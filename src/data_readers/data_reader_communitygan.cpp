@@ -81,7 +81,7 @@ int communitygan_reader::get_linearized_label_size() const {
 }
 
 bool communitygan_reader::fetch_data_block(
-  CPUMat& X,
+  std::map<data_field_type, CPUMat*>& input_buffers,
   El::Int block_offset,
   El::Int block_stride,
   El::Int mb_size,
@@ -102,8 +102,10 @@ bool communitygan_reader::fetch_data_block(
     LBANN_ERROR("CommunityGAN data reader has empty data cache");
   }
 
+
   // Populate output tensor
   const size_t mb_size_ = mb_size;
+  auto& buffer = *input_buffers[INPUT_DATA_TYPE_SAMPLES];
   for (size_t j=0; j<mb_size_; ++j) {
     if (m_cache_pos >= m_cache.size()) {
       m_cache_pos = 0;
@@ -112,10 +114,10 @@ bool communitygan_reader::fetch_data_block(
     const auto& sample = m_cache[m_cache_pos];
     ++m_cache_pos;
     for (size_t i=0; i<sample.size(); ++i) {
-      X(i,j) = static_cast<float>(sample[i]);
+      buffer(i,j) = static_cast<float>(sample[i]);
     }
     for (size_t i=sample.size(); i<m_motif_size+m_walk_length; ++i) {
-      X(i,j) = -1.f;
+      buffer(i,j) = -1.f;
     }
   }
 

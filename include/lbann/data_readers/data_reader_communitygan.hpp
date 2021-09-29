@@ -64,7 +64,7 @@ public:
 
 protected:
   bool fetch_data_block(
-    CPUMat& X,
+    std::map<data_field_type, CPUMat*>& input_buffers,
     El::Int block_offset,
     El::Int block_stride,
     El::Int mb_size,
