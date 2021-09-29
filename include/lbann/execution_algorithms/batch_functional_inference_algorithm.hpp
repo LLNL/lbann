@@ -37,7 +37,7 @@
 
 namespace lbann {
 
-/** @brief Class for LBANN batch inference algorithms. 
+/** @brief Class for LBANN batch inference algorithms.
  *
  *  This execution algorithm is meant for running inference using a trained
  *  model and samples passed by the user from an external application.  The
@@ -136,7 +136,7 @@ protected:
    */
   void get_labels(model& model,\
                   El::Matrix<int, El::Device::CPU> &labels) {
-    int pred_label;
+    int pred_label = 0;
     float max, col_value;
 
     for (const auto* l : model.get_layers()) {

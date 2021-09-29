@@ -101,7 +101,8 @@ std::vector<size_t> verify_and_get_dims(MatrixT const& A,
   auto const A_width = A.Width();
   if (dims[0] == El::To<size_t>(A_width)) {
 #ifdef LBANN_DEBUG
-    LBANN_ASSERT(get_linear_size(dims) == A_height * A_width);
+    LBANN_ASSERT(get_linear_size(dims) ==
+                 static_cast<size_t>(A_height * A_width));
 #endif
     return dims;
   }
@@ -282,7 +283,8 @@ template <typename T, El::Device D>
 class ConstDistTensorView
   : public details::MatrixAsTensorView<El::AbstractDistMatrix<T> const>
 {
-  using base_type = details::MatrixAsTensorView<El::AbstractDistMatrix<T> const>;
+  using base_type =
+    details::MatrixAsTensorView<El::AbstractDistMatrix<T> const>;
 
 public:
   template <typename MatT>

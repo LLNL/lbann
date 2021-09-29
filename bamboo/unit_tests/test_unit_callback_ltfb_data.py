@@ -68,7 +68,7 @@ def construct_model(lbann):
     """
 
     # Layer graph
-    step_id = lbann.Identity(lbann.Input())
+    step_id = lbann.Input(data_field='samples')
     for l in lbann.traverse_layer_graph(step_id):
         l.device = 'CPU'
 
@@ -76,6 +76,7 @@ def construct_model(lbann):
     ltfb_interval = 3
     metrics = [lbann.Metric(step_id, name='step id')]
     callbacks = [
+        lbann.CallbackPrint(),
         lbann.CallbackLTFB(
             batch_interval=ltfb_interval,
             metric=metrics[-1].name,

@@ -125,8 +125,9 @@ fast_rng_gen& get_fast_io_generator();
 /** @brief Initialize the random number generator (with optional seed).
  *
  *  @param seed Seed value for the random number generator
- *  @param comm If present, mixes the process's rank within the model
- *              into the seed; if not, uses the MPI world rank.
+ *  @param comm If present, mixes the process's rank within the
+ *              trainer into the seed; if not, uses the MPI world
+ *              rank.
  *
  */
 void init_random(int seed = -1, int num_io_RNGs = 1, lbann_comm *comm = nullptr);

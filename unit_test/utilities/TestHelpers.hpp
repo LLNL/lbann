@@ -39,6 +39,12 @@ bool IsValidPtr(std::unique_ptr<T> const& ptr) noexcept
   return static_cast<bool>(ptr);
 }
 
+template <typename T>
+bool IsValidPtr(T const* ptr) noexcept
+{
+  return static_cast<bool>(ptr);
+}
+
 } // namespace utilities
 } // namespace unit_test
 #endif // LBANN_UNIT_TEST_UTILITIES_TEST_HELPERS_HPP_INCLUDED

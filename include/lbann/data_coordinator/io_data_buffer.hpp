@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -46,7 +46,7 @@ public:
   /** Number of samples in the current mini-batch */
   int m_num_samples_fetched;
   /** Distributed matrix used to stage local data to layer output */
-  std::map<input_data_type, std::unique_ptr<AbsDistMatrixType>> m_input_buffers;
+  std::map<data_field_type, std::unique_ptr<AbsDistMatrixType>> m_input_buffers;
   std::atomic<bool> m_fetch_data_in_background;
   std::future<void> m_data_fetch_future;
   /// 1-D Matrix of which indices were fetched in this mini-batch
@@ -56,16 +56,6 @@ public:
     m_num_samples_fetched(0), m_fetch_data_in_background(false)
   {
     m_input_buffers.clear();
-    // Create an empty buffer for each type of input data
-    // @todo BVE this should be tailored to only create buffers needed
-    //    by the data reader
-    for(auto idt : input_data_type_iterator()) {
-      m_input_buffers[idt].reset(new StarVCMatDT<TensorDataType, El::Device::CPU>(comm->get_trainer_grid()));
-#if defined(LBANN_HAS_GPU)
-      // Pin the memory so that we get efficient GPU data transfer
-      m_input_buffers[idt]->Matrix().SetMemoryMode(1);
-#endif // LBANN_HAS_GPU
-    }
   }
 
   data_buffer(const data_buffer& other) :
@@ -92,6 +82,11 @@ public:
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar );
+
+  /** @brief Create a data parallel distributed matrix to hold the input data
+   * for the field */
+  void initialize_buffer_for_data_field(data_field_type const data_field,
+                                        lbann_comm* comm);
 
   void set_fetch_data_in_background(bool flag) { m_fetch_data_in_background = flag; }
 

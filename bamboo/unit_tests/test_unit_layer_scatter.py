@@ -20,7 +20,7 @@ import tools
 # Data
 width = 13
 height = 7
-input_size = width * height 
+input_size = width * height
 output_size = 23
 seed = 20210127
 
@@ -67,7 +67,7 @@ def construct_model(lbann):
     # Input data
     # Note: Sum with a weights layer so that gradient checking will
     # verify that error signals are correct.
-    x = lbann.Identity(lbann.Input())
+    x = lbann.Input(data_field='samples')
     x_slice = lbann.Slice(
         x,
         slice_points=tools.str_list([0,input_size,2*input_size]),
@@ -97,7 +97,7 @@ def construct_model(lbann):
 
     # Objects for LBANN model
 
-    
+
     obj = []
     metrics = []
     callbacks = []
@@ -131,7 +131,7 @@ def construct_model(lbann):
 
     ######################################################################
     #
-    #          2D Values , 1D Input, Axis = 0 
+    #          2D Values , 1D Input, Axis = 0
     #
     ######################################################################
 
@@ -156,7 +156,7 @@ def construct_model(lbann):
     obj.append(z)
     metrics.append(lbann.Metric(z, name='2D, axis=0'))
 
-    vals = [] 
+    vals = []
 
     for i in range(num_samples()):
         _x = get_sample(i)
@@ -167,9 +167,9 @@ def construct_model(lbann):
 
         for i in range(height):
             if 0 <= x1[i] < output_size:
-                for j in range(width):                
+                for j in range(width):
                     y0[int(x1[i])][j] += x0[i][j]
-        z = 0 
+        z = 0
         for i in range(width * output_size):
             z += ((i + 1) * y0.flatten()[i])**2
         vals.append(z)
@@ -183,7 +183,7 @@ def construct_model(lbann):
         execution_modes='test'))
     ######################################################################
     #
-    #          2D Values , 1D Input, Axis = 1 
+    #          2D Values , 1D Input, Axis = 1
     #
     ######################################################################
 
@@ -208,7 +208,7 @@ def construct_model(lbann):
     obj.append(z)
     metrics.append(lbann.Metric(z, name='2D, axis=1'))
 
-    vals = [] 
+    vals = []
 
     for i in range(num_samples()):
         _x = get_sample(i)
@@ -221,7 +221,7 @@ def construct_model(lbann):
             for j in range(height):
                 if 0 <= x1[i] < output_size:
                     y0[j][int(x1[i])] += x0[j][i]
-        z = 0 
+        z = 0
         for i in range(height * output_size):
             z += ((i + 1) * y0.flatten()[i])**2
         vals.append(z)
@@ -234,7 +234,7 @@ def construct_model(lbann):
         error_on_failure=True,
         execution_modes='test'))
     # Gradient checking
-    
+
     callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # Construct model

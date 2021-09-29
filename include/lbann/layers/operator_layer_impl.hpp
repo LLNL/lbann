@@ -48,6 +48,7 @@ OperatorLayer<InputT, OutputT, Layout, D>::OperatorLayer(lbann_comm& comm,
   LBANN_ASSERT(op);
   m_ops.reserve(1);
   m_ops.emplace_back(std::move(op));
+  this->m_expected_num_parent_layers = -1; // No limit on parents
 }
 
 template <typename InputT, typename OutputT, data_layout Layout, El::Device D>
@@ -58,6 +59,7 @@ OperatorLayer<InputT, OutputT, Layout, D>::OperatorLayer(
 {
   LBANN_ASSERT(m_ops.size() == 1UL); // For starters.
   LBANN_ASSERT(m_ops[0]);
+  this->m_expected_num_parent_layers = -1; // No limit on parents
 }
 
 template <typename InputT, typename OutputT, data_layout Layout, El::Device D>
@@ -261,5 +263,4 @@ namespace lbann {
 
 } // namespace lbann
 #endif // LBANN_INSTANTIATE_OPERATOR_LAYER
-
 #endif // LBANN_LAYERS_OPERATOR_LAYER_IMPL_HPP_INCLUDED

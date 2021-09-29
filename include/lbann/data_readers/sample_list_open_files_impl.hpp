@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -804,15 +804,15 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
       close_file_handle(victim_fd);
       clear_file_handle(victim_fd);
     }
-  }
 
-  /// Before we can enqueue the any new access times for this descriptor, remove any
-  /// earlier descriptor
-  std::sort_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
-  if(m_open_fd_pq.front().first == id) {
-    m_open_fd_pq.pop_front();
+    /// Before we can enqueue the any new access times for this descriptor,
+    /// remove any earlier descriptor
+    std::sort_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
+    if (m_open_fd_pq.front().first == id) {
+      m_open_fd_pq.pop_front();
+    }
+    std::make_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
   }
-  std::make_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
 
   auto& e = m_file_id_stats_map[id];
   auto& file_access_queue = std::get<FID_STATS_DEQUE>(e);

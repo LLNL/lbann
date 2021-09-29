@@ -35,19 +35,7 @@
 #include <lbann.pb.h>
 #include <lbann/base.hpp>
 
-namespace pb = ::google::protobuf;
-
 namespace {
-
-#include "test_data/hdf5_reader.prototext.inc"
-
-lbann_data::LbannPB parse_prototext(lbann::lbann_comm& comm)
-{
-  lbann_data::LbannPB reader;
-  if (!pb::TextFormat::ParseFromString(hdf5_reader, &reader))
-    throw "Parsing protobuf failed.";
-  return reader;
-}
 
 std::string const probies_hdf5_legacy_sample_list =
   R"ptext(CONDUIT_HDF5_INCLUSION
@@ -66,6 +54,8 @@ h5out_30.h5 4 RUN_ID/000000138 RUN_ID/000000139 RUN_ID/000000140 RUN_ID/00000014
 h5out_31.h5 4 RUN_ID/000000000 RUN_ID/000000001 RUN_ID/000000002 RUN_ID/000000003
 h5out_32.h5 4 RUN_ID/000000004 RUN_ID/000000005 RUN_ID/000000006 RUN_ID/000000007
 )ptext";
+
+} // namespace
 
 TEST_CASE("hdf5 data reader", "[mpi][data reader][sample_list][hdf5]")
 {
@@ -99,5 +89,3 @@ TEST_CASE("hdf5 data reader", "[mpi][data reader][sample_list][hdf5]")
     CHECK(sample_list == buf);
   }
 }
-
-} // namespace

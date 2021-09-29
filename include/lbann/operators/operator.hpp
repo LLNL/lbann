@@ -46,13 +46,6 @@
 #include <string>
 #include <vector>
 
-/** @brief A utility macro for easily adding ETI for operator builders
- *  @note Must be called inside lbann namespace.
- */
-#define LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(OPERATOR_NAME, T, D)            \
-  template std::unique_ptr<Operator<T, T, D>>                                  \
-    build_##OPERATOR_NAME##_operator<T, D>(lbann_data::Operator const&)
-
 namespace lbann {
 
 using supported_operator_data_type = h2::meta::TL<
@@ -63,7 +56,9 @@ using supported_operator_data_type = h2::meta::TL<
   cpu_fp16,
 #endif
   float,
-  double>;
+  double,
+  El::Complex<float>,
+  El::Complex<double>>;
 
 /** @brief Neural network tensor operation.
  *
@@ -132,13 +127,11 @@ public:
   ///@{
 
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar){};
+  void serialize(ArchiveT& ar);
 
   ///@}
-
-  // ===========================================================
-  // Forward prop compute function
-  // ===========================================================
+  /** @name Computational interface */
+  ///@{
 
   /** @brief Apply operator's forward operation.
    *  @details Given the input tensors, the output tensors are
@@ -148,10 +141,6 @@ public:
   fp_compute(std::vector<ConstInputTensorType> const& inputs,
              std::vector<OutputTensorType> const& outputs) const = 0;
 
-  // ===========================================================
-  // Back prop compute function
-  // ===========================================================
-
   /** @brief Compute operator's "backward" operation
    *  @details Given the inputs, outputs, and gradient w.r.t. output
    *           tensors, the gradient w.r.t. input tensors are
@@ -160,7 +149,8 @@ public:
   virtual void
   bp_compute(std::vector<ConstInputTensorType> const& inputs,
              std::vector<ConstOutputTensorType> const& gradient_wrt_outputs,
-             std::vector<InputTensorType> const& gradient_wrt_inputs) const {};
+             std::vector<InputTensorType> const& gradient_wrt_inputs) const;
+  ///@}
 
 protected:
   Operator(Operator&& other) noexcept = default;
@@ -204,6 +194,18 @@ Description Operator<InputT, OutputT, D>::get_description() const
 
   return desc;
 }
+
+template <typename InputT, typename OutputT, El::Device D>
+void Operator<InputT, OutputT, D>::bp_compute(
+  std::vector<ConstInputTensorType> const&,
+  std::vector<ConstOutputTensorType> const&,
+  std::vector<InputTensorType> const&) const
+{}
+
+template <typename InputT, typename OutputT, El::Device D>
+template <typename ArchiveT>
+void Operator<InputT, OutputT, D>::serialize(ArchiveT& ar)
+{}
 
 } // namespace lbann
 #endif // LBANN_OPERATORS_OPERATOR_HPP_INCLUDED

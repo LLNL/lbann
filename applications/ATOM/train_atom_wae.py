@@ -107,7 +107,7 @@ def construct_model(run_args):
     print("sequence length is {}".format(sequence_length))
     data_layout = "data_parallel"
     # Layer graph
-    input_ = lbann.Identity(lbann.Input(name='inp',target_mode="N/A"), name='inp1')
+    input_ = lbann.Identity(lbann.Input(name='inp',data_field='samples'), name='inp1')
     input_feature_dims = sequence_length
 
     embedding_size = run_args.embedding_dim

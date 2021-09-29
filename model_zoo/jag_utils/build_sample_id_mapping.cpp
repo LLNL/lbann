@@ -25,8 +25,21 @@ int main(int argc, char **argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &np);
 
-  options *opts = options::get();
-  opts->init(argc, argv);
+  auto& arg_parser = global_argument_parser();
+  construct_std_options();
+  construct_jag_options();
+  try {
+    arg_parser.parse(argc, argv);
+  }
+  catch (std::exception const& e) {
+    auto guessed_rank = guess_global_rank();
+    if (guessed_rank <= 0)
+      // Cannot call `El::ReportException` because MPI hasn't been
+      // initialized yet.
+      std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
+                << e.what() << "\n\nProcess terminating." << std::endl;
+    std::terminate();
+  }
 
   // sanity check the cmd line
   if (argc < 2) {
@@ -50,7 +63,7 @@ int total = 0;
   // get list of conduit filenames
   if (master) cerr << "reading filelist\n";
   vector<string> filenames;
-  string base_dir = opts->get_string("base_dir");
+  string base_dir = arg_parser.get<std::string>(BASE_DIR);
   if (base_dir.back() != '/') {
     base_dir += '/';
   }

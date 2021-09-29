@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -214,15 +214,16 @@ void hdf5_data_reader::load()
   }
   double tm1 = get_time();
   double tm11 = tm1;
-  options* opts = options::get();
+  auto& arg_parser = global_argument_parser();
 
-  if (opts->has_string("keep_packed_fields")) {
+  if (arg_parser.get<bool>(KEEP_PACKED_FIELDS)) {
     m_delete_packed_fields = false;
   }
 
   // May go away; for now, this reader only supports preloading mode
   // with data store
-  opts->set_option("preload_data_store", true);
+  // TODO MRW
+  // opts->set_option("preload_data_store", true);
 
   // Load the sample list(s)
   data_reader_sample_list::load();
@@ -259,7 +260,7 @@ void hdf5_data_reader::load()
               << "; num samples: " << m_shuffled_indices.size() << std::endl;
   }
 
-  if (!opts->get_bool("quiet") && is_master()) {
+  if (!arg_parser.get<bool>(QUIET) && is_master()) {
     print_metadata();
   }
 }
@@ -823,14 +824,17 @@ const std::vector<int> hdf5_data_reader::get_data_dims(std::string name) const
   return iter->second;
 }
 
-int hdf5_data_reader::get_linearized_size(std::string const& name) const
+int hdf5_data_reader::get_linearized_size(data_field_type const& data_field) const
 {
+  if (m_linearized_size_lookup_table.size() == 0) {
+    LBANN_ERROR("get_linearized_size was called with an empty lookup table");
+  }
   std::unordered_map<std::string, int>::const_iterator iter =
-    m_linearized_size_lookup_table.find(name);
+    m_linearized_size_lookup_table.find(data_field);
   if (iter == m_linearized_size_lookup_table.end()) {
-    LBANN_ERROR("get_linearized_data_size was asked for info about an unknown "
-                "field name: ",
-                name,
+    LBANN_ERROR("get_linearized_size was asked for info about an unknown "
+                "data field: ",
+                data_field,
                 "; table size: ",
                 m_linearized_size_lookup_table.size(),
                 " for role: ",
@@ -854,6 +858,11 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables()
   // could be included in the schemas
   load_sample(node, index);
 
+  return construct_linearized_size_lookup_tables(node);
+}
+
+void hdf5_data_reader::construct_linearized_size_lookup_tables(conduit::Node& node)
+{
   std::unordered_map<std::string, conduit::Node*> leaves;
   get_leaves(&node, leaves);
 
@@ -896,14 +905,14 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables()
   }
 }
 
-bool hdf5_data_reader::fetch(std::string which,
+bool hdf5_data_reader::fetch_data_field(data_field_type data_field,
                              CPUMat& Y,
                              int data_id,
                              int mb_idx)
 {
   size_t n_elts = 0;
   std::string dtype;
-  const void* d = get_data(data_id, which, n_elts, dtype);
+  const void* d = get_data(data_id, data_field, n_elts, dtype);
 
   if (dtype == "float64") {
     const conduit::float64* data = reinterpret_cast<const conduit::float64*>(d);
@@ -1026,7 +1035,7 @@ void hdf5_data_reader::set_experiment_schema(const conduit::Node& s)
 // Note to developers and reviewer: this is very conduit-ishy; I keep thinking
 // there's a simpler, more elegant way to do this, but I'm not seeing it.
 const void* hdf5_data_reader::get_data(const size_t sample_id_in,
-                                       std::string field_name_in,
+                                       data_field_type data_field,
                                        size_t& num_elts_out,
                                        std::string& dtype_out) const
 {
@@ -1034,7 +1043,7 @@ const void* hdf5_data_reader::get_data(const size_t sample_id_in,
   // get the pathname to the data, and verify it exists in the conduit::Node
   const conduit::Node& node = m_data_store->get_conduit_node(sample_id_in);
   std::ostringstream ss;
-  ss << node.name() << node.child(0).name() + "/" << field_name_in;
+  ss << node.child(0).name() + "/" << data_field;
   if (!node.has_path(ss.str())) {
     LBANN_ERROR("no path: ", ss.str());
   }

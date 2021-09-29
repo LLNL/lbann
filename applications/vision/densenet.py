@@ -348,28 +348,6 @@ def get_args():
     return args
 
 
-def construct_layer_graph(
-        statistics_group_size,
-        version,
-        cumulative_layer_num,
-        input_node):
-    # Input data
-    images_node = lbann.Identity(input_node)
-    cumulative_layer_num += 1
-    log('Identity. cumulative_layer_num={n}'.format(n=cumulative_layer_num))
-
-    # Use input_node, not images_node.
-    image_labels_node = lbann.Identity(input_node)
-    cumulative_layer_num += 1
-    log('Identity. cumulative_layer_num={n}'.format(n=cumulative_layer_num))
-
-    # Use images_node, not image_labels_node.
-    probabilities = densenet(statistics_group_size, version,
-                             cumulative_layer_num, images_node)
-
-    return probabilities, image_labels_node
-
-
 def set_up_experiment(args,
                       input_,
                       probs,
@@ -444,20 +422,23 @@ def main():
     # Construct layer graph
     # ----------------------------------
 
-    input_node = lbann.Input(target_mode='classification')
+    images = lbann.Input(data_field='samples')
     # Start counting cumulative layers at 1.
     cumulative_layer_num = 1
-    log('Input. cumulative_layer_num={n}'.format(n=cumulative_layer_num))
-    (probs, labels) = construct_layer_graph(
-        args.procs_per_node,
-        121, cumulative_layer_num, input_node)
+    log('Input(datum). cumulative_layer_num={n}'.format(n=cumulative_layer_num))
+    labels = lbann.Input(data_field='labels')
+    cumulative_layer_num += 1
+    log('Input(labels). cumulative_layer_num={n}'.format(n=cumulative_layer_num))
+
+    probs = densenet(args.procs_per_node,
+        121, cumulative_layer_num, images)
 
     # ----------------------------------
     # Setup experiment
     # ----------------------------------
 
     (trainer, model, data_reader_proto, optimizer) = set_up_experiment(
-        args, input_node, probs, labels)
+        args, [images, labels], probs, labels)
 
     # ----------------------------------
     # Run experiment

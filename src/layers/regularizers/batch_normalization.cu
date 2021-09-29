@@ -488,7 +488,8 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
       dim3 block_dims, grid_dims;
       block_dims.x = block_size;
       grid_dims.x = (channel_size + block_size - 1) / block_size;
-      grid_dims.y = El::Min(num_channels, 65535);
+      grid_dims.y = num_channels;
+      gpu_lib::clip_grid_dims(grid_dims);
       hydrogen::gpu::LaunchKernel(
         fp_sums_kernel<TensorDataType, block_size>,
         grid_dims, block_dims, 0, multisync,
@@ -533,11 +534,11 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
                           gpu::get_sync_info(local_mean),
                           gpu::get_sync_info(local_var));
       constexpr size_t block_dim = 256;
-      const size_t grid_dim = El::Min((num_channels + block_dim - 1) / block_dim,
-                                      65535);
+      dim3 grid_dims((num_channels + block_dim - 1) / block_dim, 1, 1);
+      gpu_lib::clip_grid_dims(grid_dims);
       hydrogen::gpu::LaunchKernel(
         fp_statistics_kernel<TensorDataType>,
-        grid_dim, block_dim, 0, multisync,
+        grid_dims, block_dim, 0, multisync,
         num_channels, num_per_sum, this->m_epsilon, this->m_decay,
         local_mean.Buffer(), local_var.Buffer(),
         local_running_mean.Buffer(), local_running_var.Buffer());
@@ -566,8 +567,9 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
-    grid_dims.y = El::Min(local_width, 65535);
-    grid_dims.z = El::Min(num_channels, 65535);
+    grid_dims.y = local_width;
+    grid_dims.z = num_channels;
+    gpu_lib::clip_grid_dims(grid_dims);
     hydrogen::gpu::LaunchKernel(
       fp_output_kernel<TensorDataType>,
       grid_dims, block_dims, 0, multisync,
@@ -635,7 +637,8 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
-    grid_dims.y = El::Min(num_channels, 65535);
+    grid_dims.y = num_channels;
+    gpu_lib::clip_grid_dims(grid_dims);
     hydrogen::gpu::LaunchKernel(
       bp_statistics_grad_kernel<TensorDataType,block_size>,
       grid_dims, block_dims, 0, multisync,
@@ -693,8 +696,9 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
-    grid_dims.y = El::Min(local_width, 65535);
-    grid_dims.z = El::Min(num_channels, 65535);
+    grid_dims.y = local_width;
+    grid_dims.z = num_channels;
+    gpu_lib::clip_grid_dims(grid_dims);
     hydrogen::gpu::LaunchKernel(
       bp_input_grad_kernel<TensorDataType>,
       grid_dims, block_dims, 0, multisync,

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,6 +27,7 @@
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
 #include <lbann/utils/dnn_lib/helpers.hpp>
+#include <lbann/utils/options.hpp>
 #include <lbann/utils/random_number_generators.hpp>
 
 int main(int argc, char* argv[]) {
@@ -34,6 +35,8 @@ int main(int argc, char* argv[]) {
   hydrogen::gpu::Initialize();
   lbann::dnn_lib::initialize();
 #endif // LBANN_HAS_DNN_LIB
+
+  lbann::construct_all_options();
 
   // Initialize the general RNGs and the data sequence RNGs
   int random_seed = 42;

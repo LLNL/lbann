@@ -1,7 +1,7 @@
 """Test to check truncation selection exchanges in LTFB.
 
-An LTFB round is performed after every training step and two (truncation_k=2) 
-winners chosen from higher random metric values, propagate their 
+An LTFB round is performed after every training step and two (truncation_k=2)
+winners chosen from higher random metric values, propagate their
 models/topologies to other trainers with lower metric values.
 The log files are post-processed to make sure that the correct weights
 are propagated by LTFB.
@@ -90,7 +90,7 @@ def construct_model(lbann):
     """
 
     # Layer graph
-    rand = lbann.Identity(lbann.Input())
+    rand = lbann.Input(data_field='samples')
     layers = list(lbann.traverse_layer_graph([rand]))
     for l in layers:
         l.device = 'CPU'
@@ -192,8 +192,8 @@ def augment_test_func(test_func):
                         continue
                     sending_partner = [[] for _ in range(num_trainers)]
                     tournament_metrics = [[] for _ in range(num_trainers)]
-             
-                #sender 
+
+                #sender
                 match = re.search(
                     'In LTFB TSE .* '
                     'trainer ([0-9]+) with score .* sends model to trainer  ([0-9]+) '
@@ -202,7 +202,7 @@ def augment_test_func(test_func):
                 if match:
                     trainer = int(match.group(1))
                     sending_partner[trainer].append(trainer) #ltfb_sender
-                
+
                 #receiver
                 match = re.search(
                     'In LTFB TSE .* '
@@ -213,7 +213,7 @@ def augment_test_func(test_func):
                     receiver = looser = trainer = int(match.group(1))
                     sender = winner = partner = int(match.group(2))
                     sending_partner[trainer].append(sender) #ltfb_sender
-                
+
                 # Metric value on tournament (test) set
                 match = re.search(
                     'model0 \\(instance ([0-9]+)\\) test random : '
@@ -245,7 +245,7 @@ def augment_test_func(test_func):
                   sender_at_step = sending_partner[trainer][step]
                   trainer_score = tournament_metrics[trainer][step]
                   winning_score = tournament_metrics[sender_at_step][step]
-                    
+
                   assert trainer_score <= winning_score, \
                       'Incorrect metric value for LTFB tournament'
 

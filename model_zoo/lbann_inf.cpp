@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -42,7 +42,7 @@ using namespace lbann;
 
 int main(int argc, char *argv[]) {
   auto& arg_parser = global_argument_parser();
-  construct_std_options();
+  construct_all_options();
 
   try {
     arg_parser.parse(argc, argv);
@@ -60,17 +60,15 @@ int main(int argc, char *argv[]) {
     // Split MPI into trainers
     allocate_trainer_resources(comm.get());
 
-    // Initialize options db (this parses the command line)
-    options *opts = options::get();
-    opts->init(argc, argv);
-    if (opts->has_string("h") or opts->has_string("help") or argc == 1) {
-      print_help(*comm);
+    if (arg_parser.help_requested() or argc == 1) {
+      if (master)
+        std::cout << arg_parser << std::endl;
       return EXIT_SUCCESS;
     }
 
     std::ostringstream err;
 
-    auto pbs = protobuf_utils::load_prototext(master, argc, argv);
+    auto pbs = protobuf_utils::load_prototext(master);
     // Optionally over-ride some values in the prototext for each model
     for(size_t i = 0; i < pbs.size(); i++) {
       get_cmdline_overrides(*comm, *(pbs[i]));
@@ -80,7 +78,7 @@ int main(int argc, char *argv[]) {
     lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
 
     // Construct the trainer
-    auto& trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]), opts);
+    auto& trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]));
 
     thread_pool& io_thread_pool = trainer.get_io_thread_pool();
     int training_dr_linearized_data_size = -1;
@@ -94,8 +92,12 @@ int main(int argc, char *argv[]) {
     std::vector<std::unique_ptr<model>> models;
     for(auto&& pb_model : pbs) {
       models.emplace_back(
-        build_model_from_prototext(argc, argv, pb_trainer, *pb_model,
-                                   comm.get(), opts, io_thread_pool,
+        build_model_from_prototext(argc,
+                                   argv,
+                                   pb_trainer,
+                                   *pb_model,
+                                   comm.get(),
+                                   io_thread_pool,
                                    trainer.get_callbacks_with_ownership(),
                                    training_dr_linearized_data_size));
     }

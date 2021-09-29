@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -77,26 +77,26 @@ data_store_conduit::data_store_conduit(
 
   open_informational_files();
 
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
 
   // For use in testing
-  if (opts->has_string("data_store_fail")) {
+  if (arg_parser.get<bool>(DATA_STORE_FAIL)) {
     LBANN_ERROR("data_store_conduit is throwing a fake exception; this is for use during testing");
   }
 
-  if (opts->has_string("data_store_test_checkpoint")
-      && opts->has_string("data_store_spill")) {
+  if (arg_parser.get<std::string>(DATA_STORE_TEST_CHECKPOINT) != "" &&
+      arg_parser.get<std::string>(DATA_STORE_SPILL) != "") {
     LBANN_ERROR("you passed both --data_store_test_checkpoint and --data_store_spill; please use one or the other or none, but not both");
   }
-  if (opts->has_string("data_store_test_checkpoint")) {
+  if (arg_parser.get<std::string>(DATA_STORE_TEST_CHECKPOINT) != "") {
     setup_checkpoint_test();
   }
-  if (opts->has_string("data_store_spill")) {
-    setup_spill(opts->get_string("data_store_spill"));
+  if (arg_parser.get<std::string>(DATA_STORE_SPILL) != "") {
+    setup_spill(arg_parser.get<std::string>(DATA_STORE_SPILL));
   }
 
-  set_is_local_cache(opts->get_bool("data_store_cache"));
-  set_is_preloading(opts->get_bool("preload_data_store"));
+  set_is_local_cache(arg_parser.get<bool>(DATA_STORE_CACHE));
+  set_is_preloading(arg_parser.get<bool>(PRELOAD_DATA_STORE));
   set_is_explicitly_loading(! is_preloading());
 
   if (is_local_cache()) {
@@ -133,7 +133,9 @@ data_store_conduit::~data_store_conduit() {
 }
 
 void data_store_conduit::setup_checkpoint_test() {
-  std::string c = options::get()->get_string("data_store_test_checkpoint");
+  auto& arg_parser = global_argument_parser();
+  std::string c = arg_parser.get<std::string>(DATA_STORE_TEST_CHECKPOINT);
+  // TODO MRW
   if (c == "1") {
     LBANN_ERROR("--data_store_test_checkpoint=1; you probably forgot to specify the spill directory; you must specify --data_store_test_checkpoint=<string>'");
   }
@@ -414,19 +416,20 @@ void data_store_conduit::set_conduit_node(int data_id, const conduit::Node &node
 }
 
 const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
+  using iterator_t = std::unordered_map<int, conduit::Node>::const_iterator;
   if (is_local_cache()) {
-    std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);
+    iterator_t t3 = m_data.find(data_id);
     if (t3 == m_data.end()) {
       LBANN_ERROR("(local cache) failed to find data_id: ", data_id, " in m_data; m_data.size: ", m_data.size());
     }
     return t3->second;
   }
 
-  std::unordered_map<int, conduit::Node>::const_iterator t2 = m_minibatch_data.find(data_id);
+  iterator_t t2 = m_minibatch_data.find(data_id);
   // if not preloaded, and get_label() or get_response() is called,
   // we need to check m_data
   if (t2 == m_minibatch_data.end()) {
-    std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);
+    iterator_t t3 = m_data.find(data_id);
     if (t3 != m_data.end()) {
       return t3->second["data"];
     }
@@ -978,8 +981,9 @@ bool data_store_conduit::is_fully_loaded() const {
 }
 
 void data_store_conduit::get_image_sizes(map_is_t &file_sizes, std::vector<std::vector<int>> &indices) {
+  auto& arg_parser = global_argument_parser();
   /// this block fires if image sizes have been precomputed
-  if (options::get()->has_string("image_sizes_filename")) {
+  if (arg_parser.get<std::string>(IMAGE_SIZES_FILENAME) != "") {
     LBANN_ERROR("not yet implemented");
     //TODO dah - implement, if this becomes a bottleneck (but I don't think it will)
   }
@@ -1195,7 +1199,8 @@ void data_store_conduit::exchange_local_caches() {
 
   set_loading_is_complete();
 
-  if (options::get()->get_bool("data_store_test_cache")) {
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(DATA_STORE_TEST_CACHE)) {
     test_local_cache_imagenet(20);
   }
 }
@@ -1417,6 +1422,7 @@ PROFILE("exchange_owner_maps; m_owner_maps_were_exchanged = true");
 }
 
 void data_store_conduit::profile_timing() {
+  auto& arg_parser = global_argument_parser();
   if (m_exchange_time == 0) {
     return;
   }
@@ -1430,7 +1436,7 @@ void data_store_conduit::profile_timing() {
         "  wait alls:                ", m_wait_all_time, "\n",
         "  unpacking rcvd nodes:     ", m_rebuild_time, "\n\n");
 
-    if (options::get()->get_bool("data_store_min_max_timing")) {
+    if (arg_parser.get<bool>(DATA_STORE_MIN_MAX_TIMING)) {
       std::vector<double> send;
       static int count = 5;
       send.reserve(count);
@@ -1855,13 +1861,14 @@ void data_store_conduit::load_spilled_conduit_nodes() {
 }
 
 void data_store_conduit::open_informational_files() {
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
   if (m_comm == nullptr) {
     LBANN_ERROR("m_comm == nullptr");
   }
 
   // optionally, each <rank, reader_role> pair opens a debug file
-  if (opts->get_bool("data_store_debug") && !m_debug && m_reader != nullptr) {
+  if (arg_parser.get<bool>(DATA_STORE_DEBUG) && !m_debug &&
+      m_reader != nullptr) {
     m_debug_filename = m_debug_filename_base + "_" + m_reader->get_role() + "." + std::to_string(m_comm->get_rank_in_world()) + ".txt";
     m_debug = new std::ofstream(m_debug_filename.c_str());
     if (!m_debug) {
@@ -1870,7 +1877,8 @@ void data_store_conduit::open_informational_files() {
   }
 
   // optionally, <P_0, reader_role> pair opens a file for writing
-  if (opts->get_bool("data_store_profile") && m_world_master && !m_profile && m_reader != nullptr) {
+  if (arg_parser.get<bool>(DATA_STORE_PROFILE) && m_world_master &&
+      !m_profile && m_reader != nullptr) {
     m_profile_filename = m_profile_filename_base + "_" + m_reader->get_role() + ".txt";
     m_profile = new std::ofstream(m_profile_filename.c_str());
     if (!m_profile) {

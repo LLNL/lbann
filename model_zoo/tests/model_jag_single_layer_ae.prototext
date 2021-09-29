@@ -70,7 +70,7 @@ model {
   # Data
   layer {
     input {
-      target_mode: "N/A"
+      data_field: "samples"
     }
     name: "data"
     data_layout: "data_parallel"

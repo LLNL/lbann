@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -82,8 +82,9 @@ void ras_lipid_conduit_data_reader::load() {
     std::cout << "starting load for role: " << get_role() << std::endl;
   }
 
-  options *opts = options::get();
-  opts->set_option("preload_data_store", 1);
+  auto& arg_parser = global_argument_parser();
+  // TODO MRW
+  // opts->set_option(PRELOAD_DATA_STORE, 1);
 
   // Error check some settings
   size_t count = get_absolute_sample_count();
@@ -102,22 +103,23 @@ void ras_lipid_conduit_data_reader::load() {
 
   // Read or compute the number of samples per file (this is the number
   // of samples before we sequentially-concatenate them)
-  if (opts->has_string("pilot2_read_file_sizes")) {
+  if (arg_parser.get<std::string>("pilot2_read_file_sizes") != "") {
     read_file_sizes();
-  } else {
+  }
+  else {
     double tm3 = get_time();
     get_samples_per_file();
     if (is_master()) std::cout << "time to compute samples_per_file: " << get_time() - tm3 << std::endl;
   }
   // Optionally save the samples-per-file info to file
-  if (opts->has_string("pilot2_save_file_sizes")) {
+  if (arg_parser.get<std::string>("pilot2_save_file_sizes") != "") {
     write_file_sizes();
   }
 
   // Get the number of samples that will be combined into a multi-sample
   m_seq_len = 1;
-  if (opts->has_int("seq_len")) {
-    m_seq_len = opts->get_int("seq_len");
+  if (arg_parser.get<int>(SEQUENCE_LENGTH) != -1) {
+    m_seq_len = arg_parser.get<int>(SEQUENCE_LENGTH);
   }
 
   // set the number of labels
@@ -221,14 +223,15 @@ data types, from python+numpy:
   }
 
   // Variables only used for user feedback
-  bool verbose = options::get()->get_bool("verbose");
+  auto& arg_parser = global_argument_parser();
+  bool verbose = arg_parser.get<bool>(VERBOSE);
   int np = m_comm->get_procs_per_trainer();
   size_t nn = 0;
 
   std::vector<conduit::Node> work(m_seq_len);
 
   // option and variables only used for testing during development
-  bool debug_concatenate = options::get()->get_bool("debug_concatenate");
+  bool debug_concatenate = arg_parser.get<bool>(DEBUG_CONCATENATE);
   if (m_seq_len > 1) {
     debug_concatenate = false;
   }
@@ -440,7 +443,8 @@ void ras_lipid_conduit_data_reader::write_file_sizes() {
   if (! is_master()) {
     return;
   }
-  std::string fn = options::get()->get_string("pilot2_save_file_sizes");
+  std::string fn =
+    global_argument_parser().get<std::string>(PILOT2_SAVE_FILE_SIZES);
   std::ofstream out(fn.c_str());
   if (!out) {
     LBANN_ERROR("failed to open ", fn, " for writing");
@@ -452,7 +456,8 @@ void ras_lipid_conduit_data_reader::write_file_sizes() {
 }
 
 void ras_lipid_conduit_data_reader::read_file_sizes() {
-  std::string fn = options::get()->get_string("pilot2_read_file_sizes");
+  std::string fn =
+    global_argument_parser().get<std::string>(PILOT2_READ_FILE_SIZES);
   std::ifstream in(fn.c_str());
   if (!in) {
     LBANN_ERROR("failed to open ", fn, " for reading");
@@ -477,9 +482,10 @@ void ras_lipid_conduit_data_reader::read_file_sizes() {
 void ras_lipid_conduit_data_reader::read_normalization_data() {
   m_use_min_max = false;
   m_use_z_score = false;
-  if (options::get()->has_string("normalization")) {
-   m_use_min_max = true;
-    m_use_z_score = options::get()->get_bool("z_score");
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<std::string>(NORMALIZATION) != "") {
+    m_use_min_max = true;
+    m_use_z_score = arg_parser.get<bool>(Z_SCORE);
     if (is_master()) {
       if (m_use_z_score) {
         std::cout << "Normalizing data using z-score" << std::endl;
@@ -488,7 +494,7 @@ void ras_lipid_conduit_data_reader::read_normalization_data() {
       }
     }
 
-    std::string fn = options::get()->get_string("normalization");
+    std::string fn = arg_parser.get<std::string>(NORMALIZATION);
     std::ifstream in(fn.c_str());
     if (!in) {
       LBANN_ERROR("failed to open ", fn, " for reading");
@@ -510,7 +516,8 @@ void ras_lipid_conduit_data_reader::read_normalization_data() {
     if (m_min.size() != 14) {
       LBANN_ERROR("normalization.size() = ", m_min.size(), "; should be 14");
     }
-  } else {
+  }
+  else {
     if (is_master()) {
       std::cout << "NOT Normalizing data!" << std::endl;
     }
@@ -539,7 +546,7 @@ void ras_lipid_conduit_data_reader::print_shapes_etc() {
   }
   std::cout << std::endl;
 
-  if (options::get()->get_bool("verbose_print")) {
+  if (global_argument_parser().get<bool>(VERBOSE)) {
     std::cout << "\nAll data shapes:\n";
     for (const auto &t : m_datum_shapes) {
       std::cout << "  " << t.first << " ";

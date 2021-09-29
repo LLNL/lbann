@@ -1,6 +1,67 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
+  abs.cpp
+  acos.cpp
+  acosh.cpp
+  add.cpp
+  add_constant.cpp
+  asin.cpp
+  asinh.cpp
+  atan.cpp
+  atanh.cpp
+  ceil.cpp
   clamp.cpp
+  constant_subtract.cpp
+  cos.cpp
+  cosh.cpp
+  divide.cpp
+  equal.cpp
+  equal_constant.cpp
+  erf.cpp
+  erfinv.cpp
+  exp.cpp
+  expm1.cpp
+  floor.cpp
+  greater.cpp
+  greater_equal.cpp
+  less.cpp
+  less_equal.cpp
+  greater_constant.cpp
+  greater_equal_constant.cpp
+  less_constant.cpp
+  less_equal_constant.cpp
+  log.cpp
+  log1p.cpp
+  logical_and.cpp
+  logical_not.cpp
+  logical_or.cpp
+  logical_xor.cpp
+  max.cpp
+  min.cpp
+  max_constant.cpp
+  min_constant.cpp
+  mod.cpp
+  multiply.cpp
+  negative.cpp
+  not_equal.cpp
+  not_equal_constant.cpp
+  pow.cpp
+  reciprocal.cpp
+  round.cpp
+  rsqrt.cpp
+  safe_divide.cpp
+  safe_reciprocal.cpp
+  scale.cpp
+  sign.cpp
+  sin.cpp
+  sinh.cpp
+  sqrt.cpp
+  square.cpp
+  squared_difference.cpp
+  subtract.cpp
+  subtract_constant.cpp
+  tan.cpp
+  tanh.cpp
   )
 
 # Propagate the files up the tree

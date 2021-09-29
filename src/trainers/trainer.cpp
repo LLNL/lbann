@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -239,6 +239,7 @@ void trainer::train(observer_ptr<model> model,
   }
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
   m_training_alg->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
+
   // FIXME (trb 04/27/2021): This is a hack to support the current
   // checkpoint/restart mechanisms. This needs to be refactored to be
   // agnostic to the training algorithm. At this time, only SGD is
@@ -276,8 +277,8 @@ void trainer::evaluate(observer_ptr<model> model,
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
   sgd->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
 
-  if(m_comm->get_grid_type() == GridType::NO_GRID or 
-     m_comm->get_grid_type() == GridType::PRIMARY_GRID){
+  if (m_comm->get_grid_type() == GridType::NO_GRID or
+      m_comm->get_grid_type() == GridType::PRIMARY_GRID) {
     sgd->evaluate(*ctxt, *model, get_data_coordinator(), mode,
                   epoch_termination_criteria(/*num_epochs=*/1UL));
   }

@@ -36,8 +36,6 @@ namespace protobuf_utils
 std::vector<std::unique_ptr<lbann_data::LbannPB>>
 load_prototext(
   const bool master,
-  const int argc,
-  char* const argv[],
   const int trainer_rank=0);
 
 /** @brief Parses the command line for special prototext flags
@@ -52,8 +50,8 @@ load_prototext(
  *  specification.
  */
 std::vector<prototext_fn_triple>
-parse_prototext_filenames_from_command_line(
-  const bool master, const int argc, char* const argv[], const int trainer_rank=0);
+parse_prototext_filenames_from_command_line(const bool master,
+                                            const int trainer_rank = 0);
 
 std::vector<std::unique_ptr<lbann_data::LbannPB>>
 read_in_prototext_files(

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -105,7 +105,14 @@ class data_coordinator {
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar );
 
+  /** Setup the thread pool and data readers within the data coordinator */
   virtual void setup(thread_pool& io_thread_pool, int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
+
+  /** Once all of the models that are served by this data coordinator are
+   *  setup and have registered which data fields are required, setup the local
+   *  buffers in the data coordinator for each data field.
+   */
+  virtual void setup_data_fields(int max_mini_batch_size) = 0;
 
   void set_trainer(trainer &trainer) { m_trainer = &trainer; }
 
@@ -283,6 +290,31 @@ class data_coordinator {
   /**
    * Get the linearized size of the underlying data.
    */
+  long get_linearized_size(data_field_type const& data_field) const
+  {
+    long linearized_size = -1;
+    for (auto mode : execution_mode_iterator()) {
+      if (generic_data_reader const* const dr = get_data_reader(mode)) {
+        long tmp_size = dr->get_linearized_size(data_field);
+        if (linearized_size != -1 && linearized_size != tmp_size) {
+          LBANN_ERROR(
+            "data_coordinator: ",
+            to_string(mode),
+            " data set size (",
+            std::to_string(tmp_size),
+            ") does not match the currently established data set size (",
+            std::to_string(linearized_size),
+            ")");
+        }
+        linearized_size = tmp_size;
+      }
+    }
+    return linearized_size;
+  }
+
+  /**
+   * Get the linearized size of the underlying data.
+   */
   long get_linearized_data_size() const {
     long linearized_data_size = -1;
     generic_data_reader *dr;
@@ -439,6 +471,11 @@ class data_coordinator {
     return at_new_epoch(execution_mode::training);
   }
 
+  virtual void register_active_data_field(data_field_type const data_field)
+  {
+    m_active_data_fields.insert(data_field);
+  }
+
   //************************************************************************
   //
   //************************************************************************
@@ -456,10 +493,13 @@ class data_coordinator {
   /** Pointer to LBANN communicator. */
   lbann_comm *m_comm;
 
+  /// Datasets hold the active statistics and metadata for each data reader
   dataset_map_t m_datasets;
 
   data_reader_map_t m_data_readers;
  //  std::map<execution_mode, dataset_stats> m_dataset_stats;
+
+  std::set<data_field_type> m_active_data_fields;
 
 public:  // @todo BVE FIXME
   bool m_data_set_processed;

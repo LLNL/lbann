@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -118,62 +118,8 @@ message Layer {
     TopKCategoricalAccuracy top_k_categorical_accuracy = 64;
     L2Norm2 l2_norm2 = 65;
     L1Norm l1_norm = 66;
-    BinaryCrossEntropy binary_cross_entropy = 67;
-    SigmoidBinaryCrossEntropy sigmoid_binary_cross_entropy = 68;
-    BooleanAccuracy boolean_accuracy = 69;
-    BooleanFalseNegative boolean_false_negative = 70;
-    BooleanFalsePositive boolean_false_positive = 71;
 
     // Math layers
-    LogicalNot logical_not = 401;
-    Abs abs = 402;
-    Negative negative = 403;
-    Sign sign = 404;
-    Round round = 405;
-    Ceil ceil = 406;
-    Floor floor = 407;
-    Reciprocal reciprocal = 408;
-    Square square = 409;
-    Sqrt sqrt = 410;
-    Rsqrt rsqrt = 411;
-    SafeReciprocal safe_reciprocal = 412;
-    Exp exp = 413;
-    Expm1 expm1 = 414;
-    Log log = 415;
-    Log1p log1p = 416;
-    Cos cos = 417;
-    Sin sin = 418;
-    Tan tan = 419;
-    Acos acos = 420;
-    Asin asin = 421;
-    Atan atan = 422;
-    Cosh cosh = 423;
-    Sinh sinh = 424;
-    Tanh tanh = 425;
-    Acosh acosh = 426;
-    Asinh asinh = 427;
-    Atanh atanh = 428;
-    Erf erf = 429;
-    ErfInv erfinv = 430;
-    Add add = 450;
-    Subtract subtract = 451;
-    Multiply multiply = 452;
-    Divide divide = 453;
-    Mod mod = 454;
-    Pow pow = 455;
-    SafeDivide safe_divide = 456;
-    SquaredDifference squared_difference = 457;
-    Max max = 458;
-    Min min = 459;
-    Equal equal = 460;
-    NotEqual not_equal = 461;
-    Less less = 462;
-    LessEqual less_equal = 463;
-    Greater greater = 464;
-    GreaterEqual greater_equal = 465;
-    LogicalAnd logical_and = 466;
-    LogicalOr logical_or = 467;
-    LogicalXor logical_xor = 468;
     MatMul matmul = 470;
     DFTAbs dft_abs = 471;
 
@@ -190,14 +136,9 @@ message Layer {
     Elu elu = 200;
     Identity identity = 201;
     LeakyRelu leaky_relu = 202;
-    LogSigmoid log_sigmoid = 203;
     LogSoftmax log_softmax = 204;
     Relu relu = 205;
-    Selu selu = 206;
-    Sigmoid sigmoid = 207;
     Softmax softmax = 208;
-    Softplus softplus = 209;
-    Softsign softsign = 210;
 
     // Image layers
     BilinearResize bilinear_resize = 500;
@@ -230,55 +171,6 @@ message Layer {
   ///////////////////////
   // Math layers       //
   ///////////////////////
-  message LogicalNot {}
-  message Abs {}
-  message Negative {}
-  message Sign {}
-  message Round {}
-  message Ceil {}
-  message Floor {}
-  message Reciprocal {}
-  message Square {}
-  message Sqrt {}
-  message Rsqrt {}
-  message SafeReciprocal {}
-  message Exp {}
-  message Expm1 {}
-  message Log {}
-  message Log1p {}
-  message Cos {}
-  message Sin {}
-  message Tan {}
-  message Acos {}
-  message Asin {}
-  message Atan {}
-  message Cosh {}
-  message Sinh {}
-  message Tanh {}
-  message Acosh {}
-  message Asinh {}
-  message Atanh {}
-  message Erf {}
-  message ErfInv {}
-  message Add {}
-  message Subtract {}
-  message Multiply {}
-  message Divide {}
-  message Mod {}
-  message Pow {}
-  message SafeDivide {}
-  message SquaredDifference {}
-  message Max {}
-  message Min {}
-  message Equal {}
-  message NotEqual {}
-  message Less {}
-  message LessEqual {}
-  message Greater {}
-  message GreaterEqual {}
-  message LogicalAnd {}
-  message LogicalOr {}
-  message LogicalXor {}
   message DFTAbs {}
 
   /** @brief Matrix multiplication.
@@ -308,7 +200,6 @@ message Layer {
   message LeakyRelu {
     double negative_slope = 1; //default: 0.01
   }
-  message LogSigmoid {}
 
   /** @brief Logarithm of softmax function.
    *
@@ -317,8 +208,6 @@ message Layer {
   message LogSoftmax {}
 
   message Relu {}
-  message Selu {}
-  message Sigmoid {}
 
   /**
    *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
@@ -326,9 +215,6 @@ message Layer {
   message Softmax {
     string softmax_mode = 1; // default: "instance"; should be "instance" or "channel"
   }
-
-  message Softplus {}
-  message Softsign {}
 
   ///////////////////////
   // Loss layers //
@@ -344,11 +230,6 @@ message Layer {
   }
   message L2Norm2 {}
   message L1Norm {}
-  message BinaryCrossEntropy {}
-  message SigmoidBinaryCrossEntropy {}
-  message BooleanAccuracy {}
-  message BooleanFalseNegative {}
-  message BooleanFalsePositive {}
 
   ///////////////////////////
   // Regularization layers //
@@ -415,7 +296,7 @@ message Layer {
   // Input layers //
   //////////////////
   message Input {
-    string target_mode = 3;       // Options: "classification", "regression", "reconstruction", "label_reconstruction", "N/A" (default)
+    string data_field = 1; // legacy names are: samples, labels, responses
   }
 
   //////////////////////
@@ -576,14 +457,14 @@ message Layer {
     *
     *  The first input tensor is the values and the second is the
     *  indices. For the 1D case the inputs must have the same dimensions.
-    *  For the 2D case, the inputs must have either the same number of 
+    *  For the 2D case, the inputs must have either the same number of
     *  columns (axis=0) or the same number of rows (axis=1). If
     *  an index is out-of-range, it is ignored.
     *
-    *  @note: In the 2D case the output dimensions change depending on the 
-    *  axis. For an (m,n) values input, the output dims are expected to 
-    *  be (*,n) for Axis == 0 and (m,*) for Axis == 1. 
-    *   
+    *  @note: In the 2D case the output dimensions change depending on the
+    *  axis. For an (m,n) values input, the output dims are expected to
+    *  be (*,n) for Axis == 0 and (m,*) for Axis == 1.
+    *
     *  @todo Only flat tensors are currently supported. For higher-order
     *  tensors, PyTorch
     *  (https://pytorch.org/docs/master/tensors.html#torch.Tensor.scatter_)
@@ -619,10 +500,10 @@ message Layer {
     *  the index tensor. If an index is out-of-range, the corresponding
     *  output is set to zero.
     *
-    *  @note: In the 2D case, the output dimension changes according 
-    *  to the axis. For an (m,n) values input, and a (k) indices input, 
+    *  @note: In the 2D case, the output dimension changes according
+    *  to the axis. For an (m,n) values input, and a (k) indices input,
     *  the output tensor will be (k,n) for Axis == 0 and (m, k) for
-    *  Axis == 1  
+    *  Axis == 1
     */
   message Gather {
 
@@ -818,8 +699,8 @@ message Layer {
   /** @brief Rotate a image clockwise around its center, then shear , then translate
    *
    *  Expects 4 inputs: a 3D image tensor in CHW format, a scalar
-   *  rotation angle, a tensor for (X,Y) shear factor, a tensor 
-   *  for (X,Y) translate. 
+   *  rotation angle, a tensor for (X,Y) shear factor, a tensor
+   *  for (X,Y) translate.
    */
   message CompositeImageTransformation {}
 

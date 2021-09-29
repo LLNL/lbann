@@ -4,7 +4,7 @@ import os
 import os.path
 import sys
 import numpy as np
-import pytest 
+import pytest
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -79,7 +79,7 @@ def construct_model(lbann):
                               name='input_weights')
     x0 = lbann.WeightsLayer(weights=x_weights,
                             dims=tools.str_list(_sample_dims))
-    x1 = lbann.Reshape(lbann.Input(), dims=tools.str_list(_sample_dims), name="Input_layer")
+    x1 = lbann.Reshape(lbann.Input(data_field='samples'), dims=tools.str_list(_sample_dims), name="Input_layer")
     x = lbann.Sum(x0, x1, name="Adding_weight_layer")
     x_lbann = x
 
