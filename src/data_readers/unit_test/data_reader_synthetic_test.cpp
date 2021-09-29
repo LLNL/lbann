@@ -66,6 +66,14 @@ public:
   {
     return dr.fetch_response(Y, data_id, mb_idx);
   }
+  bool fetch_data_field(lbann::data_reader_synthetic& dr,
+                        lbann::data_field_type data_field,
+                        lbann::CPUMat& X,
+                        int data_id,
+                        int mb_idx)
+  {
+    return dr.fetch_data_field(data_field, X, data_id, mb_idx);
+  }
 };
 
 TEST_CASE("Synthetic data reader classification tests",
@@ -190,5 +198,59 @@ TEST_CASE("Synthetic data reader regression tests",
         }
       }
     }
+  }
+}
+
+TEST_CASE("Synthetic data reader data field",
+          "[data_reader][synthetic][data_field]")
+{
+  // initialize stuff (boilerplate)
+  lbann::init_random(42, 1);
+  lbann::init_data_seq_random(42);
+
+  DataReaderSyntheticWhiteboxTester white_box_tester;
+
+  // Create a local copy of the RNG to check the synthetic data reader
+  lbann::fast_rng_gen ref_fast_generator;
+  ref_fast_generator.seed(lbann::hash_combine(42, 0));
+
+  auto s = GENERATE(range(1, 4));
+  El::Int num_samples = s;
+  std::vector<lbann::data_field_type> data_fields = {"foo", "bar"};
+  std::map<lbann::data_field_type, std::vector<int>> fields;
+  int f = 0;
+  for (auto const& data_field : data_fields) {
+    std::vector<int> dims = {s+f, s+f};
+    fields[data_field] = dims;
+    ++f;
+  }
+
+  SECTION("fetch data field")
+  {
+    auto dr = std::make_unique<lbann::data_reader_synthetic>(num_samples,
+                                                             fields,
+                                                             false);
+    lbann::CPUMat X;
+    for (auto const& [data_field, dims] : fields) {
+      X.Resize(dims[0] * dims[1], num_samples);
+
+      auto io_rng = lbann::set_io_generators_local_index(0);
+      for (El::Int j = 0; j < num_samples; j++) {
+        white_box_tester.fetch_data_field(*dr, data_field, X, 0, j);
+      }
+
+      for (El::Int j = 0; j < num_samples; j++) {
+        // Create a new normal distribution for each sample.  This ensures
+        // that the behavior matches the implementation in the synthetic data
+        // reader and handles the case of odd numbers of entries with a normal
+        // distriubtion implementation. (Specifically that entries for a
+        // normal distribution are generated in pairs.)
+        std::normal_distribution<lbann::DataType> dist(float(0), float(1));
+        for (El::Int i = 0; i < X.Height(); i++) {
+          CHECK(X(i, j) == dist(ref_fast_generator));
+        }
+      }
+    }
+    REQUIRE(white_box_tester.fetch_data_field(*dr, "foobar", X, 0, 0) == false);
   }
 }

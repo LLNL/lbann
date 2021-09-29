@@ -29,6 +29,7 @@
 #define LBANN_DATA_READER_SYNTHETIC_HPP
 
 #include "data_reader.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 
 // Forward declaration
 class DataReaderSyntheticWhiteboxTester;
@@ -47,6 +48,8 @@ class data_reader_synthetic : public generic_data_reader {
                         int num_labels, bool shuffle = true);
   data_reader_synthetic(int num_samples, std::vector<int> dims,
                         std::vector<int> response_dims, bool shuffle = true);
+  data_reader_synthetic(int num_samples, std::map<data_field_type, std::vector<int>> data_fields,
+                        bool shuffle = true);
   data_reader_synthetic(const data_reader_synthetic&) = default;
   data_reader_synthetic& operator=(const data_reader_synthetic&) = default;
   ~data_reader_synthetic() override {}
@@ -58,6 +61,14 @@ class data_reader_synthetic : public generic_data_reader {
   }
 
   void load() override;
+
+  int get_linearized_size(data_field_type const& data_field) const override {
+    auto iter = m_synthetic_data_fields.find(data_field);
+    if (iter == end(m_synthetic_data_fields)) {
+      LBANN_ERROR("Unknown data field ", data_field);
+    }
+    return get_linear_size(iter->second);
+  }
 
   int get_linearized_data_size() const override {
     return std::accumulate(m_dimensions.begin(), m_dimensions.end(), 1,
@@ -82,6 +93,7 @@ class data_reader_synthetic : public generic_data_reader {
   }
 
  protected:
+  bool fetch_data_field(data_field_type data_field, CPUMat& Y, int data_id, int mb_idx) override;
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
@@ -98,6 +110,8 @@ private:
   std::vector<int> m_dimensions;
   /** Shape of the responses. */
   std::vector<int> m_response_dimensions;
+
+  std::map<data_field_type, std::vector<int>> m_synthetic_data_fields;
 };
 
 }  // namespace lbann

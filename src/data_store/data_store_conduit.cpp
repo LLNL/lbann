@@ -416,19 +416,20 @@ void data_store_conduit::set_conduit_node(int data_id, const conduit::Node &node
 }
 
 const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
+  using iterator_t = std::unordered_map<int, conduit::Node>::const_iterator;
   if (is_local_cache()) {
-    std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);
+    iterator_t t3 = m_data.find(data_id);
     if (t3 == m_data.end()) {
       LBANN_ERROR("(local cache) failed to find data_id: ", data_id, " in m_data; m_data.size: ", m_data.size());
     }
     return t3->second;
   }
 
-  std::unordered_map<int, conduit::Node>::const_iterator t2 = m_minibatch_data.find(data_id);
+  iterator_t t2 = m_minibatch_data.find(data_id);
   // if not preloaded, and get_label() or get_response() is called,
   // we need to check m_data
   if (t2 == m_minibatch_data.end()) {
-    std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);
+    iterator_t t3 = m_data.find(data_id);
     if (t3 != m_data.end()) {
       return t3->second["data"];
     }
