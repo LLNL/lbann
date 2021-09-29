@@ -335,14 +335,11 @@ void HybridMutation::mutate(model& m, const int& step)
   m.get_comm()->trainer_broadcast(m.get_comm()->get_trainer_master(),
                                   mutation_choice);
 
-  ReplaceActivation *RA = new ReplaceActivation();
-  ReplaceConvolution *RC = new ReplaceConvolution();
-
   if (mutation_choice == 0) {
-    RA->mutate(m, step);
+    ReplaceActivation().mutate(m, step);
   }
   else {
-    RC->mutate(m, step);
+    ReplaceConvolution().mutate(m, step);
   }    
 }
 
