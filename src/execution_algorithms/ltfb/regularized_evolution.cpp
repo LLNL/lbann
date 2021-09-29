@@ -187,11 +187,6 @@ void RegularizedEvolution::select_next(model& m,
                                        ltfb::ExecutionContext& ctxt,
                                        data_coordinator& dc) const
 {
-  // Find the best model trainer
-  // Find the oldest model trainer (highest age)
-  // Copy the best model trainer to oldest model trainer, mutate it and set its
-  // age to 0
-
   auto const& comm = *(m.get_comm());
   const unsigned int num_trainers = comm.get_num_trainers();
   const int trainer_id = comm.get_trainer_rank();
@@ -204,25 +199,30 @@ void RegularizedEvolution::select_next(model& m,
     std::shuffle(sample_trainers.begin(),
                  sample_trainers.end(),
                  get_ltfb_generator());
+
+    // Print trainers selected in sample
+    std::cout << "Trainers in sample at step " << step << " -";
+    for (int i = 0; i < m_sample_size; i++)
+       std::cout << " " << sample_trainers[i];
+    std::cout << std::endl;
   }
   comm.world_broadcast(comm.get_world_master(),
                        sample_trainers.data(),
                        num_trainers);
 
-  // If rank within first S, send score , else score = 0
+  // If rank within sample, send score. Otherwise force score to 0 to indicate that trainer
+  // is not participating in tournament
   auto it =
     std::find(sample_trainers.begin(), sample_trainers.end(), trainer_id);
 
   El::Int score = evaluate_model(m, ctxt, dc);
   // If in sample, send true score
   if (std::distance(sample_trainers.begin(), it) < m_sample_size) {
-    // score = evaluate_model(m, ctxt, dc);
-    if (comm.am_trainer_master())
-      std::cout << "Trainer " << trainer_id << " in sample" << std::endl;
+    ;
+    //score = evaluate_model(m, ctxt, dc);
   }
   // Else force score to 0
   else {
-    // score = evaluate_model(m, ctxt, dc);
     score = 0;
   }
 
@@ -245,9 +245,11 @@ void RegularizedEvolution::select_next(model& m,
   // Find oldest trainer - cycle through trainer ids
   El::Int oldest_id = step % num_trainers;
 
-  // DEBUG
+  // Print winning and oldest model
+  if (comm.am_world_master()) {
   std::cout << "Winner - " << winner_id << ", Oldest - " << oldest_id
             << std::endl;
+  }
 
   if (trainer_id == winner_id) {
 
@@ -264,9 +266,6 @@ void RegularizedEvolution::select_next(model& m,
 
   if (trainer_id == oldest_id) {
 
-    auto partner_model_ptr = m.copy_model();
-    auto& partner_model = *partner_model_ptr;
-
     if (winner_id != oldest_id) {
       std::string rcv_str;
       if (comm.am_trainer_master()) {
@@ -275,11 +274,11 @@ void RegularizedEvolution::select_next(model& m,
         std::cout << " receives model from trainer " << winner_id << std::endl;
       }
 
-      unpack(partner_model, rcv_str);
+      unpack(m, rcv_str);
     }
 
     // Mutating oldest model
-    m_mutate_algo->mutate(partner_model, step);
+    m_mutate_algo->mutate(m, step);
 
     auto& trainer = get_trainer();
     auto&& metadata = trainer.get_data_coordinator().get_dr_metadata();
