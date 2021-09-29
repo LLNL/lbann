@@ -331,7 +331,7 @@ class generic_data_reader {
   }
 
   /// Whether or not a data reader has a data field
-  virtual void set_has_data_field(data_field_type const data_field, const bool b)
+  void set_has_data_field(data_field_type const data_field, const bool b)
   {
     m_supported_input_types[data_field] = b;
   }

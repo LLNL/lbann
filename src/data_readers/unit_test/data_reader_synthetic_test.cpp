@@ -232,7 +232,6 @@ TEST_CASE("Synthetic data reader data field",
                                                              false);
     lbann::CPUMat X;
     for (auto const& [data_field, dims] : fields) {
-      std::cout << "Fetching " << data_field << std::endl;
       X.Resize(dims[0] * dims[1], num_samples);
 
       auto io_rng = lbann::set_io_generators_local_index(0);
@@ -252,6 +251,6 @@ TEST_CASE("Synthetic data reader data field",
         }
       }
     }
-    CHECK_THROWS(white_box_tester.fetch_data_field(*dr, "foobar", X, 0, 0));
+    REQUIRE(white_box_tester.fetch_data_field(*dr, "foobar", X, 0, 0) == false);
   }
 }

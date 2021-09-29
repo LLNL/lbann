@@ -29,6 +29,7 @@
 #define LBANN_DATA_READER_SYNTHETIC_HPP
 
 #include "data_reader.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 
 // Forward declaration
 class DataReaderSyntheticWhiteboxTester;
@@ -66,7 +67,7 @@ class data_reader_synthetic : public generic_data_reader {
     if (iter == end(m_synthetic_data_fields)) {
       LBANN_ERROR("Unknown data field ", data_field);
     }
-    return get_linear_size(iter.second);
+    return get_linear_size(iter->second);
   }
 
   int get_linearized_data_size() const override {
