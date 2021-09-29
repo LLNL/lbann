@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,8 +26,9 @@
 #ifndef LBANN_DATA_READER_HDF5_REVISED_HPP
 #define LBANN_DATA_READER_HDF5_REVISED_HPP
 
-#include "lbann/data_readers/sample_list_hdf5.hpp"
+#include "lbann/data_readers/data_reader.hpp"
 #include "lbann/data_readers/data_reader_sample_list.hpp"
+#include "lbann/data_readers/sample_list_hdf5.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 
 // Forward declaration
@@ -64,27 +65,21 @@ public:
 
   void load() override;
 
-  /** @brief Called by fetch_data, fetch_label, fetch_response
-   *
-   * Note that 'which' is not confined to the three commonly used
-   * in lbann (datum, label, response); in general, it can be
-   * any pack field in the experiment schema: pack: <string>
-   */
-  bool fetch(std::string which, CPUMat& Y, int data_id, int mb_idx);
+  bool fetch_data_field(data_field_type data_field, CPUMat& Y, int data_id, int mb_idx) override;
 
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override
   {
-    return fetch("datum", X, data_id, mb_idx);
+    return fetch_data_field("datum", X, data_id, mb_idx);
   }
 
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override
   {
-    return fetch("response", Y, data_id, mb_idx);
+    return fetch_data_field("response", Y, data_id, mb_idx);
   }
 
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override
   {
-    return fetch("label", Y, data_id, mb_idx);
+    return fetch_data_field("label", Y, data_id, mb_idx);
   }
 
   /** @brief Sets the name of the yaml experiment file */
@@ -248,14 +243,14 @@ private:
    *  which is one of: float32, float64, int32, int64, uint64, uint32
    */
   const void* get_data(const size_t sample_id_in,
-                       std::string field_name_in,
+                       data_field_type data_field,
                        size_t& num_elts_out,
                        std::string& dtype_out) const;
 
   const std::vector<int> get_data_dims(std::string name = "") const;
 
   /** Returns the size of the requested field (datum, label, response, etc) */
-  int get_linearized_size(std::string const& name) const override;
+  int get_linearized_size(data_field_type const& data_field) const override;
 
   /** P_0 reads and bcasts the schema */
   void load_sample_schema(conduit::Schema& s);
@@ -337,6 +332,7 @@ private:
 
   /** Constructs m_data_dims_lookup_table and m_linearized_size_lookup_table */
   void construct_linearized_size_lookup_tables();
+  void construct_linearized_size_lookup_tables(conduit::Node& node);
 
   /** sanity check; call after adjust_metadata */
   void test_that_all_nodes_contain_metadata(conduit::Node& node);

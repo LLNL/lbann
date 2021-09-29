@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -81,12 +81,6 @@ void print_parameters(const lbann_comm& comm,
                       std::vector<int>& root_random_seeds,
                       std::vector<int>& random_seeds,
                       std::vector<int>& data_seq_random_seeds);
-
-/** @brief prints usage information */
-void print_help(const lbann_comm& comm);
-
-/** @brief prints usage information */
-void print_help(std::ostream& os);
 
 /** @brief prints prototext file, cmd line, etc to file */
 void save_session(const lbann_comm& comm,

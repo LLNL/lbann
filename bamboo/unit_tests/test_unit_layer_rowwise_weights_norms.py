@@ -63,7 +63,7 @@ def construct_model(lbann):
     mat = np.random.normal(size=(height, width)).astype(np.float32)
 
     # Input data
-    x_lbann = lbann.Identity(lbann.Input())
+    x_lbann = lbann.Input(data_field='samples')
 
     # Objects for LBANN model
     layers = [x_lbann]

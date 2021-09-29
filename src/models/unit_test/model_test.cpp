@@ -35,6 +35,7 @@
 #include <lbann/layers/io/input_layer.hpp>
 #include <lbann/utils/memory.hpp>
 #include <lbann/utils/serialize.hpp>
+#include <lbann/utils/lbann_library.hpp>
 #include <lbann/proto/factories.hpp>
 
 #include <lbann.pb.h>
@@ -62,6 +63,8 @@ auto make_model(lbann::lbann_comm& comm)
   lbann_data::LbannPB my_proto;
   if (!pb::TextFormat::ParseFromString(model_prototext, &my_proto))
     throw "Parsing protobuf failed.";
+  // Construct a trainer so that the model can register the input layer
+  lbann::construct_trainer(&comm, my_proto.mutable_trainer(), my_proto);
   auto metadata = mock_datareader_metadata();
   auto my_model = lbann::proto::construct_model(&comm,
                                                 -1,

@@ -33,6 +33,17 @@ namespace gpu_lib {
 #endif // LBANN_HAS_CUDA
 
 // -------------------------------------------------------------
+// Device properties
+// -------------------------------------------------------------
+
+inline void clip_grid_dims(dim3& grid_dims) {
+  const auto max_grid_dims_ = max_grid_dims();
+  grid_dims.x = std::min(grid_dims.x, max_grid_dims_.x);
+  grid_dims.y = std::min(grid_dims.y, max_grid_dims_.y);
+  grid_dims.z = std::min(grid_dims.z, max_grid_dims_.z);
+}
+
+// -------------------------------------------------------------
 // Device functions
 // -------------------------------------------------------------
 #if defined __CUDACC__ || defined __HIPCC__

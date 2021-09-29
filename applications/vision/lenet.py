@@ -21,9 +21,8 @@ args = parser.parse_args()
 # ----------------------------------
 
 # Input data
-input_ = lbann.Input(target_mode='classification')
-images = lbann.Identity(input_)
-labels = lbann.Identity(input_)
+images = lbann.Input(data_field='samples')
+labels = lbann.Input(data_field='labels')
 
 # LeNet
 x = lbann.Convolution(images,
@@ -73,7 +72,7 @@ acc = lbann.CategoricalAccuracy(probs, labels)
 mini_batch_size = 64
 num_epochs = 20
 model = lbann.Model(num_epochs,
-                    layers=lbann.traverse_layer_graph(input_),
+                    layers=lbann.traverse_layer_graph([images, labels]),
                     objective_function=loss,
                     metrics=[lbann.Metric(acc, name='accuracy', unit='%')],
                     callbacks=[lbann.CallbackPrintModelDescription(),

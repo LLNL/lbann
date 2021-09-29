@@ -88,7 +88,7 @@ def construct_model():
     import lbann
 
     # Layer graph
-    input = lbann.Input(target_mode='N/A', name='inp_data')
+    input = lbann.Input(data_field='samples', name='inp_data')
     # data is 64*64*4 images + 15 scalar + 5 param
     #inp_slice = lbann.Slice(input, axis=0, slice_points="0 16399 16404",name='inp_slice')
     inp_slice = lbann.Slice(input, axis=0, slice_points=str_list([0,args.ydim,args.ydim+5]),name='inp_slice')

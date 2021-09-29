@@ -30,14 +30,11 @@
 #include "lbann_config.hpp"
 
 #include "lbann/operators/elementwise_operator.hpp"
-#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/cloneable.hpp"
 
 #include <operators.pb.h>
 
 #include <h2/meta/Core.hpp>
-
-#include <google/protobuf/message.h>
 
 namespace lbann {
 
@@ -53,8 +50,9 @@ namespace lbann {
  *  @f]
  */
 template <typename DataT, El::Device D>
-class ClampOperator : public Cloneable<ClampOperator<DataT, D>,
-                                       ElementwiseOperator<DataT, DataT, D>>
+class ClampOperator final
+  : public Cloneable<ClampOperator<DataT, D>,
+                     ElementwiseOperator<DataT, DataT, D>>
 {
 #ifdef LBANN_HAS_GPU_FP16
   using CompareType =
@@ -111,7 +109,7 @@ public:
   void serialize(ArchiveT& ar)
   {
     using OperatorType = ElementwiseOperator<DataT, DataT, D>;
-    ar(::cereal::make_nvp("DataTypeOperator",
+    ar(::cereal::make_nvp("ElementwiseOperator",
                           ::cereal::base_class<OperatorType>(this)),
        CEREAL_NVP(m_min),
        CEREAL_NVP(m_max));
@@ -125,17 +123,16 @@ protected:
 
 private:
   /** @brief Local forward compute function */
-  virtual void
-  fp_compute_local(std::vector<ConstLocalInputTensorType> input,
-                   std::vector<LocalOutputTensorType> output) const override;
+  void fp_compute_local(std::vector<ConstLocalInputTensorType> input,
+                        std::vector<LocalOutputTensorType> output) const final;
 
   /** @brief Local backward compute function */
   void bp_compute_local(
     std::vector<ConstLocalInputTensorType> input,
     std::vector<ConstLocalOutputTensorType> gradient_wrt_output,
-    std::vector<LocalInputTensorType> gradient_wrt_input) const override;
+    std::vector<LocalInputTensorType> gradient_wrt_input) const final;
 
-  void set_proto_params(lbann_data::Operator& msg) const override
+  void set_proto_params(lbann_data::Operator& msg) const final
   {
     lbann_data::ClampOperator clamp_msg;
     clamp_msg.set_min(m_min);
@@ -143,7 +140,7 @@ private:
     msg.mutable_parameters()->PackFrom(clamp_msg);
   }
 
-  void do_fill_description(description& desc) const override
+  void do_fill_description(description& desc) const final
   {
     std::ostringstream oss;
     oss << "[" << m_min << "," << m_max << "]";

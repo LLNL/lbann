@@ -74,16 +74,15 @@ def construct_model(lbann):
     lbann.models.LeNet.global_count = 0
     lbann.Layer.global_count = 0
     # Layer graph
-    input_ = lbann.Input(target_mode='classification')
-    images = lbann.Identity(input_)
-    labels = lbann.Identity(input_)
+    images = lbann.Input(data_field='samples')
+    labels = lbann.Input(data_field='labels')
     x = lbann.models.LeNet(10)(images)
     probs = lbann.Softmax(x)
     loss = lbann.CrossEntropy(probs, labels)
     acc = lbann.CategoricalAccuracy(probs, labels)
 
     # Make sure all layers are on CPU
-    for layer in lbann.traverse_layer_graph(input_):
+    for layer in lbann.traverse_layer_graph([images, labels]):
         layer.device = 'cpu'
 
     # Objects for LBANN model
@@ -94,7 +93,7 @@ def construct_model(lbann):
 
     # Construct model
     return lbann.Model(num_epochs,
-                       layers=lbann.traverse_layer_graph(input_),
+                       layers=lbann.traverse_layer_graph([images, labels]),
                        objective_function=loss,
                        metrics=metrics,
                        callbacks=callbacks)
@@ -187,7 +186,7 @@ def create_test_func(test_func):
             test_name_base=test_name_base,
             nodes=num_nodes,
             work_subdir='reload_weights_from_checkpoint',
-            lbann_args=['--disable_cuda=True',
+            lbann_args=['--disable_cuda',
                         '--num_epochs='+str(num_restart_epochs),
                         '--load_model_weights_dir='+ os.path.join(baseline_test_output['work_dir'], checkpoint_dir, 'trainer0')],
         )
@@ -206,10 +205,10 @@ def create_test_func(test_func):
             test_name_base=test_name_base,
             nodes=num_nodes,
             work_subdir='reload_weights_from_save_model_cb',
-            lbann_args=['--disable_cuda=True',
+            lbann_args=['--disable_cuda',
                         '--num_epochs='+str(num_restart_epochs),
                         '--load_model_weights_dir='+ os.path.join(baseline_test_output['work_dir'], save_model_dir, 'trainer0', 'model0/'),
-                        '--load_model_weights_dir_is_complete=True'],
+                        '--load_model_weights_dir_is_complete'],
         )
 
         # Restart LBANN model and run to completion
@@ -261,6 +260,6 @@ for _test_func in tools.create_tests(setup_experiment,
                                      test_name_base=test_name_base,
                                      nodes=num_nodes,
                                      work_subdir='baseline',
-                                     lbann_args=['--disable_cuda=True',
+                                     lbann_args=['--disable_cuda',
                                                  ' --num_epochs='+str(num_ckpt_epochs)]):
     globals()[_test_func.__name__] = create_test_func(_test_func)

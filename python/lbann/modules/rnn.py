@@ -2,7 +2,7 @@
 
 import math
 import lbann
-from .base import Module, FullyConnectedModule
+from .base import Module, FullyConnectedModule, ChannelwiseFullyConnectedModule
 from lbann.util import make_iterable, str_list
 
 class LSTMCell(Module):
@@ -304,4 +304,153 @@ class GRU(Module):
             )
 
         # Return output
+        return ht, ht
+
+class ChannelwiseGRU(Module):
+    """Channelwise extension of Gated-recurrent unit for 2D input.
+       Implementation mostly taken from:
+       https://pytorch.org/docs/stable/generated/torch.nn.GRUCell.html#torch.nn.GRUCell"""
+    global_count = 0
+
+    def __init__(self, num_channels, size, bias=True, weights=[], name=None):
+        """Initialize GRU cell.
+
+        Args:
+            num_channels (int): The number of rows in the matrix to perform GRU 
+            size (int): Size of output tensor.
+            bias (bool): Whether to apply biases after linearity.
+            weights (`Weights` or iterator of `Weights`): Weights in
+                fully-connected layer. There are at most four - two
+                matrices ((3*size) x (input_size) and (3*size) x (size) dimensions) each and two
+                biases (3*size entries) each. If weights are not provided,
+                the matrix and bias will be initialized in a similar
+                manner as PyTorch (uniform random values from
+                [-1/sqrt(size), 1/sqrt(size)]).
+            name (str): Default name is in the form 'gru<index>'.
+            data_layout (str): Data layout.
+
+        """
+
+        super().__init__()
+        ChannelwiseGRU.global_count += 1 
+        self.step = 0
+        self.size = size
+        self.num_channels = num_channels 
+        self.name = (name if name else f'gru{ChannelwiseGRU.global_count}')
+        self.data_layout = 'data_parallel'
+        scale = 1 / math.sqrt(self.size)
+
+        self.weights = list(make_iterable(weights))
+
+        weight_name = ['_ih_matrix', '_ih_bias', '_hh_matrix', '_hh_bias']
+        for i in range(4):
+            if (len(self.weights) == i):
+                self.weights.append(lbann.Weights(initializer=lbann.UniformInitializer(min=-scale,
+                                                                                       max=scale),
+                                                  name=self.name+weight_name[i])
+                )
+
+        self.ih_fc = ChannelwiseFullyConnectedModule(3*size,
+                                                     bias=bias,
+                                                     weights=self.weights[:2],
+                                                     name=self.name + '_ih_fc')
+        self.hh_fc = ChannelwiseFullyConnectedModule(3*size,
+                                                     bias=bias,
+                                                     weights=self.weights[2:],
+                                                     name=self.name + '_hh_fc')
+        self.ones = lbann.Constant(
+            value=1.0,
+            num_neurons = str_list([num_channels, size]),
+            name=self.name+'_ones')
+
+    def forward(self, x, prev_state):
+        """ Apply GRU step channelwise 
+        Args: 
+            x (Layer): Input (shape: (num_channels, *))
+            prev_state (Layer): Sate from previous GRU step  (shape: (num_channels, size))
+        Returns:
+            (Layer, Layer): The output (out) and state (hn). The state can be passed directly into the next GRU step
+        """
+
+        self.step += 1
+
+        name = f"{self.name}_step{self.step}"
+
+        mat_size = self.num_channels * self.size
+
+        prev_state = lbann.Reshape(prev_state,
+                                   dims=str_list([self.num_channels, self.size]),
+                                   name=name+"_prev_state_reshape")
+
+        fc1 = self.ih_fc(x)
+        fc2 = self.hh_fc(prev_state)
+
+        fc1_slice = lbann.Slice(fc1,
+                                axis=1,
+                                slice_points=str_list([0, self.size, 2*self.size, 3*self.size]))
+        
+        Wir_x =lbann.Reshape(lbann.Identity(fc1_slice), 
+                             dims=str_list([self.num_channels, self.size]),
+                             name=name+'_Wir_x')
+        Wiz_z =lbann.Reshape(lbann.Identity(fc1_slice), 
+                             dims=str_list([self.num_channels, self.size]),
+                             name=name+'_Wiz_z')
+        Win_x =lbann.Reshape(lbann.Identity(fc1_slice), 
+                             dims=str_list([self.num_channels, self.size]),
+                             name=name+'_Win_x')
+        fc2_slice = lbann.Slice(fc2,
+                                axis=1,
+                                slice_points=str_list([0, self.size, 2*self.size, 3*self.size]))
+
+        Whr_x =lbann.Reshape(lbann.Identity(fc2_slice),
+                             dims=str_list([self.num_channels, self.size]),
+                             name=name+'_Whr_x')   
+        Whz_z =lbann.Reshape(lbann.Identity(fc2_slice),
+                             dims=str_list([self.num_channels, self.size]),
+                             name=name+'_Whz_z') 
+        Whn_x =lbann.Reshape(lbann.Identity(fc2_slice),
+                             dims=str_list([self.num_channels, self.size]),
+                             name=name+'_Whn_x')
+
+        rt = \
+            lbann.Sigmoid(
+                lbann.Add(Wir_x, Whr_x, data_layout=self.data_layout),
+                name=name + '_reset_gate',
+                data_layout=self.data_layout
+            )
+
+        zt = \
+            lbann.Sigmoid(
+                lbann.Add(Wiz_z, Whz_z, data_layout=self.data_layout),
+                name=name + '_update_gate',
+                data_layout=self.data_layout,
+            )
+
+        nt = \
+            lbann.Tanh(
+                lbann.Add(
+                    Win_x,
+                    lbann.Multiply(rt, Whn_x, data_layout=self.data_layout),
+                    data_layout=self.data_layout,
+                ),
+                name=name + '_new_gate', data_layout=self.data_layout,
+            )
+
+        ht = \
+            lbann.Add(
+                lbann.Multiply(
+                    lbann.WeightedSum(
+                        self.ones,
+                        zt,
+                        scaling_factors='1 -1', data_layout=self.data_layout
+                    ),
+                    nt,
+                    data_layout=self.data_layout
+                ),
+                lbann.Multiply(zt, prev_state, data_layout=self.data_layout),
+                name=name+ '_output', data_layout=self.data_layout,
+            )
+
+        ht = lbann.Reshape(ht, dims=str_list([self.num_channels, self.size]))
+
         return ht, ht

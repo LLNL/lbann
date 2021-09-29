@@ -72,16 +72,15 @@ def construct_model(lbann):
     lbann.models.LeNet.global_count = 0
     lbann.Layer.global_count = 0
     # Layer graph
-    input_ = lbann.Input(target_mode='classification')
-    images = lbann.Identity(input_)
-    labels = lbann.Identity(input_)
+    images = lbann.Input(data_field='samples')
+    labels = lbann.Input(data_field='labels')
     x = lbann.models.LeNet(10)(images)
     probs = lbann.Softmax(x)
     loss = lbann.CrossEntropy(probs, labels)
     acc = lbann.CategoricalAccuracy(probs, labels)
 
     # Make sure all layers are on CPU
-    for layer in lbann.traverse_layer_graph(input_):
+    for layer in lbann.traverse_layer_graph([images, labels]):
         layer.device = 'cpu'
 
     # Objects for LBANN model
@@ -90,7 +89,7 @@ def construct_model(lbann):
 
     # Construct model
     return lbann.Model(num_epochs,
-                       layers=lbann.traverse_layer_graph(input_),
+                       layers=lbann.traverse_layer_graph([images, labels]),
                        objective_function=loss,
                        metrics=metrics,
                        callbacks=callbacks)
@@ -183,7 +182,7 @@ def create_test_func(test_func):
             test_name_base=test_name_base,
             nodes=num_nodes,
             work_subdir='checkpoint',
-            lbann_args=['--disable_cuda=True' + ' --num_epochs='+str(num_ckpt_epochs)],
+            lbann_args=['--disable_cuda' + ' --num_epochs='+str(num_ckpt_epochs)],
         )
 
         checkpoint_test_output = test_func_checkpoint[0](cluster, dirname)
@@ -200,7 +199,7 @@ def create_test_func(test_func):
             test_name_base=test_name_base,
             nodes=num_nodes,
             work_subdir='restart',
-            lbann_args=['--disable_cuda=True'
+            lbann_args=['--disable_cuda'
                         + ' --restart_dir='
                         + os.path.join(checkpoint_test_output['work_dir'], checkpoint_dir)
                         + ' --num_epochs='+str(num_epochs)],
@@ -258,5 +257,5 @@ for _test_func in tools.create_tests(setup_experiment,
                                      test_name_base=test_name_base,
                                      nodes=num_nodes,
                                      work_subdir='baseline',
-                                     lbann_args=['--disable_cuda=True']):
+                                     lbann_args=['--disable_cuda']):
     globals()[_test_func.__name__] = create_test_func(_test_func)

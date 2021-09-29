@@ -94,7 +94,7 @@ __global__ void scatter3d_kernel(
   }
 }
 
-/** @brief Kernel for gathering a 3D 
+/** @brief Kernel for gathering a 3D
  *
  *  output(k, j, i) = values(k, indices(k,j), i) axis == 0
  *  output(k, j, i) = values(k, j, indices(k,i)) axis == 1
@@ -141,7 +141,7 @@ __global__ void gather3d_kernel(
         const auto ind = static_cast<El::Int>(
           gpu_lib::floor(
             indices[batch*indices_strides[0] + index_offest]));
-        
+
         auto &y = output[batch*output_strides[0] + row*output_strides[1] + i*output_strides[2]];
 
         const auto& output_axis_1 = has_row_vectors? ind : static_cast<El::Int>(row);
@@ -181,7 +181,7 @@ void gather_layer<TensorDataType, Layout, Device>::fp_compute() {
 
   const size_t values_size = is_2D ? input_dims[1] : this->get_input_size(0);
   const size_t output_size = is_2D ?  this->get_output_dims()[1] : this->get_output_size();
-  
+
   const size_t num_rows = (input_dims.size()>1) ? input_dims[0] : 1;
   const size_t num_output_rows = has_row_vectors ? this->get_output_dims()[0]: num_rows;
   const size_t value_stride_2 = is_2D ? values_size : 0;
@@ -194,7 +194,7 @@ void gather_layer<TensorDataType, Layout, Device>::fp_compute() {
                                        gpu::get_sync_info(local_indices));
     constexpr size_t block_size_x = 32;
     constexpr size_t block_size_y = 8;
-    
+
     dim3 block_dims, grid_dims;
     block_dims.x = block_size_x;
     block_dims.y = block_size_y;
@@ -203,7 +203,8 @@ void gather_layer<TensorDataType, Layout, Device>::fp_compute() {
     grid_dims.x = (values_size + block_dims.x - 1) / block_dims.x;
     grid_dims.y = (num_rows + block_dims.y - 1) / block_dims.y;
     grid_dims.z = (local_mini_batch_size + block_dims.z - 1) / block_dims.z;
-    
+    gpu_lib::clip_grid_dims(grid_dims);
+
     if (has_row_vectors){
       hydrogen::gpu::LaunchKernel(
       gather3d_kernel<TensorDataType, true>,
@@ -248,7 +249,7 @@ void gather_layer<TensorDataType, Layout, Device>::bp_compute() {
   std::vector<size_t> output_dims(output_dims_.begin(), output_dims_.end());
 
   const size_t local_mini_batch_size = local_indices.Width();
-  
+
   const bool is_2D = input_dims.size()>1;
   const bool has_row_vectors = (is_2D && m_gather_axis == 0);
 
@@ -256,7 +257,7 @@ void gather_layer<TensorDataType, Layout, Device>::bp_compute() {
   const size_t output_size = is_2D ? this->get_output_dims()[1] : this->get_output_size();
 
   const size_t num_rows = (input_dims.size()>1) ? input_dims[0] : 1;
-  const size_t num_output_rows = has_row_vectors ? this->get_output_dims()[0]: num_rows; 
+  const size_t num_output_rows = has_row_vectors ? this->get_output_dims()[0]: num_rows;
 
 
   const size_t value_stride_2 = (input_dims.size()>1) ? values_size : 0;
@@ -274,7 +275,7 @@ void gather_layer<TensorDataType, Layout, Device>::bp_compute() {
                                        gpu::get_sync_info(local_indices));
     constexpr size_t block_size_x = 32;
     constexpr size_t block_size_y = 8;
-    
+
     dim3 block_dims, grid_dims;
     block_dims.x = block_size_x;
     block_dims.y = block_size_y;
@@ -283,6 +284,7 @@ void gather_layer<TensorDataType, Layout, Device>::bp_compute() {
     grid_dims.x = (output_size + block_dims.x - 1) / block_dims.x;
     grid_dims.y = (num_rows + block_dims.y - 1) / block_dims.y;
     grid_dims.z = (local_mini_batch_size + block_dims.z - 1) / block_dims.z;
+    gpu_lib::clip_grid_dims(grid_dims);
 
     if (has_row_vectors){
       hydrogen::gpu::LaunchKernel(

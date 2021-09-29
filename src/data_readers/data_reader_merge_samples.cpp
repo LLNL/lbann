@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Semy_num_readersity, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,7 +35,7 @@ data_reader_merge_samples::data_reader_merge_samples(
   std::vector<generic_data_reader*> data_readers,
   bool shuffle) :
   generic_compound_data_reader(data_readers, shuffle) {
-  m_supported_input_types[input_data_type::RESPONSES] = true;
+  m_supported_input_types[INPUT_DATA_TYPE_RESPONSES] = true;
 }
 
 data_reader_merge_samples::data_reader_merge_samples(

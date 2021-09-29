@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -23,7 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_numpy .hpp .cpp - generic_data_reader class for numpy dataset
+// lbann_data_reader_numpy .hpp .cpp - generic_data_reader class for numpy
+// dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_NUMPY_HPP
@@ -64,7 +65,8 @@ class numpy_reader : public generic_data_reader {
   const std::vector<int> get_data_dims() const override {
     std::vector<int> dims(m_data.shape.begin() + 1,
                           m_data.shape.end());
-    if (m_supported_input_types.at(input_data_type::LABELS) || m_supported_input_types.at(input_data_type::RESPONSES)) {
+    if (m_supported_input_types.at(INPUT_DATA_TYPE_LABELS) ||
+        m_supported_input_types.at(INPUT_DATA_TYPE_RESPONSES)) {
       dims.back() -= 1;
     }
     return dims;

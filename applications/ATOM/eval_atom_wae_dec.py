@@ -109,13 +109,13 @@ def construct_model(run_args):
     print("sequence length is {}, which is training sequence len + bos + eos".format(sequence_length))
     data_layout = "data_parallel"
     # Layer graph
-    input_ = lbann.Input(target_mode='N/A',name='inp_data')
+    input_ = lbann.Input(data_field='samples',name='inp_data')
     #Note input assumes to come from encoder script concatenation of input smiles + z
-    inp_slice = lbann.Slice(input_, axis=0, 
+    inp_slice = lbann.Slice(input_, axis=0,
                              slice_points=str_list([0, sequence_length, sequence_length+run_args.z_dim]),
                              name='inp_slice')
     inp_smile = lbann.Identity(inp_slice,name='inp_smile')
-    z  = lbann.Identity(inp_slice, name='z') 
+    z  = lbann.Identity(inp_slice, name='z')
     wae_loss= []
     input_feature_dims = sequence_length
 
@@ -202,7 +202,7 @@ def construct_data_reader(run_args):
     os.environ["DATA_PATH"] = run_args.data_path
     seq_len = run_args.sequence_length+run_args.z_dim
     print("SEQ LEN for env ", seq_len)
-    os.environ["MAX_SEQ_LEN"] = str(seq_len) 
+    os.environ["MAX_SEQ_LEN"] = str(seq_len)
     print("MODULE file ", module_file)
 
     module_name = os.path.splitext(os.path.basename(module_file))[0]

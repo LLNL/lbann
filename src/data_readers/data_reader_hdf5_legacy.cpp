@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -55,17 +55,17 @@ namespace lbann {
 
 template <typename TensorDataType>
 hdf5_reader<TensorDataType>::hdf5_reader(const bool shuffle,
-                         const std::string key_data,
-                         const std::string key_labels,
-                         const std::string key_responses,
-                         const bool hyperslab_labels)
-    : generic_data_reader(shuffle),
-      m_use_data_store(options::get()->get_bool("use_data_store")),
-      m_key_data(key_data),
-      m_key_labels(key_labels),
-      m_key_responses(key_responses),
-      m_hyperslab_labels(hyperslab_labels) {
-}
+                                         const std::string key_data,
+                                         const std::string key_labels,
+                                         const std::string key_responses,
+                                         const bool hyperslab_labels)
+  : generic_data_reader(shuffle),
+    m_use_data_store(global_argument_parser().get<bool>(USE_DATA_STORE)),
+    m_key_data(key_data),
+    m_key_labels(key_labels),
+    m_key_responses(key_responses),
+    m_hyperslab_labels(hyperslab_labels)
+{}
 
 template <typename TensorDataType>
 hdf5_reader<TensorDataType>::hdf5_reader(const hdf5_reader& rhs)  : generic_data_reader(rhs) {
@@ -229,8 +229,8 @@ void hdf5_reader<TensorDataType>::load() {
   m_dxpl = H5P_DEFAULT;
 #endif
   std::vector<int> local_list_sizes;
-  options *opts = options::get();
-  if (opts->get_bool("preload_data_store")) {
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(PRELOAD_DATA_STORE)) {
     LBANN_ERROR("preload_data_store not supported on HDF5 data reader");
   }
   if (m_use_data_store) {

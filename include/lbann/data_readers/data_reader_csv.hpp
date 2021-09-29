@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -63,12 +63,12 @@ class csv_reader : public generic_data_reader {
   void set_response_col(int col) { m_response_col = col; }
   /// Disable fetching labels.
   void disable_labels(bool b = true) {
-    m_supported_input_types[input_data_type::LABELS] = false;
+    m_supported_input_types[INPUT_DATA_TYPE_LABELS] = false;
     m_disable_labels = b;
   }
   /// Enable fetching responses (disabled by default).
   void enable_responses(bool b = false) {
-    m_supported_input_types[input_data_type::RESPONSES] = true;
+    m_supported_input_types[INPUT_DATA_TYPE_RESPONSES] = true;
     m_disable_responses = b;
   }
   /// Set the column separator (default is ',').

@@ -84,7 +84,7 @@ def construct_model(lbann):
 
     data_layout = "data_parallel"
     # Layer graph
-    input_ = lbann.Identity(lbann.Input(name='inp',target_mode="N/A"), name='inp1')
+    input_ = lbann.Input(name='inp', data_field="samples")
     wae_loss= []
     input_feature_dims = sequence_length
 

@@ -73,9 +73,8 @@ def construct_model(lbann):
     import lbann.models
 
     # Layer graph
-    input_ = lbann.Input(target_mode='classification')
-    images = lbann.Identity(input_)
-    labels = lbann.Identity(input_)
+    images = lbann.Input(data_field='samples')
+    labels = lbann.Input(data_field='labels')
     x = lbann.models.LeNet(10)(images)
     probs = lbann.Softmax(x)
     loss = lbann.CrossEntropy(probs, labels)
@@ -87,7 +86,7 @@ def construct_model(lbann):
 
     # Construct model
     return lbann.Model(num_epochs,
-                       layers=lbann.traverse_layer_graph(input_),
+                       layers=lbann.traverse_layer_graph([images, labels]),
                        objective_function=loss,
                        metrics=metrics,
                        callbacks=callbacks)

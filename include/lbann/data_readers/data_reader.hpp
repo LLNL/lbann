@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,16 +30,17 @@
 #define LBANN_DATA_READER_HPP
 
 #include "lbann/base.hpp"
-#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
-#include "lbann/utils/random_number_generators.hpp"
-#include "lbann/data_readers/utils/input_data_type.hpp"
-#include "lbann/utils/exception.hpp"
 #include "lbann/comm.hpp"
+#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
+#include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/utils/options.hpp"
 #include "lbann/transforms/transform_pipeline.hpp"
+#include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/distconv.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/options.hpp"
+#include "lbann/utils/random_number_generators.hpp"
 
 #include <cassert>
 #include <algorithm>
@@ -75,40 +76,48 @@ class generic_data_reader {
   /**
    * ctor
    */
-  generic_data_reader(bool shuffle = true) :
-    m_verbose(options::get()->get_bool("verbose")),
-    m_data_store(nullptr),
-    m_comm(nullptr),
-    m_mini_batch_size(0), m_current_pos(0),
-    m_stride_to_next_mini_batch(0), m_base_offset(0), m_model_offset(0),
-    m_sample_stride(1), m_iteration_stride(1),
-    m_last_mini_batch_size(0),
-    m_stride_to_last_mini_batch(0),
-    m_reset_mini_batch_index(0),
-    m_loaded_mini_batch_idx(0),
-    m_current_mini_batch_idx(0),
-    m_num_iterations_per_epoch(0), m_global_mini_batch_size(0),
-    m_global_last_mini_batch_size(0),
-    m_world_master_mini_batch_adjustment(0),
-    m_num_parallel_readers(0), m_rank_in_model(0),
-    m_max_files_to_load(0),
-    m_file_dir(""), m_data_sample_list(""), m_data_fn(""), m_label_fn(""),
-    m_shuffle(shuffle), m_absolute_sample_count(0),
-    m_use_percent(1.0),
-    m_master(false),
-    m_gan_labelling(false), //default, not GAN
-    m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
-    m_io_thread_pool(nullptr),
-    m_jag_partitioned(false),
-    m_keep_sample_order(false),
-    m_trainer(nullptr),
-    m_issue_warning(true)
+  generic_data_reader(bool shuffle = true)
+    : m_verbose(global_argument_parser().get<bool>(VERBOSE)),
+      m_data_store(nullptr),
+      m_comm(nullptr),
+      m_mini_batch_size(0),
+      m_current_pos(0),
+      m_stride_to_next_mini_batch(0),
+      m_base_offset(0),
+      m_model_offset(0),
+      m_sample_stride(1),
+      m_iteration_stride(1),
+      m_last_mini_batch_size(0),
+      m_stride_to_last_mini_batch(0),
+      m_reset_mini_batch_index(0),
+      m_loaded_mini_batch_idx(0),
+      m_current_mini_batch_idx(0),
+      m_num_iterations_per_epoch(0),
+      m_global_mini_batch_size(0),
+      m_global_last_mini_batch_size(0),
+      m_world_master_mini_batch_adjustment(0),
+      m_num_parallel_readers(0),
+      m_rank_in_model(0),
+      m_max_files_to_load(0),
+      m_file_dir(""),
+      m_data_sample_list(""),
+      m_data_fn(""),
+      m_label_fn(""),
+      m_shuffle(shuffle),
+      m_absolute_sample_count(0),
+      m_use_percent(1.0),
+      m_master(false),
+      m_gan_labelling(false), // default, not GAN
+      m_gan_label_value(
+        0), // If GAN, default for fake label, discriminator model
+      m_io_thread_pool(nullptr),
+      m_jag_partitioned(false),
+      m_keep_sample_order(false),
+      m_trainer(nullptr),
+      m_issue_warning(true)
   {
     // By default only support fetching input samples
-    for(auto i : input_data_type_iterator()) {
-      m_supported_input_types[i] = false;
-    }
-    m_supported_input_types[input_data_type::SAMPLES] = true;
+    m_supported_input_types[INPUT_DATA_TYPE_SAMPLES] = true;
   }
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
@@ -296,21 +305,47 @@ class generic_data_reader {
   virtual std::string get_type() const = 0;
 
   /** @brief Fetch a mini-batch worth of data, including samples, labels, responses (as appropriate) */
-  int fetch(std::map<input_data_type, CPUMat*>& input_buffers, El::Matrix<El::Int>& indices_fetched);
-  /// Fetch this mini-batch's samples into X.
-  virtual int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched);
-  /// Fetch this mini-batch's labels into Y.
-  virtual int fetch_labels(CPUMat& Y);
-  /// Fetch this mini-batch's responses into Y.
-  virtual int fetch_responses(CPUMat& Y);
+  int fetch(std::map<data_field_type, CPUMat*>& input_buffers,
+            El::Matrix<El::Int>& indices_fetched);
 
-  virtual bool has_labels() const { return m_supported_input_types.at(input_data_type::LABELS); }
-  virtual bool has_responses() const { return m_supported_input_types.at(input_data_type::RESPONSES); }
+  /** @brief Check to see if the data reader supports this specific data field
+   */
+  virtual bool has_data_field(data_field_type data_field) const
+  {
+    if (m_supported_input_types.find(data_field) !=
+        m_supported_input_types.end()) {
+      return m_supported_input_types.at(data_field);
+    }
+    else {
+      return false;
+    }
+  }
+
+  virtual bool has_labels() const
+  {
+    return has_data_field(INPUT_DATA_TYPE_LABELS);
+  }
+  virtual bool has_responses() const
+  {
+    return has_data_field(INPUT_DATA_TYPE_RESPONSES);
+  }
+
+  /// Whether or not a data reader has a data field
+  void set_has_data_field(data_field_type const data_field, const bool b)
+  {
+    m_supported_input_types[data_field] = b;
+  }
 
   /// Whether or not a data reader has labels
-  virtual void set_has_labels(const bool b) { m_supported_input_types[input_data_type::LABELS] = b; }
+  virtual void set_has_labels(const bool b)
+  {
+    m_supported_input_types[INPUT_DATA_TYPE_LABELS] = b;
+  }
   /// Whether or not a data reader has a response field
-  virtual void set_has_responses(const bool b) { m_supported_input_types[input_data_type::RESPONSES] = b; }
+  virtual void set_has_responses(const bool b)
+  {
+    m_supported_input_types[INPUT_DATA_TYPE_RESPONSES] = b;
+  }
 
   /**
    * During the network's update phase, the data reader will
@@ -349,13 +384,19 @@ class generic_data_reader {
     return 1;
   }
   /// get the linearized size of what is identified by desc.
-  virtual int get_linearized_size(const std::string& desc) const {
-    if (desc == "data") {
+  virtual int get_linearized_size(data_field_type const& data_field) const
+  {
+    if (data_field == INPUT_DATA_TYPE_SAMPLES) {
       return get_linearized_data_size();
-    } else if (desc == "label") {
+    }
+    else if (data_field == INPUT_DATA_TYPE_LABELS) {
       return get_linearized_label_size();
-    } else if (desc == "response") {
+    }
+    else if (data_field == INPUT_DATA_TYPE_RESPONSES) {
       return get_linearized_response_size();
+    }
+    else {
+      LBANN_ERROR("Unknown data_field_type value provided: " + data_field);
     }
     return 0;
   }
@@ -723,7 +764,30 @@ class generic_data_reader {
 
   lbann_comm *m_comm;
 
-  virtual bool fetch_data_block(CPUMat& X, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched);
+  virtual bool
+  fetch_data_block(std::map<data_field_type, CPUMat*>& input_buffers,
+                   El::Int block_offset,
+                   El::Int block_stride,
+                   El::Int mb_size,
+                   El::Matrix<El::Int>& indices_fetched);
+
+  /** @brief Called by fetch_data, fetch_label, fetch_response
+   *
+   * Fetch data from a single data field into a matrix.
+   * @param data_field The name of the data field.  May be one of the commonly
+   *        used (samples, labels, responses) or any data_field that exists
+   *        within an HDF5 experiment schema, Python DR schema, or synthetic
+   *        data reader
+   * @param X The matrix to load data into.
+   * @param data_id The index of the datum to fetch.
+   * @param mb_idx The index within the mini-batch.
+   *
+   */
+  virtual bool fetch_data_field(data_field_type data_field, CPUMat& Y, int data_id, int mb_idx)
+  {
+    NOT_IMPLEMENTED("fetch_data_field");
+    return false;
+  }
 
   /**
    * Fetch a single sample into a matrix.
@@ -856,13 +920,11 @@ private:
 
   /** @brief Holds a true value for each input data type that is supported.
    *  Use an ordered map so that checkpoints are stable. */
-  std::map<input_data_type, bool> m_supported_input_types;
+  std::map<data_field_type, bool> m_supported_input_types;
 
   //var to support GAN
   bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
   int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0
-
-  std::vector<std::vector<char>> m_thread_buffer;
 
   observer_ptr<thread_pool> m_io_thread_pool;
 

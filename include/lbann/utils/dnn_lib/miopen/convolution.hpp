@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -40,6 +40,62 @@ namespace dnn_lib
 {
 
 using namespace miopen;
+
+inline size_t
+get_fwd_conv_workspace_size(TensorDescriptor const& wDesc,
+                            TensorDescriptor const& xDesc,
+                            ConvolutionDescriptor const& convDesc,
+                            TensorDescriptor const& yDesc,
+                            El::SyncInfo<El::Device::GPU> const& si)
+{
+  size_t size;
+  auto handle_manager = internal::make_default_handle_manager(si);
+  CHECK_MIOPEN(miopenConvolutionForwardGetWorkSpaceSize(handle_manager.get(),
+                                                        wDesc,
+                                                        xDesc,
+                                                        convDesc,
+                                                        yDesc,
+                                                        &size));
+  return size;
+}
+
+inline size_t
+get_bwd_data_conv_workspace_size(TensorDescriptor const& dyDesc,
+                                 TensorDescriptor const& wDesc,
+                                 ConvolutionDescriptor const& convDesc,
+                                 TensorDescriptor const& dxDesc,
+                                 El::SyncInfo<El::Device::GPU> const& si)
+{
+  size_t size;
+  auto handle_manager = internal::make_default_handle_manager(si);
+  CHECK_MIOPEN(
+    miopenConvolutionBackwardDataGetWorkSpaceSize(handle_manager.get(),
+                                                  dyDesc,
+                                                  wDesc,
+                                                  convDesc,
+                                                  dxDesc,
+                                                  &size));
+  return size;
+}
+
+inline size_t
+get_bwd_weights_conv_workspace_size(TensorDescriptor const& dyDesc,
+                                    TensorDescriptor const& xDesc,
+                                    ConvolutionDescriptor const& convDesc,
+                                    TensorDescriptor const& dwDesc,
+                                    El::SyncInfo<El::Device::GPU> const& si)
+{
+  size_t size;
+  auto handle_manager = internal::make_default_handle_manager(si);
+  CHECK_MIOPEN(
+    miopenConvolutionBackwardWeightsGetWorkSpaceSize(handle_manager.get(),
+                                                     dyDesc,
+                                                     xDesc,
+                                                     convDesc,
+                                                     dwDesc,
+                                                     &size));
+  return size;
+}
 
 template <typename TensorDataType, typename ScalarParameterType>
 void convolution_forward(

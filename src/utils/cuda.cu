@@ -29,6 +29,33 @@
 #ifdef LBANN_HAS_CUDA
 
 namespace lbann {
+namespace gpu_lib {
+
+// -------------------------------------------------------------
+// Device properties
+// -------------------------------------------------------------
+
+dim3 max_grid_dims() {
+  static dim3 max_grid_dims_(0,0,0);
+  if (max_grid_dims_.x == 0) {
+    int device = 0;
+    cudaDeviceProp prop;
+    CHECK_CUDA(cudaGetDevice(&device));
+    CHECK_CUDA(cudaGetDeviceProperties(&prop, device));
+    max_grid_dims_.x = prop.maxGridSize[0];
+    max_grid_dims_.y = prop.maxGridSize[1];
+    max_grid_dims_.z = prop.maxGridSize[2];
+    if (max_grid_dims_.x == 0) {
+      LBANN_ERROR("Could not setup max CUDA grid size");
+    }
+  }
+  return max_grid_dims_;
+}
+
+} // namespace gpu_lib
+} // namespace lbann
+
+namespace lbann {
 namespace cuda {
 
 // -------------------------------------------------------------
@@ -475,4 +502,5 @@ void mem_copy_async(
 
 } // namespace cuda
 } // namespace lbann
+
 #endif // LBANN_HAS_CUDA

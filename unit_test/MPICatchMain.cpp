@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -40,13 +40,12 @@
 using namespace unit_test::utilities;
 int main(int argc, char* argv[])
 {
+  lbann::construct_all_options();
+
   // Set up the communication domain
   auto world_comm = lbann::initialize(argc, argv);
   lbann::init_random(13);
   expert::register_world_comm(*world_comm);
-
-  // as of Mar 2021, required for data_readers
-  lbann::options::get()->init(argc, argv);
 
   // Initialize Catch2
   Catch::Session session;

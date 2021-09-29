@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -52,19 +52,35 @@ int main(int argc, char *argv[]) {
 
 
   try {
-    options *opts = options::get();
-    opts->init(argc, argv);
+    auto& arg_parser = global_argument_parser();
+    construct_std_options();
+    construct_jag_options();
+    try {
+      arg_parser.parse(argc, argv);
+    }
+    catch (std::exception const& e) {
+      auto guessed_rank = guess_global_rank();
+      if (guessed_rank <= 0)
+        // Cannot call `El::ReportException` because MPI hasn't been
+        // initialized yet.
+        std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
+                  << e.what() << "\n\nProcess terminating." << std::endl;
+      std::terminate();
+    }
 
-    if (!opts->has_string("filelist")) {
+    if (arg_parser.get<std::string>(FILELIST)) {
       if (master) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist");
       }
     }
 
     std::vector<std::string> files;
-    std::ifstream in(opts->get_string("filelist").c_str());
+    std::ifstream in(arg_parser.get<std::string>(FILELIST).c_str());
     if (!in) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + opts->get_string("filelist") + " for reading");
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) + " :: failed to open " +
+                            arg_parser.get<std::string>(FILELIST) +
+                            " for reading");
     }
     std::string line;
     while (getline(in, line)) {

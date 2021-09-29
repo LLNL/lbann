@@ -27,7 +27,7 @@ def make_model(
 
     # Layer graph
     input_ = lbann.Slice(
-        lbann.Input(device='CPU'),
+        lbann.Input(data_field='samples', device='CPU'),
         slice_points=str_list([0, motif_size, motif_size+walk_length]),
         device='CPU',
     )

@@ -6,6 +6,7 @@ set_full_path(THIS_DIR_SOURCES
   mutation_strategy.cpp
   random_pairwise_exchange.cpp
   sendrecv_weights.cpp
+  truncation_selection_exchange.cpp
   )
 
 # Propagate the files up the tree

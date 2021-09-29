@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -229,8 +229,8 @@ void data_reader_jag_conduit::set_defaults() {
   m_list_per_trainer = false;
   m_list_per_model = false;
 
-  m_supported_input_types[input_data_type::LABELS] = true;
-  m_supported_input_types[input_data_type::RESPONSES] = true;
+  m_supported_input_types[INPUT_DATA_TYPE_LABELS] = true;
+  m_supported_input_types[INPUT_DATA_TYPE_RESPONSES] = true;
 }
 
 void data_reader_jag_conduit::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
@@ -763,8 +763,8 @@ void data_reader_jag_conduit::load() {
 
   load_list_of_samples(sample_list_file);
 
-  options *opts = options::get();
-  if (opts->has_string("write_sample_list") && m_comm->am_trainer_master()) {
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(WRITE_SAMPLE_LIST) && m_comm->am_trainer_master()) {
     {
       const std::string msg = " writing sample list " + sample_list_file;
       LBANN_WARNING(msg);
@@ -798,10 +798,10 @@ void data_reader_jag_conduit::do_preload_data_store() {
   /// @todo BVE FIXME this
   m_rank_in_model = get_comm()->get_rank_in_trainer();
 
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
   double tm1 = get_time();
   if (get_comm()->am_world_master() ||
-      (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
+      (arg_parser.get<bool>(LTFB_VERBOSE) && get_comm()->am_trainer_master())) {
     LBANN_WARNING("starting preload for role: ", get_role());
   }
 
@@ -839,7 +839,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
   }
 
   if (get_comm()->am_world_master() ||
-      (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
+      (arg_parser.get<bool>(LTFB_VERBOSE) && get_comm()->am_trainer_master())) {
     std::stringstream msg;
     msg << " loading data for role: " << get_role() << " took " << get_time() - tm1 << "s";
     LBANN_WARNING(msg.str());
@@ -880,15 +880,16 @@ void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list
   // load the sample list
   double tm1 = get_time();
 
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
 
-  if (this->m_keep_sample_order || opts->has_string("keep_sample_order")) {
+  if (this->m_keep_sample_order || arg_parser.get<bool>(KEEP_SAMPLE_ORDER)) {
     m_sample_list.keep_sample_order(true);
-  } else {
+  }
+  else {
     m_sample_list.keep_sample_order(false);
   }
 
-  const bool check_data = opts->get_bool("check_data");
+  const bool check_data = arg_parser.get<bool>(CHECK_DATA);
 
   if (check_data) {
     m_sample_list.set_data_file_check();
@@ -896,7 +897,7 @@ void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list
 
   std::vector<char> buffer;
 
-  if (opts->has_string("load_full_sample_list_once")) {
+  if (arg_parser.get<bool>(LOAD_FULL_SAMPLE_LIST_ONCE)) {
     if (m_comm->am_trainer_master()) {
       load_file(sample_list_file, buffer);
     }
@@ -907,7 +908,8 @@ void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list
 
     m_sample_list.set_sample_list_name(sample_list_file);
     m_sample_list.load(iss, *(this->m_comm), true);
-  } else {
+  }
+  else {
     m_sample_list.load(sample_list_file, *(this->m_comm), true);
   }
 
@@ -1423,41 +1425,14 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
   return true;
 }
 
-int data_reader_jag_conduit::reuse_data(CPUMat& X) {
-  El::Copy(m_data_cache, X);
-  return m_cached_data_mb_size;
-}
 
-int data_reader_jag_conduit::reuse_responses(CPUMat& Y) {
-  El::Copy(m_response_cache, Y);
-  return m_cached_response_mb_size;
-}
 
-int data_reader_jag_conduit::reuse_labels(CPUMat& Y) {
-  El::Copy(m_label_cache, Y);
-  return m_cached_label_mb_size;
-}
 
-int data_reader_jag_conduit::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) {
-  m_cached_data_mb_size = generic_data_reader::fetch_data(X, indices_fetched);
-  El::Copy(X, m_data_cache);
 
-  return m_cached_data_mb_size;
-}
 
-int data_reader_jag_conduit::fetch_responses(CPUMat& Y) {
-  m_cached_response_mb_size = generic_data_reader::fetch_responses(Y);
-  El::Copy(Y, m_response_cache);
 
-  return m_cached_response_mb_size;
-}
 
-int data_reader_jag_conduit::fetch_labels(CPUMat& Y) {
-  m_cached_label_mb_size = generic_data_reader::fetch_labels(Y);
-  El::Copy(Y, m_label_cache);
 
-  return m_cached_label_mb_size;
-}
 
 
 bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {

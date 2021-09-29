@@ -165,7 +165,7 @@ metrics = []
 
 # Embedding vectors, including negative sampling
 # Note: Input is sequence of vertex IDs
-input_ = lbann.Identity(lbann.Input())
+input_ = lbann.Input(data_field='samples')
 if args.embeddings == 'distributed':
     embeddings_weights = lbann.Weights(
         initializer=lbann.NormalInitializer(

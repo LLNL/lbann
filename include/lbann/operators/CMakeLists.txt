@@ -4,6 +4,7 @@ set_full_path(THIS_DIR_HEADERS
   operator.hpp
   )
 
+add_subdirectory(activations)
 add_subdirectory(math)
 
 # Propagate the files up the tree

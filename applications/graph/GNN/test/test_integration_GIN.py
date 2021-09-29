@@ -24,16 +24,16 @@ import tools
 
 num_epochs = 100
 mini_batch_size = 64
-num_nodes = 2
+num_nodes = 1
 
 
-expected_accuracy_range = (70, 80)
+expected_accuracy_range = (65, 80)
 
 expected_mini_batch_times = {
-       'ray' : 0.0792
+       'ray' : 0.062
        }
 expected_gpu_usage = {
-        'ray' : 0.535
+        'ray' : 1.16
         }
 
 def setup_experiment(lbann):
@@ -53,8 +53,7 @@ def setup_experiment(lbann):
     
 
     
-    model = Sparse_Graph_Trainer.make_model(dataset = 'PROTEINS',
-                                            kernel_type = 'GIN',
+    model = Sparse_Graph_Trainer.make_model(kernel_type = 'GIN',
                                             num_epochs = num_epochs,
                                             callbacks = callbacks)
     reader = data.PROTEINS.make_data_reader()
@@ -93,9 +92,9 @@ def augment_test_func(test_func):
     test_name = test_func.__name__
 
     # Define test function
-    def func(cluster, exes, dirname):
+    def func(cluster, dirname):
         # Run LBANN experiment
-        experiment_output = test_func(cluster, exes, dirname)
+        experiment_output = test_func(cluster, dirname)
 
         # Parse LBANN log file
         train_accuracy = None

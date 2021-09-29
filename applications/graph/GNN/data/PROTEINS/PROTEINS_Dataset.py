@@ -6,71 +6,101 @@ import utils
 import numpy as np 
 import sys 
 
-files = ['node_features.npy', 'adj_mats.npy', 'targets.npy']
 
 data_dir = os.path.dirname(os.path.realpath(__file__))
 
-class PROTEINS_Dataset:
+def get_data():
+    if not os.path.isfile(os.path.join(data_dir, "PROTEINS.zip")):
+        #Needs Download
+        url = 'https://ls11-www.cs.tu-dortmund.de/people/morris/graphkerneldatasets/PROTEINS.zip'
+        save_path = os.path.join(data_dir, 'PROTEINS.zip')
+        utils.download_url(url, save_path)
+    utils.unzip_file(os.path.join(data_dir, "PROTEINS.zip"))
+        
+
+
+class PROTEINS_Sparse_Dataset():
+    files = ['node_features_sparse.npy', 
+             'source_indices_sparse.npy',
+             'target_indices_sparse.npy',
+             'targets_sparse.npy']
+    
     def __init__(self):
         # Check is data is downloaded and processed
         # Load if data exists 
-        # Else Download and process data  
+        # Else Download and process data
+        files = PROTEINS_Sparse_Dataset.files  
         for npy_file in files:
             if not os.path.isfile(os.path.join(data_dir,"PROTEINS/"+npy_file)):
-                self.process_data()
+                get_data()
+                self.generate_dataset()
+                break
 
+        self.node_features = np.load(os.path.join(data_dir, "PROTEINS/"+files[0]))
+        self.source_indices = np.load(os.path.join(data_dir,"PROTEINS/"+files[1]))
+        self.target_indices = np.load(os.path.join(data_dir,"PROTEINS/"+files[2]))
+        self.targets = np.load(os.path.join(data_dir, "PROTEINS/"+files[3]))
+        self.max_edges = max([x.shape[0] for x in self.source_indices])
+        self.pad_edge_lists()
+
+    def generate_dataset(self):
+        files = PROTEINS_Sparse_Dataset.files
+        save_dir = os.path.join(data_dir, 'PROTEINS')        
+        data = utils.TUDataset_Parser(save_dir, 'PROTEINS', 2, graph_format="sparse")
+        
+        for file_name, _graph_data_i in zip(files, data):
+            np.save(os.path.join(save_dir, file_name), _graph_data_i)
+
+    def pad_edge_lists(self):
+        for i, (sources, targets) in enumerate(zip(self.source_indices, self.target_indices)):
+            padding_size = self.max_edges - sources.shape[0]
+            padding = np.full((padding_size), -1)
+            self.source_indices[i] = np.concatenate((sources, padding), axis=0)
+            self.target_indices[i] = np.concatenate((targets, padding), axis=0)
+
+    def __len__(self):
+        return len(self.node_features)
+
+    def __getitem__(self, index):
+        x = np.float32(self.node_features[index].flatten())
+        s = np.float32(self.source_indices[index].flatten())
+        t = np.float32(self.target_indices[index].flatten())
+        y = np.float32(self.targets[index].flatten())
+        return np.concatenate((x,s,t,y), axis=0)             
+
+
+
+class PROTEINS_Dense_Dataset():
+    files = ['node_features_dense.npy', 'adj_mats_dense.npy', 'targets_dense.npy']
+    
+    def __init__(self):
+        # Check is data is downloaded and processed
+        # Load if data exists 
+        # Else download and process data
+        files = PROTEINS_Dense_Dataset.files  
+        for npy_file in files:
+            if not os.path.isfile(os.path.join(data_dir,"PROTEINS/"+npy_file)):
+                get_data()
+                self.generate_dataset()
+                break
         self.node_features = np.load(os.path.join(data_dir, "PROTEINS/"+files[0]))
         self.adjs = np.load(os.path.join(data_dir,"PROTEINS/"+files[1]))
         self.targets = np.load(os.path.join(data_dir, "PROTEINS/"+files[2]))
-       
+
     def generate_dataset(self):
-        global data_dir
-        print(data_dir)
-        data_dir = os.path.join(data_dir, 'PROTEINS')        
-        node_features, adj_mat, targets = utils.TUDataset_Parser(data_dir, 'PROTEINS', 2)
-        np.save(os.path.join(data_dir, files[0]), node_features)
-        np.save(os.path.join(data_dir, files[1]), adj_mat)
-        np.save(os.path.join(data_dir, files[2]), targets)
-
-    def process_data(self):
-        if not os.path.isfile(os.path.join(data_dir, "PROTEINS.zip")):
-            #Needs Download
-            url = 'https://ls11-www.cs.tu-dortmund.de/people/morris/graphkerneldatasets/PROTEINS.zip'
-            save_path = os.path.join(data_dir, 'PROTEINS.zip')
-            utils.download_url(url, save_path)
-        utils.unzip_file(os.path.join(data_dir, "PROTEINS.zip"))
+        files = PROTEINS_Dense_Dataset.files
+        save_dir = os.path.join(data_dir, 'PROTEINS')        
+        data = utils.TUDataset_Parser(save_dir, 'PROTEINS', 2, graph_format="dense")
         
-        self.generate_dataset()
-
+        for file_name, _graph_data_i in zip(files, data):
+            np.save(os.path.join(save_dir, file_name), _graph_data_i)
+    
     def __len__(self):
-        
         return len(self.node_features)
+    
     def __getitem__(self, index):
-        
         x = np.float32(self.node_features[index].flatten())
         y = np.float32(self.targets[index].flatten())
         adj = np.float32(self.adjs[index].flatten())
 
         return np.concatenate((x,adj,y), axis=0)
-
-training_data = PROTEINS_Dataset()
-
-def get_train(index):
-    return training_data[index]
-
-def num_train_samples():
-    return len(training_data)
-
-def sample_dims():
-    adjacency_matrix_size = 100 * 100 
-    node_feature_size = 100 * 3 
-    target_size = 2
-    return (adjacency_matrix_size + node_feature_size + target_size, )
-
-if __name__== '__main__':
-    print(len(training_data))
-    print(training_data.node_features[0].shape)
-    print(training_data.adjs[0].shape)
-    print(training_data.targets[0].shape)
-    print(type(training_data[0][0]))
-    print(sys.getsizeof(training_data[0][0]))

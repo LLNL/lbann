@@ -39,6 +39,16 @@ namespace gpu_lib {
 #endif // LBANN_HAS_CUDA
 
 // -------------------------------------------------------------
+// Device properties
+// -------------------------------------------------------------
+
+/** @brief Maximum grid dimensions in GPU kernel */
+dim3 max_grid_dims();
+
+/** @brief Clip grid dims in GPU kernel to maximum size */
+void clip_grid_dims(dim3& grid_dims);
+
+// -------------------------------------------------------------
 // Device functions
 // -------------------------------------------------------------
 

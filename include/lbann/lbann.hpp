@@ -41,7 +41,6 @@
 #include "lbann/models/directed_acyclic_graph.hpp"
 
 /// Activation layers
-#include "lbann/layers/activations/activations.hpp"
 #include "lbann/layers/activations/elu.hpp"
 #include "lbann/layers/activations/identity.hpp"
 #include "lbann/layers/activations/leaky_relu.hpp"
@@ -63,7 +62,6 @@
 /// Loss layers
 #include "lbann/layers/loss/categorical_accuracy.hpp"
 #include "lbann/layers/loss/cross_entropy.hpp"
-#include "lbann/layers/loss/entrywise.hpp"
 #include "lbann/layers/loss/l1_norm.hpp"
 #include "lbann/layers/loss/l2_norm2.hpp"
 #include "lbann/layers/loss/mean_absolute_error.hpp"
@@ -71,8 +69,7 @@
 #include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
 
 /// Math layers
-#include "lbann/layers/math/unary.hpp"
-#include "lbann/layers/math/binary.hpp"
+#include "lbann/layers/math/matmul.hpp"
 
 /// Transform layers
 #include "lbann/layers/transform/reshape.hpp"

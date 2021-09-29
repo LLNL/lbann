@@ -602,7 +602,6 @@ void send_recv_precomputed_gradients(
     lbann_comm *comm,
     const kfac::kfac_allgather_mode& mode) {
 
-  const int comm_size = El::mpi::Size(comm->get_KFAC_comm());
   const int comm_rank = El::mpi::Rank(comm->get_KFAC_comm());
   const int combined_rank = El::mpi::Rank(comm->get_combined_grid_comm());
 
@@ -613,8 +612,6 @@ void send_recv_precomputed_gradients(
   int num_process_secondary_grid = (int)secondary_grid_ranks.size();
 
   const El::mpi::Comm & combined_comm = comm->get_combined_grid_comm();
-  const El::mpi::Comm & trainer_comm = comm->get_KFAC_comm();
-
 
   if(comm->get_grid_type() == GridType::SECONDARY_GRID)
   {

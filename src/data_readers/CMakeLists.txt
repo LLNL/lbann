@@ -39,8 +39,5 @@ if (LBANN_HAS_OPENCV)
     "${CMAKE_CURRENT_SOURCE_DIR}/data_reader_imagenet.cpp")
 endif ()
 
-# Add the subdirectories
-add_subdirectory(utils)
-
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)

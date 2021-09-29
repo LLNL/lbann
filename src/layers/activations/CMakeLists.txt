@@ -1,6 +1,5 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
-  activations.cpp
   elu.cpp
   identity.cpp
   relu.cpp
@@ -13,7 +12,6 @@ set_full_path(THIS_DIR_SOURCES
 if (LBANN_HAS_GPU)
   # Add the CUDA source files for this directory
   set_full_path(THIS_DIR_CU_SOURCES
-    activations.cu
     elu.cu
     relu.cu
     leaky_relu.cu

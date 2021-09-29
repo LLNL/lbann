@@ -29,6 +29,33 @@
 #ifdef LBANN_HAS_ROCM
 
 namespace lbann {
+namespace gpu_lib {
+
+// -------------------------------------------------------------
+// Device properties
+// -------------------------------------------------------------
+
+dim3 max_grid_dims() {
+  static dim3 max_grid_dims_(0,0,0);
+  if (max_grid_dims_.x == 0) {
+    int device = 0;
+    hipDeviceProp_t prop;
+    CHECK_ROCM(hipGetDevice(&device));
+    CHECK_ROCM(hipGetDeviceProperties(&prop, device));
+    max_grid_dims_.x = prop.maxGridSize[0];
+    max_grid_dims_.y = prop.maxGridSize[1];
+    max_grid_dims_.z = prop.maxGridSize[2];
+    if (max_grid_dims_.x == 0) {
+      LBANN_ERROR("Could not setup max HIP grid size");
+    }
+  }
+  return max_grid_dims_;
+}
+
+} // namespace gpu_lib
+} // namespace lbann
+
+namespace lbann {
 namespace rocm {
 
 // -------------------------------------------------------------
@@ -175,7 +202,7 @@ void copy_tensor(
     grid_dims.z = (rdims[2] + block_dims.z - 1) / block_dims.z;
     grid_dims.y = El::Min(grid_dims.y, 65535);
     grid_dims.z = El::Min(grid_dims.z, 65535);
-    hipLaunchKernelGGL(copy_4d_kernel, dim3(grid_dims), dim3(block_dims), 0, stream, 
+    hipLaunchKernelGGL(copy_4d_kernel, dim3(grid_dims), dim3(block_dims), 0, stream,
       {rdims[3], rdims[2], rdims[1], rdims[0]},
       input,
       {input_rstrides[3], input_rstrides[2],

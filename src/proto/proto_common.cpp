@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -61,9 +61,7 @@ void init_data_readers(
   const bool master = comm->am_world_master();
   std::ostringstream err;
 
-  options *opts = options::get();
-  const bool create_tarball
-    = opts->has_string("create_tarball") ? true : false;
+  auto& arg_parser = global_argument_parser();
 
   const lbann_data::DataReader & d_reader = p.data_reader();
   const int size = d_reader.reader_size();
@@ -437,17 +435,19 @@ void init_data_readers(
       reader->set_local_file_dir( readme.data_local_filedir() );
     }
 
-    if (create_tarball) {
-      if (opts->has_int("test_tarball")) {
-        reader->set_absolute_sample_count( opts->get_int("test_tarball"));
+    if (arg_parser.get<bool>(CREATE_TARBALL)) {
+      if (arg_parser.get<int>(TEST_TARBALL) != -1) {
+        reader->set_absolute_sample_count(arg_parser.get<int>(TEST_TARBALL));
         reader->set_use_percent( 0. );
         reader->set_first_n(0);
-      } else {
+      }
+      else {
         reader->set_absolute_sample_count( 0. );
         reader->set_use_percent( 1.0 );
         reader->set_first_n( 0 );
       }
-    } else {
+    }
+    else {
       reader->set_absolute_sample_count( readme.absolute_sample_count() );
       reader->set_use_percent( readme.percent_of_data_to_use() );
       reader->set_first_n( readme.first_n() );
@@ -468,14 +468,16 @@ void init_data_readers(
       reader->set_role("error");
     }
     if (readme.role() == "train") {
-      if (create_tarball || separate_validation) {
+      if (arg_parser.get<bool>(CREATE_TARBALL) || separate_validation) {
         reader->set_execution_mode_split_percent(execution_mode::validation, 0. );
-      } else {
+      }
+      else {
         reader->set_execution_mode_split_percent(execution_mode::validation, readme.validation_percent() );
       }
-      if (create_tarball || separate_tournament) {
+      if (arg_parser.get<bool>(CREATE_TARBALL) || separate_tournament) {
         reader->set_execution_mode_split_percent(execution_mode::tournament, 0. );
-      } else {
+      }
+      else {
         reader->set_execution_mode_split_percent(execution_mode::tournament, readme.tournament_percent() );
       }
     }
@@ -498,7 +500,7 @@ void init_data_readers(
       data_readers[execution_mode::tournament] = reader;
     }
 
-    if (readme.role() == "train" && !create_tarball) {
+    if (readme.role() == "train" && !arg_parser.get<bool>(CREATE_TARBALL)) {
       for(auto m : execution_mode_iterator()) {
         if((m == execution_mode::validation && readme.validation_percent() > 0. && !separate_validation)
            || (m == execution_mode::tournament && readme.tournament_percent() > 0. && !separate_tournament)) {
@@ -731,7 +733,7 @@ int get_requested_num_parallel_readers(const lbann_comm& comm, const lbann_data:
 void set_data_readers_filenames(
   const std::string& which, lbann_data::LbannPB& p)
 {
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
   lbann_data::DataReader *readers = p.mutable_data_reader();
   int size = readers->reader_size();
   for (int j=0; j<size; j++) {
@@ -739,27 +741,28 @@ void set_data_readers_filenames(
     if (r->role() == which) {
       std::ostringstream s;
       s << "data_filedir_" << which;
-      if (opts->has_string(s.str())) {
-        r->set_data_filedir(opts->get_string(s.str()));
-      }else {
+      if (arg_parser.get<std::string>(s.str()) != "") {
+        r->set_data_filedir(arg_parser.get<std::string>(s.str()));
+      }
+      else {
         s.clear();
         s.str("");
         s << "data_filedir";
-        if (opts->has_string(s.str())) {
-          r->set_data_filedir(opts->get_string(s.str()));
+        if (arg_parser.get<std::string>(s.str()) != "") {
+          r->set_data_filedir(arg_parser.get<std::string>(s.str()));
         }
       }
       s.clear();
       s.str("");
       s << "data_filename_" << which;
-      if (opts->has_string(s.str())) {
-        r->set_data_filename(opts->get_string(s.str()));
+      if (arg_parser.get<std::string>(s.str()) != "") {
+        r->set_data_filename(arg_parser.get<std::string>(s.str()));
       }
       s.clear();
       s.str("");
       s << "label_filename_" << which;
-      if (opts->has_string(s.str())) {
-        r->set_label_filename(opts->get_string(s.str()));
+      if (arg_parser.get<std::string>(s.str()) != "") {
+        r->set_label_filename(arg_parser.get<std::string>(s.str()));
       }
     }
   }
@@ -768,7 +771,7 @@ void set_data_readers_filenames(
 void set_data_readers_sample_list(
   const std::string& which, lbann_data::LbannPB& p)
 {
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
   lbann_data::DataReader *readers = p.mutable_data_reader();
   int size = readers->reader_size();
   const std::string key_role = "sample_list_" + which;
@@ -776,15 +779,15 @@ void set_data_readers_sample_list(
   for (int j=0; j<size; j++) {
     lbann_data::Reader *r = readers->mutable_reader(j);
     if (r->role() == which) {
-      r->set_sample_list(opts->get_string(key_role));
+      r->set_sample_list(arg_parser.get<std::string>(key_role));
     }
   }
 }
 
 void set_data_readers_percent(lbann_data::LbannPB& p)
 {
-  options *opts = options::get();
-  double percent = opts->get_float("data_reader_percent");
+  auto& arg_parser = global_argument_parser();
+  double percent = arg_parser.get<float>(DATA_READER_PERCENT);
   if (percent <= 0 || percent > 1.0) {
       std::ostringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -834,52 +837,52 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
 {
   std::ostringstream err;
 
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
   lbann_data::Trainer *trainer = p.mutable_trainer();
   lbann_data::Model *model = p.mutable_model();
   lbann_data::DataReader *d_reader = p.mutable_data_reader();
   int size = d_reader->reader_size();
 
-  if (opts->has_int("absolute_sample_count")) {
+  if (arg_parser.get<int>(ABSOLUTE_SAMPLE_COUNT) != -1) {
     for (int j=0; j<size; j++) {
-      int n = opts->get_int("absolute_sample_count");
+      int n = arg_parser.get<int>(ABSOLUTE_SAMPLE_COUNT);
       lbann_data::Reader *readme = d_reader->mutable_reader(j);
       readme->set_percent_of_data_to_use(0.0);
       readme->set_absolute_sample_count(n);
     }
   }
 
-  if (opts->has_string("data_filedir")
-      or opts->has_string("data_filedir_train")
-      or opts->has_string("data_filename_train")
-      or opts->has_string("label_filename_train")) {
+  if ((arg_parser.get<std::string>(DATA_FILEDIR) != "") or
+      (arg_parser.get<std::string>(DATA_FILEDIR_TRAIN) != "") or
+      (arg_parser.get<std::string>(DATA_FILENAME_TRAIN) != "") or
+      (arg_parser.get<std::string>(LABEL_FILENAME_TRAIN) != "")) {
     set_data_readers_filenames("train", p);
   }
-  if (opts->has_string("data_filedir")
-      or opts->has_string("data_filedir_validate")
-      or opts->has_string("data_filename_validate")
-      or opts->has_string("label_filename_validate")) {
+  if ((arg_parser.get<std::string>(DATA_FILEDIR) != "") or
+      (arg_parser.get<std::string>(DATA_FILEDIR_VALIDATE) != "") or
+      (arg_parser.get<std::string>(DATA_FILENAME_VALIDATE) != "") or
+      (arg_parser.get<std::string>(LABEL_FILENAME_VALIDATE) != "")) {
     set_data_readers_filenames("validate", p);
   }
-  if (opts->has_string("data_filedir")
-      or opts->has_string("data_filedir_test")
-      or opts->has_string("data_filename_test")
-      or opts->has_string("label_filename_test")) {
+  if ((arg_parser.get<std::string>(DATA_FILEDIR) != "") or
+      (arg_parser.get<std::string>(DATA_FILEDIR_TEST) != "") or
+      (arg_parser.get<std::string>(DATA_FILENAME_TEST) != "") or
+      (arg_parser.get<std::string>(LABEL_FILENAME_TEST) != "")) {
     set_data_readers_filenames("test", p);
   }
-  if (opts->has_string("sample_list_train")) {
+  if (arg_parser.get<std::string>(SAMPLE_LIST_TRAIN) != "") {
     set_data_readers_sample_list("train", p);
   }
-  if (opts->has_string("sample_list_validate")) {
+  if (arg_parser.get<std::string>(SAMPLE_LIST_VALIDATE) != "") {
     set_data_readers_sample_list("validate", p);
   }
-  if (opts->has_string("sample_list_test")) {
+  if (arg_parser.get<std::string>(SAMPLE_LIST_TEST) != "") {
     set_data_readers_sample_list("test", p);
   }
-  if (opts->has_string("data_reader_percent")) {
+  if (arg_parser.get<float>(DATA_READER_PERCENT) != -1.0) {
     set_data_readers_percent(p);
   }
-  if (opts->get_bool("no_im_comm")) {
+  if (arg_parser.get<bool>(NO_IM_COMM)) {
     int sz = model->callback_size();
     for (int j=0; j<sz; j++) {
       lbann_data::Callback *c = model->mutable_callback(j);
@@ -888,28 +891,28 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
       }
     }
   }
-  if (opts->has_int("mini_batch_size")) {
-    trainer->set_mini_batch_size(opts->get_int("mini_batch_size"));
+  if (arg_parser.get<int>(MINI_BATCH_SIZE) != -1) {
+    trainer->set_mini_batch_size(arg_parser.get<int>(MINI_BATCH_SIZE));
   }
-  if (opts->has_int("num_epochs")) {
-    model->set_num_epochs(opts->get_int("num_epochs"));
+  if (arg_parser.get<int>(NUM_EPOCHS) != -1) {
+    model->set_num_epochs(arg_parser.get<int>(NUM_EPOCHS));
   }
-  if (opts->has_int("hydrogen_block_size")) {
-    trainer->set_hydrogen_block_size(opts->get_int("hydrogen_block_size"));
+  if (arg_parser.get<int>(HYDROGEN_BLOCK_SIZE) != -1) {
+    trainer->set_hydrogen_block_size(arg_parser.get<int>(HYDROGEN_BLOCK_SIZE));
   }
-  if (opts->has_int("num_parallel_readers")) {
-    trainer->set_num_parallel_readers(opts->get_int("num_parallel_readers"));
+  if (arg_parser.get<int>(NUM_PARALLEL_READERS) != -1) {
+    trainer->set_num_parallel_readers(
+      arg_parser.get<int>(NUM_PARALLEL_READERS));
   }
-  if (opts->get_bool("disable_cuda")) {
-    model->set_disable_cuda(opts->get_bool("disable_cuda"));
+  if (arg_parser.get<bool>(DISABLE_CUDA)) {
+    model->set_disable_cuda(arg_parser.get<bool>(DISABLE_CUDA));
   }
-  if (opts->has_int("random_seed")) {
-    trainer->set_random_seed(opts->get_int("random_seed"));
+  if (arg_parser.get<int>(RANDOM_SEED) == -1) {
+    trainer->set_random_seed(arg_parser.get<int>(RANDOM_SEED));
   }
-  if(opts->get_bool("serialize_io")) {
-    trainer->set_serialize_io(opts->get_bool("serialize_io"));
+  if (arg_parser.get<bool>(SERIALIZE_IO)) {
+    trainer->set_serialize_io(arg_parser.get<bool>(SERIALIZE_IO));
   }
-
 }
 
 void print_parameters(const lbann_comm& comm,
@@ -975,103 +978,6 @@ void print_parameters(const lbann_comm& comm,
             << "     (only used for metrics)\n";
 }
 
-void print_help(const lbann_comm& comm)
-{
-  if (comm.am_world_master()) {
-    print_help(std::cerr);
-  }
-}
-
-void print_help(std::ostream& os)
-{
-  os <<
-       "General usage: you need to specify three prototext files, e.g:\n"
-       "  srun -n# proto --model=<string> --optimizer=<string> --reader=<string> --metadata=<string>\n"
-       "\n"
-       "  However, if you are re-running an experiment from a previously saved\n"
-       "  file, you only need to specify --prototext=<string>\n"
-       "  When proto is run, an output file containing the concatenated prototext\n"
-       "  files, along with other data is written. The default name for this file\n"
-       "  is 'data.prototext'  You can specify an alternative name via the option:\n"
-       "  --saveme=<string>  You can suppress writing the file via the option:\n"
-       "  --saveme=0\n"
-       "\n"
-       "Some prototext values can be overriden on the command line;\n"
-       "(notes: use '1' or '0' for bool; if no value is given for a flag,\n"
-       "        e.g: --disable_cuda, then a value of '1' is assigned)\n"
-       "\n"
-       "General:\n"
-       "  --mini_batch_size=<int>\n"
-       "  --num_epochs=<int>\n"
-       "  --hydrogen_block_size=<int>\n"
-       "  --num_parallel_readers=<int>\n"
-       "  --serialize_io=<bool>\n"
-       "      force data readers to use a single thread for I/O\n"
-       "  --disable_background_io_activity=<bool>\n"
-       "      prevent the input layers from fetching data in the background\n"
-       "  --disable_cuda=<bool>\n"
-       "     has no effect unless lbann was compiled with: LBANN_HAS_CUDNN\n"
-       "  --random_seed=<int>\n"
-       "  --objective_function<string>\n"
-       "      <string> must be: categorical_cross_entropy or mean_squared_error\n"
-       "  --data_layout<string>\n"
-       "      <string> must be: data_parallel or model_parallel\n"
-       "      note: this will be applied to all layers, metrics (and others)\n"
-       "            that take DATA_PARALLEL or MODEL_PARALLEL as a template parameter\n"
-       "  --print_affinity\n"
-       "      display information on how OpenMP threads are provisioned\n"
-       "  --use_data_store \n"
-       "      Enables the data store in-memory structure\n"
-       "  --preload_data_store \n"
-       "      Preloads the data store in-memory structure during data reader load time\n"
-       "  --super_node \n"
-       "      Enables the data store in-memory structure to use the supernode exchange structure\n"
-       "  --write_sample_list \n"
-       "      Writes out the sample list that was loaded into the current directory\n"
-       "  --ltfb_verbose \n"
-       "      Increases number of per-trainer messages that are reported\n"
-       "  --ckpt_dir=<string>\n"
-       "      Save to or restart from a specific checkpoint directory.\n"
-       "      Additionally, sets the output directory for dumping weights.\n"
-       "      Modifies callbacks: checkpoint, save_model, dump_weights\n"
-       "  --restart_dir=<string>\n"
-       "      Restart from a checkpoint found in the given directory.\n"
-       "      If the directory doesn't exist or doesn't contain a checkpoint,\n"
-       "      an error will be thrown.\n"
-       "  --load_model_weights_dir=<string>\n"
-       "      Load model wieghts found in the given directory.\n"
-       "      If the directory doesn't exist, doesn't contain valid weights,\n"
-       "      or doesn't contain a checkpoint,\n"
-       "      an error will be thrown.\n"
-       "  --load_model_weights_dir_is_complete=<bool>\n"
-       "      Use load_model_weights_dir as given, ignoring checkpoint hierarchy.\n"
-       "\n"
-       "DataReaders:\n"
-       "  --data_filedir=<string>\n"
-       "      sets the file directory for train and test data\n"
-       "  --data_filedir_train=<string>   --data_filedir_test=<string>\n"
-       "  --data_filename_train=<string>  --data_filename_test=<string>\n"
-       "  --sample_list_train=<string>    --sample_list_test=<string>\n"
-       "  --label_filename_train=<string> --label_filename_test=<string>\n"
-       "  --data_reader_percent=<float>\n"
-       "  --share_testing_data_readers=<bool:[0|1]>\n"
-       "\n"
-       "Callbacks:\n"
-       "  --image_dir=<string>\n"
-       "      if the model has callback_save_images, this determines where the\n"
-       "      images are saved\n"
-       "  --no_im_comm=<bool>\n"
-       "      removes ImComm callback, if present; this is intended for\n"
-       "      running alexnet with a single model, but may be useful elsewhere\n"
-       "\n"
-       "Optimizers; all values except for nesterov are floats;\n"
-       "            the values shown in <...> are the default values, that will be\n"
-       "            used if the option is not specified on the cmd line.\n"
-       "            If you specify an option that is not applicable to your choice\n"
-       "            of optimizer, the option is ignored\n"
-       "\n";
-}
-
 void copy_file(std::string fn, std::ofstream &out)
 {
   std::ifstream in(fn.c_str());
@@ -1092,11 +998,11 @@ void save_session(const lbann_comm& comm, const int argc, char * const* argv, lb
     return;
   }
 
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
 
   //do not write output file for a repeated experiment;
   //may want to revisit this decision later ...
-  if (opts->has_string("prototext")) {
+  if (arg_parser.get<std::string>(PROTOTEXT) != "") {
     return;
   }
 

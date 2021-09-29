@@ -53,7 +53,7 @@ def construct_model(lbann):
     import lbann.models
 
     # Layer graph
-    input_ = lbann.Input()
+    input_ = lbann.Input(data_field='samples')
     x = lbann.Identity(input_)
     y = lbann.L2Norm2(x)
     z = lbann.Multiply(y, lbann.Sqrt(lbann.MiniBatchIndex()))
@@ -285,38 +285,38 @@ is_f = 'is_fully_loaded'
 
 # test checkpoint, preload
 test_name = 'data_store_checkpoint_preload'
-make_test(test_name, datastore_tests, ['--preload_data_store', '--data_store_test_checkpoint=CHECKPOINT', '--data_store_profile'])
+make_test(test_name, datastore_tests, ['--preload_data_store', '--data_store_test_checkpoint=CHECKPOINT', '--data_store_profile', '--node_sizes_vary'])
 profile_data[test_name] =  {is_e : '0', is_l : '0', is_f : '1'}
 
 # test checkpoint, explicit
 test_name = 'data_store_checkpoint_explicit'
-make_test(test_name, datastore_tests, ['--use_data_store', '--data_store_test_checkpoint=CHECKPOINT', '--data_store_profile'])
+make_test(test_name, datastore_tests, ['--use_data_store', '--data_store_test_checkpoint=CHECKPOINT', '--data_store_profile', '--node_sizes_vary'])
 profile_data[test_name] =  {is_e : '1', is_l : '0', is_f : '0'}
 
 # explicit loading
 test_name = 'data_store_explicit'
-make_test(test_name, datastore_tests, ['--use_data_store', '--data_store_profile'])
+make_test(test_name, datastore_tests, ['--use_data_store', '--data_store_profile', '--node_sizes_vary'])
 profile_data[test_name] = {is_e : '1', is_l : '0', is_f : '0'}
 
 # preloading
 test_name = 'data_store_preload'
-make_test(test_name, datastore_tests, ['--preload_data_store', '--data_store_profile'])
+make_test(test_name, datastore_tests, ['--preload_data_store', '--data_store_profile', '--node_sizes_vary'])
 profile_data[test_name] =  {is_e : '0', is_l : '0', is_f : '1'}
 
 #local cache with explicit loading (internally, this should run identically
 #with the flag: --preload_data_store
 test_name = 'data_store_cache_explicit'
-make_test(test_name, datastore_tests, ['--data_store_cache', '--data_store_profile'])
+make_test(test_name, datastore_tests, ['--data_store_cache', '--data_store_profile', '--node_sizes_vary'])
 profile_data[test_name] =  {is_e : '1', is_l : '1', is_f : '0'}
 
 #local cache with preloading
 test_name = 'data_store_cache_preloading'
-make_test(test_name, datastore_tests, ['--data_store_cache', '--preload_data_store', '--data_store_profile'])
+make_test(test_name, datastore_tests, ['--data_store_cache', '--preload_data_store', '--data_store_profile', '--node_sizes_vary'])
 profile_data[test_name] =  {is_e : '0', is_l : '1', is_f : '0'}
 
 #test local cache
 test_name = 'data_store_test_cache'
-make_test(test_name, datastore_tests, ['--data_store_cache', '--preload_data_store', '--data_store_test_cache', '--data_store_profile'])
+make_test(test_name, datastore_tests, ['--data_store_cache', '--preload_data_store', '--data_store_test_cache', '--data_store_profile', '--node_sizes_vary'])
 profile_data[test_name] =  {is_e : '0', is_l : '1', is_f : '0'}
 
 for i in range(len(datastore_tests)):

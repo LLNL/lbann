@@ -49,6 +49,18 @@ struct TypeToProtoDataType<double>
   static constexpr auto value = lbann_data::DOUBLE;
 };
 
+template <>
+struct TypeToProtoDataType<El::Complex<float>>
+{
+  static constexpr auto value = lbann_data::COMPLEX_FLOAT;
+};
+
+template <>
+struct TypeToProtoDataType<El::Complex<double>>
+{
+  static constexpr auto value = lbann_data::COMPLEX_DOUBLE;
+};
+
 #ifdef LBANN_HAS_HALF
 template <>
 struct TypeToProtoDataType<cpu_fp16>

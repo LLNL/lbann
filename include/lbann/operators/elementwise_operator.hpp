@@ -120,10 +120,10 @@ public:
    *           tensors, the gradient w.r.t. input tensors are
    *           populated with the computed values.
    */
-  void
-  bp_compute(std::vector<ConstInputTensorType> const& inputs,
-             std::vector<ConstOutputTensorType> const& gradient_wrt_outputs,
-             std::vector<InputTensorType> const& gradient_wrt_inputs) const final
+  void bp_compute(
+    std::vector<ConstInputTensorType> const& inputs,
+    std::vector<ConstOutputTensorType> const& gradient_wrt_outputs,
+    std::vector<InputTensorType> const& gradient_wrt_inputs) const final
   {
     return bp_compute_local(get_local_tensor_views(inputs),
                             get_local_tensor_views(gradient_wrt_outputs),

@@ -30,9 +30,10 @@
 #include "MPITestHelpers.hpp"
 
 #include <lbann/base.hpp>
+#include <lbann/execution_algorithms/batch_functional_inference_algorithm.hpp>
 #include <lbann/models/directed_acyclic_graph.hpp>
 #include <lbann/models/model.hpp>
-#include <lbann/execution_algorithms/batch_functional_inference_algorithm.hpp>
+#include <lbann/utils/lbann_library.hpp>
 
 #include <lbann.pb.h>
 #include <google/protobuf/text_format.h>
@@ -48,7 +49,7 @@ model {
     name: "layer1"
     children: "layer2"
     input {
-      target_mode: "N/A"
+      data_field: "samples"
     }
   }
   layer {
@@ -76,6 +77,8 @@ auto make_model(lbann::lbann_comm& comm, int class_n)
   lbann_data::LbannPB my_proto;
   if (!pb::TextFormat::ParseFromString(model_prototext, &my_proto))
     throw "Parsing protobuf failed.";
+  // Construct a trainer so that the model can register the input layer
+  lbann::construct_trainer(&comm, my_proto.mutable_trainer(), my_proto);
   auto metadata = mock_datareader_metadata(class_n);
   auto my_model = lbann::proto::construct_model(&comm,
                                                 -1,

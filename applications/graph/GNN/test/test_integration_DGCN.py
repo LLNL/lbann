@@ -24,7 +24,7 @@ import tools
 
 num_epochs = 30
 mini_batch_size = 64
-num_nodes = 2
+num_nodes = 1
 
 
 expected_accuracy_range = (64, 71)
@@ -53,11 +53,10 @@ def setup_experiment(lbann):
     
 
     
-    model = Dense_Graph_Trainer.make_model(dataset = 'PROTEINS',
-                                            kernel_type = 'GCN',
-                                            num_epochs = num_epochs,
-                                            callbacks = callbacks)
-    reader = data.PROTEINS.make_data_reader()
+    model = Dense_Graph_Trainer.make_model(kernel_type = 'GCN',
+                                           num_epochs = num_epochs,
+                                           callbacks = callbacks)
+    reader = data.PROTEINS.make_data_reader("Dense")
     
     # No validation set
 
@@ -93,9 +92,9 @@ def augment_test_func(test_func):
     test_name = test_func.__name__
 
     # Define test function
-    def func(cluster, exes, dirname):
+    def func(cluster, dirname):
         # Run LBANN experiment
-        experiment_output = test_func(cluster, exes, dirname)
+        experiment_output = test_func(cluster, dirname)
 
         # Parse LBANN log file
         train_accuracy = None

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -23,7 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// data_reader_numpy_npz .hpp .cpp - generic_data_reader class for numpy .npz dataset
+// data_reader_numpy_npz .hpp .cpp - generic_data_reader class for numpy .npz
+// dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_numpy_npz.hpp"
@@ -81,8 +82,14 @@ namespace lbann {
 
     std::vector<std::tuple<const bool, const std::string, cnpy::NpyArray &> > npyLoadList;
     npyLoadList.push_back(std::forward_as_tuple(true,            NPZ_KEY_DATA,      m_data));
-    npyLoadList.push_back(std::forward_as_tuple(m_supported_input_types[input_data_type::LABELS],    NPZ_KEY_LABELS,    m_labels));
-    npyLoadList.push_back(std::forward_as_tuple(m_supported_input_types[input_data_type::RESPONSES], NPZ_KEY_RESPONSES, m_responses));
+    npyLoadList.push_back(
+      std::forward_as_tuple(m_supported_input_types[INPUT_DATA_TYPE_LABELS],
+                            NPZ_KEY_LABELS,
+                            m_labels));
+    npyLoadList.push_back(
+      std::forward_as_tuple(m_supported_input_types[INPUT_DATA_TYPE_RESPONSES],
+                            NPZ_KEY_RESPONSES,
+                            m_responses));
     for(const auto& npyLoad : npyLoadList) {
       // Check whether the tensor have to be loaded.
       if(!std::get<0>(npyLoad)) {
@@ -114,7 +121,7 @@ namespace lbann {
                                      m_data.shape.end(),
                                      (unsigned) 1,
                                      std::multiplies<unsigned>());
-    if(m_supported_input_types[input_data_type::RESPONSES]) {
+    if (m_supported_input_types[INPUT_DATA_TYPE_RESPONSES]) {
       m_num_response_features = std::accumulate(m_responses.shape.begin() + 1,
                                                 m_responses.shape.end(),
                                                 (unsigned) 1,
@@ -127,7 +134,7 @@ namespace lbann {
                             " not supported");
     }
 
-    if (m_supported_input_types[input_data_type::LABELS]) {
+    if (m_supported_input_types[INPUT_DATA_TYPE_LABELS]) {
       // Determine number of label classes.
       std::unordered_set<int> label_classes;
       if (m_labels.word_size != 4) {
@@ -183,7 +190,7 @@ namespace lbann {
   }
 
   bool numpy_npz_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
-    if (!m_supported_input_types[input_data_type::LABELS]) {
+    if (!m_supported_input_types[INPUT_DATA_TYPE_LABELS]) {
       throw lbann_exception("numpy_npz_reader: do not have labels");
     }
     const int label = m_labels.data<int>()[data_id];
@@ -192,7 +199,7 @@ namespace lbann {
   }
 
   bool numpy_npz_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
-    if (!m_supported_input_types[input_data_type::RESPONSES]) {
+    if (!m_supported_input_types[INPUT_DATA_TYPE_RESPONSES]) {
       throw lbann_exception("numpy_npz_reader: do not have responses");
     }
 

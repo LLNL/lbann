@@ -45,7 +45,7 @@ vocab_size = dataset.corpus.vocab_size
 sequence_length = dataset.sample_dims()[0]
 
 # Input is a sequence of token IDs
-input_ = lbann.Identity(lbann.Input())
+input_ = lbann.Input(data_field='samples')
 input_slice = lbann.Slice(input_,
                           slice_points=str_list(range(sequence_length+1)))
 tokens_list = [lbann.Identity(input_slice) for _ in range(sequence_length)]
