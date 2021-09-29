@@ -65,27 +65,21 @@ public:
 
   void load() override;
 
-  /** @brief Called by fetch_data, fetch_label, fetch_response
-   *
-   * Note that 'which' is not confined to the three commonly used
-   * in lbann (datum, label, response); in general, it can be
-   * any pack field in the experiment schema: pack: <string>
-   */
-  bool fetch(data_field_type data_field, CPUMat& Y, int data_id, int mb_idx);
+  bool fetch_data_field(data_field_type data_field, CPUMat& Y, int data_id, int mb_idx) override;
 
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override
   {
-    return fetch("datum", X, data_id, mb_idx);
+    return fetch_data_field("datum", X, data_id, mb_idx);
   }
 
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override
   {
-    return fetch("response", Y, data_id, mb_idx);
+    return fetch_data_field("response", Y, data_id, mb_idx);
   }
 
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override
   {
-    return fetch("label", Y, data_id, mb_idx);
+    return fetch_data_field("label", Y, data_id, mb_idx);
   }
 
   /** @brief Sets the name of the yaml experiment file */
@@ -256,7 +250,7 @@ private:
   const std::vector<int> get_data_dims(std::string name = "") const;
 
   /** Returns the size of the requested field (datum, label, response, etc) */
-  int get_linearized_size(std::string const& name) const override;
+  int get_linearized_size(data_field_type const& data_field) const override;
 
   /** P_0 reads and bcasts the schema */
   void load_sample_schema(conduit::Schema& s);
@@ -338,6 +332,7 @@ private:
 
   /** Constructs m_data_dims_lookup_table and m_linearized_size_lookup_table */
   void construct_linearized_size_lookup_tables();
+  void construct_linearized_size_lookup_tables(conduit::Node& node);
 
   /** sanity check; call after adjust_metadata */
   void test_that_all_nodes_contain_metadata(conduit::Node& node);

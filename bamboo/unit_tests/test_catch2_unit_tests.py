@@ -53,4 +53,18 @@ def test_run_parallel_catch_tests(cluster, dirname):
     mpi_catch_args = [mpi_catch_exe, '-r', 'junit', '-o', mpi_output_file]
     output = sp.run(mpi_launch + mpi_catch_args)
     tools.assert_success(output.returncode, mpi_output_file)
-    
+
+def test_run_parallel_filesystem_catch_tests(cluster, dirname):
+    output_dir = os.path.join(dirname, 'bamboo', 'unit_tests')
+    build_dir = hack_find_spack_build_dir(dirname)
+    mpi_catch_exe = os.path.join(build_dir, 'unit_test', 'mpi-catch-tests')
+    if not os.path.exists(mpi_catch_exe):
+        print('Skip - executable not found')
+        pytest.skip('executable not found')
+    # Run the parallel tests
+    mpi_launch = get_system_mpi_launch(cluster)
+    mpi_output_file_name = 'mpi_filesystem_catch_tests_output-%s-rank=%%r-size=%%s.xml' % (cluster)
+    mpi_output_file = os.path.join(output_dir, mpi_output_file_name)
+    mpi_catch_args = [mpi_catch_exe, '"[filesystem]"', '-r', 'junit', '-o', mpi_output_file]
+    output = sp.run(mpi_launch + mpi_catch_args)
+    tools.assert_success(output.returncode, mpi_output_file)

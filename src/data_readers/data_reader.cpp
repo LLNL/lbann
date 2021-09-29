@@ -80,10 +80,6 @@ void generic_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io
 
   shuffle_indices();
 
-  m_thread_buffer.resize(num_io_threads, std::vector<char>());
-  for(int tid = 0; tid < num_io_threads; ++tid) {
-    m_thread_buffer[tid].resize(get_linearized_data_size());
-  }
   m_io_thread_pool = io_thread_pool;
 }
 
@@ -269,6 +265,22 @@ bool lbann::generic_data_reader::fetch_data_block(
         if (!valid) {
           LBANN_ERROR("invalid datum (index ", std::to_string(index), ")");
         }
+      }
+      else if (has_data_field(data_field)) {
+        if (buf == nullptr || buf->Height() == 0 || buf->Width() == 0) {
+          LBANN_ERROR(
+            "fetch_data_block function called with invalid buffer: h=",
+            buf->Height(),
+            " x ",
+            buf->Width());
+        }
+        valid = fetch_data_field(data_field, *buf, index, s);
+        if (!valid) {
+          LBANN_ERROR("invalid datum (index ", std::to_string(index), ") for field ", data_field);
+        }
+      }
+      else {
+        LBANN_ERROR("Unsupported data_field ", data_field);
       }
     }
   }
