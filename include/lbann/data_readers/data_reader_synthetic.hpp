@@ -62,12 +62,11 @@ class data_reader_synthetic : public generic_data_reader {
   void load() override;
 
   int get_linearized_size(data_field_type const& data_field) const override {
-    if (m_synthetic_data_fields.find(data_field) == m_synthetic_data_fields.end()) {
+    auto iter = m_synthetic_data_fields.find(data_field);
+    if (iter == end(m_synthetic_data_fields)) {
       LBANN_ERROR("Unknown data field ", data_field);
     }
-    auto&& dims = m_synthetic_data_fields.at(data_field);
-    return std::accumulate(dims.begin(), dims.end(), 1,
-                           std::multiplies<int>());
+    return get_linear_size(iter.second);
   }
 
   int get_linearized_data_size() const override {
