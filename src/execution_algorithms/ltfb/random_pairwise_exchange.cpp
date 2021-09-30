@@ -181,7 +181,9 @@ RandomPairwiseExchange::evaluate_model(model& m,
   m.mark_data_store_explicitly_loading(execution_mode::tournament);
 
   // Evaluate model on validation set
+  std::cout<<"Before eval\n";
   get_trainer().evaluate(&m, execution_mode::tournament);
+  std::cout<<"After eval\n";
 
   // Get metric values
   std::unordered_map<std::string, EvalType> metric_values;
@@ -192,6 +194,7 @@ RandomPairwiseExchange::evaluate_model(model& m,
         met->get_mean_value(execution_mode::tournament);
     }
   }
+  std::cout<<"Mean for metrics calculated\n";
   if (metric_values.size() != m_metrics.size()) {
     auto missing = set_diff(keys(m_metrics), keys(metric_values));
     LBANN_ERROR("Could not find metrics \"",
@@ -225,7 +228,7 @@ int RandomPairwiseExchange::get_partner_trainer(
   // can all communicate the same pairs without communication
   std::shuffle(trainers.begin(), trainers.end(), get_ltfb_generator());
 
-  if (comm.am_world_master()) { // Root process
+  if (comm.am_world_master() or true) { // Root process
     auto const& arg_parser = global_argument_parser();
     bool const multitrainer_verbose =
       arg_parser.get<bool>(LBANN_OPTION_MULTITRAINER_VERBOSE);
@@ -251,6 +254,7 @@ int RandomPairwiseExchange::get_partner_trainer(
       }
     }
     msg << "\n";
+    std::cout<<msg.str()<<"\n";
     LBANN_LOG_WORLD_MASTER(comm, msg.str());
   }
 
@@ -304,16 +308,19 @@ void RandomPairwiseExchange::select_next(model& m,
   int const partner_trainer = get_partner_trainer(comm);
 
   LBANN_LOG_WORLD_MASTER(comm, message_prefix, "evaluating local model...");
+  std::cout<<"evaluating model my now\n"<< std::flush;
 
   auto const local_scores = evaluate_model(m, ctxt, dc);
 
   LBANN_LOG_WORLD_MASTER(comm, message_prefix, "exchanging model data...");
+  std::cout<<"ExchangeStrategy model my now\n"<< std::flush;
 
   // The "local_model" is passed in here to accommodate the
   // "sendrecv_weights" strategy; other than that, I don't think it
   // should be necessary.
   auto partner_model =
     m_comm_algo->get_partner_model(m, partner_trainer, ctxt.get_step());
+    std::cout<<"After ExchangeStrategy model my now\n"<< std::flush;
 
   LBANN_LOG_WORLD_MASTER(comm, message_prefix, "evaluating partner model...");
 

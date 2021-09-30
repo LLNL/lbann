@@ -85,7 +85,8 @@ public:
     std::vector<std::string> disable_layers,
     double learning_rate_factor,
     double learning_rate_factor_gru,
-    size_t compute_interval);
+    size_t compute_interval,
+    bool distribute_precondition_compute);
 
   ~KFAC() noexcept = default;
   KFAC(KFAC const& other) = delete;
@@ -205,6 +206,7 @@ private:
 
   void start_old_async_weights_model(model& model, lbann_comm *comm,ExeContextType& context);
   void end_old_async_weights_model(model& model, lbann_comm *comm,ExeContextType& context);
+  void allgather_precondition_gradient(lbann_comm& comm,ExeContextType& context);
 
   /** @brief The KFAC stopping criteria. */
   std::unique_ptr<TermCriteriaType> m_stopping_criteria;
@@ -248,7 +250,12 @@ private:
 
   /** @brief Whether inverse of Kronecker factors are available. */
   bool m_has_kronecker_inverse=false;
+
+  /** @brief KFAC Compute interval. */
   size_t m_compute_interval;
+
+  /** @brief distribute precondition gradient compute. */
+  bool m_distribute_precondition_compute;
 
   El::Matrix<double, El::Device::CPU> m_inverse_matrices_size;
 

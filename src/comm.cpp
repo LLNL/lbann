@@ -164,7 +164,7 @@ void lbann_comm::split_trainer_grid(
     return ;
   }
 
-
+  std::cout<<"Rank:"<<m_rank_in_trainer<<" split trainer grid\n"<< std::flush;
   int num_process_secondary_grid = world_size - num_process_primary_grid;
 
 

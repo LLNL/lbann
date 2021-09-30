@@ -186,4 +186,6 @@ message KFAC {
 
   int64 compute_interval = 18; // default:1
 
+  bool distribute_precondition_compute = 19; // default: false
+
 }//message KFAC
