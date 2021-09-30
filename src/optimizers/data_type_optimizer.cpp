@@ -143,7 +143,7 @@ void data_type_optimizer<TensorDataType>::setup_base(WeightsType* w) {
 }
 
 template <typename TensorDataType>
-TensorDataType data_type_optimizer<TensorDataType>::get_learning_rate() const {
+double data_type_optimizer<TensorDataType>::get_learning_rate() const {
   return m_learning_rate;
 }
 

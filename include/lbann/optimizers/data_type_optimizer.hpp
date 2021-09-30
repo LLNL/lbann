@@ -105,7 +105,7 @@ public:
   ///@}
 
   /** @brief Access the scaling factor for optimization step sizes. */
-  TensorDataType get_learning_rate() const;
+  double get_learning_rate() const final;
   /** @brief Set the scaling factor for optimization step sizes. */
   void set_learning_rate(TensorDataType learning_rate);
 
@@ -166,7 +166,7 @@ private:
    *
    *  @todo Consider moving this to the derived classes.
    */
-  TensorDataType m_learning_rate;
+  double m_learning_rate;
 };
 
 #ifndef LBANN_DATA_TYPE_OPTIMIZER_INSTANTIATE

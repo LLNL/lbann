@@ -92,6 +92,8 @@ public:
   /** @brief Human-readable description. */
   virtual description get_description() const;
 
+  virtual double get_learning_rate() const = 0;
+
   /** @name Gradient update management */
   ///@{
 
