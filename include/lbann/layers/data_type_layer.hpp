@@ -289,7 +289,6 @@ protected:
   void setup_inter_subgrid_comm_based_on_childs(const El::Grid& grid);
   void setup_inter_subgrid_comm_based_on_parents(const El::Grid& grid);
 
-
 private:
 
   /** @brief Attempt to take ownership of the previous error signal.
