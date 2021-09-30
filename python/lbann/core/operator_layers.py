@@ -39,9 +39,18 @@ def generate_operator_layer(operator_class):
         layer_kwargs['ops'] = [ operator_class(**op_kwargs) ]
         OperatorLayer.__init__(self, *args, **layer_kwargs)
 
+    def export_proto(self):
+        """Construct and return a protobuf message."""
+        if (self.datatype is None):
+            self.datatype = 0 # Use the default value.
+        for o in self.ops:
+            o.input_type = self.datatype
+            o.output_type = self.datatype
+        return OperatorLayer.export_proto(self)
+
     # Return operator layer class
     class_name = operator_class.__name__
-    class_dict = {'__init__': __init__}
+    class_dict = {'__init__': __init__, 'export_proto': export_proto}
     return type(class_name, (OperatorLayer,), class_dict)
 
 def is_operator_class(obj):
