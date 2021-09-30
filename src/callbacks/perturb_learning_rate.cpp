@@ -71,7 +71,7 @@ void perturb_learning_rate::setup(model* m) {
 
 void perturb_learning_rate::on_batch_begin(model* m) {
   const auto& c = m->get_execution_context();
-  if (m_perturb_during_training && 
+  if (m_perturb_during_training &&
       c.get_step() % m_batch_interval == 0 &&
       c.get_step() > 0) {
     perturb(*m);
@@ -124,7 +124,7 @@ void perturb_learning_rate::perturb(lbann_comm& comm, data_type_optimizer<DataTy
     std::normal_distribution<DataType> dist(zero, one);
 
     // Perturb log(learning_rate)
-    auto learning_rate = opt.get_learning_rate();
+    DataType learning_rate = opt.get_learning_rate();
     if (m_learning_rate_factor != zero && learning_rate >= zero) {
       auto log_val = std::log(std::max(learning_rate, min_val));
       log_val += m_learning_rate_factor * dist(gen);
@@ -137,7 +137,7 @@ void perturb_learning_rate::perturb(lbann_comm& comm, data_type_optimizer<DataTy
   // Communicate new lr  from trainer master processes
   comm.trainer_broadcast(comm.get_trainer_master(),new_lr);
 
-  // Workers update new lr 
+  // Workers update new lr
   opt.set_learning_rate(new_lr);
 
 }

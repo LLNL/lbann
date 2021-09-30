@@ -106,7 +106,7 @@ public:
   /** @brief Access the scaling factor for optimization step sizes. */
   double get_learning_rate() const final;
   /** @brief Set the scaling factor for optimization step sizes. */
-  void set_learning_rate(TensorDataType learning_rate);
+  void set_learning_rate(double learning_rate) override;
 
   /** @name Checkpointing functionality */
   ///@{

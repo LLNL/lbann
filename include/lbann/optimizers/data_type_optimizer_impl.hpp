@@ -27,6 +27,7 @@
 #ifndef LBANN_OPTIMIZERS_DATA_TYPE_OPTIMIZER_IMPL_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_DATA_TYPE_OPTIMIZER_IMPL_HPP_INCLUDED
 
+#include "lbann/weights/data_type_weights.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/timer.hpp"
 
@@ -163,7 +164,7 @@ double data_type_optimizer<TensorDataType>::get_learning_rate() const
 
 template <typename TensorDataType>
 void data_type_optimizer<TensorDataType>::set_learning_rate(
-  TensorDataType learning_rate)
+  double learning_rate)
 {
   m_learning_rate = learning_rate;
 }
