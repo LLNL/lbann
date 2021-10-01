@@ -128,8 +128,8 @@ void hypergradient_adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
 
   // Compute the learning rate update.
   TensorDataType lr_update = El::Dot(gradient, *m_old_gradient);
-  auto learning_rate = this->get_learning_rate();
-  learning_rate += m_hyper_learning_rate * lr_update;
+  auto const learning_rate = El::To<TensorDataType>(this->get_learning_rate()) +
+                             m_hyper_learning_rate * lr_update;
   this->set_learning_rate(learning_rate);
 
   // Hypergradient Adam step

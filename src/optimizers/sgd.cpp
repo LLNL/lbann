@@ -121,7 +121,7 @@ void sgd<TensorDataType>::momentum_step_cpu(AbsDistMatrixType& values,
                                             const AbsDistMatrixType& gradient) {
 
   // Get local matrix data
-  const auto& learning_rate = this->get_learning_rate();
+  const auto learning_rate = El::To<TensorDataType>(this->get_learning_rate());
   const size_t local_height = values.LocalHeight();
   const size_t local_width = values.LocalWidth();
   auto* __restrict__ values_buffer = values.Buffer();
