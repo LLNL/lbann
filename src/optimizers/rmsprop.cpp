@@ -101,7 +101,7 @@ void rmsprop<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
   const size_t cache_ldim = m_cache->LDim();
 
   // Apply RMSprop step
-  const auto& learning_rate = this->get_learning_rate();
+  const auto learning_rate = El::To<TensorDataType>(this->get_learning_rate());
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (size_t col = 0; col < local_width; ++col) {
     for (size_t row = 0; row < local_height; ++row) {

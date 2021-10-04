@@ -71,8 +71,7 @@ void learning_rate::setup(model *m) {
       m_weights.insert(w);
       // Initialize the global learning rate, exactly once.
       if (m_cur_global_lr == 0.0f) {
-        m_cur_global_lr =
-          dynamic_cast<data_type_optimizer<DataType>*>(w->get_optimizer())->get_learning_rate();
+        m_cur_global_lr = w->get_optimizer()->get_learning_rate();
       }
     }
   }
@@ -91,7 +90,7 @@ void learning_rate::on_epoch_end(model *m) {
               << " at epoch " << c.get_epoch() << std::endl;
   }
   for (weights* w : this->get_weights()) {
-    auto *opt = dynamic_cast<data_type_optimizer<DataType>*>(w->get_optimizer());
+    auto *opt = w->get_optimizer();
     const float old_lr = opt->get_learning_rate();
     if (old_lr != new_lr) {
       opt->set_learning_rate(new_lr);
@@ -101,7 +100,7 @@ void learning_rate::on_epoch_end(model *m) {
 
 void learning_rate::on_backward_prop_end(model *m) {
   for (weights *w : this->get_weights()) {
-    auto &opt = dynamic_cast<data_type_optimizer<DataType>&>(*w->get_optimizer());
+    auto &opt = *w->get_optimizer();
     const float old_lr = opt.get_learning_rate();
     const float new_lr = optimizer_schedule(m, opt);
     if (old_lr != new_lr) {
@@ -111,7 +110,7 @@ void learning_rate::on_backward_prop_end(model *m) {
 }
 
 float learning_rate::optimizer_schedule(model *m, optimizer &opt) {
-  return dynamic_cast<data_type_optimizer<DataType>&>(opt).get_learning_rate();
+  return opt.get_learning_rate();
 }
 
 step_learning_rate::step_learning_rate(

@@ -135,7 +135,7 @@ void perturb_adam::perturb(lbann_comm& comm, adam<DataType>& opt) const {
     std::normal_distribution<DataType> dist(zero, one);
 
     // Perturb log(learning_rate)
-    auto learning_rate = opt.get_learning_rate();
+    DataType learning_rate = opt.get_learning_rate();
     if (m_learning_rate_factor != zero && learning_rate >= zero) {
       auto log_val = std::log(std::max(learning_rate, min_val));
       log_val += m_learning_rate_factor * dist(gen);

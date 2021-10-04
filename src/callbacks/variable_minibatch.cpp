@@ -136,10 +136,9 @@ void variable_minibatch::on_epoch_end(model *m) {
 void variable_minibatch::change_learning_rate(
   model *m, float new_lr) const {
   for (weights *w : m->get_weights()) {
-    optimizer *opt = w->get_optimizer();
-    if (opt != nullptr) {
-      auto* dt_opt = dynamic_cast<data_type_optimizer<DataType>*>(opt);
-      dt_opt->set_learning_rate(new_lr);
+    if (optimizer *opt = w->get_optimizer()) {
+      auto& dt_opt = dynamic_cast<data_type_optimizer<DataType>&>(*opt);
+      dt_opt.set_learning_rate(new_lr);
     }
   }
 }
@@ -147,10 +146,9 @@ void variable_minibatch::change_learning_rate(
 float variable_minibatch::get_current_learning_rate(
   model *m) const {
   for (weights *w : m->get_weights()) {
-    optimizer *opt = w->get_optimizer();
-    if (opt != nullptr) {
-      auto* dt_opt = dynamic_cast<data_type_optimizer<DataType>*>(opt);
-      return dt_opt->get_learning_rate();
+    if (optimizer *opt = w->get_optimizer()) {
+      auto& dt_opt = dynamic_cast<data_type_optimizer<DataType> const&>(*opt);
+      return dt_opt.get_learning_rate();
     }
   }
   return 0.0f;
