@@ -59,11 +59,6 @@ public:
                        metric_strategy winner_strategy,
                        std::unique_ptr<MutationStrategy> mutate_algo,
                        int sample_size);
-
-  RegularizedEvolution(std::unordered_map<std::string, metric_strategy> metrics,
-                       std::unique_ptr<MutationStrategy> mutate_algo,
-                       int sample_size);
-
   ~RegularizedEvolution() = default;
   RegularizedEvolution(RegularizedEvolution const& other);
 
@@ -77,14 +72,14 @@ private:
   evaluate_model(model& m, ExecutionContext& ctxt, data_coordinator& dc) const;
 
 private:
-  /** @brief The list of metric/strategy pairs.
-   *
-   *  Each metric gets its own strategy.
-   *  Note, only one metric and strategy pair is currently supported.
-   *  List (map) is for compatibility with classic LTFB (RPE)
-   *  And as a placeholder for when multiple metrics are needed.
+  /** @brief Name of the metric for evaluation
    */
-  std::unordered_map<std::string, metric_strategy> m_metrics;
+  std::string m_metric_name;
+
+  /** @brief Strategy to consider for evaluating the metric
+   *  e.g., HIGHER_IS_BETTER or LOWER_IS_BETTER
+   */
+  metric_strategy m_metric_strategy;
 
   /** @brief The strategy for mutation of a model
    *

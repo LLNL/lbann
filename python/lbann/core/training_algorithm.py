@@ -410,11 +410,13 @@ class RegularizedEvolution(MetaLearningStrategy):
         HIGHER_IS_BETTER: int = 1
 
     def __init__(self,
-                 metric_strategies: dict[str,int] = {},
+                 metric_name,
+                 metric_strategy,
                  mutation_strategy = MutationStrategy(),
                  sample_size = 0):
         
-        self.metric_strategies = metric_strategies
+        self.metric_name = metric_name
+        self.metric_strategy = metric_strategy
         self.mutation_strategy = mutation_strategy
         self.sample_size = sample_size
 
@@ -422,9 +424,9 @@ class RegularizedEvolution(MetaLearningStrategy):
         """Get a protobuf representation of this object."""
 
         msg = AlgoProto.RegularizedEvolution()
-        for key, value in self.metric_strategies.items():
-            msg.metric_name_strategy_map[key] = value
 
+        msg.metric_name = self.metric_name
+        msg.metric_strategy = self.metric_strategy
         msg.mutation_strategy.CopyFrom(self.mutation_strategy.export_proto())
         msg.sample_size = self.sample_size
         return msg 
