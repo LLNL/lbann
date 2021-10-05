@@ -28,6 +28,8 @@
 
 #include "lbann/execution_algorithms/ltfb/regularized_evolution.hpp"
 
+#include "checkpoint_common.hpp"
+
 #include "lbann/base.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
@@ -51,54 +53,6 @@
 
 namespace lbann {
 namespace ltfb {
-namespace {
-
-// Pack model to ship off
-std::string pack(model const& m)
-{
-  std::ostringstream oss;
-  {
-    RootedBinaryOutputArchive ar(oss, m.get_comm()->get_trainer_grid());
-    ar(m);
-  }
-  return oss.str();
-}
-
-// Send a string to the root of the destination trainer
-void send_string(lbann_comm const& comm,
-                 std::string const& str,
-                 int destination_trainer)
-{
-  size_t size = str.length();
-  comm.send(&size, 1, destination_trainer, /*rank=*/0);
-  comm.send(reinterpret_cast<El::byte const*>(str.data()),
-            size,
-            destination_trainer,
-            /*rank=*/0);
-}
-
-// Receive a string from the root of src_trainer
-std::string recv_string(lbann_comm const& comm, int src_trainer)
-{
-  size_t size = 0;
-  comm.recv(&size, 1, src_trainer);
-  std::string buf;
-  buf.resize(size);
-  comm.recv(reinterpret_cast<El::byte*>(buf.data()), size, src_trainer);
-  return buf;
-}
-
-// Unpack received model
-void unpack(model& m, std::string const& str)
-{
-  std::istringstream iss(str);
-  {
-    RootedBinaryInputArchive ar(iss, m.get_comm()->get_trainer_grid());
-    ar(m);
-  }
-}
-
-} // namespace
 
 // RegularizedEvolution Implementation
 
@@ -194,47 +148,59 @@ void RegularizedEvolution::select_next(model& m,
     // Print trainers selected in sample
     std::cout << "Trainers in sample at step " << step << " -";
     for (int i = 0; i < m_sample_size; i++)
-       std::cout << " " << sample_trainers[i];
+      std::cout << " " << sample_trainers[i];
     std::cout << std::endl;
   }
   comm.world_broadcast(comm.get_world_master(),
                        sample_trainers.data(),
                        num_trainers);
 
-  // If rank within sample, send score. Otherwise force score to 0 to indicate that trainer
-  // is not participating in tournament
-  auto it =
-    std::find(sample_trainers.begin(), sample_trainers.end(), trainer_id);
-
   El::Int score = evaluate_model(m, ctxt, dc);
-  // If not in sample, force score to 0
-  if (std::distance(sample_trainers.begin(), it) >= m_sample_size) {
-    score = 0;
-  }
 
-  std::vector<EvalType> score_list(num_trainers);
+  // AllGather scores from all trainers
+  std::vector<EvalType> score_list_all(num_trainers);
   comm.trainer_barrier();
   if (comm.am_trainer_master()) {
-    comm.all_gather<EvalType>(score, score_list, comm.get_intertrainer_comm());
+    comm.all_gather<EvalType>(score,
+                              score_list_all,
+                              comm.get_intertrainer_comm());
   }
-  // Communicate trainer score list from trainer master to other procs in
+
+  // Use scores only for samples selected from sample_trainers above
+  // and place them in the same order as in sample_trainers
+  std::vector<EvalType> score_list_samples(m_sample_size);
+  for (int i = 0; i < m_sample_size; i++) {
+    score_list_samples[i] = score_list_all[sample_trainers[i]];
+  }
+
+  // Communicate sample score list from trainer master to other procs in
   // trainer
   comm.trainer_broadcast(comm.get_trainer_master(),
-                         score_list.data(),
-                         num_trainers);
+                         score_list_samples.data(),
+                         m_sample_size);
 
-  // Find winning trainer (in sample)
-  El::Int winner_id =
-    std::distance(score_list.begin(),
-                  std::max_element(score_list.begin(), score_list.end()));
+  // Find winning trainer in sample according to metric strategy
+  El::Int winner_id;
+  if (m_metric_strategy ==
+      RegularizedEvolution::metric_strategy::HIGHER_IS_BETTER)
+    winner_id = sample_trainers[std::distance(
+      score_list_samples.begin(),
+      std::max_element(score_list_samples.begin(), score_list_samples.end()))];
+  else if (m_metric_strategy ==
+           RegularizedEvolution::metric_strategy::LOWER_IS_BETTER)
+    winner_id = sample_trainers[std::distance(
+      score_list_samples.begin(),
+      std::min_element(score_list_samples.begin(), score_list_samples.end()))];
+  else
+    LBANN_ERROR("Invalid metric strategy!");
 
   // Find oldest trainer - cycle through trainer ids
   El::Int oldest_id = step % num_trainers;
 
   // Print winning and oldest model
   if (comm.am_world_master()) {
-  std::cout << "Winner - " << winner_id << ", Oldest - " << oldest_id
-            << std::endl;
+    std::cout << "Winner - " << winner_id << ", Oldest - " << oldest_id
+              << std::endl;
   }
 
   if (trainer_id == winner_id) {
@@ -244,7 +210,7 @@ void RegularizedEvolution::select_next(model& m,
       if (comm.am_trainer_master()) {
         send_string(comm, model_string, oldest_id);
         std::cout << "In Reg Evo step " << step << ", trainer " << trainer_id
-                  << " with score " << score_list[trainer_id];
+                  << " with score " << score_list_all[trainer_id];
         std::cout << " sends model to trainer " << oldest_id << std::endl;
       }
     }

@@ -138,7 +138,6 @@ message RegularizedEvolution {
     HIGHER_IS_BETTER = 1;
   }
 
-  //map<string, MetricStrategy> metric_name_strategy_map = 1;
   string metric_name = 1;
   MetricStrategy metric_strategy = 2;
   MutationStrategy mutation_strategy = 3;

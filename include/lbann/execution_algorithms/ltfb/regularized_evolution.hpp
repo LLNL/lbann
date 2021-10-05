@@ -41,7 +41,11 @@ namespace lbann {
 namespace ltfb {
 
 /** @class RegularizedEvolution
- *  INSERT DESC HERE
+ *  This is a meta-learning strategy in population-based training.
+ *  A sample of trainers is chosen from a population in every tournament.
+ *  The best trainer is chosen from that sample according to an evaluation
+ * metric. Then the model from that best trainer is mutated and replaces the
+ * oldest model.
  */
 
 class RegularizedEvolution final
