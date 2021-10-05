@@ -30,8 +30,8 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/proto/helpers.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/memory.hpp"
 #include "lbann/utils/factory.hpp"
+#include "lbann/utils/memory.hpp"
 
 #include <training_algorithm.pb.h>
 
@@ -326,7 +326,8 @@ void ReplaceConvolution::mutate(model& m, const int& step)
 
 void HybridMutation::mutate(model& m, const int& step)
 {
-  // Generate a random number to alternate between ReplaceActivation and ReplaceConvolution
+  // Generate a random number to alternate between ReplaceActivation and
+  // ReplaceConvolution
   int mutation_choice; // 0 - ReplaceActivation, 1 - ReplaceConvolution
 
   if (m.get_comm()->am_trainer_master()) {
@@ -340,7 +341,7 @@ void HybridMutation::mutate(model& m, const int& step)
   }
   else {
     ReplaceConvolution().mutate(m, step);
-  }    
+  }
 }
 
 } // namespace ltfb
@@ -356,7 +357,7 @@ using MutationStrategyFactory = lbann::generic_factory<
 
 std::unique_ptr<lbann::ltfb::NullMutation>
 make_null_mutation(google::protobuf::Message const& msg)
-{ 
+{
   using NullMutation = lbann_data::MutationStrategy::NullMutation;
   LBANN_ASSERT(dynamic_cast<NullMutation const*>(&msg));
   return std::make_unique<lbann::ltfb::NullMutation>();
@@ -364,7 +365,7 @@ make_null_mutation(google::protobuf::Message const& msg)
 
 std::unique_ptr<lbann::ltfb::ReplaceActivation>
 make_replace_activation(google::protobuf::Message const& msg)
-{ 
+{
   using ReplaceActivation = lbann_data::MutationStrategy::ReplaceActivation;
   LBANN_ASSERT(dynamic_cast<ReplaceActivation const*>(&msg));
   return std::make_unique<lbann::ltfb::ReplaceActivation>();
@@ -372,7 +373,7 @@ make_replace_activation(google::protobuf::Message const& msg)
 
 std::unique_ptr<lbann::ltfb::ReplaceConvolution>
 make_replace_convolution(google::protobuf::Message const& msg)
-{ 
+{
   using ReplaceConvolution = lbann_data::MutationStrategy::ReplaceConvolution;
   LBANN_ASSERT(dynamic_cast<ReplaceConvolution const*>(&msg));
   return std::make_unique<lbann::ltfb::ReplaceConvolution>();
@@ -380,7 +381,7 @@ make_replace_convolution(google::protobuf::Message const& msg)
 
 std::unique_ptr<lbann::ltfb::HybridMutation>
 make_hybrid_mutation(google::protobuf::Message const& msg)
-{ 
+{
   using HybridMutation = lbann_data::MutationStrategy::HybridMutation;
   LBANN_ASSERT(dynamic_cast<HybridMutation const*>(&msg));
   return std::make_unique<lbann::ltfb::HybridMutation>();

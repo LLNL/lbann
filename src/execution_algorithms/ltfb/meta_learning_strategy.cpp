@@ -25,8 +25,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "lbann/execution_algorithms/ltfb/meta_learning_strategy.hpp"
 #include "lbann/execution_algorithms/ltfb/random_pairwise_exchange.hpp"
-#include "lbann/execution_algorithms/ltfb/truncation_selection_exchange.hpp"
 #include "lbann/execution_algorithms/ltfb/regularized_evolution.hpp"
+#include "lbann/execution_algorithms/ltfb/truncation_selection_exchange.hpp"
 #include "lbann/proto/helpers.hpp"
 #include "lbann/utils/make_abstract.hpp"
 
