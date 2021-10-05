@@ -426,61 +426,6 @@ ExchangeStrategyFactory& get_exchange_factory()
   return factory;
 }
 
-using MutationStrategyFactory = lbann::generic_factory<
-  lbann::ltfb::MutationStrategy,
-  std::string,
-  lbann::proto::generate_builder_type<
-    lbann::ltfb::MutationStrategy,
-    google::protobuf::Message const&>>;
-
-std::unique_ptr<lbann::ltfb::NullMutation>
-make_null_mutation(google::protobuf::Message const& msg)
-{
-  using NullMutation = lbann_data::MutationStrategy::NullMutation;
-  LBANN_ASSERT(dynamic_cast<NullMutation const*>(&msg));
-  return std::make_unique<lbann::ltfb::NullMutation>();
-}
-
-std::unique_ptr<lbann::ltfb::ReplaceActivation>
-make_replace_activation(google::protobuf::Message const& msg)
-{
-  using ReplaceActivation = lbann_data::MutationStrategy::ReplaceActivation;
-  LBANN_ASSERT(dynamic_cast<ReplaceActivation const*>(&msg));
-  return std::make_unique<lbann::ltfb::ReplaceActivation>();
-}
-
-std::unique_ptr<lbann::ltfb::ReplaceConvolution>
-make_replace_convolution(google::protobuf::Message const& msg)
-{
-  using ReplaceConvolution = lbann_data::MutationStrategy::ReplaceConvolution;
-  LBANN_ASSERT(dynamic_cast<ReplaceConvolution const*>(&msg));
-  return std::make_unique<lbann::ltfb::ReplaceConvolution>();
-}
-
-std::unique_ptr<lbann::ltfb::HybridMutation>
-make_hybrid_mutation(google::protobuf::Message const& msg)
-{
-  using HybridMutation = lbann_data::MutationStrategy::HybridMutation;
-  LBANN_ASSERT(dynamic_cast<HybridMutation const*>(&msg));
-  return std::make_unique<lbann::ltfb::HybridMutation>();
-}
-
-MutationStrategyFactory build_default_mutation_factory()
-{
-  MutationStrategyFactory factory;
-  factory.register_builder("NullMutation", make_null_mutation);
-  factory.register_builder("ReplaceActivation", make_replace_activation);
-  factory.register_builder("ReplaceConvolution", make_replace_convolution);
-  factory.register_builder("HybridMutation", make_hybrid_mutation);
-  return factory;
-}
-
-MutationStrategyFactory& get_mutation_factory()
-{
-  static MutationStrategyFactory factory = build_default_mutation_factory();
-  return factory;
-}
-
 } // namespace
 
 // For ExchangeStrategy
@@ -505,25 +450,6 @@ lbann::make_abstract<lbann::ltfb::RandomPairwiseExchange::ExchangeStrategy>(
     exchange_params);
 }
 
-<<<<<<< HEAD
-// For MutationStrategy
-template <>
-std::unique_ptr<lbann::ltfb::MutationStrategy>
-lbann::make_abstract<lbann::ltfb::MutationStrategy>(
-  const google::protobuf::Message& msg)
-{
-  using ProtoStrategy = lbann_data::MutationStrategy;
-  auto const& params = dynamic_cast<ProtoStrategy const&>(msg);
-
-  auto const& mutate_params =
-    proto::helpers::get_oneof_message(params, "strategy");
-  return get_mutation_factory().create_object(
-    proto::helpers::message_type(mutate_params),
-    mutate_params);
-}
-
-=======
->>>>>>> b953e889a (refactoring MutationStrategy factory methods - build failing)
 template <>
 std::unique_ptr<lbann::ltfb::RandomPairwiseExchange>
 lbann::make<lbann::ltfb::RandomPairwiseExchange>(

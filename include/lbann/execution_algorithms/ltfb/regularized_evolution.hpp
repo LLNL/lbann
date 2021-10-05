@@ -76,15 +76,6 @@ private:
   evaluate_model(model& m, ExecutionContext& ctxt, data_coordinator& dc) const;
 
 private:
-  /** @brief Name of the metric for evaluation
-   */
-  std::string m_metric_name;
-
-  /** @brief Strategy to consider for evaluating the metric
-   *  e.g., HIGHER_IS_BETTER or LOWER_IS_BETTER
-   */
-  metric_strategy m_metric_strategy;
-
   /** @brief The strategy for mutation of a model
    *
    *  When a trainer loses in a LTFB tournament, the winning model is
@@ -93,6 +84,15 @@ private:
    *  architecture search (NAS).
    */
   std::unique_ptr<MutationStrategy> m_mutate_algo;
+
+  /** @brief Name of the metric for evaluation
+   */
+  std::string m_metric_name;
+
+  /** @brief Strategy to consider for evaluating the metric
+   *  e.g., HIGHER_IS_BETTER or LOWER_IS_BETTER
+   */
+  metric_strategy m_metric_strategy;
 
   /** @brief The size of the sample to choose from the population in every step
    */

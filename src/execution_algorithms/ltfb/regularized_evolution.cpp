@@ -61,16 +61,16 @@ RegularizedEvolution::RegularizedEvolution(
   metric_strategy winner_strategy,
   std::unique_ptr<MutationStrategy> mutate_algo,
   int sample_size)
-  : m_metric_name{std::move(metric_name)},
+  : m_mutate_algo{std::move(mutate_algo)},
+    m_metric_name{std::move(metric_name)},
     m_metric_strategy{std::move(winner_strategy)},
-    m_mutate_algo{std::move(mutate_algo)},
     m_sample_size{std::move(sample_size)}
 {}
 
 RegularizedEvolution::RegularizedEvolution(RegularizedEvolution const& other)
-  : m_metric_name{other.m_metric_name},
+  : m_mutate_algo{other.m_mutate_algo->clone()},
+    m_metric_name{other.m_metric_name},
     m_metric_strategy{other.m_metric_strategy},
-    m_mutate_algo{other.m_mutate_algo->clone()},
     m_sample_size{other.m_sample_size}
 {}
 
@@ -105,7 +105,7 @@ EvalType RegularizedEvolution::evaluate_model(model& m,
     metric_name = met->name();
     if (metric_name == m_metric_name) {
       found_metric = true;
-      score += met->get_mean_value(execution_mode::tournament);
+      score = met->get_mean_value(execution_mode::tournament);
       break;
     }
   }
@@ -113,7 +113,7 @@ EvalType RegularizedEvolution::evaluate_model(model& m,
   // sanity check
   if (!found_metric) {
     LBANN_ERROR("could not find metric \"",
-                metric_name,
+                m_metric_name,
                 "\" "
                 "in model \"",
                 m.get_name(),
@@ -137,10 +137,9 @@ void RegularizedEvolution::select_next(model& m,
   const int trainer_id = comm.get_trainer_rank();
   auto const step = ctxt.get_step();
 
-  std::vector<EvalType> sample_trainers(num_trainers);
+  std::vector<unsigned> sample_trainers(num_trainers);
   if (comm.am_world_master()) {
-    for (unsigned int i = 0; i < num_trainers; i++)
-      sample_trainers[i] = i;
+    std::iota(begin(sample_trainers), end(sample_trainers), 0U);
     std::shuffle(sample_trainers.begin(),
                  sample_trainers.end(),
                  get_ltfb_generator());
@@ -210,8 +209,8 @@ void RegularizedEvolution::select_next(model& m,
       if (comm.am_trainer_master()) {
         send_string(comm, model_string, oldest_id);
         std::cout << "In Reg Evo step " << step << ", trainer " << trainer_id
-                  << " with score " << score_list_all[trainer_id];
-        std::cout << " sends model to trainer " << oldest_id << std::endl;
+                  << " with score " << score_list_all[trainer_id]
+                  << " sends model to trainer " << oldest_id << std::endl;
       }
     }
   }
@@ -222,8 +221,8 @@ void RegularizedEvolution::select_next(model& m,
       std::string rcv_str;
       if (comm.am_trainer_master()) {
         rcv_str = recv_string(comm, winner_id);
-        std::cout << "In Reg Evo step " << step << ", trainer " << trainer_id;
-        std::cout << " receives model from trainer " << winner_id << std::endl;
+        std::cout << "In Reg Evo step " << step << ", trainer " << trainer_id
+                  << " receives model from trainer " << winner_id << std::endl;
       }
 
       unpack(m, rcv_str);
