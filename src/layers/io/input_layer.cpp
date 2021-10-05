@@ -154,6 +154,30 @@ get_data_dims(DataReaderMetaData& dr_metadata, int child_index) const {
   return std::vector<int>(1, 0);
 }
 
+#ifdef LBANN_HAS_ONNX
+template <typename T, data_layout L, El::Device D>
+void input_layer<T,L,D>::fill_onnx_node(onnx::GraphProto& graph) const
+{
+  auto child_layers = this->get_child_layers();
+  for (auto const* child : this->get_child_layers()) {
+    auto idx = this->find_child_layer_index(*child);
+    auto* input = graph.add_input();
+    input->set_name(this->get_name() + "_" + std::to_string(idx));
+    auto* input_type = input->mutable_type();
+    // FIXME: enum type. 1 is float. Get TensorDataType?
+    input_type->mutable_tensor_type()->set_elem_type(1);
+
+    auto* dims = input_type->mutable_tensor_type()->mutable_shape()->add_dim();
+    dims->set_dim_param("batch");
+    for (auto const& dim : this->get_output_dims(idx)) {
+      dims = input_type->mutable_tensor_type()->mutable_shape()->add_dim();
+      dims->set_dim_value(dim);
+    }
+    input->set_doc_string("Input layer info");
+  }
+}
+#endif // LBANN_HAS_ONNX
+
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
