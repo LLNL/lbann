@@ -146,10 +146,10 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(data_buffer
 
     // Compute the size of the current mini-batch
 
-    int loaded_batch_size = data_reader->get_loaded_mini_batch_size();
-    const int end_pos = std::min(static_cast<size_t>(data_reader->m_current_pos+loaded_batch_size), data_reader->m_shuffled_indices.size());
-    const int mb_size = std::min(El::Int{((end_pos - data_reader->m_current_pos) + data_reader->m_sample_stride - 1) / data_reader->m_sample_stride},
-                                 local_input_buffers[input_data_type::SAMPLES]->Width());
+    int loaded_batch_size = dr->get_loaded_mini_batch_size();
+    const int end_pos = std::min(static_cast<size_t>(dr->m_current_pos+loaded_batch_size), dr->m_shuffled_indices.size());
+    const int mb_size = std::min(El::Int{((end_pos - dr->m_current_pos) + dr->m_sample_stride - 1) / dr->m_sample_stride},
+                                 local_input_buffers[INPUT_DATA_TYPE_SAMPLES]->Width());
 
     /** @brief Each rank will fetch a mini-batch worth of data into it's buffer */
     buf.m_num_samples_fetched = dr->fetch(local_input_buffers, buf.m_indices_fetched_per_mb, mb_size);
