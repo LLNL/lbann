@@ -267,20 +267,40 @@ void convolution_backward_filter(
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
-  auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_MIOPEN(miopenConvolutionBackwardWeights(handle_manager.get(),
-                                                &alpha,
-                                                dyDesc,
-                                                dy.LockedBuffer(),
-                                                xDesc,
-                                                x.LockedBuffer(),
-                                                convDesc,
-                                                miopen::to_miopen(alg),
-                                                &beta,
-                                                dwDesc,
-                                                dw.Buffer(),
-                                                workSpace.Buffer(),
-                                                workSpace.Height()*sizeof(TensorDataType)));
+  auto beta = El::TypeTraits<LibScalingParamT>::Zero();
+
+  if (beta_in != El::TypeTraits<LibScalingParamT>::Zero()) {
+    El::Matrix<TensorDataType, El::Device::GPU> dw_old(dw.Height(), dw.Width());
+    El::Copy(dw, dw_old);
+    CHECK_MIOPEN(miopenConvolutionBackwardWeights(handle_manager.get(),
+                                                  &alpha,
+                                                  dyDesc,
+                                                  dy.LockedBuffer(),
+                                                  xDesc,
+                                                  x.LockedBuffer(),
+                                                  convDesc,
+                                                  miopen::to_miopen(alg),
+                                                  &beta,
+                                                  dwDesc,
+                                                  dw.Buffer(),
+                                                  workSpace.Buffer(),
+                                                  workSpace.Height()*sizeof(TensorDataType)));
+    add_tensor(alpha_in, dwDesc, dw, beta_in, dwDesc, dw_old);
+  } else {
+    CHECK_MIOPEN(miopenConvolutionBackwardWeights(handle_manager.get(),
+                                                  &alpha,
+                                                  dyDesc,
+                                                  dy.LockedBuffer(),
+                                                  xDesc,
+                                                  x.LockedBuffer(),
+                                                  convDesc,
+                                                  miopen::to_miopen(alg),
+                                                  &beta,
+                                                  dwDesc,
+                                                  dw.Buffer(),
+                                                  workSpace.Buffer(),
+                                                  workSpace.Height()*sizeof(TensorDataType)));
+  }
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
