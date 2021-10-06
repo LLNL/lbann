@@ -139,7 +139,7 @@ void smiles_data_reader::load() {
 
   // Load the sample list(s)
   data_reader_sample_list::load();
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "time to load sample list: " << get_time() - tm1 << std::endl;
   }
 
@@ -260,7 +260,7 @@ void smiles_data_reader::do_preload_data_store() {
         for (const auto& [r_local, r_index] : samples_in_range) {
           (void) r_local; // silence compiler warning about unused variable.
           // BVE CHECK THIS
-          if (m_data_store->get_index_owner(r_index) != m_rank_in_model) {
+          if (m_data_store->get_index_owner(r_index) != get_comm()->get_rank_in_trainer()) {
             continue;
           }
 
@@ -289,7 +289,7 @@ std::set<int> smiles_data_reader::get_my_indices() const {
   std::set<int> s;
   for (size_t j=0; j<m_shuffled_indices.size(); j++) {
     const int index = m_shuffled_indices[j];
-    if (m_data_store->get_index_owner(index) == m_rank_in_model) {
+    if (m_data_store->get_index_owner(index) == get_comm()->get_rank_in_trainer()) {
       s.insert(index);
     }
   }

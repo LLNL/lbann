@@ -113,7 +113,7 @@ int lbann::generic_data_reader::fetch(
                     "mismatched widths: h=",
                     buf->Height(),
                     " x ",
-                    Buf->Width(),
+                    buf->Width(),
                     " for data field ",
                     data_field);
       }
@@ -134,13 +134,6 @@ int lbann::generic_data_reader::fetch(
   #endif
 
   int loaded_batch_size = get_loaded_mini_batch_size();
-
-  /// Make sure that every rank participates in the data store prior
-  /// to seeing if the local rank's position is valid.  Note that
-  /// every rank will hold data that may be used in the last mini-batch
-  if (data_store_active()) {
-    m_data_store->exchange_mini_batch_data(m_current_pos-m_base_offset-m_model_offset, loaded_batch_size);
-  }
 
   if(!position_valid()) {
     if(position_is_overrun()) {
