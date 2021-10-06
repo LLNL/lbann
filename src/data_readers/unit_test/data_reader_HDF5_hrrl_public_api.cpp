@@ -129,7 +129,6 @@ TEST_CASE("hdf5 data reader data field fetch tests",
   // Manually tell the data reader to extract all of the data fields
   white_box_tester.construct_linearized_size_lookup_tables(*hdf5_dr, ref_node);
 
-  hdf5_dr->set_rank(0);
   hdf5_dr->set_comm(&comm);
 
   El::Int num_samples = 1;
