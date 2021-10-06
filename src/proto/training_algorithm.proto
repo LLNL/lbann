@@ -76,10 +76,14 @@ message MutationStrategy {
   message ReplaceConvolution {
   }
 
+  message HybridMutation {
+  }
+
   oneof strategy {
     NullMutation null_mutation = 1;
     ReplaceActivation replace_activation = 2;
     ReplaceConvolution replace_convolution = 3;
+    HybridMutation hybrid_mutation = 4;
   }
 } //message Mutation Strategy
 
@@ -126,6 +130,19 @@ message TruncationSelectionExchange {
   map<string, MetricStrategy> metric_name_strategy_map = 1;
   uint64 truncation_k = 2; //what should be default, 1?
 }// message TruncationSelectionExchange
+
+// Regularized Evolution strategy Implements MetaLearningStrategy.
+message RegularizedEvolution {
+  enum MetricStrategy {
+    LOWER_IS_BETTER = 0;
+    HIGHER_IS_BETTER = 1;
+  }
+
+  string metric_name = 1;
+  MetricStrategy metric_strategy = 2;
+  MutationStrategy mutation_strategy = 3;
+  uint64 sample_size = 4;
+}// message RegularizedEvolution
 
 message KFAC {
 

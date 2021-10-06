@@ -212,6 +212,9 @@ class MutationStrategy:
         elif self.strategy == "replace_convolution":
             ReplaceConvolutionMsg = MutationStrategyMsg.ReplaceConvolution
             msg.replace_convolution.CopyFrom(ReplaceConvolutionMsg())
+        elif self.strategy == "hybrid_mutation":
+            HybridMutationMsg = MutationStrategyMsg.HybridMutation
+            msg.hybrid_mutation.CopyFrom(HybridMutationMsg())
         else:
             raise ValueError("Unknown Strategy")
         return msg
@@ -397,6 +400,39 @@ class TruncationSelectionExchange(MetaLearningStrategy):
             msg.metric_name_strategy_map[key] = value
         msg.truncation_k = self.truncation_k
         return msg
+
+class RegularizedEvolution(MetaLearningStrategy):
+    """ This is a meta-learning strategy in population-based training.
+        A sample of trainers is chosen from a population in every tournament.
+        The best trainer is chosen from that sample according to an evaluation metric.
+        Then the model from that best trainer is mutated and replaces the oldest model.
+    """
+
+    class MetricStrategy:
+        LOWER_IS_BETTER: int = 0
+        HIGHER_IS_BETTER: int = 1
+
+    def __init__(self,
+                 metric_name,
+                 metric_strategy,
+                 mutation_strategy = MutationStrategy(),
+                 sample_size = 0):
+        
+        self.metric_name = metric_name
+        self.metric_strategy = metric_strategy
+        self.mutation_strategy = mutation_strategy
+        self.sample_size = sample_size
+
+    def export_proto(self):
+        """Get a protobuf representation of this object."""
+
+        msg = AlgoProto.RegularizedEvolution()
+
+        msg.metric_name = self.metric_name
+        msg.metric_strategy = self.metric_strategy
+        msg.mutation_strategy.CopyFrom(self.mutation_strategy.export_proto())
+        msg.sample_size = self.sample_size
+        return msg 
 
 class KFAC(TrainingAlgorithm):
     """Kronecker-Factored Approximate Curvature algorithm.
