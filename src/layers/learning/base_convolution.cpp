@@ -672,17 +672,17 @@ base_convolution_layer<TensorDataType,Device>
 
       // Get workspace size
       auto multisync = El::MakeMultiSync(gpu::get_sync_info(workspace));
-      size_t workspace_size =
-        dnn_lib::get_bwd_weights_conv_workspace_size(gradient_wrt_output_desc,
-                                                     input_desc,
-                                                     m_convolution_dnn_desc,
-                                                     m_kernel_dnn_desc,
-                                                     multisync);
-      workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
-      workspace_size = workspace.Height() * sizeof(TensorDataType);
 
       // Determine algorithm and compute kernel gradient
       if (using_transposed_convolution) {
+        size_t workspace_size =
+          dnn_lib::get_bwd_weights_conv_workspace_size(input_desc,
+                                                       gradient_wrt_output_desc,
+                                                       m_convolution_dnn_desc,
+                                                       m_kernel_dnn_desc,
+                                                       multisync);
+        workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+        workspace_size = workspace.Height() * sizeof(TensorDataType);
         bwd_filter_conv_alg kernel_gradient_dnn_algorithm
           = get_backward_filter_algo_dnn(
             local_input.Width(),
@@ -704,6 +704,14 @@ base_convolution_layer<TensorDataType,Device>
           m_kernel_dnn_desc,
           kernel_gradient.Matrix());
       } else {
+        size_t workspace_size =
+          dnn_lib::get_bwd_weights_conv_workspace_size(gradient_wrt_output_desc,
+                                                       input_desc,
+                                                       m_convolution_dnn_desc,
+                                                       m_kernel_dnn_desc,
+                                                       multisync);
+        workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+        workspace_size = workspace.Height() * sizeof(TensorDataType);
         bwd_filter_conv_alg kernel_gradient_dnn_algorithm
           = get_backward_filter_algo_dnn(
             local_input.Width(),
