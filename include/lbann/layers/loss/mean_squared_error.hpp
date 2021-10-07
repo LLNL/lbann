@@ -264,7 +264,8 @@ private:
 
 #ifdef LBANN_HAS_ONNX
 template <typename T, data_layout L, El::Device D>
-void input_layer<T, L, D>::fill_onnx_node(onnx::GraphProto& graph) const
+void mean_squared_error_layer<T, L, D>::fill_onnx_node(
+  onnx::GraphProto& graph) const
 {
   auto* diff = graph.add_node();
   for (auto const* parent : this->get_parent_layers()) {
