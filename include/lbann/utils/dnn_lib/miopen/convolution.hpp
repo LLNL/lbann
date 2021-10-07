@@ -267,20 +267,23 @@ void convolution_backward_filter(
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
-  auto beta = El::TypeTraits<LibScalingParamT>::Zero();
+  auto beta = El::To<LibScalingParamT>(beta_in);
+  auto one = El::TypeTraits<LibScalingParamT>::One();
+  auto zero = El::TypeTraits<LibScalingParamT>::Zero();
+  El::Matrix<TensorDataType, El::Device::GPU> dw_old;
 
-  if (beta_in != El::TypeTraits<LibScalingParamT>::Zero()) {
-    El::Matrix<TensorDataType, El::Device::GPU> dw_old(dw.Height(), dw.Width());
+  if (alpha_in != El::TypeTraits<LibScalingParamT>::One() ||
+      beta_in != El::TypeTraits<LibScalingParamT>::Zero()) {
     El::Copy(dw, dw_old);
     CHECK_MIOPEN(miopenConvolutionBackwardWeights(handle_manager.get(),
-                                                  &alpha,
+                                                  &one,
                                                   dyDesc,
                                                   dy.LockedBuffer(),
                                                   xDesc,
                                                   x.LockedBuffer(),
                                                   convDesc,
                                                   miopen::to_miopen(alg),
-                                                  &beta,
+                                                  &zero,
                                                   dwDesc,
                                                   dw.Buffer(),
                                                   workSpace.Buffer(),
