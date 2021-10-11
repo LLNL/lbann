@@ -277,7 +277,7 @@ TEST_CASE("hdf5 data reader pack test",
     ref_node.parse(packed_hdf5_hrrl_data_sample_id, "yaml");
 
     // Check each of the fields to ensure that the packing worked
-    std::vector<std::string>fields = {"samples", "response"};
+    std::vector<std::string>fields = {"samples", "responses"};
     for (auto f : fields) {
       const std::string ref_pathname("000000334/" + f);
       size_t ref_num_elements = ref_node[ref_pathname].dtype().number_of_elements();
