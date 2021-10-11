@@ -43,7 +43,7 @@
 
 // Use a different schema to create a different packing
 const std::string packed_hdf5_hrrl_data_sample_id_foobar =R"FOO(000000334:
-    datum: [456.288777930614, 231.340700217946, 113.528447010204, 115.115911382861, 116.716861149023, 118.331222098325, 120.52874207647, 122.175220756304, 123.834871115725, 125.507597035081, 126.011234474661, 123.587537036166]
+    samples: [456.288777930614, 231.340700217946, 113.528447010204, 115.115911382861, 116.716861149023, 118.331222098325, 120.52874207647, 122.175220756304, 123.834871115725, 125.507597035081, 126.011234474661, 123.587537036166]
     foo: [15.2486634101312, 0.0426354341969429]
     bar: [64037572840.4818, 5.34505173275895]
     baz: [32.6826031770453]
@@ -51,7 +51,7 @@ const std::string packed_hdf5_hrrl_data_sample_id_foobar =R"FOO(000000334:
 
 // Now change the ordering fields in the experiment schema to change the field order
 const std::string packed_hdf5_hrrl_data_sample_id_foobar_permute =R"FOO(000000334:
-    datum: [456.288777930614, 231.340700217946, 113.528447010204, 115.115911382861, 116.716861149023, 118.331222098325, 120.52874207647, 122.175220756304, 123.834871115725, 125.507597035081, 126.011234474661, 123.587537036166]
+    samples: [456.288777930614, 231.340700217946, 113.528447010204, 115.115911382861, 116.716861149023, 118.331222098325, 120.52874207647, 122.175220756304, 123.834871115725, 125.507597035081, 126.011234474661, 123.587537036166]
     foo: [0.0426354341969429, 15.2486634101312]
     bar: [5.34505173275895, 64037572840.4818]
     baz: [32.6826031770453]
@@ -60,7 +60,7 @@ const std::string packed_hdf5_hrrl_data_sample_id_foobar_permute =R"FOO(00000033
 const std::string hdf5_hrrl_experiment_schema_test_foobar = R"AurthurDent(
 Image:
   metadata:
-    pack: "datum"
+    pack: "samples"
     coerce: "float"
 Epmax:
   metadata:
@@ -83,7 +83,7 @@ alpha:
 const std::string hdf5_hrrl_experiment_schema_test_foobar_permute = R"AurthurDent(
 Image:
   metadata:
-    pack: "datum"
+    pack: "samples"
     coerce: "float"
 Epmax:
   metadata:
@@ -146,6 +146,11 @@ public:
   void set_experiment_schema(lbann::hdf5_data_reader& x,
                              const conduit::Node& s) {
     x.set_experiment_schema(s);
+  }
+
+  void print_metadata(lbann::hdf5_data_reader& x,
+                      std::ostream& os = std::cout) {
+    x.print_metadata(os);
   }
 
 };
@@ -264,6 +269,7 @@ TEST_CASE("hdf5 data reader pack test",
     // Instantiate a fresh copy of the sample
     conduit::Node test_node;
     test_node.parse(hdf5_hrrl_data_sample_id, "yaml");
+    //white_box_tester.print_metadata(*hdf5_dr);
     white_box_tester.pack(*hdf5_dr, test_node, index);
 
     // Get the reference packed node
@@ -271,7 +277,7 @@ TEST_CASE("hdf5 data reader pack test",
     ref_node.parse(packed_hdf5_hrrl_data_sample_id, "yaml");
 
     // Check each of the fields to ensure that the packing worked
-    std::vector<std::string>fields = {"datum", "response"};
+    std::vector<std::string>fields = {"samples", "response"};
     for (auto f : fields) {
       const std::string ref_pathname("000000334/" + f);
       size_t ref_num_elements = ref_node[ref_pathname].dtype().number_of_elements();
@@ -304,7 +310,7 @@ TEST_CASE("hdf5 data reader pack test",
     ref_node.parse(packed_hdf5_hrrl_data_sample_id_foobar, "yaml");
 
     // Check each of the fields to ensure that the packing worked
-    std::vector<std::string>fields = {"datum", "foo", "bar", "baz"};
+    std::vector<std::string>fields = {"samples", "foo", "bar", "baz"};
     for (auto f : fields) {
       const std::string ref_pathname("000000334/" + f);
       size_t ref_num_elements = ref_node[ref_pathname].dtype().number_of_elements();
@@ -338,7 +344,7 @@ TEST_CASE("hdf5 data reader pack test",
     ref_node.parse(packed_hdf5_hrrl_data_sample_id_foobar_permute, "yaml");
 
     // Check each of the fields to ensure that the packing worked
-    std::vector<std::string>fields = {"datum", "foo", "bar", "baz"};
+    std::vector<std::string>fields = {"samples", "foo", "bar", "baz"};
     for (auto f : fields) {
       const std::string ref_pathname("000000334/" + f);
       size_t ref_num_elements = ref_node[ref_pathname].dtype().number_of_elements();

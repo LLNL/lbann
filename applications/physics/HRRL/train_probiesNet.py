@@ -38,18 +38,14 @@ args = parser.parse_args()
 cur_dir = dirname(abspath(__file__))
 data_reader_prototext = join(cur_dir,
                              'data',
-                             args.reader_prototext) 
+                             args.reader_prototext)
 
 print("DATA READER ", data_reader_prototext)
 
-#images = lbann.Input(data_field='samples')
-#responses = lbann.Input(data_field='labels')
+images = lbann.Input(data_field='samples')
+responses = lbann.Input(data_field='responses')
 
-input_ = lbann.Input(target_mode='regression')
-images = lbann.Identity(input_, name='images')
-responses = lbann.Identity(input_, name='responses')
-
-num_labels = 5 
+num_labels = 5
 
 images = lbann.Reshape(images, dims='1 300 300')
 
@@ -80,7 +76,7 @@ eps = lbann.Constant(value=1e-07,hint_layer=pearson_r_sqrt)
 pearson_r = lbann.Divide([pearson_r_cov, lbann.Add(pearson_r_sqrt,eps)],
 			     name="pearson_r")
 
- 
+
 metrics = [lbann.Metric(mse, name='mse')]
 metrics.append(lbann.Metric(pearson_r, name='pearson_r'))
 
@@ -88,8 +84,7 @@ callbacks = [lbann.CallbackPrint(),
              lbann.CallbackTimer()]
 
 
-#layers = list(lbann.traverse_layer_graph([images, responses]))
-layers = list(lbann.traverse_layer_graph(input_))
+layers = list(lbann.traverse_layer_graph([images, responses]))
 model = lbann.Model(args.num_epochs,
                     layers=layers,
                     metrics=metrics,
@@ -113,5 +108,6 @@ opt = lbann.Adam(learn_rate=0.0002,beta1=0.9,beta2=0.99,eps=1e-8)
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 lbann.contrib.launcher.run(trainer, model, data_reader_proto, opt,
+                           lbann_args=" --use_data_store --preload_data_store",
                            job_name=args.job_name,
                            **kwargs)
