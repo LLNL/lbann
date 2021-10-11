@@ -239,10 +239,12 @@ TEST_CASE("hdf5 data reader data field fetch tests",
       for (auto j = 0; j < num_samples; j++) {
         if (data_field == INPUT_DATA_TYPE_SAMPLES) {
           white_box_tester.fetch_datum(*hdf5_dr, X, 0, j);
+          CHECK_THROWS(white_box_tester.fetch_label(*hdf5_dr, X, 0, j));
           CHECK_THROWS(white_box_tester.fetch_response(*hdf5_dr, X, 0, j));
         }else if (data_field == INPUT_DATA_TYPE_LABELS) {
         }else if (data_field == INPUT_DATA_TYPE_RESPONSES) {
           CHECK_THROWS(white_box_tester.fetch_datum(*hdf5_dr, X, 0, j));
+          CHECK_THROWS(white_box_tester.fetch_label(*hdf5_dr, X, 0, j));
           white_box_tester.fetch_response(*hdf5_dr, X, 0, j);
         }
 
