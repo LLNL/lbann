@@ -224,6 +224,10 @@ void hdf5_data_reader::load()
   // with data store
   // TODO MRW
   // opts->set_option("preload_data_store", true);
+  if (!arg_parser.get<bool>(USE_DATA_STORE)) {
+    LBANN_ERROR("HDF5 data reader requires the data store.",
+                "Set command line arguments --use_data_store --preload_data_store");
+  }
 
   // Load the sample list(s)
   data_reader_sample_list::load();
@@ -914,6 +918,11 @@ bool hdf5_data_reader::fetch_data_field(data_field_type data_field,
   std::string dtype;
   const void* d = get_data(data_id, data_field, n_elts, dtype);
 
+  if ((El::Int)n_elts != Y.Height()) {
+    LBANN_ERROR("data field ", data_field, " has ", n_elts,
+                " elements, but the matrix only has a linearized size (height) of ",
+                Y.Height());
+  }
   if (dtype == "float64") {
     const conduit::float64* data = reinterpret_cast<const conduit::float64*>(d);
     for (size_t j = 0; j < n_elts; ++j) {
@@ -964,24 +973,25 @@ void hdf5_data_reader::print_metadata(std::ostream& os)
         "role: "
      << get_role() << std::endl;
 
+  std::unordered_map<std::string, conduit::Node*> leaves;
+  std::unordered_map<std::string, conduit::Node*> mp;
   // load a sample from file, applying all transformations along the way;
   // need to do this so we can get the correct dtypes
   conduit::Node populated_node;
-  size_t index = random() % m_shuffled_indices.size();
-  bool ignore_failure = true;
-  load_sample(populated_node, index, ignore_failure);
+  if(m_shuffled_indices.size() != 0) {
+    size_t index = random() % m_shuffled_indices.size();
+    bool ignore_failure = true;
+    load_sample(populated_node, index, ignore_failure);
 
-  // get all leaves (data fields)
-  std::unordered_map<std::string, conduit::Node*> leaves;
-  get_leaves(&populated_node, leaves);
+    // get all leaves (data fields)
+    get_leaves(&populated_node, leaves);
 
-  // build map: field_name -> Node
-  std::unordered_map<std::string, conduit::Node*> mp;
-  for (const auto& t : leaves) {
-    size_t j = t.first.find('/');
-    mp[t.first.substr(j + 1)] = t.second;
+    // build map: field_name -> Node
+    for (const auto& t : leaves) {
+      size_t j = t.first.find('/');
+      mp[t.first.substr(j + 1)] = t.second;
+    }
   }
-
   // print metadata and data types for all other nodes
   for (const auto& t : m_useme_node_map_ptrs) {
     const std::string& name = t.first;
@@ -1041,7 +1051,7 @@ const void* hdf5_data_reader::get_data(const size_t sample_id_in,
 {
 
   // get the pathname to the data, and verify it exists in the conduit::Node
-  const conduit::Node& node = m_data_store->get_conduit_node(sample_id_in);
+  const conduit::Node& node = get_data_store().get_conduit_node(sample_id_in);
   std::ostringstream ss;
   ss << node.child(0).name() + "/" << data_field;
   if (!node.has_path(ss.str())) {
