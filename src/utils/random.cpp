@@ -309,6 +309,7 @@ void gaussian_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat,
                            TensorDataType mean,
                            TensorDataType stddev)
 {
+  LBANN_CALIPER_MARK_FUNCTION;
 #if defined(LBANN_HAS_GPU_FP16) && defined(LBANN_HAS_HALF)
   using RandDataType =
     typename std::conditional<El::Or<std::is_same<TensorDataType, cpu_fp16>,
@@ -350,6 +351,7 @@ void bernoulli_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat,
                             El::Int n,
                             double p)
 {
+  LBANN_CALIPER_MARK_FUNCTION;
   CircMatDT<TensorDataType, El::Device::CPU> vals(m, n, mat.Grid(), 0);
   if (vals.Participating()) {
     auto& local_vals = vals.Matrix();
@@ -371,6 +373,7 @@ void uniform_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat,
                           TensorDataType center,
                           TensorDataType radius)
 {
+  LBANN_CALIPER_MARK_FUNCTION;
 #if defined(LBANN_HAS_GPU_FP16) && defined(LBANN_HAS_HALF)
   using RandDataType =
     typename std::conditional<El::Or<std::is_same<TensorDataType, cpu_fp16>,
@@ -413,7 +416,7 @@ void gaussian_fill_parallel(El::AbstractDistMatrix<TensorDataType>& mat,
                             TensorDataType mean,
                             TensorDataType stddev)
 {
-
+  LBANN_CALIPER_MARK_FUNCTION;
   // Type for generating random variables
 #if defined(LBANN_HAS_GPU_FP16) && defined(LBANN_HAS_HALF)
   using RandDataType =

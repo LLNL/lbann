@@ -73,6 +73,7 @@ struct Builder<TensorDataType, data_layout::DATA_PARALLEL, Device>
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void pooling_layer<TensorDataType, Layout, Device>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("pooling_layer::fp_compute");
   if (this->using_gpus()) {
 #ifdef LBANN_HAS_DISTCONV
     if (this->distconv_enabled()) {
@@ -92,6 +93,7 @@ void pooling_layer<TensorDataType, Layout, Device>::fp_compute()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void pooling_layer<TensorDataType, Layout, Device>::bp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("pooling_layer::bp_compute");
   if (this->using_gpus()) {
 #ifdef LBANN_HAS_DISTCONV
     if (this->distconv_enabled()) {

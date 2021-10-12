@@ -45,6 +45,7 @@ namespace lbann {
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void sort_layer<TensorDataType, T_layout, Dev>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("sort_layer::fp_compute");
 
   // Local matrices
   const auto& local_input = this->get_local_prev_activations();
@@ -88,6 +89,7 @@ void sort_layer<TensorDataType, T_layout, Dev>::fp_compute()
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void sort_layer<TensorDataType, T_layout, Dev>::bp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("sort_layer::bp_compute");
 
   // Local matrices
   const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();

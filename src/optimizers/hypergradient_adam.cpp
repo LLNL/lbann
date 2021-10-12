@@ -125,6 +125,7 @@ void hypergradient_adam<TensorDataType>::step_compute(
   AbsDistMatrixType& values,
   const AbsDistMatrixType& gradient)
 {
+  LBANN_CALIPER_MARK_SCOPE("hypergradient_adam::step_compute");
   if (values.GetLocalDevice() != El::Device::CPU) {
     LBANN_ERROR("hypergradient Adam is only supported on CPU");
   }

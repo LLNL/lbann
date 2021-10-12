@@ -66,6 +66,7 @@ void fp_impl(lbann_comm& comm,
 
   // Compute sums
   El::Zero(statistics);
+
   LBANN_OMP_PARALLEL_FOR
   for (El::Int i = 0; i < local_num_samples; ++i) {
     auto& sum = local_means(0, i);
@@ -162,6 +163,7 @@ void bp_impl(lbann_comm& comm,
   //   dL/dmean = - sum(dL/dy_i) / sqrt(var+epsilon)
   //   dL/dvar = - sum(dL/dy_i * (x_i-mean)) * (var+epsilon)^(-3/2) / 2
   El::Zero(statistics_grad);
+
   LBANN_OMP_PARALLEL_FOR
   for (El::Int i = 0; i < local_num_samples; ++i) {
     const auto& mean = local_means(0, i);
@@ -211,6 +213,7 @@ void bp_impl(lbann_comm& comm,
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void layer_norm_layer<TensorDataType, Layout, Device>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("layer_norm_layer::fp_compute");
   fp_impl(*this->get_comm(),
           this->m_epsilon,
           this->get_prev_activations(),
@@ -221,6 +224,7 @@ void layer_norm_layer<TensorDataType, Layout, Device>::fp_compute()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void layer_norm_layer<TensorDataType, Layout, Device>::bp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("layer_norm_layer::bp_compute");
   bp_impl(*this->get_comm(),
           this->m_epsilon,
           this->get_prev_activations(),

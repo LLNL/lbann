@@ -114,6 +114,7 @@
 #cmakedefine LBANN_HAS_FFTW_DOUBLE
 
 #cmakedefine LBANN_HAS_BOOST
+#cmakedefine LBANN_HAS_CALIPER
 
 // Define the LBANN datatype
 namespace lbann

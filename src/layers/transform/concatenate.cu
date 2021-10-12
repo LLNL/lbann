@@ -182,6 +182,7 @@ void fp_compute_impl(concatenate_layer<TensorDataType,
                                        El::Device::GPU>& l,
                      size_t concat_dim)
 {
+  LBANN_CALIPER_MARK_SCOPE("concatenate_layer::fp_compute");
 
   // Check that number of dimensions is valid
   /// @todo Support tensors with arbitrary number of dimensions
@@ -347,6 +348,7 @@ void bp_compute_impl(concatenate_layer<TensorDataType,
                                        El::Device::GPU>& l,
                      size_t concat_dim)
 {
+  LBANN_CALIPER_MARK_SCOPE("concatenate_layer::bp_compute");
 
   // Check that number of dimensions is valid
   /// @todo Support tensors with arbitrary number of dimensions

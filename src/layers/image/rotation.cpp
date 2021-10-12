@@ -84,6 +84,7 @@ void rotation_layer<T, L, D>::write_specific_proto(
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void rotation_layer<TensorDataType, Layout, Device>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("rotation_layer::fp_compute");
 
   // Useful constants
   constexpr DataType Pi = M_PI;

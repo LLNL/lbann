@@ -358,6 +358,7 @@ void bp_gpu(const El::AbstractDistMatrix<TensorDataType>& input0,
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void covariance_layer<TensorDataType, Layout, Device>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("covariance_layer::fp_compute");
   fp_gpu(this->get_prev_activations(0),
          this->get_prev_activations(1),
          this->get_activations(),
@@ -369,6 +370,7 @@ void covariance_layer<TensorDataType, Layout, Device>::fp_compute()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void covariance_layer<TensorDataType, Layout, Device>::bp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("covariance_layer::bp_compute");
   bp_gpu(this->get_prev_activations(0),
          this->get_prev_activations(1),
          this->get_prev_error_signals(),

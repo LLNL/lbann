@@ -63,6 +63,7 @@
 #include "lbann/callbacks/print_model_description.hpp"
 #include "lbann/callbacks/print_statistics.hpp"
 #include "lbann/callbacks/profiler.hpp"
+#include "lbann/callbacks/profiler_caliper.hpp"
 #include "lbann/callbacks/replace_weights.hpp"
 #include "lbann/callbacks/save_images.hpp"
 #include "lbann/callbacks/save_model.hpp"
@@ -181,6 +182,8 @@ void register_default_builders(factory_type& factory)
                            build_print_statistics_callback_from_pbuf);
   factory.register_builder("CallbackProfiler",
                            build_profiler_callback_from_pbuf);
+  factory.register_builder("CallbackProfilerCaliper",
+                           build_profiler_caliper_callback_from_pbuf);
   factory.register_builder("CallbackReplaceWeights",
                            build_replace_weights_callback_from_pbuf);
   factory.register_builder("CallbackSaveImages",

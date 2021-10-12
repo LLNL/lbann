@@ -28,6 +28,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_numpy_npz.hpp"
+#include "lbann/utils/profiling.hpp"
 #include <cnpy.h>
 #include <cstdio>
 #include <string>
@@ -73,6 +74,7 @@ numpy_npz_reader& numpy_npz_reader::operator=(const numpy_npz_reader& other)
 
 void numpy_npz_reader::load()
 {
+  LBANN_CALIPER_MARK_SCOPE("numpy_npz_reader::load");
   std::string infile = get_data_filename();
   // Ensure the file exists.
   std::ifstream ifs(infile);

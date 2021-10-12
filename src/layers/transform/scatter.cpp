@@ -32,6 +32,7 @@ namespace lbann {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void scatter_layer<TensorDataType, Layout, Device>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("scatter_layer::fp_compute");
 
   // Local matrices
   const auto& local_values = this->get_local_prev_activations(0);
@@ -88,6 +89,7 @@ void scatter_layer<TensorDataType, Layout, Device>::fp_compute()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void scatter_layer<TensorDataType, Layout, Device>::bp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("scatter_layer::bp_compute");
 
   // Local matrices
   const auto& local_indices = this->get_local_prev_activations(1);

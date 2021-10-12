@@ -167,6 +167,7 @@ void local_bp(TensorDataType alpha,
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void elu_layer<TensorDataType, Layout, Device>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("elu_layer::fp_compute");
   local_fp(this->m_alpha,
            this->get_local_prev_activations(),
            this->get_local_activations());
@@ -174,6 +175,7 @@ void elu_layer<TensorDataType, Layout, Device>::fp_compute()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void elu_layer<TensorDataType, Layout, Device>::bp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("elu_layer::bp_compute");
   local_bp(this->m_alpha,
            this->get_local_prev_activations(),
            this->get_local_prev_error_signals(),

@@ -258,6 +258,7 @@ bool KFAC::train_mini_batch(ExeContextType& kfac_context,
                             model& model,
                             data_coordinator& dc)
 {
+  LBANN_CALIPER_MARK_FUNCTION;
   bool profile = true;
   auto& sgd_context = kfac_context.get_sgd_execution_context();
   auto current_epoch = sgd_context.get_epoch();

@@ -45,6 +45,7 @@ void LTFB::apply(ExecutionContext& context,
                  data_coordinator& dc,
                  execution_mode /*mode*/)
 {
+  LBANN_CALIPER_MARK_FUNCTION; 
   TimerMap ltfb_timer(build_string("LTFB::",
                                    this->get_name(),
                                    " (trainer:",

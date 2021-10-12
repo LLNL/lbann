@@ -176,10 +176,10 @@ __global__ void gather3d_kernel(const T* __restrict__ indices,
 // =============================================================
 // Scatter member functions
 // =============================================================
-
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void scatter_layer<TensorDataType, Layout, Device>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("scatter_layer::fp_compute");
 
 #if defined LBANN_HAS_DISTCONV && defined LBANN_HAS_NVSHMEM
   // Initialize the nvshmem here. No Op if already initialized
@@ -272,6 +272,7 @@ void scatter_layer<TensorDataType, Layout, Device>::fp_compute()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void scatter_layer<TensorDataType, Layout, Device>::bp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("scatter_layer::bp_compute");
 
 #if defined LBANN_HAS_DISTCONV && defined LBANN_HAS_NVSHMEM
   // Initialize the nvshmem here. No Op if already initialized

@@ -34,6 +34,7 @@ void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::row_sqsums(
   const El::Matrix<TensorDataType, Device>& mat,
   El::Matrix<TensorDataType, Device>& row_sqsums)
 {
+  LBANN_CALIPER_MARK_FUNCTION;
 
   // Matrix data
   const size_t height = mat.Height();
@@ -74,6 +75,7 @@ void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::divide(
   El::Matrix<TensorDataType, Device>& numer,
   const El::Matrix<TensorDataType, Device>& denom)
 {
+  LBANN_CALIPER_MARK_FUNCTION;
 
   // Check that matrices are valid
   if (numer.Height() != denom.Height() || numer.Width() != denom.Width()) {
@@ -104,6 +106,7 @@ void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::row_axpy(
   TensorDataType beta,
   El::Matrix<TensorDataType, Device>& y_mat)
 {
+  LBANN_CALIPER_MARK_FUNCTION;
 
   // Check that matrices are valid
   if (x_mat.Height() != y_mat.Height() || x_mat.Width() != y_mat.Width() ||

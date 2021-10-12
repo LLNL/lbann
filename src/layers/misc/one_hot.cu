@@ -94,6 +94,7 @@ __global__ void fp_kernel(El::Int local_mini_batch_size,
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void one_hot_layer<TensorDataType, Layout, Device>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("one_hot_layer::fp_compute");
 
   // Local matrices
   using AbsLocalMat = El::AbstractMatrix<TensorDataType>;

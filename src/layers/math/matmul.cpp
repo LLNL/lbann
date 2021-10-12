@@ -165,7 +165,7 @@ void fp_compute_impl(
   bool transpose_input0,
   bool transpose_input1)
 {
-
+  LBANN_CALIPER_MARK_SCOPE("matmul_layer::fp_compute");
   // Local data
   using LocalMat = El::Matrix<TensorDataType, El::Device::CPU>;
   const auto& local_input0 =
@@ -244,6 +244,7 @@ void bp_compute_impl(
   bool transpose_input1)
 {
 
+  LBANN_CALIPER_MARK_SCOPE("matmul_layer::bp_compute");
   // Local data
   using LocalMat = El::Matrix<TensorDataType, El::Device::CPU>;
   const auto& local_input0 =
@@ -366,6 +367,7 @@ void fp_compute_impl(
   bool transpose_input1)
 {
 
+  LBANN_CALIPER_MARK_SCOPE("matmul_layer::fp_compute");
   // Local data
   using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
   const auto& local_input0 =
@@ -448,6 +450,7 @@ void bp_compute_impl(
   bool transpose_input1)
 {
 
+  LBANN_CALIPER_MARK_SCOPE("matmul_layer::bp_compute");
   // Local data
   using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
   const auto& local_input0 =

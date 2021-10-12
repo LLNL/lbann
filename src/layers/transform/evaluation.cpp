@@ -272,6 +272,7 @@ void abstract_evaluation_layer<TensorDataType>::setup_data(
 template <typename TensorDataType>
 void abstract_evaluation_layer<TensorDataType>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("evaluation_layer::fp_compute");
   switch (this->get_device_allocation()) {
   case El::Device::CPU:
     this->get_comm()->wait(m_allreduce_req);
@@ -296,6 +297,7 @@ void abstract_evaluation_layer<TensorDataType>::fp_compute()
 template <typename TensorDataType>
 void abstract_evaluation_layer<TensorDataType>::bp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("evaluation_layer::bp_compute");
   const auto& context =
     static_cast<SGDExecutionContext&>(this->m_model->get_execution_context());
   const auto mini_batch_size = context.get_effective_mini_batch_size();

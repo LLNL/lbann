@@ -44,6 +44,7 @@ static_assert(false,
 #include "lbann/utils/dnn_lib/openmp/softmax.hpp"
 
 #include "lbann/utils/sync_info_helpers.hpp"
+#include "lbann/utils/profiling.hpp"
 
 namespace lbann {
 namespace dnn_lib {

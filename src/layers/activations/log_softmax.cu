@@ -497,11 +497,13 @@ void bp_compute_impl(log_softmax_layer<TensorDataType,
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void log_softmax_layer<TensorDataType, Layout, Device>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("log_softmax_layer::fp_compute");
   fp_compute_impl(*this);
 }
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void log_softmax_layer<TensorDataType, Layout, Device>::bp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("log_softmax_layer::bp_compute");
   bp_compute_impl(*this);
 }
 

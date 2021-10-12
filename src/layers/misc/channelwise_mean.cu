@@ -121,6 +121,7 @@ backprop_kernel(El::Int num_channels,
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void channelwise_mean_layer<TensorDataType, Layout, Device>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("channelwise_mean_layer::fp_compute");
 
   // Local matrices
   const auto& local_input = this->get_local_prev_activations();
@@ -167,6 +168,7 @@ void channelwise_mean_layer<TensorDataType, Layout, Device>::fp_compute()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void channelwise_mean_layer<TensorDataType, Layout, Device>::bp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("channelwise_mean_layer::bp_compute");
   // Local matrices
   const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
   auto& local_gradient_wrt_input = this->get_local_error_signals();

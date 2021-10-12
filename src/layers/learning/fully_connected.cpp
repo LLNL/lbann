@@ -823,12 +823,14 @@ void fully_connected_layer<T, L, D>::write_specific_proto(
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void fully_connected_layer<TensorDataType, T_layout, Dev>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("fully_connected_layer::fp_compute");
   fp_compute_impl<TensorDataType>(*this);
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void fully_connected_layer<TensorDataType, T_layout, Dev>::bp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("fully_connected_layer::bp_compute");
   bp_compute_impl<TensorDataType>(*this);
 }
 

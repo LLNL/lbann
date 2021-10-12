@@ -429,6 +429,7 @@ template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void entrywise_batch_normalization_layer<TensorDataType, T_layout, Dev>::
   fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("entrywise_batch_normalization_layer::fp_compute");
   using ValuesGetter = weights_details::SafeWeightsAccessor<TensorDataType>;
 
   const auto mode = this->m_model->get_execution_context().get_execution_mode();
@@ -447,6 +448,7 @@ template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void entrywise_batch_normalization_layer<TensorDataType, T_layout, Dev>::
   bp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("entrywise_batch_normalization_layer::bp_compute");
   const auto mode = this->m_model->get_execution_context().get_execution_mode();
   bp_impl(*this->get_comm(),
           this->m_epsilon,

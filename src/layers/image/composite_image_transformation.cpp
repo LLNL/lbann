@@ -71,6 +71,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void composite_image_transformation_layer<TensorDataType, Layout, Device>::
   fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("composite_image_transformation_layer::fp_compute");
 
   // Useful constants
   constexpr DataType Pi = M_PI;

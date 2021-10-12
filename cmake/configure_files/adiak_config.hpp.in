@@ -1,0 +1,25 @@
+
+#ifndef ADIAK_CONFIG_HPP__
+#define ADIAK_CONFIG_HPP__
+
+namespace lbann {
+
+struct adiak_configuration {
+constexpr static const char* lbann_git_version = "@LBANN_GIT_VERSION@";
+constexpr static const char* cmake_build_type = "@CMAKE_BUILD_TYPE@";
+constexpr static const char* compiler = "@CMAKE_CXX_COMPILER@"; 
+constexpr static const char* compiler_version = "@CMAKE_CXX_COMPILER_VERSION@"; 
+constexpr static const char* compiler_flags = "@CMAKE_CXX_FLAGS@"; 
+constexpr static const char* compiler_flags_release = "@CMAKE_CXX_FLAGS_RELEASE@"; 
+constexpr static const char* compiler_flags_relwithdebinfo = "@CMAKE_CXX_FLAGS_RELWITHDEBINFO@"; 
+constexpr static const char* compiler_flags_debug = "@CMAKE_CXX_FLAGS_DEBUG@"; 
+constexpr static const char* cuda_compiler_version = "@CMAKE_CUDA_COMPILER_VERSION@"; 
+constexpr static const char* cuda_flags = "@CMAKE_CUDA_FLAGS@"; 
+constexpr static const char* cuda_flags_release = "@CMAKE_CUDA_FLAGS_RELEASE@"; 
+constexpr static const char* cuda_flags_relwithdebinfo = "@CMAKE_CUDA_FLAGS_RELWITHDEBINFO@"; 
+constexpr static const char* cuda_flags_debug = "@CMAKE_CUDA_FLAGS_DEBUG@"; 
+};
+} // closing brace for lbann namespace
+
+#endif  // closing endif for header file include guard
+

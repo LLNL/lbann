@@ -194,6 +194,7 @@ deconvolution_layer<TensorDataType, Layout, Device>::get_kernel_dims() const
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void deconvolution_layer<TensorDataType, Layout, Device>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("deconvolution_layer::fp_compute");
   using BaseConvLayer = base_convolution_layer<TensorDataType, Device>;
   if (this->using_gpus()) {
 #ifdef LBANN_HAS_DISTCONV
@@ -215,6 +216,7 @@ void deconvolution_layer<TensorDataType, Layout, Device>::fp_compute()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void deconvolution_layer<TensorDataType, Layout, Device>::bp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("deconvolution_layer::bp_compute");
   using BaseConvLayer = base_convolution_layer<TensorDataType, Device>;
   if (this->using_gpus()) {
 #ifdef LBANN_HAS_DISTCONV

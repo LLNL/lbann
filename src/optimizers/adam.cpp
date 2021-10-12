@@ -178,6 +178,7 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
                                             const AbsDistMatrixType& gradient,
                                             const TensorDataType& correction)
 {
+  LBANN_CALIPER_MARK_SCOPE("adam::step_compute");
   static const auto one = TensorDataType(1.);
 
   // Get local matrix data

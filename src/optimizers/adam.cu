@@ -99,6 +99,7 @@ void adam<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
                                             const AbsDistMatrixType& gradient,
                                             const TensorDataType& correction)
 {
+  LBANN_CALIPER_MARK_SCOPE("adam::step_compute");
   // Get matrix dimensions
   const size_t local_height = values.LocalHeight();
   const size_t local_width = values.LocalWidth();

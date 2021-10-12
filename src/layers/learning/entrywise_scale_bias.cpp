@@ -38,7 +38,6 @@ void fp_impl(
   El::Matrix<TensorDataType, El::Device::CPU>& local_output,
   El::Matrix<TensorDataType, El::Device::CPU> const& local_scale_bias)
 {
-
   // Local matrices
   const auto local_scale = El::LockedView(local_scale_bias, El::ALL, El::IR(0));
   const auto local_bias = El::LockedView(local_scale_bias, El::ALL, El::IR(1));
@@ -66,7 +65,6 @@ void bp_impl(
   El::Matrix<TensorDataType, El::Device::CPU> const& local_scale_bias,
   El::AbstractDistMatrix<TensorDataType>& gradient_wrt_scale_bias)
 {
-
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
@@ -115,6 +113,7 @@ void bp_impl(
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("entrywise_scale_bias_layer::fp_compute");
   using LocalMatType = El::Matrix<TensorDataType, Device>;
   fp_impl(
     dynamic_cast<LocalMatType const&>(this->get_local_prev_activations()),
@@ -125,6 +124,7 @@ void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::fp_compute()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::bp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("entrywise_scale_bias_layer::bp_compute");
   using LocalMatType = El::Matrix<TensorDataType, Device>;
 
   bp_impl(

@@ -191,6 +191,7 @@ void bp_compute_distconv(
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void leaky_relu_layer<TensorDataType, Layout, Device>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("leaky_relu_layer::fp_compute");
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
     fp_compute_distconv(get_distconv_adapter(), m_negative_slope);
@@ -204,6 +205,7 @@ void leaky_relu_layer<TensorDataType, Layout, Device>::fp_compute()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("leaky_relu_layer::bp_compute");
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
     bp_compute_distconv(get_distconv_adapter(), m_negative_slope);

@@ -63,6 +63,7 @@ void adagrad<TensorDataType>::step_compute_gpu(
   AbsDistMatrixType& values,
   const AbsDistMatrixType& gradient)
 {
+  LBANN_CALIPER_MARK_SCOPE("adagrad::step_compute");
   const size_t local_height = values.LocalHeight();
   const size_t local_width = values.LocalWidth();
   const size_t local_size = local_height * local_width;

@@ -68,6 +68,7 @@ void argmax_layer<T, L, D>::write_specific_proto(lbann_data::Layer& proto) const
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void argmax_layer<TensorDataType, Layout, Device>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("argmax_layer::fp_compute");
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
   const auto& local_input =
     dynamic_cast<const CPUMatType&>(this->get_local_prev_activations());

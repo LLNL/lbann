@@ -65,6 +65,7 @@ struct op_backprop
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void relu_layer<TensorDataType, Layout, Device>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("relu_layer::fp_compute");
   apply_entrywise_unary_operator<op, TensorDataType>(
     this->get_prev_activations(),
     this->get_activations());
@@ -73,6 +74,7 @@ void relu_layer<TensorDataType, Layout, Device>::fp_compute()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void relu_layer<TensorDataType, Layout, Device>::bp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("relu_layer::bp_compute");
   apply_entrywise_binary_operator<op_backprop, TensorDataType>(
     this->get_activations(),
     this->get_prev_error_signals(),

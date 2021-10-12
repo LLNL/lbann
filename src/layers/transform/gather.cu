@@ -182,6 +182,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void gather_layer<TensorDataType, Layout, Device>::fp_compute()
 {
 
+  LBANN_CALIPER_MARK_SCOPE("gather_layer::fp_compute");
 #if defined LBANN_HAS_DISTCONV && defined LBANN_HAS_NVSHMEM
   // Initialize the nvshmem here. No Op if already initialized
   nvshmem::initialize();
@@ -281,6 +282,7 @@ void gather_layer<TensorDataType, Layout, Device>::bp_compute()
     return;
   }
 #endif // LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
+  LBANN_CALIPER_MARK_SCOPE("gather_layer::bp_compute");
 
   // Local matrices
   const auto& local_indices = this->get_local_prev_activations(1);

@@ -488,6 +488,7 @@ void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("batch_normalization_layer::fp_compute");
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
     get_distconv_adapter().fp_compute();
@@ -654,6 +655,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute()
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("batch_normalization_layer::bp_compute");
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
     get_distconv_adapter().bp_compute();

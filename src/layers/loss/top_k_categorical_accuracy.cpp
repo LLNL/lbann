@@ -189,6 +189,7 @@ template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void top_k_categorical_accuracy_layer<TensorDataType, T_layout, Dev>::
   fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("top_k_categorical_accuracy_layer::fp_compute");
   fp_cpu(*this->get_comm(),
          this->m_k,
          this->get_prev_activations(0),

@@ -80,7 +80,7 @@ void apply_binary_backprop_operator(
   El::AbstractMatrix<TensorDataType>& dx1,
   El::AbstractMatrix<TensorDataType>& dx2)
 {
-
+  LBANN_CALIPER_MARK_SCOPE("apply_binary_backprop_operator");
   // Get CUDA grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
   // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).

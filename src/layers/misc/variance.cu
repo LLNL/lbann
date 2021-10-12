@@ -251,6 +251,7 @@ void bp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void variance_layer<TensorDataType, Layout, Device>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("variance_layer::fp_compute");
   fp_gpu(this->get_prev_activations(),
          this->get_activations(),
          *this->m_means,
@@ -261,6 +262,7 @@ void variance_layer<TensorDataType, Layout, Device>::fp_compute()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void variance_layer<TensorDataType, Layout, Device>::bp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("variance_layer::bp_compute");
   bp_gpu(this->get_prev_activations(),
          this->get_prev_error_signals(),
          this->get_error_signals(),

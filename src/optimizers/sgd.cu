@@ -106,6 +106,7 @@ void sgd<TensorDataType>::momentum_step_gpu(AbsDistMatrixType& values,
                                             const AbsDistMatrixType& gradient)
 {
 
+  LBANN_CALIPER_MARK_SCOPE("sgd::momentum_step");
   // Get matrix dimensions
   const size_t local_height = values.LocalHeight();
   const size_t local_width = values.LocalWidth();

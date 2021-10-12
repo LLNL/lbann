@@ -181,6 +181,7 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
                                             data_coordinator& dc,
                                             ScopeTimer timer)
 {
+  LBANN_CALIPER_MARK_FUNCTION;
   model.reset_mode(c, execution_mode::training);
   dc.reset_mode(c);
   do_batch_begin_cbs(model,

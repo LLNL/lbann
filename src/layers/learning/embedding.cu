@@ -118,6 +118,7 @@ __global__ void bp_kernel(El::Int num_embeddings,
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void embedding_layer<TensorDataType, T_layout, Dev>::fp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("embedding_layer::fp_compute");
   using MatType = El::Matrix<TensorDataType, El::Device::GPU>;
 
   // Local data
@@ -161,6 +162,7 @@ void embedding_layer<TensorDataType, T_layout, Dev>::fp_compute()
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute()
 {
+  LBANN_CALIPER_MARK_SCOPE("embedding_layer::bp_compute");
   using MatType = El::Matrix<TensorDataType, El::Device::GPU>;
 
   // Embedding layer is not differentiable w.r.t. inputs
