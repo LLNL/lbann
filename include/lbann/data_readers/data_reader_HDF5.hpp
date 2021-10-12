@@ -69,17 +69,17 @@ public:
 
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override
   {
-    return fetch_data_field("datum", X, data_id, mb_idx);
+    return fetch_data_field(INPUT_DATA_TYPE_SAMPLES, X, data_id, mb_idx);
   }
 
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override
   {
-    return fetch_data_field("response", Y, data_id, mb_idx);
+    return fetch_data_field(INPUT_DATA_TYPE_RESPONSES, Y, data_id, mb_idx);
   }
 
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override
   {
-    return fetch_data_field("label", Y, data_id, mb_idx);
+    return fetch_data_field(INPUT_DATA_TYPE_LABELS, Y, data_id, mb_idx);
   }
 
   /** @brief Sets the name of the yaml experiment file */
@@ -105,22 +105,22 @@ public:
 
   const std::vector<int> get_data_dims() const override
   {
-    return get_data_dims("datum");
+    return get_data_dims(INPUT_DATA_TYPE_SAMPLES);
   }
 
   int get_linearized_data_size() const override
   {
-    return get_linearized_size("datum");
+    return get_linearized_size(INPUT_DATA_TYPE_SAMPLES);
   }
 
   int get_linearized_response_size() const override
   {
-    return get_linearized_size("response");
+    return get_linearized_size(INPUT_DATA_TYPE_RESPONSES);
   }
 
   int get_linearized_label_size() const override
   {
-    return get_linearized_size("label");
+    return get_linearized_size(INPUT_DATA_TYPE_LABELS);
   }
 
   int get_num_labels() const override { return get_linearized_label_size(); }
@@ -336,6 +336,9 @@ private:
 
   /** sanity check; call after adjust_metadata */
   void test_that_all_nodes_contain_metadata(conduit::Node& node);
+
+  bool get_delete_packed_fields() { return m_delete_packed_fields; }
+  void set_delete_packed_fields(bool flag) { m_delete_packed_fields = flag; }
 
   //=========================================================================
   // template declarations follow
