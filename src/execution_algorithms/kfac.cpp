@@ -135,9 +135,9 @@ KFAC& KFAC::operator=(KFAC const& other) {
 
 std::string KFAC::get_type() const { return "KFAC"; }
 
-kfac::ExecutionContext* KFAC::do_get_new_execution_context() const
+kfac::KFACExecutionContext* KFAC::do_get_new_execution_context() const
 {
-  return new kfac::ExecutionContext(
+  return new kfac::KFACExecutionContext(
     0UL,
     m_damping_act_params[0],
     m_damping_err_params[0],

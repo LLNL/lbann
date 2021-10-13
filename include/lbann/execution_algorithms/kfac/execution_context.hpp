@@ -53,25 +53,25 @@ constexpr El::Device Device = El::Device::CPU;
 /** @class ExecutionContext
  *  @brief The execution context for an KFAC algorithm.
  */
-class ExecutionContext final : public lbann::ExecutionContext
+class KFACExecutionContext final : public lbann::ExecutionContext
 {
 public:
   friend class ::lbann::KFAC;
 
   /** Constructor. */
-  ExecutionContext(
+  KFACExecutionContext(
     size_t mini_batch_size,
     double damping_act,
     double damping_err,
     double damping_bn_act,
     double damping_bn_err);
   /** Destructor. */
-  ~ExecutionContext() = default;
+  ~KFACExecutionContext() = default;
 
   /** Copy constructor -- deleted. */
-  ExecutionContext(const ExecutionContext& other) = delete;
+  KFACExecutionContext(const KFACExecutionContext& other) = delete;
   /** Copy assignment operator -- deleted. */
-  ExecutionContext& operator=(const ExecutionContext& other) = delete;
+  KFACExecutionContext& operator=(const KFACExecutionContext& other) = delete;
 
   /** Get a "clean" execution_context of the same type. */
   std::unique_ptr<lbann::ExecutionContext> get_new() const override;

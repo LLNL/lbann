@@ -63,7 +63,7 @@ class KFAC final : public Cloneable<KFAC, TrainingAlgorithm>
 
 public:
   using TermCriteriaType = SGDTerminationCriteria;
-  using ExeContextType = kfac::ExecutionContext;
+  using ExeContextType = kfac::KFACExecutionContext;
 
 public:
   /** @name Life-cycle management */
@@ -161,7 +161,7 @@ protected:
   /** @brief Covariant return-friendly implementation of
    *         `get_new_exection_context()`.
    */
-  kfac::ExecutionContext* do_get_new_execution_context() const final;
+  kfac::KFACExecutionContext* do_get_new_execution_context() const final;
 
   void send_recv_inverse_matrices(
     ExeContextType& context,
