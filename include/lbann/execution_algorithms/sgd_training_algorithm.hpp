@@ -41,9 +41,9 @@ namespace lbann {
 
 /** @brief Base class for LBANN SGD-family training algorithms. */
 class sgd_training_algorithm
-  : public Cloneable<sgd_training_algorithm, training_algorithm>
+  : public Cloneable<sgd_training_algorithm, TrainingAlgorithm>
 {
-  using BaseType = Cloneable<sgd_training_algorithm, training_algorithm>;
+  using BaseType = Cloneable<sgd_training_algorithm, TrainingAlgorithm>;
 
 public:
   /** @brief Construct with a name. */

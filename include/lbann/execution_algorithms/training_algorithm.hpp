@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_TRAINING_ALGORITHM_HPP
-#define LBANN_TRAINING_ALGORITHM_HPP
+#ifndef LBANN_EXECUTION_ALGORITHMS_TRAINING_ALGORITHM_HPP_INCLUDED
+#define LBANN_EXECUTION_ALGORITHMS_TRAINING_ALGORITHM_HPP_INCLUDED
 
 #include "lbann/base.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
@@ -81,8 +81,8 @@ namespace lbann {
  *        learning scenario, in which repeatedly writing to and
  *        reading from disk is not sufficient.
  */
-class training_algorithm
-  : public Cloneable<HasAbstractFunction<training_algorithm>>
+class TrainingAlgorithm
+  : public Cloneable<HasAbstractFunction<TrainingAlgorithm>>
 {
 public:
   /** @name Lifecycle Management */
@@ -90,8 +90,8 @@ public:
   /** @brief Constructor
    *  @param[in] name The user-defined name of the algorithm.
    */
-  training_algorithm(std::string name);
-  virtual ~training_algorithm() = default;
+  TrainingAlgorithm(std::string name);
+  virtual ~TrainingAlgorithm() = default;
   ///@}
 
   /** @name Queries */
@@ -168,10 +168,10 @@ public:
 protected:
   /** @name In-hierarchy Lifecycle Management */
   ///@{
-  training_algorithm(const training_algorithm& other) = default;
-  training_algorithm& operator=(const training_algorithm& other) = default;
-  training_algorithm(training_algorithm&& other) = default;
-  training_algorithm& operator=(training_algorithm&& other) = default;
+  TrainingAlgorithm(const TrainingAlgorithm& other) = default;
+  TrainingAlgorithm& operator=(const TrainingAlgorithm& other) = default;
+  TrainingAlgorithm(TrainingAlgorithm&& other) = default;
+  TrainingAlgorithm& operator=(TrainingAlgorithm&& other) = default;
   ///@}
 
   /** @brief Covariant return-friendly implementation of
@@ -186,4 +186,4 @@ private:
 
 } // namespace lbann
 
-#endif // LBANN_TRAINING_ALGORITHM_HPP
+#endif // LBANN_EXECUTION_ALGORITHMS_TRAINING_ALGORITHM_HPP_INCLUDED

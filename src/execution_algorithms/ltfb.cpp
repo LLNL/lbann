@@ -90,7 +90,7 @@ lbann::make<lbann::LTFB>(google::protobuf::Message const& msg_in)
   auto const& stopping = params.stopping_criteria();
   return make_unique<LTFB>(
     msg.name(),
-    make_abstract<training_algorithm>(params.local_training_algorithm()),
+    make_abstract<TrainingAlgorithm>(params.local_training_algorithm()),
     make_abstract<ltfb::MetaLearningStrategy>(params.meta_learning_strategy()),
     ltfb::TerminationCriteria{stopping.max_tournaments()});
 }

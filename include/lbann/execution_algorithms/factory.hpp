@@ -47,9 +47,9 @@ namespace lbann {
  *         messages.
  */
 using TrainingAlgorithmFactory = generic_factory<
-  training_algorithm,
+  TrainingAlgorithm,
   std::string,
-  proto::generate_builder_type<training_algorithm,
+  proto::generate_builder_type<TrainingAlgorithm,
                                google::protobuf::Message const&>>;
 
 /** @brief The builder type used to create a new training algorithm.
@@ -74,8 +74,8 @@ void register_new_training_algorithm(TrainingAlgorithmKey key,
  *  @return A newly-constructed training algorithm.
  */
 template <>
-std::unique_ptr<lbann::training_algorithm>
-lbann::make_abstract<lbann::training_algorithm>(
+std::unique_ptr<lbann::TrainingAlgorithm>
+lbann::make_abstract<lbann::TrainingAlgorithm>(
   google::protobuf::Message const& params);
 
 #endif // LBANN_EXECUTION_ALGORITHMS_FACTORY_HPP_INCLUDED

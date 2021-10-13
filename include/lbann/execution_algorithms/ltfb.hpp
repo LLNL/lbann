@@ -64,9 +64,9 @@ namespace lbann {
  *  then do some other stuff, this class can certainly serve as a
  *  useful guide, but is not likely to be the out-of-the-box solution.
  */
-class LTFB final : public Cloneable<LTFB, training_algorithm>
+class LTFB final : public Cloneable<LTFB, TrainingAlgorithm>
 {
-  using BaseType = Cloneable<LTFB, training_algorithm>;
+  using BaseType = Cloneable<LTFB, TrainingAlgorithm>;
 
 public:
   using TermCriteriaType = ltfb::TerminationCriteria;
@@ -81,7 +81,7 @@ public:
    *  @param meta_learning_strategy The postprocessing algorithm.
    */
   LTFB(std::string name,
-       std::unique_ptr<training_algorithm> local_training_algorithm,
+       std::unique_ptr<TrainingAlgorithm> local_training_algorithm,
        std::unique_ptr<ltfb::MetaLearningStrategy> meta_learning_strategy,
        ltfb::TerminationCriteria stopping_criteria)
     : BaseType{std::move(name)}, m_local_algo{std::move(
@@ -126,7 +126,7 @@ protected:
 
 private:
   /** @brief The training algorithm for trainer-local training. */
-  std::unique_ptr<training_algorithm> m_local_algo;
+  std::unique_ptr<TrainingAlgorithm> m_local_algo;
 
   /** @brief The strategy for postprocessing local training outputs. */
   std::unique_ptr<ltfb::MetaLearningStrategy> m_meta_learning_strategy;

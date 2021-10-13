@@ -63,7 +63,7 @@ namespace lbann {
 
 // Forward declarations
 class lbann_callback;
-class training_algorithm;
+class TrainingAlgorithm;
 class callback_base;
 
 /** @brief Abstract base class for neural network models. */
@@ -291,7 +291,7 @@ public:
   void swap_objective_function(model& other);
 
   // ===========================================
-  // Model modification 
+  // Model modification
   // ===========================================
 
   /** @brief Insert layer in model. */
@@ -395,10 +395,10 @@ protected:
    */
   virtual void setup_layer_topology();
 
-  /** setup sub grids for the sub graph parallelism	
+  /** setup sub grids for the sub graph parallelism
 
-  */	
-  virtual void setup_subgrids();	
+  */
+  virtual void setup_subgrids();
 
   virtual void get_subgrids_order(std::vector<int> &ranks_order, int num_branches);
 
@@ -412,8 +412,8 @@ protected:
 
   virtual void get_subgraph_subgrids_ranks(std::vector<int> &parent_ranks, std::vector<int> &subgrid_ranks, int layer_index,int number_ranks_in_grid);
 
-  virtual void get_resources_for_spliting_point(std::vector<int> &parent_ranks, 
-                  std::vector<int> &subgrid_ranks, 
+  virtual void get_resources_for_spliting_point(std::vector<int> &parent_ranks,
+                  std::vector<int> &subgrid_ranks,
                   int layer_index,
                   int number_ranks_in_grid,
                   int num_subgrids);
@@ -422,7 +422,7 @@ protected:
   virtual void get_resources_for_input_layer(std::vector<int>& masterSubGrid, int num_subgrids);
 
   virtual void setup_subcommunicators();
-  
+
   /** @brief Set up layer execution order.
    *
    *  Called in setup function.
@@ -513,14 +513,14 @@ public:
   size_t get_max_mini_batch_size_distconv() const { return m_max_mini_batch_size_distconv; }
 #endif
 
-	
-private:	
-  // map to store all distinct grids in the model
-  std::unordered_map<std::string, std::shared_ptr<El::Grid>> grids; 
 
-  std::unordered_map<std::string, std::shared_ptr<El::mpi::Comm>> subCommunicatorsSubgrids; 
+private:
+  // map to store all distinct grids in the model
+  std::unordered_map<std::string, std::shared_ptr<El::Grid>> grids;
+
+  std::unordered_map<std::string, std::shared_ptr<El::mpi::Comm>> subCommunicatorsSubgrids;
   // map to store all distinct mpi groups in the model (one to one mapping with grids)
-  std::unordered_map<std::string, std::unique_ptr<El::mpi::Group>> grids_mpi_groups; 
+  std::unordered_map<std::string, std::unique_ptr<El::mpi::Group>> grids_mpi_groups;
 
 
 
@@ -535,20 +535,20 @@ private:
   /*experimental code for Sub graph*/
   /** Enable vector communication for the subgraph parallelism */
   //0: send-recv based subgrid communication
-  //1: collective based subgrid communication without optimization that requires specific assumptions like subgrids should have same size and creates sub-communicators everytime 
+  //1: collective based subgrid communication without optimization that requires specific assumptions like subgrids should have same size and creates sub-communicators everytime
   //2: collective based subgrid communication with optimization
 
   int vector_communication_subgraph = 0;
 
   //Number of resources for parent (common) grid
-  //0: use all resources (default) 
+  //0: use all resources (default)
   int subgraph_num_resources_parent = 0;
 
   //0: no topology aware design
-  //1: master grid in round robin manner of nodes (GPUs per node 4)  1 3 5 7, 2 4 6 8     
+  //1: master grid in round robin manner of nodes (GPUs per node 4)  1 3 5 7, 2 4 6 8
   bool enable_subgraph_topology = false;
 
-  // whether subgraph parallelism is enabled or not for the model 
+  // whether subgraph parallelism is enabled or not for the model
   bool apply_subgraph_parallelism = false;
 
   // total number of resources / ranks for branch (subgrid) layers
@@ -556,7 +556,7 @@ private:
 
   // total number of resources / ranks for common/seq layers
   int num_resources_non_branch_layers;
-  
+
   /** @brief Model instance's name.
    *  @details Each model in a trainer should have a unique,
    *  preferably human-readable, name.

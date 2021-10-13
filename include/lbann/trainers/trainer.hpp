@@ -47,7 +47,7 @@ namespace lbann {
 
 // Forward-declare this.
 class lbann_callback;
-class training_algorithm;
+class TrainingAlgorithm;
 class termination_criteria;
 
 /** @brief User-facing class that represents a set of compute resources.
@@ -72,7 +72,7 @@ public:
   trainer(lbann_comm* comm,
           std::unique_ptr<data_coordinator> dc,
           size_t mini_batch_size,
-          std::unique_ptr<training_algorithm> alg = nullptr);
+          std::unique_ptr<TrainingAlgorithm> alg = nullptr);
 
   ~trainer();
 
@@ -206,7 +206,7 @@ public:
     typename std::pair<observer_ptr<model>, execution_mode>;
 
   execution_context_key_pair_t
-  check_and_build_execution_context(training_algorithm& alg,
+  check_and_build_execution_context(TrainingAlgorithm& alg,
                                     observer_ptr<model> model,
                                     execution_mode mode);
 
@@ -298,7 +298,7 @@ private:
    *  @details If null, a different type of execution algorithm is
    *  being used (e.g., inference).
    */
-  std::unique_ptr<training_algorithm> m_training_alg;
+  std::unique_ptr<TrainingAlgorithm> m_training_alg;
 
   /** @brief Communication domain for the trainer. */
   lbann_comm* m_comm;

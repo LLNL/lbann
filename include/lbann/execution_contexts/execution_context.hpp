@@ -41,7 +41,7 @@ namespace lbann {
 
 // Forward-declare this.
 class trainer;
-class training_algorithm;
+class TrainingAlgorithm;
 
 class execution_context
 {

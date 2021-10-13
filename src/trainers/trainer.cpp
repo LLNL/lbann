@@ -56,7 +56,7 @@ namespace lbann {
 trainer::trainer(lbann_comm* comm,
                  std::unique_ptr<data_coordinator> dc,
                  size_t mini_batch_size,
-                 std::unique_ptr<training_algorithm> alg)
+                 std::unique_ptr<TrainingAlgorithm> alg)
   : m_data_coordinator{std::move(dc)},
     m_training_alg{std::move(alg)},
     m_comm{comm},
@@ -128,7 +128,7 @@ void trainer::setup(std::unique_ptr<thread_pool> io_thread_pool,
 /// Check if there is already an execution context for the model in this mode,
 /// if not create one
 trainer::execution_context_key_pair_t
-trainer::check_and_build_execution_context(training_algorithm& alg,
+trainer::check_and_build_execution_context(TrainingAlgorithm& alg,
                                            observer_ptr<model> model,
                                            execution_mode mode)
 {

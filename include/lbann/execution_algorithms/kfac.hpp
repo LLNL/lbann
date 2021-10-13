@@ -57,9 +57,9 @@ namespace lbann {
  *  deep convolutional neural networks." Proceedings of the IEEE
  *  Conference on Computer Vision and Pattern Recognition. 2019.
  */
-class KFAC final : public Cloneable<KFAC, training_algorithm>
+class KFAC final : public Cloneable<KFAC, TrainingAlgorithm>
 {
-  using BaseType = Cloneable<KFAC, training_algorithm>;
+  using BaseType = Cloneable<KFAC, TrainingAlgorithm>;
 
 public:
   using TermCriteriaType = sgd_termination_criteria;
@@ -162,7 +162,7 @@ protected:
    *         `get_new_exection_context()`.
    */
   kfac::ExecutionContext* do_get_new_execution_context() const final;
-  
+
   void send_recv_inverse_matrices(
     ExeContextType& context,
     lbann_comm *comm);
@@ -241,7 +241,7 @@ private:
   bool m_has_kronecker_inverse=false;
   size_t m_compute_interval;
 
-  El::Matrix<double, El::Device::CPU> m_inverse_matrices_size; 
+  El::Matrix<double, El::Device::CPU> m_inverse_matrices_size;
 
 }; // class KFAC
 

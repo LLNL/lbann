@@ -60,8 +60,8 @@ void lbann::register_new_training_algorithm(TrainingAlgorithmKey key,
 }
 
 template <>
-std::unique_ptr<lbann::training_algorithm>
-lbann::make_abstract<lbann::training_algorithm>(
+std::unique_ptr<lbann::TrainingAlgorithm>
+lbann::make_abstract<lbann::TrainingAlgorithm>(
   google::protobuf::Message const& params)
 {
   auto const& algo_params =
