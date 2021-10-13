@@ -669,7 +669,7 @@ if [[ "${SPEC_ONLY}" == "TRUE" ]]; then
 fi
 
 # Try to concretize the environment and catch the return code
-CMD="spack concretize"
+CMD="spack concretize ${INSTALL_BUILD_EXTRAS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -783,6 +783,13 @@ if [[ -z "${USER_BUILD:-}" ]]; then
     CMD="ln -s ${LBANN_HOME}/spack-build-${LBANN_SPEC_HASH} ${LINK_DIR}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+    # Copy the compile_commands.json file to LBANN_HOME
+    if [[ -e "${LBANN_HOME}/spack-build-${LBANN_SPEC_HASH}/compile_commands.json" ]]; then
+        CMD="cp ${LBANN_HOME}/spack-build-${LBANN_SPEC_HASH}/compile_commands.json ${LBANN_HOME}/compile_commands.json"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    fi
 fi
 
 ##########################################################################################
