@@ -41,29 +41,29 @@ namespace lbann {
  *  execution mode.
  *  @details Step counts are not reset after each epoch.
  */
-class sgd_execution_context final : public execution_context
+class SGDExecutionContext final : public ExecutionContext
 {
 public:
   /** Constructor. */
-  sgd_execution_context(execution_mode mode, size_t mini_batch_size);
+  SGDExecutionContext(execution_mode mode, size_t mini_batch_size);
   /** Destructor. */
-  virtual ~sgd_execution_context() = default;
+  virtual ~SGDExecutionContext() = default;
 
   /** Move constructor. */
-  sgd_execution_context(sgd_execution_context&& other) = default;
+  SGDExecutionContext(SGDExecutionContext&& other) = default;
   /** Move assignment operator. */
-  sgd_execution_context& operator=(sgd_execution_context&& other) = default;
+  SGDExecutionContext& operator=(SGDExecutionContext&& other) = default;
   /** @brief Get a clean sgd_execution_context. */
 
   /** Copy constructor -- deleted. */
-  sgd_execution_context(const sgd_execution_context& other) = delete;
+  SGDExecutionContext(const SGDExecutionContext& other) = delete;
   /** Copy assignment operator -- deleted. */
-  sgd_execution_context&
-  operator=(const sgd_execution_context& other) = delete;
+  SGDExecutionContext&
+  operator=(const SGDExecutionContext& other) = delete;
 
-  std::unique_ptr<execution_context> get_new() const override
+  std::unique_ptr<ExecutionContext> get_new() const override
   {
-    return make_unique<sgd_execution_context>(execution_mode::invalid, 0UL);
+    return make_unique<SGDExecutionContext>(execution_mode::invalid, 0UL);
   }
 
   /** Archive for checkpoint and restart */
@@ -143,7 +143,7 @@ public:
 
 private:
   friend class cereal::access;
-  sgd_execution_context() = default;
+  SGDExecutionContext() = default;
 
 private:
   /** @brief Timer tracking execution time. */
@@ -168,19 +168,19 @@ private:
 };
 
 /** @brief Base class for SGD stopping. */
-class sgd_termination_criteria
-  : public termination_criteria,
-    public Cloneable<HasAbstractFunction<sgd_termination_criteria>>
+class SGDTerminationCriteria
+  : public TerminationCriteria,
+    public Cloneable<HasAbstractFunction<SGDTerminationCriteria>>
 {
 public:
-  sgd_termination_criteria() = default;
-  virtual ~sgd_termination_criteria() = default;
-  bool operator()(execution_context const& c_in) const final {
-    auto const& c = dynamic_cast<sgd_execution_context const&>(c_in);
+  SGDTerminationCriteria() = default;
+  virtual ~SGDTerminationCriteria() = default;
+  bool operator()(ExecutionContext const& c_in) const final {
+    auto const& c = dynamic_cast<SGDExecutionContext const&>(c_in);
     return c.get_early_stop() || this->is_done(c);
   }
 private:
-  virtual bool is_done(sgd_execution_context const& c) const noexcept = 0;
+  virtual bool is_done(SGDExecutionContext const& c) const noexcept = 0;
 };
 
 /** @brief Stop SGD based on a fixed batch count.
@@ -188,16 +188,16 @@ private:
  *  The training algorithm still tracks the epoch count for other
  *  parts of the code (e.g. at_epoch_begin/end callbacks).
  */
-class batch_termination_criteria
-  : public Cloneable<batch_termination_criteria, sgd_termination_criteria>
+class BatchTerminationCriteria
+  : public Cloneable<BatchTerminationCriteria, SGDTerminationCriteria>
 {
 public:
-  batch_termination_criteria(size_t num_batches)
+  BatchTerminationCriteria(size_t num_batches)
     : m_max_batches{num_batches}
   {}
 
 private:
-  bool is_done(sgd_execution_context const& c) const noexcept final {
+  bool is_done(SGDExecutionContext const& c) const noexcept final {
     return c.get_step() >= m_max_batches;
   }
 
@@ -205,16 +205,16 @@ private:
   size_t m_max_batches;
 };
 
-class epoch_termination_criteria
-  : public Cloneable<epoch_termination_criteria, sgd_termination_criteria>
+class EpochTerminationCriteria
+  : public Cloneable<EpochTerminationCriteria, SGDTerminationCriteria>
 {
 public:
-  epoch_termination_criteria(size_t num_epochs)
+  EpochTerminationCriteria(size_t num_epochs)
     : m_max_epochs{num_epochs}
   {}
 
 private:
-  bool is_done(sgd_execution_context const& c) const noexcept final {
+  bool is_done(SGDExecutionContext const& c) const noexcept final {
     return c.get_epoch() >= m_max_epochs;
   }
 
@@ -222,16 +222,16 @@ private:
   size_t m_max_epochs;
 };
 
-class seconds_termination_criteria
-  : public Cloneable<seconds_termination_criteria, sgd_termination_criteria>
+class SecondsTerminationCriteria
+  : public Cloneable<SecondsTerminationCriteria, SGDTerminationCriteria>
 {
 public:
-  seconds_termination_criteria(double seconds)
+  SecondsTerminationCriteria(double seconds)
     : m_max_seconds{seconds}
   {}
 
 private:
-  bool is_done(sgd_execution_context const& c) const noexcept final;
+  bool is_done(SGDExecutionContext const& c) const noexcept final;
 
 private:
   double m_max_seconds;

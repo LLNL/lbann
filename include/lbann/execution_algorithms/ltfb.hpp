@@ -110,7 +110,7 @@ public:
    *  @param[in,out] dc The data source for training.
    *  @param[in] mode Completely superfluous.
    */
-  void apply(execution_context& context,
+  void apply(ExecutionContext& context,
              model& m,
              data_coordinator& dc,
              execution_mode mode) final;

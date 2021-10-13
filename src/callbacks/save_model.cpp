@@ -93,7 +93,7 @@ bool save_model::do_save_model(model *m) {
 
 // Save model weights
 bool save_model::do_save_model_weights(model *m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   // if the checkpoint directory is not defined, bail
   if (m_dir.length() == 0) {
     return false;

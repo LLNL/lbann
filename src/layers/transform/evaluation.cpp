@@ -252,7 +252,7 @@ void abstract_evaluation_layer<TensorDataType>::fp_compute() {
 
 template <typename TensorDataType>
 void abstract_evaluation_layer<TensorDataType>::bp_compute() {
-  const auto& context = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+  const auto& context = static_cast<SGDExecutionContext&>(this->m_model->get_execution_context());
   const auto mini_batch_size = context.get_effective_mini_batch_size();
   El::Fill(this->get_error_signals(), TensorDataType(m_scale / mini_batch_size));
 }

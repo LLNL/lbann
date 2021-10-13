@@ -62,7 +62,7 @@ class KFAC final : public Cloneable<KFAC, TrainingAlgorithm>
   using BaseType = Cloneable<KFAC, TrainingAlgorithm>;
 
 public:
-  using TermCriteriaType = sgd_termination_criteria;
+  using TermCriteriaType = SGDTerminationCriteria;
   using ExeContextType = kfac::ExecutionContext;
 
 public:
@@ -106,7 +106,7 @@ public:
    *  @param[in,out] dc The data source for training.
    *  @param[in] mode Completely superfluous.
    */
-  void apply(execution_context& context,
+  void apply(ExecutionContext& context,
              model& m,
              data_coordinator& dc,
              execution_mode mode) final;

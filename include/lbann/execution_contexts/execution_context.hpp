@@ -43,17 +43,17 @@ namespace lbann {
 class trainer;
 class TrainingAlgorithm;
 
-class execution_context
+class ExecutionContext
 {
 public:
   /** Constructor. */
-  execution_context();
+  ExecutionContext();
 
   /** Destructor. */
-  virtual ~execution_context() = default;
+  virtual ~ExecutionContext() = default;
 
   /** Get a "clean" execution_context of the same type. */
-  virtual std::unique_ptr<execution_context> get_new() const = 0;
+  virtual std::unique_ptr<ExecutionContext> get_new() const = 0;
 
   /** @brief Get a string identifying the type of execution context.
    *  @details Should match the training algorithm.
@@ -100,13 +100,13 @@ public:
 protected:
   friend class cereal::access;
   /** Copy constructor. */
-  execution_context(const execution_context& other) = delete;
+  ExecutionContext(const ExecutionContext& other) = delete;
   /** Copy assignment operator. */
-  execution_context& operator=(const execution_context& other) = delete;
+  ExecutionContext& operator=(const ExecutionContext& other) = delete;
   /** Move constructor. */
-  execution_context(execution_context&& other) = default;
+  ExecutionContext(ExecutionContext&& other) = default;
   /** Move assignment operator. */
-  execution_context& operator=(execution_context&& other) = default;
+  ExecutionContext& operator=(ExecutionContext&& other) = default;
 
 private:
 
@@ -123,12 +123,12 @@ private:
  *  algorithm, and specifically its execution context, but can
  *  otherwise be anything meaningful in the context of that algorithm.
 */
-class termination_criteria
+class TerminationCriteria
 {
 public:
-  termination_criteria() = default;
-  virtual ~termination_criteria() = default;
-  virtual bool operator()(execution_context const& c) const = 0;
+  TerminationCriteria() = default;
+  virtual ~TerminationCriteria() = default;
+  virtual bool operator()(ExecutionContext const& c) const = 0;
 };
 
 } // namespace lbann

@@ -115,7 +115,7 @@ public:
    *  @param[in] mode IMO, superfluous. Will be removed.
    *  @param[in] term_criteria A description of when to stop training.
    */
-  virtual void apply(execution_context& context,
+  virtual void apply(ExecutionContext& context,
                      model& model,
                      data_coordinator& dc,
                      execution_mode mode) = 0;
@@ -159,7 +159,7 @@ public:
    *        the Cloneable interface, for example. See
    *        `do_get_new_execution_context()`.
    */
-  std::unique_ptr<execution_context> get_new_execution_context() const
+  std::unique_ptr<ExecutionContext> get_new_execution_context() const
   {
     return to_unique_ptr(do_get_new_execution_context());
   }
@@ -177,7 +177,7 @@ protected:
   /** @brief Covariant return-friendly implementation of
    *         `get_new_exection_context()`.
    */
-  virtual execution_context* do_get_new_execution_context() const = 0;
+  virtual ExecutionContext* do_get_new_execution_context() const = 0;
 
 private:
   /** @brief The user-defined name of the algorithm. */

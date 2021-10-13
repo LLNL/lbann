@@ -38,7 +38,7 @@
 
 namespace lbann {
 
-void LTFB::apply(execution_context& context,
+void LTFB::apply(ExecutionContext& context,
                  model& m,
                  data_coordinator& dc,
                  execution_mode /*mode*/)

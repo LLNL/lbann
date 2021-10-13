@@ -75,7 +75,7 @@ void debug_io::on_forward_prop_begin(model *m, Layer *l) {
 }
 
 void debug_io::print_fp_start(model *m, input_layer<DataType> *input) {
-  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
   const data_coordinator& dc = get_const_trainer().get_data_coordinator();
   const auto& step = c.get_step();
   const auto mode = c.get_execution_mode();

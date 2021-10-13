@@ -65,7 +65,7 @@ void profiler::serialize(Archive & ar) {
 }
 
 void profiler::on_epoch_begin(model *m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   // Skip the first epoch
   if (m_skip_init && c.get_epoch() == 1) {
     prof_start();
@@ -75,31 +75,31 @@ void profiler::on_epoch_begin(model *m) {
 }
 
 void profiler::on_epoch_end(model *m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   prof_region_end(("epoch " + std::to_string(c.get_epoch())).c_str(),
                   m_sync);
 }
 
 void profiler::on_validation_begin(model *m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   prof_region_begin(("val " + std::to_string(c.get_epoch())).c_str(),
                     prof_colors[0], m_sync);
 }
 
 void profiler::on_validation_end(model *m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   prof_region_end(("val " + std::to_string(c.get_epoch())).c_str(),
                   m_sync);
 }
 
 void profiler::on_test_begin(model *m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   prof_region_begin(("test " + std::to_string(c.get_epoch())).c_str(),
                     prof_colors[0], m_sync);
 }
 
 void profiler::on_test_end(model *m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   prof_region_end(("test " + std::to_string(c.get_epoch())).c_str(),
                   m_sync);
 }

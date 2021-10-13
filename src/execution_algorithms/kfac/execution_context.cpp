@@ -46,7 +46,7 @@ ExecutionContext::ExecutionContext(
     m_damping_bn_err{damping_bn_err}
 {}
 
-std::unique_ptr<lbann::execution_context> ExecutionContext::get_new() const
+std::unique_ptr<lbann::ExecutionContext> ExecutionContext::get_new() const
 {
     return std::make_unique<ExecutionContext>(0UL, 0.0, 0.0, 0.0, 0.0);
 }

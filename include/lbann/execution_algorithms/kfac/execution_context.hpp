@@ -53,7 +53,7 @@ constexpr El::Device Device = El::Device::CPU;
 /** @class ExecutionContext
  *  @brief The execution context for an KFAC algorithm.
  */
-class ExecutionContext final : public lbann::execution_context
+class ExecutionContext final : public lbann::ExecutionContext
 {
 public:
   friend class ::lbann::KFAC;
@@ -74,7 +74,7 @@ public:
   ExecutionContext& operator=(const ExecutionContext& other) = delete;
 
   /** Get a "clean" execution_context of the same type. */
-  std::unique_ptr<lbann::execution_context> get_new() const override;
+  std::unique_ptr<lbann::ExecutionContext> get_new() const override;
 
   /** @brief Get a string identifying the type of execution context.
    *  @details Should match the training algorithm.
@@ -86,7 +86,7 @@ public:
   std::string get_state_string() const noexcept override;
 
   /** @brief Return execution context for SGD-family training algorithm. */
-  inline sgd_execution_context& get_sgd_execution_context() noexcept
+  inline SGDExecutionContext& get_sgd_execution_context() noexcept
   {
     return m_sgd_execution_context;
   }
@@ -116,7 +116,7 @@ public:
 
 private:
 
-  sgd_execution_context m_sgd_execution_context;
+  SGDExecutionContext m_sgd_execution_context;
 
   /** @brief The current damping values. */
   double m_damping_act, m_damping_err,

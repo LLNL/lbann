@@ -90,7 +90,7 @@ std::vector<std::pair<size_t, El::Int>>
 categorical_accuracy_strategy::get_image_indices(model const& m) const {
   static size_t img_counter = 0;
   static size_t epoch_counter = 0;
-  auto const& exe_ctx = dynamic_cast<sgd_execution_context const&>(m.get_execution_context());
+  auto const& exe_ctx = dynamic_cast<SGDExecutionContext const&>(m.get_execution_context());
   if(exe_ctx.get_epoch() > epoch_counter){
     epoch_counter++;
     img_counter = 0;
@@ -279,7 +279,7 @@ summarize_images::summarize_images(std::shared_ptr<lbann_summary> const& summari
 
 void summarize_images::on_batch_evaluate_end(model* m) {
 
-  auto const& exe_ctx = dynamic_cast<sgd_execution_context const&>(m->get_execution_context());
+  auto const& exe_ctx = dynamic_cast<SGDExecutionContext const&>(m->get_execution_context());
   if (exe_ctx.get_epoch() % m_epoch_interval != 0)
     return;
 
@@ -311,7 +311,7 @@ void summarize_images::dump_images_to_summary(model const& m) const {
           "Column index ", col_index, " is greater than Matrix width ",
           local_images.Width());
       }
-      auto const& exe_ctx = dynamic_cast<sgd_execution_context const&>(
+      auto const& exe_ctx = dynamic_cast<SGDExecutionContext const&>(
         m.get_execution_context());
       auto image_tag =  m_strategy->get_tag(m_img_source_layer_name,
                                             sample_index, exe_ctx.get_epoch());

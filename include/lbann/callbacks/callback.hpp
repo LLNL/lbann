@@ -217,7 +217,7 @@ public:
   inline std::string get_multi_trainer_ec_model_path(const model& m,
                                                      const std::string& root_dir) {
     std::string dir = get_multi_trainer_path(m, root_dir);
-    const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
+    const auto& c = static_cast<const SGDExecutionContext&>(m.get_execution_context());
     return build_string(dir,
                         c.get_state_string(), '/',
                         m.get_name(), '/');

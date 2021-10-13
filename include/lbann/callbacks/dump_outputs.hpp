@@ -83,7 +83,7 @@ public:
     do_dump_outputs(*m, *l);
   }
   void on_evaluate_forward_prop_end(model* m, Layer* l) override {
-    const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+    const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
     if(c.get_step() % m_batch_interval == 0) {
       do_dump_outputs(*m, *l);
     }

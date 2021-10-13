@@ -49,7 +49,7 @@ void save_topk_models::on_test_end(model *m) {
 }
 
 bool save_topk_models::am_in_topk(model *m) {
-  const auto& c = static_cast<const execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<const ExecutionContext&>(m->get_execution_context());
   lbann_comm *comm = m->get_comm();
   const int num_trainers = comm->get_num_trainers();
   std::string mode_string = "test";

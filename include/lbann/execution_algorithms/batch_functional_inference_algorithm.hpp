@@ -89,7 +89,7 @@ public:
     // Create an SGD_execution_context so that layer.forward_prop can get the
     // mini_batch_size - This should be fixed in the future, when SGD is not so
     // hard-coded into the model & layers
-    auto c = sgd_execution_context(execution_mode::inference, mbs);
+    auto c = SGDExecutionContext(execution_mode::inference, mbs);
     model->reset_mode(c, execution_mode::inference);
 
     // Infer on mini batches

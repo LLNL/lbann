@@ -53,7 +53,7 @@ SGDTrainingAlgorithm::operator=(SGDTrainingAlgorithm const& other)
 {
   BaseType::operator=(other);
   m_stopping_criteria = other.m_stopping_criteria->clone();
-  m_validation_context = sgd_execution_context{execution_mode::validation, 1UL};
+  m_validation_context = SGDExecutionContext{execution_mode::validation, 1UL};
   m_validation_epochs = 1UL;
   return *this;
 }
@@ -62,14 +62,14 @@ SGDTrainingAlgorithm::operator=(SGDTrainingAlgorithm const& other)
 // Evaluation and training
 ////////////////////////////////////////////////////////////
 
-void SGDTrainingAlgorithm::apply(execution_context& context,
+void SGDTrainingAlgorithm::apply(ExecutionContext& context,
                                    model& model,
                                    data_coordinator& dc,
                                    execution_mode mode)
 {
-  sgd_execution_context& sgd_context =
-    dynamic_cast<sgd_execution_context&>(context);
-  const sgd_termination_criteria& sgd_term = *m_stopping_criteria;
+  SGDExecutionContext& sgd_context =
+    dynamic_cast<SGDExecutionContext&>(context);
+  const SGDTerminationCriteria& sgd_term = *m_stopping_criteria;
   switch (mode) {
   case execution_mode::training:
     train(sgd_context, model, dc, sgd_term);
@@ -84,10 +84,10 @@ void SGDTrainingAlgorithm::apply(execution_context& context,
   }
 }
 
-void SGDTrainingAlgorithm::train(sgd_execution_context& c,
+void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
                                    model& model,
                                    data_coordinator& dc,
-                                   sgd_termination_criteria const& term)
+                                   SGDTerminationCriteria const& term)
 {
   auto& evaluation_context = m_validation_context;
   auto& num_validation_epochs = m_validation_epochs;
@@ -137,7 +137,7 @@ void SGDTrainingAlgorithm::train(sgd_execution_context& c,
                  model,
                  dc,
                  execution_mode::validation,
-                 epoch_termination_criteria(num_validation_epochs));
+                 EpochTerminationCriteria(num_validation_epochs));
         ++num_validation_epochs;
 
         // FIXME (trb 06/07/21): The early stopping callback is part
@@ -164,7 +164,7 @@ void SGDTrainingAlgorithm::train(sgd_execution_context& c,
 ////////////////////////////////////////////////////////////
 
 // Returns "true" if the data_coordinator detects the end of an epoch.
-bool SGDTrainingAlgorithm::train_mini_batch(sgd_execution_context& c,
+bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
                                               model& model,
                                               data_coordinator& dc)
 {
@@ -219,11 +219,11 @@ bool SGDTrainingAlgorithm::train_mini_batch(sgd_execution_context& c,
   return finished;
 }
 
-void SGDTrainingAlgorithm::evaluate(sgd_execution_context& c,
+void SGDTrainingAlgorithm::evaluate(SGDExecutionContext& c,
                                       model& model,
                                       data_coordinator& dc,
                                       execution_mode mode,
-                                      sgd_termination_criteria const& term)
+                                      SGDTerminationCriteria const& term)
 {
   /// @todo BVE FIXME this state needs to be set for inference-only
   /// workflows -- however, if the model will bail due to a lack of a
@@ -251,7 +251,7 @@ void SGDTrainingAlgorithm::evaluate(sgd_execution_context& c,
   do_evaluate_end_cbs(model, mode);
 }
 
-bool SGDTrainingAlgorithm::evaluate_mini_batch(sgd_execution_context& c,
+bool SGDTrainingAlgorithm::evaluate_mini_batch(SGDExecutionContext& c,
                                                  model& model,
                                                  data_coordinator& dc,
                                                  execution_mode mode)
@@ -353,8 +353,8 @@ void SGDTrainingAlgorithm::do_epoch_end_cbs(model& model)
 void SGDTrainingAlgorithm::do_batch_begin_cbs(model& model,
                                                 execution_mode mode)
 {
-  sgd_execution_context& c =
-    static_cast<sgd_execution_context&>(model.get_execution_context());
+  SGDExecutionContext& c =
+    static_cast<SGDExecutionContext&>(model.get_execution_context());
 
   for (const auto& cb : model.get_callbacks()) {
     switch (mode) {
@@ -376,8 +376,8 @@ void SGDTrainingAlgorithm::do_batch_begin_cbs(model& model,
 
 void SGDTrainingAlgorithm::do_batch_end_cbs(model& model, execution_mode mode)
 {
-  sgd_execution_context& c =
-    static_cast<sgd_execution_context&>(model.get_execution_context());
+  SGDExecutionContext& c =
+    static_cast<SGDExecutionContext&>(model.get_execution_context());
 
   for (const auto& cb : model.get_callbacks()) {
     switch (mode) {
@@ -399,10 +399,10 @@ void SGDTrainingAlgorithm::do_batch_end_cbs(model& model, execution_mode mode)
 
 std::string SGDTrainingAlgorithm::get_type() const { return "sgd"; }
 
-sgd_execution_context*
+SGDExecutionContext*
 SGDTrainingAlgorithm::do_get_new_execution_context() const
 {
-  return new sgd_execution_context(execution_mode::invalid, 0);
+  return new SGDExecutionContext(execution_mode::invalid, 0);
 }
 } // namespace lbann
 
@@ -418,18 +418,18 @@ lbann::make<lbann::SGDTrainingAlgorithm>(
   LBANN_ASSERT(params.parameters().UnpackTo(&sgd_params));
 
   auto const& stopping_criteria = sgd_params.stopping_criteria();
-  std::unique_ptr<lbann::sgd_termination_criteria> stopping;
+  std::unique_ptr<SGDTerminationCriteria> stopping;
   switch (stopping_criteria.criterion_case()) {
   case lbann_data::SGD::TerminationCriteria::kMaxBatches:
-    stopping = lbann::make_unique<lbann::batch_termination_criteria>(
+    stopping = make_unique<BatchTerminationCriteria>(
       stopping_criteria.max_batches());
     break;
   case lbann_data::SGD::TerminationCriteria::kMaxEpochs:
-    stopping = lbann::make_unique<lbann::epoch_termination_criteria>(
+    stopping = make_unique<EpochTerminationCriteria>(
       stopping_criteria.max_epochs());
     break;
   case lbann_data::SGD::TerminationCriteria::kMaxSeconds:
-    stopping = lbann::make_unique<lbann::seconds_termination_criteria>(
+    stopping = make_unique<SecondsTerminationCriteria>(
       stopping_criteria.max_seconds());
     //LBANN_ERROR("Time-based training not yet supported in SGD.");
     break;

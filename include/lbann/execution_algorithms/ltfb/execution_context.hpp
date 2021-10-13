@@ -42,14 +42,14 @@ namespace ltfb {
  *  object. My inclination is that it really doesn't matter and either
  *  would work.
  */
-class ExecutionContext final : public lbann::execution_context
+class ExecutionContext final : public lbann::ExecutionContext
 {
 public:
   ExecutionContext() = default;
   ~ExecutionContext() = default;
 
   /** Get a "clean" execution_context of the same type. */
-  std::unique_ptr<lbann::execution_context> get_new() const override
+  std::unique_ptr<lbann::ExecutionContext> get_new() const override
   {
     return std::make_unique<ExecutionContext>();
   }

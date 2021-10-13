@@ -72,7 +72,7 @@ void timer::timing_begin(const model& m) {
 }
 
 void timer::timing_end(model& m) {
-  const auto& c = static_cast<sgd_execution_context&>(m.get_execution_context());
+  const auto& c = static_cast<SGDExecutionContext&>(m.get_execution_context());
   constexpr EvalType zero = 0;
 
   // Get run time

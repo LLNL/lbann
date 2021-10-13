@@ -70,7 +70,7 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(El::Int mini_b
   /// During model setup there is no valid execution context, but
   /// during execution there is a context
   if(this->m_model->has_valid_execution_context()) {
-    auto& c = dynamic_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+    auto& c = dynamic_cast<SGDExecutionContext&>(this->m_model->get_execution_context());
     auto mode = c.get_execution_mode();
     auto effective_mini_batch_size = mini_batch_size;
     if (!(mode==execution_mode::inference)) {

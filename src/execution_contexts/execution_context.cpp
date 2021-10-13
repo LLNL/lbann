@@ -33,14 +33,14 @@ namespace lbann {
 // Execution context
 //******************************************************************************
 
-execution_context::execution_context() : m_step{0UL} {}
+ExecutionContext::ExecutionContext() : m_step{0UL} {}
 
-template <class Archive> void execution_context::serialize(Archive& ar)
+template <class Archive> void ExecutionContext::serialize(Archive& ar)
 {
   ar(CEREAL_NVP(m_step));
 }
 
 } // namespace lbann
 
-#define LBANN_CLASS_NAME execution_context
+#define LBANN_CLASS_NAME ExecutionContext
 #include <lbann/macros/register_class_with_cereal.hpp>

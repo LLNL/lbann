@@ -48,7 +48,7 @@ class SGDTrainingAlgorithm
 public:
   /** @brief Construct with a name. */
   SGDTrainingAlgorithm(std::string name,
-                         std::unique_ptr<sgd_termination_criteria> stop)
+                         std::unique_ptr<SGDTerminationCriteria> stop)
     : BaseType{std::move(name)},
       m_stopping_criteria{std::move(stop)},
       m_validation_context{execution_mode::validation, 1UL},
@@ -74,23 +74,23 @@ public:
 
   /** Apply the training algorithm to the model with the provided
       context and execution mode */
-  void apply(execution_context& c,
+  void apply(ExecutionContext& c,
              model& model,
              data_coordinator& dc,
              execution_mode mode) override;
 
   /** Train a model using an iterative SGD solver. */
-  void train(sgd_execution_context& c,
+  void train(SGDExecutionContext& c,
              model& model,
              data_coordinator& dc,
-             sgd_termination_criteria const& term);
+             SGDTerminationCriteria const& term);
 
   /** Evaluate a model using the forward pass of an SGD solver. */
-  void evaluate(sgd_execution_context& c,
+  void evaluate(SGDExecutionContext& c,
                 model& model,
                 data_coordinator& dc,
                 execution_mode mode,
-                sgd_termination_criteria const& term);
+                SGDTerminationCriteria const& term);
 
   /** @brief Get a default-initialized execution context.
    *  @note This method participates in the
@@ -98,7 +98,7 @@ public:
    *        it hides the base-class method to give the illusion of a
    *        covariant return.
    */
-  std::unique_ptr<sgd_execution_context>
+  std::unique_ptr<SGDExecutionContext>
   get_new_execution_context() const
   {
     return to_unique_ptr(this->do_get_new_execution_context());
@@ -106,12 +106,12 @@ public:
 
 protected:
   /** Train model on one step / mini-batch of an SGD forward pass */
-  virtual bool train_mini_batch(sgd_execution_context& c,
+  virtual bool train_mini_batch(SGDExecutionContext& c,
                                 model& model,
                                 data_coordinator& dc);
 
   /** Evaluate model on one step / mini-batch of an SGD forward pass */
-  virtual bool evaluate_mini_batch(sgd_execution_context& c,
+  virtual bool evaluate_mini_batch(SGDExecutionContext& c,
                                    model& model,
                                    data_coordinator& dc,
                                    execution_mode mode);
@@ -137,17 +137,17 @@ protected:
   /** Execute callbacks at end of mini-batch. */
   virtual void do_batch_end_cbs(model& model, execution_mode mode);
 
-  sgd_execution_context*
+  SGDExecutionContext*
   do_get_new_execution_context() const override;
 
 private:
-  std::unique_ptr<sgd_termination_criteria> m_stopping_criteria;
+  std::unique_ptr<SGDTerminationCriteria> m_stopping_criteria;
 
   // FIXME (trb 07/20/21): This is a hack. These aren't actually
   // copyable objects (it wouldn't make sense), so when the training
   // algorithm is copied, these are reset to defaults. "In the
   // future", we'll externalize validation and this won't be an issue.
-  sgd_execution_context m_validation_context;
+  SGDExecutionContext m_validation_context;
   size_t m_validation_epochs;
 };
 

@@ -223,7 +223,7 @@ public:
   }
 
   /** Grab the training context of the model */
-  const execution_context& get_execution_context() const {
+  const ExecutionContext& get_execution_context() const {
     if(m_execution_context == nullptr) {
       LBANN_ERROR("execution context is not set");
     }
@@ -231,8 +231,8 @@ public:
   }
 
   /** Grab the training context of the model */
-  execution_context& get_execution_context() {
-    return const_cast<execution_context&>(static_cast<const model&>(*this).get_execution_context());
+  ExecutionContext& get_execution_context() {
+    return const_cast<ExecutionContext&>(static_cast<const model&>(*this).get_execution_context());
   }
 
   // ===========================================
@@ -448,7 +448,7 @@ public:
   // ===========================================
 
   /** @brief Reset model pointer and execution mode. */
-  virtual void reset_mode(execution_context& context, execution_mode mode);
+  virtual void reset_mode(ExecutionContext& context, execution_mode mode);
   /** @brief Reset model statistics for an epoch. */
   virtual void reset_epoch_statistics(execution_mode mode);
 
@@ -527,7 +527,7 @@ private:
 private:
 
   /** Pointer to the execution context object used for training or evaluating this model */
-  observer_ptr<execution_context> m_execution_context;
+  observer_ptr<ExecutionContext> m_execution_context;
 
   /** @brief LBANN communicator. */
   lbann_comm* m_comm;

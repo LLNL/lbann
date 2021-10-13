@@ -122,7 +122,7 @@ class data_coordinator {
   }
 
   /** Grab the training context of the data coordinator */
-  const execution_context& get_execution_context() const {
+  const ExecutionContext& get_execution_context() const {
     if(m_execution_context == nullptr) {
       LBANN_ERROR("execution context is not set");
     }
@@ -130,8 +130,8 @@ class data_coordinator {
   }
 
   /** Grab the training context of the data coordinator */
-  execution_context& get_execution_context() {
-    return const_cast<execution_context&>(static_cast<const data_coordinator&>(*this).get_execution_context());
+  ExecutionContext& get_execution_context() {
+    return const_cast<ExecutionContext&>(static_cast<const data_coordinator&>(*this).get_execution_context());
   }
 
   /** Return the I/O thread pool */
@@ -380,8 +380,8 @@ class data_coordinator {
 
   // At the start of the epoch, set the execution mode and make sure
   // that each layer points to this model
-  void reset_mode(execution_context& context) {
-    m_execution_context = static_cast<observer_ptr<execution_context>>(&context);
+  void reset_mode(ExecutionContext& context) {
+    m_execution_context = static_cast<observer_ptr<ExecutionContext>>(&context);
   }
 
   /** @name Helper functions to access the dataset statistics */
@@ -506,7 +506,7 @@ public:  // @todo BVE FIXME
   std::mutex dr_mutex;
 
   /** Pointer to the execution context object used for training or evaluating this model */
-  observer_ptr<execution_context> m_execution_context;
+  observer_ptr<ExecutionContext> m_execution_context;
 
   observer_ptr<thread_pool> m_io_thread_pool;
 };
