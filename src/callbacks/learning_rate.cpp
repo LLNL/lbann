@@ -251,15 +251,15 @@ poly_learning_rate::poly_learning_rate(
   double p, size_t n_epochs, size_t max_iter)
   : learning_rate(std::vector<std::string>()),
     m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
-    m_end_lr(0.0f),
-    m_lr(1.0f), m_last_epoch_lr(1.0f) {}
+    m_start_lr(0.0f), m_end_lr(0.0f)
+{}
 
 poly_learning_rate::poly_learning_rate(
   double p, size_t n_epochs, size_t max_iter, double end_lr,  std::vector<std::string> weights_names)
   : learning_rate(std::move(weights_names)),
     m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
-    m_end_lr(end_lr),
-    m_lr(1.0f), m_last_epoch_lr(1.0f) {}
+    m_start_lr(0.0f), m_end_lr(end_lr)
+{}
 
 /**
  * Check if the maximum number of iterations is set. If not, compute it by the
