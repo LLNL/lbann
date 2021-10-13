@@ -160,7 +160,7 @@ void KFAC::apply(
     train(context, model, dc, *m_stopping_criteria);
   }
   else {
-    sgd_training_algorithm eval_algo(
+    SGDTrainingAlgorithm eval_algo(
       this->get_name()+"_eval",
       m_stopping_criteria->clone());
     auto& eval_context = context.get_sgd_execution_context();
@@ -241,7 +241,7 @@ void KFAC::train(
             eval_context.inc_epoch();
             ++num_validation_epochs;
           }
-          sgd_training_algorithm eval_algo(
+          SGDTrainingAlgorithm eval_algo(
             this->get_name()+"_eval",
             make_unique<epoch_termination_criteria>(num_validation_epochs));
           eval_algo.apply(eval_context, model, dc, eval_mode);

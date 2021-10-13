@@ -40,14 +40,14 @@
 namespace lbann {
 
 /** @brief Base class for LBANN SGD-family training algorithms. */
-class sgd_training_algorithm
-  : public Cloneable<sgd_training_algorithm, TrainingAlgorithm>
+class SGDTrainingAlgorithm
+  : public Cloneable<SGDTrainingAlgorithm, TrainingAlgorithm>
 {
-  using BaseType = Cloneable<sgd_training_algorithm, TrainingAlgorithm>;
+  using BaseType = Cloneable<SGDTrainingAlgorithm, TrainingAlgorithm>;
 
 public:
   /** @brief Construct with a name. */
-  sgd_training_algorithm(std::string name,
+  SGDTrainingAlgorithm(std::string name,
                          std::unique_ptr<sgd_termination_criteria> stop)
     : BaseType{std::move(name)},
       m_stopping_criteria{std::move(stop)},
@@ -55,14 +55,14 @@ public:
       m_validation_epochs{1UL}
   {}
 
-  sgd_training_algorithm(const sgd_training_algorithm& other);
-  sgd_training_algorithm&
-  operator=(const sgd_training_algorithm& other);
+  SGDTrainingAlgorithm(const SGDTrainingAlgorithm& other);
+  SGDTrainingAlgorithm&
+  operator=(const SGDTrainingAlgorithm& other);
 
-  sgd_training_algorithm(sgd_training_algorithm&& other) = default;
-  sgd_training_algorithm& operator=(sgd_training_algorithm&& other) = default;
+  SGDTrainingAlgorithm(SGDTrainingAlgorithm&& other) = default;
+  SGDTrainingAlgorithm& operator=(SGDTrainingAlgorithm&& other) = default;
 
-  virtual ~sgd_training_algorithm() = default;
+  virtual ~SGDTrainingAlgorithm() = default;
   /** Copy training_algorithm. */
   //  virtual sgd_training_algorithm* copy() const = default;
 
@@ -152,8 +152,8 @@ private:
 };
 
 template <>
-std::unique_ptr<sgd_training_algorithm>
-make<sgd_training_algorithm>(google::protobuf::Message const& params);
+std::unique_ptr<SGDTrainingAlgorithm>
+make<SGDTrainingAlgorithm>(google::protobuf::Message const& params);
 
 } // namespace lbann
 

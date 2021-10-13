@@ -39,7 +39,7 @@ namespace {
 lbann::TrainingAlgorithmFactory build_default_factory()
 {
   lbann::TrainingAlgorithmFactory fact;
-  fact.register_builder("SGD", lbann::make<lbann::sgd_training_algorithm>);
+  fact.register_builder("SGD", lbann::make<lbann::SGDTrainingAlgorithm>);
   fact.register_builder("LTFB", lbann::make<lbann::LTFB>);
   fact.register_builder("KFAC", lbann::make<lbann::KFAC>);
   return fact;

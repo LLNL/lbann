@@ -136,7 +136,7 @@ TEST_CASE("Building training algorithm from the factory",
 
     auto sgd = lbann::make_abstract<lbann::TrainingAlgorithm>(algo_msg);
 
-    REQUIRE_NOTHROW(dynamic_cast<lbann::sgd_training_algorithm const&>(*sgd));
+    REQUIRE_NOTHROW(dynamic_cast<lbann::SGDTrainingAlgorithm const&>(*sgd));
 
     REQUIRE(sgd->get_type() == "sgd");
     REQUIRE(sgd->get_name() == "my sgd algo");

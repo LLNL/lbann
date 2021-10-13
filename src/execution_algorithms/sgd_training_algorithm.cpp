@@ -40,16 +40,16 @@
 
 namespace lbann {
 
-sgd_training_algorithm::sgd_training_algorithm(
-  sgd_training_algorithm const& other)
+SGDTrainingAlgorithm::SGDTrainingAlgorithm(
+  SGDTrainingAlgorithm const& other)
   : BaseType(other.get_name()),
     m_stopping_criteria{other.m_stopping_criteria->clone()},
     m_validation_context{execution_mode::validation, 1UL},
     m_validation_epochs{1UL}
 {}
 
-sgd_training_algorithm&
-sgd_training_algorithm::operator=(sgd_training_algorithm const& other)
+SGDTrainingAlgorithm&
+SGDTrainingAlgorithm::operator=(SGDTrainingAlgorithm const& other)
 {
   BaseType::operator=(other);
   m_stopping_criteria = other.m_stopping_criteria->clone();
@@ -62,7 +62,7 @@ sgd_training_algorithm::operator=(sgd_training_algorithm const& other)
 // Evaluation and training
 ////////////////////////////////////////////////////////////
 
-void sgd_training_algorithm::apply(execution_context& context,
+void SGDTrainingAlgorithm::apply(execution_context& context,
                                    model& model,
                                    data_coordinator& dc,
                                    execution_mode mode)
@@ -84,7 +84,7 @@ void sgd_training_algorithm::apply(execution_context& context,
   }
 }
 
-void sgd_training_algorithm::train(sgd_execution_context& c,
+void SGDTrainingAlgorithm::train(sgd_execution_context& c,
                                    model& model,
                                    data_coordinator& dc,
                                    sgd_termination_criteria const& term)
@@ -164,7 +164,7 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
 ////////////////////////////////////////////////////////////
 
 // Returns "true" if the data_coordinator detects the end of an epoch.
-bool sgd_training_algorithm::train_mini_batch(sgd_execution_context& c,
+bool SGDTrainingAlgorithm::train_mini_batch(sgd_execution_context& c,
                                               model& model,
                                               data_coordinator& dc)
 {
@@ -219,7 +219,7 @@ bool sgd_training_algorithm::train_mini_batch(sgd_execution_context& c,
   return finished;
 }
 
-void sgd_training_algorithm::evaluate(sgd_execution_context& c,
+void SGDTrainingAlgorithm::evaluate(sgd_execution_context& c,
                                       model& model,
                                       data_coordinator& dc,
                                       execution_mode mode,
@@ -251,7 +251,7 @@ void sgd_training_algorithm::evaluate(sgd_execution_context& c,
   do_evaluate_end_cbs(model, mode);
 }
 
-bool sgd_training_algorithm::evaluate_mini_batch(sgd_execution_context& c,
+bool SGDTrainingAlgorithm::evaluate_mini_batch(sgd_execution_context& c,
                                                  model& model,
                                                  data_coordinator& dc,
                                                  execution_mode mode)
@@ -282,21 +282,21 @@ bool sgd_training_algorithm::evaluate_mini_batch(sgd_execution_context& c,
 // Callbacks
 ////////////////////////////////////////////////////////////
 
-void sgd_training_algorithm::do_train_begin_cbs(model& model)
+void SGDTrainingAlgorithm::do_train_begin_cbs(model& model)
 {
   for (const auto& cb : model.get_callbacks()) {
     cb->on_train_begin(&model);
   }
 }
 
-void sgd_training_algorithm::do_train_end_cbs(model& model)
+void SGDTrainingAlgorithm::do_train_end_cbs(model& model)
 {
   for (const auto& cb : model.get_callbacks()) {
     cb->on_train_end(&model);
   }
 }
 
-void sgd_training_algorithm::do_evaluate_begin_cbs(model& model,
+void SGDTrainingAlgorithm::do_evaluate_begin_cbs(model& model,
                                                    execution_mode mode)
 {
   for (const auto& cb : model.get_callbacks()) {
@@ -316,7 +316,7 @@ void sgd_training_algorithm::do_evaluate_begin_cbs(model& model,
   }
 }
 
-void sgd_training_algorithm::do_evaluate_end_cbs(model& model,
+void SGDTrainingAlgorithm::do_evaluate_end_cbs(model& model,
                                                  execution_mode mode)
 {
   for (const auto& cb : model.get_callbacks()) {
@@ -336,21 +336,21 @@ void sgd_training_algorithm::do_evaluate_end_cbs(model& model,
   }
 }
 
-void sgd_training_algorithm::do_epoch_begin_cbs(model& model)
+void SGDTrainingAlgorithm::do_epoch_begin_cbs(model& model)
 {
   for (const auto& cb : model.get_callbacks()) {
     cb->on_epoch_begin(&model);
   }
 }
 
-void sgd_training_algorithm::do_epoch_end_cbs(model& model)
+void SGDTrainingAlgorithm::do_epoch_end_cbs(model& model)
 {
   for (const auto& cb : model.get_callbacks()) {
     cb->on_epoch_end(&model);
   }
 }
 
-void sgd_training_algorithm::do_batch_begin_cbs(model& model,
+void SGDTrainingAlgorithm::do_batch_begin_cbs(model& model,
                                                 execution_mode mode)
 {
   sgd_execution_context& c =
@@ -374,7 +374,7 @@ void sgd_training_algorithm::do_batch_begin_cbs(model& model,
   }
 }
 
-void sgd_training_algorithm::do_batch_end_cbs(model& model, execution_mode mode)
+void SGDTrainingAlgorithm::do_batch_end_cbs(model& model, execution_mode mode)
 {
   sgd_execution_context& c =
     static_cast<sgd_execution_context&>(model.get_execution_context());
@@ -397,18 +397,18 @@ void sgd_training_algorithm::do_batch_end_cbs(model& model, execution_mode mode)
   }
 }
 
-std::string sgd_training_algorithm::get_type() const { return "sgd"; }
+std::string SGDTrainingAlgorithm::get_type() const { return "sgd"; }
 
 sgd_execution_context*
-sgd_training_algorithm::do_get_new_execution_context() const
+SGDTrainingAlgorithm::do_get_new_execution_context() const
 {
   return new sgd_execution_context(execution_mode::invalid, 0);
 }
 } // namespace lbann
 
 template <>
-std::unique_ptr<lbann::sgd_training_algorithm>
-lbann::make<lbann::sgd_training_algorithm>(
+std::unique_ptr<lbann::SGDTrainingAlgorithm>
+lbann::make<lbann::SGDTrainingAlgorithm>(
   google::protobuf::Message const& msg_in)
 {
   auto const& params =
@@ -436,6 +436,6 @@ lbann::make<lbann::sgd_training_algorithm>(
   default:
     LBANN_ERROR("No stopping criteria specified.");
   }
-  return make_unique<sgd_training_algorithm>(params.name(),
+  return make_unique<SGDTrainingAlgorithm>(params.name(),
                                              std::move(stopping));
 }

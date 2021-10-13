@@ -136,7 +136,7 @@ trainer::check_and_build_execution_context(TrainingAlgorithm& alg,
   if (m_model_execution_context.count(key) == 0) {
     /// Create a execution context for each model and execution mode
     std::unique_ptr<execution_context> context;
-    if (dynamic_cast<observer_ptr<sgd_training_algorithm>>(&alg) != nullptr) {
+    if (dynamic_cast<observer_ptr<SGDTrainingAlgorithm>>(&alg) != nullptr) {
       /// @todo BVE FIXME Figure out how to get a good mini-batch size
       /// in here
       context =
@@ -231,7 +231,7 @@ void trainer::train(observer_ptr<model> model,
     else
       stopping = make_unique<batch_termination_criteria>(num_batches);
 
-    m_training_alg = std::make_unique<sgd_training_algorithm>(
+    m_training_alg = std::make_unique<SGDTrainingAlgorithm>(
       "sgd_train", std::move(stopping));
   }
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
@@ -264,7 +264,7 @@ void trainer::evaluate(observer_ptr<model> model,
                        execution_mode mode,
                        El::Int num_batches)
 {
-  auto sgd = make_unique<sgd_training_algorithm>(
+  auto sgd = make_unique<SGDTrainingAlgorithm>(
     "sgd_evaluate",
     make_unique<epoch_termination_criteria>(/*num_epochs=*/1UL));
   auto ctxt = sgd->get_new_execution_context();
