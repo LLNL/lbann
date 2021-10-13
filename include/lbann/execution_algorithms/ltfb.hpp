@@ -69,8 +69,8 @@ class LTFB final : public Cloneable<LTFB, TrainingAlgorithm>
   using BaseType = Cloneable<LTFB, TrainingAlgorithm>;
 
 public:
-  using TermCriteriaType = ltfb::TerminationCriteria;
-  using ExeContextType = ltfb::ExecutionContext;
+  using TermCriteriaType = ltfb::LTFBTerminationCriteria;
+  using ExeContextType = ltfb::LTFBExecutionContext;
 
 public:
   /** @name Life-cycle management */
@@ -83,7 +83,7 @@ public:
   LTFB(std::string name,
        std::unique_ptr<TrainingAlgorithm> local_training_algorithm,
        std::unique_ptr<ltfb::MetaLearningStrategy> meta_learning_strategy,
-       ltfb::TerminationCriteria stopping_criteria)
+       ltfb::LTFBTerminationCriteria stopping_criteria)
     : BaseType{std::move(name)}, m_local_algo{std::move(
                                    local_training_algorithm)},
       m_meta_learning_strategy{std::move(meta_learning_strategy)},
@@ -119,9 +119,9 @@ protected:
   /** @brief Covariant return-friendly implementation of
    *         `get_new_exection_context()`.
    */
-  ltfb::ExecutionContext* do_get_new_execution_context() const final
+  ltfb::LTFBExecutionContext* do_get_new_execution_context() const final
   {
-    return new ltfb::ExecutionContext();
+    return new ltfb::LTFBExecutionContext();
   }
 
 private:
@@ -132,7 +132,7 @@ private:
   std::unique_ptr<ltfb::MetaLearningStrategy> m_meta_learning_strategy;
 
   /** @brief The LTFB stopping criteria. */
-  ltfb::TerminationCriteria m_termination_criteria;
+  ltfb::LTFBTerminationCriteria m_termination_criteria;
 
 }; // class LTFB
 

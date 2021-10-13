@@ -37,19 +37,19 @@ namespace ltfb {
  *
  *  An object here needs to manage
  */
-class TerminationCriteria final : public lbann::TerminationCriteria
+class LTFBTerminationCriteria final : public lbann::TerminationCriteria
 {
 public:
-  TerminationCriteria(size_t max_metalearning_steps)
+  LTFBTerminationCriteria(size_t max_metalearning_steps)
     : m_max_metalearning_steps{max_metalearning_steps}
   {}
-  ~TerminationCriteria() = default;
+  ~LTFBTerminationCriteria() = default;
   bool operator()(ExecutionContext const& c) const final
   {
-    return this->operator()(dynamic_cast<ExecutionContext const&>(c));
+    return this->operator()(dynamic_cast<LTFBExecutionContext const&>(c));
   }
   /** @brief Decide if the criteria are fulfilled. */
-  bool operator()(ExecutionContext const& exe_state) const noexcept
+  bool operator()(LTFBExecutionContext const& exe_state) const noexcept
   {
     return exe_state.get_step() >= m_max_metalearning_steps;
   }
