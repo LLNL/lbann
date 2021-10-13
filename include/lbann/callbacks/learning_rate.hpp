@@ -295,14 +295,10 @@ class poly_learning_rate : public learning_rate {
   size_t m_num_epochs;
   /// The maximum number of iterations until which the learning rate changes
   size_t m_max_iter;
-  /// The start learning rate
+  /// The initial learning rate
   float m_start_lr;
   /// The final learning rate
   float m_end_lr;
-  /// The current rate to scale the base learning rate
-  float m_lr;
-  /// The learning rate scale used at the end of the last epoch
-  float m_last_epoch_lr;
 };
 
 // Builder function
