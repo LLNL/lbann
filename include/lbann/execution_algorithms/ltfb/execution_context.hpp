@@ -26,7 +26,9 @@
 #ifndef LBANN_EXECUTION_ALGORITHMS_LTFB_EXECUTION_CONTEXT_HPP_INCLUDED
 #define LBANN_EXECUTION_ALGORITHMS_LTFB_EXECUTION_CONTEXT_HPP_INCLUDED
 
-#include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/utils/exception.hpp"
+
 #include <memory>
 #include <string>
 

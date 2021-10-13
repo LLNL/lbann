@@ -27,7 +27,7 @@
 #define LBANN_EXECUTION_ALGORITHMS_FACTORY_HPP_INCLUDED
 
 #include "lbann/execution_algorithms/training_algorithm.hpp"
-#include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/proto/helpers.hpp"
 #include "lbann/utils/factory.hpp"
 #include "lbann/utils/factory_error_policies.hpp"

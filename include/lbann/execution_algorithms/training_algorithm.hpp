@@ -29,7 +29,7 @@
 
 #include "lbann/base.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
-#include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/make_abstract.hpp"

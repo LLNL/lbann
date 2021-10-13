@@ -28,7 +28,7 @@
 
 #include "lbann/base.hpp"
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/memory.hpp"
 

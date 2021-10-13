@@ -28,8 +28,8 @@
 #include "lbann/layers/io/input_layer.hpp"
 
 #include "lbann/callbacks/imcomm.hpp"
-#include "lbann/execution_contexts/execution_context.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/serialize.hpp"
 

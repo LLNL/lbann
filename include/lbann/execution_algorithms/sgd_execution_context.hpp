@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,13 +27,10 @@
 #ifndef LBANN_SGD_EXECUTION_CONTEXT_HPP
 #define LBANN_SGD_EXECUTION_CONTEXT_HPP
 
-#include "lbann/base.hpp"
-#include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/utils/cloneable.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/utils/timer.hpp"
-
-#include <cstddef>
-#include <limits>
 
 namespace lbann {
 
@@ -63,7 +60,7 @@ public:
 
   std::unique_ptr<ExecutionContext> get_new() const override
   {
-    return make_unique<SGDExecutionContext>(execution_mode::invalid, 0UL);
+    return std::make_unique<SGDExecutionContext>(execution_mode::invalid, 0UL);
   }
 
   /** Archive for checkpoint and restart */

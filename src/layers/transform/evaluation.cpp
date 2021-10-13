@@ -28,7 +28,7 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/hydrogen_utils.hpp"
 #ifdef LBANN_HAS_GPU

@@ -1,8 +1,10 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
+  execution_context.cpp
   factory.cpp
   kfac.cpp
   ltfb.cpp
+  sgd_execution_context.cpp
   sgd_training_algorithm.cpp
   training_algorithm.cpp
   )

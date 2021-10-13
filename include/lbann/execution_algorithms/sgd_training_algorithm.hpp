@@ -30,8 +30,8 @@
 #include "lbann/base.hpp"
 #include "lbann/execution_algorithms/factory.hpp"
 #include "lbann/execution_algorithms/training_algorithm.hpp"
-#include "lbann/execution_contexts/execution_context.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/memory.hpp"
 #include <google/protobuf/message.h>

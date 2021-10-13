@@ -32,7 +32,7 @@
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/detect_El_mpi.hpp"
 #include "lbann/execution_algorithms/training_algorithm.hpp"
-#include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/hash.hpp"

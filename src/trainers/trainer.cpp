@@ -33,7 +33,7 @@
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/execution_algorithms/sgd_training_algorithm.hpp"
 #include "lbann/execution_algorithms/training_algorithm.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/io/persist_impl.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/memory.hpp"

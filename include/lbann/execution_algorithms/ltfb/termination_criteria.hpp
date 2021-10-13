@@ -27,7 +27,7 @@
 #define LBANN_EXECUTION_ALGORITHMS_LTFB_TERMINATION_CRITERIA_HPP_INCLUDED
 
 #include "lbann/execution_algorithms/ltfb/execution_context.hpp"
-#include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 
 namespace lbann {
 namespace ltfb {

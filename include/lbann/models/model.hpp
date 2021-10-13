@@ -31,7 +31,7 @@
 #include "lbann/comm.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
-#include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/utils/graph.hpp"
 #include "lbann/io/file_io.hpp"

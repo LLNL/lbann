@@ -29,7 +29,9 @@
 
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/utils/dataset.hpp"
-#include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/utils/threads/thread_pool.hpp"
+
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/data_readers/data_reader_hdf5_legacy.hpp"
 #endif // LBANN_HAS_DISTCONV

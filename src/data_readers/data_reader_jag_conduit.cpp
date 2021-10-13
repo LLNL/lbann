@@ -29,7 +29,7 @@
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/trainers/trainer.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/vision.hpp"

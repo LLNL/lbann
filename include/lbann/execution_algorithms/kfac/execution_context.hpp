@@ -26,8 +26,8 @@
 #ifndef LBANN_EXECUTION_ALGORITHMS_KFAC_EXECUTION_CONTEXT_HPP_INCLUDED
 #define LBANN_EXECUTION_ALGORITHMS_KFAC_EXECUTION_CONTEXT_HPP_INCLUDED
 
-#include "lbann/execution_contexts/execution_context.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_block.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_util.hpp"
 #include <memory>

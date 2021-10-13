@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,13 +24,13 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_EXECUTION_CONTEXT_HPP
-#define LBANN_EXECUTION_CONTEXT_HPP
+#ifndef LBANN_EXECUTION_ALGORITHMS_EXECUTION_CONTEXT_HPP_INCLUDED
+#define LBANN_EXECUTION_ALGORITHMS_EXECUTION_CONTEXT_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-#include "lbann/comm.hpp"
-#include "lbann/io/persist.hpp"
-#include "lbann/utils/threads/thread_pool.hpp"
+
+#include <memory>
+#include <string>
 
 // Forward declaration
 namespace cereal {
@@ -40,6 +40,7 @@ class access;
 namespace lbann {
 
 // Forward-declare this.
+class persist;
 class trainer;
 class TrainingAlgorithm;
 
@@ -132,4 +133,5 @@ public:
 };
 
 } // namespace lbann
-#endif // LBANN_EXECUTION_CONTEXT_HPP
+
+#endif // LBANN_EXECUTION_ALGORITHMS_EXECUTION_CONTEXT_HPP_INCLUDED
