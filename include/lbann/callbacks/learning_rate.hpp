@@ -89,6 +89,12 @@ class learning_rate : public callback_base {
     m_cur_global_lr = rate;
   }
 
+  size_t experienced_batches() const noexcept { return m_experience_batches; }
+  size_t experienced_epochs() const noexcept { return m_experience_epochs; }
+
+  void inc_experienced_batches() noexcept { ++m_experience_batches; }
+  void inc_experienced_epochs() noexcept { ++m_experience_epochs; }
+
  private:
     /**
    * This should be maintained by all learning rate schedule
@@ -103,6 +109,12 @@ class learning_rate : public callback_base {
 
   /** Weights to update. */
   std::unordered_set<weights*> m_weights;
+
+  /** Experienced batches */
+  size_t m_experience_batches = 0UL;
+
+  /** Experienced epochs */
+  size_t m_experience_epochs = 0UL;
 };
 
 /**

@@ -96,6 +96,7 @@ void learning_rate::on_epoch_end(model *m) {
       opt->set_learning_rate(new_lr);
     }
   }
+  this->inc_experienced_epochs();
 }
 
 void learning_rate::on_backward_prop_end(model *m) {
@@ -107,6 +108,7 @@ void learning_rate::on_backward_prop_end(model *m) {
       opt.set_learning_rate(new_lr);
     }
   }
+  this->inc_experienced_batches();
 }
 
 float learning_rate::optimizer_schedule(model *m, optimizer &opt) {
@@ -123,8 +125,8 @@ step_learning_rate::step_learning_rate(
   m_step(step), m_amt(amt) {}
 
 float step_learning_rate::global_schedule(model *m) {
-  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
-  if (c.get_epoch() % m_step == 0) {
+  size_t const curr_epoch = this->experienced_epochs();
+  if (curr_epoch % m_step == 0) {
     return step_learning_rate::get_current_global_learning_rate() * m_amt;
   } else {
     return step_learning_rate::get_current_global_learning_rate();
@@ -143,9 +145,10 @@ adaptive_learning_rate::adaptive_learning_rate(
 
 float adaptive_learning_rate::global_schedule(model *m) {
   const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
+  size_t const curr_epoch = this->experienced_epochs();
   // Determine behavior the first time this is called in an epoch
-  if (m_cur_epoch != c.get_epoch()) {
-    m_cur_epoch = c.get_epoch();
+  if (m_cur_epoch != curr_epoch) {
+    m_cur_epoch = curr_epoch;
     const auto mode = c.get_execution_mode();
     const EvalType score = m->get_objective_function()->get_mean_value(mode);
     if (score < m_last_score) {
@@ -187,15 +190,15 @@ drop_fixed_learning_rate::drop_fixed_learning_rate(
 }
 
 float drop_fixed_learning_rate::global_schedule(model* m) {
-  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
+  size_t const curr_epoch = this->experienced_epochs();
   // Delete last drop epoch if we have already passed it
   while (!m_drop_epochs.empty()
-         && c.get_epoch() > m_drop_epochs.back()) {
+         && curr_epoch > m_drop_epochs.back()) {
     m_drop_epochs.pop_back();
   }
 
   // Adjust learning rate if at a drop epoch
-  if (!m_drop_epochs.empty() && c.get_epoch() == m_drop_epochs.back()) {
+  if (!m_drop_epochs.empty() && curr_epoch == m_drop_epochs.back()) {
     return drop_fixed_learning_rate::get_current_global_learning_rate() * m_amt;
   } else {
     return drop_fixed_learning_rate::get_current_global_learning_rate();
@@ -230,11 +233,11 @@ void linear_growth_learning_rate::setup(model *m) {
 }
 
 float linear_growth_learning_rate::global_schedule(model *m) {
-  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
-  if (c.get_epoch() < m_delay) {
+  size_t const curr_epoch = this->experienced_epochs();
+  if (curr_epoch < m_delay) {
     return linear_growth_learning_rate::get_current_global_learning_rate();
-  } else if (c.get_epoch() <= m_num_epochs + m_delay) {
-    int num_left = m_num_epochs + m_delay - c.get_epoch();
+  } else if (curr_epoch <= m_num_epochs + m_delay) {
+    int const num_left = m_num_epochs + m_delay - curr_epoch;
     return m_base_lr + m_inc*(m_num_epochs - num_left);
   } else {
     return linear_growth_learning_rate::get_current_global_learning_rate();
@@ -289,11 +292,12 @@ float poly_learning_rate::global_schedule(model *m) {
  * Compute the learning rate for the next iteration.
  */
 float poly_learning_rate::optimizer_schedule(model *m, optimizer &opt) {
-  const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
-  const size_t iter = std::min(c.get_step(), m_max_iter);
-  const float scale = static_cast<float>(
-    std::pow(static_cast<double>(m_max_iter-iter)/m_max_iter, m_p));
-  return (m_start_lr - m_end_lr) * scale + m_end_lr;
+  size_t const cur_iter = experienced_batches();
+  if (m_max_iter > cur_iter) {
+    m_lr = static_cast<float>(std::pow(static_cast<double>(m_max_iter - cur_iter)/m_max_iter, m_p));
+  }
+  const float scale = m_lr / m_last_epoch_lr;
+  return (poly_learning_rate::get_current_global_learning_rate() - m_end_lr) * scale + m_end_lr;
 }
 
 optimizerwise_adaptive_learning_rate::
