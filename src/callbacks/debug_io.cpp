@@ -104,7 +104,7 @@ void debug_io::print_phase_start(model *m, execution_mode mode) {
   generic_data_reader* data_reader = dc.get_data_reader(mode);
   const auto& step = c.get_step();
 
-  if(data_reader->get_rank() < data_reader->get_num_parallel_readers()) {
+  if(m->get_comm()->get_rank_in_trainer() < data_reader->get_num_parallel_readers()) {
     std::cout << "[" << m->get_comm()->get_trainer_rank()
               << "." << m->get_comm()->get_rank_in_trainer()
               << "] @" << 0 << "." << step

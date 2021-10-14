@@ -745,14 +745,14 @@ void data_reader_jag_conduit::load() {
     m_num_labels=2;
   }
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "JAG load GAN m_gan_labelling : label_value "
               << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
   }
 
   m_shuffled_indices.clear();
 
-  if(is_master()) {
+  if(get_comm()->am_world_master()) {
     std::cout << "data_reader_jag_conduit - starting load" << std::endl;
   }
   const std::string sample_list_file = get_data_sample_list();
@@ -795,9 +795,6 @@ void data_reader_jag_conduit::do_preload_data_store() {
   conduit::Node work;
   const std::string key; // key = "" is intentional
 
-  /// @todo BVE FIXME this
-  m_rank_in_model = get_comm()->get_rank_in_trainer();
-
   auto& arg_parser = global_argument_parser();
   double tm1 = get_time();
   if (get_comm()->am_world_master() ||
@@ -807,7 +804,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
 
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
     int index = m_shuffled_indices[idx];
-    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
+    if(m_data_store->get_index_owner(index) != get_comm()->get_rank_in_trainer()) {
       continue;
     }
     try {
@@ -832,7 +829,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
   /// Once all of the data has been preloaded, close all of the file handles
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
     int index = m_shuffled_indices[idx];
-    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
+    if(m_data_store->get_index_owner(index) != get_comm()->get_rank_in_trainer()) {
       continue;
     }
     m_sample_list.close_samples_file_handle(index, true);
@@ -915,14 +912,14 @@ void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list
 
   double tm2 = get_time();
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "Time to load sample list '" << sample_list_file << "': " << tm2 - tm1 << std::endl;
   }
 
   sample_schema_check(check_data);
 
   double tm3 = get_time();
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     if (!check_data) {
       std::cout << "Skip data checking" << std::endl;
     } else {
@@ -935,7 +932,7 @@ void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list
   set_file_dir(m_sample_list.get_samples_dirname());
 
   double tm4 = get_time();
-  if(is_master()) {
+  if(get_comm()->am_world_master()) {
     std::cout << "Time to gather sample list '" << sample_list_file << "': " << tm4 - tm3 << std::endl;
   }
 }
@@ -950,7 +947,7 @@ void data_reader_jag_conduit::load_list_of_samples_from_archive(const std::strin
   iarchive(m_sample_list); // Read the data from the archive
   double tm2 = get_time();
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "Time to load sample list from archive: " << tm2 - tm1 << std::endl;
   }
 }
@@ -1425,16 +1422,6 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
   return true;
 }
 
-
-
-
-
-
-
-
-
-
-
 bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_data_sizes();
@@ -1465,7 +1452,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
 }
 
 bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx) {
-  const auto& c = static_cast<const sgd_execution_context&>(m_trainer->get_data_coordinator().get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(get_trainer().get_data_coordinator().get_execution_context());
   int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_response_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);

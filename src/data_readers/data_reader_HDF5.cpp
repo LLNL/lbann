@@ -209,7 +209,7 @@ void hdf5_data_reader::copy_members(const hdf5_data_reader& rhs)
 
 void hdf5_data_reader::load()
 {
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "hdf5_data_reader - starting load" << std::endl;
   }
   double tm1 = get_time();
@@ -231,7 +231,7 @@ void hdf5_data_reader::load()
 
   // Load the sample list(s)
   data_reader_sample_list::load();
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "time to load sample list: " << get_time() - tm11 << std::endl;
   }
 
@@ -257,14 +257,14 @@ void hdf5_data_reader::load()
   load_schema(get_experiment_schema_filename(), m_experiment_schema);
   parse_schemas();
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "time to load and parse the schemas: " << get_time() - tm11
               << " for role: " << get_role() << std::endl;
     std::cout << "hdf5_data_reader::load() time: " << (get_time() - tm1)
               << "; num samples: " << m_shuffled_indices.size() << std::endl;
   }
 
-  if (!arg_parser.get<bool>(QUIET) && is_master()) {
+  if (!arg_parser.get<bool>(QUIET) && get_comm()->am_world_master()) {
     print_metadata();
   }
 }
@@ -284,14 +284,14 @@ void hdf5_data_reader::load_schema(std::string filename, conduit::Node& schema)
 void hdf5_data_reader::do_preload_data_store()
 {
   double tm1 = get_time();
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "starting hdf5_data_reader::do_preload_data_store() for role: "
               << get_role() << std::endl;
   }
 
   for (size_t idx = 0; idx < m_shuffled_indices.size(); idx++) {
     int index = m_shuffled_indices[idx];
-    if (m_data_store->get_index_owner(index) != get_rank()) {
+    if (m_data_store->get_index_owner(index) != get_comm()->get_rank_in_trainer()) {
       continue;
     }
     try {
@@ -310,14 +310,14 @@ void hdf5_data_reader::do_preload_data_store()
 
   for (size_t idx = 0; idx < m_shuffled_indices.size(); idx++) {
     int index = m_shuffled_indices[idx];
-    if (m_data_store->get_index_owner(index) != get_rank()) {
+    if (m_data_store->get_index_owner(index) != get_comm()->get_rank_in_trainer()) {
       continue;
     }
     close_file(index); // data_reader_sample_list::close_file
   }
 
   size_t nn = m_data_store->get_num_global_indices();
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "loading data for role: " << get_role() << " took "
               << get_time() - tm1 << "s"
               << "num samples (local to this rank): "

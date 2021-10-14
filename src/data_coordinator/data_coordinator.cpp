@@ -60,7 +60,6 @@ void data_coordinator::setup(thread_pool& io_thread_pool, int max_mini_batch_siz
     if (!dr.second) continue;
     dr.second->setup(m_io_thread_pool->get_num_threads(),
                      m_io_thread_pool);
-    dr.second->set_rank(m_comm->get_rank_in_trainer());
   }
 
   /** Calculate how many iterations are required for training, testing,

@@ -234,7 +234,7 @@ void image_data_reader::do_preload_data_store() {
 
   bool threaded = !arg_parser.get<bool>(DATA_STORE_NO_THREAD);
   if (threaded) {
-    if (is_master()) {
+    if (get_comm()->am_world_master()) {
       std::cout << "mode: data_store_thread\n";
     }
     std::shared_ptr<thread_pool> io_thread_pool =
@@ -265,7 +265,7 @@ void image_data_reader::do_preload_data_store() {
     io_thread_pool->finish_work_group();
   }
   else {
-    if (is_master()) {
+    if (get_comm()->am_world_master()) {
       std::cout << "mode: NOT data_store_thread\n";
     }
     for (size_t data_id=0; data_id<m_shuffled_indices.size(); data_id++) {
@@ -364,7 +364,7 @@ void image_data_reader::load_list_of_samples(const std::string sample_list_file)
 
   double tm2 = get_time();
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "Time to load sample list '" << sample_list_file << "': "
               << tm2 - tm1 << std::endl;
   }
@@ -374,7 +374,7 @@ void image_data_reader::load_list_of_samples(const std::string sample_list_file)
   set_file_dir(m_sample_list.get_samples_dirname());
 
   double tm3 = get_time();
-  if(is_master()) {
+  if(get_comm()->am_world_master()) {
     std::cout << "Time to gather sample list '" << sample_list_file << "': "
               << tm3 - tm2 << std::endl;
   }
@@ -395,7 +395,7 @@ void image_data_reader::load_list_of_samples_from_archive(const std::string& sam
   iarchive(m_sample_list); // Read the data from the archive
   double tm2 = get_time();
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "Time to load sample list from archive: " << tm2 - tm1 << std::endl;
   }
 }
@@ -482,7 +482,7 @@ void image_data_reader::gen_list_of_samples() {
 
   double tm2 = get_time();
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "Time to load sample list '" << sample_list_file << "': "
               << tm2 - tm1 << std::endl;
   }
@@ -491,7 +491,7 @@ void image_data_reader::gen_list_of_samples() {
   m_sample_list.all_gather_packed_lists(*m_comm);
 
   double tm3 = get_time();
-  if(is_master()) {
+  if(get_comm()->am_world_master()) {
     std::cout << "Time to gather sample list '" << sample_list_file << "': "
               << tm3 - tm2 << std::endl;
   }
@@ -576,7 +576,7 @@ void image_data_reader::load_labels(std::vector<char>& preloaded_buffer) {
     read_labels(is);
   }
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "Time to load label file '" << imageListFile << "': "
               << get_time() - tm1 << std::endl;
   }
