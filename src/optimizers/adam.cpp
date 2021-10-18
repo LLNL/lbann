@@ -131,9 +131,9 @@ void adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
   // Precompute the bias correction and learning rate.
   m_current_beta1 *= m_beta1;
   m_current_beta2 *= m_beta2;
-  const TensorDataType correction = this->get_learning_rate() *
-                              (El::Sqrt(one - m_current_beta2)
-                               / (one - m_current_beta1));
+  const TensorDataType correction =
+    El::To<TensorDataType>(this->get_learning_rate()) *
+    (El::Sqrt(one - m_current_beta2) / (one - m_current_beta1));
 
   switch (values.GetLocalDevice()) {
   case El::Device::CPU: step_compute_cpu(values, gradient, correction); break;

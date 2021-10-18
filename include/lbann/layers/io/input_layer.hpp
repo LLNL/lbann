@@ -122,6 +122,11 @@ class input_layer : public data_type_layer<TensorDataType> {
   }
 
   std::string get_type() const override { return "input"; }
+
+#ifdef LBANN_HAS_ONNX
+  void fill_onnx_node(onnx::GraphProto& graph) const override;
+#endif // LBANN_HAS_ONNX
+
   // description get_description() const override {
   //   auto desc = io_layer<TensorDataType>::get_description();
   //   return desc;

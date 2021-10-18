@@ -141,7 +141,6 @@ TEST_CASE("Synthetic data reader public API tests",
       LBANN_ERROR("Unknown data field");
     }
     dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
-    dr->set_rank(0);
     dr->set_comm(&comm);
     dr->set_num_parallel_readers(1);
     dr->load();
@@ -149,7 +148,7 @@ TEST_CASE("Synthetic data reader public API tests",
     dr->set_last_mini_batch_size(num_samples);
     dr->set_initial_position();
 
-    dr->fetch(local_input_buffers, indices_fetched);
+    dr->fetch(local_input_buffers, indices_fetched, num_samples);
 
     // Check all of the results that were fetched.  Ensure that the
     // data fields are accessed in the same order that they are in the map
@@ -235,7 +234,6 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
                                                              fields,
                                                              false);
     dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
-    dr->set_rank(0);
     dr->set_comm(&comm);
     dr->set_num_parallel_readers(1);
     dr->load();
@@ -243,7 +241,7 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
     dr->set_last_mini_batch_size(num_samples);
     dr->set_initial_position();
 
-    dr->fetch(local_input_buffers, indices_fetched);
+    dr->fetch(local_input_buffers, indices_fetched, num_samples);
 
     // Check all of the results that were fetched.  Ensure that the
     // data fields are accessed in the same order that they are in the map
@@ -276,7 +274,6 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
                                                              test_fields,
                                                              false);
     dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
-    dr->set_rank(0);
     dr->set_comm(&comm);
     dr->set_num_parallel_readers(1);
     dr->load();
@@ -284,7 +281,7 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
     dr->set_last_mini_batch_size(num_samples);
     dr->set_initial_position();
 
-    CHECK_THROWS(dr->fetch(local_input_buffers, indices_fetched));
+    CHECK_THROWS(dr->fetch(local_input_buffers, indices_fetched, num_samples));
 
     // All data buffers should be empty since it will have thrown an exception
     for (El::Int j = 0; j < num_samples; j++) {
@@ -312,7 +309,6 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
                                                              test_fields,
                                                              false);
     dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
-    dr->set_rank(0);
     dr->set_comm(&comm);
     dr->set_num_parallel_readers(1);
     dr->load();
@@ -320,7 +316,7 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
     dr->set_last_mini_batch_size(num_samples);
     dr->set_initial_position();
 
-    dr->fetch(test_local_input_buffers, indices_fetched);
+    dr->fetch(test_local_input_buffers, indices_fetched, num_samples);
 
     // Check all of the results that were fetched.  Ensure that the
     // data fields are accessed in the same order that they are in the map
@@ -353,7 +349,6 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
                                                              fields,
                                                              false);
     dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
-    dr->set_rank(0);
     dr->set_comm(&comm);
     dr->set_num_parallel_readers(1);
     dr->load();
@@ -365,7 +360,7 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
       dr->set_has_data_field(data_field, false);
     }
 
-    CHECK_THROWS(dr->fetch(local_input_buffers, indices_fetched));
+    CHECK_THROWS(dr->fetch(local_input_buffers, indices_fetched, num_samples));
 
     // All data buffers should be empty since it will have thrown an exception
     for (El::Int j = 0; j < num_samples; j++) {

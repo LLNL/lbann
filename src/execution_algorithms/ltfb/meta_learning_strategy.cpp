@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "lbann/execution_algorithms/ltfb/meta_learning_strategy.hpp"
 #include "lbann/execution_algorithms/ltfb/random_pairwise_exchange.hpp"
+#include "lbann/execution_algorithms/ltfb/regularized_evolution.hpp"
 #include "lbann/execution_algorithms/ltfb/truncation_selection_exchange.hpp"
 #include "lbann/proto/helpers.hpp"
 #include "lbann/utils/make_abstract.hpp"
@@ -42,6 +43,8 @@ lbann::ltfb::MetaLearningStrategyFactory build_default_factory()
                            lbann::make<RandomPairwiseExchange>);
   factory.register_builder("TruncationSelectionExchange",
                            lbann::make<TruncationSelectionExchange>);
+  factory.register_builder("RegularizedEvolution",
+                           lbann::make<RegularizedEvolution>);
   return factory;
 }
 

@@ -1,21 +1,21 @@
 const std::string hdf5_hrrl_experiment_schema = R"AurthurDent(
 Image:
   metadata:
-    pack: "datum"
+    pack: "samples"
     coerce: "float"
 Epmax:
   metadata:
-    pack: "response"
+    pack: "responses"
 Etot:
   metadata:
-    pack: "response"
+    pack: "responses"
 N:
   metadata:
-    pack: "response"
+    pack: "responses"
 T:
   metadata:
-    pack: "response"
+    pack: "responses"
 alpha:
   metadata:
-    pack: "response"
+    pack: "responses"
 )AurthurDent";

@@ -115,9 +115,6 @@ void trainer::setup(std::unique_ptr<thread_pool> io_thread_pool,
   // layer depends on having a properly initialized thread pool)
   m_io_thread_pool = std::move(io_thread_pool);
 
-  for (auto d : data_readers) {
-    d.second->set_trainer(this);
-  }
   m_data_coordinator.get()->setup(*m_io_thread_pool.get(),
                                   get_max_mini_batch_size(),
                                   data_readers);

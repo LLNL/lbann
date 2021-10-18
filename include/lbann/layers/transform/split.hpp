@@ -72,7 +72,9 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-
+#ifdef LBANN_HAS_ONNX
+  void fill_onnx_node(onnx::GraphProto& graph) const override;
+#endif // LBANN_HAS_ONNX
 
 protected:
 
@@ -238,6 +240,25 @@ protected:
   const split_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() const override;
 #endif // LBANN_HAS_DISTCONV
 };
+
+#ifdef LBANN_HAS_ONNX
+template <typename T, data_layout L, El::Device D>
+void split_layer<T, L, D>::fill_onnx_node(onnx::GraphProto& graph) const
+{
+  const auto& parent = this->get_parent_layer();
+  const size_t idx_in_parent = parent.find_child_layer_index(*this);
+  for (auto const* child : this->get_child_layers()) {
+    auto* node = graph.add_node();
+    node->add_input(parent.get_name() + "_" + std::to_string(idx_in_parent));
+    size_t idx = this->find_child_layer_index(*child);
+    node->add_output(this->get_name() + "_" + std::to_string(idx));
+    node->set_name(this->get_name() + std::to_string(idx));
+    node->set_op_type("Identity");
+    node->set_domain("");
+    node->set_doc_string(this->get_type());
+  }
+}
+#endif // LBANN_HAS_ONNX
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

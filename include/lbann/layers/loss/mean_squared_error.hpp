@@ -103,6 +103,10 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+#ifdef LBANN_HAS_ONNX
+  void fill_onnx_node(onnx::GraphProto& graph) const override;
+#endif // LBANN_HAS_ONNX
+
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims({1});
@@ -256,8 +260,45 @@ private:
                                                           this->get_distconv_adapter().get_error_signals(1));
   }
 #endif // LBANN_HAS_DISTCONV
-
 };
+
+#ifdef LBANN_HAS_ONNX
+template <typename T, data_layout L, El::Device D>
+void mean_squared_error_layer<T, L, D>::fill_onnx_node(
+  onnx::GraphProto& graph) const
+{
+  auto* diff = graph.add_node();
+  for (auto const* parent : this->get_parent_layers()) {
+    size_t idx = parent->find_child_layer_index(*this);
+    diff->add_input(parent->get_name() + "_" + std::to_string(idx));
+  }
+  diff->add_output(this->get_name() + "diff_0");
+  diff->set_name(this->get_name() + "diff");
+  diff->set_op_type("Sub");
+  diff->set_domain("");
+  diff->set_doc_string("First node representing Mean Squared Error Layer");
+
+  auto* square = graph.add_node();
+  square->add_input(diff->output(0));
+  square->add_input(diff->output(0));
+  square->add_output("square_0");
+  square->set_name("square");
+  square->set_op_type("Mul");
+  square->set_domain("");
+  square->set_doc_string("Second node representing Mean Squared Error Layer");
+
+  auto* mse = graph.add_node();
+  mse->add_input(square->output(0));
+  for (auto const* child : this->get_child_layers()) {
+    size_t idx = this->find_child_layer_index(*child);
+    mse->add_output(this->get_name() + "_" + std::to_string(idx));
+  }
+  mse->set_name("mse");
+  mse->set_op_type("Mean");
+  mse->set_domain("");
+  mse->set_doc_string("Third node representing Mean Squared Error Layer");
+}
+#endif // LBANN_HAS_ONNX
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

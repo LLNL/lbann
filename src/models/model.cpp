@@ -491,17 +491,17 @@ void model::copy_trained_weights_from(std::vector<weights*>& new_weights) {
     return;
   }
   for(size_t i = 0; i < new_weights.size(); ++i) {
-     for (size_t j = 0; j < m_weights.size(); ++j) {
-       //copy only trained weights (that is unfrozen layer)
-       if(m_weights[j]->get_name() == new_weights[i]->get_name() && !new_weights[i]->is_frozen()) {
-         #ifdef LBANN_DEBUG
-         if(m_comm->am_world_master()) std::cout << " Replacing " << m_weights[j]->get_name() << " with " << new_weights[i]->get_name() << std::endl;
-         #endif
-         dynamic_cast<observer_ptr<data_type_weights<DataType>>>(m_weights[j].get())->set_values(
-           dynamic_cast<data_type_weights<DataType>*>(new_weights[i])->get_values());
-       }
-     }
-   }
+    for (size_t j = 0; j < m_weights.size(); ++j) {
+      //copy only trained weights (that is unfrozen layer)
+      if(m_weights[j]->get_name() == new_weights[i]->get_name() && !new_weights[i]->is_frozen()) {
+#ifdef LBANN_DEBUG
+        if(m_comm->am_world_master()) std::cout << " Replacing " << m_weights[j]->get_name() << " with " << new_weights[i]->get_name() << std::endl;
+#endif
+        dynamic_cast<data_type_weights<DataType>&>(*m_weights[j].get()).set_values(
+          dynamic_cast<data_type_weights<DataType> const&>(*new_weights[i]).get_values());
+      }
+    }
+  }
 }
 
 void model::swap_layers(model& other) {

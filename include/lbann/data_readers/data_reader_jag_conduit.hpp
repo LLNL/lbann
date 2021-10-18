@@ -171,8 +171,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool has_list_per_model() const override { return m_list_per_model; }
   bool has_list_per_trainer() const override { return m_list_per_trainer; }
 
-
-
   /// Return the number of measurement views
   unsigned int get_num_img_srcs() const;
   /// Return the linearized size of an image

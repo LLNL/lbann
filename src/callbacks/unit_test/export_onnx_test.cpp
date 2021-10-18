@@ -22,18 +22,36 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
-#define LBANN_DATA_TYPE_OPTIMIZER_INSTANTIATE
-#include "lbann/optimizers/data_type_optimizer.hpp"
-#include "lbann/optimizers/data_type_optimizer_impl.hpp"
+#include <catch2/catch.hpp>
+#include "TestHelpers.hpp"
+#include "MPITestHelpers.hpp"
 
-#undef PROTO
-#define PROTO(T) template class lbann::data_type_optimizer<T>
+// The code being tested
+#include <lbann/callbacks/export_onnx.hpp>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
-#include "lbann/macros/instantiate.hpp"
+#include "lbann/callbacks/callback.hpp"
+#include <google/protobuf/message.h>
+#include <lbann/base.hpp>
 
-#define LBANN_CLASS_NAME data_type_optimizer
-#include <lbann/macros/register_template_class_with_cereal.hpp>
+#include <onnx/onnx_pb.h>
+
+#include <iostream>
+#include <memory>
+
+
+using unit_test::utilities::IsValidPtr;
+TEST_CASE("Serializing \"export onnx\" callback",
+          "[mpi][callback][serialize][onnx]")
+{
+  using CallbackType = lbann::callback::export_onnx;
+
+  auto& world_comm = unit_test::utilities::current_world_comm();
+  auto const& g = world_comm.get_trainer_grid();
+  lbann::utils::grid_manager mgr(g);
+
+  CallbackType callback();
+
+  // FIXME: Testing if onnx is defined? How to do this?
+}

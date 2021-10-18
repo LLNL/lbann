@@ -78,7 +78,7 @@ void ras_lipid_conduit_data_reader::copy_members(const ras_lipid_conduit_data_re
 }
 
 void ras_lipid_conduit_data_reader::load() {
-  if(is_master()) {
+  if(get_comm()->am_world_master()) {
     std::cout << "starting load for role: " << get_role() << std::endl;
   }
 
@@ -109,7 +109,7 @@ void ras_lipid_conduit_data_reader::load() {
   else {
     double tm3 = get_time();
     get_samples_per_file();
-    if (is_master()) std::cout << "time to compute samples_per_file: " << get_time() - tm3 << std::endl;
+    if (get_comm()->am_world_master()) std::cout << "time to compute samples_per_file: " << get_time() - tm3 << std::endl;
   }
   // Optionally save the samples-per-file info to file
   if (arg_parser.get<std::string>("pilot2_save_file_sizes") != "") {
@@ -189,7 +189,7 @@ void ras_lipid_conduit_data_reader::load() {
 }
 
 void ras_lipid_conduit_data_reader::do_preload_data_store() {
-  if (is_master()) std::cout << "starting ras_lipid_conduit_data_reader::do_preload_data_store; num indices: " << utils::commify(m_shuffled_indices.size()) << " for role: " << get_role() << std::endl;
+  if (get_comm()->am_world_master()) std::cout << "starting ras_lipid_conduit_data_reader::do_preload_data_store; num indices: " << utils::commify(m_shuffled_indices.size()) << " for role: " << get_role() << std::endl;
 
 #if 0
 ==========================================================================
@@ -262,7 +262,7 @@ data types, from python+numpy:
           load_the_next_sample(work[k], starting_id+k, data);
 
           ++nn;
-          if (verbose && is_master() && nn % 1000 == 0) {
+          if (verbose && get_comm()->am_world_master() && nn % 1000 == 0) {
             std::cout << "estimated number of single-samples processed: "
                       << utils::commify(nn/1000*np) << "K" << std::endl;
           }
@@ -271,7 +271,7 @@ data types, from python+numpy:
         // First branch: seq_len = 1
         if (which == 1) {
           // debug block; will go away
-          if (testme && is_master()) {
+          if (testme && get_comm()->am_world_master()) {
             std::cout << "Taking first branch (seq_len == 1)" << std::endl;
             testme = false;
           }
@@ -284,7 +284,7 @@ data types, from python+numpy:
         //        branch for debugging
         else {
           // debug block; will go away
-          if (is_master() && m_seq_len == 1 && testme) {
+          if (get_comm()->am_world_master() && m_seq_len == 1 && testme) {
             std::cout << "Taking second branch (seq_len == 1)" << std::endl;
             testme = false;
           }
@@ -440,7 +440,7 @@ void ras_lipid_conduit_data_reader::get_samples_per_file() {
 }
 
 void ras_lipid_conduit_data_reader::write_file_sizes() {
-  if (! is_master()) {
+  if (! get_comm()->am_world_master()) {
     return;
   }
   std::string fn =
@@ -486,7 +486,7 @@ void ras_lipid_conduit_data_reader::read_normalization_data() {
   if (arg_parser.get<std::string>(NORMALIZATION) != "") {
     m_use_min_max = true;
     m_use_z_score = arg_parser.get<bool>(Z_SCORE);
-    if (is_master()) {
+    if (get_comm()->am_world_master()) {
       if (m_use_z_score) {
         std::cout << "Normalizing data using z-score" << std::endl;
       } else {
@@ -518,7 +518,7 @@ void ras_lipid_conduit_data_reader::read_normalization_data() {
     }
   }
   else {
-    if (is_master()) {
+    if (get_comm()->am_world_master()) {
       std::cout << "NOT Normalizing data!" << std::endl;
     }
   }
@@ -526,7 +526,7 @@ void ras_lipid_conduit_data_reader::read_normalization_data() {
 
 //user feedback
 void ras_lipid_conduit_data_reader::print_shapes_etc() {
-  if (!is_master()) {
+  if (!get_comm()->am_world_master()) {
     return;
   }
 
