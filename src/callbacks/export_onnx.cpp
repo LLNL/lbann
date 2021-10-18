@@ -74,6 +74,46 @@ void export_onnx::on_train_begin(model* m)
   auto* gp = mp_.mutable_graph();
   gp->set_name(m->get_name());
 
+  auto const weights_vec = m->get_weights();
+  for (auto const weights : weights_vec) {
+    auto* initializer = gp->add_initializer();
+    auto dims = weights->get_dims();
+    for (auto const dim : dims) {
+      initializer->add_dims(dim);
+    }
+    const auto& values = dynamic_cast<El::AbstractDistMatrix<DataType>&>(
+      weights->get_values());
+
+    El::DistMatrix<DataType, El::CIRC, El::CIRC, El::ELEMENT,
+                   El::Device::CPU> tmp(values.Grid(), 0);
+
+    El::Copy(values, tmp);
+
+    if( tmp.CrossRank() == tmp.Root()) {
+      auto const& local = tmp.LockedMatrix();
+      auto const mat_height = tmp.Height();
+      auto const mat_width = tmp.Width();
+
+      if (sizeof(DataType) == 4 || sizeof(DataType) == 2 ) {
+        initializer->set_data_type(1);
+        for (auto col = decltype(mat_width){0}; col < mat_width; ++col) {
+          for (auto row = decltype(mat_height){0}; row < mat_height; ++row) {
+            initializer->add_float_data(local.CRef(row,col));
+          }
+        }
+      }
+      else if (sizeof(DataType) == 8) {
+        initializer->set_data_type(11);
+        for (auto col = decltype(mat_width){0}; col < mat_width; ++col) {
+          for (auto row = decltype(mat_height){0}; row < mat_height; ++row) {
+            initializer->add_double_data(local.CRef(row,col));
+          }
+        }
+      }
+      else
+        LBANN_ERROR("Unsupported DataType. Export onnx callback supports float, double, and half.");
+    }
+  }
   auto const layers = m->get_layers();
   for (auto const* layer : layers) {
     layer->fill_onnx_node(*gp);
@@ -82,11 +122,15 @@ void export_onnx::on_train_begin(model* m)
 
   auto rank = m->get_comm()->get_rank_in_trainer();
   if( rank == 0 ) {
-    std::ofstream onnx_out(m_output_file);
+    // FIXME: Why doesn't the constructor initialize this??
+    //std::ofstream onnx_out(m_output_file);
+    std::ofstream onnx_out("lbann.onnx");
     mp_.SerializeToOstream(&onnx_out);
 
-    if(m_print_debug_string)
+     if(m_print_debug_string)
       std::cout << mp_.DebugString() << std::endl;
+     std::ofstream debug("lbann_debug.onnx");
+     debug << mp_.DebugString();
   }
 }
 

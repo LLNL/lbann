@@ -66,6 +66,10 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+#ifdef LBANN_HAS_ONNX
+  void fill_onnx_node(onnx::GraphProto& graph) const override;
+#endif // LBANN_HAS_ONNX
+
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims({1});
@@ -100,6 +104,75 @@ protected:
   {}
 
 };
+
+#ifdef LBANN_HAS_ONNX
+template <typename T, data_layout L, El::Device D>
+void categorical_accuracy_layer<T, L, D>::fill_onnx_node(
+  onnx::GraphProto& graph) const {
+  auto* shape = graph.add_value_info();
+  shape->set_name(this->get_name() + "_shape_0");
+  shape->mutable_type()->mutable_tensor_type()->set_elem_type(1);
+  for (auto const& dim : this->get_output_dims())
+    shape->mutable_type()->mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(dim);
+  shape->set_doc_string(this->get_name() + " shape");
+
+  auto* equal = graph.add_node();
+
+  for (auto const* parent : this->get_parent_layers()) {
+    size_t idx = parent->find_child_layer_index(*this);
+    size_t prt_idx = this->find_parent_layer_index(*parent);
+
+    //x = Reshape(data=x, shape=[0,-1])
+    //y = Reshape(data=y, shape=[0,-1])
+    auto* reshape = graph.add_node();
+    reshape->add_input(parent->get_name() + "_" + std::to_string(idx));
+    reshape->add_input(this->get_name() + "_shape_0");
+    reshape->add_output(this->get_name() + "_reshape_" + std::to_string(prt_idx));
+    reshape->set_name(this->get_name() + "_reshape");
+    reshape->set_op_type("Reshape");
+    reshape->set_domain("");
+    reshape->set_doc_string("Reshape node for Categorical Accuracy Layer");
+
+    //xmax = ArgMax(data=x, axis=-1)
+    //ymax = ArgMax(data=y, axis=-1)
+    auto* argmax = graph.add_node();
+    argmax->add_input(reshape->output(0));
+    // FIXME: Axis ? Attribute
+    //argmax->add_input("-1");
+    argmax->add_output(this->get_name() + "_argmax_" + std::to_string(prt_idx));
+    argmax->set_name(this->get_name() + "_argmax");
+    argmax->set_op_type("ArgMax");
+    argmax->set_domain("");
+    argmax->set_doc_string("Argmax node for Categorical Accuracy Layer");
+
+    //z = Equal(A=xmax, B=ymax)
+    equal->add_input(argmax->output(0));
+  }
+  equal->add_output(this->get_name() + "_equal_0");
+  equal->set_name(this->get_name() + "_equal");
+  equal->set_op_type("Equal");
+  equal->set_domain("");
+  equal->set_doc_string("Equal node for Categorical Accuracy Layer");
+
+  //z = Cast(input=z, to=float)
+  auto* cast = graph.add_node();
+  cast->add_input(equal->output(0));
+  auto* attribute = cast->add_attribute();
+  attribute->set_name("cast_to_float");
+  //enum FLOAT = 1;
+  //attribute->set_type(1);
+  // attribute->int field?
+  attribute->set_i(1);
+  for (auto const* child : this->get_child_layers()) {
+    auto idx = this->find_child_layer_index(*child);
+    cast->add_output(this->get_name() + "_" + std::to_string(idx));
+  }
+  cast->set_name(this->get_name() + "_cast");
+  cast->set_op_type("Cast");
+  cast->set_domain("");
+  cast->set_doc_string("Cast node for Categorical Accuracy Layer");
+}
+#endif //LBANN_HAS_ONNX
 
 #ifndef LBANN_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
 
