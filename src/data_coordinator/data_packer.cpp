@@ -43,11 +43,11 @@ size_t data_packer::extract_data_fields_from_samples(std::vector<conduit::Node>&
     for (auto& sample : samples) {
       size_t tmp_n_elts = 0;
       tmp_n_elts = extract_data_field_from_sample(data_field, sample, *X, mb_idx);
-      if(n_elts != 0) {
+      if(n_elts == 0) {
         n_elts = tmp_n_elts;
       }
       if(tmp_n_elts != n_elts) {
-        LBANN_ERROR("Unexpected number of elements extracted from the data field",
+        LBANN_ERROR("Unexpected number of elements extracted from the data field ",
                     data_field,
                     " found ", tmp_n_elts,
                     " expected ", n_elts);
@@ -72,16 +72,22 @@ size_t data_packer::extract_data_field_from_sample(data_field_type data_field,
     LBANN_ERROR("Unsupported number of samples per Conduit node");
   }
   std::string data_id = sample.child(0).name();
+  if (!sample.is_compact()) {
+    //    sample.print();
+    LBANN_WARNING("m_data[",  data_id, "] does not have a compact layout");
+  }
+#if 0
   if (!sample.is_contiguous()) {
-    LBANN_ERROR("m_data[",  data_id, "] does not have a contiguous layout");
+    //    sample.print();
+    LBANN_WARNING("m_data[",  data_id, "] does not have a contiguous layout");
   }
   if (sample.data_ptr() == nullptr) {
-    LBANN_ERROR("m_data[", data_id, "] does not have a valid data pointer");
+    LBANN_WARNING("m_data[", data_id, "] does not have a valid data pointer");
   }
   if (sample.contiguous_data_ptr() == nullptr) {
-    LBANN_ERROR("m_data[", data_id, "] does not have a valid contiguous data pointer");
+    LBANN_WARNING("m_data[", data_id, "] does not have a valid contiguous data pointer");
   }
-
+#endif
   std::ostringstream ss;
   ss << sample.child(0).name() + "/" << data_field;
   if (!sample.has_path(ss.str())) {

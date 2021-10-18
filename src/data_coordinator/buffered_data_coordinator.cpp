@@ -170,7 +170,7 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(data_buffer
 
     /** @brief Each rank will fetch a mini-batch worth of data into it's buffer */
     if(dr->has_conduit_output()) {
-      std::vector<conduit::Node> samples;
+      std::vector<conduit::Node> samples(mb_size);
       buf.m_num_samples_fetched = dr->fetch(samples, buf.m_indices_fetched_per_mb, mb_size);
       data_packer::extract_data_fields_from_samples(samples, local_input_buffers);
     }else {
