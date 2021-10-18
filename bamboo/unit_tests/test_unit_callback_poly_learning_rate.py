@@ -1,9 +1,8 @@
-"""Test to check weight exchanges in LTFB.
+"""Test to check polynomial decay learning rate schedule.
 
-Each model has a randomly initialized weights object. An LTFB round is
-performed after every training step and winners are chosen randomly.
-The log files are post-processed to make sure that the correct weights
-are propagated by LTFB.
+LBANN is run with the polynomial learning rate schedule and the log
+files are post-processed to make sure that the correct learning rate
+values are used.
 
 """
 import os
@@ -26,20 +25,6 @@ lr_power = 0.8
 lr_num_epochs = 5
 lr_start = 1
 lr_end = 0.1
-
-# ==============================================
-# Objects for Python data reader
-# ==============================================
-# Note: The Python data reader imports this file as a module and calls
-# the functions below to ingest data.
-
-# Sample access functions
-def get_sample(index):
-    return [0]
-def num_samples():
-    return 2
-def sample_dims():
-    return (1,)
 
 # ==============================================
 # Setup LBANN experiment
@@ -97,20 +82,13 @@ def construct_data_reader(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
-
-    # Note: The training data reader should be removed when
-    # https://github.com/LLNL/lbann/issues/1098 is resolved.
     message = lbann.reader_pb2.DataReader()
-    message.reader.extend([
-        tools.create_python_data_reader(
-            lbann,
-            current_file,
-            'get_sample',
-            'num_samples',
-            'sample_dims',
-            'train',
-        ),
-    ])
+    _reader = message.reader.add()
+    _reader.name = 'synthetic'
+    _reader.role = 'train'
+    _reader.num_samples = 2
+    _reader.synth_dimensions = '1'
+    _reader.percent_of_data_to_use = 1.0
     return message
 
 # ==============================================
