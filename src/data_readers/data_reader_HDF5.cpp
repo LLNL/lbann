@@ -966,6 +966,15 @@ bool hdf5_data_reader::fetch_data_field(data_field_type data_field,
   return true;
 }
 
+bool hdf5_data_reader::fetch_conduit_node(conduit::Node& sample,
+                             int data_id)
+{
+  // get the pathname to the data, and verify it exists in the conduit::Node
+  const conduit::Node& node = get_data_store().get_conduit_node(data_id);
+  sample = node;
+  return true;
+}
+
 void hdf5_data_reader::print_metadata(std::ostream& os)
 {
   os << std::endl

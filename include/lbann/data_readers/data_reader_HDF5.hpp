@@ -51,6 +51,8 @@ public:
   void copy_members(const hdf5_data_reader& rhs);
   ~hdf5_data_reader() override;
 
+  bool has_conduit_output() override { return true; }
+
   std::string get_type() const override { return "hdf5_data_reader"; }
 
   /** @brief Prints metadata and data-types for all field-names
@@ -66,6 +68,8 @@ public:
   void load() override;
 
   bool fetch_data_field(data_field_type data_field, CPUMat& Y, int data_id, int mb_idx) override;
+
+  bool fetch_conduit_node(conduit::Node& sample, int data_id) override;
 
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override
   {

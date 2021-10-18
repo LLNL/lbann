@@ -28,6 +28,7 @@
 #include "lbann/data_coordinator/buffered_data_coordinator.hpp"
 #include "lbann/data_coordinator/buffered_data_coordinator_impl.hpp"
 #include "lbann/data_coordinator/io_data_buffer_impl.hpp"
+#include "lbann/data_coordinator/data_packer.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/trainers/trainer.hpp"
@@ -168,7 +169,13 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(data_buffer
                                  local_input_buffers[INPUT_DATA_TYPE_SAMPLES]->Width());
 
     /** @brief Each rank will fetch a mini-batch worth of data into it's buffer */
-    buf.m_num_samples_fetched = dr->fetch(local_input_buffers, buf.m_indices_fetched_per_mb, mb_size);
+    if(dr->has_conduit_output()) {
+      std::vector<conduit::Node> samples;
+      buf.m_num_samples_fetched = dr->fetch(samples, buf.m_indices_fetched_per_mb, mb_size);
+      data_packer::extract_data_fields_from_samples(samples, local_input_buffers);
+    }else {
+      buf.m_num_samples_fetched = dr->fetch(local_input_buffers, buf.m_indices_fetched_per_mb, mb_size);
+    }
 
     bool data_valid = (buf.m_num_samples_fetched > 0);
     if(data_valid) {
