@@ -25,14 +25,14 @@ num_nodes = 1
 
 # Reconstruction loss
 expected_train_pc_range = (0.89, 0.91)
-expected_test_pc_range = (0.90, 0.92)
+expected_test_pc_range = (0.90, 0.925)
 
 # Average mini-batch time (in sec) for each LC system
 # Note that run times are with LBANN_DETERMINISTIC set
 # Commented out times are prior to thread safe RNGs
 expected_mini_batch_times = {
     'lassen':   0.0051,
-    'pascal':   0.0051,
+    'pascal':   0.0110,
 }
 
 # ==============================================
