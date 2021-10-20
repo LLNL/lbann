@@ -103,6 +103,16 @@ void construct_std_options()
     "forward prop (namely activations and weights). This will "
     "typically use a GPU memory pool, which uses more memory than "
     "directly allocating GPU memory.");
+  arg_parser.add_flag(
+    LBANN_OPTION_INIT_SHMEM,
+    {"--init_shmem"},
+    utils::ENV("LBANN_INIT_SHMEM"),
+    "[STD] Initialize SHMEM when initializing LBANN");
+  arg_parser.add_flag(
+    LBANN_OPTION_INIT_NVSHMEM,
+    {"--init_nvshmem"},
+    utils::ENV("LBANN_INIT_NVSHMEM"),
+    "[STD] Initialize NVSHMEM when initializing LBANN");
 
   // Input options
   arg_parser.add_option(
@@ -292,7 +302,7 @@ void construct_datareader_options()
   arg_parser.add_flag(NODE_SIZES_VARY,
                       {"--node_sizes_vary"},
                       "[DATAREADER] TODO");
-  arg_parser.add_flag(QUIET, {"--quiet"}, "[DATAREADER] TODO");
+  arg_parser.add_flag(LBANN_OPTION_QUIET, {"--quiet"}, "[DATAREADER] TODO");
   arg_parser.add_flag(STACK_TRACE_TO_FILE,
                       {"--stack_trace_to_file"},
                       "[DATAREADER] TODO");
