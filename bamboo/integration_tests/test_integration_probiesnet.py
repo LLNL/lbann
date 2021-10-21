@@ -10,8 +10,9 @@ import pytest
 
 # Local files
 current_file = os.path.realpath(__file__)
-current_dir = os.path.dirname(current_file)
-sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
+lbann_dir = os.path.dirname(os.path.dirname(os.path.dirname(current_file)))
+app_path = os.path.join(lbann_dir, 'applications', 'physics','HRRL')
+sys.path.append(app_path)
 import tools
 
 # ==============================================
@@ -24,22 +25,39 @@ mini_batch_size = 32
 num_nodes = 1
 
 # Reconstruction loss
-expected_train_pc_range = (0.89, 0.91)
-expected_test_pc_range = (0.90, 0.92)
+expected_train_pc_range = (0.89, 0.92)
+expected_test_pc_range = (0.90, 0.93)
 
 # Average mini-batch time (in sec) for each LC system
 # Note that run times are with LBANN_DETERMINISTIC set
 # Commented out times are prior to thread safe RNGs
 expected_mini_batch_times = {
     'lassen':   0.0051,
-    'pascal':   0.0051,
+    'pascal':   0.0146,
 }
-
 # ==============================================
 # Setup LBANN experiment
 # ==============================================
 def list2str(l):
     return ' '.join(l)
+
+def make_data_reader(lbann):
+    """Make Protobuf message for HRRL  data reader.
+
+    """
+    import lbann.contrib.lc.paths
+
+    # Load data readers from prototext
+    protobuf_file = os.path.join(app_path,'data',
+                                 'probies_v2.prototext')
+
+    message = lbann.lbann_pb2.LbannPB()
+    with open(protobuf_file, 'r') as f:
+        google.protobuf.text_format.Merge(f.read(), message)
+    message = message.data_reader
+
+    # Set paths
+    return message
 
 def setup_experiment(lbann):
     """Construct LBANN experiment.
@@ -56,10 +74,7 @@ def setup_experiment(lbann):
     trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model(lbann)
 
-    #see: <LBANN>bamboo/common_python/data/hrrl/probies_v2.prototext
-    #     for data_reader prototext
-    import data.hrrl
-    data_reader = data.hrrl.make_data_reader(lbann)
+    data_reader = make_data_reader(lbann)
 
     opt = lbann.Adam(learn_rate=0.0002,beta1=0.9,beta2=0.99,eps=1e-8)
     return trainer, model, data_reader, opt
@@ -71,7 +86,7 @@ def construct_model(lbann):
 
     """
 
-    import models.hrrl.probiesNet as model
+    import models.probiesNet as model
 
     images = lbann.Input(data_field='samples')
     responses = lbann.Input(data_field='responses')
