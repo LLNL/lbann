@@ -79,7 +79,6 @@ public:
   description get_description() const override;
 
 protected:
-  El::SyncInfo<Device> syncSubGridCommunication = El::SyncInfo<Device>();
 
   friend class cereal::access;
   concatenate_layer()
@@ -270,7 +269,7 @@ void concatenate_layer<TensorDataType,Layout,Device>::fp_setup_outputs(El::Int m
     {
       output.AlignWith(input0);
     }
-    
+
     output.Resize(this->get_output_size(), input0.Width());
   }
 }
@@ -278,40 +277,73 @@ void concatenate_layer<TensorDataType,Layout,Device>::fp_setup_outputs(El::Int m
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType,Layout,Device>::fp_compute_subgrid() {
 
+  // Check that concatenation configuration is supported
   const auto& input_dims = this->get_input_dims(0);
-
-  int split_dim = int(input_dims[m_concat_dim] );
-
-  auto& input = this->get_activations();
-
-  auto * ptr_input = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Device> *>(&input);
-
-  El::copy::TranslateBetweenGridsGather<TensorDataType,Device,Device>(*ptr_input,this->get_all_prev_activations(), split_dim,this->get_subgrid_comm(),syncSubGridCommunication);
-
+  const size_t num_dims = input_dims.size();
+  if (m_concat_dim != num_dims-1) {
+    LBANN_ERROR(
+      this->get_type()," layer \"",this->get_name(),"\" ",
+      "has sub-graph parallelism enabled and ",
+      "is attempting to concatenate ",num_dims,"-D tensors ",
+      "along dim ",m_concat_dim,". ",
+      "However, sub-graph parallelism only supports ",
+      "concatenation along the last tensor dimension.");
   }
+  for (int i=1; i<this->get_num_parents(); ++i) {
+    if (this->get_input_dims(i) != input_dims) {
+      LBANN_ERROR(
+      this->get_type()," layer \"",this->get_name(),"\" ",
+      "has sub-grid parallelism enabled, ",
+      "but does not have identically-sized inputs");
+    }
+  }
+
+  // Perform concatenation with sub-graph parallelism
+  using DistMatType = El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Device>;
+  auto& output = dynamic_cast<DistMatType&>(this->get_activations());
+  auto sync_info = El::SyncInfoFromMatrix(output.LockedMatrix());
+  El::copy::TranslateBetweenGridsGather<TensorDataType,Device,Device>(
+    output,
+    this->get_all_activations(),
+    input_dims[m_concat_dim],
+    this->get_subgrid_comm(),
+    sync_info);
+
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType,Layout,Device>::bp_compute_subgrid() {
-
-  const auto& input_dims = this->get_input_dims(0);
-
-  int split_dim = int(input_dims[m_concat_dim] * this->get_num_parents() );
-
-  const auto& input_grad = this->get_prev_error_signals();
-
-  auto const* ptr_input_grad = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Device> const *>(&input_grad);
-
-  if(this->get_communication_flag()==COLL_OPT)
-  {
-    El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(*ptr_input_grad,this->get_all_error_signals(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication,3);
-  }
-  else if(this->get_communication_flag()==COLL)
-  {
-    El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(*ptr_input_grad,this->get_all_error_signals(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication,2);
-  }
-  else
-  {
-    El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(*ptr_input_grad,this->get_all_error_signals(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication,1);
+  const auto& output_dims = this->get_output_dims();
+  using DistMatType = El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Device>;
+  const auto& output_grad = dynamic_cast<const DistMatType&>(this->get_prev_error_signals());
+  auto sync_info = El::SyncInfoFromMatrix(output_grad.LockedMatrix());
+  switch (this->get_communication_flag()) {
+  case COLL_OPT:
+    El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(
+      output_grad,
+      this->get_all_error_signals(),
+      output_dims[m_concat_dim],
+      this->get_subgrid_comm(),
+      sync_info,
+      3);
+    break;
+  case COLL:
+    El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(
+      output_grad,
+      this->get_all_error_signals(),
+      output_dims[m_concat_dim],
+      this->get_subgrid_comm(),
+      sync_info,
+      2);
+    break;
+  default:
+    El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(
+      output_grad,
+      this->get_all_error_signals(),
+      output_dims[m_concat_dim],
+      this->get_subgrid_comm(),
+      sync_info,
+      1);
   }
 }
 
@@ -341,7 +373,7 @@ void concatenate_layer<TensorDataType,Layout,Device>::fp_compute() {
   {
     fp_compute_impl(*this, m_concat_dim);
   }
-  
+
 
 }
 
@@ -401,7 +433,7 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inpu
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
-  
+
   const auto& input_dims = this->get_input_dims();
   const size_t num_dims = input_dims.size();
 
@@ -427,7 +459,7 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
   {
     bp_compute_impl(*this, m_concat_dim);
   }
-  
+
 
 }
 

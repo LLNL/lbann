@@ -89,8 +89,6 @@ public:
 
 protected:
 
-  El::SyncInfo<Device> syncSubGridCommunication = El::SyncInfo<Device>();
-
   friend class cereal::access;
   slice_layer()
     : slice_layer(nullptr)
@@ -294,41 +292,68 @@ void slice_layer<TensorDataType,Layout,Device>::fp_setup_outputs(El::Int mini_ba
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void slice_layer<TensorDataType,Layout,Device>::fp_compute_subgrid( )
 {
+
+  // Check that slice configuration is supported
   const auto& input_dims = this->get_input_dims();
+  const auto& output_dims = this->get_output_dims(0);
   const size_t num_dims = input_dims.size();
-  if (num_dims > 3) {
-    LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
-                "is operating on ",num_dims,"-D tensors, ",
-                "but only 3-D tensors are currently supported");
+  if (m_slice_dim != num_dims-1) {
+    LBANN_ERROR(
+      this->get_type()," layer \"",this->get_name(),"\" ",
+      "has sub-graph parallelism enabled and ",
+      "is attempting to slice a ",num_dims,"-D tensor ",
+      "along dim ",m_slice_dim,". ",
+      "However, sub-graph parallelism only supports ",
+      "slicing along the last tensor dimension.");
+  }
+  if (this->get_num_children()+1 != static_cast<int>(m_slice_points.size())) {
+    LBANN_ERROR(
+      this->get_type()," layer \"",this->get_name(),"\" ",
+      "has ",m_slice_points.size()," slice points and ",
+      this->get_num_children()," children");
+  }
+  for (size_t i=0; i<m_slice_points.size(); ++i) {
+    if (m_slice_points[i] != i * output_dims[m_slice_dim]) {
+      LBANN_ERROR(
+        this->get_type()," layer \"",this->get_name(),"\" ",
+        "has sub-grid parallelism enabled, ",
+        "but does not evenly slice the input tensor");
+    }
   }
 
-  const int split_dim = input_dims[this->m_slice_dim];
-
-  if(this->m_slice_dim!=num_dims-1)
-  {
-    LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
-                "has axis ",this->m_slice_dim," However, ",
-                "Subgrpah parallelism is supported when split axis is the last dimension");
+  // Perform slice with sub-graph parallelism
+  using DistMatType = El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Device>;
+  const auto& input = dynamic_cast<const DistMatType&>(this->get_prev_activations());
+  auto sync_info = El::SyncInfoFromMatrix(input.LockedMatrix());
+  switch (this->get_communication_flag()) {
+  case COLL_OPT:
+    El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(
+      input,
+      this->get_all_activations(),
+      input_dims[m_slice_dim],
+      this->get_subgrid_comm(),
+      sync_info,
+      3);
+    break;
+  case COLL:
+    El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(
+      input,
+      this->get_all_activations(),
+      input_dims[m_slice_dim],
+      this->get_subgrid_comm(),
+      sync_info,
+      2);
+    break;
+  default:
+    El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(
+      input,
+      this->get_all_activations(),
+      input_dims[m_slice_dim],
+      this->get_subgrid_comm(),
+      sync_info,
+      1);
   }
-  const auto& input = this->get_prev_activations();
 
-  auto const* ptr_input = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Device> const *>(&input);
-
-  if(this->get_communication_flag()==COLL_OPT)
-  {
-    El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(*ptr_input,this->get_all_activations(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication,3);
-  }
-  else if(this->get_communication_flag()==COLL)
-  {
-    El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(*ptr_input,this->get_all_activations(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication,2);
-  }
-  else
-  {
-    El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(*ptr_input,this->get_all_activations(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication,1);
-
-  }
-
-  
 }
 
 
@@ -345,27 +370,22 @@ void slice_layer<TensorDataType,Layout,Device>::fp_compute() {
   {
     fp_compute_impl(*this);
   }
-  
+
 }
 
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void slice_layer<TensorDataType,Layout,Device>::bp_compute_subgrid( )
-{
-  const auto& input_dims = this->get_input_dims();
-
-  const int split_dim = int(input_dims[this->m_slice_dim] / this->get_num_children());
-
-  auto& input_grad = this->get_error_signals();
-
-  auto * ptr_input_grad = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Device>  *>(&input_grad);
-
-  El::copy::TranslateBetweenGridsGather<TensorDataType,Device,Device>(*ptr_input_grad,
-                                                                        this->get_all_prev_error_signals(),
-                                                                        split_dim,
-                                                                        this->get_subgrid_comm(),
-                                                                        syncSubGridCommunication);
-
+void slice_layer<TensorDataType,Layout,Device>::bp_compute_subgrid() {
+  const auto& output_dims = this->get_output_dims(0);
+  using DistMatType = El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Device>;
+  auto& input_grad = dynamic_cast<DistMatType&>(this->get_error_signals());
+  auto sync_info = El::SyncInfoFromMatrix(input_grad.LockedMatrix());
+  El::copy::TranslateBetweenGridsGather<TensorDataType,Device,Device>(
+    input_grad,
+    this->get_all_prev_error_signals(),
+    output_dims[m_slice_dim],
+    this->get_subgrid_comm(),
+    sync_info);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -392,7 +412,7 @@ void slice_layer<TensorDataType,Layout,Device>::bp_compute() {
   {
     bp_compute_impl(*this);
   }
-  
+
 }
 
 #ifndef LBANN_SLICE_LAYER_INSTANTIATE
