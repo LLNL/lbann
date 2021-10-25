@@ -190,6 +190,7 @@ class input_layer : public data_type_layer<TensorDataType> {
   distconv_adapter_type& get_distconv_adapter() override;
   const distconv_adapter_type& get_distconv_adapter() const override;
   bool keep_original_outputs(int index) const override;
+  bool keep_original_gradient_wrt_outputs(int index) const override;
 ///@}
 #endif // LBANN_HAS_DISTCONV
 };

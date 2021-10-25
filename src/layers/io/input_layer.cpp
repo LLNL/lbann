@@ -486,6 +486,16 @@ keep_original_outputs(int index) const {
   // into distconv tensors.
   return true;
 }
+
+template <typename TensorDataType,
+          data_layout T_layout,
+          El::Device Dev>
+bool input_layer<TensorDataType, T_layout, Dev>::
+keep_original_gradient_wrt_outputs(int index) const {
+  // Error signals are ignored
+  return false;
+}
+
 #endif // LBANN_HAS_DISTCONV
 
 #define PROTO_DEVICE(T, Device) \
