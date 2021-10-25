@@ -1,9 +1,28 @@
 import lbann
 import lbann.modules
 
+OPS = {
+    'none': lambda C, stride, affine: Zero(stride),
+    'avg_pool_3x3': lambda C, stride, affine: lbann.Pooling(num_dims = 2,
+                                                            pool_strides_i = stride,
+                                                            pool_pads_i = 1,
+                                                            pool_mode = "avg"), #count_include_pad missing
+    'max_pool_3x3': lambda C, stride, affine: lbann.Pooling(num_dims = 2,
+                                                            pool_strides_i = stride, 
+                                                            pool_pads_i = 1,
+                                                            pool_mode = "max"),
+    'skip_connect': lambda C, stride, affine: Identity() if stride == 1 else FactorizedReduce(C, C, affine=affine),
+    'sep_conv_3x3': lambda C, stride, affine: SepConv(C, C, 3, stride, 1, affine=affine),
+    'sep_conv_5x5': lambda C, stride, affine: SepConv(C, C, 5, stride, 2, affine=affine),
+    'sep_conv_7x7': lambda C, stride, affine: SepConv(C, C, 7, stride, 3, affine=affine),
+    'dil_conv_3x3': lambda C, stride, affine: DilConv(C, C, 3, stride, 2, 2, affine=affine),
+    'dil_conv_5x5': lambda C, stride, affine: DilConv(C, C, 5, stride, 4, 2, affine=affine),    
+}
+
+
 class ReLUConvBN(lbann.modules.Module):
     
-    def __init__(self, C_in, C_out, kernel_size, stride, padding):
+    def __init__(self, C_in, C_out, kernel_size, stride, padding, affine=False):
         # affine missing for BatchNorm
         super().__init__()
         self.relu = lbann.Relu
@@ -22,7 +41,7 @@ class ReLUConvBN(lbann.modules.Module):
 
 class DilConv(lbann.modules.Module):
 
-    def __init__(self, C_in, C_out, kernel_size, stride, padding, dilation):
+    def __init__(self, C_in, C_out, kernel_size, stride, padding, dilation, affine=False):
         # affine missing
         super().__init__()
         self.relu = lbann.Relu
@@ -49,7 +68,7 @@ class DilConv(lbann.modules.Module):
 
 class SepConv(lbann.modules.Module):
 
-    def __init__(self, C_in, C_out, kernel_size, stride, padding):
+    def __init__(self, C_in, C_out, kernel_size, stride, padding, affine=False):
         super().__init__()
         self.relu = lbann.Relu
         self.conv1 = lbann.Convolution(num_dims = 2,
@@ -109,7 +128,7 @@ class Zero(lbann.modules.Module):
 
 class FactorizedReduce(lbann.modules.Module):
 
-    def __init__(self, C_in, C_out):
+    def __init__(self, C_in, C_out, affine=False):
         super().__init__()
         assert C_out % 2 == 0
         self.relu = lbann.Relu
@@ -123,7 +142,7 @@ class FactorizedReduce(lbann.modules.Module):
 
     def forward(self, x):
         x = self.relu(x)
-        out = [self.conv1(x) self.conv2(x[:,:,1:,1:])] #concatenate along first dim
+        out = lbann.Concatenation([self.conv1(x), self.conv2(x[:,:,1:,1:])], dim=0) #concatenate along first dim
         out = self.bn(out)
         return out
 
