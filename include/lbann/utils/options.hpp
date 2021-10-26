@@ -30,8 +30,8 @@ namespace lbann {
 #define LBANN_OPTION_VERBOSE "verbose"
 #define LBANN_OPTION_WRITE_SAMPLE_LIST "write_sample_list"
 #define LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP "Use Hydrogen's default memory mode for GPU buffers in forward prop"
-#define LBANN_OPTION_LBANN_OPTION_INIT_SHMEM "Initialize SHMEM when initializing LBANN"
-#define LBANN_OPTION_LBANN_OPTION_INIT_NVSHMEM "Initialize NVSHMEM when initializing LBANN"
+#define LBANN_OPTION_INIT_SHMEM "Initialize SHMEM when initializing LBANN"
+#define LBANN_OPTION_INIT_NVSHMEM "Initialize NVSHMEM when initializing LBANN"
 
 // Input options
 #define LBANN_OPTION_CKPT_DIR "ckpt_dir"
@@ -83,7 +83,7 @@ namespace lbann {
 #define LBANN_OPTION_LOAD_FULL_SAMPLE_LIST_ONCE "load_full_sample_list_once"
 #define LBANN_OPTION_MAKE_TEST_FAIL "make_test_fail"
 #define LBANN_OPTION_NODE_SIZES_VARY "node_sizes_vary"
-#define LBANN_OPTION_LBANN_OPTION_QUIET "quiet"
+#define LBANN_OPTION_QUIET "quiet"
 #define LBANN_OPTION_STACK_TRACE_TO_FILE "stack_trace_to_file"
 #define LBANN_OPTION_TEST_ENCODE "test_encode"
 #define LBANN_OPTION_WRITE_SAMPLE_LABEL_LIST "write_sample_label_list"

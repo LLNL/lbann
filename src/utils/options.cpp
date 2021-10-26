@@ -104,12 +104,12 @@ void construct_std_options()
     "typically use a GPU memory pool, which uses more memory than "
     "directly allocating GPU memory.");
   arg_parser.add_flag(
-    LBANN_OPTION_LBANN_OPTION_INIT_SHMEM,
+    LBANN_OPTION_INIT_SHMEM,
     {"--init_shmem"},
     utils::ENV("LBANN_INIT_SHMEM"),
     "[STD] Initialize SHMEM when initializing LBANN");
   arg_parser.add_flag(
-    LBANN_OPTION_LBANN_OPTION_INIT_NVSHMEM,
+    LBANN_OPTION_INIT_NVSHMEM,
     {"--init_nvshmem"},
     utils::ENV("LBANN_INIT_NVSHMEM"),
     "[STD] Initialize NVSHMEM when initializing LBANN");
@@ -302,7 +302,7 @@ void construct_datareader_options()
   arg_parser.add_flag(LBANN_OPTION_NODE_SIZES_VARY,
                       {"--node_sizes_vary"},
                       "[DATAREADER] TODO");
-  arg_parser.add_flag(LBANN_OPTION_LBANN_OPTION_QUIET, {"--quiet"}, "[DATAREADER] TODO");
+  arg_parser.add_flag(LBANN_OPTION_QUIET, {"--quiet"}, "[DATAREADER] TODO");
   arg_parser.add_flag(LBANN_OPTION_STACK_TRACE_TO_FILE,
                       {"--stack_trace_to_file"},
                       "[DATAREADER] TODO");

@@ -126,7 +126,7 @@ std::unique_ptr<lbann_comm> initialize_lbann(El::mpi::Comm&& c)
 
 #ifdef LBANN_HAS_SHMEM
   // Initialize SHMEM
-  if (arg_parser.get<bool>(LBANN_OPTION_LBANN_OPTION_INIT_SHMEM)) {
+  if (arg_parser.get<bool>(LBANN_OPTION_INIT_SHMEM)) {
     int threading_level = SHMEM_THREAD_MULTIPLE;
     int status = shmem_init_thread(threading_level, &threading_level);
     if (status != 0 || threading_level != SHMEM_THREAD_MULTIPLE) {
@@ -135,7 +135,7 @@ std::unique_ptr<lbann_comm> initialize_lbann(El::mpi::Comm&& c)
   }
 #endif // LBANN_HAS_SHMEM
 #ifdef LBANN_HAS_NVSHMEM
-  if (arg_parser.get<bool>(LBANN_OPTION_LBANN_OPTION_INIT_NVSHMEM)) {
+  if (arg_parser.get<bool>(LBANN_OPTION_INIT_NVSHMEM)) {
     nvshmem::initialize();
   }
 #endif // LBANN_HAS_NVSHMEM
@@ -230,7 +230,7 @@ world_comm_ptr initialize(int& argc, char**& argv) {
 
 #ifdef LBANN_HAS_SHMEM
   // Initialize SHMEM
-  if (arg_parser.get<bool>(LBANN_OPTION_LBANN_OPTION_INIT_SHMEM)) {
+  if (arg_parser.get<bool>(LBANN_OPTION_INIT_SHMEM)) {
     int threading_level = SHMEM_THREAD_MULTIPLE;
     int status = shmem_init_thread(threading_level, &threading_level);
     if (status != 0 || threading_level != SHMEM_THREAD_MULTIPLE) {
@@ -239,7 +239,7 @@ world_comm_ptr initialize(int& argc, char**& argv) {
   }
 #endif // LBANN_HAS_SHMEM
 #ifdef LBANN_HAS_NVSHMEM
-  if (arg_parser.get<bool>(LBANN_OPTION_LBANN_OPTION_INIT_NVSHMEM)) {
+  if (arg_parser.get<bool>(LBANN_OPTION_INIT_NVSHMEM)) {
     nvshmem::initialize();
   }
 #endif // LBANN_HAS_NVSHMEM

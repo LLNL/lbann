@@ -264,7 +264,7 @@ void hdf5_data_reader::load()
               << "; num samples: " << m_shuffled_indices.size() << std::endl;
   }
 
-  if (!arg_parser.get<bool>(LBANN_OPTION_LBANN_OPTION_QUIET) && get_comm()->am_world_master()) {
+  if (!arg_parser.get<bool>(LBANN_OPTION_QUIET) && get_comm()->am_world_master()) {
     print_metadata();
   }
 }
