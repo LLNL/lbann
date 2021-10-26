@@ -80,23 +80,23 @@ data_store_conduit::data_store_conduit(
   auto& arg_parser = global_argument_parser();
 
   // For use in testing
-  if (arg_parser.get<bool>(DATA_STORE_FAIL)) {
+  if (arg_parser.get<bool>(LBANN_OPTION_DATA_STORE_FAIL)) {
     LBANN_ERROR("data_store_conduit is throwing a fake exception; this is for use during testing");
   }
 
-  if (arg_parser.get<std::string>(DATA_STORE_TEST_CHECKPOINT) != "" &&
-      arg_parser.get<std::string>(DATA_STORE_SPILL) != "") {
+  if (arg_parser.get<std::string>(LBANN_OPTION_DATA_STORE_TEST_CHECKPOINT) != "" &&
+      arg_parser.get<std::string>(LBANN_OPTION_DATA_STORE_SPILL) != "") {
     LBANN_ERROR("you passed both --data_store_test_checkpoint and --data_store_spill; please use one or the other or none, but not both");
   }
-  if (arg_parser.get<std::string>(DATA_STORE_TEST_CHECKPOINT) != "") {
+  if (arg_parser.get<std::string>(LBANN_OPTION_DATA_STORE_TEST_CHECKPOINT) != "") {
     setup_checkpoint_test();
   }
-  if (arg_parser.get<std::string>(DATA_STORE_SPILL) != "") {
-    setup_spill(arg_parser.get<std::string>(DATA_STORE_SPILL));
+  if (arg_parser.get<std::string>(LBANN_OPTION_DATA_STORE_SPILL) != "") {
+    setup_spill(arg_parser.get<std::string>(LBANN_OPTION_DATA_STORE_SPILL));
   }
 
-  set_is_local_cache(arg_parser.get<bool>(DATA_STORE_CACHE));
-  set_is_preloading(arg_parser.get<bool>(PRELOAD_DATA_STORE));
+  set_is_local_cache(arg_parser.get<bool>(LBANN_OPTION_DATA_STORE_CACHE));
+  set_is_preloading(arg_parser.get<bool>(LBANN_OPTION_PRELOAD_DATA_STORE));
   set_is_explicitly_loading(! is_preloading());
 
   if (is_local_cache()) {
@@ -134,7 +134,7 @@ data_store_conduit::~data_store_conduit() {
 
 void data_store_conduit::setup_checkpoint_test() {
   auto& arg_parser = global_argument_parser();
-  std::string c = arg_parser.get<std::string>(DATA_STORE_TEST_CHECKPOINT);
+  std::string c = arg_parser.get<std::string>(LBANN_OPTION_DATA_STORE_TEST_CHECKPOINT);
   // TODO MRW
   if (c == "1") {
     LBANN_ERROR("--data_store_test_checkpoint=1; you probably forgot to specify the spill directory; you must specify --data_store_test_checkpoint=<string>'");
@@ -821,7 +821,7 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
       sstr >> filename >> included_samples >> excluded_samples;
       my_sample_count += included_samples;
 
-      // attempt to load a JAG sample
+      // attempt to load a LBANN_OPTION_JAG sample
       if (!got_one) {
         hid_t hdf5_file_hnd;
         try {
@@ -849,20 +849,20 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
               key = "/" + t;
               conduit::relay::io::hdf5_read(hdf5_file_hnd, key, useme);
             } catch (conduit::Error const& e) {
-              LBANN_ERROR("failed to load JAG sample: ", key);
+              LBANN_ERROR("failed to load LBANN_OPTION_JAG sample: ", key);
             }
             break;
           }
         } // end: for (auto t : sample_names)
 
         conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
-      } // end: attempt to load a JAG sample
+      } // end: attempt to load a LBANN_OPTION_JAG sample
     } // end: loop over conduit filenames
     istr.close();
     // end: get list of conduit files that I own, and compute my num_samples
 
     if (! got_one) {
-      LBANN_ERROR("failed to find any successful JAG samples");
+      LBANN_ERROR("failed to find any successful LBANN_OPTION_JAG samples");
     }
 
     // compute memory for the compacted nodes this processor owns
@@ -874,7 +874,7 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
     std::cout
       << "\n"
       << "==============================================================\n"
-      << "Estimated memory requirements for JAG samples:\n"
+      << "Estimated memory requirements for LBANN_OPTION_JAG samples:\n"
       << "Memory for one sample:             " <<  bytes_per_sample << " kB\n"
       << "Total mem for a single rank:       " << mem_this_proc << " kB\n"
       << "Samples per proc:                  " << my_sample_count << "\n"
@@ -983,7 +983,7 @@ bool data_store_conduit::is_fully_loaded() const {
 void data_store_conduit::get_image_sizes(map_is_t &file_sizes, std::vector<std::vector<int>> &indices) {
   auto& arg_parser = global_argument_parser();
   /// this block fires if image sizes have been precomputed
-  if (arg_parser.get<std::string>(IMAGE_SIZES_FILENAME) != "") {
+  if (arg_parser.get<std::string>(LBANN_OPTION_IMAGE_SIZES_FILENAME) != "") {
     LBANN_ERROR("not yet implemented");
     //TODO dah - implement, if this becomes a bottleneck (but I don't think it will)
   }
@@ -1200,7 +1200,7 @@ void data_store_conduit::exchange_local_caches() {
   set_loading_is_complete();
 
   auto& arg_parser = global_argument_parser();
-  if (arg_parser.get<bool>(DATA_STORE_TEST_CACHE)) {
+  if (arg_parser.get<bool>(LBANN_OPTION_DATA_STORE_TEST_CACHE)) {
     test_local_cache_imagenet(20);
   }
 }
@@ -1436,7 +1436,7 @@ void data_store_conduit::profile_timing() {
         "  wait alls:                ", m_wait_all_time, "\n",
         "  unpacking rcvd nodes:     ", m_rebuild_time, "\n\n");
 
-    if (arg_parser.get<bool>(DATA_STORE_MIN_MAX_TIMING)) {
+    if (arg_parser.get<bool>(LBANN_OPTION_DATA_STORE_MIN_MAX_TIMING)) {
       std::vector<double> send;
       static int count = 5;
       send.reserve(count);
@@ -1867,7 +1867,7 @@ void data_store_conduit::open_informational_files() {
   }
 
   // optionally, each <rank, reader_role> pair opens a debug file
-  if (arg_parser.get<bool>(DATA_STORE_DEBUG) && !m_debug &&
+  if (arg_parser.get<bool>(LBANN_OPTION_DATA_STORE_DEBUG) && !m_debug &&
       m_reader != nullptr) {
     m_debug_filename = m_debug_filename_base + "_" + m_reader->get_role() + "." + std::to_string(m_comm->get_rank_in_world()) + ".txt";
     m_debug = new std::ofstream(m_debug_filename.c_str());
@@ -1877,7 +1877,7 @@ void data_store_conduit::open_informational_files() {
   }
 
   // optionally, <P_0, reader_role> pair opens a file for writing
-  if (arg_parser.get<bool>(DATA_STORE_PROFILE) && m_world_master &&
+  if (arg_parser.get<bool>(LBANN_OPTION_DATA_STORE_PROFILE) && m_world_master &&
       !m_profile && m_reader != nullptr) {
     m_profile_filename = m_profile_filename_base + "_" + m_reader->get_role() + ".txt";
     m_profile = new std::ofstream(m_profile_filename.c_str());

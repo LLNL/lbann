@@ -2,7 +2,7 @@
 
 '''
 =====================================================================
-This code partitions the 100M JAG set as follows:
+This code partitions the 100M LBANN_OPTION_JAG set as follows:
 
 from 100M:
   set A = 10M random samples

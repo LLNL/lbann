@@ -1,4 +1,4 @@
-# Unit test for JAG model and (particularly) data reader
+# Unit test for LBANN_OPTION_JAG model and (particularly) data reader
 # Run time for this example is about 2s per epoch on 16 nodes (32 tasks)
 # Example on how to run:
 # srun --nodes=16 --ntasks=32  build/gnu.Release.catalyst.llnl.gov/lbann/build/model_zoo/lbann --model=model_zoo/tests/model_jag_single_layer_ae.prototext --optimizer=model_zoo/optimizers/opt_adam.prototext --reader=model_zoo/data_readers/data_reader_jag.prototext --metadata=model_zoo/models/jag/wae_cycle_gan/jag_100M_metadata.prototext

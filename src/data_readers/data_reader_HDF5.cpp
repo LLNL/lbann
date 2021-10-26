@@ -216,7 +216,7 @@ void hdf5_data_reader::load()
   double tm11 = tm1;
   auto& arg_parser = global_argument_parser();
 
-  if (arg_parser.get<bool>(KEEP_PACKED_FIELDS)) {
+  if (arg_parser.get<bool>(LBANN_OPTION_KEEP_PACKED_FIELDS)) {
     m_delete_packed_fields = false;
   }
 
@@ -224,7 +224,7 @@ void hdf5_data_reader::load()
   // with data store
   // TODO MRW
   // opts->set_option("preload_data_store", true);
-  if (!arg_parser.get<bool>(USE_DATA_STORE)) {
+  if (!arg_parser.get<bool>(LBANN_OPTION_USE_DATA_STORE)) {
     LBANN_ERROR("HDF5 data reader requires the data store.",
                 "Set command line arguments --use_data_store --preload_data_store");
   }
@@ -264,7 +264,7 @@ void hdf5_data_reader::load()
               << "; num samples: " << m_shuffled_indices.size() << std::endl;
   }
 
-  if (!arg_parser.get<bool>(LBANN_OPTION_QUIET) && get_comm()->am_world_master()) {
+  if (!arg_parser.get<bool>(LBANN_OPTION_LBANN_OPTION_QUIET) && get_comm()->am_world_master()) {
     print_metadata();
   }
 }
@@ -894,7 +894,7 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables(conduit::Node& no
       }
 
       // error prone case; depends on user correctly writing schema
-      // data dims for JAG images are: {4, 64, 64}; they may have previously
+      // data dims for LBANN_OPTION_JAG images are: {4, 64, 64}; they may have previously
       // been {64, 64}; this could be a problem
       else {
         int channels = metadata->child("channels").to_int32();

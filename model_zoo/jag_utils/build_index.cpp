@@ -83,15 +83,15 @@ int main(int argc, char *argv[]) {
       return EXIT_SUCCESS;
     }
 
-    if (arg_parser.get<std::string>(FILELIST) == "" ||
-        arg_parser.get<std::string>(OUTPUT_FN) == "" ||
-        arg_parser.get<std::string>(BASE_DIR)) {
+    if (arg_parser.get<std::string>(LBANN_OPTION_FILELIST) == "" ||
+        arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_FN) == "" ||
+        arg_parser.get<std::string>(LBANN_OPTION_BASE_DIR)) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: improper invocation; run with no cmd line args for proper invocation");
     }
 
-    const std::string input_fn = arg_parser.get<std::string>(FILELIST);
-    const std::string output_fn = arg_parser.get<std::string>(OUTPUT_FN);
-    const std::string base_dir = arg_parser.get<std::string>(BASE_DIR);
+    const std::string input_fn = arg_parser.get<std::string>(LBANN_OPTION_FILELIST);
+    const std::string output_fn = arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_FN);
+    const std::string base_dir = arg_parser.get<std::string>(LBANN_OPTION_BASE_DIR);
 
     int rank = comm->get_rank_in_world();
     std::stringstream ss;

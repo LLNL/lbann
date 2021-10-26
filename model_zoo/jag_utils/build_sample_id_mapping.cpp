@@ -63,7 +63,7 @@ int total = 0;
   // get list of conduit filenames
   if (master) cerr << "reading filelist\n";
   vector<string> filenames;
-  string base_dir = arg_parser.get<std::string>(BASE_DIR);
+  string base_dir = arg_parser.get<std::string>(LBANN_OPTION_BASE_DIR);
   if (base_dir.back() != '/') {
     base_dir += '/';
   }
@@ -134,7 +134,7 @@ if (cnames[h].find("META") == string::npos) {
           // however, the top-level fields, e.g, "274e5a16-7c3a-11e9-90fd-0894ef80059f,"
           // are unique, at least for the current set of hydra bricks, so for now I'm using
           // that field as the sample_id. This has the advantage that the sample_ids are at
-          // the top level, as they are for JAG samples
+          // the top level, as they are for LBANN_OPTION_JAG samples
           out << cnames[h] << " ";
 
         #if 0

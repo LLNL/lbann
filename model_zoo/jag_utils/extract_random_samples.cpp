@@ -42,7 +42,7 @@ using namespace lbann;
 
 #define NUM_OUTPUT_DIRS 100
 // TODO MRW
-#define NUM_SAMPLES_PER_FILE 1000
+#define LBANN_OPTION_NUM_SAMPLES_PER_FILE 1000
 
 //==========================================================================
 void check_invocation(bool master);
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
     }
 
     // ensure the db contains NUM_SAMPLES_PER_FILE
-    arg_parser.get<int>(NUM_SAMPLES_PER_FILE);
+    arg_parser.get<int>(LBANN_OPTION_NUM_SAMPLES_PER_FILE);
 
     int num_output_dirs;
     if (master) {
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
 
     build_exclusion_set(exclude);
     std::vector<int> indices_v;
-    size_t num_samples = arg_parser.get<int>(NUM_SAMPLES);
+    size_t num_samples = arg_parser.get<int>(LBANN_OPTION_NUM_SAMPLES);
     indices_v.reserve(num_samples);
 
     get_random_sample_indices(exclude, indices, global_num_samples);
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
     if (master) {
       // write set of random indices to file; these can be used
       // as an exclusion set for a subsequent run
-      const std::string base_dir = arg_parser.get<std::string>(OUTPUT_BASE_DIR);
+      const std::string base_dir = arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_BASE_DIR);
       const std::string fn = base_dir + "/random_indices.txt";
       std::ofstream out(fn.c_str());
       if (!out) {
@@ -176,8 +176,8 @@ int main(int argc, char *argv[]) {
 }
 
 void get_random_sample_indices(const std::unordered_set<int> &exclude, std::set<int> &indices, int global_num_samples) {
-  size_t num_samples = options::get()->get_int(NUM_SAMPLES);
-  int seed = options::get()->get_int(RANDOM_SEED);
+  size_t num_samples = options::get()->get_int(LBANN_OPTION_NUM_SAMPLES);
+  int seed = options::get()->get_int(LBANN_OPTION_RANDOM_SEED);
   srand(seed);
   while (indices.size() < num_samples) {
     int v = rand() % global_num_samples;
@@ -227,9 +227,9 @@ void build_exclusion_set(std::unordered_set<int> &exclude) {
 
 int construct_output_directories(int np) {
   auto& arg_parser = global_argument_parser();
-  int num_samples_per_file = arg_parser.get<int>(NUM_SAMPLES_PER_FILE);
-  int num_samples = arg_parser.get<int>(NUM_SAMPLES);
-  const std::string base_dir = options::get()->get_string(OUTPUT_BASE_DIR);
+  int num_samples_per_file = arg_parser.get<int>(LBANN_OPTION_NUM_SAMPLES_PER_FILE);
+  int num_samples = arg_parser.get<int>(LBANN_OPTION_NUM_SAMPLES);
+  const std::string base_dir = options::get()->get_string(LBANN_OPTION_OUTPUT_BASE_DIR);
   int num_output_dirs = ((num_samples / num_samples_per_file + 1) / np) *2;
 
   for (int j=0; j<num_output_dirs; j++) {
@@ -249,7 +249,7 @@ void build_sample_mapping(
   std::vector<std::set<int> > &samples) {
 
   // open index file
-  const std::string index_fn = options::get()->get_string(INDEX_FN);
+  const std::string index_fn = options::get()->get_string(LBANN_OPTION_INDEX_FN);
   std::ifstream in(index_fn);
   if (!in) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + index_fn + " for reading");
@@ -294,10 +294,10 @@ void build_sample_mapping(
 
 void check_invocation(bool master) {
   auto& arg_parser = global_argument_parser();
-  if (arg_parser.get<std::string>(INDEX_FN) == "" ||
-      arg_parser.get<int>(NUM_SAMPLES) == -1 ||
-      arg_parser.get<std::string>(OUTPUT_BASE_DIR) == "" ||
-      arg_parser.get<int>(RANDOM_SEED) == -1) {
+  if (arg_parser.get<std::string>(LBANN_OPTION_INDEX_FN) == "" ||
+      arg_parser.get<int>(LBANN_OPTION_NUM_SAMPLES) == -1 ||
+      arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_BASE_DIR) == "" ||
+      arg_parser.get<int>(LBANN_OPTION_RANDOM_SEED) == -1) {
     if (master) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: improper invocation; see usage message below\n\n " + usage() + "\n\n");
     }
@@ -305,7 +305,7 @@ void check_invocation(bool master) {
 }
 
 void get_global_num_samples(int &num_samples, int &num_files) {
-  const std::string index_fn = options::get()->get_string(INDEX_FN);
+  const std::string index_fn = options::get()->get_string(LBANN_OPTION_INDEX_FN);
   std::ifstream in(index_fn);
   if (!in) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + index_fn + " for reading");
@@ -321,7 +321,7 @@ void extract_samples(
   const std::vector<std::string> &filenames,
   const std::vector<std::set<int> > &samples) {
 
-  const std::string base_dir = options::get()->get_string(OUTPUT_BASE_DIR);
+  const std::string base_dir = options::get()->get_string(LBANN_OPTION_OUTPUT_BASE_DIR);
   char b[1024];
   sprintf(b, "%s/_sample_ids_%d.txt", base_dir.c_str(), rank);
   std::ofstream out_ids(b);
@@ -329,7 +329,7 @@ void extract_samples(
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + b + " for writing");
   }
   int num_output_dirs = options::get()->get_int("num_output_dirs");
-  int num_samples_per_file = options::get()->get_int(NUM_SAMPLES_PER_FILE);
+  int num_samples_per_file = options::get()->get_int(LBANN_OPTION_NUM_SAMPLES_PER_FILE);
   int file_id = 0;
   int dir_id = 0;
   int n_samples = 0;

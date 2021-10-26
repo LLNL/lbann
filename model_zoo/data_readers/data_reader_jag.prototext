@@ -1,5 +1,5 @@
 ########################################################################
-# The JAG normalization values were computed over the 10M + 1MA + 1MB random
+# The LBANN_OPTION_JAG normalization values were computed over the 10M + 1MA + 1MB random
 # pulls from the 100M data set.  They are valid for the directories:
 # /p/lustre2/brainusr/datasets/10MJAG/ (10M | 1M_A | 1M_B)
 # /p/lustre2/brainusr/datasets/10MJAG_balanced_1K/ (1M_A | 1M_B)

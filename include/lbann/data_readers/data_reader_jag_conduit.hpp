@@ -50,7 +50,7 @@ namespace lbann {
 class data_store_conduit;
 
 /**
- * Loads JAG simulation parameters and results from hdf5 files using conduit interfaces
+ * Loads LBANN_OPTION_JAG simulation parameters and results from hdf5 files using conduit interfaces
  */
 class data_reader_jag_conduit : public generic_data_reader {
  public:
@@ -220,7 +220,7 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   void setup_data_store(int mini_batch_size);
 
-  /// A utility function to convert a JAG variable type to name string
+  /// A utility function to convert a LBANN_OPTION_JAG variable type to name string
   static std::string to_string(const variable_t t);
 
   /// print the schema of the specific sample identified by a given id
@@ -253,9 +253,9 @@ class data_reader_jag_conduit : public generic_data_reader {
               const std::vector<prefix_t>& prefix_filter, const std::string& name) const;
 
   using generic_data_reader::get_linearized_size;
-  /// Return the linearized size of a particular JAG variable type
+  /// Return the linearized size of a particular LBANN_OPTION_JAG variable type
   size_t get_linearized_size(const variable_t t) const;
-  /// Return the dimension of a particular JAG variable type
+  /// Return the dimension of a particular LBANN_OPTION_JAG variable type
   const std::vector<int> get_dims(const variable_t t) const;
   /// Return the slice points for linearized data or responses
   std::vector<El::Int> get_slice_points_impl(const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& var) const;

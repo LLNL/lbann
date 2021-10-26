@@ -492,7 +492,7 @@ inline void sample_list<sample_name_t>
 ::all_gather_archive(const std::string &archive,
                      std::vector<std::string>& gathered_archive,
                      lbann_comm& comm) {
-  if (!global_argument_parser().get<bool>(ALL_GATHER_OLD)) {
+  if (!global_argument_parser().get<bool>(LBANN_OPTION_ALL_GATHER_OLD)) {
     all_gather_archive_new(archive, gathered_archive, comm);
     return;
   }
@@ -546,7 +546,7 @@ inline void sample_list<sample_name_t>
 
   // there's commented out code below to deal with the case where
   // archive.size() > INT_MAX; but for now let's assume we won't
-  // encounter that (which is true for the 100M JAG set)
+  // encounter that (which is true for the 100M LBANN_OPTION_JAG set)
   int constexpr max_int = std::numeric_limits<int>::max();
   size_t n = archive.size();
   if (n > max_int) {
