@@ -84,7 +84,7 @@ def construct_model(args):
                 depth_groups=args.depth_groups)
 
     g_device = 'GPU'
-    input_ = lbann.Input(name='input', device=g_device)
+    input_ = lbann.Input(name='input', data_field='samples')
     input_ = lbann.Reshape(input_, dims=list2str(_sample_dims),name='in_reshape', device=g_device),
     x1 = lbann.Identity(input_, parallel_strategy=None, name='x1')
     x2 = lbann.Identity(input_, name='x2') if args.compute_mse else None
