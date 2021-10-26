@@ -26,7 +26,6 @@ _samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
 
 # Sample access functions
 def get_sample(index):
-    #return np.ones(_sample_size, dtype=np.float32) ### @todo Remove
     return _samples[index,:]
 def num_samples():
     return _num_samples
@@ -69,21 +68,12 @@ def construct_model(lbann):
     x = lbann.Sum(lbann.Input(data_field='samples'),
                   lbann.WeightsLayer(weights=x_weights,
                                      dims=tools.str_list(_sample_size)))
-    x = lbann.Identity(x, name='in') ### @todo Remove
     x_lbann = x
 
     # Objects for LBANN model
     obj = []
     metrics = []
     callbacks = []
-    callbacks.extend([lbann.CallbackDumpOutputs(layers='in sliceconcat_out splitconcat_out slicesum_out sliceconcat2_out sliceconcat_ref sliceconcat_y1 sliceconcat_y2')]) ### @todo Remove
-
-    ### @todo Remove
-    x_slice = lbann.Slice(x, slice_points=tools.str_list([0,3,6]))
-    y1 = lbann.Square(x_slice)
-    y2 = lbann.Sin(x_slice)
-    y = lbann.Concatenation(y1, y2, name='sliceconcat_ref')
-
 
     # Helper function to create parallel strategies for sub-grid parallelism
     def make_ps(tag):
@@ -100,7 +90,7 @@ def construct_model(lbann):
     y1 = lbann.Square(x1)
     y2 = lbann.Sin(x2)
     y = lbann.Sum(y1, y2)
-    z = lbann.L2Norm2(y)
+    z = lbann.Reduction(lbann.Multiply(x_lbann, y))
     obj.append(z)
     metrics.append(lbann.Metric(z, name='split/sum'))
 
@@ -109,7 +99,7 @@ def construct_model(lbann):
     for i in range(num_samples()):
         x = get_sample(i).astype(np.float64)
         y = x ** 2 + np.sin(x)
-        z = tools.numpy_l2norm2(y)
+        z = np.sum(x * y)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
@@ -126,20 +116,12 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    # x_slice = lbann.Slice(x, slice_points=tools.str_list([0,3,6])) ### @todo Remove
-    # x1 = lbann.Identity(x_slice) ### @todo Remove
-    # x2 = lbann.Identity(x_slice) ### @todo Remove
-    # y1 = lbann.Square(x1) ### @todo Remove
-    # y2 = lbann.Sin(x2) ### @todo Remove
     x_slice = lbann.Slice(x, slice_points=tools.str_list([0,3,6]), parallel_strategy=make_ps(0))
     y1 = lbann.Square(x_slice, parallel_strategy=make_ps(1))
     y2 = lbann.Sin(x_slice, parallel_strategy=make_ps(2))
-    y1 = lbann.Identity(y1, parallel_strategy=make_ps(0)) ### @todo Remove
-    y2 = lbann.Identity(y2, parallel_strategy=make_ps(0)) ### @todo Remove
     y = lbann.Concatenation(y1, y2)
-    y = lbann.Identity(y, name='sliceconcat_out') ### @todo Remove
-    z = lbann.L2Norm2(y)
-    #obj.append(z)
+    z = lbann.Reduction(lbann.Multiply(x_lbann, y))
+    obj.append(z)
     metrics.append(lbann.Metric(z, name='slice/concat'))
 
     # NumPy implementation
@@ -149,7 +131,7 @@ def construct_model(lbann):
         y1 = x[:3] ** 2
         y2 = np.sin(x[3:])
         y = np.concatenate((y1, y2))
-        z = tools.numpy_l2norm2(y)
+        z = np.sum(x * y)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
@@ -171,8 +153,8 @@ def construct_model(lbann):
     y1 = lbann.Square(x1)
     y2 = lbann.Sin(x2)
     y = lbann.Concatenation(y1, y2)
-    y = lbann.Identity(y, name='splitconcat_out') ### @todo Remove
-    z = lbann.L2Norm2(y)
+    z = lbann.Multiply(lbann.Tessellate(x_lbann, hint_layer=y), y)
+    z = lbann.Reduction(z)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='split/concat'))
 
@@ -183,7 +165,8 @@ def construct_model(lbann):
         y1 = x ** 2
         y2 = np.sin(x)
         y = np.concatenate((y1, y2))
-        z = tools.numpy_l2norm2(y)
+        z = x.reshape((1,-1)) * y.reshape((2,-1))
+        z = np.sum(z)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
@@ -204,8 +187,8 @@ def construct_model(lbann):
     y1 = lbann.Square(x_slice, parallel_strategy=make_ps(1))
     y2 = lbann.Sin(x_slice, parallel_strategy=make_ps(2))
     y = lbann.Sum(y1, y2)
-    y = lbann.Identity(y, name='slicesum_out') ### @todo Remove
-    z = lbann.L2Norm2(y)
+    z = lbann.Multiply(x_lbann, lbann.Tessellate(y, hint_layer=x_lbann))
+    z = lbann.Reduction(z)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='slice/sum'))
 
@@ -216,7 +199,8 @@ def construct_model(lbann):
         y1 = x[:3] ** 2
         y2 = np.sin(x[3:])
         y = y1 + y2
-        z = tools.numpy_l2norm2(y)
+        z = x.reshape((2,-1)) * y.reshape((1,-1))
+        z = np.sum(z)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
@@ -232,13 +216,6 @@ def construct_model(lbann):
     # --------------------------
 
     callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
-
-    ### @todo Remove
-    # for l in lbann.traverse_layer_graph(x_lbann):
-    #     l.device = 'cpu'
-    #     if isinstance(l, lbann.OperatorLayer):
-    #         for op in l.ops:
-    #             op.device = lbann.DeviceAllocation.CPU
 
     # --------------------------
     # Construct model
