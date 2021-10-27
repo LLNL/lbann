@@ -430,7 +430,7 @@ void construct_jag_options()
   arg_parser.add_option(LBANN_OPTION_NUM_SAMPLES_PER_FILE,
                         {"--num_samples_per_file"},
                         "[JAG] TODO",
-                        -1);
+                        1000);
   arg_parser.add_option(LBANN_OPTION_NUM_SAMPLES_PER_LIST,
                         {"--num_samples_per_list"},
                         "[JAG] TODO",

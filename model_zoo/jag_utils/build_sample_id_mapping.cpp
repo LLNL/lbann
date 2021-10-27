@@ -134,7 +134,7 @@ if (cnames[h].find("META") == string::npos) {
           // however, the top-level fields, e.g, "274e5a16-7c3a-11e9-90fd-0894ef80059f,"
           // are unique, at least for the current set of hydra bricks, so for now I'm using
           // that field as the sample_id. This has the advantage that the sample_ids are at
-          // the top level, as they are for LBANN_OPTION_JAG samples
+          // the top level, as they are for JAG samples
           out << cnames[h] << " ";
 
         #if 0

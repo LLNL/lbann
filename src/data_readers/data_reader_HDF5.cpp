@@ -894,7 +894,7 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables(conduit::Node& no
       }
 
       // error prone case; depends on user correctly writing schema
-      // data dims for LBANN_OPTION_JAG images are: {4, 64, 64}; they may have previously
+      // data dims for JAG images are: {4, 64, 64}; they may have previously
       // been {64, 64}; this could be a problem
       else {
         int channels = metadata->child("channels").to_int32();

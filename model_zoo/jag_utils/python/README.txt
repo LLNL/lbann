@@ -5,7 +5,7 @@ sanity.py
   usage: sanity.py id_mapping_fn bar_fn t0_fn [t1_fn, ...]
 
 partition_jag.py
-  Partitions the 100M LBANN_OPTION_JAG set as follows:
+  Partitions the 100M JAG set as follows:
   from 100M:
     set A = 10M random samples
     set B = remaining (90M)

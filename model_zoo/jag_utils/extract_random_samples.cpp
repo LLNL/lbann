@@ -41,8 +41,6 @@
 using namespace lbann;
 
 #define NUM_OUTPUT_DIRS 100
-// TODO MRW
-#define LBANN_OPTION_NUM_SAMPLES_PER_FILE 1000
 
 //==========================================================================
 void check_invocation(bool master);

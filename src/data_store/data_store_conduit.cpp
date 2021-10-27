@@ -821,7 +821,7 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
       sstr >> filename >> included_samples >> excluded_samples;
       my_sample_count += included_samples;
 
-      // attempt to load a LBANN_OPTION_JAG sample
+      // attempt to load a JAG sample
       if (!got_one) {
         hid_t hdf5_file_hnd;
         try {
@@ -849,20 +849,20 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
               key = "/" + t;
               conduit::relay::io::hdf5_read(hdf5_file_hnd, key, useme);
             } catch (conduit::Error const& e) {
-              LBANN_ERROR("failed to load LBANN_OPTION_JAG sample: ", key);
+              LBANN_ERROR("failed to load JAG sample: ", key);
             }
             break;
           }
         } // end: for (auto t : sample_names)
 
         conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
-      } // end: attempt to load a LBANN_OPTION_JAG sample
+      } // end: attempt to load a JAG sample
     } // end: loop over conduit filenames
     istr.close();
     // end: get list of conduit files that I own, and compute my num_samples
 
     if (! got_one) {
-      LBANN_ERROR("failed to find any successful LBANN_OPTION_JAG samples");
+      LBANN_ERROR("failed to find any successful JAG samples");
     }
 
     // compute memory for the compacted nodes this processor owns
@@ -874,7 +874,7 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
     std::cout
       << "\n"
       << "==============================================================\n"
-      << "Estimated memory requirements for LBANN_OPTION_JAG samples:\n"
+      << "Estimated memory requirements for JAG samples:\n"
       << "Memory for one sample:             " <<  bytes_per_sample << " kB\n"
       << "Total mem for a single rank:       " << mem_this_proc << " kB\n"
       << "Samples per proc:                  " << my_sample_count << "\n"
