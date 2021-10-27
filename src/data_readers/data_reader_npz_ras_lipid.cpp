@@ -231,20 +231,11 @@ data types, from python+numpy:
   std::vector<conduit::Node> work(m_seq_len);
 
   // option and variables only used for testing during development
-  bool debug_concatenate = arg_parser.get<bool>(LBANN_OPTION_DEBUG_CONCATENATE);
-  if (m_seq_len > 1) {
-    debug_concatenate = false;
-  }
   bool testme = true;
 
   // Determine which branch to use when forming multi-sample and inserting
   // in the data store
   int which = 2;
-  if (m_seq_len == 1 && !debug_concatenate) {
-    which = 1;
-  }
-  //TODO: fix this
-  which = 2;
 
   // Loop over the files owned by this processer
   for (const auto &t : m_filename_to_multi_sample) {
