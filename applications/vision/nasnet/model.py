@@ -5,7 +5,7 @@ class Cell(lbann.modules.Module):
 
    def __init__(self, genotype, C_prev_prev, C_prev, C, reduction, reduction_prev):
        super().__init__()
-       print(C_prev_prev, C_prev, C)
+       #print(C_prev_prev, C_prev, C)
 
        if reduction_prev:
            self.preprocess0 = FactorizedReduce(C_prev_prev, C)
@@ -55,7 +55,6 @@ class Cell(lbann.modules.Module):
            states += [s]
 
        return lbann.Concatenation([states[i] for i in self._concat], dim=0)
-       #torch.cat([states[i] for i in self._concat], dim=1)
 
 class NetworkCIFAR(lbann.modules.Module):
 
@@ -98,20 +97,27 @@ class NetworkCIFAR(lbann.modules.Module):
 
    def forward(self, input):
        logits_aux = None
-       input2 = self.stem1(input)
-       s0 = s1 = self.stem(input2)
+       s0 = s1 = self.stem1(input)
+       #input2 = self.stem1(input)
+       #s0 = s1 = self.stem2(input2)
        for i, cell in enumerate(self.cells):
            s0, s1 = s1, cell(s0, s1, self.droprate)
            if i == 2 * self._layers // 3:
                if self._auxiliary and self.training:
                    logits_aux = self.auxiliary_head(s1)
        out = self.global_pooling(s1)
-       logits = self.classifier(out.view(out.size(0), -1))
+       logits = self.classifier(out.view(out.size(0), -1)) # view is in pytorch, convert to lbann
        return logits, logits_aux
 
 if __name__ == '__main__':
-    #import nasnet.genotypes as genotypes
     
     genome = NASNet
-    model = NetworkCIFAR(34, 10, 20, False, genome)
-    model.droprate = 0.0
+    mymodel = NetworkCIFAR(32, 10, 20, False, genome) # nsga uses 34 instead of 32
+    mymodel.droprate = 0.0
+
+    input_ = lbann.Input(data_field='samples')
+    x = lbann.Gaussian(neuron_dims='3 32 32')
+    y = mymodel(x)
+    layers = list(lbann.traverse_layer_graph([x, input_]))
+    
+    print(y)
