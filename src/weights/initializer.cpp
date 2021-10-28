@@ -33,6 +33,9 @@
 #include "lbann/utils/random.hpp"
 
 #include <weights.pb.h>
+#ifdef LBANN_HAS_CNPY
+#include <cnpy.h>
+#endif // LBANN_HAS_CNPY
 
 #include <sstream>
 
@@ -102,6 +105,104 @@ void value_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
 }
 
 template <typename TensorDataType>
+void numpy_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
+#ifndef LBANN_HAS_CNPY
+  LBANN_ERROR("CNPY not detected");
+#else
+
+  // Load NumPy file
+  cnpy::NpyArray array = cnpy::npy_load(m_file);
+  const size_t num_values = array.num_bytes() / array.word_size;
+  if (matrix.Height() * matrix.Width() != (El::Int) num_values) {
+    LBANN_ERROR(
+      "NumPy weight initializer attempted to initialize a ",
+      matrix.Height()," x ",matrix.Width()," weights matrix, "
+      "but ",m_file," contains ",num_values," values");
+  }
+  if (array.fortran_order) {
+    LBANN_ERROR(
+      "NumPy weight initializer does not support Fortran order ",
+      "(error while loading ",m_file,")");
+  }
+
+  // Extract weight values from NumPy array
+  // Note: Consider viewing instead of copying when the array is
+  // already in the right datatype.
+  std::vector<TensorDataType> values(num_values);
+  switch (array.word_size) {
+  case 4:
+  {
+    const auto* src = array.data<float>();
+    auto* dst = values.data();
+    LBANN_OMP_PARALLEL_FOR
+    for (size_t i=0; i<num_values; ++i) {
+      dst[i] = src[i];
+    }
+    break;
+  }
+  case 8:
+  {
+    const auto* src = array.data<double>();
+    auto* dst = values.data();
+    LBANN_OMP_PARALLEL_FOR
+    for (size_t i=0; i<num_values; ++i) {
+      dst[i] = src[i];
+    }
+    break;
+  }
+  default:
+    LBANN_ERROR(
+      "NumPy weight initializer only supports float32 and float64 data",
+      "(error while loading ",m_file,")");
+  }
+
+  // Construct CPU matrix from weight values
+  using CPUMatType = El::DistMatrix<TensorDataType, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU>;
+  CPUMatType cpu_matrix(matrix.Grid(), matrix.Root());
+  if (matrix.Width() == 1) {
+    cpu_matrix.LockedAttach(
+      matrix.Height(),
+      matrix.Width(),
+      matrix.Grid(),
+      matrix.ColAlign(),
+      matrix.RowAlign(),
+      values.data(),
+      matrix.Height(),
+      matrix.Root());
+  }
+  else {
+    // Weights in fully-connected layer are in Fortran-order. Need to
+    // transpose NumPy array before copying in Hydrogen matrix
+    if (array.shape.size() != 2) {
+      LBANN_ERROR(
+        "NumPy weight initializer attempted to initialize a ",
+        matrix.Height()," x ",matrix.Width()," weights matrix, "
+        "but ",m_file," contains a ",array.shape.size(),"-D array");
+    }
+    if ((El::Int) array.shape[0] != matrix.Height()
+        || (El::Int) array.shape[1] != matrix.Width()) {
+      LBANN_ERROR(
+        "NumPy weight initializer attempted to initialize a ",
+        matrix.Height()," x ",matrix.Width()," weights matrix, "
+        "but ",m_file," contains a ",
+        array.shape[0]," x ",array.shape[1], " array");
+    }
+    El::Matrix<TensorDataType, El::Device::CPU> cpu_matrix_trans(
+      matrix.Width(),
+      matrix.Height(),
+      values.data(),
+      matrix.Width());
+    cpu_matrix.Resize(matrix.Height(), matrix.Width());
+    El::Transpose(cpu_matrix_trans, cpu_matrix.Matrix());
+  }
+
+  // Copy CPU matrix to weights matrix
+  El::Copy(cpu_matrix, matrix);
+
+#endif // LBANN_HAS_CNPY
+}
+
+template <typename TensorDataType>
 description uniform_initializer<TensorDataType>::get_description() const {
   auto desc = data_type_weights_initializer<TensorDataType>::get_description();
   std::stringstream ss;
@@ -153,6 +254,14 @@ build_value_initializer_from_pbuf(google::protobuf::Message const& msg) {
 
 template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
+build_numpy_initializer_from_pbuf(google::protobuf::Message const& msg) {
+  const auto& params =
+    dynamic_cast<lbann_data::Initializer::NumpyInitializer const&>(msg);
+  return make_unique<numpy_initializer<TensorDataType>>(params.file());
+}
+
+template <typename TensorDataType>
+std::unique_ptr<weights_initializer>
 build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::UniformInitializer const&>(msg);
@@ -184,12 +293,15 @@ build_normal_initializer_from_pbuf(google::protobuf::Message const& msg) {
   template class data_type_weights_initializer<T>;                           \
   template class constant_initializer<T>;                                    \
   template class value_initializer<T>;                                       \
+  template class numpy_initializer<T>;                                       \
   template class uniform_initializer<T>;                                     \
   template class normal_initializer<T>;                                      \
   template std::unique_ptr<weights_initializer>                              \
   build_constant_initializer_from_pbuf<T>(google::protobuf::Message const&); \
   template std::unique_ptr<weights_initializer>                              \
   build_value_initializer_from_pbuf<T>(google::protobuf::Message const&);    \
+  template std::unique_ptr<weights_initializer>                              \
+  build_numpy_initializer_from_pbuf<T>(google::protobuf::Message const&);    \
   template std::unique_ptr<weights_initializer>                              \
   build_uniform_initializer_from_pbuf<T>(google::protobuf::Message const&);  \
   template std::unique_ptr<weights_initializer>                              \

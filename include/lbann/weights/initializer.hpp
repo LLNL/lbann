@@ -63,6 +63,8 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  ///@}
+
 public:
   data_type_weights_initializer() = default;
   virtual ~data_type_weights_initializer() = default;
@@ -75,7 +77,7 @@ public:
 
 };
 
-/** @brief Fill weights with a constant value. */
+/** @brief Fill weights with a single constant value. */
 template <typename TensorDataType>
 class constant_initializer
   : public Cloneable<constant_initializer<TensorDataType>,
@@ -86,6 +88,8 @@ public:
 
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
 
 public:
   constant_initializer(TensorDataType value)
@@ -106,6 +110,9 @@ private:
  *
  *  The number of weight entries must exactly match the number of
  *  provided values.
+ *
+ *  @note Most weights are stored in row-major order. However, the
+ *  fully-connected layer's linearity weights are column-major.
  */
 template <typename TensorDataType>
 class value_initializer
@@ -117,6 +124,8 @@ public:
 
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
 
 public:
   value_initializer(std::vector<TensorDataType> values)
@@ -132,6 +141,38 @@ private:
 
 };
 
+/** @brief Fill weights with values from a NumPy file.
+ *
+ *  Expects a .npy file with float32 or float64 values in C-style,
+ *  row-major order.
+ */
+template <typename TensorDataType>
+class numpy_initializer
+  : public Cloneable<numpy_initializer<TensorDataType>,
+                     data_type_weights_initializer<TensorDataType>> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
+
+public:
+  numpy_initializer(std::string file)
+    : m_file{std::move(file)}
+  {}
+  std::string get_type() const override { return "NumPy"; }
+  void fill(AbsDistMatrixType& matrix) override;
+
+private:
+
+  /** NumPy file */
+  std::string m_file;
+
+};
+
 /** @brief Draw weights values from a uniform random distribution. */
 template <typename TensorDataType>
 class uniform_initializer
@@ -143,6 +184,8 @@ public:
 
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
 
  public:
   uniform_initializer(TensorDataType min = El::To<TensorDataType>(0),
@@ -206,6 +249,10 @@ build_value_initializer_from_pbuf(google::protobuf::Message const& msg);
 
 template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
+build_numpy_initializer_from_pbuf(google::protobuf::Message const& msg);
+
+template <typename TensorDataType>
+std::unique_ptr<weights_initializer>
 build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg);
 
 template <typename TensorDataType>
@@ -217,6 +264,7 @@ build_normal_initializer_from_pbuf(google::protobuf::Message const& msg);
   extern template class data_type_weights_initializer<T>; \
   extern template class constant_initializer<T>;          \
   extern template class value_initializer<T>;             \
+  extern template class numpy_initializer<T>;             \
   extern template class uniform_initializer<T>;           \
   extern template class normal_initializer<T>
 
