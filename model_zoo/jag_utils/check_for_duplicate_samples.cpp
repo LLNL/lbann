@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
     }
 
     // sanity check invocation
-    if (arg_parser.get<std::string>(FILELIST) == "") {
+    if (arg_parser.get<std::string>(LBANN_OPTION_FILELIST) == "") {
       if (master) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist=<string>");
       }
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
 
     // read list of conduit filenames
     std::vector<std::string> files;
-    const std::string fn = arg_parser.get<std::string>(FILELIST);
+    const std::string fn = arg_parser.get<std::string>(LBANN_OPTION_FILELIST);
     read_filelist(comm.get(), fn, files);
 
     std::unordered_set<std::string> input_names;

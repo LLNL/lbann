@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
   }
 
   // sanity check invocation
-  if (arg_parser.get<std::string>(FILELIST) == "") {
+  if (arg_parser.get<std::string>(LBANN_OPTION_FILELIST) == "") {
     if (master) {
       err << " :: usage: " << argv[0] << " --filelist=<string>\n"
           << "WARNING: this driver deletes the directory 'corrupt_jag_samples' if it exists "
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
 
   // read list of conduit filenames
   std::vector<std::string> files;
-  const std::string fn = arg_parser.get<std::string>(FILELIST);
+  const std::string fn = arg_parser.get<std::string>(LBANN_OPTION_FILELIST);
   read_filelist(comm.get(), fn, files);
 
   int ee = system("rm -rf corrupt_jag_samples");

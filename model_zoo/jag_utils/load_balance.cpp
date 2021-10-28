@@ -64,18 +64,18 @@ int main(int argc, char *argv[]) {
     }
 
     // sanity check invocation
-    if (arg_parser.get<std::string>(FILELIST) == "" ||
-        arg_parser.get<std::string>(OUTPUT_BASE_DIR) == "" ||
-        arg_parser.get<int>(NUM_SUBDIRS) == -1 ||
-        arg_parser.get<int>(SAMPLES_PER_FILE) == -1) {
+    if (arg_parser.get<std::string>(LBANN_OPTION_FILELIST) == "" ||
+        arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_BASE_DIR) == "" ||
+        arg_parser.get<int>(LBANN_OPTION_NUM_SUBDIRS) == -1 ||
+        arg_parser.get<int>(LBANN_OPTION_SAMPLES_PER_FILE) == -1) {
       if (master) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist=<string> --output_base_dir=<string> --num_subdirs=<int> --samples_per_file=<int>");
       }
     }
 
-    const int num_dirs = arg_parser.get<int>(NUM_SUBDIRS);
-    const std::string base = arg_parser.get<std::string>(OUTPUT_BASE_DIR);
-    const int samples_per_file = arg_parser.get<int>(SAMPLES_PER_FILE);
+    const int num_dirs = arg_parser.get<int>(LBANN_OPTION_NUM_SUBDIRS);
+    const std::string base = arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_BASE_DIR);
+    const int samples_per_file = arg_parser.get<int>(LBANN_OPTION_SAMPLES_PER_FILE);
 
     // master creates output directory structure
     if (master) {
@@ -98,11 +98,11 @@ int main(int argc, char *argv[]) {
     int size;
     if (master) {
       std::stringstream s;
-      std::ifstream in(arg_parser.get<std::string>(FILELIST).c_str());
+      std::ifstream in(arg_parser.get<std::string>(LBANN_OPTION_FILELIST).c_str());
       if (!in) {
         throw lbann_exception(std::string{} + __FILE__ + " " +
                               std::to_string(__LINE__) + " :: failed to open " +
-                              arg_parser.get<std::string>(FILELIST) +
+                              arg_parser.get<std::string>(LBANN_OPTION_FILELIST) +
                               " for reading");
       }
       std::string line;

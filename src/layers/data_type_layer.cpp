@@ -689,7 +689,7 @@ setup_matrices(const El::Grid& grid) {
   /// training with persistent error signals
   if (this->get_device_allocation() == El::Device::GPU) {
     const auto& arg_parser = global_argument_parser();
-    if (!arg_parser.get<bool>(USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP)) {
+    if (!arg_parser.get<bool>(LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP)) {
       for (auto& input : m_inputs) {
         input->Matrix().SetMemoryMode(0); // Directly-allocated memory
       }

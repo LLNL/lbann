@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
     return EXIT_SUCCESS;
   }
 
-  const std::string input_fn = arg_parser.get<std::string>(FILELIST);
+  const std::string input_fn = arg_parser.get<std::string>(LBANN_OPTION_FILELIST);
   std::vector<std::string> filenames;
   read_filelist(comm, input_fn, filenames);
 

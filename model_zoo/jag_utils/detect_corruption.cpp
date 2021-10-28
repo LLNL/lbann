@@ -71,13 +71,13 @@ int main(int argc, char *argv[]) {
     }
 
     // sanity check invocation
-    if (arg_parser.get<std::string>(FILELIST) == "") {
+    if (arg_parser.get<std::string>(LBANN_OPTION_FILELIST) == "") {
       if (master) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist=<string> \nwhere: 'filelist' is a file that contains the fully qualified filenames of the conduit *'bundle' files that are to be inspected.\nfunction: attemptsto detect and report currupt files and/or samples within those files.");
       }
     }
 
-    const std::string fn = arg_parser.get<std::string>(FILELIST);
+    const std::string fn = arg_parser.get<std::string>(LBANN_OPTION_FILELIST);
     std::vector<std::string> filenames;
     read_filelist(comm.get(), fn, filenames);
 
