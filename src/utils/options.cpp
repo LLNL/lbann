@@ -46,6 +46,13 @@ void construct_std_options()
     LBANN_OPTION_DISABLE_SIGNAL_HANDLER,
     {"--disable_signal_handler"},
     "[STD] Disables signal handling (signal handling on by default)");
+  arg_parser.add_flag(LBANN_OPTION_EXIT_AFTER_SETUP,
+                      {"--exit_after_setup"},
+                      "[STD] Forces exit after model setup");
+  arg_parser.add_flag(LBANN_OPTION_GENERATE_MULTI_PROTO,
+                      {"--generate_multi_proto"},
+                      "[STD] Enables loading of multiple prototext files for "
+                      "model, datareader, optimizer, etc. input options");
   arg_parser.add_flag(
     LBANN_OPTION_LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE,
     {"--load_model_weights_dir_is_complete"},
@@ -83,6 +90,9 @@ void construct_std_options()
     LBANN_OPTION_ST_FULL_TRACE,
     {"--st_full_trace"},
     "[STD] Enable full stack trace, stack tracing must be enabled");
+  arg_parser.add_flag(LBANN_OPTION_STACK_TRACE_TO_FILE,
+                      {"--stack_trace_to_file"},
+                      "[STD] When enabled, stack trace is output to file");
   arg_parser.add_flag(LBANN_OPTION_USE_CUBLAS_TENSOR_OPS,
                       {"--use-cublas-tensor-ops"},
                       utils::ENV("LBANN_USE_CUBLAS_TENSOR_OPS"),
@@ -99,10 +109,6 @@ void construct_std_options()
   arg_parser.add_flag(LBANN_OPTION_VERBOSE,
                       {"--verbose", "--verbose_print"},
                       "[STD] Turns on verbose mode");
-  arg_parser.add_flag(LBANN_OPTION_WRITE_SAMPLE_LIST,
-                      {"--write_sample_list"},
-                      "[DATAREADER] Writes out the sample list into file in "
-                      "current directory for image datareader");
   arg_parser.add_flag(
     LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP,
     {"--use_gpu_default_memory_in_forward_prop"},
@@ -282,11 +288,12 @@ void construct_datastore_options()
     {"--data_store_spill"},
     "[DATASTORE] Base directory for conduit data store to spill data",
     "");
-  arg_parser.add_option(LBANN_OPTION_DATA_STORE_TEST_CHECKPOINT,
-                        {"--data_store_test_checkpoint"},
-                        "[DATASTORE] Runs checks on conduit data store "
-                        "checkpointing, used for testing purposes",
-                        "");
+  arg_parser.add_option(
+    LBANN_OPTION_DATA_STORE_TEST_CHECKPOINT,
+    {"--data_store_test_checkpoint"},
+    "[DATASTORE] Set direcotry for running checks on conduit data store "
+    "checkpointing, used for testing purposes",
+    "");
 }
 
 void construct_datareader_options()
@@ -298,13 +305,6 @@ void construct_datareader_options()
     LBANN_OPTION_CHECK_DATA,
     {"--check_data"},
     "[DATAREADER] Checks if the data file exists for image datareader");
-  arg_parser.add_flag(LBANN_OPTION_EXIT_AFTER_SETUP,
-                      {"--exit_after_setup"},
-                      "[STD] Forces exit after model setup");
-  arg_parser.add_flag(LBANN_OPTION_GENERATE_MULTI_PROTO,
-                      {"--generate_multi_proto"},
-                      "[STD] Enables loading of multiple prototext files for "
-                      "model, datareader, optimizer, etc. input options");
   arg_parser.add_flag(
     LBANN_OPTION_KEEP_SAMPLE_ORDER,
     {"--keep_sample_order"},
@@ -327,13 +327,14 @@ void construct_datareader_options()
     LBANN_OPTION_QUIET,
     {"--quiet"},
     "[DATAREADER] Silences metadata output from HDF5 datareader");
-  arg_parser.add_flag(LBANN_OPTION_STACK_TRACE_TO_FILE,
-                      {"--stack_trace_to_file"},
-                      "[STD] When enabled, stack trace is output to file");
   arg_parser.add_flag(LBANN_OPTION_WRITE_SAMPLE_LABEL_LIST,
                       {"--write_sample_label_list"},
                       "[DATAREADER] When enabled, the sample labels from image "
                       "datareader are output to file in current directory");
+  arg_parser.add_flag(LBANN_OPTION_WRITE_SAMPLE_LIST,
+                      {"--write_sample_list"},
+                      "[DATAREADER] Writes out the sample list into file in "
+                      "current directory for image datareader");
   arg_parser.add_flag(
     LBANN_OPTION_Z_SCORE,
     {"--z_score"},
@@ -409,22 +410,21 @@ void construct_datareader_options()
                         "[DATAREADER] Sets the filename for saving computed "
                         "number of samples per file for RAS lipid datatreader",
                         "");
-  // These don't look like they do anything where is
-  // data_reader->set_sample_list() defined??
-  /*
-  arg_parser.add_option(LBANN_OPTION_SAMPLE_LIST_TEST,
-                        {"--sample_list_test"},
-                        "[DATAREADER] TODO",
-                        "");
-  arg_parser.add_option(LBANN_OPTION_SAMPLE_LIST_TRAIN,
-                        {"--sample_list_train"},
-                        "[DATAREADER] TODO",
-                        "");
-  arg_parser.add_option(LBANN_OPTION_SAMPLE_LIST_VALIDATE,
-                        {"--sample_list_validate"},
-                        "[DATAREADER] TODO",
-                        "");
-  */
+  arg_parser.add_option(
+    LBANN_OPTION_SAMPLE_LIST_TEST,
+    {"--sample_list_test"},
+    "[DATAREADER] Sets the datareader sample list for test data",
+    "");
+  arg_parser.add_option(
+    LBANN_OPTION_SAMPLE_LIST_TRAIN,
+    {"--sample_list_train"},
+    "[DATAREADER] Sets the datareader sample list for training data",
+    "");
+  arg_parser.add_option(
+    LBANN_OPTION_SAMPLE_LIST_VALIDATE,
+    {"--sample_list_validate"},
+    "[DATAREADER] Sets the datareader sample list for validation data",
+    "");
   arg_parser.add_option(LBANN_OPTION_SEQUENCE_LENGTH,
                         {"--sequence_length", "--seq_len"},
                         "[DATAREADER] Sets the sequence length for RAS lipid "
@@ -528,7 +528,7 @@ void construct_all_options()
   construct_std_options();
   construct_datastore_options();
   construct_datareader_options();
-  construct_jag_options();
+  //construct_jag_options();
 }
 
 } // namespace lbann
