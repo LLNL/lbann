@@ -42,18 +42,20 @@ void construct_std_options()
     LBANN_OPTION_DISABLE_CUDA,
     {"--disable_cuda"},
     "[STD] has no effect unless LBANN was compiled with LBANN_HAS_CUDNN");
-  arg_parser.add_flag(LBANN_OPTION_DISABLE_SIGNAL_HANDLER,
-                      {"--disable_signal_handler"},
-                      "[STD] Disables signal handling (signal handling on by default)");
+  arg_parser.add_flag(
+    LBANN_OPTION_DISABLE_SIGNAL_HANDLER,
+    {"--disable_signal_handler"},
+    "[STD] Disables signal handling (signal handling on by default)");
   arg_parser.add_flag(
     LBANN_OPTION_LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE,
     {"--load_model_weights_dir_is_complete"},
     "[STD] Use load_model_weights_dir as given, ignoring checkpoint hierarchy");
-  arg_parser.add_flag(LBANN_OPTION_LTFB_ALLOW_GLOBAL_STATISTICS,
-                      {"--ltfb_allow_global_statistics"},
-                      utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
-                      "[STD] Allow the print_statistics callback to report "
-                      "global (inter-trainer) summary statistics.");
+  arg_parser.add_flag(
+    LBANN_OPTION_LTFB_ALLOW_GLOBAL_STATISTICS,
+    {"--ltfb_allow_global_statistics"},
+    utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
+    "[STD] Allow the print_statistics callback to report "
+    "global (inter-trainer) summary statistics.");
   arg_parser.add_flag(
     LBANN_OPTION_LTFB_VERBOSE,
     {"--ltfb_verbose"},
@@ -63,10 +65,11 @@ void construct_std_options()
     {"--no_im_comm"},
     "[STD] removed ImComm callback, if present; this is intended for"
     "running alexnet with a single model, but may be useful elsewhere");
-  arg_parser.add_flag(LBANN_OPTION_PRELOAD_DATA_STORE,
-                      {"--preload_data_store"},
-                      "[STD] Preloads the data store in-memory structure "
-                      "druing data reader load time");
+  arg_parser.add_flag(
+    LBANN_OPTION_PRELOAD_DATA_STORE,
+    {"--preload_data_store"},
+    "[STD] Preloads the data store in-memory structure "
+    "druing data reader load time");
   arg_parser.add_flag(
     LBANN_OPTION_PRINT_AFFINITY,
     {"--print_affinity"},
@@ -75,27 +78,38 @@ void construct_std_options()
     LBANN_OPTION_SERIALIZE_IO,
     {"--serialize_io"},
     "[STD] force data readers to use a single threaded for I/O");
-  arg_parser.add_flag(LBANN_OPTION_ST_ON, {"--st_on"}, "[STD] Enable stack profiler tracing");
-  arg_parser.add_flag(LBANN_OPTION_ST_FULL_TRACE, {"--st_full_trace"}, "[STD] Enable full stack trace, stack tracing must be enabled");
-  arg_parser.add_flag(LBANN_OPTION_USE_CUBLAS_TENSOR_OPS,
-                      {"--use-cublas-tensor-ops"},
-                      utils::ENV("LBANN_USE_CUBLAS_TENSOR_OPS"),
-                      "[STD] Set the default cuBLAS math mode to use "
-                      "Tensor Core operations when available.");
-  arg_parser.add_flag(LBANN_OPTION_USE_CUDNN_TENSOR_OPS,
-                      {"--use-cudnn-tensor-ops"},
-                      utils::ENV("LBANN_USE_CUDNN_TENSOR_OPS"),
-                      "[STD] Set the default cuDNN math mode to use "
-                      "Tensor Core operations when available.");
-  arg_parser.add_flag(LBANN_OPTION_USE_DATA_STORE,
-                      {"--use_data_store"},
-                      "[STD] Enables the data store in-memory structure");
-  arg_parser.add_flag(LBANN_OPTION_VERBOSE,
-                      {"--verbose", "--verbose_print"},
-                      "[STD] Turns on verbose mode");
-  arg_parser.add_flag(LBANN_OPTION_WRITE_SAMPLE_LIST,
-                      {"--write_sample_list"},
-                      "[DATAREADER] Writes out the sample list into file in current directory for image datareader");
+  arg_parser.add_flag(
+    LBANN_OPTION_ST_ON,
+    {"--st_on"},
+    "[STD] Enable stack profiler tracing");
+  arg_parser.add_flag(
+    LBANN_OPTION_ST_FULL_TRACE,
+    {"--st_full_trace"},
+    "[STD] Enable full stack trace, stack tracing must be enabled");
+  arg_parser.add_flag(
+    LBANN_OPTION_USE_CUBLAS_TENSOR_OPS,
+    {"--use-cublas-tensor-ops"},
+    utils::ENV("LBANN_USE_CUBLAS_TENSOR_OPS"),
+    "[STD] Set the default cuBLAS math mode to use "
+    "Tensor Core operations when available.");
+  arg_parser.add_flag(
+    LBANN_OPTION_USE_CUDNN_TENSOR_OPS,
+    {"--use-cudnn-tensor-ops"},
+    utils::ENV("LBANN_USE_CUDNN_TENSOR_OPS"),
+    "[STD] Set the default cuDNN math mode to use "
+    "Tensor Core operations when available.");
+  arg_parser.add_flag(
+    LBANN_OPTION_USE_DATA_STORE,
+    {"--use_data_store"},
+    "[STD] Enables the data store in-memory structure");
+  arg_parser.add_flag(
+    LBANN_OPTION_VERBOSE,
+    {"--verbose", "--verbose_print"},
+    "[STD] Turns on verbose mode");
+  arg_parser.add_flag(
+    LBANN_OPTION_WRITE_SAMPLE_LIST,
+    {"--write_sample_list"},
+    "[DATAREADER] Writes out the sample list into file in current directory for image datareader");
   arg_parser.add_flag(
     LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP,
     {"--use_gpu_default_memory_in_forward_prop"},
@@ -123,17 +137,17 @@ void construct_std_options()
     "Additionally, sets the output directory for dumping weights.\n"
     "Modifies callbacks: checkpoint, save_model, dump_weights\n",
     "");
-  arg_parser.add_option(LBANN_OPTION_HYDROGEN_BLOCK_SIZE,
-                        {"--hydrogen_block_size"},
-                        "[STD] Block size for Hydrogen",
-                        0);
+  arg_parser.add_option(
+    LBANN_OPTION_HYDROGEN_BLOCK_SIZE,
+    {"--hydrogen_block_size"},
+    "[STD] Block size for Hydrogen",
+    0);
   arg_parser.add_option(
     LBANN_OPTION_LOAD_MODEL_WEIGHTS_DIR,
     {"--load_model_weights_dir"},
     "[STD] Load model wieghts found in the given directory.\n"
     "If the directory doesn't exist, doesn't contain valid weights,\n"
-    "or doesn't contain a checkpoint,\n"
-    "an error will be thrown.\n",
+    "or doesn't contain a checkpoint, an error will be thrown.\n",
     "");
   arg_parser.add_option(
     LBANN_OPTION_MAX_RNG_SEEDS_DISPLAY,
@@ -142,31 +156,44 @@ void construct_std_options()
     "[STD] Limit how many random seeds LBANN should display "
     "from each trainer",
     2);
-  arg_parser.add_option(LBANN_OPTION_METADATA, {"--metadata"}, "[STD] Metadata input file", "");
-  arg_parser.add_option(LBANN_OPTION_MINI_BATCH_SIZE,
-                        {"--mini_batch_size"},
-                        "[STD] Size of mini batches",
-                        -1);
-  arg_parser.add_option(LBANN_OPTION_MODEL, {"--model"}, "[STD] Model input file", "");
-  arg_parser.add_option(LBANN_OPTION_NUM_EPOCHS,
-                        {"--num_epochs"},
-                        "[STD] Number of epochs to train model",
-                        -1);
-  arg_parser.add_option(LBANN_OPTION_NUM_IO_THREADS,
-                        {"--num_io_threads"},
-                        utils::ENV("LBANN_NUM_IO_THREADS"),
-                        "[STD] Number of threads available to both I/O and "
-                        "initial data transformations for each rank.",
-                        64);
-  arg_parser.add_option(LBANN_OPTION_NUM_PARALLEL_READERS,
-                        {"--num_parallel_readers"},
-                        "[STD] The number of parallel data readers",
-                        1);
-  arg_parser.add_option(LBANN_OPTION_NUM_TEST_SAMPLES,
-                        {"--num_test_samples"},
-                        utils::ENV("LBANN_NUM_TEST_SAMPLES"),
-                        "[STD] Set the number of testing samples to ingest.",
-                        -1);
+  arg_parser.add_option(
+    LBANN_OPTION_METADATA,
+    {"--metadata"},
+    "[STD] Metadata input file",
+    "");
+  arg_parser.add_option(
+    LBANN_OPTION_MINI_BATCH_SIZE,
+    {"--mini_batch_size"},
+    "[STD] Size of mini batches",
+    -1);
+  arg_parser.add_option(
+    LBANN_OPTION_MODEL,
+    {"--model"},
+    "[STD] Model input file",
+    "");
+  arg_parser.add_option(
+    LBANN_OPTION_NUM_EPOCHS,
+    {"--num_epochs"},
+    "[STD] Number of epochs to train model",
+    -1);
+  arg_parser.add_option(
+    LBANN_OPTION_NUM_IO_THREADS,
+    {"--num_io_threads"},
+    utils::ENV("LBANN_NUM_IO_THREADS"),
+    "[STD] Number of threads available to both I/O and "
+    "initial data transformations for each rank.",
+    64);
+  arg_parser.add_option(
+    LBANN_OPTION_NUM_PARALLEL_READERS,
+    {"--num_parallel_readers"},
+    "[STD] The number of parallel data readers",
+    1);
+  arg_parser.add_option(
+    LBANN_OPTION_NUM_TEST_SAMPLES,
+    {"--num_test_samples"},
+    utils::ENV("LBANN_NUM_TEST_SAMPLES"),
+    "[STD] Set the number of testing samples to ingest.",
+    -1);
   arg_parser.add_option(LBANN_OPTION_NUM_TRAIN_SAMPLES,
                         {"--num_train_samples"},
                         utils::ENV("LBANN_NUM_TRAIN_SAMPLES"),
@@ -385,7 +412,7 @@ void construct_datareader_options()
                         "[DATAREADER] Size of the read buffer for the SMILES "
                         "data reader.",
                         16 * 1024 * 1024UL);
-  arg_parser.add_option(LBANN_OPTION_VOCAB, {"--vocab"}, "[DATAREADER] TODO", ""Sets the filename containing vocabulary for SMILES datareader);
+  arg_parser.add_option(LBANN_OPTION_VOCAB, {"--vocab"}, "[DATAREADER] Sets the filename containing the vocabulary for SMILES datareader", "");
 }
 
 void construct_jag_options()
@@ -393,37 +420,36 @@ void construct_jag_options()
   auto& arg_parser = global_argument_parser();
 
   // Bool flags
-  arg_parser.add_flag(LBANN_OPTION_JAG, {"--jag"}, "[JAG] TODO");
-  arg_parser.add_flag(LBANN_OPTION_JAG_PARTITIONED, {"--jag_partitioned"}, "[JAG] TODO");
+  arg_parser.add_flag(LBANN_OPTION_JAG, {"--jag"}, "[JAG] Runs the JAG test");
 
   // Input options
-  arg_parser.add_option(LBANN_OPTION_BASE_DIR, {"--base_dir"}, "[JAG] TODO", "");
-  arg_parser.add_option(LBANN_OPTION_FILELIST, {"--filelist"}, "[JAG|ATOM] TODO", "");
-  arg_parser.add_option(LBANN_OPTION_FILENAME, {"--filename"}, "[JAG] TODO", "");
-  arg_parser.add_option(LBANN_OPTION_FORMAT, {"--format"}, "[JAG] TODO", "");
-  arg_parser.add_option(LBANN_OPTION_INDEX_FN, {"--index_fn"}, "[JAG] TODO", "");
-  arg_parser.add_option(LBANN_OPTION_MAPPING_FN, {"--mapping_fn"}, "[JAG] TODO", "");
-  arg_parser.add_option(LBANN_OPTION_NUM_LISTS, {"--num_lists"}, "[JAG] TODO", -1);
-  arg_parser.add_option(LBANN_OPTION_NUM_SAMPLES, {"--num_samples"}, "[JAG] TODO", -1);
+  arg_parser.add_option(LBANN_OPTION_BASE_DIR, {"--base_dir"}, "[JAG] Sets the file path to directory containing conduit files", "");
+  arg_parser.add_option(LBANN_OPTION_FILELIST, {"--filelist"}, "[JAG] List of Conduit filenames", "");
+  arg_parser.add_option(LBANN_OPTION_FILENAME, {"--filename"}, "[JAG] Sets HDF5 file for JAG Conduit HDF5 test", "");
+  arg_parser.add_option(LBANN_OPTION_FORMAT, {"--format"}, "[JAG] Sets format for test_speed_hydra <hdf5|conduit_bin>", "");
+  arg_parser.add_option(LBANN_OPTION_INDEX_FN, {"--index_fn"}, "[JAG] Sets filename for output file from build_index executable", "");
+  arg_parser.add_option(LBANN_OPTION_MAPPING_FN, {"--mapping_fn"}, "[JAG] Sets filename for mapping values", "");
+  arg_parser.add_option(LBANN_OPTION_NUM_LISTS, {"--num_lists"}, "[JAG] Number of sets for randomly selected samples to be partitioned", -1);
+  arg_parser.add_option(LBANN_OPTION_NUM_SAMPLES, {"--num_samples"}, "[JAG] Number of random samples to be extracted", -1);
   arg_parser.add_option(LBANN_OPTION_NUM_SAMPLES_PER_FILE,
                         {"--num_samples_per_file"},
-                        "[JAG] TODO",
+                        "[JAG] Number of samples per output file",
                         1000);
   arg_parser.add_option(LBANN_OPTION_NUM_SAMPLES_PER_LIST,
                         {"--num_samples_per_list"},
-                        "[JAG] TODO",
+                        "[JAG] Sets the number of samples per list",
                         -1);
-  arg_parser.add_option(LBANN_OPTION_NUM_SUBDIRS, {"--num_subdirs"}, "[JAG] TODO", -1);
+  arg_parser.add_option(LBANN_OPTION_NUM_SUBDIRS, {"--num_subdirs"}, "[JAG] Sets the number of output directories", -1);
   arg_parser.add_option(LBANN_OPTION_OUTPUT_BASE_DIR,
                         {"--output_base_dir"},
-                        "[JAG] TODO",
+                        "[JAG] Sets path for output directory, will be created if it doesn't exist",
                         "");
-  arg_parser.add_option(LBANN_OPTION_OUTPUT_BASE_FN, {"--output_base_fn"}, "[JAG] TODO", "");
-  arg_parser.add_option(LBANN_OPTION_OUTPUT_DIR, {"--output_dir"}, "[JAG] TODO", "");
-  arg_parser.add_option(LBANN_OPTION_OUTPUT_FN, {"--output_fn"}, "[JAG] TODO", "");
+  arg_parser.add_option(LBANN_OPTION_OUTPUT_BASE_FN, {"--output_base_fn"}, "[JAG] Sets output filename for sample selection", "");
+  arg_parser.add_option(LBANN_OPTION_OUTPUT_DIR, {"--output_dir"}, "[JAG] Sets the output direcotry for various JAG util executables", "");
+  arg_parser.add_option(LBANN_OPTION_OUTPUT_FN, {"--output_fn"}, "[JAG] Sets output filename for build_index executable", "");
   arg_parser.add_option(LBANN_OPTION_SAMPLES_PER_FILE,
                         {"--samples_per_file"},
-                        "[JAG] TODO",
+                        "[JAG] Sets number of samples per Conduit output file",
                         -1);
 }
 

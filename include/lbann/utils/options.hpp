@@ -116,7 +116,6 @@ namespace lbann {
 /****** jag options ******/
 // Bool flags
 #define LBANN_OPTION_JAG "jag"
-#define LBANN_OPTION_JAG_PARTITIONED "jag_partitioned"
 
 // Input options
 #define LBANN_OPTION_BASE_DIR "base_dir"
