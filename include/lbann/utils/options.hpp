@@ -68,6 +68,7 @@ namespace lbann {
 #define LBANN_OPTION_DATA_STORE_NO_THREAD "data_store_no_thread"
 #define LBANN_OPTION_DATA_STORE_PROFILE "data_store_profile"
 #define LBANN_OPTION_DATA_STORE_TEST_CACHE "data_store_test_cache"
+#define LBANN_OPTION_NODE_SIZES_VARY "node_sizes_vary"
 
 // Input options
 #define LBANN_OPTION_DATA_STORE_SPILL "data_store_spill"
@@ -79,7 +80,6 @@ namespace lbann {
 #define LBANN_OPTION_KEEP_SAMPLE_ORDER "keep_sample_order"
 #define LBANN_OPTION_KEEP_PACKED_FIELDS "keep_packed_fields"
 #define LBANN_OPTION_LOAD_FULL_SAMPLE_LIST_ONCE "load_full_sample_list_once"
-#define LBANN_OPTION_NODE_SIZES_VARY "node_sizes_vary"
 #define LBANN_OPTION_QUIET "quiet"
 #define LBANN_OPTION_WRITE_SAMPLE_LABEL_LIST "write_sample_label_list"
 #define LBANN_OPTION_WRITE_SAMPLE_LIST "write_sample_list"

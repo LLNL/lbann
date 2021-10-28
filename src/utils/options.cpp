@@ -69,12 +69,12 @@ void construct_std_options()
   arg_parser.add_flag(
     LBANN_OPTION_NO_IM_COMM,
     {"--no_im_comm"},
-    "[STD] removed ImComm callback, if present; this is intended for"
+    "[STD] removed ImComm callback, if present; this is intended for "
     "running alexnet with a single model, but may be useful elsewhere");
   arg_parser.add_flag(LBANN_OPTION_PRELOAD_DATA_STORE,
                       {"--preload_data_store"},
                       "[STD] Preloads the data store in-memory structure "
-                      "druing data reader load time");
+                      "during data reader load time");
   arg_parser.add_flag(
     LBANN_OPTION_PRINT_AFFINITY,
     {"--print_affinity"},
@@ -141,7 +141,7 @@ void construct_std_options()
   arg_parser.add_option(
     LBANN_OPTION_LOAD_MODEL_WEIGHTS_DIR,
     {"--load_model_weights_dir"},
-    "[STD] Load model wieghts found in the given directory.\n"
+    "[STD] Load model weights found in the given directory.\n"
     "If the directory doesn't exist, doesn't contain valid weights,\n"
     "or doesn't contain a checkpoint, an error will be thrown.\n",
     "");
@@ -281,6 +281,10 @@ void construct_datastore_options()
                       {"--data_store_test_cache"},
                       "[DATASTORE] Perform checks on imagenet data store "
                       "cache, used for testing purposes");
+  arg_parser.add_flag(
+    LBANN_OPTION_NODE_SIZES_VARY,
+    {"--node_sizes_vary"},
+    "[DATASTORE] Allows Conduit data store nodes to have non-uniform sizes");
 
   // Input options
   arg_parser.add_option(
@@ -291,7 +295,7 @@ void construct_datastore_options()
   arg_parser.add_option(
     LBANN_OPTION_DATA_STORE_TEST_CHECKPOINT,
     {"--data_store_test_checkpoint"},
-    "[DATASTORE] Set direcotry for running checks on conduit data store "
+    "[DATASTORE] Set directory for running checks on conduit data store "
     "checkpointing, used for testing purposes",
     "");
 }
@@ -320,10 +324,6 @@ void construct_datareader_options()
     "[DATAREADER] Trainer master will load entire sample list into memory and "
     "then broadcast it to other workers within the trainer");
   arg_parser.add_flag(
-    LBANN_OPTION_NODE_SIZES_VARY,
-    {"--node_sizes_vary"},
-    "[DATASTORE] Allows Conduit data store nodes to have non-uniform sizes");
-  arg_parser.add_flag(
     LBANN_OPTION_QUIET,
     {"--quiet"},
     "[DATAREADER] Silences metadata output from HDF5 datareader");
@@ -349,7 +349,7 @@ void construct_datareader_options()
   arg_parser.add_option(
     LBANN_OPTION_DATA_FILEDIR,
     {"--data_filedir"},
-    "[DATAREADER] Sets the file direcotry for train and test data",
+    "[DATAREADER] Sets the file directory for train and test data",
     "");
   arg_parser.add_option(LBANN_OPTION_DATA_FILEDIR_TEST,
                         {"--data_filedir_test"},
@@ -511,7 +511,7 @@ void construct_jag_options()
   arg_parser.add_option(
     LBANN_OPTION_OUTPUT_DIR,
     {"--output_dir"},
-    "[JAG] Sets the output direcotry for various JAG util executables",
+    "[JAG] Sets the output directory for various JAG util executables",
     "");
   arg_parser.add_option(LBANN_OPTION_OUTPUT_FN,
                         {"--output_fn"},
