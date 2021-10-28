@@ -67,7 +67,7 @@ namespace lbann {
 #define LBANN_OPTION_DATA_STORE_MIN_MAX_TIMING "data_store_min_max_timing"
 #define LBANN_OPTION_DATA_STORE_NO_THREAD "data_store_no_thread"
 #define LBANN_OPTION_DATA_STORE_PROFILE "data_store_profile"
-#define LBANN_OPTION_DATA_STORE_TEST_CACHE "data_store_test_cache"o
+#define LBANN_OPTION_DATA_STORE_TEST_CACHE "data_store_test_cache"
 
 // Input options
 #define LBANN_OPTION_DATA_STORE_SPILL "data_store_spill"
