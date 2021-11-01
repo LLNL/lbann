@@ -1,6 +1,9 @@
 from operations import *
 from genotypes import *
 
+import lbann.models
+import lbann.models.resnet
+
 class Cell(lbann.modules.Module):
 
    def __init__(self, genotype, C_prev_prev, C_prev, C, reduction, reduction_prev):
@@ -34,7 +37,7 @@ class Cell(lbann.modules.Module):
            self._ops += [op]
        self._indices = indices
 
-   def forward(self, s0, s1, drop_prob):
+   def forward(self, s0, s1): # add drop_prob later
        s0 = self.preprocess0(s0)
        s1 = self.preprocess1(s1)
 
@@ -46,11 +49,6 @@ class Cell(lbann.modules.Module):
            op2 = self._ops[2 * i + 1]
            h1 = op1(h1)
            h2 = op2(h2)
-           if self.training and drop_prob > 0.:
-               if not isinstance(op1, Identity):
-                   h1 = drop_path(h1, drop_prob)
-               if not isinstance(op2, Identity):
-                   h2 = drop_path(h2, drop_prob)
            s = h1 + h2
            states += [s]
 
@@ -101,23 +99,30 @@ class NetworkCIFAR(lbann.modules.Module):
        #input2 = self.stem1(input)
        #s0 = s1 = self.stem2(input2)
        for i, cell in enumerate(self.cells):
-           s0, s1 = s1, cell(s0, s1, self.droprate)
+           s0, s1 = s1, cell(s0, s1)
            if i == 2 * self._layers // 3:
                if self._auxiliary and self.training:
                    logits_aux = self.auxiliary_head(s1)
        out = self.global_pooling(s1)
-       logits = self.classifier(out.view(out.size(0), -1)) # view is in pytorch, convert to lbann
+         
+       # will this work?
+       size0 = out.size(0) 
+       size1 = out.size(1)
+       out = lbann.Reshape(out, dims='size0 size1')       
+
+       logits = self.classifier(out)
        return logits, logits_aux
 
 if __name__ == '__main__':
     
     genome = NASNet
     mymodel = NetworkCIFAR(32, 10, 20, False, genome) # nsga uses 34 instead of 32
-    mymodel.droprate = 0.0
+
+    #myresnet = lbann.models.ResNet18
 
     input_ = lbann.Input(data_field='samples')
     x = lbann.Gaussian(neuron_dims='3 32 32')
     y = mymodel(x)
-    layers = list(lbann.traverse_layer_graph([x, input_]))
+    #layers = list(lbann.traverse_layer_graph([x, input_]))
     
     print(y)
