@@ -920,6 +920,7 @@ add_subdirectory(applications/CANDLE/pilot2/tools)
 add_subdirectory(applications/ATOM/utils)
 add_subdirectory(tests)
 add_subdirectory(scripts)
+add_subdirectory(core-driver)
 
 ################################################################
 # Install LBANN
