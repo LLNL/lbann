@@ -26,11 +26,13 @@
 
 #include "lbann/lbann.hpp"
 #include "lbann/utils/argument_parser.hpp"
+//#include <conduit/conduit.hpp>
 #include <mpi.h>
 #include <stdio.h>
 
 void construct_opts(int argc, char **argv) {
   auto& arg_parser = lbann::global_argument_parser();
+  lbann::construct_std_options();
   arg_parser.add_option("samples",
                         {"-n"},
                         "Number of samples to run inference on",
@@ -69,6 +71,24 @@ random_samples(El::Grid const& g, int n, int c, int h, int w) {
   return samples;
 }
 
+void random_mnist_sample(int *arr, int size, int max_val=255) {
+  for (int i; i < size; i++) {
+    arr[i] = std::rand() % max_val;
+  }
+}
+
+std::vector<conduit::Node> conduit_mnist_samples(int n, int c, int h, int w) {
+  std::vector<conduit::Node> samples(n);
+  int sample_size = c * h * w;
+  for (int i; i<n; i++) {
+    int this_sample[sample_size];
+    random_mnist_sample(this_sample, sample_size);
+    samples[i]["sample"].set(this_sample, sample_size);
+    samples[i]["label"] = std::rand() % 10;
+  }
+  return samples;
+}
+
 int main(int argc, char **argv) {
   // Initialize MPI
   int provided;
@@ -96,6 +116,14 @@ int main(int argc, char **argv) {
 
   // Load model and run inference on samples
   auto lbann_comm = lbann::initialize_lbann(MPI_COMM_WORLD);
+
+  /*
+  auto samples = conduit_mnist_samples(arg_parser.get<int>("samples"),
+                                       arg_parser.get<int>("channels"),
+                                       arg_parser.get<int>("height"),
+                                       arg_parser.get<int>("width"));
+  samples[0].print();
+  */
   auto m = lbann::load_inference_model(lbann_comm.get(),
                                        arg_parser.get<std::string>("model"),
                                        arg_parser.get<int>("minibatchsize"),
