@@ -1,6 +1,8 @@
 from operations import *
 from genotypes import *
 
+#import lbann
+#import lbann.modules
 import lbann.models
 import lbann.models.resnet
 
@@ -47,6 +49,8 @@ class Cell(lbann.modules.Module):
            h2 = states[self._indices[2 * i + 1]]
            op1 = self._ops[2 * i]
            op2 = self._ops[2 * i + 1]
+           print(h1)
+           print(op1)
            h1 = op1(h1)
            h2 = op2(h2)
            s = h1 + h2
@@ -63,12 +67,11 @@ class NetworkCIFAR(lbann.modules.Module):
 
        stem_multiplier = 3
        C_curr = stem_multiplier * C
-       self.stem1 = lbann.Convolution(num_dims = 2,
-                                      num_output_channels = C_curr,
-                                      conv_dims_i = 3,
-                                      conv_pads_i = 1,
-                                      has_bias = False)
-       self.stem2 = lbann.BatchNormalization
+       self.stem1 = lbann.modules.Convolution2dModule(out_channels = C_curr,
+                                                      kernel_size = 3,
+                                                      stride = 1,
+                                                      bias = False)
+       #self.stem2 = lbann.BatchNormalization
 
        C_prev_prev, C_prev, C_curr = C_curr, C_curr, C
        self.cells = []
@@ -88,11 +91,6 @@ class NetworkCIFAR(lbann.modules.Module):
            if i == 2 * layers // 3:
                C_to_auxiliary = C_prev
 
-       self.global_pooling = lbann.Pooling(num_dims = 2,
-                                           #adaptive avg - o/p 1
-                                           pool_mode = "max")
-       self.classifier = lbann.FullyConnected(num_neurons = num_classes)
-
    def forward(self, input):
        logits_aux = None
        s0 = s1 = self.stem1(input)
@@ -103,14 +101,16 @@ class NetworkCIFAR(lbann.modules.Module):
            if i == 2 * self._layers // 3:
                if self._auxiliary and self.training:
                    logits_aux = self.auxiliary_head(s1)
-       out = self.global_pooling(s1)
+       out = lbann.Pooling(s1, 
+                           num_dims = 2,
+                           pool_mode = "max") # adaptive avg - o/p 1
          
        # will this work?
        size0 = out.size(0) 
        size1 = out.size(1)
        out = lbann.Reshape(out, dims='size0 size1')       
 
-       logits = self.classifier(out)
+       logits = lbann.FullyConnected(out, num_neurons = num_classes)
        return logits, logits_aux
 
 if __name__ == '__main__':
