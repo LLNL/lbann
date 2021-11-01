@@ -62,6 +62,12 @@ data_reader_synthetic::data_reader_synthetic(int num_samples,
     m_dimensions(dims)
 {
   set_has_labels(true);
+  set_has_data_field(INPUT_DATA_TYPE_SAMPLES, true);
+  set_has_data_field(INPUT_DATA_TYPE_LABELS, true);
+  m_synthetic_data_fields[INPUT_DATA_TYPE_SAMPLES] = dims;
+  m_synthetic_data_fields[INPUT_DATA_TYPE_LABELS] = {num_labels};
+  m_supported_input_types[INPUT_DATA_TYPE_SAMPLES] = true;
+  m_supported_input_types[INPUT_DATA_TYPE_LABELS] = true;
 }
 
 data_reader_synthetic::data_reader_synthetic(int num_samples,
@@ -75,6 +81,12 @@ data_reader_synthetic::data_reader_synthetic(int num_samples,
     m_response_dimensions(response_dims)
 {
   set_has_responses(true);
+  set_has_data_field(INPUT_DATA_TYPE_SAMPLES, true);
+  set_has_data_field(INPUT_DATA_TYPE_RESPONSES, true);
+  m_synthetic_data_fields[INPUT_DATA_TYPE_SAMPLES] = dims;
+  m_synthetic_data_fields[INPUT_DATA_TYPE_RESPONSES] = response_dims;
+  m_supported_input_types[INPUT_DATA_TYPE_SAMPLES] = true;
+  m_supported_input_types[INPUT_DATA_TYPE_RESPONSES] = true;
 }
 
 data_reader_synthetic::data_reader_synthetic(int num_samples,
