@@ -257,14 +257,14 @@ void dump_weights::on_train_begin(model *m) {
 }
 
 void dump_weights::on_epoch_end(model *m) {
-  const auto& context = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const auto& context = static_cast<const SGDExecutionContext&>(m->get_execution_context());
   if (context.get_epoch() % m_epoch_interval == 0) {
     do_dump_weights(*m, visitor_hook::epoch_end);
   }
 }
 
 void dump_weights::do_dump_weights(const model& m, visitor_hook hook) {
-  const auto& context = static_cast<const sgd_execution_context&>(m.get_execution_context());
+  const auto& context = static_cast<const SGDExecutionContext&>(m.get_execution_context());
   const auto& t = get_const_trainer();
 
   // Create directory for weight files

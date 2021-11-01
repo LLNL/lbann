@@ -195,7 +195,7 @@ void confusion_matrix::update_counts(const model& m) {
 }
 
 void confusion_matrix::save_confusion_matrix(const model& m) {
-  const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
+  const auto& c = static_cast<const SGDExecutionContext&>(m.get_execution_context());
 
   // Get counts
   const auto& mode = c.get_execution_mode();

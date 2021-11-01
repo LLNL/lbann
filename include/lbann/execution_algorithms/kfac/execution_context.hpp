@@ -26,8 +26,8 @@
 #ifndef LBANN_EXECUTION_ALGORITHMS_KFAC_EXECUTION_CONTEXT_HPP_INCLUDED
 #define LBANN_EXECUTION_ALGORITHMS_KFAC_EXECUTION_CONTEXT_HPP_INCLUDED
 
-#include "lbann/execution_contexts/execution_context.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_block.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_util.hpp"
 #include <memory>
@@ -53,28 +53,28 @@ constexpr El::Device Device = El::Device::CPU;
 /** @class ExecutionContext
  *  @brief The execution context for an KFAC algorithm.
  */
-class ExecutionContext final : public lbann::execution_context
+class KFACExecutionContext final : public lbann::ExecutionContext
 {
 public:
   friend class ::lbann::KFAC;
 
   /** Constructor. */
-  ExecutionContext(
+  KFACExecutionContext(
     size_t mini_batch_size,
     double damping_act,
     double damping_err,
     double damping_bn_act,
     double damping_bn_err);
   /** Destructor. */
-  ~ExecutionContext() = default;
+  ~KFACExecutionContext() = default;
 
   /** Copy constructor -- deleted. */
-  ExecutionContext(const ExecutionContext& other) = delete;
+  KFACExecutionContext(const KFACExecutionContext& other) = delete;
   /** Copy assignment operator -- deleted. */
-  ExecutionContext& operator=(const ExecutionContext& other) = delete;
+  KFACExecutionContext& operator=(const KFACExecutionContext& other) = delete;
 
   /** Get a "clean" execution_context of the same type. */
-  std::unique_ptr<lbann::execution_context> get_new() const override;
+  std::unique_ptr<lbann::ExecutionContext> get_new() const override;
 
   /** @brief Get a string identifying the type of execution context.
    *  @details Should match the training algorithm.
@@ -86,7 +86,7 @@ public:
   std::string get_state_string() const noexcept override;
 
   /** @brief Return execution context for SGD-family training algorithm. */
-  inline sgd_execution_context& get_sgd_execution_context() noexcept
+  inline SGDExecutionContext& get_sgd_execution_context() noexcept
   {
     return m_sgd_execution_context;
   }
@@ -116,7 +116,7 @@ public:
 
 private:
 
-  sgd_execution_context m_sgd_execution_context;
+  SGDExecutionContext m_sgd_execution_context;
 
   /** @brief The current damping values. */
   double m_damping_act, m_damping_err,

@@ -65,7 +65,7 @@ void print_statistics::setup(model *m) {
 }
 
 void print_statistics::on_epoch_begin(model *m) {
-  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
   data_coordinator& dc = get_trainer().get_data_coordinator();
   lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
@@ -154,7 +154,7 @@ void print_statistics::on_test_end(model *m) {
 }
 
 void print_statistics::report_results(model *m) {
-  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
   lbann_comm *comm = m->get_comm();
 
   // Get string for execution mode

@@ -28,8 +28,8 @@
 #include "lbann/layers/io/input_layer.hpp"
 
 #include "lbann/callbacks/imcomm.hpp"
-#include "lbann/execution_contexts/execution_context.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/serialize.hpp"
 
@@ -70,7 +70,7 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(El::Int mini_b
   /// During model setup there is no valid execution context, but
   /// during execution there is a context
   if(this->m_model->has_valid_execution_context()) {
-    auto& c = dynamic_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+    auto& c = dynamic_cast<SGDExecutionContext&>(this->m_model->get_execution_context());
     auto mode = c.get_execution_mode();
     auto effective_mini_batch_size = mini_batch_size;
     if (!(mode==execution_mode::inference)) {

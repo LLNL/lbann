@@ -39,7 +39,7 @@ namespace {
 lbann::TrainingAlgorithmFactory build_default_factory()
 {
   lbann::TrainingAlgorithmFactory fact;
-  fact.register_builder("SGD", lbann::make<lbann::sgd_training_algorithm>);
+  fact.register_builder("SGD", lbann::make<lbann::SGDTrainingAlgorithm>);
   fact.register_builder("LTFB", lbann::make<lbann::LTFB>);
   fact.register_builder("KFAC", lbann::make<lbann::KFAC>);
   return fact;
@@ -60,8 +60,8 @@ void lbann::register_new_training_algorithm(TrainingAlgorithmKey key,
 }
 
 template <>
-std::unique_ptr<lbann::training_algorithm>
-lbann::make_abstract<lbann::training_algorithm>(
+std::unique_ptr<lbann::TrainingAlgorithm>
+lbann::make_abstract<lbann::TrainingAlgorithm>(
   google::protobuf::Message const& params)
 {
   auto const& algo_params =

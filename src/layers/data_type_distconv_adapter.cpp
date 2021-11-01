@@ -27,7 +27,7 @@
 #include "lbann/layers/data_type_distconv_adapter.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/trainers/trainer.hpp"
 
 namespace lbann {

@@ -100,9 +100,9 @@ struct DefaultErrorReporter
 struct DumpLayerFunctor : DefaultErrorReporter
 {
   model * m;
-  sgd_execution_context const& c;
+  SGDExecutionContext const& c;
 
-  DumpLayerFunctor(model* arg_m, sgd_execution_context const& arg_c)
+  DumpLayerFunctor(model* arg_m, SGDExecutionContext const& arg_c)
     : m(arg_m), c(arg_c)
   {}
 
@@ -130,9 +130,9 @@ struct DumpLayerFunctor : DefaultErrorReporter
 struct DumpWeightsFunctor : DefaultErrorReporter
 {
   model * m;
-  sgd_execution_context const& c;
+  SGDExecutionContext const& c;
 
-  DumpWeightsFunctor(model* arg_m, sgd_execution_context const& arg_c)
+  DumpWeightsFunctor(model* arg_m, SGDExecutionContext const& arg_c)
     : m(arg_m), c(arg_c)
   {}
 
@@ -165,7 +165,7 @@ template <typename T> using SingleTypeDataTypeLayer = data_type_layer<T, T>;
 void dump_network(model *m) {
   using ValidFPTypes = supported_layer_data_type;
 
-  const auto& c = dynamic_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = dynamic_cast<SGDExecutionContext&>(m->get_execution_context());
   for (auto* l : m->get_layers()) {
     using LayerTypes = h2::meta::tlist::ExpandTL<SingleTypeDataTypeLayer,
                                                  ValidFPTypes>;

@@ -50,7 +50,7 @@ namespace {
  *  layers. It is assumed that input layers have already loaded data.
  */
 EvalType compute_objective_function(model& m) {
-  const auto& c = static_cast<sgd_execution_context&>(m.get_execution_context());
+  const auto& c = static_cast<SGDExecutionContext&>(m.get_execution_context());
 
   // Forward prop, skipping input layers
 
@@ -60,7 +60,7 @@ EvalType compute_objective_function(model& m) {
     for (auto&& l : m.get_layers()) {
       if (dynamic_cast<input_layer<DataType>*>(l) == nullptr && l->get_run_layer_in_subgraph()) {
         l->forward_prop();
-          
+
       }
     }
   }
@@ -68,7 +68,7 @@ EvalType compute_objective_function(model& m) {
   {
     for (auto&& l : m.get_layers()) {
       if (dynamic_cast<input_layer<DataType>*>(l) == nullptr) {
-        
+
         l->forward_prop();
       }
     }
@@ -76,7 +76,7 @@ EvalType compute_objective_function(model& m) {
   }
 
 
-  
+
 
   // Get objective function value
   auto&& obj = m.get_objective_function();
@@ -105,7 +105,7 @@ struct DefaultErrorReporter
 struct CheckWeightsFunctor : DefaultErrorReporter
 {
   model &m;
-  sgd_execution_context const& c;
+  SGDExecutionContext const& c;
   EvalType epsilon;
   EvalType step_size;
   EvalType expected_error;
@@ -113,7 +113,7 @@ struct CheckWeightsFunctor : DefaultErrorReporter
   bool error_on_failure;
 
   CheckWeightsFunctor(model& arg_m,
-                      sgd_execution_context const& arg_c,
+                      SGDExecutionContext const& arg_c,
                       EvalType arg_epsilon,
                       EvalType arg_step_size,
                       EvalType arg_expected_error,
@@ -231,7 +231,7 @@ check_gradients::serialize(Archive & ar) {
 void check_gradients::do_check_gradients(model& m) const {
 
   // Get objects from model
-  auto& c = static_cast<sgd_execution_context&>(m.get_execution_context());
+  auto& c = static_cast<SGDExecutionContext&>(m.get_execution_context());
   auto& comm = *m.get_comm();
   const auto mode = c.get_execution_mode();
   const auto& layers = m.get_layers();
@@ -253,7 +253,7 @@ void check_gradients::do_check_gradients(model& m) const {
   data_coordinator& dc = get_trainer().get_data_coordinator();
   dc.fetch_data(mode);
 
-  //checking subgrpah parallelism 
+  //checking subgrpah parallelism
   if(m.is_subgraph_parallelism_enabled())
   {
     for (auto&& l : m.get_layers()) {
@@ -274,7 +274,7 @@ void check_gradients::do_check_gradients(model& m) const {
 
   }
 
-  
+
 
   // Compute objective function
   const EvalType objective = compute_objective_function(m);
@@ -303,7 +303,7 @@ void check_gradients::do_check_gradients(model& m) const {
   m.get_objective_function()->differentiate();
   m.get_objective_function()->compute_weight_regularization();
 
-  //checking subgraph parallelism 
+  //checking subgraph parallelism
   if(m.is_subgraph_parallelism_enabled())
   {
     for (El::Int i = layers.size()-1; i >= 0; --i) {
@@ -311,7 +311,7 @@ void check_gradients::do_check_gradients(model& m) const {
       {
         layers[i]->back_prop();
       }
-      
+
     }
 
   }
@@ -322,7 +322,7 @@ void check_gradients::do_check_gradients(model& m) const {
     }
 
   }
-  
+
 
   // Print objective function value
   if (comm.am_world_master()) {

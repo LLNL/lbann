@@ -114,7 +114,7 @@ class kfac_block_gru: public kfac_block<Device> {
   /** Constructor.
    */
   kfac_block_gru(Layer* layer,
-                 kfac::ExecutionContext* context,
+                 kfac::KFACExecutionContext* context,
                  size_t layer_id,
                  size_t inverse_proc_rank)
       : kfac_block<Device>(layer, context, layer_id, inverse_proc_rank) {
@@ -177,7 +177,7 @@ class kfac_block_gru: public kfac_block<Device> {
   int get_inverse_matrices(
       El::Matrix<DataType, Device>& output,
       int offset) override;
-  
+
 
   /** @brief Get inverse matrices size (offset). */
   int get_inverse_matrices_size(lbann_comm *comm) override;
@@ -190,7 +190,7 @@ class kfac_block_gru: public kfac_block<Device> {
   void send_recv_weights(lbann_comm *comm);
 
   /** @brief Get inverse matrices size vector */
-  std::vector<int> 
+  std::vector<int>
   get_inverse_matrices_size_vector(lbann_comm *comm) override
   {
     LBANN_ERROR("This function is not yet implemented for GRU layer");
@@ -203,7 +203,7 @@ class kfac_block_gru: public kfac_block<Device> {
     LBANN_ERROR("This function is not yet implemented for GRU layer");
   }
 
-    
+
 
   const std::vector<El::AbstractMatrix<DataType>*>
   get_preconditioned_grad_buffers() override;
@@ -229,7 +229,7 @@ class kfac_block_gru: public kfac_block<Device> {
   void get_weight_matrix(
       kfac_gru_util::weight_type matrix_type,
       El::Matrix<DataType, Device>& view);
-  
+
   void get_gradient_matrix(
       kfac_gru_util::weight_type matrix_type,
       El::Matrix<DataType, Device>& view);

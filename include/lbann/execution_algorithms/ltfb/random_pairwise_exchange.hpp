@@ -159,13 +159,13 @@ public:
    *  @param[in,out] dc The data source for the tournament.
    */
   void select_next(model& m,
-                   ltfb::ExecutionContext& ctxt,
+                   ltfb::LTFBExecutionContext& ctxt,
                    data_coordinator& dc) const final;
 
 private:
   /** @brief Get the value of the given metric from the model. */
   std::unordered_map<std::string, EvalType>
-  evaluate_model(model& m, ExecutionContext& ctxt, data_coordinator& dc) const;
+  evaluate_model(model& m, LTFBExecutionContext& ctxt, data_coordinator& dc) const;
   /** @brief Generate a new trainer partner from the comm. */
   El::Int get_partner_trainer(lbann_comm const& c) const noexcept;
   /** @brief Evaluate the output of two models according to the input
@@ -202,12 +202,12 @@ private:
 
   /** @brief The strategy for mutation of a model
    *
-   *  When a trainer loses in a LTFB tournament, the winning model is 
+   *  When a trainer loses in a LTFB tournament, the winning model is
    *  copied over to it and this mutation strategy is applied to the
    *  copied model to explore a new model. This is relevant to neural
-   *  architecture search (NAS). 
+   *  architecture search (NAS).
    */
-  std::unique_ptr<MutationStrategy> m_mutate_algo;  
+  std::unique_ptr<MutationStrategy> m_mutate_algo;
 
 }; // class RandomPairwiseExchange
 

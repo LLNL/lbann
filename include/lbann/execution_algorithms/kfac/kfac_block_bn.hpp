@@ -60,7 +60,7 @@ class kfac_block_bn: public kfac_block<Device> {
   /** Constructor.
    */
   kfac_block_bn(Layer* layer,
-                kfac::ExecutionContext* context,
+                kfac::KFACExecutionContext* context,
                 size_t layer_id,
                 size_t inverse_proc_rank)
       : kfac_block<Device>(layer, context, layer_id, inverse_proc_rank) {
@@ -152,7 +152,7 @@ class kfac_block_bn: public kfac_block<Device> {
   }
 
   /** @brief Get inverse matrices size vector */
-  std::vector<int> 
+  std::vector<int>
   get_inverse_matrices_size_vector(lbann_comm *comm) override
   {
     LBANN_ERROR("Sub-grid parallelism  is not implemented for BN layer");
