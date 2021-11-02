@@ -195,7 +195,7 @@ void construct_std_options()
   arg_parser.add_option(LBANN_OPTION_RANDOM_SEED,
                         {"--random_seed", "--rand_seed"},
                         "[STD] Value to seed RNG",
-                        -1);
+                        0);
   arg_parser.add_option(LBANN_OPTION_READER, {"--reader"}, "[STD] TODO", "");
   arg_parser.add_option(
     LBANN_OPTION_RESTART_DIR,

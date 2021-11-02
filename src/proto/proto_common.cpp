@@ -887,7 +887,7 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   if (arg_parser.get<bool>(LBANN_OPTION_DISABLE_CUDA)) {
     model->set_disable_cuda(arg_parser.get<bool>(LBANN_OPTION_DISABLE_CUDA));
   }
-  if (arg_parser.get<int>(LBANN_OPTION_RANDOM_SEED) == -1) {
+  if (arg_parser.get<int>(LBANN_OPTION_RANDOM_SEED) != 0) {
     trainer->set_random_seed(arg_parser.get<int>(LBANN_OPTION_RANDOM_SEED));
   }
   if (arg_parser.get<bool>(LBANN_OPTION_SERIALIZE_IO)) {
