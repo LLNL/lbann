@@ -94,7 +94,7 @@ TruncationSelectionExchange::TruncationSelectionExchange(
 {}
 
 EvalType TruncationSelectionExchange::evaluate_model(model& m,
-                                                     ExecutionContext& ctxt,
+                                                     LTFBExecutionContext& ctxt,
                                                      data_coordinator& dc) const
 {
   // Make sure data readers finish asynchronous work
@@ -147,7 +147,7 @@ EvalType TruncationSelectionExchange::evaluate_model(model& m,
 }
 
 void TruncationSelectionExchange::select_next(model& m,
-                                              ltfb::ExecutionContext& ctxt,
+                                              ltfb::LTFBExecutionContext& ctxt,
                                               data_coordinator& dc) const
 {
   auto const& comm = *(m.get_comm());

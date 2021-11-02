@@ -135,9 +135,9 @@ KFAC& KFAC::operator=(KFAC const& other) {
 
 std::string KFAC::get_type() const { return "KFAC"; }
 
-kfac::ExecutionContext* KFAC::do_get_new_execution_context() const
+kfac::KFACExecutionContext* KFAC::do_get_new_execution_context() const
 {
-  return new kfac::ExecutionContext(
+  return new kfac::KFACExecutionContext(
     0UL,
     m_damping_act_params[0],
     m_damping_err_params[0],
@@ -150,7 +150,7 @@ kfac::ExecutionContext* KFAC::do_get_new_execution_context() const
 // =============================================
 
 void KFAC::apply(
-  execution_context& context_,
+  ExecutionContext& context_,
   model& model,
   data_coordinator& dc,
   execution_mode mode)
@@ -160,7 +160,7 @@ void KFAC::apply(
     train(context, model, dc, *m_stopping_criteria);
   }
   else {
-    sgd_training_algorithm eval_algo(
+    SGDTrainingAlgorithm eval_algo(
       this->get_name()+"_eval",
       m_stopping_criteria->clone());
     auto& eval_context = context.get_sgd_execution_context();
@@ -230,7 +230,7 @@ void KFAC::train(
         // its own context that we needn't know about.
         if (dc.is_execution_mode_valid(execution_mode::validation)) {
           const execution_mode eval_mode = execution_mode::validation;
-          sgd_execution_context eval_context(
+          SGDExecutionContext eval_context(
             eval_mode,
             dc.get_mini_batch_size(eval_mode));
           // FIXME (trb 05/05/2021): This hacks around a bad assumption
@@ -241,9 +241,9 @@ void KFAC::train(
             eval_context.inc_epoch();
             ++num_validation_epochs;
           }
-          sgd_training_algorithm eval_algo(
+          SGDTrainingAlgorithm eval_algo(
             this->get_name()+"_eval",
-            make_unique<epoch_termination_criteria>(num_validation_epochs));
+            make_unique<EpochTerminationCriteria>(num_validation_epochs));
           eval_algo.apply(eval_context, model, dc, eval_mode);
 
           // FIXME (trb 06/07/21): The early stopping callback is part
@@ -417,8 +417,8 @@ void KFAC::do_epoch_end_cbs(model& model)
 
 void KFAC::do_batch_begin_cbs(model& model)
 {
-  sgd_execution_context& c =
-    static_cast<sgd_execution_context&>(model.get_execution_context());
+  SGDExecutionContext& c =
+    static_cast<SGDExecutionContext&>(model.get_execution_context());
   for (const auto& cb : model.get_callbacks()) {
     if (c.get_step() % cb->get_batch_interval() == 0) {
       cb->on_batch_begin(&model);
@@ -428,8 +428,8 @@ void KFAC::do_batch_begin_cbs(model& model)
 
 void KFAC::do_batch_end_cbs(model& model)
 {
-  sgd_execution_context& c =
-    static_cast<sgd_execution_context&>(model.get_execution_context());
+  SGDExecutionContext& c =
+    static_cast<SGDExecutionContext&>(model.get_execution_context());
   for (const auto& cb : model.get_callbacks()) {
     if (c.get_step() % cb->get_batch_interval() == 0) {
       cb->on_batch_end(&model);
@@ -1109,18 +1109,18 @@ std::unique_ptr<lbann::KFAC> lbann::make<lbann::KFAC>(
   // SGD parameters
   auto const& sgd_params = kfac_params.sgd();
   auto const& stopping_criteria = sgd_params.stopping_criteria();
-  std::unique_ptr<lbann::sgd_termination_criteria> stopping;
+  std::unique_ptr<SGDTerminationCriteria> stopping;
   switch (stopping_criteria.criterion_case()) {
   case lbann_data::SGD::TerminationCriteria::kMaxBatches:
-    stopping = lbann::make_unique<lbann::batch_termination_criteria>(
+    stopping = make_unique<BatchTerminationCriteria>(
       stopping_criteria.max_batches());
     break;
   case lbann_data::SGD::TerminationCriteria::kMaxEpochs:
-    stopping = lbann::make_unique<lbann::epoch_termination_criteria>(
+    stopping = make_unique<EpochTerminationCriteria>(
       stopping_criteria.max_epochs());
     break;
   case lbann_data::SGD::TerminationCriteria::kMaxSeconds:
-    stopping = lbann::make_unique<lbann::seconds_termination_criteria>(
+    stopping = make_unique<SecondsTerminationCriteria>(
       stopping_criteria.max_seconds());
     //LBANN_ERROR("Time-based training not yet supported in SGD.");
     break;

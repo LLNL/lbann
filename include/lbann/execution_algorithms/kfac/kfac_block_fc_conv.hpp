@@ -75,7 +75,7 @@ class kfac_block_fc_conv: public kfac_block<Device> {
   /** Constructor.
    */
   kfac_block_fc_conv(Layer* layer,
-                     kfac::ExecutionContext* context,
+                     kfac::KFACExecutionContext* context,
                      const size_t layer_id,
                      const size_t inverse_proc_rank,
                      const bool is_conv)
@@ -156,7 +156,7 @@ class kfac_block_fc_conv: public kfac_block<Device> {
       lbann_comm* comm,
       int num_local_activations,
       int num_local_errors,
-      int num_weights) override;  
+      int num_weights) override;
 
   const std::vector<El::AbstractMatrix<DataType>*>
   get_preconditioned_grad_buffers() override;

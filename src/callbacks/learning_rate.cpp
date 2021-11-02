@@ -79,7 +79,7 @@ void learning_rate::setup(model *m) {
 }
 
 void learning_rate::on_epoch_end(model *m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   const float new_lr = global_schedule(m);
   const float old_global_lr = m_cur_global_lr;
   m_cur_global_lr = new_lr;
@@ -123,7 +123,7 @@ step_learning_rate::step_learning_rate(
   m_step(step), m_amt(amt) {}
 
 float step_learning_rate::global_schedule(model *m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   if (c.get_epoch() % m_step == 0) {
     return step_learning_rate::get_current_global_learning_rate() * m_amt;
   } else {
@@ -142,7 +142,7 @@ adaptive_learning_rate::adaptive_learning_rate(
   m_patience(patience), m_amt(amt) {}
 
 float adaptive_learning_rate::global_schedule(model *m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   // Determine behavior the first time this is called in an epoch
   if (m_cur_epoch != c.get_epoch()) {
     m_cur_epoch = c.get_epoch();
@@ -187,7 +187,7 @@ drop_fixed_learning_rate::drop_fixed_learning_rate(
 }
 
 float drop_fixed_learning_rate::global_schedule(model* m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   // Delete last drop epoch if we have already passed it
   while (!m_drop_epochs.empty()
          && c.get_epoch() > m_drop_epochs.back()) {
@@ -230,7 +230,7 @@ void linear_growth_learning_rate::setup(model *m) {
 }
 
 float linear_growth_learning_rate::global_schedule(model *m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   if (c.get_epoch() < m_delay) {
     return linear_growth_learning_rate::get_current_global_learning_rate();
   } else if (c.get_epoch() <= m_num_epochs + m_delay) {
@@ -278,7 +278,7 @@ void poly_learning_rate::setup(model *m) {
  * Keep the record of the learning rate at the end of the current epoch.
  */
 float poly_learning_rate::global_schedule(model *m) {
-  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
   const size_t iter = std::min(c.get_step(), m_max_iter);
   const float scale = static_cast<float>(
     std::pow(static_cast<double>(m_max_iter-iter)/m_max_iter, m_p));
@@ -289,7 +289,7 @@ float poly_learning_rate::global_schedule(model *m) {
  * Compute the learning rate for the next iteration.
  */
 float poly_learning_rate::optimizer_schedule(model *m, optimizer &opt) {
-  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
   const size_t iter = std::min(c.get_step(), m_max_iter);
   const float scale = static_cast<float>(
     std::pow(static_cast<double>(m_max_iter-iter)/m_max_iter, m_p));

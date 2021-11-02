@@ -53,7 +53,7 @@ smiles_data_reader::smiles_data_reader(const smiles_data_reader& rhs)  : data_re
 
 smiles_data_reader::~smiles_data_reader() {
   if (m_missing_chars.size()) {
-    if (is_master()) {
+    if (get_comm()->am_world_master()) {
       std::cout << std::endl << "The following tokens were in SMILES strings, but were missing from the vocabulary: ";
       for (const auto t : m_missing_chars) {
         std::cout << t << " ";
@@ -108,7 +108,7 @@ void smiles_data_reader::copy_members(const smiles_data_reader &rhs) {
 }
 
 void smiles_data_reader::load() {
-  if(is_master()) {
+  if(get_comm()->am_world_master()) {
     std::cout << "starting load for role: " << get_role() << std::endl;
   }
 
@@ -119,19 +119,19 @@ void smiles_data_reader::load() {
   set_use_data_store(true);
 
   if (m_sequence_length == 0) {
-    if (arg_parser.get<int>(SEQUENCE_LENGTH) == -1) {
+    if (arg_parser.get<int>(LBANN_OPTION_SEQUENCE_LENGTH) == -1) {
       LBANN_ERROR("you must pass --sequence_length=<int> on the cmd line or call set_sequence_length()");
     }
-    m_sequence_length = arg_parser.get<int>(SEQUENCE_LENGTH);
+    m_sequence_length = arg_parser.get<int>(LBANN_OPTION_SEQUENCE_LENGTH);
   }
   m_linearized_data_size = m_sequence_length+2;
 
   // load the vocabulary; this is a map: string -> short
   if (m_vocab.size() == 0) {
-    if (arg_parser.get<std::string>(VOCAB) == "") {
+    if (arg_parser.get<std::string>(LBANN_OPTION_VOCAB) == "") {
       LBANN_ERROR("you must either pass --vocab=<string> on the command line or call load_vocab(...)");
     }
-    const std::string fn = arg_parser.get<std::string>(VOCAB);
+    const std::string fn = arg_parser.get<std::string>(LBANN_OPTION_VOCAB);
     load_vocab(fn);
   } else {
     LBANN_ERROR("you passed --vocab=<string>, but it looks like load_vocab() was previously called. You must use one or the other.");
@@ -139,7 +139,7 @@ void smiles_data_reader::load() {
 
   // Load the sample list(s)
   data_reader_sample_list::load();
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "time to load sample list: " << get_time() - tm1 << std::endl;
   }
 
@@ -159,7 +159,7 @@ void smiles_data_reader::load() {
 
 void smiles_data_reader::do_preload_data_store() {
   double tm1 = get_time();
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "starting do_preload_data_store; num indices: "
               << utils::commify(m_shuffled_indices.size())
               << "; role: " << get_role() << std::endl;
@@ -181,7 +181,7 @@ void smiles_data_reader::do_preload_data_store() {
   for (const auto &filename : my_ordering) {
     std::ifstream in;
     auto& arg_parser = global_argument_parser();
-    size_t buf_size = arg_parser.get<size_t>(SMILES_BUFFER_SIZE);
+    size_t buf_size = arg_parser.get<size_t>(LBANN_OPTION_SMILES_BUFFER_SIZE);
     char iobuffer [buf_size];
     in.rdbuf()->pubsetbuf(iobuffer,buf_size);
     in.open(filename.c_str(), std::ios::binary | std::ios::ate);
@@ -260,7 +260,7 @@ void smiles_data_reader::do_preload_data_store() {
         for (const auto& [r_local, r_index] : samples_in_range) {
           (void) r_local; // silence compiler warning about unused variable.
           // BVE CHECK THIS
-          if (m_data_store->get_index_owner(r_index) != m_rank_in_model) {
+          if (m_data_store->get_index_owner(r_index) != get_comm()->get_rank_in_trainer()) {
             continue;
           }
 
@@ -280,7 +280,7 @@ void smiles_data_reader::do_preload_data_store() {
     in.close();
   }
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << " do_preload_data_store time: " << get_time() - tm1 << std::endl;
   }
 }
@@ -289,7 +289,7 @@ std::set<int> smiles_data_reader::get_my_indices() const {
   std::set<int> s;
   for (size_t j=0; j<m_shuffled_indices.size(); j++) {
     const int index = m_shuffled_indices[j];
-    if (m_data_store->get_index_owner(index) == m_rank_in_model) {
+    if (m_data_store->get_index_owner(index) == get_comm()->get_rank_in_trainer()) {
       s.insert(index);
     }
   }
@@ -327,7 +327,7 @@ bool smiles_data_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
 
 //user feedback
 void smiles_data_reader::print_statistics() const {
-  if (!is_master()) {
+  if (!get_comm()->am_world_master()) {
     return;
   }
 
@@ -467,13 +467,13 @@ void smiles_data_reader::load_offsets_and_lengths() {
   // trainer P_0 fills in offset_data vector, then bcasts
   std::vector<SampleData> offset_data;
 
-  if (m_comm->am_trainer_master()) {
+  if (get_comm()->am_trainer_master()) {
     read_offset_data(offset_data);
   }
   size_t n_samples = offset_data.size(); // only meaningful for root
-  m_comm->trainer_broadcast<size_t>(0, &n_samples, 1);
+  get_comm()->trainer_broadcast<size_t>(0, &n_samples, 1);
   offset_data.resize(n_samples); // not meaningful for root
-  m_comm->trainer_broadcast<SampleData>(0, offset_data.data(), offset_data.size());
+  get_comm()->trainer_broadcast<SampleData>(0, offset_data.data(), offset_data.size());
 
   // fill in the m_sample_offsets map
   for (size_t j=0; j<offset_data.size(); j++) {
@@ -589,7 +589,7 @@ void smiles_data_reader::read_offset_data(std::vector<SampleData> &data) {
     if (m_filename_to_local_id_set.find(data_filenames[j]) != m_filename_to_local_id_set.end()) {
       std::ifstream in;
       auto& arg_parser = global_argument_parser();
-      size_t buf_size = arg_parser.get<size_t>(SMILES_BUFFER_SIZE);
+      size_t buf_size = arg_parser.get<size_t>(LBANN_OPTION_SMILES_BUFFER_SIZE);
       char iobuffer [buf_size];
       in.rdbuf()->pubsetbuf(iobuffer,buf_size);
       in.open(offsets_filenames[j], std::ios::binary);

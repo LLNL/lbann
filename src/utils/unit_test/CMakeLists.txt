@@ -14,7 +14,6 @@ set_full_path(THIS_DIR_SEQ_CATCH2_TEST_FILES
   serialize_matrix_test.cpp
   timer_test.cpp
   type_erased_matrix_test.cpp
-
   stubs/preset_env_accessor.hpp
   stubs/preset_env_accessor.cpp
   )

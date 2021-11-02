@@ -75,7 +75,7 @@ RegularizedEvolution::RegularizedEvolution(RegularizedEvolution const& other)
 {}
 
 EvalType RegularizedEvolution::evaluate_model(model& m,
-                                              ExecutionContext& ctxt,
+                                              LTFBExecutionContext& ctxt,
                                               data_coordinator& dc) const
 
 {
@@ -129,7 +129,7 @@ EvalType RegularizedEvolution::evaluate_model(model& m,
 }
 
 void RegularizedEvolution::select_next(model& m,
-                                       ltfb::ExecutionContext& ctxt,
+                                       ltfb::LTFBExecutionContext& ctxt,
                                        data_coordinator& dc) const
 {
   auto const& comm = *(m.get_comm());

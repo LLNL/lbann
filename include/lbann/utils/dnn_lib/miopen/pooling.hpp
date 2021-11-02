@@ -44,6 +44,8 @@ using namespace miopen;
 inline size_t get_pooling_ws_size(PoolingDescriptor const& poolingDesc,
                                   TensorDescriptor const& yDesc)
 {
+  CHECK_MIOPEN(miopenSetPoolingIndexType(poolingDesc,
+                                         miopenIndexUint32));
   size_t size;
   CHECK_MIOPEN(miopenPoolingGetWorkSpaceSizeV2(poolingDesc,
                                                yDesc,

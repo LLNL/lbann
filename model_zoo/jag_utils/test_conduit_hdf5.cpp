@@ -73,13 +73,13 @@ int main(int argc, char *argv[]) {
   }
 
   // sanity check invocation
-  if (arg_parser.get<std::string>(FILENAME) == "") {
+  if (arg_parser.get<std::string>(LBANN_OPTION_FILENAME) == "") {
     if (master) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filename=<string>\ne.g: --filename=/p/lscratchh/brainusr/datasets/conduit_test/from_100M.bundle");
     }
   }
 
-  const std::string filename = arg_parser.get<std::string>(FILENAME);
+  const std::string filename = arg_parser.get<std::string>(LBANN_OPTION_FILENAME);
 
   // get lists of inputs and scalars to read from file
   std::unordered_set<std::string> input_names;

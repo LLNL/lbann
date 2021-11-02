@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,12 +24,12 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_TRAINING_ALGORITHM_HPP
-#define LBANN_TRAINING_ALGORITHM_HPP
+#ifndef LBANN_EXECUTION_ALGORITHMS_TRAINING_ALGORITHM_HPP_INCLUDED
+#define LBANN_EXECUTION_ALGORITHMS_TRAINING_ALGORITHM_HPP_INCLUDED
 
 #include "lbann/base.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
-#include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/make_abstract.hpp"
@@ -81,8 +81,8 @@ namespace lbann {
  *        learning scenario, in which repeatedly writing to and
  *        reading from disk is not sufficient.
  */
-class training_algorithm
-  : public Cloneable<HasAbstractFunction<training_algorithm>>
+class TrainingAlgorithm
+  : public Cloneable<HasAbstractFunction<TrainingAlgorithm>>
 {
 public:
   /** @name Lifecycle Management */
@@ -90,8 +90,8 @@ public:
   /** @brief Constructor
    *  @param[in] name The user-defined name of the algorithm.
    */
-  training_algorithm(std::string name);
-  virtual ~training_algorithm() = default;
+  TrainingAlgorithm(std::string name);
+  virtual ~TrainingAlgorithm() = default;
   ///@}
 
   /** @name Queries */
@@ -115,7 +115,7 @@ public:
    *  @param[in] mode IMO, superfluous. Will be removed.
    *  @param[in] term_criteria A description of when to stop training.
    */
-  virtual void apply(execution_context& context,
+  virtual void apply(ExecutionContext& context,
                      model& model,
                      data_coordinator& dc,
                      execution_mode mode) = 0;
@@ -159,7 +159,7 @@ public:
    *        the Cloneable interface, for example. See
    *        `do_get_new_execution_context()`.
    */
-  std::unique_ptr<execution_context> get_new_execution_context() const
+  std::unique_ptr<ExecutionContext> get_new_execution_context() const
   {
     return to_unique_ptr(do_get_new_execution_context());
   }
@@ -168,16 +168,16 @@ public:
 protected:
   /** @name In-hierarchy Lifecycle Management */
   ///@{
-  training_algorithm(const training_algorithm& other) = default;
-  training_algorithm& operator=(const training_algorithm& other) = default;
-  training_algorithm(training_algorithm&& other) = default;
-  training_algorithm& operator=(training_algorithm&& other) = default;
+  TrainingAlgorithm(const TrainingAlgorithm& other) = default;
+  TrainingAlgorithm& operator=(const TrainingAlgorithm& other) = default;
+  TrainingAlgorithm(TrainingAlgorithm&& other) = default;
+  TrainingAlgorithm& operator=(TrainingAlgorithm&& other) = default;
   ///@}
 
   /** @brief Covariant return-friendly implementation of
    *         `get_new_exection_context()`.
    */
-  virtual execution_context* do_get_new_execution_context() const = 0;
+  virtual ExecutionContext* do_get_new_execution_context() const = 0;
 
 private:
   /** @brief The user-defined name of the algorithm. */
@@ -186,4 +186,4 @@ private:
 
 } // namespace lbann
 
-#endif // LBANN_TRAINING_ALGORITHM_HPP
+#endif // LBANN_EXECUTION_ALGORITHMS_TRAINING_ALGORITHM_HPP_INCLUDED

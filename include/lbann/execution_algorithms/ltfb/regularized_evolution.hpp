@@ -67,13 +67,13 @@ public:
   RegularizedEvolution(RegularizedEvolution const& other);
 
   void select_next(model& m,
-                   ltfb::ExecutionContext& ctxt,
+                   ltfb::LTFBExecutionContext& ctxt,
                    data_coordinator& dc) const final;
 
 private:
   /** @brief Get the value of the given metric from the model. */
   EvalType
-  evaluate_model(model& m, ExecutionContext& ctxt, data_coordinator& dc) const;
+  evaluate_model(model& m, LTFBExecutionContext& ctxt, data_coordinator& dc) const;
 
 private:
   /** @brief The strategy for mutation of a model

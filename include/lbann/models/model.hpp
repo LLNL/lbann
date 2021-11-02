@@ -31,7 +31,7 @@
 #include "lbann/comm.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
-#include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/utils/graph.hpp"
 #include "lbann/io/file_io.hpp"
@@ -63,7 +63,7 @@ namespace lbann {
 
 // Forward declarations
 class lbann_callback;
-class training_algorithm;
+class TrainingAlgorithm;
 class callback_base;
 
 /** @brief Abstract base class for neural network models. */
@@ -223,7 +223,7 @@ public:
   }
 
   /** Grab the training context of the model */
-  const execution_context& get_execution_context() const {
+  const ExecutionContext& get_execution_context() const {
     if(m_execution_context == nullptr) {
       LBANN_ERROR("execution context is not set");
     }
@@ -231,8 +231,8 @@ public:
   }
 
   /** Grab the training context of the model */
-  execution_context& get_execution_context() {
-    return const_cast<execution_context&>(static_cast<const model&>(*this).get_execution_context());
+  ExecutionContext& get_execution_context() {
+    return const_cast<ExecutionContext&>(static_cast<const model&>(*this).get_execution_context());
   }
 
   // ===========================================
@@ -291,7 +291,7 @@ public:
   void swap_objective_function(model& other);
 
   // ===========================================
-  // Model modification 
+  // Model modification
   // ===========================================
 
   /** @brief Insert layer in model. */
@@ -395,10 +395,10 @@ protected:
    */
   virtual void setup_layer_topology();
 
-  /** setup sub grids for the sub graph parallelism	
+  /** setup sub grids for the sub graph parallelism
 
-  */	
-  virtual void setup_subgrids();	
+  */
+  virtual void setup_subgrids();
 
   virtual void get_subgrids_order(std::vector<int> &ranks_order, int num_branches);
 
@@ -412,8 +412,8 @@ protected:
 
   virtual void get_subgraph_subgrids_ranks(std::vector<int> &parent_ranks, std::vector<int> &subgrid_ranks, int layer_index,int number_ranks_in_grid);
 
-  virtual void get_resources_for_spliting_point(std::vector<int> &parent_ranks, 
-                  std::vector<int> &subgrid_ranks, 
+  virtual void get_resources_for_spliting_point(std::vector<int> &parent_ranks,
+                  std::vector<int> &subgrid_ranks,
                   int layer_index,
                   int number_ranks_in_grid,
                   int num_subgrids);
@@ -422,7 +422,7 @@ protected:
   virtual void get_resources_for_input_layer(std::vector<int>& masterSubGrid, int num_subgrids);
 
   virtual void setup_subcommunicators();
-  
+
   /** @brief Set up layer execution order.
    *
    *  Called in setup function.
@@ -448,7 +448,7 @@ public:
   // ===========================================
 
   /** @brief Reset model pointer and execution mode. */
-  virtual void reset_mode(execution_context& context, execution_mode mode);
+  virtual void reset_mode(ExecutionContext& context, execution_mode mode);
   /** @brief Reset model statistics for an epoch. */
   virtual void reset_epoch_statistics(execution_mode mode);
 
@@ -513,21 +513,21 @@ public:
   size_t get_max_mini_batch_size_distconv() const { return m_max_mini_batch_size_distconv; }
 #endif
 
-	
-private:	
-  // map to store all distinct grids in the model
-  std::unordered_map<std::string, std::shared_ptr<El::Grid>> grids; 
 
-  std::unordered_map<std::string, std::shared_ptr<El::mpi::Comm>> subCommunicatorsSubgrids; 
+private:
+  // map to store all distinct grids in the model
+  std::unordered_map<std::string, std::shared_ptr<El::Grid>> grids;
+
+  std::unordered_map<std::string, std::shared_ptr<El::mpi::Comm>> subCommunicatorsSubgrids;
   // map to store all distinct mpi groups in the model (one to one mapping with grids)
-  std::unordered_map<std::string, std::unique_ptr<El::mpi::Group>> grids_mpi_groups; 
+  std::unordered_map<std::string, std::unique_ptr<El::mpi::Group>> grids_mpi_groups;
 
 
 
 private:
 
   /** Pointer to the execution context object used for training or evaluating this model */
-  observer_ptr<execution_context> m_execution_context;
+  observer_ptr<ExecutionContext> m_execution_context;
 
   /** @brief LBANN communicator. */
   lbann_comm* m_comm;
@@ -535,20 +535,20 @@ private:
   /*experimental code for Sub graph*/
   /** Enable vector communication for the subgraph parallelism */
   //0: send-recv based subgrid communication
-  //1: collective based subgrid communication without optimization that requires specific assumptions like subgrids should have same size and creates sub-communicators everytime 
+  //1: collective based subgrid communication without optimization that requires specific assumptions like subgrids should have same size and creates sub-communicators everytime
   //2: collective based subgrid communication with optimization
 
   int vector_communication_subgraph = 0;
 
   //Number of resources for parent (common) grid
-  //0: use all resources (default) 
+  //0: use all resources (default)
   int subgraph_num_resources_parent = 0;
 
   //0: no topology aware design
-  //1: master grid in round robin manner of nodes (GPUs per node 4)  1 3 5 7, 2 4 6 8     
+  //1: master grid in round robin manner of nodes (GPUs per node 4)  1 3 5 7, 2 4 6 8
   bool enable_subgraph_topology = false;
 
-  // whether subgraph parallelism is enabled or not for the model 
+  // whether subgraph parallelism is enabled or not for the model
   bool apply_subgraph_parallelism = false;
 
   // total number of resources / ranks for branch (subgrid) layers
@@ -556,7 +556,7 @@ private:
 
   // total number of resources / ranks for common/seq layers
   int num_resources_non_branch_layers;
-  
+
   /** @brief Model instance's name.
    *  @details Each model in a trainer should have a unique,
    *  preferably human-readable, name.

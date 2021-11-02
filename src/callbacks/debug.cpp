@@ -69,7 +69,7 @@ std::string weights_string(const data_type_weights<TensorDataType>& w) {
 /** Get human-readable string describing current batch step. */
 std::string batch_step_string(const model& m) {
   const auto& c =
-    dynamic_cast<const sgd_execution_context&>(m.get_execution_context());
+    dynamic_cast<const SGDExecutionContext&>(m.get_execution_context());
   std::stringstream msg;
   const auto& mode = c.get_execution_mode();
   msg << to_string(mode) << " batch " << c.get_step();

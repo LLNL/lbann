@@ -165,7 +165,7 @@ void image_data_reader::load() {
     load_list_of_samples(sample_list_file);
   }
 
-  if (arg_parser.get<bool>(WRITE_SAMPLE_LIST) && m_comm->am_trainer_master()) {
+  if (arg_parser.get<bool>(LBANN_OPTION_WRITE_SAMPLE_LIST) && m_comm->am_trainer_master()) {
     const std::string slist_name = (m_sample_list.get_header()).get_sample_list_name();
     std::stringstream s;
     std::string basename = get_basename_without_ext(slist_name);
@@ -180,7 +180,7 @@ void image_data_reader::load() {
   }
   if (arg_parser.get<bool>("write_sample_label_list") &&
       m_comm->am_trainer_master()) {
-    if (!(m_keep_sample_order || arg_parser.get<bool>(KEEP_SAMPLE_ORDER))) {
+    if (!(m_keep_sample_order || arg_parser.get<bool>(LBANN_OPTION_KEEP_SAMPLE_ORDER))) {
       std::cout << "Writting sample label list without the option "
                 << "`keep_sample_order' set." << std::endl;
     }
@@ -232,9 +232,9 @@ void image_data_reader::do_preload_data_store() {
 
   int rank = m_comm->get_rank_in_trainer();
 
-  bool threaded = !arg_parser.get<bool>(DATA_STORE_NO_THREAD);
+  bool threaded = !arg_parser.get<bool>(LBANN_OPTION_DATA_STORE_NO_THREAD);
   if (threaded) {
-    if (is_master()) {
+    if (get_comm()->am_world_master()) {
       std::cout << "mode: data_store_thread\n";
     }
     std::shared_ptr<thread_pool> io_thread_pool =
@@ -265,7 +265,7 @@ void image_data_reader::do_preload_data_store() {
     io_thread_pool->finish_work_group();
   }
   else {
-    if (is_master()) {
+    if (get_comm()->am_world_master()) {
       std::cout << "mode: NOT data_store_thread\n";
     }
     for (size_t data_id=0; data_id<m_shuffled_indices.size(); data_id++) {
@@ -333,20 +333,20 @@ void image_data_reader::load_list_of_samples(const std::string sample_list_file)
 
   auto& arg_parser = global_argument_parser();
 
-  if (m_keep_sample_order || arg_parser.get<bool>(KEEP_SAMPLE_ORDER)) {
+  if (m_keep_sample_order || arg_parser.get<bool>(LBANN_OPTION_KEEP_SAMPLE_ORDER)) {
     m_sample_list.keep_sample_order(true);
   }
   else {
     m_sample_list.keep_sample_order(false);
   }
 
-  if (arg_parser.get<bool>(CHECK_DATA)) {
+  if (arg_parser.get<bool>(LBANN_OPTION_CHECK_DATA)) {
     m_sample_list.set_data_file_check();
   }
 
   std::vector<char> buffer;
 
-  if (arg_parser.get<bool>(LOAD_FULL_SAMPLE_LIST_ONCE)) {
+  if (arg_parser.get<bool>(LBANN_OPTION_LOAD_FULL_SAMPLE_LIST_ONCE)) {
     if (m_comm->am_trainer_master()) {
       load_file(sample_list_file, buffer);
     }
@@ -364,7 +364,7 @@ void image_data_reader::load_list_of_samples(const std::string sample_list_file)
 
   double tm2 = get_time();
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "Time to load sample list '" << sample_list_file << "': "
               << tm2 - tm1 << std::endl;
   }
@@ -374,7 +374,7 @@ void image_data_reader::load_list_of_samples(const std::string sample_list_file)
   set_file_dir(m_sample_list.get_samples_dirname());
 
   double tm3 = get_time();
-  if(is_master()) {
+  if(get_comm()->am_world_master()) {
     std::cout << "Time to gather sample list '" << sample_list_file << "': "
               << tm3 - tm2 << std::endl;
   }
@@ -395,7 +395,7 @@ void image_data_reader::load_list_of_samples_from_archive(const std::string& sam
   iarchive(m_sample_list); // Read the data from the archive
   double tm2 = get_time();
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "Time to load sample list from archive: " << tm2 - tm1 << std::endl;
   }
 }
@@ -426,20 +426,20 @@ void image_data_reader::gen_list_of_samples() {
 
   auto& arg_parser = global_argument_parser();
 
-  if (m_keep_sample_order || arg_parser.get<bool>(KEEP_SAMPLE_ORDER)) {
+  if (m_keep_sample_order || arg_parser.get<bool>(LBANN_OPTION_KEEP_SAMPLE_ORDER)) {
     m_sample_list.keep_sample_order(true);
   }
   else {
     m_sample_list.keep_sample_order(false);
   }
 
-  if (arg_parser.get<bool>(CHECK_DATA)) {
+  if (arg_parser.get<bool>(LBANN_OPTION_CHECK_DATA)) {
     m_sample_list.set_data_file_check();
   }
 
   std::vector<char> buffer;
 
-  if (arg_parser.get<bool>(LOAD_FULL_SAMPLE_LIST_ONCE)) {
+  if (arg_parser.get<bool>(LBANN_OPTION_LOAD_FULL_SAMPLE_LIST_ONCE)) {
     // The trainer master loads the entire file into a buffer in the memory
     if (m_comm->am_trainer_master()) {
       load_file(imageListFile, buffer);
@@ -482,7 +482,7 @@ void image_data_reader::gen_list_of_samples() {
 
   double tm2 = get_time();
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "Time to load sample list '" << sample_list_file << "': "
               << tm2 - tm1 << std::endl;
   }
@@ -491,7 +491,7 @@ void image_data_reader::gen_list_of_samples() {
   m_sample_list.all_gather_packed_lists(*m_comm);
 
   double tm3 = get_time();
-  if(is_master()) {
+  if(get_comm()->am_world_master()) {
     std::cout << "Time to gather sample list '" << sample_list_file << "': "
               << tm3 - tm2 << std::endl;
   }
@@ -509,7 +509,7 @@ void image_data_reader::read_labels(std::istream& istrm) {
   m_sample_list.build_sample_map_from_name_to_index();
 
   auto& arg_parser = global_argument_parser();
-  const bool check_data = arg_parser.get<bool>(CHECK_DATA);
+  const bool check_data = arg_parser.get<bool>(LBANN_OPTION_CHECK_DATA);
 
   m_labels.clear();
   m_labels.resize(num_samples);
@@ -576,7 +576,7 @@ void image_data_reader::load_labels(std::vector<char>& preloaded_buffer) {
     read_labels(is);
   }
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "Time to load label file '" << imageListFile << "': "
               << get_time() - tm1 << std::endl;
   }

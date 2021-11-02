@@ -33,7 +33,7 @@ namespace kfac {
 // Life cycle
 // =============================================
 
-ExecutionContext::ExecutionContext(
+KFACExecutionContext::KFACExecutionContext(
   size_t mini_batch_size,
   double damping_act,
   double damping_err,
@@ -46,26 +46,26 @@ ExecutionContext::ExecutionContext(
     m_damping_bn_err{damping_bn_err}
 {}
 
-std::unique_ptr<lbann::execution_context> ExecutionContext::get_new() const
+std::unique_ptr<lbann::ExecutionContext> KFACExecutionContext::get_new() const
 {
-    return std::make_unique<ExecutionContext>(0UL, 0.0, 0.0, 0.0, 0.0);
+    return std::make_unique<KFACExecutionContext>(0UL, 0.0, 0.0, 0.0, 0.0);
 }
 
 // =============================================
 // Accessors
 // =============================================
 
-std::string ExecutionContext::get_type() const
+std::string KFACExecutionContext::get_type() const
 {
   return "KFAC";
 }
 
-std::string ExecutionContext::get_state_string() const noexcept
+std::string KFACExecutionContext::get_state_string() const noexcept
 {
   return build_string(this->get_type(), ".step.", m_sgd_execution_context.get_step());
 }
 
-El::Matrix<DataType,Device>& ExecutionContext::get_workspace_matrix(
+El::Matrix<DataType,Device>& KFACExecutionContext::get_workspace_matrix(
   const std::string& key,
   const size_t height,
   const size_t width) {
@@ -93,19 +93,19 @@ El::Matrix<DataType,Device>& ExecutionContext::get_workspace_matrix(
 // Checkpointing and serialization
 // =============================================
 
-void ExecutionContext::save_to_checkpoint_shared(persist& p)
+void KFACExecutionContext::save_to_checkpoint_shared(persist& p)
 {
   LBANN_ERROR("TODO: Not yet implemented.");
 }
-void ExecutionContext::load_from_checkpoint_shared(persist& p)
+void KFACExecutionContext::load_from_checkpoint_shared(persist& p)
 {
   LBANN_ERROR("TODO: Not yet implemented.");
 }
-void ExecutionContext::save_to_checkpoint_distributed(persist& p)
+void KFACExecutionContext::save_to_checkpoint_distributed(persist& p)
 {
   LBANN_ERROR("TODO: Not yet implemented.");
 }
-void ExecutionContext::load_from_checkpoint_distributed(persist& p)
+void KFACExecutionContext::load_from_checkpoint_distributed(persist& p)
 {
   LBANN_ERROR("TODO: Not yet implemented.");
 }

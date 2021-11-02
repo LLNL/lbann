@@ -37,6 +37,7 @@
 #include <conduit/conduit.hpp>
 #include <cstdlib>
 #include <errno.h>
+#include <ostream>
 #include <string.h>
 
 #include "lbann/data_readers/data_reader_HDF5.hpp"
@@ -84,6 +85,16 @@ public:
     x.set_experiment_schema(s);
   }
 
+  void print_metadata(lbann::hdf5_data_reader& x,
+                      std::ostream& os = std::cout) {
+    x.print_metadata(os);
+  }
+
+  void set_delete_packed_fields(lbann::hdf5_data_reader& x,
+                                const bool flag) {
+    x.set_delete_packed_fields(flag);
+  }
+
   bool fetch_data_field(lbann::hdf5_data_reader& dr,
                         lbann::data_field_type data_field,
                         lbann::CPUMat& X,
@@ -91,6 +102,30 @@ public:
                         int mb_idx)
   {
     return dr.fetch_data_field(data_field, X, data_id, mb_idx);
+  }
+
+  bool fetch_datum(lbann::hdf5_data_reader& dr,
+                   lbann::CPUMat& X,
+                   int data_id,
+                   int mb_idx)
+  {
+    return dr.fetch_datum(X, data_id, mb_idx);
+  }
+
+  bool fetch_response(lbann::hdf5_data_reader& dr,
+                      lbann::CPUMat& X,
+                      int data_id,
+                      int mb_idx)
+  {
+    return dr.fetch_response(X, data_id, mb_idx);
+  }
+
+  bool fetch_label(lbann::hdf5_data_reader& dr,
+                   lbann::CPUMat& X,
+                   int data_id,
+                   int mb_idx)
+  {
+    return dr.fetch_label(X, data_id, mb_idx);
   }
 
   int get_linearized_size(lbann::hdf5_data_reader& dr,
@@ -129,7 +164,6 @@ TEST_CASE("hdf5 data reader data field fetch tests",
   // Manually tell the data reader to extract all of the data fields
   white_box_tester.construct_linearized_size_lookup_tables(*hdf5_dr, ref_node);
 
-  hdf5_dr->set_rank(0);
   hdf5_dr->set_comm(&comm);
 
   El::Int num_samples = 1;
@@ -141,6 +175,13 @@ TEST_CASE("hdf5 data reader data field fetch tests",
   auto& ds = hdf5_dr->get_data_store();
   conduit::Node& ds_node = ds.get_empty_node(index);
   ds_node.parse(hdf5_hrrl_data_sample_id, "yaml");
+
+  // Once the node is constructed pack the requested fields into the node
+  size_t sample_index = 334;
+  white_box_tester.set_delete_packed_fields(*hdf5_dr, false);
+  white_box_tester.pack(*hdf5_dr, ds_node, sample_index);
+  white_box_tester.construct_linearized_size_lookup_tables(*hdf5_dr, ds_node);
+
   ds.set_preloaded_conduit_node(index, ds_node);
 
   // Initalize a per-trainer I/O thread pool
@@ -173,6 +214,53 @@ TEST_CASE("hdf5 data reader data field fetch tests",
         }
         else {
           double check = ref_node[test_pathname].as_double();
+          CHECK(X(0,0) == Approx(check));
+        }
+      }
+    }
+  }
+
+  SECTION("fetch datum and responses")
+  {
+    lbann::CPUMat X;
+
+    // Get the reference packed node
+    conduit::Node packed_ref_node;
+    packed_ref_node.parse(packed_hdf5_hrrl_data_sample_id, "yaml");
+
+    std::vector<std::string> fields = {};
+    fields.emplace_back(
+                        GENERATE(std::string("samples"), std::string("responses")));
+    for (auto& data_field : fields) {
+      X.Resize(white_box_tester.get_linearized_size(*hdf5_dr, data_field), num_samples);
+
+      auto io_rng = lbann::set_io_generators_local_index(0);
+      for (auto j = 0; j < num_samples; j++) {
+        if (data_field == INPUT_DATA_TYPE_SAMPLES) {
+          white_box_tester.fetch_datum(*hdf5_dr, X, 0, j);
+          CHECK_THROWS(white_box_tester.fetch_label(*hdf5_dr, X, 0, j));
+          CHECK_THROWS(white_box_tester.fetch_response(*hdf5_dr, X, 0, j));
+        }else if (data_field == INPUT_DATA_TYPE_LABELS) {
+        }else if (data_field == INPUT_DATA_TYPE_RESPONSES) {
+          CHECK_THROWS(white_box_tester.fetch_datum(*hdf5_dr, X, 0, j));
+          CHECK_THROWS(white_box_tester.fetch_label(*hdf5_dr, X, 0, j));
+          white_box_tester.fetch_response(*hdf5_dr, X, 0, j);
+        }
+
+      }
+
+      const std::string test_pathname("000000334/" + data_field);
+      for (El::Int j = 0; j < num_samples; j++) {
+        // Check to make sure that each element in the transformed field are properly normalized
+        size_t num_elements = packed_ref_node[test_pathname].dtype().number_of_elements();
+        if(num_elements > 1) {
+          for(size_t i = 0; i < num_elements; i++) {
+            double check = packed_ref_node[test_pathname].as_double_array()[i];
+            CHECK(X(i,0) == Approx(check));
+          }
+        }
+        else {
+          double check = packed_ref_node[test_pathname].as_double();
           CHECK(X(0,0) == Approx(check));
         }
       }

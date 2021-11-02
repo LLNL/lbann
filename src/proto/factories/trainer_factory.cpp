@@ -63,7 +63,7 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm* comm,
     std::move(dc),
     proto_trainer.mini_batch_size(),
     (proto_trainer.has_training_algorithm()
-       ? make_abstract<training_algorithm>(proto_trainer.training_algorithm())
+       ? make_abstract<TrainingAlgorithm>(proto_trainer.training_algorithm())
        : nullptr));
   const auto& name = proto_trainer.name();
   if (!name.empty()) {

@@ -34,7 +34,7 @@ namespace lbann {
 
 // Forward declaration
 namespace kfac {
-class ExecutionContext;
+class KFACExecutionContext;
 }
 
 /** A building block for K-FAC.
@@ -46,7 +46,7 @@ class kfac_block {
   /** Constructor.
    */
   kfac_block(Layer* layer,
-             kfac::ExecutionContext* context,
+             kfac::KFACExecutionContext* context,
              size_t layer_id,
              size_t inverse_proc_rank)
       : m_layer(layer),
@@ -104,7 +104,7 @@ class kfac_block {
     LBANN_ERROR("this function should be called via a sub-class.");
   }
 
-  /** @brief Copies activations, errors, and weights from model class to 
+  /** @brief Copies activations, errors, and weights from model class to
   private variables to be used in KFAC computation. */
   virtual void initialize_activations_and_errors(
       lbann_comm* comm,
@@ -128,10 +128,10 @@ class kfac_block {
 
   /** @brief Get inverse matrices size (offset). */
   virtual int
-  get_inverse_matrices_size(lbann_comm *comm) = 0; 
+  get_inverse_matrices_size(lbann_comm *comm) = 0;
 
   /** @brief Get inverse matrices size vector */
-  virtual std::vector<int> 
+  virtual std::vector<int>
   get_inverse_matrices_size_vector(lbann_comm *comm) = 0;
 
   /** @brief Get inverse matrices size vector */
@@ -217,13 +217,13 @@ class kfac_block {
   /** @brief Translatebetweengrid  funciton has a basic implementation for STAR,STAR
    * distributed matrices. Therefore, using local matrices for weights  */
   std::vector<std::unique_ptr<El::Matrix<DataType, Device>>> m_weight_values;
-  
+
 
  private:
 
   /** @brief The execution context that created this block.
    *  TODO: Use its own workspace and remove this pointer. */
-  kfac::ExecutionContext* m_context;
+  kfac::KFACExecutionContext* m_context;
 
 };
 

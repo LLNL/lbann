@@ -32,7 +32,7 @@
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/detect_El_mpi.hpp"
 #include "lbann/execution_algorithms/training_algorithm.hpp"
-#include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/hash.hpp"
@@ -47,8 +47,8 @@ namespace lbann {
 
 // Forward-declare this.
 class lbann_callback;
-class training_algorithm;
-class termination_criteria;
+class TrainingAlgorithm;
+class TerminationCriteria;
 
 /** @brief User-facing class that represents a set of compute resources.
  *
@@ -72,7 +72,7 @@ public:
   trainer(lbann_comm* comm,
           std::unique_ptr<data_coordinator> dc,
           size_t mini_batch_size,
-          std::unique_ptr<training_algorithm> alg = nullptr);
+          std::unique_ptr<TrainingAlgorithm> alg = nullptr);
 
   ~trainer();
 
@@ -206,19 +206,19 @@ public:
     typename std::pair<observer_ptr<model>, execution_mode>;
 
   execution_context_key_pair_t
-  check_and_build_execution_context(training_algorithm& alg,
+  check_and_build_execution_context(TrainingAlgorithm& alg,
                                     observer_ptr<model> model,
                                     execution_mode mode);
 
   execution_context_key_pair_t
-  check_and_build_execution_context(execution_context& c,
+  check_and_build_execution_context(ExecutionContext& c,
                                     model& model,
                                     execution_mode mode);
 
-  execution_context& get_execution_context(observer_ptr<model> model,
+  ExecutionContext& get_execution_context(observer_ptr<model> model,
                                            execution_mode mode);
 
-  execution_context& get_execution_context(execution_context_key_pair_t key);
+  ExecutionContext& get_execution_context(execution_context_key_pair_t key);
 
   /** @name Training and evaluation interface */
   ///@{
@@ -241,7 +241,7 @@ public:
   bool load_from_checkpoint_shared(persist& p);
 
   /** @brief Restore model from a shared checkpoint. */
-  bool load_from_checkpoint_shared(model& m, execution_context& c);
+  bool load_from_checkpoint_shared(model& m, ExecutionContext& c);
 
   /** @brief Create a distributed checkpoint of the trainer. */
   bool save_to_checkpoint_distributed();
@@ -250,7 +250,7 @@ public:
   bool load_from_checkpoint_distributed(persist& p);
 
   /** @brief Restore a model from a distributed checkpoint. */
-  bool load_from_checkpoint_distributed(model& m, execution_context& c);
+  bool load_from_checkpoint_distributed(model& m, ExecutionContext& c);
 
   /** @brief Write trainer to proto message */
   void write_proto(lbann_data::Trainer& proto);
@@ -261,7 +261,7 @@ private:
   void delete_execution_context(execution_context_key_pair_t key);
 
   void for_each_execution_context(
-    std::function<void(observer_ptr<execution_context>)> fn);
+    std::function<void(observer_ptr<ExecutionContext>)> fn);
 
 private:
   /** @brief Persist object used for serializing LBANN classes. */
@@ -276,7 +276,7 @@ private:
 
   using ModelContextMapType =
     std::unordered_map<std::pair<observer_ptr<model>, execution_mode>,
-                       std::unique_ptr<execution_context>,
+                       std::unique_ptr<ExecutionContext>,
                        model_execution_context_hash_t>;
 
   /** @brief Map from model and execution mode to its execution context */
@@ -298,7 +298,7 @@ private:
    *  @details If null, a different type of execution algorithm is
    *  being used (e.g., inference).
    */
-  std::unique_ptr<training_algorithm> m_training_alg;
+  std::unique_ptr<TrainingAlgorithm> m_training_alg;
 
   /** @brief Communication domain for the trainer. */
   lbann_comm* m_comm;

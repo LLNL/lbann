@@ -49,7 +49,7 @@ parse_prototext_filenames_from_command_line(
   std::vector<std::string> data_set_metadata;
   bool single_file_load = false;
 
-  std::string params[] = {PROTOTEXT, MODEL, READER, METADATA, OPTIMIZER};
+  std::string params[] = {LBANN_OPTION_PROTOTEXT, LBANN_OPTION_MODEL, LBANN_OPTION_READER, LBANN_OPTION_METADATA, LBANN_OPTION_OPTIMIZER};
   for (auto& which : params) {
     std::string fn = arg_parser.get<std::string>(which);
     if (fn != "") {
@@ -60,20 +60,20 @@ parse_prototext_filenames_from_command_line(
           fn.substr(0, t_pos + 7) + std::to_string(trainer_rank);
         fn = fname;
       }
-      if (which == PROTOTEXT) {
+      if (which == LBANN_OPTION_PROTOTEXT) {
         models.push_back(fn);
         single_file_load = true;
       }
-      if (which == MODEL) {
+      if (which == LBANN_OPTION_MODEL) {
         models.push_back(fn);
       }
-      if (which == READER) {
+      if (which == LBANN_OPTION_READER) {
         readers.push_back(fn);
       }
-      if (which == METADATA) {
+      if (which == LBANN_OPTION_METADATA) {
         data_set_metadata.push_back(fn);
       }
-      if (which == OPTIMIZER) {
+      if (which == LBANN_OPTION_OPTIMIZER) {
         optimizers.push_back(fn);
       }
     }

@@ -74,15 +74,15 @@ int main(int argc, char *argv[]) {
     std::terminate();
   }
 
-  if (arg_parser.get<std::string>(FILELIST) == "") {
+  if (arg_parser.get<std::string>(LBANN_OPTION_FILELIST) == "") {
     LBANN_ERROR("usage: test_speed_hydra_ --filelist=<string> --jag");
   }
 
-  if (arg_parser.get<bool>(JAG)) {
-    test_jag(arg_parser.get<std::string>(FILELIST));
+  if (arg_parser.get<bool>(LBANN_OPTION_JAG)) {
+    test_jag(arg_parser.get<std::string>(LBANN_OPTION_FILELIST));
   }
   else {
-    test_hydra(arg_parser.get<std::string>(FILELIST));
+    test_hydra(arg_parser.get<std::string>(LBANN_OPTION_FILELIST));
   }
   return EXIT_SUCCESS;
 }

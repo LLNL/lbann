@@ -101,9 +101,9 @@ int main(int argc, char *argv[]) {
       return EXIT_SUCCESS;
     }
 
-    if (!arg_parser.get<bool>(DISABLE_SIGNAL_HANDLER)) {
+    if (!arg_parser.get<bool>(LBANN_OPTION_DISABLE_SIGNAL_HANDLER)) {
       std::string file_base =
-        (arg_parser.get<bool>(STACK_TRACE_TO_FILE) ? "stack_trace" : "");
+        (arg_parser.get<bool>(LBANN_OPTION_STACK_TRACE_TO_FILE) ? "stack_trace" : "");
       stack_trace::register_signal_handler(file_base);
     }
 

@@ -85,7 +85,7 @@ void data_reader_sample_list<SampleListT>::shuffle_indices(rng_gen& gen)
 template <typename SampleListT>
 void data_reader_sample_list<SampleListT>::load()
 {
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "starting data_reader_sample_list::load()\n";
   }
   const std::string sample_list_file = get_data_sample_list();
@@ -105,7 +105,7 @@ void data_reader_sample_list<SampleListT>::load_list_of_samples(
 
   // dah: I've not a clue what this next block does;
   //      is it a hack that should come out?
-  if (this->m_keep_sample_order || arg_parser.get<bool>(KEEP_SAMPLE_ORDER)) {
+  if (this->m_keep_sample_order || arg_parser.get<bool>(LBANN_OPTION_KEEP_SAMPLE_ORDER)) {
     m_sample_list.keep_sample_order(true);
   }
   else {
@@ -113,7 +113,7 @@ void data_reader_sample_list<SampleListT>::load_list_of_samples(
   }
 
   // Load the sample list
-  if (arg_parser.get<bool>(LOAD_FULL_SAMPLE_LIST_ONCE)) {
+  if (arg_parser.get<bool>(LBANN_OPTION_LOAD_FULL_SAMPLE_LIST_ONCE)) {
     std::vector<char> buffer;
     if (m_comm->am_trainer_master()) {
       load_file(sample_list_file, buffer);
@@ -129,7 +129,7 @@ void data_reader_sample_list<SampleListT>::load_list_of_samples(
   else {
     m_sample_list.load(sample_list_file, *(this->m_comm), true);
   }
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "Time to load sample list '" << sample_list_file
               << "': " << get_time() - tm1 << std::endl;
   }
@@ -138,7 +138,7 @@ void data_reader_sample_list<SampleListT>::load_list_of_samples(
   double tm3 = get_time();
   m_sample_list.all_gather_packed_lists(*m_comm);
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "Time to gather sample list '" << sample_list_file
               << "': " << get_time() - tm3 << std::endl;
   }
@@ -160,7 +160,7 @@ void data_reader_sample_list<SampleListT>::load_list_of_samples_from_archive(
   iarchive(m_sample_list); // Read the data from the archive
   double tm2 = get_time();
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "Time to load sample list from archive: " << tm2 - tm1
               << std::endl;
   }
