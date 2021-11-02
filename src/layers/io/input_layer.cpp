@@ -182,34 +182,33 @@ void input_layer<T,L,D>::fill_onnx_node(onnx::GraphProto& graph) const
 template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
 input_distconv_adapter<TensorDataType, T_layout, Dev>::
-input_distconv_adapter(Layer& layer, const bool shuffle_required)
+input_distconv_adapter(
+  Layer& layer,
+  const data_field_type data_field,
+  const bool shuffle_required)
   : data_type_distconv_adapter<TensorDataType>(layer),
-  m_shuffle_required(shuffle_required) {
+    m_data_field(data_field),
+    m_shuffle_required(shuffle_required) {
+
+  // Distconv currently only supports CosmoFlow data
+  if (m_data_field != INPUT_DATA_TYPE_SAMPLES
+      && m_data_field != INPUT_DATA_TYPE_RESPONSES) {
+    LBANN_ERROR(
+      "attempted to create distconv adapter for ",
+      "input layer with unsupported data field (",m_data_field,")");
+  }
+
   // Input data is only processed when its consumer layer is also
   // enabled for distconv
-  for (int i = 0; i < layer.get_num_children(); ++i) {
-    m_is_input_processed.push_back(layer.get_child_layers()[i]->distconv_enabled());
-  }
-  if (m_shuffle_required) {
-    m_shufflers.resize(layer.get_num_children());
-  }
-}
+  m_is_input_processed = layer.get_child_layer().distconv_enabled();
 
-template <typename TensorDataType,
-          data_layout T_layout, El::Device Dev>
-bool input_distconv_adapter<TensorDataType, T_layout, Dev>::
-is_input_processed(size_t index) const {
-  if (index >= m_is_input_processed.size()) {
-    LBANN_ERROR("Invalid index: ", index);
-  }
-  return m_is_input_processed[index];
 }
 
 template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
 typename input_distconv_adapter<TensorDataType, T_layout, Dev>::TensorHostShuffler&
 input_distconv_adapter<TensorDataType, T_layout, Dev>::get_shuffler(
-    const TensorHost &src, const TensorHost &dst, int mat_idx) {
+    const TensorHost &src, const TensorHost &dst) {
   size_t cur_mb_size = src.get_shape()[dc::get_sample_dim()];
   auto src_buf = m_shuffler_src_buf.get();
   auto dst_buf = m_shuffler_dst_buf.get();
@@ -224,7 +223,7 @@ input_distconv_adapter<TensorDataType, T_layout, Dev>::get_shuffler(
     shfl_idx = 1 + static_cast<int>(mode);
   }
   assert_always(shfl_idx >= 0 && shfl_idx < 4);
-  auto &shfl = m_shufflers[mat_idx][shfl_idx];
+  auto &shfl = m_shufflers[shfl_idx];
   if (shfl == nullptr) {
     shfl = make_unique<TensorHostShuffler>(
         src, dst, src_buf, dst_buf);
@@ -237,10 +236,10 @@ template <typename TensorDataType,
 void input_distconv_adapter<TensorDataType, T_layout, Dev>::setup_fp_tensors() {
   const auto sample_dist = dc::get_hydrogen_data_parallel_distribution(
       dc::get_num_dims(this->layer()));
-  for (int mat_idx = 0; mat_idx < this->layer().get_num_children(); ++mat_idx) {
-    if (!is_input_processed(mat_idx)) continue;
 
-    const auto shape = this->get_activations_shape(mat_idx);
+  if (m_is_input_processed) {
+
+    const auto shape = this->get_activations_shape(0);
     auto local_shape = shape;
     if (m_shuffle_required) {
       local_shape[dc::get_sample_dim()] = 0;
@@ -254,7 +253,7 @@ void input_distconv_adapter<TensorDataType, T_layout, Dev>::setup_fp_tensors() {
     const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
 
     auto dist = this->get_activations_dist();
-    if (mat_idx == 1) {
+    if (m_data_field == INPUT_DATA_TYPE_RESPONSES) {
       // assumes no halo for the ground-truth data
       dist.clear_overlap();
     }
@@ -264,29 +263,29 @@ void input_distconv_adapter<TensorDataType, T_layout, Dev>::setup_fp_tensors() {
     const auto original_host_tensor_dist = m_shuffle_required ?
         sample_dist : dist_no_halo;
     // Create a view to the host LBANN matrix
-    m_original_host_tensors.emplace_back(
-        make_unique<TensorHost>(shape, loc, original_host_tensor_dist, local_shape));
+    m_original_host_tensor
+      = make_unique<TensorHost>(shape, loc, original_host_tensor_dist, local_shape);
 
     // When shuffled, host tensor will have the same distribution as
     // the final output; otherwise, it is just a view to the host
     // LBANN matrix, so no overlap.
     auto host_tensor_dist = m_shuffle_required ? dist : dist_no_halo;
-    m_host_tensors.emplace_back(
-        make_unique<TensorHost>(shape, loc, host_tensor_dist));
+    m_host_tensor
+      = make_unique<TensorHost>(shape, loc, host_tensor_dist);
 
     if (m_shuffle_required) {
       // TODO: This is a temporary hack. Should use
       // CUDAHostPooledAllocator, but the shuffler is
       // only specialized for BaseAllocator.
-      size_t buf_size = m_host_tensors.back()->get_local_real_size()
-          * sizeof(TensorDataType);
+      size_t buf_size = m_host_tensor->get_local_real_size() * sizeof(TensorDataType);
       TensorDataType *buf = nullptr;
       CHECK_CUDA(cudaMallocHost(&buf, buf_size));
       // Note buf should be deallocated.
-      dc::tensor::View(*m_host_tensors.back(), buf);
-      setup_shuffler_buffers(*m_original_host_tensors.back(),
-                             *m_host_tensors.back());
+      dc::tensor::View(*m_host_tensor, buf);
+      setup_shuffler_buffers(*m_original_host_tensor,
+                             *m_host_tensor);
     }
+
   }
 
   this->setup_activations();
@@ -297,12 +296,12 @@ template <typename TensorDataType,
 std::unique_ptr<typename input_distconv_adapter<TensorDataType, T_layout, Dev>::TensorDevType>
 input_distconv_adapter<TensorDataType, T_layout, Dev>::
 setup_activations_i(int index) const {
-  if (!is_input_processed(index)) return nullptr;
-  if (index == 0) {
+  if (!m_is_input_processed) return nullptr;
+  if (m_data_field == INPUT_DATA_TYPE_SAMPLES) {
     return data_type_distconv_adapter<TensorDataType>::
         setup_activations_i(index);
-  } else {
-    assert_eq(index, 1);
+  }
+  else if (m_data_field == INPUT_DATA_TYPE_RESPONSES) {
     // Note: the default setup_activations_i can't be used because
     // the distribution might need to be changed to remove
     // overlap. This can be fixed by making each tensor hav a
@@ -316,6 +315,9 @@ setup_activations_i(int index) const {
     assert0(t->allocate());
     t->zero(hydrogen::cuda::GetDefaultStream());
     return t;
+  }
+  else {
+    LBANN_ERROR("unsupported data field (",m_data_field,")");
   }
 }
 
@@ -332,23 +334,27 @@ template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
 dc::Shape input_distconv_adapter<TensorDataType, T_layout, Dev>::
 get_activations_shape(int index) const {
-  if (index == 0) {
+  if (m_data_field == INPUT_DATA_TYPE_SAMPLES) {
     return data_type_distconv_adapter<TensorDataType>::
         get_activations_shape(index);
-  } else {
-    assert_eq(index, 1);
+  }
+  else if (m_data_field == INPUT_DATA_TYPE_RESPONSES) {
     // TODO: This is a temporary hack. The label tensor shape should
     //be set based on the shape set by the data reader, but the data
     //reader does not provide it. Using the shape shape as the data
     //tensor works fine for the U-Net model.
-    auto shape = this->get_activations_shape(0);
+    auto shape = data_type_distconv_adapter<TensorDataType>::
+      get_activations_shape(0); /// @todo Should this be getting shape corresponding to INPUT_DATA_TYPE_SAMPLES?
     auto label_size = data_type_distconv_adapter<TensorDataType>::
-        get_activations_shape(1).reduce_prod();
+        get_activations_shape(0).reduce_prod();
     const std::string env = std::getenv("DISTCONV_LABEL_NUM_CHANNELS");
     auto num_channels = env != ""
         ? std::stoi(env) : label_size / shape.reduce_prod();
     shape[-2] = num_channels;
     return shape;
+  }
+  else {
+    LBANN_ERROR("unsupported data field (",m_data_field,")");
   }
 }
 
@@ -377,7 +383,7 @@ template <typename TensorDataType,
 bool input_distconv_adapter<TensorDataType, T_layout, Dev>::
 child_copy_required(size_t output_index) const {
   // Not required when label is not handled.
-  if (output_index == 1 && !is_input_processed(1)) {
+  if (m_data_field == INPUT_DATA_TYPE_RESPONSES && !m_is_input_processed) {
     return false;
   } else {
     return data_type_distconv_adapter<TensorDataType>::
@@ -390,7 +396,7 @@ template <typename TensorDataType,
 bool input_distconv_adapter<TensorDataType, T_layout, Dev>::
 child_shuffle_required(size_t output_index) const {
   // Not required when label is not handled.
-  if (output_index == 1 && !is_input_processed(1)) {
+  if (m_data_field == INPUT_DATA_TYPE_RESPONSES && !m_is_input_processed) {
     return false;
   } else {
     return data_type_distconv_adapter<TensorDataType>::
@@ -410,18 +416,17 @@ void input_distconv_adapter<TensorDataType, T_layout, Dev>::fp_compute() {
   const int mb_size = static_cast<sgd_execution_context&>(
       l.get_model()->get_execution_context()).get_current_mini_batch_size();
 
-  for (int mat_idx = 0; mat_idx < l.get_num_children(); ++mat_idx) {
-    if (!is_input_processed(mat_idx)) continue;
+  if (m_is_input_processed) {
 
     // TODO: This is diabled as it raises an error when the HDF5 data
     // reader with hyperslab labels is used. Remove this assertion or
-    // reshape the actiavtion tensor (mat_idx=1).
+    // reshape the actiavtion tensor (data_field = RESPONSES).
     // assert_eq(mb_size * dc::get_number_of_io_partitions(),
-    //           l.get_activations(mat_idx).Width());
+    //           l.get_activations().Width());
 
-    auto &original_tensor = *m_original_host_tensors[mat_idx];
-    auto &host_tensor = *m_host_tensors[mat_idx];
-    auto &device_tensor = this->get_activations(mat_idx);
+    auto& original_tensor = *m_original_host_tensor;
+    auto& host_tensor = *m_host_tensor;
+    auto& device_tensor = this->get_activations();
 
     // Adjust the mini-batch size
     original_tensor.set_outermost_dimension(mb_size);
@@ -429,33 +434,35 @@ void input_distconv_adapter<TensorDataType, T_layout, Dev>::fp_compute() {
     device_tensor.set_outermost_dimension(mb_size);
 
     // Setup view
-    assert0(dc::tensor::View(
+    assert0(
+      dc::tensor::View(
         original_tensor,
-        l.get_activations(mat_idx).LockedBuffer()));
+        l.get_activations().LockedBuffer()));
 
     // Shuffle if necessary
     if (m_shuffle_required) {
       get_shuffler(
-          original_tensor, host_tensor, mat_idx).shuffle_forward(
-              original_tensor.get_const_base_ptr(),
-              host_tensor.get_base_ptr());
-    } else {
+        original_tensor, host_tensor).shuffle_forward(
+          original_tensor.get_const_base_ptr(),
+          host_tensor.get_base_ptr());
+    }
+    else {
       // The input buffer is already partitioned
-      assert0(dc::tensor::View(
+      assert0(
+        dc::tensor::View(
           host_tensor, original_tensor.get_const_buffer()));
     }
 
     // After this, there is no inter-process communication, so it's
     // safe to exit if the local tensor is empty.
-    if (host_tensor.get_local_size() == 0) {
-      continue;
+    if (host_tensor.get_local_size() > 0) {
+      prof_region_begin("copy-to-device", prof_colors[1], false);
+      assert0(dc::tensor::Copy(device_tensor, host_tensor, stream));
+      prof_region_end("copy-to-device", false);
     }
 
-    prof_region_begin("copy-to-device", prof_colors[1], false);
-    assert0(dc::tensor::Copy(
-        device_tensor, host_tensor, stream));
-    prof_region_end("copy-to-device", false);
   }
+
 }
 
 template <typename TensorDataType,
@@ -486,6 +493,16 @@ keep_original_outputs(int index) const {
   // into distconv tensors.
   return true;
 }
+
+template <typename TensorDataType,
+          data_layout T_layout,
+          El::Device Dev>
+bool input_layer<TensorDataType, T_layout, Dev>::
+keep_original_gradient_wrt_outputs(int index) const {
+  // Error signals are ignored
+  return false;
+}
+
 #endif // LBANN_HAS_DISTCONV
 
 #define PROTO_DEVICE(T, Device) \
