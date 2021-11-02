@@ -273,7 +273,7 @@ void mean_squared_error_layer<T, L, D>::fill_onnx_node(
     diff->add_input(parent->get_name() + "_" + std::to_string(idx));
   }
   diff->add_output(this->get_name() + "diff_0");
-  diff->set_name(this->get_name() + "diff");
+  diff->set_name(this->get_name() + "diff_0");
   diff->set_op_type("Sub");
   diff->set_domain("");
   diff->set_doc_string("First node representing Mean Squared Error Layer");
@@ -282,7 +282,7 @@ void mean_squared_error_layer<T, L, D>::fill_onnx_node(
   square->add_input(diff->output(0));
   square->add_input(diff->output(0));
   square->add_output("square_0");
-  square->set_name("square");
+  square->set_name("square_0");
   square->set_op_type("Mul");
   square->set_domain("");
   square->set_doc_string("Second node representing Mean Squared Error Layer");
@@ -293,7 +293,7 @@ void mean_squared_error_layer<T, L, D>::fill_onnx_node(
     size_t idx = this->find_child_layer_index(*child);
     mse->add_output(this->get_name() + "_" + std::to_string(idx));
   }
-  mse->set_name("mse");
+  mse->set_name("mse_0");
   mse->set_op_type("Mean");
   mse->set_domain("");
   mse->set_doc_string("Third node representing Mean Squared Error Layer");

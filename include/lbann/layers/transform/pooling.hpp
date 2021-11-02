@@ -202,7 +202,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
 #ifdef LBANN_HAS_ONNX
-  std::string get_onnx_op_type() const override { return "AveragePool"; }
+  std::string get_onnx_op_type() const override;
 #endif //LBANN_HAS_ONNX
 
   description get_description() const override {
@@ -581,6 +581,28 @@ private:
 #endif // LBANN_HAS_DISTCONV
 
 };
+
+#ifdef LBANN_HAS_ONNX
+template <typename T, data_layout L, El::Device D>
+std::string pooling_layer<T, L, D>::get_onnx_op_type() const {
+  //auto &l = this->layer();
+  std::string mode;
+  switch(m_pool_mode) {
+  case pooling_mode::MAX:
+    mode = "MaxPool"; break;
+  case pooling_mode::MAX_DETERMINISTIC:
+    mode = "MaxPool"; break;
+  case pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING:
+    mode = "AveragePool"; break;
+  case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING:
+    mode = "AveragePool"; break;
+  default:
+    LBANN_ERROR("pooling_layer: no ONNX implementation for pooling mode");
+  }
+
+  return mode;
+}
+#endif
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

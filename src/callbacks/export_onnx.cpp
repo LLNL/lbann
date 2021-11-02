@@ -75,6 +75,7 @@ void export_onnx::on_train_begin(model* m)
   gp->set_name(m->get_name());
 
   auto const weights_vec = m->get_weights();
+  int idx = 0;
   for (auto const weights : weights_vec) {
     auto* initializer = gp->add_initializer();
     auto dims = weights->get_dims();
@@ -95,7 +96,7 @@ void export_onnx::on_train_begin(model* m)
       auto const mat_width = tmp.Width();
 
       if (sizeof(DataType) == 4 || sizeof(DataType) == 2 ) {
-        initializer->set_data_type(1);
+        initializer->set_data_type(onnx::TensorProto::FLOAT);
         for (auto col = decltype(mat_width){0}; col < mat_width; ++col) {
           for (auto row = decltype(mat_height){0}; row < mat_height; ++row) {
             initializer->add_float_data(local.CRef(row,col));
@@ -103,7 +104,7 @@ void export_onnx::on_train_begin(model* m)
         }
       }
       else if (sizeof(DataType) == 8) {
-        initializer->set_data_type(11);
+        initializer->set_data_type(onnx::TensorProto::DOUBLE);
         for (auto col = decltype(mat_width){0}; col < mat_width; ++col) {
           for (auto row = decltype(mat_height){0}; row < mat_height; ++row) {
             initializer->add_double_data(local.CRef(row,col));
@@ -113,6 +114,8 @@ void export_onnx::on_train_begin(model* m)
       else
         LBANN_ERROR("Unsupported DataType. Export onnx callback supports float, double, and half.");
     }
+    initializer->set_name("weights_" + std::to_string(idx));
+    initializer->set_doc_string(m->get_name() + "weights_" + std::to_string(idx++));
   }
   auto const layers = m->get_layers();
   for (auto const* layer : layers) {

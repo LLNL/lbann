@@ -109,11 +109,11 @@ protected:
 template <typename T, data_layout L, El::Device D>
 void categorical_accuracy_layer<T, L, D>::fill_onnx_node(
   onnx::GraphProto& graph) const {
-  auto* shape = graph.add_value_info();
+  auto* shape = graph.add_initializer();
   shape->set_name(this->get_name() + "_shape_0");
-  shape->mutable_type()->mutable_tensor_type()->set_elem_type(1);
+  shape->set_data_type(onnx::TensorProto::INT8);
   for (auto const& dim : this->get_output_dims())
-    shape->mutable_type()->mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(dim);
+    shape->add_dims(dim);
   shape->set_doc_string(this->get_name() + " shape");
 
   auto* equal = graph.add_node();
@@ -128,7 +128,7 @@ void categorical_accuracy_layer<T, L, D>::fill_onnx_node(
     reshape->add_input(parent->get_name() + "_" + std::to_string(idx));
     reshape->add_input(this->get_name() + "_shape_0");
     reshape->add_output(this->get_name() + "_reshape_" + std::to_string(prt_idx));
-    reshape->set_name(this->get_name() + "_reshape");
+    reshape->set_name(this->get_name() + "_reshape" + std::to_string(prt_idx));
     reshape->set_op_type("Reshape");
     reshape->set_domain("");
     reshape->set_doc_string("Reshape node for Categorical Accuracy Layer");
@@ -137,10 +137,12 @@ void categorical_accuracy_layer<T, L, D>::fill_onnx_node(
     //ymax = ArgMax(data=y, axis=-1)
     auto* argmax = graph.add_node();
     argmax->add_input(reshape->output(0));
-    // FIXME: Axis ? Attribute
-    //argmax->add_input("-1");
+    auto* attribute = argmax->add_attribute();
+    attribute->set_name("axis_0");
+    attribute->set_type(onnx::AttributeProto::INT);
+    attribute->set_i(-1);
     argmax->add_output(this->get_name() + "_argmax_" + std::to_string(prt_idx));
-    argmax->set_name(this->get_name() + "_argmax");
+    argmax->set_name(this->get_name() + "_argmax" + std::to_string(prt_idx));
     argmax->set_op_type("ArgMax");
     argmax->set_domain("");
     argmax->set_doc_string("Argmax node for Categorical Accuracy Layer");
@@ -149,7 +151,7 @@ void categorical_accuracy_layer<T, L, D>::fill_onnx_node(
     equal->add_input(argmax->output(0));
   }
   equal->add_output(this->get_name() + "_equal_0");
-  equal->set_name(this->get_name() + "_equal");
+  equal->set_name(this->get_name() + "_equal_0");
   equal->set_op_type("Equal");
   equal->set_domain("");
   equal->set_doc_string("Equal node for Categorical Accuracy Layer");
@@ -158,16 +160,15 @@ void categorical_accuracy_layer<T, L, D>::fill_onnx_node(
   auto* cast = graph.add_node();
   cast->add_input(equal->output(0));
   auto* attribute = cast->add_attribute();
-  attribute->set_name("cast_to_float");
-  //enum FLOAT = 1;
-  //attribute->set_type(1);
-  // attribute->int field?
-  attribute->set_i(1);
+  attribute->set_name("float_0");
+  attribute->set_type(onnx::AttributeProto::FLOAT);
+  // FIXME: the docs say one of these fields is required
+  // attribute->set_f(0)?
   for (auto const* child : this->get_child_layers()) {
     auto idx = this->find_child_layer_index(*child);
     cast->add_output(this->get_name() + "_" + std::to_string(idx));
   }
-  cast->set_name(this->get_name() + "_cast");
+  cast->set_name(this->get_name() + "_cast_0");
   cast->set_op_type("Cast");
   cast->set_domain("");
   cast->set_doc_string("Cast node for Categorical Accuracy Layer");
