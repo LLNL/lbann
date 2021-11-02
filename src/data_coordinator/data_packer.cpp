@@ -64,8 +64,6 @@ size_t data_packer::extract_data_field_from_sample(data_field_type data_field,
                                   //                             int data_id,
                                   int mb_idx)
 {
-  size_t n_elts = 0;
-  std::string dtype;
   // Check to make sure that each Conduit node only has a single
   // sample
   if (sample.number_of_children() != 1) {
@@ -96,10 +94,10 @@ size_t data_packer::extract_data_field_from_sample(data_field_type data_field,
 
   conduit::Node const& data_field_node = sample[ss.str()];
 
-  n_elts = data_field_node.dtype().number_of_elements();
+  size_t n_elts = data_field_node.dtype().number_of_elements();
 
   // const void* r;
-  dtype = data_field_node.dtype().name();
+  std::string dtype = data_field_node.dtype().name();
   if (dtype == "float64") {
     const auto* data = data_field_node.as_float64_ptr();
     // if(data_field_node.dtype().is_compact()) {
