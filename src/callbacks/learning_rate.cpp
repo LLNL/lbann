@@ -251,15 +251,15 @@ poly_learning_rate::poly_learning_rate(
   double p, size_t n_epochs, size_t max_iter)
   : learning_rate(std::vector<std::string>()),
     m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
-    m_end_lr(0.0f),
-    m_lr(1.0f), m_last_epoch_lr(1.0f) {}
+    m_start_lr(0.0f), m_end_lr(0.0f)
+{}
 
 poly_learning_rate::poly_learning_rate(
   double p, size_t n_epochs, size_t max_iter, double end_lr,  std::vector<std::string> weights_names)
   : learning_rate(std::move(weights_names)),
     m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
-    m_end_lr(end_lr),
-    m_lr(1.0f), m_last_epoch_lr(1.0f) {}
+    m_start_lr(0.0f), m_end_lr(end_lr)
+{}
 
 /**
  * Check if the maximum number of iterations is set. If not, compute it by the
@@ -267,6 +267,7 @@ poly_learning_rate::poly_learning_rate(
  */
 void poly_learning_rate::setup(model *m) {
   learning_rate::setup(m);
+  m_start_lr = get_current_global_learning_rate();
   if (m_max_iter == 0ull) {
     data_coordinator& dc = get_trainer().get_data_coordinator();
     m_max_iter = m_num_epochs * dc.get_num_iterations_per_epoch(execution_mode::training);
@@ -277,9 +278,11 @@ void poly_learning_rate::setup(model *m) {
  * Keep the record of the learning rate at the end of the current epoch.
  */
 float poly_learning_rate::global_schedule(model *m) {
-  const float scale = m_lr / m_last_epoch_lr;
-  m_last_epoch_lr = m_lr;
-  return (poly_learning_rate::get_current_global_learning_rate() - m_end_lr) * scale + m_end_lr;
+  const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
+  const size_t iter = std::min(c.get_step(), m_max_iter);
+  const float scale = static_cast<float>(
+    std::pow(static_cast<double>(m_max_iter-iter)/m_max_iter, m_p));
+  return (m_start_lr - m_end_lr) * scale + m_end_lr;
 }
 
 /**
@@ -287,12 +290,10 @@ float poly_learning_rate::global_schedule(model *m) {
  */
 float poly_learning_rate::optimizer_schedule(model *m, optimizer &opt) {
   const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
-  const size_t cur_iter = c.get_step();
-  if (m_max_iter > cur_iter) {
-    m_lr = static_cast<float>(std::pow(static_cast<double>(m_max_iter - cur_iter)/m_max_iter, m_p));
-  }
-  const float scale = m_lr / m_last_epoch_lr;
-  return (poly_learning_rate::get_current_global_learning_rate() - m_end_lr) * scale + m_end_lr;
+  const size_t iter = std::min(c.get_step(), m_max_iter);
+  const float scale = static_cast<float>(
+    std::pow(static_cast<double>(m_max_iter-iter)/m_max_iter, m_p));
+  return (m_start_lr - m_end_lr) * scale + m_end_lr;
 }
 
 optimizerwise_adaptive_learning_rate::
