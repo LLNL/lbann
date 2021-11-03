@@ -184,6 +184,7 @@ private:
     LBANN_REGISTER_BUILDER(Convolution, convolution);
     LBANN_REGISTER_BUILDER(ChannelwiseFullyConnected, channelwise_fully_connected);
     LBANN_REGISTER_BUILDER(ChannelwiseScaleBias, channelwise_scale_bias);
+    LBANN_REGISTER_BUILDER(Deconvolution, deconvolution);
     LBANN_REGISTER_BUILDER(Embedding, embedding);
     LBANN_REGISTER_BUILDER(EntrywiseScaleBias, entrywise_scale_bias);
     LBANN_REGISTER_BUILDER(FullyConnected, fully_connected);
@@ -293,72 +294,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
     else {
       LBANN_ERROR("Input layers are only valid with "
                     "TensorDataType == DataType and Layout == DATA_PARALLEL");
-    }
-  }
-
-  // Currently this cannot be suitably removed from this function
-  // because it relies on LBANN_OPTION_NUM_PARALLEL_READERS and "data_readers"
-  // arguments.
-  if (proto_layer.has_deconvolution()) {
-    const auto& params = proto_layer.deconvolution();
-    const auto& bias = params.has_bias();
-    int num_output_channels = params.num_output_channels();
-    int num_groups = params.num_groups();
-    if (num_groups == 0) {
-      num_groups = 1;
-    }
-    if (proto_layer.num_neurons_from_data_reader()) {
-      if (training_dr_linearized_data_size == -1) {
-        LBANN_ERROR("Training data reader does not exist!");
-      }
-      num_output_channels = training_dr_linearized_data_size;
-    }
-    if (Layout != data_layout::DATA_PARALLEL) {
-      LBANN_ERROR("deconvolution layer is only supported with "
-                  "a data-parallel layout");
-    }
-    if (params.has_vectors()) {
-      const auto& dims = parse_list<int>(params.conv_dims());
-      const auto& pads = parse_list<int>(params.conv_pads());
-      const auto& strides = parse_list<int>(params.conv_strides());
-      std::vector<int> dilations = parse_list<int>(params.conv_dilations());
-      if (dilations.empty()) {
-        dilations.resize(dims.size(), 1);
-      }
-#ifdef LBANN_HAS_DNN_LIB
-      auto ret = lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
-        dims.size(), num_output_channels,
-        dims, pads, strides, dilations, num_groups, bias);
-      ret->set_dnn_math_mode(
-        dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
-      return ret;
-#else
-      return lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
-               dims.size(), num_output_channels,
-               dims, pads, strides, dilations, num_groups, bias);
-#endif // LBANN_HAS_DNN_LIB
-
-    } else {
-      const auto& num_dims = params.num_dims();
-      const auto& dim = params.conv_dims_i();
-      const auto& pad = params.conv_pads_i();
-      const auto& stride = params.conv_strides_i();
-      int dilation = params.conv_dilations_i();
-      if (dilation == 0) {
-        dilation = 1;
-      }
-#ifdef LBANN_HAS_DNN_LIB
-      auto ret = lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
-        num_dims, num_output_channels,
-        dim, pad, stride, dilation, num_groups, bias);
-      ret->set_dnn_math_mode(
-        dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
-      return ret;
-#else
-      return lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
-        num_dims, num_output_channels,
-        dim, pad, stride, dilation, num_groups, bias);
-#endif // LBANN_HAS_DNN_LIB
     }
   }
 

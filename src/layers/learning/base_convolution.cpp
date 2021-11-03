@@ -71,7 +71,21 @@ base_convolution_layer<TensorDataType,Device>::base_convolution_layer(
 #ifdef LBANN_HAS_DNN_LIB
   , m_tensors_dnn_desc(this)
 #endif // LBANN_HAS_DNN_LIB
-{}
+{
+  if (m_conv_dims.size() == 1) {
+    m_conv_dims.assign(num_data_dims, m_conv_dims.front());
+  }
+  if (m_pads.size() == 1) {
+    m_pads.assign(num_data_dims, m_pads.front());
+  }
+  if (m_strides.size() == 1) {
+    m_strides.assign(num_data_dims, m_strides.front());
+  }
+  if (m_dilations.size() == 1) {
+    m_dilations.assign(num_data_dims, m_dilations.front());
+  }
+}
+
 template <typename TensorDataType, El::Device Device>
 base_convolution_layer<TensorDataType,Device>::base_convolution_layer(
   const base_convolution_layer& other)

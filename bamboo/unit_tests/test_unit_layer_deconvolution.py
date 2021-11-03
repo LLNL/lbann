@@ -57,13 +57,16 @@ def sample_dims():
 # PyTorch convolution
 # ==============================================
 
-def pytorch_convolution(data,
-                        kernel,
-                        bias=None,
-                        stride=1,
-                        padding=0,
-                        dilation=1,
-                        groups=1):
+def pytorch_deconvolution(
+        data,
+        kernel,
+        bias=None,
+        stride=1,
+        padding=0,
+        output_padding=0,
+        dilation=1,
+        groups=1,
+):
     """Wrapper around PyTorch convolution.
 
     Input and output data are NumPy arrays.
@@ -87,21 +90,21 @@ def pytorch_convolution(data,
         bias = bias.to(torch.float64)
 
     # Perform convolution with PyTorch
-    output = None
-    if len(kernel.shape) == 3:
-        output = torch.nn.functional.conv1d(
-            data, kernel, bias, stride, padding, dilation, groups
-        )
-    if len(kernel.shape) == 4:
-        output = torch.nn.functional.conv2d(
-            data, kernel, bias, stride, padding, dilation, groups
-        )
-    if len(kernel.shape) == 5:
-        output = torch.nn.functional.conv3d(
-            data, kernel, bias, stride, padding, dilation, groups
-        )
-    if output is None:
-        raise ValueError('PyTorch only supports 1D, 2D, and 3D convolution')
+    conv = {
+        3: torch.nn.functional.conv_transpose1d,
+        4: torch.nn.functional.conv_transpose2d,
+        5: torch.nn.functional.conv_transpose3d,
+    }[len(kernel.shape)]
+    output = conv(
+        input=data,
+        weight=kernel,
+        bias=bias,
+        stride=stride,
+        padding=padding,
+        output_padding=output_padding,
+        groups=groups,
+        dilation=dilation,
+    )
 
     # Return output as NumPy array
     return output.numpy()
@@ -150,17 +153,15 @@ def construct_model(lbann):
     callbacks = []
 
     # ------------------------------------------
-    # Basic 3x3 convolution
+    # Basic 3x3 deconvolution
     # ------------------------------------------
     # 3x3 conv, stride=1, pad=1, dilation=1, bias
 
     # Convolution settings
-    kernel_dims = (5, _sample_dims[0], 3, 3)
-    strides = (1, 1)
+    kernel_dims = (_sample_dims[0], 5, 3, 3)
     pads = (1, 1)
-    dilations = (1, 1)
     kernel = make_random_array(kernel_dims, 11)
-    bias = make_random_array([kernel_dims[0]], 123)
+    bias = make_random_array([kernel_dims[1]], 123)
 
     # Apply convolution
     kernel_weights = lbann.Weights(
@@ -174,32 +175,30 @@ def construct_model(lbann):
         name='bias1'
     )
     x = x_lbann
-    y = lbann.Convolution(x,
-                          weights=(kernel_weights, bias_weights),
-                          num_dims=2,
-                          num_output_channels=kernel_dims[0],
-                          has_vectors=True,
-                          conv_dims=tools.str_list(kernel_dims[2:]),
-                          conv_strides=tools.str_list(strides),
-                          conv_pads=tools.str_list(pads),
-                          conv_dilations=tools.str_list(dilations),
-                          has_bias=True)
+    y = lbann.Deconvolution(
+        x,
+        weights=(kernel_weights, bias_weights),
+        num_dims=2,
+        out_channels=kernel_dims[1],
+        kernel_size=kernel_dims[2:],
+        padding=pads,
+    )
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='basic 3x3 convolution'))
+    metrics.append(lbann.Metric(z, name='basic 3x3 deconvolution'))
 
     # PyTorch implementation
     try:
         x = _samples
-        y = pytorch_convolution(
+        y = pytorch_deconvolution(
             x, kernel, bias=bias,
-            stride=strides, padding=pads, dilation=dilations
+            stride=1, padding=pads, dilation=1,
         )
         z = tools.numpy_l2norm2(y) / _num_samples
         val = z
     except:
         # Precomputed value
-        val = 153.84937996554953
+        val = 156.539447271956
     tol = 8 * val * np.finfo(np.float32).eps
     callbacks.append(lbann.CallbackCheckMetric(
         metric=metrics[-1].name,
@@ -213,11 +212,10 @@ def construct_model(lbann):
     # ------------------------------------------
 
     # Convolution settings
-    kernel_dims = (3, _sample_dims[0], 2, 4)
-    strides = (3, 1)
-    pads = (3, 0)
-    dilations = (1, 1)
-    num_groups = 1
+    kernel_dims = (_sample_dims[0], 3, 2, 4)
+    stride = (3, 2)
+    padding = (3, 0)
+    output_padding = (1, 0)
     kernel = make_random_array(kernel_dims, 19)
 
     # Apply convolution
@@ -227,17 +225,16 @@ def construct_model(lbann):
         name='kernel2'
     )
     x = x_lbann
-    y = lbann.Convolution(x,
-                          weights=(kernel_weights),
-                          num_dims=2,
-                          num_output_channels=kernel_dims[0],
-                          has_vectors=True,
-                          conv_dims=tools.str_list(kernel_dims[2:]),
-                          conv_strides=tools.str_list(strides),
-                          conv_pads=tools.str_list(pads),
-                          conv_dilations=tools.str_list(dilations),
-                          num_groups=num_groups,
-                          has_bias=False)
+    y = lbann.Deconvolution(
+        x,
+        weights=(kernel_weights),
+        num_dims=2,
+        out_channels=kernel_dims[1],
+        kernel_size=kernel_dims[2:],
+        stride=stride,
+        padding=padding,
+        output_padding=output_padding,
+        has_bias=False)
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='2x4 convolution'))
@@ -245,16 +242,15 @@ def construct_model(lbann):
     # PyTorch implementation
     try:
         x = _samples
-        y = pytorch_convolution(
+        y = pytorch_deconvolution(
             x, kernel, bias=None,
-            stride=strides, padding=pads,
-            dilation=dilations, groups=num_groups
+            stride=stride, padding=padding, output_padding=output_padding,
         )
         z = tools.numpy_l2norm2(y) / _num_samples
         val = z
     except:
         # Precomputed value
-        val = 19.24587403346207
+        val = 64.52775841957222
     tol = 8 * val * np.finfo(np.float32).eps
     callbacks.append(lbann.CallbackCheckMetric(
         metric=metrics[-1].name,
