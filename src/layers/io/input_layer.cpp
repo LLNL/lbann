@@ -413,7 +413,7 @@ void input_distconv_adapter<TensorDataType, T_layout, Dev>::fp_compute() {
   // Note that the mini-batch size of the data reader is not
   // actually the one for the current mini-batch as the mini-batch
   // index is already updated by fp_compute.
-  const int mb_size = static_cast<sgd_execution_context&>(
+  const int mb_size = static_cast<SGDExecutionContext&>(
       l.get_model()->get_execution_context()).get_current_mini_batch_size();
 
   if (m_is_input_processed) {
