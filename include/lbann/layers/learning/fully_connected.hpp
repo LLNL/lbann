@@ -151,10 +151,11 @@ void fully_connected_layer<T, L, D>::fill_onnx_node(
   //x = Reshape(data=x, shape=[0,-1,1])
   auto* shape = graph.add_initializer();
   shape->set_name(this->get_name() + "_shape_0");
-  shape->set_data_type(onnx::TensorProto::INT8);
-  shape->add_dims(0);
-  shape->add_dims(-1);
-  shape->add_dims(1);
+  shape->set_data_type(onnx::TensorProto::INT64);
+  shape->add_dims(3);
+  shape->add_int64_data(0);
+  shape->add_int64_data(-1);
+  shape->add_int64_data(1);
   shape->set_doc_string(this->get_name() + " shape");
 
   auto const parents = this->get_parent_layers();
@@ -181,10 +182,11 @@ void fully_connected_layer<T, L, D>::fill_onnx_node(
   const auto linearity_height = this->get_weights(0).get_matrix_height();
   shape = graph.add_initializer();
   shape->set_name(this->get_name() + "_shape_1");
-  shape->set_data_type(onnx::TensorProto::INT8);
-  shape->add_dims(1);
-  shape->add_dims(linearity_height);
-  shape->add_dims(linearity_height);
+  shape->set_data_type(onnx::TensorProto::INT64);
+  shape->add_dims(3);
+  shape->add_int64_data(1);
+  shape->add_int64_data(linearity_height);
+  shape->add_int64_data(linearity_height);
   shape->set_doc_string(this->get_name() + " shape");
 
   auto* linearity = graph.add_node();
@@ -200,10 +202,11 @@ void fully_connected_layer<T, L, D>::fill_onnx_node(
     //bias = Reshape(data=bias, shape=[1,-1,1])
     shape = graph.add_initializer();
     shape->set_name(this->get_name() + "_shape_2");
-    shape->set_data_type(onnx::TensorProto::INT8);
-    shape->add_dims(1);
-    shape->add_dims(-1);
-    shape->add_dims(1);
+    shape->set_data_type(onnx::TensorProto::INT64);
+    shape->add_dims(3);
+    shape->add_int64_data(1);
+    shape->add_int64_data(-1);
+    shape->add_int64_data(1);
     shape->set_doc_string(this->get_name() + " shape");
 
     auto* bias = graph.add_node();
@@ -241,9 +244,10 @@ void fully_connected_layer<T, L, D>::fill_onnx_node(
   //z = Reshape(data=z, shape=[0,-1])
   shape = graph.add_initializer();
   shape->set_name(this->get_name() + "_shape_3");
-  shape->set_data_type(onnx::TensorProto::INT8);
-  shape->add_dims(0);
-  shape->add_dims(-1);
+  shape->set_data_type(onnx::TensorProto::INT64);
+  shape->add_dims(2);
+  shape->add_int64_data(0);
+  shape->add_int64_data(-1);
   shape->set_doc_string(this->get_name() + " shape");
 
   reshape = graph.add_node();

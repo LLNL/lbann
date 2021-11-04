@@ -272,8 +272,8 @@ void mean_squared_error_layer<T, L, D>::fill_onnx_node(
     size_t idx = parent->find_child_layer_index(*this);
     diff->add_input(parent->get_name() + "_" + std::to_string(idx));
   }
-  diff->add_output(this->get_name() + "diff_0");
-  diff->set_name(this->get_name() + "diff_0");
+  diff->add_output(this->get_name() + "_diff_0");
+  diff->set_name(this->get_name() + "_diff_0");
   diff->set_op_type("Sub");
   diff->set_domain("");
   diff->set_doc_string("First node representing Mean Squared Error Layer");
