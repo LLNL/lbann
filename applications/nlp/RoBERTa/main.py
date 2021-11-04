@@ -10,6 +10,7 @@ _permute_cache = {}
 _cumsum_cache = {}
 _value_tensor_cache = {}
 
+
 class RobertaEmbeddings(lbann.modules.Module):
     def __init__(self, config):
         super().__init__()
@@ -250,7 +251,9 @@ class RobertaLayer(lbann.modules.Module):
             outputs = self_attention_outputs[1:-1]
             present_key_value = self_attention_outputs[-1]
         else:
-            outputs = self_attention_outputs[1:]  # add self attentions if we output attention weights
+            outputs = self_attention_outputs[
+                1:
+            ]  # add self attentions if we output attention weights
 
         cross_attn_present_key_value = None
         if self.is_decoder and encoder_hidden_states is not None:
@@ -272,7 +275,9 @@ class RobertaLayer(lbann.modules.Module):
                 output_attentions,
             )
             attention_output = cross_attention_outputs[0]
-            outputs = outputs + cross_attention_outputs[1:-1] # add cross attentions if we output attention weights
+            outputs = (
+                outputs + cross_attention_outputs[1:-1]
+            )  # add cross attentions if we output attention weights
 
             # add cross-attn cache to positions 3,4 of present_key_value tuple
             cross_attn_present_key_value = cross_attention_outputs[-1]
@@ -297,14 +302,15 @@ class RobertaLayer(lbann.modules.Module):
 def apply_chunking_to_forward(chunk_size, chunk_dim, foward_fn, input_tensors):
     return input_tensors
 
+
 # Mimics torch.matmul in LBANN
 def _Matmul(x, x_shape, y, y_shape):
     if len(x_shape) != len(y_shape):
-        sys.exit('Broadcasting not fully implemented, tensors must have same dimension')
+        sys.exit("Broadcasting not fully implemented, tensors must have same dimension")
     need_reshape = (len(x_shape) > 3) and (len(y_shape) > 3)
     if need_reshape:
         if x_shape[:-2] != y_shape[:-2]:
-            sys.exit('The first n-2 dimensions must match')
+            sys.exit("The first n-2 dimensions must match")
         new_x_shape = (np.prod(x_shape[:-2]),) + x_shape[-2:]
         x = lbann.Reshape(x, dims=str_list(new_x_shape))
 
@@ -318,6 +324,7 @@ def _Matmul(x, x_shape, y, y_shape):
         z = lbann.Reshape(z, dims=str_list(z_shape))
 
     return z, z_shape
+
 
 # Fills a LBANN tensor of a given size with a value
 def _ValueTensor(shape, value):
@@ -336,6 +343,7 @@ def _ValueTensor(shape, value):
         _value_tensor_cache[key] = x
     return _value_tensor_cache[key]
 
+
 # Mimics torch.nn.Linear in LBANN
 def _Linear(x, input_shape, hidden_size):
     need_reshape = len(input_shape) > 2
@@ -343,10 +351,7 @@ def _Linear(x, input_shape, hidden_size):
         new_in_shape = (np.prod(input_shape[:-1]), input_shape[-1])
         x = lbann.Reshape(x, dims=str_list(new_in_shape))
 
-    y = lbann.ChannelwiseFullyConnected(
-            x,
-            output_channel_dims=[hidden_size]
-            )
+    y = lbann.ChannelwiseFullyConnected(x, output_channel_dims=[hidden_size])
 
     if need_reshape:
         new_out_shape = input_shape[:-1] + (hidden_size,)
@@ -355,6 +360,7 @@ def _Linear(x, input_shape, hidden_size):
         new_out_shape = (input_shape[0], hidden_size)
 
     return y, new_out_shape
+
 
 class RobertaSelfAttention(lbann.modules.Module):
     def __init__(self, config):
@@ -390,7 +396,7 @@ class RobertaSelfAttention(lbann.modules.Module):
         self.is_decoder = config.is_decoder
 
     def transpose_for_scores(self, x, dims):
-        #x = lbann.Reshape(x, dims=str_list(dims))
+        # x = lbann.Reshape(x, dims=str_list(dims))
         new_x_shape = dims[:-1] + (self.num_attention_heads, self.attention_head_size)
         x = lbann.Reshape(x, dims=lbann.util.str_list(new_x_shape))
         return _permute(x, new_x_shape, axes=(0, 2, 1, 3))
@@ -405,7 +411,9 @@ class RobertaSelfAttention(lbann.modules.Module):
         past_key_value=None,
         output_attentions=False,
     ):
-        mixed_query_layer, query_shape = _Linear(hidden_states, self.input_shape, self.all_head_size)
+        mixed_query_layer, query_shape = _Linear(
+            hidden_states, self.input_shape, self.all_head_size
+        )
 
         # If this is instantiated as a cross-attention module, the keys
         # and values come from an encoder; the attention mask needs to be
@@ -420,12 +428,20 @@ class RobertaSelfAttention(lbann.modules.Module):
         elif past_key_value is not None:
             sys.exit("Not yet implemented")
         else:
-            key_layer, key_shape = _Linear(hidden_states, self.input_shape, self.all_head_size)
+            key_layer, key_shape = _Linear(
+                hidden_states, self.input_shape, self.all_head_size
+            )
             key_layer, key_shape = self.transpose_for_scores(key_layer, key_shape)
-            value_layer, value_shape = _Linear(hidden_states, self.input_shape, self.all_head_size)
-            value_layer, value_shape = self.transpose_for_scores(value_layer, value_shape)
+            value_layer, value_shape = _Linear(
+                hidden_states, self.input_shape, self.all_head_size
+            )
+            value_layer, value_shape = self.transpose_for_scores(
+                value_layer, value_shape
+            )
 
-        query_layer, query_shape = self.transpose_for_scores(mixed_query_layer, query_shape)
+        query_layer, query_shape = self.transpose_for_scores(
+            mixed_query_layer, query_shape
+        )
 
         if self.is_decoder:
             # if cross_attention save Tuple(torch.Tensor, torch.Tensor) of all cross attention key/value_states.
@@ -438,15 +454,17 @@ class RobertaSelfAttention(lbann.modules.Module):
             past_key_value = (key_layer, value_layer)
 
         # Take the dot product between "query" and "key" to get the raw attention scores.
-        key_layer, key_shape = _permute(key_layer, key_shape, axes=(0,1,-1,-2))
-        attention_scores, attention_shape = _Matmul(query_layer, query_shape, key_layer, key_shape)
+        key_layer, key_shape = _permute(key_layer, key_shape, axes=(0, 1, -1, -2))
+        attention_scores, attention_shape = _Matmul(
+            query_layer, query_shape, key_layer, key_shape
+        )
 
         denom = _ValueTensor(attention_shape, math.sqrt(self.attention_head_size))
         attention_score = lbann.Divide(attention_scores, denom)
         # TODO
-        #if attention_mask is not None:
-            # Apply the attention mask is (precomputed for all layers in RobertaModel forward() function)
-            #attention_scores = lbann.Add(attention_scores, attention_mask)
+        # if attention_mask is not None:
+        # Apply the attention mask is (precomputed for all layers in RobertaModel forward() function)
+        # attention_scores = lbann.Add(attention_scores, attention_mask)
 
         # Normalize the attention scores to probabilities.
         attention_probs = lbann.ChannelwiseSoftmax(attention_scores)
@@ -462,8 +480,12 @@ class RobertaSelfAttention(lbann.modules.Module):
         # if head_mask is not None:
         #  attention_probs = attention_probs * head_mask
 
-        context_layer, context_shape = _Matmul(attention_probs, attention_shape, value_layer, value_shape)
-        context_layer, context_shape = _permute(context_layer, context_shape, axes=(0,2,1,3))
+        context_layer, context_shape = _Matmul(
+            attention_probs, attention_shape, value_layer, value_shape
+        )
+        context_layer, context_shape = _permute(
+            context_layer, context_shape, axes=(0, 2, 1, 3)
+        )
         new_context_layer_shape = context_shape[:-2] + (self.all_head_size,)
         context_layer = lbann.Reshape(context_layer, dims=str_list(self.input_shape))
 
@@ -557,26 +579,31 @@ class RobertaAttention(lbann.modules.Module):
 def _relu(x, _):
     return lbann.Relu(x)
 
+
 def _silu(x, _):
     return x * lbann.Sigmoid(x)
+
 
 def _gelu(x, x_shape):
     # return 0.5 * x * (1 + tanh(sqrt(pi / 2) * (x + 0.044715 * x ** 3)))
     # Based on: https://github.com/pytorch/pytorch/issues/20464#issuecomment-492339005
     ones = _ValueTensor(x_shape, 1)
     twos = _ValueTensor(x_shape, 2)
-    sqrt_pi_over_2 = _ValueTensor(x_shape, math.sqrt(math.pi/2))
+    sqrt_pi_over_2 = _ValueTensor(x_shape, math.sqrt(math.pi / 2))
     b_coef = _ValueTensor(x_shape, 0.044715)
-    x_cubed = lbann.Multiply(lbann.Multiply(lbann.Identity(x),x),x)
+    x_cubed = lbann.Multiply(lbann.Multiply(lbann.Identity(x), x), x)
     inner_tanh_x_comp = lbann.Add(x, lbann.Multiply(b_coef, x_cubed))
     tanh_x = lbann.Tanh(lbann.Multiply(sqrt_pi_over_2, inner_tanh_x_comp))
     return lbann.Divide(lbann.Multiply(x, lbann.Add(ones, tanh_x)), twos)
 
+
 def _tanh(x, _):
     return lbann.Tanh(x)
 
+
 def _sigmoid(x, _):
     return lbann.Sigmoid(x)
+
 
 ACT2FN = {
     "relu": _relu,
@@ -599,7 +626,9 @@ class RobertaIntermediate(lbann.modules.Module):
             self.intermediate_act_fn = config.hidden_act
 
     def forward(self, hidden_states):
-        hidden_states, hidden_shape = _Linear(hidden_states, self.input_shape, self.intermediate_size)
+        hidden_states, hidden_shape = _Linear(
+            hidden_states, self.input_shape, self.intermediate_size
+        )
         hidden_states = self.intermediate_act_fn(hidden_states, hidden_shape)
         return hidden_states
 
@@ -614,7 +643,9 @@ class RobertaOutput(lbann.modules.Module):
         self.layer_norm_eps = config.layer_norm_eps
 
     def forward(self, hidden_states, input_tensor):
-        hidden_states, hidden_shape = _Linear(hidden_states, self.input_shape, self.hidden_size)
+        hidden_states, hidden_shape = _Linear(
+            hidden_states, self.input_shape, self.hidden_size
+        )
         hidden_states = lbann.Dropout(hidden_states, keep_prob=self.hidden_dropout_prob)
         hidden_states = lbann.Add(hidden_states, input_tensor)
         hidden_states = lbann.LayerNorm(hidden_states, epsilon=self.layer_norm_eps)
@@ -633,7 +664,9 @@ class RobertaPooler(lbann.modules.Module):
         # to the first token.
         # TODO
         # first_token_tensor = hidden_states[:, 0]
-        first_token_tensor = lbann.Slice(hidden_states, axis=0, slice_points=str_list([0,1]))
+        first_token_tensor = lbann.Slice(
+            hidden_states, axis=0, slice_points=str_list([0, 1])
+        )
         pooled_output = lbann.ChannelwiseFullyConnected(
             first_token_tensor,
             output_channel_dims=[self.hidden_size],
@@ -786,7 +819,9 @@ class RobertaModel(lbann.modules.Module):
             inputs_embeds=inputs_embeds,
             past_key_values_length=past_key_values_length,
         )
-        embedding_output = lbann.Reshape(embedding_output, dims=str_list(self.input_shape+(768,)))
+        embedding_output = lbann.Reshape(
+            embedding_output, dims=str_list(self.input_shape + (768,))
+        )
         encoder_outputs = self.encoder(
             embedding_output,
             attention_mask=attention_mask,
@@ -949,7 +984,9 @@ def make_model(config):
         layers=lbann.traverse_layer_graph(input_),
         objective_function=loss,
         metrics=metrics,
-        callbacks=[lbann.CallbackPrintModelDescription(),
+        callbacks=[
+            lbann.CallbackPrintModelDescription(),
             lbann.CallbackPrint(),
-            lbann.CallbackTimer()],
+            lbann.CallbackTimer(),
+        ],
     )
