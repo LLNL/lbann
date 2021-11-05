@@ -10,7 +10,6 @@ class Cell(lbann.modules.Module):
 
    def __init__(self, genotype, C_prev_prev, C_prev, C, reduction, reduction_prev):
        super().__init__()
-       #print(C_prev_prev, C_prev, C)
 
        if reduction_prev:
            self.preprocess0 = FactorizedReduce(C_prev_prev, C)
@@ -49,19 +48,20 @@ class Cell(lbann.modules.Module):
            h2 = states[self._indices[2 * i + 1]]
            op1 = self._ops[2 * i]
            op2 = self._ops[2 * i + 1]
-           print(h1)
-           print(op1)
+           #print(h1)
+           #print(op1)
            h1 = op1(h1)
            h2 = op2(h2)
-           s = h1 + h2
+           s = lbann.Sum(h1, h2) #h1 + h2
            states += [s]
 
-       return lbann.Concatenation([states[i] for i in self._concat], dim=0)
+       return lbann.Concatenation([states[i] for i in self._concat], axis=0)
 
 class NetworkCIFAR(lbann.modules.Module):
 
    def __init__(self, C, num_classes, layers, auxiliary, genotype):
        super().__init__()
+       self._num_classes = num_classes
        self._layers = layers
        self._auxiliary = auxiliary
 
@@ -101,28 +101,36 @@ class NetworkCIFAR(lbann.modules.Module):
            if i == 2 * self._layers // 3:
                if self._auxiliary and self.training:
                    logits_aux = self.auxiliary_head(s1)
-       out = lbann.Pooling(s1, 
-                           num_dims = 2,
-                           pool_mode = "max") # adaptive avg - o/p 1
-         
-       # will this work?
-       size0 = out.size(0) 
-       size1 = out.size(1)
-       out = lbann.Reshape(out, dims='size0 size1')       
 
-       logits = lbann.FullyConnected(out, num_neurons = num_classes)
+       out = lbann.ChannelwiseMean(s1)
+
+       logits = lbann.FullyConnected(out, num_neurons = self._num_classes)
        return logits, logits_aux
 
 if __name__ == '__main__':
-    
+
+    # Dummy input
+    reader = lbann.reader_pb2.DataReader()
+    reader_ = reader.reader.add()
+    reader_.name = 'synthetic'
+    reader_.role = 'train'
+    reader_.num_samples = 1
+    reader_.num_labels = 1
+    reader_.synth_dimensions = '1'
+    reader_.percent_of_data_to_use = 1.0
+    input_ = lbann.Input(data_field='samples')
+   
+    # Construct model with random input 
     genome = NASNet
     mymodel = NetworkCIFAR(32, 10, 20, False, genome) # nsga uses 34 instead of 32
-
-    #myresnet = lbann.models.ResNet18
-
-    input_ = lbann.Input(data_field='samples')
     x = lbann.Gaussian(neuron_dims='3 32 32')
     y = mymodel(x)
-    #layers = list(lbann.traverse_layer_graph([x, input_]))
-    
-    print(y)
+
+    # Run LBANN
+    model = lbann.Model(epochs=1, layers=[input_, x])
+    trainer = lbann.Trainer(mini_batch_size=1)
+    lbann.run(trainer=trainer,
+              model=model,
+              data_reader=reader,
+              optimizer=lbann.SGD(),
+              job_name='lbann_nasnet_test')
