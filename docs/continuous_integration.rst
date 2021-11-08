@@ -7,6 +7,43 @@
 LBANN CI
 ====================
 
+LLNL GitLab is going to replace previous Bamboo support.  There are
+lots of restrictions on using GitLab for CI that will require some
+jumping through hoops.
+
+GitLab
+----------------------------------------
+
+https://stackoverflow.com/questions/10065526/github-how-to-make-a-fork-of-public-repository-private
+
+$ git clone --bare https://github.com/exampleuser/old-repository.git
+# Make a bare clone of the repository
+
+$ cd old-repository.git
+$ git push --mirror https://github.com/exampleuser/new-repository.git
+# Mirror-push to the new repository
+
+$ cd ..
+$ rm -rf old-repository.git
+# Remove our temporary local repository
+
+$ git clone --mirror https://github.com/exampleuser/repository-to-mirror.git
+# Make a bare mirrored clone of the repository
+
+$ cd repository-to-mirror.git
+$ git remote set-url --push origin https://github.com/exampleuser/mirrored
+# Set the push location to your mirror
+
+$ git fetch -p origin
+$ git push --mirror
+
+https://stackoverflow.com/questions/34265266/remote-rejected-errors-after-mirroring-a-git-repository
+
+
+
+Bamboo
+----------------------------------------
+
 Bamboo is the continuous integration (CI) framework we use.
 A Bamboo plan consists of stages (which run sequentially),
 which consist of jobs (which run in parallel),
