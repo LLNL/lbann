@@ -186,7 +186,7 @@ void fully_connected_layer<T, L, D>::fill_onnx_node(
   shape->add_dims(3);
   shape->add_int64_data(1);
   shape->add_int64_data(linearity_height);
-  shape->add_int64_data(linearity_height);
+  shape->add_int64_data(linearity_width);
   shape->set_doc_string(this->get_name() + " shape");
 
   auto* linearity = graph.add_node();
