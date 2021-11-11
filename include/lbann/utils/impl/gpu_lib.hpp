@@ -318,7 +318,7 @@ void apply_entrywise_unary_operator(
   else {
     dim3 block_dims, grid_dims;
     block_dims.x = 256;
-    block_dims.y = 256;
+    block_dims.y = 1;
     grid_dims.x = (output.Height() + block_dims.x - 1) / block_dims.x;
     grid_dims.y = (output.Width() + block_dims.y - 1) / block_dims.y;
     gpu_lib::clip_grid_dims(grid_dims);
@@ -385,7 +385,7 @@ void apply_entrywise_binary_operator(
   else {
     dim3 block_dims, grid_dims;
     block_dims.x = 256;
-    block_dims.y = 256;
+    block_dims.y = 1;
     grid_dims.x = (output.Height() + block_dims.x - 1) / block_dims.x;
     grid_dims.y = (output.Width() + block_dims.y - 1) / block_dims.y;
     gpu_lib::clip_grid_dims(grid_dims);
