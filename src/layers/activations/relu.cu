@@ -35,8 +35,8 @@ namespace {
 /** Entry-wise operator. */
 template <typename TensorDataType>
 struct op {
-  inline __device__ TensorDataType operator()(TensorDataType x) const {
-    return x > TensorDataType{0.f} ? x : TensorDataType{0.f};
+  inline __device__ TensorDataType operator()(const TensorDataType& x) const {
+    return gpu_lib::max(x, TensorDataType{0.f});
   }
 };
 
@@ -47,7 +47,9 @@ struct op {
  */
 template <typename TensorDataType>
 struct op_backprop {
-  inline __device__ TensorDataType operator()(TensorDataType x, TensorDataType dy) const {
+  inline __device__ TensorDataType operator()(
+    const TensorDataType& x,
+    const TensorDataType& dy) const {
     return x > TensorDataType{0.f} ? dy : TensorDataType{0.f};
   }
 };
