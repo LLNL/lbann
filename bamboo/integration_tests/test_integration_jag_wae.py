@@ -86,10 +86,10 @@ def setup_experiment(lbann):
 
     trainer = lbann.Trainer(mini_batch_size=mini_batch_size,
                             serialize_io=True)
-    import jag_trainable_models
+    import jag_models
     dump_models = 'dump_models'
     ltfb_batch_interval = 0
-    model = jag_trainable_models.construct_jag_wae_model(y_dim=y_dim,
+    model = jag_models.construct_jag_wae_model(y_dim=y_dim,
                                                z_dim=z_dim,
                                                num_epochs=num_epochs)
 

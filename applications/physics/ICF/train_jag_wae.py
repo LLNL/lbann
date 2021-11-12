@@ -1,4 +1,4 @@
-import jag_trainable_models
+import jag_models
 from os.path import abspath, dirname, join
 import google.protobuf.text_format as txtf
 
@@ -21,8 +21,7 @@ if __name__ == '__main__':
     mini_batch_size = 128
     trainer = lbann.Trainer(mini_batch_size=mini_batch_size,
                             serialize_io=True)
-#    model = construct_model()
-    model = jag_trainable_models.construct_jag_wae_model(y_dim=y_dim,
+    model = jag_models.construct_jag_wae_model(y_dim=y_dim,
                                                z_dim=z_dim,
                                                num_epochs=num_epochs)
     # Setup optimizer
@@ -37,8 +36,6 @@ if __name__ == '__main__':
                        scheduler='slurm',
                        nodes=1,
                        procs_per_node=1,
-                       lbann_args=[f'--data_reader_percent=0.1'],
                        time_limit=360,
-#                       setup_only=True,
                        job_name='jag_wae')
     print(status)
