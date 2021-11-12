@@ -1,4 +1,4 @@
-import macc_trainable_models
+import macc_models
 import argparse
 from os.path import abspath, dirname, join
 import google.protobuf.text_format as txtf
@@ -73,13 +73,13 @@ if __name__ == '__main__':
 
     trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size,
                             serialize_io=True)
-    model = macc_trainable_models.construct_jag_wae_model(ydim=args.ydim,
-                                                          zdim=args.zdim,
-                                                          mcf=args.mcf,
-                                                          useCNN=args.useCNN,
-                                                          dump_models=args.dump_models,
-                                                          ltfb_batch_interval=args.ltfb_batch_interval,
-                                                          num_epochs=args.num_epochs)
+    model = macc_models.construct_jag_wae_model(ydim=args.ydim,
+                                                zdim=args.zdim,
+                                                mcf=args.mcf,
+                                                useCNN=args.useCNN,
+                                                dump_models=args.dump_models,
+                                                ltfb_batch_interval=args.ltfb_batch_interval,
+                                                num_epochs=args.num_epochs)
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0001,beta1=0.9,beta2=0.99,eps=1e-8)
     # Load data reader from prototext
@@ -91,13 +91,10 @@ if __name__ == '__main__':
     kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
     status = lbann.contrib.launcher.run(trainer,model, data_reader_proto, opt,
                        nodes=args.num_nodes,
-#                       procs_per_node=args.ppn,
                        time_limit=720,
-#                       setup_only=True,
                        job_name=args.job_name,
                        lbann_args=['--use_data_store --preload_data_store',
                                    f'--metadata={metadata_prototext}',
-                                   f'--data_reader_percent=0.1',
                                    f'--sample_list_train={args.sample_list_train}',
                                    f'--sample_list_test={args.sample_list_test}',
                                    f'--procs_per_trainer={args.procs_per_trainer}'],

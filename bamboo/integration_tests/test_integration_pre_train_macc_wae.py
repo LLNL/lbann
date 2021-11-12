@@ -88,16 +88,16 @@ def setup_experiment(lbann):
 
     trainer = lbann.Trainer(mini_batch_size=mini_batch_size,
                             serialize_io=True)
-    import macc_trainable_models
+    import macc_models
     dump_models = 'dump_models'
     ltfb_batch_interval = 0
-    model = macc_trainable_models.construct_jag_wae_model(ydim=ydim,
-                                                          zdim=zdim,
-                                                          mcf=mcf,
-                                                          useCNN=useCNN,
-                                                          dump_models=dump_models,
-                                                          ltfb_batch_interval=ltfb_batch_interval,
-                                                          num_epochs=num_epochs)
+    model = macc_models.construct_jag_wae_model(ydim=ydim,
+                                                zdim=zdim,
+                                                mcf=mcf,
+                                                useCNN=useCNN,
+                                                dump_models=dump_models,
+                                                ltfb_batch_interval=ltfb_batch_interval,
+                                                num_epochs=num_epochs)
 
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0001,beta1=0.9,beta2=0.99,eps=1e-8)

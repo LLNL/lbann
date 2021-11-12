@@ -1,4 +1,4 @@
-import macc_trainable_models
+import macc_models
 import argparse
 from os.path import abspath, dirname, join
 import google.protobuf.text_format as txtf
@@ -99,17 +99,17 @@ if __name__ == '__main__':
 
     trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size,
                             serialize_io=True)
-    model = macc_trainable_models.construct_macc_surrogate_model(xdim=args.xdim,
-                                                                 ydim=args.ydim,
-                                                                 zdim=args.zdim,
-                                                                 wae_mcf=args.wae_mcf,
-                                                                 surrogate_mcf=args.surrogate_mcf,
-                                                                 lambda_cyc=args.lambda_cyc,
-                                                                 useCNN=args.useCNN,
-                                                                 dump_models=args.dump_models,
-                                                                 pretrained_dir=args.pretrained_dir,
-                                                                 ltfb_batch_interval=args.ltfb_batch_interval,
-                                                                 num_epochs=args.num_epochs)
+    model = macc_models.construct_macc_surrogate_model(xdim=args.xdim,
+                                                       ydim=args.ydim,
+                                                       zdim=args.zdim,
+                                                       wae_mcf=args.wae_mcf,
+                                                       surrogate_mcf=args.surrogate_mcf,
+                                                       lambda_cyc=args.lambda_cyc,
+                                                       useCNN=args.useCNN,
+                                                       dump_models=args.dump_models,
+                                                       pretrained_dir=args.pretrained_dir,
+                                                       ltfb_batch_interval=args.ltfb_batch_interval,
+                                                       num_epochs=args.num_epochs)
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0001,beta1=0.9,beta2=0.99,eps=1e-8)
     # Load data reader from prototext
@@ -120,22 +120,13 @@ if __name__ == '__main__':
 
     kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
     status = lbann.contrib.launcher.run(trainer,model, data_reader_proto, opt,
-#                       scheduler='lsf',
                        nodes=args.num_nodes,
-#                       procs_per_node=args.ppn,
-#                       partition='pbatch',
                        time_limit=480,
-#                       setup_only=False,
                        job_name=args.job_name,
                        lbann_args=['--preload_data_store --use_data_store',
                                    f'--metadata={metadata_prototext}',
-                                   f'--data_reader_percent=0.1',
                                    f'--sample_list_train={args.sample_list_train}',
                                    f'--sample_list_test={args.sample_list_test}',
-#                                   f'--index_list_train={args.index_list_train}',
-#                                   f'--index_list_test={args.index_list_test}',
-#                                   f'--data_filedir_train={args.data_filedir_train}',
-#                                   f'--data_filedir_test={args.data_filedir_test}',
                                    f'--procs_per_trainer={args.procs_per_trainer}'],
                                    **kwargs)
     print(status)
