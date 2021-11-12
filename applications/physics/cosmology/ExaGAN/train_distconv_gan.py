@@ -162,6 +162,10 @@ if __name__ == '__main__':
     # Runtime parameters/arguments
     environment = lbann.contrib.args.get_distconv_environment(
         num_io_partitions=args.depth_groups)
+    environment['INPUT_WIDTH'] = os.environ['INPUT_WIDTH']
+    environment['DATA_DIR'] = os.environ['DATA_DIR']
+    environment['LBANN_DISTCONV_HALO_EXCHANGE'] = 'AL'
+    environment['LBANN_DISTCONV_TENSOR_SHUFFLER'] = 'AL'
 
     if args.dynamically_reclaim_error_signals:
         environment['LBANN_KEEP_ERROR_SIGNALS'] = 0
