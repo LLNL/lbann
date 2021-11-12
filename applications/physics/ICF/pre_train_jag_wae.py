@@ -50,10 +50,10 @@ parser.add_argument(
     help='use CNN', metavar='BOOL')
 parser.add_argument(
     '--sample-list-train', action='store', default='/p/vast1/lbann/datasets/JAG/10MJAG/1M_A/index.txt', type=str,
-    help='index list (default index.txt)', metavar='NAME')
+    help='sample list (default index.txt)', metavar='NAME')
 parser.add_argument(
     '--sample-list-test', action='store', default='/p/vast1/lbann/datasets/JAG/10MJAG/1M_B/t0_sample_list_multi_10K.txt', type=str,
-    help='index list (default t0_sample_list_multi_10K.txt, 100 samples)', metavar='NAME')
+    help='sample list (default t0_sample_list_multi_10K.txt, 100 samples)', metavar='NAME')
 parser.add_argument(
     '--dump-outputs', action='store', default='dump_outs', type=str,
     help='dump outputs dir (default: jobdir/dump_outs)', metavar='NAME')
@@ -73,7 +73,13 @@ if __name__ == '__main__':
 
     trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size,
                             serialize_io=True)
-    model = macc_trainable_models.construct_jag_wae_model(args.ydim, args.zdim, args.mcf, args.useCNN, args.dump_models, args.ltfb_batch_interval, args.num_epochs)
+    model = macc_trainable_models.construct_jag_wae_model(ydim=args.ydim,
+                                                          zdim=args.zdim,
+                                                          mcf=args.mcf,
+                                                          useCNN=args.useCNN,
+                                                          dump_models=args.dump_models,
+                                                          ltfb_batch_interval=args.ltfb_batch_interval,
+                                                          num_epochs=args.num_epochs)
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0001,beta1=0.9,beta2=0.99,eps=1e-8)
     # Load data reader from prototext
@@ -91,7 +97,7 @@ if __name__ == '__main__':
                        job_name=args.job_name,
                        lbann_args=['--use_data_store --preload_data_store',
                                    f'--metadata={metadata_prototext}',
-                                   f'--data_reader_percent=0.01',
+                                   f'--data_reader_percent=0.1',
                                    f'--sample_list_train={args.sample_list_train}',
                                    f'--sample_list_test={args.sample_list_test}',
                                    f'--procs_per_trainer={args.procs_per_trainer}'],

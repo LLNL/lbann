@@ -36,21 +36,25 @@ metadata_prototext = join(model_zoo_dir,
                              'data',
                              'jag_100M_metadata.prototext')
 
+xdim = 5 # input (x) dim (default: 5)
 ydim = 16399 # image+scalar dim (default: 64*64*4+15=16399)
 zdim = 20 # latent space dim (default: 20)
-mcf = 1 # model capacity factor (default: 1)
+wae_mcf = 1 # model capacity factor (default: 1)
+surrogate_mcf = 1 # model capacity factor (default: 1)
+lambda_cyc = 1e-3 # lambda-cyc (default: 1e-3)
+
 useCNN = False
 
 # Reconstruction loss
-expected_train_pc_range = (19.9, 20.0)
-expected_test_pc_range = (19.1, 19.2)
+expected_train_range = (0.66, 0.68)
+expected_test_range = (0.83, 0.84)
 
 # Average mini-batch time (in sec) for each LC system
 # Note that run times are with LBANN_DETERMINISTIC set
 # Commented out times are prior to thread safe RNGs
 expected_mini_batch_times = {
     'lassen':   0.0530066,
-    'pascal':   0.133671,
+    'pascal':   0.123863,
 }
 # ==============================================
 # Setup LBANN experiment
@@ -91,14 +95,19 @@ def setup_experiment(lbann):
     import macc_trainable_models
     dump_models = 'dump_models'
     ltfb_batch_interval = 0
-    model = macc_trainable_models.construct_jag_wae_model(ydim=ydim,
-                                                          zdim=zdim,
-                                                          mcf=mcf,
-                                                          useCNN=useCNN,
-                                                          dump_models=dump_models,
-                                                          ltfb_batch_interval=ltfb_batch_interval,
-                                                          num_epochs=num_epochs)
-
+    pretrained_dir = ' '
+    model = macc_trainable_models.construct_macc_surrogate_model(xdim=xdim,
+                                                                 ydim=ydim,
+                                                                 zdim=zdim,
+                                                                 wae_mcf=wae_mcf,
+                                                                 surrogate_mcf=surrogate_mcf,
+                                                                 lambda_cyc=lambda_cyc,
+                                                                 useCNN=useCNN,
+                                                                 dump_models=dump_models,
+                                                                 pretrained_dir=pretrained_dir,
+                                                                 ltfb_batch_interval=ltfb_batch_interval,
+                                                                 num_epochs=num_epochs)
+ 
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0001,beta1=0.9,beta2=0.99,eps=1e-8)
     # Load data reader from prototext
@@ -149,10 +158,10 @@ def augment_test_func(test_func):
         mini_batch_times = []
         with open(experiment_output['stdout_log_file']) as f:
             for line in f:
-                match = re.search('training epoch [0-9]+ recon_error : ([0-9.]+)', line)
+                match = re.search('training epoch [0-9]+ output cycle loss : ([0-9.]+)', line)
                 if match:
                     train_pc = float(match.group(1))
-                match = re.search('test recon_error : ([0-9.]+)', line)
+                match = re.search('test output cycle loss : ([0-9.]+)', line)
                 if match:
                     test_pc = float(match.group(1))
                 match = re.search('training epoch [0-9]+ mini-batch time statistics : ([0-9.]+)s mean', line)
@@ -160,15 +169,15 @@ def augment_test_func(test_func):
                     mini_batch_times.append(float(match.group(1)))
 
         # Check if training reconstruction is within expected range
-        assert (expected_train_pc_range[0]
+        assert (expected_train_range[0]
                 < train_pc
-                < expected_train_pc_range[1]), \
+                < expected_train_range[1]), \
                 'train reconstruction error is outside expected range'
 
         # Check if testing reconstruction  is within expected range
-        assert (expected_test_pc_range[0]
+        assert (expected_test_range[0]
                 < test_pc
-                < expected_test_pc_range[1]), \
+                < expected_test_range[1]), \
                 'test reconstruction error is outside expected range'
 
         # Check if mini-batch time is within expected range
