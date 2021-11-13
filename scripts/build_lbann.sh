@@ -430,9 +430,16 @@ function exit_with_instructions()
     exit 1
 }
 
+##########################################################################################
+# Figure out if there are default dependencies or flags (e.g.  MPI/BLAS library) for the center
+CENTER_DEPENDENCIES=
+CENTER_FLAGS=
+CENTER_BLAS_LIBRARY=
+set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
+
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^hydrogen".* ]]; then
     # If the user didn't supply a specific version of Hydrogen on the command line add one
-    HYDROGEN="^hydrogen${HYDROGEN_VER}"
+    HYDROGEN="^hydrogen${HYDROGEN_VER} ${CENTER_BLAS_LIBRARY}"
 fi
 
 if [[ (! "${LBANN_VARIANTS}" =~ .*"^aluminum".*) && (! "${LBANN_VARIANTS}" =~ .*"~al".*) ]]; then
@@ -443,7 +450,7 @@ fi
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^dihydrogen".* ]]; then
     # If the user didn't supply a specific version of DiHydrogen on the command line add one
     # Due to concretizer errors force the openmp variant for DiHydrogen
-    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER}"
+    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER} ${CENTER_BLAS_LIBRARY}"
 fi
 
 GPU_VARIANTS_ARRAY=('+cuda' '+rocm')
@@ -536,11 +543,6 @@ if [[ -z "${DRY_RUN:-}" ]]; then
     fi
     ${CMD} || exit_on_failure "${CMD}"
 fi
-
-# Figure out if there is a default MPI library for the center
-CENTER_DEPENDENCIES=
-CENTER_FLAGS=
-set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
 
 ##########################################################################################
 # See if the is a local spack mirror or buildcache
@@ -721,7 +723,8 @@ fi
 
 ##########################################################################################
 # Actually install LBANN from local source
-CMD="spack install ${BUILD_JOBS} ${INSTALL_BUILD_EXTRAS}"
+CMD="spack install --dirty ${BUILD_JOBS} ${INSTALL_BUILD_EXTRAS}"
+#CMD="spack install --dirty --reuse ${BUILD_JOBS} ${INSTALL_BUILD_EXTRAS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
