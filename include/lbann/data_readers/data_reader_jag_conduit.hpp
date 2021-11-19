@@ -197,7 +197,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   int get_num_data() const override;
   int get_num_labels() const override;
   int get_linearized_label_size() const override;
-  int get_linearized_size(const std::string& desc) const override;
 
   std::vector<El::Int> get_slice_points(const slice_points_mode var_category,
                                         bool& is_supported) override;

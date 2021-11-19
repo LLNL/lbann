@@ -1114,19 +1114,6 @@ int data_reader_jag_conduit::get_linearized_label_size() const {
   return m_num_labels;
 }
 
-int data_reader_jag_conduit::get_linearized_size(const std::string& desc) const {
-  if (desc == "JAG_Image") {
-    return get_linearized_size(JAG_Image);
-  } else if (desc == "JAG_Scalar") {
-    return get_linearized_size(JAG_Scalar);
-  } else if (desc == "JAG_Input") {
-    return get_linearized_size(JAG_Input);
-  } else {
-    LBANN_ERROR(_CN_ + ":: get_linearized_size() : unknown key " + desc);
-  }
-  return generic_data_reader::get_linearized_size(desc);
-}
-
 void data_reader_jag_conduit::set_split_image_channels() {
   m_split_channels = true;
 }
