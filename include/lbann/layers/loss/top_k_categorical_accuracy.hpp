@@ -32,8 +32,7 @@
 namespace lbann {
 
 
-/** @brief
- *
+/**
  *  Requires two inputs, which are respectively interpreted as
  *  prediction scores and as a one-hot label vector. The output is one
  *  if the corresponding label matches one of the top-k prediction

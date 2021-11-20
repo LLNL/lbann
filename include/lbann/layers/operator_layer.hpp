@@ -39,6 +39,10 @@
 
 namespace lbann {
 
+/** @brief Layer composed of one or more operator objects
+ *
+ *  Operators are applied sequentially.
+ */
 template <typename InputT, typename OutputT, data_layout Layout, El::Device D>
 class OperatorLayer final : public data_type_layer<InputT, OutputT>
 {

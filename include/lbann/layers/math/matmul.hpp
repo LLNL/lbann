@@ -33,11 +33,12 @@ namespace lbann {
 
 /** @brief Matrix multiplication.
  *
- *  Takes two 2D input tensors and outputs their matrix product.
- *  Matrix products are computed independently for each mini-batch
- *  sample, in a similar manner as NumPy's matmul function.
+ *  Performs matrix product of two 2D input tensors. If the input
+ *  tensors are 3D, then matrix products are computed independently
+ *  over the first dimension, in a similar manner as NumPy's matmul
+ *  function.
  *
- *  @todo Support >2 dimensions, matvecs, and dot products
+ *  @todo Support >3 dimensions, matvecs, and dot products
  *
  */
 template <typename TensorDataType,

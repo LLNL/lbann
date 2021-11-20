@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-/** @brief L1 vector norm.
+/** @brief L1 vector norm
  *
  *  @f[ \lVert x\rVert_1 = \sum\limits_{i} | x_i | @f]
  */

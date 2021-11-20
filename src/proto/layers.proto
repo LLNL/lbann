@@ -44,25 +44,101 @@ enum ConvTensorOpsMode {
   USE_TENSOR_OPS = 2;
 }
 
+/** @brief Neural network tensor operation
+ *
+ *  Layers in a neural network are arranged as a directed acyclic
+ *  graph. They take one input tensor from each parent layer and send
+ *  an output tensor to each child layer. Some layers may recieve
+ *  tensors from weights objects (trainable parameters).
+ *
+ *  LBANN performs implicit mini-batching. If the user specifies a
+ *  layer to handle 3D image data (in channel-height-width format), it
+ *  is stored internally as a 4D tensor (in NCHW format).
+ *
+ *  The default value for fields in protobuf messages is zero-like
+ *  (false for bool, empty string for string). Thus, all defaults are
+ *  zero-like unless otherwise stated.
+ */
 message Layer {
+
+  // ===========================================
+  // Basic layer options
+  // ===========================================
+
+  /** @brief Unique identifier for layer
+   *  @details Must not contain spaces.
+   */
   string name = 50;
+
+  /** @brief Parent layers
+   *  @details Space-separated list of layer names
+   */
   string parents = 151;
+  /** @brief Child layers
+   *  @details Space-separated list of layer names
+   */
   string children = 152;
-  string data_layout = 52;
-  string device_allocation = 55;
-  DataType datatype = 57;
+  /** @brief Weights objects
+   *
+   *  Space-separated list of weights names. Weights are typically
+   *  used as trainable parameters.
+   */
   string weights = 54;
-  bool num_neurons_from_data_reader = 53;
-  bool freeze = 5;
+
+  /** @brief Data tensor device
+   *
+   *  If LBANN has been built with GPU support, default is GPU.
+   *  Otherwise, CPU.
+   *
+   *  Options: CPU or GPU
+   */
+  string device_allocation = 55;
+  /** @brief Data tensors datatype */
+  DataType datatype = 57;
+
+  // ===========================================
+  // Advanced options
+  // ===========================================
+
+  /** @brief Hint layer for configuration
+   *
+   *  Advanced option for configuring certain layers. Typically used
+   *  to specify that a layer has the same output dimensions as
+   *  another.
+   */
   string hint_layer = 56;
+  /** @brief Data tensor layout
+   *  @details Options: data_parallel (default) or model_parallel
+   */
+  string data_layout = 52;
+  /** @brief Configuration for advanced parallelization strategies */
   ParallelStrategy parallel_strategy = 58;
 
+  // ===========================================
+  // Deprecated options
+  // ===========================================
+
+  /// Deprecated
+  bool num_neurons_from_data_reader = 53;
+  /// Deprecated
+  bool freeze = 5;
+  /// Deprecated
   repeated WeightsData weights_data = 153;
+  /// Deprecated
   string top = 154;
+  /// Deprecated
   string bottom = 155;
+  /// Deprecated
   string type = 156;
 
+  // ===========================================
+  // Concrete layer types
+  // ===========================================
+  // Note: This is a somewhat hacky implementation of class
+  // inheritance.
+
   oneof layer_type {
+
     // Input layers
     Input input = 2;
 
@@ -161,100 +237,282 @@ message Layer {
 
   }
 
-  ///////////////////////
-  // Operator layers   //
-  ///////////////////////
+  // ---------------------------
+  // Operator layers
+  // ---------------------------
+
+  /** @brief Layer composed of one or more operator objects
+   *
+   *  Operators are applied sequentially.
+   */
   message OperatorLayer {
     repeated Operator ops = 1;
   }
 
-  ///////////////////////
-  // Math layers       //
-  ///////////////////////
+  // ---------------------------
+  // Math layers
+  // ---------------------------
+
+  /** @brief Absolute value of discrete Fourier transform
+   *
+   *  One-, two-, or three-dimensional data is allowed.
+   *
+   *  The implementation is meant to be as flexible as possible. We
+   *  use FFTW for the CPU implementation; whichever types your
+   *  implementation of FFTW supports will be supported in this layer
+   *  at runtime. The GPU implementation uses cuFFT on NVIDIA GPUs and
+   *  will support float and double at runtime (assuming CUDA support
+   *  is enabled). A future implementation will support rocFFT for AMD
+   *  GPUs.
+   *
+   *  Currently, LBANN only supports outputting the same type that is
+   *  used as input. As such, in forward propagation, this will do a
+   *  DFT and then compute the absolute value of the output
+   *  implicitly. The intention is to support immediate customer need
+   *  now; we will generalize this as LBANN learns to support
+   *  different input/output data types.
+   */
   message DFTAbs {}
 
   /** @brief Matrix multiplication.
    *
-   *  Takes two 2D input tensors and outputs their matrix product.
-   *  Matrix products are computed independently for each mini-batch
-   *  sample, in a similar manner as NumPy's matmul function.
+   *  Performs matrix product of two 2D input tensors. If the input
+   *  tensors are 3D, then matrix products are computed independently
+   *  over the first dimension, in a similar manner as NumPy's matmul
+   *  function.
    */
   message MatMul {
-    /** If true, matrices from the first input tensor are transposed
-     *  before multiplication.
-     */
+    /// Whether to transpose matrices from first input tensor
     bool transpose_a = 1;
-    /** If true, matrices from the second input tensor are transposed
-     *  before multiplication.
-     */
+    /// Whether to transpose matrices from second input tensor
     bool transpose_b = 2;
   }
 
-  ///////////////////////
-  // Activation layers //
-  ///////////////////////
+  // ---------------------------
+  // Activation layers
+  // ---------------------------
+
+  /** @brief Exponential linear unit
+   *
+   *  @f[
+   *    \text{ELU}(x; \alpha) =
+   *      \begin{cases}
+   *        x                & x > 0 \\
+   *        \alpha (e^x - 1) & x \leq 0
+   *      \end{cases}
+   *  @f]
+   *  @f$\alpha@f$ should be non-negative. See:
+   *
+   *  Djork-Arne Clevert, Thomas Unterthiner, and Sepp Hochreiter.
+   *  "Fast and accurate deep network learning by exponential linear
+   *  units (ELUs)." arXiv preprint arXiv:1511.07289 (2015).
+   */
   message Elu {
-    double alpha = 1; //default: 1.0; should be >= 0
+    /// Default: 1. Should be >=0.
+    double alpha = 1;
   }
+  /** @brief Output the input tensor
+   *
+   *  This layer is very cheap since it just involves setting up
+   *  tensor views.
+   */
   message Identity {}
+
+  /**
+   *  @f[
+   *    \text{LeakyReLU}(x; \alpha) =
+   *      \begin{cases}
+   *        x        & x > 0 \\
+   *        \alpha x & x \leq 0
+   *      \end{cases}
+   *  @f]
+   *  See:
+   *
+   *  Andrew L. Maas, Awni Y. Hannun, and Andrew Y. Ng. "Rectifier
+   *  nonlinearities improve neural network acoustic models." In
+   *  Proc. ICML, vol. 30, no. 1, p. 3. 2013.
+   */
   message LeakyRelu {
-    double negative_slope = 1; //default: 0.01
+    /// Default: 0.01
+    double negative_slope = 1;
   }
 
-  /** @brief Logarithm of softmax function.
+  /** @brief Logarithm of softmax function
    *
    *  @f[ \log \text{softmax}(x)_i = x_i - \log \sum_j e^{x_j} @f]
    */
   message LogSoftmax {}
 
+  /** @brief Rectified linear unit
+   *
+   *  \f[ ReLU(x) = \text{max}(x, 0) \f]
+   */
   message Relu {}
 
   /**
    *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
    */
   message Softmax {
-    string softmax_mode = 1; // default: "instance"; should be "instance" or "channel"
+    /// Options: instance (default), channel
+    string softmax_mode = 1;
   }
 
-  ///////////////////////
-  // Loss layers //
-  ///////////////////////
+  // ---------------------------
+  // Loss layers
+  // ---------------------------
+
+  /** @brief Cross entropy between probability vectors
+   *
+   *  Given a predicted distribution @f$y@f$ and ground truth
+   *  distribution @f$\hat{y}@f$,
+   *  @f[ CE(y,\hat{y}) = - \sum\limits_{i} \hat{y}_i \log y_i @f]
+   */
   message CrossEntropy {
-    bool use_labels = 1; //default: false
+    /// Advanced option for distconv
+    bool use_labels = 1;
   }
+  /**
+   *  Given a prediction @f$y@f$ and ground truth @f$\hat{y}@f$,
+   *  @f[
+   *    MSE(y,\hat{y})
+   *      = \frac{1}{n} \sum\limits_{i=1}^{n} (y_i - \hat{y}_i)^2
+   *  @f]
+   */
   message MeanSquaredError {}
+  /**
+   *  Given a prediction @f$y@f$ and ground truth @f$\hat{y}@f$,
+   *  @f[
+   *    MAE(y,\hat{y})
+   *      = \frac{1}{n} \sum\limits_{i=1}^{n} | y_i - \hat{y}_i |
+   *  @f]
+   */
   message MeanAbsoluteError {}
+  /** @brief 0-1 loss function
+   *
+   *  Requires two inputs, which are respectively interpreted as
+   *  prediction scores and as a one-hot label vector. The output is
+   *  one if the top entries in both inputs are in the same position
+   *  and is otherwise zero. Ties are broken in favor of entries with
+   *  smaller indices.
+   *  This is primarily intended for use as a metric since it is not
+   *  differentiable.
+   */
   message CategoricalAccuracy {}
+  /**
+   *  Requires two inputs, which are respectively interpreted as
+   *  prediction scores and as a one-hot label vector. The output is
+   *  one if the corresponding label matches one of the top-k
+   *  prediction scores and is otherwise zero. Ties in the top-k
+   *  prediction scores are broken in favor of entries with smaller
+   *  indices.
+   */
   message TopKCategoricalAccuracy {
     int64 k = 1;
   }
+  /** @brief Square of L2 vector norm
+   *
+   *  @f[ \lVert x\rVert_2^2 = \sum\limits_{i} x_i^2 @f]
+   */
   message L2Norm2 {}
+  /** @brief L1 vector norm
+   *
+   *  @f[ \lVert x\rVert_1 = \sum\limits_{i} | x_i | @f]
+   */
   message L1Norm {}
 
-  ///////////////////////////
-  // Regularization layers //
-  ///////////////////////////
+  // ---------------------------
+  // Regularization layers
+  // ---------------------------
+
+  /** @brief Channel-wise batch normalization, including scale/bias
+   *
+   *  Each input channel is normalized across the mini-batch to have
+   *  zero mean and unit standard deviation. Learned scaling factors
+   *  and biases are then applied. This uses the standard approach of
+   *  maintaining the running mean and standard deviation (with
+   *  exponential decay) for use at test time. See:
+   *
+   *  Sergey Ioffe and Christian Szegedy. "Batch Normalization:
+   *  Accelerating Deep Network Training by Reducing Internal
+   *  Covariate Shift." In International Conference on Machine
+   *  Learning, pp. 448-456. 2015.
+   */
   message BatchNormalization {
-    double decay = 1;          //default: 0.9
-    double scale_init = 2;     //default: 1.0
-    double bias_init = 3;      //default: 0.0
-    double epsilon = 4;        //default: 1e-5
-    string stats_aggregation = 5; // default: local; deprecated
-    // default: 1 (local aggregation); set to a negative value for global stats.
+    /** @brief Decay factor for running statistics
+     *  @details Default: 0.9
+     */
+    double decay = 1;
+    /** @brief Small number for numerical stability
+     *  @details Default: 1e-5
+     */
+    double epsilon = 4;
+    /** @brief Size of process group for computing statistics
+     *
+     *  Default: 1
+     *
+     *  A group size of 1 implies purely local statistics. A negative
+     *  group size indicates global statistics (i.e. statistics over
+     *  the entire mini-batch).
+     */
     int64 statistics_group_size = 6;
+
+    /// Deprecated and unused
+    double scale_init = 2;
+    /// Deprecated and unsued
+    double bias_init = 3;
+    /// Deprecated
+    string stats_aggregation = 5;
+
   }
 
+  /** @brief Entry-wise batch normalization, including scale/bias
+   *
+   *  Each input entry is normalized across the mini-batch to have
+   *  zero mean and unit standard deviation. This uses the standard
+   *  approach of maintaining the running mean and standard deviation
+   *  (with exponential decay) for use at test time. See:
+   *
+   *  Sergey Ioffe and Christian Szegedy. "Batch Normalization:
+   *  Accelerating Deep Network Training by Reducing Internal
+   *  Covariate Shift." In International Conference on Machine
+   *  Learning, pp. 448-456. 2015.
+   */
   message EntrywiseBatchNormalization {
+    /** @brief Decay factor for running statistics
+     *  @details Recommendation: 0.9
+     */
     double decay = 1;
+    /** @brief Small number for numerical stability
+     *  @details Recommendation: 1e-5
+     */
     double epsilon = 2;
   }
 
+  /** @brief Scaled dropout for use with SELU activations.
+   *
+   *  A default keep probability of 0.95 is recommended. See:
+   *
+   *  Gunter Klambauer, Thomas Unterthiner, Andreas Mayr, and Sepp
+   *  Hochreiter. "Self-normalizing neural networks." In Advances in
+   *  Neural Information Processing Systems, pp. 971-980. 2017.
+   */
   message SeluDropout {
-    double keep_prob = 2; //default: 0.95
-    double alpha = 3;     //default: 1.6732632423543772848170429916717
-    double scale = 4;     //default: 1.0507009873554804934193349852946
+    /// Recommendation: 0.95
+    double keep_prob = 2;
+    /// Default: 1.6732632423543772848170429916717
+    double alpha = 3;
+    /// Default: 1.0507009873554804934193349852946
+    double scale = 4;
   }
 
+  /**
+   *  See:
+   *
+   *  Alex Krizhevsky, Ilya Sutskever, and Geoffrey E. Hinton. "ImageNet
+   *  classification with deep convolutional neural networks." In
+   *  Advances in Neural Information Processing Systems,
+   *  pp. 1097-1105. 2012.
+   */
   message LocalResponseNormalization {
     int64 window_width = 4;
     double lrn_alpha = 5;
@@ -262,11 +520,25 @@ message Layer {
     double lrn_k = 7;
   }
 
+  /** @brief Probabilistically drop tensor entries
+   *
+   *  The values multiplied by 1/(keep probability) at training time.
+   *  Keep probabilities of 0.5 for fully-connected layers and 0.8 for
+   *  input layers are good starting points. See:
+   *
+   *  Nitish Srivastava, Geoffrey Hinton, Alex Krizhevsky, Ilya
+   *  Sutskever, and Ruslan Salakhutdinov. "Dropout: a simple way to
+   *  prevent neural networks from overfitting." The Journal of
+   *  Machine Learning Research 15, no. 1 (2014): 1929-1958.
+   */
   message Dropout {
-    double keep_prob = 2;  //default: 0.5
+    /** @brief Probability of keeping each tensor entry
+     *  @details Recommendation: 0.5
+     */
+    double keep_prob = 2;
   }
 
-  /** @brief
+  /** @brief Normalize over data samples
    *
    *  Each data sample is normalized to have zero mean and unit
    *  standard deviation. See:
@@ -280,28 +552,49 @@ message Layer {
    */
   message LayerNorm {
     /** @brief Small number to avoid division by zero.
-     *  @details Default is 1e-5.
+     *  @details Default: 1e-5
      */
     google.protobuf.DoubleValue epsilon = 1;
   }
 
+  /** @brief Normalize over data channels
+   *
+   *  Each channel within a data sample is normalized to have zero
+   *  mean and unit standard deviation. See:
+   *
+   *  Dmitry Ulyanov, Andrea Vedaldi, and Victor Lempitsky. "Instance
+   *  normalization: The missing ingredient for fast stylization."
+   *  arXiv preprint arXiv:1607.08022 (2016).
+   *
+   *  This is equivalent to applying layer normalization independently
+   *  to each channel. Note that this layer does not apply a
+   *  channel-wise scale and bias. Use the channel-wise scale/bias
+   *  layer to reproduce that functionality.
+   */
   message InstanceNorm {
     /** @brief Small number to avoid division by zero.
-     *  @details Default is 1e-5.
+     *  @details Default: 1e-5
      */
     google.protobuf.DoubleValue epsilon = 1;
   }
 
-  //////////////////
-  // Input layers //
-  //////////////////
+  // ---------------------------
+  // I/O layers
+  // ---------------------------
+
+  /** @brief Data tensor from data reader */
   message Input {
-    string data_field = 1; // legacy names are: samples, labels, responses
+    /** @brief Data tensor name
+     *
+     *  Legacy values are "samples", "labels", "responses".
+     */
+    string data_field = 1;
   }
 
-  //////////////////////
-  // Transform layers //
-  //////////////////////
+  // ---------------------------
+  // Transform layers
+  // ---------------------------
+
   message Reshape {
     int64 num_dims = 1; //DEPRECATED
     string dims = 2; //should be space-separated list of ints, e.g, "2 6 7"
@@ -516,9 +809,9 @@ message Layer {
     */
   message BatchwiseReduceSum {}
 
-  /////////////////////
-  // Learning layers //
-  /////////////////////
+  // ---------------------------
+  // Learning layers
+  // ---------------------------
 
   /** @brief Affine transformation
    *
@@ -681,9 +974,10 @@ message Layer {
     google.protobuf.UInt64Value num_layers = 2;
   }
 
-  //////////////////
-  // Image layers //
-  //////////////////
+  // ---------------------------
+  // Image layers
+  // ---------------------------
+
   message BilinearResize {
     int64 height = 1;
     int64 width = 2;
@@ -704,9 +998,9 @@ message Layer {
    */
   message CompositeImageTransformation {}
 
-  //////////////////////////
-  // Miscellaneous layers //
-  //////////////////////////
+  // ---------------------------
+  // Miscellaneous layers
+  // ---------------------------
 
   message Covariance {
     bool biased = 1; //Whether to use a biased covariance estimate
@@ -804,33 +1098,6 @@ message Layer {
 
 } // message Layer
 
-//note: I'd like to put this enum inside of Layer, but if I do the enum values
-//      become, e.g, Layer_Imcomm_EXCLUDE, which is just ugly
-enum Imcomm {
-  DEFAULT = 0; //add Layer to Imcomm callback if all_learning_layers = true in
-               //the CallbackImComm
-  EXCLUDE = 1; //*do not* add Layer to Imcomm callback if all_learning_layers = true in
-               //the CallbackImComm
-  INCLUDE = 2;  //add Layer to Imcomm callback regardless of whether all_learning_layers
-                //in the CallbackImComm is set to true or false
-}
-
-// Weight data for exporting
-message WeightsShape {
-  repeated int64 dim = 1 [packed = true];
-}
-
-message WeightsData {
-  WeightsShape shape = 5;
-  string name = 1;
-  int64 height = 2;
-  int64 width = 3;
-  //@todo assume float above, add other datatype
-  repeated float data = 4 [packed=true];
-
-  Imcomm imcomm = 55;
-}
-
 //========================================================================
 // Parallel strategies for generalized layer-wise parallelism
 //========================================================================
@@ -853,4 +1120,31 @@ message ParallelStrategy {
   int64 sub_branch_tag = 15;
   int64 sub_branch_resource_percentage = 16;
   bool enable_subgraph = 17;
+}
+
+// =============================================
+// Deprecated messages
+// =============================================
+
+/// Deprecated
+message WeightsShape {
+  repeated int64 dim = 1 [packed = true];
+}
+/// Deprecated
+message WeightsData {
+  WeightsShape shape = 5;
+  string name = 1;
+  int64 height = 2;
+  int64 width = 3;
+  repeated float data = 4 [packed=true];
+  Imcomm imcomm = 55;
+}
+/// Deprecated
+enum Imcomm {
+  DEFAULT = 0; //add Layer to Imcomm callback if all_learning_layers = true in
+               //the CallbackImComm
+  EXCLUDE = 1; //*do not* add Layer to Imcomm callback if all_learning_layers = true in
+               //the CallbackImComm
+  INCLUDE = 2;  //add Layer to Imcomm callback regardless of whether all_learning_layers
+                //in the CallbackImComm is set to true or false
 }
