@@ -133,8 +133,6 @@ int lbann::generic_data_reader::fetch(
   }
   #endif
 
-  int loaded_batch_size = get_loaded_mini_batch_size();
-
   if(!position_valid()) {
     if(position_is_overrun()) {
       return 0;
