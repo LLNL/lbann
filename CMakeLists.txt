@@ -196,11 +196,13 @@ find_package(Threads REQUIRED)
 find_package(Clara REQUIRED)
 
 find_package(CEREAL NO_MODULE
+  NAMES cereal
   HINTS ${CEREAL_DIR} $ENV{CEREAL_DIR}
   PATH_SUFFIXES share/cmake/cereal
   NO_DEFAULT_PATH)
 if (NOT CEREAL_FOUND)
-  find_package(CEREAL NO_MODULE REQUIRED)
+  find_package(CEREAL NO_MODULE REQUIRED
+    NAMES cereal)
 endif ()
 set(LBANN_HAS_CEREAL ${CEREAL_FOUND})
 # The imported target is just called "cereal". Super.
