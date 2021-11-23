@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-/** @brief Placeholder layer.
+/** @brief Placeholder layer with no child layers
  *
  *  Does no computation and is primarily intended as a placeholder for
  *  unused layer outputs.

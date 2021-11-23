@@ -33,7 +33,7 @@
 
 namespace lbann {
 
-/** @brief Add tensors with specified scaling factors. */
+/** @brief Add tensors with scaling factors */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>

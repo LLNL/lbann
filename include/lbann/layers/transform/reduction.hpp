@@ -33,7 +33,7 @@ namespace lbann {
 
 enum class reduction_mode {INVALID, SUM, AVERAGE};
 
-/** @brief Reduce tensor to scalar.
+/** @brief Reduce tensor to scalar
  *
  *  @todo Reduction over specified dimensions.
  */

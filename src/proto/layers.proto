@@ -122,13 +122,13 @@ message Layer {
   bool num_neurons_from_data_reader = 53;
   /// Deprecated
   bool freeze = 5;
-  /// Deprecated
+  /// Deprecated and unused
   repeated WeightsData weights_data = 153;
-  /// Deprecated
+  /// Deprecated and unused
   string top = 154;
-  /// Deprecated
+  /// Deprecated and unused
   string bottom = 155;
-  /// Deprecated
+  /// Deprecated and unused
   string type = 156;
 
   // ===========================================
@@ -139,10 +139,10 @@ message Layer {
 
   oneof layer_type {
 
-    // Input layers
+    // Input layer
     Input input = 2;
 
-    // Operator layers
+    // Operator layer
     OperatorLayer operator_layer = 701; // Name chosen to avoid collision
 
     // Transform layers
@@ -424,13 +424,20 @@ message Layer {
   // Regularization layers
   // ---------------------------
 
-  /** @brief Channel-wise batch normalization, including scale/bias
+  /** @brief Channel-wise batch normalization
    *
    *  Each input channel is normalized across the mini-batch to have
    *  zero mean and unit standard deviation. Learned scaling factors
    *  and biases are then applied. This uses the standard approach of
    *  maintaining the running mean and standard deviation (with
-   *  exponential decay) for use at test time. See:
+   *  exponential decay) for use at test time.
+   *
+   *  This layer maintains four weights: scales, biases, running
+   *  means, and running variances. Each has a size equal to the
+   *  number of channels. In order to disable the affine operation,
+   *  manually construct weights without optimizers.
+   *
+   *  See:
    *
    *  Sergey Ioffe and Christian Szegedy. "Batch Normalization:
    *  Accelerating Deep Network Training by Reducing Internal
@@ -465,12 +472,19 @@ message Layer {
 
   }
 
-  /** @brief Entry-wise batch normalization, including scale/bias
+  /** @brief Entry-wise batch normalization
    *
    *  Each input entry is normalized across the mini-batch to have
    *  zero mean and unit standard deviation. This uses the standard
    *  approach of maintaining the running mean and standard deviation
-   *  (with exponential decay) for use at test time. See:
+   *  (with exponential decay) for use at test time.
+   *
+   *  This layer maintains two weights: running means, and running
+   *  variances. Each has a shape identical to the data tensor. It is
+   *  common to apply an affine operation after this layer, e.g. with
+   *  the entry-wise scale/bias layer.
+   *
+   *  See:
    *
    *  Sergey Ioffe and Christian Szegedy. "Batch Normalization:
    *  Accelerating Deep Network Training by Reducing Internal
@@ -546,9 +560,8 @@ message Layer {
    *  Jimmy Lei Ba, Jamie Ryan Kiros, and Geoffrey E. Hinton. "Layer
    *  normalization." arXiv preprint arXiv:1607.06450 (2016).
    *
-   *  Note that this layer does not apply an entry-wise scale and bias
-   *  like in the paper. Use the entry-wise scale/bias layer to
-   *  reproduce that functionality.
+   *  It is common to apply an affine operation after this layer, e.g.
+   *  with the entry-wise scale/bias layer.
    */
   message LayerNorm {
     /** @brief Small number to avoid division by zero.
@@ -567,9 +580,8 @@ message Layer {
    *  arXiv preprint arXiv:1607.08022 (2016).
    *
    *  This is equivalent to applying layer normalization independently
-   *  to each channel. Note that this layer does not apply a
-   *  channel-wise scale and bias. Use the channel-wise scale/bias
-   *  layer to reproduce that functionality.
+   *  to each channel. It is common to apply an affine operation after
+   *  this layer, e.g. with the channel-wise scale/bias layer.
    */
   message InstanceNorm {
     /** @brief Small number to avoid division by zero.
@@ -584,7 +596,7 @@ message Layer {
 
   /** @brief Data tensor from data reader */
   message Input {
-    /** @brief Data tensor name
+    /** @brief Data field in data reader
      *
      *  Legacy values are "samples", "labels", "responses".
      */
@@ -595,29 +607,88 @@ message Layer {
   // Transform layers
   // ---------------------------
 
+  /** @brief Reinterpret tensor with new dimensions
+   *
+   *  The input and output tensors must have the same number of
+   *  entries. This layer is very cheap since it just involves setting
+   *  up tensor views.
+   */
   message Reshape {
-    int64 num_dims = 1; //DEPRECATED
-    string dims = 2; //should be space-separated list of ints, e.g, "2 6 7"
+    /** @brief Tensor dimensions
+     *
+     *  Space-separated list of integers. A single dimension may be
+     *  -1, in which case the dimension is inferred.
+     */
+    string dims = 1;
+
+    /// Deprecated and unused
+    int64 num_dims = 2;
   }
 
+  /** @brief Pooling
+   *
+   *  Traverses the spatial dimensions of a data tensor with a sliding
+   *  window and applies a reduction operation.
+   */
   message Pooling {
-    int64 num_dims = 1;
 
-    bool has_vectors = 2;
+    /** @brief Pooling operation
+     *
+     *  Options: max, average, average_no_pad
+     */
+    string pool_mode = 1;
 
-    //these are used if has_vectors = true
-    string pool_dims = 4; //should be space-separated list, e.g, "2 2 3"
-    string pool_pads = 5; //should be space-separated list, e.g, "2 2 3"
-    string pool_strides = 6; //should be space-separated list, e.g, "2 2 3"
+    /** @brief Number of spatial dimensions
+     *
+     *  The first data dimension is treated as the channel dimension,
+     *  and all others are treated as spatial dimensions (recall that
+     *  the mini-batch dimension is implicit).
+     */
+    int64 num_dims = 2;
 
-    //these are used if has_vectors = false
-    int64 pool_dims_i = 10;
-    int64 pool_pads_i = 11;
-    int64 pool_strides_i = 12;
+    /** @brief Whether to use vector-valued options
+     *
+     *  If true, then the pooling is configured with @c pool_dims,
+     *  @c pool_pads, @c pool_strides. Otherwise, @c pool_dims_i,
+     *  @c pool_pads_i, @c pool_strides_i.
+     */
+    bool has_vectors = 3;
 
-    //pool_mode should be one of: max, average, average_no_pad
-    //see: lbann/include/lbann/lbann_base.hpp
-    string pool_mode = 7;
+    /** @brief Pooling window dimensions (vector-valued)
+     *
+     *  Space-separated list of integers, one for each spatial
+     *  dimension. Used when @c has_vectors is enabled.
+     */
+    string pool_dims = 4;
+    /** @brief Pooling padding (vector-valued)
+     *
+     *  Space-separated list of integers, one for each spatial
+     *  dimension. Used when @c has_vectors is enabled.
+     */
+    string pool_pads = 5;
+    /** @brief Pooling strides (vector-valued)
+     *
+     *  Space-separated list of integers, one for each spatial
+     *  dimension. Used when @c has_vectors is enabled.
+     */
+    string pool_strides = 6;
+
+    /** @brief Pooling window dimension (integer-valued)
+     *
+     *  Used when @c has_vectors is disabled.
+     */
+    int64 pool_dims_i = 7;
+    /** @brief Pooling padding (integer-valued)
+     *
+     *  Used when @c has_vectors is disabled.
+     */
+    int64 pool_pads_i = 8;
+    /** @brief Pooling stride (integer-valued)
+     *
+     *  Used when @c has_vectors is disabled.
+     */
+    int64 pool_strides_i = 9;
+
   }
 
   /** @brief Transpose of pooling layer
@@ -629,181 +700,334 @@ message Layer {
    *  @todo GPU support.
    */
   message Unpooling {
+    /** @brief Number of spatial dimensions
+     *
+     *  The first data dimension is treated as the channel dimension,
+     *  and all others are treated as spatial dimensions (recall that
+     *  the mini-batch dimension is implicit).
+     */
     int64 num_dims = 1;
   }
 
-
+  /** @brief Concatenate tensors along specified dimension
+   *
+   *  All input tensors must have identical dimensions, except for the
+   *  concatenation dimension.
+   */
   message Concatenation {
+    /// Tensor dimension to concatenate along
     int64 axis = 1;
   }
 
+  /** @brief Slice tensor along specified dimension
+   *
+   *  The tensor is split along one dimension at user-specified
+   *  points, and each child layer recieves one piece.
+   */
   message Slice {
+
+    /// Tensor dimension to slice along
     int64 axis = 1;
-    string slice_points = 2; //should be space-separated list of ints, e.g, "2 6 7"
-    //the following is for jag_conduit_hdf5;
-    string get_slice_points_from_reader = 4;
-    bool get_slice_points_from_reader_bool = 5;
+    /** @brief Positions at which to slice tensor
+     *
+     *  Space-separated list of integers. Slice points must be in
+     *  ascending order and the number of slice points must be one
+     *  greater than the number of child layers.
+     */
+    string slice_points = 2;
+
+    /** @brief Deprecated
+     *  @details Hack for jag_conduit_hdf5
+     */
+    string get_slice_points_from_reader = 3;
+    /** @brief Deprecated
+     *  @details Hack for jag_conduit_hdf5
+     */
+    bool get_slice_points_from_reader_bool = 4;
   }
 
+  /** @brief Output the input tensor to multiple child layers
+   *
+   *  Rarely needed by users. This layer is used internally to handle
+   *  cases where a layer outputs the same tensor to multiple child
+   *  layers. From a usage perspective, there is little difference
+   *  from an identity layer.
+   *
+   *  This layer is very cheap since it just involves setting up
+   *  tensor views.
+   */
   message Split {
   }
 
+  /** @brief Add multiple tensors */
   message Sum {
   }
 
+  /** @brief Add tensors over multiple sub-grids and slice
+   *
+   *  This is experimental functionality for use with sub-grid
+   *  parallelism.
+   */
   message Cross_Grid_Sum_Slice {
   }
-
+  /** @brief Add tensors over multiple sub-grids
+   *
+   *  This is experimental functionality for use with sub-grid
+   *  parallelism.
+   */
   message Cross_Grid_Sum {
   }
 
+  /** @brief Add tensors with scaling factors */
   message WeightedSum {
+    /** Space-separated list of floating-point numbers, one for each
+     *  input tensor.
+     */
     string scaling_factors = 1;
-    //should be a space-separated list of doubles, e.g. "1.0 2.0 -1.0"
   }
 
+  /** @brief Entry-wise tensor product */
   message Hadamard {
   }
 
+  /** @brief Output tensor filled with a single value */
   message Constant {
-    double value=1;
-    string num_neurons=2;
+    /** @brief Value of tensor entries */
+    double value = 1;
+    /** @brief Tensor dimensions
+     *  @details Space-separated list of integers
+     */
+    string num_neurons = 2;
   }
 
-  /** @brief Reduce tensor to scalar. */
+  /** @brief Reduce tensor to scalar */
   message Reduction {
-    string mode=1; // "sum" (default) or "mean"
+    /** @brief Reduction operation
+     *  @details Options: sum (default) or mean
+     */
+    string mode = 1;
   }
 
+  /** @brief Interface with objective function and metrics
+   *
+   *  Rarely needed by users. Evaluation layers are automatically
+   *  created when needed in the compute graph.
+   */
   message Evaluation {
   }
 
+  /** @brief Random tensor with Gaussian/normal distribution */
   message Gaussian {
+    /** @brief Distribution mean */
     double mean = 1;
+    /** @brief Distribution standard deviation */
     double stdev = 2;
+    /** @brief Tensor dimensions
+     *  @details Space-separated list of integers
+     */
     string neuron_dims = 3;
+    /** @brief Only generate random values during training
+     *
+     *  If true, the tensor is filled with the distribution mean
+     *  during evaluation.
+     */
     bool training_only = 4;
   }
 
+  /** @brief Random tensor with Bernoulli distribution
+   *
+   *  Randomness is only applied during training. The tensor is filled
+   *  with zeros during evaluation.
+   */
   message Bernoulli {
+    /** @brief Bernoulli distribution probability */
     double prob = 1;
+    /** @brief Tensor dimensions
+     *  @details Space-separated list of integers
+     */
     string neuron_dims = 2;
   }
 
+  /** @brief Random tensor with uniform distribution */
   message Uniform {
+    /** @brief Distribution minimum */
     double min = 1;
+    /** @brief Distribution maximum */
     double max = 2;
+    /** @brief Tensor dimensions
+     *  @details Space-separated list of integers
+     */
     string neuron_dims = 3;
+    /** @brief Only generate random values during training
+     *
+     *  If true, the tensor is filled with the distribution mean
+     *  during evaluation.
+     */
     bool training_only = 4;
   }
 
-
+  /** @brief Extract crop from tensor at a position
+   *
+   *  Expects two input tensors: an @f$ N @f$-D data tensor and a 1D
+   *  position vector with @f$ N @f$ entries. The position vector
+   *  should be normalized so that values are in @f$ [0,1] @f$. For
+   *  images in CHW format, a position of (0,0,0) corresponds to the
+   *  red-top-left corner and (1,1,1) to the blue-bottom-right corner.
+   */
   message Crop {
+    /** @brief Crop dimensions
+     *  @details Space-separated list of integers
+     */
     string dims = 3;
   }
 
+  /// Deprecated
   message CategoricalRandom {
   }
 
+  /// Deprecated
   message DiscreteRandom {
     string values = 1;
     string dims = 2;
   }
 
+  /** @brief Placeholder layer with no child layers
+   *
+   *  Rarely needed by users. This layer is used internally to handle
+   *  cases where a layer has no child layers.
+   */
   message Dummy {
   }
 
+  /** @brief Block error signals during back propagation
+   *
+   *  The output is identical to the input, but the back propagation
+   *  output (i.e. the error signal) is always zero. Compare with the
+   *  stop_gradient operation in TensorFlow and Keras. Note that this
+   *  means that computed gradients in preceeding layers are not exact
+   *  gradients of the objective function.
+   */
   message StopGradient {
   }
 
+  /** @brief One-hot vector indicating top-k entries
+   *
+   *  Output tensor has same dimensions as input tensor. Output
+   *  entries corresponding to the top-k input entries are set to one
+   *  and the rest to zero. Ties are broken in favor of entries with
+   *  smaller indices.
+   */
   message InTopK {
+    /// Number of non-zeros in one-hot vector
     int64 k = 1;
   }
 
+  /** @brief Sort tensor entries */
   message Sort {
+    /// Sort entries in descending order
     bool descending = 1;
   }
 
+  /** @brief Output values from a weights tensor
+   *
+   *  Interfaces with a @c weights object.
+   */
   message WeightsLayer {
+    /** @brief Weights tensor dimensions
+     *  @details Space-separated list of integers
+     */
     string dims = 1;
   }
 
+  /** @brief Repeat a tensor until it matches specified dimensions
+   *
+   *  The output tensor dimensions do not need to be integer multiples
+   *  of the input dimensions. Compare with the NumPy @c tile
+   *  function.
+   *
+   *  As an example, tessellating a @f$ 2 \times 2 @f$ matrix into a
+   *  @f$ 3 \times 4 @f$ matrix looks like the following:
+   *  @f[
+   *    \begin{bmatrix}
+   *      1 & 2 \\
+   *      3 & 4
+   *    \end{bmatrix}
+   *    \rightarrow
+   *    \begin{bmatrix}
+   *      1 & 2 & 1 & 2 \\
+   *      3 & 4 & 3 & 4 \\
+   *      1 & 2 & 1 & 2
+   *    \end{bmatrix}
+   *  @f]
+   */
   message Tessellate {
+    /** @brief Output tensor dimensions
+     *  @details Space-separated list of integers
+     */
     string dims = 1;
   }
 
-  /** @brief Scatter values to specified tensor indices.
+  /** @brief Scatter values to specified tensor indices
     *
+    *  Expects two input tensors: an @f$ N @f$-D data tensor and a 1D
+    *  index vector. For 1D data:
     *  @f[
     *    y[\text{ind}[i]] = x[i]
     *  @f]
+    *  Out-of-range indices are ignored.
     *
-    *  If 2D and Axis = 0
-    *  @f[
-    *    y[\text{ind}[i],j] = x[i,j]
-    *  @f]
-    *
-    *  If 2D and Axis = 1
+    *  For higher-dimensional data, the layer performs a scatter along
+    *  one dimension. For example, with 2D data and axis=1,
     *  @f[
     *    y[i,\text{ind}[j]] = x[i,j]
     *  @f]
+    *  Currently, only 1D and 2D data is supported.
     *
-    *  The first input tensor is the values and the second is the
-    *  indices. For the 1D case the inputs must have the same dimensions.
-    *  For the 2D case, the inputs must have either the same number of
-    *  columns (axis=0) or the same number of rows (axis=1). If
-    *  an index is out-of-range, it is ignored.
+    *  The size of the index vector must match the size of the data
+    *  tensor along the scatter dimension.
     *
-    *  @note: In the 2D case the output dimensions change depending on the
-    *  axis. For an (m,n) values input, the output dims are expected to
-    *  be (*,n) for Axis == 0 and (m,*) for Axis == 1.
-    *
-    *  @todo Only flat tensors are currently supported. For higher-order
-    *  tensors, PyTorch
-    *  (https://pytorch.org/docs/master/tensors.html#torch.Tensor.scatter_)
-    *  and TensorFlow
-    *  (https://www.tensorflow.org/api_docs/python/tf/scatter_nd) will
-    *  scatter along a specified dimension.
+    *  @todo Support higher-dimensional data
     */
   message Scatter {
-    /// Output tensor dimensions
+    /** @brief Output tensor dimensions
+     *
+     *  Space-separated list of integers. Number of dimensions must
+     *  match data tensor.
+     */
     string dims = 1;
+    /// Dimension to scatter along
     google.protobuf.UInt64Value axis = 2;
   }
 
-  /** @brief Gather values from specified tensor indices.
+  /** @brief Gather values from specified tensor indices
     *
+    *  Expects two input tensors: an @f$ N @f$-D data tensor and a 1D
+    *  index vector. For 1D data:
     *  @f[
     *    y[i] = x[\text{ind}[i]]
     *  @f]
+    *  If an index is out-of-range, the corresponding output is set to
+    *  zero.
     *
-    *  If 2D and Axis = 0
-    *  @f[
-    *    y[i,j] = x[\text{ind}[i],j]
-    *  @f]
-    *
-    *  If 2D and Axis = 1
+    *  For higher-dimensional data, the layer performs a gather along
+    *  one dimension. For example, with 2D data and axis=1,
     *  @f[
     *    y[i,j] = x[i,\text{ind}[j]]
     *  @f]
+    *  Currently, only 1D and 2D data is supported.
     *
-    *  The first input tensor is the values and the second is the
-    *  indices. The two input tensors must have the same number of
-    *  dimensions, and the output tensor will have the same dimensions as
-    *  the index tensor. If an index is out-of-range, the corresponding
-    *  output is set to zero.
+    *  The size of the the output tensor along the gather dimension is
+    *  equal to the size of the index vector. The remaining dimensions
+    *  of the output tensor are identical to the data tensor.
     *
-    *  @note: In the 2D case, the output dimension changes according
-    *  to the axis. For an (m,n) values input, and a (k) indices input,
-    *  the output tensor will be (k,n) for Axis == 0 and (m, k) for
-    *  Axis == 1
+    *  @todo Support higher-dimensional data
     */
   message Gather {
-
+    /// Dimension to gather along
     google.protobuf.UInt64Value axis = 1;
   }
 
-  /** @brief Sum of tensor entries along batch dimension
+  /** @brief Sum of tensor entries over batch dimension
     *
     *  Output tensor has same shape as input tensor.
     */
@@ -827,11 +1051,11 @@ message Layer {
    *  initialized to zero.
    */
   message FullyConnected {
-    // Output tensor size
+    /// Output tensor size
     int64 num_neurons = 1;
-    // Whether to apply entry-wise bias
+    /// Whether to apply entry-wise bias
     bool has_bias = 2;
-    // Whether to apply transpose of weights matrix
+    /// Whether to apply transpose of weights matrix
     bool transpose = 3;
   }
 

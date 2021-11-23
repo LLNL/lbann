@@ -48,7 +48,14 @@ class split_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
 };
 #endif // LBANN_HAS_DISTCONV
 
-/** @brief Present input tensor to multiple outputs. */
+/** @brief Present input tensor to multiple outputs
+ *
+ *  This layer is used internally to handle cases where a layer
+ *  outputs the same tensor to multiple child layers.
+ *
+ *  This layer is very cheap since it just involves setting up
+ *  tensor views.
+ */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
