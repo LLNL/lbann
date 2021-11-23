@@ -1040,15 +1040,20 @@ message Layer {
   /** @brief Affine transformation
    *
    *  Flattens the input tensor, multiplies with a weights matrix, and
-   *  optionally applies an entry-wise bias. Following the
-   *  column-vector convention:
-   *    @f[ y = W * \text{vec}(x) + b @f]
+   *  optionally applies an entry-wise bias. Following a
+   *  row-vector convention:
+   *    @f[ y = \text{vec}(x) W^T + b @f]
    *
    *  Two weights are required if bias is applied: the linearity and the
    *  bias. Only the linearity weights are required if bias is not
    *  applied. If weights aren't provided, the linearity weights are
    *  initialized with He normal initialization and the bias weights are
    *  initialized to zero.
+
+   *  For flat data, this layer is similar to Keras' dense layer or
+   *  PyTorch's linear operation. However, it implicitly flattens
+   *  multi-dimensional data. To avoid this flattening, consider the
+   *  channel-wise fully-connected layer.
    */
   message FullyConnected {
     /// Output tensor size
@@ -1059,32 +1064,107 @@ message Layer {
     bool transpose = 3;
   }
 
+  /** @brief Convolution
+   *
+   *  Applies convolution (more precisely, cross-correlation) to input
+   *  tensor. This is primarily optimized for image data in CHW
+   *  format.
+   *
+   *  Two weights are required if bias is applied: a kernel tensor (in
+   *  KCHW format) and per-channel biases. Only the kernel weights are
+   *  required if bias is not applied. If weights aren't provided, the
+   *  kernel weights are initialized with He normal initialization and
+   *  the bias weights are initialized to zero.
+   */
   message Convolution {
+
+    /** @brief Number of spatial dimensions
+     *
+     *  The first data dimension is treated as the channel dimension,
+     *  and all others are treated as spatial dimensions (recall that
+     *  the mini-batch dimension is implicit).
+     */
     int64 num_dims = 1;
-    int64 num_output_channels = 4;
-    int64 num_groups = 3;
+    /** @brief Channel dimension of output tensor */
+    int64 num_output_channels = 2;
 
-    bool has_vectors = 2;
+    /** @brief Whether to use vector-valued options
+     *
+     *  If true, then the pooling is configured with @c conv_dims,
+     *  @c conv_pads, @c conv_strides, @c conv_dilations. Otherwise,
+     *  @c conv_dims_i, @c conv_pads_i, @c conv_strides_i,
+     *  @c conv_dilations_i.
+     */
+    bool has_vectors = 3;
 
-    // these are used if has_vector = true
-    string conv_dims = 5; //should be space-separated list, e.g, "2 2 3"
-    string conv_pads = 6;  //should be space-separated list, e.g, "2 2 3"
-    string conv_strides = 7; //should be space-separated list, e.g, "2 2 3"
-    string conv_dilations = 8;  //should be space-separated list, e.g. "2 3 3"
+    /** @brief Convolution kernel dimensions (vector-valued)
+     *
+     *  Space-separated list of integers, one for each spatial
+     *  dimension. Used when @c has_vectors is enabled.
+     */
+    string conv_dims = 4;
+    /** @brief Convolution padding (vector-valued)
+     *
+     *  Space-separated list of integers, one for each spatial
+     *  dimension. Used when @c has_vectors is enabled.
+     */
+    string conv_pads = 5;
+    /** @brief Convolution strides (vector-valued)
+     *
+     *  Space-separated list of integers, one for each spatial
+     *  dimension. Used when @c has_vectors is enabled.
+     */
+    string conv_strides = 6;
+    /** @brief Convolution dilations (vector-valued)
+     *
+     *  Space-separated list of integers, one for each spatial
+     *  dimension. Used when @c has_vectors is enabled. Defaults to
+     *  dilations of 1, i.e. undilated convolution.
+     */
+    string conv_dilations = 7;
 
-    // these are used if has_vector = false
-    int64 conv_dims_i = 50;
-    int64 conv_pads_i = 60;
-    int64 conv_strides_i = 70;
-    int64 conv_dilations_i = 80;
+    /** @brief Convolution kernel size (integer-valued)
+     *
+     *  Used when @c has_vectors is disabled.
+     */
+    int64 conv_dims_i = 8;
+    /** @brief Convolution padding (integer-valued)
+     *
+     *  Used when @c has_vectors is disabled.
+     */
+    int64 conv_pads_i = 9;
+    /** @brief Convolution stride (integer-valued)
+     *
+     *  Used when @c has_vectors is disabled.
+     */
+    int64 conv_strides_i = 10;
+    /** @brief Convolution dilation (integer-valued)
+     *
+     *  Default: 1
+     *
+     *  Used when @c has_vectors is disabled.
+     */
+    int64 conv_dilations_i = 11;
 
-    string weight_initialization = 9;     //DEPRECATED
-    bool has_bias = 10;                   //default: true
-    double bias_initial_value = 11;       //default: 0
-    double l2_regularization_factor = 12; //default: 0
+    /** @brief Whether to apply per-channel bias */
+    bool has_bias = 12;
+    /** @brief Number of channel groups for grouped convolution
+     *  @details Default: 1
+     */
+    int64 num_groups = 13;
 
-    // This field is ignored for non-GPU layers.
-    ConvTensorOpsMode conv_tensor_op_mode = 13;
+    /** @brief Special behavior with FP16 tensor cores
+     *  @details Ignored for non-GPU layers.
+     */
+    ConvTensorOpsMode conv_tensor_op_mode = 14;
+
+    /// Deprecated and unused
+    string weight_initialization = 15;
+    /// Deprecated and unused
+    double bias_initial_value = 16;
+    /// Deprecated and unused
+    double l2_regularization_factor = 17;
+
   }
 
   message Deconvolution {
