@@ -46,6 +46,9 @@ def construct_lc_launcher_args():
         '--depth-groups', action='store', type=int, default=2,
         help='the number of processes for the depth dimension (default: 2)')
     parser.add_argument(
+        '--height-groups', action='store', type=int, default=1,
+        help='the number of processes for the height dimension (default: 1)')
+    parser.add_argument(
         '--dynamically-reclaim-error-signals', action='store_true',
         help='Allow LBANN to reclaim error signals buffers (default: False)')
 
@@ -80,8 +83,10 @@ def construct_model(args):
     #have model and input ps
     if(args.use_distconv):
       ps = get_parallel_strategy_args(
-                sample_groups=args.mini_batch_size,
-                depth_groups=args.depth_groups)
+          sample_groups=args.mini_batch_size,
+          depth_groups=args.depth_groups,
+          height_groups=args.height_groups,
+      )
 
     g_device = 'GPU'
     input_ = lbann.Input(name='input', data_field='samples')
@@ -162,6 +167,10 @@ if __name__ == '__main__':
     # Runtime parameters/arguments
     environment = lbann.contrib.args.get_distconv_environment(
         num_io_partitions=args.depth_groups)
+    environment['INPUT_WIDTH'] = os.environ['INPUT_WIDTH']
+    environment['DATA_DIR'] = os.environ['DATA_DIR']
+    environment['LBANN_DISTCONV_HALO_EXCHANGE'] = 'AL'
+    environment['LBANN_DISTCONV_TENSOR_SHUFFLER'] = 'AL'
 
     if args.dynamically_reclaim_error_signals:
         environment['LBANN_KEEP_ERROR_SIGNALS'] = 0
