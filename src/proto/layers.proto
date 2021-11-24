@@ -754,8 +754,9 @@ message Layer {
    *  layers. From a usage perspective, there is little difference
    *  from an identity layer.
    *
-   *  This layer is very cheap since it just involves setting up
-   *  tensor views.
+   *  This is not to be confused with the split operation in NumPy,
+   *  PyTorch or TensorFlow. The name refers to splits in the compute
+   *  graph.
    */
   message Split {
   }
