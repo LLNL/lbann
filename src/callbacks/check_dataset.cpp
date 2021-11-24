@@ -26,7 +26,7 @@
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/check_dataset.hpp"
-#include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/layers/io/input_layer.hpp"
 #include "lbann/utils/serialize.hpp"
 

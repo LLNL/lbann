@@ -57,7 +57,7 @@ void mixup::on_forward_prop_end(model *m, Layer *l) {
     return;
   }
   const auto& c =
-    dynamic_cast<const sgd_execution_context&>(m->get_execution_context());
+    dynamic_cast<const SGDExecutionContext&>(m->get_execution_context());
   if (c.get_execution_mode() != execution_mode::training) {
     return;  // No mixup outside of training.
   }

@@ -72,7 +72,7 @@ void timer::timing_begin(const model& m) {
 }
 
 void timer::timing_end(model& m) {
-  const auto& c = static_cast<sgd_execution_context&>(m.get_execution_context());
+  const auto& c = static_cast<SGDExecutionContext&>(m.get_execution_context());
   constexpr EvalType zero = 0;
 
   // Get run time
@@ -144,7 +144,7 @@ void timer::timing_end(model& m) {
 
     auto& arg_parser = global_argument_parser();
     bool allow_global_statistics =
-      arg_parser.get<bool>(LTFB_ALLOW_GLOBAL_STATISTICS);
+      arg_parser.get<bool>(LBANN_OPTION_LTFB_ALLOW_GLOBAL_STATISTICS);
     std::stringstream report;
 
     if(allow_global_statistics) {

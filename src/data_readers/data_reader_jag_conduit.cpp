@@ -29,7 +29,7 @@
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/trainers/trainer.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/vision.hpp"
@@ -764,7 +764,7 @@ void data_reader_jag_conduit::load() {
   load_list_of_samples(sample_list_file);
 
   auto& arg_parser = global_argument_parser();
-  if (arg_parser.get<bool>(WRITE_SAMPLE_LIST) && m_comm->am_trainer_master()) {
+  if (arg_parser.get<bool>(LBANN_OPTION_WRITE_SAMPLE_LIST) && m_comm->am_trainer_master()) {
     {
       const std::string msg = " writing sample list " + sample_list_file;
       LBANN_WARNING(msg);
@@ -798,7 +798,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
   auto& arg_parser = global_argument_parser();
   double tm1 = get_time();
   if (get_comm()->am_world_master() ||
-      (arg_parser.get<bool>(LTFB_VERBOSE) && get_comm()->am_trainer_master())) {
+      (arg_parser.get<bool>(LBANN_OPTION_LTFB_VERBOSE) && get_comm()->am_trainer_master())) {
     LBANN_WARNING("starting preload for role: ", get_role());
   }
 
@@ -836,7 +836,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
   }
 
   if (get_comm()->am_world_master() ||
-      (arg_parser.get<bool>(LTFB_VERBOSE) && get_comm()->am_trainer_master())) {
+      (arg_parser.get<bool>(LBANN_OPTION_LTFB_VERBOSE) && get_comm()->am_trainer_master())) {
     std::stringstream msg;
     msg << " loading data for role: " << get_role() << " took " << get_time() - tm1 << "s";
     LBANN_WARNING(msg.str());
@@ -879,14 +879,14 @@ void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list
 
   auto& arg_parser = global_argument_parser();
 
-  if (this->m_keep_sample_order || arg_parser.get<bool>(KEEP_SAMPLE_ORDER)) {
+  if (this->m_keep_sample_order || arg_parser.get<bool>(LBANN_OPTION_KEEP_SAMPLE_ORDER)) {
     m_sample_list.keep_sample_order(true);
   }
   else {
     m_sample_list.keep_sample_order(false);
   }
 
-  const bool check_data = arg_parser.get<bool>(CHECK_DATA);
+  const bool check_data = arg_parser.get<bool>(LBANN_OPTION_CHECK_DATA);
 
   if (check_data) {
     m_sample_list.set_data_file_check();
@@ -894,7 +894,7 @@ void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list
 
   std::vector<char> buffer;
 
-  if (arg_parser.get<bool>(LOAD_FULL_SAMPLE_LIST_ONCE)) {
+  if (arg_parser.get<bool>(LBANN_OPTION_LOAD_FULL_SAMPLE_LIST_ONCE)) {
     if (m_comm->am_trainer_master()) {
       load_file(sample_list_file, buffer);
     }
@@ -1452,7 +1452,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
 }
 
 bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx) {
-  const auto& c = static_cast<const sgd_execution_context&>(get_trainer().get_data_coordinator().get_execution_context());
+  const auto& c = static_cast<const SGDExecutionContext&>(get_trainer().get_data_coordinator().get_execution_context());
   int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_response_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);

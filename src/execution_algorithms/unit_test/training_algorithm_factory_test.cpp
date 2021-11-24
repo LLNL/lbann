@@ -134,9 +134,9 @@ TEST_CASE("Building training algorithm from the factory",
     algo_msg.set_name("my sgd algo");
     algo_msg.mutable_parameters()->PackFrom(sgd_msg);
 
-    auto sgd = lbann::make_abstract<lbann::training_algorithm>(algo_msg);
+    auto sgd = lbann::make_abstract<lbann::TrainingAlgorithm>(algo_msg);
 
-    REQUIRE_NOTHROW(dynamic_cast<lbann::sgd_training_algorithm const&>(*sgd));
+    REQUIRE_NOTHROW(dynamic_cast<lbann::SGDTrainingAlgorithm const&>(*sgd));
 
     REQUIRE(sgd->get_type() == "sgd");
     REQUIRE(sgd->get_name() == "my sgd algo");
@@ -157,7 +157,7 @@ TEST_CASE("Building training algorithm from the factory",
     algo_msg.mutable_parameters()->PackFrom(wrong_msg_type);
 
     REQUIRE_THROWS_WITH(
-      lbann::make_abstract<lbann::training_algorithm>(algo_msg),
+      lbann::make_abstract<lbann::TrainingAlgorithm>(algo_msg),
       Catch::Contains("Unknown id \"TerminationCriteria\" detected"));
   }
 }

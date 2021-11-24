@@ -119,19 +119,19 @@ void smiles_data_reader::load() {
   set_use_data_store(true);
 
   if (m_sequence_length == 0) {
-    if (arg_parser.get<int>(SEQUENCE_LENGTH) == -1) {
+    if (arg_parser.get<int>(LBANN_OPTION_SEQUENCE_LENGTH) == -1) {
       LBANN_ERROR("you must pass --sequence_length=<int> on the cmd line or call set_sequence_length()");
     }
-    m_sequence_length = arg_parser.get<int>(SEQUENCE_LENGTH);
+    m_sequence_length = arg_parser.get<int>(LBANN_OPTION_SEQUENCE_LENGTH);
   }
   m_linearized_data_size = m_sequence_length+2;
 
   // load the vocabulary; this is a map: string -> short
   if (m_vocab.size() == 0) {
-    if (arg_parser.get<std::string>(VOCAB) == "") {
+    if (arg_parser.get<std::string>(LBANN_OPTION_VOCAB) == "") {
       LBANN_ERROR("you must either pass --vocab=<string> on the command line or call load_vocab(...)");
     }
-    const std::string fn = arg_parser.get<std::string>(VOCAB);
+    const std::string fn = arg_parser.get<std::string>(LBANN_OPTION_VOCAB);
     load_vocab(fn);
   } else {
     LBANN_ERROR("you passed --vocab=<string>, but it looks like load_vocab() was previously called. You must use one or the other.");
@@ -181,7 +181,7 @@ void smiles_data_reader::do_preload_data_store() {
   for (const auto &filename : my_ordering) {
     std::ifstream in;
     auto& arg_parser = global_argument_parser();
-    size_t buf_size = arg_parser.get<size_t>(SMILES_BUFFER_SIZE);
+    size_t buf_size = arg_parser.get<size_t>(LBANN_OPTION_SMILES_BUFFER_SIZE);
     char iobuffer [buf_size];
     in.rdbuf()->pubsetbuf(iobuffer,buf_size);
     in.open(filename.c_str(), std::ios::binary | std::ios::ate);
@@ -589,7 +589,7 @@ void smiles_data_reader::read_offset_data(std::vector<SampleData> &data) {
     if (m_filename_to_local_id_set.find(data_filenames[j]) != m_filename_to_local_id_set.end()) {
       std::ifstream in;
       auto& arg_parser = global_argument_parser();
-      size_t buf_size = arg_parser.get<size_t>(SMILES_BUFFER_SIZE);
+      size_t buf_size = arg_parser.get<size_t>(LBANN_OPTION_SMILES_BUFFER_SIZE);
       char iobuffer [buf_size];
       in.rdbuf()->pubsetbuf(iobuffer,buf_size);
       in.open(offsets_filenames[j], std::ios::binary);

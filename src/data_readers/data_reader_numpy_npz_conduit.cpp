@@ -79,8 +79,8 @@ void numpy_npz_conduit_reader::load() {
 
   auto& arg_parser = global_argument_parser();
 
-  if (!(arg_parser.get<bool>(PRELOAD_DATA_STORE) ||
-        arg_parser.get<bool>(USE_DATA_STORE))) {
+  if (!(arg_parser.get<bool>(LBANN_OPTION_PRELOAD_DATA_STORE) ||
+        arg_parser.get<bool>(LBANN_OPTION_USE_DATA_STORE))) {
     LBANN_ERROR("numpy_npz_conduit_reader requires data_store; please pass either --use_data_store or --preload_data_store on the cmd line");
   }
 
@@ -104,8 +104,8 @@ void numpy_npz_conduit_reader::load() {
   resize_shuffled_indices();
   m_num_samples = m_shuffled_indices.size();
 
-  if (m_num_labels == 0 && !arg_parser.get<bool>(PRELOAD_DATA_STORE) &&
-      arg_parser.get<bool>(USE_DATA_STORE)) {
+  if (m_num_labels == 0 && !arg_parser.get<bool>(LBANN_OPTION_PRELOAD_DATA_STORE) &&
+      arg_parser.get<bool>(LBANN_OPTION_USE_DATA_STORE)) {
     LBANN_WARNING("when not preloading you must specify the number of labels in the prototext file if you are doing classification");
   }
 
@@ -129,7 +129,7 @@ void numpy_npz_conduit_reader::do_preload_data_store() {
 
   std::unordered_set<int> label_classes;
 
-  bool threaded = !global_argument_parser().get<bool>(DATA_STORE_NO_THREAD);
+  bool threaded = !global_argument_parser().get<bool>(LBANN_OPTION_DATA_STORE_NO_THREAD);
 
   //threaded mode
   if (threaded) {
@@ -263,7 +263,7 @@ bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
     load_npz(m_filenames[data_id], data_id, node);
     //note: if testing, and test set is touched more than once, the following
     //      will through an exception TODO: relook later
-    const auto& c = static_cast<const execution_context&>(get_trainer().get_data_coordinator().get_execution_context());
+    const auto& c = static_cast<const ExecutionContext&>(get_trainer().get_data_coordinator().get_execution_context());
     if (priming_data_store() || c.get_execution_mode() == execution_mode::testing) {
       m_data_store->set_conduit_node(data_id, node);
     }

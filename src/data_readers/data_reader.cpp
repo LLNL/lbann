@@ -29,7 +29,7 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/io/persist_impl.hpp"
 #include "lbann/trainers/trainer.hpp"
@@ -132,8 +132,6 @@ int lbann::generic_data_reader::fetch(
     }
   }
   #endif
-
-  int loaded_batch_size = get_loaded_mini_batch_size();
 
   if(!position_valid()) {
     if(position_is_overrun()) {
@@ -652,10 +650,10 @@ double generic_data_reader::get_use_percent() const {
 void generic_data_reader::instantiate_data_store() {
   double tm1 = get_time();
   auto& arg_parser = global_argument_parser();
-  if (!(arg_parser.get<bool>(USE_DATA_STORE) ||
-        arg_parser.get<bool>(PRELOAD_DATA_STORE) ||
-        arg_parser.get<bool>(DATA_STORE_CACHE) ||
-        arg_parser.get<std::string>(DATA_STORE_SPILL) != "")) {
+  if (!(arg_parser.get<bool>(LBANN_OPTION_USE_DATA_STORE) ||
+        arg_parser.get<bool>(LBANN_OPTION_PRELOAD_DATA_STORE) ||
+        arg_parser.get<bool>(LBANN_OPTION_DATA_STORE_CACHE) ||
+        arg_parser.get<std::string>(LBANN_OPTION_DATA_STORE_SPILL) != "")) {
     if (m_data_store != nullptr) {
       delete m_data_store;
       m_data_store = nullptr;
@@ -671,7 +669,7 @@ void generic_data_reader::instantiate_data_store() {
     LBANN_ERROR("shuffled_indices.size() == 0");
   }
 
-  if (arg_parser.get<bool>(NODE_SIZES_VARY)) {
+  if (arg_parser.get<bool>(LBANN_OPTION_NODE_SIZES_VARY)) {
     m_data_store->set_node_sizes_vary();
   }
 
@@ -704,7 +702,7 @@ bool generic_data_reader::data_store_active() const {
     return true;
   }
 
-  const auto& c = static_cast<const sgd_execution_context&>(get_trainer().get_data_coordinator().get_execution_context());
+  const auto& c = static_cast<const SGDExecutionContext&>(get_trainer().get_data_coordinator().get_execution_context());
   /// Use the data store for all modes except testing
   /// i.e. training, validation, tournament
   return (m_data_store != nullptr
@@ -715,7 +713,7 @@ bool generic_data_reader::data_store_active() const {
 }
 
 bool generic_data_reader::priming_data_store() const {
-  const auto& c = static_cast<const sgd_execution_context&>(get_trainer().get_data_coordinator().get_execution_context());
+  const auto& c = static_cast<const SGDExecutionContext&>(get_trainer().get_data_coordinator().get_execution_context());
   if (m_data_store != nullptr && m_data_store->is_fully_loaded()) {
     return false;
   }

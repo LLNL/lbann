@@ -76,7 +76,7 @@ public:
    *  @param[in,out] dc The data coordinator for this trainer.
    */
   virtual void select_next(model& m,
-                           ltfb::ExecutionContext& ctxt,
+                           ltfb::LTFBExecutionContext& ctxt,
                            data_coordinator& dc) const = 0;
 }; // class MetaLearningStrategy
 

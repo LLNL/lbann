@@ -42,7 +42,7 @@ void dump_error_signals::serialize(Archive & ar) {
 }
 
 void dump_error_signals::on_backward_prop_end(model *m, Layer *l) {
-  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
 
   // Write each activation matrix to file
   for (int i = 0; i < l->get_num_parents(); ++i) {

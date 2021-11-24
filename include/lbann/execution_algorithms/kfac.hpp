@@ -30,7 +30,7 @@
 #include "lbann/execution_algorithms/factory.hpp"
 #include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/execution_algorithms/kfac/execution_context.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/models/directed_acyclic_graph.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/cloneable.hpp"
@@ -57,13 +57,13 @@ namespace lbann {
  *  deep convolutional neural networks." Proceedings of the IEEE
  *  Conference on Computer Vision and Pattern Recognition. 2019.
  */
-class KFAC final : public Cloneable<KFAC, training_algorithm>
+class KFAC final : public Cloneable<KFAC, TrainingAlgorithm>
 {
-  using BaseType = Cloneable<KFAC, training_algorithm>;
+  using BaseType = Cloneable<KFAC, TrainingAlgorithm>;
 
 public:
-  using TermCriteriaType = sgd_termination_criteria;
-  using ExeContextType = kfac::ExecutionContext;
+  using TermCriteriaType = SGDTerminationCriteria;
+  using ExeContextType = kfac::KFACExecutionContext;
 
 public:
   /** @name Life-cycle management */
@@ -106,7 +106,7 @@ public:
    *  @param[in,out] dc The data source for training.
    *  @param[in] mode Completely superfluous.
    */
-  void apply(execution_context& context,
+  void apply(ExecutionContext& context,
              model& m,
              data_coordinator& dc,
              execution_mode mode) final;
@@ -161,8 +161,8 @@ protected:
   /** @brief Covariant return-friendly implementation of
    *         `get_new_exection_context()`.
    */
-  kfac::ExecutionContext* do_get_new_execution_context() const final;
-  
+  kfac::KFACExecutionContext* do_get_new_execution_context() const final;
+
   void send_recv_inverse_matrices(
     ExeContextType& context,
     lbann_comm *comm);
@@ -241,7 +241,7 @@ private:
   bool m_has_kronecker_inverse=false;
   size_t m_compute_interval;
 
-  El::Matrix<double, El::Device::CPU> m_inverse_matrices_size; 
+  El::Matrix<double, El::Device::CPU> m_inverse_matrices_size;
 
 }; // class KFAC
 

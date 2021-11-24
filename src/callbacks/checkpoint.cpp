@@ -99,7 +99,7 @@ void checkpoint::on_batch_begin(model *m) {
 
 // Decide if we need to trigger a checkpoint for either mode, based on prototext defined intervals
 bool checkpoint::need_checkpoint(model *m, callback_phase phase) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   /* TODO: since we're using clocks, this requires a bcast for each call,
    * we could use number of samples processed to make a local decision */
   // if none of our checkpoint conditions are set, assume we're not checkpointing
@@ -154,7 +154,7 @@ bool checkpoint::need_checkpoint(model *m, callback_phase phase) {
 // Checkpoint Shared/Distributed
 bool checkpoint::do_checkpoint(model *m, visitor_hook hook) {
   auto& p = get_active_trainer().get_persist_obj();
-  auto& c = dynamic_cast<sgd_execution_context&>(m->get_execution_context());
+  auto& c = dynamic_cast<SGDExecutionContext&>(m->get_execution_context());
   auto& t = get_active_trainer();
   if(&t != &get_trainer()) { LBANN_ERROR("Mismatched trainers"); }
   // if the checkpoint directory is not defined, bail
@@ -442,7 +442,7 @@ bool checkpoint::restart(model *m) {
   // contexts exists and create a valid execution context for each
   // one.
   // Then setup the model with the proper one
-  auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   return open_latest_checkpoint(
     *(m->get_comm()),
     "Restarting",

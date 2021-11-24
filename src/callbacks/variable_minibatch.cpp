@@ -45,7 +45,7 @@ variable_minibatch::variable_minibatch(
 
 void variable_minibatch::on_train_begin(model *m) {
   // Avoid issues with the train method being called multiple times.
-  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
   if (c.get_epoch() != 0) { return; }
   const auto& t = get_const_trainer();
 
@@ -71,7 +71,7 @@ void variable_minibatch::on_train_begin(model *m) {
 }
 
 void variable_minibatch::on_epoch_end(model *m) {
-  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
   const auto& t = get_const_trainer();
 
   // Get first input layer in model
@@ -161,7 +161,7 @@ step_minibatch::step_minibatch(
 
 bool step_minibatch::schedule(
   model *m, size_t& new_mbsize, float& new_lr, size_t& ramp_time) {
-  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
   if (c.get_epoch() % m_step == 0) {
     new_mbsize = m_current_mini_batch_size * 2;
     new_lr = get_current_learning_rate(m) * 2;
@@ -183,7 +183,7 @@ minibatch_schedule::minibatch_schedule(
 
 bool minibatch_schedule::schedule(
   model *m, size_t& new_mbsize, float& new_lr, size_t& ramp_time) {
-  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
   if (!m_steps.empty() && c.get_epoch() == m_steps.back().epoch) {
     new_mbsize = m_steps.back().mbsize;
     new_lr = m_steps.back().lr;

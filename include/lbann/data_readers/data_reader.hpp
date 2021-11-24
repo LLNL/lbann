@@ -74,7 +74,7 @@ class generic_data_reader {
    * ctor
    */
   generic_data_reader(bool shuffle = true)
-    : m_verbose(global_argument_parser().get<bool>(VERBOSE)),
+    : m_verbose(global_argument_parser().get<bool>(LBANN_OPTION_VERBOSE)),
       m_data_store(nullptr),
       m_comm(nullptr),
       m_mini_batch_size(0),

@@ -164,7 +164,7 @@ RandomPairwiseExchange::RandomPairwiseExchange(
 
 std::unordered_map<std::string, EvalType>
 RandomPairwiseExchange::evaluate_model(model& m,
-                                       ExecutionContext& ctxt,
+                                       LTFBExecutionContext& ctxt,
                                        data_coordinator& dc) const
 {
   // Make sure data readers finish asynchronous work
@@ -270,7 +270,7 @@ bool RandomPairwiseExchange::local_is_better(
 }
 
 void RandomPairwiseExchange::select_next(model& m,
-                                         ltfb::ExecutionContext& ctxt,
+                                         ltfb::LTFBExecutionContext& ctxt,
                                          data_coordinator& dc) const
 {
   auto const& comm = *(m.get_comm());

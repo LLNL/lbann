@@ -50,7 +50,7 @@ void dump_gradients::serialize(Archive & ar) {
 }
 
 void dump_gradients::on_backward_prop_end(model *m) {
-  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
   for (weights *w : m->get_weights()) {
     optimizer *opt = w->get_optimizer();
     if (opt != nullptr) {
