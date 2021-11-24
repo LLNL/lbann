@@ -138,7 +138,7 @@ def construct_data_reader(lbann):
             'get_sample',
             'num_samples',
             'sample_dims',
-            'test',
+            'tournament',
         ),
     ])
     return message
@@ -210,13 +210,13 @@ def augment_test_func(test_func):
                     'with score .*',
                     line)
                 if match:
-                    receiver = looser = trainer = int(match.group(1))
+                    receiver = loser = trainer = int(match.group(1))
                     sender = winner = partner = int(match.group(2))
                     sending_partner[trainer].append(sender) #ltfb_sender
 
-                # Metric value on tournament (test) set
+                # Metric value on tournament set
                 match = re.search(
-                    'model0 \\(instance ([0-9]+)\\) test random : '
+                    'model0 \\(instance ([0-9]+)\\) tournament random : '
                     '([0-9.]+)',
                     line)
                 if match:
@@ -227,7 +227,7 @@ def augment_test_func(test_func):
         assert num_trainers, \
             f'Error parsing {log_file} (could not find number of trainers)'
         for trainer, vals in enumerate(tournament_metrics):
-            assert len(vals) == _num_epochs, \
+            assert len(vals) == _num_epochs-1, \
                 f'Error parsing {log_file} ' \
                 f'(expected {_num_epochs} tournament metric values, ' \
                 f'but found {len(vals)} for trainer {trainer})'
@@ -235,9 +235,9 @@ def augment_test_func(test_func):
 
         # Make sure metric values match expected values
         # All trainers participate in tournament by evaluating their local
-        # model on tournament (test) dataset
+        # model on tournament dataset
         # Winning trainers (above threshold) retain their models
-        # Loosing trainers (below threshold) receive models from winning trainers
+        # Losing trainers (below threshold) receive models from winning trainers
         # Here we test that the model exchanges between winners and lossers are correct
         for step in range(_num_epochs-1):
             for trainer in range(num_trainers):
@@ -254,8 +254,9 @@ def augment_test_func(test_func):
     return func
 
 # Create test functions that can interact with PyTest
-for _test_func in tools.create_tests(setup_experiment,
-                               __file__,
-                               nodes=2,
-                               lbann_args='--procs_per_trainer=2'):
+for _test_func in tools.create_tests(
+        setup_experiment,
+        __file__,
+        nodes=2,
+        lbann_args='--procs_per_trainer=2'):
     globals()[_test_func.__name__] = augment_test_func(_test_func)
