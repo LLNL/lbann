@@ -168,52 +168,112 @@ const T& array<T,N>::operator[](size_t i) const {
 // -------------------------------------------------------------
 #if defined __CUDACC__ || defined __HIPCC__
 
-/** GPU kernel to apply an entry-wise unary operator. */
+namespace apply_entrywise_operator_impl {
+
+/** @brief Apply entry-wise unary operator to 1D data
+ *
+ *  Block dims: bsize x 1 x 1
+ *
+ *  Grid dims: (size/bsize) x 1 x 1
+ */
 template <template <typename> class UnaryOperator, typename TensorDataType>
 __global__
-void entrywise_unary_operator_kernel(El::Int height, El::Int width,
-                                     const TensorDataType* __restrict__ input,
-                                     El::Int input_ldim,
-                                     TensorDataType* __restrict__ output,
-                                     El::Int output_ldim) {
-  const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
-  const El::Int size = height * width;
-  const El::Int num_threads = blockDim.x * gridDim.x;
+void unary_1d_kernel(
+  size_t size,
+  const TensorDataType* __restrict__ input,
+  TensorDataType* __restrict__ output) {
+  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+  const size_t nthreads = blockDim.x * gridDim.x;
   UnaryOperator<TensorDataType> op;
-  for (El::Int pos = gid; pos < size; pos += num_threads) {
-    const auto& row = pos % height;
-    const auto& col = pos / height;
-    const auto& x = input[row + col * input_ldim];
-    auto& y = output[row + col * output_ldim];
-    y = op(x);
+  for (size_t i = gid; i < size; i += nthreads) {
+    output[i] = op(input[i]);
   }
 }
 
-/** GPU kernel to apply an entry-wise binary operator. */
+/** @brief Apply entry-wise unary operator to 2D data
+ *
+ *  Block dims: bsizex x bsizey x 1
+ *
+ *  Grid dims: (height/bsizex) x (width/bsizey) x 1
+ */
+template <template <typename> class UnaryOperator, typename TensorDataType>
+__global__
+void unary_2d_kernel(
+  size_t height, size_t width,
+  const TensorDataType* __restrict__ input,
+  size_t input_ldim,
+  TensorDataType* __restrict__ output,
+  size_t output_ldim) {
+  const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
+  const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
+  const size_t nthreadsx = blockDim.x * gridDim.x;
+  const size_t nthreadsy = blockDim.y * gridDim.y;
+  UnaryOperator<TensorDataType> op;
+  for (size_t j=gidy; j<width; j+=nthreadsy) {
+    for (size_t i=gidx; i<height; i+=nthreadsx) {
+      const auto& x = input[i + j*input_ldim];
+      auto& y = output[i + j*output_ldim];
+      y = op(x);
+    }
+  }
+}
+
+/** @brief Apply entry-wise binary operator to 1D data
+ *
+ *  Block dims: bsize x 1 x 1
+ *
+ *  Grid dims: (size/bsize) x 1 x 1
+ */
 template <template <typename> class BinaryOperator, typename TensorDataType>
 __global__
-void entrywise_binary_operator_kernel(El::Int height, El::Int width,
-                                     const TensorDataType* __restrict__ input1,
-                                     El::Int input1_ldim,
-                                     const TensorDataType* __restrict__ input2,
-                                     El::Int input2_ldim,
-                                     TensorDataType* __restrict__ output,
-                                     El::Int output_ldim) {
-  const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
-  const El::Int size = height * width;
-  const El::Int num_threads = blockDim.x * gridDim.x;
+void binary_1d_kernel(
+  size_t size,
+  const TensorDataType* __restrict__ input1,
+  const TensorDataType* __restrict__ input2,
+  TensorDataType* __restrict__ output) {
+  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+  const size_t nthreads = blockDim.x * gridDim.x;
   BinaryOperator<TensorDataType> op;
-  for (El::Int pos = gid; pos < size; pos += num_threads) {
-    const auto& row = pos % height;
-    const auto& col = pos / height;
-    const auto& x1 = input1[row + col * input1_ldim];
-    const auto& x2 = input2[row + col * input2_ldim];
-    auto& y = output[row + col * output_ldim];
-    y = op(x1, x2);
+  for (size_t i = gid; i < size; i += nthreads) {
+    output[i] = op(input1[i], input2[i]);
   }
 }
 
-/** Apply an entry-wise unary operator to GPU data.
+/** @brief Apply entry-wise binary operator to 2D data
+ *
+ *  Block dims: bsizex x bsizey x 1
+ *
+ *  Grid dims: (height/bsizex) x (width/bsizey) x 1
+ */
+template <template <typename> class BinaryOperator, typename TensorDataType>
+__global__
+void binary_2d_kernel(
+  size_t height, size_t width,
+  const TensorDataType* __restrict__ input1,
+  size_t input1_ldim,
+  const TensorDataType* __restrict__ input2,
+  size_t input2_ldim,
+  TensorDataType* __restrict__ output,
+  size_t output_ldim) {
+  const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
+  const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
+  const size_t nthreadsx = blockDim.x * gridDim.x;
+  const size_t nthreadsy = blockDim.y * gridDim.y;
+  BinaryOperator<TensorDataType> op;
+  for (size_t j=gidy; j<width; j+=nthreadsy) {
+    for (size_t i=gidx; i<height; i+=nthreadsx) {
+      const auto& x1 = input1[i + j*input1_ldim];
+      const auto& x2 = input2[i + j*input2_ldim];
+      auto& y = output[i + j*output_ldim];
+      y = op(x1, x2);
+    }
+  }
+}
+
+} // namespace apply_entrywise_operator_impl
+
+/** @brief Apply an entry-wise unary operator to GPU data.
+ *
  *  The input and output data must be on GPU and must have the same
  *  dimensions.
  */
@@ -225,42 +285,57 @@ void apply_entrywise_unary_operator(
   // Check that input and output are valid
   if (input.GetDevice() != El::Device::GPU) {
     LBANN_ERROR("input is not on GPU");
-  } else if (output.GetDevice() != El::Device::GPU) {
+  }
+  else if (output.GetDevice() != El::Device::GPU) {
     LBANN_ERROR("output is not on GPU");
-  } else if (input.Height() != output.Height()
-             || input.Width() != output.Width()) {
+  }
+  else if (input.Height() != output.Height()
+           || input.Width() != output.Width()) {
     LBANN_ERROR("input matrix dimensions "
                 "(", input.Height(), " x ", input.Width(), ")"
                 "don't match output matrix dimensions "
                 "(", output.Height(), " x ", output.Width(), ")");
   }
 
-  // Get GPU grid dimensions
-  // Note: Maximum CUDA grid dimension is 2^32-1
-  // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
-  const El::Int height = input.Height();
-  const El::Int width = input.Width();
-  const El::Int block_dim = 256;
-  El::Int grid_dim = (height * width + block_dim - 1) / block_dim;
-  if (sizeof(El::Int) > sizeof(unsigned int)
-      && grid_dim > std::numeric_limits<uint32_t>::max()) {
-    grid_dim = std::numeric_limits<uint32_t>::max();
+  // Return immediately if no compute is required
+  if (output.IsEmpty()) {
+    return;
   }
 
   // Launch GPU kernel
-  if (grid_dim > 0) {
+  if (input.Contiguous() && output.Contiguous()) {
+    dim3 block_dims, grid_dims;
+    block_dims.x = 256;
+    grid_dims.x = (output.Height()*output.Width() + block_dims.x - 1) / block_dims.x;
+    gpu_lib::clip_grid_dims(grid_dims);
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(output),
                                        gpu::get_sync_info(input));
     hydrogen::gpu::LaunchKernel(
-      entrywise_unary_operator_kernel<UnaryOp, TensorDataType>,
-      grid_dim, block_dim, 0, multisync,
-      height, width, input.LockedBuffer(), input.LDim(),
+      apply_entrywise_operator_impl::unary_1d_kernel<UnaryOp, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      output.Height()*output.Width(), input.LockedBuffer(), output.Buffer());
+  }
+  else {
+    dim3 block_dims, grid_dims;
+    block_dims.x = 256;
+    block_dims.y = 1;
+    grid_dims.x = (output.Height() + block_dims.x - 1) / block_dims.x;
+    grid_dims.y = (output.Width() + block_dims.y - 1) / block_dims.y;
+    gpu_lib::clip_grid_dims(grid_dims);
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(output),
+                                       gpu::get_sync_info(input));
+    hydrogen::gpu::LaunchKernel(
+      apply_entrywise_operator_impl::unary_2d_kernel<UnaryOp, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      input.Height(), input.Width(),
+      input.LockedBuffer(), input.LDim(),
       output.Buffer(), output.LDim());
   }
 
 }
 
-/** Apply an entry-wise binary operator to GPU data.
+/** @brief Apply an entry-wise binary operator to GPU data.
+ *
  *  The input and output data must be on GPU and must have the same
  *  dimensions.
  */
@@ -287,27 +362,40 @@ void apply_entrywise_binary_operator(
                 "(", output.Height(), " x ", output.Width(), ")");
   }
 
-  // Get GPU grid dimensions
-  // Note: Maximum CUDA grid dimension is 2^32-1
-  // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
-  const El::Int height = input1.Height();
-  const El::Int width = input1.Width();
-  const El::Int block_dim = 256;
-  El::Int grid_dim = (height * width + block_dim - 1) / block_dim;
-  if (sizeof(El::Int) > sizeof(unsigned int)
-      && grid_dim > std::numeric_limits<uint32_t>::max()) {
-    grid_dim = std::numeric_limits<uint32_t>::max();
+  // Return immediately if no compute is required
+  if (output.IsEmpty()) {
+    return;
   }
 
   // Launch GPU kernel
-  if (grid_dim > 0) {
+  if (input1.Contiguous() && input2.Contiguous() && output.Contiguous()) {
+    dim3 block_dims, grid_dims;
+    block_dims.x = 256;
+    grid_dims.x = (output.Height()*output.Width() + block_dims.x - 1) / block_dims.x;
+    gpu_lib::clip_grid_dims(grid_dims);
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(output),
                                        gpu::get_sync_info(input1),
                                        gpu::get_sync_info(input2));
     hydrogen::gpu::LaunchKernel(
-      entrywise_binary_operator_kernel<BinaryOp, TensorDataType>,
-      grid_dim, block_dim, 0, multisync,
-      height, width,
+      apply_entrywise_operator_impl::binary_1d_kernel<BinaryOp, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      output.Height()*output.Width(),
+      input1.LockedBuffer(), input2.LockedBuffer(), output.Buffer());
+  }
+  else {
+    dim3 block_dims, grid_dims;
+    block_dims.x = 256;
+    block_dims.y = 1;
+    grid_dims.x = (output.Height() + block_dims.x - 1) / block_dims.x;
+    grid_dims.y = (output.Width() + block_dims.y - 1) / block_dims.y;
+    gpu_lib::clip_grid_dims(grid_dims);
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(output),
+                                       gpu::get_sync_info(input1),
+                                       gpu::get_sync_info(input2));
+    hydrogen::gpu::LaunchKernel(
+      apply_entrywise_operator_impl::binary_2d_kernel<BinaryOp, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      output.Height(), output.Width(),
       input1.LockedBuffer(), input1.LDim(),
       input2.LockedBuffer(), input2.LDim(),
       output.Buffer(), output.LDim());

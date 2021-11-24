@@ -366,18 +366,12 @@ public:
     return TypeName<DataType>();
   };
 
-
-  void set_num_spliting_groups(int num_grps)
-  {
-    m_num_spliting_groups = num_grps;
-  }
   //enable subgraph parallelism for this layer
   //to set variable for ssplit layer
   void set_enable_subgraph_variable()
   {
     m_parallel_strategy.enable_subgraph=true;
   }
-
 
   /** @brief Human-readable description. */
 
