@@ -29,7 +29,7 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/io/persist_impl.hpp"
 #include "lbann/trainers/trainer.hpp"
@@ -85,7 +85,8 @@ void generic_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io
 
 int lbann::generic_data_reader::fetch(
   std::map<data_field_type, CPUMat*>& input_buffers,
-  El::Matrix<El::Int>& indices_fetched)
+  El::Matrix<El::Int>& indices_fetched,
+  size_t mb_size)
 {
   // Check to make sure that a valid map was passed
   if (input_buffers.empty()) {
@@ -121,8 +122,8 @@ int lbann::generic_data_reader::fetch(
 
 #ifdef DEBUG
   if (m_current_pos == 0) {
-    if (is_master()) {
-      std::cout << "role: " << get_role() << " model: " << m_trainer->get_name()
+    if (get_comm()->am_world_master()) {
+      std::cout << "role: " << get_role() << " model: " << get_trainer().get_name()
                 << " shuffled indices: ";
       for (size_t j=0; j<15; j++) {
         std::cout << m_shuffled_indices[j] << " ";
@@ -131,14 +132,6 @@ int lbann::generic_data_reader::fetch(
     }
   }
   #endif
-
-  int loaded_batch_size = get_loaded_mini_batch_size();
-
-  const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size), m_shuffled_indices.size());
-  const int mb_size =
-    std::min(El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) /
-                     m_sample_stride},
-             buffer_width);
 
   if(!position_valid()) {
     if(position_is_overrun()) {
@@ -154,12 +147,6 @@ int lbann::generic_data_reader::fetch(
   /// data source prior to fetching data
   for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
     preprocess_data_source(t);
-  }
-
-  static bool fix_jag = true;
-  if (m_jag_partitioned && fix_jag) {
-    fix_jag = false;
-    set_jag_variables(mb_size);
   }
 
   // BVE FIXME - for the time being certain data fields, such as the
@@ -288,32 +275,6 @@ bool lbann::generic_data_reader::fetch_data_block(
   return true;
 }
 
-void lbann::generic_data_reader::set_jag_variables(int mb_size) {
-  // all min_batches have the same number of indices;
-  // this probably causes a few indices to be discarded,
-  // but with 1B indices, who cares?
-  int mb_max = m_comm->trainer_allreduce<int>(mb_size, El::mpi::MAX);
-  m_num_iterations_per_epoch = m_shuffled_indices.size() / mb_max;
-
-  m_last_mini_batch_size = m_mini_batch_size;
-  m_global_mini_batch_size = m_mini_batch_size;
-  m_global_last_mini_batch_size = m_mini_batch_size;
-
-  m_reset_mini_batch_index = 0;
-  m_loaded_mini_batch_idx = 0;
-  m_current_mini_batch_idx = 0;
-
-  m_stride_to_next_mini_batch = mb_size;
-  m_stride_to_last_mini_batch = mb_size;
-
-  m_base_offset = 0;
-  m_model_offset = 0;
-  m_sample_stride = 1;
-  m_iteration_stride = 1;
-
-  m_world_master_mini_batch_adjustment = 0;
-}
-
 bool generic_data_reader::update(bool is_active_reader) {
   bool reader_not_done = true; // BVE The sense of this should be fixed
   m_current_mini_batch_idx++;
@@ -330,7 +291,7 @@ bool generic_data_reader::update(bool is_active_reader) {
   }
   if (m_current_mini_batch_idx == m_num_iterations_per_epoch) {
     // for working with 1B jag samples, we may not process all the data
-    if ((get_rank() < m_num_parallel_readers) && (m_current_pos < (int)m_shuffled_indices.size()) && !m_jag_partitioned) {
+    if ((m_comm->get_rank_in_trainer() < m_num_parallel_readers) && (m_current_pos < (int)m_shuffled_indices.size())) {
       throw lbann_exception(
         std::string{} + __FILE__ + " " + std::to_string(__LINE__)
         + " :: generic data reader update error: the epoch is complete,"
@@ -444,12 +405,6 @@ size_t generic_data_reader::get_num_indices_to_use() const {
 }
 
 void generic_data_reader::resize_shuffled_indices() {
-  // ensure that all readers have the same number of indices
-  if (m_jag_partitioned) {
-    size_t n = m_comm->trainer_allreduce<size_t>(m_shuffled_indices.size(), El::mpi::MIN);
-    m_shuffled_indices.resize(n);
-  }
-
   size_t num_indices = get_num_indices_to_use();
   shuffle_indices();
   m_shuffled_indices.resize(num_indices);
@@ -695,10 +650,10 @@ double generic_data_reader::get_use_percent() const {
 void generic_data_reader::instantiate_data_store() {
   double tm1 = get_time();
   auto& arg_parser = global_argument_parser();
-  if (!(arg_parser.get<bool>(USE_DATA_STORE) ||
-        arg_parser.get<bool>(PRELOAD_DATA_STORE) ||
-        arg_parser.get<bool>(DATA_STORE_CACHE) ||
-        arg_parser.get<std::string>(DATA_STORE_SPILL) != "")) {
+  if (!(arg_parser.get<bool>(LBANN_OPTION_USE_DATA_STORE) ||
+        arg_parser.get<bool>(LBANN_OPTION_PRELOAD_DATA_STORE) ||
+        arg_parser.get<bool>(LBANN_OPTION_DATA_STORE_CACHE) ||
+        arg_parser.get<std::string>(LBANN_OPTION_DATA_STORE_SPILL) != "")) {
     if (m_data_store != nullptr) {
       delete m_data_store;
       m_data_store = nullptr;
@@ -706,7 +661,7 @@ void generic_data_reader::instantiate_data_store() {
     return;
   }
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "\nUSING DATA_STORE\n\n";
   }
   m_data_store = new data_store_conduit(this);  // *data_store_conduit
@@ -714,7 +669,7 @@ void generic_data_reader::instantiate_data_store() {
     LBANN_ERROR("shuffled_indices.size() == 0");
   }
 
-  if (arg_parser.get<bool>(NODE_SIZES_VARY)) {
+  if (arg_parser.get<bool>(LBANN_OPTION_NODE_SIZES_VARY)) {
     m_data_store->set_node_sizes_vary();
   }
 
@@ -747,7 +702,7 @@ bool generic_data_reader::data_store_active() const {
     return true;
   }
 
-  const auto& c = static_cast<const sgd_execution_context&>(m_trainer->get_data_coordinator().get_execution_context());
+  const auto& c = static_cast<const SGDExecutionContext&>(get_trainer().get_data_coordinator().get_execution_context());
   /// Use the data store for all modes except testing
   /// i.e. training, validation, tournament
   return (m_data_store != nullptr
@@ -758,7 +713,7 @@ bool generic_data_reader::data_store_active() const {
 }
 
 bool generic_data_reader::priming_data_store() const {
-  const auto& c = static_cast<const sgd_execution_context&>(m_trainer->get_data_coordinator().get_execution_context());
+  const auto& c = static_cast<const SGDExecutionContext&>(get_trainer().get_data_coordinator().get_execution_context());
   if (m_data_store != nullptr && m_data_store->is_fully_loaded()) {
     return false;
   }
@@ -786,13 +741,6 @@ void generic_data_reader::set_mini_batch_size(const int s) {
 
 void generic_data_reader::set_role(std::string role) {
   m_role = role;
-  if (global_argument_parser().get<bool>(JAG_PARTITIONED) &&
-      get_role() == "train") {
-    m_jag_partitioned = true;
-    if (is_master()) {
-      std::cout << "USING JAG DATA PARTITIONING\n";
-    }
-  }
 }
 
 void generic_data_reader::preload_data_store() {
@@ -826,7 +774,7 @@ void generic_data_reader::preload_data_store() {
 }
 
 void generic_data_reader::print_get_methods(const std::string filename) {
-  if (!is_master()) {
+  if (!get_comm()->am_world_master()) {
     return;
   }
   std::ofstream out(filename.c_str());

@@ -157,7 +157,7 @@ void save_images::serialize(Archive & ar) {
 }
 
 void save_images::on_epoch_end(model *m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   save_image(build_string(m_image_prefix, "epoch", c.get_epoch()),
              m_image_format,
              m->get_layers(),

@@ -66,18 +66,18 @@ int main(int argc, char *argv[]) {
       std::terminate();
     }
 
-    if (arg_parser.get<std::string>(FILELIST) == "" ||
-        arg_parser.get<std::string>(OUTPUT_DIR) == "") {
+    if (arg_parser.get<std::string>(LBANN_OPTION_FILELIST) == "" ||
+        arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_DIR) == "") {
       if (master) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist=<string> --output_dir=<string>");
       }
     }
 
-    const std::string dir = arg_parser.get<std::string>(OUTPUT_DIR);
+    const std::string dir = arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_DIR);
 
     if (master) {
       std::stringstream s;
-      s << "mkdir -p " << arg_parser.get<std::string>(OUTPUT_DIR);
+      s << "mkdir -p " << arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_DIR);
       int r = system(s.str().c_str());
       if (r != 0) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: system call failed: " + s.str());
@@ -89,11 +89,11 @@ int main(int argc, char *argv[]) {
     int size;
     if (master) {
       std::stringstream s;
-      std::ifstream in(arg_parser.get<std::string>(FILELIST).c_str());
+      std::ifstream in(arg_parser.get<std::string>(LBANN_OPTION_FILELIST).c_str());
       if (!in) {
         throw lbann_exception(std::string{} + __FILE__ + " " +
                               std::to_string(__LINE__) + " :: failed to open " +
-                              arg_parser.get<std::string>(FILELIST) +
+                              arg_parser.get<std::string>(LBANN_OPTION_FILELIST) +
                               " for reading");
       }
       std::string line;

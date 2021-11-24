@@ -64,13 +64,13 @@ namespace lbann {
  *  then do some other stuff, this class can certainly serve as a
  *  useful guide, but is not likely to be the out-of-the-box solution.
  */
-class LTFB final : public Cloneable<LTFB, training_algorithm>
+class LTFB final : public Cloneable<LTFB, TrainingAlgorithm>
 {
-  using BaseType = Cloneable<LTFB, training_algorithm>;
+  using BaseType = Cloneable<LTFB, TrainingAlgorithm>;
 
 public:
-  using TermCriteriaType = ltfb::TerminationCriteria;
-  using ExeContextType = ltfb::ExecutionContext;
+  using TermCriteriaType = ltfb::LTFBTerminationCriteria;
+  using ExeContextType = ltfb::LTFBExecutionContext;
 
 public:
   /** @name Life-cycle management */
@@ -81,9 +81,9 @@ public:
    *  @param meta_learning_strategy The postprocessing algorithm.
    */
   LTFB(std::string name,
-       std::unique_ptr<training_algorithm> local_training_algorithm,
+       std::unique_ptr<TrainingAlgorithm> local_training_algorithm,
        std::unique_ptr<ltfb::MetaLearningStrategy> meta_learning_strategy,
-       ltfb::TerminationCriteria stopping_criteria)
+       ltfb::LTFBTerminationCriteria stopping_criteria)
     : BaseType{std::move(name)}, m_local_algo{std::move(
                                    local_training_algorithm)},
       m_meta_learning_strategy{std::move(meta_learning_strategy)},
@@ -110,7 +110,7 @@ public:
    *  @param[in,out] dc The data source for training.
    *  @param[in] mode Completely superfluous.
    */
-  void apply(execution_context& context,
+  void apply(ExecutionContext& context,
              model& m,
              data_coordinator& dc,
              execution_mode mode) final;
@@ -119,20 +119,20 @@ protected:
   /** @brief Covariant return-friendly implementation of
    *         `get_new_exection_context()`.
    */
-  ltfb::ExecutionContext* do_get_new_execution_context() const final
+  ltfb::LTFBExecutionContext* do_get_new_execution_context() const final
   {
-    return new ltfb::ExecutionContext();
+    return new ltfb::LTFBExecutionContext();
   }
 
 private:
   /** @brief The training algorithm for trainer-local training. */
-  std::unique_ptr<training_algorithm> m_local_algo;
+  std::unique_ptr<TrainingAlgorithm> m_local_algo;
 
   /** @brief The strategy for postprocessing local training outputs. */
   std::unique_ptr<ltfb::MetaLearningStrategy> m_meta_learning_strategy;
 
   /** @brief The LTFB stopping criteria. */
-  ltfb::TerminationCriteria m_termination_criteria;
+  ltfb::LTFBTerminationCriteria m_termination_criteria;
 
 }; // class LTFB
 

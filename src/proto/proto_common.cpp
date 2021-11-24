@@ -213,6 +213,7 @@ void init_data_readers(
                                                           key_labels,
                                                           key_responses,
                                                           hyperslab_labels);
+      reader_hdf5->set_has_data_field(INPUT_DATA_TYPE_SAMPLES, true);
       reader_hdf5->set_has_labels(!readme.disable_labels());
       reader_hdf5->set_has_responses(!readme.disable_responses());
       reader_hdf5->set_num_responses(readme.num_responses());
@@ -417,9 +418,9 @@ void init_data_readers(
       reader->set_local_file_dir( readme.data_local_filedir() );
     }
 
-    if (arg_parser.get<bool>(CREATE_TARBALL)) {
-      if (arg_parser.get<int>(TEST_TARBALL) != -1) {
-        reader->set_absolute_sample_count(arg_parser.get<int>(TEST_TARBALL));
+    if (arg_parser.get<bool>(LBANN_OPTION_CREATE_TARBALL)) {
+      if (arg_parser.get<int>(LBANN_OPTION_TEST_TARBALL) != -1) {
+        reader->set_absolute_sample_count(arg_parser.get<int>(LBANN_OPTION_TEST_TARBALL));
         reader->set_use_percent( 0. );
         reader->set_first_n(0);
       }
@@ -450,21 +451,19 @@ void init_data_readers(
       reader->set_role("error");
     }
     if (readme.role() == "train") {
-      if (arg_parser.get<bool>(CREATE_TARBALL) || separate_validation) {
+      if (arg_parser.get<bool>(LBANN_OPTION_CREATE_TARBALL) || separate_validation) {
         reader->set_execution_mode_split_percent(execution_mode::validation, 0. );
       }
       else {
         reader->set_execution_mode_split_percent(execution_mode::validation, readme.validation_percent() );
       }
-      if (arg_parser.get<bool>(CREATE_TARBALL) || separate_tournament) {
+      if (arg_parser.get<bool>(LBANN_OPTION_CREATE_TARBALL) || separate_tournament) {
         reader->set_execution_mode_split_percent(execution_mode::tournament, 0. );
       }
       else {
         reader->set_execution_mode_split_percent(execution_mode::tournament, readme.tournament_percent() );
       }
     }
-
-    reader->set_master(master);
 
     reader->load();
 
@@ -482,7 +481,7 @@ void init_data_readers(
       data_readers[execution_mode::tournament] = reader;
     }
 
-    if (readme.role() == "train" && !arg_parser.get<bool>(CREATE_TARBALL)) {
+    if (readme.role() == "train" && !arg_parser.get<bool>(LBANN_OPTION_CREATE_TARBALL)) {
       for(auto m : execution_mode_iterator()) {
         if((m == execution_mode::validation && readme.validation_percent() > 0. && !separate_validation)
            || (m == execution_mode::tournament && readme.tournament_percent() > 0. && !separate_tournament)) {
@@ -769,7 +768,7 @@ void set_data_readers_sample_list(
 void set_data_readers_percent(lbann_data::LbannPB& p)
 {
   auto& arg_parser = global_argument_parser();
-  double percent = arg_parser.get<float>(DATA_READER_PERCENT);
+  double percent = arg_parser.get<float>(LBANN_OPTION_DATA_READER_PERCENT);
   if (percent <= 0 || percent > 1.0) {
       std::ostringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -825,46 +824,46 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   lbann_data::DataReader *d_reader = p.mutable_data_reader();
   int size = d_reader->reader_size();
 
-  if (arg_parser.get<int>(ABSOLUTE_SAMPLE_COUNT) != -1) {
+  if (arg_parser.get<int>(LBANN_OPTION_ABSOLUTE_SAMPLE_COUNT) != -1) {
     for (int j=0; j<size; j++) {
-      int n = arg_parser.get<int>(ABSOLUTE_SAMPLE_COUNT);
+      int n = arg_parser.get<int>(LBANN_OPTION_ABSOLUTE_SAMPLE_COUNT);
       lbann_data::Reader *readme = d_reader->mutable_reader(j);
       readme->set_percent_of_data_to_use(0.0);
       readme->set_absolute_sample_count(n);
     }
   }
 
-  if ((arg_parser.get<std::string>(DATA_FILEDIR) != "") or
-      (arg_parser.get<std::string>(DATA_FILEDIR_TRAIN) != "") or
-      (arg_parser.get<std::string>(DATA_FILENAME_TRAIN) != "") or
-      (arg_parser.get<std::string>(LABEL_FILENAME_TRAIN) != "")) {
+  if ((arg_parser.get<std::string>(LBANN_OPTION_DATA_FILEDIR) != "") or
+      (arg_parser.get<std::string>(LBANN_OPTION_DATA_FILEDIR_TRAIN) != "") or
+      (arg_parser.get<std::string>(LBANN_OPTION_DATA_FILENAME_TRAIN) != "") or
+      (arg_parser.get<std::string>(LBANN_OPTION_LABEL_FILENAME_TRAIN) != "")) {
     set_data_readers_filenames("train", p);
   }
-  if ((arg_parser.get<std::string>(DATA_FILEDIR) != "") or
-      (arg_parser.get<std::string>(DATA_FILEDIR_VALIDATE) != "") or
-      (arg_parser.get<std::string>(DATA_FILENAME_VALIDATE) != "") or
-      (arg_parser.get<std::string>(LABEL_FILENAME_VALIDATE) != "")) {
+  if ((arg_parser.get<std::string>(LBANN_OPTION_DATA_FILEDIR) != "") or
+      (arg_parser.get<std::string>(LBANN_OPTION_DATA_FILEDIR_VALIDATE) != "") or
+      (arg_parser.get<std::string>(LBANN_OPTION_DATA_FILENAME_VALIDATE) != "") or
+      (arg_parser.get<std::string>(LBANN_OPTION_LABEL_FILENAME_VALIDATE) != "")) {
     set_data_readers_filenames("validate", p);
   }
-  if ((arg_parser.get<std::string>(DATA_FILEDIR) != "") or
-      (arg_parser.get<std::string>(DATA_FILEDIR_TEST) != "") or
-      (arg_parser.get<std::string>(DATA_FILENAME_TEST) != "") or
-      (arg_parser.get<std::string>(LABEL_FILENAME_TEST) != "")) {
+  if ((arg_parser.get<std::string>(LBANN_OPTION_DATA_FILEDIR) != "") or
+      (arg_parser.get<std::string>(LBANN_OPTION_DATA_FILEDIR_TEST) != "") or
+      (arg_parser.get<std::string>(LBANN_OPTION_DATA_FILENAME_TEST) != "") or
+      (arg_parser.get<std::string>(LBANN_OPTION_LABEL_FILENAME_TEST) != "")) {
     set_data_readers_filenames("test", p);
   }
-  if (arg_parser.get<std::string>(SAMPLE_LIST_TRAIN) != "") {
+  if (arg_parser.get<std::string>(LBANN_OPTION_SAMPLE_LIST_TRAIN) != "") {
     set_data_readers_sample_list("train", p);
   }
-  if (arg_parser.get<std::string>(SAMPLE_LIST_VALIDATE) != "") {
+  if (arg_parser.get<std::string>(LBANN_OPTION_SAMPLE_LIST_VALIDATE) != "") {
     set_data_readers_sample_list("validate", p);
   }
-  if (arg_parser.get<std::string>(SAMPLE_LIST_TEST) != "") {
+  if (arg_parser.get<std::string>(LBANN_OPTION_SAMPLE_LIST_TEST) != "") {
     set_data_readers_sample_list("test", p);
   }
-  if (arg_parser.get<float>(DATA_READER_PERCENT) != -1.0) {
+  if (arg_parser.get<float>(LBANN_OPTION_DATA_READER_PERCENT) != -1.0) {
     set_data_readers_percent(p);
   }
-  if (arg_parser.get<bool>(NO_IM_COMM)) {
+  if (arg_parser.get<bool>(LBANN_OPTION_NO_IM_COMM)) {
     int sz = model->callback_size();
     for (int j=0; j<sz; j++) {
       lbann_data::Callback *c = model->mutable_callback(j);
@@ -873,27 +872,27 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
       }
     }
   }
-  if (arg_parser.get<int>(MINI_BATCH_SIZE) != -1) {
-    trainer->set_mini_batch_size(arg_parser.get<int>(MINI_BATCH_SIZE));
+  if (arg_parser.get<int>(LBANN_OPTION_MINI_BATCH_SIZE) != -1) {
+    trainer->set_mini_batch_size(arg_parser.get<int>(LBANN_OPTION_MINI_BATCH_SIZE));
   }
-  if (arg_parser.get<int>(NUM_EPOCHS) != -1) {
-    model->set_num_epochs(arg_parser.get<int>(NUM_EPOCHS));
+  if (arg_parser.get<int>(LBANN_OPTION_NUM_EPOCHS) != -1) {
+    model->set_num_epochs(arg_parser.get<int>(LBANN_OPTION_NUM_EPOCHS));
   }
-  if (arg_parser.get<int>(HYDROGEN_BLOCK_SIZE) != -1) {
-    trainer->set_hydrogen_block_size(arg_parser.get<int>(HYDROGEN_BLOCK_SIZE));
+  if (arg_parser.get<int>(LBANN_OPTION_HYDROGEN_BLOCK_SIZE) != -1) {
+    trainer->set_hydrogen_block_size(arg_parser.get<int>(LBANN_OPTION_HYDROGEN_BLOCK_SIZE));
   }
-  if (arg_parser.get<int>(NUM_PARALLEL_READERS) != -1) {
+  if (arg_parser.get<int>(LBANN_OPTION_NUM_PARALLEL_READERS) != -1) {
     trainer->set_num_parallel_readers(
-      arg_parser.get<int>(NUM_PARALLEL_READERS));
+      arg_parser.get<int>(LBANN_OPTION_NUM_PARALLEL_READERS));
   }
-  if (arg_parser.get<bool>(DISABLE_CUDA)) {
-    model->set_disable_cuda(arg_parser.get<bool>(DISABLE_CUDA));
+  if (arg_parser.get<bool>(LBANN_OPTION_DISABLE_CUDA)) {
+    model->set_disable_cuda(arg_parser.get<bool>(LBANN_OPTION_DISABLE_CUDA));
   }
-  if (arg_parser.get<int>(RANDOM_SEED) == -1) {
-    trainer->set_random_seed(arg_parser.get<int>(RANDOM_SEED));
+  if (arg_parser.get<int>(LBANN_OPTION_RANDOM_SEED) != 0) {
+    trainer->set_random_seed(arg_parser.get<int>(LBANN_OPTION_RANDOM_SEED));
   }
-  if (arg_parser.get<bool>(SERIALIZE_IO)) {
-    trainer->set_serialize_io(arg_parser.get<bool>(SERIALIZE_IO));
+  if (arg_parser.get<bool>(LBANN_OPTION_SERIALIZE_IO)) {
+    trainer->set_serialize_io(arg_parser.get<bool>(LBANN_OPTION_SERIALIZE_IO));
   }
 }
 
@@ -940,7 +939,7 @@ void print_parameters(const lbann_comm& comm,
   for(size_t i = 0; i < random_seeds.size(); i++) {
     int trainer_rank = comm.map_world_rank_to_trainer_rank(i);
     int rank_in_trainer = comm.map_world_rank_to_rank_in_trainer(i);
-    if(rank_in_trainer < arg_parser.get<int>(MAX_RNG_SEEDS_DISPLAY)) {
+    if(rank_in_trainer < arg_parser.get<int>(LBANN_OPTION_MAX_RNG_SEEDS_DISPLAY)) {
       std::stringstream id;
       id << "[" << trainer_rank << "][" << rank_in_trainer << "]";
       root_rng << id.str() << "=" << std::setfill('0') << std::setw(10) << static_cast<unsigned int>(root_random_seeds[i]) << " " ;
@@ -984,7 +983,7 @@ void save_session(const lbann_comm& comm, const int argc, char * const* argv, lb
 
   //do not write output file for a repeated experiment;
   //may want to revisit this decision later ...
-  if (arg_parser.get<std::string>(PROTOTEXT) != "") {
+  if (arg_parser.get<std::string>(LBANN_OPTION_PROTOTEXT) != "") {
     return;
   }
 

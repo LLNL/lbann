@@ -71,15 +71,16 @@ endif ()
 
 if (LBANN_HAS_CEREAL)
   find_package(CEREAL NO_MODULE QUIET
+    NAMES cereal
     HINTS ${CEREAL_DIR} $ENV{CEREAL_DIR}
     PATH_SUFFIXES share/cmake/cereal
     NO_DEFAULT_PATH)
   if (NOT CEREAL_FOUND)
-    find_package(CEREAL NO_MODULE QUIET)
+    find_package(CEREAL NO_MODULE QUIET NAMES cereal)
   endif ()
   if (NOT CEREAL_FOUND AND NOT CEREAL_DIR)
     set(CEREAL_DIR "@CEREAL_DIR@")
-    find_package(CEREAL NO_MODULE REQUIRED)
+    find_package(CEREAL NO_MODULE REQUIRED NAMES cereal)
   endif ()
   if (NOT CEREAL_FOUND)
     message(FATAL_ERROR "Required dependency CEREAL not found.")

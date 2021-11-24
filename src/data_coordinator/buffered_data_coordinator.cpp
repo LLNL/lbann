@@ -65,8 +65,6 @@ void buffered_data_coordinator<TensorDataType>::setup_data_fields(
 
 #ifdef LBANN_HAS_DISTCONV
   if (dc::is_cosmoflow_parallel_io_enabled()) {
-    El::Int num_neurons = get_linearized_data_size();
-    num_neurons /= dc::get_number_of_io_partitions();
     // TODO: Make sure that TensorDatType is equivalent to the HDF5
     // data reader's data type (float as default).
     // TensorDataType is assumed to be 2-byte integer types such as
@@ -80,15 +78,33 @@ void buffered_data_coordinator<TensorDataType>::setup_data_fields(
   /// ranks are participating in I/O
   El::Int local_mini_batch_size = max_mini_batch_size / this->m_comm->get_procs_per_trainer();
   El::Int partial_mini_batch_size = max_mini_batch_size % this->m_comm->get_procs_per_trainer();
-#ifdef LBANN_HAS_DISTCONV
-  if (dc::is_cosmoflow_parallel_io_enabled()) {
-    assert_eq(local_mini_batch_size, 1);
-    assert_eq(partial_mini_batch_size, 0);
-  }
-#endif // LBANN_HAS_DISTCONV
   if(partial_mini_batch_size > 0 && this->m_comm->get_rank_in_trainer() < partial_mini_batch_size) {
     local_mini_batch_size++;
   }
+
+#ifdef LBANN_HAS_DISTCONV
+  if (dc::is_cosmoflow_parallel_io_enabled()) {
+    // Manually resize buffers for CosmoFlow data tensors
+    assert_eq(local_mini_batch_size, 1);
+    assert_eq(partial_mini_batch_size, 0);
+    El::Int linearized_size = get_linearized_data_size();
+    linearized_size /= dc::get_number_of_io_partitions();
+    for (const auto& buf_map : m_data_buffers) {
+      const data_buffer_map_t& buffer_map = buf_map;
+      for (const auto& [mode, data_buffer] : buffer_map) {
+        auto& input_buffers = data_buffer->m_input_buffers;
+        if (input_buffers.count(INPUT_DATA_TYPE_SAMPLES) > 0
+            && input_buffers[INPUT_DATA_TYPE_SAMPLES]->IsEmpty()) {
+          input_buffers[INPUT_DATA_TYPE_SAMPLES]->Resize(linearized_size,
+                                                         max_mini_batch_size);
+          El::Zeros_seq(data_buffer->m_indices_fetched_per_mb,
+                        local_mini_batch_size,
+                        1);
+        }
+      }
+    }
+  }
+#endif // LBANN_HAS_DISTCONV
 
   // Check to see if there are any data fields with unallocated buffers
   for (auto& data_field : m_active_data_fields) {
@@ -143,8 +159,16 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(data_buffer
     for(auto& b : buf.m_input_buffers) {
       local_input_buffers[b.first] = static_cast<CPUMat*>(&(b.second->Matrix()));
     }
+
+    // Compute the size of the current mini-batch
+
+    int loaded_batch_size = dr->get_loaded_mini_batch_size();
+    const int end_pos = std::min(static_cast<size_t>(dr->m_current_pos+loaded_batch_size), dr->m_shuffled_indices.size());
+    const int mb_size = std::min(El::Int{((end_pos - dr->m_current_pos) + dr->m_sample_stride - 1) / dr->m_sample_stride},
+                                 local_input_buffers[INPUT_DATA_TYPE_SAMPLES]->Width());
+
     /** @brief Each rank will fetch a mini-batch worth of data into it's buffer */
-    buf.m_num_samples_fetched = dr->fetch(local_input_buffers, buf.m_indices_fetched_per_mb);
+    buf.m_num_samples_fetched = dr->fetch(local_input_buffers, buf.m_indices_fetched_per_mb, mb_size);
 
     bool data_valid = (buf.m_num_samples_fetched > 0);
     if(data_valid) {

@@ -87,7 +87,7 @@ void sgd<TensorDataType>::setup(WeightsType* w) {
 #ifdef LBANN_HAS_GPU
   if (m_velocity->GetLocalDevice() == El::Device::GPU) {
     const auto& arg_parser = global_argument_parser();
-    if (!arg_parser.get<bool>(USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP)) {
+    if (!arg_parser.get<bool>(LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP)) {
       m_velocity->Matrix().SetMemoryMode(0); // Directly-allocated memory
     }
   }
@@ -121,7 +121,7 @@ void sgd<TensorDataType>::momentum_step_cpu(AbsDistMatrixType& values,
                                             const AbsDistMatrixType& gradient) {
 
   // Get local matrix data
-  const auto& learning_rate = this->get_learning_rate();
+  const auto learning_rate = El::To<TensorDataType>(this->get_learning_rate());
   const size_t local_height = values.LocalHeight();
   const size_t local_width = values.LocalWidth();
   auto* __restrict__ values_buffer = values.Buffer();

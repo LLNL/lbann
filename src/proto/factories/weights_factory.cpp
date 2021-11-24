@@ -71,6 +71,8 @@ private:
                               build_constant_initializer_from_pbuf<T>);
     factory_.register_builder("ValueInitializer",
                               build_value_initializer_from_pbuf<T>);
+    factory_.register_builder("NumpyInitializer",
+                              build_numpy_initializer_from_pbuf<T>);
     factory_.register_builder("UniformInitializer",
                               build_uniform_initializer_from_pbuf<T>);
     factory_.register_builder("NormalInitializer",

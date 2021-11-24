@@ -26,6 +26,8 @@
 
 #include "lbann/execution_algorithms/ltfb/truncation_selection_exchange.hpp"
 
+#include "checkpoint_common.hpp"
+
 #include "lbann/base.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
@@ -65,48 +67,6 @@ bool low_score_wins(TruncationSelectionExchange::metric_strategy strategy)
   return true; // Silence compiler warning about no return.
 }
 
-// Pack model to ship off
-std::string pack(model const& m)
-{
-  std::ostringstream oss;
-  {
-    RootedBinaryOutputArchive ar(oss, m.get_comm()->get_trainer_grid());
-    ar(m);
-  }
-  return oss.str();
-}
-
-// Send a string to the root of the destination trainer
-void send_string(lbann_comm const& comm,
-                 std::string const& str,
-                 int destination_trainer)
-{
-  size_t size = str.length();
-  comm.send(&size, 1, destination_trainer, /*rank=*/0);
-  comm.send(reinterpret_cast<El::byte const*>(str.data()),
-            size,
-            destination_trainer,
-            /*rank=*/0);
-}
-// Receive a string from the root of src_trainer
-std::string recv_string(lbann_comm const& comm, int src_trainer)
-{
-  size_t size = 0;
-  comm.recv(&size, 1, src_trainer);
-  std::string buf;
-  buf.resize(size);
-  comm.recv(reinterpret_cast<El::byte*>(buf.data()), size, src_trainer);
-  return buf;
-}
-// Unpack received model
-void unpack(model& m, std::string const& str)
-{
-  std::istringstream iss(str);
-  {
-    RootedBinaryInputArchive ar(iss, m.get_comm()->get_trainer_grid());
-    ar(m);
-  }
-}
 } // namespace
 
 // TruncationSelectionExchange implementation
@@ -134,7 +94,7 @@ TruncationSelectionExchange::TruncationSelectionExchange(
 {}
 
 EvalType TruncationSelectionExchange::evaluate_model(model& m,
-                                                     ExecutionContext& ctxt,
+                                                     LTFBExecutionContext& ctxt,
                                                      data_coordinator& dc) const
 {
   // Make sure data readers finish asynchronous work
@@ -187,7 +147,7 @@ EvalType TruncationSelectionExchange::evaluate_model(model& m,
 }
 
 void TruncationSelectionExchange::select_next(model& m,
-                                              ltfb::ExecutionContext& ctxt,
+                                              ltfb::LTFBExecutionContext& ctxt,
                                               data_coordinator& dc) const
 {
   auto const& comm = *(m.get_comm());

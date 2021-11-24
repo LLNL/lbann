@@ -32,6 +32,7 @@
 #include "lbann/utils/gpu/helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #include <mpi.h>
+#define NVSHMEM_USE_NCCL
 #include <nvshmem.h>
 #include <nvshmemx.h>
 

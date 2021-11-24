@@ -70,14 +70,11 @@ class generic_data_reader {
  public:
   using unused_index_map_t = std::map<execution_mode,std::vector<int>>;
 
- #define JAG_NOOP_VOID if (m_jag_partitioned) { return; }
- #define JAG_NOOP_INT if (m_jag_partitioned) { return 0; }
-
   /**
    * ctor
    */
   generic_data_reader(bool shuffle = true)
-    : m_verbose(global_argument_parser().get<bool>(VERBOSE)),
+    : m_verbose(global_argument_parser().get<bool>(LBANN_OPTION_VERBOSE)),
       m_data_store(nullptr),
       m_comm(nullptr),
       m_mini_batch_size(0),
@@ -97,7 +94,6 @@ class generic_data_reader {
       m_global_last_mini_batch_size(0),
       m_world_master_mini_batch_adjustment(0),
       m_num_parallel_readers(0),
-      m_rank_in_model(0),
       m_max_files_to_load(0),
       m_file_dir(""),
       m_data_sample_list(""),
@@ -106,14 +102,10 @@ class generic_data_reader {
       m_shuffle(shuffle),
       m_absolute_sample_count(0),
       m_use_percent(1.0),
-      m_master(false),
-      m_gan_labelling(false), // default, not GAN
-      m_gan_label_value(
-        0), // If GAN, default for fake label, discriminator model
+      m_gan_labelling(false), //default, not GAN
+      m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
       m_io_thread_pool(nullptr),
-      m_jag_partitioned(false),
       m_keep_sample_order(false),
-      m_trainer(nullptr),
       m_issue_warning(true)
   {
     // By default only support fetching input samples
@@ -131,7 +123,6 @@ class generic_data_reader {
   /// set the comm object
   void set_comm(lbann_comm *comm) {
     m_comm = comm;
-    set_master(comm->am_world_master());
   }
 
   /// returns a (possibly nullptr) to comm
@@ -306,7 +297,7 @@ class generic_data_reader {
 
   /** @brief Fetch a mini-batch worth of data, including samples, labels, responses (as appropriate) */
   int fetch(std::map<data_field_type, CPUMat*>& input_buffers,
-            El::Matrix<El::Int>& indices_fetched);
+            El::Matrix<El::Int>& indices_fetched, size_t mb_size);
 
   /** @brief Check to see if the data reader supports this specific data field
    */
@@ -448,7 +439,6 @@ class generic_data_reader {
   }
   /// Set the mini batch size across all models (global)
   void set_global_mini_batch_size(const int s) {
-    JAG_NOOP_VOID
     m_global_mini_batch_size = s;
   }
   /// Return the mini_batch_size across all models (global)
@@ -457,7 +447,6 @@ class generic_data_reader {
   }
   /// Set the mini batch stride
   void set_stride_to_next_mini_batch(const int s) {
-    JAG_NOOP_VOID
     m_stride_to_next_mini_batch = s;
   }
   /// Return the mini batch stride.
@@ -466,7 +455,6 @@ class generic_data_reader {
   }
   /// Set the sample stride
   void set_sample_stride(const int s) {
-    JAG_NOOP_VOID
     m_sample_stride = s;
   }
   /// Return the sample stride.
@@ -483,7 +471,6 @@ class generic_data_reader {
   }
   /// Return the base offset.
   virtual void set_base_offset(const int s) {
-    JAG_NOOP_VOID
     m_base_offset = s;
   }
   /// Return the base offset.
@@ -492,7 +479,6 @@ class generic_data_reader {
   }
   /// Set the model offset
   void set_model_offset(const int s) {
-    JAG_NOOP_VOID
     m_model_offset = s;
   }
   /// Return the model offset.
@@ -501,7 +487,6 @@ class generic_data_reader {
   }
   /// Set the last mini batch size
   void set_last_mini_batch_size(const int s) {
-    JAG_NOOP_VOID
     m_last_mini_batch_size = s;
   }
   /// Return the last mini batch size
@@ -510,7 +495,6 @@ class generic_data_reader {
   }
   /// Set the last mini batch size across all models (global)
   void set_global_last_mini_batch_size(const int s) {
-    JAG_NOOP_VOID
     m_global_last_mini_batch_size = s;
   }
   /// Return the last mini batch size across all models (global)
@@ -519,7 +503,6 @@ class generic_data_reader {
   }
   /// Set the world master mini batch adjustment (global)
   void set_world_master_mini_batch_adjustment(const int s) {
-    JAG_NOOP_VOID
     m_world_master_mini_batch_adjustment = s;
   }
   /// Return the world master mini batch adjustment (global)
@@ -528,7 +511,6 @@ class generic_data_reader {
   }
   /// Set the last mini batch stride
   void set_stride_to_last_mini_batch(const int s) {
-    JAG_NOOP_VOID
     m_stride_to_last_mini_batch = s;
   }
   /// Return the last mini batch stride
@@ -616,26 +598,6 @@ class generic_data_reader {
     return  m_current_mini_batch_idx;
   }
 
-  /// only the master may write to cerr or cout; primarily for use in debugging during development
-  virtual void set_master(bool m) {
-    m_master = m;
-  }
-
-  /// only the master may write to cerr or cout; primarily for use in debugging during development
-  bool is_master() const {
-    return m_master;
-  }
-
-  /// Allow the reader to know where it is in the model hierarchy
-  virtual void set_rank(int rank) {
-    m_rank_in_model = rank;
-  }
-
-  /// Allow the reader to know where it is in the model hierarchy
-  int get_rank() const {
-    return m_rank_in_model;
-  }
-
   /**
    * Optionally resizes the shuffled indices based on the data reader
    * prototext settings: absolute_sample_count, percent_of_data_to_use.
@@ -714,12 +676,9 @@ class generic_data_reader {
 
   virtual bool priming_data_store() const;
 
-  void set_trainer(trainer *t) { m_trainer = t; }
-
-  trainer& get_trainer() const {
-    if(m_trainer == nullptr) { LBANN_ERROR("get_trainer called with nullptr"); }
-    return *m_trainer;
-  }
+  /// experimental; used to ensure all readers for jag_conduit_hdf5
+  /// have identical shuffled indices
+  virtual void post_update() {}
 
   /** Set the transform pipeline this data reader will use. */
   void set_transform_pipeline(transform::transform_pipeline&& tp) {
@@ -836,6 +795,7 @@ class generic_data_reader {
   /// Shuffle indices and profide a random number generator
   virtual void shuffle_indices(rng_gen& gen);
 
+public:
   int m_mini_batch_size;
   int m_current_pos;
   /// Batch Stride is typically batch_size, but may be a multiple of batch size if there are multiple readers
@@ -873,7 +833,6 @@ class generic_data_reader {
 
   int m_num_parallel_readers; /// How many parallel readers are being used
 
-  int m_rank_in_model;  /// What is the rank of the data reader within a given model
   size_t m_max_files_to_load;
   std::string m_file_dir;
   std::string m_local_file_dir;
@@ -886,8 +845,6 @@ class generic_data_reader {
   double m_use_percent;
   int m_first_n;
   std::string m_role;
-
-  bool m_master;
 
   /** @brief Print the return values from various get_X methods to file
    *
@@ -928,19 +885,9 @@ private:
 
   observer_ptr<thread_pool> m_io_thread_pool;
 
-  /// special handling for 1B jag; each reader
-  /// owns a unique subset of the data
-  bool m_jag_partitioned;
-
   /** Whether to keep the order of loaded samples same as it is in the
    *  file to make testing and validation easier */
   bool m_keep_sample_order;
-
-  /// called by fetch_data a single time if m_jag_partitioned = true;
-  /// this sets various member variables (num_iterations, m_reset_mini_batch_index,
-  /// etc.
-  void set_jag_variables(int mb_size);
-  trainer *m_trainer;
 
   /** Transform pipeline for preprocessing data. */
   transform::transform_pipeline m_transform_pipeline;

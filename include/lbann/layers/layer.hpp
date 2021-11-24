@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -45,6 +45,9 @@
 #endif // LBANN_HAS_DISTCONV
 #include <string>
 #include <vector>
+#ifdef LBANN_HAS_ONNX
+#include <onnx/onnx_pb.h>
+#endif
 
 /** @brief A utility macro for easily defining default-constructed sub-class
  *  builders.*/
@@ -363,18 +366,12 @@ public:
     return TypeName<DataType>();
   };
 
-
-  void set_num_spliting_groups(int num_grps)
-  {
-    m_num_spliting_groups = num_grps;
-  }
   //enable subgraph parallelism for this layer
   //to set variable for ssplit layer
   void set_enable_subgraph_variable()
   {
     m_parallel_strategy.enable_subgraph=true;
   }
-
 
   /** @brief Human-readable description. */
 
@@ -469,6 +466,26 @@ public:
 
   /** @brief Write layer to proto file */
   virtual void write_proto(lbann_data::Layer* proto) const;
+
+#ifdef LBANN_HAS_ONNX
+  /** @brief Add layer specific data to onnx graph
+   *  Fills layer specific data in onnx nodes. Needs to
+   *  be overridden by layers that cannot be represented
+   *  by a single onnx operator type.
+   */
+  virtual void fill_onnx_node(onnx::GraphProto& graph) const;
+
+private:
+  /** @brief Get ONNX operator type
+   *  Unsupported layers and layers that cannot be represented
+   *  by a single ONNX operator type will throw an LBANN error.
+   *  The operator types for these layers must be included
+   *  manually in the overridden fill_onnx_node() function.
+   */
+  virtual std::string get_onnx_op_type() const;
+#endif // LBANN_HAS_ONNX
+
+public:
 
   const Layer& get_parent_layer(size_t index=0) const;
   const Layer& get_child_layer(size_t index=0) const;

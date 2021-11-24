@@ -113,7 +113,7 @@ void adam<TensorDataType>::setup(WeightsType* w) {
   if (m_moment1->GetLocalDevice() == El::Device::GPU
       && m_moment2->GetLocalDevice() == El::Device::GPU) {
     const auto& arg_parser = global_argument_parser();
-    if (!arg_parser.get<bool>(USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP)) {
+    if (!arg_parser.get<bool>(LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP)) {
       m_moment1->Matrix().SetMemoryMode(0); // Directly-allocated memory
       m_moment2->Matrix().SetMemoryMode(0); // Directly-allocated memory
     }
@@ -131,9 +131,9 @@ void adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
   // Precompute the bias correction and learning rate.
   m_current_beta1 *= m_beta1;
   m_current_beta2 *= m_beta2;
-  const TensorDataType correction = this->get_learning_rate() *
-                              (El::Sqrt(one - m_current_beta2)
-                               / (one - m_current_beta1));
+  const TensorDataType correction =
+    El::To<TensorDataType>(this->get_learning_rate()) *
+    (El::Sqrt(one - m_current_beta2) / (one - m_current_beta1));
 
   switch (values.GetLocalDevice()) {
   case El::Device::CPU: step_compute_cpu(values, gradient, correction); break;

@@ -63,7 +63,7 @@ int total = 0;
   // get list of conduit filenames
   if (master) cerr << "reading filelist\n";
   vector<string> filenames;
-  string base_dir = arg_parser.get<std::string>(BASE_DIR);
+  string base_dir = arg_parser.get<std::string>(LBANN_OPTION_BASE_DIR);
   if (base_dir.back() != '/') {
     base_dir += '/';
   }

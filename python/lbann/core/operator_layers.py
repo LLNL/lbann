@@ -39,9 +39,33 @@ def generate_operator_layer(operator_class):
         layer_kwargs['ops'] = [ operator_class(**op_kwargs) ]
         OperatorLayer.__init__(self, *args, **layer_kwargs)
 
+    def export_proto(self):
+        """Construct and return a protobuf message."""
+
+        # Use default datatype if not specified
+        if self.datatype is None:
+            self.datatype = 0
+
+        # Convert device string to enum
+        device = lbann.DeviceAllocation.DEFAULT_DEVICE
+        if isinstance(self.device, str):
+            if self.device.lower() == 'cpu':
+                device = lbann.DeviceAllocation.CPU
+            elif self.device.lower() == 'gpu':
+                device = lbann.DeviceAllocation.GPU
+
+        # Configure operators to match layer
+        for o in self.ops:
+            o.input_type = self.datatype
+            o.output_type = self.datatype
+            o.device_allocation = device
+
+        # Generate Protobuf message
+        return OperatorLayer.export_proto(self)
+
     # Return operator layer class
     class_name = operator_class.__name__
-    class_dict = {'__init__': __init__}
+    class_dict = {'__init__': __init__, 'export_proto': export_proto}
     return type(class_name, (OperatorLayer,), class_dict)
 
 def is_operator_class(obj):

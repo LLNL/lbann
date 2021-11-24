@@ -34,6 +34,51 @@
 namespace lbann {
 namespace ltfb {
 
+// Pack model to ship off
+inline static std::string pack(model const& m)
+{
+  std::ostringstream oss;
+  {
+    RootedBinaryOutputArchive ar(oss, m.get_comm()->get_trainer_grid());
+    ar(m);
+  }
+  return oss.str();
+}
+
+// Send a string to the root of the destination trainer
+inline static void send_string(lbann_comm const& comm,
+                               std::string const& str,
+                               int destination_trainer)
+{
+  size_t size = str.length();
+  comm.send(&size, 1, destination_trainer, /*rank=*/0);
+  comm.send(reinterpret_cast<El::byte const*>(str.data()),
+            size,
+            destination_trainer,
+            /*rank=*/0);
+}
+
+// Receive a string from the root of src_trainer
+inline static std::string recv_string(lbann_comm const& comm, int src_trainer)
+{
+  size_t size = 0;
+  comm.recv(&size, 1, src_trainer);
+  std::string buf;
+  buf.resize(size);
+  comm.recv(reinterpret_cast<El::byte*>(buf.data()), size, src_trainer);
+  return buf;
+}
+
+// Unpack received model
+inline static void unpack(model& m, std::string const& str)
+{
+  std::istringstream iss(str);
+  {
+    RootedBinaryInputArchive ar(iss, m.get_comm()->get_trainer_grid());
+    ar(m);
+  }
+}
+
 inline static void restore_model_weights(
   model& m,
   std::unordered_map<std::string, std::unique_ptr<weights>>& restore_weights)
@@ -110,7 +155,8 @@ inline static std::string sendrecv_string(lbann_comm const& c,
 }
 
 template <typename T>
-static void exchange(lbann_comm const& c, T& object, El::Int partner_trainer)
+inline static void
+exchange(lbann_comm const& c, T& object, El::Int partner_trainer)
 {
   std::ostringstream oss;
   {

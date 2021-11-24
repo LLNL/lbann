@@ -34,16 +34,16 @@
 
 namespace lbann {
 
-training_algorithm::training_algorithm(std::string name)
+TrainingAlgorithm::TrainingAlgorithm(std::string name)
   : m_name{std::move(name)}
 {}
 
-std::string const& training_algorithm::get_name() const noexcept
+std::string const& TrainingAlgorithm::get_name() const noexcept
 {
   return m_name;
 }
 
-void training_algorithm::setup_models(
+void TrainingAlgorithm::setup_models(
   std::vector<observer_ptr<model>> const& models,
   size_t max_mini_batch_size,
   DataReaderMetaData& dr_metadata)

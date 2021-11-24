@@ -41,7 +41,7 @@
 using namespace lbann;
 
 #define NUM_OUTPUT_DIRS 100
-#define NUM_SAMPLES_PER_FILE 1000
+#define LBANN_OPTION_NUM_SAMPLES_PER_FILE 1000
 
 //==========================================================================
 int main(int argc, char *argv[]) {
@@ -68,18 +68,18 @@ int main(int argc, char *argv[]) {
       std::terminate();
     }
 
-    if (arg_parser.get<std::string>(FILELIST)) {
+    if (arg_parser.get<std::string>(LBANN_OPTION_FILELIST)) {
       if (master) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist");
       }
     }
 
     std::vector<std::string> files;
-    std::ifstream in(arg_parser.get<std::string>(FILELIST).c_str());
+    std::ifstream in(arg_parser.get<std::string>(LBANN_OPTION_FILELIST).c_str());
     if (!in) {
       throw lbann_exception(std::string{} + __FILE__ + " " +
                             std::to_string(__LINE__) + " :: failed to open " +
-                            arg_parser.get<std::string>(FILELIST) +
+                            arg_parser.get<std::string>(LBANN_OPTION_FILELIST) +
                             " for reading");
     }
     std::string line;

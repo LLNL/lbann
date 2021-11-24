@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/utils/serialize.hpp"
 
 namespace lbann {
@@ -33,14 +33,14 @@ namespace lbann {
 // Execution context
 //******************************************************************************
 
-execution_context::execution_context() : m_step{0UL} {}
+ExecutionContext::ExecutionContext() : m_step{0UL} {}
 
-template <class Archive> void execution_context::serialize(Archive& ar)
+template <class Archive> void ExecutionContext::serialize(Archive& ar)
 {
   ar(CEREAL_NVP(m_step));
 }
 
 } // namespace lbann
 
-#define LBANN_CLASS_NAME execution_context
+#define LBANN_CLASS_NAME ExecutionContext
 #include <lbann/macros/register_class_with_cereal.hpp>

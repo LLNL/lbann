@@ -59,6 +59,10 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+#ifdef LBANN_HAS_ONNX
+  std::string get_onnx_op_type() const override { return "Relu"; }
+#endif // LBANN_HAS_ONNX
+
   /** @name Serialization */
   ///@{
 

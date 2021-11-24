@@ -26,6 +26,13 @@
 #ifndef LBANN_EXECUTION_ALGORITHMS_LTFB_MUTATION_STRATEGY_HPP_INCLUDED
 #define LBANN_EXECUTION_ALGORITHMS_LTFB_MUTATION_STRATEGY_HPP_INCLUDED
 
+#include "lbann/proto/helpers.hpp"
+#include "lbann/utils/factory.hpp"
+#include "lbann/utils/factory_error_policies.hpp"
+#include "lbann/utils/make_abstract.hpp"
+
+#include <google/protobuf/message.h>
+
 #include "lbann/models/model.hpp"
 #include "lbann/utils/cloneable.hpp"
 
@@ -64,13 +71,29 @@ public:
 };
 
 // Replace Convolution layers
-class ReplaceConvolution final : public Cloneable<ReplaceConvolution, MutationStrategy>
+class ReplaceConvolution final
+  : public Cloneable<ReplaceConvolution, MutationStrategy>
 {
 public:
   ReplaceConvolution() = default;
   void mutate(model& m, const int& step) final;
 };
 
+// Hybrid mutation for Regularized Evolution mutation
+// Alternates between ReplaceActivation and ReplaceConvolution randomly
+class HybridMutation final : public Cloneable<HybridMutation, MutationStrategy>
+{
+public:
+  HybridMutation() = default;
+  void mutate(model& m, const int& step) final;
+};
+
 } // namespace ltfb
 } // namespace lbann
+
+template <>
+std::unique_ptr<lbann::ltfb::MutationStrategy>
+lbann::make_abstract<lbann::ltfb::MutationStrategy>(
+  google::protobuf::Message const& params);
+
 #endif // LBANN_EXECUTION_ALGORITHMS_LTFB_MUTATION_STRATEGY_HPP_INCLUDED

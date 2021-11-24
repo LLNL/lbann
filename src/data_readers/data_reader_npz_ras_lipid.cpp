@@ -78,7 +78,7 @@ void ras_lipid_conduit_data_reader::copy_members(const ras_lipid_conduit_data_re
 }
 
 void ras_lipid_conduit_data_reader::load() {
-  if(is_master()) {
+  if(get_comm()->am_world_master()) {
     std::cout << "starting load for role: " << get_role() << std::endl;
   }
 
@@ -109,7 +109,7 @@ void ras_lipid_conduit_data_reader::load() {
   else {
     double tm3 = get_time();
     get_samples_per_file();
-    if (is_master()) std::cout << "time to compute samples_per_file: " << get_time() - tm3 << std::endl;
+    if (get_comm()->am_world_master()) std::cout << "time to compute samples_per_file: " << get_time() - tm3 << std::endl;
   }
   // Optionally save the samples-per-file info to file
   if (arg_parser.get<std::string>("pilot2_save_file_sizes") != "") {
@@ -118,8 +118,8 @@ void ras_lipid_conduit_data_reader::load() {
 
   // Get the number of samples that will be combined into a multi-sample
   m_seq_len = 1;
-  if (arg_parser.get<int>(SEQUENCE_LENGTH) != -1) {
-    m_seq_len = arg_parser.get<int>(SEQUENCE_LENGTH);
+  if (arg_parser.get<int>(LBANN_OPTION_SEQUENCE_LENGTH) != -1) {
+    m_seq_len = arg_parser.get<int>(LBANN_OPTION_SEQUENCE_LENGTH);
   }
 
   // set the number of labels
@@ -189,7 +189,7 @@ void ras_lipid_conduit_data_reader::load() {
 }
 
 void ras_lipid_conduit_data_reader::do_preload_data_store() {
-  if (is_master()) std::cout << "starting ras_lipid_conduit_data_reader::do_preload_data_store; num indices: " << utils::commify(m_shuffled_indices.size()) << " for role: " << get_role() << std::endl;
+  if (get_comm()->am_world_master()) std::cout << "starting ras_lipid_conduit_data_reader::do_preload_data_store; num indices: " << utils::commify(m_shuffled_indices.size()) << " for role: " << get_role() << std::endl;
 
 #if 0
 ==========================================================================
@@ -224,14 +224,14 @@ data types, from python+numpy:
 
   // Variables only used for user feedback
   auto& arg_parser = global_argument_parser();
-  bool verbose = arg_parser.get<bool>(VERBOSE);
+  bool verbose = arg_parser.get<bool>(LBANN_OPTION_VERBOSE);
   int np = m_comm->get_procs_per_trainer();
   size_t nn = 0;
 
   std::vector<conduit::Node> work(m_seq_len);
 
   // option and variables only used for testing during development
-  bool debug_concatenate = arg_parser.get<bool>(DEBUG_CONCATENATE);
+  bool debug_concatenate = arg_parser.get<bool>(LBANN_OPTION_DEBUG_CONCATENATE);
   if (m_seq_len > 1) {
     debug_concatenate = false;
   }
@@ -262,7 +262,7 @@ data types, from python+numpy:
           load_the_next_sample(work[k], starting_id+k, data);
 
           ++nn;
-          if (verbose && is_master() && nn % 1000 == 0) {
+          if (verbose && get_comm()->am_world_master() && nn % 1000 == 0) {
             std::cout << "estimated number of single-samples processed: "
                       << utils::commify(nn/1000*np) << "K" << std::endl;
           }
@@ -271,7 +271,7 @@ data types, from python+numpy:
         // First branch: seq_len = 1
         if (which == 1) {
           // debug block; will go away
-          if (testme && is_master()) {
+          if (testme && get_comm()->am_world_master()) {
             std::cout << "Taking first branch (seq_len == 1)" << std::endl;
             testme = false;
           }
@@ -284,7 +284,7 @@ data types, from python+numpy:
         //        branch for debugging
         else {
           // debug block; will go away
-          if (is_master() && m_seq_len == 1 && testme) {
+          if (get_comm()->am_world_master() && m_seq_len == 1 && testme) {
             std::cout << "Taking second branch (seq_len == 1)" << std::endl;
             testme = false;
           }
@@ -440,11 +440,11 @@ void ras_lipid_conduit_data_reader::get_samples_per_file() {
 }
 
 void ras_lipid_conduit_data_reader::write_file_sizes() {
-  if (! is_master()) {
+  if (! get_comm()->am_world_master()) {
     return;
   }
   std::string fn =
-    global_argument_parser().get<std::string>(PILOT2_SAVE_FILE_SIZES);
+    global_argument_parser().get<std::string>(LBANN_OPTION_PILOT2_SAVE_FILE_SIZES);
   std::ofstream out(fn.c_str());
   if (!out) {
     LBANN_ERROR("failed to open ", fn, " for writing");
@@ -457,7 +457,7 @@ void ras_lipid_conduit_data_reader::write_file_sizes() {
 
 void ras_lipid_conduit_data_reader::read_file_sizes() {
   std::string fn =
-    global_argument_parser().get<std::string>(PILOT2_READ_FILE_SIZES);
+    global_argument_parser().get<std::string>(LBANN_OPTION_PILOT2_READ_FILE_SIZES);
   std::ifstream in(fn.c_str());
   if (!in) {
     LBANN_ERROR("failed to open ", fn, " for reading");
@@ -483,10 +483,10 @@ void ras_lipid_conduit_data_reader::read_normalization_data() {
   m_use_min_max = false;
   m_use_z_score = false;
   auto& arg_parser = global_argument_parser();
-  if (arg_parser.get<std::string>(NORMALIZATION) != "") {
+  if (arg_parser.get<std::string>(LBANN_OPTION_NORMALIZATION) != "") {
     m_use_min_max = true;
-    m_use_z_score = arg_parser.get<bool>(Z_SCORE);
-    if (is_master()) {
+    m_use_z_score = arg_parser.get<bool>(LBANN_OPTION_Z_SCORE);
+    if (get_comm()->am_world_master()) {
       if (m_use_z_score) {
         std::cout << "Normalizing data using z-score" << std::endl;
       } else {
@@ -494,7 +494,7 @@ void ras_lipid_conduit_data_reader::read_normalization_data() {
       }
     }
 
-    std::string fn = arg_parser.get<std::string>(NORMALIZATION);
+    std::string fn = arg_parser.get<std::string>(LBANN_OPTION_NORMALIZATION);
     std::ifstream in(fn.c_str());
     if (!in) {
       LBANN_ERROR("failed to open ", fn, " for reading");
@@ -518,7 +518,7 @@ void ras_lipid_conduit_data_reader::read_normalization_data() {
     }
   }
   else {
-    if (is_master()) {
+    if (get_comm()->am_world_master()) {
       std::cout << "NOT Normalizing data!" << std::endl;
     }
   }
@@ -526,7 +526,7 @@ void ras_lipid_conduit_data_reader::read_normalization_data() {
 
 //user feedback
 void ras_lipid_conduit_data_reader::print_shapes_etc() {
-  if (!is_master()) {
+  if (!get_comm()->am_world_master()) {
     return;
   }
 
@@ -546,7 +546,7 @@ void ras_lipid_conduit_data_reader::print_shapes_etc() {
   }
   std::cout << std::endl;
 
-  if (global_argument_parser().get<bool>(VERBOSE)) {
+  if (global_argument_parser().get<bool>(LBANN_OPTION_VERBOSE)) {
     std::cout << "\nAll data shapes:\n";
     for (const auto &t : m_datum_shapes) {
       std::cout << "  " << t.first << " ";
