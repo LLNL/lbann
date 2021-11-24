@@ -33,11 +33,10 @@ namespace lbann {
 
 /** @brief Convert index to a one-hot vector
  *
- *  Expects a scalar input tensor and outputs a 1-D output tensor with
- *  @c size entries. The input is interpreted as an index, and output
- *  entries are one if they correspond to that index and zero
- *  otherwise. If the input is outside @f$[0,\text{size})@f$, then the
- *  output is all zeros.
+ *  Expects a scalar input tensor and outputs a 1D tensor. The input
+ *  is interpreted as an index, and output entries are one if they
+ *  correspond to that index and zero otherwise. Out-of-range indices
+ *  are ignored.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class one_hot_layer : public data_type_layer<TensorDataType> {

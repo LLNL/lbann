@@ -33,7 +33,7 @@
 
 namespace lbann {
 
-/** @brief Apply scale and bias to tensor channels.
+/** @brief Apply per-channel scale and bias
  *
  *  The input tensor is sliced along the first tensor dimension (the
  *  "channel" dimension, assuming image data in CHW format) and scale

@@ -33,7 +33,7 @@ namespace lbann {
 
 /** @brief Get index of maximum-value tensor entry
  *
- *  Expects a 1-D input tensor. If multiple entries have the same
+ *  Expects a 1D input tensor. If multiple entries have the same
  *  maximum value, outputs the index of the first one.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
