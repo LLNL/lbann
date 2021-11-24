@@ -30,6 +30,8 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/exception.hpp"
 
+#include <layers.pb.h>
+
 #include <sstream>
 #include <string>
 
@@ -509,9 +511,9 @@ std::unique_ptr<Layer> build_deconvolution_layer_from_pbuf(
 // Explicit template instantiation
 // =========================================================
 
-#define PROTO_DEVICE(T, Device)                                 \
-  template class deconvolution_layer<                           \
-    T, data_layout::DATA_PARALLEL, Device>;                     \
+#define PROTO_DEVICE(T, Device)                         \
+  template class deconvolution_layer<                   \
+    T, data_layout::DATA_PARALLEL, Device>;             \
   LBANN_LAYER_BUILDER_ETI(deconvolution, T, Device)
 #include "lbann/macros/instantiate_device.hpp"
 
