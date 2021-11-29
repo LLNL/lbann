@@ -231,10 +231,11 @@ message Layer {
     MiniBatchSize mini_batch_size = 304;
     Argmax argmax = 305;
     Argmin argmin = 306;
-    OneHot one_hot = 308;
-    DistEmbedding dist_embedding = 309;
-    UniformHash uniform_hash = 310;
-    RowwiseWeightsNorms rowwise_weights_norms = 311;
+    OneHot one_hot = 307;
+    ChannelwiseSoftmax channelwise_softmax = 309;
+    DistEmbedding dist_embedding = 311;
+    UniformHash uniform_hash = 312;
+    RowwiseWeightsNorms rowwise_weights_norms = 313;
 
   }
 
