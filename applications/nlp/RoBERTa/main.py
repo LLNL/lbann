@@ -1,14 +1,14 @@
 import numpy as np
 import math
 import sys
+import os
 
 import lbann
 import lbann.modules
 from lbann.util import str_list
 
-_permute_cache = {}
-_cumsum_cache = {}
-_value_tensor_cache = {}
+_Permute_cache = {}
+_Cumsum_cache = {}
 
 
 class RobertaEmbeddings(lbann.modules.Module):
@@ -22,7 +22,9 @@ class RobertaEmbeddings(lbann.modules.Module):
         self.type_vocab_size = config.type_vocab_size
         self.layer_norm_eps = config.layer_norm_eps
         self.hidden_dropout_prob = config.hidden_dropout_prob
-        self.position_embedding_type = "absolute"
+        self.position_embedding_type = getattr(
+            config, "position_embedding_type", "absolute"
+        )
         self.input_shape = config.input_shape
 
     def forward(
@@ -57,16 +59,8 @@ class RobertaEmbeddings(lbann.modules.Module):
                 )
                 token_type_ids = buffered_token_type_ids_expanded
             else:
-                token_type_ids = np.zeros(self.input_shape, dtype=float)
-                tmp_weights = lbann.Weights(
-                    initializer=lbann.ValueInitializer(
-                        values=lbann.util.str_list(np.nditer(token_type_ids))
-                    ),
-                    optimizer=lbann.NoOptimizer(),
-                )
-                token_type_ids = lbann.WeightsLayer(
-                    dims=lbann.util.str_list(self.input_shape),
-                    weights=tmp_weights,
+                token_type_ids = lbann.Constant(
+                    value=0, num_neurons=str_list(self.input_shape)
                 )
 
         if inputs_embeds is None:
@@ -75,11 +69,13 @@ class RobertaEmbeddings(lbann.modules.Module):
                 num_embeddings=self.vocab_size,
                 embedding_dim=self.hidden_size,
                 padding_idx=self.pad_token_id,
+                weights=_load_pretrained_weights("embeddings.word_embeddings.weight"),
             )
         token_type_embeddings = lbann.Embedding(
             token_type_ids,
             num_embeddings=self.type_vocab_size,
             embedding_dim=self.hidden_size,
+            weights=_load_pretrained_weights("embeddings.token_type_embeddings.weight"),
         )
 
         embeddings = lbann.Add(inputs_embeds, token_type_embeddings)
@@ -89,10 +85,18 @@ class RobertaEmbeddings(lbann.modules.Module):
                 num_embeddings=self.max_position_embeddings,
                 embedding_dim=self.hidden_size,
                 padding_idx=self.pad_token_id,
+                weights=_load_pretrained_weights(
+                    "embeddings.position_embeddings.weight"
+                ),
             )
             embeddings = lbann.Add(embeddings, position_embeddings)
 
-        embeddings = lbann.LayerNorm(embeddings, epsilon=self.layer_norm_eps)
+        embeddings = _LayerNorm(
+            embeddings,
+            self.layer_norm_eps,
+            self.input_shape + (self.hidden_size,),
+            weights=_load_pretrained_weights("embeddings.layernorm.weightbias"),
+        )
         embeddings = lbann.Dropout(embeddings, keep_prob=self.hidden_dropout_prob)
         return embeddings
 
@@ -102,7 +106,9 @@ class RobertaEncoder(lbann.modules.Module):
         super().__init__()
         self.config = config
         self.input_shape = config.input_shape + (config.hidden_size,)
-        self.layer = [RobertaLayer(config) for _ in range(config.num_hidden_layers)]
+        self.layer = [
+            RobertaLayer(config, layer_id=i) for i in range(config.num_hidden_layers)
+        ]
 
     def forward(
         self,
@@ -206,21 +212,20 @@ class RobertaEncoder(lbann.modules.Module):
 
 
 class RobertaLayer(lbann.modules.Module):
-    def __init__(self, config):
+    def __init__(self, config, layer_id):
         super().__init__()
-        # self.chunk_size_feed_forward = config.chunk_size_feed_forward
         self.input_shape = config.input_shape + (config.hidden_size,)
-        self.seq_len_dim = 1
-        self.attention = RobertaAttention(config)
+        self.attention = RobertaAttention(config, layer_id)
         self.is_decoder = config.is_decoder
         self.add_cross_attention = config.add_cross_attention
+        self.layer_id = layer_id
         if self.add_cross_attention:
             assert (
                 self.is_decoder
             ), f"{self} should be used as a decoder model if cross attention is added"
             self.crossattention = RobertaAttention(config)
-        self.intermediate = RobertaIntermediate(config)
-        self.output = RobertaOutput(config)
+        self.intermediate = RobertaIntermediate(config, layer_id)
+        self.output = RobertaOutput(config, layer_id)
 
     def forward(
         self,
@@ -298,72 +303,8 @@ class RobertaLayer(lbann.modules.Module):
         return layer_output
 
 
-# TODO
-def apply_chunking_to_forward(chunk_size, chunk_dim, foward_fn, input_tensors):
-    return input_tensors
-
-
-# Mimics torch.matmul in LBANN
-def _Matmul(x, x_shape, y, y_shape):
-    if len(x_shape) != len(y_shape):
-        sys.exit("Broadcasting not fully implemented, tensors must have same dimension")
-    need_reshape = (len(x_shape) > 3) and (len(y_shape) > 3)
-    if need_reshape:
-        if x_shape[:-2] != y_shape[:-2]:
-            sys.exit("The first n-2 dimensions must match")
-        new_x_shape = (np.prod(x_shape[:-2]),) + x_shape[-2:]
-        x = lbann.Reshape(x, dims=str_list(new_x_shape))
-
-        new_y_shape = (np.prod(y_shape[:-2]),) + y_shape[-2:]
-        y = lbann.Reshape(y, dims=str_list(new_y_shape))
-
-    z = lbann.MatMul(x, y)
-
-    z_shape = x_shape[:-1] + (y_shape[-1],)
-    if need_reshape:
-        z = lbann.Reshape(z, dims=str_list(z_shape))
-
-    return z, z_shape
-
-
-# Fills a LBANN tensor of a given size with a value
-def _ValueTensor(shape, value):
-    global _value_tensor_cache
-    key = (shape, value)
-    if key not in _value_tensor_cache:
-        x = np.full(shape, value)
-        tmp_weights = lbann.Weights(
-            initializer=lbann.ValueInitializer(values=str_list(np.nditer(x))),
-            optimizer=lbann.NoOptimizer(),
-        )
-        x = lbann.WeightsLayer(
-            dims=str_list(shape),
-            weights=tmp_weights,
-        )
-        _value_tensor_cache[key] = x
-    return _value_tensor_cache[key]
-
-
-# Mimics torch.nn.Linear in LBANN
-def _Linear(x, input_shape, hidden_size):
-    need_reshape = len(input_shape) > 2
-    if need_reshape:
-        new_in_shape = (np.prod(input_shape[:-1]), input_shape[-1])
-        x = lbann.Reshape(x, dims=str_list(new_in_shape))
-
-    y = lbann.ChannelwiseFullyConnected(x, output_channel_dims=[hidden_size])
-
-    if need_reshape:
-        new_out_shape = input_shape[:-1] + (hidden_size,)
-        y = lbann.Reshape(y, dims=str_list(new_out_shape))
-    else:
-        new_out_shape = (input_shape[0], hidden_size)
-
-    return y, new_out_shape
-
-
 class RobertaSelfAttention(lbann.modules.Module):
-    def __init__(self, config):
+    def __init__(self, config, layer_id):
         super().__init__()
         if config.hidden_size % config.num_attention_heads != 0 and not hasattr(
             config, "embedding_size"
@@ -383,23 +324,13 @@ class RobertaSelfAttention(lbann.modules.Module):
         self.position_embedding_type = getattr(
             config, "position_embedding_type", "absolute"
         )
-        if (
-            self.position_embedding_type == "relative_key"
-            or self.position_embedding_type == "relative_key_query"
-        ):
-            self.max_position_embeddings = config.max_position_embeddings
-            self.distance_embedding = lbann.Embedding(
-                num_embeddings=2 * config.max_position_embeddings - 1,
-                embedding_dim=self.attention_head_size,
-            )
-
         self.is_decoder = config.is_decoder
+        self.layer_id = layer_id
 
     def transpose_for_scores(self, x, dims):
-        # x = lbann.Reshape(x, dims=str_list(dims))
         new_x_shape = dims[:-1] + (self.num_attention_heads, self.attention_head_size)
         x = lbann.Reshape(x, dims=lbann.util.str_list(new_x_shape))
-        return _permute(x, new_x_shape, axes=(0, 2, 1, 3))
+        return _Permute(x, new_x_shape, axes=(0, 2, 1, 3))
 
     def forward(
         self,
@@ -412,7 +343,17 @@ class RobertaSelfAttention(lbann.modules.Module):
         output_attentions=False,
     ):
         mixed_query_layer, query_shape = _Linear(
-            hidden_states, self.input_shape, self.all_head_size
+            hidden_states,
+            self.input_shape,
+            self.all_head_size,
+            weights=(
+                _load_pretrained_weights(
+                    f"encoder.layer.{self.layer_id}.attention.self.query.weight"
+                ),
+                _load_pretrained_weights(
+                    f"encoder.layer.{self.layer_id}.attention.self.query.bias"
+                ),
+            ),
         )
 
         # If this is instantiated as a cross-attention module, the keys
@@ -429,11 +370,31 @@ class RobertaSelfAttention(lbann.modules.Module):
             sys.exit("Not yet implemented")
         else:
             key_layer, key_shape = _Linear(
-                hidden_states, self.input_shape, self.all_head_size
+                hidden_states,
+                self.input_shape,
+                self.all_head_size,
+                weights=(
+                    _load_pretrained_weights(
+                        f"encoder.layer.{self.layer_id}.attention.self.key.weight"
+                    ),
+                    _load_pretrained_weights(
+                        f"encoder.layer.{self.layer_id}.attention.self.key.bias"
+                    ),
+                ),
             )
             key_layer, key_shape = self.transpose_for_scores(key_layer, key_shape)
             value_layer, value_shape = _Linear(
-                hidden_states, self.input_shape, self.all_head_size
+                hidden_states,
+                self.input_shape,
+                self.all_head_size,
+                weights=(
+                    _load_pretrained_weights(
+                        f"encoder.layer.{self.layer_id}.attention.self.value.weight"
+                    ),
+                    _load_pretrained_weights(
+                        f"encoder.layer.{self.layer_id}.attention.self.value.bias"
+                    ),
+                ),
             )
             value_layer, value_shape = self.transpose_for_scores(
                 value_layer, value_shape
@@ -454,17 +415,20 @@ class RobertaSelfAttention(lbann.modules.Module):
             past_key_value = (key_layer, value_layer)
 
         # Take the dot product between "query" and "key" to get the raw attention scores.
-        key_layer, key_shape = _permute(key_layer, key_shape, axes=(0, 1, -1, -2))
+        key_layer, key_shape = _Permute(key_layer, key_shape, axes=(0, 1, -1, -2))
         attention_scores, attention_shape = _Matmul(
             query_layer, query_shape, key_layer, key_shape
         )
 
-        denom = _ValueTensor(attention_shape, math.sqrt(self.attention_head_size))
+        denom = lbann.Constant(
+            value=math.sqrt(self.attention_head_size),
+            num_neurons=str_list(attention_shape),
+        )
         attention_score = lbann.Divide(attention_scores, denom)
         # TODO
-        # if attention_mask is not None:
-        # Apply the attention mask is (precomputed for all layers in RobertaModel forward() function)
-        # attention_scores = lbann.Add(attention_scores, attention_mask)
+        if attention_mask is not None:
+            # Apply the attention mask is (precomputed for all layers in RobertaModel forward() function)
+            attention_scores = lbann.Add(attention_scores, attention_mask)
 
         # Normalize the attention scores to probabilities.
         attention_probs = lbann.ChannelwiseSoftmax(attention_scores)
@@ -475,15 +439,14 @@ class RobertaSelfAttention(lbann.modules.Module):
             attention_probs, keep_prob=self.attention_probs_dropout_prob
         )
 
-        # TODO
         # Mask heads if we want to
-        # if head_mask is not None:
-        #  attention_probs = attention_probs * head_mask
+        if head_mask is not None:
+            attention_probs = lbann.Multiply(attention_probs, head_mask)
 
         context_layer, context_shape = _Matmul(
             attention_probs, attention_shape, value_layer, value_shape
         )
-        context_layer, context_shape = _permute(
+        context_layer, context_shape = _Permute(
             context_layer, context_shape, axes=(0, 2, 1, 3)
         )
         new_context_layer_shape = context_shape[:-2] + (self.all_head_size,)
@@ -499,55 +462,49 @@ class RobertaSelfAttention(lbann.modules.Module):
 
 
 class RobertaSelfOutput(lbann.modules.Module):
-    def __init__(self, config):
+    def __init__(self, config, layer_id):
         super().__init__()
         self.input_shape = config.input_shape + (config.hidden_size,)
         self.hidden_size = config.hidden_size
         self.layer_norm_eps = config.layer_norm_eps
         self.hidden_dropout_prob = config.hidden_dropout_prob
-        self.dense = lbann.FullyConnected(num_neurons=config.hidden_size)
-        self.LayerNorm = lbann.LayerNorm(epsilon=config.layer_norm_eps)
-        self.dropout = lbann.Dropout(keep_prob=config.hidden_dropout_prob)
+        self.layer_id = layer_id
 
     def forward(self, hidden_states, input_tensor):
         hidden_states, _ = _Linear(hidden_states, self.input_shape, self.hidden_size)
+        hidden_states, hidden_shape = _Linear(
+            hidden_states,
+            self.input_shape,
+            self.hidden_size,
+            weights=(
+                _load_pretrained_weights(
+                    f"encoder.layer.{self.layer_id}.attention.output.dense.weight"
+                ),
+                _load_pretrained_weights(
+                    f"encoder.layer.{self.layer_id}.attention.output.dense.bias"
+                ),
+            ),
+        )
         hidden_states = lbann.Dropout(hidden_states, keep_prob=self.hidden_dropout_prob)
-        hidden_states = lbann.LayerNorm(
-            lbann.Add(hidden_states, input_tensor), epsilon=self.layer_norm_eps
+        hidden_states = _LayerNorm(
+            lbann.Add(hidden_states, input_tensor),
+            self.layer_norm_eps,
+            hidden_shape,
+            weights=_load_pretrained_weights(
+                f"encoder.layer.{self.layer_id}.attention.output.layernorm.weightbias"
+            ),
         )
         return hidden_states
 
 
 class RobertaAttention(lbann.modules.Module):
-    def __init__(self, config):
+    def __init__(self, config, layer_id):
         super().__init__()
         self.input_shape = config.input_shape + (config.hidden_size,)
-        self.self = RobertaSelfAttention(config)
-        self.output = RobertaSelfOutput(config)
+        self.self = RobertaSelfAttention(config, layer_id)
+        self.output = RobertaSelfOutput(config, layer_id)
         self.pruned_heads = set()
-
-    def prune_heads(self, heads):
-        if len(heads) == 0:
-            return
-        heads, index = find_pruneable_heads_and_indices(
-            heads,
-            self.self.num_attention_heads,
-            self.self.attention_head_size,
-            self.pruned_heads,
-        )
-
-        # Prune linear layers
-        self.self.query = prune_linear_layer(self.self.query, index)
-        self.self.key = prune_linear_layer(self.self.key, index)
-        self.self.value = prune_linear_layer(self.self.value, index)
-        self.output.dense = prune_linear_layer(self.output.dense, index, dim=1)
-
-        # Update hyper params and store pruned heads
-        self.self.num_attention_heads = self.self.num_attention_heads - len(heads)
-        self.self.all_head_size = (
-            self.self.attention_head_size * self.self.num_attention_heads
-        )
-        self.pruned_heads = self.pruned_heads.union(heads)
+        self.layer_id = layer_id
 
     def forward(
         self,
@@ -569,57 +526,18 @@ class RobertaAttention(lbann.modules.Module):
             output_attentions,
         )
         attention_output = self.output(self_outputs[0], hidden_states)
-        # TODO self_outputs[0] is wrong
         outputs = (attention_output,) + (
-            self_outputs[0],
+            self_outputs[1:],
         )  # add attentions if we output them
         return outputs
 
 
-def _relu(x, _):
-    return lbann.Relu(x)
-
-
-def _silu(x, _):
-    return x * lbann.Sigmoid(x)
-
-
-def _gelu(x, x_shape):
-    # return 0.5 * x * (1 + tanh(sqrt(pi / 2) * (x + 0.044715 * x ** 3)))
-    # Based on: https://github.com/pytorch/pytorch/issues/20464#issuecomment-492339005
-    ones = _ValueTensor(x_shape, 1)
-    twos = _ValueTensor(x_shape, 2)
-    sqrt_pi_over_2 = _ValueTensor(x_shape, math.sqrt(math.pi / 2))
-    b_coef = _ValueTensor(x_shape, 0.044715)
-    x_cubed = lbann.Multiply(lbann.Multiply(lbann.Identity(x), x), x)
-    inner_tanh_x_comp = lbann.Add(x, lbann.Multiply(b_coef, x_cubed))
-    tanh_x = lbann.Tanh(lbann.Multiply(sqrt_pi_over_2, inner_tanh_x_comp))
-    return lbann.Divide(lbann.Multiply(x, lbann.Add(ones, tanh_x)), twos)
-
-
-def _tanh(x, _):
-    return lbann.Tanh(x)
-
-
-def _sigmoid(x, _):
-    return lbann.Sigmoid(x)
-
-
-ACT2FN = {
-    "relu": _relu,
-    "silu": _silu,
-    "swish": _silu,
-    "gelu": _gelu,
-    "tanh": _tanh,
-    "sigmoid": _sigmoid,
-}
-
-
 class RobertaIntermediate(lbann.modules.Module):
-    def __init__(self, config):
+    def __init__(self, config, layer_id):
         super().__init__()
         self.intermediate_size = config.intermediate_size
         self.input_shape = config.input_shape + (config.hidden_size,)
+        self.layer_id = layer_id
         if isinstance(config.hidden_act, str):
             self.intermediate_act_fn = ACT2FN[config.hidden_act]
         else:
@@ -627,7 +545,17 @@ class RobertaIntermediate(lbann.modules.Module):
 
     def forward(self, hidden_states):
         hidden_states, hidden_shape = _Linear(
-            hidden_states, self.input_shape, self.intermediate_size
+            hidden_states,
+            self.input_shape,
+            self.intermediate_size,
+            weights=(
+                _load_pretrained_weights(
+                    f"encoder.layer.{self.layer_id}.intermediate.dense.weight"
+                ),
+                _load_pretrained_weights(
+                    f"encoder.layer.{self.layer_id}.intermediate.dense.bias"
+                ),
+            ),
         )
         hidden_states = self.intermediate_act_fn(hidden_states, hidden_shape)
         return hidden_states
@@ -635,41 +563,61 @@ class RobertaIntermediate(lbann.modules.Module):
 
 # Copied from transformers.models.bert.modeling_bert.BertOutput
 class RobertaOutput(lbann.modules.Module):
-    def __init__(self, config):
+    def __init__(self, config, layer_id):
         super().__init__()
         self.input_shape = config.input_shape + (config.intermediate_size,)
         self.hidden_size = config.hidden_size
         self.hidden_dropout_prob = config.hidden_dropout_prob
         self.layer_norm_eps = config.layer_norm_eps
+        self.layer_id = layer_id
 
     def forward(self, hidden_states, input_tensor):
         hidden_states, hidden_shape = _Linear(
-            hidden_states, self.input_shape, self.hidden_size
+            hidden_states,
+            self.input_shape,
+            self.hidden_size,
+            weights=(
+                _load_pretrained_weights(
+                    f"encoder.layer.{self.layer_id}.output.dense.weight"
+                ),
+                _load_pretrained_weights(
+                    f"encoder.layer.{self.layer_id}.output.dense.bias"
+                ),
+            ),
         )
         hidden_states = lbann.Dropout(hidden_states, keep_prob=self.hidden_dropout_prob)
         hidden_states = lbann.Add(hidden_states, input_tensor)
-        hidden_states = lbann.LayerNorm(hidden_states, epsilon=self.layer_norm_eps)
+        hidden_states = _LayerNorm(
+            hidden_states,
+            self.layer_norm_eps,
+            hidden_shape,
+            weights=_load_pretrained_weights(
+                f"encoder.layer.{self.layer_id}.output.layernorm.weightbias"
+            ),
+        )
         return hidden_states
 
 
 class RobertaPooler(lbann.modules.Module):
     def __init__(self, config):
         super().__init__()
+        self.input_shape = config.input_shape + (config.hidden_size,)
         self.hidden_size = config.hidden_size
-        self.dense = lbann.FullyConnected(num_neurons=config.hidden_size)
-        self.activation = lbann.Tanh()
 
     def forward(self, hidden_states):
         # We "pool" the model by simply taking the hidden state corresponding
         # to the first token.
-        # TODO
-        # first_token_tensor = hidden_states[:, 0]
         first_token_tensor = lbann.Slice(
             hidden_states, axis=0, slice_points=str_list([0, 1])
         )
-        pooled_output = lbann.ChannelwiseFullyConnected(
+        pooled_output, pooled_output_shape = _Linear(
             first_token_tensor,
-            output_channel_dims=[self.hidden_size],
+            (1,) + self.input_shape[1:],
+            self.hidden_size,
+            weights=(
+                _load_pretrained_weights("pooler.dense.weight"),
+                _load_pretrained_weights("pooler.dense.bias"),
+            ),
         )
         pooled_output = lbann.Tanh(pooled_output)
         return pooled_output
@@ -696,14 +644,6 @@ class RobertaModel(lbann.modules.Module):
 
     def set_input_embeddings(self, value):
         self.embeddings.word_embeddings = value
-
-    def _prune_heads(self, heads_to_prune):
-        """
-        Prunes heads of the model. heads_to_prune: dict of {layer_num: list of heads to prune in this layer} See base
-        class PreTrainedModel
-        """
-        for layer, heads in heads_to_prune.items():
-            self.encoder.layer[layer].attention.prune_heads(heads)
 
     def forward(
         self,
@@ -757,29 +697,13 @@ class RobertaModel(lbann.modules.Module):
         )
 
         if attention_mask is None:
-            attention_mask = np.ones((16, 12, 32, 32), dtype=float)
-            tmp_weights = lbann.Weights(
-                initializer=lbann.ValueInitializer(
-                    values=lbann.util.str_list(np.nditer(attention_mask))
-                ),
-                optimizer=lbann.NoOptimizer(),
-            )
-            attention_mask = lbann.WeightsLayer(
-                dims=lbann.util.str_list(self.input_shape),
-                weights=tmp_weights,
+            attention_mask = lbann.Constant(
+                value=1, num_neurons=str_list(self.input_shape)
             )
 
         if token_type_ids is None:
-            token_type_ids = np.zeros(self.input_shape, dtype=float)
-            tmp_weights = lbann.Weights(
-                initializer=lbann.ValueInitializer(
-                    values=lbann.util.str_list(np.nditer(token_type_ids))
-                ),
-                optimizer=lbann.NoOptimizer(),
-            )
-            token_type_ids = lbann.WeightsLayer(
-                dims=lbann.util.str_list(self.input_shape),
-                weights=tmp_weights,
+            token_type_ids = lbann.Constant(
+                value=0, num_neurons=str_list(self.input_shape)
             )
 
         # We can provide a self-attention mask of dimensions [batch_size, from_seq_length, to_seq_length]
@@ -861,38 +785,54 @@ class RobertaModel(lbann.modules.Module):
         )
 
 
+def _relu(x, _):
+    return lbann.Relu(x)
+
+
+def _silu(x, _):
+    return lbann.Multiply(x, lbann.Sigmoid(x))
+
+
+def _gelu(x, x_shape):
+    # return 0.5 * x * (1 + tanh(sqrt(pi / 2) * (x + 0.044715 * x ** 3)))
+    # Based on: https://github.com/pytorch/pytorch/issues/20464#issuecomment-492339005
+    sqrt_pi_over_2 = math.sqrt(math.pi / 2)
+    b_coef = 0.044715
+    x_cubed = lbann.Multiply(lbann.Multiply(lbann.Identity(x), x), x)
+    inner_tanh_x_comp = lbann.Add(x, lbann.Scale(x_cubed, constant=b_coef))
+    tanh_x = lbann.Tanh(lbann.Scale(inner_tanh_x_comp, constant=sqrt_pi_over_2))
+    return lbann.Scale(
+        lbann.Multiply(x, lbann.AddConstant(tanh_x, constant=1)), constant=0.5
+    )
+
+
+def _tanh(x, _):
+    return lbann.Tanh(x)
+
+
+def _sigmoid(x, _):
+    return lbann.Sigmoid(x)
+
+
+ACT2FN = {
+    "relu": _relu,
+    "silu": _silu,
+    "swish": _silu,
+    "gelu": _gelu,
+    "tanh": _tanh,
+    "sigmoid": _sigmoid,
+}
+
+
 def create_position_ids_from_input_ids(
     input_ids, input_shape, padding_idx, past_key_values_length=0
 ):
-    padding_idx = np.full(input_shape, padding_idx, dtype=np.int32)
-    tmp_weights = lbann.Weights(
-        initializer=lbann.ValueInitializer(
-            values=lbann.util.str_list(np.nditer(padding_idx))
-        ),
-        optimizer=lbann.NoOptimizer(),
-    )
-    padding_idx = lbann.WeightsLayer(
-        dims=lbann.util.str_list(input_shape),
-        weights=tmp_weights,
-    )
+    padding_idx = lbann.Constant(value=padding_idx, num_neurons=str_list(input_shape))
     mask = lbann.NotEqual(input_ids, padding_idx)
-
-    incremental_indices = _cumsum(mask, input_shape, axis=1)
-
-    past_key_values_length = np.full(
-        input_shape, past_key_values_length, dtype=np.int32
+    incremental_indices = _Cumsum(mask, input_shape, axis=1)
+    past_key_values_length = lbann.Constant(
+        value=past_key_values_length, num_neurons=str_list(input_shape)
     )
-    tmp_weights = lbann.Weights(
-        initializer=lbann.ValueInitializer(
-            values=lbann.util.str_list(np.nditer(past_key_values_length))
-        ),
-        optimizer=lbann.NoOptimizer(),
-    )
-    past_key_values_length = lbann.WeightsLayer(
-        dims=lbann.util.str_list(input_shape),
-        weights=tmp_weights,
-    )
-
     incremental_indices = lbann.Add(incremental_indices, past_key_values_length)
     incremental_indices = lbann.Multiply(incremental_indices, mask)
     incremental_indices = lbann.Add(incremental_indices, padding_idx)
@@ -900,11 +840,11 @@ def create_position_ids_from_input_ids(
     return incremental_indices
 
 
-def _permute(x, dims, axes=None):
-    global _permute_cache
+def _Permute(x, dims, axes=None):
+    global _Permute_cache
     key = (dims, axes)
     size = np.prod(dims)
-    if key not in _permute_cache:
+    if key not in _Permute_cache:
         # Construct gather indices
         inds = np.arange(size).reshape(dims, order="C").transpose(axes)
         inds = lbann.Weights(
@@ -914,10 +854,10 @@ def _permute(x, dims, axes=None):
             optimizer=lbann.NoOptimizer(),
         )
         inds = lbann.WeightsLayer(dims=str_list([size]), weights=inds)
-        _permute_cache[key] = inds
+        _Permute_cache[key] = inds
 
     # Apply transpose with gather
-    inds = _permute_cache[key]
+    inds = _Permute_cache[key]
     if axes == None:
         new_dims = dims[::-1]
     else:
@@ -928,15 +868,15 @@ def _permute(x, dims, axes=None):
     return y, tuple(new_dims)
 
 
-def _cumsum(x, dims, axis=0):
-    global _cumsum_cache
+def _Cumsum(x, dims, axis=0):
+    global _Cumsum_cache
 
-    if len(dims) > 2:
+    if len(dims) != 2:
         sys.exit("dims > 2 not tested/supported for cumsum")
-    if axis > 1:
+    if (axis < 0) or (axis > 1):
         sys.exit("Unsupported cumsum axis: {}".format(axis))
     shape = (dims[axis], dims[axis])
-    if shape not in _cumsum_cache:
+    if shape not in _Cumsum_cache:
         tril_ones = np.tril(np.full(shape, 1, dtype=int), k=0)
         tril_ones = lbann.Weights(
             initializer=lbann.ValueInitializer(
@@ -945,30 +885,117 @@ def _cumsum(x, dims, axis=0):
             optimizer=lbann.NoOptimizer(),
         )
         tril_ones = lbann.WeightsLayer(dims=str_list(shape), weights=tril_ones)
-        _cumsum_cache[shape] = tril_ones
+        _Cumsum_cache[shape] = tril_ones
 
     # Apply cumsum
-    tril_ones = _cumsum_cache[shape]
+    tril_ones = _Cumsum_cache[shape]
     if axis == 0:
         x = lbann.MatMul(tril_ones, x)
         return x
     if axis == 1:
-        x, _ = _permute(x, dims)
-        x = lbann.MatMul(tril_ones, x)
-        x, _ = _permute(x, dims[::-1])
+        x = lbann.MatMul(x, tril_ones, transpose_b=True)
         return x
+
+
+def _load_pretrained_weights_layer(
+    fn, file_dir="/usr/workspace/wyatt5/pascal/sbert/authortransformer/npy_weights"
+):
+    weights_file = os.path.join(file_dir, fn + ".npy")
+    dims = np.load(weights_file).shape
+    weights = _load_pretrained_weights(fn, file_dir)
+    weights = lbann.WeightsLayer(weights=weights, dims=str_list(dims))
+    return weights, dims
+
+
+def _load_pretrained_weights(
+    fn, file_dir="/usr/workspace/wyatt5/pascal/sbert/authortransformer/npy_weights"
+):
+    weights_file = os.path.join(file_dir, fn + ".npy")
+    print("loading weight:", fn)
+    weights = lbann.Weights(initializer=lbann.NumpyInitializer(file=weights_file))
+    return weights
+
+
+# Mimics torch.matmul in LBANN
+def _Matmul(x, x_shape, y, y_shape):
+    if len(x_shape) != len(y_shape):
+        sys.exit("Broadcasting not fully implemented, tensors must have same dimension")
+    need_reshape = (len(x_shape) > 3) and (len(y_shape) > 3)
+    if need_reshape:
+        if x_shape[:-2] != y_shape[:-2]:
+            sys.exit("The first n-2 dimensions must match")
+        new_x_shape = (np.prod(x_shape[:-2]),) + x_shape[-2:]
+        x = lbann.Reshape(x, dims=str_list(new_x_shape))
+
+        new_y_shape = (np.prod(y_shape[:-2]),) + y_shape[-2:]
+        y = lbann.Reshape(y, dims=str_list(new_y_shape))
+
+    z = lbann.MatMul(x, y)
+
+    z_shape = x_shape[:-1] + (y_shape[-1],)
+    if need_reshape:
+        z = lbann.Reshape(z, dims=str_list(z_shape))
+
+    return z, z_shape
+
+
+# Mimics torch.nn.Linear in LBANN
+def _Linear(x, input_shape, hidden_size, weights=None):
+    need_reshape = len(input_shape) > 2
+    if need_reshape:
+        new_in_shape = (np.prod(input_shape[:-1]), input_shape[-1])
+        x = lbann.Reshape(x, dims=str_list(new_in_shape))
+
+    if weights is not None:
+        y = lbann.ChannelwiseFullyConnected(
+            x,
+            output_channel_dims=[hidden_size],
+            weights=weights,
+        )
+    else:
+        y = lbann.ChannelwiseFullyConnected(
+            x,
+            output_channel_dims=[hidden_size],
+        )
+
+    if need_reshape:
+        new_out_shape = input_shape[:-1] + (hidden_size,)
+        y = lbann.Reshape(y, dims=str_list(new_out_shape))
+    else:
+        new_out_shape = (input_shape[0], hidden_size)
+
+    return y, new_out_shape
+
+
+# Mimics torch.nn.layernorm in LBANN
+def _LayerNorm(x, epsilon, input_shape=None, weights=None):
+    x = lbann.LayerNorm(x, epsilon=epsilon)
+    if weights is not None:
+        if input_shape is None:
+            sys.exit("input shape must be provided for loading weights on LayerNorm")
+
+        x, new_x_shape = _Permute(x, input_shape)
+        x = lbann.ChannelwiseScaleBias(x, weights=weights)
+        x, _ = _Permute(x, new_x_shape)
+
+    return x
 
 
 def make_model(config):
 
     # Input data
-    input_ = lbann.Slice(lbann.Input(), slice_points=str_list([0, 1, 1 + 16 * 32]))
+    input_ = lbann.Slice(
+        lbann.Input(data_field="samples"), slice_points=str_list([0, 1, 1 + 16 * 32])
+    )
     labels = lbann.Identity(input_)
     sample = lbann.Reshape(input_, dims=str_list([16, 32]))
 
+    # Load pretrained weights
+    position_ids, _ = _load_pretrained_weights_layer("embeddings.position_ids")
+
     # Model
     model = RobertaModel(config)
-    out = model(sample, return_dict=True, output_hidden_states=True)
+    out = model(sample, position_ids=position_ids)
     out = lbann.FullyConnected(out[1], num_neurons=1)
     probs = lbann.Softmax(out)
 
