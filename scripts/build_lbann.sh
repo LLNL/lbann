@@ -723,8 +723,7 @@ fi
 
 ##########################################################################################
 # Actually install LBANN from local source
-CMD="spack install --dirty ${BUILD_JOBS} ${INSTALL_BUILD_EXTRAS}"
-#CMD="spack install --dirty --reuse ${BUILD_JOBS} ${INSTALL_BUILD_EXTRAS}"
+CMD="spack install ${BUILD_JOBS} ${INSTALL_BUILD_EXTRAS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
