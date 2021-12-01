@@ -66,74 +66,34 @@ std::vector<size_t> get_tensor_dims(MatrixT const& A)
   return {El::To<size_t>(A.Width()), El::To<size_t>(A.Height())};
 }
 
-/** @brief Get the tensor-ized dimensions of the given matrix.
+/** @brief Attempt to compute the tensor dimensions of the local
+ *         portion of the matrix, given the global tensor dimensions.
  *
- *  LBANN assumes that the first dimension is the sample dimension of
- *  a minibatch, which is further assumed to be the column dimension
- *  of the input matrix. A "leading dimension" is allowed. The
- *  subsequent tensor dimensions are linearized, and assumed to be
- *  packed. At this time, this interface does not support non-unit
- *  striding in tensors.
- *
- *  To accommodate LBANN's use-cases of tensors, two modes are
- *  allowed. If the leading dimension in the input dimension vector
- *  matches the width of the matrix, the input dimension vector is
- *  returned. If the linearied size of the input dimension vector is
- *  equal to the height of the input matrix, then the width dimension
- *  of the input vector is prepended to the input dimension vector and
- *  returned. Otherwise, an exception is thrown.
- *
- *  Obviously the first check is open to abuse. However, computing the
- *  linearized size of the dimensions is a relatively expensive
- *  operation. To keep things sane, however, there's a check in Debug
- *  mode to verify that the dimensions are correct.
- *
- *  @param[in] A The input tensor as a matrix. It may be a local or a
- *               distributed matrix.
- *  @param[in] dims The initial dimension array.
- *  @returns The correct dimension array for the input tensor.
- */
-template <typename MatrixT>
-std::vector<size_t> verify_and_get_dims(MatrixT const& A,
-                                        std::vector<size_t> const& dims)
-{
-  auto const A_height = A.Height();
-  auto const A_width = A.Width();
-  if (dims[0] == El::To<size_t>(A_width)) {
-#ifdef LBANN_DEBUG
-    LBANN_ASSERT(get_linear_size(dims) ==
-                 static_cast<size_t>(A_height * A_width));
-#endif
-    return dims;
-  }
-  else if (get_linear_size(dims) == El::To<size_t>(A_height)) {
-    std::vector<size_t> out;
-    out.reserve(dims.size() + 1UL);
-    out.push_back(El::To<size_t>(A_width));
-    std::copy(cbegin(dims), cend(dims), std::back_inserter(out));
-    return out;
-  }
-  else {
-    LBANN_ERROR("Invalid input dimensions vector.");
-    return {};
-  }
-}
-
+ *  This is only valid in two cases. Either the matrix must be
+ *  column-distributed or it must logically represent a collection of
+ *  1D arrays.
+*/
 template <typename T>
 std::vector<size_t> localize_dims(El::AbstractDistMatrix<T> const& A,
-                                  std::vector<size_t> const& dims)
+                                  std::vector<size_t> const& global_dims)
 {
   if (A.ColDist() == El::Dist::STAR) {
-    std::vector<size_t> out = dims;
+    std::vector<size_t> out = global_dims;
     out.front() = A.LocalWidth();
     return out;
   }
-  else if (dims.size() == 2UL) {
+  else if (global_dims.size() == 2UL) {
     return get_tensor_dims(A.LockedMatrix());
   }
   else {
-    LBANN_WARNING("Dimension localization is ill-posed.");
-    return dims;
+    std::ostringstream oss;
+    oss << "{";
+    for (auto const& d : global_dims)
+      oss << " " << d;
+    oss << " }";
+    LBANN_WARNING("Dimension localization is ill-posed. Dims=", oss.str());
+
+    return global_dims;
   }
 }
 
@@ -197,7 +157,7 @@ public:
   template <typename MatT>
   MatrixAsTensorView(MatT&& mat, std::vector<size_t> const& dims)
     : MatrixReferenceWrapper<MatrixT>{std::forward<MatT>(mat)},
-      m_dims{verify_and_get_dims(mat, dims)}
+      m_dims{dims}
   {}
 
   std::vector<size_t> const& dims() const noexcept { return m_dims; }
