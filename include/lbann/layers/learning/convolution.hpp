@@ -56,11 +56,16 @@ public:
 };
 #endif // LBANN_HAS_DISTCONV
 
-/** @brief Standard deep learning convolution.
+/** @brief Convolution
  *
  *  Applies convolution (more precisely, cross-correlation) to input
- *  tensors. This is primarily optimized for image data in NCHW
- *  format.
+ *  tensor. This is primarily optimized for image data in CHW format.
+ *
+ *  Two weights are required if bias is applied: a kernel tensor (in
+ *  KCHW format) and per-channel biases. Only the kernel weights are
+ *  required if bias is not applied. If weights aren't provided, the
+ *  kernel weights are initialized with He normal initialization and
+ *  the bias weights are initialized to zero.
  */
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,

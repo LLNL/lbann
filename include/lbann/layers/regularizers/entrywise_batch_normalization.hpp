@@ -33,7 +33,7 @@
 
 namespace lbann {
 
-/** @brief
+/** @brief Entry-wise batch normalization, including scale/bias
  *
  *  Each input entry is normalized across the mini-batch to have zero
  *  mean and unit standard deviation. This uses the standard approach

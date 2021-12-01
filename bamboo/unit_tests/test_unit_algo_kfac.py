@@ -94,6 +94,7 @@ def construct_trainer(lbann, ):
         print_matrix=False,
         print_matrix_summary=True,
         use_pi=True,
+        compute_interval=1,
     )
     trainer = lbann.Trainer(mini_batch_size, training_algo=algo)
     return trainer

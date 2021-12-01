@@ -32,18 +32,28 @@
 
 namespace lbann {
 
-/** @brief Gather values from specified tensor indices.
+/** @brief Gather values from specified tensor indices
  *
+ *  Expects two input tensors: an @f$ N @f$-D data tensor and a 1D
+ *  index vector. For 1D data:
  *  @f[
  *    y[i] = x[\text{ind}[i]]
  *  @f]
+ *  If an index is out-of-range, the corresponding output is set to
+ *  zero.
  *
- *  The first input tensor is the values and the second is the
- *  indices. The two input tensors must have the same number of
- *  dimensions, and the output tensor will have the same dimensions as
- *  the index tensor. If an index is out-of-range, the corresponding
- *  output is set to zero.
+ *  For higher-dimensional data, the layer performs a gather along one
+ *  dimension. For example, with 2D data and axis=1,
+ *  @f[
+ *    y[i,j] = x[i,\text{ind}[j]]
+ *  @f]
+ *  Currently, only 1D and 2D data is supported.
  *
+ *  The size of the the output tensor along the gather dimension is
+ *  equal to the size of the index vector. The remaining dimensions of
+ *  the output tensor are identical to the data tensor.
+ *
+ *  @todo Support higher-dimensional data
  */
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,
@@ -124,11 +134,11 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
   const auto& input1_dims = this->get_input_dims(1);
   // Only support 1D indices
   const auto is_indices_not_1D = input1_dims.size() != 1;
-  
+
   // Only support 1D or 2D values
   const auto is_values_1D =  input0_dims.size() == 1;
-  const auto is_values_2D = input0_dims.size() == 2; 
-  
+  const auto is_values_2D = input0_dims.size() == 2;
+
   const bool along_axis_0 = this->m_gather_axis == 0;
   if(is_values_2D){
     if(this->m_gather_axis == -1){
@@ -149,7 +159,7 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
       this->set_output_dims(std::vector<int>{input0_dims[0],input1_dims[0]});
     }
   }
-  
+
   auto dims_to_str = [] (const std::vector<int>& dims) -> std::string {
     std::ostringstream ss;
     for (size_t i=0; i<dims.size(); ++i) {

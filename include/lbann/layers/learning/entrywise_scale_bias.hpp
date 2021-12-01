@@ -33,7 +33,7 @@
 
 namespace lbann {
 
-/** @brief Apply scale and bias to tensor entries.
+/** @brief Apply entry-wise scale and bias
  *
  *  Scale and bias terms are applied independently to each tensor
  *  entry. More precisely, given input, output, scale, and bias

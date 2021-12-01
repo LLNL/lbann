@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-/** @brief 0-1 loss function.
+/** @brief 0-1 loss function
  *
  *  Requires two inputs, which are respectively interpreted as
  *  prediction scores and as a one-hot label vector. The output is one

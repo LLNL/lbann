@@ -33,7 +33,7 @@
 
 namespace lbann {
 
-/** @brief
+/** @brief Normalize over data samples
  *
  *  Each data sample is normalized to have zero mean and unit standard
  *  deviation. See:

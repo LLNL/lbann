@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-/** @brief Interface with objective function and metrics. */
+/** @brief Interface with objective function and metrics */
 template <typename TensorDataType>
 class abstract_evaluation_layer : public data_type_layer<TensorDataType> {
 public:

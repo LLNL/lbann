@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-/** @brief
+/** @brief Mean absolute error
  *
  *  Given a prediction @f$y@f$ and ground truth @f$\hat{y}@f$,
  *  @f[

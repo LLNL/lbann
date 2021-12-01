@@ -32,7 +32,7 @@
 
 namespace lbann {
 
-/** @brief Output a weights tensor.
+/** @brief Output a weights tensor
  *
  *  Interfaces with a @c weights object and outputs its tensor.
  */

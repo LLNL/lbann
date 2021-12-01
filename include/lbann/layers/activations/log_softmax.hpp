@@ -34,7 +34,7 @@
 
 namespace lbann {
 
-/** @brief Logarithm of softmax function.
+/** @brief Logarithm of softmax function
  *
  *  @f[ \log \text{softmax}(x)_i = x_i - \log \sum_j e^{x_j} @f]
  */

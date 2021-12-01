@@ -45,6 +45,7 @@ class sum_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
 };
 #endif // LBANN_HAS_DISTCONV
 
+/** @brief Add multiple tensors */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>

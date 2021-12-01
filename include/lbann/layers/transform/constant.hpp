@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-/** @brief Constant output. */
+/** @brief Output tensor filled with a single value */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
