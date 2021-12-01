@@ -26,6 +26,7 @@ CLEAN_BUILD=
 DEV_BUILD_FLAGS=
 # Flag for passing subcommands to spack install
 INSTALL_BUILD_EXTRAS=
+BUILD_JOBS="-j $(($(nproc)+2))"
 
 LBANN_VARIANTS=
 CMD_LINE_VARIANTS=

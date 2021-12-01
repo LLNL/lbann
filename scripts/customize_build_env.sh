@@ -171,7 +171,7 @@ set_center_specific_spack_dependencies()
                 CENTER_FLAGS="+lld"
                 ;;
             *)
-                echo "No center-specified CENTER_DEPENDENCIES."
+                echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
                 ;;
         esac
     elif [[ ${center} = "olcf" ]]; then
@@ -180,7 +180,7 @@ set_center_specific_spack_dependencies()
                 CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12"
                 ;;
             *)
-                echo "No center-specified CENTER_DEPENDENCIES."
+                echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
                 ;;
         esac
     elif [[ ${center} = "nersc" ]]; then
@@ -193,7 +193,7 @@ set_center_specific_spack_dependencies()
 		CENTER_BLAS_LIBRARY="blas=libsci"
                 ;;
             *)
-                echo "No center-specified CENTER_DEPENDENCIES."
+                echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
                 ;;
         esac
     elif [[ ${center} = "riken" ]]; then
@@ -202,11 +202,21 @@ set_center_specific_spack_dependencies()
                 CENTER_DEPENDENCIES="^openmpi"
                 ;;
             *)
-                echo "No center-specified CENTER_DEPENDENCIES."
+                echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
+                ;;
+        esac
+    elif [[ ${center} = "osx" ]]; then
+        case ${spack_arch_target} in
+            "skylake")
+                CENTER_DEPENDENCIES="^hdf5+hl"
+		CENTER_BLAS_LIBRARY="blas=accelerate"
+                ;;
+            *)
+                echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
                 ;;
         esac
     else
-        echo "No center found and no center-specified CENTER_DEPENDENCIES."
+        echo "No center found and no center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
     fi
 }
 
@@ -454,7 +464,7 @@ cleanup_clang_compilers()
     local yaml="$2"
 
     # Point compilers that don't have a fortran compiler a default one
-    sed -i.sed_bak -e 's/\(f[c7]7*:\s\)null$/\1 \/usr\/bin\/gfortran/g' ${yaml}
+    sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/usr\/bin\/gfortran/g' ${yaml}
     echo "Updating Clang compiler's to see the gfortran compiler."
 
     if [[ ${center} = "llnl_lc" ]]; then
