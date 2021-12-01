@@ -72,7 +72,7 @@ class batch_normalization_distconv_adapter: public data_type_distconv_adapter<Te
 };
 #endif // LBANN_HAS_DISTCONV
 
-/** @brief
+/** @brief Channel-wise batch normalization, including scale/bias
  *
  *  Each input channel is normalized across the mini-batch to have
  *  zero mean and unit standard deviation. Learned scaling factors and
@@ -106,14 +106,14 @@ public:
 
 private:
 
-  /** Decay rate for the running statistics. */
+  /// Decay rate for running statistics
   TensorDataType m_decay;
-  /** Small number to avoid division by zero. */
+  /// Small number for numerical stability
   TensorDataType m_epsilon;
-  /** @brief Size of group to aggregate statistics over.
+  /** @brief Size of process group for computing statistics
    *
-   * If this is 1, the group consists of one process and aggregation
-   * is local. If it is 0, statistics are aggregated globally.
+   *  If this is 1, the group consists of one process and aggregation
+   *  is local. If it is 0, statistics are aggregated globally.
    */
   int m_statistics_group_size;
   /**

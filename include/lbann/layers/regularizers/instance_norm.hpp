@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-/** @brief
+/** @brief Normalize over data channels
  *
  *  Each channel within a data sample is normalized to have zero mean
  *  and unit standard deviation. See:

@@ -32,11 +32,12 @@
 
 namespace lbann {
 
-/** @brief Indicate top-k entries.
+/** @brief One-hot vector indicating top-k entries
  *
- *  Output entries corresponding to the top-k input entries are set to
- *  one and the rest to zero. Ties are broken in favor of entries with
- *  smaller indices.
+ *  Output tensor has same dimensions as input tensor. Output entries
+ *  corresponding to the top-k input entries are set to one and the
+ *  rest to zero. Ties are broken in favor of entries with smaller
+ *  indices.
  */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,

@@ -45,9 +45,9 @@ class relu_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
 };
 #endif // LBANN_HAS_DISTCONV
 
-/** Rectified linear unit activation function layer.
+/** @brief Rectified linear unit
+ *
  *  \f[ ReLU(x) = \text{max}(x, 0) \f]
- *  See https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class relu_layer : public data_type_layer<TensorDataType> {

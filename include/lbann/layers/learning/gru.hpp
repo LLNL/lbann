@@ -62,8 +62,8 @@ namespace lbann {
  *  "ih_bias" ( @f$ 3 \text{hidden\_size} @f$ ),
  *  "hh_bias" ( @f$ 3 \text{hidden\_size} @f$ ).
  *
- *  Currently only supported on GPU. Requires at least CUDA 11.0 and
- *  cuDNN 8.0.4.
+ *  Support is experimental and requires either cuDNN (on GPU) or
+ *  oneDNN (on CPU).
  *
  *  @todo Support bidirectional RNNs
  */

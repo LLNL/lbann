@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-/** @brief Exponential linear unit.
+/** @brief Exponential linear unit
  *
  *  @f[
  *    \text{ELU}(x; \alpha) =

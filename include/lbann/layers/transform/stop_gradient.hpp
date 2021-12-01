@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-/** @brief Block back propagation.
+/** @brief Block error signals during back propagation
  *
  *  The output is identical to the input, but the back propagation
  *  output (i.e. the error signal) is always zero. Compare with the

@@ -49,7 +49,7 @@ class mean_squared_error_distconv_adapter: public data_type_distconv_adapter<Ten
 };
 #endif // LBANN_HAS_DISTCONV
 
-/** @brief
+/** @brief Mean squared error
  *
  *  Given a prediction @f$y@f$ and ground truth @f$\hat{y}@f$,
  *  @f[

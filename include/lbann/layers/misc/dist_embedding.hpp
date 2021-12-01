@@ -38,7 +38,7 @@
 
 namespace lbann {
 
-/** @brief Embedding layer with distributed weights.
+/** @brief Embedding layer with distributed weights
  *
  *  This is similar to the embedding layer, which takes integer
  *  indices and returns embedding vectors from a lookup table.

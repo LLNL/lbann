@@ -48,8 +48,7 @@ class leaky_relu_distconv_adapter: public data_type_distconv_adapter<TensorDataT
 };
 #endif // LBANN_HAS_DISTCONV
 
-/** @brief
- *
+/**
  *  @f[
  *    \text{LeakyReLU}(x; \alpha) =
  *      \begin{cases}

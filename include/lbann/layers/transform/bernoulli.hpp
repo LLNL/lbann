@@ -33,9 +33,10 @@
 
 namespace lbann {
 
-/** @brief Random values with Bernoulli distribution.
+/** @brief Random tensor with Bernoulli distribution.
  *
- *  During validation and testing, outputs are all zero.
+ *  Randomness is only applied during training. The tensor is filled
+ *  with zeros during evaluation.
  */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,

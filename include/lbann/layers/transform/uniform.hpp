@@ -33,7 +33,7 @@
 
 namespace lbann {
 
-/** @brief Random values from uniform distribution. */
+/** @brief Random tensor with uniform distribution */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
@@ -45,9 +45,8 @@ private:
   TensorDataType m_max;
   /** @brief Whether to have deterministic output when not training.
    *
-   *  Applies to execution modes other than training, e.g. validation
-   *  and inference. If true, outputs are all equal to the
-   *  distribution mean when not training.
+   *  If true, the tensor is filled with the distribution mean during
+   *  evaluation.
    */
   bool m_training_only;
 

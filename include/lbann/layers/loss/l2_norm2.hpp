@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-/** @brief Square of L2 vector norm.
+/** @brief Square of L2 vector norm
  *
  *  @f[ \lVert x\rVert_2^2 = \sum\limits_{i} x_i^2 @f]
  */

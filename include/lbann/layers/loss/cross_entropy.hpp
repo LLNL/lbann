@@ -51,7 +51,7 @@ class cross_entropy_distconv_adapter: public data_type_distconv_adapter<TensorDa
 };
 #endif // LBANN_HAS_DISTCONV
 
-/** @brief Cross entropy loss function.
+/** @brief Cross entropy between probability vectors
  *
  *  Given a predicted distribution @f$y@f$ and ground truth
  *  distribution @f$\hat{y}@f$,

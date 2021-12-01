@@ -37,7 +37,7 @@
 
 namespace lbann {
 
-/** @brief
+/** @brief Local response normalization
  *
  *  See:
  *

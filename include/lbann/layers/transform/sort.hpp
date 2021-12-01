@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-/** @brief Sort tensor entries. */
+/** @brief Sort tensor entries */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
