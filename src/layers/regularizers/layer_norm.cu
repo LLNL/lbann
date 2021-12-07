@@ -184,8 +184,8 @@ void fp_impl(lbann_comm& comm,
   const auto& local_input = dynamic_cast<const GPUMatType&>(input.LockedMatrix());
   auto& local_output = dynamic_cast<GPUMatType&>(output.Matrix());
   auto& local_statistics = dynamic_cast<GPUMatType&>(statistics.Matrix());
-  auto local_means = El::LockedView(local_statistics, El::IR(0), El::ALL);
-  auto local_vars = El::LockedView(local_statistics, El::IR(1), El::ALL);
+  auto local_means = El::View(local_statistics, El::IR(0), El::ALL);
+  auto local_vars = El::View(local_statistics, El::IR(1), El::ALL);
 
   // Dimensions
   const size_t sample_size = input.Height();
