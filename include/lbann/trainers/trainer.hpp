@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -67,6 +67,7 @@ public:
    *  @param[in] dc The data coordinator used by this trainer.
    *  @param[in] mini_batch_size The minibatch size? What's a minibatch? That
    *                             sounds like an SGD thing...
+   *  @param[in] alg The training algorithm to use.
    *  @todo I don't know why `mini_batch_size` is here.
    */
   trainer(lbann_comm* comm,

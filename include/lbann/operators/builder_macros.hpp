@@ -53,7 +53,7 @@ void AssertConsistentTypeParameters(lbann_data::Operator const& op)
 } // namespace details
 } // namespace lbann
 
-/** @brief A utility macro fro adding a builder declaration for a single-type
+/** @brief A utility macro for adding a builder declaration for a single-type
  *         operator.
  *  @note Must be called inside lbann namespace.
  */

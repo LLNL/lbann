@@ -259,6 +259,7 @@ class generic_data_reader {
 
   /**
    * Sets the percentage of the dataset to be used for validation.
+   * @param m The execution mode.
    * @param s The percentage used, in the range [0, 1].
    */
   virtual void set_execution_mode_split_percent(execution_mode m, double s);
@@ -737,7 +738,7 @@ class generic_data_reader {
    *        used (samples, labels, responses) or any data_field that exists
    *        within an HDF5 experiment schema, Python DR schema, or synthetic
    *        data reader
-   * @param X The matrix to load data into.
+   * @param Y The matrix to load data into.
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    *

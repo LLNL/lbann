@@ -61,17 +61,13 @@ class LTFBCommunicationAlgorithm;
  */
 class ltfb : public callback_base {
 public:
-
   /** @brief Construct the LTFB callback
    *  @param batch_interval Number of training mini-batch steps between
    *                        tournaments.
    *  @param metric_name    Metric for tournament evaluation.
-   *  @param weights_names  List of weights to exchange with partner.
-   *                        If empty, then all weights are exchanged.
-   *  @param low_score_wins Whether low-scoring or high-scoring models
-   *                        survive a tournament.
    *  @param comm_algo      Inter-trainer communication scheme.
-   *  @param summarizer     The summarizer to use for this callback
+   *  @param exchange_hyperparameters Whether to exchange hyperparameters
+   *                                  with model information.
    */
   ltfb(El::Int batch_interval,
        std::string metric_name,

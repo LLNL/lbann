@@ -262,6 +262,7 @@ to_lbann(lbann_data::RegularizedEvolution::MetricStrategy strategy)
 
 } // namespace
 
+/** @brief Builder function for RegularizedEvolution. */
 template <>
 std::unique_ptr<lbann::ltfb::RegularizedEvolution>
 lbann::make<lbann::ltfb::RegularizedEvolution>(

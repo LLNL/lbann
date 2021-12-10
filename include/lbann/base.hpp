@@ -68,7 +68,6 @@ using world_comm_ptr =
  *
  *  @param argc Command line arguments.
  *  @param argv Number of command line arguments.
- *  @param seed RNG seed.
  *  @return     LBANN communicator corresponding to MPI_COMM_WORLD.
  */
 world_comm_ptr initialize(int& argc, char**& argv);

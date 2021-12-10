@@ -105,7 +105,7 @@ private:
 /** @name Builder functions */
 ///@{
 
-/** @brief Concrete product builder for RegularizedEvolution. */
+/** @brief Concrete builder for RegularizedEvolution. */
 template <>
 std::unique_ptr<ltfb::RegularizedEvolution>
 make(google::protobuf::Message const&);

@@ -76,22 +76,26 @@ public:
   /** @name Life-cycle management */
   ///@{
   /** @brief Construct LTFB from its component pieces.
-   *  @param local_training_algorithm The training algorithm to be
-   *         used for (trainer-)local training.
-   *  @param meta_learning_strategy The postprocessing algorithm.
+   *  @param[in] name A string identifying this instance of LTFB.
+   *  @param[in] local_training_algorithm The training algorithm to
+   *             be used for (trainer-)local training.
+   *  @param[in] meta_learning_strategy The postprocessing algorithm.
+   *  @param[in] stopping_criteria When to stop the training
+   *             algorithm.
    */
   LTFB(std::string name,
        std::unique_ptr<TrainingAlgorithm> local_training_algorithm,
        std::unique_ptr<ltfb::MetaLearningStrategy> meta_learning_strategy,
        ltfb::LTFBTerminationCriteria stopping_criteria)
-    : BaseType{std::move(name)}, m_local_algo{std::move(
-                                   local_training_algorithm)},
+    : BaseType{std::move(name)},
+      m_local_algo{std::move(local_training_algorithm)},
       m_meta_learning_strategy{std::move(meta_learning_strategy)},
       m_termination_criteria{std::move(stopping_criteria)}
   {}
 
   LTFB(LTFB const& other)
-    : BaseType(other), m_local_algo{other.m_local_algo->clone()},
+    : BaseType(other),
+      m_local_algo{other.m_local_algo->clone()},
       m_meta_learning_strategy{other.m_meta_learning_strategy->clone()},
       m_termination_criteria{other.m_termination_criteria}
   {}
@@ -114,7 +118,7 @@ public:
              model& m,
              data_coordinator& dc,
              execution_mode mode) final;
-
+  ///@}
 protected:
   /** @brief Covariant return-friendly implementation of
    *         `get_new_exection_context()`.

@@ -227,9 +227,9 @@ template <typename InputT,
           typename OutputT,
           lbann::data_layout Layout,
           El::Device D>
-auto lbann::build_operator_layer_from_pbuf(lbann_comm* comm,
-                                           lbann_data::Layer const& msg)
-  -> std::unique_ptr<Layer>
+std::unique_ptr<Layer>
+lbann::build_operator_layer_from_pbuf(lbann_comm* comm,
+                                      lbann_data::Layer const& msg)
 {
   using LayerType = OperatorLayer<InputT, OutputT, Layout, D>;
   using OperatorType = Operator<InputT, OutputT, D>;

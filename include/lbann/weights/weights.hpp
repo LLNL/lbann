@@ -261,7 +261,7 @@ public:
 
   /** @brief Serialize the weights object to the archive.
    *  @tparam ArchiveT (Inferred.) The archive type.
-   *  @param ar[in,out] The archive to which to write or from which to
+   *  @param[in,out] ar The archive to which to write or from which to
    *                    read.
    */
   template <typename ArchiveT>
@@ -281,7 +281,7 @@ public:
    *  @pre Other weights has the same dimenions.
    *  @post Other weights objects values may be invalidated.
    *
-   *  @param[in,out] The object from which to steal values.
+   *  @param[in,out] other The object from which to steal values.
    *
    *  @throws lbann::exception If the weights objects don't have the
    *  same dimensions.
@@ -301,7 +301,7 @@ private:
   virtual void do_set_dims_(std::vector<size_t> const& matrix_height_dims,
                             std::vector<size_t> const& matrix_width_dims) = 0;
   virtual void do_steal_values_(weights& other) = 0;
-  
+
 private:
   /** Weights name.
    *  Each set of weights in a model should have a unique,
