@@ -26,6 +26,7 @@
 #ifndef LBANN_UTILS_CLONEABLE_HPP_INCLUDED
 #define LBANN_UTILS_CLONEABLE_HPP_INCLUDED
 
+#include <h2/meta/core/SFINAE.hpp>
 #include <memory>
 #include <type_traits>
 
@@ -230,11 +231,59 @@ struct IsCloneableT
 template <typename T>
 constexpr bool IsCloneable_v() { return IsCloneableT<T>::value; };
 
+template <typename T>
+inline constexpr bool IsCloneable = IsCloneable_v<T>();
+
+template <typename T>
+struct IsCloneablePtrT : std::false_type
+{
+};
+
+template <typename T>
+struct IsCloneablePtrT<T*> : IsCloneableT<std::remove_cv_t<T>>
+{
+};
+
+template <typename T>
+struct IsCloneablePtrT<std::shared_ptr<T>> : IsCloneableT<std::remove_cv_t<T>>
+{
+};
+
+template <typename T, typename DeleterT>
+struct IsCloneablePtrT<std::unique_ptr<T, DeleterT>>
+  : IsCloneableT<std::remove_cv_t<T>>
+{
+};
+
+template <typename T>
+constexpr bool IsCloneablePtr_v()
+{
+  return IsCloneablePtrT<T>::value;
+}
+
+template <typename T>
+inline constexpr bool IsCloneablePtr = IsCloneablePtr_v<T>();
+
 /** @brief Helper metafunction for describing the top of a hierarchy
  *         that's cloneable.
  */
 template <typename T, typename... Bases>
 using AbstractCloneableBase = Cloneable<HasAbstractFunction<T>, Bases...>;
+
+template <typename CloneablePtrT,
+          h2::meta::EnableWhen<IsCloneablePtr<CloneablePtrT>,int> = 1>
+auto clone_all(std::vector<CloneablePtrT> const& things)
+{
+  std::vector<CloneablePtrT> cloned_things;
+  cloned_things.reserve(things.size());
+  for (auto const& t : things) {
+    if (t)
+      cloned_things.emplace_back(t->clone());
+    else
+      cloned_things.emplace_back(nullptr);
+  }
+  return cloned_things;
+}
 
 }// namespace lbann
 #endif // LBANN_UTILS_CLONEABLE_HPP_INCLUDED
