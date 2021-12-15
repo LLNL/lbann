@@ -43,13 +43,6 @@
 namespace lbann {
 namespace callback {
 
-export_onnx::export_onnx(bool print_debug_string,
-                         std::string output_file)
-  : callback_base(/*batch_interval=*/1),
-    m_print_debug_string(print_debug_string),
-    m_output_file(output_file)
-{}
-
 void export_onnx::on_setup_end(model* m)
 {
   mp_.set_ir_version(7);
@@ -59,7 +52,7 @@ void export_onnx::on_setup_end(model* m)
   // to operator sets of other vendors (e.g., they can be used to
   // provide vendor-specific extensions to ONNX)
   opset->set_domain("");
-  opset->set_version(11);
+  opset->set_version(14);
 
   mp_.set_producer_name("LBANN");
   mp_.set_producer_version(LBANN_MAKE_STR(LBANN_VERSION));
@@ -74,48 +67,50 @@ void export_onnx::on_train_begin(model* m)
   auto* gp = mp_.mutable_graph();
   gp->set_name(m->get_name());
 
-  auto const weights_vec = m->get_weights();
-  int idx = 0;
-  for (auto const weights : weights_vec) {
-    auto* initializer = gp->add_initializer();
-    auto dims = weights->get_dims();
-    for (auto const dim : dims) {
-      initializer->add_dims(dim);
-    }
-    const auto& values = dynamic_cast<El::AbstractDistMatrix<DataType>&>(
-      weights->get_values());
+  auto rank = m->get_comm()->get_rank_in_trainer();
+  if( rank == 0 ) {
+    auto const weights_vec = m->get_weights();
+    for (auto const weights : weights_vec) {
+      auto* initializer = gp->add_initializer();
+      auto dims = weights->get_dims();
+      for (auto const dim : dims) {
+        initializer->add_dims(dim);
+      }
+      const auto& values = dynamic_cast<El::AbstractDistMatrix<DataType>&>(
+        weights->get_values());
 
-    El::DistMatrix<DataType, El::CIRC, El::CIRC, El::ELEMENT,
-                   El::Device::CPU> tmp(values.Grid(), 0);
+      El::DistMatrix<DataType, El::CIRC, El::CIRC, El::ELEMENT,
+                     El::Device::CPU> tmp(values.Grid(), 0);
 
-    El::Copy(values, tmp);
+      El::Copy(values, tmp);
 
-    if( tmp.CrossRank() == tmp.Root()) {
-      auto const& local = tmp.LockedMatrix();
-      auto const mat_height = tmp.Height();
-      auto const mat_width = tmp.Width();
+      if( tmp.CrossRank() == tmp.Root()) {
+        auto const& local = tmp.LockedMatrix();
+        auto const mat_height = tmp.Height();
+        auto const mat_width = tmp.Width();
 
-      if (sizeof(DataType) == 4 || sizeof(DataType) == 2 ) {
-        initializer->set_data_type(onnx::TensorProto::FLOAT);
-        for (auto col = decltype(mat_width){0}; col < mat_width; ++col) {
-          for (auto row = decltype(mat_height){0}; row < mat_height; ++row) {
-            initializer->add_float_data(local.CRef(row,col));
+        if (sizeof(DataType) == 4 || sizeof(DataType) == 2 ) {
+          initializer->set_data_type(onnx::TensorProto::FLOAT);
+          for (auto col = decltype(mat_width){0}; col < mat_width; ++col) {
+            for (auto row = decltype(mat_height){0}; row < mat_height; ++row) {
+              initializer->add_float_data(local.CRef(row,col));
+            }
           }
         }
-      }
-      else if (sizeof(DataType) == 8) {
-        initializer->set_data_type(onnx::TensorProto::DOUBLE);
-        for (auto col = decltype(mat_width){0}; col < mat_width; ++col) {
-          for (auto row = decltype(mat_height){0}; row < mat_height; ++row) {
-            initializer->add_double_data(local.CRef(row,col));
+        else if (sizeof(DataType) == 8) {
+          initializer->set_data_type(onnx::TensorProto::DOUBLE);
+          for (auto col = decltype(mat_width){0}; col < mat_width; ++col) {
+            for (auto row = decltype(mat_height){0}; row < mat_height; ++row) {
+              initializer->add_double_data(local.CRef(row,col));
+            }
           }
         }
+        else
+          LBANN_ERROR("Unsupported DataType. Export onnx callback supports float, double, and half.");
       }
-      else
-        LBANN_ERROR("Unsupported DataType. Export onnx callback supports float, double, and half.");
+      initializer->set_name(weights->get_name());
+      initializer->set_doc_string(weights->get_name());
     }
-    initializer->set_name("weights_" + std::to_string(idx));
-    initializer->set_doc_string(m->get_name() + "weights_" + std::to_string(idx++));
   }
   auto const layers = m->get_layers();
   for (auto const* layer : layers) {
@@ -123,17 +118,14 @@ void export_onnx::on_train_begin(model* m)
   }
   gp->set_doc_string(m->get_name());
 
-  auto rank = m->get_comm()->get_rank_in_trainer();
-  if( rank == 0 ) {
-    // FIXME: Why doesn't the constructor initialize this??
-    //std::ofstream onnx_out(m_output_file);
-    std::ofstream onnx_out("lbann.onnx");
+  if(rank == 0) {
+    std::ofstream onnx_out(m_output_file);
     mp_.SerializeToOstream(&onnx_out);
 
-     if(m_print_debug_string)
-      std::cout << mp_.DebugString() << std::endl;
-     std::ofstream debug("lbann_debug.onnx");
-     debug << mp_.DebugString();
+    if(m_print_debug_string) {
+      std::ofstream debug("onnx_debug.txt");
+      debug << mp_.DebugString();
+    }
   }
 }
 
@@ -145,7 +137,9 @@ build_export_onnx_callback_from_pbuf(
     dynamic_cast<const lbann_data::Callback::CallbackExportOnnx&>(proto_msg);
   return std::make_unique<export_onnx>(
     params.print_debug_string(),
-    params.output_file());
+    (params.output_file().size() == 0
+     ? std::string("lbann_output.onnx")
+     : params.output_file()));
 }
 }// namespace callback
 }// namespace lbann

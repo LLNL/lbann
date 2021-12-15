@@ -295,7 +295,7 @@ void cross_entropy_layer<T, L, D>::fill_onnx_node(
   log->set_name(this->get_name() + "_log_0");
   log->set_op_type("Log");
   log->set_domain("");
-  log->set_doc_string("First node representing Cross Entropy Layer");
+  log->set_doc_string("Log node for Cross Entropy Layer");
 
   //z = Mul(A=y, B=z)
   auto* mul = graph.add_node();
@@ -306,40 +306,46 @@ void cross_entropy_layer<T, L, D>::fill_onnx_node(
   mul->set_name(this->get_name() + "_mul_0");
   mul->set_op_type("Mul");
   mul->set_domain("");
-  mul->set_doc_string("Second node representing Cross Entropy Layer");
+  mul->set_doc_string("Multiply node for Cross Entropy Layer");
 
   //z = Reshape(data=z, shape=[0,-1])
   auto* shape = graph.add_initializer();
   shape->set_name(this->get_name() + "_shape_0");
-  shape->set_data_type(onnx::TensorProto::INT8);
-  for (auto const& dim : this->get_output_dims())
-    shape->add_dims(dim);
+  shape->set_data_type(onnx::TensorProto::INT64);
+  shape->add_dims(2);
+  shape->add_int64_data(0);
+  shape->add_int64_data(-1);
   shape->set_doc_string(this->get_name() + " shape");
 
   auto* reshape = graph.add_node();
   reshape->add_input(mul->output(0));
-  reshape->add_input(this->get_name() + "_shape_0");
+  reshape->add_input(shape->name());
   reshape->add_output(this->get_name() + "_reshape_0");
   reshape->set_name(this->get_name() + "_reshape_0");
   reshape->set_op_type("Reshape");
   reshape->set_domain("");
-  reshape->set_doc_string("Third node representing Cross Entropy Layer");
+  reshape->set_doc_string("Reshape node for Cross Entropy Layer");
 
-  //z = ReduceSum(data=z, axis=-1)
-  auto* reduce = graph.add_node();
-  reduce->add_input(reshape->output(0));
-  auto* attribute = reduce->add_attribute();
-  attribute->set_name("axis_0");
-  attribute->set_type(onnx::AttributeProto::INT);
-  attribute->set_i(-1);
+  //z = ReduceSum(data=z, axes=-1)
+
+  auto* axes = graph.add_initializer();
+  axes->set_name(this->get_name() + "_reducesum_axes_0");
+  axes->set_data_type(onnx::TensorProto::INT64);
+  axes->add_dims(1);
+  axes->add_int64_data(-1);
+  axes->set_doc_string(this->get_name() + "ReduceSum axes");
+
+  auto* reduceSum = graph.add_node();
+  reduceSum->add_input(reshape->output(0));
+  reduceSum->add_input(axes->name());
   for (auto const* child : this->get_child_layers()) {
     idx = this->find_child_layer_index(*child);
-    reduce->add_output(this->get_name() + "_" + std::to_string(idx));
+    reduceSum->add_output(this->get_name() + "_" + std::to_string(idx));
   }
-  reduce->set_name(this->get_name() + "_reduce_0");
-  reduce->set_op_type("ReduceSum");
-  reduce->set_domain("");
-  reduce->set_doc_string("Fourth node representing Cross Entropy Layer");
+  reduceSum->set_name(this->get_name() + "_reducesum_0");
+  reduceSum->set_op_type("ReduceSum");
+  reduceSum->set_domain("");
+  reduceSum->set_doc_string("ReduceSum node for Cross Entropy Layer");
 
 }
 #endif //LBANN_HAS_ONNX

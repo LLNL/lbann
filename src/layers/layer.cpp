@@ -549,7 +549,7 @@ void Layer::fill_onnx_node(onnx::GraphProto& graph) const {
     node->add_input(parent->get_name() + "_" + std::to_string(idx));
   }
   for(size_t ii = 0; ii < this->num_weights(); ii++)
-    node->add_input(graph.initializer(ii).name());
+    node->add_input(this->get_weights(ii).get_name());
 
   for(auto const* child : this->get_child_layers()) {
     size_t idx = this->find_child_layer_index(*child);

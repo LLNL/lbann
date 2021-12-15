@@ -202,7 +202,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
 #ifdef LBANN_HAS_ONNX
-  std::string get_onnx_op_type() const override;
+  void fill_onnx_node(onnx::GraphProto& graph) const override;
 #endif //LBANN_HAS_ONNX
 
   description get_description() const override {
@@ -584,23 +584,42 @@ private:
 
 #ifdef LBANN_HAS_ONNX
 template <typename T, data_layout L, El::Device D>
-std::string pooling_layer<T, L, D>::get_onnx_op_type() const {
-  //auto &l = this->layer();
-  std::string mode;
+void pooling_layer<T, L, D>::fill_onnx_node(
+  onnx::GraphProto& graph) const {
+  auto* pool = graph.add_node();
+  auto* attribute = pool->add_attribute();
+  attribute->set_name("kernel_shape");
+  attribute->set_type(onnx::AttributeProto::INTS);
+  //FIXME: What is the size of the kernel along each axis?
+  attribute->add_ints(3);
+  attribute->add_ints(3);
+  for(auto const* parent : this->get_parent_layers()) {
+    size_t idx = parent->find_child_layer_index(*this);
+    pool->add_input(parent->get_name() + "_" + std::to_string(idx));
+  }
+  for(size_t ii = 0; ii < this->num_weights(); ii++)
+    pool->add_input(this->get_weights(ii).get_name());
+  for(auto const* child : this->get_child_layers()) {
+    size_t idx = this->find_child_layer_index(*child);
+    pool->add_output(this->get_name() + "_" + std::to_string(idx));
+  }
+  pool->set_name(this->get_name() + "_0");
+
   switch(m_pool_mode) {
   case pooling_mode::MAX:
-    mode = "MaxPool"; break;
+    pool->set_op_type("MaxPool"); break;
   case pooling_mode::MAX_DETERMINISTIC:
-    mode = "MaxPool"; break;
+    pool->set_op_type("MaxPool"); break;
   case pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING:
-    mode = "AveragePool"; break;
+    pool->set_op_type("AveragePool"); break;
   case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING:
-    mode = "AveragePool"; break;
+    pool->set_op_type("AveragePool"); break;
   default:
     LBANN_ERROR("pooling_layer: no ONNX implementation for pooling mode");
   }
 
-  return mode;
+  pool->set_domain("");
+  pool->set_doc_string(this->get_type());
 }
 #endif
 

@@ -51,10 +51,14 @@ class export_onnx : public callback_base {
 public:
   /** @brief export_onnx Constructor.
    *  @param output_file Output filename (default = lbann_output.onnx)
-   *  @param print_debug_string Option to print debug string to stdout
+   *  @param print_debug_string Print debug string to file onnx_debug.txt
    */
   export_onnx(bool print_debug_string = false,
-              std::string output_file = "lbann_output.onnx");
+              std::string output_file = "lbann_output.onnx")
+    : callback_base(/*batch_interval=*/1),
+      m_print_debug_string(print_debug_string),
+      m_output_file(output_file)
+  {}
 
   /** @brief Copy interface */
   export_onnx* copy() const override {
