@@ -45,37 +45,6 @@
 
 namespace lbann {
 
-static int get_num_numa_nodes()
-{
-  int num_numa_nodes = 1;
-#if defined(LBANN_TOPO_AWARE)
-  // Determine the number of NUMA nodes present.
-  hwloc_topology_t topo;
-  hwloc_topology_init(&topo);
-  hwloc_topology_load(topo);
-  int numa_depth = hwloc_get_type_depth(topo, HWLOC_OBJ_NUMANODE);
-  // if (numa_depth == HWLOC_TYPE_DEPTH_UNKNOWN) {
-  //   LBANN_ERROR(comm->get_rank_in_world(),
-  //               ": cannot determine hwloc NUMA-node depth");
-  // }
-  num_numa_nodes = hwloc_get_nbobjs_by_depth(topo, numa_depth);
-  // Warn if there are more NUMA nodes than processes per node.
-  // It's probably fine if there are more processes than NUMA nodes for now.
-  // We can adjust that later when we better understand the threaded perf.
-  // ppn = comm->get_procs_per_node();
-  // if (num_numa_nodes > ppn) {
-  //   // if (comm->get_rank_in_node() == 0) {
-  //     std::cout << comm->get_rank_in_world() <<
-  //               ": WARNING: node has " << num_numa_nodes <<
-  //               " NUMA nodes but you have " << ppn << " processes per node"
-  //               << std::endl;
-  //   // }
-  // }
-  hwloc_topology_destroy(topo);
-#endif // LBANN_TOPO_AWARE
-  return num_numa_nodes;
-}
-
 #if defined(LBANN_TOPO_AWARE)
 void hwloc_print_topo()
 {
