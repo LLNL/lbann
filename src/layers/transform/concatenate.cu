@@ -315,6 +315,7 @@ void fp_compute_impl(
     grid_dims.x = (max_input_dims[3] + block_size - 1) / block_size;
     grid_dims.y = max_input_dims[2];
     grid_dims.z = max_input_dims[1];
+    gpu_lib::clip_grid_dims(grid_dims);
     hydrogen::gpu::LaunchKernel(
       concat4d_kernel<TensorDataType>,
       grid_dims, block_dims, 0, sync_info,
@@ -470,6 +471,7 @@ void bp_compute_impl(
     grid_dims.x = (max_input_grad_dims[3] + block_size - 1) / block_size;
     grid_dims.y = max_input_grad_dims[2];
     grid_dims.z = max_input_grad_dims[1];
+    gpu_lib::clip_grid_dims(grid_dims);
     hydrogen::gpu::LaunchKernel(
       slice4d_kernel<TensorDataType>,
       grid_dims, block_dims, 0, sync_info,
