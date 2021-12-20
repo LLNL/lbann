@@ -113,7 +113,6 @@ public:
    *                       been updated according to the algorithm.
    *  @param[in,out] dc The data source for this round of training.
    *  @param[in] mode IMO, superfluous. Will be removed.
-   *  @param[in] term_criteria A description of when to stop training.
    */
   virtual void apply(ExecutionContext& context,
                      model& model,

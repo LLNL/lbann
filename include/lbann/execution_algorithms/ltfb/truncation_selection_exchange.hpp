@@ -39,12 +39,13 @@ namespace lbann {
 namespace ltfb {
 
 /** @class TruncationSelectionExchange
- *  A variant of classic LTFB or exploitation mechanism in population-based
- * training. All trainers in the population set are ranked using specified
- * evaluation metric. Model parameters, training hyperparameters and or
- * topologies of any trainer in the bottom rank is replaced by that of a
- * (random) trainer in the top rank.
  *
+ *  A variant of classic LTFB or exploitation mechanism in
+ *  population-based training. All trainers in the population set are
+ *  ranked using specified evaluation metric. Model parameters,
+ *  training hyperparameters and or topologies of any trainer in the
+ *  bottom rank is replaced by that of a (random) trainer in the top
+ *  rank.
  */
 class TruncationSelectionExchange final
   : public Cloneable<TruncationSelectionExchange, MetaLearningStrategy>
@@ -61,21 +62,23 @@ public:
   ///@{
   /** @brief Constructor
    *  @param[in] metric_name The name of the metric to use for
-   *             evaluation. A metric with this name must exist in the
-   *             model passed to apply().
+   *                         evaluation. A metric with this name must
+   *                         exist in the model passed to apply().
    *  @param[in] winner_strategy Strategy for determining the winner
-   *             of a tournament.
-   *  @param[in] truncation_k  Partitions ranking list to
-   * top(winners)/bottom(losers)
+   *                             of a tournament.
+   *  @param[in] truncation_k Partitions ranking list to
+   *                          top(winners)/bottom(losers)
    */
   TruncationSelectionExchange(std::string metric_name,
                               metric_strategy winner_strategy,
                               int truncation_k);
 
   /** @brief Constructor
-   *  @param[in] metrics The metric/strategy pairs. A metric
-   *             with each given name must exist in the model passed
-   *             to apply().
+   *  @param[in] metrics The metric/strategy pairs. A metric with each
+   *                     given name must exist in the model passed to
+   *                     apply().
+   *  @param[in] truncation_k Partitions ranking list to
+   *                          top(winners)/bottom(losers)
    */
   TruncationSelectionExchange(
     std::unordered_map<std::string, metric_strategy> metrics,
@@ -124,7 +127,7 @@ private:
 /** @name Builder functions */
 ///@{
 
-/** @brief Concrete product builder for TruncationSelectionExchange. */
+/** @brief Concrete builder for TruncationSelectionExchange. */
 template <>
 std::unique_ptr<ltfb::TruncationSelectionExchange>
 make(google::protobuf::Message const&);

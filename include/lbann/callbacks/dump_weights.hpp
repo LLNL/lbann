@@ -55,8 +55,10 @@ class FileFormat;
  */
 class dump_weights : public callback_base {
  public:
-  /**
-   *  @param dir Directory in which weight files will be saved.
+   /** @brief Constructor
+    *  @param dir Directory in which weight files will be saved.
+    *  @param epoch_interval The number of epochs between weights.
+    *  @param file_format The output file format.
    */
   dump_weights(
     std::string dir,

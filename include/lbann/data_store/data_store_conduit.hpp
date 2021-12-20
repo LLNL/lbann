@@ -320,13 +320,13 @@ private :
 
   /** @brief @brief Current directory for spilling (writing to file) conduit nodes
    *
-   * m_cur_spill_dir = m_spill_dir_base/<m_cur_spill_dir_integer>
+   * m_cur_spill_dir = m_spill_dir_base/m_cur_spill_dir_integer
    */
   std::string m_cur_spill_dir;
 
   /** @brief The directory to use for testing checkpointing
    *
-   * Testing is activated by passing the cmd flag: --data_store_test_checkpoint=<dir>
+   * Testing is activated by passing the cmd flag: --data_store_test_checkpoint=\<dir\>
    */
   std::string m_test_dir;
 

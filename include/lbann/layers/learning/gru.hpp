@@ -56,7 +56,7 @@ namespace lbann {
  *
  *  Uses four weights per GRU cell: "ih\_matrix" (
  *  @f$ 3 \text{hidden\_size}\times\text{input\_size} @f$ for layer 0
- *  and @f$ 3 \text{hidden\_size}\times\text{hidden\_size} for other
+ *  and @f$ 3 \text{hidden\_size}\times\text{hidden\_size} @f$ for other
  *  layers), "hh\_matrix" (
  *  @f$ 3 \text{hidden\_size}\times\text{hidden\_size} @f$ ),
  *  "ih_bias" ( @f$ 3 \text{hidden\_size} @f$ ),

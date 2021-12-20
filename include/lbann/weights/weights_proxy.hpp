@@ -52,22 +52,20 @@ namespace lbann {
  *  effort to avoid, e.g., safe dereferences to internal pointer
  *  members.
  *
- *  @sec Class contract
+ *  The class contract is as follows:
  *
- *  It is invalid to attempt to access the values() or
- *  master_weights() of a WeightsProxy object for which empty()
- *  returns @c true.
- *
- *  It is invalid to derive meaning from the values() of a
- *  WeightsProxy object after construction or after modifying the
- *  master weights externally until synchronize_with_master() is
- *  called on that WeightsProxy object
- *
- *  If the memory for the values matrix of a master weights object
- *  watched by a WeightsProxy object is replaced for any reason, the
- *  user is responsible for calling setup() on that object again. The
- *  local values are subsequently considered invalid until
- *  synchronize_with_master() is called on that object.
+ *    - It is invalid to attempt to access the values() or
+ *      master_weights() of a WeightsProxy object for which empty()
+ *      returns @c true.
+ *    - It is invalid to derive meaning from the values() of a
+ *      WeightsProxy object after construction or after modifying the
+ *      master weights externally until synchronize_with_master() is
+ *      called on that WeightsProxy object
+ *    - If the memory for the values matrix of a master weights object
+ *      watched by a WeightsProxy object is replaced for any reason,
+ *      the user is responsible for calling setup() on that object
+ *      again. The local values are subsequently considered invalid
+ *      until synchronize_with_master() is called on that object.
  *
  *  @tparam TensorDataType The type to which the weights are proxied.
  */
