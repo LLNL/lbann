@@ -137,7 +137,7 @@ OperatorFactory<InT, OutT, D> build_default_factory()
 } // namespace lbann
 
 template <typename InT, typename OutT, El::Device D>
-OperatorFactory<InT, OutT, D>& lbann::proto::get_operator_factory()
+auto lbann::proto::get_operator_factory() -> OperatorFactory<InT, OutT, D>&
 {
   static auto factory = details::build_default_factory<InT, OutT, D>();
   return factory;
