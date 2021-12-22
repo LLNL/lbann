@@ -46,8 +46,8 @@ lambda_cyc = 1e-3 # lambda-cyc (default: 1e-3)
 useCNN = False
 
 # Reconstruction loss
-expected_train_range = (0.66, 0.68)
-expected_test_range = (0.83, 0.84)
+expected_train_range = (0.42, 0.44)
+expected_test_range = (0.48, 0.50)
 
 # Average mini-batch time (in sec) for each LC system
 # Note that run times are with LBANN_DETERMINISTIC set
