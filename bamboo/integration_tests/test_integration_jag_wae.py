@@ -40,8 +40,8 @@ y_dim = 16399 # image+scalar dim (default: 64*64*4+15=16399)
 z_dim = 20 # latent space dim (default: 20)
 
 # Reconstruction loss
-expected_train_pc_range = (20.1, 20.2)
-expected_test_pc_range = (19.3, 19.4)
+expected_train_pc_range = (20.0, 20.2)
+expected_test_pc_range = (19.2, 19.4)
 
 # Average mini-batch time (in sec) for each LC system
 # Note that run times are with LBANN_DETERMINISTIC set
