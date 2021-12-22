@@ -93,7 +93,6 @@ void fp_impl(lbann_comm& comm,
   //   var = ( sum(x_i^2)/n - mean^2 ) * n/(n-1)
   //   y_i = (x_i - mean) / sqrt(var + epsilon)
   const TensorDataType mean_scale = 1. / channel_size;
-  const TensorDataType var_correction = double(channel_size) / (channel_size - 1);
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int k = 0; k < local_mini_batch_size; ++k) {
     for (El::Int j = 0; j < num_channels; ++j) {
@@ -101,7 +100,7 @@ void fp_impl(lbann_comm& comm,
       const auto& sqsum = local_sqsums(j,k);
       const auto mean = sum * mean_scale;
       const auto sqmean = sqsum * mean_scale;
-      auto var = (sqmean - mean * mean) * var_correction;
+      auto var = (sqmean - mean * mean);
       var = std::max(var, TensorDataType{0.});
       const TensorDataType inv_stdev
         = TensorDataType{1.} / std::sqrt(var + epsilon);
@@ -184,7 +183,6 @@ void bp_impl(lbann_comm& comm,
                                   El::IR(num_channels, 2*num_channels),
                                   El::ALL);
   const TensorDataType mean_scale = 1. / channel_size;
-  const TensorDataType var_correction = double(channel_size) / (channel_size - 1);
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int k = 0; k < local_mini_batch_size; ++k) {
     for (El::Int j = 0; j < num_channels; ++j) {
@@ -192,7 +190,7 @@ void bp_impl(lbann_comm& comm,
       const auto& sqsum = local_sqsums(j,k);
       const auto mean = sum * mean_scale;
       const auto sqmean = sqsum * mean_scale;
-      auto var = (sqmean - mean * mean) * var_correction;
+      auto var = (sqmean - mean * mean);
       const TensorDataType inv_stdev
         = TensorDataType{1.} / std::sqrt(var + epsilon);
       auto& dmean = local_means_grad(j,k);
@@ -219,7 +217,7 @@ void bp_impl(lbann_comm& comm,
       const auto& sqsum = local_sqsums(j,k);
       const auto mean = sum * mean_scale;
       const auto sqmean = sqsum * mean_scale;
-      auto var = (sqmean - mean * mean) * var_correction;
+      auto var = (sqmean - mean * mean);
       const TensorDataType inv_stdev
         = TensorDataType{1.} / std::sqrt(var + epsilon);
       const auto& dmean = local_means_grad(j,k);
