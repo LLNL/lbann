@@ -39,7 +39,7 @@ def numpy_layer_norm(x, epsilon=1e-5):
     if x.dtype is not np.float64:
         x = x.astype(np.float64)
     mean = np.mean(x)
-    var = np.var(x, ddof=1)
+    var = np.var(x, ddof=0)
     return (x - mean) / np.sqrt(var + epsilon)
 
 # ==============================================
