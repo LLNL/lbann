@@ -48,7 +48,7 @@ expected_test_pc_range = (19.2, 19.4)
 # Commented out times are prior to thread safe RNGs
 expected_mini_batch_times = {
     'lassen':   0.0530066,
-    'pascal':   0.11119,
+    'pascal':   0.044,
 }
 # ==============================================
 # Setup LBANN experiment
