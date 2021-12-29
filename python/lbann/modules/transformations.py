@@ -25,12 +25,12 @@ def Permute(x, dims, axes=None, return_dims=False):
     # Apply transpose with gather
     inds = _permute_cache[key]
     if axes == None:
-        new_dims = dims[::-1]
+        new_dims = tuple(dims[::-1])
     else:
-        new_dims = np.array(dims)[list(axes)]
+        new_dims = tuple(np.array(dims)[list(axes)])
     x = lbann.Reshape(x, dims=str_list([size]))
     y = lbann.Gather(x, inds)
-    y = lbann.Reshape(y, dims=str_list(list(new_dims)))
+    y = lbann.Reshape(y, dims=str_list(list(new_dims)), name=name)
 
     if return_dims:
         return y, new_dims
@@ -40,9 +40,9 @@ def Cumsum(x, dims, axis=0):
     global _cumsum_cache
 
     if len(dims) != 2:
-        sys.exit("dims > 2 not tested/supported for cumsum")
+        raise RuntimeError("dims > 2 not tested/supported for cumsum")
     if (axis < 0) or (axis > 1):
-        sys.exit("Unsupported cumsum axis: {}".format(axis))
+        raise RuntimeError("Unsupported cumsum axis: {}".format(axis))
     shape = (dims[axis], dims[axis])
     if shape not in _cumsum_cache:
         tril_ones = np.tril(np.full(shape, 1, dtype=int), k=0)
