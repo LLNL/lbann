@@ -54,7 +54,7 @@ expected_test_range = (0.48, 0.50)
 # Commented out times are prior to thread safe RNGs
 expected_mini_batch_times = {
     'lassen':   0.0530066,
-    'pascal':   0.123863,
+    'pascal':   0.044,
 }
 # ==============================================
 # Setup LBANN experiment
@@ -107,7 +107,7 @@ def setup_experiment(lbann):
                                                        pretrained_dir=pretrained_dir,
                                                        ltfb_batch_interval=ltfb_batch_interval,
                                                        num_epochs=num_epochs)
- 
+
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0001,beta1=0.9,beta2=0.99,eps=1e-8)
     # Load data reader from prototext
