@@ -48,6 +48,27 @@
 
 namespace lbann {
 
+namespace {
+
+std::unique_ptr<trainer> global_trainer_;
+
+void cleanup_trainer_atexit() { global_trainer_ = nullptr; }
+
+} // namespace
+
+trainer& get_trainer() {
+  LBANN_ASSERT(global_trainer_);
+  return *global_trainer_;
+}
+trainer const& get_const_trainer() {
+  LBANN_ASSERT(global_trainer_);
+  return *global_trainer_;
+}
+
+void finalize_trainer() {
+  global_trainer_.reset();
+}
+
 // Creates a datareader metadata to get around the need for an actual
 // datareader in inference only mode
 auto mock_dr_metadata(std::vector<int> input_dims,
@@ -71,6 +92,9 @@ std::unique_ptr<model> load_inference_model(lbann_comm* lc,
   auto m = std::make_unique<model>(lc, nullptr, nullptr);
   m->load_from_checkpoint_shared(p);
   p.close_restart();
+
+  std::unique_ptr<data_coordinator> dc = lbann::make_unique<buffered_data_coordinator<float>>(lc);
+  global_trainer_ = lbann::make_unique<trainer>(lc, std::move(dc), mbs, nullptr);
 
   // Must use a mock datareader with input and output dims for setup
   // TODO: avoid need for datareader altogether
@@ -107,27 +131,6 @@ int allocate_trainer_resources(lbann_comm *comm) {
   }
 
   return procs_per_trainer;
-}
-
-namespace {
-
-std::unique_ptr<trainer> global_trainer_;
-
-void cleanup_trainer_atexit() { global_trainer_ = nullptr; }
-
-} // namespace
-
-trainer& get_trainer() {
-  LBANN_ASSERT(global_trainer_);
-  return *global_trainer_;
-}
-trainer const& get_const_trainer() {
-  LBANN_ASSERT(global_trainer_);
-  return *global_trainer_;
-}
-
-void finalize_trainer() {
-  global_trainer_.reset();
 }
 
 /// Construct a trainer that contains a lbann comm object and threadpool
