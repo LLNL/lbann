@@ -84,7 +84,7 @@ public:
 protected:
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
-  void setup_matrices(const El::Grid& grid) override;
+  void setup_data(size_t max_mini_batch_size) override;
   void fp_setup_outputs(El::Int mini_batch_size) override;
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
 
@@ -182,8 +182,8 @@ void layer_norm_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaDa
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void layer_norm_layer<TensorDataType,Layout,Device>::setup_matrices(const El::Grid& grid) {
-  data_type_layer<TensorDataType>::setup_matrices(grid);
+void layer_norm_layer<TensorDataType,Layout,Device>::setup_data(size_t max_mini_batch_size) {
+  data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
   auto dist = this->get_prev_activations().DistData();
   dist.colDist = El::STAR;
   m_statistics.reset(AbsDistMatrixType::Instantiate(dist));

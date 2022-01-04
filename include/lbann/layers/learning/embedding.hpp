@@ -105,7 +105,6 @@ protected:
   friend class cereal::access;
   embedding_layer();
 
-  void setup_matrices(const El::Grid& grid) override;
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void setup_data(size_t max_mini_batch_size) override;
 
@@ -259,7 +258,15 @@ void embedding_layer<TensorDataType,Layout,Device>::setup_data(size_t max_mini_b
   }
 
   // Initialize gradient w.r.t. embeddings
-  m_embeddings_grad->Resize(m_embedding_dim, m_num_embeddings);
+  {
+    auto& embedding_values =
+      dynamic_cast<AbsDistMatrixType&>(embeddings.get_values());
+    this->m_embeddings_grad.reset(
+      embedding_values.Construct(
+        embedding_values.Grid(),
+        embedding_values.Root()));
+    m_embeddings_grad->Resize(m_embedding_dim, m_num_embeddings);
+  }
 
 }
 

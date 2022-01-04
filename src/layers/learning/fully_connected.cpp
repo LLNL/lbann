@@ -110,30 +110,6 @@ fully_connected_layer<TensorDataType, T_layout, Dev>::get_description() const {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void fully_connected_layer<TensorDataType, T_layout, Dev>
-::setup_matrices(const El::Grid& grid) {
-  data_type_layer<TensorDataType>::setup_matrices(grid);
-  deallocate_matrices();
-  if(Dev == El::Device::CPU) {
-    if(T_layout == data_layout::MODEL_PARALLEL) {
-      // Allocate a MCStarMat (RowSumMat)
-      this->m_bias_gradient =
-        new El::DistMatrix<TensorDataType,
-                           El::MC, El::STAR,
-                           El::ELEMENT,
-                           El::Device::CPU>(grid);
-    } else if(T_layout == data_layout::DATA_PARALLEL) {
-      // Allocate a StarMat
-      this->m_bias_gradient =
-        new El::DistMatrix<TensorDataType,
-                           El::STAR, El::STAR,
-                           El::ELEMENT,
-                           El::Device::CPU>(grid);
-    }
-  }
-}
-
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void fully_connected_layer<TensorDataType, T_layout, Dev>
 ::setup_data(size_t max_mini_batch_size) {
   data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
@@ -200,6 +176,25 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>
     bias_dist.rowDist = El::STAR;
     bias_weights.set_dims(output_dims);
     bias_weights.set_matrix_distribution(bias_dist);
+
+    // Setup bias gradient
+    if(Dev == El::Device::CPU) {
+      if(T_layout == data_layout::MODEL_PARALLEL) {
+        // Allocate a MCStarMat (RowSumMat)
+        this->m_bias_gradient =
+          new El::DistMatrix<TensorDataType,
+                             El::MC, El::STAR,
+                             El::ELEMENT,
+                             El::Device::CPU>(*bias_dist.grid);
+      } else if(T_layout == data_layout::DATA_PARALLEL) {
+        // Allocate a StarMat
+        this->m_bias_gradient =
+          new El::DistMatrix<TensorDataType,
+                             El::STAR, El::STAR,
+                             El::ELEMENT,
+                             El::Device::CPU>(*bias_dist.grid);
+      }
+    }
     if (this->m_bias_gradient != nullptr) {
       El::Zeros(*this->m_bias_gradient,
                 bias_weights.get_matrix_height(),

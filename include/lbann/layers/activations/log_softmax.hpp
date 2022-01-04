@@ -94,8 +94,8 @@ public:
     this->set_output_dims(this->get_input_dims());
   }
 
-  void setup_matrices(const El::Grid& grid) override {
-    data_type_layer<TensorDataType>::setup_matrices(grid);
+  void setup_data(size_t max_mini_batch_size) override {
+    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
     auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
     m_workspace.reset(AbsDistMatrixType::Instantiate(dist));

@@ -91,7 +91,6 @@ public:
 
   ///@}
 
-  void setup_matrices(const El::Grid& grid) override;
   void setup_data(size_t max_mini_batch_size) override;
 
   void fp_setup_outputs(El::Int mini_batch_size) override;
@@ -138,16 +137,6 @@ auto entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
 template <typename TensorDataType, data_layout Layout, El::Device Dev>
 void
 entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
-::setup_matrices(const El::Grid& grid) {
-  data_type_layer<TensorDataType>::setup_matrices(grid);
-  auto dist = this->get_prev_activations().DistData();
-  dist.rowDist = El::STAR;
-  m_weights_gradient.reset(AbsDistMatrixType::Instantiate(dist));
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Dev>
-void
-entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
 ::setup_data(size_t max_mini_batch_size) {
     data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
@@ -188,6 +177,12 @@ entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
     this->get_weights(0).set_matrix_distribution(dist);
 
     // Setup gradient w.r.t. weights
+    auto& weights_matrix =
+      dynamic_cast<AbsDistMatrixType&>(this->get_weights(0).get_values());
+    this->m_weights_gradient.reset(
+      weights_matrix.Construct(
+        weights_matrix.Grid(),
+        weights_matrix.Root()));
     m_weights_gradient->AlignWith(dist);
     m_weights_gradient->Resize(output_size, 2);
 }

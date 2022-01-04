@@ -312,6 +312,7 @@ public:
   virtual void setup(
     size_t max_mini_batch_size,
     DataReaderMetaData& dr_metadata,
+    const std::vector<El::Grid*>& grids,
     bool force=false);
 
   virtual void make_data_store_preloaded(execution_mode mode);
@@ -433,7 +434,10 @@ protected:
    *
    *  Called in setup function.
    */
-  virtual void setup_layers(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata);
+  virtual void setup_layers(
+    size_t max_mini_batch_size,
+    DataReaderMetaData& dr_metadata,
+    const std::vector<El::Grid*>& grids);
   /** @brief Set up weights.
    *
    *  Called in setup function. All weights being used by layers or

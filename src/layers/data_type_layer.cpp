@@ -475,7 +475,8 @@ auto MakeMatBuilder(data_layout const layout, El::Device const device)
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::
-setup_matrices(const El::Grid& grid) {
+setup_matrices(
+  const std::vector<El::Grid*>& grids) {
 
   using InputMatrixBuilderType = details::MatrixBuilder<InputTensorDataType>;
   using OutputMatrixBuilderType = details::MatrixBuilder<OutputTensorDataType>;
@@ -518,6 +519,22 @@ setup_matrices(const El::Grid& grid) {
   m_gradient_wrt_inputs.resize(get_num_parents());
   m_temp_grad.resize(1);
   m_subgrid_tensors_split.resize(1);
+
+  // Choose process grid to distribute matrices over
+  int tag = this->get_grid_tag();
+  if (tag < 0) {
+    /// @todo Choose tag based on parent layers
+    tag = 0;
+  }
+  if (tag < 0 || tag >= grids.size()) {
+    LBANN_ERROR(
+      "attempted to initialize ",
+      this->get_type()," layer \"",this->get_name(),"\" ",
+      "on invalid grid ",
+      "(grid tag ",tag,", ",
+      grids.size()," grids available)");
+  }
+  const El::Grid& grid = *grids[tag];
 
   auto childs = get_child_layers();
   auto parents = get_parent_layers();

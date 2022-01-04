@@ -108,21 +108,6 @@ public:
     : weights_layer(nullptr, { 1 } )
   {}
 
-  void setup_matrices(const El::Grid& grid) override {
-    data_type_layer<TensorDataType>::setup_matrices(grid);
-
-    // Initialize weights gradient
-    auto dist = this->get_activations().DistData();
-    dist.rowDist = El::STAR;
-    m_gradient.reset(AbsDistMatrixType::Instantiate(dist));
-
-    // Initialize workspace
-#if defined HYDROGEN_HAVE_CUB
-    if (Dev == El::Device::GPU)
-      m_workspace.SetMemoryMode(1); // Use CUB GPU memory pool if possible
-#endif // defined HYDROGEN_HAVE_CUB
-  }
-
   void setup_data(size_t max_mini_batch_size) override {
     data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
@@ -148,6 +133,9 @@ public:
     // Setup weights and weights gradient
     const auto& output_dims_ = this->get_output_dims();
     std::vector<size_t> output_dims(output_dims_.begin(), output_dims_.end());
+    auto dist = this->get_activations().DistData();
+    dist.rowDist = El::STAR;
+    m_gradient.reset(AbsDistMatrixType::Instantiate(dist));
     m_gradient->AlignWith(this->get_activations());
     m_gradient->Resize(this->get_output_size(), 1);
     this->get_weights(0).set_dims(output_dims);
@@ -162,6 +150,12 @@ public:
                   (this->get_weights(0).is_frozen() ? "" : "un"),"frozen ",
                   "weights \"",this->get_weights(0).get_name(),"\"");
     }
+
+    // Initialize workspace
+#if defined HYDROGEN_HAVE_CUB
+    if (Dev == El::Device::GPU)
+      m_workspace.SetMemoryMode(1); // Use CUB GPU memory pool if possible
+#endif // defined HYDROGEN_HAVE_CUB
 
   }
 

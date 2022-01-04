@@ -141,8 +141,8 @@ protected:
     this->set_output_dims(this->get_input_dims());
   }
 
-  void setup_matrices(const El::Grid& grid) override {
-    data_type_layer<TensorDataType>::setup_matrices(grid);
+  void setup_data(size_t max_mini_batch_size) override {
+    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
     m_mask = std::unique_ptr<AbsDistMatrixType>(this->get_activations().Copy());
   }
 

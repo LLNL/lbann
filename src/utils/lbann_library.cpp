@@ -75,7 +75,7 @@ load_inference_model(lbann_comm* lc,
   // Must use a mock datareader with input and output dims for setup
   // TODO: avoid need for datareader altogether
   auto dr_metadata = mock_dr_metadata(input_dims, output_dims);
-  m->setup(mbs, dr_metadata);
+  m->setup(mbs, dr_metadata, get_trainer().get_grids());
 
   return m;
 }

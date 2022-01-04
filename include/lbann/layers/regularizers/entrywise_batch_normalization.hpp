@@ -119,14 +119,6 @@ public:
 
 protected:
 
-  void setup_matrices(const El::Grid& grid) override {
-    data_type_layer<TensorDataType>::setup_matrices(grid);
-    auto dist = this->get_prev_activations().DistData();
-    dist.rowDist = El::STAR;
-    m_batch_statistics.reset(AbsDistMatrixType::Instantiate(dist));
-    m_batch_statistics_gradient.reset(AbsDistMatrixType::Instantiate(dist));
-  }
-
   void setup_data(size_t max_mini_batch_size) override {
     data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
@@ -173,8 +165,10 @@ protected:
     }
 
     // Initialize matrices
+    m_batch_statistics.reset(AbsDistMatrixType::Instantiate(dist));
     m_batch_statistics->AlignWith(dist);
     m_batch_statistics->Resize(output_size, 2);
+    m_batch_statistics_gradient.reset(AbsDistMatrixType::Instantiate(dist));
     m_batch_statistics_gradient->AlignWith(dist);
     m_batch_statistics_gradient->Resize(output_size, 2);
 

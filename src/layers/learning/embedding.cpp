@@ -30,12 +30,6 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void embedding_layer<TensorDataType,Layout,Device>::setup_matrices(const El::Grid& grid) {
-  data_type_layer<TensorDataType>::setup_matrices(grid);
-  this->m_embeddings_grad.reset(new El::DistMatrix<TensorDataType, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU>(grid));
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
 void embedding_layer<TensorDataType,Layout,Device>::fp_compute() {
   using MatType = El::Matrix<TensorDataType, El::Device::CPU>;
 

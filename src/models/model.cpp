@@ -616,7 +616,11 @@ void model::remap_pointers(
 // Setup
 // =============================================
 
-void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata, bool force) {
+void model::setup(
+  size_t max_mini_batch_size,
+  DataReaderMetaData& dr_metadata,
+  const std::vector<El::Grid*>& grids_,
+  bool force) {
 
   // Bail out if the model is already setup
   if(m_model_is_setup && !force) { return; }
@@ -637,7 +641,7 @@ void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata, b
     setup_subgrids();
   }
 
-  setup_layers(max_mini_batch_size, dr_metadata);
+  setup_layers(max_mini_batch_size, dr_metadata, grids_);
 
 
   // Setup weights
@@ -1548,20 +1552,15 @@ void model::setup_layer_execution_order() {
 
 }
 
-void model::setup_layers(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
+void model::setup_layers(
+  size_t max_mini_batch_size,
+  DataReaderMetaData& dr_metadata,
+  const std::vector<El::Grid*>& grids_) {
 
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
     l.set_model(this);
-
-    if(this->is_subgraph_parallelism_enabled())
-    {
-      l.setup(max_mini_batch_size, dr_metadata,*(grids[l.get_subgrid_index()]));
-    }
-    else
-    {
-      l.setup(max_mini_batch_size, dr_metadata,m_comm->get_trainer_grid());
-    }
+    l.setup(max_mini_batch_size, dr_metadata, grids_);
     l.check_setup();
   }
 }
