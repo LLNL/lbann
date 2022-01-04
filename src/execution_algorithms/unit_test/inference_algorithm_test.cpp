@@ -84,8 +84,8 @@ auto make_model(lbann::lbann_comm& comm, int class_n)
                                                 -1,
                                                 my_proto.optimizer(),
                                                 my_proto.trainer(),
-                                                my_proto.model()) ;
-  my_model->setup(1UL, metadata);
+                                                my_proto.model());
+  my_model->setup(1UL, metadata, {&comm.get_trainer_grid()});
   return my_model;
 }
 
