@@ -33,6 +33,7 @@
 void construct_opts(int argc, char **argv) {
   auto& arg_parser = lbann::global_argument_parser();
   lbann::construct_std_options();
+  lbann::construct_datastore_options();
   arg_parser.add_option("samples",
                         {"-n"},
                         "Number of samples to run inference on",
@@ -124,6 +125,7 @@ int main(int argc, char **argv) {
                                        arg_parser.get<int>("width"));
   samples[0].print();
   */
+
   auto m = lbann::load_inference_model(lbann_comm.get(),
                                        arg_parser.get<std::string>("model"),
                                        arg_parser.get<int>("minibatchsize"),
@@ -133,11 +135,13 @@ int main(int argc, char **argv) {
                                          arg_parser.get<int>("width")
                                        },
                                        {arg_parser.get<int>("labels")});
+
   auto samples = random_samples(lbann_comm->get_trainer_grid(),
                                 arg_parser.get<int>("samples"),
                                 arg_parser.get<int>("channels"),
                                 arg_parser.get<int>("height"),
                                 arg_parser.get<int>("width"));
+
   auto labels = lbann::infer(m.get(),
                              samples,
                              arg_parser.get<int>("minibatchsize"));

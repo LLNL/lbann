@@ -22,29 +22,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
+//
+// lbann_data_reader .hpp .cpp - Input data base class for training, testing
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATA_READER_CONDUIT_HPP
-#define LBANN_DATA_READER_CONDUIT_HPP
-
 #include "lbann/data_readers/data_reader.hpp"
-#include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/data_readers/data_reader_conduit.hpp"
 
 namespace lbann {
-/**
- * A generalized data reader for passed in conduit nodes.
- */
-class conduit_data_reader : public generic_data_reader
-{
-public:
-  conduit_data_reader* copy() const override { return new conduit_data_reader(*this); }
-  void load() override;
-  bool has_conduit_output() override { return true; }
 
-  std::string get_type() const override { return "conduit_data_reader"; }
+void conduit_data_reader::load() {
+}
 
-}; // END: class conduit_data_reader
-
-} // namespace lbann
-
-#endif // LBANN_DATA_READER_CONDUIT_HPP
+}  // namespace lbann

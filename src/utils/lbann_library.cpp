@@ -93,8 +93,28 @@ std::unique_ptr<model> load_inference_model(lbann_comm* lc,
   m->load_from_checkpoint_shared(p);
   p.close_restart();
 
+  lbann::generic_data_reader *reader = new conduit_data_reader();
+  std::map<execution_mode, generic_data_reader *> data_readers =
+    {{ execution_mode::inference, reader }};
+  std::unique_ptr<thread_pool> io_thread_pool =
+    construct_io_thread_pool(lc, false);
+  auto io_threads_per_process = io_thread_pool->get_num_threads();
   std::unique_ptr<data_coordinator> dc = lbann::make_unique<buffered_data_coordinator<float>>(lc);
   global_trainer_ = lbann::make_unique<trainer>(lc, std::move(dc), mbs, nullptr);
+
+  // Root of the random seed tree
+  int root_random_seed = lbann_default_random_seed;
+  // Random seed used for the general RNGs
+  int random_seed = root_random_seed;
+  // Random seed used for the RNG used to fetch data
+  int data_seq_random_seed = root_random_seed;
+  // Initialize the general RNGs and the data sequence RNGs
+  init_random(random_seed, io_threads_per_process);
+  init_data_seq_random(data_seq_random_seed);
+  init_ltfb_random(root_random_seed);
+  global_trainer_->set_random_seeds(root_random_seed, random_seed, data_seq_random_seed);
+
+  global_trainer_->setup(std::move(io_thread_pool), data_readers);
 
   // Must use a mock datareader with input and output dims for setup
   // TODO: avoid need for datareader altogether
