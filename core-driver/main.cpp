@@ -118,16 +118,15 @@ int main(int argc, char **argv) {
   // Load model and run inference on samples
   auto lbann_comm = lbann::initialize_lbann(MPI_COMM_WORLD);
 
-  /*
   auto samples = conduit_mnist_samples(arg_parser.get<int>("samples"),
                                        arg_parser.get<int>("channels"),
                                        arg_parser.get<int>("height"),
                                        arg_parser.get<int>("width"));
   samples[0].print();
-  */
 
   auto m = lbann::load_inference_model(lbann_comm.get(),
                                        arg_parser.get<std::string>("model"),
+                                       samples,
                                        arg_parser.get<int>("minibatchsize"),
                                        {
                                          arg_parser.get<int>("channels"),
@@ -136,6 +135,7 @@ int main(int argc, char **argv) {
                                        },
                                        {arg_parser.get<int>("labels")});
 
+  /*
   auto samples = random_samples(lbann_comm->get_trainer_grid(),
                                 arg_parser.get<int>("samples"),
                                 arg_parser.get<int>("channels"),
@@ -154,6 +154,7 @@ int main(int argc, char **argv) {
     }
     std::cout << std::endl;
   }
+                                */
 
   // Clean up
   m.reset();

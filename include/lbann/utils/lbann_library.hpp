@@ -45,6 +45,7 @@ const int lbann_default_random_seed = 42;
  */
 std::unique_ptr<model> load_inference_model(lbann_comm* lc,
                                             std::string cp_dir,
+                                            std::vector<conduit::Node> &samples,
                                             int mbs,
                                             std::vector<int> input_dims,
                                             std::vector<int> output_dims);
