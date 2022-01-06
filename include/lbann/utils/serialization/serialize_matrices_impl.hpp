@@ -274,13 +274,19 @@ template <typename ArchiveT, typename T,
 void save(lbann::RootedOutputArchiveAdaptor<ArchiveT>& ar,
           ::El::AbstractDistMatrix<T> const& mat)
 {
+  LBANN_ASSERT(!mat.Viewing());
   using CircMatType =
     ::El::DistMatrix<T,::El::CIRC,::El::CIRC,::El::ELEMENT,::El::Device::CPU>;
-  LBANN_ASSERT(!mat.Viewing());
-  LBANN_ASSERT(mat.Grid() == ar.grid());
-  LBANN_ASSERT(mat.Root() == ar.root());
   CircMatType circ_mat(mat);
-  save(ar, circ_mat);
+  CircMatType circ_mat_ar(ar.grid(), ar.root());
+  if (circ_mat.Grid() == circ_mat_ar.Grid()
+      && circ_mat.Root() == circ_mat_ar.Root()) {
+    circ_mat_ar = std::move(circ_mat);
+  }
+  else {
+    ::El::copy::Translate(circ_mat, circ_mat_ar);
+  }
+  save(ar, circ_mat_ar);
 }
 
 template <typename ArchiveT, typename T,
@@ -288,15 +294,21 @@ template <typename ArchiveT, typename T,
 void load(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
           ::El::AbstractDistMatrix<T>& mat)
 {
+  LBANN_ASSERT(!mat.Viewing());
   using CircMatType =
     ::El::DistMatrix<T,::El::CIRC,::El::CIRC,::El::ELEMENT,::El::Device::CPU>;
-  LBANN_ASSERT(!mat.Viewing());
-  LBANN_ASSERT(mat.Grid() == ar.grid());
-  LBANN_ASSERT(mat.Root() == ar.root());
 
   // Do the root process read.
   CircMatType circ_mat(mat.Grid(), mat.Root());
-  load(ar, circ_mat);
+  CircMatType circ_mat_ar(ar.grid(), ar.root());
+  load(ar, circ_mat_ar);
+  if (circ_mat.Grid() == circ_mat_ar.Grid()
+      && circ_mat.Root() == circ_mat_ar.Root()) {
+    circ_mat = std::move(circ_mat_ar);
+  }
+  else {
+    ::El::copy::Translate(circ_mat_ar, circ_mat);
+  }
 
   // Distribute the data
   ::El::Copy(circ_mat, mat);
