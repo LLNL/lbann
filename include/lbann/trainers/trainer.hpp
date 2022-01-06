@@ -310,8 +310,8 @@ private:
 
   /** @brief Processor grids for sub-grid parallelism
    *
-   *  Grid 0 corresponds to the trainer's MPI communicator. Other
-   *  grids are assumed to be sub-grids.
+   *  Does not include grid 0, which corresponds to the trainer's MPI
+   *  communicator.
    */
   std::vector<std::unique_ptr<El::Grid>> m_grids;
 

@@ -66,15 +66,6 @@ trainer::trainer(lbann_comm* comm,
   // Default trainer name
   m_name = "trainer" + std::to_string(m_comm->get_trainer_rank());
   m_data_coordinator->set_trainer(*this);
-
-  // First sub-grid is copy of trainer grid
-  const auto& trainer_grid = m_comm->get_trainer_grid();
-  m_grids.emplace_back(
-    make_unique<El::Grid>(
-      trainer_grid.Comm().GetMPIComm(),
-      trainer_grid.Height(),
-      trainer_grid.Order()));
-
 }
 
 trainer::~trainer() {}
@@ -300,7 +291,8 @@ void trainer::evaluate(observer_ptr<model> model,
 
 std::vector<El::Grid*> trainer::get_grids() const {
   std::vector<El::Grid*> grids;
-  grids.reserve(m_grids.size());
+  grids.reserve(m_grids.size()+1);
+  grids.push_back(&get_comm()->get_trainer_grid());
   for (const auto& g : m_grids) {
     grids.push_back(g.get());
   }
