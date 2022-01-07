@@ -93,9 +93,6 @@ public:
 
   void setup_data(size_t max_mini_batch_size) override;
 
-  void fp_setup_outputs(El::Int mini_batch_size) override;
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
-
 protected:
 
   void fp_compute() override;
@@ -177,59 +174,10 @@ entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
     this->get_weights(0).set_matrix_distribution(dist);
 
     // Setup gradient w.r.t. weights
-    auto& weights_matrix =
-      dynamic_cast<AbsDistMatrixType&>(this->get_weights(0).get_values());
-    this->m_weights_gradient.reset(
-      weights_matrix.Construct(
-        weights_matrix.Grid(),
-        weights_matrix.Root()));
+    m_weights_gradient.reset(AbsDistMatrixType::Instantiate(dist));
     m_weights_gradient->AlignWith(dist);
     m_weights_gradient->Resize(output_size, 2);
 }
-
-template <typename TensorDataType, data_layout Layout, El::Device Dev>
-void
-entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
-::fp_setup_outputs(El::Int mini_batch_size) {
-  data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
-
-#if 0 /// @todo See https://github.com/LLNL/lbann/issues/1123
-
-  // Check that input and weights tensors are aligned
-  /// @todo Realign weights tensor if misaligned
-  bool aligned = true;
-  try {
-    const auto& x = this->get_prev_activations();
-    const auto& w = m_weights[0]->get_values();
-    aligned = (x.ColAlign() == w.ColAlign()
-               && x.RowAlign() == w.RowAlign());
-  }
-  catch (const exception& e) {
-    // An exception is thrown if you try accessing weights values
-    // before they are initialized. We don't care if this case is
-    // aligned, so it's safe to ignore.
-  }
-  if (!aligned) {
-    std::ostringstream err;
-    err << this->get_type() << " layer \"" << this->get_name() << "\" "
-        << "has misaligned input and weights matrices";
-    LBANN_ERROR(err.str());
-  }
-
-#endif // 0
-
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Dev>
-void
-entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
-::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
-  data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(mini_batch_size);
-  m_weights_gradient->Empty(false);
-  m_weights_gradient->AlignWith(this->get_prev_activations());
-  m_weights_gradient->Resize(this->get_input_size(), 2);
-}
-
 
 LBANN_DEFINE_LAYER_BUILDER(entrywise_scale_bias);
 

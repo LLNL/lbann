@@ -41,6 +41,11 @@ void fp_impl(lbann_comm& comm,
              El::AbstractDistMatrix<TensorDataType>& statistics) {
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
+  // Workspace buffer
+  statistics.Empty(false);
+  statistics.AlignWith(input);
+  statistics.Resize(2, input.Width());
+
   // Local matrices
   const auto& local_input = dynamic_cast<const CPUMatType&>(input.LockedMatrix());
   auto& local_output = dynamic_cast<CPUMatType&>(output.Matrix());
@@ -114,6 +119,11 @@ void bp_impl(lbann_comm& comm,
              const El::AbstractDistMatrix<TensorDataType>& statistics,
              El::AbstractDistMatrix<TensorDataType>& statistics_grad) {
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
+
+  // Workspace buffer
+  statistics_grad.Empty(false);
+  statistics_grad.AlignWith(input);
+  statistics_grad.Resize(2, input.Width());
 
   // Local matrices
   const auto& local_input = dynamic_cast<const CPUMatType&>(input.LockedMatrix());

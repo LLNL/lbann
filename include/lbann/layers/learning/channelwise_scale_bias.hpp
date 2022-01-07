@@ -174,12 +174,7 @@ void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
   this->get_weights(0).set_matrix_distribution(dist);
 
   // Setup gradient w.r.t. weights
-  auto& weights_matrix =
-    dynamic_cast<AbsDistMatrixType&>(this->get_weights(0).get_values());
-  this->m_weights_gradient.reset(
-    weights_matrix.Construct(
-      weights_matrix.Grid(),
-      weights_matrix.Root()));
+  m_weights_gradient.reset(AbsDistMatrixType::Instantiate(dist));
   m_weights_gradient->AlignWith(dist);
   m_weights_gradient->Resize(num_channels, 2);
 

@@ -135,23 +135,6 @@ public:
 
   }
 
-  void fp_setup_outputs(El::Int mini_batch_size) final {
-    data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
-    // The data parallel implementations do not use a workspace. Thus,
-    // we only need to allocate a workspace when we are in model
-    // parallel mode.
-    if constexpr (Layout == data_layout::MODEL_PARALLEL)
-    {
-      const auto& dist_data = this->get_prev_activations().DistData();
-      m_workspace->Empty(false);
-      m_workspace->AlignWith(dist_data);
-      m_workspace->Resize(1, mini_batch_size);
-    }
-
-    // Setup the descriptors
-    this->setup_fp_dnn_descriptors();
-  }
-
   void fp_compute() final;
   void bp_compute() final;
 
@@ -180,13 +163,22 @@ private:
 #endif
   using dnnTensorDescriptor = typename dnn_backend::TensorDescriptor;
 
+  /** @brief Descriptor for local input tensor
+   *  @details Only used for data-parallel, CPU implementation.
+   */
   dnnTensorDescriptor input_descriptor_;
+  /** @brief Descriptor for local output tensor
+   *  @details Only used for data-parallel, CPU implementation.
+   */
   dnnTensorDescriptor output_descriptor_;
+  /** @brief Descriptor for local input gradient tensor
+   *  @details Only used for data-parallel, CPU implementation.
+   */
   dnnTensorDescriptor grad_wrt_input_descriptor_;
+  /** @brief Descriptor for local output gradient tensor
+   *  @details Only used for data-parallel, CPU implementation.
+   */
   dnnTensorDescriptor grad_wrt_output_descriptor_;
-
-  void setup_fp_dnn_descriptors();
-  void setup_bp_dnn_descriptors();
 
   ///@}
 
@@ -196,7 +188,10 @@ private:
   /** Softmax mode. */
   softmax_mode m_mode;
 
-  /** Workspace for column-wise reductions. */
+  /** @brief Workspace for column-wise reductions
+   *
+   *  Only used for model-parallel implementation.
+   */
   std::unique_ptr<AbsDistMatrixType> m_workspace;
 
 #ifdef LBANN_HAS_DNN_LIB

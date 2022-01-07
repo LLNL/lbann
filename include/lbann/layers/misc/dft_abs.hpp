@@ -101,8 +101,6 @@ protected:
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void fp_compute() override;
   void bp_compute() override;
-  void fp_setup_inputs(El::Int mini_batch_size) override;
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
 
 private:
   using impl_type = dft_abs_impl<TensorDataType, Device>;
