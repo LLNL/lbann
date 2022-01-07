@@ -148,7 +148,6 @@ private:
 public:
   /** @brief Set up batch normalization.
    *
-   *  @param comm The communication context for this layer
    *  @param decay Controls the momentum of the running mean/standard
    *         deviation averages.
    *  @param epsilon A small number to avoid division by zero.

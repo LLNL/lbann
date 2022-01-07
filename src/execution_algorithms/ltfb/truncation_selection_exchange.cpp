@@ -262,6 +262,7 @@ to_lbann(lbann_data::TruncationSelectionExchange::MetricStrategy strategy)
 
 } // namespace
 
+/** @brief Builder function for TruncationSelectionExchange. */
 template <>
 std::unique_ptr<lbann::ltfb::TruncationSelectionExchange>
 lbann::make<lbann::ltfb::TruncationSelectionExchange>(

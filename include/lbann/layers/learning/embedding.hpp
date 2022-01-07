@@ -68,8 +68,7 @@ public:
 
 public:
 
-  /**
-   *  @param comm           LBANN communicator.
+  /** @brief Constructor
    *  @param num_embeddings Size of dictionary of embeddings.
    *  @param embedding_dim  Size of embedding vectors.
    *  @param padding_idx    If set, then the corresponding embedding

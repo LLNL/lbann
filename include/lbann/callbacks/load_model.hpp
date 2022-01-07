@@ -49,7 +49,7 @@ namespace callback {
 class load_model : public callback_base {
 public:
   /**
-   * @param dir directory to load model
+   * @param dirs directories from which to load model
    * @param extension file extension e.g., model, state ......
    */
   load_model(std::vector<std::string> dirs,

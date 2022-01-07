@@ -430,6 +430,8 @@ ExchangeStrategyFactory& get_exchange_factory()
 } // namespace
 
 // For ExchangeStrategy
+
+/** @brief Factory function for ExchangeStrategy objects. */
 template <>
 std::unique_ptr<lbann::ltfb::RandomPairwiseExchange::ExchangeStrategy>
 lbann::make_abstract<lbann::ltfb::RandomPairwiseExchange::ExchangeStrategy>(
@@ -451,6 +453,7 @@ lbann::make_abstract<lbann::ltfb::RandomPairwiseExchange::ExchangeStrategy>(
     exchange_params);
 }
 
+/** @brief Builder function for RandomPairwiseExchange. */
 template <>
 std::unique_ptr<lbann::ltfb::RandomPairwiseExchange>
 lbann::make<lbann::ltfb::RandomPairwiseExchange>(

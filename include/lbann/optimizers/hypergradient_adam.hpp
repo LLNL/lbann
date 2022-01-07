@@ -66,7 +66,6 @@ public:
 
   /** @brief Construct a Hypergradient Adam optimizer object
    *
-   *  @param comm                   Communication context for this object
    *  @param init_learning_rate     Initial Adam learning rate (0.001 is
    *                                reasonable).
    *  @param hyper_learning_rate    Hypergradient learning rate.

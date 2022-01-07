@@ -865,7 +865,7 @@ private:
    */
   friend void attempt_move_error_signal(
     Layer& parent, Layer const& child,
-    std::unique_ptr<BaseDistMat> signals);
+    std::unique_ptr<BaseDistMat> signal);
   friend void attempt_view_error_signal(
     Layer& parent, Layer const& child,
     const BaseDistMat& signals);

@@ -163,7 +163,7 @@ public:
 
   /** @brief Serialize the weights object to the archive.
    *  @tparam ArchiveT (Inferred.) The archive type.
-   *  @param ar[in,out] The archive to which to write or from which to
+   *  @param[in,out] ar The archive to which to write or from which to
    *                    read.
    */
   template <typename ArchiveT>

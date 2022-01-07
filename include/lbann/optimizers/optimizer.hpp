@@ -101,7 +101,7 @@ public:
   virtual void setup(weights* w) = 0;
 
   /** @brief Add to the objective function gradient w.r.t. the weights.
-   *  @param gradient           Contribution to gradient.
+   *  @param contrib            Contribution to gradient.
    *  @param scale              Scaling factor for gradient
    *                            contribution.
    *  @param allreduce_needed   Whether the gradient contribution
