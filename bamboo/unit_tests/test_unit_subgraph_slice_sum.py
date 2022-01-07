@@ -45,6 +45,7 @@ def setup_experiment(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
+    assert False, 'Temporarily disabled' ### @todo Remove
     mini_batch_size = num_samples() // 2
     trainer = lbann.Trainer(mini_batch_size)
     model = construct_model(lbann)
