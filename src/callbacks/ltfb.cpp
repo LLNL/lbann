@@ -650,9 +650,7 @@ ltfb::ltfb(El::Int batch_interval,
     m_metric_name{std::move(metric_name)},
     comm_algo_{std::move(algo)},
     m_low_score_wins{low_score_wins}
-{
-  LBANN_ERROR("LTFB callback is no longer supported. Use LTFB training algorithm instead.");
-}
+{}
 
 ltfb::ltfb(const ltfb& other) :
   callback_base(other),
@@ -688,9 +686,6 @@ void ltfb::on_train_begin(model *m)
 
 void ltfb::on_batch_begin(model* m)
 {
-#if 1
-  LBANN_ERROR("LTFB callback is no longer supported");
-#else
   auto& local_model = *m;
   auto& context = local_model.get_execution_context();
   auto&& comm = *local_model.get_comm();
@@ -755,6 +750,7 @@ void ltfb::on_batch_begin(model* m)
     local_model.setup(
       trainer_.get_max_mini_batch_size(),
       metadata,
+      trainer_.get_grids(),
       true);
   }
 
@@ -770,7 +766,6 @@ void ltfb::on_batch_begin(model* m)
         << "= " << partner_score << ")" << "\n";
     std::cout << msg.str() << std::flush;
   }
-#endif
 }
 
 std::unique_ptr<callback_base>
