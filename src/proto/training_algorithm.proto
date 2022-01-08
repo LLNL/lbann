@@ -188,4 +188,6 @@ message KFAC {
 
   bool distribute_precondition_compute = 19; // default: false
 
+  bool use_eigen_decomposition = 20; // default: false
+
 }//message KFAC

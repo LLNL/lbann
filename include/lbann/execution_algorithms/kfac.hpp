@@ -86,7 +86,8 @@ public:
     double learning_rate_factor,
     double learning_rate_factor_gru,
     size_t compute_interval,
-    bool distribute_precondition_compute);
+    bool distribute_precondition_compute,
+    bool use_eigen_decomposition);
 
   ~KFAC() noexcept = default;
   KFAC(KFAC const& other) = delete;
@@ -256,6 +257,9 @@ private:
 
   /** @brief distribute precondition gradient compute. */
   bool m_distribute_precondition_compute;
+
+  /** @brief use eigen value decomposition for inversing the matrix. */
+  bool m_use_eigen_decomposition;
 
   El::Matrix<double, El::Device::CPU> m_inverse_matrices_size;
 

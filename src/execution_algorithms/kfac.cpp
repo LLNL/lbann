@@ -69,7 +69,8 @@ KFAC::KFAC(
   double learning_rate_factor,
   double learning_rate_factor_gru,
   size_t compute_interval,
-  bool distribute_precondition_compute)
+  bool distribute_precondition_compute,
+  bool use_eigen_decomposition)
   : TrainingAlgorithm{std::move(name)},
     m_stopping_criteria{std::move(stop)},
     m_damping_act_params{std::move(damping_act_params)},
@@ -89,7 +90,8 @@ KFAC::KFAC(
     m_learning_rate_factor{learning_rate_factor},
     m_learning_rate_factor_gru{learning_rate_factor_gru},
     m_compute_interval{compute_interval},
-    m_distribute_precondition_compute{distribute_precondition_compute}
+    m_distribute_precondition_compute{distribute_precondition_compute},
+    m_use_eigen_decomposition{use_eigen_decomposition}
 {}
 
 KFAC::KFAC(KFAC const& other)
@@ -111,7 +113,8 @@ KFAC::KFAC(KFAC const& other)
     m_disable_layers{other.m_disable_layers},
     m_learning_rate_factor{other.m_learning_rate_factor},
     m_compute_interval{other.m_compute_interval},
-    m_distribute_precondition_compute{other.m_distribute_precondition_compute}
+    m_distribute_precondition_compute{other.m_distribute_precondition_compute},
+    m_use_eigen_decomposition{other.m_use_eigen_decomposition}
 {}
 
 KFAC& KFAC::operator=(KFAC const& other) {
@@ -134,6 +137,7 @@ KFAC& KFAC::operator=(KFAC const& other) {
   m_learning_rate_factor = other.m_learning_rate_factor;
   m_compute_interval = other.m_compute_interval;
   m_distribute_precondition_compute = other.m_distribute_precondition_compute;
+  m_use_eigen_decomposition = other.m_use_eigen_decomposition;
   return *this;
 }
 
@@ -1340,6 +1344,7 @@ void KFAC::on_backward_prop_end(
         is_bn ? context.m_damping_bn_act : context.m_damping_act,
         is_bn ? context.m_damping_bn_err : context.m_damping_err,
         is_gru ? m_learning_rate_factor_gru : m_learning_rate_factor,
+        m_use_eigen_decomposition,
         m_print_matrix, m_print_matrix_summary,
         m_print_time);
     prof_region_end(("kfac-inverse/" + block->get_name()).c_str(), prof_sync);
@@ -1505,6 +1510,7 @@ std::unique_ptr<lbann::KFAC> lbann::make<lbann::KFAC>(
   const size_t update_interval_steps = kfac_params.update_interval_steps();
   const size_t compute_interval = El::Max(kfac_params.compute_interval(), 1);
   const bool distribute_precondition_compute = kfac_params.distribute_precondition_compute();
+  const bool use_eigen_decomposition = kfac_params.use_eigen_decomposition();
 
   const std::string inverse_strategy_str = kfac_params.inverse_strategy();
   kfac::kfac_inverse_strategy inverse_strategy;
@@ -1551,6 +1557,7 @@ std::unique_ptr<lbann::KFAC> lbann::make<lbann::KFAC>(
     learning_rate_factor,
     learning_rate_factor_gru,
     compute_interval,
-    distribute_precondition_compute);
+    distribute_precondition_compute,
+    use_eigen_decomposition);
 
 }

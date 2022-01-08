@@ -33,10 +33,17 @@
 #include <core/imports/mpi.hpp>
 #include <iomanip>
 #include <iterator>
+#include "lbann/utils/gpu/gpu_lib.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
+#include "lbann/utils/entrywise_operator.hpp"
+
 
 namespace lbann {
 namespace kfac {
 namespace {
+
+
+
 std::vector<int> intify_size_t_vector(std::vector<size_t> const& in_sizes)
 {
   std::vector<int> out;
@@ -150,7 +157,50 @@ void allgather_v_blocks_device(
 }
 #endif // defined LBANN_HAS_GPU && defined LBANN_HAS_ALUMINUM
 
+
+
+
+
+
 } // namespace
+
+
+/** Entry-wise operator for CPU */
+template <typename TensorDataType>
+struct inverse_op_cpu {
+  inline TensorDataType operator()(const TensorDataType &x) const {
+    return TensorDataType(1)/(x);
+  }
+};
+
+template<>
+void get_matrix_entrywise_inverse(
+    El::Matrix<DataType,El::Device::CPU>& input,
+    El::Matrix<DataType,El::Device::CPU>& output,
+    const El::SyncInfo<El::Device::CPU>& sync_info){
+
+  apply_entrywise_unary_operator<inverse_op_cpu, DataType>(input,output);
+}
+
+// #ifdef LBANN_HAS_GPU
+// /** Entry-wise operator. */
+// template <typename TensorDataType>
+// struct inverse_op_gpu {
+//   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
+//     return TensorDataType(1)/x;
+//   }
+// };
+
+
+// template<>
+// void get_matrix_entrywise_inverse(
+//     El::Matrix<DataType,El::Device::GPU>& input,
+//     El::Matrix<DataType,El::Device::GPU>& output){
+
+//   ::lbann::gpu_lib::apply_entrywise_unary_operator<inverse_op_gpu, DataType>(input,output);
+// }
+// #endif //LBANN_HAS_GPU
+
 
 template <El::Device Device>
 void get_matrix_inverse(
@@ -224,6 +274,102 @@ void get_matrix_inverse(
   // TODO: Check whether this is actually needed.
   El::Synchronize(sync_info);
 }
+
+template <El::Device Device>
+void get_matrix_inverse_eigen(
+    El::AbstractMatrix<DataType>& Ainv,
+    El::AbstractMatrix<DataType>& Linv,
+    const El::AbstractMatrix<DataType>& A,
+    const bool report_time,
+    const DataType damping,
+    const DataType damping_bn_err,
+    const bool is_bn,
+    const El::SyncInfo<Device>& sync_info) {
+
+  assert(A.Height() == A.Width());
+  assert(Ainv.Height() == A.Height());
+  assert(Ainv.Width() == A.Height());
+  El::Copy(A, Ainv);
+
+  El::HermitianEigCtrl<DataType> ctrl;
+  typedef El::Base<DataType> Real;
+  El::Matrix<DataType, Device> w;
+  El::Matrix<DataType, Device> Q, diag(Ainv.Height(), Ainv.Width()), diag_out(Ainv.Height(), Ainv.Width());
+  identity<Device>(diag, sync_info);
+  Zeros(Q, Ainv.Height(), Ainv.Width());
+
+  // std::cout<<"Using Eigen\n";
+
+  // El::Matrix<DataType, El::Device::CPU> Q_cpu, w_cpu, Ainv_cpu;
+  const auto uplo = El::UpperOrLowerNS::LOWER;
+
+  El::HermitianEig( uplo, (El::Matrix<DataType, Device> &) Ainv, w, Q, ctrl );
+
+  // El::Copy(Ainv, Ainv_cpu);
+  // El::HermitianEig( uplo, (El::Matrix<DataType, El::Device::CPU> &) Ainv_cpu, w_cpu, Q_cpu, ctrl );
+  // El::Copy(w_cpu,w);
+  // El::Copy(Q_cpu, Q);
+
+  // Diagonal(diag,w);
+
+  const double t_start = get_time();
+
+  const double t_damping = get_time();
+
+  const double t_spotrf = get_time();
+
+  // assert(Linv.Height() == Ainv.Height());
+  // assert(Linv.Width() == Ainv.Height());
+  El::Zeros(diag, Ainv.Height(), Ainv.Width());
+
+  make_diagonal<Device>(
+        diag, w, 
+        damping, damping_bn_err,
+        is_bn,
+        sync_info);
+
+
+  // get_matrix_entrywise_inverse<Device>(
+  //                               (El::AbstractMatrix<DataType> &)diag,
+  //                               (El::AbstractMatrix<DataType> &)diag_out,
+  //                               sync_info);
+
+
+
+  El::Gemm(
+      El::NORMAL, El::NORMAL,
+      El::TypeTraits<DataType>::One(), Q, diag,
+      El::TypeTraits<DataType>::Zero(), diag_out);
+
+  El::Gemm(
+      El::NORMAL, El::TRANSPOSE,
+      El::TypeTraits<DataType>::One(), diag_out, Q,
+      El::TypeTraits<DataType>::Zero(), Ainv);
+
+
+  const double t_spotri = get_time();
+
+  // TRSM+GEMM is equivalent to POTRI+fill_upper_tri.
+  // fill_upper_tri(Ainv.Buffer(), Ainv.Height());
+
+  const double t_fill = get_time();
+
+  if(report_time) {
+    std::cout << "K-FAC: get_matrix_inverse of"
+              << " " << A.Height() << "x" << A.Width()
+              << " using Hydrogen"
+              << " (damping=" << damping << "): "
+              << " t_damping=" << (t_damping-t_start)
+              << ", t_spotrf=" << (t_spotrf-t_damping)
+              << ", t_spotri=" << (t_spotri-t_spotrf)
+              << ", t_fill=" << (t_fill-t_spotri)
+              << std::endl;
+  }
+
+  // TODO: Check whether this is actually needed.
+  El::Synchronize(sync_info);
+}
+
 
 template <El::Device Device>
 std::string get_matrix_stat(const El::Matrix<DataType, Device>& X,
@@ -1118,6 +1264,20 @@ void add_to_diagonal(
 }
 
 template <>
+void make_diagonal(
+    El::Matrix<DataType, El::Device::CPU>& A,
+    El::Matrix<DataType, El::Device::CPU>& B,
+    const DataType damping,
+    const DataType damping_bn_err,
+    const bool is_bn,
+    const El::SyncInfo<El::Device::CPU>& sync_info) {
+  const auto height = A.Height();
+#pragma omp parallel for
+  for(int i = 0; i < height; i++)
+    A(i, i) = DataType(1) / (B(i) + (is_bn && i >= A.Height()/2 ? damping_bn_err : damping));
+}
+
+template <>
 void fill_upper_tri(
     El::Matrix<DataType, El::Device::CPU>& A,
     const El::SyncInfo<El::Device::CPU>& sync_info) {
@@ -1181,6 +1341,15 @@ void unpack_lower_tri(
 
 #define PROTO_DEVICE(T, Device)                 \
   template void get_matrix_inverse(             \
+      El::AbstractMatrix<T>& Ainv,              \
+      El::AbstractMatrix<T>& Linv,              \
+      const El::AbstractMatrix<T>& A,           \
+      bool report_time,                         \
+      T damping,                                \
+      T damping_bn_err,                         \
+      bool is_bn,                               \
+      const El::SyncInfo<Device>& sync_info);   \
+  template void get_matrix_inverse_eigen(       \
       El::AbstractMatrix<T>& Ainv,              \
       El::AbstractMatrix<T>& Linv,              \
       const El::AbstractMatrix<T>& A,           \

@@ -157,6 +157,7 @@ void kfac_block_bn<Device>::update_kronecker_inverse(
     const bool use_pi,
     const DataType damping_act, const DataType damping_err,
     const DataType learning_rate_factor,
+    const bool use_eigen_decomposition,
     const bool print_matrix,
     const bool print_matrix_summary,
     const bool print_time) {
@@ -173,10 +174,20 @@ void kfac_block_bn<Device>::update_kronecker_inverse(
   auto& FLinv = this->get_workspace_matrix(
       "bn_FLinv",
       Fave.Height(), Fave.Height());
-  kfac::get_matrix_inverse(
+
+  if(use_eigen_decomposition){
+    kfac::get_matrix_inverse_eigen(
       Finv, FLinv, Fave, comm->am_trainer_master() && print_time,
       DataType(damping_act), DataType(damping_err),
       true, sync_info);
+  }
+  else{
+    kfac::get_matrix_inverse(
+      Finv, FLinv, Fave, comm->am_trainer_master() && print_time,
+      DataType(damping_act), DataType(damping_err),
+      true, sync_info);
+  }
+  
 
   // dump L2 norm of matrices
   if(comm->am_trainer_master() && print_matrix_summary) {

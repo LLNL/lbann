@@ -194,6 +194,7 @@ void kfac_block_fc_conv<Device>::update_kronecker_inverse(
     const bool use_pi,
     const DataType damping_act, const DataType damping_err,
     const DataType learning_rate_factor,
+    const bool use_eigen_decomposition,
     const bool print_matrix,
     const bool print_matrix_summary,
     const bool print_time) {
@@ -234,14 +235,27 @@ void kfac_block_fc_conv<Device>::update_kronecker_inverse(
       "ALinv", Aave.Height(), Aave.Height());
   auto& GLinv = this->get_workspace_matrix(
       "GLinv", Gave.Height(), Gave.Height());
-  kfac::get_matrix_inverse(
-      Ainv, ALinv, Aave, comm->am_trainer_master() && print_time,
-      DataType(damping_act*pi), 0,
-      false, sync_info);
-  kfac::get_matrix_inverse(
-      Ginv, GLinv, Gave, comm->am_trainer_master() && print_time,
-      DataType(damping_err/pi), 0,
-      false, sync_info);
+
+  if(use_eigen_decomposition){
+    kfac::get_matrix_inverse_eigen(
+        Ainv, ALinv, Aave, comm->am_trainer_master() && print_time,
+        DataType(damping_act*pi), 0,
+        false, sync_info);
+    kfac::get_matrix_inverse_eigen(
+        Ginv, GLinv, Gave, comm->am_trainer_master() && print_time,
+        DataType(damping_err/pi), 0,
+        false, sync_info);
+  }
+  else{
+    kfac::get_matrix_inverse(
+        Ainv, ALinv, Aave, comm->am_trainer_master() && print_time,
+        DataType(damping_act*pi), 0,
+        false, sync_info);
+    kfac::get_matrix_inverse(
+        Ginv, GLinv, Gave, comm->am_trainer_master() && print_time,
+        DataType(damping_err/pi), 0,
+        false, sync_info);
+  }
 
   if(print_matrix_summary) {
     std::ostringstream oss;

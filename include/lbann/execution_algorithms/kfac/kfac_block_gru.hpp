@@ -156,6 +156,7 @@ class kfac_block_gru: public kfac_block<Device> {
       bool use_pi,
       DataType damping_act, DataType damping_err,
       DataType learning_rate_factor,
+      bool use_eigen_decomposition,
       bool print_matrix,
       bool print_matrix_summary,
       bool print_time) override;

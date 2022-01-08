@@ -46,6 +46,24 @@ __global__ void kfac_add_to_diagonal_kernel(
 }
 
 template <typename TensorDataType>
+__global__ void kfac_make_diagonal_kernel(
+    TensorDataType * __restrict__ A,
+    TensorDataType * __restrict__ B,
+    const size_t height,
+    const TensorDataType value,
+    const TensorDataType value_bn_err,
+    const bool is_bn) {
+  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+  if(gid < height) {
+    // A[gid+gid*height] = B[gid] + (is_bn && gid >= height/2 ? value_bn_err : value);
+    A[gid+gid*height] = B[gid] + value;
+
+    // A[gid+gid*height] = gpu_lib::pow(A[gid+gid*height],-1);
+    A[gid+gid*height] = TensorDataType(1)/A[gid+gid*height];
+  }
+}
+
+template <typename TensorDataType>
 __global__ void kfac_fill_upper_tri_kernel(
     TensorDataType * __restrict__ A,
     const size_t height) {
@@ -146,6 +164,43 @@ void add_to_diagonal(
       A.Buffer(), height, damping,
       damping_bn_err, is_bn);
   }
+}
+
+template <>
+void make_diagonal(
+    El::Matrix<DataType, El::Device::GPU>& A,
+    El::Matrix<DataType, El::Device::GPU>& B,
+    const DataType damping,
+    const DataType damping_bn_err,
+    const bool is_bn,
+    const El::SyncInfo<El::Device::GPU>& sync_info) {
+  const size_t height = A.Height();
+  constexpr size_t block_size = 256;
+  const size_t grid_size = (height + block_size - 1) / block_size;
+  if (grid_size > 0) {
+    hydrogen::gpu::LaunchKernel(
+      kfac_make_diagonal_kernel<DataType>,
+      grid_size, block_size, 0, sync_info,
+      A.Buffer(), B.Buffer(), height, damping,
+      damping_bn_err, is_bn);
+  }
+}
+
+template <typename TensorDataType>
+struct inverse_op_gpu {
+  inline __device__ TensorDataType operator()(const TensorDataType& x) const {
+    // return TensorDataType(1)/x;
+    return gpu_lib::pow(x,-1);
+  }
+};
+
+template<>
+void get_matrix_entrywise_inverse(
+    El::Matrix<DataType,El::Device::GPU>& input,
+    El::Matrix<DataType,El::Device::GPU>& output,
+    const El::SyncInfo<El::Device::GPU>& sync_info){
+
+  ::lbann::gpu_lib::apply_entrywise_unary_operator<inverse_op_gpu, DataType>(input,output);
 }
 
 template <>

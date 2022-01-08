@@ -85,6 +85,18 @@ void get_matrix_inverse(
     bool is_bn,
     const El::SyncInfo<Device>& sync_info);
 
+/** @brief Gets the inverse matrix of A using Eigen Value Decomposition. **/
+template <El::Device Device>
+void get_matrix_inverse_eigen(
+    El::AbstractMatrix<DataType>& Ainv,
+    El::AbstractMatrix<DataType>& Linv,
+    const El::AbstractMatrix<DataType>& A,
+    bool report_time,
+    DataType damping,
+    DataType damping_bn_err,
+    bool is_bn,
+    const El::SyncInfo<Device>& sync_info);
+
 /** @brief Gets statistics of a given matrix. **/
 template <El::Device Device>
 std::string get_matrix_stat(
@@ -143,6 +155,23 @@ void add_to_diagonal(
     DataType value,
     DataType value_bn_err,
     bool is_bn,
+    const El::SyncInfo<Device>& sync_info);
+
+/** @brief Add the damping value to the diagonal elements of A from B. **/
+template <El::Device Device>
+void make_diagonal(
+    El::Matrix<DataType, Device>& A,
+    El::Matrix<DataType, Device>& B,
+    DataType value,
+    DataType value_bn_err,
+    bool is_bn,
+    const El::SyncInfo<Device>& sync_info);
+
+/** @brief Add the damping value to the diagonal elements of A. **/
+template <El::Device Device>
+void get_matrix_entrywise_inverse(
+    El::Matrix<DataType, Device>& input,
+    El::Matrix<DataType, Device>& output,
     const El::SyncInfo<Device>& sync_info);
 
 /** @brief Fill the upper trianglar with the lower trianglar. **/
