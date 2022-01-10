@@ -371,7 +371,7 @@ __global__ void bp_input_grad_kernel(
       auto& dx = input_grad[i*input_grad_ldim + j];
       dx = (dy * inv_stdev
             + dmean / TensorDataType(sample_size)
-            + dvar * (x - mean) * TensorDataType(2) / TensorDataType(sample_size - 1));
+            + dvar * (x - mean) * TensorDataType(2) / TensorDataType(sample_size));
     }
   }
 

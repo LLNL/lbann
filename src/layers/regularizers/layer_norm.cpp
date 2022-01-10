@@ -178,7 +178,7 @@ void bp_impl(lbann_comm& comm,
       auto& dx = local_input_grad(j,i);
       dx = (dy * inv_stdev
             + dmean / sample_size
-            + dvar * (x - mean) * 2 / (sample_size - 1));
+            + dvar * (x - mean) * 2 / sample_size);
     }
   }
 
