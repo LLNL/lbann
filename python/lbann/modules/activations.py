@@ -1,9 +1,13 @@
 import math
 import lbann
 
+
 def Gelu(x):
-    x_erf = lbann.Erf(lbann.Scale(x, constant=(1/math.sqrt(2))))
-    return lbann.Multiply(x, lbann.Scale(lbann.AddConstant(x_erf, constant=1), constant=0.5))
+    x_erf = lbann.Erf(lbann.Scale(x, constant=(1 / math.sqrt(2))))
+    return lbann.Multiply(
+        x, lbann.Scale(lbann.AddConstant(x_erf, constant=1), constant=0.5)
+    )
+
 
 def Gelu_approx(x):
     # This approximates gelu and may be more performant
@@ -17,6 +21,7 @@ def Gelu_approx(x):
     return lbann.Scale(
         lbann.Multiply(x, lbann.AddConstant(tanh_x, constant=1)), constant=0.5
     )
+
 
 def Silu(x):
     return lbann.Multiply(x, lbann.Sigmoid(x))
