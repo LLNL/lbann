@@ -6,6 +6,7 @@ from lbann.utils import str_list
 _permute_cache = {}
 _cumsum_cache = {}
 
+
 def Permute(x, dims, axes=None, return_dims=False):
     global _permute_cache
     key = (dims, axes)
@@ -35,6 +36,7 @@ def Permute(x, dims, axes=None, return_dims=False):
     if return_dims:
         return y, new_dims
     return y
+
 
 def Cumsum(x, dims, axis=0):
     global _cumsum_cache

@@ -29,6 +29,7 @@ def PytorchMatmul(x, x_shape, y, y_shape, return_dims=False):
         return z, z_shape
     return z
 
+
 # Mimics torch.nn.Linear in LBANN
 def PytorchLinear(x, input_shape, hidden_size, weights=None, return_dims=False):
     need_reshape = len(input_shape) > 2
@@ -49,6 +50,7 @@ def PytorchLinear(x, input_shape, hidden_size, weights=None, return_dims=False):
     if return_dims:
         return y, new_out_shape
     return y
+
 
 # Mimics torch.nn.layernorm in LBANN
 def PytorchLayerNorm(x, epsilon, input_shape=None, weights=None):
