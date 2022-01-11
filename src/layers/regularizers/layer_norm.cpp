@@ -69,7 +69,7 @@ void fp_impl(lbann_comm& comm,
 
   // Compute statistics from sums
   //   mean = sum(x_i) / n
-  //   var = ( sum(x_i^2)/n - mean^2 ) * n/(n-1)
+  //   var = ( sum(x_i^2)/n - mean^2 )
   if (sample_size <= 1) {
     // local_means already has correct values
     El::Fill(local_vars, El::TypeTraits<TensorDataType>::One());
@@ -82,8 +82,7 @@ void fp_impl(lbann_comm& comm,
       auto sample_size_dt = El::To<TensorDataType>(sample_size);
       const auto& mean = sum / sample_size_dt;
       const auto& sqmean = sqsum / sample_size_dt;
-      const auto& var = (sqmean - mean*mean) * sample_size_dt
-        / (sample_size_dt-El::TypeTraits<TensorDataType>::One());
+      const auto& var = (sqmean - mean*mean);
       local_means(0,i) = mean;
       local_vars(0,i) = std::max(var, El::TypeTraits<TensorDataType>::Zero());
     }
@@ -179,7 +178,7 @@ void bp_impl(lbann_comm& comm,
       auto& dx = local_input_grad(j,i);
       dx = (dy * inv_stdev
             + dmean / sample_size
-            + dvar * (x - mean) * 2 / (sample_size - 1));
+            + dvar * (x - mean) * 2 / sample_size);
     }
   }
 

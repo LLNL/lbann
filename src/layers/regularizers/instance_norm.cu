@@ -146,14 +146,13 @@ __global__ void fp_output_kernel(
   const size_t nthreadsz = blockDim.z * gridDim.z;
 
   const TensorDataType mean_scale = 1. / channel_size;
-  const TensorDataType var_correction = double(channel_size) / (channel_size - 1);
   for (size_t k = gidz; k < mini_batch_size; k += nthreadsz) {
     for (size_t j = gidy; j < num_channels; j += nthreadsy) {
       const auto& sum = sums[j+k*sums_ldim];
       const auto& sqsum = sqsums[j+k*sqsums_ldim];
       const auto& mean = sum * mean_scale;
       const auto& sqmean = sqsum * mean_scale;
-      auto var = (sqmean - mean*mean) * var_correction;
+      auto var = (sqmean - mean*mean);
       var = gpu_lib::max(var, TensorDataType{0.});
       const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
       for (size_t i = gidx; i < channel_size; i += nthreadsx) {
@@ -310,7 +309,6 @@ __global__ void bp_statistics_grad_kernel(
   const size_t nthreadsz = blockDim.z * gridDim.z;
 
   const TensorDataType mean_scale = 1. / channel_size;
-  const TensorDataType var_correction = double(channel_size) / (channel_size - 1);
   for (size_t k = gidz; k < mini_batch_size; k += nthreadsz) {
     for (size_t j = gidy; j < num_channels; j += nthreadsy) {
 
@@ -319,7 +317,7 @@ __global__ void bp_statistics_grad_kernel(
       const auto& sqsum = sqsums[j+k*sqsums_ldim];
       const auto& mean = sum * mean_scale;
       const auto& sqmean = sqsum * mean_scale;
-      auto var = (sqmean - mean*mean) * var_correction;
+      auto var = (sqmean - mean*mean);
       var = gpu_lib::max(var, TensorDataType{0.});
       const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
 
@@ -388,14 +386,13 @@ __global__ void bp_input_grad_kernel(
   const size_t nthreadsz = blockDim.z * gridDim.z;
 
   const TensorDataType mean_scale = 1. / channel_size;
-  const TensorDataType var_correction = double(channel_size) / (channel_size - 1);
   for (size_t k = gidz; k < mini_batch_size; k += nthreadsz) {
     for (size_t j = gidy; j < num_channels; j += nthreadsy) {
       const auto& sum = sums[j+k*sums_ldim];
       const auto& sqsum = sqsums[j+k*sqsums_ldim];
       const auto& mean = sum * mean_scale;
       const auto& sqmean = sqsum * mean_scale;
-      auto var = (sqmean - mean*mean) * var_correction;
+      auto var = (sqmean - mean*mean);
       var = gpu_lib::max(var, TensorDataType{0.});
       const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
       const auto& dmean = means_grad[j+k*means_grad_ldim];
@@ -406,7 +403,7 @@ __global__ void bp_input_grad_kernel(
         auto& dx = input_grad[i + j*channel_size + k*input_grad_ldim];
         dx = (dy * inv_stdev
               + dmean * mean_scale
-              + dvar * (x - mean) * 2 * mean_scale * var_correction);
+              + dvar * (x - mean) * 2 * mean_scale);
       }
     }
   }

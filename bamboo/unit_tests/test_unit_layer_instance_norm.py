@@ -41,7 +41,7 @@ def numpy_instance_norm(x, epsilon=1e-5):
         x = x.astype(np.float64)
     axes = tuple(range(1,x.ndim))
     mean = np.mean(x, axis=axes, keepdims=True)
-    var = np.var(x, ddof=1, axis=axes, keepdims=True)
+    var = np.var(x, ddof=0, axis=axes, keepdims=True)
     return (x - mean) / np.sqrt(var + epsilon)
 
 # ==============================================
