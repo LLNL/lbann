@@ -1,7 +1,7 @@
 import numpy as np
 
 import lbann
-from lbann.utils import str_list
+from lbann.util import str_list
 
 _permute_cache = {}
 _cumsum_cache = {}
@@ -26,15 +26,15 @@ def Permute(x, dims, axes=None, return_dims=False):
     # Apply transpose with gather
     inds = _permute_cache[key]
     if axes == None:
-        new_dims = tuple(dims[::-1])
+        new_dims = dims[::-1]
     else:
-        new_dims = tuple(np.array(dims)[list(axes)])
+        new_dims = np.array(dims)[list(axes)]
     x = lbann.Reshape(x, dims=str_list([size]))
     y = lbann.Gather(x, inds)
-    y = lbann.Reshape(y, dims=str_list(list(new_dims)), name=name)
+    y = lbann.Reshape(y, dims=str_list(list(new_dims)))
 
     if return_dims:
-        return y, new_dims
+        return y, tuple(new_dims)
     return y
 
 
