@@ -7,7 +7,7 @@ _permute_cache = {}
 _cumsum_cache = {}
 
 
-def Permute(x, dims, axes=None, return_dims=False):
+def Permute(x, dims, axes=None, name="", return_dims=False):
     global _permute_cache
     key = (dims, axes)
     size = np.prod(dims)
@@ -31,7 +31,7 @@ def Permute(x, dims, axes=None, return_dims=False):
         new_dims = np.array(dims)[list(axes)]
     x = lbann.Reshape(x, dims=str_list([size]))
     y = lbann.Gather(x, inds)
-    y = lbann.Reshape(y, dims=str_list(list(new_dims)))
+    y = lbann.Reshape(y, dims=str_list(list(new_dims)), name=name)
 
     if return_dims:
         return y, tuple(new_dims)

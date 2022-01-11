@@ -32,14 +32,14 @@ def PytorchMatmul(x, x_shape, y, y_shape, return_dims=False):
 
 
 # Mimics torch.nn.Linear in LBANN
-def PytorchLinear(x, input_shape, hidden_size, weights=[], return_dims=False):
+def PytorchLinear(x, input_shape, hidden_size, weights=[], name="", return_dims=False):
     need_reshape = len(input_shape) > 2
     if need_reshape:
         new_in_shape = (np.prod(input_shape[:-1]), input_shape[-1])
         x = lbann.Reshape(x, dims=str_list(new_in_shape))
 
     y = lbann.ChannelwiseFullyConnected(
-        x, output_channel_dims=[hidden_size], weights=weights
+        x, output_channel_dims=[hidden_size], weights=weights, name=name
     )
 
     if need_reshape:
@@ -54,7 +54,7 @@ def PytorchLinear(x, input_shape, hidden_size, weights=[], return_dims=False):
 
 
 # Mimics torch.nn.layernorm in LBANN
-def PytorchLayerNorm(x, epsilon, input_shape, weights=[]):
+def PytorchLayerNorm(x, epsilon, input_shape, weights=[], name=""):
     if len(input_shape) > 2:
         x = lbann.Reshape(
             x, dims=str_list([np.prod(input_shape[:-1]), input_shape[-1]])
@@ -64,6 +64,6 @@ def PytorchLayerNorm(x, epsilon, input_shape, weights=[]):
     if weights is not []:
         x, new_x_shape = lbann.modules.Permute(x, input_shape, return_dims=True)
         x = lbann.ChannelwiseScaleBias(x, weights=weights)
-        x, _ = lbann.modules.Permute(x, new_x_shape, return_dims=True)
+        x, _ = lbann.modules.Permute(x, new_x_shape, return_dims=True, name=name)
 
     return x
