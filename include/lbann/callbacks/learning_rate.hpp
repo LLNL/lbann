@@ -146,6 +146,36 @@ build_step_learning_rate_callback_from_pbuf(
   const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
 
 /**
+ * Set the learning rate to given value at given epoch.
+ */
+class set_learning_rate : public learning_rate {
+ public:
+  set_learning_rate(size_t step, float val);
+  set_learning_rate(size_t step, float val,
+                     std::vector<std::string> weights_names);
+  set_learning_rate(
+    const set_learning_rate&) = default;
+  set_learning_rate& operator=(
+    const set_learning_rate&) = default;
+  set_learning_rate* copy() const override {
+    return new set_learning_rate(*this);
+  }
+  std::string name() const override { return "step learning rate"; }
+ protected:
+  float global_schedule(model *m) override;
+ private:
+  /** Number of epochs between each learning rate decrease. */
+  size_t m_step;
+  /** Amount to decrease the learning rate by. */
+  float m_val;
+};
+
+// Builder function
+std::unique_ptr<callback_base>
+build_set_learning_rate_callback_from_pbuf(
+  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+
+/**
  * Decrease the learning rate by a fixed proportion when validation error stops
  * improving.
  */

@@ -160,6 +160,7 @@ message KFAC {
   string damping_err = 3;
   string damping_bn_act = 4;
   string damping_bn_err = 5;
+  string kfac_use_interval = 21;
 
   uint64 damping_warmup_steps = 6; // default: damping_warmup_steps_default
   double kronecker_decay = 7; // default: callback::kfac::kronecker_decay_default

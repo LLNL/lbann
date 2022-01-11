@@ -58,6 +58,7 @@ KFAC::KFAC(
   std::vector<double> damping_err_params,
   std::vector<double> damping_bn_act_params,
   std::vector<double> damping_bn_err_params,
+  std::vector<bool> kfac_use_interval,
   size_t damping_warmup_steps,
   double kronecker_decay,
   bool print_time,  bool print_matrix, bool print_matrix_summary,
@@ -78,6 +79,7 @@ KFAC::KFAC(
     m_damping_bn_act_params{std::move(damping_bn_act_params)},
     m_damping_bn_err_params{std::move(damping_bn_err_params)},
     m_damping_warmup_steps{std::move(damping_warmup_steps)},
+    m_use_KFAC_epoch{std::move(kfac_use_interval)},
     m_kronecker_decay{kronecker_decay},
     m_print_time{print_time},
     m_print_matrix{print_matrix},
@@ -102,6 +104,7 @@ KFAC::KFAC(KFAC const& other)
     m_damping_bn_act_params{other.m_damping_bn_act_params},
     m_damping_bn_err_params{other.m_damping_bn_err_params},
     m_damping_warmup_steps{other.m_damping_warmup_steps},
+    m_use_KFAC_epoch{other.m_use_KFAC_epoch},
     m_kronecker_decay{other.m_kronecker_decay},
     m_print_time{other.m_print_time},
     m_print_matrix{other.m_print_matrix},
@@ -125,6 +128,7 @@ KFAC& KFAC::operator=(KFAC const& other) {
   m_damping_bn_act_params = other.m_damping_bn_act_params;
   m_damping_bn_err_params = other.m_damping_bn_err_params;
   m_damping_warmup_steps = other.m_damping_warmup_steps;
+  m_use_KFAC_epoch = other.m_use_KFAC_epoch,
   m_kronecker_decay = other.m_kronecker_decay;
   m_print_time = other.m_print_time;
   m_print_matrix = other.m_print_matrix;
@@ -297,6 +301,7 @@ bool KFAC::train_mini_batch(
   data_coordinator& dc)
 {
   auto& sgd_context = kfac_context.get_sgd_execution_context();
+  auto current_epoch = sgd_context.get_epoch();
 
   model.reset_mode(sgd_context, execution_mode::training);
   dc.reset_mode(sgd_context);
@@ -375,11 +380,19 @@ bool KFAC::train_mini_batch(
               if((size_t) comm.get_rank_in_trainer() != block->get_inverse_proc_rank() and m_distribute_precondition_compute)
                 continue;
               const bool is_gru = dynamic_cast<kfac_block_gru<Device>*>(block.get()) != nullptr;
-              block->compute_preconditioned_gradients(
-                  &comm,
-                  is_gru ? m_learning_rate_factor_gru : m_learning_rate_factor,
-                  m_print_matrix, m_print_matrix_summary,
-                  m_print_time);
+
+              bool apply_precondition = false;
+
+              if(m_use_KFAC_epoch.size() <= current_epoch)
+                apply_precondition = true;
+              else
+                apply_precondition = m_use_KFAC_epoch[current_epoch];
+              if(apply_precondition)
+                block->compute_preconditioned_gradients(
+                    &comm,
+                    is_gru ? m_learning_rate_factor_gru : m_learning_rate_factor,
+                    m_print_matrix, m_print_matrix_summary,
+                    m_print_time);
           }
           if(m_distribute_precondition_compute)
             allgather_precondition_gradient(comm, kfac_context);
@@ -478,6 +491,8 @@ void KFAC::do_batch_end_cbs(model& model)
 // =============================================
 // Sub-grid implementation
 // =============================================
+
+
 
 void KFAC::allgather_precondition_gradient(lbann_comm& comm, ExeContextType& context){
   // List-up buffers to synchronize.
@@ -1203,6 +1218,7 @@ void KFAC::on_backward_prop_end(
   // Get some configs
   auto& comm = *model.get_comm();
   const auto& sgd_context = context.get_sgd_execution_context();
+  auto current_epoch = sgd_context.get_epoch();
   const size_t num_steps = sgd_context.get_step();
   const auto layers = model.get_layers();
   const bool is_first_step = (!m_has_kronecker_inverse);
@@ -1399,11 +1415,19 @@ void KFAC::on_backward_prop_end(
         if((size_t) comm.get_rank_in_trainer() != block->get_inverse_proc_rank() and m_distribute_precondition_compute)
           continue;
         const bool is_gru = dynamic_cast<kfac_block_gru<Device>*>(block.get()) != nullptr;
-        block->compute_preconditioned_gradients(
-            &comm,
-            is_gru ? m_learning_rate_factor_gru : m_learning_rate_factor,
-            m_print_matrix, m_print_matrix_summary,
-            m_print_time);
+
+        bool apply_precondition = false;
+
+        if(m_use_KFAC_epoch.size() <= current_epoch)
+          apply_precondition = true;
+        else
+          apply_precondition = m_use_KFAC_epoch[current_epoch];
+        if(apply_precondition)
+          block->compute_preconditioned_gradients(
+              &comm,
+              is_gru ? m_learning_rate_factor_gru : m_learning_rate_factor,
+              m_print_matrix, m_print_matrix_summary,
+              m_print_time);
     	}
       if(m_distribute_precondition_compute)
         allgather_precondition_gradient(comm, context);
@@ -1435,6 +1459,36 @@ void KFAC::on_backward_prop_end(
 }
 
 } // namespace lbann
+
+std::vector<bool> parse_sgd_kfac_combination_interval(std::string const& str){
+
+  std::string del = " ";
+  std::vector <int>  tokens;
+  std::vector<bool> use_KFAC_epoch;
+  int start = 0;
+  int end = str.find(del);
+  while (end != -1) {
+      tokens.push_back( std::stoi(str.substr(start, end - start)));
+      start = end + del.size();
+      end = str.find(del, start);
+  }
+
+  //use SGD until the first specified epoch
+  int count = 0;
+  bool use_kfac = false;
+  if((int)tokens.size() > 0){
+
+    for(int epoch=0; epoch<tokens.back(); ++epoch){
+      if(epoch == tokens[count]){
+        use_kfac = !use_kfac;
+        count += 1;
+      }
+
+      use_KFAC_epoch.push_back(use_kfac);
+    }   
+  }
+  return use_KFAC_epoch;
+}
 
 template <>
 std::unique_ptr<lbann::KFAC> lbann::make<lbann::KFAC>(
@@ -1497,6 +1551,7 @@ std::unique_ptr<lbann::KFAC> lbann::make<lbann::KFAC>(
   const std::vector<double> damping_err_params = parse_damping_params(kfac_params.damping_err());
   const std::vector<double> damping_bn_act_params = parse_damping_params(kfac_params.damping_bn_act());
   const std::vector<double> damping_bn_err_params = parse_damping_params(kfac_params.damping_bn_err());
+  const std::vector<bool> kfac_use_interval = parse_sgd_kfac_combination_interval(kfac_params.kfac_use_interval());
   size_t damping_warmup_steps = kfac_params.damping_warmup_steps();
   if(damping_warmup_steps == 0) damping_warmup_steps = AlgoType::damping_warmup_steps_default;
   double kronecker_decay = kfac_params.kronecker_decay();
@@ -1544,6 +1599,7 @@ std::unique_ptr<lbann::KFAC> lbann::make<lbann::KFAC>(
     std::move(damping_err_params),
     std::move(damping_bn_act_params),
     std::move(damping_bn_err_params),
+    std::move(kfac_use_interval),
     damping_warmup_steps,
     kronecker_decay,
     print_time,

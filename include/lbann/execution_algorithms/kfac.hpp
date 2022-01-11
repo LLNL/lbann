@@ -75,6 +75,7 @@ public:
     std::vector<double> damping_err_params,
     std::vector<double> damping_bn_act_params,
     std::vector<double> damping_bn_err_params,
+    std::vector<bool> kfac_use_interval,
     size_t damping_warmup_steps,
     double kronecker_decay,
     bool print_time,  bool print_matrix, bool print_matrix_summary,
@@ -209,6 +210,7 @@ private:
   void end_old_async_weights_model(model& model, lbann_comm *comm,ExeContextType& context);
   void allgather_precondition_gradient(lbann_comm& comm,ExeContextType& context);
 
+
   /** @brief The KFAC stopping criteria. */
   std::unique_ptr<TermCriteriaType> m_stopping_criteria;
 
@@ -269,6 +271,8 @@ private:
   std::vector<ReqT>m_inverse_matrix_communication_reqs, m_weights_communication_reqs;
 
   int m_time_span_inverse_comm=0,m_time_span_inverse_send_recv=0;
+
+  std::vector<bool> m_use_KFAC_epoch;
 
 }; // class KFAC
 
