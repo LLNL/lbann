@@ -228,7 +228,7 @@ void bp_impl(lbann_comm& comm,
         auto& dx = local_input_grad(i+j*channel_size,k);
         dx = (dy * inv_stdev
               + dmean / channel_size
-              + dvar * (x - mean) * 2 / (channel_size - 1));
+              + dvar * (x - mean) * 2 / channel_size);
       }
     }
   }
