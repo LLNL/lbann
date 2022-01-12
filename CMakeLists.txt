@@ -283,7 +283,7 @@ if (LBANN_HAS_CUDA)
 endif ()
 
 if (LBANN_HAS_ALUMINUM)
-  if (AL_HAS_CUDA AND NOT LBANN_HAS_CUDA)
+  if (AL_HAS_CUDA AND NOT AL_HAS_ROCM AND NOT LBANN_HAS_CUDA)
     message(WARNING
       "Aluminum has CUDA support but CUDA support has not been found.")
   endif ()
@@ -340,17 +340,18 @@ endif (LBANN_HAS_CUDA)
 
 if (LBANN_HAS_ROCM)
   find_package(hip CONFIG REQUIRED)
+  enable_language(HIP)
   find_package(MIOpen CONFIG REQUIRED)
   set(LBANN_HAS_MIOPEN ${MIOpen_FOUND})
   set(LBANN_HAS_DNN_LIB ${MIOpen_FOUND})
-  if (LBANN_HAS_FFTW)
-    find_package(rocfft CONFIG REQUIRED)
-  endif ()
-
   set(LBANN_ROCM_LIBS
     hip::host
-    MIOpen
-    roc::rocfft)
+    MIOpen)
+
+  if (LBANN_HAS_FFTW)
+    find_package(rocfft CONFIG REQUIRED)
+    list(APPEND LBANN_ROCM_LIBS roc::rocfft)
+  endif ()
 
 endif (LBANN_HAS_ROCM)
 
@@ -521,6 +522,12 @@ add_library(lbann
   ${LBANN_SOURCES}
   ${LBANN_HEADERS}
   ${LBANN_GPU_SOURCES})
+
+if (LBANN_HAS_ROCM)
+  set_source_files_properties(${LBANN_GPU_SOURCES}
+    PROPERTIES
+    LANGUAGE HIP)
+endif ()
 
 set_target_properties(lbann
   PROPERTIES
