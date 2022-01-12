@@ -13,6 +13,7 @@ if (PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
 endif ()
 
 # Add CMake modules
+include(CheckCompilerFlag)
 list(APPEND CMAKE_MODULE_PATH
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
@@ -331,6 +332,10 @@ if (LBANN_HAS_CUDA)
   endif ()
   set(LBANN_HAS_NVSHMEM "${NVSHMEM_FOUND}")
 
+  # This is for back-compatibility with old Hydrogen/Aluminum.
+  if (NOT TARGET cuda::nvtx)
+    add_library(cuda::nvtx ALIAS CUDA::nvToolsExt)
+  endif ()
 endif (LBANN_HAS_CUDA)
 
 if (LBANN_HAS_ROCM)
