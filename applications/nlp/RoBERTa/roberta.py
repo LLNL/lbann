@@ -8,6 +8,65 @@ import lbann.modules
 from lbann.util import str_list
 
 
+ACT2FN = {
+    "relu": lbann.Relu,
+    "silu": lbann.modules.Silu,
+    "swish": lbann.modules.Silu,
+    "gelu": lbann.modules.Gelu,
+    "tanh": lbann.Tanh,
+    "sigmoid": lbann.Sigmoid,
+}
+
+
+def create_position_ids_from_input_ids(
+    input_ids, input_shape, padding_idx, past_key_values_length=0
+):
+    padding_idx = lbann.Constant(value=padding_idx, num_neurons=str_list(input_shape))
+    mask = lbann.NotEqual(input_ids, padding_idx)
+    incremental_indices = lbann.modules.Cumsum(mask, input_shape, axis=1)
+    past_key_values_length = lbann.Constant(
+        value=past_key_values_length, num_neurons=str_list(input_shape)
+    )
+    incremental_indices = lbann.Add(incremental_indices, past_key_values_length)
+    incremental_indices = lbann.Multiply(incremental_indices, mask)
+    incremental_indices = lbann.Add(incremental_indices, padding_idx)
+
+    return incremental_indices
+
+
+def _load_pretrained_weights_layer(
+    fn,
+    file_dir=os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "pretrained_weights"
+    ),
+):
+    weights_file = os.path.join(file_dir, fn + ".npy")
+    dims = np.load(weights_file).shape
+    weights = _load_pretrained_weights(fn, file_dir)
+    weights = lbann.WeightsLayer(weights=weights, dims=str_list(dims))
+    return weights, dims
+
+
+def _load_pretrained_weights(
+    *fn,
+    file_dir=os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "pretrained_weights"
+    ),
+    load_weights=True,
+):
+    if not load_weights:
+        return []
+
+    weights = []
+    for f in fn:
+        w_file = os.path.join(file_dir, f + ".npy")
+        weights.append(lbann.Weights(initializer=lbann.NumpyInitializer(file=w_file)))
+
+    if len(weights) == 1:
+        weights = weights[0]
+    return weights
+
+
 class RobertaEmbeddings(lbann.modules.Module):
     def __init__(self, config, name, load_weights=True):
         super().__init__()
@@ -198,7 +257,9 @@ class RobertaSelfAttention(lbann.modules.Module):
     def transpose_for_scores(self, x, dims):
         new_x_shape = dims[:-1] + (self.num_attention_heads, self.attention_head_size)
         x = lbann.Reshape(x, dims=lbann.util.str_list(new_x_shape))
-        return lbann.modules.Permute(x, new_x_shape, axes=(0, 2, 1, 3), return_dims=True)
+        return lbann.modules.Permute(
+            x, new_x_shape, axes=(0, 2, 1, 3), return_dims=True
+        )
 
     def forward(
         self,
@@ -255,7 +316,10 @@ class RobertaSelfAttention(lbann.modules.Module):
             key_layer, key_shape, axes=(0, 1, -1, -2), return_dims=True
         )
         attention_scores, attention_shape = lbann.modules.PytorchMatmul(
-            query_layer, query_shape, key_layer, key_shape,
+            query_layer,
+            query_shape,
+            key_layer,
+            key_shape,
             return_dims=True,
         )
 
@@ -287,11 +351,16 @@ class RobertaSelfAttention(lbann.modules.Module):
             attention_probs = lbann.Multiply(attention_probs, head_mask)
 
         context_layer, context_shape = lbann.modules.PytorchMatmul(
-            attention_probs, attention_shape, value_layer, value_shape,
+            attention_probs,
+            attention_shape,
+            value_layer,
+            value_shape,
             return_dims=True,
         )
         context_layer, context_shape = lbann.modules.Permute(
-            context_layer, context_shape, axes=(0, 2, 1, 3),
+            context_layer,
+            context_shape,
+            axes=(0, 2, 1, 3),
             return_dims=True,
         )
         new_context_layer_shape = context_shape[:-2] + (self.all_head_size,)
@@ -394,7 +463,6 @@ class RobertaIntermediate(lbann.modules.Module):
         return hidden_states
 
 
-# Copied from transformers.models.bert.modeling_bert.BertOutput
 class RobertaOutput(lbann.modules.Module):
     def __init__(self, config, name, load_weights=True):
         super().__init__()
@@ -525,63 +593,7 @@ class RobertaModel(lbann.modules.Module):
         )
         pooled_output = self.pooler(encoder_output) if self.pooler is not None else None
 
-        return pooled_output
-
-
-ACT2FN = {
-    "relu": lbann.Relu,
-    "silu": lbann.modules.Silu,
-    "swish": lbann.modules.Silu,
-    "gelu": lbann.modules.Gelu,
-    "tanh": lbann.Tanh,
-    "sigmoid": lbann.Sigmoid,
-}
-
-
-def create_position_ids_from_input_ids(
-    input_ids, input_shape, padding_idx, past_key_values_length=0
-):
-    padding_idx = lbann.Constant(value=padding_idx, num_neurons=str_list(input_shape))
-    mask = lbann.NotEqual(input_ids, padding_idx)
-    incremental_indices = lbann.modules.Cumsum(mask, input_shape, axis=1)
-    past_key_values_length = lbann.Constant(
-        value=past_key_values_length, num_neurons=str_list(input_shape)
-    )
-    incremental_indices = lbann.Add(incremental_indices, past_key_values_length)
-    incremental_indices = lbann.Multiply(incremental_indices, mask)
-    incremental_indices = lbann.Add(incremental_indices, padding_idx)
-
-    return incremental_indices
-
-
-def _load_pretrained_weights_layer(
-    fn,
-    file_dir=os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "pretrained_weights"
-    ),
-):
-    weights_file = os.path.join(file_dir, fn + ".npy")
-    dims = np.load(weights_file).shape
-    weights = _load_pretrained_weights(fn, file_dir)
-    weights = lbann.WeightsLayer(weights=weights, dims=str_list(dims))
-    return weights, dims
-
-
-def _load_pretrained_weights(
-    *fn,
-    file_dir=os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "pretrained_weights"
-    ),
-    load_weights=True,
-):
-    if not load_weights:
-        return []
-
-    weights = []
-    for f in fn:
-        w_file = os.path.join(file_dir, f + ".npy")
-        weights.append(lbann.Weights(initializer=lbann.NumpyInitializer(file=w_file)))
-
-    if len(weights) == 1:
-        weights = weights[0]
-    return weights
+        if pooled_output is not None:
+            return pooled_output
+        else:
+            return encoder_output
