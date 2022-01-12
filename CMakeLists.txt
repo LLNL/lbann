@@ -1,9 +1,7 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.21)
+cmake_policy(VERSION 3.21)
 
 project(LBANN CXX)
-
-# C isn't required by LBANN but packages such as Conduit are forcing C dependencies in MPI
-enable_language(C)
 
 # Prevent in-source builds
 if (PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
@@ -15,12 +13,12 @@ if (PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
 endif ()
 
 # Add CMake modules
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
+list(APPEND CMAKE_MODULE_PATH
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 include(LBANNCMakeUtilities)
 
-#FIXME
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-
+# FIXME: RelWithDebInfo too?
 if (CMAKE_BUILD_TYPE MATCHES Debug)
   set(LBANN_DEBUG TRUE)
 endif ()
@@ -29,26 +27,14 @@ if (NOT DEFINED BUILD_SHARED_LIBS)
   set(BUILD_SHARED_LIBS ON)
 endif ()
 
-# Convenience defines
-string(TOUPPER "${PROJECT_NAME}" UPPER_PROJECT_NAME)
-string(TOLOWER "${PROJECT_NAME}" LOWER_PROJECT_NAME)
-
-# This will help define some targets later
-if (CMAKE_VERSION VERSION_LESS 3.9)
-  set(LBANN_PUBLIC_LINK_FLAG)
-else ()
-  set(LBANN_PUBLIC_LINK_FLAG "PUBLIC")
-endif ()
-
-#
 # Version setup
-#
 
 set(LBANN_VERSION_MAJOR 0)
 set(LBANN_VERSION_MINOR 103)
 set(LBANN_VERSION_PATCH 0)
 
-set(LBANN_VERSION "${LBANN_VERSION_MAJOR}.${LBANN_VERSION_MINOR}.${LBANN_VERSION_PATCH}")
+set(LBANN_VERSION
+  "${LBANN_VERSION_MAJOR}.${LBANN_VERSION_MINOR}.${LBANN_VERSION_PATCH}")
 
 # Check to see if we are in a git repo
 find_program(__GIT_EXECUTABLE git)
@@ -89,11 +75,11 @@ if (CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
   set(LBANN_GNU_LINUX TRUE)
 endif ()
 
-#
 # Options
-#
 
-option(LBANN_WITH_CEREAL_XML "Enable the use of XML archives from Cereal" OFF)
+option(LBANN_WITH_CEREAL_XML
+  "Enable the use of XML archives from Cereal"
+  OFF)
 set(LBANN_HAS_CEREAL_XML_ARCHIVES ${LBANN_WITH_CEREAL_XML})
 
 option(LBANN_WITH_CNPY "Include cnpy" ON)
@@ -167,17 +153,12 @@ option(LBANN_WARNINGS_AS_ERRORS
   "Build with warnings promoted to errors." OFF)
 mark_as_advanced(LBANN_WARNINGS_AS_ERRORS)
 
-#
 # The datatype option is not binary
-#
 
-# FIXME what if "fp16"?
 set(LBANN_DATATYPE "float"
   CACHE STRING "The datatype to use in LBANN")
 
-#
 # Initialize build
-#
 
 # Get installation directories -- these get used in various places;
 # best to just make them available
@@ -195,46 +176,28 @@ find_package(Threads REQUIRED)
 # Argument parsing backend
 find_package(Clara REQUIRED)
 
-find_package(CEREAL NO_MODULE
-  NAMES cereal
-  HINTS ${CEREAL_DIR} $ENV{CEREAL_DIR}
-  PATH_SUFFIXES share/cmake/cereal
-  NO_DEFAULT_PATH)
-if (NOT CEREAL_FOUND)
-  find_package(CEREAL NO_MODULE REQUIRED
-    NAMES cereal)
-endif ()
+find_package(CEREAL CONFIG REQUIRED)
 set(LBANN_HAS_CEREAL ${CEREAL_FOUND})
 # The imported target is just called "cereal". Super.
 
 # Setup the linear algebra library
-find_package(Hydrogen 1.5.0 NO_MODULE QUIET
-  HINTS ${Hydrogen_DIR} ${HYDROGEN_DIR} $ENV{Hydrogen_DIR} $ENV{HYDROGEN_DIR}
-  PATH_SUFFIXES lib/cmake/hydrogen
-  NO_DEFAULT_PATH)
-if (NOT Hydrogen_FOUND)
-  find_package(Hydrogen 1.5.0 NO_MODULE QUIET REQUIRED)
-endif ()
+find_package(Hydrogen 1.5.0 CONFIG REQUIRED)
 message(STATUS "Found Hydrogen@${HYDROGEN_VERSION}: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
 
 # DiHydrogen and Distconv
 if (LBANN_WITH_DISTCONV)
-  find_package(DiHydrogen QUIET CONFIG COMPONENTS Meta Patterns DistConv
-    HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
-    ${H2_DIR} $ENV{H2_DIR}
-    PATH_SUFFIXES install/lib64/cmake install/lib/cmake
-    NO_DEFAULT_PATH)
-  find_package(DiHydrogen QUIET CONFIG REQUIRED
-    COMPONENTS Meta Patterns DistConv)
+  find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns DistConv)
   set(LBANN_HAS_DISTCONV TRUE)
+  set(LBANN_H2_LIBS
+    H2::H2Meta
+    H2::H2Patterns
+    H2::H2DistConv)
 else ()
-  find_package(DiHydrogen QUIET CONFIG COMPONENTS Meta Patterns
-    HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
-    ${H2_DIR} $ENV{H2_DIR}
-    PATH_SUFFIXES install/lib64/cmake install/lib/cmake
-    NO_DEFAULT_PATH)
-  find_package(DiHydrogen QUIET CONFIG REQUIRED COMPONENTS Meta Patterns)
+  find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns)
+  set(LBANN_H2_LIBS
+    H2::H2Meta
+    H2::H2Patterns)
 endif ()
 set(LBANN_HAS_DIHYDROGEN TRUE)
 message(STATUS "Found DiHydrogen: ${DiHydrogen_DIR}")
@@ -266,14 +229,7 @@ endif (LBANN_WITH_FFT)
 
 # OpenCV installs a CMake configure file we can exploit
 if (LBANN_WITH_VISION)
-  find_package(OpenCV NO_MODULE QUIET
-    HINTS ${OpenCV_DIR} ${OPENCV_DIR} $ENV{OpenCV_DIR} $ENV{OPENCV_DIR}
-    PATH_SUFFIXES share/OpenCV
-    NO_DEFAULT_PATH)
-  if (NOT OpenCV_FOUND)
-    find_package(OpenCV NO_MODULE QUIET REQUIRED)
-  endif ()
-  message(STATUS "Found OpenCV: ${OpenCV_DIR}")
+  find_package(OpenCV CONFIG REQUIRED)
 endif ()
 set(LBANN_HAS_OPENCV ${OpenCV_FOUND})
 
@@ -283,6 +239,9 @@ if (LBANN_WITH_ONEDNN)
   set(LBANN_HAS_ONEDNN_V1 ${DNNL_FOUND})
   if (NOT DNNL_FOUND)
     find_package(DNNL 2.0.0 REQUIRED CONFIG)
+  endif ()
+  if (DNNL_FOUND)
+    set(LBANN_DNNL_LIBS DNNL::dnnl)
   endif ()
   set(LBANN_HAS_ONEDNN ${DNNL_FOUND})
   if (NOT DNNL_CPU_RUNTIME STREQUAL "NONE")
@@ -334,7 +293,8 @@ if (LBANN_HAS_ALUMINUM)
   endif (LBANN_BUILT_WITH_SPECTRUM)
 endif (LBANN_HAS_ALUMINUM)
 
-# Setup some additional CUDA-y things
+# Setup some additional device-side things
+set(LBANN_HAS_DNN_LIB FALSE)
 if (LBANN_HAS_CUDA)
   if (NOT LBANN_WITH_CUDNN)
     message(WARNING
@@ -344,14 +304,18 @@ if (LBANN_HAS_CUDA)
     set(LBANN_WITH_CUDNN ON)
   endif ()
 
-  include(SetupCUDAToolkit)
+  find_package(CUDAToolkit REQUIRED) # Hydrogen will have found this,
+                                     # but it doesn't hurt to find it
+                                     # again.
+  find_package(cuDNN REQUIRED)
+  set(LBANN_HAS_CUDNN ${cuDNN_FOUND})
+  set(LBANN_HAS_DNN_LIB ${cuDNN_FOUND})
 
-  if (LBANN_HAS_GPU_FP16)
-    # This should ensure that all the __half functionality we need exists.
-    list(APPEND CMAKE_CUDA_ARCHITECTURES 60)
-  endif (LBANN_HAS_GPU_FP16)
-
-  set(LBANN_HAS_CUDNN ${CUDNN_FOUND})
+  set(LBANN_CUDA_LIBS
+    CUDA::cudart
+    CUDA::nvToolsExt
+    CUDA::cufft
+    cuda::cudnn)
 
   if (LBANN_HAS_ALUMINUM AND AL_HAS_NCCL)
     set(LBANN_HAS_NCCL2 TRUE)
@@ -361,31 +325,31 @@ if (LBANN_HAS_CUDA)
 
   if (LBANN_WITH_NVSHMEM)
     find_package(NVSHMEM REQUIRED)
-    # This should ensure that all the CUDA functionality we for NVSHMEM need exists.
-    list(APPEND CMAKE_CUDA_ARCHITECTURES 70)
     # Build LBANN as a static library to get around a bug in NVSHMEM
     set(BUILD_SHARED_LIBS OFF)
+    list(APPEND LBANN_CUDA_LIBS NVSHMEM::NVSHMEM)
   endif ()
   set(LBANN_HAS_NVSHMEM "${NVSHMEM_FOUND}")
 
 endif (LBANN_HAS_CUDA)
 
 if (LBANN_HAS_ROCM)
-  list(APPEND CMAKE_MODULE_PATH "/opt/rocm/hip/cmake")
-  find_package(HIP MODULE REQUIRED)
+  find_package(hip CONFIG REQUIRED)
   find_package(MIOpen CONFIG REQUIRED)
-  set(LBANN_HAS_MIOPEN TRUE)
+  set(LBANN_HAS_MIOPEN ${MIOpen_FOUND})
+  set(LBANN_HAS_DNN_LIB ${MIOpen_FOUND})
   if (LBANN_HAS_FFTW)
-    find_package(rocFFT CONFIG REQUIRED)
+    find_package(rocfft CONFIG REQUIRED)
   endif ()
+
+  set(LBANN_ROCM_LIBS
+    hip::host
+    MIOpen
+    roc::rocfft)
+
 endif (LBANN_HAS_ROCM)
 
-if (LBANN_HAS_CUDNN OR LBANN_HAS_MIOPEN)
-  set(LBANN_HAS_DNN_LIB TRUE)
-else ()
-  set(LBANN_HAS_DNN_LIB FALSE)
-endif ()
-
+# This is used in the sample list implementation
 find_package(ZSTR REQUIRED)
 
 # This shouldn't be here, but is ok for now. This will occasionally be
@@ -421,10 +385,11 @@ if (LBANN_WITH_PYTHON_FRONTEND OR LBANN_WITH_EMBEDDED_PYTHON)
     set(LBANN_HAS_PYTHON_FRONTEND TRUE)
   endif ()
   if (LBANN_WITH_EMBEDDED_PYTHON AND Python_FOUND)
+    set(LBANN_PYTHON_LIBS Python::Python)
     set(LBANN_HAS_EMBEDDED_PYTHON TRUE)
   endif ()
 
-  if (NOT Python_VERSION_MAJOR EQUAL 3)
+  if (Python_VERSION_MAJOR LESS 3)
     set(LBANN_HAS_PYTHON_FRONTEND FALSE)
     set(LBANN_HAS_EMBEDDED_PYTHON FALSE)
     message(FATAL_ERROR "Python 2 is not supported.")
@@ -474,96 +439,30 @@ if (LBANN_WITH_HWLOC)
 endif (LBANN_WITH_HWLOC)
 
 if (LBANN_WITH_CONDUIT)
-  find_package(Conduit CONFIG QUIET
-    HINTS ${Conduit_DIR} $ENV{Conduit_DIR} ${CONDUIT_DIR} $ENV{CONDUIT_DIR}
-    PATH_SUFFIXES lib64/cmake lib/cmake
-    NO_DEFAULT_PATH)
-  if (NOT Conduit_FOUND)
-    find_package(Conduit CONFIG QUIET REQUIRED
-      PATH_SUFFIXES lib64/cmake lib/cmake)
-  endif ()
+  find_package(Conduit 0.7.0 CONFIG REQUIRED)
   message(STATUS "Found CONDUIT: ${Conduit_DIR}")
 
-  # Ugh. I don't like that this requires intimate knowledge of
-  # specific targets that CONDUIT exports. It should support
-  # components.
-  if (NOT TARGET conduit_relay_mpi)
-    message(FATAL_ERROR "CONDUIT does not have proper MPI support.")
-  endif ()
-
-  if (NOT TARGET conduit OR NOT TARGET conduit_relay
-      OR NOT TARGET conduit_blueprint)
+  if (NOT TARGET conduit::conduit OR NOT TARGET conduit::conduit_mpi)
     message(FATAL_ERROR "Missing some CONDUIT required library.")
   endif ()
 
-  if (NOT TARGET conduit::conduit)
-    add_library(conduit::conduit INTERFACE IMPORTED)
-  endif ()
-
-  set(_conduit_interface_link_libs
-    "conduit;conduit_relay;conduit_relay_mpi;conduit_blueprint")
-
-  # Remove -pthread from linkage, if found
-  foreach (_lib IN LISTS _conduit_interface_link_libs)
-    if (TARGET ${_lib})
-      get_property(_tmp_interface_link_libs TARGET ${_lib}
-        PROPERTY INTERFACE_LINK_LIBRARIES)
-
-      list(FIND _tmp_interface_link_libs "-pthread" _pthread_idx)
-      if (_pthread_idx GREATER_EQUAL 0)
-        list(REMOVE_AT _tmp_interface_link_libs ${_pthread_idx})
-
-        set_property(TARGET ${_lib} PROPERTY
-          INTERFACE_LINK_LIBRARIES ${_tmp_interface_link_libs})
-      endif ()
-
-      get_property(_tmp_interface_compile_opts TARGET ${_lib}
-        PROPERTY INTERFACE_COMPILE_OPTIONS)
-      set_property(TARGET ${_lib}
-        PROPERTY INTERFACE_COMPILE_OPTIONS
-          $<$<COMPILE_LANGUAGE:CXX>:${_tmp_interface_compile_opts}>)
-    endif ()
-  endforeach ()
-
-  get_filename_component(_conduit_include_dirs
-    "${CONDUIT_INCLUDE_DIRS}" DIRECTORY)
-
-  if (HDF5_FOUND_WITH_MODULE)
-    list(APPEND _conduit_interface_link_libs
-      ${HDF5_LIBRARIES})
-
-    list(APPEND _conduit_include_dirs
-      "${HDF5_INCLUDE_DIRS}")
-  endif ()
-
-  set_property(TARGET conduit::conduit
-    PROPERTY
-    INTERFACE_INCLUDE_DIRECTORIES
-    "${_conduit_include_dirs}")
-
-  set_target_properties(conduit::conduit
-    PROPERTIES
-    INTERFACE_LINK_LIBRARIES
-    "${_conduit_interface_link_libs}")
-
-  set(CONDUIT_LIBRARIES conduit::conduit)
+  set(CONDUIT_LIBRARIES conduit::conduit conduit::conduit_mpi)
 endif (LBANN_WITH_CONDUIT)
 
 if (LBANN_WITH_BOOST)
   # Boost (optional)
-  find_package(Boost QUIET)
+  find_package(Boost)
   set(LBANN_HAS_BOOST ${Boost_FOUND})
 endif (LBANN_WITH_BOOST)
 
+# Include onnx dependency
+if (LBANN_WITH_ONNX)
+  find_package(ONNX CONFIG REQUIRED)
+  set (LBANN_HAS_ONNX TRUE)
+endif ()
+
 if (LBANN_WITH_UNIT_TESTING)
-  find_package(Catch2 2.0.0 CONFIG QUIET
-    HINTS ${CATCH2_DIR} $ENV{CATCH2_DIR} ${CATCH_DIR} $ENV{CATCH_DIR}
-    PATH_SUFFIXES lib64/cmake/Catch2 lib/cmake/Catch2
-    NO_DEFAULT_PATH)
-  if (NOT Catch2_FOUND)
-    find_package(Catch2 2.0.0 CONFIG QUIET REQUIRED)
-  endif ()
-  message(STATUS "Found Catch2: ${Catch2_DIR}")
+  find_package(Catch2 2.0.0 CONFIG REQUIRED)
 
   if (CMAKE_CXX_COMPILER_ID MATCHES "ROCMClang")
     set_target_properties(Catch2::Catch2
@@ -598,13 +497,6 @@ endif (LBANN_WITH_UNIT_TESTING)
 # Handle the documentation
 add_subdirectory(docs)
 
-# Include onnx dependency
-if (LBANN_WITH_ONNX)
-  set (LBANN_HAS_ONNX TRUE)
-  find_package(ONNX CONFIG REQUIRED)
-endif ()
-
-
 ################################################################
 # Build LBANN
 ################################################################
@@ -620,88 +512,90 @@ configure_file(
   @ONLY)
 
 # Create the LBANN library
-if (LBANN_HAS_ROCM)
-  hip_add_library(
-    lbann ${LBANN_SOURCES} ${LBANN_HEADERS} ${LBANN_GPU_SOURCES})
-else ()
-  add_library(lbann ${LBANN_SOURCES} ${LBANN_HEADERS} ${LBANN_GPU_SOURCES})
-endif ()
+add_library(lbann
+  ${LBANN_SOURCES}
+  ${LBANN_HEADERS}
+  ${LBANN_GPU_SOURCES})
+
+set_target_properties(lbann
+  PROPERTIES
+  VERSION ${LBANN_VERSION})
 
 target_include_directories(lbann PUBLIC
   $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
-# The max of CXX_STANDARD and this value will be used.
+# Five years later, here we are. :D
 target_compile_features(lbann PUBLIC cxx_std_17)
 
-# Use the IMPORTED targets when possible.
-if (LBANN_HAS_ONNX)
-  target_link_libraries(lbann PUBLIC onnx)
-endif ()
 target_link_libraries(lbann PUBLIC LbannProto)
 if (LBANN_HAS_TBINF)
   target_link_libraries(lbann PUBLIC TBinf)
 endif ()
-target_link_libraries(lbann PUBLIC Threads::Threads)
-target_link_libraries(lbann PUBLIC clara::clara)
-target_link_libraries(lbann PUBLIC cereal)
-target_link_libraries(lbann PUBLIC OpenMP::OpenMP_CXX)
+
 target_link_libraries(lbann PUBLIC
-  $<TARGET_NAME_IF_EXISTS:HWLOC::hwloc>
-  MPI::MPI_CXX)
-target_link_libraries(lbann PUBLIC protobuf::libprotobuf)
-target_link_libraries(lbann PUBLIC ${HYDROGEN_LIBRARIES})
+  ${HWLOC_LIBRARIES}
+  ${LBANN_H2_LIBS}
+  ${HYDROGEN_LIBRARIES}
+  ${Aluminum_LIBRARIES}
+  ${CONDUIT_LIBRARIES}
+  ${CNPY_LIBRARIES}
+  ${CLARA_LIBRARIES}
+  ${LBANN_PYTHON_LIBS}
+  protobuf::libprotobuf
+  cereal
+  ZSTR::ZSTR)
+
 if (LBANN_HAS_OPENCV)
   target_link_libraries(lbann PUBLIC ${OpenCV_LIBRARIES})
 endif ()
-target_link_libraries(lbann PUBLIC ${CONDUIT_LIBRARIES})
 
-target_link_libraries(lbann PUBLIC
-  $<TARGET_NAME_IF_EXISTS:LBANN_CXX_FLAGS_werror>
-  $<TARGET_NAME_IF_EXISTS:TBinf>
-
-  $<TARGET_NAME_IF_EXISTS:H2::H2Meta>
-  $<TARGET_NAME_IF_EXISTS:H2::H2Patterns>
-  $<TARGET_NAME_IF_EXISTS:H2::H2DistConv>
-
-  $<TARGET_NAME_IF_EXISTS:CNPY::CNPY>
-  $<TARGET_NAME_IF_EXISTS:FFTW::FFTW>
-  $<TARGET_NAME_IF_EXISTS:Python::Python>
-  $<TARGET_NAME_IF_EXISTS:ZSTR::ZSTR>
-
-  $<TARGET_NAME_IF_EXISTS:MIOpen>
-  $<TARGET_NAME_IF_EXISTS:roc::rocfft>
-
-  $<TARGET_NAME_IF_EXISTS:DNNL::dnnl>
-  )
-
-if (LBANN_FLAG_Werror_OK)
-  target_compile_options(lbann
-    PRIVATE $<$<COMPILE_LANGUAGE:CXX>:$<BUILD_INTERFACE:-Werror>>)
+if (LBANN_HAS_FFTW)
+  target_link_libraries(lbann PUBLIC FFTW::FFTW)
 endif ()
 
-if (LBANN_HAS_ALUMINUM)
-  target_link_libraries(lbann PUBLIC ${Aluminum_LIBRARIES})
+if (LBANN_HAS_ONNX)
+  target_link_libraries(lbann PUBLIC onnx)
 endif ()
 
 if (LBANN_HAS_VTUNE)
   target_link_libraries(lbann PUBLIC ${VTUNE_STATIC_LIB})
 endif ()
 
-if (LBANN_HAS_NVSHMEM)
-  set_property(TARGET lbann PROPERTY CUDA_SEPARABLE_COMPILATION ON)
-  target_link_libraries(lbann PUBLIC NVSHMEM::NVSHMEM)
-endif ()
-
 if (LBANN_EXPLICIT_LIBDL)
   target_link_libraries(lbann PUBLIC ${DL_LIBRARY})
 endif ()
 
-if (LBANN_HAS_FFTW AND LBANN_HAS_CUDA)
-  target_compile_options(lbann PRIVATE
-    $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
-endif (LBANN_HAS_FFTW AND LBANN_HAS_CUDA)
+target_link_libraries(lbann PUBLIC
+  OpenMP::OpenMP_CXX
+  Threads::Threads
+  MPI::MPI_CXX
+  ${LBANN_CUDA_LIBS}
+  ${LBANN_ROCM_LIBS}
+  ${LBANN_DNNL_LIBS})
+
+if (LBANN_FLAG_Werror_OK)
+  target_compile_options(lbann
+    PRIVATE $<$<COMPILE_LANGUAGE:CXX>:$<BUILD_INTERFACE:-Werror>>)
+endif ()
+
+if (LBANN_HAS_CUDA)
+
+  if (LBANN_HAS_NVSHMEM)
+    set_target_properties(lbann
+      PROPERTIES
+      CUDA_SEPARABLE_COMPILATION ON)
+  endif ()
+
+  # Enable device lambdas with nvcc
+  check_compiler_flag(CUDA "--expt-extended-lambda"
+    CUDA_COMPILER_SUPPORTS_EXTENDED_LAMBDA)
+  if (CUDA_COMPILER_SUPPORTS_EXTENDED_LAMBDA)
+    target_compile_options(lbann PRIVATE
+      $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+  endif ()
+endif (LBANN_HAS_CUDA)
 
 # Fix the -g issue with Clang on OSX
 if (APPLE)

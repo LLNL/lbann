@@ -4,11 +4,6 @@ if (NOT MPI_CXX_FOUND)
   find_package(MPI REQUIRED COMPONENTS CXX)
 endif ()
 
-# This shouldn't be required but packages such as Conduit are forcing C dependencies in MPI
-if (NOT MPI_C_FOUND)
-  find_package(MPI REQUIRED COMPONENTS C)
-endif ()
-
 if (NOT TARGET MPI::MPI_CXX)
   add_library(MPI::MPI_CXX INTERFACE IMPORTED)
   if (MPI_CXX_COMPILE_FLAGS)
