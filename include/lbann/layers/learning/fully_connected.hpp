@@ -149,24 +149,29 @@ void fully_connected_layer<T, L, D>::fill_onnx_node(
   onnx::GraphProto& graph) const {
   //def fully_connected(x, weights=[linearity, bias]):
   //x = Reshape(data=x, shape=[0,-1,1])
+  auto const parents = this->get_parent_layers();
   auto* shape = graph.add_initializer();
-  shape->set_name(this->get_name() + "_shape_0");
+  shape->set_name(this->get_name() + "_" + parents[0]->get_name() +
+                  "_shape");
   shape->set_data_type(onnx::TensorProto::INT64);
   shape->add_dims(2);
   shape->add_int64_data(0);
   shape->add_int64_data(-1);
-  shape->set_doc_string(this->get_name() + " shape");
+  shape->set_doc_string("Shape for " + this->get_name() + " reshape " +
+                        parents[0]->get_name() + " node");
 
-  auto const parents = this->get_parent_layers();
   size_t idx = parents[0]->find_child_layer_index(*this);
   auto* reshape = graph.add_node();
   reshape->add_input(parents[0]->get_name() + "_" + std::to_string(idx));
   reshape->add_input(shape->name());
-  reshape->add_output(this->get_name() + "_reshape_0");
-  reshape->set_name(this->get_name() + "_reshape_0");
+  reshape->add_output(this->get_name() + "_" +
+                      parents[0]->get_name() + "_reshape");
+  reshape->set_name(this->get_name() + "_" +
+                      parents[0]->get_name() + "_reshape");
   reshape->set_op_type("Reshape");
   reshape->set_domain("");
-  reshape->set_doc_string("Reshape node for Fully Connected Layer");
+  reshape->set_doc_string("Reshape " + parents[0]->get_name() +
+                          " for Fully Connected Layer");
 /*
   // transpose matrix
   auto transpose = graph.add_node();
@@ -181,25 +186,31 @@ void fully_connected_layer<T, L, D>::fill_onnx_node(
   const auto linearity_height = this->get_weights(0).get_matrix_height();
   const auto linearity_width = this->get_weights(0).get_matrix_width();
   shape = graph.add_initializer();
-  shape->set_name(this->get_name() + "_shape_1");
+  shape->set_name(this->get_name() + "_linearity_shape");
   shape->set_data_type(onnx::TensorProto::INT64);
   shape->add_dims(2);
   shape->add_int64_data(linearity_height);
   shape->add_int64_data(linearity_width);
-  shape->set_doc_string(this->get_name() + " shape");
+  shape->set_doc_string("Shape for " + this->get_name() + " Linearity");
 
   auto* linearity = graph.add_node();
   linearity->add_input(this->get_weights(0).get_name());
   linearity->add_input(shape->name());
-  linearity->add_output(this->get_name() + "_reshape_1");
-  linearity->set_name(this->get_name() + "_reshape_1");
+  linearity->add_output(this->get_name() + "_linearity_reshape");
+  linearity->set_name(this->get_name() + "_linearity_reshape");
   linearity->set_op_type("Reshape");
   linearity->set_domain("");
-  linearity->set_doc_string("Reshape (linearity) node for Fully Connected Layer");
+  linearity->set_doc_string("Reshape linearity for Fully Connected Layer");
 
   auto* gemm = graph.add_node();
   gemm->add_input(linearity->output(0));
   gemm->add_input(reshape->output(0));
+  gemm->add_output(this->get_name() + "_gemm");
+  gemm->set_name(this->get_name() + "_gemm");
+  gemm->set_op_type("Gemm");
+  gemm->set_domain("");
+  gemm->set_doc_string("Gemm node for Fully Connected Layer");
+
   auto* attribute = gemm->add_attribute();
   attribute->set_name("alpha");
   attribute->set_type(onnx::AttributeProto::FLOAT);
@@ -213,38 +224,32 @@ void fully_connected_layer<T, L, D>::fill_onnx_node(
   attribute = gemm->add_attribute();
   attribute->set_name("transA");
   attribute->set_type(onnx::AttributeProto::INT);
-  attribute->set_i(1);
+  attribute->set_i(m_transpose ? 1 : 0);
 
   attribute = gemm->add_attribute();
   attribute->set_name("transB");
   attribute->set_type(onnx::AttributeProto::INT);
-  attribute->set_i(1);
-
-  gemm->add_output(this->get_name() + "_gemm_0");
-  gemm->set_name(this->get_name() + "_gemm_0");
-  gemm->set_op_type("Gemm");
-  gemm->set_domain("");
-  gemm->set_doc_string("Gemm node for Fully Connected Layer");
+  attribute->set_i(1); // FIXME: changed from 0 to 1 for onnxruntime debug
 
   if (this->num_weights() > 1) {
     //bias = Reshape(data=bias, shape=[1,-1,1])
     shape = graph.add_initializer();
-    shape->set_name(this->get_name() + "_shape_2");
+    shape->set_name(this->get_name() + "_bias_shape");
     shape->set_data_type(onnx::TensorProto::INT64);
     shape->add_dims(3);
     shape->add_int64_data(1);
     shape->add_int64_data(-1);
     shape->add_int64_data(1);
-    shape->set_doc_string(this->get_name() + " shape");
+    shape->set_doc_string("Shape for " + this->get_name() + " Bias");
 
     auto* bias = graph.add_node();
     bias->add_input(this->get_weights(1).get_name());
     bias->add_input(shape->name());
-    bias->add_output(this->get_name() + "_reshape_2");
-    bias->set_name(this->get_name() + "_reshape_2");
+    bias->add_output(this->get_name() + "_bias_reshape");
+    bias->set_name(this->get_name() + "_bias_reshape");
     bias->set_op_type("Reshape");
     bias->set_domain("");
-    bias->set_doc_string("Reshape (bias) node for Fully Connected Layer");
+    bias->set_doc_string("Reshape bias for Fully Connected Layer");
 /*
   }
 
@@ -263,9 +268,9 @@ void fully_connected_layer<T, L, D>::fill_onnx_node(
     //z = Add(A=z, B=bias)
     auto* add = graph.add_node();
     add->add_input(gemm->output(0));
-    add->add_input(this->get_name() + "_reshape_2");
-    add->add_output(this->get_name() + "_add_0");
-    add->set_name(this->get_name() + "_add_0");
+    add->add_input(bias->output(0));
+    add->add_output(this->get_name() + "_add");
+    add->set_name(this->get_name() + "_add");
     add->set_op_type("Add");
     add->set_domain("");
     add->set_doc_string("Add node for Fully Connected Layer");
@@ -273,16 +278,16 @@ void fully_connected_layer<T, L, D>::fill_onnx_node(
 
   //z = Reshape(data=z, shape=[0,-1])
   shape = graph.add_initializer();
-  shape->set_name(this->get_name() + "_shape_3");
+  shape->set_name(this->get_name() + "_shape");
   shape->set_data_type(onnx::TensorProto::INT64);
   shape->add_dims(2);
   shape->add_int64_data(0);
   shape->add_int64_data(-1);
-  shape->set_doc_string(this->get_name() + " shape");
+  shape->set_doc_string(this->get_name() + " output shape");
 
   reshape = graph.add_node();
   if (this->num_weights() > 1)
-    reshape->add_input(this->get_name() + "_add_0");
+    reshape->add_input(this->get_name() + "_add");
   else
     reshape->add_input(gemm->output(0));
   reshape->add_input(shape->name());
@@ -290,10 +295,10 @@ void fully_connected_layer<T, L, D>::fill_onnx_node(
     idx = this->find_child_layer_index(*child);
     reshape->add_output(this->get_name() + "_" + std::to_string(idx));
   }
-  reshape->set_name(this->get_name() + "_reshape_3");
+  reshape->set_name(this->get_name() + "_reshape");
   reshape->set_op_type("Reshape");
   reshape->set_domain("");
-  reshape->set_doc_string("Reshape node for Fully Connected Layer");
+  reshape->set_doc_string("Reshape node for Fully Connected Layer output");
 }
 #endif // LBANN_HAS_ONNX
 

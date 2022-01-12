@@ -139,8 +139,8 @@ void evaluation_layer<T, L, D>::fill_onnx_node(onnx::GraphProto& graph) const
     size_t idx = parent->find_child_layer_index(*this);
     eval->add_input(parent->get_name() + "_" + std::to_string(idx));
   }
-  eval->add_output(this->get_name() + "_0");
-  eval->set_name(this->get_name() + "_0");
+  eval->add_output(this->get_name());
+  eval->set_name(this->get_name());
   eval->set_op_type("Identity");
   eval->set_domain("");
   eval->set_doc_string(this->get_type());
@@ -149,7 +149,6 @@ void evaluation_layer<T, L, D>::fill_onnx_node(onnx::GraphProto& graph) const
   auto graph_output = graph.add_output();
   graph_output->set_name(eval->output(0));
   auto* graph_output_type = graph_output->mutable_type();
-  // FIXME: Support for other data types?
   graph_output_type->mutable_tensor_type()->set_elem_type(onnx::AttributeProto::FLOAT);
 
   auto* dims =

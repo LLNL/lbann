@@ -555,7 +555,7 @@ void Layer::fill_onnx_node(onnx::GraphProto& graph) const {
     size_t idx = this->find_child_layer_index(*child);
     node->add_output(this->get_name() + "_" + std::to_string(idx));
   }
-  node->set_name(this->get_name() + "_0");
+  node->set_name(this->get_name());
   node->set_op_type(this->get_onnx_op_type());
   node->set_domain("");
   node->set_doc_string(this->get_type());

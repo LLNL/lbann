@@ -603,7 +603,7 @@ void pooling_layer<T, L, D>::fill_onnx_node(
     size_t idx = this->find_child_layer_index(*child);
     pool->add_output(this->get_name() + "_" + std::to_string(idx));
   }
-  pool->set_name(this->get_name() + "_0");
+  pool->set_name(this->get_name());
 
   switch(m_pool_mode) {
   case pooling_mode::MAX:
