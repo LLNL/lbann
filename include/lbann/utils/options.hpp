@@ -56,6 +56,7 @@ namespace lbann {
 #define LBANN_OPTION_TRAINER_CREATE_TWO_MODELS "Create two models in Sub-grid parallelism"
 #define LBANN_OPTION_TRAINER_GRID_HEIGHT "Height of 2D process grid for each trainer"
 #define LBANN_OPTION_TRAINER_PRIMARY_GRID_SIZE "Primary Grid Size per trainer"
+#define LBANN_OPTION_NUM_SUBGRIDS_BLOCK_ORDER "Divide each trainer into equally-sized sub-grids with blocked ordering"
 
 /****** datastore options ******/
 // Bool flags

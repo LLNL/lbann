@@ -235,6 +235,7 @@ public:
   /** @name Sub-grid management */
 
   std::vector<El::Grid*> get_grids() const;
+  void add_grid(std::unique_ptr<El::Grid> g);
 
   ///@{
   /** @name Checkpointing */

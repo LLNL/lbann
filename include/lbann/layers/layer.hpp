@@ -585,9 +585,9 @@ public:
   /** Get reference to LBANN communicator. */
   lbann_comm* get_comm() const;
 
-  /** @brief Identifying tag for processor grid */
+  /** @brief Identifying tag for process grid */
   int get_grid_tag() const noexcept;
-  /** @brief Set processor grid */
+  /** @brief Set process grid */
   void set_grid_tag(int tag);
 
   /** @name Hint layer access functions */
@@ -820,7 +820,7 @@ protected:
   // -------------------------------------------------------
   /// @todo tym: Clean up and document
 
-  /** @brief Identifying tag for processor grid
+  /** @brief Identifying tag for process grid
    *
    *  If the tag is negative, the process grid is chosen
    *  based on heuristics.

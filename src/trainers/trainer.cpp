@@ -299,6 +299,9 @@ std::vector<El::Grid*> trainer::get_grids() const {
   return grids;
 }
 
+void trainer::add_grid(std::unique_ptr<El::Grid> g) {
+  m_grids.emplace_back(std::move(g));
+}
 
 // =============================================
 // Checkpointing
