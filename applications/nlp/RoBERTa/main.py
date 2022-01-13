@@ -1,10 +1,9 @@
-from collections import namedtuple
 from types import SimpleNamespace
 import argparse
 import os
 import sys
 import json
-import nltk
+import numpy as np
 
 import lbann
 from lbann.util import str_list
@@ -18,9 +17,21 @@ from roberta import RobertaModel
 # ----------------------------------------------
 parser = argparse.ArgumentParser()
 parser.add_argument(
+    "--epochs",
+    default=10,
+    type=int,
+    help="number of epochs to train",
+)
+parser.add_argument(
+    "--mini-batch-size",
+    default=32,
+    type=int,
+    help="size of minibatches for training",
+)
+parser.add_argument(
     "--job-name",
     action="store",
-    default="lbann_yubnub",
+    default="lbann_RoBERTa",
     type=str,
     help="scheduler job name",
     metavar="NAME",
@@ -35,19 +46,9 @@ parser.add_argument(
 )
 parser.add_argument("--batch-job", action="store_true", help="submit as batch job")
 parser.add_argument(
-    "--dump-embeddings",
-    action="store_true",
-    help="dump author embeddings from validation set to .npy files",
-)
-parser.add_argument(
     "--checkpoint", action="store_true", help="checkpoint trainer after every epoch"
 )
 lbann.contrib.args.add_scheduler_arguments(parser)
-parser.add_argument(
-    "yubnub_args",
-    nargs=argparse.REMAINDER,
-    help='options to pass into yubnub (separate from LBANN options with "--")',
-)
 lbann_params = parser.parse_args()
 
 # ----------------------------------------------
@@ -168,8 +169,8 @@ class CrossEntropyLoss(lbann.modules.Module):
 # ----------------------------------------------
 with open("./config.json") as f:
     config = json.load(f, object_hook=lambda d: SimpleNamespace(**d))
-config.batch_size = 32
 config.input_shape = (16, 32)
+config.load_weights = os.path.exists('./pretrained_weights')
 
 # Construct the model
 input_ = lbann.Slice(
@@ -178,7 +179,7 @@ input_ = lbann.Slice(
 )
 labels = lbann.Identity(input_)
 sample = lbann.Reshape(input_, dims=str_list(config.input_shape))
-roberta = RobertaModel(config, load_weights=True)
+roberta = RobertaModel(config, load_weights=config.load_weights)
 out = roberta(sample)
 out = lbann.ChannelwiseFullyConnected(out, output_channel_dims=[1000])
 loss = CrossEntropyLoss(10, data_layout="model_parallel")
@@ -186,25 +187,23 @@ obj = loss(out, labels)
 metrics = [lbann.Metric(obj, name="loss")]
 
 model = lbann.Model(
-    0,
+    lbann_params.epochs,
     layers=lbann.traverse_layer_graph(input_),
     objective_function=obj,
     metrics=metrics,
     callbacks=[
-        lbann.CallbackPrintModelDescription(),
         lbann.CallbackPrint(),
         lbann.CallbackTimer(),
-        lbann.CallbackDumpOutputs(),
     ],
 )
 
 # Setup trainer, optimizer, data_reader
 trainer = lbann.Trainer(
-    mini_batch_size=config.mini_batch_size,
+    mini_batch_size=lbann_params.mini_batch_size,
     num_parallel_readers=1,
 )
 optimizer = lbann.Adam(
-    learn_rate=0,
+    learn_rate=0.01,
     beta1=0.9,
     beta2=0.99,
     eps=1e-8,

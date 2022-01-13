@@ -5,6 +5,7 @@ import itertools
 import time
 import glob
 import urllib.request
+import argparse
 
 import numpy as np
 import torch
@@ -74,15 +75,23 @@ def process_weights(weights_dir):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--no-weights', action='store_true', help='avoids downloading model weights')
+    args = parser.parse_args()
+
+    if args.no_weights:
+        del files['pytorch_model.bin']
+
     """Download model from huggingface"""
     for fn, url in files.items():
         download_file(url, fn)
 
-    """ Extract weights """
-    if not os.path.exists(weights_dir):
-        os.makedirs(weights_dir)
-    model = torch.load("pytorch_model.bin", map_location="cpu")
-    extract_weights(model, weights_dir)
+    if not args.no_weights:
+        """ Extract weights """
+        if not os.path.exists(weights_dir):
+            os.makedirs(weights_dir)
+        model = torch.load("pytorch_model.bin", map_location="cpu")
+        extract_weights(model, weights_dir)
 
-    """ Process weights for loading into LBANN """
-    process_weights(weights_dir)
+        """ Process weights for loading into LBANN """
+        process_weights(weights_dir)

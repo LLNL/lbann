@@ -242,7 +242,6 @@ class RobertaSelfAttention(lbann.modules.Module):
                 f"The hidden size ({config.hidden_size}) is not a multiple of the number of attention "
                 f"heads ({config.num_attention_heads})"
             )
-        self.batch_size = config.batch_size
         self.input_shape = config.input_shape + (config.hidden_size,)
         self.num_attention_heads = config.num_attention_heads
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
