@@ -20,7 +20,7 @@ compilerRay:
     - shell
   script:
     - echo "=== compilerRay section ==="
-#    - .gitlab/scripts/build.sh
+    - .gitlab/scripts/build.sh
 
 integrationRay:
   stage: compiler
