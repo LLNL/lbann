@@ -1,5 +1,6 @@
 variables:
-  CUSTOM_CI_BUILDS_DIR: "/usr/workspace/vanessen/mygitlab-runner-builds-dir"
+  CUSTOM_CI_BUILDS_DIR: "/usr/workspace/${GITLAB_USER_LOGIN}/mygitlab-runner-builds-dir"
+  USER_CI_TOP_DIR: "${CUSTOM_CI_BUILDS_DIR}/${GITLAB_USER_LOGIN}"
   CI_DEBUG_TRACE: "true"
   
 before_script:
