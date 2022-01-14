@@ -39,3 +39,12 @@ unitRay:
   script:
     - echo "=== unitRay section ==="
     - echo "FINISHED"
+
+compilerCorona:
+  stage: compiler
+  tags:
+    - corona
+    - shell
+  script:
+    - echo "=== compilerRay section ==="
+    - .gitlab/scripts/script_compiler.sh
