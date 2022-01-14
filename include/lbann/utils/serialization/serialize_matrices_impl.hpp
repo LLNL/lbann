@@ -279,8 +279,7 @@ void save(lbann::RootedOutputArchiveAdaptor<ArchiveT>& ar,
     ::El::DistMatrix<T,::El::CIRC,::El::CIRC,::El::ELEMENT,::El::Device::CPU>;
   CircMatType circ_mat(mat);
   CircMatType circ_mat_ar(ar.grid(), ar.root());
-  if (circ_mat.Grid() == circ_mat_ar.Grid()
-      && circ_mat.Root() == circ_mat_ar.Root()) {
+  if (circ_mat.DistData() == circ_mat_ar.DistData()) {
     circ_mat_ar = std::move(circ_mat);
   }
   else {
@@ -302,8 +301,7 @@ void load(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
   CircMatType circ_mat(mat.Grid(), mat.Root());
   CircMatType circ_mat_ar(ar.grid(), ar.root());
   load(ar, circ_mat_ar);
-  if (circ_mat.Grid() == circ_mat_ar.Grid()
-      && circ_mat.Root() == circ_mat_ar.Root()) {
+  if (circ_mat.DistData() == circ_mat_ar.DistData()) {
     circ_mat = std::move(circ_mat_ar);
   }
   else {

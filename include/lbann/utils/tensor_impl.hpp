@@ -28,6 +28,7 @@
 #define LBANN_UTILS_TENSOR_IMPL_HPP
 
 #include "lbann/utils/tensor.hpp"
+#include "lbann_config.hpp"
 
 namespace lbann {
 
@@ -49,8 +50,82 @@ void do_tensor_copy(const BaseDistMat& src,
     El::CopyAsync(src, tgt);
   }
   else {
-    El::Copy(src, tgt);
+    if (src.DistData().grid == src.DistData().grid) {
+      El::Copy(src, tgt);
+    }
+    else {
+      utils::details::do_tensor_copy_between_grids(src, tgt);
+    }
   }
+}
+
+template <typename TDT>
+void utils::details::do_tensor_copy_between_grids(
+  const BaseDistMat& src,
+  El::AbstractDistMatrix<TDT>& tgt) {
+
+  // Determine matrix class and forward to template function
+  /// @todo Do this more systematically and support all matrix classes
+  const auto& tgt_dist = tgt.DistData();
+  bool did_copy = false;
+#undef LBANN_TEMPLATE_INSTANTIATION
+#define LBANN_TEMPLATE_INSTANTIATION(ColDist, RowDist, Device)          \
+  do {                                                                  \
+    if (tgt_dist.colDist == ColDist                                     \
+        && tgt_dist.rowDist == RowDist                                  \
+        && tgt_dist.device == Device) {                                 \
+      using TgtMatrixType                                               \
+        = El::DistMatrix<TDT, ColDist, RowDist, El::ELEMENT, Device>;   \
+      utils::details::do_tensor_copy_between_grids(                     \
+        src,                                                            \
+        dynamic_cast<TgtMatrixType&>(tgt));                             \
+      did_copy = true;                                                  \
+    }                                                                   \
+  } while (false)
+  LBANN_TEMPLATE_INSTANTIATION(El::STAR, El::VC,   El::Device::CPU);
+  LBANN_TEMPLATE_INSTANTIATION(El::MC,   El::MR,   El::Device::CPU);
+  LBANN_TEMPLATE_INSTANTIATION(El::STAR, El::STAR, El::Device::CPU);
+#ifdef LBANN_HAS_GPU
+  LBANN_TEMPLATE_INSTANTIATION(El::STAR, El::VC,   El::Device::GPU);
+  LBANN_TEMPLATE_INSTANTIATION(El::MC,   El::MR,   El::Device::GPU);
+  LBANN_TEMPLATE_INSTANTIATION(El::STAR, El::STAR, El::Device::GPU);
+#endif // LBANN_HAS_GPU
+#undef LBANN_TEMPLATE_INSTANTIATION
+
+  // Check if copy succeeded
+  if (!did_copy) {
+    const auto& src_dist = src.DistData();
+    LBANN_ERROR(
+      "Failed to copy between two tensors on different grids ",
+      "(src: colDist=",int(src_dist.colDist),", ",
+      "rowDist=",int(src_dist.rowDist),", ",
+      "device=",int(src_dist.device),"; "
+      "tgt: colDist=",int(tgt_dist.colDist),", ",
+      "rowDist=",int(tgt_dist.rowDist),", ",
+      "device=",int(tgt_dist.device),")");
+  }
+
+}
+
+template <typename TDT, El::Dist ColDist, El::Dist RowDist, El::DistWrap Wrap, El::Device Device>
+void utils::details::do_tensor_copy_between_grids(
+  const BaseDistMat& src,
+  El::DistMatrix<TDT, ColDist, RowDist, Wrap, Device>& tgt) {
+
+  // Make sure matrix layouts are identical
+  using TgtMatrixType = El::DistMatrix<TDT, ColDist, RowDist, Wrap, Device>;
+  const auto& src_dist = src.DistData();
+  TgtMatrixType temp(*src_dist.grid, src_dist.root);
+  if (temp.DistData() == src_dist) {
+    El::LockedView(temp, dynamic_cast<const TgtMatrixType&>(src));
+  }
+  else {
+    El::Copy(src, temp);
+  }
+
+  // Translate matrix between grids
+  El::copy::Translate(temp, tgt);
+
 }
 
 template <typename TDT>

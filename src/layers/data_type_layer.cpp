@@ -526,7 +526,7 @@ setup_matrices(
     /// @todo Choose tag based on parent layers
     tag = 0;
   }
-  if (tag < 0 || tag >= grids.size()) {
+  if (tag < 0 || tag >= static_cast<int>(grids.size())) {
     LBANN_ERROR(
       "attempted to initialize ",
       this->get_type()," layer \"",this->get_name(),"\" ",
@@ -797,28 +797,24 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
 fp_setup_inputs(El::Int mini_batch_size) {
   if (get_num_parents() < 1) { return; }
 
-  // Determine distributed matrix alignment
-  const auto& alignment_dist = get_parent_layer().get_activations(*this).DistData();
-
   // Iterate through input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
+
 #ifdef LBANN_HAS_DISTCONV
+    // Skip if tensors are managed by Distconv
     if (!keep_original_inputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
+
     // Initialize input tensor
     const auto& parent = get_parent_layer(i);
     const auto& parent_output = parent.get_activations(*this);
     auto& input = *m_inputs[i];
     input.Empty(false);
-    if(!this->is_subgraph_parallelism_enabled()){
-      input.AlignWith(alignment_dist);
-    }
     view_or_copy_tensor(parent_output, input);
 
     // Check input matrix dimensions
     const auto& height = get_input_size(i);
     const auto& width = mini_batch_size;
-
     if ((input.Height() != height || input.Width() != width) ) {
       std::stringstream err;
       err << "layer \"" << get_name() << "\" "
