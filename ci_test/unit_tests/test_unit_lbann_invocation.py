@@ -17,9 +17,9 @@ def get_default_parameters(dir_name, two_models=True):
 
 
 def get_file_names(dir_name, test_name):
-    output_file_name = '{d}/bamboo/unit_tests/output/lbann_invocation_{t}_output.txt'.format(
+    output_file_name = '{d}/ci_test/unit_tests/output/lbann_invocation_{t}_output.txt'.format(
         d=dir_name, t=test_name)
-    error_file_name = '{d}/bamboo/unit_tests/error/lbann_invocation_{t}_error.txt'.format(
+    error_file_name = '{d}/ci_test/unit_tests/error/lbann_invocation_{t}_error.txt'.format(
         d=dir_name, t=test_name)
     return output_file_name, error_file_name
 
