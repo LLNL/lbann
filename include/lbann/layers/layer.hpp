@@ -822,8 +822,10 @@ protected:
 
   /** @brief Identifying tag for process grid
    *
-   *  If the tag is negative, the process grid is chosen
-   *  based on heuristics.
+   *  If the tag is negative, the process grid is chosen based on
+   *  heuristics. In particular, the layer will attempt to use the
+   *  same grid as its parent layers, reverting to the trainer grid if
+   *  not possible.
    */
   int m_grid_tag = -1;
 

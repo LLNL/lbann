@@ -199,6 +199,9 @@ description Layer::get_description() const {
   // DataType
   desc.add("Data type", get_datatype_name());
 
+  // Sub-grid
+  desc.add("Process grid", get_grid_tag());
+
   // Freeze state
   if (is_frozen()) {
     desc.add("Frozen");

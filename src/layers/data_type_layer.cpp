@@ -523,8 +523,21 @@ setup_matrices(
   // Choose process grid to distribute matrices over
   int tag = this->get_grid_tag();
   if (tag < 0) {
-    /// @todo Choose tag based on parent layers
-    tag = 0;
+    // Use tag from parent layers if they are all the same. Otherwise
+    // use tag 0.
+    for (int i=0; i<this->get_num_parents(); ++i) {
+      auto parent_tag = this->get_parent_layer(i).get_grid_tag();
+      if (i == 0) {
+        tag = parent_tag;
+      }
+      if (tag != parent_tag) {
+        tag = -1;
+        break;
+      }
+    }
+    if (tag < 0) {
+      tag = 0;
+    }
   }
   if (tag < 0 || tag >= static_cast<int>(grids.size())) {
     LBANN_ERROR(
@@ -534,6 +547,7 @@ setup_matrices(
       "(grid tag ",tag,", ",
       grids.size()," grids available)");
   }
+  this->set_grid_tag(tag);
   const El::Grid& grid = *grids[tag];
 
   auto childs = get_child_layers();
