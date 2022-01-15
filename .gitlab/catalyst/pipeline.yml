@@ -24,7 +24,7 @@
 ## permissions and limitations under the license.
 ################################################################################
 
-# This is the testing pipeline for the Pascal cluster at LLNL. This
+# This is the testing pipeline for the Catalyst cluster at LLNL. This
 # cluster builds the LBANN applications and libraries using a single
 # compiler toolchain and then runs a collection of tests. Testing
 # output is in JUnit format and parsed by the pipeline for web
@@ -38,18 +38,18 @@ stages:
 
 allocate lc resources:
   stage: allocate
-  extends: .pascal common
+  extends: .catalyst common
   variables:
     GIT_STRATEGY: none
   script:
     - echo "== ACQUIRING SLURM RESOURCES =="
-    - salloc --exclusive -N 1 -p pvis -t 120 --no-shell -J ${JOB_NAME} --qos=standby
+    - salloc --exclusive -N 1 -p pdebug -t 120 --no-shell -J ${JOB_NAME}
   timeout: 6h
 
 build and install:
   extends:
     - .uses spack
-    - .pascal common
+    - .catalyst common
   stage: build
   artifacts:
     paths:
@@ -58,15 +58,14 @@ build and install:
   script:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
-    - |
-      srun --jobid=${JOB_ID} -N 1 -t 120 ./scripts/build_lbann.sh -d \
-      -l ${SPACK_ENV_NAME} --test --clean-build -j 74 -- \
+    - srun --jobid=${JOB_ID} -N 1 -t 120 ./scripts/build_lbann.sh -d
+      -l ${SPACK_ENV_NAME} --test --clean-build -j 74 --
       +deterministic +vision +numpy ${SPACK_SPECS}
 
 # run_tests:
 #   extends:
 #     - .uses spack
-#     - .pascal common
+#     - .catalyst common
 #   stage: test
 #   dependencies:
 #     - build_lib_and_tests
@@ -83,7 +82,7 @@ build and install:
 
 release_allocation:
   stage: deallocate
-  extends: .pascal common
+  extends: .catalyst common
   variables:
     GIT_STRATEGY: none
   when: always
@@ -96,12 +95,12 @@ release_allocation:
 # access.
 .uses spack:
   before_script:
-    - source ${HOME}/spack_repos/spack_pascal.git/share/spack/setup-env.sh
+    - source ${HOME}/spack_repos/spack_catalyst.git/share/spack/setup-env.sh
 
-.pascal common:
+.catalyst common:
   variables:
     # Just the obvious identifier. Which specific node doesn't matter.
-    SYSTEM_NAME: pascal
+    SYSTEM_NAME: catalyst
 
     # This is based on the assumption that each runner will only ever
     # be able to run one pipeline on a given cluster at one time.
@@ -109,7 +108,7 @@ release_allocation:
 
     # These are system-specific specs that should be forwarded to the
     # build script
-    SPACK_SPECS: "+cuda +half +fft"
+    SPACK_SPECS: "+onednn +half +fft"
 
     # This variable is the name used to identify the job in the Slurm
     # queue. We need this to be able to access the correct jobid.
@@ -118,5 +117,5 @@ release_allocation:
     # This is needed to ensure that we run as lbannusr.
     LLNL_SERVICE_USER: lbannusr
   tags:
-    - pascal
+    - catalyst
     - shell
