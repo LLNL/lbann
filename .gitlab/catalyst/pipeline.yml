@@ -33,9 +33,14 @@
 stages:
   - allocate
   - build
-  # - test
+  - test
   - deallocate
 
+# The purpose of this job is simply to allocate some nodes for the
+# pipeline to utilize. The trick here is JOB_NAME. Later on, we will
+# extract the job ID from the SLURM queue using this name. It will be
+# unique to this pipeline and therefore shared across all jobs in this
+# pipeline.
 allocate lc resources:
   stage: allocate
   extends: .catalyst common
@@ -43,13 +48,18 @@ allocate lc resources:
     GIT_STRATEGY: none
   script:
     - echo "== ACQUIRING SLURM RESOURCES =="
-    - salloc --exclusive -N 1 -p pdebug -t 120 --no-shell -J ${JOB_NAME}
+    - salloc --exclusive -N 2 -p pbatch -t 120 --no-shell -J ${JOB_NAME}
   timeout: 6h
 
+# This replaces "test_compiler.py". This has the advantage that it
+# very explicitly approximates what a user would do to build LBANN.
+#
+# This job also establishes the Spack environment that we will
+# use. We'll use the same environment for the whole pipeline. This
+# should be fine as the test jobs will view the environment as
+# "read-only".
 build and install:
-  extends:
-    - .uses spack
-    - .catalyst common
+  extends: .catalyst common
   stage: build
   artifacts:
     paths:
@@ -62,12 +72,26 @@ build and install:
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - export BUILD_TASKS=$(($(nproc) + 2))
     - source ${HOME}/spack_repos/spack_${SYSTEM_NAME}.git/share/spack/setup-env.sh
-    - spack env
-    - srun --jobid=${JOB_ID} -N 1 -t 120 ./scripts/build_lbann.sh -d
+    - srun --jobid=${JOB_ID} -N 1 -t 20 ./scripts/build_lbann.sh -d
       -l ${SPACK_ENV_NAME} --test --clean-build -j ${BUILD_TASKS} --
       +deterministic +vision +numpy ${SPACK_SPECS}
 
-# This handles the call to
+# The next two jobs effectively replace the rest of "run.sh".
+#
+# There is a bit of a hack going on here: instead of passing
+# "--jobid=${JOB_ID}" to an srun command, we "export
+# SLURM_JOB_ID=${JOB_ID}" into the environment prior to launching the
+# test script. The reason for this is that the srun commands are
+# buried deep inside the Python infrastructure and it would be
+# nontrivial to push them all the way in (not so nontrivial that this
+# wouldn't be worth doing, but nontrivial enough that it should be its
+# own PR).
+#
+# This appears to be working with one main side effect: as written,
+# the integration tests and the unit tests will interfere with each
+# other. It's not clear if they are interleaving or overlapping. This
+# happens because the two jobs in the test stage will run
+# concurrently. We can change this if it's shown to be a problem.
 unit tests:
   extends:
     - .catalyst common
@@ -78,28 +102,49 @@ unit tests:
   script:
     - echo "== RUNNING PYTHON-BASED UNIT TESTS =="
     - echo "Testing $(which lbann)"
+    - export OMP_NUM_THREADS=10
+    - export SLURM_JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
+    - cd ci_test/unit_tests
+    - python3 -m pytest -s -vv --durations=0 --junitxml=results.xml
+  artifacts:
+    when: always
+    paths:
+      - ci_test/unit_tests/results.xml
+    reports:
+      junit: ci_test/unit_tests/results.xml
 
-# run_tests:
-#   extends:
-#     - .uses spack
-#     - .catalyst common
-#   stage: test
-#   dependencies:
-#     - build_lib_and_tests
-#   script:
-#     - echo "== RUNNING TESTS =="
-#     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
-#     - srun --jobid=${JOB_ID} -N 1 -n 1 -t 5 .gitlab/${SYSTEM_NAME}/test.sh
-#   artifacts:
-#     when: always
-#     # paths:
-#     #   - unittest-junit-${SYSTEM_NAME}.xml
-#     reports:
-#       junit: unittest-junit-${SYSTEM_NAME}.xml
+integration tests:
+  extends:
+    - .catalyst common
+    - .uses spack environment
+  stage: test
+  dependencies:
+    - build and install
+  script:
+    - echo "== RUNNING PYTHON-BASED INTEGRATION TESTS =="
+    - echo "Testing $(which lbann)"
+    - export OMP_NUM_THREADS=10
+    - export SLURM_JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
+    - cd ci_test/integration_tests
+    - python3 -m pytest -s -vv --durations=0 --junitxml=results.xml
+  artifacts:
+    when: always
+    paths:
+      - ci_test/integration_tests/results.xml
+    reports:
+      junit: ci_test/integration_tests/results.xml
 
+# The spack environment that we use is tied to the pipeline. Thus it
+# is meaningless after the pipeline dies, but it still needs to be
+# cleaned up. It is always run. The shell script verifies the
+# environment existence before trying to delete it. An environment
+# would not exist if the pipeline failed before a certain point in the
+# build stage (namely, when the build script creates the environment).
 remove spack environment:
   extends: .catalyst common
   stage: deallocate
+  variables:
+    GIT_STRATEGY: none
   when: always
   script:
     - source ${HOME}/spack_repos/spack_${SYSTEM_NAME}.git/share/spack/setup-env.sh
@@ -108,9 +153,10 @@ remove spack environment:
     - |
       if [[ -n "$(spack env list | grep -e ${FULL_ENV_NAME})" ]] ;
       then
-        spack env rm ${FULL_ENV_NAME}
+        spack env rm --yes-to-all ${FULL_ENV_NAME}
       fi
 
+# This frees the allocation we obtained in "allocate lc resources".
 release allocation:
   stage: deallocate
   extends: .catalyst common
@@ -120,21 +166,24 @@ release allocation:
   script:
     - echo "== RELEASING RESOURCES =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
-    - ([ -n "${JOB_ID}" ] && scancel ${JOB_ID})
+    - ([[ -n "${JOB_ID}" ]] && scancel ${JOB_ID})
 
-# This should be extended by any job that needs the spack repository
-# access.
-.uses spack:
-  before_script:
-    - source ${HOME}/spack_repos/spack_catalyst.git/share/spack/setup-env.sh
-
-# This loads the spack shell integration (via ".uses spack") and
-# then loads the environment. This should only be used after the
-# build stage (i.e., in testing).
+# This loads the spack shell integration and then loads the
+# environment. Since this relies on the environment for this pipeline
+# existing, it should only be used after the build stage (i.e., in
+# testing).
 .uses spack environment:
   before_script:
     - source ${HOME}/spack_repos/spack_catalyst.git/share/spack/setup-env.sh
+    - export SPACK_ARCH=$(spack arch)
+    - export SPACK_ARCH_TARGET=$(spack arch -t)
+    - spack env activate lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
+    - spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
 
+# For simplicity, I have put the variables as well as the tags
+# here. The variables could just be top-level in the file (perhaps the
+# tags could be, too, but I'm not sure), but this makes extracting
+# them to another file easier down the road.
 .catalyst common:
   variables:
     # Just the obvious identifier. Which specific node doesn't matter.

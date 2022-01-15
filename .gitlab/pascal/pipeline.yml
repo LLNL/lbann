@@ -53,14 +53,16 @@ build and install:
   stage: build
   artifacts:
     paths:
-      - spack-build-*/*.txt
-      - spack-build-*/**/*.txt
+      - spack-*.txt
+      - spack-build-*/CMakeCache.txt
+      - spack-build-*/build.ninja
+      - spack-build-*/spack-*.txt
   script:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
-    - |
-      srun --jobid=${JOB_ID} -N 1 -t 120 ./scripts/build_lbann.sh -d \
-      -l ${SPACK_ENV_NAME} --test --clean-build -j 74 -- \
+    - export BUILD_TASKS=$(($(nproc) + 2))
+    - srun --jobid=${JOB_ID} -N 1 -t 120 ./scripts/build_lbann.sh -d \
+      -l ${SPACK_ENV_NAME} --test --clean-build -j ${BUILD_TASKS} -- \
       +deterministic +vision +numpy ${SPACK_SPECS}
 
 # run_tests:
