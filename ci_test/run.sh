@@ -1,9 +1,11 @@
 #!/bin/bash -l
 
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
+LBANN_DIR=$(git rev-parse --show-toplevel)
 
-echo "run.sh CLUSTER="
-echo $CLUSTER
+cd ${LBANN_DIR}/ci_test
+
+echo "${PWD}/run.sh CLUSTER=${CLUSTER}"
 
 PYTHON=python3
 
@@ -39,7 +41,6 @@ fi
 SPACK_VERSION=$(spack --version | sed 's/-.*//g')
 MIN_SPACK_VERSION=0.16.0
 
-LBANN_DIR=$(git rev-parse --show-toplevel)
 source ${LBANN_DIR}/scripts/utilities.sh
 
 compare_versions ${SPACK_VERSION} ${MIN_SPACK_VERSION}
@@ -62,11 +63,10 @@ $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
 # Find the correct module to load
 SPACK_ARCH=$(spack arch)
 SPACK_ARCH_TARGET=$(spack arch -t)
-BAMBOO_AGENT=${bamboo_agentId}
-SPACK_ENV_CMD="spack env activate -p lbann-bamboo-${BAMBOO_AGENT}-${SPACK_ARCH_TARGET}"
+SPACK_ENV_CMD="spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}"
 echo ${SPACK_ENV_CMD} | tee -a ${LOG}
 ${SPACK_ENV_CMD}
-SPACK_LOAD_CMD="spack load lbann@bamboo-${BAMBOO_AGENT}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}"
+SPACK_LOAD_CMD="spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}"
 echo ${SPACK_LOAD_CMD} | tee -a ${LOG}
 ${SPACK_LOAD_CMD}
 echo "Testing $(which lbann)"

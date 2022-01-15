@@ -43,20 +43,20 @@ run-catalyst-testing:
 #     strategy: depend
 #     include: .gitlab/corona/pipeline.yml
 
-# run-lassen-testing:
-#   stage: run-all-clusters
-#   trigger:
-#     strategy: depend
-#     include: .gitlab/lassen/pipeline.yml
+run-lassen-testing:
+  stage: run-all-clusters
+  trigger:
+    strategy: depend
+    include: .gitlab/lassen/pipeline.yml
 
-# run-pascal-testing:
-#   stage: run-all-clusters
-#   trigger:
-#     strategy: depend
-#     include: .gitlab/pascal/pipeline.yml
+run-pascal-testing:
+  stage: run-all-clusters
+  trigger:
+    strategy: depend
+    include: .gitlab/pascal/pipeline.yml
 
-# run-ray-testing:
-#   stage: run-all-clusters
-#   trigger:
-#     strategy: depend
-#     include: .gitlab/ray/pipeline.yml
+run-ray-testing:
+  stage: run-all-clusters
+  trigger:
+    strategy: depend
+    include: .gitlab/ray/pipeline.yml

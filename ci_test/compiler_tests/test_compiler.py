@@ -6,14 +6,14 @@ import os, re
 import shutil
 
 def test_compiler_build_script(cluster, dirname):
-    bamboo_base_dir = os.path.join(dirname, 'bamboo', 'compiler_tests')
-    output_file_name = os.path.join(bamboo_base_dir, 'output', 'build_script_output.txt')
-    error_file_name = os.path.join(bamboo_base_dir, 'error', 'build_script_error.txt')
+    test_base_dir = os.path.join(dirname, 'ci_test', 'compiler_tests')
+    output_file_name = os.path.join(test_base_dir, 'output', 'build_script_output.txt')
+    error_file_name = os.path.join(test_base_dir, 'error', 'build_script_error.txt')
 
     # Get environment variables
-    BAMBOO_AGENT = os.getenv('bamboo_agentId')
+    ENV_NAME = os.getenv('SPACK_ENV_NAME')
 
-    common_cmd = '%s/scripts/build_lbann.sh -d -l bamboo-%s --test --clean-build -j $(($(nproc)+2)) -- +deterministic +vision +numpy' % (dirname, BAMBOO_AGENT)
+    common_cmd = '%s/scripts/build_lbann.sh -d -l %s --test --clean-build -j $(($(nproc)+2)) -- +deterministic +vision +numpy' % (dirname, ENV_NAME)
     if cluster in ['lassen', 'pascal', 'ray']:
         command = '%s +cuda +half +fft > %s 2> %s' % (common_cmd, output_file_name, error_file_name)
     elif cluster in ['corona']:
@@ -27,7 +27,7 @@ def test_compiler_build_script(cluster, dirname):
 
     return_code = os.system(command)
 
-    artifact_dir = os.path.join(bamboo_base_dir, 'output')
+    artifact_dir = os.path.join(test_base_dir, 'output')
     with os.scandir(dirname) as it:
         for entry in it:
             if entry.is_file() and re.match(r'spack-.*txt', entry.name):
@@ -36,4 +36,3 @@ def test_compiler_build_script(cluster, dirname):
                 shutil.copyfile(entry.path, os.path.join(artifact_dir, new_file_name))
 
     tools.assert_success(return_code, error_file_name)
-
