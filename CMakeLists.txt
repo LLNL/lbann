@@ -538,7 +538,6 @@ target_include_directories(lbann PUBLIC
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
-# Five years later, here we are. :D
 target_compile_features(lbann PUBLIC cxx_std_17)
 
 target_link_libraries(lbann PUBLIC LbannProto)
