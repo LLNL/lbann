@@ -13,5 +13,5 @@ find_program(SPHINX_EXECUTABLE sphinx-build)
 
 # Standard handling of the package arguments
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(SPHINX
+find_package_handle_standard_args(Sphinx
   DEFAULT_MSG SPHINX_EXECUTABLE)

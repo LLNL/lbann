@@ -14,5 +14,5 @@ find_program(BREATHE_EXECUTABLE breathe-apidoc)
 
 # Standard handling of the package arguments
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(BREATHE
+find_package_handle_standard_args(Breathe
   DEFAULT_MSG BREATHE_EXECUTABLE)

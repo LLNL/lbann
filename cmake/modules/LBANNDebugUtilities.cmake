@@ -94,10 +94,18 @@ function (lbann_remove_default_include_paths_from_list OUTPUT_VAR INCL_LIST)
 endfunction ()
 
 function (lbann_remove_default_include_paths_from_target TARGET)
-  get_target_property(_target_type ${TARGET} TYPE)
+  get_target_property(_aliased ${TARGET} ALIASED_TARGET)
+  if (_aliased)
+    return ()
+  endif ()
 
+  get_target_property(_target_type ${TARGET} TYPE)
   set(_interface_prop_names
     INTERFACE_INCLUDE_DIRECTORIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
+
+  if ("${_target_type}" STREQUAL "ALIAS")
+    return ()
+  endif ()
 
   # If it's a "real" target, INCLUDE_DIRECTORIES is a valid property
   if (NOT ("${_target_type}" STREQUAL "INTERFACE_LIBRARY"))
