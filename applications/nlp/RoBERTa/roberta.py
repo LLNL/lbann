@@ -583,7 +583,7 @@ class RobertaModel(lbann.modules.Module):
             inputs_embeds=inputs_embeds,
         )
         embedding_output = lbann.Reshape(
-            embedding_output, dims=str_list(self.input_shape + (768,))
+            embedding_output, dims=str_list(self.input_shape + (self.hidden_size,))
         )
         encoder_output = self.encoder(
             embedding_output,
