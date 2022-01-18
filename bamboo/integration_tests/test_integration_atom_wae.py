@@ -25,8 +25,8 @@ num_nodes = 2
 num_decoder_layers = 3
 
 # Reconstruction loss
-expected_train_recon_range = (0.500, 0.521)
-expected_test_recon_range = (0.500, 0.521)
+expected_train_recon_range = (0.500, 0.525)
+expected_test_recon_range = (0.500, 0.525)
 
 # Average mini-batch time (in sec) for each LC system
 # Note that run times are with LBANN_DETERMINISTIC set
