@@ -162,6 +162,22 @@ class RobertaEmbeddings(lbann.modules.Module):
         embeddings = lbann.Dropout(embeddings, keep_prob=self.hidden_dropout_prob)
         return embeddings
 
+    def create_position_ids_from_inputs_embeds(self, input_embeds):
+        sequence_length = self.input_shape[1]
+        position_ids = range(
+            self.padding_idx + 1, sequence_length + self.padding_idx + 1
+        )
+        position_ids = lbann.WeightsLayer(
+            weights=lbann.Weights(
+                initializer=lbann.ValueInitializer(values=str_list(position_ids))
+            ),
+            dims=str_list([sequence_length]),
+        )
+        position_ids = lbann.Tessellate(
+            position_ids, dims=str_list(self.input_shape[:-1])
+        )
+        return position_ids
+
 
 class RobertaEncoder(lbann.modules.Module):
     def __init__(self, config, name, load_weights=True):
