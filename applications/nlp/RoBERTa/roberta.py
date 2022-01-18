@@ -23,12 +23,13 @@ def create_position_ids_from_input_ids(
 ):
     padding_idx = lbann.Constant(value=padding_idx, num_neurons=str_list(input_shape))
     mask = lbann.NotEqual(input_ids, padding_idx)
-    incremental_indices = lbann.modules.Cumsum(mask, input_shape, axis=1)
-    past_key_values_length = lbann.Constant(
-        value=past_key_values_length, num_neurons=str_list(input_shape)
+    incremental_indices = lbann.Multiply(
+        lbann.AddConstant(
+            lbann.modules.Cumsum(mask, input_shape, axis=1),
+            constant=past_key_values_length,
+        ),
+        mask,
     )
-    incremental_indices = lbann.Add(incremental_indices, past_key_values_length)
-    incremental_indices = lbann.Multiply(incremental_indices, mask)
     incremental_indices = lbann.Add(incremental_indices, padding_idx)
 
     return incremental_indices
