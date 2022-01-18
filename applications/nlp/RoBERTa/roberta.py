@@ -170,6 +170,7 @@ class RobertaEmbeddings(lbann.modules.Module):
         position_ids = lbann.WeightsLayer(
             weights=lbann.Weights(
                 initializer=lbann.ValueInitializer(values=str_list(position_ids))
+                optimizer=lbann.NoOptimizer(),
             ),
             dims=str_list([sequence_length]),
         )
