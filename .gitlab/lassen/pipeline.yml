@@ -56,7 +56,7 @@ build and test everything:
       - spack-build-*/CMakeCache.txt
       - spack-build-*/build.ninja
       - spack-build-*/spack-*.txt
-      - ci_test/**/results.xml
+      - ci_test/**/*.xml
       - ci_test/compiler_tests/**/*.txt
     reports:
       junit: ci_test/**/results.xml

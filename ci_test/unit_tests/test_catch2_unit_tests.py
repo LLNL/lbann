@@ -24,8 +24,11 @@ def get_system_mpi_launch(cluster):
     else: # Corona and Catalyst
         return ['srun', '-N2', '--ntasks-per-node=4']
 
+# Notice that these tests will automatically skip if the executable
+# doesn't exist. Since we do not save the testing executable as a
+# GitLab CI artifact on Catalyst, Corona, or Pascal, this should only
+# run on Ray and Lassen in GitLab CI testing pipelines.
 def test_run_sequential_catch_tests(cluster, dirname):
-    pytest.skip("Catch testing not yet enabled.")
     output_dir = os.path.join(dirname, 'ci_test', 'unit_tests')
     build_dir = hack_find_spack_build_dir(dirname)
     seq_catch_exe = os.path.join(build_dir, 'unit_test', 'seq-catch-tests')
@@ -41,7 +44,6 @@ def test_run_sequential_catch_tests(cluster, dirname):
     tools.assert_success(output.returncode, seq_output_file)
 
 def test_run_parallel_catch_tests(cluster, dirname):
-    pytest.skip("Catch testing not yet enabled.")
     output_dir = os.path.join(dirname, 'ci_test', 'unit_tests')
     build_dir = hack_find_spack_build_dir(dirname)
     mpi_catch_exe = os.path.join(build_dir, 'unit_test', 'mpi-catch-tests')
@@ -57,7 +59,6 @@ def test_run_parallel_catch_tests(cluster, dirname):
     tools.assert_success(output.returncode, mpi_output_file)
 
 def test_run_parallel_filesystem_catch_tests(cluster, dirname):
-    pytest.skip("Catch testing not yet enabled.")
     output_dir = os.path.join(dirname, 'ci_test', 'unit_tests')
     build_dir = hack_find_spack_build_dir(dirname)
     mpi_catch_exe = os.path.join(build_dir, 'unit_test', 'mpi-catch-tests')

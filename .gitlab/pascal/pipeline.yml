@@ -59,6 +59,8 @@ build and install:
       - spack-build-*/CMakeCache.txt
       - spack-build-*/build.ninja
       - spack-build-*/spack-*.txt
+    reports:
+      junit: spack-build-*/*.xml
   script:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
@@ -67,6 +69,9 @@ build and install:
     - srun --jobid=${JOB_ID} -N 1 -t 20 ./scripts/build_lbann.sh -d
       -l ${SPACK_ENV_NAME} --test --clean-build -j ${BUILD_TASKS} --
       +deterministic +vision +numpy ${SPACK_SPECS}
+    - export TEST_TASKS_PER_NODE=2
+    - export TEST_MPIBIND_FLAG="--mpibind=off"
+    - .gitlab/common/run-catch-tests.sh
 
 # Run the Python-based unit tests.
 unit tests:
