@@ -169,11 +169,12 @@ class RobertaEmbeddings(lbann.modules.Module):
         )
         position_ids = lbann.WeightsLayer(
             weights=lbann.Weights(
-                initializer=lbann.ValueInitializer(values=str_list(position_ids))
+                initializer=lbann.ValueInitializer(values=str_list(position_ids)),
                 optimizer=lbann.NoOptimizer(),
             ),
             dims=str_list([sequence_length]),
         )
+        position_ids = lbann.Reshape(position_ids, dims=str_list([1, sequence_length]))
         position_ids = lbann.Tessellate(
             position_ids, dims=str_list(self.input_shape[:-1])
         )
