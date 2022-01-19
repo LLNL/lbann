@@ -53,7 +53,7 @@ def generate_operator_layer(operator_class):
                 device = lbann.DeviceAllocation.CPU
             elif self.device.lower() == 'gpu':
                 device = lbann.DeviceAllocation.GPU
-        else:
+        elif self.device is not None:
             raise TypeError('Unknown type for field device ' + str(type(device)))
 
         # Configure operators to match layer
