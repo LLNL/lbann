@@ -51,10 +51,10 @@ Export ONNX Python Example
 
 .. code-block:: python
 
-    # Pass parameters to callback
-    export_onnx = lbann.CallbackExportOnnx(
-                    print_debug_string=True,
-                    output_file="model.onnx")
+   # Pass parameters to callback
+   export_onnx = lbann.CallbackExportOnnx(
+                   print_debug_string=True,
+                   output_file="model.onnx")
 
 Prototext (Advanced)
 ----------------------
