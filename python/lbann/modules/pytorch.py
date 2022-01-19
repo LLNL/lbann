@@ -38,9 +38,12 @@ def PytorchLinear(x, input_shape, hidden_size, weights=[], name="", return_dims=
         new_in_shape = (np.prod(input_shape[:-1]), input_shape[-1])
         x = lbann.Reshape(x, dims=str_list(new_in_shape))
 
-    y = lbann.ChannelwiseFullyConnected(
-        x, output_channel_dims=[hidden_size], weights=weights, name=name
-    )
+    if len(input_shape) == 1:
+        y = lbann.FullyConnected(x, num_neurons=hidden_size, weights=weights, name=name)
+    else:
+        y = lbann.ChannelwiseFullyConnected(
+            x, output_channel_dims=[hidden_size], weights=weights, name=name
+        )
 
     if need_reshape:
         new_out_shape = input_shape[:-1] + (hidden_size,)
