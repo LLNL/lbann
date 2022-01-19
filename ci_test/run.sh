@@ -59,7 +59,8 @@ echo "Task: Cleaning"
 
 echo "Task: Compiler Tests"
 cd compiler_tests
-$PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
+$PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml || exit 1
+
 # Find the correct module to load
 SPACK_ARCH=$(spack arch)
 SPACK_ARCH_TARGET=$(spack arch -t)
@@ -72,18 +73,25 @@ ${SPACK_LOAD_CMD}
 echo "Testing $(which lbann)"
 cd ..
 
+# These tests are "allowed" to fail inside the script. That is, the
+# unit tests should be run even if these fail. The status is cached
+# for now.
 echo "Task: Integration Tests"
 cd integration_tests
 if [ ${WEEKLY} -ne 0 ]; then
     $PYTHON -m pytest -s -vv --durations=0 --weekly --junitxml=results.xml
+    status=$?
 else
     $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
+    status=$?
 fi
 cd ..
 
 echo "Task: Unit Tests"
 cd unit_tests
 OMP_NUM_THREADS=10 $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
+status=$(($status + $?))
 cd ..
 
 echo "Task: Finished"
+exit $status
