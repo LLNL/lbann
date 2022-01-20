@@ -69,8 +69,6 @@ build and install:
       - spack-build-*/spack-*.txt
       - spack-build-*/*.xml
       - spack-build-*/catch-tests-failed.txt
-    reports:
-      junit: spack-build-*/*.xml
   script:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
@@ -162,6 +160,9 @@ check catch2 tests:
     - build and install
   script:
     - ([[ $(find . -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
+  artifacts:
+    reports:
+      junit: spack-build-*/*.xml
 
 # The spack environment that we use is tied to the pipeline. Thus it
 # is meaningless after the pipeline dies, but it still needs to be
