@@ -59,6 +59,8 @@ build and install:
       - spack-build-*/CMakeCache.txt
       - spack-build-*/build.ninja
       - spack-build-*/spack-*.txt
+      - spack-build-*/*.xml
+      - spack-build-*/catch-tests-failed.txt
     reports:
       junit: spack-build-*/*.xml
   script:
@@ -116,6 +118,18 @@ integration tests:
       - ci_test/integration_tests/results.xml
     reports:
       junit: ci_test/integration_tests/results.xml
+
+# This is a dummy job that checks the Catch2 testing.
+check catch2 tests:
+  variables:
+    GIT_STRATEGY: none
+  extends:
+    - .corona common
+  stage: test
+  dependencies:
+    - build and install
+  script:
+    - ([[ $(find . -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
 
 # Cleanup the pipeline's Spack environment.
 remove spack environment:

@@ -121,7 +121,7 @@ def get_command(cluster,
         # Create allocate command
         command_allocate = ''
         # Allocate nodes only if we don't already have an allocation.
-        if os.getenv('SLURM_JOB_NUM_NODES') is None:
+        if os.getenv('SLURM_JOB_ID') is None:
             print('Allocating slurm nodes.')
             command_allocate = 'salloc'
             option_num_nodes = ''

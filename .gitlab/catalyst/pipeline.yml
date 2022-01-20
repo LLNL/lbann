@@ -68,6 +68,7 @@ build and install:
       - spack-build-*/build.ninja
       - spack-build-*/spack-*.txt
       - spack-build-*/*.xml
+      - spack-build-*/catch-tests-failed.txt
     reports:
       junit: spack-build-*/*.xml
   script:
@@ -139,6 +140,28 @@ integration tests:
       - ci_test/integration_tests/results.xml
     reports:
       junit: ci_test/integration_tests/results.xml
+
+# This is a dummy job that checks the output of the Catch2
+# testing. This is one of the gotchas of GitLab: The Catch2 test
+# executables are artifacts of the build procedure, but we don't save
+# the entire build as artifacts (it would be very large and there's no
+# need since the rest of the tests run on the installed targets (for
+# better or worse)). For maximum clarity from the web interface, we
+# write a file when the Catch tests fail but then return success from
+# the script that runs them. This means that the build job will fail
+# iff the build fails. This job will be marked as "failed" if any of
+# the catch tests failed, and the pytest-based unit/integration tests
+# will run any time the build succeeds.
+check catch2 tests:
+  variables:
+    GIT_STRATEGY: none
+  extends:
+    - .catalyst common
+  stage: test
+  dependencies:
+    - build and install
+  script:
+    - ([[ $(find . -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
 
 # The spack environment that we use is tied to the pipeline. Thus it
 # is meaningless after the pipeline dies, but it still needs to be
