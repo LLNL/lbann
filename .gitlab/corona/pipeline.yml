@@ -59,8 +59,7 @@ build and install:
       - spack-build-*/CMakeCache.txt
       - spack-build-*/build.ninja
       - spack-build-*/spack-*.txt
-      - spack-build-*/*.xml
-      - spack-build-*/catch-tests-failed.txt
+      - ${RESULTS_DIR}/*
   script:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
@@ -130,7 +129,7 @@ check catch2 tests:
     - ([[ $(find . -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
   artifacts:
     reports:
-      junit: spack-build-*/*.xml
+      junit: ${RESULTS_DIR}/*.xml
 
 # Cleanup the pipeline's Spack environment.
 remove spack environment:
@@ -191,6 +190,10 @@ release allocation:
 
     # This is needed to ensure that we run as lbannusr.
     LLNL_SERVICE_USER: lbannusr
+
+    # Catch2 output.
+    RESULTS_DIR: results-${CI_PIPELINE_ID}
+
   tags:
     - corona
     - shell

@@ -9,6 +9,14 @@ SPACK_ARCH_TARGET=$(spack arch -t)
 spack env activate lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
 spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
 
+# Configure the output directory
+OUTPUT_DIR=${CI_PROJECT_DIR}/${RESULTS_DIR}
+if [[ -d ${OUTPUT_DIR} ]];
+then
+    rm -rf ${OUTPUT_DIR}
+fi
+mkdir -p ${OUTPUT_DIR}
+
 FAILED_JOBS=""
 
 SPACK_BUILD_DIR=$(find . -iname "spack-build-*" -type d | head -n 1)
@@ -16,7 +24,7 @@ cd ${SPACK_BUILD_DIR}
 srun --jobid=${JOB_ID} -N 1 -n 1 -t 5 \
      ./unit_test/seq-catch-tests \
      -r JUnit \
-     -o seq-catch-results.xml
+     -o ${OUTPUT_DIR}/seq-catch-results.xml
 if [[ $? -ne 0 ]]; then
     FAILED_JOBS+=" seq"
 fi
@@ -27,7 +35,7 @@ srun --jobid=${JOB_ID} \
      -t 5 ${TEST_MPIBIND_FLAG} \
      ./unit_test/mpi-catch-tests \
      -r JUnit \
-     -o "mpi-catch-results-rank=%r-size=%s.xml"
+     -o "${OUTPUT_DIR}/mpi-catch-results-rank=%r-size=%s.xml"
 if [[ $? -ne 0 ]]; then
     FAILED_JOBS+=" mpi"
 fi
@@ -38,7 +46,7 @@ srun --jobid=${JOB_ID} \
      -t 5 ${TEST_MPIBIND_FLAG} \
      ./unit_test/mpi-catch-tests "[filesystem]" \
      -r JUnit \
-     -o "mpi-catch-filesystem-results-rank=%r-size=%s.xml"
+     -o "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
 if [[ $? -ne 0 ]];
 then
     FAILED_JOBS+=" mpi-filesystem"
@@ -49,7 +57,7 @@ fi
 # someone would look at it.
 if [[ -n "${FAILED_JOBS}" ]];
 then
-    echo "Some Catch2 tests failed:${FAILED_JOBS}" > catch-tests-failed.txt
+    echo "Some Catch2 tests failed:${FAILED_JOBS}" > ${OUTPUT_DIR}/catch-tests-failed.txt
 fi
 
 # Return "success" so that the pytest-based testing can run.

@@ -67,8 +67,7 @@ build and install:
       - spack-build-*/CMakeCache.txt
       - spack-build-*/build.ninja
       - spack-build-*/spack-*.txt
-      - spack-build-*/*.xml
-      - spack-build-*/catch-tests-failed.txt
+      - ${RESULTS_DIR}/*
   script:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
@@ -151,18 +150,16 @@ integration tests:
 # the catch tests failed, and the pytest-based unit/integration tests
 # will run any time the build succeeds.
 check catch2 tests:
-  variables:
-    GIT_STRATEGY: none
   extends:
     - .catalyst common
   stage: test
   dependencies:
     - build and install
   script:
-    - ([[ $(find . -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
+    - ([[ $(find ${RESULTS_DIR} -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
   artifacts:
     reports:
-      junit: spack-build-*/*.xml
+      junit: ${RESULTS_DIR}/*.xml
 
 # The spack environment that we use is tied to the pipeline. Thus it
 # is meaningless after the pipeline dies, but it still needs to be
@@ -234,6 +231,26 @@ release allocation:
 
     # This is needed to ensure that we run as lbannusr.
     LLNL_SERVICE_USER: lbannusr
+
+    # This directory is a pipeline-unique dumping ground for any
+    # output files that would be hard to track down later. (In
+    # particular, I ran a few tests where some stages had multiple
+    # "spack-build-*" directories, so they were reporting dozens of
+    # xml files of Catch2 output (there should be 17 -- 1 seq, 8 mpi,
+    # 8 mpi-fs). Since the "*" there is a hash that's not computable
+    # in this file, we cannot specify it correctly in an "artifacts"
+    # section. So we just create our own results cache with known
+    # name.
+    #
+    # NOTE: directories specified in a pipeline file are relative to
+    # ${CI_PROJECT_DIR}. Therefore, shell scripts should be sure of
+    # their working directory before attempting to use this as a
+    # relative path. Alternatively, they should prefix
+    # ${CI_PROJECT_DIR} and use absolute paths (absolute paths are not
+    # allowed in pipeline files either, which is why this is not an
+    # absolute path).
+    RESULTS_DIR: results-${CI_PIPELINE_ID}
+
   tags:
     - catalyst
     - shell
