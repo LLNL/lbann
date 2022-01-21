@@ -202,7 +202,7 @@ release allocation:
 # testing).
 .uses spack environment:
   before_script:
-    - source ${HOME}/spack_repos/spack_catalyst.git/share/spack/setup-env.sh
+    - source ${HOME}/spack_repos/spack_${SYSTEM_NAME}.git/share/spack/setup-env.sh
     - export SPACK_ARCH=$(spack arch)
     - export SPACK_ARCH_TARGET=$(spack arch -t)
     - spack env activate lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
