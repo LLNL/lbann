@@ -11,8 +11,8 @@ def skeleton_checkpoint_lenet_shared(cluster, dir_name,
     if data_reader_percent is None:
         data_reader_percent = 0.01
     # No checkpointing, printing weights to files.
-    output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_shared_no_checkpoint_output.txt' % (dir_name)
-    error_file_name  = '%s/bamboo/unit_tests/error/checkpoint_lenet_shared_no_checkpoint_error.txt' % (dir_name)
+    output_file_name = '%s/ci_test/unit_tests/output/checkpoint_lenet_shared_no_checkpoint_output.txt' % (dir_name)
+    error_file_name  = '%s/ci_test/unit_tests/error/checkpoint_lenet_shared_no_checkpoint_error.txt' % (dir_name)
     os.system('rm -rf ckpt_lenet_shared && mkdir ckpt_lenet_shared')
     no_ckpt_dir = 'ckpt_lenet_shared/no_ckpt'
     command = tools.get_command(
@@ -27,8 +27,8 @@ def skeleton_checkpoint_lenet_shared(cluster, dir_name,
     tools.assert_success(return_code_nockpt, error_file_name)
 
     # Run to checkpoint, printing weights to files.
-    output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_shared_checkpoint_output.txt' % (dir_name)
-    error_file_name  = '%s/bamboo/unit_tests/error/checkpoint_lenet_shared_checkpoint_error.txt' % (dir_name)
+    output_file_name = '%s/ci_test/unit_tests/output/checkpoint_lenet_shared_checkpoint_output.txt' % (dir_name)
+    error_file_name  = '%s/ci_test/unit_tests/error/checkpoint_lenet_shared_checkpoint_error.txt' % (dir_name)
     ckpt_dir = 'ckpt_lenet_shared/ckpt'
     command = tools.get_command(
         cluster=cluster, num_nodes=1, num_processes=2,
@@ -42,8 +42,8 @@ def skeleton_checkpoint_lenet_shared(cluster, dir_name,
     tools.assert_success(return_code_ckpt_1, error_file_name)
 
     # Pick up from checkpoint, printing weights to files.
-    output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_shared_restart_output.txt' % (dir_name)
-    error_file_name  = '%s/bamboo/unit_tests/error/checkpoint_lenet_shared_restart_error.txt' % (dir_name)
+    output_file_name = '%s/ci_test/unit_tests/output/checkpoint_lenet_shared_restart_output.txt' % (dir_name)
+    error_file_name  = '%s/ci_test/unit_tests/error/checkpoint_lenet_shared_restart_error.txt' % (dir_name)
     command = tools.get_command(
         cluster=cluster, num_nodes=1, num_processes=2,
         dir_name=dir_name,
@@ -64,7 +64,7 @@ def skeleton_checkpoint_lenet_shared(cluster, dir_name,
         print()
         for d in diffs:
             print(d)
-        path_prefix = '{d}/bamboo/unit_tests'.format(d=dir_name)
+        path_prefix = '{d}/ci_test/unit_tests'.format(d=dir_name)
         raise AssertionError(
             'Compare {ncd} and {cd} in {p}'.format(
                 ncd=no_ckpt_dir, cd=ckpt_dir, p=path_prefix))
@@ -77,8 +77,8 @@ def skeleton_checkpoint_lenet_distributed(cluster, dir_name,
         data_reader_percent = 0.01
 
     # No checkpointing, printing weights to files.
-    output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_distributed_no_checkpoint_output.txt' % (dir_name)
-    error_file_name  = '%s/bamboo/unit_tests/error/checkpoint_lenet_distributed_no_checkpoint_error.txt' % (dir_name)
+    output_file_name = '%s/ci_test/unit_tests/output/checkpoint_lenet_distributed_no_checkpoint_output.txt' % (dir_name)
+    error_file_name  = '%s/ci_test/unit_tests/error/checkpoint_lenet_distributed_no_checkpoint_error.txt' % (dir_name)
     os.system('rm -rf ckpt_lenet_distributed && mkdir ckpt_lenet_distributed')
     no_ckpt_dir = 'ckpt_lenet_distributed/no_ckpt'
     command = tools.get_command(
@@ -93,8 +93,8 @@ def skeleton_checkpoint_lenet_distributed(cluster, dir_name,
     tools.assert_success(return_code_nockpt, error_file_name)
 
     # Run to checkpoint, printing weights to files.
-    output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_distributed_checkpoint_output.txt' % (dir_name)
-    error_file_name  = '%s/bamboo/unit_tests/error/checkpoint_lenet_distributed_checkpoint_error.txt' % (dir_name)
+    output_file_name = '%s/ci_test/unit_tests/output/checkpoint_lenet_distributed_checkpoint_output.txt' % (dir_name)
+    error_file_name  = '%s/ci_test/unit_tests/error/checkpoint_lenet_distributed_checkpoint_error.txt' % (dir_name)
     ckpt_dir = 'ckpt_lenet_distributed/ckpt'
     command = tools.get_command(
         cluster=cluster, num_nodes=1, num_processes=2,
@@ -108,8 +108,8 @@ def skeleton_checkpoint_lenet_distributed(cluster, dir_name,
     tools.assert_success(return_code_ckpt_1, error_file_name)
 
     # Pick up from checkpoint, printing weights to files.
-    output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_distributed_restart_output.txt' % (dir_name)
-    error_file_name  = '%s/bamboo/unit_tests/error/checkpoint_lenet_distributed_restart_error.txt' % (dir_name)
+    output_file_name = '%s/ci_test/unit_tests/output/checkpoint_lenet_distributed_restart_output.txt' % (dir_name)
+    error_file_name  = '%s/ci_test/unit_tests/error/checkpoint_lenet_distributed_restart_error.txt' % (dir_name)
     command = tools.get_command(
         cluster=cluster, num_nodes=1, num_processes=2,
         dir_name=dir_name,
@@ -130,7 +130,7 @@ def skeleton_checkpoint_lenet_distributed(cluster, dir_name,
         print()
         for d in diffs:
             print(d)
-        path_prefix = '{d}/bamboo/unit_tests'.format(d=dir_name)
+        path_prefix = '{d}/ci_test/unit_tests'.format(d=dir_name)
         raise AssertionError(
             'Compare {ncd} and {cd} in {p}'.format(
                 ncd=no_ckpt_dir, cd=ckpt_dir, p=path_prefix))

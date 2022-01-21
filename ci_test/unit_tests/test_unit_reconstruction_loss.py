@@ -7,8 +7,8 @@ import tools
 
 def skeleton_jag_reconstruction_loss(cluster, dir_name,
                                      weekly, data_reader_percent):
-    output_file_name = '%s/bamboo/unit_tests/output/jag_reconstruction_loss_output.txt' % (dir_name)
-    error_file_name  = '%s/bamboo/unit_tests/error/jag_reconstruction_loss_error.txt' % (dir_name)
+    output_file_name = '%s/ci_test/unit_tests/output/jag_reconstruction_loss_output.txt' % (dir_name)
+    error_file_name  = '%s/ci_test/unit_tests/error/jag_reconstruction_loss_error.txt' % (dir_name)
     command = tools.get_command(
         cluster=cluster,
         num_nodes=2,

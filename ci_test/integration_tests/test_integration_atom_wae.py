@@ -61,7 +61,7 @@ def setup_experiment(lbann):
     trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model(lbann)
 
-    #see: <LBANN>bamboo/common_python/data/atom/data_reader_mpro.prototext
+    #see: <LBANN>ci_test/common_python/data/atom/data_reader_mpro.prototext
     #     for data_reader prototext
     import data.atom
     data_reader = data.atom.make_data_reader(lbann)

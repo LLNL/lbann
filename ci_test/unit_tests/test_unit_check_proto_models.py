@@ -66,8 +66,8 @@ def skeleton_models(cluster, dir_name,
                         ('conv_autoencoder' in file_name) or ('gan' in subdir):
                     print('Skipping %s because unpooling/noise is not implemented on gpu' % model_path)
                 else:
-                    output_file_name = '%s/bamboo/unit_tests/output/check_proto_models_%s_output.txt' % (dir_name, file_name)
-                    error_file_name = '%s/bamboo/unit_tests/error/check_proto_models_%s_error.txt' % (dir_name, file_name)
+                    output_file_name = '%s/ci_test/unit_tests/output/check_proto_models_%s_output.txt' % (dir_name, file_name)
+                    error_file_name = '%s/ci_test/unit_tests/error/check_proto_models_%s_error.txt' % (dir_name, file_name)
                     cmd = tools.get_command(
                         cluster=cluster,
                         num_nodes=node_count,

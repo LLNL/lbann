@@ -1,0 +1,97 @@
+################################################################################
+## Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+## Produced at the Lawrence Livermore National Laboratory.
+## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+##
+## LLNL-CODE-697807.
+## All rights reserved.
+##
+## This file is part of LBANN: Livermore Big Artificial Neural Network
+## Toolkit. For details, see http://software.llnl.gov/LBANN or
+## https://github.com/LLNL/LBANN.
+##
+## Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+## may not use this file except in compliance with the License.  You may
+## obtain a copy of the License at:
+##
+## http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+## implied. See the License for the specific language governing
+## permissions and limitations under the license.
+################################################################################
+
+# This is the testing pipeline for the Ray cluster at LLNL. This
+# cluster builds the LBANN applications and libraries using a single
+# compiler toolchain and then runs a collection of tests. Testing
+# output is in JUnit format and parsed by the pipeline for web
+# viewing.
+
+stages:
+  - everything
+  - cleanup
+
+# In contrast to the Catalyst pipeline, this will look much
+# simpler. There is only one functional stage and there's no fiddling
+# around with persistent allocations or anything like that. Plus, it
+# reuses some of the bamboo infrastructure (run.sh). On the downside,
+# it made me look at run.sh and remind me how badly we need to
+# refactor that file. So a little up, a little down.
+
+build and test everything:
+  extends: .ray common
+  stage: everything
+  script:
+    - echo "== BUILDING AND TESTING LBANN =="
+    - source ${HOME}/spack_repos/spack_${SYSTEM_NAME}.git/share/spack/setup-env.sh
+    - export SPACK_ENV_NAME=${SPACK_ENV_NAME}
+    - lalloc 2 -W 90 -q pbatch ci_test/run.sh
+  artifacts:
+    when: always
+    paths:
+      - spack-*.txt
+      - spack-build-*/CMakeCache.txt
+      - spack-build-*/build.ninja
+      - spack-build-*/spack-*.txt
+      - ci_test/**/*.xml
+      - ci_test/compiler_tests/**/*.txt
+    reports:
+      junit: ci_test/**/*.xml
+  timeout: 6h
+
+# Cleanup this pipeline's spack environment.
+remove spack environment:
+  extends: .ray common
+  stage: cleanup
+  variables:
+    GIT_STRATEGY: none
+  when: always
+  script:
+    - source ${HOME}/spack_repos/spack_${SYSTEM_NAME}.git/share/spack/setup-env.sh
+    - export SPACK_ARCH_TARGET=$(spack arch -t)
+    - export FULL_ENV_NAME=lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
+    - |
+      if [[ -n "$(spack env list | grep -e ${FULL_ENV_NAME})" ]] ;
+      then
+        spack env rm --yes-to-all ${FULL_ENV_NAME}
+      fi
+
+# Variables for Ray. Because this test uses "test_compiler.py", we
+# don't need to specify the Spack spec or the job name.
+.ray common:
+  variables:
+    # Just the obvious identifier. Which specific node doesn't matter.
+    SYSTEM_NAME: ray
+
+    # This is based on the assumption that each runner will only ever
+    # be able to run one pipeline on a given cluster at one time.
+    SPACK_ENV_NAME: gitlab-${CI_PIPELINE_ID}
+
+    # This is needed to ensure that we run as lbannusr.
+    LLNL_SERVICE_USER: lbannusr
+  tags:
+    - ray
+    - shell
