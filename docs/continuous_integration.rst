@@ -15,7 +15,7 @@ GitLab pipelines would require editing to run on other machines.
 
 Developers are required to test their own work. The details are
 provided on the `CZ Confluence wiki
-<https://lc.llnl.gov/confluence/display/LBANN/LBANN%27s+Gitlab+CI+for+Internal+Developers>_`. A
+<https://lc.llnl.gov/confluence/display/LBANN/LBANN%27s+Gitlab+CI+for+Internal+Developers>`_. A
 procedure for external developers (i.e., those without CZ access) has
 not been established; please open a PR as usual and we will contact
 you about testing it.
@@ -56,7 +56,7 @@ Running Tests Yourself
 ----------------------------------------
 
 This process is documented on the `CZ Confluence wiki
-<https://lc.llnl.gov/confluence/display/LBANN/LBANN%27s+Gitlab+CI+for+Internal+Developers>_`.
+<https://lc.llnl.gov/confluence/display/LBANN/LBANN%27s+Gitlab+CI+for+Internal+Developers>`_.
 
 
 Running Tests From The Command Line
