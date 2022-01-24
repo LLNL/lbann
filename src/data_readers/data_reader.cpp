@@ -35,6 +35,7 @@
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
+#include "lbann/utils/timer.hpp"
 
 #include <omp.h>
 #include <future>
