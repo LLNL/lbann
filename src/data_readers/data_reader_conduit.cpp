@@ -34,4 +34,12 @@ namespace lbann {
 void conduit_data_reader::load() {
 }
 
+bool conduit_data_reader::fetch_conduit_node(conduit::Node& sample, int data_id)
+{
+  // get the pathname to the data, and verify it exists in the conduit::Node
+  const conduit::Node& node = get_data_store().get_conduit_node(data_id);
+  sample = node;
+  return true;
+}
+
 }  // namespace lbann

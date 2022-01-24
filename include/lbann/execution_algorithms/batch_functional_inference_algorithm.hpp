@@ -106,6 +106,8 @@ public:
     return labels;
   }
 
+  El::Matrix<int, El::Device::CPU>
+  infer(observer_ptr<model> model, size_t mbs);
 
 protected:
 

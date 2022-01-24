@@ -38,10 +38,13 @@ class conduit_data_reader : public generic_data_reader
 {
 public:
   conduit_data_reader* copy() const override { return new conduit_data_reader(*this); }
-  void load() override;
   bool has_conduit_output() override { return true; }
+  void load() override;
+  bool fetch_conduit_node(conduit::Node& sample, int data_id) override;
 
   std::string get_type() const override { return "conduit_data_reader"; }
+  int get_linearized_data_size() const override { return 28*28; }
+  int get_linearized_label_size() const override { return 10; }
 
 }; // END: class conduit_data_reader
 

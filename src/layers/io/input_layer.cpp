@@ -73,6 +73,7 @@ setup_dims(DataReaderMetaData& dr_metadata) {
   if (m_data_field == "") {
     LBANN_ERROR("Failed to setup input layer with empty data field");
   }
+  std::cout << "DATA FIELD: " << m_data_field <<  std::endl;
   get_trainer().get_data_coordinator().register_active_data_field(m_data_field);
 }
 
@@ -99,7 +100,7 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(El::Int mini_b
     auto& c = dynamic_cast<SGDExecutionContext&>(this->m_model->get_execution_context());
     auto mode = c.get_execution_mode();
     auto effective_mini_batch_size = mini_batch_size;
-    if (!(mode==execution_mode::inference)) {
+    //if (!(mode==execution_mode::inference)) {
       data_coordinator& dc = get_trainer().get_data_coordinator();
       // Determine model mini-batch size and effective mini-batch size
       // Note: If inter-model communication is activated, the effective
@@ -114,7 +115,7 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(El::Int mini_b
           break;
         }
       }
-    }
+    //}
     // Set mini-batch size in model
     c.set_current_mini_batch_size(mini_batch_size);
     c.set_effective_mini_batch_size(effective_mini_batch_size);

@@ -58,11 +58,18 @@ std::unique_ptr<model> load_inference_model(lbann_comm* lc,
  */
 template <typename DataT, El::Dist CDist, El::Dist RDist, El::DistWrap DistView, El::Device Device>
 El::Matrix<int, El::Device::CPU>
-infer(observer_ptr<model> model,
+inference(observer_ptr<model> model,
       El::DistMatrix<DataT, CDist, RDist, DistView, Device> const& samples,
       size_t mbs) {
   auto inf_alg = batch_functional_inference_algorithm();
   return inf_alg.infer(model, samples, mbs);
+}
+
+inline El::Matrix<int, El::Device::CPU>
+inference(observer_ptr<model> model,
+      size_t mbs) {
+  auto inf_alg = batch_functional_inference_algorithm();
+  return inf_alg.infer(model, mbs);
 }
 
 int allocate_trainer_resources(lbann_comm *comm);

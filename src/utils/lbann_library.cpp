@@ -96,6 +96,8 @@ load_inference_model(lbann_comm* lc,
 
   lbann::generic_data_reader *reader = new conduit_data_reader();
   reader->set_comm(lc);
+  reader->set_num_parallel_readers(lc->get_procs_per_trainer());
+  reader->set_mini_batch_size(mbs);
   auto data_store = new lbann::data_store_conduit(reader);
   reader->set_data_store(data_store);
   auto& ds = reader->get_data_store();
