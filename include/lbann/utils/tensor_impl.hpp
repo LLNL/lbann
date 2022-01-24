@@ -50,7 +50,7 @@ void do_tensor_copy(const BaseDistMat& src,
     El::CopyAsync(src, tgt);
   }
   else {
-    if (src.DistData().grid == src.DistData().grid) {
+    if (src.DistData().grid == tgt.DistData().grid) {
       El::Copy(src, tgt);
     }
     else {
@@ -110,16 +110,17 @@ void utils::details::do_tensor_copy_between_grids(
 template <typename TDT, El::Dist ColDist, El::Dist RowDist, El::DistWrap Wrap, El::Device Device>
 void utils::details::do_tensor_copy_between_grids(
   const BaseDistMat& src,
-  El::DistMatrix<TDT, ColDist, RowDist, Wrap, Device>& tgt) {
+  El::DistMatrix<TDT,ColDist,RowDist,Wrap,Device>& tgt) {
 
   // Make sure matrix layouts are identical
-  using TgtMatrixType = El::DistMatrix<TDT, ColDist, RowDist, Wrap, Device>;
-  const auto& src_dist = src.DistData();
+  using TgtMatrixType = El::DistMatrix<TDT,ColDist,RowDist,Wrap,Device>;
+  auto src_dist = src.DistData();
   TgtMatrixType temp(*src_dist.grid, src_dist.root);
   if (temp.DistData() == src_dist) {
     El::LockedView(temp, dynamic_cast<const TgtMatrixType&>(src));
   }
   else {
+    temp.Resize(src.Height(), src.Width());
     El::Copy(src, temp);
   }
 

@@ -234,6 +234,9 @@ void fp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
   // Apply linearity
   // Note: Perform GEMMs independently if possible
   const auto& linearity = l.weights_values(0);
+  if (!linearity.Participating()) {
+    return;
+  }
   if (linearity.DistSize() == 1) {
     El::Gemm(l.m_transpose ? El::TRANSPOSE : El::NORMAL,
              El::NORMAL,
@@ -273,6 +276,9 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
   const auto& local_input = input.LockedMatrix();
   const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
   auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
+  if (!linearity.Participating()) {
+    return;
+  }
 
   // Compute gradient w.r.t. bias if needed
   if (l.m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
@@ -513,6 +519,9 @@ void fp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
   // Apply linearity
   // Note: Perform GEMMs independently if possible
   const auto& linearity = l.weights_values(0);
+  if (!linearity.Participating()) {
+    return;
+  }
   if (linearity.DistSize() == 1) {
     El::Gemm(l.m_transpose ? El::TRANSPOSE : El::NORMAL,
              El::NORMAL,
@@ -554,6 +563,9 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
   const auto& local_input = input.LockedMatrix();
   const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
   auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
+  if (!linearity.Participating()) {
+    return;
+  }
 
   // Compute gradient w.r.t. bias if needed
   // Note: local GEMV is sufficient, no need for global row sum
