@@ -114,7 +114,8 @@ bool checkpoint::need_checkpoint(model *m, callback_phase phase) {
   m_checkpoint_shared = false;
   m_checkpoint_dist = false;
   lbann_comm *comm = m->get_comm();
-  int cur_epoch = c.get_epoch();
+  size_t cur_epoch = get_epoch_with_training_override(m);
+  size_t cur_step = get_step_with_training_override(m);
   // If we are at the end of a training epoch and the training epoch lands on defined interval, ckpt
   if (!m_checkpoint_shared && m_checkpoint_epochs > 0 && (phase == callback_phase::epoch || phase == callback_phase::validation)){
       m_checkpoint_shared = (cur_epoch > 0) && (cur_epoch % m_checkpoint_epochs == 0);
@@ -126,11 +127,11 @@ bool checkpoint::need_checkpoint(model *m, callback_phase phase) {
 
   // If we are at the end of a training mb step and the training mb step lands on defined interval, trigger checkpoint
   if (!m_checkpoint_shared && m_checkpoint_steps > 0) {
-    m_checkpoint_shared = (c.get_step() > 0) && (c.get_step() % m_checkpoint_steps == 0);
+    m_checkpoint_shared = (cur_step > 0) && (cur_step % m_checkpoint_steps == 0);
   }
 
   if(!m_checkpoint_dist && m_ckpt_dist_steps > 0){
-      m_checkpoint_dist = (c.get_step() > 0) && (c.get_step() % m_ckpt_dist_steps == 0);
+      m_checkpoint_dist = (cur_step > 0) && (cur_step % m_ckpt_dist_steps == 0);
   }
 
   // check the clock if time-based checkpoint is enabled
@@ -176,8 +177,8 @@ bool checkpoint::do_checkpoint(model *m, visitor_hook hook) {
   comm->trainer_barrier();
   // let user know we're saving a checkpoint
   if (comm->am_trainer_master()) {
-    epoch = c.get_epoch();
-    step = c.get_step();
+    epoch = get_epoch_with_training_override(m);
+    step = get_step_with_training_override(m);
     timer.Start();
     std::cout << "[" << m->get_name()
               << "." << comm->get_trainer_rank()

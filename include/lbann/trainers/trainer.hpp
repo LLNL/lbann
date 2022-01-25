@@ -221,6 +221,11 @@ public:
 
   ExecutionContext& get_execution_context(execution_context_key_pair_t key);
 
+  bool execution_context_valid(observer_ptr<model> model,
+                               execution_mode mode);
+
+  bool execution_context_valid(execution_context_key_pair_t key);
+
   /** @name Training and evaluation interface */
   ///@{
 
