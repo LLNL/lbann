@@ -84,8 +84,8 @@ std::vector<conduit::Node> conduit_mnist_samples(int n, int c, int h, int w) {
   for (int i; i<n; i++) {
     int this_sample[sample_size];
     random_mnist_sample(this_sample, sample_size);
-    samples[i]["sample"].set(this_sample, sample_size);
-    samples[i]["label"] = std::rand() % 10;
+    samples[i]["data/samples"].set(this_sample, sample_size);
+    samples[i]["data/labels"] = std::rand() % 10;
   }
   return samples;
 }
@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
                                        arg_parser.get<int>("channels"),
                                        arg_parser.get<int>("height"),
                                        arg_parser.get<int>("width"));
-  samples[0].print();
+  samples[1].print();
 
   auto m = lbann::load_inference_model(lbann_comm.get(),
                                        arg_parser.get<std::string>("model"),
@@ -135,6 +135,8 @@ int main(int argc, char **argv) {
                                        },
                                        {arg_parser.get<int>("labels")});
 
+  auto labels = lbann::inference(m.get(), arg_parser.get<int>("minibatchsize"));
+
   /*
   auto samples = random_samples(lbann_comm->get_trainer_grid(),
                                 arg_parser.get<int>("samples"),
@@ -145,6 +147,7 @@ int main(int argc, char **argv) {
   auto labels = lbann::infer(m.get(),
                              samples,
                              arg_parser.get<int>("minibatchsize"));
+  */
 
   // Print inference results
   if (lbann_comm->am_world_master()) {
@@ -154,7 +157,6 @@ int main(int argc, char **argv) {
     }
     std::cout << std::endl;
   }
-                                */
 
   // Clean up
   m.reset();

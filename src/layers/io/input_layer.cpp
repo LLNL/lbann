@@ -73,7 +73,6 @@ setup_dims(DataReaderMetaData& dr_metadata) {
   if (m_data_field == "") {
     LBANN_ERROR("Failed to setup input layer with empty data field");
   }
-  std::cout << "DATA FIELD: " << m_data_field <<  std::endl;
   get_trainer().get_data_coordinator().register_active_data_field(m_data_field);
 }
 

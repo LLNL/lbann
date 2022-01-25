@@ -38,7 +38,6 @@ batch_functional_inference_algorithm::infer(observer_ptr<model> model,
     El::Matrix<int, El::Device::CPU> labels(mbs, 1);
 
     auto c = SGDExecutionContext(execution_mode::inference, mbs);
-    std::cout << "MBS: " << c.get_current_mini_batch_size() << std::endl;
     model->reset_mode(c, execution_mode::inference);
     get_trainer().get_data_coordinator().reset_mode(c);
 

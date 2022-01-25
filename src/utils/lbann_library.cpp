@@ -98,6 +98,9 @@ load_inference_model(lbann_comm* lc,
   reader->set_comm(lc);
   reader->set_num_parallel_readers(lc->get_procs_per_trainer());
   reader->set_mini_batch_size(mbs);
+  std::vector<int> indices(samples.size());
+  std::iota(indices.begin(), indices.end(), 0);
+  reader->set_shuffled_indices(indices);
   auto data_store = new lbann::data_store_conduit(reader);
   reader->set_data_store(data_store);
   auto& ds = reader->get_data_store();
