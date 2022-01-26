@@ -29,6 +29,7 @@
 #if defined __CUDACC__ || defined __HIPCC__
 
 #include "lbann/base.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 namespace internal {

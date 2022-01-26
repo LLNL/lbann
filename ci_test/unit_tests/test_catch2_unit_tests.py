@@ -24,8 +24,12 @@ def get_system_mpi_launch(cluster):
     else: # Corona and Catalyst
         return ['srun', '-N2', '--ntasks-per-node=4']
 
+# Notice that these tests will automatically skip if the executable
+# doesn't exist. Since we do not save the testing executable as a
+# GitLab CI artifact on Catalyst, Corona, or Pascal, this should only
+# run on Ray and Lassen in GitLab CI testing pipelines.
 def test_run_sequential_catch_tests(cluster, dirname):
-    output_dir = os.path.join(dirname, 'bamboo', 'unit_tests')
+    output_dir = os.path.join(dirname, 'ci_test', 'unit_tests')
     build_dir = hack_find_spack_build_dir(dirname)
     seq_catch_exe = os.path.join(build_dir, 'unit_test', 'seq-catch-tests')
     if not os.path.exists(seq_catch_exe):
@@ -35,12 +39,13 @@ def test_run_sequential_catch_tests(cluster, dirname):
     seq_launch = get_system_seq_launch(cluster)
     seq_output_file_name = 'seq_catch_tests_output-%s.xml' % (cluster)
     seq_output_file = os.path.join(output_dir, seq_output_file_name)
+    seq_error_file = os.path.join(output_dir, "error", "seq-catch-test-error.log")
     seq_catch_args = [seq_catch_exe, '-r', 'junit', '-o', seq_output_file]
     output = sp.run(seq_launch + seq_catch_args)
-    tools.assert_success(output.returncode, seq_output_file)
+    tools.assert_success(output.returncode, seq_error_file)
 
 def test_run_parallel_catch_tests(cluster, dirname):
-    output_dir = os.path.join(dirname, 'bamboo', 'unit_tests')
+    output_dir = os.path.join(dirname, 'ci_test', 'unit_tests')
     build_dir = hack_find_spack_build_dir(dirname)
     mpi_catch_exe = os.path.join(build_dir, 'unit_test', 'mpi-catch-tests')
     if not os.path.exists(mpi_catch_exe):
@@ -50,12 +55,13 @@ def test_run_parallel_catch_tests(cluster, dirname):
     mpi_launch = get_system_mpi_launch(cluster)
     mpi_output_file_name = 'mpi_catch_tests_output-%s-rank=%%r-size=%%s.xml' % (cluster)
     mpi_output_file = os.path.join(output_dir, mpi_output_file_name)
+    mpi_error_file = os.path.join(output_dir, "error", "mpi-catch-test-error.log")
     mpi_catch_args = [mpi_catch_exe, '-r', 'junit', '-o', mpi_output_file]
     output = sp.run(mpi_launch + mpi_catch_args)
-    tools.assert_success(output.returncode, mpi_output_file)
+    tools.assert_success(output.returncode, mpi_error_file)
 
 def test_run_parallel_filesystem_catch_tests(cluster, dirname):
-    output_dir = os.path.join(dirname, 'bamboo', 'unit_tests')
+    output_dir = os.path.join(dirname, 'ci_test', 'unit_tests')
     build_dir = hack_find_spack_build_dir(dirname)
     mpi_catch_exe = os.path.join(build_dir, 'unit_test', 'mpi-catch-tests')
     if not os.path.exists(mpi_catch_exe):
@@ -65,6 +71,7 @@ def test_run_parallel_filesystem_catch_tests(cluster, dirname):
     mpi_launch = get_system_mpi_launch(cluster)
     mpi_output_file_name = 'mpi_filesystem_catch_tests_output-%s-rank=%%r-size=%%s.xml' % (cluster)
     mpi_output_file = os.path.join(output_dir, mpi_output_file_name)
+    mpi_error_file = os.path.join(output_dir, "error", "mpi-filesystem-catch-test-error.log")
     mpi_catch_args = [mpi_catch_exe, '"[filesystem]"', '-r', 'junit', '-o', mpi_output_file]
     output = sp.run(mpi_launch + mpi_catch_args)
-    tools.assert_success(output.returncode, mpi_output_file)
+    tools.assert_success(output.returncode, mpi_error_file)

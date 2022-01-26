@@ -25,8 +25,8 @@ num_nodes = 2
 num_decoder_layers = 3
 
 # Reconstruction loss
-expected_train_recon_range = (0.500, 0.521)
-expected_test_recon_range = (0.500, 0.521)
+expected_train_recon_range = (0.500, 0.525)
+expected_test_recon_range = (0.500, 0.525)
 
 # Average mini-batch time (in sec) for each LC system
 # Note that run times are with LBANN_DETERMINISTIC set
@@ -61,7 +61,7 @@ def setup_experiment(lbann):
     trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model(lbann)
 
-    #see: <LBANN>bamboo/common_python/data/atom/data_reader_mpro.prototext
+    #see: <LBANN>ci_test/common_python/data/atom/data_reader_mpro.prototext
     #     for data_reader prototext
     import data.atom
     data_reader = data.atom.make_data_reader(lbann)

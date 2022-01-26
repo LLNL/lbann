@@ -18,10 +18,11 @@ import tools
 # the functions below to ingest data.
 
 # Data
-np.random.seed(20191114)
-_num_samples = 31
-_sample_size = 31
-_samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
+np.random.seed(20200107)
+_num_samples = 15
+_sample_dims = (5,3,7)
+_sample_size = functools.reduce(operator.mul, _sample_dims)
+_samples = np.random.normal(loc=0.5, size=(_num_samples,_sample_size)).astype(np.float32)
 
 # Sample access functions
 def get_sample(index):
@@ -32,14 +33,15 @@ def sample_dims():
     return (_sample_size,)
 
 # ==============================================
-# NumPy softmax
+# NumPy implementation
 # ==============================================
 
-def numpy_layer_norm(x, epsilon=1e-5):
+def numpy_instance_norm(x, epsilon=1e-5):
     if x.dtype is not np.float64:
         x = x.astype(np.float64)
-    mean = np.mean(x)
-    var = np.var(x, ddof=1)
+    axes = tuple(range(1,x.ndim))
+    mean = np.mean(x, axis=axes, keepdims=True)
+    var = np.var(x, ddof=0, axis=axes, keepdims=True)
     return (x - mean) / np.sqrt(var + epsilon)
 
 # ==============================================
@@ -75,9 +77,9 @@ def construct_model(lbann):
                               initializer=lbann.ConstantInitializer(value=0.0),
                               name='input_weights')
     x = lbann.Sum(lbann.Reshape(lbann.Input(data_field='samples'),
-                                dims=tools.str_list(_sample_size)),
+                                dims=tools.str_list(_sample_dims)),
                   lbann.WeightsLayer(weights=x_weights,
-                                     dims=tools.str_list(_sample_size)))
+                                     dims=tools.str_list(_sample_dims)))
     x_lbann = x
 
     # Objects for LBANN model
@@ -91,7 +93,7 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    y = lbann.LayerNorm(x, data_layout='data_parallel')
+    y = lbann.InstanceNorm(x, data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
@@ -99,36 +101,8 @@ def construct_model(lbann):
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i).astype(np.float64)
-        y = numpy_layer_norm(x)
-        z = tools.numpy_l2norm2(y)
-        vals.append(z)
-    val = np.mean(vals)
-    tol = 8 * val * np.finfo(np.float32).eps
-    callbacks.append(lbann.CallbackCheckMetric(
-        metric=metrics[-1].name,
-        lower_bound=val-tol,
-        upper_bound=val+tol,
-        error_on_failure=True,
-        execution_modes='test'))
-
-    # ------------------------------------------
-    # Model-parallel layout
-    # ------------------------------------------
-
-    # LBANN implementation
-    epsilon = 0.0123
-    x = x_lbann
-    y = lbann.LayerNorm(x, data_layout='model_parallel', epsilon=epsilon)
-    z = lbann.L2Norm2(y)
-    obj.append(z)
-    metrics.append(lbann.Metric(z, name='model-parallel layout'))
-
-    # NumPy implementation
-    vals = []
-    for i in range(num_samples()):
-        x = get_sample(i).astype(np.float64)
-        y = numpy_layer_norm(x, epsilon)
+        x = get_sample(i).reshape(_sample_dims).astype(np.float64)
+        y = numpy_instance_norm(x)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)

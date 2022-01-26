@@ -99,7 +99,7 @@ __global__ void fp_sums_kernel(
  *
  *  mean = sum(x_i) / n
  *
- *  var = ( sum(x_i^2)/n - mean^2 ) * n/(n-1)
+ *  var = ( sum(x_i^2)/n - mean^2 )
  *
  *  On input, means contains per-sample sums and vars contains
  *  per-sample sums of squares.
@@ -125,7 +125,7 @@ __global__ void fp_statistics_kernel(
     const TensorDataType sample_size_dt = TensorDataType(sample_size);
     const auto& mean = sum / sample_size_dt;
     const auto& sqmean = sqsum / sample_size_dt;
-    const auto& var = (sqmean - mean*mean) * sample_size_dt / TensorDataType(sample_size-1);
+    const auto& var = (sqmean - mean*mean);
     means[i*means_stride] = mean;
     vars[i*vars_stride] = gpu_lib::max(var, TensorDataType(0.0));
   }
@@ -376,7 +376,7 @@ __global__ void bp_input_grad_kernel(
       auto& dx = input_grad[i*input_grad_ldim + j];
       dx = (dy * inv_stdev
             + dmean / TensorDataType(sample_size)
-            + dvar * (x - mean) * TensorDataType(2) / TensorDataType(sample_size - 1));
+            + dvar * (x - mean) * TensorDataType(2) / TensorDataType(sample_size));
     }
   }
 
