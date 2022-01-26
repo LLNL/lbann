@@ -191,6 +191,18 @@ trainer::get_execution_context(execution_context_key_pair_t key)
     *(m_model_execution_context[key].get()));
 }
 
+bool trainer::execution_context_valid(model& m,
+                                      execution_mode mode) const noexcept
+{
+  return execution_context_valid(std::make_pair(&m, mode));
+}
+
+bool trainer::execution_context_valid(
+  execution_context_key_pair_t key) const noexcept
+{
+  return (m_model_execution_context.count(key) != 0);
+}
+
 void trainer::delete_execution_context(execution_context_key_pair_t key)
 {
   if (m_model_execution_context.count(key) == 0) {
