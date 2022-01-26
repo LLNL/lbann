@@ -922,12 +922,9 @@ move_or_copy_prev_error_signal_(
 
   // Check the signal size
   auto& signal = *signal_in;
-  if(m_outputs[layer_idx]->Participating()==true)
-  {
-    assert_tensor_size(
-      signal, get_output_size(layer_idx), m_outputs[layer_idx]->Width(),
-      m_name, child.get_name());
-  }
+  assert_tensor_size(
+    signal, get_output_size(layer_idx), m_outputs[layer_idx]->Width(),
+    m_name, child.get_name());
 
   // If the distribution is OK, then we can just swap data
   // around. Otherwise, deep copy into correct distribution.

@@ -121,10 +121,13 @@ void utils::details::do_tensor_copy_between_grids(
   }
   else {
     temp.Resize(src.Height(), src.Width());
-    El::Copy(src, temp);
+    if (temp.Participating()) {
+      El::Copy(src, temp);
+    }
   }
 
   // Translate matrix between grids
+  tgt.Resize(src.Height(), src.Width());
   El::copy::Translate(temp, tgt);
 
 }
