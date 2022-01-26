@@ -191,15 +191,14 @@ trainer::get_execution_context(execution_context_key_pair_t key)
     *(m_model_execution_context[key].get()));
 }
 
-bool trainer::execution_context_valid(observer_ptr<model> model,
-                                      execution_mode mode)
+bool trainer::execution_context_valid(model& m,
+                                      execution_mode mode) const noexcept
 {
-  auto key = std::make_pair(model, mode);
-  return execution_context_valid(key);
+  return execution_context_valid(std::make_pair(&m, mode));
 }
 
-bool
-trainer::execution_context_valid(execution_context_key_pair_t key)
+bool trainer::execution_context_valid(
+  execution_context_key_pair_t key) const noexcept
 {
   return (m_model_execution_context.count(key) != 0);
 }

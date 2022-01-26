@@ -221,10 +221,10 @@ public:
 
   ExecutionContext& get_execution_context(execution_context_key_pair_t key);
 
-  bool execution_context_valid(observer_ptr<model> model,
-                               execution_mode mode);
+  bool execution_context_valid(model& m,
+                               execution_mode mode) const noexcept;
 
-  bool execution_context_valid(execution_context_key_pair_t key);
+  bool execution_context_valid(execution_context_key_pair_t key) const noexcept;
 
   /** @name Training and evaluation interface */
   ///@{

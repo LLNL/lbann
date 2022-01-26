@@ -179,43 +179,6 @@ public:
     }
   }
 
-  /**
-   * Get the current execution context for the model.  However, if the current
-   * execution context is not for training and there is a valid training
-   * execution context, return the training context instead.
-   *
-   */
-  inline const SGDExecutionContext& get_current_execution_context_with_training_override(model* m) {
-    const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
-    if(c.get_execution_mode() != execution_mode::training &&
-       this->get_active_trainer().execution_context_valid(m, execution_mode::training)) {
-      const auto& training_ctx = static_cast<SGDExecutionContext&>(
-        this->get_active_trainer().get_execution_context(m, execution_mode::training));
-      return training_ctx;
-    }
-    return c;
-  }
-
-  /**
-   * When generating a checkpoint for non-training execution phases, the epoch
-   * number should be pulled from the training context to provide a proper
-   * ordering of the checkpoint.
-   */
-  inline size_t get_epoch_with_training_override(model* m) {
-    const auto& c = get_current_execution_context_with_training_override(m);
-    return c.get_epoch();
-  }
-
-  /**
-   * When generating a checkpoint for non-training execution phases, the step
-   * count should be pulled from the training context to provide a proper
-   * ordering of the checkpoint.
-   */
-  inline size_t get_step_with_training_override(model* m) {
-    const auto& c = get_current_execution_context_with_training_override(m);
-    return c.get_step();
-  }
-
   bool need_checkpoint(model *m, callback_phase phase);
   std::string find_latest_checkpoint(lbann_comm& comm,
                                      const std::string& trainer_name,
