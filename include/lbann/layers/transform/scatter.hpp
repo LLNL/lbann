@@ -33,7 +33,32 @@
 #include "lbann/utils/protobuf.hpp"
 #include "lbann/proto/layers.pb.h"
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#include "lbann/layers/transform/distconv/distconv_scatter.hpp"
+#endif // LBANN_HAS_DISTCONV
+
 namespace lbann {
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class scatter_distconv_adapter
+  :  public data_type_distconv_adapter <TensorDataType>{
+  public:
+    using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+
+    scatter_distconv_adapter(Layer &layer) : data_type_distconv_adapter(layer){}
+    virtual ~scatter_distconv_adapter() = default;
+
+    void setup_distribution(tensor_overlap_constraints &constraints) override;
+    void setup_layer(size_t workspace_capacity) override;
+    void fp_compute();
+    void bp_compute();
+
+    std::unique_ptr<dc::Scatter<TensorDataType>> m_scatter_operator;
+    size_t m_workspace_buffer_size{0};
+  };
+#endif // LBANN_HAS_DISTCONV
 
 /** @brief Scatter values to specified tensor indices
  *
@@ -94,6 +119,13 @@ protected:
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void fp_compute() override;
   void bp_compute() override;
+#ifdef LBANN_HAS_DISTCONV
+  friend class scatter_distconv_adapter<TensorDataType, Layout, Device>;
+  void setup_distconv_adapter();
+  bool is_distconv_supported() const override;
+  scatter_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() override;
+  const scatter_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() const override;
+#endif // LBANN_HAS_DISTCONV
 private:
   int m_scatter_axis;
 

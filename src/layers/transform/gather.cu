@@ -161,8 +161,106 @@ __global__ void gather3d_kernel(
 
 } // namespace <anon>
 
+// =========================================================
+// DistConv-Adapter member functions
+// =========================================================
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+gather_distconv_adapter<TensorDataType, Layout, Device>
+::setup_distribution(tensor_overlap_constraints &constraints){
+  data_type_distconv_adapter<TensorDataType>::setup_distributions(constraints);
+  // no overlap needed
+  for (auto &d: this->m_prev_activations_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_activations_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_prev_error_signals_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_error_signals_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+gather_distconv_adapter<TensorDataType, Layout, Device>
+setup_layer(size_t workspace_capacity){
+  data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
+  m_gather_operator = make_unique<dc::Gather<TensorDataType>(dc::get_backend());
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+gather_distconv_adapter<TensorDataType, Layout, Device>
+fp_compute(){
+
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+gather_distconv_adapter<TensorDataType, Layout, Device>
+bp_compute(){
+
+}
+
+// =============================================================
+// DistConv-enabled Gather member functions
+// =============================================================
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+bool
+gather_layer<TensorDataType, Layout, Device>
+::is_distconv_supported() const {
+  // To do: Add constraints about tensor shape here in the future - SZ
+  return Device==El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void 
+gather_layer<TensorDataType, Layout, Device>
+::setup_distconv_adapter(){
+  this->get_distconv_adapter_ptr() = make_unique<gather_distconv_adapter<TensorDataType, Layout, Device>>(*this);
+}
+
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+gather_distconv_adapter<TensorDataType, Layout, Device>& 
+gather_layer<TensorDataType, Layout, Device>
+::get_distconv_adapter(){
+  return const_cast<gather_distconv_adapter<TensorDataType, Layout, Device>&>(
+    static_cast<const gather<TensorDataType, Layout, Device>&>(*this).get_distconv_adapter());
+} 
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+const gather_distconv_adapter<TensorDataType, Layout, Device>& 
+gather_layer<TensorDataType, Layout, Device>
+::get_distconv_adapter() const{
+  return dynamic_cast<const gather_distconv_adapter<
+    TensorDataType, Layout, Device>&>(data_type_layer<TensorDataType>::get_distconv_adapter());
+}
+#endif
+
+// =============================================================
+// Gather member functions
+// =============================================================
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void gather_layer<TensorDataType, Layout, Device>::fp_compute() {
+
+#ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()){
+    this->get_distconv_adapter().fp_compute();
+    return ;
+  }
+#endif // LBANN_HAS_DISTCONV
 
   // Local matrices
   const auto& local_values = this->get_local_prev_activations(0);
@@ -237,6 +335,13 @@ void gather_layer<TensorDataType, Layout, Device>::fp_compute() {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void gather_layer<TensorDataType, Layout, Device>::bp_compute() {
 
+#ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()){
+    this->get_distconv_adapter().bp_compute();
+    return ;
+  }
+#endif // LBANN_HAS_DISTCONV
+  
   // Local matrices
   const auto& local_indices = this->get_local_prev_activations(1);
   const auto& local_output_grad = this->get_local_prev_error_signals();
