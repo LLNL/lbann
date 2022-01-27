@@ -65,32 +65,33 @@ void utils::details::do_tensor_copy_between_grids(
   El::AbstractDistMatrix<TDT>& tgt) {
 
   // Determine matrix class and forward to template function
+  // Note: We use instantiate_device.hpp to deal with the annoyances
+  // of different FP16 types on CPU and GPU.
   /// @todo Do this more systematically and support all matrix classes
   const auto& tgt_dist = tgt.DistData();
   bool did_copy = false;
-#undef LBANN_TEMPLATE_INSTANTIATION
-#define LBANN_TEMPLATE_INSTANTIATION(ColDist, RowDist, Device)          \
-  do {                                                                  \
-    if (tgt_dist.colDist == ColDist                                     \
-        && tgt_dist.rowDist == RowDist                                  \
-        && tgt_dist.device == Device) {                                 \
-      using TgtMatrixType                                               \
-        = El::DistMatrix<TDT, ColDist, RowDist, El::ELEMENT, Device>;   \
-      utils::details::do_tensor_copy_between_grids(                     \
-        src,                                                            \
-        dynamic_cast<TgtMatrixType&>(tgt));                             \
-      did_copy = true;                                                  \
-    }                                                                   \
-  } while (false)
-  LBANN_TEMPLATE_INSTANTIATION(El::STAR, El::VC,   El::Device::CPU);
-  LBANN_TEMPLATE_INSTANTIATION(El::MC,   El::MR,   El::Device::CPU);
-  LBANN_TEMPLATE_INSTANTIATION(El::STAR, El::STAR, El::Device::CPU);
-#ifdef LBANN_HAS_GPU
-  LBANN_TEMPLATE_INSTANTIATION(El::STAR, El::VC,   El::Device::GPU);
-  LBANN_TEMPLATE_INSTANTIATION(El::MC,   El::MR,   El::Device::GPU);
-  LBANN_TEMPLATE_INSTANTIATION(El::STAR, El::STAR, El::Device::GPU);
-#endif // LBANN_HAS_GPU
-#undef LBANN_TEMPLATE_INSTANTIATION
+#undef PROTO_DEVICE
+#undef PROTO_MATRIX_TYPE
+#define PROTO_MATRIX_TYPE(T, ColDist, RowDist, Device)                \
+  if constexpr (std::is_same<T,TDT>::value) {                         \
+    if (tgt_dist.colDist == ColDist                                   \
+        && tgt_dist.rowDist == RowDist                                \
+        && tgt_dist.device == Device) {                               \
+      using TgtMatrixType                                             \
+        = El::DistMatrix<T, ColDist, RowDist, El::ELEMENT, Device>;   \
+      utils::details::do_tensor_copy_between_grids(                   \
+        src,                                                          \
+        dynamic_cast<TgtMatrixType&>(tgt));                           \
+      did_copy = true;                                                \
+    }                                                                 \
+  }
+#define PROTO_DEVICE(T, Device)                       \
+  PROTO_MATRIX_TYPE(T, El::STAR, El::VC,   Device)    \
+  PROTO_MATRIX_TYPE(T, El::MC,   El::MR,   Device)    \
+  PROTO_MATRIX_TYPE(T, El::STAR, El::STAR, Device)
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#undef PROTO_MATRIX_TYPE
 
   // Check if copy succeeded
   if (!did_copy) {
