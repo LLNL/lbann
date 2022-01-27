@@ -243,6 +243,29 @@ public:
   /** @brief Create the parser */
   argument_parser();
 
+  /** @brief Copy construction is disabled.
+   *
+   *  The Clara parser is not actually copyable because the references
+   *  are bound to memory in the parameter map. They are not re-bound
+   *  during the default copy, so the copied parser would refer to
+   *  memory in the source parser. If the source parser is destroyed,
+   *  these references are left dangling. It would be very hard to
+   *  rebind the references on copy (it would have to be done through
+   *  "std::any" object, making it all the more complicated). Rather,
+   *  we don't have the other machinery to do this at this time, so
+   *  copy is disabled. This issue should not apply to move.
+   */
+  argument_parser(argument_parser const&) = delete;
+
+  /** @brief Copy assignment is disabled. */
+  argument_parser& operator=(argument_parser const&) = delete;
+
+  /** @brief Move constructor */
+  argument_parser(argument_parser&&) = default;
+
+  /** @brief Move assignment operator */
+  argument_parser& operator=(argument_parser&&) = default;
+
   ///@}
   /** @name Adding options and arguments */
   ///@{
@@ -509,6 +532,13 @@ public:
     std::string const& name,
     std::string const& description);
 
+  /** @brief Clear all state in the parser.
+   *
+   *  The resulting state is as though the parser had been newly
+   *  constructed.
+   */
+  void clear() noexcept;
+
   ///@}
   /** @name Command-line-like parsing */
   ///@{
@@ -563,7 +593,7 @@ public:
    *
    *  @return The name of the executable.
    */
-  std::string const& get_exe_name() const noexcept;
+  std::string get_exe_name() const noexcept;
 
   /** @brief Test if an option exists in the parser.
    *
@@ -598,6 +628,9 @@ public:
 
 private:
 
+  /** @brief Reinitialize the parser. */
+  void init() noexcept;
+
   /** @brief Implementation of add_flag */
   readonly_reference<bool>
   add_flag_impl_(std::string const& name,
@@ -612,8 +645,6 @@ private:
   std::unordered_set<std::string> required_;
   /** @brief The underlying clara object */
   clara::Parser parser_;
-  /** @brief The name of the executable. */
-  std::string exe_name_ = "<exe>";
 
 };
 
@@ -702,12 +733,24 @@ inline auto argument_parser<ErrorHandler>::add_required_argument(
 template <typename ErrorHandler>
 argument_parser<ErrorHandler>::argument_parser()
 {
-  params_["print help"] = false;
-  parser_ |= clara::ExeName(exe_name_);
-  parser_ |= clara::Help(utils::any_cast<bool&>(params_["print help"]));
+  init();
+}
 
-  // Work around a bug in Clara logic
-  parser_.m_exeName.set(exe_name_);
+template <typename ErrorHandler>
+void argument_parser<ErrorHandler>::clear() noexcept
+{
+  std::unordered_map<std::string, utils::any>{}.swap(params_);
+  std::unordered_set<std::string>{}.swap(required_);
+  parser_ = clara::Parser{};
+  init();
+}
+
+template <typename ErrorHandler>
+void argument_parser<ErrorHandler>::init() noexcept
+{
+  params_["print help"] = false;
+  parser_ |= clara::ExeName();
+  parser_ |= clara::Help(utils::any_cast<bool&>(params_["print help"]));
 }
 
 template <typename ErrorHandler>
@@ -746,9 +789,9 @@ auto argument_parser<ErrorHandler>::add_flag(
 }
 
 template <typename ErrorHandler>
-std::string const& argument_parser<ErrorHandler>::get_exe_name() const noexcept
+std::string argument_parser<ErrorHandler>::get_exe_name() const noexcept
 {
-  return exe_name_;
+  return parser_.m_exeName.name();
 }
 
 template <typename ErrorHandler>

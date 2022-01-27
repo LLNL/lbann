@@ -56,6 +56,9 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
     CHECK_FALSE(parser.help_requested());
     REQUIRE_NOTHROW(parser.parse(argc, argv));
     CHECK(parser.help_requested());
+
+    REQUIRE_NOTHROW(parser.clear());
+    CHECK_FALSE(parser.help_requested());
   }
 
   SECTION("Long help flag")
@@ -66,6 +69,9 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
     CHECK_FALSE(parser.help_requested());
     REQUIRE_NOTHROW(parser.parse(argc, argv));
     CHECK(parser.help_requested());
+
+    REQUIRE_NOTHROW(parser.clear());
+    CHECK_FALSE(parser.help_requested());
   }
 
   SECTION("Boolean flags are false by default")
@@ -76,6 +82,12 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
 
     CHECK(parser.option_is_defined("flag v"));
     CHECK_FALSE(flag_v);
+
+    SECTION("Clear removes the flag")
+    {
+      REQUIRE_NOTHROW(parser.clear());
+      CHECK_FALSE(parser.option_is_defined("flag v"));
+    }
 
     SECTION("Short flag sets flag to true")
     {
