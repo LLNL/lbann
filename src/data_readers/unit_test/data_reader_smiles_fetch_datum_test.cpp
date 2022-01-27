@@ -74,7 +74,7 @@ void test_fetch(lbann::generic_data_reader* reader);
 
 bool directory_exists(std::string s);
 
-TEST_CASE("SMILES functional black-box", "[.filesystem][data reader][mpi][smiles]")
+TEST_CASE("SMILES functional black-box", "[.filesystem][data_reader][mpi][smiles]")
 {
   //currently, tests are sequential; they can (should?) be expanded
   //to multiple ranks
