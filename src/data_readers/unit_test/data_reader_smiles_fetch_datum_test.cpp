@@ -82,6 +82,8 @@ TEST_CASE("SMILES functional black-box", "[.filesystem][data reader][mpi][smiles
   auto& comm = unit_test::utilities::current_world_comm();
   lbann::init_random(0, 2);
   lbann::init_data_seq_random(42);
+  auto& arg_parser = lbann::global_argument_parser();
+  arg_parser = lbann::default_arg_parser_type{}; // Clear the argument parser.
   lbann::construct_all_options();
 
   //make non-const copies
@@ -203,7 +205,6 @@ TEST_CASE("SMILES functional black-box", "[.filesystem][data reader][mpi][smiles
     "--sequence_length=100",
     "--vocab", vocab_fn.c_str()};
   int const argc = sizeof(argv) / sizeof(argv[0]);
-  auto& arg_parser = lbann::global_argument_parser();
   REQUIRE_NOTHROW(arg_parser.parse(argc, argv));
 
   // instantiate and load the data readers
@@ -238,6 +239,12 @@ TEST_CASE("SMILES functional black-box", "[.filesystem][data reader][mpi][smiles
     if (test_ptr) {
       test_fetch(test_ptr);
     }
+  }
+
+  arg_parser = lbann::default_arg_parser_type{}; // Clear the argument parser.
+  // Cleanup the data readers
+  for (auto t : data_readers) {
+    delete t.second;
   }
 }
 
