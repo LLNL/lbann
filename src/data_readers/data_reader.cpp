@@ -44,6 +44,13 @@ namespace lbann {
 #undef DEBUG
 //#define DEBUG
 
+generic_data_reader::~generic_data_reader() {
+  if (m_data_store != nullptr) {
+    delete m_data_store;
+    m_data_store = nullptr;
+  }
+}
+
 template <class Archive>
 void generic_data_reader::serialize( Archive & ar ) {
   ar(CEREAL_NVP(m_current_mini_batch_idx),
