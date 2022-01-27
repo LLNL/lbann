@@ -69,7 +69,7 @@ TEST_CASE("hdf5 data reader schema tests",
   lbann::init_random(0, 2);
   lbann::init_data_seq_random(42);
   auto& arg_parser = lbann::global_argument_parser();
-  arg_parser = lbann::default_arg_parser_type{}; // Clear the argument parser.
+  arg_parser.clear(); // Clear the argument parser.
   lbann::construct_all_options(); // Reset to the default state.
 
   // create working directory
@@ -304,7 +304,7 @@ TEST_CASE("hdf5 data reader schema tests",
     }
   } // SECTION("hdf5_reader: node_map")
 
-  arg_parser = lbann::default_arg_parser_type{}; // Clear the argument parser.
+  arg_parser.clear(); // Clear the argument parser.
   // Cleanup the data readers
   for (auto t : all_readers) {
     delete t.second;

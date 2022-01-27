@@ -83,7 +83,7 @@ TEST_CASE("SMILES functional black-box", "[.filesystem][data reader][mpi][smiles
   lbann::init_random(0, 2);
   lbann::init_data_seq_random(42);
   auto& arg_parser = lbann::global_argument_parser();
-  arg_parser = lbann::default_arg_parser_type{}; // Clear the argument parser.
+  arg_parser.clear(); // Clear the argument parser.
   lbann::construct_all_options();
 
   //make non-const copies
@@ -241,7 +241,7 @@ TEST_CASE("SMILES functional black-box", "[.filesystem][data reader][mpi][smiles
     }
   }
 
-  arg_parser = lbann::default_arg_parser_type{}; // Clear the argument parser.
+  arg_parser.clear(); // Clear the argument parser.
   // Cleanup the data readers
   for (auto t : data_readers) {
     delete t.second;
