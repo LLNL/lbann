@@ -8,11 +8,30 @@ import lbann.launcher
 import lbann.proto
 
 def cartesian_hyperparameter_sweep(
-        script : lbann.launcher.batch_script.BatchScript,
+        script,
         make_experiment,
         procs_per_trainer=1,
         **kwargs,
 ):
+    """Train LBANN models with Cartesian product of hyperparameter values
+
+    Models are evaluated independently by LBANN trainers. If the
+    number of models is greater than the number of trainers, LBANN is
+    run multiple times.
+
+    Args:
+        script (lbann.launcher.batch_script.BatchScript): Batch script
+            manager with MPI job configuration info.
+        make_experiment (function): Function that returns a tuple with
+            an lbann.Model, lbann.Optimizer,
+            lbann.reader_pb2.DataReader, and lbann.Trainer.
+        procs_per_trainer (int): Number of MPI ranks in an LBANN
+            trainer.
+        **kwargs (list): Hyperparameter values. Each kwarg should be a
+            list of values to pass to the corresponding kwarg in
+            make_experiment.
+
+    """
 
     # MPI launch configuration
     num_nodes = script.nodes
@@ -31,7 +50,7 @@ def cartesian_hyperparameter_sweep(
     # LBANN invocation as needed.
     arg_keys = list(kwargs.keys())
     arg_values = list(kwargs.values())
-    configs_file = open(os.path.join(work_dir, 'configs.csv'), 'w')
+    configs_file = open(os.path.join(work_dir, 'hyperparameters.csv'), 'w')
     configs_file.write('config_id,run_id,trainer_id,')
     configs_file.write(','.join(arg_keys))
     configs_file.write('\n')
