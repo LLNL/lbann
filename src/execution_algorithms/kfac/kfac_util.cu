@@ -68,7 +68,10 @@ __global__ void kfac_update_kronecker_average_kernel(
   }
 }
 
-#ifdef LBANN_HAS_HALF
+// This is never used because KFAC is only instantiated at `DataType`
+// (i.e., "float" for most folks). I assume this should stay put for a
+// future universe in which we perhaps consider other compute types?
+#if 0 //def LBANN_HAS_HALF
 template <>
 __global__ void kfac_update_kronecker_average_kernel<__half>(
     __half * __restrict__ Aave,

@@ -123,7 +123,7 @@ __global__ void fill_with_tensor_index(El::Int tensor_size,
 template <typename TensorDataType>
 __global__ void indicate_matrix_entries(El::Int k,
                                         El::Int global_matrix_height,
-                                        El::Int local_matrix_height,
+                                        El::Int /*local_matrix_height*/,
                                         El::Int local_matrix_width,
                                         El::Int global_matrix_col_rank,
                                         El::Int global_matrix_col_align,
@@ -185,7 +185,6 @@ void fp_gpu(lbann_comm& comm,
 
   // Column communicator
   auto&& col_comm = input.ColComm();
-  const auto& col_comm_rank = El::mpi::Rank(col_comm);
   const auto& col_comm_size = El::mpi::Size(col_comm);
 
   // GPU objects

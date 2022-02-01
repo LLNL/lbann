@@ -35,7 +35,7 @@ namespace {
 template <typename TensorDataType>
 __global__ void fp_gpu_3d_kernel(
   El::Int input_dim0, El::Int input_dim1, El::Int input_dim2,
-  El::Int output_dim0, El::Int output_dim1, El::Int output_dim2,
+  El::Int /*output_dim0*/, El::Int output_dim1, El::Int output_dim2,
   El::Int local_output_height, El::Int local_output_width,
   const TensorDataType * __restrict__ input, El::Int input_ldim,
   TensorDataType * __restrict__ local_output, El::Int local_output_ldim,
@@ -76,7 +76,7 @@ __global__ void fp_gpu_3d_kernel(
 template <typename TensorDataType>
 __global__ void bp_gpu_3d_kernel(
   El::Int input_dim0, El::Int input_dim1, El::Int input_dim2,
-  El::Int output_dim0, El::Int output_dim1, El::Int output_dim2,
+  El::Int /*output_dim0*/, El::Int output_dim1, El::Int output_dim2,
   El::Int local_output_height, El::Int local_output_width,
   const TensorDataType * __restrict__ local_gradient_wrt_output,
   El::Int local_gradient_wrt_output_ldim,
