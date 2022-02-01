@@ -46,7 +46,7 @@ template <typename TensorDataType>
 __global__ void kfac_conv_transpose_kernel(
     const TensorDataType * __restrict__ A,
     TensorDataType * __restrict__ Acol,
-    const size_t mini_batch_size, const size_t num_channels,
+    const size_t num_channels,
     const size_t spatial_prod, const size_t num_elems) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if(gid < num_elems) {
@@ -94,7 +94,7 @@ void kfac_fc_conv_util::conv_transpose<El::Device::GPU>(
       kfac_conv_transpose_kernel<DataType>,
       grid_size, block_size, 0, sync_info,
       activations.LockedBuffer(), act_columns.Buffer(),
-      mini_batch_size, num_channels, spatial_prod,
+      num_channels, spatial_prod,
       num_elems);
   }
 }
