@@ -114,7 +114,7 @@ class generic_data_reader {
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
 
-  virtual ~generic_data_reader() {}
+  virtual ~generic_data_reader();
   virtual generic_data_reader* copy() const = 0;
 
   /** Archive for checkpoint and restart */

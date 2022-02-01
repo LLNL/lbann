@@ -30,6 +30,7 @@
 #include "MPITestHelpers.hpp"
 
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/random_number_generators.hpp"
 #include "lbann/utils/file_utils.hpp"
@@ -73,7 +74,7 @@ void test_fetch(lbann::generic_data_reader* reader);
 
 bool directory_exists(std::string s);
 
-TEST_CASE("functional black-box", "[.filesystem][data reader][mpi][smiles]")
+TEST_CASE("SMILES functional black-box", "[.filesystem][data_reader][mpi][smiles]")
 {
   //currently, tests are sequential; they can (should?) be expanded
   //to multiple ranks
@@ -81,6 +82,8 @@ TEST_CASE("functional black-box", "[.filesystem][data reader][mpi][smiles]")
   auto& comm = unit_test::utilities::current_world_comm();
   lbann::init_random(0, 2);
   lbann::init_data_seq_random(42);
+  auto& arg_parser = lbann::global_argument_parser();
+  arg_parser.clear(); // Clear the argument parser.
   lbann::construct_all_options();
 
   //make non-const copies
@@ -196,12 +199,13 @@ TEST_CASE("functional black-box", "[.filesystem][data reader][mpi][smiles]")
   }
 
   // set up the options that the reader expects
-  // TODO MRW
-  // opts->set_option("use_data_store", true);
-  // opts->set_option("preload_data_store", true);
-  // opts->set_option("sequence_length", Max_seq_len);
-  // opts->set_option("vocab", vocab_fn);
-  // opts->set_option("prototext", prototext_fn);
+  char const* argv[] = {"smiles_functional_black_box.exe",
+    "--use_data_store",
+    "--preload_data_store",
+    "--sequence_length=100",
+    "--vocab", vocab_fn.c_str()};
+  int const argc = sizeof(argv) / sizeof(argv[0]);
+  REQUIRE_NOTHROW(arg_parser.parse(argc, argv));
 
   // instantiate and load the data readers
   std::map<lbann::execution_mode, lbann::generic_data_reader*> data_readers;
@@ -235,6 +239,12 @@ TEST_CASE("functional black-box", "[.filesystem][data reader][mpi][smiles]")
     if (test_ptr) {
       test_fetch(test_ptr);
     }
+  }
+
+  arg_parser.clear(); // Clear the argument parser.
+  // Cleanup the data readers
+  for (auto t : data_readers) {
+    delete t.second;
   }
 }
 
