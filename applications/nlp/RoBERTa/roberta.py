@@ -35,19 +35,6 @@ def create_position_ids_from_input_ids(
     return incremental_indices
 
 
-def _load_pretrained_weights_layer(
-    fn,
-    file_dir=os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "pretrained_weights"
-    ),
-):
-    weights_file = os.path.join(file_dir, fn + ".npy")
-    dims = np.load(weights_file).shape
-    weights = _load_pretrained_weights(fn, file_dir)
-    weights = lbann.WeightsLayer(weights=weights, dims=str_list(dims))
-    return weights, dims
-
-
 def _load_pretrained_weights(
     *fn,
     file_dir=os.path.join(
@@ -58,9 +45,15 @@ def _load_pretrained_weights(
     if not load_weights:
         return []
 
+    # Use custom directory for loading weights
+    if isinstance(load_weights, str):
+        file_dir = load_weights
+
     weights = []
     for f in fn:
         w_file = os.path.join(file_dir, f + ".npy")
+        if not os.path.isfile(w_file):
+            raise ValueError(f'Pretrained weight file does not exist: {w_file}')
         weights.append(lbann.Weights(initializer=lbann.NumpyInitializer(file=w_file)))
 
     if len(weights) == 1:
@@ -552,6 +545,11 @@ class RobertaPooler(lbann.modules.Module):
 class RobertaModel(lbann.modules.Module):
     def __init__(self, config, add_pooling_layer=True, load_weights=True):
         self.config = config
+
+        # A custom directory can be passed instead of True/False
+        if isinstance(load_weights, str):
+            if not os.path.isdir(load_weights):
+                raise ValueError(f'Path to pretrained weights does not exist: {load_weights}')
 
         self.embeddings = RobertaEmbeddings(
             config, "embeddings", load_weights=load_weights
