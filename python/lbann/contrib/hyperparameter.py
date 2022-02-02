@@ -1,4 +1,3 @@
-from __future__ import annotations
 import itertools
 import os
 import shutil
@@ -7,73 +6,77 @@ import lbann
 import lbann.launcher
 import lbann.proto
 
-def cartesian_hyperparameter_sweep(
+def grid_search(
         script,
         make_experiment,
         procs_per_trainer=1,
+        hyperparameters_file=None,
         **kwargs,
 ):
-    """Train LBANN models with Cartesian product of hyperparameter values
+    """Run LBANN with exhaustive grid search over hyperparameter values
 
     Models are evaluated independently by LBANN trainers. If the
     number of models is greater than the number of trainers, LBANN is
     run multiple times.
 
+    Model configurations are saved to a CSV file.
+
     Args:
         script (lbann.launcher.batch_script.BatchScript): Batch script
-            manager with MPI job configuration info.
+            manager with LBANN launch options.
         make_experiment (function): Function that returns a tuple with
             an lbann.Model, lbann.Optimizer,
             lbann.reader_pb2.DataReader, and lbann.Trainer.
-        procs_per_trainer (int): Number of MPI ranks in an LBANN
-            trainer.
+        procs_per_trainer (int): Number of parallel processes per
+            LBANN trainer.
+        hyperparameters_file (str): CSV file to write model
+            configurations (default: hyperparameters.csv in work
+            directory).
         **kwargs (list): Hyperparameter values. Each kwarg should be a
             list of values to pass to the corresponding kwarg in
             make_experiment.
 
     """
 
-    # MPI launch configuration
+    # Launch configuration
+    work_dir = script.work_dir
     num_nodes = script.nodes
     procs_per_node = script.procs_per_node
-    if procs_per_node % procs_per_trainer and procs_per_trainer % procs_per_node:
+    if (procs_per_node % procs_per_trainer != 0
+        and procs_per_trainer % procs_per_node != 0):
         raise RuntimeError(
             f'Trainer size ({procs_per_trainer}) and '
             f'number of MPI ranks per node ({procs_per_node}) '
             'are not multiples of each other')
     num_trainers = (num_nodes * procs_per_node) // procs_per_trainer
     num_nodes = (procs_per_trainer * num_trainers) // procs_per_node
-    work_dir = script.work_dir
 
     # Iterate through Cartesian product of hyperparameter values
     # Note: Export Protobuf message for each configuration and add
     # LBANN invocation as needed.
     arg_keys = list(kwargs.keys())
     arg_values = list(kwargs.values())
-    configs_file = open(os.path.join(work_dir, 'hyperparameters.csv'), 'w')
-    configs_file.write('config_id,run_id,trainer_id,')
-    configs_file.write(','.join(arg_keys))
-    configs_file.write('\n')
-    for config_id, values in enumerate(itertools.product(*arg_values)):
+    hyperparameters = [['run_id', 'trainer_id', 'model_name'] + arg_keys]
+    for model_id, values in enumerate(itertools.product(*arg_values)):
+        run_id = model_id // num_trainers
+        trainer_id = model_id % num_trainers
 
         # Construct experiment
-        args = { key : values[i] for i, key in enumerate(arg_keys) }
+        args = dict(zip(arg_keys, values))
         model, optimizer, reader, trainer = make_experiment(**args)
+        if not model.name:
+            model.name = f'model{model_id}'
+
+        # Record hyperparameters
+        hyperparameters.append([run_id, trainer_id, model.name] + list(values))
 
         # Export Protobuf file
-        run_id = config_id // num_trainers
-        trainer_id = config_id % num_trainers
         lbann.proto.save_prototext(
             os.path.join(work_dir, f'run{run_id}.trainer{trainer_id}'),
             model=model,
             optimizer=optimizer,
             data_reader=reader,
             trainer=trainer)
-
-        # Write hyperparameters to file
-        configs_file.write(f'{config_id},{run_id},{trainer_id},')
-        configs_file.write(','.join(str(val) for val in values))
-        configs_file.write('\n')
 
         # Invocation to launch LBANN
         if trainer_id == num_trainers-1:
@@ -93,6 +96,8 @@ def cartesian_hyperparameter_sweep(
         last_prototext = os.path.join(work_dir, f'run{run_id}.trainer{trainer_id}')
         while ((trainer_id+1)*procs_per_trainer) % procs_per_node != 0:
             trainer_id += 1
+            hyperparameters.append(list(hyperparameters[-1]))
+            hyperparameters[-1][1] = trainer_id
             shutil.copyfile(
                 last_prototext,
                 os.path.join(work_dir, f'run{run_id}.trainer{trainer_id}'))
@@ -106,8 +111,13 @@ def cartesian_hyperparameter_sweep(
             nodes=((trainer_id+1)*procs_per_trainer) // procs_per_node,
             procs_per_node=procs_per_node)
 
-    # Clean up file with hyperparameters
-    configs_file.close()
+    # Write run configurations to file
+    if not hyperparameters_file:
+        hyperparameters_file = os.path.join(work_dir, 'hyperparameters.csv')
+    with open(hyperparameters_file, 'w') as f:
+        for line in hyperparameters:
+            f.write(','.join(str(val) for val in line))
+            f.write('\n')
 
     # Run script
     script.run(True)
