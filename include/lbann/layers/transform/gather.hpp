@@ -145,6 +145,15 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
   // Tensor dimensions
   const auto& input0_dims = this->get_input_dims(0);
   const auto& input1_dims = this->get_input_dims(1);
+
+  auto dims_to_str = [] (const std::vector<int>& dims) -> std::string {
+    std::ostringstream ss;
+    for (size_t i=0; i<dims.size(); ++i) {
+      ss << (i>0 ? "x" : "") << dims[i];
+    }
+    return ss.str();
+  };
+  
   // Only support 1D indices
   const auto is_indices_not_1D = input1_dims.size() != 1;
 
@@ -173,13 +182,7 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
     }
   }
 
-  auto dims_to_str = [] (const std::vector<int>& dims) -> std::string {
-    std::ostringstream ss;
-    for (size_t i=0; i<dims.size(); ++i) {
-      ss << (i>0 ? "x" : "") << dims[i];
-    }
-    return ss.str();
-  };
+
 
   // Make sure input tensors have supported numbers of dimensions
 

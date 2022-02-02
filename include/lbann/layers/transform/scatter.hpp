@@ -175,22 +175,11 @@ El::Device scatter_layer<TensorDataType,Layout,Device>::get_device_allocation() 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& dr_metadata) {
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  
 
-  // Tensor dimensions
   const auto& input0_dims = this->get_input_dims(0);
   const auto& input1_dims = this->get_input_dims(1);
-
-  // Check if value matrix is 1D or 2D
-
-  const auto is_values_1D = input0_dims.size() == 1;
-  const auto is_values_2D = input0_dims.size() == 2;
-
-
   const auto& output_dims = this->get_output_dims();
-  // Check if output matrix is 1D or 2D
-
-  const auto is_output_1D = output_dims.size() == 1;
-  const auto is_output_2D = output_dims.size() == 2;
 
   auto dims_to_str = [] (const std::vector<int>& dims) -> std::string {
     std::ostringstream ss;
@@ -199,6 +188,67 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
     }
     return ss.str();
   };
+
+  // Tensor dimension requirements are different 
+  // when using distconv 
+  // Distconv requires 3D inputs for both values
+  // and indices
+  
+  #ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()){
+    const auto is_values_3D = input0_dims.size(); 
+    const auto is_indices_3D = input1_dims.size();
+    const auto is_output_3D = output_dims.size();
+    
+    // Matrices need to be 3D
+    if (!is_values_3D || !is_indices_3d){
+       
+      LBANN_ERROR(this->get_type(), " Layer \"", this->get_name(),"\" ",
+        "has values input (", dims_to_str(input0_dims),") ",
+        "has indices input (", dims_to_str(inpu1_dims),"). ", 
+        "Distconv requires both to be 3D. ");
+    }
+    // The 0-th dimension of the values and indices must match
+    if (input0_dims[0] != input1_dims[0]){
+      LBANN_ERROR(this->get_type(), " Layer \"", this->get_name(),"\" ",
+        "has values input (", dims_to_str(input0_dims),") ",
+        "has indices input (", dims_to_str(inpu1_dims),"). ", 
+        "Distconv requires the 0-th dimension to match. ")
+    }
+
+    // The 1st and 2D dimension of the values and output must match
+    const auto output_dim_fail = input0_dims[1] != output_dims[1] || 
+        input0_dims[2] != output_dims[2];
+
+    if (output_dim_fail){
+      LBANN_ERROR(this->get_type(), " Layer \"", this->get_name(),"\" ",
+        "has values input (", dims_to_str(input0_dims),") ",
+        "has indices input (", dims_to_str(inpu1_dims),"). ", 
+        "Distconv requires the 0-th dimension to match. ")
+    }
+
+    // Enable distconv only for scatter along the 0-th dimension
+    if (this->m_scatter_axis != 0){
+      LBANN_ERROR(this->get_type(), " Layer \"", this->get_name(),"\" ",
+         "requires the scatter dimension to be 0 when using distconv");
+    }
+
+    return ;
+  }
+  #endif // LBANN_HAS_DISTCONV
+  // Tensor dimensions
+  
+  
+
+  // Check if value matrix is 1D or 2D
+
+  const auto is_values_1D = input0_dims.size() == 1;
+  const auto is_values_2D = input0_dims.size() == 2;
+
+  // Check if output matrix is 1D or 2D
+
+  const auto is_output_1D = output_dims.size() == 1;
+  const auto is_output_2D = output_dims.size() == 2;
 
   if(is_values_2D){
     if(this->m_scatter_axis == -1){
