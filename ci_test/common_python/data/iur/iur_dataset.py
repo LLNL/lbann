@@ -6,13 +6,14 @@ from tqdm import tqdm
 
 class IUR_Dataset:
     def __init__(
-        self, data_path, num_sample_per_author=4, episode_length=16, max_token_length=32
+        self, data_path, num_sample_per_author=4, episode_length=16, max_token_length=32, num_authors=None
     ):
 
         self.dataset_path = data_path
         self.num_sample_per_author = num_sample_per_author
         self.episode_length = episode_length
         self.max_token_length = max_token_length
+        self.num_authors = num_authors
         self.load_data()
 
     def load_data(self):
@@ -23,8 +24,12 @@ class IUR_Dataset:
 
         feats = [f for f in data[0].keys() if f != "author_id"]
 
+        if self.num_authors is not None:
+            data = data[:self.num_authors]
         self.num_authors = len(data)
-        self.author_id = [d["author_id"] for d in data]
+        # This is only to reduce the GPU memory requirements of integration tests
+        self.author_id = [d for d in range(self.num_authors)]
+        #self.author_id = [d["author_id"] for d in data]
         self.data = {f: [d[f] for d in data] for f in feats}
         self.num_docs = [len(d) for d in self.data["syms"]]
 
@@ -74,18 +79,19 @@ class IUR_Dataset:
         return np.concatenate((np.array([author_id]), input_ids, attn_mask))
 
 
-train_data = IUR_Dataset(
-    "/p/vast1/brain/iur_dataset/bert_tokenization/validation.jsonl"
+test_data = IUR_Dataset(
+    "/p/vast1/brain/iur_dataset/bert_tokenization/validation.jsonl",
+    num_authors=1000
 )
 
 
 def sample_dims():
-    return (train_data.sample_size(),)
+    return (test_data.sample_size(),)
 
 
-def num_train_samples():
-    return len(train_data)
+def num_test_samples():
+    return len(test_data)
 
 
-def get_train_sample(i):
-    return train_data[i]
+def get_test_sample(i):
+    return test_data[i]
