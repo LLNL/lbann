@@ -26,10 +26,11 @@
 #ifndef LBANN_UTILS_TYPE_ERASED_MATRIX_HPP_INCLUDED
 #define LBANN_UTILS_TYPE_ERASED_MATRIX_HPP_INCLUDED
 
-#include <lbann/utils/any.hpp>
 #include <lbann/utils/memory.hpp>
 
 #include <El.hpp>
+
+#include <any>
 
 namespace lbann
 {
@@ -86,7 +87,7 @@ public:
    *
    *  @tparam Field The data type of the held matrix
    *
-   *  @throws bad_any_cast If the datatype of the held matrix does not
+   *  @throws std::bad_any_cast If the datatype of the held matrix does not
    *      match the input @c Field.
    */
   template <typename Field>
@@ -106,13 +107,13 @@ public:
    *
    *  @return Reference to the underlying matrix
    *
-   *  @throws bad_any_cast If the datatype of the held matrix does not
+   *  @throws std::bad_any_cast If the datatype of the held matrix does not
    *      match the input @c Field.
    */
   template <typename Field>
   El::Matrix<Field> const& get() const
   {
-    return any_cast<El::Matrix<Field> const&>(m_matrix);
+    return std::any_cast<El::Matrix<Field> const&>(m_matrix);
   }
 
   /** @brief Replace the held matrix with a new one constructed
@@ -132,7 +133,7 @@ public:
 
 private:
   /** @brief Type-erased matrix storage */
-  any m_matrix;
+  std::any m_matrix;
 };// class type_erased_matrix
 
 /** @brief Create an empty type-erased matrix with given underlying

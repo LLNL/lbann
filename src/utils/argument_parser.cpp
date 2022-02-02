@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/argument_parser.hpp"
-#include "lbann/utils/any.hpp"
 #include "lbann/utils/exception.hpp"
 
 #include <clara.hpp>

@@ -27,11 +27,11 @@
 #ifndef LBANN_UTILS_ARGUMENT_PARSER_HPP_INCLUDED
 #define LBANN_UTILS_ARGUMENT_PARSER_HPP_INCLUDED
 
-#include "lbann/utils/any.hpp"
 #include "lbann/utils/environment_variable.hpp"
 
 #include <clara.hpp>
 
+#include <any>
 #include <initializer_list>
 #include <iostream>
 #include <sstream>
@@ -640,7 +640,7 @@ private:
 
 private:
   /** @brief Dictionary of arguments to their values */
-  std::unordered_map<std::string, utils::any> params_;
+  std::unordered_map<std::string, std::any> params_;
   /** @brief Patch around in-progress clara limitation */
   std::unordered_set<std::string> required_;
   /** @brief The underlying clara object */
@@ -659,7 +659,7 @@ template <typename ErrorHandler>
 template <typename T>
 inline T const& argument_parser<ErrorHandler>::get(std::string const& option_name) const
 {
-  return utils::any_cast<T const&>(params_.at(option_name));
+  return std::any_cast<T const&>(params_.at(option_name));
 }
 
 template <typename ErrorHandler>
@@ -672,7 +672,7 @@ inline auto argument_parser<ErrorHandler>::add_option(
   -> readonly_reference<T>
 {
   params_[name] = std::move(default_value);
-  auto& param_ref = any_cast<T&>(params_[name]);
+  auto& param_ref = std::any_cast<T&>(params_[name]);
   clara::Opt option(param_ref, name);
   for (auto const& f : cli_flags)
     option[f];
@@ -689,7 +689,7 @@ inline auto argument_parser<ErrorHandler>::add_argument(
   -> readonly_reference<T>
 {
   params_[name] = std::move(default_value);
-  auto& param_ref = utils::any_cast<T&>(params_[name]);
+  auto& param_ref = std::any_cast<T&>(params_[name]);
   parser_ |= clara::Arg
     (param_ref, name)
     (description).optional();
@@ -706,7 +706,7 @@ inline auto argument_parser<ErrorHandler>::add_required_argument(
   // Add the reference to bind to
   params_[name] = T{};
   auto& param_any = params_[name];
-  auto& param_ref = any_cast<T&>(param_any);
+  auto& param_ref = std::any_cast<T&>(param_any);
 
   required_.insert(name);
 
@@ -739,7 +739,7 @@ argument_parser<ErrorHandler>::argument_parser()
 template <typename ErrorHandler>
 void argument_parser<ErrorHandler>::clear() noexcept
 {
-  std::unordered_map<std::string, utils::any>{}.swap(params_);
+  std::unordered_map<std::string, std::any>{}.swap(params_);
   std::unordered_set<std::string>{}.swap(required_);
   parser_ = clara::Parser{};
   init();
@@ -750,7 +750,7 @@ void argument_parser<ErrorHandler>::init() noexcept
 {
   params_["print help"] = false;
   parser_ |= clara::ExeName();
-  parser_ |= clara::Help(utils::any_cast<bool&>(params_["print help"]));
+  parser_ |= clara::Help(std::any_cast<bool&>(params_["print help"]));
 }
 
 template <typename ErrorHandler>
@@ -797,7 +797,7 @@ std::string argument_parser<ErrorHandler>::get_exe_name() const noexcept
 template <typename ErrorHandler>
 bool argument_parser<ErrorHandler>::help_requested() const
 {
-  return utils::any_cast<bool>(params_.at("print help"));
+  return std::any_cast<bool>(params_.at("print help"));
 }
 
 template <typename ErrorHandler>
@@ -815,7 +815,7 @@ auto argument_parser<ErrorHandler>::add_flag_impl_(
   -> readonly_reference<bool>
 {
   params_[name] = default_value;
-  auto& param_ref = any_cast<bool&>(params_[name]);
+  auto& param_ref = std::any_cast<bool&>(params_[name]);
   clara::Opt option(param_ref);
   for (auto const& f : cli_flags)
     option[f];
