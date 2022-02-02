@@ -1,5 +1,6 @@
 import os
 
+
 def make_data_reader(lbann):
     reader = lbann.reader_pb2.DataReader()
 

@@ -53,7 +53,7 @@ def _load_pretrained_weights(
     for f in fn:
         w_file = os.path.join(file_dir, f + ".npy")
         if not os.path.isfile(w_file):
-            raise ValueError(f'Pretrained weight file does not exist: {w_file}')
+            raise ValueError(f"Pretrained weight file does not exist: {w_file}")
         weights.append(lbann.Weights(initializer=lbann.NumpyInitializer(file=w_file)))
 
     if len(weights) == 1:
@@ -549,7 +549,9 @@ class RobertaModel(lbann.modules.Module):
         # A custom directory can be passed instead of True/False
         if isinstance(load_weights, str):
             if not os.path.isdir(load_weights):
-                raise ValueError(f'Path to pretrained weights does not exist: {load_weights}')
+                raise ValueError(
+                    f"Path to pretrained weights does not exist: {load_weights}"
+                )
 
         self.embeddings = RobertaEmbeddings(
             config, "embeddings", load_weights=load_weights

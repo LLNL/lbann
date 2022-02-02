@@ -6,7 +6,12 @@ from tqdm import tqdm
 
 class IUR_Dataset:
     def __init__(
-        self, data_path, num_sample_per_author=4, episode_length=16, max_token_length=32, num_authors=None
+        self,
+        data_path,
+        num_sample_per_author=4,
+        episode_length=16,
+        max_token_length=32,
+        num_authors=None,
     ):
 
         self.dataset_path = data_path
@@ -25,11 +30,11 @@ class IUR_Dataset:
         feats = [f for f in data[0].keys() if f != "author_id"]
 
         if self.num_authors is not None:
-            data = data[:self.num_authors]
+            data = data[: self.num_authors]
         self.num_authors = len(data)
         # This is only to reduce the GPU memory requirements of integration tests
         self.author_id = [d for d in range(self.num_authors)]
-        #self.author_id = [d["author_id"] for d in data]
+        # self.author_id = [d["author_id"] for d in data]
         self.data = {f: [d[f] for d in data] for f in feats}
         self.num_docs = [len(d) for d in self.data["syms"]]
 
@@ -80,8 +85,7 @@ class IUR_Dataset:
 
 
 test_data = IUR_Dataset(
-    "/p/vast1/brain/iur_dataset/bert_tokenization/validation.jsonl",
-    num_authors=1000
+    "/p/vast1/brain/iur_dataset/bert_tokenization/validation.jsonl", num_authors=1000
 )
 
 
