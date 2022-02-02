@@ -71,8 +71,8 @@ public:
   void push(T value)
   {
     // Make the new data outside of the lock to minimize lock time
-    auto new_value = make_unique<T>(std::move(value));
-    auto new_node = make_unique<_Node>();
+    auto new_value = std::make_unique<T>(std::move(value));
+    auto new_node = std::make_unique<_Node>();
 
     // Adding to the queue only modifies the tail
     {

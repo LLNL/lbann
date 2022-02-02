@@ -132,7 +132,7 @@ build_timeline_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, std::shared_ptr<lbann_summary> const&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackTimeline&>(proto_msg);
-  return make_unique<timeline>(params.directory());
+  return std::make_unique<timeline>(params.directory());
 }
 
 } // namespace callback

@@ -298,7 +298,7 @@ setup_original_prev_activations_i(int index) const {
     const auto dist = dc::get_hydrogen_data_parallel_distribution(
         dc::get_num_dims(layer()));
     const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-    t = make_unique<InputTensorDevType>(shape, loc, dist, local_shape);
+    t = std::make_unique<InputTensorDevType>(shape, loc, dist, local_shape);
   } else if (parent_shuffle_required(index)) {
     // NOTE: previous activations are assumed to be of the same
     // tensor data type.
@@ -306,7 +306,7 @@ setup_original_prev_activations_i(int index) const {
     const auto &parent_activations =
         dynamic_cast<const InputTensorDevType&>(
             layer().get_parent_layers()[index]->get_distconv_adapter().get_activations(layer()));
-    t = make_unique<InputTensorDevType>(parent_activations);
+    t = std::make_unique<InputTensorDevType>(parent_activations);
   }
   return t;
 }
@@ -330,7 +330,7 @@ setup_prev_activations_i(int index) const {
     const auto shape = get_prev_activations_shape(index);
     const auto local_shape = get_prev_activations_local_shape(index);
     const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-    t = make_unique<InputTensorDevType>(shape, loc, dist, local_shape);
+    t = std::make_unique<InputTensorDevType>(shape, loc, dist, local_shape);
     assert0(t->allocate());
     t->zero(hydrogen::cuda::GetDefaultStream());
   } else {
@@ -340,7 +340,7 @@ setup_prev_activations_i(int index) const {
             layer().get_parent_layers()[index]->get_distconv_adapter().get_activations(layer()));
     // Sanity check
     assert_always(parent_activations.get_distribution() == dist);
-    t = make_unique<InputTensorDevType>(parent_activations);
+    t = std::make_unique<InputTensorDevType>(parent_activations);
   }
   return t;
 }
@@ -425,7 +425,7 @@ setup_activations_i(int index) const {
   const auto &dist = this->get_activations_dist();
   const auto shape = get_activations_shape(index);
   const auto local_shape = get_activations_local_shape(index);
-  auto t = make_unique<OutputTensorDevType>(shape, loc, dist, local_shape);
+  auto t = std::make_unique<OutputTensorDevType>(shape, loc, dist, local_shape);
   assert0(t->allocate());
   t->zero(hydrogen::cuda::GetDefaultStream());
   return t;
@@ -457,7 +457,7 @@ setup_original_activations_i(int index) const {
     // Set the sample dimension as 0 so that its actual value is
     // calculated by Distconv
     local_shape[-1] = 0;
-    t = make_unique<OutputTensorDevType>(
+    t = std::make_unique<OutputTensorDevType>(
         shape, loc, dist, local_shape);
   }
   return t;
@@ -481,7 +481,7 @@ setup_prev_error_signals_i(int index) const {
     const auto shape = get_prev_error_signals_shape(index);
     const auto local_shape = get_prev_error_signals_local_shape(index);
     const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-    t = make_unique<OutputTensorDevType>(shape, loc, dist, local_shape);
+    t = std::make_unique<OutputTensorDevType>(shape, loc, dist, local_shape);
     assert0(t->allocate());
     t->zero(hydrogen::cuda::GetDefaultStream());
   } else {
@@ -491,7 +491,7 @@ setup_prev_error_signals_i(int index) const {
             layer().get_child_layers()[index]->get_distconv_adapter().get_error_signals(layer()));
     // Just sanity check
     assert_always(child_error_signals.get_distribution() == dist);
-    t = make_unique<OutputTensorDevType>(child_error_signals);
+    t = std::make_unique<OutputTensorDevType>(child_error_signals);
   }
   return t;
 }
@@ -519,7 +519,7 @@ setup_original_prev_error_signals_i(int index) const {
     // Set the sample dimension as 0 so that its actual value is
     // calculated by Distconv
     local_shape[-1] = 0;
-    t = make_unique<OutputTensorDevType>(shape, loc, dist, local_shape);
+    t = std::make_unique<OutputTensorDevType>(shape, loc, dist, local_shape);
   } else if (this->child_shuffle_required(index)) {
     // NOTE: previous activations are assumed to be of the same
     // tensor data type.
@@ -527,7 +527,7 @@ setup_original_prev_error_signals_i(int index) const {
     const auto &child_error_signals =
         dynamic_cast<const OutputTensorDevType&>(
             layer().get_child_layers()[index]->get_distconv_adapter().get_error_signals(layer()));
-    t = make_unique<OutputTensorDevType>(child_error_signals);
+    t = std::make_unique<OutputTensorDevType>(child_error_signals);
   }
   return t;
 }
@@ -548,7 +548,7 @@ setup_error_signals_i(int index) const {
   const auto &dist = this->get_error_signals_dist();
   const auto shape = get_error_signals_shape(index);
   const auto local_shape = get_error_signals_local_shape(index);
-  auto t = make_unique<InputTensorDevType>(shape, loc, dist, local_shape);
+  auto t = std::make_unique<InputTensorDevType>(shape, loc, dist, local_shape);
   assert0(t->allocate());
   t->zero(hydrogen::cuda::GetDefaultStream());
   return t;
@@ -578,7 +578,7 @@ setup_original_error_signals_i(int index) const {
     // Set the sample dimension as 0 so that its actual value is
     // calculated by Distconv
     local_shape[-1] = 0;
-    t = make_unique<InputTensorDevType>(shape, loc, dist, local_shape);
+    t = std::make_unique<InputTensorDevType>(shape, loc, dist, local_shape);
   }
   return t;
 }

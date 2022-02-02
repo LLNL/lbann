@@ -157,14 +157,14 @@ private:
       #KEY,                                                             \
       [](lbann_comm*,                                                   \
          lbann_data::Layer const&){                                     \
-        return lbann::make_unique<LAYER_NAME##_layer<T,L,D>>();         \
+        return std::make_unique<LAYER_NAME##_layer<T,L,D>>();         \
       })
 #define LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(KEY, LAYER_NAME)       \
     factory_.register_builder(                                          \
       #KEY,                                                             \
       [](lbann_comm* comm,                                              \
          lbann_data::Layer const&){                                     \
-        return lbann::make_unique<LAYER_NAME##_layer<T,L,D>>(comm);     \
+        return std::make_unique<LAYER_NAME##_layer<T,L,D>>(comm);     \
       })
 
   // Builder registration happens here
@@ -286,7 +286,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
     /// this is not related to this PR.
     if ((typeid(TensorDataType) == typeid(DataType))
         && (Layout == data_layout::DATA_PARALLEL)) {
-      return lbann::make_unique<
+      return std::make_unique<
         input_layer<DataType, data_layout::DATA_PARALLEL, Device>>(comm,
                                                                    data_field);
     }
@@ -326,14 +326,14 @@ std::unique_ptr<Layer> construct_layer_legacy(
         dilations.resize(dims.size(), 1);
       }
 #ifdef LBANN_HAS_DNN_LIB
-      auto ret = lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
+      auto ret = std::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
         dims.size(), num_output_channels,
         dims, pads, strides, dilations, num_groups, bias);
       ret->set_dnn_math_mode(
         dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
       return ret;
 #else
-      return lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
+      return std::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
                dims.size(), num_output_channels,
                dims, pads, strides, dilations, num_groups, bias);
 #endif // LBANN_HAS_DNN_LIB
@@ -348,14 +348,14 @@ std::unique_ptr<Layer> construct_layer_legacy(
         dilation = 1;
       }
 #ifdef LBANN_HAS_DNN_LIB
-      auto ret = lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
+      auto ret = std::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
         num_dims, num_output_channels,
         dim, pad, stride, dilation, num_groups, bias);
       ret->set_dnn_math_mode(
         dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
       return ret;
 #else
-      return lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
+      return std::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
         num_dims, num_output_channels,
         dim, pad, stride, dilation, num_groups, bias);
 #endif // LBANN_HAS_DNN_LIB
@@ -379,7 +379,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
       }
       dims.push_back(training_dr_linearized_data_size);
     }
-    return lbann::make_unique<reshape_layer<TensorDataType, Layout, Device>>(comm, dims);
+    return std::make_unique<reshape_layer<TensorDataType, Layout, Device>>(comm, dims);
   }
 
   // Currently this cannot be suitably removed from this function
@@ -389,7 +389,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
     const auto& params = proto_layer.slice();
     std::vector<size_t> slice_points;
 
-    auto layer = lbann::make_unique<slice_layer<TensorDataType, Layout, Device>>(comm);
+    auto layer = std::make_unique<slice_layer<TensorDataType, Layout, Device>>(comm);
 
     if (params.get_slice_points_from_reader() != "") {
       const slice_points_mode var = slice_points_mode_from_string(params.get_slice_points_from_reader());
@@ -415,7 +415,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
       mean = 0.0;
       stdev = 1.0;
     }
-    return lbann::make_unique<gaussian_layer<TensorDataType,Layout,Device>>(
+    return std::make_unique<gaussian_layer<TensorDataType,Layout,Device>>(
       comm,
       dims,
       mean,
@@ -431,7 +431,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
       min = 0.0;
       max = 1.0;
     }
-    return lbann::make_unique<uniform_layer<TensorDataType,Layout,Device>>(
+    return std::make_unique<uniform_layer<TensorDataType,Layout,Device>>(
       comm,
       dims,
       min,
@@ -440,7 +440,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
   }
   if (proto_layer.has_unpooling()) {
     if (Layout == data_layout::DATA_PARALLEL && Device == El::Device::CPU) {
-      return lbann::make_unique<unpooling_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
+      return std::make_unique<unpooling_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
     } else {
       LBANN_ERROR("unpooling layer is only supported with "
                   "a data-parallel layout and on CPU");
@@ -452,7 +452,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
     const auto& dims = parse_list<int>(params.dims());
     if (Layout == data_layout::DATA_PARALLEL
         && Device == El::Device::CPU) {
-      return lbann::make_unique<discrete_random_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>>(
+      return std::make_unique<discrete_random_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>>(
                comm, values, dims);
     } else {
       LBANN_ERROR("discrete random layer is only supported on CPU");
@@ -460,12 +460,12 @@ std::unique_ptr<Layer> construct_layer_legacy(
   }
   if (proto_layer.has_in_top_k()) {
     const auto& params = proto_layer.in_top_k();
-    return lbann::make_unique<in_top_k_layer<TensorDataType, Layout, Device>>(comm, params.k());
+    return std::make_unique<in_top_k_layer<TensorDataType, Layout, Device>>(comm, params.k());
   }
   if (proto_layer.has_sort()) {
     const auto& params = proto_layer.sort();
     if (Layout == data_layout::DATA_PARALLEL) {
-      return lbann::make_unique<sort_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(comm, params.descending());
+      return std::make_unique<sort_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(comm, params.descending());
     } else {
       LBANN_ERROR("sort layer is only supported with "
                   "a data-parallel layout");
@@ -474,7 +474,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
   if (proto_layer.has_tessellate()) {
     const auto& params = proto_layer.tessellate();
     const auto& dims = parse_list<int>(params.dims());
-    return lbann::make_unique<tessellate_layer<TensorDataType, Layout, Device>>(comm, dims);
+    return std::make_unique<tessellate_layer<TensorDataType, Layout, Device>>(comm, dims);
   }
 
   // Regularizer layers
@@ -511,7 +511,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
       if (epsilon == 0.0) {
         epsilon = 1e-5;
       }
-      return lbann::make_unique<batch_normalization_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
+      return std::make_unique<batch_normalization_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
         decay,
         epsilon,
         statistics_group_size);
@@ -526,21 +526,21 @@ std::unique_ptr<Layer> construct_layer_legacy(
     const auto& alpha = params.alpha();
     const auto& scale = params.scale();
     if (alpha != 0.0 && scale != 0.0) {
-      return lbann::make_unique<selu_dropout<TensorDataType, Layout, Device>>(keep_prob, alpha, scale);
+      return std::make_unique<selu_dropout<TensorDataType, Layout, Device>>(keep_prob, alpha, scale);
     } else {
-      return lbann::make_unique<selu_dropout<TensorDataType, Layout, Device>>(keep_prob);
+      return std::make_unique<selu_dropout<TensorDataType, Layout, Device>>(keep_prob);
     }
   }
   if (proto_layer.has_entrywise_batch_normalization()) {
     const auto& params = proto_layer.entrywise_batch_normalization();
-    return lbann::make_unique<entrywise_batch_normalization_layer<TensorDataType, Layout, Device>>(params.decay(), params.epsilon());
+    return std::make_unique<entrywise_batch_normalization_layer<TensorDataType, Layout, Device>>(params.decay(), params.epsilon());
   }
   if (proto_layer.has_layer_norm()) {
     const auto& params = proto_layer.layer_norm();
     const double epsilon = (params.has_epsilon()
                             ? params.epsilon().value()
                             : 1e-5);
-    return lbann::make_unique<layer_norm_layer<TensorDataType, Layout, Device>>(epsilon);
+    return std::make_unique<layer_norm_layer<TensorDataType, Layout, Device>>(epsilon);
   }
 
   // Activation layers
@@ -548,36 +548,36 @@ std::unique_ptr<Layer> construct_layer_legacy(
     const auto& params = proto_layer.elu();
     const auto& alpha = params.alpha();
     if (alpha != 0) {
-      return lbann::make_unique<elu_layer<TensorDataType, Layout, Device>>(comm, alpha);
+      return std::make_unique<elu_layer<TensorDataType, Layout, Device>>(comm, alpha);
     } else {
-      return lbann::make_unique<elu_layer<TensorDataType, Layout, Device>>(comm);
+      return std::make_unique<elu_layer<TensorDataType, Layout, Device>>(comm);
     }
   }
   if (proto_layer.has_leaky_relu()) {
     const auto& params = proto_layer.leaky_relu();
     const auto& negative_slope = params.negative_slope();
     if (negative_slope != 0) {
-      return lbann::make_unique<leaky_relu_layer<TensorDataType, Layout, Device>>(comm, negative_slope);
+      return std::make_unique<leaky_relu_layer<TensorDataType, Layout, Device>>(comm, negative_slope);
     } else {
-      return lbann::make_unique<leaky_relu_layer<TensorDataType, Layout, Device>>(comm);
+      return std::make_unique<leaky_relu_layer<TensorDataType, Layout, Device>>(comm);
     }
   }
 
   // Loss layers
   if (proto_layer.has_cross_entropy()) {
     const auto& params = proto_layer.cross_entropy();
-    return lbann::make_unique<cross_entropy_layer<TensorDataType, Layout, Device>>(comm, params.use_labels());
+    return std::make_unique<cross_entropy_layer<TensorDataType, Layout, Device>>(comm, params.use_labels());
   }
   if (proto_layer.has_top_k_categorical_accuracy()) {
     const auto& params = proto_layer.top_k_categorical_accuracy();
-    return lbann::make_unique<top_k_categorical_accuracy_layer<TensorDataType, Layout, Device>>(comm, params.k());
+    return std::make_unique<top_k_categorical_accuracy_layer<TensorDataType, Layout, Device>>(comm, params.k());
   }
 
   // Image layers
   if (proto_layer.has_bilinear_resize()) {
     const auto& params = proto_layer.bilinear_resize();
     if (Layout == data_layout::DATA_PARALLEL) {
-      return lbann::make_unique<bilinear_resize_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
+      return std::make_unique<bilinear_resize_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
                comm, params.height(), params.width());
     } else {
       LBANN_ERROR("bilinear resize layer is only supported with "
@@ -587,7 +587,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
 
   if (proto_layer.has_composite_image_transformation()) {
     if (Layout == data_layout::DATA_PARALLEL && Device == El::Device::CPU) {
-      return lbann::make_unique<composite_image_transformation_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
+      return std::make_unique<composite_image_transformation_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
     } else {
       LBANN_ERROR("composite image transformation layer is only supported with "
                   "a data-parallel layout and on CPU");
@@ -596,7 +596,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
 
   if (proto_layer.has_rotation()) {
     if (Layout == data_layout::DATA_PARALLEL && Device == El::Device::CPU) {
-      return lbann::make_unique<rotation_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
+      return std::make_unique<rotation_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
     } else {
       LBANN_ERROR("rotation layer is only supported with "
                   "a data-parallel layout and on CPU");
@@ -606,15 +606,15 @@ std::unique_ptr<Layer> construct_layer_legacy(
   // Miscellaneous layers
   if (proto_layer.has_covariance()) {
     const auto& params = proto_layer.covariance();
-    return lbann::make_unique<covariance_layer<TensorDataType, Layout, Device>>(comm, params.biased());
+    return std::make_unique<covariance_layer<TensorDataType, Layout, Device>>(comm, params.biased());
   }
   if (proto_layer.has_variance()) {
     const auto& params = proto_layer.variance();
-    return lbann::make_unique<variance_layer<TensorDataType, Layout, Device>>(comm, params.biased());
+    return std::make_unique<variance_layer<TensorDataType, Layout, Device>>(comm, params.biased());
   }
   if (proto_layer.has_channelwise_mean()) {
     if (Layout == data_layout::DATA_PARALLEL) {
-      return lbann::make_unique<channelwise_mean_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(comm);
+      return std::make_unique<channelwise_mean_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(comm);
     } else {
       LBANN_ERROR("channel-wise mean layer is only supported with "
                   "a data-parallel layout");
@@ -622,7 +622,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
   }
   if (proto_layer.has_argmax()) {
     if (Layout == data_layout::DATA_PARALLEL && Device == El::Device::CPU) {
-      return lbann::make_unique<argmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
+      return std::make_unique<argmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
     } else {
       LBANN_ERROR("argmax layer is only supported with "
                   "a data-parallel layout and on CPU");
@@ -630,7 +630,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
   }
   if (proto_layer.has_argmin()) {
     if (Layout == data_layout::DATA_PARALLEL && Device == El::Device::CPU) {
-      return lbann::make_unique<argmin_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
+      return std::make_unique<argmin_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
     } else {
       LBANN_ERROR("argmin layer is only supported with "
                   "a data-parallel layout and on CPU");

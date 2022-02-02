@@ -127,7 +127,7 @@ std::unique_ptr<weights> construct_weights(
   auto proto_datatype = proto_weights.datatype();
 
   // Instantiate weights
-  //  auto w = make_unique<data_type_weights<DataType>>(comm);
+  //  auto w = std::make_unique<data_type_weights<DataType>>(comm);
   std::unique_ptr<weights> w;
   std::unique_ptr<weights_initializer> init;
   std::unique_ptr<optimizer> opt;
@@ -135,7 +135,7 @@ std::unique_ptr<weights> construct_weights(
 #define TEMPLATE_INSTANTIATION(TensorDataType)                                \
     do {                                                                      \
       if (proto_datatype == TypeToProtoDataType<TensorDataType>::value) {     \
-        w = make_unique<data_type_weights<TensorDataType>>(*comm);            \
+        w = std::make_unique<data_type_weights<TensorDataType>>(*comm);            \
         init = (proto_weights.has_initializer()                               \
           ? construct_initializer<TensorDataType>(proto_weights)              \
           : nullptr);                                                         \

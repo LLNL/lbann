@@ -182,9 +182,9 @@ build_debug_io_callback_from_pbuf(
   case execution_mode::training:
   case execution_mode::validation:
   case execution_mode::testing:
-    return make_unique<debug_io>(phase, lvl);
+    return std::make_unique<debug_io>(phase, lvl);
   default:
-    return make_unique<debug_io>();
+    return std::make_unique<debug_io>();
   }
 }
 

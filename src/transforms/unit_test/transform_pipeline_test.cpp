@@ -34,8 +34,8 @@
 
 TEST_CASE("Testing transform pipeline", "[preproc]") {
   lbann::transform::transform_pipeline p;
-  p.add_transform(lbann::make_unique<lbann::transform::scale>(2.0f));
-  p.add_transform(lbann::make_unique<lbann::transform::sample_normalize>());
+  p.add_transform(std::make_unique<lbann::transform::scale>(2.0f));
+  p.add_transform(std::make_unique<lbann::transform::sample_normalize>());
   lbann::CPUMat mat;
   El::Identity(mat, 3, 3);
   std::vector<size_t> dims = {3, 3};

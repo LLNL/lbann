@@ -62,7 +62,7 @@ auto make_weights(lbann::lbann_comm& comm, size_t height, size_t width)
   DataTypeWeights<T> out(comm);
   out.set_dims({height}, {width});
   out.set_initializer(
-    lbann::make_unique<ConstantInitializer<T>>(value));
+    std::make_unique<ConstantInitializer<T>>(value));
   return out;
 }
 }// namespace <>
@@ -74,7 +74,7 @@ auto make_weights_ptr(lbann::lbann_comm& comm, size_t height, size_t width)
   auto out = std::make_unique<DataTypeWeights<T>>(comm);
   out->set_dims({height}, {width});
   out->set_initializer(
-    lbann::make_unique<ConstantInitializer<T>>(value));
+    std::make_unique<ConstantInitializer<T>>(value));
   return out;
 }
 
@@ -104,10 +104,10 @@ TEST_CASE("Serializing weights", "[mpi][weights][serialize]")
                                                   weights_height,
                                                   weights_width);
 
-  dtw_src.set_optimizer(lbann::make_unique<SGD<DataType>>(1.f, 2.f, true));
+  dtw_src.set_optimizer(std::make_unique<SGD<DataType>>(1.f, 2.f, true));
   dtw_src.setup();
   dtw_src_ptr_init->set_optimizer(
-    lbann::make_unique<SGD<DataType>>(3.f, 4.f, false));
+    std::make_unique<SGD<DataType>>(3.f, 4.f, false));
   dtw_src_ptr_init->setup();
   std::unique_ptr<lbann::weights>
     dtw_src_ptr = std::move(dtw_src_ptr_init),

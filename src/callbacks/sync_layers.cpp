@@ -82,7 +82,7 @@ build_sync_layers_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSyncLayers&>(proto_msg);
-  return make_unique<sync_layers>(params.sync_gpus(),
+  return std::make_unique<sync_layers>(params.sync_gpus(),
                                                  params.sync_mpi(),
                                                  params.only_input());
 }

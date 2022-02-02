@@ -52,7 +52,7 @@ struct Builder<TensorDataType,data_layout::DATA_PARALLEL,Device>
     using LayerType = channelwise_scale_bias_layer<TensorDataType,
                                                    data_layout::DATA_PARALLEL,
                                                    Device>;
-    return make_unique<LayerType>(std::forward<Args>(args)...);
+    return std::make_unique<LayerType>(std::forward<Args>(args)...);
   }
 };
 } // namespace <anon>

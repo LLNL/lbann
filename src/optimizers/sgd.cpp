@@ -184,7 +184,7 @@ std::unique_ptr<optimizer>
 build_sgd_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
   const auto& params = dynamic_cast<lbann_data::Optimizer::SGD const&>(msg);
-  return make_unique<sgd<TensorDataType>>(TensorDataType(params.learn_rate()),
+  return std::make_unique<sgd<TensorDataType>>(TensorDataType(params.learn_rate()),
                                           TensorDataType(params.momentum()),
                                           params.nesterov());
 }

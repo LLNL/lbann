@@ -381,7 +381,7 @@ El::AbstractDistMatrix<TensorDataType>& optimizer::get_gradient_buffer(
   // If the manager hasn't been created, let's make it.
   if (!grad_mgr_ptr) {
     auto mat_info = this->get_matrix_info();
-    grad_mgr_ptr = make_unique<GradMgrType>(
+    grad_mgr_ptr = std::make_unique<GradMgrType>(
       std::get<HEIGHT>(mat_info),
       std::get<WIDTH>(mat_info),
       std::get<DISTDATA>(mat_info));

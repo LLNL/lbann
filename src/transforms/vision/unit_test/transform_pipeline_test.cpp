@@ -38,10 +38,10 @@
 TEST_CASE("Testing vision transform pipeline", "[preproc]") {
   lbann::transform::transform_pipeline p;
   p.add_transform(
-    lbann::make_unique<lbann::transform::resized_center_crop>(7, 7, 3, 3));
-  p.add_transform(lbann::make_unique<lbann::transform::to_lbann_layout>());
-  p.add_transform(lbann::make_unique<lbann::transform::scale>(2.0f));
-  p.add_transform(lbann::make_unique<lbann::transform::normalize>(
+    std::make_unique<lbann::transform::resized_center_crop>(7, 7, 3, 3));
+  p.add_transform(std::make_unique<lbann::transform::to_lbann_layout>());
+  p.add_transform(std::make_unique<lbann::transform::scale>(2.0f));
+  p.add_transform(std::make_unique<lbann::transform::normalize>(
                     std::vector<float>({0.5f, 0.5f, 0.5f}),
                     std::vector<float>({2.0f, 2.0f, 2.0f})));
   lbann::utils::type_erased_matrix mat = lbann::utils::type_erased_matrix(El::Matrix<uint8_t>());

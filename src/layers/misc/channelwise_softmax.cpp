@@ -206,7 +206,7 @@ struct Builder<float,data_layout::DATA_PARALLEL,Device>
     using LayerType = channelwise_softmax_layer<float,
                                                 data_layout::DATA_PARALLEL,
                                                 Device>;
-    return make_unique<LayerType>(std::forward<Args>(args)...);
+    return std::make_unique<LayerType>(std::forward<Args>(args)...);
   }
 };
 
@@ -219,7 +219,7 @@ struct Builder<double,data_layout::DATA_PARALLEL,Device>
     using LayerType = channelwise_softmax_layer<double,
                                                 data_layout::DATA_PARALLEL,
                                                 Device>;
-    return make_unique<LayerType>(std::forward<Args>(args)...);
+    return std::make_unique<LayerType>(std::forward<Args>(args)...);
   }
 };
 

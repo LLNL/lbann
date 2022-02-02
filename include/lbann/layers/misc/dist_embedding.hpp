@@ -301,7 +301,7 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::setup_data(size_t max_m
   // standard deviation 1.
   if (!this->has_weights()) {
     auto w = std::make_shared<data_type_weights<TensorDataType>>(comm);
-    auto init = make_unique<normal_initializer<TensorDataType>>(0,1);
+    auto init = std::make_unique<normal_initializer<TensorDataType>>(0,1);
     auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_weights");
     w->set_initializer(std::move(init));
@@ -336,7 +336,7 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::setup_data(size_t max_m
   if (m_sparse_sgd) {
     embeddings.set_optimizer(nullptr);
     auto w = std::make_shared<data_type_weights<TensorDataType>>(comm);
-    auto opt = make_unique<sgd<TensorDataType>>(0.);
+    auto opt = std::make_unique<sgd<TensorDataType>>(0.);
     w->set_name(this->get_name() + "_dummy_weights");
     w->set_optimizer(std::move(opt));
     w->set_dims(1);

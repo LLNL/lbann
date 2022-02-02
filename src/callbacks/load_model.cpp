@@ -206,12 +206,12 @@ build_load_model_callback_from_pbuf(
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackLoadModel&>(proto_msg);
   if(params.extension().size() != 0) {
-    return make_unique<load_model>(
+    return std::make_unique<load_model>(
       parse_list<std::string>(params.dirs()),
       params.extension());
   }
   else {
-    return make_unique<load_model>(
+    return std::make_unique<load_model>(
       parse_list<std::string>(params.dirs()));
   }
 }

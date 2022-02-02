@@ -124,7 +124,7 @@ build_check_metric_callback_from_pbuf(
     dynamic_cast<const lbann_data::Callback::CallbackCheckMetric&>(proto_msg);
   const auto& modes =
     parse_set<execution_mode>(params.execution_modes());
-  return make_unique<check_metric>(params.metric(),
+  return std::make_unique<check_metric>(params.metric(),
                                                   modes,
                                                   params.lower_bound(),
                                                   params.upper_bound(),

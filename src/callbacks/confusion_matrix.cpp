@@ -257,7 +257,7 @@ build_confusion_matrix_callback_from_pbuf(
   const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackConfusionMatrix&>(proto_msg);
-  return make_unique<confusion_matrix>(params.prediction(),
+  return std::make_unique<confusion_matrix>(params.prediction(),
                                        params.label(),
                                        params.prefix());
 }

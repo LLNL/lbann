@@ -96,14 +96,14 @@ TEMPLATE_TEST_CASE(
         key::get(generic_key::WIDGET),[]()
         {
           return std::unique_ptr<widget_base>(
-            lbann::make_unique<widget>());
+            std::make_unique<widget>());
         });
 
       factory.register_builder(
         key::get(generic_key::GIZMO),[]()
         {
           return std::unique_ptr<widget_base>(
-            lbann::make_unique<gizmo>());
+            std::make_unique<gizmo>());
         });
 
       THEN("The factory knows about two builders")
@@ -117,7 +117,7 @@ TEMPLATE_TEST_CASE(
           key::get(generic_key::GIZMO),[]()
           {
             return std::unique_ptr<widget_base>(
-              lbann::make_unique<gizmo>());
+              std::make_unique<gizmo>());
           });
 
         THEN("The factory still knows about only two factories")

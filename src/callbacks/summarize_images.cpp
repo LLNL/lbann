@@ -169,7 +169,7 @@ build_categorical_accuracy_strategy_from_pbuf(google::protobuf::Message const& m
   };
 
   const auto& strategy_msg = dynamic_cast<const strategy_type&>(msg);
-  return make_unique<categorical_accuracy_strategy>(
+  return std::make_unique<categorical_accuracy_strategy>(
     strategy_msg.accuracy_layer_name(),
     ConvertToLbannType(strategy_msg.match_type()),
     strategy_msg.num_images_per_epoch());
@@ -255,7 +255,7 @@ build_track_sample_ids_strategy_from_pbuf(google::protobuf::Message const& msg) 
   using strategy_type = callback_type::SelectionStrategy::TrackSampleIDsStrategy;
 
   const auto& strategy_msg = dynamic_cast<const strategy_type&>(msg);
-  return make_unique<autoencoder_strategy>(
+  return std::make_unique<autoencoder_strategy>(
     strategy_msg.input_layer_name(),
     strategy_msg.num_tracked_images());
 }
@@ -342,7 +342,7 @@ build_summarize_images_callback_from_pbuf(
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSummarizeImages&>(proto_msg);
 
-  return make_unique<summarize_images>(
+  return std::make_unique<summarize_images>(
     summarizer,
     construct_strategy(params.selection_strategy()),
     params.image_source_layer_name(),

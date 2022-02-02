@@ -99,7 +99,7 @@ build_set_weights_value_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSetWeightsValue&>(proto_msg);
-  return make_unique<set_weights_value>(
+  return std::make_unique<set_weights_value>(
     params.weights(),
     params.value(),
     params.step());

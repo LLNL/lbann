@@ -88,7 +88,7 @@ public:
 public:
   matrix_ptr_type MakeEmpty(El::Grid const& g, El::Int root) const final
   {
-    auto ret = make_unique<concrete_matrix_type>(g, root);
+    auto ret = std::make_unique<concrete_matrix_type>(g, root);
     ret->Matrix().SetMemoryMode(memory_mode_);
     return ret;
   }

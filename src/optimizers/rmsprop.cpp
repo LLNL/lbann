@@ -121,7 +121,7 @@ build_rmsprop_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Optimizer::RMSprop const&>(msg);
-  return make_unique<rmsprop<TensorDataType>>(
+  return std::make_unique<rmsprop<TensorDataType>>(
     TensorDataType(params.learn_rate()),
     TensorDataType(params.decay_rate()),
     TensorDataType(params.eps()));

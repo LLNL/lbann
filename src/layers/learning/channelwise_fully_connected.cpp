@@ -75,7 +75,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 ::setup_layer(size_t workspace_capacity){
   data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
 
-  m_linear_operator = make_unique<dc::ChannelwiseFullyConnected<TensorDataType>>(dc::get_backend());
+  m_linear_operator = std::make_unique<dc::ChannelwiseFullyConnected<TensorDataType>>(dc::get_backend());
 
 }
 
@@ -106,7 +106,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
   // Create new distconv tensor using distribution
 
-  m_linear = make_unique<TensorDevType>(linearity_shape, loc, shared_dist);
+  m_linear = std::make_unique<TensorDevType>(linearity_shape, loc, shared_dist);
 
   // This distconv tensor m_linear will be Viewed during forward compute
 
@@ -115,7 +115,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
     // get bias shape
     const auto& bias_dims = layer.get_bias_dims();
     dc::Shape bias_shape(bias_dims);
-    m_bias = make_unique<TensorDevType>(bias_shape, loc, shared_dist);
+    m_bias = std::make_unique<TensorDevType>(bias_shape, loc, shared_dist);
   }
 }
 
@@ -140,7 +140,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
   const auto shared_dist = dc::Dist::make_shared_distribution(
      this->get_prev_error_signals_dist().get_locale_shape());
-  m_linearity_gradient = make_unique<TensorDevType>(linearity_shape, loc, shared_dist);
+  m_linearity_gradient = std::make_unique<TensorDevType>(linearity_shape, loc, shared_dist);
 
   auto* linearity_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(layer.get_weights(0).get_optimizer());
 
@@ -154,7 +154,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
       // create shape for bias grad
       const auto& bias_dims = layer.get_bias_dims();
       dc::Shape bias_shape(bias_dims );
-      m_bias_gradient = make_unique<TensorDevType>(bias_shape, loc, shared_dist);
+      m_bias_gradient = std::make_unique<TensorDevType>(bias_shape, loc, shared_dist);
 
       // Copy over bias gradients
       assert0(dc::tensor::View(*m_bias_gradient,
@@ -286,7 +286,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 ::setup_distconv_adapter(const DataReaderMetaData& dr_metadata){
-  this->get_distconv_adapter_ptr() = make_unique<channelwise_fully_connected_distconv_adapter<
+  this->get_distconv_adapter_ptr() = std::make_unique<channelwise_fully_connected_distconv_adapter<
     TensorDataType, Layout, Device>>(*this);
 
 }
@@ -514,7 +514,7 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   // Create default linearity weights if needed
   if (!this->has_weights(0)) {
     auto w = std::make_shared<WeightsType>(*this->get_comm());
-    auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
+    auto init = std::make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
     auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_linearity_weights");
     w->set_initializer(std::move(init));
@@ -811,7 +811,7 @@ struct Builder<TensorDataType,data_layout::DATA_PARALLEL,Device>
       TensorDataType,
       data_layout::DATA_PARALLEL,
       Device>;
-    return make_unique<LayerType>(std::forward<Args>(args)...);
+    return std::make_unique<LayerType>(std::forward<Args>(args)...);
   }
 };
 

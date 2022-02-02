@@ -569,7 +569,7 @@ private:
  protected:
   bool is_distconv_supported() const override;
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
-    this->get_distconv_adapter_ptr() = make_unique<
+    this->get_distconv_adapter_ptr() = std::make_unique<
       pooling_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
   }
   pooling_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() override;
@@ -701,7 +701,7 @@ setup_layer(size_t workspace_capacity) {
       this->layer());
 
   // Init the dc::Pooling layer
-  m_pooling = make_unique<dc::Pooling<TensorDataType>>(
+  m_pooling = std::make_unique<dc::Pooling<TensorDataType>>(
       dc::get_backend(), dc::get_num_dims(l),
       dc::get_halo_exchange_method());
 

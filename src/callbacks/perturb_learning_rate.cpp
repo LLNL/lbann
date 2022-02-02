@@ -147,7 +147,7 @@ build_perturb_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackPerturbLearningRate&>(proto_msg);
-  return make_unique<perturb_learning_rate>(
+  return std::make_unique<perturb_learning_rate>(
     params.learning_rate_factor(),
     params.perturb_during_training(),
     params.batch_interval(),

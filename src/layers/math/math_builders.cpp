@@ -41,7 +41,7 @@ std::unique_ptr<Layer> build_matmul_layer_from_pbuf(
   if constexpr (Layout == data_layout::DATA_PARALLEL) {
     using LayerType = matmul_layer<TensorDataType, Layout, Device>;
     const auto& params = proto_layer.matmul();
-    return lbann::make_unique<LayerType>(
+    return std::make_unique<LayerType>(
       comm,
       params.transpose_a(),
       params.transpose_b());

@@ -386,7 +386,7 @@ struct Builder<TensorDataType,data_layout::DATA_PARALLEL,Device>        \
   {                                                                     \
     constexpr data_layout Layout = data_layout::DATA_PARALLEL;          \
     using LayerType = dist_embedding_layer<TensorDataType,Layout,Device>; \
-    return make_unique<LayerType>(std::forward<Args>(args)...);         \
+    return std::make_unique<LayerType>(std::forward<Args>(args)...);         \
   }                                                                     \
 }
 #ifdef LBANN_HAS_SHMEM

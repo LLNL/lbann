@@ -75,7 +75,7 @@ TEMPLATE_LIST_TEST_CASE("Serializing Identity layer",
   // Create the objects
   LayerType src_layer, tgt_layer;
   std::unique_ptr<lbann::Layer>
-    src_layer_ptr = lbann::make_unique<LayerType>(),
+    src_layer_ptr = std::make_unique<LayerType>(),
     tgt_layer_ptr;
 
 #ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES

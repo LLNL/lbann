@@ -148,7 +148,7 @@ template <typename Field>
 std::unique_ptr<type_erased_matrix>
 create_type_erased_matrix()
 {
-  return make_unique<type_erased_matrix>(El::Matrix<Field>{});
+  return std::make_unique<type_erased_matrix>(El::Matrix<Field>{});
 }
 
 }// namespace utils

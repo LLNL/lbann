@@ -302,7 +302,7 @@ protected:
     this->set_num_weights(4);
     if (!this->has_weights(0)) {
       auto w = std::make_shared<WeightsType>(*this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
+      auto init = std::make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_scale");
       w->set_initializer(std::move(init));
@@ -312,7 +312,7 @@ protected:
     }
     if (!this->has_weights(1)) {
       auto w = std::make_shared<WeightsType>(*this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
+      auto init = std::make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_bias");
       w->set_initializer(std::move(init));
@@ -322,7 +322,7 @@ protected:
     }
     if (!this->has_weights(2)) {
       auto w = std::make_shared<WeightsType>(*this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
+      auto init = std::make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
       this->set_weights(2, w);
@@ -330,7 +330,7 @@ protected:
     }
     if (!this->has_weights(3)) {
       auto w = std::make_shared<WeightsType>(*this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
+      auto init = std::make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
       this->set_weights(3, w);
@@ -393,7 +393,7 @@ protected:
     return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
   }
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
-    this->get_distconv_adapter_ptr() = make_unique<
+    this->get_distconv_adapter_ptr() = std::make_unique<
       batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
   }
   batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() override;
@@ -526,7 +526,7 @@ void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::setup_
     LBANN_ERROR("statistics_group_size must be either 0 or 1 for now.");
   }
 
-  m_bn = make_unique<dc::BatchNormalization<TensorDataType>>(
+  m_bn = std::make_unique<dc::BatchNormalization<TensorDataType>>(
       dc::get_backend(), dc::get_num_dims(l),
       l.m_decay, l.m_epsilon, global_stats);
 }

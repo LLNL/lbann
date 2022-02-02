@@ -159,7 +159,7 @@ void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
                                      El::TypeTraits<TensorDataType>::Zero());
     std::fill(vals.begin(), vals.begin()+num_channels,
               El::TypeTraits<TensorDataType>::One());
-    auto init = make_unique<value_initializer<TensorDataType>>(vals);
+    auto init = std::make_unique<value_initializer<TensorDataType>>(vals);
     auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_weights");
     w->set_initializer(std::move(init));

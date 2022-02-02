@@ -50,7 +50,7 @@ void print_model_description::on_setup_end(model *m) {
 std::unique_ptr<callback_base>
 build_print_model_description_callback_from_pbuf(
   const google::protobuf::Message&, const std::shared_ptr<lbann_summary>&) {
-  return make_unique<print_model_description>();
+  return std::make_unique<print_model_description>();
 }
 
 } // namespace callback

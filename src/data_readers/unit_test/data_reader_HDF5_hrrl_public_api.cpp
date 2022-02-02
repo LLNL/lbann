@@ -185,7 +185,7 @@ TEST_CASE("hdf5 data reader data field fetch tests",
   ds.set_preloaded_conduit_node(index, ds_node);
 
   // Initalize a per-trainer I/O thread pool
-  auto io_thread_pool = lbann::make_unique<lbann::thread_pool>();
+  auto io_thread_pool = std::make_unique<lbann::thread_pool>();
   io_thread_pool->launch_pinned_threads(1, 1);
   hdf5_dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
   hdf5_dr->set_num_parallel_readers(1);

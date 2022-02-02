@@ -105,7 +105,7 @@ private:
     return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
   }
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
-    this->get_distconv_adapter_ptr() = make_unique<leaky_relu_distconv_adapter<
+    this->get_distconv_adapter_ptr() = std::make_unique<leaky_relu_distconv_adapter<
       TensorDataType, Layout, Device>>(*this);
   }
   leaky_relu_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() override;
@@ -150,7 +150,7 @@ setup_distributions(tensor_overlap_constraints &constraints) {
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void leaky_relu_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
     size_t workspace_capacity) {
-  m_leaky_relu = make_unique<dc::LeakyReLU>(dc::get_backend());
+  m_leaky_relu = std::make_unique<dc::LeakyReLU>(dc::get_backend());
 }
 #endif // LBANN_HAS_DISTCONV
 

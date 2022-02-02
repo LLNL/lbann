@@ -44,7 +44,7 @@ build_cross_grid_sum_layer_from_pbuf(lbann_comm* comm,
   }
 
   using LayerType = cross_grid_sum_layer<TensorDataType, Device>;
-  return make_unique<LayerType>(comm);
+  return std::make_unique<LayerType>(comm);
 }
 
 #define PROTO_DEVICE(T, D)                                                     \
