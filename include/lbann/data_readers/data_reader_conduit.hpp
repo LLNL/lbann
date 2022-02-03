@@ -42,9 +42,28 @@ public:
   void load() override;
   bool fetch_conduit_node(conduit::Node& sample, int data_id) override;
 
+  void set_data_dims(std::vector<int> dims);
+  void set_label_dims(std::vector<int> dims);
+
   std::string get_type() const override { return "conduit_data_reader"; }
-  int get_linearized_data_size() const override { return 28*28; }
-  int get_linearized_label_size() const override { return 10; }
+  int get_linearized_data_size() const override {
+    int data_size = 1;
+    for(int i : m_data_dims) {
+      data_size *= i;
+    }
+    return data_size;
+  }
+  int get_linearized_label_size() const override {
+    int label_size = 1;
+    for(int i : m_label_dims) {
+      label_size *= i;
+    }
+    return label_size;
+  }
+
+protected:
+  std::vector<int> m_data_dims;
+  std::vector<int> m_label_dims;
 
 }; // END: class conduit_data_reader
 

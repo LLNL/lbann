@@ -42,4 +42,12 @@ bool conduit_data_reader::fetch_conduit_node(conduit::Node& sample, int data_id)
   return true;
 }
 
+void conduit_data_reader::set_data_dims(std::vector<int> dims) {
+  m_data_dims = dims;
+}
+
+void conduit_data_reader::set_label_dims(std::vector<int> dims) {
+  m_label_dims = dims;
+}
+
 }  // namespace lbann

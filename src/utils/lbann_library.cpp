@@ -80,57 +80,86 @@ auto mock_dr_metadata(std::vector<int> input_dims,
   return drmd;
 }
 
-// Loads a model from checkpoint and sets up model for inference
-std::unique_ptr<model>
-load_inference_model(lbann_comm* lc,
-                     std::string cp_dir,
-                     std::vector<conduit::Node> &samples,
-                     int mbs,
-                     std::vector<int> input_dims,
-                     std::vector<int> output_dims) {
-  persist p;
-  p.open_restart(cp_dir.c_str());
-  auto m = std::make_unique<model>(lc, nullptr, nullptr);
-  m->load_from_checkpoint_shared(p);
-  p.close_restart();
+// Sets data samples for lbann-core inference
+void set_inference_samples(std::vector<conduit::Node> &samples) {
+  data_coordinator& dc = global_trainer_->get_data_coordinator();
+  generic_data_reader* dr = dc.get_data_reader(execution_mode::inference);
+  data_store_conduit& ds = dr->get_data_store();
 
-  lbann::generic_data_reader *reader = new conduit_data_reader();
-  reader->set_comm(lc);
-  reader->set_num_parallel_readers(lc->get_procs_per_trainer());
-  reader->set_mini_batch_size(mbs);
+  // Push samples into data_store
   std::vector<int> indices(samples.size());
   std::iota(indices.begin(), indices.end(), 0);
-  reader->set_shuffled_indices(indices);
-  auto data_store = new lbann::data_store_conduit(reader);
-  reader->set_data_store(data_store);
-  auto& ds = reader->get_data_store();
-  int data_id  = 0;
+  dr->set_shuffled_indices(indices);
+  int data_id = 0;
   for (auto& node : samples) {
     ds.set_conduit_node(data_id, node);
     ++data_id;
   }
 
-  std::map<execution_mode, generic_data_reader *> data_readers =
-    {{ execution_mode::inference, reader }};
+  // Call setup on data_coordinator to have proper init of input buffers
+  std::map<execution_mode, generic_data_reader*> data_readers = {
+    {execution_mode::inference, dr}};
+  dc.setup(global_trainer_->get_io_thread_pool(),
+           global_trainer_->get_max_mini_batch_size(),
+           data_readers);
+}
+
+void setup_inference_env(lbann_comm* lc,
+                         int mbs,
+                         std::vector<int> input_dims,
+                         std::vector<int> output_dims)
+{
+  // Setup data reader
+  lbann::conduit_data_reader* reader = new conduit_data_reader();
+  reader->set_comm(lc);
+  reader->set_num_parallel_readers(lc->get_procs_per_trainer());
+  reader->set_mini_batch_size(mbs);
+  reader->set_data_dims(input_dims);
+  reader->set_label_dims(output_dims);
+
+  // Add data store
+  auto data_store = new lbann::data_store_conduit(reader);
+  reader->set_data_store(data_store);
+
+  // Setup data coordinator and trainer
+  std::map<execution_mode, generic_data_reader*> data_readers = {
+    {execution_mode::inference, reader}};
   std::unique_ptr<thread_pool> io_thread_pool =
     construct_io_thread_pool(lc, false);
   auto io_threads_per_process = io_thread_pool->get_num_threads();
-  std::unique_ptr<data_coordinator> dc = lbann::make_unique<buffered_data_coordinator<float>>(lc);
-  global_trainer_ = lbann::make_unique<trainer>(lc, std::move(dc), mbs, nullptr);
-
-  // Root of the random seed tree
+  std::unique_ptr<data_coordinator> dc =
+    lbann::make_unique<buffered_data_coordinator<float>>(lc);
+  global_trainer_ =
+    lbann::make_unique<trainer>(lc, std::move(dc), mbs, nullptr);
   int root_random_seed = lbann_default_random_seed;
-  // Random seed used for the general RNGs
   int random_seed = root_random_seed;
-  // Random seed used for the RNG used to fetch data
   int data_seq_random_seed = root_random_seed;
-  // Initialize the general RNGs and the data sequence RNGs
   init_random(random_seed, io_threads_per_process);
   init_data_seq_random(data_seq_random_seed);
   init_ltfb_random(root_random_seed);
-  global_trainer_->set_random_seeds(root_random_seed, random_seed, data_seq_random_seed);
+  global_trainer_->set_random_seeds(root_random_seed,
+                                    random_seed,
+                                    data_seq_random_seed);
 
   global_trainer_->setup(std::move(io_thread_pool), data_readers);
+}
+
+// Loads a model from checkpoint and sets up model for inference
+std::unique_ptr<model>
+load_inference_model(lbann_comm* lc,
+                     std::string cp_dir,
+                     int mbs,
+                     std::vector<int> input_dims,
+                     std::vector<int> output_dims) {
+  // Setup trainer, dr, dc, ds
+  setup_inference_env(lc, mbs, input_dims, output_dims);
+
+  // Load checkpoint
+  persist p;
+  p.open_restart(cp_dir.c_str());
+  auto m = make_unique<directed_acyclic_graph_model>(lc, nullptr, nullptr);
+  m->load_from_checkpoint_shared(p);
+  p.close_restart();
 
   // Must use a mock datareader with input and output dims for setup
   // TODO: avoid need for datareader altogether

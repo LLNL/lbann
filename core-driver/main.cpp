@@ -58,6 +58,9 @@ void construct_opts(int argc, char **argv) {
                         {"-mbs"},
                         "Number of samples in a mini-batch",
                         16);
+  arg_parser.add_flag("use_conduit",
+                        {"-conduit"},
+                        "Use Conduit node samples");
   arg_parser.add_required_argument<std::string>
                                   ("model",
                                    "Directory containing checkpointed model");
@@ -72,17 +75,17 @@ random_samples(El::Grid const& g, int n, int c, int h, int w) {
   return samples;
 }
 
-void random_mnist_sample(int *arr, int size, int max_val=255) {
+void random_mnist_sample(float *arr, int size, int max_val=255) {
   for (int i; i < size; i++) {
-    arr[i] = std::rand() % max_val;
+    arr[i] = (std::rand() % max_val) / max_val;
   }
 }
 
 std::vector<conduit::Node> conduit_mnist_samples(int n, int c, int h, int w) {
   std::vector<conduit::Node> samples(n);
   int sample_size = c * h * w;
+  float this_sample[sample_size];
   for (int i; i<n; i++) {
-    int this_sample[sample_size];
     random_mnist_sample(this_sample, sample_size);
     samples[i]["data/samples"].set(this_sample, sample_size);
     samples[i]["data/labels"] = std::rand() % 10;
@@ -118,22 +121,29 @@ int main(int argc, char **argv) {
   // Load model and run inference on samples
   auto lbann_comm = lbann::initialize_lbann(MPI_COMM_WORLD);
 
-  auto samples = conduit_mnist_samples(arg_parser.get<int>("samples"),
-                                       arg_parser.get<int>("channels"),
-                                       arg_parser.get<int>("height"),
-                                       arg_parser.get<int>("width"));
-  samples[1].print();
-
-  auto m = lbann::load_inference_model(lbann_comm.get(),
-                                       arg_parser.get<std::string>("model"),
-                                       samples,
-                                       arg_parser.get<int>("minibatchsize"),
-                                       {
+  //if arg_parser.get<bool>("use_conduit") {
+    auto samples = conduit_mnist_samples(arg_parser.get<int>("samples"),
                                          arg_parser.get<int>("channels"),
                                          arg_parser.get<int>("height"),
-                                         arg_parser.get<int>("width")
-                                       },
-                                       {arg_parser.get<int>("labels")});
+                                         arg_parser.get<int>("width"));
+    auto m = lbann::load_inference_model(lbann_comm.get(),
+                                         arg_parser.get<std::string>("model"),
+                                         arg_parser.get<int>("minibatchsize"),
+                                         {
+                                           arg_parser.get<int>("channels"),
+                                           arg_parser.get<int>("height"),
+                                           arg_parser.get<int>("width")
+                                         },
+                                         {arg_parser.get<int>("labels")});
+    lbann::set_inference_samples(samples);
+  /*} else {
+    auto samples = random_samples(lbann_comm->get_trainer_grid(),
+                                  arg_parser.get<int>("samples"),
+                                  arg_parser.get<int>("channels"),
+                                  arg_parser.get<int>("height"),
+                                  arg_parser.get<int>("width"));
+  }*/
+
 
   auto labels = lbann::inference(m.get(), arg_parser.get<int>("minibatchsize"));
 

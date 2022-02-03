@@ -35,6 +35,8 @@ namespace lbann {
 
 const int lbann_default_random_seed = 42;
 
+void set_inference_samples(std::vector<conduit::Node> &samples);
+
 /** @brief Loads a trained model from checkpoint for inference only
  * @param[in] lc An LBANN Communicator
  * @param[in] cp_dir The model checkpoint directory
@@ -45,7 +47,6 @@ const int lbann_default_random_seed = 42;
  */
 std::unique_ptr<model> load_inference_model(lbann_comm* lc,
                                             std::string cp_dir,
-                                            std::vector<conduit::Node> &samples,
                                             int mbs,
                                             std::vector<int> input_dims,
                                             std::vector<int> output_dims);
