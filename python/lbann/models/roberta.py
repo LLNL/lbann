@@ -542,7 +542,7 @@ class RobertaPooler(lbann.modules.Module):
         return pooled_output
 
 
-class RobertaModel(lbann.modules.Module):
+class RoBERTa(lbann.modules.Module):
     def __init__(self, config, add_pooling_layer=True, load_weights=True):
         self.config = config
 
