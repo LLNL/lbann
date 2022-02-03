@@ -51,9 +51,10 @@ namespace distconv{
                  const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &indices,           
                  tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &values_grad,             
                  tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &indices_grad);
-
+    void setup();
   protected:
     Backend &m_backend;
+    std::unique_ptr<tensor::ScatterNVSHMEM<DataType>> m_dist_scatter;
   };  // class definition Scatter
 } // namespace distconv
 #endif // LBANN_HAS_DISTCONV

@@ -167,6 +167,7 @@ __global__ void gather3d_kernel(
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
 scatter_distconv_adapter<TensorDataType, Layout, Device>
 ::setup_distribution(tensor_overlap_constraints &constraints){
   data_type_distconv_adapter<TensorDataType>::setup_distributions(constraints);
@@ -193,23 +194,39 @@ scatter_distconv_adapter<TensorDataType, Layout, Device>
   }
 }
 
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
 scatter_distconv_adapter<TensorDataType, Layout, Device>
-setup_layer(size_t workspace_capacity){
+::setup_layer(size_t workspace_capacity){
   data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
   m_scatter_operator = make_unique<dc::Scatter<TensorDataType>(dc::get_backend());
+  // Follow the convention from MSE 
+  // MSE also has two input vectors being partitioned 
+
+  m_scatter_operator->setup(); 
+}
+
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+scatter_distconv_adapter<TensorDataType, Layout, Device>
+::fp_compute(){
+  // Compute the forward pass
+  m_scatter_operator->forward(this->get_prev_activations(0),
+                              this->get_prev_activations(1),
+                              this->get_activations()); 
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
 scatter_distconv_adapter<TensorDataType, Layout, Device>
-fp_compute(){
-
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-scatter_distconv_adapter<TensorDataType, Layout, Device>
-bp_compute(){
-
+::bp_compute(){
+  // Compute the backward pass 
+  m_scatter_operator->backward(this->get_prev_error_signals(),  
+                               this->get_prev_activations(1),
+                               this->get_local_error_signals(0),   // Values gradient
+                               this->get_local_error_signals(1));  // Indices gradient. Will be 0'ed out
 }
 
 // =============================================================

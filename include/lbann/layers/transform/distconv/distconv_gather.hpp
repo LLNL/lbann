@@ -39,7 +39,9 @@ namespace distconv{
     using LocaleMPI = tensor::LocaleMPI;
     
     public:
-      Gather(Backend &backend):m_backend(backend){};
+      Gather(Backend &backend):m_backend(backend){
+        
+      };
     
     template<typename Allocator>
     int forward(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input,
@@ -54,6 +56,7 @@ namespace distconv{
 
   protected:
     Backend &m_backend;
+    std::unique_ptr<tensor::GatherNVSHMEM<DataType>> m_dist_gather;
   };  // class definition Gather
 } // namespace distconv
 #endif // LBANN_HAS_DISTCONV

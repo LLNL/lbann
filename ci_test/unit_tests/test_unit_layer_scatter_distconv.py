@@ -60,6 +60,10 @@ def construct_model(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
+    # Objects for LBANN model
+    obj = []
+    metrics = []
+    callbacks = []
 
     # Input data
     # Note: Sum with a weights layer so that gradient checking will
@@ -81,10 +85,6 @@ def construct_model(lbann):
 
     x1 = lbann.Identity(x_slice)
 
-
-    
-
-
     ######################################################################
     #
     #          3D Values , 3D Input, Axis = 0, Distconv
@@ -92,7 +92,7 @@ def construct_model(lbann):
     ######################################################################
 
     x0 = lbann.Reshape(x0, dims=tools.str_list([height, width, 1]), name="values_distconv_axis_0")
-    x1 = lbann.Reshape(x1, dims=tools.str_list([height, 1, 1], name="indices_distconv_axis_0")
+    x1 = lbann.Reshape(x1, dims=tools.str_list([height, 1, 1]), name="indices_distconv_axis_0")
 
 
     # output should be (height, output_size, 1)
@@ -113,13 +113,6 @@ def construct_model(lbann):
 
     obj.append(z)
     metrics.append(lbann.Metric(z, name='3D, axis=0'))
-
-    # Objects for LBANN model
-    obj = []
-    metrics = []
-    callbacks = []
-
-
 
     vals = []
 
