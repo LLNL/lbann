@@ -96,25 +96,16 @@ set_center_specific_modules()
         # Disable the StdEnv for systems in LC
         case ${spack_arch_target} in
             "power9le") # Lassen
-                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.8.2"
-#                MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 cuda/11.4.1 spectrum-mpi/rolling-release python/3.8.2"
-#                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2"
+                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2"
                 ;;
             "power8le") # Ray
-#                MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2"
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2"
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
-                MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 cuda/11.4.1 mvapich2/2.3 python/3.8.2"
-#                MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 cuda/11.4.1 openmpi/4.1.0 python/3.8.2"
-#                MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 cuda/11.4.1 mvapich2/2.3 python/3.7.2"
-#                MODULE_CMD="module --force unload StdEnv; module load clang/11.0.1 cuda/11.4.1 mvapich2/2.3 python/3.7.2"
-#                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.0 mvapich2/2.3 python/3.7.2"
+                MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 cuda/11.4.1 mvapich2/2.3.6 python/3.7.2"
                 ;;
             "ivybridge") # Catalyst
-#                MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 openmpi/4.1.0 python/3.8.2"
-                MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 mvapich2/2.3 python/3.8.2"
-#                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
+                MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 mvapich2/2.3.6 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
                 MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 python/3.7.2 opt rocm/4.2.0 openmpi-gnu/4.0"
@@ -169,27 +160,17 @@ set_center_specific_spack_dependencies()
         # MIRRORS="/p/vast1/lbann/spack/mirror /p/vast1/atom/spack/mirror"
         case ${spack_arch_target} in
             "power9le") # Lassen
-#                CENTER_DEPENDENCIES="%clang ^spectrum-mpi ^openblas@0.3.12 threads=openmp ^cuda@11.4.1 ^libtool@2.4.2 ^py-packaging@17.1"
-#                CENTER_FLAGS="+lld"
                 CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp ^cuda@11.1.105 ^libtool@2.4.2 ^py-packaging@17.1"
                 CENTER_FLAGS="+gold"
-#                CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp ^cuda@11.1.105 ^libtool@2.4.2 ^py-packaging@17.1"
-#                CENTER_FLAGS="+gold"
                 ;;
             "power8le") # Ray
-#                CENTER_DEPENDENCIES="%clang ^spectrum-mpi ^openblas@0.3.12 threads=openmp ^cuda@11.1.105 ^libtool@2.4.2 ^py-packaging@17.1"
-#                CENTER_FLAGS="+lld"
                 CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp ^cuda@11.1.105 ^libtool@2.4.2 ^py-packaging@17.1"
                 CENTER_FLAGS="+gold"
                 ;;
             "broadwell" | "haswell" | "sandybridge" | "ivybridge") # Pascal, RZHasGPU, Surface, Catalyst
                 # On LC the mvapich2 being used is built against HWLOC v1
-#               CENTER_DEPENDENCIES="%clang ^openmpi ^hwloc@1.11.13 ^libtool@2.4.2 ^py-packaging@17.1"
-#               CENTER_DEPENDENCIES="%clang ^openmpi ^hwloc@1.11.13 ^libtool@2.4.2 ^py-packaging@17.1 ^conduit@0.7.2"
                CENTER_DEPENDENCIES="%clang ^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^py-packaging@17.1"
                CENTER_FLAGS="+lld"
-                # CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^py-packaging@17.1 ^python@3.9.10"
-                # CENTER_FLAGS="+gold"
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
