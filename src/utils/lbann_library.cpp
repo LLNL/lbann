@@ -169,6 +169,12 @@ load_inference_model(lbann_comm* lc,
   return m;
 }
 
+El::Matrix<int, El::Device::CPU>
+inference(observer_ptr<model> model) {
+  auto inf_alg = batch_functional_inference_algorithm();
+  return inf_alg.infer(model);
+}
+
 /// Split the MPI communicator into trainers
 /// Return the
 int allocate_trainer_resources(lbann_comm *comm) {
