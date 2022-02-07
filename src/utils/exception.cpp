@@ -49,7 +49,7 @@ exception::exception(std::string message)
   auto const stack_trace = stack_trace::get();
   auto const star_rule = std::string(64, '*');
   std::ostringstream oss;
-  oss << star_rule << "\n" << message;
+  oss << star_rule << "\n" << message << "\n";
   if (!stack_trace.empty()) {
     oss << "Stack trace:\n" << stack_trace;
   }
