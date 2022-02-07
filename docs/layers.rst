@@ -94,7 +94,6 @@ Layer Arguments
 
 .. toctree::
    :maxdepth: 2
-   :caption: Layer Arguments
 
    Layer Arguments <layers/layer_args>
 
