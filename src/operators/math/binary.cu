@@ -48,8 +48,8 @@ struct AddOpImpl {
   {
     return x1 + x2;
   }
-  inline __device__ void operator()(DataT const& x1,
-                                    DataT const& x2,
+  inline __device__ void operator()(DataT const& /*x1*/,
+                                    DataT const& /*x2*/,
                                     DataT const& dy,
                                     DataT& dx1,
                                     DataT& dx2) const
@@ -66,8 +66,8 @@ struct SubtractOpImpl {
   {
     return x1 - x2;
   }
-  inline __device__ void operator()(DataT const& x1,
-                                    DataT const& x2,
+  inline __device__ void operator()(DataT const& /*x1*/,
+                                    DataT const& /*x2*/,
                                     DataT const& dy,
                                     DataT& dx1,
                                     DataT& dx2) const
@@ -261,9 +261,9 @@ struct EqualOpImpl {
   {
     return x1 == x2 ? DataT(1.0) : DataT(0.0);
   }
-  inline __device__ void operator()(DataT const& x1,
-                                    DataT const& x2,
-                                    DataT const& dy,
+  inline __device__ void operator()(DataT const& /*x1*/,
+                                    DataT const& /*x2*/,
+                                    DataT const& /*dy*/,
                                     DataT& dx1,
                                     DataT& dx2) const
   {
@@ -279,9 +279,9 @@ struct NotEqualOpImpl {
   {
     return x1 == x2 ? DataT(0.0) : DataT(1.0);
   }
-  inline __device__ void operator()(DataT const& x1,
-                                    DataT const& x2,
-                                    DataT const& dy,
+  inline __device__ void operator()(DataT const& /*x1*/,
+                                    DataT const& /*x2*/,
+                                    DataT const& /*dy*/,
                                     DataT& dx1,
                                     DataT& dx2) const
   {
@@ -297,9 +297,9 @@ struct LessOpImpl {
   {
     return x1 < x2 ? DataT(1.0) : DataT(0.0);
   }
-  inline __device__ void operator()(DataT const& x1,
-                                    DataT const& x2,
-                                    DataT const& dy,
+  inline __device__ void operator()(DataT const& /*x1*/,
+                                    DataT const& /*x2*/,
+                                    DataT const& /*dy*/,
                                     DataT& dx1,
                                     DataT& dx2) const
   {
@@ -315,9 +315,9 @@ struct LessEqualOpImpl {
   {
     return x1 <= x2 ? DataT(1.0) : DataT(0.0);
   }
-  inline __device__ void operator()(DataT const& x1,
-                                    DataT const& x2,
-                                    DataT const& dy,
+  inline __device__ void operator()(DataT const& /*x1*/,
+                                    DataT const& /*x2*/,
+                                    DataT const& /*dy*/,
                                     DataT& dx1,
                                     DataT& dx2) const
   {
@@ -333,9 +333,9 @@ struct GreaterOpImpl {
   {
     return x1 > x2 ? DataT(1.0) : DataT(0.0);
   }
-  inline __device__ void operator()(DataT const& x1,
-                                    DataT const& x2,
-                                    DataT const& dy,
+  inline __device__ void operator()(DataT const& /*x1*/,
+                                    DataT const& /*x2*/,
+                                    DataT const& /*dy*/,
                                     DataT& dx1,
                                     DataT& dx2) const
   {
@@ -351,9 +351,9 @@ struct GreaterEqualOpImpl {
   {
     return x1 >= x2 ? DataT(1.0) : DataT(0.0);
   }
-  inline __device__ void operator()(DataT const& x1,
-                                    DataT const& x2,
-                                    DataT const& dy,
+  inline __device__ void operator()(DataT const& /*x1*/,
+                                    DataT const& /*x2*/,
+                                    DataT const& /*dy*/,
                                     DataT& dx1,
                                     DataT& dx2) const
   {
@@ -371,9 +371,9 @@ struct LogicalAndOpImpl {
     auto const& b2 = x2 != DataT(0.0) && !gpu_lib::isnan(x2);
     return (b1 && b2) ? DataT(1.0) : DataT(0.0);
   }
-  inline __device__ void operator()(DataT const& x1,
-                                    DataT const& x2,
-                                    DataT const& dy,
+  inline __device__ void operator()(DataT const& /*x1*/,
+                                    DataT const& /*x2*/,
+                                    DataT const& /*dy*/,
                                     DataT& dx1,
                                     DataT& dx2) const
   {
@@ -391,9 +391,9 @@ struct LogicalOrOpImpl {
     auto const& b2 = x2 != DataT(0.0) && !gpu_lib::isnan(x2);
     return (b1 || b2) ? DataT(1.0) : DataT(0.0);
   }
-  inline __device__ void operator()(DataT const& x1,
-                                    DataT const& x2,
-                                    DataT const& dy,
+  inline __device__ void operator()(DataT const& /*x1*/,
+                                    DataT const& /*x2*/,
+                                    DataT const& /*dy*/,
                                     DataT& dx1,
                                     DataT& dx2) const
   {
@@ -411,9 +411,9 @@ struct LogicalXorOpImpl {
     auto const& b2 = x2 != DataT(0.0) && !gpu_lib::isnan(x2);
     return (b1 || b2) && !(b1 && b2) ? DataT(1.0) : DataT(0.0);
   }
-  inline __device__ void operator()(DataT const& x1,
-                                    DataT const& x2,
-                                    DataT const& dy,
+  inline __device__ void operator()(DataT const& /*x1*/,
+                                    DataT const& /*x2*/,
+                                    DataT const& /*dy*/,
                                     DataT& dx1,
                                     DataT& dx2) const
   {

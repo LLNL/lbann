@@ -128,9 +128,9 @@ struct BooleanAccuracyOpImpl
     auto const& b2 = x2 >= DataT(0.5);
     return b1 == b2 ? DataT(1.0) : DataT(0.0);
   }
-  inline __device__ void operator()(DataT const& x1,
-                                    DataT const& x2,
-                                    DataT const& dy,
+  inline __device__ void operator()(DataT const& /*x1*/,
+                                    DataT const& /*x2*/,
+                                    DataT const& /*dy*/,
                                     DataT& dx1,
                                     DataT& dx2) const
   {
@@ -150,9 +150,9 @@ struct BooleanFalseNegativeOpImpl
     auto const& b2 = x2 >= DataT(0.5);
     return (!b1 && b2) ? DataT(1.0) : DataT(0.0);
   }
-  inline __device__ void operator()(DataT const& x1,
-                                    DataT const& x2,
-                                    DataT const& dy,
+  inline __device__ void operator()(DataT const& /*x1*/,
+                                    DataT const& /*x2*/,
+                                    DataT const& /*dy*/,
                                     DataT& dx1,
                                     DataT& dx2) const
   {
@@ -172,9 +172,9 @@ struct BooleanFalsePositiveOpImpl
     auto const& b2 = x2 >= DataT(0.5);
     return (b1 && !b2) ? DataT(1.0) : DataT(0.0);
   }
-  inline __device__ void operator()(DataT const& x1,
-                                    DataT const& x2,
-                                    DataT const& dy,
+  inline __device__ void operator()(DataT const& /*x1*/,
+                                    DataT const& /*x2*/,
+                                    DataT const& /*dy*/,
                                     DataT& dx1,
                                     DataT& dx2) const
   {

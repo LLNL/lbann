@@ -38,6 +38,8 @@
 
 #include "./data_reader_common_catch2.hpp"
 #include "lbann/data_readers/data_reader_HDF5.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/options.hpp"
 
 // input data; each of these contain a single variable: "const std::string"
 #include "./test_data/hdf5_hrrl_data_schema.yaml"
@@ -66,6 +68,9 @@ TEST_CASE("hdf5 data reader schema tests",
   auto& comm = unit_test::utilities::current_world_comm();
   lbann::init_random(0, 2);
   lbann::init_data_seq_random(42);
+  auto& arg_parser = lbann::global_argument_parser();
+  arg_parser.clear(); // Clear the argument parser.
+  lbann::construct_all_options(); // Reset to the default state.
 
   // create working directory
   std::string work_dir = create_test_directory("hdf5_reader");
@@ -92,6 +97,13 @@ TEST_CASE("hdf5 data reader schema tests",
   write_file(hdf5_hrrl_test_sample_list,
              work_dir,
              "hdf5_hrrl_test.sample_list");
+
+  // set up the options that the reader expects
+  char const* argv[] = {"smiles_functional_black_box.exe",
+    "--use_data_store",
+    "--preload_data_store"};
+  int const argc = sizeof(argv) / sizeof(argv[0]);
+  REQUIRE_NOTHROW(arg_parser.parse(argc, argv));
 
   // instantiate the data readers
   lbann::generic_data_reader* train_ptr = nullptr;
@@ -291,6 +303,12 @@ TEST_CASE("hdf5 data reader schema tests",
       REQUIRE(test_val == new_val);
     }
   } // SECTION("hdf5_reader: node_map")
+
+  arg_parser.clear(); // Clear the argument parser.
+  // Cleanup the data readers
+  for (auto t : all_readers) {
+    delete t.second;
+  }
 }
 
 //==========================================================================

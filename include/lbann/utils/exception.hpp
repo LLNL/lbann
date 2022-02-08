@@ -37,8 +37,8 @@
 #define LBANN_ERROR(...)                                        \
   do {                                                          \
     const int rank_LBANN_ERROR = lbann::get_rank_in_world();    \
-    throw lbann::exception(                                     \
-      lbann::build_string(                                      \
+    throw ::lbann::exception(                                   \
+      ::lbann::build_string(                                    \
         "LBANN error",                                          \
         (rank_LBANN_ERROR >= 0                                  \
          ? " on rank " + std::to_string(rank_LBANN_ERROR)       \
@@ -90,32 +90,36 @@
 
 namespace lbann {
 
-/** Exception.
+/** @class exception
+ *  @brief The base exception for LBANN errors.
+ *
  *  A stack trace is recorded when the exception is constructed.
  */
 class exception : public std::exception {
 public:
-
-  /** Constructor.
-   *  By default, a human-readable report is immediately printed to
-   *  the standard error stream.
+  /** @brief Default constructor.
+   *
+   *  Uses a generic message that reports the rank and stack trace.
    */
-  exception(std::string message = "", bool print = true);
-  const char* what() const noexcept override;
+  exception();
 
-  /** Print human-readable report to stream.
-   *  Reports the exception message and the stack trace.
+  /** @brief Constructor with message.
+   *
+   *  The message is interpolated into a longer report that includes
+   *  the stack trace from where the constructor is called.
+   *  Unfortunately, the constructor frame is usually included in
+   *  that stack trace.
    */
+  exception(std::string message);
+
+  char const* what() const noexcept override;
+
+  /** @brief Print the what() string to the stream. */
   void print_report(std::ostream& os = std::cerr) const;
 
 private:
   /** Human-readable exception message. */
   std::string m_message;
-  /** Human-readable stack trace.
-   *  The stack trace is recorded when the exception is constructed.
-   */
-  std::string m_stack_trace;
-
 };
 using lbann_exception = exception;
 
