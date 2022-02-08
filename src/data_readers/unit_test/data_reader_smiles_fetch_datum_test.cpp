@@ -241,7 +241,6 @@ TEST_CASE("SMILES functional black-box", "[.filesystem][data_reader][mpi][smiles
     }
   }
 
-  arg_parser.clear(); // Clear the argument parser.
   // Cleanup the data readers
   for (auto t : data_readers) {
     delete t.second;
