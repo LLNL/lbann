@@ -56,7 +56,7 @@ build and install:
   artifacts:
     paths:
       - spack-*.txt
-      - spack-build-*/CMakeCache.txt
+      - spack-build-*/*
       - spack-build-*/build.ninja
       - spack-build-*/spack-*.txt
       - ${RESULTS_DIR}/*
