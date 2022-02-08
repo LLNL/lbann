@@ -336,4 +336,5 @@ build_dump_weights_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::dump_weights
+#define LBANN_CLASS_LIBNAME callback_dump_weights
 #include <lbann/macros/register_class_with_cereal.hpp>

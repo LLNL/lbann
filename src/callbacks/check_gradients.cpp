@@ -386,4 +386,5 @@ build_check_gradients_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::check_gradients
+#define LBANN_CLASS_LIBNAME callback_check_gradients
 #include <lbann/macros/register_class_with_cereal.hpp>

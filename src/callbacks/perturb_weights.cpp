@@ -192,4 +192,5 @@ build_perturb_weights_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::perturb_weights
+#define LBANN_CLASS_LIBNAME callback_perturb_weights
 #include <lbann/macros/register_class_with_cereal.hpp>

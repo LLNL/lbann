@@ -192,4 +192,5 @@ build_debug_io_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::debug_io
+#define LBANN_CLASS_LIBNAME callback_debug_io
 #include <lbann/macros/register_class_with_cereal.hpp>

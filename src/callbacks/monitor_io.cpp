@@ -82,4 +82,5 @@ build_monitor_io_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::monitor_io
+#define LBANN_CLASS_LIBNAME callback_monitor_io
 #include <lbann/macros/register_class_with_cereal.hpp>

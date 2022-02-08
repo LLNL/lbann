@@ -158,4 +158,5 @@ build_perturb_learning_rate_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::perturb_learning_rate
+#define LBANN_CLASS_LIBNAME callback_perturb_learning_rate
 #include <lbann/macros/register_class_with_cereal.hpp>

@@ -421,6 +421,9 @@ void lbann::lbann_mpi_err_handler(MPI_Comm *comm, int *err_code, ... ) {
 }
 
 // Layers
+CEREAL_FORCE_DYNAMIC_INIT(Layer);
+CEREAL_FORCE_DYNAMIC_INIT(data_type_layer);
+
 CEREAL_FORCE_DYNAMIC_INIT(argmax_layer);
 CEREAL_FORCE_DYNAMIC_INIT(argmin_layer);
 CEREAL_FORCE_DYNAMIC_INIT(base_convolution_layer);
@@ -597,3 +600,65 @@ CEREAL_FORCE_DYNAMIC_INIT(DistMat_STAR_VC);
 CEREAL_FORCE_DYNAMIC_INIT(DistMat_STAR_VR);
 CEREAL_FORCE_DYNAMIC_INIT(DistMat_VC_STAR);
 CEREAL_FORCE_DYNAMIC_INIT(DistMat_VR_STAR);
+
+// Callbacks
+CEREAL_FORCE_DYNAMIC_INIT(callback_base);
+CEREAL_FORCE_DYNAMIC_INIT(callback_check_dataset);
+CEREAL_FORCE_DYNAMIC_INIT(callback_check_gradients);
+CEREAL_FORCE_DYNAMIC_INIT(callback_check_init);
+CEREAL_FORCE_DYNAMIC_INIT(callback_check_metric);
+CEREAL_FORCE_DYNAMIC_INIT(callback_check_nan);
+CEREAL_FORCE_DYNAMIC_INIT(callback_check_small);
+CEREAL_FORCE_DYNAMIC_INIT(callback_compute_model_size);
+CEREAL_FORCE_DYNAMIC_INIT(callback_debug);
+CEREAL_FORCE_DYNAMIC_INIT(callback_debug_io);
+CEREAL_FORCE_DYNAMIC_INIT(callback_dump_error_signals);
+CEREAL_FORCE_DYNAMIC_INIT(callback_dump_gradients);
+CEREAL_FORCE_DYNAMIC_INIT(callback_dump_minibatch_sample_indices);
+CEREAL_FORCE_DYNAMIC_INIT(callback_dump_outputs);
+CEREAL_FORCE_DYNAMIC_INIT(callback_dump_weights);
+CEREAL_FORCE_DYNAMIC_INIT(callback_early_stopping);
+CEREAL_FORCE_DYNAMIC_INIT(callback_gpu_memory_usage);
+CEREAL_FORCE_DYNAMIC_INIT(callback_hang);
+CEREAL_FORCE_DYNAMIC_INIT(callback_load_model);
+CEREAL_FORCE_DYNAMIC_INIT(callback_mixup);
+CEREAL_FORCE_DYNAMIC_INIT(callback_monitor_io);
+CEREAL_FORCE_DYNAMIC_INIT(callback_perturb_adam);
+CEREAL_FORCE_DYNAMIC_INIT(callback_perturb_dropout);
+CEREAL_FORCE_DYNAMIC_INIT(callback_perturb_learning_rate);
+CEREAL_FORCE_DYNAMIC_INIT(callback_perturb_weights);
+CEREAL_FORCE_DYNAMIC_INIT(callback_print_model_description);
+CEREAL_FORCE_DYNAMIC_INIT(callback_print_statistics);
+CEREAL_FORCE_DYNAMIC_INIT(callback_profiler);
+CEREAL_FORCE_DYNAMIC_INIT(callback_save_images);
+CEREAL_FORCE_DYNAMIC_INIT(callback_set_weights_value);
+CEREAL_FORCE_DYNAMIC_INIT(callback_sync_layers);
+CEREAL_FORCE_DYNAMIC_INIT(callback_timeline);
+CEREAL_FORCE_DYNAMIC_INIT(callback_timer);
+
+// Optimizers
+CEREAL_FORCE_DYNAMIC_INIT(optimizer);
+CEREAL_FORCE_DYNAMIC_INIT(data_type_optimizer);
+
+CEREAL_FORCE_DYNAMIC_INIT(adagrad);
+CEREAL_FORCE_DYNAMIC_INIT(adam);
+CEREAL_FORCE_DYNAMIC_INIT(hypergradient_adam);
+CEREAL_FORCE_DYNAMIC_INIT(rmsprop);
+CEREAL_FORCE_DYNAMIC_INIT(sgd);
+
+// Other sundries
+CEREAL_FORCE_DYNAMIC_INIT(ExecutionContext);
+CEREAL_FORCE_DYNAMIC_INIT(SGDExecutionContext);
+CEREAL_FORCE_DYNAMIC_INIT(data_coordinator);
+CEREAL_FORCE_DYNAMIC_INIT(data_type_weights);
+CEREAL_FORCE_DYNAMIC_INIT(dataset);
+CEREAL_FORCE_DYNAMIC_INIT(directed_acyclic_graph_model);
+CEREAL_FORCE_DYNAMIC_INIT(l2_weight_regularization);
+CEREAL_FORCE_DYNAMIC_INIT(layer_metric);
+CEREAL_FORCE_DYNAMIC_INIT(layer_term);
+CEREAL_FORCE_DYNAMIC_INIT(metric);
+CEREAL_FORCE_DYNAMIC_INIT(metric_statistics);
+CEREAL_FORCE_DYNAMIC_INIT(model);
+CEREAL_FORCE_DYNAMIC_INIT(objective_function);
+CEREAL_FORCE_DYNAMIC_INIT(objective_function_term);
+CEREAL_FORCE_DYNAMIC_INIT(weights);
