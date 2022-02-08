@@ -489,7 +489,6 @@ CEREAL_FORCE_DYNAMIC_INIT(stop_gradient_layer);
 CEREAL_FORCE_DYNAMIC_INIT(sum_layer);
 CEREAL_FORCE_DYNAMIC_INIT(tessellate_layer);
 CEREAL_FORCE_DYNAMIC_INIT(top_k_categorical_accuracy_layer);
-CEREAL_FORCE_DYNAMIC_INIT(uniform_hash_layer);
 CEREAL_FORCE_DYNAMIC_INIT(uniform_layer);
 CEREAL_FORCE_DYNAMIC_INIT(unpooling_layer);
 CEREAL_FORCE_DYNAMIC_INIT(variance_layer);
@@ -504,6 +503,9 @@ CEREAL_FORCE_DYNAMIC_INIT(dft_abs_layer);
 #endif
 #if defined(LBANN_HAS_SHMEM) || defined(LBANN_HAS_NVSHMEM)
 CEREAL_FORCE_DYNAMIC_INIT(dist_embedding_layer);
+#endif
+#ifdef LBANN_HAS_GPU
+CEREAL_FORCE_DYNAMIC_INIT(uniform_hash_layer);
 #endif
 
 #if defined LBANN_GRU_LAYER_CUDNN_SUPPORTED || defined LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
