@@ -62,3 +62,5 @@ void instance_norm_layer<TensorDataType,Layout,Device>::serialize(ArchiveT& ar) 
   PROTO_GPU(T)
 
 #include "lbann/macros/instantiate.hpp"
+
+CEREAL_REGISTER_DYNAMIC_INIT(instance_norm_layer);

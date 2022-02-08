@@ -77,7 +77,7 @@ world_comm_ptr initialize(int& argc, char**& argv);
  *  @param argv Number of command line arguments.
  *  @return LBANN communicator
  */
-std::unique_ptr<lbann_comm> initialize_lbann(int& argc, char**& argv);
+std::unique_ptr<lbann_comm> initialize_lbann(int argc, char** argv);
 
 /** @brief Initialize LBANN for use with external applcations
  *  @param[in] c MPI communicator
@@ -196,8 +196,6 @@ using execution_mode_iterator = enum_iterator<execution_mode, execution_mode::tr
 
 /** @brief Convert a string to an execution_mode. */
 execution_mode exec_mode_from_string(std::string const& str);
-/** @brief Extract an execution_mode from a stream. */
-std::istream& operator>>(std::istream& os, execution_mode& e);
 
 /*
  * endsWith: http://thispointer.com/c-how-to-check-if-a-string-ends-with-an-another-given-string/
@@ -221,5 +219,8 @@ void print_local_matrix_dims(AbsMat *m, const char *name);
 void lbann_mpi_err_handler(MPI_Comm *comm, int *err_code, ... );
 
 } // namespace lbann
+
+/** @brief Extract an execution_mode from a stream. */
+std::istream& operator>>(std::istream& os, lbann::execution_mode& e);
 
 #endif // LBANN_BASE_HPP_INCLUDED

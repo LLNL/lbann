@@ -114,3 +114,5 @@
 // Enumerate all the valid data types.
 #define PROTO(T) REGISTER_ALL_MATRIX_DEVICES(T)
 #include <lbann/macros/instantiate.hpp>
+
+CEREAL_REGISTER_DYNAMIC_INIT(SerialMatrixTypes);

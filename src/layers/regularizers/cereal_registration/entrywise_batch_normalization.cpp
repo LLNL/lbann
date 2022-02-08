@@ -66,3 +66,5 @@ entrywise_batch_normalization_layer<TensorDataType,Layout,Device>
   PROTO_GPU(T)
 
 #include "lbann/macros/instantiate.hpp"
+
+CEREAL_REGISTER_DYNAMIC_INIT(entrywise_batch_normalization_layer);
