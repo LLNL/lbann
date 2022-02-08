@@ -62,8 +62,9 @@ namespace distconv{
         util::nvshmem::SyncArray m_sync;
         Memory<NVSHMEMAllocator> m_native_sync;
       public:
-        ScatterNVSHMEM(cudaStream_t steam):
-          m_stream(stream),m_pid(nvshmem_my_pe()),m_np(nvshmem_n_pes()){}
+        ScatterNVSHMEM(cudaStream_t steam):m_stream(stream),
+                                           m_pid(nvshmem_my_pe()),  // NVSHMEM function 
+                                           m_np(nvshmem_n_pes()){}  // NVSHMEM function
       template <typename T>
       ScatterNVHSMEMDevice<T> get_for_device(){
         return ScatterNVHSMEMDevice<T>(m_pid,

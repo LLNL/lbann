@@ -62,6 +62,8 @@ namespace distconv{
         util::nvshmem::SyncArray m_sync;
         Memory<NVSHMEMAllocator> m_native_sync;
       
+      public:
+        GatherNVSHMEM()
       template <typename T>
       GatherNVHSMEMDevice<T> get_for_device(){
         return GatherNVHSMEMDevice<T>(m_pid,
