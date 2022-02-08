@@ -18,7 +18,7 @@ def get_system_seq_launch(cluster):
 
 def get_system_mpi_launch(cluster):
     if cluster in ['lassen', 'ray']:
-        return ['jsrun', '-n2', '-r1', '-a4', '-c40', '-g4', '-d', 'packed', '-b', 'packed:10']
+        return ['jsrun', '-n2', '-r1', '-a4', '-c', 'ALL_CPUS', '-g', 'ALL_GPUS', '-d', 'packed', '-b', 'packed:10']
     elif cluster == 'pascal':
         return ['srun', '-N2', '--ntasks-per-node=2', '--mpibind=off']
     else: # Corona and Catalyst
