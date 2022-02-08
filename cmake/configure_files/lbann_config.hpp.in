@@ -88,6 +88,9 @@
 #cmakedefine LBANN_HAS_DNN_LIB
 #endif
 
+#cmakedefine LBANN_GRU_LAYER_CUDNN_SUPPORTED
+#cmakedefine LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
+
 #cmakedefine LBANN_HAS_HALF
 #cmakedefine LBANN_HAS_GPU_FP16
 

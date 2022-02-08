@@ -272,6 +272,8 @@ if (LBANN_WITH_ONEDNN)
   set(LBANN_HAS_ONEDNN ${DNNL_FOUND})
   if (NOT DNNL_CPU_RUNTIME STREQUAL "NONE")
     set(LBANN_HAS_ONEDNN_CPU TRUE)
+    # GRU layer strikes again...
+    set(LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED TRUE)
   else ()
     set(LBANN_HAS_ONEDNN_CPU FALSE)
   endif ()
@@ -336,6 +338,12 @@ if (LBANN_HAS_CUDA)
   find_package(cuDNN REQUIRED)
   set(LBANN_HAS_CUDNN ${cuDNN_FOUND})
   set(LBANN_HAS_DNN_LIB ${cuDNN_FOUND})
+
+  # Special stuff for the GRU layer
+  if ((CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0.0")
+      AND (CUDNN_VERSION VERSION_GREATER_EQUAL "8.0.4"))
+    set(LBANN_GRU_LAYER_CUDNN_SUPPORTED TRUE)
+  endif ()
 
   set(LBANN_CUDA_LIBS
     CUDA::cudart

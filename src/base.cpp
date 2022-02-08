@@ -453,7 +453,6 @@ CEREAL_FORCE_DYNAMIC_INIT(evaluation_layer);
 CEREAL_FORCE_DYNAMIC_INIT(fully_connected_layer);
 CEREAL_FORCE_DYNAMIC_INIT(gather_layer);
 CEREAL_FORCE_DYNAMIC_INIT(gaussian_layer);
-CEREAL_FORCE_DYNAMIC_INIT(gru_layer);
 CEREAL_FORCE_DYNAMIC_INIT(hadamard_layer);
 CEREAL_FORCE_DYNAMIC_INIT(identity_layer);
 CEREAL_FORCE_DYNAMIC_INIT(in_top_k_layer);
@@ -502,6 +501,10 @@ CEREAL_FORCE_DYNAMIC_INIT(dft_abs_layer);
 #endif
 #if defined(LBANN_HAS_SHMEM) || defined(LBANN_HAS_NVSHMEM)
 CEREAL_FORCE_DYNAMIC_INIT(dist_embedding_layer);
+#endif
+
+#if defined LBANN_GRU_LAYER_CUDNN_SUPPORTED || defined LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
+CEREAL_FORCE_DYNAMIC_INIT(gru_layer);
 #endif
 
 // Operators
