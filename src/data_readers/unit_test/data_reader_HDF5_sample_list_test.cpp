@@ -57,7 +57,7 @@ h5out_32.h5 4 RUN_ID/000000004 RUN_ID/000000005 RUN_ID/000000006 RUN_ID/00000000
 
 } // namespace
 
-TEST_CASE("hdf5 data reader", "[mpi][data reader][sample_list][hdf5]")
+TEST_CASE("hdf5 data reader", "[mpi][data_reader][sample_list][hdf5]")
 {
   auto& comm = unit_test::utilities::current_world_comm();
 

@@ -37,7 +37,7 @@
 
 namespace pb = ::google::protobuf;
 
-TEST_CASE("SMILES string encoder", "[data reader][smiles]")
+TEST_CASE("SMILES string encoder", "[data_reader][smiles]")
 {
   //For what it's worth, smiles_data_reader::decode_smiles() isn't
   //used during normal operations (training, inferencing).
@@ -109,7 +109,7 @@ TEST_CASE("SMILES string encoder", "[data reader][smiles]")
   }
 }
 
-TEST_CASE("SMILES istream reader", "[data reader][smiles]")
+TEST_CASE("SMILES istream reader", "[data_reader][smiles]")
 {
   lbann::smiles_data_reader *smiles = new lbann::smiles_data_reader(true);
 
@@ -144,7 +144,7 @@ TEST_CASE("SMILES istream reader", "[data reader][smiles]")
   }
 }
 
-TEST_CASE("SMILES ingestion - REAL/S/H30/SH30M600.smi", "[data reader][smiles]")
+TEST_CASE("SMILES ingestion - REAL/S/H30/SH30M600.smi", "[data_reader][smiles]")
 {
   lbann::smiles_data_reader *smiles = new lbann::smiles_data_reader(true);
 
@@ -173,7 +173,7 @@ CC(=O)N[C@@H]1[C@@H](O)C[C@@](O)(C(=O)N2CC(=O)NCC2C(N)=O)O[C@H]1[C@H](O)[C@H](O)
   }
 }
 
-TEST_CASE("SMILES ingestion - malformed REAL/S/H30/SH30M600.smi", "[data reader][smiles]")
+TEST_CASE("SMILES ingestion - malformed REAL/S/H30/SH30M600.smi", "[data_reader][smiles]")
 {
   lbann::smiles_data_reader *smiles = new lbann::smiles_data_reader(true);
 
