@@ -304,7 +304,6 @@ TEST_CASE("hdf5 data reader schema tests",
     }
   } // SECTION("hdf5_reader: node_map")
 
-  arg_parser.clear(); // Clear the argument parser.
   // Cleanup the data readers
   for (auto t : all_readers) {
     delete t.second;
