@@ -26,31 +26,29 @@
 
 #include <catch2/catch.hpp>
 
-#include "TestHelpers.hpp"
 #include "MPITestHelpers.hpp"
-
-#include "lbann/proto/proto_common.hpp"
-#include "lbann/utils/argument_parser.hpp"
-#include "lbann/utils/options.hpp"
-#include "lbann/utils/random_number_generators.hpp"
-#include "lbann/utils/file_utils.hpp"
-#include "lbann/utils/lbann_library.hpp"
-
-#include "lbann/proto/proto_common.hpp"
-#include <lbann.pb.h>
-#include <google/protobuf/text_format.h>
+#include "TestHelpers.hpp"
 
 // The code being tested
 #include "lbann/data_readers/data_reader_smiles.hpp"
+
 #include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/lbann_library.hpp"
+#include "lbann/utils/options.hpp"
+#include "lbann/utils/random_number_generators.hpp"
+
+#include <lbann.pb.h>
+
+#include <google/protobuf/text_format.h>
+
+#include <cstdlib>
+#include <string>
 
 #include <sys/types.h> //for getpid
 #include <unistd.h>    //for getpid
-#include <sys/stat.h>    //for mkdir
-#include <sys/types.h>   //for mkdir
-#include <errno.h>
-#include <string.h>
-#include <cstdlib>
 
 // input data
 #include "test_data/A_smiles_reader.smi"
@@ -58,26 +56,29 @@
 #include "test_data/C_smiles_reader.smi"
 #include "test_data/D_smiles_reader.smi"
 #include "test_data/smiles_reader.prototext"
-#include "test_data/vocab.txt"
 #include "test_data/smiles_reader_sample_list.txt"
+#include "test_data/vocab.txt"
 
 namespace pb = ::google::protobuf;
 
 // compute offsets and lengths and writes to binary file;
 // returns the number of sequences in the file
-int write_offsets(const std::string& smi, const std::string output_fn, const char *tmp_dir);
+int write_offsets(const std::string& smi,
+                  const std::string output_fn,
+                  const char* tmp_dir);
 
 // write smiles strings to file: /tmp/<filename>
-void write_smiles_data_to_file(const std::string smi, const std::string output_fn, const char* tmp_dir);
+void write_smiles_data_to_file(const std::string smi,
+                               const std::string output_fn,
+                               const char* tmp_dir);
 
 void test_fetch(lbann::generic_data_reader* reader);
 
-bool directory_exists(std::string s);
-
-TEST_CASE("SMILES functional black-box", "[.filesystem][data_reader][mpi][smiles]")
+TEST_CASE("SMILES functional black-box",
+          "[.filesystem][data_reader][mpi][smiles]")
 {
-  //currently, tests are sequential; they can (should?) be expanded
-  //to multiple ranks
+  // currently, tests are sequential; they can (should?) be expanded
+  // to multiple ranks
 
   auto& comm = unit_test::utilities::current_world_comm();
   lbann::init_random(0, 2);
@@ -86,7 +87,7 @@ TEST_CASE("SMILES functional black-box", "[.filesystem][data_reader][mpi][smiles
   arg_parser.clear(); // Clear the argument parser.
   lbann::construct_all_options();
 
-  //make non-const copies
+  // make non-const copies
   std::string smiles_reader_prototext(smiles_reader_prototext_const);
   std::string sample_list(sample_list_const);
 
@@ -99,25 +100,25 @@ TEST_CASE("SMILES functional black-box", "[.filesystem][data_reader][mpi][smiles
   char b[2048];
   sprintf(b, "/tmp/smiles_reader_test_%d", pid);
   const std::string tmp_dir(b);
-  const char *tdir = tmp_dir.data();
+  const char* tdir = tmp_dir.data();
 
-  //create working directory; this will contain the inputs files that
-  //the smiles_data_reader expects during load()
+  // create working directory; this will contain the inputs files that
+  // the smiles_data_reader expects during load()
   lbann::file::make_directory(tmp_dir);
 
-  //test that we can write files to the tmp_dir
+  // test that we can write files to the tmp_dir
   sprintf(b, "%s/test", tdir);
   std::ofstream out(b);
   REQUIRE(out.good());
   out.close();
 
-  //write binary offset files
+  // write binary offset files
   int n_seqs_B = write_offsets(B_smi_const, "B_smiles_reader.offsets", tdir);
   int n_seqs_A = write_offsets(A_smi_const, "A_smiles_reader.offsets", tdir);
   int n_seqs_C = write_offsets(C_smi_const, "C_smiles_reader.offsets", tdir);
   int n_seqs_D = write_offsets(D_smi_const, "D_smiles_reader.offsets", tdir);
 
-  //copy smiles data and metadata file
+  // copy smiles data and metadata file
   write_smiles_data_to_file(C_smi_const, "C_smiles_reader.smi", tdir);
   write_smiles_data_to_file(B_smi_const, "B_smiles_reader.smi", tdir);
   write_smiles_data_to_file(A_smi_const, "A_smiles_reader.smi", tdir);
@@ -150,14 +151,14 @@ TEST_CASE("SMILES functional black-box", "[.filesystem][data_reader][mpi][smiles
   // construct metadata file contents
   std::stringstream meta;
   sprintf(b, "%s/", tdir);
-  meta << n_seqs_A << " " << b
-       << "A_smiles_reader.smi " << b << "A_smiles_reader.offsets" << std::endl
-       << n_seqs_D << " " << b
-       << "D_smiles_reader.smi " << b << "D_smiles_reader.offsets" << std::endl
-       << n_seqs_B << " " << b
-       << "B_smiles_reader.smi " << b << "B_smiles_reader.offsets" << std::endl
-       << n_seqs_C << " " << b
-       << "C_smiles_reader.smi " << b << "C_smiles_reader.offsets" << std::endl;
+  meta << n_seqs_A << " " << b << "A_smiles_reader.smi " << b
+       << "A_smiles_reader.offsets" << std::endl
+       << n_seqs_D << " " << b << "D_smiles_reader.smi " << b
+       << "D_smiles_reader.offsets" << std::endl
+       << n_seqs_B << " " << b << "B_smiles_reader.smi " << b
+       << "B_smiles_reader.offsets" << std::endl
+       << n_seqs_C << " " << b << "C_smiles_reader.smi " << b
+       << "C_smiles_reader.offsets" << std::endl;
 
   // write the metadata file
   sprintf(b, "%s/metadata", tdir);
@@ -167,16 +168,16 @@ TEST_CASE("SMILES functional black-box", "[.filesystem][data_reader][mpi][smiles
   out << meta.str();
   out.close();
 
-  //write the vocabulary file
+  // write the vocabulary file
   sprintf(b, "%s/vocab.txt", tdir);
   const std::string vocab_fn(b);
   out.open(b);
   REQUIRE(out.good());
-  out << vocab_txt_const; //from: #include "test_data/vocab.txt"
+  out << vocab_txt_const; // from: #include "test_data/vocab.txt"
   out.close();
   std::cout << "wrote: " << b << std::endl;
 
-  //adjust "BASE_DIR" place-holder, then write the sample list file
+  // adjust "BASE_DIR" place-holder, then write the sample list file
   sprintf(b, "%s/sample_list", tdir);
   std::string sample_list_filename(b);
   out.open(sample_list_filename);
@@ -200,10 +201,11 @@ TEST_CASE("SMILES functional black-box", "[.filesystem][data_reader][mpi][smiles
 
   // set up the options that the reader expects
   char const* argv[] = {"smiles_functional_black_box.exe",
-    "--use_data_store",
-    "--preload_data_store",
-    "--sequence_length=100",
-    "--vocab", vocab_fn.c_str()};
+                        "--use_data_store",
+                        "--preload_data_store",
+                        "--sequence_length=100",
+                        "--vocab",
+                        vocab_fn.c_str()};
   int const argc = sizeof(argv) / sizeof(argv[0]);
   REQUIRE_NOTHROW(arg_parser.parse(argc, argv));
 
@@ -227,7 +229,6 @@ TEST_CASE("SMILES functional black-box", "[.filesystem][data_reader][mpi][smiles
     }
   }
 
-
   SECTION("compare disk against data_store SMILES strings")
   {
     if (train_ptr) {
@@ -247,10 +248,13 @@ TEST_CASE("SMILES functional black-box", "[.filesystem][data_reader][mpi][smiles
   }
 }
 
-int write_offsets(const std::string& smi, const std::string output_fn, const char* tmp_dir) {
+int write_offsets(const std::string& smi,
+                  const std::string output_fn,
+                  const char* tmp_dir)
+{
   int n_seqs = 0;
 
-  //open output file
+  // open output file
   char b[2048];
   sprintf(b, "%s/%s", tmp_dir, output_fn.c_str());
   std::ofstream out(b, std::ios::binary);
@@ -266,10 +270,10 @@ int write_offsets(const std::string& smi, const std::string output_fn, const cha
     ss.getline(buf, 2048);
     std::string smiles_str(buf);
 
-    //find the delimiter, which determines the length of the sequence;
-    //check for one of the delimiters: tab, comma, space, newline;
-    //implicit assumption: these will never be characters in a valid
-    //SMILES string
+    // find the delimiter, which determines the length of the sequence;
+    // check for one of the delimiters: tab, comma, space, newline;
+    // implicit assumption: these will never be characters in a valid
+    // SMILES string
     size_t len_1 = smiles_str.find(" ");
     size_t len_2 = smiles_str.find(",");
     size_t len_3 = smiles_str.find("\t");
@@ -279,10 +283,14 @@ int write_offsets(const std::string& smi, const std::string output_fn, const cha
     REQUIRE(len_3);
     REQUIRE(len_4);
     size_t length = SIZE_MAX;
-    if (len_1 < length) length = len_1;
-    if (len_2 < length) length = len_2;
-    if (len_3 < length) length = len_3;
-    if (len_4 < length) length = len_4;
+    if (len_1 < length)
+      length = len_1;
+    if (len_2 < length)
+      length = len_2;
+    if (len_3 < length)
+      length = len_3;
+    if (len_4 < length)
+      length = len_4;
     REQUIRE(length != SIZE_MAX);
 
     short len = length;
@@ -295,7 +303,10 @@ int write_offsets(const std::string& smi, const std::string output_fn, const cha
   return n_seqs;
 }
 
-void write_smiles_data_to_file(const std::string smi, const std::string output_fn, const char* tmp_dir) {
+void write_smiles_data_to_file(const std::string smi,
+                               const std::string output_fn,
+                               const char* tmp_dir)
+{
   char b[2048];
   sprintf(b, "%s/%s", tmp_dir, output_fn.c_str());
   std::ofstream out(b, std::ios::binary);
@@ -305,7 +316,8 @@ void write_smiles_data_to_file(const std::string smi, const std::string output_f
   std::cout << "wrote: " << b << std::endl;
 }
 
-void test_fetch(lbann::generic_data_reader* reader) {
+void test_fetch(lbann::generic_data_reader* reader)
+{
   reader->preload_data_store();
 #if 0
   const std::vector<int>& indices = reader->get_shuffled_indices();
@@ -358,10 +370,5 @@ void test_fetch(lbann::generic_data_reader* reader) {
     REQUIRE(decoded == from_file);
 */
   }
-  #endif
-}
-
-bool directory_exists(std::string s) {
-  struct stat buffer;
-  return (stat (s.c_str(), &buffer) == 0);
+#endif
 }
