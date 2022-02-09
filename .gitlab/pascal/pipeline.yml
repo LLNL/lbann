@@ -56,7 +56,7 @@ build and install:
   artifacts:
     paths:
       - spack-*.txt
-      - spack-build-*/*
+      - spack-build-*/CMakeCache.txt
       - spack-build-*/build.ninja
       - spack-build-*/spack-*.txt
       - ${RESULTS_DIR}/*
@@ -141,11 +141,11 @@ remove spack environment:
     - source ${HOME}/spack_repos/spack_${SYSTEM_NAME}.git/share/spack/setup-env.sh
     - export SPACK_ARCH_TARGET=$(spack arch -t)
     - export FULL_ENV_NAME=lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
-    # - |
-    #   if [[ -n "$(spack env list | grep -e ${FULL_ENV_NAME})" ]] ;
-    #   then
-    #     spack env rm --yes-to-all ${FULL_ENV_NAME}
-    #   fi
+    - |
+      if [[ -n "$(spack env list | grep -e ${FULL_ENV_NAME})" ]] ;
+      then
+        spack env rm --yes-to-all ${FULL_ENV_NAME}
+      fi
 
 # Free the allocation we obtained in "allocate lc resources".
 release allocation:

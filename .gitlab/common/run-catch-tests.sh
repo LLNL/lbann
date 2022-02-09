@@ -44,7 +44,7 @@ srun --jobid=${JOB_ID} \
      -N 2 -n $(($TEST_TASKS_PER_NODE * 2)) \
      --ntasks-per-node=$TEST_TASKS_PER_NODE \
      -t 5 ${TEST_MPIBIND_FLAG} \
-     catchsegv ./unit_test/mpi-catch-tests "[filesystem]" \
+     ./unit_test/mpi-catch-tests "[filesystem]" \
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
 if [[ $? -ne 0 ]];
