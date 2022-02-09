@@ -99,12 +99,6 @@ void smiles_data_reader::copy_members(const smiles_data_reader &rhs) {
   m_local_to_index = rhs.m_local_to_index;
   m_filename_to_local_id_set = rhs.m_filename_to_local_id_set;
   m_index_to_filename = rhs.m_index_to_filename;
-
-  if(rhs.m_data_store != nullptr) {
-    m_data_store = new data_store_conduit(rhs.get_data_store());
-    m_data_store->set_data_reader_ptr(this);
-  }
-
 }
 
 void smiles_data_reader::load() {
@@ -254,7 +248,7 @@ void smiles_data_reader::do_preload_data_store() {
         in.seekg(min_offset, std::ios::beg);
         std::vector<char> buffer(read_len);
         in.read(buffer.data(), read_len);
-        std::istringstream buf_stream(buffer.data());
+        std::istringstream buf_stream({buffer.data(), buffer.size()});
 
         // Place all of the samples in the range into the data store
         for (const auto& [r_local, r_index] : samples_in_range) {
