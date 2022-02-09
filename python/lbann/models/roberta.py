@@ -35,19 +35,6 @@ def create_position_ids_from_input_ids(
     return incremental_indices
 
 
-def _load_pretrained_weights_layer(
-    fn,
-    file_dir=os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "pretrained_weights"
-    ),
-):
-    weights_file = os.path.join(file_dir, fn + ".npy")
-    dims = np.load(weights_file).shape
-    weights = _load_pretrained_weights(fn, file_dir)
-    weights = lbann.WeightsLayer(weights=weights, dims=str_list(dims))
-    return weights, dims
-
-
 def _load_pretrained_weights(
     *fn,
     file_dir=os.path.join(
@@ -58,9 +45,15 @@ def _load_pretrained_weights(
     if not load_weights:
         return []
 
+    # Use custom directory for loading weights
+    if isinstance(load_weights, str):
+        file_dir = load_weights
+
     weights = []
     for f in fn:
         w_file = os.path.join(file_dir, f + ".npy")
+        if not os.path.isfile(w_file):
+            raise ValueError(f"Pretrained weight file does not exist: {w_file}")
         weights.append(lbann.Weights(initializer=lbann.NumpyInitializer(file=w_file)))
 
     if len(weights) == 1:
@@ -549,9 +542,16 @@ class RobertaPooler(lbann.modules.Module):
         return pooled_output
 
 
-class RobertaModel(lbann.modules.Module):
+class RoBERTa(lbann.modules.Module):
     def __init__(self, config, add_pooling_layer=True, load_weights=True):
         self.config = config
+
+        # A custom directory can be passed instead of True/False
+        if isinstance(load_weights, str):
+            if not os.path.isdir(load_weights):
+                raise ValueError(
+                    f"Path to pretrained weights does not exist: {load_weights}"
+                )
 
         self.embeddings = RobertaEmbeddings(
             config, "embeddings", load_weights=load_weights
@@ -571,6 +571,21 @@ class RobertaModel(lbann.modules.Module):
             config.input_shape[1],
         )
 
+    def extend_attention_mask(self, attention_mask):
+        tmp_attn_shape = [
+            self.attn_mask_shape[0],
+            np.prod(self.attn_mask_shape[1:3]),
+            self.attn_mask_shape[3],
+        ]
+        extended_attention_mask = lbann.Reshape(
+            attention_mask, dims=str_list([self.input_shape[0], 1, self.input_shape[1]])
+        )
+        extended_attention_mask = lbann.Reshape(
+            lbann.Tessellate(extended_attention_mask, dims=str_list(tmp_attn_shape)),
+            dims=str_list(self.attn_mask_shape),
+        )
+        return extended_attention_mask
+
     def forward(
         self,
         input_ids=None,
@@ -583,7 +598,7 @@ class RobertaModel(lbann.modules.Module):
 
         if attention_mask is None:
             attention_mask = lbann.Constant(
-                value=1, num_neurons=str_list(self.attn_mask_shape)
+                value=1, num_neurons=str_list(self.input_shape)
             )
 
         if token_type_ids is None:
@@ -594,6 +609,8 @@ class RobertaModel(lbann.modules.Module):
         if head_mask is None:
             head_mask = [None] * self.config.num_hidden_layers
 
+        extended_attention_mask = self.extend_attention_mask(attention_mask)
+
         input_ids = lbann.Reshape(input_ids, dims=str_list(self.input_shape))
         embedding_output = self.embeddings(
             input_ids=input_ids,
@@ -601,12 +618,9 @@ class RobertaModel(lbann.modules.Module):
             token_type_ids=token_type_ids,
             inputs_embeds=inputs_embeds,
         )
-        embedding_output = lbann.Reshape(
-            embedding_output, dims=str_list(self.input_shape + (self.hidden_size,))
-        )
         encoder_output = self.encoder(
             embedding_output,
-            attention_mask=attention_mask,
+            attention_mask=extended_attention_mask,
             head_mask=head_mask,
         )
         pooled_output = self.pooler(encoder_output) if self.pooler is not None else None

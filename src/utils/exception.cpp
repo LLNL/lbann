@@ -25,46 +25,40 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/stack_trace.hpp"
+
 #include "lbann/comm_impl.hpp"
+#include "lbann/utils/stack_trace.hpp"
 
 namespace lbann {
 
-exception::exception(std::string message, bool print)
-  : m_message(message),
-    m_stack_trace(stack_trace::get()) {
-
-  // Construct default message if none is provided
-  if (m_message.empty()) {
-    std::stringstream ss("LBANN exception");
-    const auto& rank = get_rank_in_world();
-    if (rank >= 0) {
-      ss << " on rank " << rank;
-    }
-    m_message = ss.str();
+static std::string default_error_message()
+{
+  std::ostringstream oss("LBANN exception", std::ios_base::ate);
+  const auto rank = get_rank_in_world();
+  if (rank >= 0) {
+    oss << " on rank " << rank;
   }
-
-  // Print report to standard error stream
-  if (print) { print_report(std::cerr); }
-
+  return oss.str();
 }
 
-const char* exception::what() const noexcept {
-  return m_message.c_str();
-}
+exception::exception() : exception(default_error_message()) {}
 
-void exception::print_report(std::ostream& os) const {
-  std::stringstream ss;
-  ss << "****************************************************************"
-     << std::endl
-     << m_message << std::endl;
-  if (!m_stack_trace.empty()) {
-    ss << "Stack trace:" << std::endl
-       << m_stack_trace;
+exception::exception(std::string message)
+{
+  // Build the "real" what() string, complete with stack trace:
+  auto const stack_trace = stack_trace::get();
+  auto const star_rule = std::string(64, '*');
+  std::ostringstream oss;
+  oss << star_rule << "\n" << message << "\n";
+  if (!stack_trace.empty()) {
+    oss << "Stack trace:\n" << stack_trace;
   }
-  ss << "****************************************************************"
-     << std::endl;
-  os << ss.str();
+  oss << star_rule << "\n";
+  m_message = oss.str();
 }
+
+const char* exception::what() const noexcept { return m_message.c_str(); }
+
+void exception::print_report(std::ostream& os) const { os << m_message; }
 
 } // namespace lbann
