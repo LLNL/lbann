@@ -1,4 +1,4 @@
-const std::string smiles_reader_prototext_const = R"ptext(data_reader {
+std::string smiles_reader_prototext = R"ptext(data_reader {
   reader {
     name: "smiles"
     role: "train"

@@ -35,6 +35,7 @@
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/options.hpp"
@@ -44,11 +45,8 @@
 
 #include <google/protobuf/text_format.h>
 
-#include <cstdlib>
+#include <ctime>
 #include <string>
-
-#include <sys/types.h> //for getpid
-#include <unistd.h>    //for getpid
 
 // input data
 #include "test_data/A_smiles_reader.smi"
@@ -60,152 +58,135 @@
 #include "test_data/vocab.txt"
 
 namespace pb = ::google::protobuf;
+namespace utils = ::unit_test::utilities;
+using lbann::file::join_path;
+
+// Make a temporary directory with the given name.
+std::string get_tmpdir() noexcept;
 
 // compute offsets and lengths and writes to binary file;
 // returns the number of sequences in the file
-int write_offsets(const std::string& smi,
-                  const std::string output_fn,
-                  const char* tmp_dir);
+int write_offsets(std::string const& smi,
+                  std::string const& output_fn,
+                  std::string const& tmp_dir);
 
 // write smiles strings to file: /tmp/<filename>
-void write_smiles_data_to_file(const std::string smi,
-                               const std::string output_fn,
-                               const char* tmp_dir);
+void write_smiles_data_to_file(std::string const& smi,
+                               std::string const& output_fn,
+                               std::string const& tmp_dir);
 
 void test_fetch(lbann::generic_data_reader* reader);
 
 TEST_CASE("SMILES functional black-box",
           "[.filesystem][data_reader][mpi][smiles]")
 {
-  // currently, tests are sequential; they can (should?) be expanded
-  // to multiple ranks
-
-  auto& comm = unit_test::utilities::current_world_comm();
-  lbann::init_random(0, 2);
+  auto& comm = utils::current_world_comm();
   lbann::init_data_seq_random(42);
-  auto& arg_parser = lbann::global_argument_parser();
-  arg_parser.clear(); // Clear the argument parser.
-  lbann::construct_all_options();
 
-  // make non-const copies
-  std::string smiles_reader_prototext(smiles_reader_prototext_const);
-  std::string sample_list(sample_list_const);
+  // The data reader behavior depends on arguments passed on the
+  // command line (super...). Therefore, we should restore its state
+  // to the expected state/
+  auto& arg_parser = utils::reset_global_argument_parser();
 
-  //=========================================================================
-  // create directory: /tmp/smiles_reader_test_<pid>,
-  // then write the input files that the reader expects,
-  // during normal operation of a network with the lbann executable
-  //=========================================================================
-  pid_t pid = getpid();
-  char b[2048];
-  sprintf(b, "/tmp/smiles_reader_test_%d", pid);
-  const std::string tmp_dir(b);
-  const char* tdir = tmp_dir.data();
-
-  // create working directory; this will contain the inputs files that
-  // the smiles_data_reader expects during load()
-  lbann::file::make_directory(tmp_dir);
+  // Get a temporary location in the file system (:/).
+  std::string const tmp_dir = get_tmpdir();
+  REQUIRE_NOTHROW(lbann::file::make_directory(tmp_dir));
 
   // test that we can write files to the tmp_dir
-  sprintf(b, "%s/test", tdir);
-  std::ofstream out(b);
-  REQUIRE(out.good());
-  out.close();
+  {
+    std::ofstream out(join_path(tmp_dir, "test"));
+    REQUIRE(out.good());
+  }
 
   // write binary offset files
-  int n_seqs_B = write_offsets(B_smi_const, "B_smiles_reader.offsets", tdir);
-  int n_seqs_A = write_offsets(A_smi_const, "A_smiles_reader.offsets", tdir);
-  int n_seqs_C = write_offsets(C_smi_const, "C_smiles_reader.offsets", tdir);
-  int n_seqs_D = write_offsets(D_smi_const, "D_smiles_reader.offsets", tdir);
+  int const n_seqs_A =
+    write_offsets(A_smi_const, "A_smiles_reader.offsets", tmp_dir);
+  int const n_seqs_B =
+    write_offsets(B_smi_const, "B_smiles_reader.offsets", tmp_dir);
+  int const n_seqs_C =
+    write_offsets(C_smi_const, "C_smiles_reader.offsets", tmp_dir);
+  int const n_seqs_D =
+    write_offsets(D_smi_const, "D_smiles_reader.offsets", tmp_dir);
 
   // copy smiles data and metadata file
-  write_smiles_data_to_file(C_smi_const, "C_smiles_reader.smi", tdir);
-  write_smiles_data_to_file(B_smi_const, "B_smiles_reader.smi", tdir);
-  write_smiles_data_to_file(A_smi_const, "A_smiles_reader.smi", tdir);
-  write_smiles_data_to_file(D_smi_const, "D_smiles_reader.smi", tdir);
+  write_smiles_data_to_file(A_smi_const, "A_smiles_reader.smi", tmp_dir);
+  write_smiles_data_to_file(B_smi_const, "B_smiles_reader.smi", tmp_dir);
+  write_smiles_data_to_file(C_smi_const, "C_smiles_reader.smi", tmp_dir);
+  write_smiles_data_to_file(D_smi_const, "D_smiles_reader.smi", tmp_dir);
 
-  // === START: fix place-holders in the prototex, then write to file
+  // === START: fix place-holders in the prototext, then write to file
   // adjust prototext "label_filename" to point to correct metadata file
   size_t j1 = smiles_reader_prototext.find("METADATA_FN");
   REQUIRE(j1 != std::string::npos);
-  sprintf(b, "%s/metadata", tdir);
-  std::string replacement(b);
+  std::string replacement = join_path(tmp_dir, "metadata");
   smiles_reader_prototext.replace(j1, 11, replacement);
 
   // adjust prototext "sample_list" to point to correct sample list file
   j1 = smiles_reader_prototext.find("SAMPLE_LIST_FN");
   REQUIRE(j1 != std::string::npos);
-  sprintf(b, "%s/sample_list", tdir);
-  replacement = b;
+  replacement = join_path(tmp_dir, "sample_list");
   smiles_reader_prototext.replace(j1, 14, replacement);
 
   // write the prototext file
-  sprintf(b, "%s/prototext", tdir);
-  std::string prototext_fn(b);
-  out.open(prototext_fn);
-  REQUIRE(out.good());
-  out << smiles_reader_prototext << std::endl;
-  out.close();
+  std::string const prototext_fn = join_path(tmp_dir, "prototext");
+  {
+    std::ofstream out(prototext_fn);
+    REQUIRE(out.good());
+    out << smiles_reader_prototext << '\n';
+  }
   // === END: fix place-holders in the prototex, then write to file
 
   // construct metadata file contents
-  std::stringstream meta;
-  sprintf(b, "%s/", tdir);
-  meta << n_seqs_A << " " << b << "A_smiles_reader.smi " << b
-       << "A_smiles_reader.offsets" << std::endl
-       << n_seqs_D << " " << b << "D_smiles_reader.smi " << b
-       << "D_smiles_reader.offsets" << std::endl
-       << n_seqs_B << " " << b << "B_smiles_reader.smi " << b
-       << "B_smiles_reader.offsets" << std::endl
-       << n_seqs_C << " " << b << "C_smiles_reader.smi " << b
-       << "C_smiles_reader.offsets" << std::endl;
+  {
+    std::ofstream meta(join_path(tmp_dir, "metadata"));
+    REQUIRE(meta.good());
+    meta << n_seqs_A << " " << join_path(tmp_dir, "A_smiles_reader.smi") << ' '
+         << join_path(tmp_dir, "A_smiles_reader.offsets") << '\n'
+         << n_seqs_D << ' ' << join_path(tmp_dir, "D_smiles_reader.smi") << ' '
+         << join_path(tmp_dir, "D_smiles_reader.offsets") << '\n'
+         << n_seqs_B << ' ' << join_path(tmp_dir, "B_smiles_reader.smi") << ' '
+         << join_path(tmp_dir, "B_smiles_reader.offsets") << '\n'
+         << n_seqs_C << ' ' << join_path(tmp_dir, "C_smiles_reader.smi ")
+         << join_path(tmp_dir, "C_smiles_reader.offsets") << '\n';
+  }
 
-  // write the metadata file
-  sprintf(b, "%s/metadata", tdir);
-  std::string metadata_fn(b);
-  out.open(metadata_fn);
-  REQUIRE(out.good());
-  out << meta.str();
-  out.close();
-
-  // write the vocabulary file
-  sprintf(b, "%s/vocab.txt", tdir);
-  const std::string vocab_fn(b);
-  out.open(b);
-  REQUIRE(out.good());
-  out << vocab_txt_const; // from: #include "test_data/vocab.txt"
-  out.close();
-  std::cout << "wrote: " << b << std::endl;
+  // write the vocabulary file. The filename is needed later to pass
+  // to the argument parser.
+  auto const& vocab_fn = join_path(tmp_dir, "vocab.txt");
+  {
+    std::ofstream out(vocab_fn);
+    REQUIRE(out.good());
+    out << vocab_txt_const; // from: #include "test_data/vocab.txt"
+  }
+  std::clog << "-- wrote: " << vocab_fn << std::endl;
 
   // adjust "BASE_DIR" place-holder, then write the sample list file
-  sprintf(b, "%s/sample_list", tdir);
-  std::string sample_list_filename(b);
-  out.open(sample_list_filename);
-  REQUIRE(out.good());
-  sprintf(b, "%s/", tdir);
-  replacement = b;
-  j1 = sample_list.find("BASE_DIR");
-  REQUIRE(j1 != std::string::npos);
-  sample_list.replace(j1, 8, replacement);
-  out << sample_list << std::endl;
-  out.close();
-  std::cout << "wrote: " << sample_list_filename << std::endl;
+  {
+    auto const sample_list_filename(join_path(tmp_dir, "sample_list"));
+    std::ofstream out(sample_list_filename);
+    REQUIRE(out.good());
+
+    replacement = tmp_dir;
+    j1 = sample_list.find("BASE_DIR");
+    REQUIRE(j1 != std::string::npos);
+    sample_list.replace(j1, 8, replacement);
+    out << sample_list << '\n';
+    std::clog << "-- wrote: " << sample_list_filename << std::endl;
+  }
 
   //=========================================================================
   // instantiate and setup the data reader
   //=========================================================================
   lbann_data::LbannPB my_proto;
-  if (!pb::TextFormat::ParseFromString(smiles_reader_prototext, &my_proto)) {
-    throw "Parsing protobuf failed.";
-  }
+  REQUIRE(pb::TextFormat::ParseFromString(smiles_reader_prototext, &my_proto));
 
   // set up the options that the reader expects
-  char const* argv[] = {"smiles_functional_black_box.exe",
-                        "--use_data_store",
-                        "--preload_data_store",
-                        "--sequence_length=100",
-                        "--vocab",
-                        vocab_fn.c_str()};
+  char const* const argv[] = {"smiles_functional_black_box.exe",
+                              "--use_data_store",
+                              "--preload_data_store",
+                              "--sequence_length=100",
+                              "--vocab",
+                              vocab_fn.c_str()};
   int const argc = sizeof(argv) / sizeof(argv[0]);
   REQUIRE_NOTHROW(arg_parser.parse(argc, argv));
 
@@ -218,6 +199,7 @@ TEST_CASE("SMILES functional black-box",
   lbann::generic_data_reader* validate_ptr = nullptr;
   lbann::generic_data_reader* test_ptr = nullptr;
   for (auto t : data_readers) {
+    REQUIRE(unit_test::utilities::IsValidPtr(t.second));
     if (t.second->get_role() == "train") {
       train_ptr = t.second;
     }
@@ -248,17 +230,15 @@ TEST_CASE("SMILES functional black-box",
   }
 }
 
-int write_offsets(const std::string& smi,
-                  const std::string output_fn,
-                  const char* tmp_dir)
+int write_offsets(std::string const& smi,
+                  std::string const& output_fn,
+                  std::string const& tmp_dir)
 {
   int n_seqs = 0;
 
   // open output file
-  char b[2048];
-  sprintf(b, "%s/%s", tmp_dir, output_fn.c_str());
-  std::ofstream out(b, std::ios::binary);
-  REQUIRE(out.good());
+  std::ofstream out(join_path(tmp_dir, output_fn), std::ios::binary);
+  LBANN_ASSERT(out.good());
 
   // compute and write contents of offset file for the input SMILES (smi)
   // string; at least one input data file (D_smiles_reader.smi) should have
@@ -274,14 +254,14 @@ int write_offsets(const std::string& smi,
     // check for one of the delimiters: tab, comma, space, newline;
     // implicit assumption: these will never be characters in a valid
     // SMILES string
-    size_t len_1 = smiles_str.find(" ");
-    size_t len_2 = smiles_str.find(",");
-    size_t len_3 = smiles_str.find("\t");
-    size_t len_4 = smiles_str.size();
-    REQUIRE(len_1);
-    REQUIRE(len_2);
-    REQUIRE(len_3);
-    REQUIRE(len_4);
+    size_t const len_1 = smiles_str.find(" ");
+    size_t const len_2 = smiles_str.find(",");
+    size_t const len_3 = smiles_str.find("\t");
+    size_t const len_4 = smiles_str.size();
+    LBANN_ASSERT(len_1 > 0UL);
+    LBANN_ASSERT(len_2 > 0UL);
+    LBANN_ASSERT(len_3 > 0UL);
+    LBANN_ASSERT(len_4 > 0UL);
     size_t length = SIZE_MAX;
     if (len_1 < length)
       length = len_1;
@@ -291,33 +271,31 @@ int write_offsets(const std::string& smi,
       length = len_3;
     if (len_4 < length)
       length = len_4;
-    REQUIRE(length != SIZE_MAX);
+    LBANN_ASSERT(length != SIZE_MAX);
 
-    short len = length;
+    short const len = length;
     out.write((char*)&start, sizeof(long long));
     out.write((char*)&len, sizeof(short));
     ++n_seqs;
   } while (ss.good() && !ss.eof());
 
-  out.close();
   return n_seqs;
 }
 
-void write_smiles_data_to_file(const std::string smi,
-                               const std::string output_fn,
-                               const char* tmp_dir)
+void write_smiles_data_to_file(std::string const& smi,
+                               std::string const& output_fn,
+                               std::string const& tmp_dir)
 {
-  char b[2048];
-  sprintf(b, "%s/%s", tmp_dir, output_fn.c_str());
-  std::ofstream out(b, std::ios::binary);
-  REQUIRE(out.good());
+  auto const outfile = join_path(tmp_dir, output_fn);
+  std::ofstream out(outfile, std::ios::binary);
+  LBANN_ASSERT(out.good());
   out << smi;
-  out.close();
-  std::cout << "wrote: " << b << std::endl;
+  std::clog << "-- wrote: " << outfile << std::endl;
 }
 
 void test_fetch(lbann::generic_data_reader* reader)
 {
+  LBANN_ASSERT(unit_test::utilities::IsValidPtr(reader));
   reader->preload_data_store();
 #if 0
   const std::vector<int>& indices = reader->get_shuffled_indices();
@@ -350,7 +328,7 @@ void test_fetch(lbann::generic_data_reader* reader)
     r->decode_smiles(data, decoded);
 
     // read the smiles string from file
-    std::cout << "getting origin for: " << index << std::endl;
+    std::clog << "-- getting origin for: " << index << std::endl;
     r->get_sample_origin(index, fn, offset, length);
     std::ifstream in(fn.c_str());
     REQUIRE(in);
@@ -371,4 +349,16 @@ void test_fetch(lbann::generic_data_reader* reader)
 */
   }
 #endif
+}
+
+std::string get_tmpdir() noexcept
+{
+  std::string tmpdir;
+  if (auto const* tmp = std::getenv("TMPDIR"))
+    tmpdir = tmp;
+  else
+    tmpdir = "/tmp";
+  return join_path(
+    tmpdir,
+    lbann::build_string("smiles_fetch_datum_test_", std::time(nullptr)));
 }
