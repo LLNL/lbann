@@ -44,10 +44,9 @@ srun --jobid=${JOB_ID} \
      -N 2 -n $(($TEST_TASKS_PER_NODE * 2)) \
      --ntasks-per-node=$TEST_TASKS_PER_NODE \
      -t 5 ${TEST_MPIBIND_FLAG} \
-     ./unit_test/mpi-catch-tests "[filesystem]"
-# \
-#      -r JUnit \
-#      -o "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
+     ./unit_test/mpi-catch-tests "[filesystem]" \
+     -r JUnit \
+     -o "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
 if [[ $? -ne 0 ]];
 then
     FAILED_JOBS+=" mpi-filesystem"
