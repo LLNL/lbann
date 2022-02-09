@@ -58,13 +58,25 @@ def throw_exception():
 
     SECTION ("Making syntax error") {
       PyObject* main = PyImport_ImportModule("__main__");
-      std::string func_def = R"(
-def make_syntax_error():
-    this should throw a NameError
+      std::string silence_warnings = R"(
+import os, sys
+stderr_orig = sys.stderr
+stderr_devnull = open(os.devnull, 'w')
+sys.stderr = stderr_devnull
 )";
+      std::string func_def = R"(
+def invalid_func():
+    A SyntaxError should happen here
+)";
+      std::string reenable_warnings = R"(
+sys.stderr = stderr_orig
+stderr_devnull.close()
+)";
+      PyRun_SimpleString(silence_warnings.c_str());
       PyRun_SimpleString(func_def.c_str());
-      PyObject_CallMethod(main, "make_syntax_error", "()");
+      PyObject_CallMethod(main, "invalid_func", "()");
       REQUIRE_THROWS(lbann::python::check_error());
+      PyRun_SimpleString(reenable_warnings.c_str());
       Py_DECREF(main);
       REQUIRE_NOTHROW(lbann::python::check_error());
     }
