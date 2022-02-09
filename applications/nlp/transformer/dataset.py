@@ -32,7 +32,8 @@ dataset_train, dataset_val = torchnlp.datasets.wmt_dataset(
 )
 
 # Load token vocabulary
-with open(os.path.join(data_dir, 'vocab.bpe.32000')) as f:
+token_file = os.path.join(data_dir, 'vocab.bpe.32000')
+with open(token_file, 'r', encoding='utf-8') as f:
     tokens = f.read().splitlines()
 tokens.extend(['<unk>', '<s>', '</s>', '<pad>'])
 token_indices = dict(zip(tokens, range(len(tokens))))
