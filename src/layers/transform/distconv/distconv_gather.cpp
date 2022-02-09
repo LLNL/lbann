@@ -39,14 +39,56 @@ namespace distconv{
     if(output.get_buffer() == nullptr){
       util::MPIRootPrintStreamInfo() << "output buffer is null";
     }
-    const auto& values_dims = values.get_local_shape();
-    const auto& indices_dims = indices.get_local_shape();
+    const auto& values_dims = values.get_local_shape(); // Should be {1, F, E, B}
+    const auto& indices_dims = indices.get_local_shape(); // Should be {1, 1, E, B}
+    const auto& output_dims = output.get_local_shape(); // Should be {1, F, C, B}
 
-    util::MPIRootPrintStreamInfo() << "Values Dims: " << values_dims
-      << "Indices dims: " << indices_dims; 
+    // Debug prints -- delete before PR
+    #if 1
+       util::MPIRootPrintStreamInfo() << "Values Dims: " << values_dims
+      << "Indices Dims: " << indices_dims << "Output Dims: "<< output_dims; 
 
     util::MPIRootPrintStreamInfo() << values; 
     util::MPIRootPrintStreamInfo() << indices;
+    util::MPIRootPrintStreamInfo() << output;
+    #endif
+
+    const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
+    const auto& indices_size = std::accumulate(indices_dims.begin(), indices_dims.begin()+1, 1, std::multiplies<size_t>());
+    const auto& values_size = std::accumulate(values_dims.begin(), values_dims.begin()+1, 1, std::multiplies<size_t>());
+
+    const auto local_mini_batch_size = output_dims[3];
+
+    const auto input_length = output_dims[2];
+    const auto output_length = indices_dims[2];
+
+    if(output.get_buffer() == nullptr){
+      util::MPIRootPrintStreamInfo() << "output buffer is null";
+    }
+      
+    if (values.get_buffer() == nullptr){
+      util::MPIRootPrintStreamInfo() << "values buffer is null";
+    }
+
+    if (indices.get_buffer() == nullptr){
+      util::MPIRootPrintStreamInfo() << "indices buffer is null";
+    }
+   
+    // Cast the local matrices and convert to 2D EL matrices
+    El::Matrix<DataType, El::Device::GPU> out_mat(output_size, local_mini_batch_size, output.get_buffer(), output_size);
+    El::Matrix<DataType, El::Device::GPU> val_mat(values_size, local_mini_batch_size, val.get_buffer(), values_size);
+    El::Matrix<DataType, El::Device::GPU> ind_mat(ind_size, local_mini_batch_size, ind.get_buffer(), indices_size);
+    
+    //  Attach values matrix to the NVSHMEM buffer
+    // The size of the NVSHMEM_values buffer is for the local values matrix
+    // 
+
+
+    // Retreive value vectors onto the NVSHMEM workspace buffer 
+    // The NVSHMEM workspace buffer is the size of the local output matrix 
+
+
+    // Copy the local workspace buffer onto the output matrix
     return 0;
   }
 
@@ -59,6 +101,15 @@ namespace distconv{
              tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &values_grad, 
              tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices_grad){
     return 0;
+  }
+
+  template<typename Backend, typename DataType>
+  template<typename Allocator>
+  Gather<Backend, DataType>
+  ::~Gather(){
+    if(m_workspace_buffer != nullptr){
+      nvshmemfree(m_workspace_buffer);
+    }
   }
 
 // Explicit template instantiation

@@ -40,6 +40,53 @@
 namespace distconv{
   namespace tensor{
     template <typename DataType>
+    struct ScatterNVHSMEMDevice{
+      int m_pid;
+      int m_num_processes;
+      DataType *m_buf;
+      util::nvshmem::SyncArrayDevice m_sync;
+      ScatterNVHSMEMDevice(int pid,
+                           int num_processes, 
+                           DataType* buf, 
+                           const util::nvshmem::SyncArrayDevice &sync):
+        m_pid(pid), m_num_processes(num_processes), m_buf(buf) m_sync(sync){}
+    };
+
+    template <typename DataType>
+    class ScatterNVSHMEM{
+      protected:
+        cudaStream_t m_stream;
+        int m_pid;
+        int m_np;
+        Memory<NVSHMEMAllocator> m_buf;
+        util::nvshmem::SyncArray m_sync;
+        Memory<NVSHMEMAllocator> m_native_sync;
+      public:
+        ScatterNVSHMEM(cudaStream_t steam):m_stream(stream),
+                                           m_pid(nvshmem_my_pe()),  // NVSHMEM function 
+                                           m_np(nvshmem_n_pes()){}  // NVSHMEM function
+      template <typename T>
+      ScatterNVHSMEMDevice<T> get_for_device(){
+        return ScatterNVHSMEMDevice<T>(m_pid,
+                                       m_np,
+                                       static_cast<T*>(m_buf.get()),
+                                       m_sync.get_for_device());
+      }
+
+      void buffer_init(size_t count){
+        size_t cur_size = m_buf.get_size() / sizeof(DataType);
+        if (cur_size >= count){
+          util::MPIPrintStreamInfo() << "Buffer large enough. Continuining";
+          return ; 
+        }
+
+        util::MPIPrintStreamInfo() << "Allocating NVSHMEM buffer of size " << count; 
+        m_buf.allocate(count * sizeof(DataType));
+        m_buf.memset(0);
+      }
+    };
+    
+    template <typename DataType>
     struct GatherNVHSMEMDevice{
       int m_pid;
       int m_num_processes;

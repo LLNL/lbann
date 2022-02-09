@@ -29,47 +29,6 @@
 #include "lbann/layers/transform/distconv/distconv_scatter.hpp"
 
 namespace distconv{
-  namespace
-  {
-
-    /** Copy between two device buffers, using all threads in a warp. */
-    template <typename T> __device__ __forceinline__
-    T* memcpy_warp(T* __restrict__ dest, const T* __restrict__ src, int n) {
-      constexpr int warp_size = 32;
-      for (int i = threadIdx.x; i < n; i += warp_size) {
-        dest[i] = src[i];
-      }
-      __syncwarp();
-      return dest;
-    }
-
-    /** Set device buffer, using all threads in a warp. */
-    template <typename T> __device__ __forceinline__
-    T* memset_warp(T* buf, T val, int n) {
-      constexpr int warp_size = 32;
-      for (int i = threadIdx.x; i < n; i += warp_size) {
-        buf[i] = val;
-      }
-      __syncwarp();
-      return buf;
-    }
-
-    template <typename T>
-    __global__ void get_vector(){
-
-      // Matrix dimensions
-      const auto rows = input_dims[0];
-      const auto columns = input_dims[1];
-
-
-      // Indices
-      const size_t bidx = blockIdx.x;
-      const size_t bidy = blockIdx.y;
-      const size_t nblocksx = gridDim.x;
-      const size_t nblocksy = gridDim.y;
-
-    }
-  } // namespace <anon>
 
   template<typename Backend, typename DataType>
   template<typename Allocator>
@@ -78,17 +37,56 @@ namespace distconv{
   ::forward(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &values, 
           const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices,
           tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output){
-    if(output.get_buffer() == nullptr){
-      util::MPIRootPrintStreamInfo() << "output buffer is null";
-    }
-    const auto& values_dims = values.get_local_shape();
-    const auto& indices_dims = indices.get_local_shape();
+     
+    const auto& values_dims = values.get_local_shape(); // Should be {1, F, E, B}
+    const auto& indices_dims = indices.get_local_shape(); // Should be {1, 1, E, B}
+    const auto& output_dims = output.get_local_shape(); // Should be {1, F, C, B}
 
-    util::MPIRootPrintStreamInfo() << "Values Dims: " << values_dims
-      << "Indices dims: " << indices_dims; 
+    // Debug prints -- delete before PR
+    #if 1
+       util::MPIRootPrintStreamInfo() << "Values Dims: " << values_dims
+      << "Indices Dims: " << indices_dims << "Output Dims: "<< output_dims; 
 
     util::MPIRootPrintStreamInfo() << values; 
     util::MPIRootPrintStreamInfo() << indices;
+    util::MPIRootPrintStreamInfo() << output;
+    #endif
+
+    const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
+    const auto& indices_size = std::accumulate(indices_dims.begin(), indices_dims.begin()+1, 1, std::multiplies<size_t>());
+    const auto& values_size = std::accumulate(values_dims.begin(), values_dims.begin()+1, 1, std::multiplies<size_t>());
+
+    const auto local_mini_batch_size = output_dims[3];
+
+    const auto input_length = output_dims[2];
+    const auto output_length = indices_dims[2];
+
+    if(output.get_buffer() == nullptr){
+      util::MPIRootPrintStreamInfo() << "output buffer is null";
+    }
+      
+    if (values.get_buffer() == nullptr){
+      util::MPIRootPrintStreamInfo() << "values buffer is null";
+    }
+
+    if (indices.get_buffer() == nullptr){
+      util::MPIRootPrintStreamInfo() << "indices buffer is null";
+    }
+   
+    // Cast the local matrices and convert to 2D EL matrices
+    El::Matrix<DataType, El::Device::GPU> out_mat(output_size, local_mini_batch_size, output.get_buffer(), output_size);
+    El::Matrix<DataType, El::Device::GPU> val_mat(values_size, local_mini_batch_size, val.get_buffer(), values_size);
+    El::Matrix<DataType, El::Device::GPU> ind_mat(ind_size, local_mini_batch_size, ind.get_buffer(), indices_size);
+    
+    //  Attach values matrix to the NVSHMEM buffer
+    // The size of the NVSHMEM_values buffer is for the local values matrix
+
+
+    // Retreive value vectors onto the NVSHMEM workspace buffer 
+    // The NVSHMEM workspace buffer is the size of the local output matrix 
+
+
+    // Copy the local workspace buffer onto the output matrix
     return 0;
   }
 
