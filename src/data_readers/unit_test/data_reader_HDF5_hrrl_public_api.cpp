@@ -168,8 +168,10 @@ TEST_CASE("hdf5 data reader data field fetch tests",
 
   El::Int num_samples = 1;
 
-  auto data_store = std::make_unique<lbann::data_store_conduit>(hdf5_dr.get());
-  hdf5_dr->set_data_store(data_store.get());
+  {
+    auto data_store = std::make_unique<lbann::data_store_conduit>(hdf5_dr.get());
+    hdf5_dr->set_data_store(data_store.release());
+  }
   // Take the sample and place it into the data store
   int index = 0;
   auto& ds = hdf5_dr->get_data_store();
