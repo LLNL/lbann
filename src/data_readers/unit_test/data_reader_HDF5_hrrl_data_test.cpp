@@ -165,7 +165,7 @@ TEST_CASE("hdf5 data reader transform tests",
   conduit::Node node;
   node.parse(hdf5_hrrl_data_sample, "yaml");
 
-  lbann::hdf5_data_reader* hdf5_dr = new lbann::hdf5_data_reader();
+  auto hdf5_dr = std::make_unique<lbann::hdf5_data_reader>();
   DataReaderHDF5WhiteboxTester white_box_tester;
 
   conduit::Node schema;
@@ -240,7 +240,7 @@ TEST_CASE("hdf5 data reader pack test",
   lbann::init_random(0, 2);
   lbann::init_data_seq_random(42);
 
-  lbann::hdf5_data_reader* hdf5_dr = new lbann::hdf5_data_reader();
+  auto hdf5_dr = std::make_unique<lbann::hdf5_data_reader>();
   DataReaderHDF5WhiteboxTester white_box_tester;
 
   hdf5_dr->set_role("train");

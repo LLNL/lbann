@@ -47,7 +47,7 @@ TEST_CASE("SMILES string encoder", "[data_reader][smiles]")
 
   std::stringstream vocab("# 0 % 1 ( 2 ) 3 + 4 - 5 . 6 / 7 0 8 1 9 2 10 3 11 4 12 5 13 6 14 7 15 8 16 9 17 = 18 @ 19 B 20 C 21 F 22 H 23 I 24 N 25 O 26 P 27 S 28 [ 29 \\ 30 ] 31 c 32 e 33 i 34 l 35 n 36 o 37 p 38 r 39 s 40 <bos> 41 <eos> 42 <pad> 43 <unk> 44");
 
-  lbann::smiles_data_reader *smiles = new lbann::smiles_data_reader(true);
+  auto smiles = std::make_unique<lbann::smiles_data_reader>(true);
   smiles->load_vocab(vocab);
 
   const std::string smi_1("C#CCCNC1=NN(C)C=C1"); // good
