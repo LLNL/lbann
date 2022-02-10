@@ -32,9 +32,14 @@
 #include "ReplaceEscapes.hpp"
 
 #include <lbann/base.hpp>
+#include <lbann/utils/options.hpp>
 #include <lbann/utils/random_number_generators.hpp>
 #include <lbann/utils/system_info.hpp>
-#include <lbann/utils/options.hpp>
+
+#if __has_include(<unistd.h>)
+#define LBANN_HAS_UNISTD_H
+#include <unistd.h>
+#endif
 
 // Just stand up MPI before running all tests; teardown after.
 using namespace unit_test::utilities;
@@ -50,16 +55,42 @@ int main(int argc, char* argv[])
   // Initialize Catch2
   Catch::Session session;
 
+  int hang_rank = -1;
+  auto cli = session.cli()
+    | Catch::clara::Opt(hang_rank, "Rank to hang")["--hang-rank"](
+                      "Hang this rank to attach a debugger.");
+  session.cli(cli);
+
   // Parse the command line
   int return_code = session.applyCommandLine(argc, argv);
   if (return_code != 0) // Indicates a command line error
     return return_code;
 
+  // Handle a debugger hang.
+  //
+  // Note (trb 02/10/2022): We should NOT use the default Catch2 flag
+  // for this as that will hang every rank. I personally find it more
+  // effective when using GDB in a parallel setting to just attach to
+  // one rank. It's rare that I need more than one rank to run in GDB,
+  // but this block does not preclude that. If that's the intention,
+  // only the hang_rank needs to release the spin lock.
+  if (world_comm->get_rank_in_world() == hang_rank) {
+#ifdef LBANN_HAS_UNISTD_H
+    char hostname[1024];
+    gethostname(hostname, 1024);
+    std::cerr << "[hang]: (hostname: " << hostname << ", pid: " << getpid()
+              << ")" << std::endl;
+#endif
+    int volatile wait = 1;
+    while (wait) {}
+  }
+  // This should hang the other ranks
+  world_comm->global_barrier();
+
   // Manipulate output file if needed.
   auto& config_data = session.configData();
   auto& output_file = config_data.outputFilename;
-  if (output_file.size() > 0)
-  {
+  if (output_file.size() > 0) {
     lbann::utils::SystemInfo sys_info;
     output_file = replace_escapes(output_file, sys_info);
   }
