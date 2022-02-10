@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -220,6 +220,11 @@ public:
                                            execution_mode mode);
 
   ExecutionContext& get_execution_context(execution_context_key_pair_t key);
+
+  bool execution_context_valid(model& m,
+                               execution_mode mode) const noexcept;
+
+  bool execution_context_valid(execution_context_key_pair_t key) const noexcept;
 
   /** @name Training and evaluation interface */
   ///@{

@@ -174,7 +174,7 @@ def get_command(cluster,
             print('Allocating lsf nodes.')
             command_allocate = 'bsub'
             option_exclusive = ''
-            if cluster != 'lassen':
+            if cluster != 'lassen' or cluster == 'ray':
                 # x => Puts the host running your job into exclusive execution
                 # mode.
                 option_exclusive = ' -x'
@@ -189,7 +189,7 @@ def get_command(cluster,
             option_partition = ''
             option_processes_per_node = ''
             option_time_limit = ''
-            if cluster == 'lassen':
+            if cluster == 'lassen' or cluster == 'ray':
                 option_num_nodes = ' -nnodes {n}'.format(n=num_nodes)
             elif num_processes is not None:
                 # n => Submits a parallel job and specifies the number of
@@ -222,7 +222,7 @@ def get_command(cluster,
             space = ''
         else:
             space = ' '
-        if cluster == 'lassen':
+        if cluster == 'lassen' or cluster == 'ray':
             # Cannot specify time limit for jsrun.
             command_run = '{s}jsrun'.format(s=space)
         else:
@@ -236,7 +236,7 @@ def get_command(cluster,
         option_resources_per_host = ''
         option_tasks_per_resource = ''
         if num_processes is not None:
-            if cluster == 'lassen':
+            if cluster == 'lassen' or cluster == 'ray':
                 option_bind = ' -b "packed:8"'
                 option_cpu_per_resource = ' --cpu_per_rs ALL_CPUS'
                 option_gpu_per_resource = ' --gpu_per_rs ALL_GPUS'

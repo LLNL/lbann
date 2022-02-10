@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -189,6 +189,18 @@ trainer::get_execution_context(execution_context_key_pair_t key)
   }
   return static_cast<SGDExecutionContext&>(
     *(m_model_execution_context[key].get()));
+}
+
+bool trainer::execution_context_valid(model& m,
+                                      execution_mode mode) const noexcept
+{
+  return execution_context_valid(std::make_pair(&m, mode));
+}
+
+bool trainer::execution_context_valid(
+  execution_context_key_pair_t key) const noexcept
+{
+  return (m_model_execution_context.count(key) != 0);
 }
 
 void trainer::delete_execution_context(execution_context_key_pair_t key)

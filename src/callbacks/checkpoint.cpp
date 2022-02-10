@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,7 +29,7 @@
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
-
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/serialize.hpp"
 
@@ -39,7 +39,49 @@
 #include <string>
 
 namespace lbann {
+namespace {
+/**
+ * Get the current execution context for the model.  However, if the current
+ * execution context is not for training and there is a valid training
+ * execution context, return the training context instead.
+ *
+ */
+SGDExecutionContext const&
+get_current_execution_context_with_training_override(model& m, trainer& t)
+{
+  const auto& c =
+    dynamic_cast<SGDExecutionContext const&>(m.get_execution_context());
+  if (c.get_execution_mode() != execution_mode::training &&
+      t.execution_context_valid(m, execution_mode::training)) {
+    return dynamic_cast<SGDExecutionContext const&>(
+      t.get_execution_context(&m, execution_mode::training));
+  }
+  return c;
+}
+
+/**
+ * When generating a checkpoint for non-training execution phases, the epoch
+ * number should be pulled from the training context to provide a proper
+ * ordering of the checkpoint.
+ */
+size_t get_epoch_with_training_override(model& m, trainer& t)
+{
+  return get_current_execution_context_with_training_override(m, t).get_epoch();
+}
+
+/**
+ * When generating a checkpoint for non-training execution phases, the step
+ * count should be pulled from the training context to provide a proper
+ * ordering of the checkpoint.
+ */
+size_t get_step_with_training_override(model& m, trainer& t)
+{
+  return get_current_execution_context_with_training_override(m, t).get_step();
+}
+} // namespace
+
 namespace callback {
+
 // Load from checkpoint occurs during setup callbacks
 void checkpoint::setup(model *m) {
   reload_model(m);
@@ -99,7 +141,6 @@ void checkpoint::on_batch_begin(model *m) {
 
 // Decide if we need to trigger a checkpoint for either mode, based on prototext defined intervals
 bool checkpoint::need_checkpoint(model *m, callback_phase phase) {
-  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   /* TODO: since we're using clocks, this requires a bcast for each call,
    * we could use number of samples processed to make a local decision */
   // if none of our checkpoint conditions are set, assume we're not checkpointing
@@ -114,8 +155,13 @@ bool checkpoint::need_checkpoint(model *m, callback_phase phase) {
   m_checkpoint_shared = false;
   m_checkpoint_dist = false;
   lbann_comm *comm = m->get_comm();
-  int cur_epoch = c.get_epoch();
-  // If we are at the end of a training epoch and the training epoch lands on defined interval, ckpt
+  auto& t = this->get_active_trainer();
+  size_t const cur_epoch =
+    get_epoch_with_training_override(*m, t);
+  size_t const cur_step =
+    get_step_with_training_override(*m, t);
+  // If we are at the end of a training epoch and the training epoch lands on
+  // defined interval, ckpt
   if (!m_checkpoint_shared && m_checkpoint_epochs > 0 && (phase == callback_phase::epoch || phase == callback_phase::validation)){
       m_checkpoint_shared = (cur_epoch > 0) && (cur_epoch % m_checkpoint_epochs == 0);
     }
@@ -126,11 +172,11 @@ bool checkpoint::need_checkpoint(model *m, callback_phase phase) {
 
   // If we are at the end of a training mb step and the training mb step lands on defined interval, trigger checkpoint
   if (!m_checkpoint_shared && m_checkpoint_steps > 0) {
-    m_checkpoint_shared = (c.get_step() > 0) && (c.get_step() % m_checkpoint_steps == 0);
+    m_checkpoint_shared = (cur_step > 0) && (cur_step % m_checkpoint_steps == 0);
   }
 
   if(!m_checkpoint_dist && m_ckpt_dist_steps > 0){
-      m_checkpoint_dist = (c.get_step() > 0) && (c.get_step() % m_ckpt_dist_steps == 0);
+      m_checkpoint_dist = (cur_step > 0) && (cur_step % m_ckpt_dist_steps == 0);
   }
 
   // check the clock if time-based checkpoint is enabled
@@ -176,8 +222,8 @@ bool checkpoint::do_checkpoint(model *m, visitor_hook hook) {
   comm->trainer_barrier();
   // let user know we're saving a checkpoint
   if (comm->am_trainer_master()) {
-    epoch = c.get_epoch();
-    step = c.get_step();
+    epoch = get_epoch_with_training_override(*m, t);
+    step = get_step_with_training_override(*m, t);
     timer.Start();
     std::cout << "[" << m->get_name()
               << "." << comm->get_trainer_rank()

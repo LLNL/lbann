@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -99,12 +99,6 @@ void smiles_data_reader::copy_members(const smiles_data_reader &rhs) {
   m_local_to_index = rhs.m_local_to_index;
   m_filename_to_local_id_set = rhs.m_filename_to_local_id_set;
   m_index_to_filename = rhs.m_index_to_filename;
-
-  if(rhs.m_data_store != nullptr) {
-    m_data_store = new data_store_conduit(rhs.get_data_store());
-    m_data_store->set_data_reader_ptr(this);
-  }
-
 }
 
 void smiles_data_reader::load() {
@@ -177,13 +171,15 @@ void smiles_data_reader::do_preload_data_store() {
   std::mt19937 r(rd());
   std::shuffle(my_ordering.begin(), my_ordering.end(), r);
 
+  auto& arg_parser = global_argument_parser();
+  size_t buf_size = arg_parser.get<size_t>(LBANN_OPTION_SMILES_BUFFER_SIZE);
+  // Create a buffer for reading in the SMILES files
+  std::vector<char> iobuffer(buf_size);
+
   // load all samples that belong to this rank's data_store
   for (const auto &filename : my_ordering) {
     std::ifstream in;
-    auto& arg_parser = global_argument_parser();
-    size_t buf_size = arg_parser.get<size_t>(LBANN_OPTION_SMILES_BUFFER_SIZE);
-    char iobuffer [buf_size];
-    in.rdbuf()->pubsetbuf(iobuffer,buf_size);
+    in.rdbuf()->pubsetbuf(iobuffer.data(),buf_size);
     in.open(filename.c_str(), std::ios::binary | std::ios::ate);
     if (!in) {
       LBANN_ERROR("failed to open ", filename, " for reading");
@@ -254,7 +250,7 @@ void smiles_data_reader::do_preload_data_store() {
         in.seekg(min_offset, std::ios::beg);
         std::vector<char> buffer(read_len);
         in.read(buffer.data(), read_len);
-        std::istringstream buf_stream(buffer.data());
+        std::istringstream buf_stream({buffer.data(), buffer.size()});
 
         // Place all of the samples in the range into the data store
         for (const auto& [r_local, r_index] : samples_in_range) {
@@ -583,15 +579,16 @@ void smiles_data_reader::read_offset_data(std::vector<SampleData> &data) {
   std::vector<std::string> offsets_filenames;
   read_metadata_file(samples_per_file, data_filenames, offsets_filenames);
 
+  auto& arg_parser = global_argument_parser();
+  size_t buf_size = arg_parser.get<size_t>(LBANN_OPTION_SMILES_BUFFER_SIZE);
+  // Create a buffer for reading in each offsets file
+  std::vector<char> iobuffer(buf_size);
   long long offset;
   short length;
   for (size_t j=0; j<data_filenames.size(); j++) {
     if (m_filename_to_local_id_set.find(data_filenames[j]) != m_filename_to_local_id_set.end()) {
       std::ifstream in;
-      auto& arg_parser = global_argument_parser();
-      size_t buf_size = arg_parser.get<size_t>(LBANN_OPTION_SMILES_BUFFER_SIZE);
-      char iobuffer [buf_size];
-      in.rdbuf()->pubsetbuf(iobuffer,buf_size);
+      in.rdbuf()->pubsetbuf(iobuffer.data(),buf_size);
       in.open(offsets_filenames[j], std::ios::binary);
 
       const std::set<size_t> &indices = m_filename_to_local_id_set[data_filenames[j]];

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -43,6 +43,13 @@ namespace lbann {
 
 #undef DEBUG
 //#define DEBUG
+
+generic_data_reader::~generic_data_reader() {
+  if (m_data_store != nullptr) {
+    delete m_data_store;
+    m_data_store = nullptr;
+  }
+}
 
 template <class Archive>
 void generic_data_reader::serialize( Archive & ar ) {

@@ -95,14 +95,17 @@ set_center_specific_modules()
     if [[ ${center} = "llnl_lc" ]]; then
         # Disable the StdEnv for systems in LC
         case ${spack_arch_target} in
-            "power9le" | "power8le") # Lassen, Ray
+            "power9le") # Lassen
+                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2"
+                ;;
+            "power8le") # Ray
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2"
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
-                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.0 mvapich2/2.3 python/3.7.2"
+                MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 cuda/11.4.1 mvapich2/2.3.6 python/3.7.2"
                 ;;
             "ivybridge") # Catalyst
-                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
+                MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 mvapich2/2.3.6 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
                 MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 python/3.7.2 opt rocm/4.2.0 openmpi-gnu/4.0"
@@ -156,14 +159,18 @@ set_center_specific_spack_dependencies()
         # buildcache for Hydrogen has been updated.
         # MIRRORS="/p/vast1/lbann/spack/mirror /p/vast1/atom/spack/mirror"
         case ${spack_arch_target} in
-            "power9le" | "power8le") # Lassen, Ray
-                CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp ^cuda@11.1.105"
+            "power9le") # Lassen
+                CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp ^cuda@11.1.105 ^libtool@2.4.2 ^py-packaging@17.1 ^python@3.9.10 ^py-scipy@1.6.3"
+                CENTER_FLAGS="+gold"
+                ;;
+            "power8le") # Ray
+                CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp ^cuda@11.1.105 ^libtool@2.4.2 ^py-packaging@17.1 ^python@3.9.10 ^py-scipy@1.6.3"
                 CENTER_FLAGS="+gold"
                 ;;
             "broadwell" | "haswell" | "sandybridge" | "ivybridge") # Pascal, RZHasGPU, Surface, Catalyst
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13"
-                CENTER_FLAGS="+gold"
+               CENTER_DEPENDENCIES="%clang ^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^py-packaging@17.1 ^python@3.9.10 ^py-scipy@1.6.3"
+               CENTER_FLAGS="+lld"
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
@@ -463,14 +470,18 @@ cleanup_clang_compilers()
     local center="$1"
     local yaml="$2"
 
-    # Point compilers that don't have a fortran compiler a default one
-    sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/usr\/bin\/gfortran/g' ${yaml}
-    echo "Updating Clang compiler's to see the gfortran compiler."
-
     if [[ ${center} = "llnl_lc" ]]; then
+	# Point compilers that don't have a fortran compiler a default one
+	sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/usr\/tce\/packages\/gcc\/gcc-8.3.1\/bin\/gfortran/g' ${yaml}
+	echo "Updating Clang compiler's to see the gfortran compiler."
+
         # LC uses a old default gcc and clang needs a newer default gcc toolchain
         # Also set LC clang compilers to use lld for faster linking ldflags: -fuse-ld=lld
-        perl -i.perl_bak -0pe 's/(- compiler:.*?spec: clang.*?flags:) (\{\})/$1 \{cflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.1.0, cxxflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.1.0\}/smg' ${yaml}
+        perl -i.perl_bak -0pe 's/(- compiler:.*?spec: clang.*?flags:) (\{\})/$1 \{cflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.3.1, cxxflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.3.1\}/smg' ${yaml}
+    else
+	# Point compilers that don't have a fortran compiler a default one
+	sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/usr\/bin\/gfortran/g' ${yaml}
+	echo "Updating Clang compiler's to see the gfortran compiler."
     fi
 }
 

@@ -10,7 +10,7 @@ from lbann.util import str_list
 import lbann.contrib.args
 import lbann.contrib.launcher
 
-from roberta import RobertaModel
+from lbann.models import RoBERTa
 
 # ----------------------------------------------
 # Options
@@ -170,7 +170,7 @@ class CrossEntropyLoss(lbann.modules.Module):
 with open("./config.json") as f:
     config = json.load(f, object_hook=lambda d: SimpleNamespace(**d))
 config.input_shape = (16, 32)
-config.load_weights = os.path.exists('./pretrained_weights')
+config.load_weights = os.path.abspath('./pretrained_weights')
 
 # Construct the model
 input_ = lbann.Slice(
@@ -179,7 +179,7 @@ input_ = lbann.Slice(
 )
 labels = lbann.Identity(input_)
 sample = lbann.Reshape(input_, dims=str_list(config.input_shape))
-roberta = RobertaModel(config, load_weights=config.load_weights)
+roberta = RoBERTa(config, load_weights=config.load_weights)
 out = roberta(sample)
 out = lbann.ChannelwiseFullyConnected(out, output_channel_dims=[1000])
 loss = CrossEntropyLoss(10, data_layout="model_parallel")

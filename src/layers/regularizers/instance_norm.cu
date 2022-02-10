@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -167,8 +167,7 @@ __global__ void fp_output_kernel(
 
 /** @brief Forward prop */
 template <typename TensorDataType>
-void fp_impl(lbann_comm& comm,
-             size_t num_channels,
+void fp_impl(size_t num_channels,
              size_t channel_size,
              TensorDataType epsilon,
              const El::AbstractDistMatrix<TensorDataType>& input,
@@ -249,8 +248,7 @@ void instance_norm_layer<TensorDataType, Layout, Device>::fp_compute()
 {
   const size_t num_channels = this->get_output_dims().front();
   const size_t channel_size = this->get_output_size() / num_channels;
-  fp_impl(*this->get_comm(),
-          num_channels,
+  fp_impl(num_channels,
           channel_size,
           this->m_epsilon,
           this->get_prev_activations(),
@@ -412,8 +410,7 @@ __global__ void bp_input_grad_kernel(
 
 /** @brief Backprop */
 template <typename TensorDataType>
-void bp_impl(lbann_comm& comm,
-             size_t num_channels,
+void bp_impl(size_t num_channels,
              size_t channel_size,
              TensorDataType epsilon,
              const El::AbstractDistMatrix<TensorDataType>& input,
@@ -515,8 +512,7 @@ void instance_norm_layer<TensorDataType, Layout, Device>::bp_compute()
 {
   const size_t num_channels = this->get_output_dims().front();
   const size_t channel_size = this->get_output_size() / num_channels;
-  bp_impl(*this->get_comm(),
-          num_channels,
+  bp_impl(num_channels,
           channel_size,
           this->m_epsilon,
           this->get_prev_activations(),

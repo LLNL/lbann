@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -84,11 +84,16 @@ babe.txt 18 0 ... 6 8 ... 14 16 ... 19
 }// namespace <anon>
 
 using unit_test::utilities::IsValidPtr;
-TEST_CASE("Sample list", "[mpi][data reader][smiles]")
+TEST_CASE("Sample list", "[mpi][data_reader][smiles]")
 {
   //using DataType = float; commented out to silence compiler
 
   auto& comm = unit_test::utilities::current_world_comm();
+  lbann::init_random(0, 2);
+  lbann::init_data_seq_random(42);
+  auto& arg_parser = lbann::global_argument_parser();
+  arg_parser.clear(); // Clear the argument parser.
+  lbann::construct_all_options();
 
   auto const& g = comm.get_trainer_grid();
   lbann::utils::grid_manager mgr(g);
