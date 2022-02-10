@@ -32,9 +32,10 @@
 // The code being tested
 #include "lbann/data_readers/data_reader_smiles.hpp"
 
+#include "lbann/comm.hpp"
+#include "lbann/proto/proto_common.hpp" // init_data_readers
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/file_utils.hpp"
-#include "lbann/utils/lbann_library.hpp" // init_data_readers
 
 #include <lbann.pb.h>
 
@@ -308,7 +309,8 @@ static std::string get_tmpdir() noexcept
     tmpdir = "/tmp";
   return join_path(
     tmpdir,
-    lbann::build_string("smiles_fetch_datum_test_", std::time(nullptr)));
+    lbann::build_string("smiles_fetch_datum_test_", std::time(nullptr), "_",
+                        lbann::get_rank_in_world()));
 }
 
 static void setup_tmp_filetree(std::string const& tmp_dir)
