@@ -56,8 +56,8 @@ int main(int argc, char* argv[])
   Catch::Session session;
 
   int hang_rank = -1;
-  auto cli = session.cli()
-    | Catch::clara::Opt(hang_rank, "Rank to hang")["--hang-rank"](
+  auto cli =
+    session.cli() | Catch::clara::Opt(hang_rank, "Rank to hang")["--hang-rank"](
                       "Hang this rank to attach a debugger.");
   session.cli(cli);
 
@@ -82,7 +82,8 @@ int main(int argc, char* argv[])
               << ")" << std::endl;
 #endif
     int volatile wait = 1;
-    while (wait) {}
+    while (wait) {
+    }
   }
   // This should hang the other ranks
   world_comm->global_barrier();
