@@ -152,7 +152,7 @@ TEST_CASE("hdf5 data reader data field fetch tests",
   conduit::Node ref_node;
   ref_node.parse(hdf5_hrrl_data_sample_id, "yaml");
 
-  lbann::hdf5_data_reader* hdf5_dr = new lbann::hdf5_data_reader();
+  auto hdf5_dr = std::make_unique<lbann::hdf5_data_reader>();
   DataReaderHDF5WhiteboxTester white_box_tester;
 
   // Setup the data schema for this HRRL data set
@@ -168,8 +168,8 @@ TEST_CASE("hdf5 data reader data field fetch tests",
 
   El::Int num_samples = 1;
 
-  auto data_store = new lbann::data_store_conduit(hdf5_dr);
-  hdf5_dr->set_data_store(data_store);
+  auto data_store = std::make_unique<lbann::data_store_conduit>(hdf5_dr.get());
+  hdf5_dr->set_data_store(data_store.get());
   // Take the sample and place it into the data store
   int index = 0;
   auto& ds = hdf5_dr->get_data_store();

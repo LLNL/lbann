@@ -98,7 +98,7 @@ TEST_CASE("Sample list", "[mpi][data_reader][smiles]")
   auto const& g = comm.get_trainer_grid();
   lbann::utils::grid_manager mgr(g);
 
-  lbann::smiles_data_reader *smiles = new lbann::smiles_data_reader(true /*shuffle*/);
+  auto smiles = std::make_unique<lbann::smiles_data_reader>(/*shuffle=*/true);
   // Avoid the sample list code checking that the files really exist
   // in the file system
   smiles->get_sample_list().unset_data_file_check();
