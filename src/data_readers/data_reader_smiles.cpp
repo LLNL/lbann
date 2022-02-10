@@ -171,13 +171,15 @@ void smiles_data_reader::do_preload_data_store() {
   std::mt19937 r(rd());
   std::shuffle(my_ordering.begin(), my_ordering.end(), r);
 
+  auto& arg_parser = global_argument_parser();
+  size_t buf_size = arg_parser.get<size_t>(LBANN_OPTION_SMILES_BUFFER_SIZE);
+  // Create a buffer for reading in the SMILES files
+  std::vector<char> iobuffer(buf_size);
+
   // load all samples that belong to this rank's data_store
   for (const auto &filename : my_ordering) {
     std::ifstream in;
-    auto& arg_parser = global_argument_parser();
-    size_t buf_size = arg_parser.get<size_t>(LBANN_OPTION_SMILES_BUFFER_SIZE);
-    char iobuffer [buf_size];
-    in.rdbuf()->pubsetbuf(iobuffer,buf_size);
+    in.rdbuf()->pubsetbuf(iobuffer.data(),buf_size);
     in.open(filename.c_str(), std::ios::binary | std::ios::ate);
     if (!in) {
       LBANN_ERROR("failed to open ", filename, " for reading");
@@ -577,15 +579,16 @@ void smiles_data_reader::read_offset_data(std::vector<SampleData> &data) {
   std::vector<std::string> offsets_filenames;
   read_metadata_file(samples_per_file, data_filenames, offsets_filenames);
 
+  auto& arg_parser = global_argument_parser();
+  size_t buf_size = arg_parser.get<size_t>(LBANN_OPTION_SMILES_BUFFER_SIZE);
+  // Create a buffer for reading in each offsets file
+  std::vector<char> iobuffer(buf_size);
   long long offset;
   short length;
   for (size_t j=0; j<data_filenames.size(); j++) {
     if (m_filename_to_local_id_set.find(data_filenames[j]) != m_filename_to_local_id_set.end()) {
       std::ifstream in;
-      auto& arg_parser = global_argument_parser();
-      size_t buf_size = arg_parser.get<size_t>(LBANN_OPTION_SMILES_BUFFER_SIZE);
-      char iobuffer [buf_size];
-      in.rdbuf()->pubsetbuf(iobuffer,buf_size);
+      in.rdbuf()->pubsetbuf(iobuffer.data(),buf_size);
       in.open(offsets_filenames[j], std::ios::binary);
 
       const std::set<size_t> &indices = m_filename_to_local_id_set[data_filenames[j]];
