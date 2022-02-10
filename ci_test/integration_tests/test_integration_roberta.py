@@ -51,6 +51,7 @@ expected_test_loss_range = (6.8, 7.1)
 expected_mini_batch_times = {
     "pascal": 0.1225,
     "lassen": 0.0440,
+    "ray" : 0.0607,
 }
 
 # ==============================================
