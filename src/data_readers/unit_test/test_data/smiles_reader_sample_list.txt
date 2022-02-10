@@ -1,5 +1,5 @@
-const std::string sample_list_const = R"ptext(CONDUIT_HDF5_INCLUSION
+std::string sample_list = R"ptext(CONDUIT_HDF5_INCLUSION
 5 0 1
-BASE_DIR
+TMPDIR/
 D_smiles_reader.smi 5 0 0 1 ... 3 4
 )ptext";
