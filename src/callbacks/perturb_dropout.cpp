@@ -140,7 +140,7 @@ build_perturb_dropout_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackPerturbDropout&>(proto_msg);
-  return make_unique<perturb_dropout>(
+  return std::make_unique<perturb_dropout>(
     params.keep_dropout_factor(),
     parse_set<std::string>(params.layers()));
 }

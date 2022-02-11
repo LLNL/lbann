@@ -151,13 +151,13 @@ build_save_model_callback_from_pbuf(
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSaveModel&>(proto_msg);
   if(params.extension().size() != 0) {
-    return make_unique<save_model>(
+    return std::make_unique<save_model>(
       params.dir(),
       params.disable_save_after_training(),
       params.extension());
   }
   else {
-    return make_unique<save_model>(
+    return std::make_unique<save_model>(
       params.dir(),
       params.disable_save_after_training());
   }

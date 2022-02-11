@@ -106,7 +106,7 @@ void random_affine::apply(utils::type_erased_matrix& data, std::vector<size_t>& 
 std::unique_ptr<transform>
 build_random_affine_transform_from_pbuf(google::protobuf::Message const& msg) {
   auto const& params = dynamic_cast<lbann_data::Transform::RandomAffine const&>(msg);
-  return make_unique<random_affine>(
+  return std::make_unique<random_affine>(
     params.rotate_min(), params.rotate_max(),
     params.translate_h(), params.translate_w(),
     params.scale_min(), params.scale_max(),

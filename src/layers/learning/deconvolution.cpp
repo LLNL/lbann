@@ -187,7 +187,7 @@ void deconvolution_layer<TensorDataType,Layout,Device>::bp_compute() {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void deconvolution_layer<TensorDataType,Layout,Device>
 ::setup_distconv_adapter(const DataReaderMetaData& dr_metadata) {
-  this->get_distconv_adapter_ptr() = make_unique<
+  this->get_distconv_adapter_ptr() = std::make_unique<
     deconvolution_distconv_adapter<TensorDataType, Layout, Device>>(*this);
 }
 

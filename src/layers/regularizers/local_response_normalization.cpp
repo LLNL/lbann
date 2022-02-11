@@ -43,7 +43,7 @@ struct lrn_builder<TensorDataType, data_layout::DATA_PARALLEL, device> {
   static std::unique_ptr<LayerType> Get(lbann_comm* comm,
                                         lbann_data::Layer const& layer_msg) {
     const auto& params = layer_msg.local_response_normalization();
-    return lbann::make_unique<LayerType>(
+    return std::make_unique<LayerType>(
       params.window_width(),
       El::To<TensorDataType>(params.lrn_alpha()),
       El::To<TensorDataType>(params.lrn_beta()),

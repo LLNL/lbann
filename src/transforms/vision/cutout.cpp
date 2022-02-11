@@ -67,7 +67,7 @@ void cutout::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
 std::unique_ptr<transform>
 build_cutout_transform_from_pbuf(google::protobuf::Message const& msg) {
   auto const& params = dynamic_cast<lbann_data::Transform::Cutout const&>(msg);
-  return make_unique<cutout>(params.num_holes(), params.length());
+  return std::make_unique<cutout>(params.num_holes(), params.length());
 }
 
 }  // namespace transform

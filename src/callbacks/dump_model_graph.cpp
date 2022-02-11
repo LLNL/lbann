@@ -156,7 +156,7 @@ build_dump_model_graph_callback_from_pbuf(
       dynamic_cast<const lbann_data::Callback::CallbackDumpModelGraph&>(proto_msg);
   const std::string basename = params.basename();
   const bool print = params.print();
-  return make_unique<dump_model_graph>(
+  return std::make_unique<dump_model_graph>(
       basename.size() == 0 ? "model.dot" : basename,
       print);
 }

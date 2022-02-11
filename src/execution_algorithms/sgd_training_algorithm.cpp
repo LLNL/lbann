@@ -421,21 +421,21 @@ lbann::make<lbann::SGDTrainingAlgorithm>(
   std::unique_ptr<SGDTerminationCriteria> stopping;
   switch (stopping_criteria.criterion_case()) {
   case lbann_data::SGD::TerminationCriteria::kMaxBatches:
-    stopping = make_unique<BatchTerminationCriteria>(
+    stopping = std::make_unique<BatchTerminationCriteria>(
       stopping_criteria.max_batches());
     break;
   case lbann_data::SGD::TerminationCriteria::kMaxEpochs:
-    stopping = make_unique<EpochTerminationCriteria>(
+    stopping = std::make_unique<EpochTerminationCriteria>(
       stopping_criteria.max_epochs());
     break;
   case lbann_data::SGD::TerminationCriteria::kMaxSeconds:
-    stopping = make_unique<SecondsTerminationCriteria>(
+    stopping = std::make_unique<SecondsTerminationCriteria>(
       stopping_criteria.max_seconds());
     //LBANN_ERROR("Time-based training not yet supported in SGD.");
     break;
   default:
     LBANN_ERROR("No stopping criteria specified.");
   }
-  return make_unique<SGDTrainingAlgorithm>(params.name(),
+  return std::make_unique<SGDTrainingAlgorithm>(params.name(),
                                              std::move(stopping));
 }

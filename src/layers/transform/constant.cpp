@@ -41,7 +41,7 @@ std::unique_ptr<Layer> build_constant_layer_from_pbuf(
 
   const auto& params = proto_layer.constant();
   const auto& dims = parse_list<int>(params.num_neurons());
-  return lbann::make_unique<LayerType>(
+  return std::make_unique<LayerType>(
     comm, El::To<TensorDataType>(params.value()), dims);
 }
 

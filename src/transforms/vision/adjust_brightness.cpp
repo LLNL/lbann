@@ -51,7 +51,7 @@ void adjust_brightness::apply(utils::type_erased_matrix& data, std::vector<size_
 std::unique_ptr<transform>
 build_adjust_brightness_transform_from_pbuf(google::protobuf::Message const& msg) {
   auto const& params = dynamic_cast<lbann_data::Transform::AdjustBrightness const&>(msg);
-  return make_unique<adjust_brightness>(params.factor());
+  return std::make_unique<adjust_brightness>(params.factor());
 }
 
 }  // namespace transform

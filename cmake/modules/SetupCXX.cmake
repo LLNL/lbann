@@ -136,16 +136,3 @@ endif ()
 
 # Check if we can use Linux's sys/sendfile.h
 check_include_file_cxx(sys/sendfile.h LBANN_SYS_SENDFILE_OK)
-
-# Testing for std::any
-include(CheckCXXSourceCompiles)
-set(_ANY_TEST_CODE
-  "#include <any>
-int main(int, char* argv[]) { std::any x; }")
-check_cxx_source_compiles("${_ANY_TEST_CODE}" LBANN_HAS_STD_ANY)
-
-set(_MAKE_UNIQUE_TEST_CODE
-  "#include <memory>
-int main(int, char* argv[]) { auto x = std::make_unique<double>(); }")
-check_cxx_source_compiles(
-  "${_MAKE_UNIQUE_TEST_CODE}" LBANN_HAS_STD_MAKE_UNIQUE)

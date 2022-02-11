@@ -46,7 +46,7 @@ void horizontal_flip::apply(utils::type_erased_matrix& data, std::vector<size_t>
 std::unique_ptr<transform>
 build_horizontal_flip_transform_from_pbuf(google::protobuf::Message const& msg) {
   auto const& params = dynamic_cast<lbann_data::Transform::HorizontalFlip const&>(msg);
-  return make_unique<horizontal_flip>(params.p());
+  return std::make_unique<horizontal_flip>(params.p());
 }
 
 }  // namespace transform

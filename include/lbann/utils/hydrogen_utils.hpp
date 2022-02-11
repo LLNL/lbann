@@ -46,7 +46,7 @@ struct ViewIfPossibleOrCopy {
   template <El::Device D>
   static std::unique_ptr<El::Matrix<EvalDataType, D>> get(El::Matrix<TensorDataType, D> const& x)
   {
-    auto ret = make_unique<El::Matrix<EvalDataType, D>>();
+    auto ret = std::make_unique<El::Matrix<EvalDataType, D>>();
     El::Copy(x, *ret);
     return ret;
   }
@@ -70,7 +70,7 @@ struct ViewIfPossibleOrCopy<DataType,DataType> {
   template <El::Device D>
   static std::unique_ptr<El::Matrix<DataType, D>> get(El::Matrix<DataType, D> const& x)
   {
-    auto ret = make_unique<El::Matrix<DataType, D>>();
+    auto ret = std::make_unique<El::Matrix<DataType, D>>();
     El::LockedView(*ret, x);
     return ret;
   }

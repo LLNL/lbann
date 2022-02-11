@@ -177,7 +177,7 @@ build_save_images_callback_from_pbuf(
   const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSaveImages&>(proto_msg);
-  return make_unique<save_images>(
+  return std::make_unique<save_images>(
     parse_list<>(params.layers()),
     params.image_format(),
     params.image_prefix());

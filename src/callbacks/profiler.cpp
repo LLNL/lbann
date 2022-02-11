@@ -224,7 +224,7 @@ build_profiler_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackProfiler&>(proto_msg);
-  return make_unique<profiler>(params.sync(),
+  return std::make_unique<profiler>(params.sync(),
                                               params.skip_init());
 }
 

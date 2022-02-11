@@ -39,11 +39,11 @@ std::unique_ptr<Layer> build_softmax_layer_from_pbuf(
   using LayerType = softmax_layer<TensorDataType, Layout, Device>;
   const auto& sm_mode = proto_layer.softmax().softmax_mode();
   if (sm_mode == "instance" || sm_mode == "")
-    return lbann::make_unique<LayerType>(comm, softmax_mode::INSTANCE);
+    return std::make_unique<LayerType>(comm, softmax_mode::INSTANCE);
   else if (sm_mode == "channel")
-    return lbann::make_unique<LayerType>(comm, softmax_mode::CHANNEL);
+    return std::make_unique<LayerType>(comm, softmax_mode::CHANNEL);
   else
-    return lbann::make_unique<LayerType>(comm, softmax_mode::INVALID);
+    return std::make_unique<LayerType>(comm, softmax_mode::INVALID);
 }
 
 #define PROTO_DEVICE(T, Device) \

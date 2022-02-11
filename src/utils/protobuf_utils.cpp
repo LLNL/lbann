@@ -143,7 +143,7 @@ read_in_prototext_files(
 {
   std::vector<std::unique_ptr<lbann_data::LbannPB>> models_out;
   for (auto const& t : names) {
-    auto pb = make_unique<lbann_data::LbannPB>();
+    auto pb = std::make_unique<lbann_data::LbannPB>();
     if (t.model != "none")
       read_prototext_file(t.model, *pb, master);
     if (t.reader != "none") {

@@ -40,7 +40,7 @@ std::unique_ptr<Layer> build_weighted_sum_layer_from_pbuf(
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, weighted_sum);
   const auto& params = proto_layer.weighted_sum();
   const auto& scaling_factors = parse_list<DataType>(params.scaling_factors());
-  return lbann::make_unique<LayerType>(comm, scaling_factors);
+  return std::make_unique<LayerType>(comm, scaling_factors);
 }
 
 #define PROTO_DEVICE(T, Device) \

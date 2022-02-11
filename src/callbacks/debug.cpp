@@ -186,7 +186,7 @@ build_debug_callback_from_pbuf(const google::protobuf::Message& proto_msg,
     dynamic_cast<const lbann_data::Callback::CallbackDebug&>(proto_msg);
   const auto& modes =
     parse_set<execution_mode>(params.phase());
-  return make_unique<debug>(modes);
+  return std::make_unique<debug>(modes);
 }
 
 } // namespace callback

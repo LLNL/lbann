@@ -99,7 +99,7 @@ build_normalize_to_lbann_layout_transform_from_pbuf(
   google::protobuf::Message const& msg) {
   auto const& params =
     dynamic_cast<lbann_data::Transform::NormalizeToLBANNLayout const&>(msg);
-  return make_unique<normalize_to_lbann_layout>(
+  return std::make_unique<normalize_to_lbann_layout>(
     parse_list<float>(params.means()),
     parse_list<float>(params.stddevs()));
 }

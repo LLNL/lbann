@@ -66,7 +66,7 @@ template <typename T, El::Device D,
           typename=El::EnableWhen<DFTTypeSupported<T,D>>>
 std::unique_ptr<Layer> build_layer(lbann_comm* comm)
 {
-  return make_unique<dft_abs_layer<T,D>>(comm);
+  return std::make_unique<dft_abs_layer<T,D>>(comm);
 }
 #endif // LBANN_HAS_FFTW
 

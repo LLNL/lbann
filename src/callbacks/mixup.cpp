@@ -123,7 +123,7 @@ build_mixup_callback_from_pbuf(
   const auto& layers_list = parse_list<std::string>(params.layers());
   std::unordered_set<std::string> layers(layers_list.begin(),
                                          layers_list.end());
-  return make_unique<mixup>(layers, params.alpha());
+  return std::make_unique<mixup>(layers, params.alpha());
 }
 
 } // namespace callback

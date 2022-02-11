@@ -47,7 +47,7 @@ void grayscale::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims
 
 std::unique_ptr<transform>
 build_grayscale_transform_from_pbuf(google::protobuf::Message const&) {
-  return make_unique<grayscale>();
+  return std::make_unique<grayscale>();
 }
 
 }  // namespace transform

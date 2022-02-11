@@ -96,7 +96,7 @@ build_export_onnx_callback_from_pbuf(
   const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackExportOnnx&>(proto_msg);
-  return make_unique<export_onnx>(
+  return std::make_unique<export_onnx>(
     params.print_debug_string(),
     params.output_file());
 }

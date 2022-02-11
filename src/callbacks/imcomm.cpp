@@ -179,7 +179,7 @@ build_imcomm_callback_from_pbuf(
     LBANN_ERROR("invalid inter-model communication type (", type_str, ")");
   }
   std::unordered_set<weights*> selected_weights; /// @todo Initialize weights
-  return make_unique<imcomm>(type, selected_weights, summarizer);
+  return std::make_unique<imcomm>(type, selected_weights, summarizer);
 }
 
 } // namespace callback

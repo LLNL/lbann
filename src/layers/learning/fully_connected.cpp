@@ -148,7 +148,7 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>
   }
   if (!this->has_weights(0)) {
     auto w = std::make_shared<WeightsType>(*this->get_comm());
-    auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
+    auto init = std::make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
     auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_linearity_weights");
     w->set_initializer(std::move(init));
@@ -651,7 +651,7 @@ std::unique_ptr<Layer> build_fully_connected_layer_from_pbuf(
 {
   using LayerType = fully_connected_layer<TensorDataType, layout, device>;
   const auto& params = layer_msg.fully_connected();
-  return lbann::make_unique<LayerType>(
+  return std::make_unique<LayerType>(
     params.num_neurons(),
     params.transpose(),
     nullptr,

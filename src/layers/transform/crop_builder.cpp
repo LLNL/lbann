@@ -54,7 +54,7 @@ struct Builder<TensorDataType, data_layout::DATA_PARALLEL, Device>
     using LayerType = crop_layer<TensorDataType,
                                  data_layout::DATA_PARALLEL,
                                  Device>;
-    return lbann::make_unique<LayerType>(std::forward<Args>(args)...);
+    return std::make_unique<LayerType>(std::forward<Args>(args)...);
   }
 };
 }// namespace

@@ -38,7 +38,7 @@ std::unique_ptr<Layer> build_concatenate_layer_from_pbuf(
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, concatenation);
   using LayerType = concatenate_layer<TensorDataType, Layout, Device>;
   const auto& axis = proto_layer.concatenation().axis();
-  return lbann::make_unique<LayerType>(comm, axis);
+  return std::make_unique<LayerType>(comm, axis);
 }
 
 #define PROTO_DEVICE(T, Device) \

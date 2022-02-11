@@ -132,7 +132,7 @@ void lbann_comm::split_trainers(
                  m_intertrainer_comm);
 
   // Initialize Elemental grid for trainer
-  m_grid = make_unique<El::Grid>(
+  m_grid = std::make_unique<El::Grid>(
     m_trainer_comm.GetMPIComm(),
     trainer_grid_height);
 
@@ -220,7 +220,7 @@ void lbann_comm::split_trainer_grid(
       El::mpi::Dup(m_secondary_grid_comm, m_trainer_comm);
     }
     // Initialize Elemental grid for trainer
-    m_grid = make_unique<El::Grid>(
+    m_grid = std::make_unique<El::Grid>(
       m_trainer_comm.GetMPIComm(), 1);
   }
   else{
@@ -231,12 +231,12 @@ void lbann_comm::split_trainer_grid(
       El::mpi::Dup(m_secondary_grid_comm, m_trainer_comm);
     }
     // Initialize Elemental grid for trainer
-    m_grid = make_unique<El::Grid>(
+    m_grid = std::make_unique<El::Grid>(
       m_combined_grid_comm.GetMPIComm(),
       primary_grid_group,
       num_process_primary_grid, El::COLUMN_MAJOR);
 
-    m_secondary_grid = make_unique<El::Grid>(
+    m_secondary_grid = std::make_unique<El::Grid>(
       m_combined_grid_comm.GetMPIComm(),
       secondary_grid_group,
       num_process_secondary_grid, El::COLUMN_MAJOR);

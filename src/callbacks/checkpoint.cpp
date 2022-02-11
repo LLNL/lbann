@@ -643,7 +643,7 @@ build_checkpoint_callback_from_pbuf(
   const google::protobuf::Message& proto_msg) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackCheckpoint&>(proto_msg);
-  return make_unique<checkpoint>(params.checkpoint_dir(),
+  return std::make_unique<checkpoint>(params.checkpoint_dir(),
                                  params.restart_dir(),
                                  params.checkpoint_epochs(),
                                  params.checkpoint_steps(),

@@ -203,7 +203,7 @@ build_dump_outputs_callback_from_pbuf(
   const auto& layer_names = parse_set<std::string>(params.layers());
   const auto& modes =
     parse_set<execution_mode>(params.execution_modes());
-  return make_unique<dump_outputs>(layer_names,
+  return std::make_unique<dump_outputs>(layer_names,
                                                   modes,
                                                   params.batch_interval(),
                                                   params.directory(),

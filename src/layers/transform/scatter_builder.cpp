@@ -57,7 +57,7 @@ struct Builder<TensorDataType,data_layout::DATA_PARALLEL,Device>
     using LayerType = scatter_layer<TensorDataType,
                                     data_layout::DATA_PARALLEL,
                                     Device>;
-    return make_unique<LayerType>(std::forward<Args>(args)...);
+    return std::make_unique<LayerType>(std::forward<Args>(args)...);
   }
 };
 } // namespace <anon>

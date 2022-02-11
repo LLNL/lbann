@@ -58,7 +58,7 @@ build_hang_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, std::shared_ptr<lbann_summary> const&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackHang&>(proto_msg);
-  return make_unique<hang>(params.rank());
+  return std::make_unique<hang>(params.rank());
 }
 
 } // namespace callback

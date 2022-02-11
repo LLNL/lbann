@@ -60,7 +60,7 @@ TEMPLATE_PRODUCT_TEST_CASE(
     {
       REQUIRE_NOTHROW(mat->template get<src_type>());
       REQUIRE_THROWS_AS(mat->template get<tgt_type>(),
-                        lbann::utils::bad_any_cast);
+                        std::bad_any_cast);
 
       auto&& internal_mat = mat->template get<src_type>();
       REQUIRE(internal_mat.Height() == 0);
@@ -85,7 +85,7 @@ TEMPLATE_PRODUCT_TEST_CASE(
         {
           REQUIRE_NOTHROW(mat->template get<tgt_type>());
           REQUIRE_THROWS_AS(mat->template get<src_type>(),
-                            lbann::utils::bad_any_cast);
+                            std::bad_any_cast);
 
           REQUIRE(mat->template get<tgt_type>().Height() == 14);
           REQUIRE(mat->template get<tgt_type>().Width() == 10);

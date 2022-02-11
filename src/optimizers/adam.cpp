@@ -214,7 +214,7 @@ build_adam_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Optimizer::Adam const&>(msg);
-  return make_unique<adam<TensorDataType>>(TensorDataType(params.learn_rate()),
+  return std::make_unique<adam<TensorDataType>>(TensorDataType(params.learn_rate()),
                                            TensorDataType(params.beta1()),
                                            TensorDataType(params.beta2()),
                                            TensorDataType(params.eps()));
