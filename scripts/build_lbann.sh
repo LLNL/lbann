@@ -270,7 +270,7 @@ else
 fi
 
 SPACK_VERSION=$(spack --version | sed 's/-.*//g')
-MIN_SPACK_VERSION=0.16.0
+MIN_SPACK_VERSION=0.17.1
 
 compare_versions ${SPACK_VERSION} ${MIN_SPACK_VERSION}
 VALID_SPACK=$?
@@ -634,7 +634,11 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
 
     # Explicitly mark lbann for development
     if [[ -z "${USER_BUILD:-}" ]]; then
-        CMD="spack develop --no-clone -p ${LBANN_HOME} ${LBANN_SPEC}"
+        # Only "develop" the lbann package with the version number not the entire
+        # spec, because the spec is already handled with the add command.  Including the
+        # entire spec in the develop command triggers a bug in Spack v0.17.1 where the
+        # environment cannot be built twich with the --reuse flag
+        CMD="spack develop --no-clone -p ${LBANN_HOME} lbann${AT_LBANN_LABEL}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     fi
@@ -672,11 +676,12 @@ if [[ "${SPEC_ONLY}" == "TRUE" ]]; then
    fi
 fi
 
-# Try to concretize the environment and catch the return code
-CMD="spack concretize ${INSTALL_BUILD_EXTRAS}"
-#CMD="spack concretize --reuse ${INSTALL_BUILD_EXTRAS}"
-echo ${CMD} | tee -a ${LOG}
-[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+if [[ -n "${INSTALL_DEPS:-}" ]]; then
+  # Try to concretize the environment and catch the return code
+  CMD="spack concretize --reuse ${INSTALL_BUILD_EXTRAS}"
+  echo ${CMD} | tee -a ${LOG}
+  [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+fi
 
 # Get the spack hash for LBANN (Ensure that the concretize command has been run so that any impact of external packages is factored in)
 LBANN_SPEC_HASH=$(spack find -cl | grep -v "\-\-\-\-\-\-" | grep lbann${AT_LBANN_LABEL} | awk '{print $1}')
@@ -726,8 +731,7 @@ fi
 
 ##########################################################################################
 # Actually install LBANN from local source
-CMD="spack install ${BUILD_JOBS} ${INSTALL_BUILD_EXTRAS}"
-#CMD="spack install --reuse ${BUILD_JOBS} ${INSTALL_BUILD_EXTRAS}"
+CMD="spack install --reuse ${BUILD_JOBS} ${INSTALL_BUILD_EXTRAS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
