@@ -51,17 +51,7 @@ smiles_data_reader::smiles_data_reader(const smiles_data_reader& rhs)  : data_re
   copy_members(rhs);
 }
 
-smiles_data_reader::~smiles_data_reader() {
-  if (m_missing_chars.size()) {
-    if (get_comm()->am_world_master()) {
-      std::cout << std::endl << "The following tokens were in SMILES strings, but were missing from the vocabulary: ";
-      for (const auto t : m_missing_chars) {
-        std::cout << t << " ";
-      }
-    }
-    std::cout << std::endl;
-  }
-}
+smiles_data_reader::~smiles_data_reader() {}
 
 smiles_data_reader& smiles_data_reader::operator=(const smiles_data_reader& rhs) {
   // check for self-assignment
@@ -334,6 +324,14 @@ void smiles_data_reader::print_statistics() const {
   std::cerr << "max sequence length: " << utils::commify(m_linearized_data_size) << std::endl;
   std::cerr << "num features=" << utils::commify(m_linearized_data_size) << std::endl;
   std::cerr << "pad index: " << m_pad << std::endl;
+
+  if (m_missing_chars.size()) {
+    std::cerr << std::endl << "The following tokens were in SMILES strings, but were missing from the vocabulary: ";
+    for (const auto t : m_missing_chars) {
+      std::cerr << t << " ";
+    }
+    std::cerr << std::endl;
+  }
 
   // +4 for <bos>, <eos>, <unk>, <pad>
   std::cerr << "vocab size: " << m_vocab.size() +4 << std::endl
