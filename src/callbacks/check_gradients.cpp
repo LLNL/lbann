@@ -376,7 +376,7 @@ build_check_gradients_callback_from_pbuf(
     dynamic_cast<const lbann_data::Callback::CallbackCheckGradients&>(proto_msg);
   const auto& modes =
     parse_set<execution_mode>(params.execution_modes());
-  return make_unique<check_gradients>(modes,
+  return std::make_unique<check_gradients>(modes,
                                       params.step_size(),
                                       params.verbose(),
                                       params.error_on_failure());

@@ -140,7 +140,7 @@ trainer::check_and_build_execution_context(TrainingAlgorithm& alg,
       /// @todo BVE FIXME Figure out how to get a good mini-batch size
       /// in here
       context =
-        make_unique<SGDExecutionContext>(mode, get_max_mini_batch_size());
+        std::make_unique<SGDExecutionContext>(mode, get_max_mini_batch_size());
     }
     else {
       LBANN_ERROR("Unknown execution algorithm type.");
@@ -164,7 +164,7 @@ trainer::check_and_build_execution_context(ExecutionContext& c,
     if (dynamic_cast<observer_ptr</*const */ SGDExecutionContext>>(&c) !=
         nullptr) {
       context =
-        make_unique<SGDExecutionContext>(mode, get_max_mini_batch_size());
+        std::make_unique<SGDExecutionContext>(mode, get_max_mini_batch_size());
     }
     else {
       LBANN_ERROR("Unknown execution context type");
@@ -239,9 +239,9 @@ void trainer::train(observer_ptr<model> model,
   if (!m_training_alg) {
     std::unique_ptr<SGDTerminationCriteria> stopping;
     if (num_epochs)
-      stopping = make_unique<EpochTerminationCriteria>(num_epochs);
+      stopping = std::make_unique<EpochTerminationCriteria>(num_epochs);
     else
-      stopping = make_unique<BatchTerminationCriteria>(num_batches);
+      stopping = std::make_unique<BatchTerminationCriteria>(num_batches);
 
     m_training_alg = std::make_unique<SGDTrainingAlgorithm>(
       "sgd_train", std::move(stopping));
@@ -280,9 +280,9 @@ void trainer::evaluate(observer_ptr<model> model,
                        execution_mode mode,
                        El::Int num_batches)
 {
-  auto sgd = make_unique<SGDTrainingAlgorithm>(
+  auto sgd = std::make_unique<SGDTrainingAlgorithm>(
     "sgd_evaluate",
-    make_unique<EpochTerminationCriteria>(/*num_epochs=*/1UL));
+    std::make_unique<EpochTerminationCriteria>(/*num_epochs=*/1UL));
   auto ctxt = sgd->get_new_execution_context();
   ctxt->set_execution_mode(mode);
   model->reset_mode(*ctxt, execution_mode::invalid);

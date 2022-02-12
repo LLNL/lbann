@@ -75,7 +75,7 @@ void adjust_saturation::apply(utils::type_erased_matrix& data, std::vector<size_
 std::unique_ptr<transform>
 build_adjust_saturation_transform_from_pbuf(google::protobuf::Message const& msg) {
   auto const& params = dynamic_cast<lbann_data::Transform::AdjustSaturation const&>(msg);
-  return make_unique<adjust_saturation>(params.factor());
+  return std::make_unique<adjust_saturation>(params.factor());
 }
 
 }  // namespace transform

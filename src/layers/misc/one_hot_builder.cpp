@@ -39,7 +39,7 @@ std::unique_ptr<Layer> build_one_hot_layer_from_pbuf(
   using LayerType = one_hot_layer<TensorDataType,Layout,Device>;
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, one_hot);
   const auto& params = proto_layer.one_hot();
-  return make_unique<LayerType>(params.size());
+  return std::make_unique<LayerType>(params.size());
 }
 
 #define PROTO_DEVICE(T, Device) \

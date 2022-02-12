@@ -195,7 +195,7 @@ void node2vec_reader::load() {
   auto& comm = *get_comm();
 
   // Load graph data
-  m_distributed_database = make_unique<DistributedDatabase>(
+  m_distributed_database = std::make_unique<DistributedDatabase>(
     ::havoqgt::db_open(),
     m_graph_file.c_str());
   auto& graph = *m_distributed_database->get_segment_manager()->find<Graph>("graph_obj").first;
@@ -204,7 +204,7 @@ void node2vec_reader::load() {
   m_edge_weight_data.reset();
   auto* edge_weight_data = m_distributed_database->get_segment_manager()->find<EdgeWeightData::BaseType>("graph_edge_data_obj").first;
   if (edge_weight_data == nullptr) {
-    m_edge_weight_data = make_unique<EdgeWeightData>(graph);
+    m_edge_weight_data = std::make_unique<EdgeWeightData>(graph);
     m_edge_weight_data->reset(1.0);
     edge_weight_data = m_edge_weight_data.get();
   }
@@ -213,7 +213,7 @@ void node2vec_reader::load() {
   // Construct random walker
   constexpr bool small_edge_weight_variance = false;
   constexpr bool verbose = false;
-  m_random_walker = make_unique<RandomWalker>(
+  m_random_walker = std::make_unique<RandomWalker>(
     graph,
     *edge_weight_data,
     small_edge_weight_variance,

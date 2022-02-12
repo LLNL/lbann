@@ -53,7 +53,7 @@ identity_distconv_adapter<TensorDataType, Layout, Device>::
 setup_activations_i(int index) const {
   assert_eq(index, 0);
   const auto &prev_activations = this->get_prev_activations(0);
-  return make_unique<TensorDevType>(prev_activations);
+  return std::make_unique<TensorDevType>(prev_activations);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -62,7 +62,7 @@ identity_distconv_adapter<TensorDataType, Layout, Device>::
 setup_error_signals_i(int index) const {
   assert_eq(index, 0);
   const auto &prev_error_signals = this->get_prev_error_signals(0);
-  return make_unique<TensorDevType>(prev_error_signals);
+  return std::make_unique<TensorDevType>(prev_error_signals);
 }
 #endif // LBANN_HAS_DISTCONV
 

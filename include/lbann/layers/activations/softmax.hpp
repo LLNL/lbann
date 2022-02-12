@@ -213,7 +213,7 @@ private:
     return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
   }
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) final {
-    this->get_distconv_adapter_ptr() = make_unique<softmax_distconv_adapter<
+    this->get_distconv_adapter_ptr() = std::make_unique<softmax_distconv_adapter<
       TensorDataType, Layout, Device>>(*this);
   }
   softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() final;
@@ -269,7 +269,7 @@ void softmax_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
     size_t workspace_capacity) {
   auto &l = dynamic_cast<softmax_layer<TensorDataType, T_layout, Dev>&>(
       this->layer());
-  m_softmax = make_unique<dc::Softmax>(dc::get_backend());
+  m_softmax = std::make_unique<dc::Softmax>(dc::get_backend());
   auto mode = l.m_mode == softmax_mode::INSTANCE ?
                           ::distconv::SoftmaxMode::INSTANCE :
       ::distconv::SoftmaxMode::CHANNEL;

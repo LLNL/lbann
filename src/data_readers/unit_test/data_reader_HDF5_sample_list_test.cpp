@@ -61,7 +61,7 @@ TEST_CASE("hdf5 data reader", "[mpi][data_reader][sample_list][hdf5][.filesystem
 {
   auto& comm = unit_test::utilities::current_world_comm();
 
-  lbann::hdf5_data_reader* hdf5_dr = new lbann::hdf5_data_reader();
+  auto hdf5_dr = std::make_unique<lbann::hdf5_data_reader>();
   // Avoid the sample list code checking that the files really exist
   // in the file system
   hdf5_dr->get_sample_list().unset_data_file_check();

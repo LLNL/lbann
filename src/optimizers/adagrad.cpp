@@ -114,7 +114,7 @@ build_adagrad_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Optimizer::AdaGrad const&>(msg);
-  return make_unique<adagrad<TensorDataType>>(TensorDataType(params.learn_rate()),
+  return std::make_unique<adagrad<TensorDataType>>(TensorDataType(params.learn_rate()),
                                               TensorDataType(params.eps()));
 }
 

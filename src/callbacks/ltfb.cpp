@@ -504,7 +504,7 @@ public:
           using TensorDataType = DataType;
           using WeightsType = data_type_weights<TensorDataType>;
           restore_weights[w->get_name()]
-            = make_unique<WeightsType>(dynamic_cast<WeightsType&>(*w));
+            = std::make_unique<WeightsType>(dynamic_cast<WeightsType&>(*w));
         }
       }
     }
@@ -587,7 +587,7 @@ public:
           using TensorDataType = DataType;
           using WeightsType = data_type_weights<TensorDataType>;
           restore_weights[w->get_name()]
-            = make_unique<WeightsType>(dynamic_cast<WeightsType&>(*w));
+            = std::make_unique<WeightsType>(dynamic_cast<WeightsType&>(*w));
         }
       }
     }
@@ -779,20 +779,20 @@ build_ltfb_callback_from_pbuf(
   switch (string_to_comm_algo(params.communication_algorithm()))
   {
   case comm_algorithm::sendrecv_weights:
-    algo = make_unique<SendRecvWeights>(
+    algo = std::make_unique<SendRecvWeights>(
       std::move(weights_list),
       params.exchange_hyperparameters());
     break;
   case comm_algorithm::checkpoint_file:
-    algo = make_unique<CheckpointFile>(
+    algo = std::make_unique<CheckpointFile>(
       std::move(weights_list),
       params.checkpoint_basedir());
     break;
   case comm_algorithm::checkpoint_binary:
-    algo = make_unique<CheckpointBinary>(std::move(weights_list));
+    algo = std::make_unique<CheckpointBinary>(std::move(weights_list));
     break;
   }
-  return make_unique<ltfb>(
+  return std::make_unique<ltfb>(
     params.batch_interval(),
     params.metric(),
     std::move(algo),

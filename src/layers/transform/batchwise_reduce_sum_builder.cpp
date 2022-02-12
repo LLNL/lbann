@@ -41,7 +41,7 @@ std::unique_ptr<Layer> build_batchwise_reduce_sum_layer_from_pbuf(
     TensorDataType,
     data_layout::DATA_PARALLEL,
     Device>;
-  return make_unique<LayerType>();
+  return std::make_unique<LayerType>();
 }
 
 #define PROTO_DEVICE(T, Device) \

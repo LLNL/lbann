@@ -50,7 +50,7 @@ struct Builder<T, data_layout::DATA_PARALLEL, El::Device::CPU>
     using LayerType = categorical_random_layer<T,
                                                data_layout::DATA_PARALLEL,
                                                El::Device::CPU>;
-    return lbann::make_unique<LayerType>(comm);
+    return std::make_unique<LayerType>(comm);
   }
 };
 

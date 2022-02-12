@@ -139,7 +139,7 @@ protected:
     this->set_num_weights(2);
     if (!this->has_weights(0)) {
       auto w = std::make_shared<WeightsType>(*this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
+      auto init = std::make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
       this->set_weights(0, w);
@@ -147,7 +147,7 @@ protected:
     }
     if (!this->has_weights(1)) {
       auto w = std::make_shared<WeightsType>(*this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
+      auto init = std::make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
       this->set_weights(1, w);

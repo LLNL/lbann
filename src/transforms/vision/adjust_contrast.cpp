@@ -87,7 +87,7 @@ void adjust_contrast::apply(utils::type_erased_matrix& data, std::vector<size_t>
 std::unique_ptr<transform>
 build_adjust_contrast_transform_from_pbuf(google::protobuf::Message const& msg) {
   auto const& params = dynamic_cast<lbann_data::Transform::AdjustContrast const&>(msg);
-  return make_unique<adjust_contrast>(params.factor());
+  return std::make_unique<adjust_contrast>(params.factor());
 }
 
 }  // namespace transform

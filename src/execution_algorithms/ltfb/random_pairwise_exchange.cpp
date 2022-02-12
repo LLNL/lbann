@@ -478,7 +478,7 @@ lbann::make<lbann::ltfb::RandomPairwiseExchange>(
   using ExchangeStrategyType =
     lbann::ltfb::RandomPairwiseExchange::ExchangeStrategy;
   using MutationStrategyType = lbann::ltfb::MutationStrategy;
-  return make_unique<lbann::ltfb::RandomPairwiseExchange>(
+  return std::make_unique<lbann::ltfb::RandomPairwiseExchange>(
     std::move(metric_map),
     make_abstract<ExchangeStrategyType>(msg.exchange_strategy()),
     make_abstract<MutationStrategyType>(msg.mutation_strategy()));

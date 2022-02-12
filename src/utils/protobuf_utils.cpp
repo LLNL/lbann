@@ -143,7 +143,7 @@ read_in_prototext_files(
 {
   std::vector<std::unique_ptr<lbann_data::LbannPB>> models_out;
   for (auto const& t : names) {
-    auto pb = make_unique<lbann_data::LbannPB>();
+    auto pb = std::make_unique<lbann_data::LbannPB>();
     if (t.model != "none")
       read_prototext_file(t.model, *pb, master);
     if (t.reader != "none") {
@@ -174,7 +174,7 @@ load_prototext(
   auto names =
     parse_prototext_filenames_from_command_line(master, trainer_rank);
   auto models_out = read_in_prototext_files(master, names);
-  if (models_out.size() == 0 && master) {
+  if (models_out.size() == 0) {
     LBANN_ERROR("Failed to load any prototext files");
   }
   verify_prototext(master, models_out);

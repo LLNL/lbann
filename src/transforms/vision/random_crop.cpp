@@ -67,7 +67,7 @@ std::unique_ptr<transform>
 build_random_crop_transform_from_pbuf(google::protobuf::Message const& msg) {
   auto const& params =
     dynamic_cast<lbann_data::Transform::RandomCrop const&>(msg);
-  return make_unique<random_crop>(params.height(), params.width());
+  return std::make_unique<random_crop>(params.height(), params.width());
 }
 
 }  // namespace transform

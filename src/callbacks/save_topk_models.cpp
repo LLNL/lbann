@@ -103,7 +103,7 @@ build_save_topk_models_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSaveTopKModels&>(proto_msg);
-  return make_unique<save_topk_models>(
+  return std::make_unique<save_topk_models>(
     params.dir(),
     params.k(),
     params.metric(),

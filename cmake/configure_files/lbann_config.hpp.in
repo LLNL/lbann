@@ -95,9 +95,6 @@
 
 #cmakedefine LBANN_SYS_SENDFILE_OK
 
-#cmakedefine LBANN_HAS_STD_ANY
-#cmakedefine LBANN_HAS_STD_MAKE_UNIQUE
-
 // API support for non-portable pthread functionality.
 #cmakedefine LBANN_HAS_PTHREAD_AFFINITY_SUPPORT
 

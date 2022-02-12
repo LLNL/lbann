@@ -285,7 +285,7 @@ lbann::make<lbann::ltfb::TruncationSelectionExchange>(
                    return ValueType{kvp.first, to_lbann(kvp.second)};
                  });
 
-  return make_unique<lbann::ltfb::TruncationSelectionExchange>(
+  return std::make_unique<lbann::ltfb::TruncationSelectionExchange>(
     std::move(metric_map),
     msg.truncation_k());
 }

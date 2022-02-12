@@ -275,7 +275,7 @@ lbann::make<lbann::ltfb::RegularizedEvolution>(
 
   using MutationStrategyType = lbann::ltfb::MutationStrategy;
 
-  return make_unique<lbann::ltfb::RegularizedEvolution>(
+  return std::make_unique<lbann::ltfb::RegularizedEvolution>(
     msg.metric_name(),
     to_lbann(msg.metric_strategy()),
     make_abstract<MutationStrategyType>(msg.mutation_strategy()),

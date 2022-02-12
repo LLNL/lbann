@@ -64,7 +64,7 @@ CheckpointBinary::get_partner_model(model const& m,
         using TensorDataType = DataType;
         using WeightsType = data_type_weights<TensorDataType>;
         restore_weights[w->get_name()] =
-          make_unique<WeightsType>(dynamic_cast<WeightsType&>(*w));
+          std::make_unique<WeightsType>(dynamic_cast<WeightsType&>(*w));
       }
     }
   }

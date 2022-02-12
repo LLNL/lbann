@@ -48,7 +48,7 @@ inline bool check_is_image(const utils::type_erased_matrix& data,
     // Check if we can do the conversion.
     const auto& unused = data.template get<uint8_t>();
     (void) unused;
-  } catch (const utils::bad_any_cast&) {
+  } catch (const std::bad_any_cast&) {
     return false;
   }
   if (dims.size() != 3 || (dims[0] != 1 && dims[0] != 3)) {
@@ -72,7 +72,7 @@ inline void assert_is_image(const utils::type_erased_matrix& data,
     // Check if we can do the conversion.
     const auto& unused = data.template get<uint8_t>();
     (void) unused;
-  } catch (const utils::bad_any_cast&) {
+  } catch (const std::bad_any_cast&) {
     LBANN_ERROR("Data is not an image: not uint8_t.");
   }
   if (dims.size() != 3 || (dims[0] != 1 && dims[0] != 3)) {

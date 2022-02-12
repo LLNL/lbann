@@ -165,7 +165,7 @@ void convolution_layer<TensorDataType,Layout,Device>::bp_compute() {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void convolution_layer<TensorDataType,Layout,Device>::setup_distconv_adapter(
     const DataReaderMetaData& dr_metadata) {
-  this->get_distconv_adapter_ptr() = make_unique<
+  this->get_distconv_adapter_ptr() = std::make_unique<
     convolution_distconv_adapter<TensorDataType, Layout, Device>>(*this);
 }
 
@@ -329,14 +329,14 @@ struct ConvLayerBuilder
         dilations.resize(dims.size(), 1);
       }
 #ifdef LBANN_HAS_DNN_LIB
-      auto ret = lbann::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
+      auto ret = std::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
         dims.size(), num_output_channels,
         dims, pads, strides, dilations, num_groups, bias);
       ret->set_dnn_math_mode(
         dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
       return ret;
 #else
-      return lbann::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
+      return std::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
         dims.size(), num_output_channels,
         dims, pads, strides, dilations, num_groups, bias);
 #endif // LBANN_HAS_DNN_LIB
@@ -351,14 +351,14 @@ struct ConvLayerBuilder
         dilation = 1;
       }
 #ifdef LBANN_HAS_DNN_LIB
-      auto ret =lbann::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
+      auto ret =std::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
         num_dims, num_output_channels,
         dim, pad, stride, dilation, num_groups, bias);
       ret->set_dnn_math_mode(
         dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
       return ret;
 #else
-      return lbann::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
+      return std::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
         num_dims, num_output_channels,
         dim, pad, stride, dilation, num_groups, bias);
 #endif // LBANN_HAS_DNN_LIB

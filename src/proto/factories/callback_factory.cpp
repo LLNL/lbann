@@ -254,7 +254,7 @@ std::unique_ptr<lbann_summary> construct_summarizer(lbann_comm* comm,
       LBANN_ERROR("summary directory ", dir, " does not exist.");
     }
 
-    return make_unique<lbann_summary>(dir, comm);
+    return std::make_unique<lbann_summary>(dir, comm);
   }
   return nullptr;
 }

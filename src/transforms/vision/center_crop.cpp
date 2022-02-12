@@ -68,7 +68,7 @@ void center_crop::apply(utils::type_erased_matrix& data, std::vector<size_t>& di
 std::unique_ptr<transform>
 build_center_crop_transform_from_pbuf(google::protobuf::Message const& msg) {
   auto const& params = dynamic_cast<lbann_data::Transform::CenterCrop const&>(msg);
-  return make_unique<center_crop>(params.height(), params.width());
+  return std::make_unique<center_crop>(params.height(), params.width());
 }
 
 }  // namespace transform

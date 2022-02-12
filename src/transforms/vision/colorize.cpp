@@ -47,7 +47,7 @@ void colorize::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims)
 
 std::unique_ptr<transform>
 build_colorize_transform_from_pbuf(google::protobuf::Message const&) {
-  return make_unique<colorize>();
+  return std::make_unique<colorize>();
 }
 
 }  // namespace transform

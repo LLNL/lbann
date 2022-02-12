@@ -199,7 +199,7 @@ build_step_minibatch_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, std::shared_ptr<lbann_summary> const&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackStepMinibatch&>(proto_msg);
-  return make_unique<step_minibatch>(params.starting_mbsize(),
+  return std::make_unique<step_minibatch>(params.starting_mbsize(),
                                                     params.step(),
                                                     params.ramp_time());
 }
@@ -217,7 +217,7 @@ build_minibatch_schedule_callback_from_pbuf(
                        proto_step.lr(),
                        proto_step.ramp_time());
   }
-  return make_unique<minibatch_schedule>(params.starting_mbsize(),
+  return std::make_unique<minibatch_schedule>(params.starting_mbsize(),
                                                         steps);
 }
 

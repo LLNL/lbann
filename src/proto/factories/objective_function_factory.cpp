@@ -40,7 +40,7 @@ std::unique_ptr<objective_function>
 construct_objective_function(const lbann_data::ObjectiveFunction& proto_obj) {
 
   // Instantiate objective function
-  auto obj = make_unique<objective_function>();
+  auto obj = std::make_unique<objective_function>();
 
   // Weight regularization terms
   for (int i=0; i<proto_obj.l2_weight_regularization_size(); ++i) {

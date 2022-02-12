@@ -35,7 +35,7 @@ std::unique_ptr<Layer> build_dropout_layer_from_pbuf(
   lbann_comm* comm, lbann_data::Layer const& layer_msg)
 {
   const auto& params = layer_msg.dropout();
-  return lbann::make_unique<dropout_layer<TensorDataType, layout, device>>(
+  return std::make_unique<dropout_layer<TensorDataType, layout, device>>(
     params.keep_prob());
 }
 

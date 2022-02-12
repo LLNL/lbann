@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
       const lbann_data::Reader& readme = d_reader.reader(j);
       if (readme.role() == "train") {
         bool shuffle = true;
-        auto reader = make_unique<mnist_reader>(shuffle);
+        auto reader = std::make_unique<mnist_reader>(shuffle);
 
         if (readme.data_filename() != "") { reader->set_data_filename( readme.data_filename() ); }
         if (readme.label_filename() != "") { reader->set_label_filename( readme.label_filename() ); }
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
         //test: indices should not be shuffled; same as previous, except we call
         //      shuffle(true);
         shuffle = false;
-        reader = make_unique<mnist_reader>(shuffle);
+        reader = std::make_unique<mnist_reader>(shuffle);
         if (readme.data_filename() != "") { reader->set_data_filename( readme.data_filename() ); }
         if (readme.label_filename() != "") { reader->set_label_filename( readme.label_filename() ); }
         if (readme.data_filedir() != "") { reader->set_file_dir( readme.data_filedir() ); }
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
 
         //test: indices should not be shuffled, due to ctor argument
         shuffle = false;
-        reader = make_unique<mnist_reader>(shuffle);
+        reader = std::make_unique<mnist_reader>(shuffle);
         if (readme.data_filename() != "") { reader->set_data_filename( readme.data_filename() ); }
         if (readme.label_filename() != "") { reader->set_label_filename( readme.label_filename() ); }
         if (readme.data_filedir() != "") { reader->set_file_dir( readme.data_filedir() ); }
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
 
         //test: set_shuffled_indices; indices should not be shuffled
         shuffle = true;
-        reader = make_unique<mnist_reader>(shuffle);
+        reader = std::make_unique<mnist_reader>(shuffle);
         if (readme.data_filename() != "") { reader->set_data_filename( readme.data_filename() ); }
         if (readme.label_filename() != "") { reader->set_label_filename( readme.label_filename() ); }
         if (readme.data_filedir() != "") { reader->set_file_dir( readme.data_filedir() ); }

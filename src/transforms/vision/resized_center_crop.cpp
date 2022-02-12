@@ -70,7 +70,7 @@ void resized_center_crop::apply(utils::type_erased_matrix& data, std::vector<siz
 std::unique_ptr<transform>
 build_resized_center_crop_transform_from_pbuf(google::protobuf::Message const& msg) {
   auto const& params = dynamic_cast<lbann_data::Transform::ResizedCenterCrop const&>(msg);
-  return make_unique<resized_center_crop>(
+  return std::make_unique<resized_center_crop>(
     params.height(), params.width(),
     params.crop_height(), params.crop_width());
 }

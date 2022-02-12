@@ -65,7 +65,7 @@
     lbann_comm* comm, lbann_data::Layer const&)                         \
   {                                                                     \
     using LayerType = LAYER_NAME##_layer<TensorDataType, Layout, Device>; \
-    return make_unique<LayerType>(comm);                                \
+    return std::make_unique<LayerType>(comm);                                \
   }
 
 /** @brief A utility macro for easily adding ETI for layer builders

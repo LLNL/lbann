@@ -86,7 +86,7 @@ TEST_CASE("Synthetic data reader public API tests",
   ref_fast_generator.seed(lbann::hash_combine(seed, 0));
 
   // Initalize a per-trainer I/O thread pool
-  auto io_thread_pool = lbann::make_unique<lbann::thread_pool>();
+  auto io_thread_pool = std::make_unique<lbann::thread_pool>();
   io_thread_pool->launch_pinned_threads(1, 1);
 
   std::set<std::string> active_data_fields = {"samples"};
@@ -201,7 +201,7 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
   ref_fast_generator.seed(lbann::hash_combine(seed, 0));
 
   // Initalize a per-trainer I/O thread pool
-  auto io_thread_pool = lbann::make_unique<lbann::thread_pool>();
+  auto io_thread_pool = std::make_unique<lbann::thread_pool>();
   io_thread_pool->launch_pinned_threads(1, 1);
 
   //  std::set<std::string> active_data_fields = {"samples"};

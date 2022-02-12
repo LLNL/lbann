@@ -79,7 +79,7 @@ void to_lbann_layout::apply(utils::type_erased_matrix& data, CPUMat& out,
 
 std::unique_ptr<transform>
 build_to_lbann_layout_transform_from_pbuf(google::protobuf::Message const&) {
-  return make_unique<to_lbann_layout>();
+  return std::make_unique<to_lbann_layout>();
 }
 
 }  // namespace transform

@@ -189,7 +189,7 @@ class input_layer : public data_type_layer<TensorDataType> {
     return Dev == El::Device::CPU && T_layout == data_layout::DATA_PARALLEL;
   }
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
-    this->get_distconv_adapter_ptr() = make_unique<distconv_adapter_type>(
+    this->get_distconv_adapter_ptr() = std::make_unique<distconv_adapter_type>(
       *this, m_data_field, dr_metadata.shuffle_required);
   }
   distconv_adapter_type& get_distconv_adapter() override;

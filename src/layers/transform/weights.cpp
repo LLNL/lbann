@@ -70,7 +70,7 @@ void weights_layer<TensorDataType,Layout,Device>::setup_data(size_t max_mini_bat
   // Initialize default weights if none are provided
   if (!this->has_weights()) {
     auto w = std::make_shared<WeightsType>(*this->get_comm());
-    auto init = make_unique<constant_initializer<DataType>>(DataType(0));
+    auto init = std::make_unique<constant_initializer<DataType>>(DataType(0));
     auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_weights");
     w->set_initializer(std::move(init));
@@ -164,7 +164,7 @@ std::unique_ptr<Layer> build_weights_layer_from_pbuf(
 
   const auto& params = proto_layer.weights_layer();
   const auto& dims = parse_list<El::Int>(params.dims());
-  return lbann::make_unique<LayerType>(dims);
+  return std::make_unique<LayerType>(dims);
 }
 
 // Explicit template instantiation
