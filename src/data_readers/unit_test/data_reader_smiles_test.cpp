@@ -111,7 +111,7 @@ TEST_CASE("SMILES string encoder", "[data_reader][smiles]")
 
 TEST_CASE("SMILES istream reader", "[data_reader][smiles]")
 {
-  lbann::smiles_data_reader *smiles = new lbann::smiles_data_reader(true);
+  auto smiles = std::make_unique<lbann::smiles_data_reader>(true);
 
   std::stringstream data;
   data <<
@@ -146,7 +146,7 @@ TEST_CASE("SMILES istream reader", "[data_reader][smiles]")
 
 TEST_CASE("SMILES ingestion - REAL/S/H30/SH30M600.smi", "[data_reader][smiles]")
 {
-  lbann::smiles_data_reader *smiles = new lbann::smiles_data_reader(true);
+  auto smiles = std::make_unique<lbann::smiles_data_reader>(true);
 
   /// /p/vast1/atom/arthor_dbs/REAL/S/H30/SH30M600.smi
   std::string const SH30M600_smi =
