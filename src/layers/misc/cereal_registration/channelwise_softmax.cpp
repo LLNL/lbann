@@ -64,3 +64,5 @@ channelwise_softmax_layer<TensorDataType,Layout,Device>
   PROTO_GPU(T);
 
 #include "lbann/macros/instantiate.hpp"
+
+CEREAL_REGISTER_DYNAMIC_INIT(channelwise_softmax_layer);

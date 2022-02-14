@@ -80,4 +80,4 @@
   REGISTER_ALL_DISTMATRIX_DEVICES(T)
 #include <lbann/macros/instantiate.hpp>
 
-//CEREAL_REGISTER_DYNAMIC_INIT(LBANNMatrixTypeRegistration)
+CEREAL_REGISTER_DYNAMIC_INIT(DistMatrixTypes);

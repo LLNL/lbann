@@ -55,3 +55,5 @@ void base_convolution_layer<TensorDataType,Device>::serialize(ArchiveT& ar)
     ::lbann::base_convolution_layer<T LBANN_COMMA D>,                   \
     "base_convolution_layer(" #T "," #D ")")
 #include "lbann/macros/instantiate_device.hpp"
+
+CEREAL_REGISTER_DYNAMIC_INIT(base_convolution_layer);

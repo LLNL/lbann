@@ -135,4 +135,5 @@ build_check_metric_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::check_metric
+#define LBANN_CLASS_LIBNAME callback_check_metric
 #include <lbann/macros/register_class_with_cereal.hpp>

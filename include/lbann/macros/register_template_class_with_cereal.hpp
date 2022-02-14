@@ -45,3 +45,9 @@
 
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
+
+#ifndef LBANN_CLASS_LIBNAME
+#define LBANN_CLASS_LIBNAME LBANN_CLASS_NAME
+#endif
+
+LBANN_REGISTER_DYNAMIC_INIT(LBANN_CLASS_LIBNAME);

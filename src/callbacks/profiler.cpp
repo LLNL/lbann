@@ -232,4 +232,5 @@ build_profiler_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::profiler
+#define LBANN_CLASS_LIBNAME callback_profiler
 #include <lbann/macros/register_class_with_cereal.hpp>

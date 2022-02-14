@@ -256,4 +256,5 @@ build_timer_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::timer
+#define LBANN_CLASS_LIBNAME callback_timer
 #include <lbann/macros/register_class_with_cereal.hpp>

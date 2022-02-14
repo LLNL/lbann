@@ -105,4 +105,5 @@ void check_small::on_batch_end(model *m) {
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::check_small
+#define LBANN_CLASS_LIBNAME callback_check_small
 #include <lbann/macros/register_class_with_cereal.hpp>

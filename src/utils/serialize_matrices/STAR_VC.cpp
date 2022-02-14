@@ -49,3 +49,5 @@
 #define PROTO(T)                                \
   REGISTER_SPECIFIC_DISTMATRIX_DEVICES(T)
 #include <lbann/macros/instantiate.hpp>
+
+CEREAL_REGISTER_DYNAMIC_INIT(DistMat_STAR_VC);

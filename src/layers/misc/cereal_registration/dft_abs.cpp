@@ -63,3 +63,5 @@ PROTO_DEVICE(float, El::Device::GPU)
 PROTO_DEVICE(double, El::Device::GPU)
 #endif // LBANN_HAS_GPU
 #endif // LBANN_HAS_FFTW
+
+LBANN_REGISTER_DYNAMIC_INIT(dft_abs_layer);

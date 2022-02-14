@@ -91,4 +91,5 @@ build_sync_layers_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::sync_layers
+#define LBANN_CLASS_LIBNAME callback_sync_layers
 #include <lbann/macros/register_class_with_cereal.hpp>

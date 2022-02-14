@@ -29,6 +29,7 @@
 #   CUDNN_FOUND
 #   CUDNN_INCLUDE_PATH
 #   CUDNN_LIBRARIES
+#   CUDNN_VERSION
 #
 # Exports the following IMPORTED target
 #
@@ -54,10 +55,36 @@ find_library(CUDNN_LIBRARY cudnn
   )
 find_library(CUDNN_LIBRARY cudnn)
 
+# Get the version string
+set(CUDNN_VERSION)
+if (CUDNN_INCLUDE_PATH)
+  set(_CUDNN_VERSION_SRC "
+#include <stdio.h>
+#include <cudnn_version.h>
+int main() {
+  printf(\"%d.%d.%d\\n\", CUDNN_MAJOR, CUDNN_MINOR, CUDNN_PATCHLEVEL);
+  return 0;
+}
+")
+
+  file(
+    WRITE
+    "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src.cxx"
+    "${_CUDNN_VERSION_SRC}\n")
+
+  try_run(
+    _CUDNN_RUN_RESULT _CUDNN_COMPILE_RESULT
+    ${CMAKE_BINARY_DIR}
+    ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src.cxx
+    CMAKE_FLAGS "-DINCLUDE_DIRECTORIES:STRING=${CUDNN_INCLUDE_PATH}"
+    RUN_OUTPUT_VARIABLE CUDNN_VERSION
+    COMPILE_OUTPUT_VARIABLE _CUDNN_COMPILE_OUTPUT)
+endif ()
+
 # Standard handling of the package arguments
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(cuDNN
-  DEFAULT_MSG CUDNN_LIBRARY CUDNN_INCLUDE_PATH)
+  DEFAULT_MSG CUDNN_VERSION CUDNN_LIBRARY CUDNN_INCLUDE_PATH)
 
 if (NOT TARGET cuda::cudnn)
 
