@@ -41,23 +41,21 @@ namespace lbann {
 
 /** @brief Base class for LBANN SGD-family training algorithms. */
 class SGDTrainingAlgorithm
-  : public Cloneable<SGDTrainingAlgorithm, TrainingAlgorithm>
+  : public TrainingAlgorithm
 {
-  using BaseType = Cloneable<SGDTrainingAlgorithm, TrainingAlgorithm>;
-
 public:
   /** @brief Construct with a name. */
   SGDTrainingAlgorithm(std::string name,
-                         std::unique_ptr<SGDTerminationCriteria> stop)
-    : BaseType{std::move(name)},
+                       std::unique_ptr<SGDTerminationCriteria> stop)
+    : TrainingAlgorithm{std::move(name)},
       m_stopping_criteria{std::move(stop)},
       m_validation_context{execution_mode::validation, 1UL},
       m_validation_epochs{1UL}
   {}
 
-  SGDTrainingAlgorithm(const SGDTrainingAlgorithm& other);
+  SGDTrainingAlgorithm(const SGDTrainingAlgorithm& other) = delete;
   SGDTrainingAlgorithm&
-  operator=(const SGDTrainingAlgorithm& other);
+  operator=(const SGDTrainingAlgorithm& other) = delete;
 
   SGDTrainingAlgorithm(SGDTrainingAlgorithm&& other) = default;
   SGDTrainingAlgorithm& operator=(SGDTrainingAlgorithm&& other) = default;
