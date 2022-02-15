@@ -61,8 +61,6 @@ void init_data_readers(
   const bool master = comm->am_world_master();
   std::ostringstream err;
 
-  auto& arg_parser = global_argument_parser();
-
   const lbann_data::DataReader & d_reader = p.data_reader();
   const int size = d_reader.reader_size();
 
