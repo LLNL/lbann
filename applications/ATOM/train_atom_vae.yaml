@@ -32,7 +32,7 @@ study:
               spack env activate -p lbann-dev-power9le
               module use $(LBANN_BUILD)/install/etc/modulefiles
               module load lbann-0.102.0
-              python3 $(APP_ROOT)/train_atom_vae.py --lr=$(5LR) --ltfb=$(LTFB) --ltfb-batch-interval=$(4LTFBBI) --dump-weights-dir=$(WEIGHT_DIR) --dump-weights-interval=$(WEIGHT_INT)  --job-name vae$(0TRIAL) --nodes=$(1NUM_NODES) --procs-per-trainer=$(3PPT) --batch-size=$(2BATCH_SIZE) --num-epochs=$(EPOCH) --sequence-length=100 --embedding-dim=40  --num-embeddings=40 --pad-index=38 --scheduler=lsf  --delimiter=0  --no-header=True --partition=pdebug  --account=ncov2019  --time-limit=10 --data-filedir=$(DATASETS) --data-filename=$(TRAIN_SIZE) --data-reader-prototext=$(APP_ROOT)/smiles_data_reader.prototext --vocab=/p/gpfs1/brainusr/datasets/atom/enamine1B/newEnamineFrom2020q1-2.vocab
+              python3 $(APP_ROOT)/train_atom_vae.py --lr=$(5LR) --ltfb=$(LTFB) --ltfb-batch-interval=$(4LTFBBI) --dump-weights-dir=$(WEIGHT_DIR) --dump-weights-interval=$(WEIGHT_INT)  --job-name vae$(0TRIAL) --nodes=$(1NUM_NODES) --procs-per-trainer=$(3PPT) --batch-size=$(2BATCH_SIZE) --num-epochs=$(EPOCH) --sequence-length=100 --embedding-dim=40  --num-embeddings=40 --pad-index=38 --scheduler=lsf  --delimiter=0  --partition=pdebug  --account=ncov2019  --time-limit=10 --data-filedir=$(DATASETS) --data-filename=$(TRAIN_SIZE) --data-reader-prototext=$(APP_ROOT)/smiles_data_reader.prototext --vocab=/p/gpfs1/brainusr/datasets/atom/enamine1B/newEnamineFrom2020q1-2.vocab
           task_queue: train_queue
 
 merlin:

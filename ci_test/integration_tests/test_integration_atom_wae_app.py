@@ -7,12 +7,16 @@ import sys
 import numpy as np
 import google.protobuf.text_format
 import pytest
+from os.path import abspath, dirname, join, realpath
+import tools
 
 # Local files
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
-import tools
+lbann_dir = dirname(os.path.dirname(os.path.dirname(current_file)))
+app_path = join(lbann_dir, 'applications', 'ATOM')
+sys.path.append(app_path)
 
 # ==============================================
 # Options
@@ -25,15 +29,14 @@ num_nodes = 2
 num_decoder_layers = 3
 
 # Reconstruction loss
-#expected_train_recon_range = (0.500, 0.525)
-expected_train_recon_range = (0.500, 0.555)
-expected_test_recon_range = (0.500, 0.525)
+expected_train_recon_range = (0.96, 0.97)
+expected_test_recon_range = (0.925, 0.935)
 
 # Average mini-batch time (in sec) for each LC system
 # Note that run times are with LBANN_DETERMINISTIC set
 # Commented out times are prior to thread safe RNGs
 expected_mini_batch_times = {
-    'lassen':   0.20,
+    'lassen':   0.157,
     'pascal':   0.365,
 }
 
@@ -60,12 +63,39 @@ def setup_experiment(lbann):
       pytest.skip(message)
 
     trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
-    model = construct_model(lbann)
+    import atom_models
+    pad_index = 40
+    sequence_length = 100
+    embedding_dim = 42
+    dictionary_size = 42
+    g_mean = 0.0
+    g_std = 1.0
+    z_dim = 128
+    num_io_threads = 11
+    vocab = None
+    delimiter = "c"
+    warmup = False
+    lambda_ = 0.00157
+    learn_rate=3e-4
+
+    model = atom_models.construct_atom_wae_model(pad_index=pad_index,
+                                                 sequence_length=sequence_length,
+                                                 embedding_size=embedding_dim,
+                                                 dictionary_size=dictionary_size,
+                                                 z_dim=z_dim,
+                                                 g_mean=g_mean,
+                                                 g_std=g_std,
+                                                 lambda_=lambda_,
+                                                 lr=learn_rate,
+                                                 batch_size=mini_batch_size,
+                                                 num_epochs=num_epochs,
+                                                 CPU_only=True)
 
     #see: <LBANN>ci_test/common_python/data/atom/data_reader_mpro.prototext
-    #     for data_reader prototext
     import data.atom
     data_reader = data.atom.make_data_reader(lbann)
+    # Use less training data for the integration test
+    data_reader.reader[0].percent_of_data_to_use = 0.01
 
     opt = lbann.Adam(learn_rate=3e-4, beta1=0.9, beta2=0.99, eps=1e-8)
     return trainer, model, data_reader, opt
@@ -186,9 +216,6 @@ def augment_test_func(test_func):
 
     # Define test function
     def func(cluster, dirname,weekly):
-
-        if not weekly:
-            pytest.skip('This app runs {} with weekly builds only'.format(test_name))
 
         # Run LBANN experiment
         experiment_output = test_func(cluster, dirname)

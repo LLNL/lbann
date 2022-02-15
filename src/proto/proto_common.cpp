@@ -131,9 +131,15 @@ void init_data_readers(
       reader = new data_reader_nci(shuffle);
     } else if (name == "smiles") {
       smiles_data_reader * smiles = new smiles_data_reader(shuffle);
+      if(readme.label_filename() != "") {
+        LBANN_ERROR("Unsupported data reader field label_filename = ", readme.label_filename());
+      }
+      if(readme.metadata_filename().empty()) {
+        LBANN_ERROR("Required SMILES data reader field metadata_filename is missing");
+      }
+      smiles->set_metadata_filename(readme.metadata_filename());
       reader = smiles;
       reader->set_data_sample_list(readme.sample_list());
-      reader->set_label_filename(readme.label_filename());
     } else if (name == "hdf5_data_reader") {
       hdf5_data_reader* dr = new hdf5_data_reader(shuffle);
       dr->keep_sample_order(readme.sample_list_keep_order());

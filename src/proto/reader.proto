@@ -51,6 +51,9 @@ message Reader {
   int64 first_n = 200;
   double percent_of_data_to_use = 12;
 
+  // for SMILES data reader
+  string metadata_filename = 13;
+
   //for GAN model
   bool gan_labelling = 201;
   int32 gan_label_value = 202;
@@ -100,8 +103,8 @@ message Reader {
   //------------- end of only for HDF5 data reader ------------------
 
   //-------- start of only for new (generalized) HDF5 data reader -------------
-  string data_schema_filename = 800; 
-  string experiment_schema_filename = 801; 
+  string data_schema_filename = 800;
+  string experiment_schema_filename = 801;
   //-------- end of only for new (generalized) HDF5 data reader -------------
 
 }

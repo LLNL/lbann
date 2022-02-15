@@ -178,21 +178,6 @@ void construct_std_options()
                         {"--num_parallel_readers"},
                         "[STD] The number of parallel data readers",
                         1);
-  arg_parser.add_option(LBANN_OPTION_NUM_TEST_SAMPLES,
-                        {"--num_test_samples"},
-                        utils::ENV("LBANN_NUM_TEST_SAMPLES"),
-                        "[STD] Set the number of testing samples to ingest.",
-                        -1);
-  arg_parser.add_option(LBANN_OPTION_NUM_TRAIN_SAMPLES,
-                        {"--num_train_samples"},
-                        utils::ENV("LBANN_NUM_TRAIN_SAMPLES"),
-                        "[STD] Set the number of training samples to ingest.",
-                        -1);
-  arg_parser.add_option(LBANN_OPTION_NUM_VALIDATE_SAMPLES,
-                        {"--num_validate_samples"},
-                        utils::ENV("LBANN_NUM_VALIDATE_SAMPLES"),
-                        "[STD] Set the number of validate samples to ingest.",
-                        -1);
   arg_parser.add_option(LBANN_OPTION_OPTIMIZER,
                         {"--optimizer"},
                         "[STD] Optimizer input file",
