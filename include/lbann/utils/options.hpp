@@ -39,6 +39,9 @@ namespace lbann {
 // Bool flags
 #define LBANN_OPTION_DISABLE_BACKGROUND_IO_ACTIVITY "disable_background_io_activity"
 #define LBANN_OPTION_DISABLE_CUDA "disable_cuda"
+#define LBANN_OPTION_DISABLE_SIGNAL_HANDLER "disable_signal_handler"
+#define LBANN_OPTION_EXIT_AFTER_SETUP "exit_after_setup"
+#define LBANN_OPTION_GENERATE_MULTI_PROTO "generate_multi_proto"
 #define LBANN_OPTION_LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE "load_model_weights_dir_is_complete"
 #define LBANN_OPTION_LTFB_ALLOW_GLOBAL_STATISTICS "LTFB Allow global statistics"
 #define LBANN_OPTION_LTFB_VERBOSE "ltfb_verbose"
@@ -46,14 +49,13 @@ namespace lbann {
 #define LBANN_OPTION_PRELOAD_DATA_STORE "preload_data_store"
 #define LBANN_OPTION_PRINT_AFFINITY "print_affinity"
 #define LBANN_OPTION_SERIALIZE_IO "serialize_io"
-#define LBANN_OPTION_ST_FULL_TRACE "st_full_trace"
 #define LBANN_OPTION_ST_ON "st_on"
+#define LBANN_OPTION_ST_FULL_TRACE "st_full_trace"
+#define LBANN_OPTION_STACK_TRACE_TO_FILE "stack_trace_to_file"
 #define LBANN_OPTION_USE_CUBLAS_TENSOR_OPS "use_cublas_tensor_ops"
 #define LBANN_OPTION_USE_CUDNN_TENSOR_OPS "use_cudnn_tensor_ops"
 #define LBANN_OPTION_USE_DATA_STORE "use_data_store"
-#define LBANN_OPTION_USE_LTFB "ltfb"
 #define LBANN_OPTION_VERBOSE "verbose"
-#define LBANN_OPTION_WRITE_SAMPLE_LIST "write_sample_list"
 #define LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP "Use Hydrogen's default memory mode for GPU buffers in forward prop"
 #define LBANN_OPTION_INIT_SHMEM "Initialize SHMEM when initializing LBANN"
 #define LBANN_OPTION_INIT_NVSHMEM "Initialize NVSHMEM when initializing LBANN"
@@ -90,28 +92,22 @@ namespace lbann {
 #define LBANN_OPTION_DATA_STORE_MIN_MAX_TIMING "data_store_min_max_timing"
 #define LBANN_OPTION_DATA_STORE_NO_THREAD "data_store_no_thread"
 #define LBANN_OPTION_DATA_STORE_PROFILE "data_store_profile"
-#define LBANN_OPTION_DATA_STORE_SPILL "data_store_spill"
 #define LBANN_OPTION_DATA_STORE_TEST_CACHE "data_store_test_cache"
+#define LBANN_OPTION_NODE_SIZES_VARY "node_sizes_vary"
+
+// Input options
+#define LBANN_OPTION_DATA_STORE_SPILL "data_store_spill"
 #define LBANN_OPTION_DATA_STORE_TEST_CHECKPOINT "data_store_test_checkpoint"
 
 /****** datareader options ******/
 // Bool flags
-#define LBANN_OPTION_ALL_GATHER_OLD "all_gather_old"
 #define LBANN_OPTION_CHECK_DATA "check_data"
-#define LBANN_OPTION_CREATE_TARBALL "create_tarball"
-#define LBANN_OPTION_DISABLE_SIGNAL_HANDLER "disable_signal_handler"
-#define LBANN_OPTION_DEBUG_CONCATENATE "debug_concatenate"
-#define LBANN_OPTION_EXIT_AFTER_SETUP "exit_after_setup"
-#define LBANN_OPTION_GENERATE_MULTI_PROTO "generate_multi_proto"
 #define LBANN_OPTION_KEEP_SAMPLE_ORDER "keep_sample_order"
 #define LBANN_OPTION_KEEP_PACKED_FIELDS "keep_packed_fields"
 #define LBANN_OPTION_LOAD_FULL_SAMPLE_LIST_ONCE "load_full_sample_list_once"
-#define LBANN_OPTION_MAKE_TEST_FAIL "make_test_fail"
-#define LBANN_OPTION_NODE_SIZES_VARY "node_sizes_vary"
 #define LBANN_OPTION_QUIET "quiet"
-#define LBANN_OPTION_STACK_TRACE_TO_FILE "stack_trace_to_file"
-#define LBANN_OPTION_TEST_ENCODE "test_encode"
 #define LBANN_OPTION_WRITE_SAMPLE_LABEL_LIST "write_sample_label_list"
+#define LBANN_OPTION_WRITE_SAMPLE_LIST "write_sample_list"
 #define LBANN_OPTION_Z_SCORE "z_score"
 
 // Input options
@@ -124,14 +120,10 @@ namespace lbann {
 #define LBANN_OPTION_DATA_FILENAME_TRAIN "data_filename_train"
 #define LBANN_OPTION_DATA_FILENAME_VALIDATE "data_filename_validate"
 #define LBANN_OPTION_DATA_READER_PERCENT "data_reader_percent"
-#define LBANN_OPTION_DELIMITER "delimiter"
-#define LBANN_OPTION_IMAGE_SIZES_FILENAME "image_sizes_filename"
 #define LBANN_OPTION_LABEL_FILENAME_TEST "label_filename_test"
 #define LBANN_OPTION_LABEL_FILENAME_TRAIN "label_filename_train"
 #define LBANN_OPTION_LABEL_FILENAME_VALIDATE "label_filename_validate"
 #define LBANN_OPTION_NORMALIZATION "normalization"
-#define LBANN_OPTION_N_LINES "n_lines"
-#define LBANN_OPTION_PAD_INDEX "pad_index"
 #define LBANN_OPTION_PILOT2_READ_FILE_SIZES "pilot2_read_file_sizes"
 #define LBANN_OPTION_PILOT2_SAVE_FILE_SIZES "pilot2_save_file_sizes"
 #define LBANN_OPTION_SAMPLE_LIST_TEST "sample_list_test"
@@ -139,13 +131,11 @@ namespace lbann {
 #define LBANN_OPTION_SAMPLE_LIST_VALIDATE "sample_list_validate"
 #define LBANN_OPTION_SEQUENCE_LENGTH "sequence_length"
 #define LBANN_OPTION_SMILES_BUFFER_SIZE "smiles_buffer_size"
-#define LBANN_OPTION_TEST_TARBALL "test_tarball"
 #define LBANN_OPTION_VOCAB "vocab"
 
 /****** jag options ******/
 // Bool flags
 #define LBANN_OPTION_JAG "jag"
-#define LBANN_OPTION_JAG_PARTITIONED "jag_partitioned"
 
 // Input options
 #define LBANN_OPTION_BASE_DIR "base_dir"
