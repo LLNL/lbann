@@ -116,6 +116,9 @@ html_sidebars = { '**': ['globaltoc.html', 'relations.html', 'sourcelink.html', 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'lbanndoc'
 
+# Show todo entries in HTML docs
+todo_include_todos = True
+
 # -- Options for LaTeX output ------------------------------------------------
 
 latex_elements = {

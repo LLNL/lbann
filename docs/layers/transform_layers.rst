@@ -4,9 +4,9 @@
 
 .. _transform-layers:
 
-==================
+====================================
  Transform Layers
-==================
+====================================
 
 .. csv-table::
    :header: "Layer", "Description"
@@ -45,18 +45,17 @@
    :ref:`WeightsLayer`, "Output values from a weights tensor"
 
 
-**Deprecated transform layers**
+Deprecated transform layers:
 
 .. csv-table::
    :header: "Layer", "Description"
    :widths: auto
 
-   CategoricalRandom, "Deprecated"
-   DiscreteRandom, "Deprecated"
+   :ref:`CategoricalRandom`, "Deprecated"
+   :ref:`DiscreteRandom`, "Deprecated"
 
-.. raw:: html
 
-   <hr>
+________________________________________
 
 .. _BatchwiseReduceSum:
 
@@ -69,9 +68,9 @@ dimension. The output tensor has same shape as input tensor.
 
 Arguments: None
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
 
 .. _Bernoulli:
 
@@ -85,17 +84,18 @@ zeros during evaluation.
 
 Arguments:
 
-  :prob: (``double``) Bernoulli distribution probability
+   :prob: (``double``) Bernoulli distribution probability
 
-  :neuron_dims:
+   :neuron_dims:
 
-     (``string``) Tensor dimensions
+      (``string``) Tensor dimensions
 
-     Space-separated list of integers
+      Space-separated list of integers
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _Concatenation:
 
@@ -109,11 +109,12 @@ for the concatenation dimension.
 
 Arguments:
 
-  :axis: (``int64``) Tensor dimension to concatenate along
+   :axis: (``int64``) Tensor dimension to concatenate along
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _Constant:
 
@@ -125,17 +126,18 @@ The Constant layer is an output tensor filled with a single value.
 
 Arguments:
 
-  :value: (``double``) Value of tensor entries
+   :value: (``double``) Value of tensor entries
 
-  :num_neurons:
+   :num_neurons:
 
-     (``string``) Tensor dimensions
+      (``string``) Tensor dimensions
 
-     Space-separated list of integers
+      Space-separated list of integers
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _Crop:
 
@@ -144,9 +146,9 @@ Crop
 ----------------------------------------
 
 The Crop layer extracts a crop from a tensor at a position. It expects
-two input tensors: an @f$ N @f$-D data tensor and a 1D position vector
-with @f$ N @f$ entries. The position vector should be normalized so
-that values are in @f$ [0,1] @f$. For images in CHW format, a position
+two input tensors: an :math:`N` -D data tensor and a 1D position vector
+with :math:`N` entries. The position vector should be normalized so
+that values are in :math:`[0,1]` . For images in CHW format, a position
 of (0,0,0) corresponds to the red-top-left corner and (1,1,1) to the
 blue-bottom-right corner.
 
@@ -157,9 +159,10 @@ Arguments:
     (``string``) Crop dimensions
     Space-separated list of integers
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _Cross_Grid_Sum:
 
@@ -172,9 +175,10 @@ experimental functionality for use with sub-grid parallelism.
 
 Arguments: None
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _Cross_Grid_Sum_Slice:
 
@@ -188,9 +192,10 @@ parallelism.
 
 Arguments: None
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _Dummy:
 
@@ -204,9 +209,10 @@ layer has no child layers.
 
 Arguments: None
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _Evaluation:
 
@@ -220,9 +226,10 @@ created when needed in the compute graph.
 
 Arguments: None
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _Gather:
 
@@ -231,22 +238,21 @@ Gather
 ----------------------------------------
 
 The Gather layer gathers values from specified tensor indices. Expects
-two input tensors: an @f$ N @f$-D data tensor and a 1D index
+two input tensors: an :math:`N` -D data tensor and a 1D index
 vector. For 1D data:
 
-FIXME
-  @f[
-    y[i] = x[\text{ind}[i]]
-  @f]
+.. math::
+
+   y[i] = x[\text{ind}[i]]
 
 If an index is out-of-range, the corresponding output is set to zero.
 
 For higher-dimensional data, the layer performs a gather along one
 dimension. For example, with 2D data and axis=1,
-FIXME
-  @f[
-    y[i,j] = x[i,\text{ind}[j]]
-  @f]
+
+.. math::
+
+   y[i,j] = x[i,\text{ind}[j]]
 
 Currently, only 1D and 2D data is supported.
 
@@ -259,11 +265,12 @@ output tensor are identical to the data tensor.
 
 Arguments:
 
-  :axis: (``google.protobuf.UInt64Value``) Dimensions to gather along
+   :axis: (``google.protobuf.UInt64Value``) Dimensions to gather along
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _Gaussian:
 
@@ -275,26 +282,27 @@ A random tensor with Gaussian/normal distribution.
 
 Arguments:
 
-  :mean: (``double``) Distribution mean
+   :mean: (``double``) Distribution mean
 
-  :stdev: (``double``) Distribution standard deviation
+   :stdev: (``double``) Distribution standard deviation
 
-  :neuron_dims:
+   :neuron_dims:
 
-     (``string``) Tensor dimensions
+      (``string``) Tensor dimensions
 
-     Space-separated list of integers
+      Space-separated list of integers
 
-  :training_only:
+   :training_only:
 
-     (``bool``) Only generate random values during training
+      (``bool``) Only generate random values during training
 
-     If true, the tensor is filled with the distribution mean during
-     evaluation.
+      If true, the tensor is filled with the distribution mean during
+      evaluation.
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _Hadamard:
 
@@ -306,9 +314,10 @@ Entry-wise tensor product
 
 Arguments: None
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _InTopK:
 
@@ -323,11 +332,12 @@ to zero. Ties are broken in favor of entries with smaller indices.
 
 Arguments:
 
-  :k: (``int64``) Number of non-zeros in one-hot vector
+   :k: (``int64``) Number of non-zeros in one-hot vector
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _Pooling:
 
@@ -340,71 +350,71 @@ with a sliding window and applies a reduction operation.
 
 Arguments:
 
-  :pool_mode:
+   :pool_mode:
 
-     (``string``, optional) Pooling operation
+      (``string``, optional) Pooling operation
 
-     Options: max, average, average_no_pad
+      Options: max, average, average_no_pad
 
-  :num_dims:
+   :num_dims:
 
-     (``int64``) Number of spatial dimensions
+      (``int64``) Number of spatial dimensions
 
-     The first data dimension is treated as the channel dimension,
-     and all others are treated as spatial dimensions (recall that
-     the mini-batch dimension is implicit).
+      The first data dimension is treated as the channel dimension,
+      and all others are treated as spatial dimensions (recall that
+      the mini-batch dimension is implicit).
 
-  :has_vectors:
+   :has_vectors:
 
-     (``bool``) Whether to use vector-valued options
+      (``bool``) Whether to use vector-valued options
 
-     If true, then the pooling is configured with @c pool_dims, @c
-     pool_pads, @c pool_strides. Otherwise, @c pool_dims_i, @c
-     pool_pads_i, @c pool_strides_i.
+      If true, then the pooling is configured with ``pool_dims``,
+      ``pool_pads``, ``pool_strides``. Otherwise, ``pool_dims_i``,
+      ``pool_pads_i``, ``pool_strides_i``.
 
-  :pool_dims:
+   :pool_dims:
 
-    (``string``) Pooling window dimensions (vector-valued)
+      (``string``) Pooling window dimensions (vector-valued)
 
-    Space-separated list of integers, one for each spatial
-    dimension. Used when @c has_vectors is enabled.
+      Space-separated list of integers, one for each spatial
+      dimension. Used when ``has_vectors`` is enabled.
 
-  :pool_pads:
+   :pool_pads:
 
-     (``string``) Pooling padding (vector-valued)
+      (``string``) Pooling padding (vector-valued)
 
-     Space-separated list of integers, one for each spatial
-     dimension. Used when @c has_vectors is enabled.
+      Space-separated list of integers, one for each spatial
+      dimension. Used when ``has_vectors`` is enabled.
 
-  :pool_strides:
+   :pool_strides:
 
-     (``string``) Pooling strides (vector-valued)
+      (``string``) Pooling strides (vector-valued)
 
-     Space-separated list of integers, one for each spatial
-     dimension. Used when @c has_vectors is enabled.
+      Space-separated list of integers, one for each spatial
+      dimension. Used when ``has_vectors`` is enabled.
 
-  :pool_dims_i:
+   :pool_dims_i:
 
-     (``int64``) Pooling window dimension (integer-valued)
+      (``int64``) Pooling window dimension (integer-valued)
 
-     Used when @c has_vectors is disabled.
+      Used when ``has_vectors`` is disabled.
 
-  :pool_pads_i:
+   :pool_pads_i:
 
-     (``int64``) Pooling padding (integer-valued)
+      (``int64``) Pooling padding (integer-valued)
 
-     Used when @c has_vectors is disabled.
+      Used when ``has_vectors`` is disabled.
 
-  :pool_strides_i:
+   :pool_strides_i:
 
-     (``int64``) Pooling stride (integer-valued)
+      (``int64``) Pooling stride (integer-valued)
 
-     Used when @c has_vectors is disabled.
+      Used when ``has_vectors`` is disabled.
 
+:ref:`Back to Top<transform-layers>`
 
-.. raw:: html
+________________________________________
 
-   <hr>
 
 .. _Reduction:
 
@@ -416,15 +426,16 @@ The Reduction layer reduces a tensor to a scalar.
 
 Arguments:
 
-  :mode:
+   :mode:
 
-     (``string``, optional) Reduction operation
+      (``string``, optional) Reduction operation
 
-     Options: sum (default) or mean
+      Options: sum (default) or mean
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _Reshape:
 
@@ -438,23 +449,23 @@ The input and output tensors must have the same number of
 entries. This layer is very cheap since it just involves setting up
 tensor views.
 
-
 Arguments:
 
-  :dims:
+   :dims:
 
-     (``string``) Tensor dimensions
+      (``string``) Tensor dimensions
 
-     Space-separated list of integers. A single dimension may be
-     -1, in which case the dimension is inferred.
+      Space-separated list of integers. A single dimension may be
+      -1, in which case the dimension is inferred.
 
-Deprecated and unused
+Deprecated and unused arguments:
 
-* int64 num_dims
+   :num_dims: (``int64``)
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _Scatter:
 
@@ -463,21 +474,22 @@ Scatter
 ----------------------------------------
 
 The Scatter layer scatters values to specified tensor indices. Expects
-two input tensors: an @f$ N @f$-D data tensor and a 1D index
+two input tensors: an :math:`N` -D data tensor and a 1D index
 vector. For 1D data:
-FIXME
-  @f[
-    y[\text{ind}[i]] = x[i]
-  @f]
+
+.. math::
+
+   y[\text{ind}[i]] = x[i]
 
 Out-of-range indices are ignored.
 
 For higher-dimensional data, the layer performs a scatter along one
 dimension. For example, with 2D data and axis=1,
-FIXME
-  @f[
-    y[i,\text{ind}[j]] = x[i,j]
-  @f]
+
+.. math::
+
+   y[i,\text{ind}[j]] = x[i,j]
+
 
 Currently, only 1D and 2D data is supported.
 
@@ -489,18 +501,19 @@ along the scatter dimension.
 
 Arguments:
 
-  :dims:
+   :dims:
 
-     (``string``) Output tensor dimensions
+      (``string``) Output tensor dimensions
 
-     Space-separated list of integers. Number of dimensions must
-     match data tensor.
+      Space-separated list of integers. Number of dimensions must
+      match data tensor.
 
-  :axis: (``google.protobuf.UInt64Value``) Dimension to scatter along
+   :axis: (``google.protobuf.UInt64Value``) Dimension to scatter along
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _Slice:
 
@@ -514,27 +527,28 @@ layer recieves one piece.
 
 Arguments:
 
-  :axis: (``int64``) Tensor dimension to slice along
+   :axis: (``int64``) Tensor dimension to slice along
 
-  :slice_points:
+   :slice_points:
 
-     (``string``) Positions at which to slice tensor
+      (``string``) Positions at which to slice tensor
 
-     Space-separated list of integers. Slice points must be in
-     ascending order and the number of slice points must be one
-     greater than the number of child layers.
+      Space-separated list of integers. Slice points must be in
+      ascending order and the number of slice points must be one
+      greater than the number of child layers.
 
-Deprecated:
+Deprecated arguments:
 
-  :get_slice_points_from_reader: (``string``) Hack for jag_conduit_hdf5
+   :get_slice_points_from_reader: (``string``) Do not use unless using
+                                  the Jag dataset.
 
-  :get_slice_points_from_reader_bool: (``bool``) Hack for
-                                      jag_conduit_hdf5
+   :get_slice_points_from_reader_bool: (``bool``) Do not use unless
+                                       using the Jag dataset.
 
+:ref:`Back to Top<transform-layers>`
 
-.. raw:: html
+________________________________________
 
-   <hr>
 
 .. _Sort:
 
@@ -546,11 +560,12 @@ The Sort layer sorts tensor entries.
 
 Arguments:
 
-  :descending: (``bool``) Sort entries in descending order
+   :descending: (``bool``) Sort entries in descending order
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _Split:
 
@@ -569,9 +584,10 @@ or TensorFlow. The name refers to splits in the compute graph.
 
 Arguments: None
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _StopGradient:
 
@@ -589,9 +605,10 @@ objective function.
 
 Arguments: None
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _Sum:
 
@@ -599,14 +616,14 @@ Arguments: None
 Sum
 ----------------------------------------
 
-FIXME: Where is the description?
+Element-wise sum of each of the input tensors.
 
-Arguments:
+Arguments: None
 
+:ref:`Back to Top<transform-layers>`
 
-.. raw:: html
+________________________________________
 
-   <hr>
 
 .. _Tessellate:
 
@@ -618,12 +635,13 @@ The Tessallate layer repeats a tensor until it matches specified
 dimensions.
 
 The output tensor dimensions do not need to be integer multiples of
-the input dimensions. Compare with the NumPy @c tile function.
+the input dimensions. Compare with the NumPy ``tile`` function.
 
-As an example, tessellating a @f$ 2 \times 2 @f$ matrix into a @f$ 3
-\times 4 @f$ matrix looks like the following:
-FIXME
- @f[
+As an example, tessellating a :math:`2 \times 2` matrix into a
+:math:`3 \times 4` matrix looks like the following:
+
+.. math::
+
    \begin{bmatrix}
      1 & 2 \\
      3 & 4
@@ -634,19 +652,19 @@ FIXME
      3 & 4 & 3 & 4 \\
      1 & 2 & 1 & 2
    \end{bmatrix}
- @f]
 
 Arguments:
 
-  :dims:
+   :dims:
 
-     (``string``) Output tensor dimensions
+      (``string``) Output tensor dimensions
 
-     Space-separated list of integers
+      Space-separated list of integers
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _Uniform:
 
@@ -658,26 +676,27 @@ The Uniform layer is a random tensor with a uniform distribution.
 
 Arguments:
 
-  :min: (``double``) Distribution minimum
+   :min: (``double``) Distribution minimum
 
-  :max: (``double``) Distribution maximum
+   :max: (``double``) Distribution maximum
 
-  :neuron_dims:
+   :neuron_dims:
 
-     (``string``) Tensor dimensions
+      (``string``) Tensor dimensions
 
-     Space-separated list of integers
+      Space-separated list of integers
 
-  :training_only:
+   :training_only:
 
-     (``bool``) Only generate random values during training
+      (``bool``) Only generate random values during training
 
-     If true, the tensor is filled with the distribution mean during
-     evaluation.
+      If true, the tensor is filled with the distribution mean during
+      evaluation.
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _Unpooling:
 
@@ -696,18 +715,18 @@ required that the pooling layer be set as the hint layer.
 
 Arguments:
 
-  :num_dims:
+   :num_dims:
 
-     (``int64``) Number of spatial dimensions
+      (``int64``) Number of spatial dimensions
 
-     The first data dimension is treated as the channel dimension,
-     and all others are treated as spatial dimensions (recall that
-     the mini-batch dimension is implicit).
+      The first data dimension is treated as the channel dimension,
+      and all others are treated as spatial dimensions (recall that
+      the mini-batch dimension is implicit).
 
+:ref:`Back to Top<transform-layers>`
 
-.. raw:: html
+________________________________________
 
-   <hr>
 
 .. _WeightedSum:
 
@@ -719,12 +738,13 @@ The WeightedSum layer adds tensors with scaling factors.
 
 Arguments:
 
-  :scaling_factors: (``string``) Space-separated list of
-                    floating-point numbers, one for each input tensor.
+   :scaling_factors: (``string``) Space-separated list of
+                     floating-point numbers, one for each input tensor.
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
 
 .. _WeightsLayer:
 
@@ -733,16 +753,50 @@ WeightsLayer
 ----------------------------------------
 
 The WeightsLayer outputs values from a weights tensor. Interfaces with
-a @c weights object.
+a ``weights`` object.
 
 Arguments:
 
-  :dims:
+   :dims:
 
-     (``string``) Weights tensor dimensions
+      (``string``) Weights tensor dimensions
 
-     Space-separated list of integers
+      Space-separated list of integers
 
-.. raw:: html
+:ref:`Back to Top<transform-layers>`
 
-   <hr>
+________________________________________
+
+
+.. _CategoricalRandom:
+
+----------------------------------------
+CategoricalRandom (Deprecated)
+----------------------------------------
+
+The CategoricalRandom layer is deprecated.
+
+Arguments: None
+
+:ref:`Back to Top<transform-layers>`
+
+________________________________________
+
+
+.. _DiscreteRandom:
+
+----------------------------------------
+DiscreteRandom (Deprecated)
+----------------------------------------
+
+The DiscreteRandom layer is deprecated.
+
+Arguments:
+
+   :values: (``string``)
+
+   :dims: (``string``)
+
+:ref:`Back to Top<transform-layers>`
+
+________________________________________

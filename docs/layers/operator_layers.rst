@@ -12,7 +12,7 @@ Operator Layers
    :widths: auto
 
    :ref:`OperatorLayer`, "Layer composed of one or more operator
-        objects (name chosen to avoid collision)"
+   objects (name chosen to avoid collision)"
 
 .. csv-table::
    :header: "Operator", "Description"
@@ -99,9 +99,8 @@ Operator Layers
    Tan, "Apply the Tan operator entrywise"
    Tanh, "Apply the Tanh operator entrywise"
 
-.. raw:: html
+________________________________________
 
-   <hr>
 
 .. _OperatorLayer:
 
@@ -109,19 +108,17 @@ Operator Layers
 OperatorLayer
 ----------------------------------------
 
-FIXME: Code example?
-
 OperatorLayer is composed of one or more operator objects. Operators
 are applied sequentially.
 
 Arguments:
 
-  :repeated Operator ops: FIXME: What is this?
+   :ops: (``repeated Operator``)
 
+:ref:`Back to Top<operator-layers>`
 
-.. raw:: html
+________________________________________
 
-   <hr>
 
 .. _Operator:
 
@@ -133,18 +130,22 @@ Operator is the base class for LBANN operators
 
 Arguments:
 
-  :input_type: The type expected as input
-  :output_type: The type expected as output
-  :device: The device allocation
+   :input_type: The type expected as input
+
+   :output_type: The type expected as output
+
+   :device: The device allocation
 
 Methods:
 
-  :export_proto(): Get a protobuf representation of this object
-  :do_export_proto():
+   :export_proto(): Get a protobuf representation of this object
 
-     * Get a protobuf representation of this object
-     * Must be implemented in derived classes
+   :do_export_proto():
 
-.. raw:: html
+      Get a protobuf representation of this object
 
-   <hr>
+      Must be implemented in derived classes
+
+:ref:`Back to Top<operator-layers>`
+
+________________________________________

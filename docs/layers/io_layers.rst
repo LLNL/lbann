@@ -13,10 +13,8 @@ I/O Layers
 
    :ref:`Input`, "Data tensor from data reader"
 
+________________________________________
 
-.. raw:: html
-
-   <hr>
 
 .. _Input:
 
@@ -28,12 +26,8 @@ The input layer is a data tensor from data reader
 
 Arguments:
 
-  :data_field: (``string``, optional) Data field in data reader
+   :data_field: (``string``, optional) Data field in data reader
 
-Legacy values:
+:ref:`Back to Top<io-layers>`
 
-  "samples", "labels", "responses".
-
-.. raw:: html
-
-   <hr>
+________________________________________

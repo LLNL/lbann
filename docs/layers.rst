@@ -55,47 +55,96 @@ Python Front End
                        metrics,
                        callbacks)
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Profobuf (Advanced)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------
+Common Layer Arguments
+-------------------------------------------
 
-.. code-block::
+  :name:
 
-   layer {
-     name: "images"
-     children: "relu mse"
-     input {
-       data_field: "samples"
-     }
-   }
-   layer {
-     name: "labels"
-     input {
-       data_field: "labels"
-     }
-   }
-   layer {
-     name: "relu"
-     parents: "images"
-     children: "mse"
-     relu {
-     }
-   }
-   layer {
-     name: "mse"
-     parents: "images relu"
-     mean_squared_error {
-     }
-   }
+     (``string``, optional) default = ``layer<index>``
 
-------------------------------------------------
-Layer Arguments
-------------------------------------------------
+     Unique identifier for layer
 
-.. toctree::
-   :maxdepth: 2
+     Must not contain spaces
 
-   Layer Arguments <layers/layer_args>
+  :parents:
+
+     (``Iterable of Layer``, optional) Parent layers, i.e. Sources
+     of input tensors
+
+     Space-separated list of layer names
+
+  :children:
+
+     (``Iterable of Layer``, optional) Child layers, i.e. Destinations
+     of input tensors
+
+     Space-separated list of layer names
+
+  :weights:
+
+     (``Iterable of Weights``, optional) Weights objects.
+
+     Typically used as trainable parameters
+
+     Space-separated list of weights names
+
+  :device_allocation:
+
+     (``string``, optional) Data tensor device
+
+     If LBANN has been built with GPU support, default is
+     GPU. Otherwise, CPU
+
+  :datatype:
+
+     (``lbann.DataType``, optional) Options: CPU or GPU
+
+     Data type used for activations and weights
+
+-------------------------------------------
+  Advanced Layer Options
+-------------------------------------------
+
+  :hint_layer:
+
+     (``Layer``, optional) Hint layer for configuring output
+     dimensions
+
+     Typically used to specify that a layer has the same output
+     dimensions as another.
+
+  :data_layout:
+
+     (``string``, optional) Data tensor layout
+
+     Options: data_parallel (default) or model_parallel
+
+  :parallel_strategy:
+
+     (``dictionary``, optional) Configuration for advanced
+     parallelization strategies
+
+-------------------------------------------
+  Deprecated Layer Options
+-------------------------------------------
+
+Deprecated:
+
+  :num_neurons_from_data_reader: (``bool``)
+
+  :freeze: (``bool``)
+
+Deprecated and unused:
+
+  :WeightsData weights_data: (``repeated``)
+
+  :top: (``string``)
+
+  :bottom: (``string``)
+
+  :type: (``string``)
+
 
 ------------------------------------------------
 LBANN Layers List
@@ -107,3 +156,10 @@ LBANN Layers List
    I/O Layers <layers/io_layers>
    Operator Layers <layers/operator_layers>
    Transform Layers <layers/transform_layers>
+   Learning Layers <layers/learning_layers>
+   Loss Layers <layers/loss_layers>
+   Math Layers <layers/math_layers>
+   Regularization Layers <layers/regularization_layers>
+   Activation Layers <layers/activation_layers>
+   Image Layers <layers/image_layers>
+   Miscellaneous Layers <layers/miscellaneous_layers>
