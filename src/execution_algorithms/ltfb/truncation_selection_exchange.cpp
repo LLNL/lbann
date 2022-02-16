@@ -102,18 +102,18 @@ EvalType TruncationSelectionExchange::evaluate_model(model& m,
   dc.collect_background_data_fetch(original_mode);
 
   // Can use validation if it is global
-  if (!dc.is_execution_mode_valid(execution_mode::testing)) {
+  if (!dc.is_execution_mode_valid(execution_mode::tournament)) {
     LBANN_ERROR("LTFB truncation selection requires ",
-                to_string(execution_mode::testing),
+                to_string(execution_mode::tournament),
                 " execution mode");
   }
 
   // Mark the data store as loading - Note that this is a temporary fix
   // for the current use of the tournament
-  m.mark_data_store_explicitly_loading(execution_mode::testing);
+  m.mark_data_store_explicitly_loading(execution_mode::tournament);
 
-  // Evaluate model on test (or validation?) set
-  get_trainer().evaluate(&m, execution_mode::testing);
+  // Evaluate model on validation set
+  get_trainer().evaluate(&m, execution_mode::tournament);
 
   // Get metric values
   bool found_metric = false;
@@ -123,7 +123,7 @@ EvalType TruncationSelectionExchange::evaluate_model(model& m,
     metric_name = met->name();
     if (m_metrics.count(metric_name)) {
       found_metric = true;
-      score += met->get_mean_value(execution_mode::testing);
+      score += met->get_mean_value(execution_mode::tournament);
       break;
     }
   }
@@ -138,7 +138,7 @@ EvalType TruncationSelectionExchange::evaluate_model(model& m,
                 "\"");
   }
 
-  m.make_data_store_preloaded(execution_mode::testing);
+  m.make_data_store_preloaded(execution_mode::tournament);
 
   // Clean up and return metric score
   m.reset_mode(ctxt, original_mode);
