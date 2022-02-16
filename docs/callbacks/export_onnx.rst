@@ -30,12 +30,16 @@ Execution Points
 Callback Arguments (Python Front-End)
 ---------------------------------------------
 
-+ :python:`bool print_debug_string`: Default value is false. Set to
-  true to print debug string to a text file.
+   :print_debug_string:
 
-+ :python:`string output_file`: Default value is
-  :python:`lbann_output.onnx`.
+      (``bool``, optional) Default value: False.
 
+      Print debug string to a text file.
+
+   :output_file: (``string``, optional) Default value:
+                 ``lbann_output.onnx``.
+
+.. _examples-using-export-onnx:
 
 ---------------------------------------------
 Examples Using Export ONNX Callback
@@ -43,11 +47,6 @@ Examples Using Export ONNX Callback
 
 Python Front-End
 --------------------
-
-.. _export_onnx_example:
-
-Export ONNX Python Example
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -58,9 +57,6 @@ Export ONNX Python Example
 
 Prototext (Advanced)
 ----------------------
-
-Export ONNX Prototext
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: guess
 
