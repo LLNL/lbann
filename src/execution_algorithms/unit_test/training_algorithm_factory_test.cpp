@@ -140,11 +140,6 @@ TEST_CASE("Building training algorithm from the factory",
 
     REQUIRE(sgd->get_type() == "sgd");
     REQUIRE(sgd->get_name() == "my sgd algo");
-
-    // I don't really think we should have cloneable training algos, but:
-    auto sgd2 = sgd->clone();
-    REQUIRE(sgd2->get_type() == "sgd");
-    REQUIRE(sgd2->get_name() == "my sgd algo");
   }
 
   SECTION("Building with an invalid message type fails")

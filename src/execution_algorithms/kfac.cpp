@@ -69,7 +69,7 @@ KFAC::KFAC(
   double learning_rate_factor,
   double learning_rate_factor_gru,
   size_t compute_interval)
-  : BaseType{std::move(name)},
+  : TrainingAlgorithm{std::move(name)},
     m_stopping_criteria{std::move(stop)},
     m_damping_act_params{std::move(damping_act_params)},
     m_damping_err_params{std::move(damping_err_params)},
@@ -89,49 +89,6 @@ KFAC::KFAC(
     m_learning_rate_factor_gru{learning_rate_factor_gru},
     m_compute_interval{compute_interval}
 {}
-
-KFAC::KFAC(KFAC const& other)
-  : BaseType(other.get_name()),
-    m_stopping_criteria{other.m_stopping_criteria->clone()},
-    m_damping_act_params{other.m_damping_act_params},
-    m_damping_err_params{other.m_damping_err_params},
-    m_damping_bn_act_params{other.m_damping_bn_act_params},
-    m_damping_bn_err_params{other.m_damping_bn_err_params},
-    m_damping_warmup_steps{other.m_damping_warmup_steps},
-    m_kronecker_decay{other.m_kronecker_decay},
-    m_print_time{other.m_print_time},
-    m_print_matrix{other.m_print_matrix},
-    m_print_matrix_summary{other.m_print_matrix_summary},
-    m_use_pi{other.m_use_pi},
-    m_update_intervals{other.m_update_intervals},
-    m_update_interval_steps{other.m_update_interval_steps},
-    m_inverse_strategy{other.m_inverse_strategy},
-    m_disable_layers{other.m_disable_layers},
-    m_learning_rate_factor{other.m_learning_rate_factor},
-    m_compute_interval{other.m_compute_interval}
-{}
-
-KFAC& KFAC::operator=(KFAC const& other) {
-  BaseType::operator=(other);
-  m_stopping_criteria = other.m_stopping_criteria->clone();
-  m_damping_act_params = other.m_damping_act_params;
-  m_damping_err_params = other.m_damping_err_params;
-  m_damping_bn_act_params = other.m_damping_bn_act_params;
-  m_damping_bn_err_params = other.m_damping_bn_err_params;
-  m_damping_warmup_steps = other.m_damping_warmup_steps;
-  m_kronecker_decay = other.m_kronecker_decay;
-  m_print_time = other.m_print_time;
-  m_print_matrix = other.m_print_matrix;
-  m_print_matrix_summary = other.m_print_matrix_summary;
-  m_use_pi = other.m_use_pi;
-  m_update_intervals = other.m_update_intervals;
-  m_update_interval_steps = other.m_update_interval_steps;
-  m_inverse_strategy = other.m_inverse_strategy;
-  m_disable_layers = other.m_disable_layers;
-  m_learning_rate_factor = other.m_learning_rate_factor;
-  m_compute_interval = other.m_compute_interval;
-  return *this;
-}
 
 std::string KFAC::get_type() const { return "KFAC"; }
 

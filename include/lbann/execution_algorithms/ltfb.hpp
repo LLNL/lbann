@@ -64,10 +64,8 @@ namespace lbann {
  *  then do some other stuff, this class can certainly serve as a
  *  useful guide, but is not likely to be the out-of-the-box solution.
  */
-class LTFB final : public Cloneable<LTFB, TrainingAlgorithm>
+class LTFB final : public TrainingAlgorithm
 {
-  using BaseType = Cloneable<LTFB, TrainingAlgorithm>;
-
 public:
   using TermCriteriaType = ltfb::LTFBTerminationCriteria;
   using ExeContextType = ltfb::LTFBExecutionContext;
@@ -87,19 +85,17 @@ public:
        std::unique_ptr<TrainingAlgorithm> local_training_algorithm,
        std::unique_ptr<ltfb::MetaLearningStrategy> meta_learning_strategy,
        ltfb::LTFBTerminationCriteria stopping_criteria)
-    : BaseType{std::move(name)},
+    : TrainingAlgorithm{std::move(name)},
       m_local_algo{std::move(local_training_algorithm)},
       m_meta_learning_strategy{std::move(meta_learning_strategy)},
       m_termination_criteria{std::move(stopping_criteria)}
   {}
 
-  LTFB(LTFB const& other)
-    : BaseType(other),
-      m_local_algo{other.m_local_algo->clone()},
-      m_meta_learning_strategy{other.m_meta_learning_strategy->clone()},
-      m_termination_criteria{other.m_termination_criteria}
-  {}
   ~LTFB() noexcept = default;
+  LTFB(LTFB const& other) = delete;
+  LTFB& operator=(LTFB const&) = delete;
+  LTFB(LTFB&&) = default;
+  LTFB& operator=(LTFB&&) = default;
   ///@}
   /** @brief Queries */
   ///@{
