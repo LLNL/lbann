@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -214,7 +214,7 @@ void gru_layer<TensorDataType, Layout, Device>
     for (size_t i=0; i<m_num_layers; ++i) {
       for (size_t j=0; j<4; ++j) {
         auto w = std::make_shared<data_type_weights<TensorDataType>>(*this->get_comm());
-        auto init = make_unique<uniform_initializer<TensorDataType>>(-scale, scale);
+        auto init = std::make_unique<uniform_initializer<TensorDataType>>(-scale, scale);
         auto opt = this->m_model->template create_optimizer<TensorDataType>();
         w->set_name(lbann::build_string(this->get_name(),"_",weight_names[j],"_l",i));
         w->set_initializer(std::move(init));
@@ -295,7 +295,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void gru_layer<TensorDataType, Layout, Device>::setup_onednn_cpu() {
 
   // Initialize storage for oneDNN objects
-  m_onednn_cpu_objects = make_unique<OnednnCpuObjects>();
+  m_onednn_cpu_objects = std::make_unique<OnednnCpuObjects>();
 
   // oneDNN objects
   using Backend = onednn_backend<El::Device::CPU>;
@@ -942,7 +942,7 @@ void gru_layer<TensorDataType, Layout, Device>::setup_cudnn() {
   const size_t input_size = this->get_input_size(0) / sequence_length;
 
   // Initialize storage for cuDNN objects
-  m_cudnn_objects = make_unique<CudnnObjects>();
+  m_cudnn_objects = std::make_unique<CudnnObjects>();
 
   // RNN descriptor
   static dnn_lib::DropoutDescriptor dropout_desc;
@@ -1648,7 +1648,7 @@ struct Builder<TensorDataType,data_layout::DATA_PARALLEL,El::Device::CPU>
     constexpr auto Device = El::Device::CPU;
 #ifdef LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
     using LayerType = gru_layer<TensorDataType,Layout,Device>;
-    return make_unique<LayerType>(std::forward<Args>(args)...);
+    return std::make_unique<LayerType>(std::forward<Args>(args)...);
 #else
     LBANN_ERROR(
       "CPU gru_layer requires oneDNN "
@@ -1671,7 +1671,7 @@ struct Builder<TensorDataType,data_layout::DATA_PARALLEL,El::Device::GPU>
     constexpr auto Device = El::Device::GPU;
 #ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
     using LayerType = gru_layer<TensorDataType,Layout,Device>;
-    return make_unique<LayerType>(std::forward<Args>(args)...);
+    return std::make_unique<LayerType>(std::forward<Args>(args)...);
 #else
     LBANN_ERROR(
       "GPU gru_layer requires at least CUDA 11.0 and cuDNN 8.0.4 "

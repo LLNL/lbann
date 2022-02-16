@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -88,7 +88,7 @@ lbann::make<lbann::LTFB>(google::protobuf::Message const& msg_in)
   LBANN_ASSERT(msg.parameters().UnpackTo(&params));
 
   auto const& stopping = params.stopping_criteria();
-  return make_unique<LTFB>(
+  return std::make_unique<LTFB>(
     msg.name(),
     make_abstract<TrainingAlgorithm>(params.local_training_algorithm()),
     make_abstract<ltfb::MetaLearningStrategy>(params.meta_learning_strategy()),

@@ -15,8 +15,11 @@ set_center_specific_fields()
         BUILD_SUFFIX=llnl.gov
     else
         CORI=$([[ $(hostname) =~ (cori|cgpu) ]] && echo 1 || echo 0)
-        DOMAINNAME=$(python3 -c 'import socket; domain = socket.getfqdn().split("."); print(domain[-2] + "." + domain[-1])')
-        if [[ ${CORI} -eq 1 ]]; then
+        PERLMUTTER=$([[ $(printenv LMOD_SYSTEM_NAME) =~ (perlmutter) ]] && echo 1 || echo 0)
+#	LMOD_SITE_NAME
+	DOMAINNAME=$(python3 -c 'import socket; domain = socket.getfqdn().split("."); print(domain[-2] + "." + domain[-1]) if len(domain) > 1 else print(domain)')
+#	domainname -A | egrep -o '[a-z]+\.[a-z]+( |$)' | sort -u
+        if [[ ${CORI} -eq 1 || ${PERLMUTTER} -eq 1 ]]; then
             CENTER="nersc"
         elif [[ ${DOMAINNAME} = "ornl.gov" ]]; then
             CENTER="olcf"
@@ -71,6 +74,15 @@ set_center_specific_gpu_arch()
             *)
                 ;;
         esac
+    elif [[ ${center} = "nersc" ]]; then
+        case ${spack_arch_target} in
+            "zen3") # Perlmutter
+                GPU_ARCH_VARIANTS="cuda_arch=80"
+                CMAKE_GPU_ARCH="80"
+                ;;
+            *)
+                ;;
+        esac
     fi
 }
 
@@ -83,14 +95,19 @@ set_center_specific_modules()
     if [[ ${center} = "llnl_lc" ]]; then
         # Disable the StdEnv for systems in LC
         case ${spack_arch_target} in
-            "power9le" | "power8le") # Lassen, Ray
+            "power9le") # Lassen
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2"
+                # MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2 essl/6.2.1"
+                ;;
+            "power8le") # Ray
+                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2"
+                # MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2 essl/6.2.1"
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
-                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.0 mvapich2/2.3 python/3.7.2"
+                MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 cuda/11.4.1 mvapich2/2.3.6 python/3.7.2"
                 ;;
             "ivybridge") # Catalyst
-                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
+                MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 mvapich2/2.3.6 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
                 MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 python/3.7.2 opt rocm/4.2.0 openmpi-gnu/4.0"
@@ -112,6 +129,9 @@ set_center_specific_modules()
         case ${spack_arch_target} in
             "skylake_avx512")
                 MODULE_CMD="module purge; module load cgpu modules/3.2.11.4 gcc/8.3.0 cuda/11.1.1 openmpi/4.0.3 cmake/3.18.2"
+                ;;
+            "zen3") # Perlmutter
+                MODULE_CMD="module load PrgEnv-cray cuda/11.3.0 cray-mpich/8.1.10 nccl/2.9.8 cudnn/8.2.0 hwloc/2.2.0 cmake/git-20210830 cray-python/3.9.4.1 libfabric/1.11.0.4.79 craype-accel-host"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -141,14 +161,26 @@ set_center_specific_spack_dependencies()
         # buildcache for Hydrogen has been updated.
         # MIRRORS="/p/vast1/lbann/spack/mirror /p/vast1/atom/spack/mirror"
         case ${spack_arch_target} in
-            "power9le" | "power8le") # Lassen, Ray
-                CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp ^cuda@11.1.105"
+            "power9le") # Lassen
+                CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp ^cuda@11.1.105 ^libtool@2.4.2 ^py-packaging@17.1 ^python@3.9.10 ^py-scipy@1.6.3"
                 CENTER_FLAGS="+gold"
+                CENTER_BLAS_LIBRARY="blas=openblas"
+                # CENTER_DEPENDENCIES="%clang ^spectrum-mpi ^cuda@11.1.105 ^libtool@2.4.2 ^py-packaging@17.1 ^python@3.9.10 ^py-scipy@1.6.3"
+                # CENTER_FLAGS="+lld"
+                # CENTER_BLAS_LIBRARY="blas=essl"
+                ;;
+            "power8le") # Ray
+                CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp ^cuda@11.1.105 ^libtool@2.4.2 ^py-packaging@17.1 ^python@3.9.10 ^py-scipy@1.6.3"
+                CENTER_FLAGS="+gold"
+                CENTER_BLAS_LIBRARY="blas=openblas"
+                # CENTER_DEPENDENCIES="%clang ^spectrum-mpi ^cuda@11.1.105 ^libtool@2.4.2 ^py-packaging@17.1 ^python@3.9.10 ^py-scipy@1.6.3"
+                # CENTER_FLAGS="+lld"
+                # CENTER_BLAS_LIBRARY="blas=essl"
                 ;;
             "broadwell" | "haswell" | "sandybridge" | "ivybridge") # Pascal, RZHasGPU, Surface, Catalyst
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13"
-                CENTER_FLAGS="+gold"
+               CENTER_DEPENDENCIES="%clang ^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^py-packaging@17.1 ^python@3.9.10 ^py-scipy@1.6.3"
+               CENTER_FLAGS="+lld"
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
@@ -156,7 +188,7 @@ set_center_specific_spack_dependencies()
                 CENTER_FLAGS="+lld"
                 ;;
             *)
-                echo "No center-specified CENTER_DEPENDENCIES."
+                echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
                 ;;
         esac
     elif [[ ${center} = "olcf" ]]; then
@@ -165,7 +197,7 @@ set_center_specific_spack_dependencies()
                 CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12"
                 ;;
             *)
-                echo "No center-specified CENTER_DEPENDENCIES."
+                echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
                 ;;
         esac
     elif [[ ${center} = "nersc" ]]; then
@@ -173,8 +205,12 @@ set_center_specific_spack_dependencies()
             "skylake_avx512")
                 CENTER_DEPENDENCIES="^openmpi"
                 ;;
+            "zen3") # Perlmutter
+                CENTER_DEPENDENCIES="^mpich@8.1.10"
+		CENTER_BLAS_LIBRARY="blas=libsci"
+                ;;
             *)
-                echo "No center-specified CENTER_DEPENDENCIES."
+                echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
                 ;;
         esac
     elif [[ ${center} = "riken" ]]; then
@@ -183,11 +219,21 @@ set_center_specific_spack_dependencies()
                 CENTER_DEPENDENCIES="^openmpi"
                 ;;
             *)
-                echo "No center-specified CENTER_DEPENDENCIES."
+                echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
+                ;;
+        esac
+    elif [[ ${center} = "osx" ]]; then
+        case ${spack_arch_target} in
+            "skylake")
+                CENTER_DEPENDENCIES="^hdf5+hl"
+		CENTER_BLAS_LIBRARY="blas=accelerate"
+                ;;
+            *)
+                echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
                 ;;
         esac
     else
-        echo "No center found and no center-specified CENTER_DEPENDENCIES."
+        echo "No center found and no center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
     fi
 }
 
@@ -200,9 +246,29 @@ set_center_specific_externals()
 
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
-            "broadwell" | "haswell" | "sandybridge" | "power9le" | "power8le")
+            "broadwell" | "haswell" | "sandybridge")
 cat <<EOF  >> ${yaml}
   packages:
+    rdma-core:
+      buildable: False
+      version:
+      - 20
+      externals:
+      - spec: rdma-core@20 arch=${spack_arch}
+        prefix: /usr
+EOF
+                ;;
+            "power9le" | "power8le")
+cat <<EOF  >> ${yaml}
+  packages:
+    essl:
+      buildable: False
+      version:
+      - 6.2.1
+      externals:
+      - spec: essl@6.2.1 arch=${spack_arch}
+        modules:
+        - essl/6.2.1
     rdma-core:
       buildable: False
       version:
@@ -326,6 +392,62 @@ cat <<EOF  >> ${yaml}
         prefix: /usr
 EOF
                 ;;
+            "zen3") #perlmutter
+cat <<EOF  >> ${yaml}
+  packages:
+    all:
+      providers:
+        mpi: [mpich]
+    cuda:
+      buildable: False
+      version:
+      - 11.3.0
+      externals:
+      - spec: cuda@11.3.0 arch=${spack_arch}
+        modules:
+        - cuda/11.3.0
+    cudnn:
+      buildable: False
+      version:
+      - 8.2.0
+      externals:
+      - spec: cudnn@8.2.0 arch=${spack_arch}
+        modules:
+        - cudnn/8.2.0
+    hwloc:
+      buildable: False
+      version:
+      - 2.2.0
+      externals:
+      - spec: hwloc@2.2.0 arch=${spack_arch}
+        modules:
+        - hwloc/2.2.0
+    cray-libsci:
+      buildable: False
+      version:
+      - 21.08.1.2
+      externals:
+      - spec: cray-libsci@21.08.1.2 arch=${spack_arch}
+        modules:
+        - cray-libsci/21.08.1.2
+    mpich:
+      buildable: False
+      version:
+      - 8.1.10
+      externals:
+      - spec: "mpich@8.1.10 arch=${spack_arch}"
+        modules:
+        - cray-mpich/8.1.10
+    nccl:
+      buildable: False
+      version:
+      - 2.9.8
+      externals:
+      - spec: nccl@2.9.8 arch=${spack_arch}
+        modules:
+        - nccl/2.9.8
+EOF
+                ;;
             *)
                 echo "No center-specified externals."
                 ;;
@@ -378,14 +500,18 @@ cleanup_clang_compilers()
     local center="$1"
     local yaml="$2"
 
-    # Point compilers that don't have a fortran compiler a default one
-    sed -i.sed_bak -e 's/\(f[c7]7*:\s\)null$/\1 \/usr\/bin\/gfortran/g' ${yaml}
-    echo "Updating Clang compiler's to see the gfortran compiler."
-
     if [[ ${center} = "llnl_lc" ]]; then
+	# Point compilers that don't have a fortran compiler a default one
+	sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/usr\/tce\/packages\/gcc\/gcc-8.3.1\/bin\/gfortran/g' ${yaml}
+	echo "Updating Clang compiler's to see the gfortran compiler."
+
         # LC uses a old default gcc and clang needs a newer default gcc toolchain
         # Also set LC clang compilers to use lld for faster linking ldflags: -fuse-ld=lld
-        perl -i.perl_bak -0pe 's/(- compiler:.*?spec: clang.*?flags:) (\{\})/$1 \{cflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.1.0, cxxflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.1.0\}/smg' ${yaml}
+        perl -i.perl_bak -0pe 's/(- compiler:.*?spec: clang.*?flags:) (\{\})/$1 \{cflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.3.1, cxxflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.3.1\}/smg' ${yaml}
+    else
+	# Point compilers that don't have a fortran compiler a default one
+	sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/usr\/bin\/gfortran/g' ${yaml}
+	echo "Updating Clang compiler's to see the gfortran compiler."
     fi
 }
 
@@ -422,6 +548,9 @@ set_center_specific_variants()
     elif [[ ${center} = "nersc" ]]; then
         case ${spack_arch_target} in
             "skylake_avx512") # CoriGPU
+                CENTER_USER_VARIANTS="+cuda"
+                ;;
+            "zen3") # Perlmutter
                 CENTER_USER_VARIANTS="+cuda"
                 ;;
             *)

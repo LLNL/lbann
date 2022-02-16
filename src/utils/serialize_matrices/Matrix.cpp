@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -114,3 +114,5 @@
 // Enumerate all the valid data types.
 #define PROTO(T) REGISTER_ALL_MATRIX_DEVICES(T)
 #include <lbann/macros/instantiate.hpp>
+
+CEREAL_REGISTER_DYNAMIC_INIT(SerialMatrixTypes);

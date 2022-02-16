@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,7 +33,7 @@
 
 namespace lbann {
 
-/** @brief Apply scale and bias to tensor entries.
+/** @brief Apply entry-wise scale and bias
  *
  *  Scale and bias terms are applied independently to each tensor
  *  entry. More precisely, given input, output, scale, and bias
@@ -165,7 +165,7 @@ entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
                                        El::TypeTraits<TensorDataType>::Zero());
       std::fill(vals.begin(), vals.begin()+output_size,
                 El::TypeTraits<TensorDataType>::One());
-      auto init = make_unique<value_initializer<TensorDataType>>(vals);
+      auto init = std::make_unique<value_initializer<TensorDataType>>(vals);
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_weights");
       w->set_initializer(std::move(init));

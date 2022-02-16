@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,11 +27,11 @@
 #ifndef LBANN_UTILS_ARGUMENT_PARSER_HPP_INCLUDED
 #define LBANN_UTILS_ARGUMENT_PARSER_HPP_INCLUDED
 
-#include "lbann/utils/any.hpp"
 #include "lbann/utils/environment_variable.hpp"
 
 #include <clara.hpp>
 
+#include <any>
 #include <initializer_list>
 #include <iostream>
 #include <sstream>
@@ -242,6 +242,29 @@ public:
 
   /** @brief Create the parser */
   argument_parser();
+
+  /** @brief Copy construction is disabled.
+   *
+   *  The Clara parser is not actually copyable because the references
+   *  are bound to memory in the parameter map. They are not re-bound
+   *  during the default copy, so the copied parser would refer to
+   *  memory in the source parser. If the source parser is destroyed,
+   *  these references are left dangling. It would be very hard to
+   *  rebind the references on copy (it would have to be done through
+   *  "std::any" object, making it all the more complicated). Rather,
+   *  we don't have the other machinery to do this at this time, so
+   *  copy is disabled. This issue should not apply to move.
+   */
+  argument_parser(argument_parser const&) = delete;
+
+  /** @brief Copy assignment is disabled. */
+  argument_parser& operator=(argument_parser const&) = delete;
+
+  /** @brief Move constructor */
+  argument_parser(argument_parser&&) = default;
+
+  /** @brief Move assignment operator */
+  argument_parser& operator=(argument_parser&&) = default;
 
   ///@}
   /** @name Adding options and arguments */
@@ -509,6 +532,13 @@ public:
     std::string const& name,
     std::string const& description);
 
+  /** @brief Clear all state in the parser.
+   *
+   *  The resulting state is as though the parser had been newly
+   *  constructed.
+   */
+  void clear() noexcept;
+
   ///@}
   /** @name Command-line-like parsing */
   ///@{
@@ -563,7 +593,7 @@ public:
    *
    *  @return The name of the executable.
    */
-  std::string const& get_exe_name() const noexcept;
+  std::string get_exe_name() const noexcept;
 
   /** @brief Test if an option exists in the parser.
    *
@@ -598,6 +628,9 @@ public:
 
 private:
 
+  /** @brief Reinitialize the parser. */
+  void init() noexcept;
+
   /** @brief Implementation of add_flag */
   readonly_reference<bool>
   add_flag_impl_(std::string const& name,
@@ -607,13 +640,11 @@ private:
 
 private:
   /** @brief Dictionary of arguments to their values */
-  std::unordered_map<std::string, utils::any> params_;
+  std::unordered_map<std::string, std::any> params_;
   /** @brief Patch around in-progress clara limitation */
   std::unordered_set<std::string> required_;
   /** @brief The underlying clara object */
   clara::Parser parser_;
-  /** @brief The name of the executable. */
-  std::string exe_name_ = "<exe>";
 
 };
 
@@ -628,7 +659,7 @@ template <typename ErrorHandler>
 template <typename T>
 inline T const& argument_parser<ErrorHandler>::get(std::string const& option_name) const
 {
-  return utils::any_cast<T const&>(params_.at(option_name));
+  return std::any_cast<T const&>(params_.at(option_name));
 }
 
 template <typename ErrorHandler>
@@ -641,7 +672,7 @@ inline auto argument_parser<ErrorHandler>::add_option(
   -> readonly_reference<T>
 {
   params_[name] = std::move(default_value);
-  auto& param_ref = any_cast<T&>(params_[name]);
+  auto& param_ref = std::any_cast<T&>(params_[name]);
   clara::Opt option(param_ref, name);
   for (auto const& f : cli_flags)
     option[f];
@@ -658,7 +689,7 @@ inline auto argument_parser<ErrorHandler>::add_argument(
   -> readonly_reference<T>
 {
   params_[name] = std::move(default_value);
-  auto& param_ref = utils::any_cast<T&>(params_[name]);
+  auto& param_ref = std::any_cast<T&>(params_[name]);
   parser_ |= clara::Arg
     (param_ref, name)
     (description).optional();
@@ -675,7 +706,7 @@ inline auto argument_parser<ErrorHandler>::add_required_argument(
   // Add the reference to bind to
   params_[name] = T{};
   auto& param_any = params_[name];
-  auto& param_ref = any_cast<T&>(param_any);
+  auto& param_ref = std::any_cast<T&>(param_any);
 
   required_.insert(name);
 
@@ -702,12 +733,24 @@ inline auto argument_parser<ErrorHandler>::add_required_argument(
 template <typename ErrorHandler>
 argument_parser<ErrorHandler>::argument_parser()
 {
-  params_["print help"] = false;
-  parser_ |= clara::ExeName(exe_name_);
-  parser_ |= clara::Help(utils::any_cast<bool&>(params_["print help"]));
+  init();
+}
 
-  // Work around a bug in Clara logic
-  parser_.m_exeName.set(exe_name_);
+template <typename ErrorHandler>
+void argument_parser<ErrorHandler>::clear() noexcept
+{
+  std::unordered_map<std::string, std::any>{}.swap(params_);
+  std::unordered_set<std::string>{}.swap(required_);
+  parser_ = clara::Parser{};
+  init();
+}
+
+template <typename ErrorHandler>
+void argument_parser<ErrorHandler>::init() noexcept
+{
+  params_["print help"] = false;
+  parser_ |= clara::ExeName();
+  parser_ |= clara::Help(std::any_cast<bool&>(params_["print help"]));
 }
 
 template <typename ErrorHandler>
@@ -746,15 +789,15 @@ auto argument_parser<ErrorHandler>::add_flag(
 }
 
 template <typename ErrorHandler>
-std::string const& argument_parser<ErrorHandler>::get_exe_name() const noexcept
+std::string argument_parser<ErrorHandler>::get_exe_name() const noexcept
 {
-  return exe_name_;
+  return parser_.m_exeName.name();
 }
 
 template <typename ErrorHandler>
 bool argument_parser<ErrorHandler>::help_requested() const
 {
-  return utils::any_cast<bool>(params_.at("print help"));
+  return std::any_cast<bool>(params_.at("print help"));
 }
 
 template <typename ErrorHandler>
@@ -772,7 +815,7 @@ auto argument_parser<ErrorHandler>::add_flag_impl_(
   -> readonly_reference<bool>
 {
   params_[name] = default_value;
-  auto& param_ref = any_cast<bool&>(params_[name]);
+  auto& param_ref = std::any_cast<bool&>(params_[name]);
   clara::Opt option(param_ref);
   for (auto const& f : cli_flags)
     option[f];

@@ -1,17 +1,43 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+
 const std::string hdf5_hrrl_validate_sample_list = R"ptext(CONDUIT_HDF5_INCLUSION
 18 0 13
 /p/vast1/lbann/datasets/PROBIES/h5_data/
-h5out_29.h5 1 0 RUN_ID/000000040 
-h5out_32.h5 2 0 RUN_ID/000000342  RUN_ID/000000351 
-h5out_33.h5 2 0 RUN_ID/000000610  RUN_ID/000000612 
-h5out_35.h5 1 0 RUN_ID/000000679 
-h5out_37.h5 1 0 RUN_ID/000000698 
-h5out_38.h5 1 0 RUN_ID/000000442 
-h5out_42.h5 2 0 RUN_ID/000000040  RUN_ID/000000589 
-h5out_43.h5 1 0 RUN_ID/000000342 
-h5out_46.h5 2 0 RUN_ID/000000181  RUN_ID/000000205 
-h5out_47.h5 1 0 RUN_ID/000000509 
-h5out_48.h5 2 0 RUN_ID/000000256  RUN_ID/000000273 
-h5out_49.h5 1 0 RUN_ID/000000009 
-h5out_52.h5 1 0 RUN_ID/000000298 
+h5out_29.h5 1 0 RUN_ID/000000040
+h5out_32.h5 2 0 RUN_ID/000000342  RUN_ID/000000351
+h5out_33.h5 2 0 RUN_ID/000000610  RUN_ID/000000612
+h5out_35.h5 1 0 RUN_ID/000000679
+h5out_37.h5 1 0 RUN_ID/000000698
+h5out_38.h5 1 0 RUN_ID/000000442
+h5out_42.h5 2 0 RUN_ID/000000040  RUN_ID/000000589
+h5out_43.h5 1 0 RUN_ID/000000342
+h5out_46.h5 2 0 RUN_ID/000000181  RUN_ID/000000205
+h5out_47.h5 1 0 RUN_ID/000000509
+h5out_48.h5 2 0 RUN_ID/000000256  RUN_ID/000000273
+h5out_49.h5 1 0 RUN_ID/000000009
+h5out_52.h5 1 0 RUN_ID/000000298
 )ptext";

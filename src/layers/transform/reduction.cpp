@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -44,7 +44,7 @@ std::unique_ptr<Layer> build_reduction_layer_from_pbuf(
   reduction_mode mode = reduction_mode::INVALID;
   if (mode_str == "sum" || mode_str.empty()) { mode = reduction_mode::SUM; }
   if (mode_str == "mean" || mode_str == "average") { mode = reduction_mode::AVERAGE; }
-  return lbann::make_unique<LayerType>(mode);
+  return std::make_unique<LayerType>(mode);
 }
 
 #define PROTO_DEVICE(T, Device)                 \

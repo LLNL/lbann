@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,7 +37,7 @@
 
 namespace pb = ::google::protobuf;
 
-TEST_CASE("SMILES string encoder", "[data reader][smiles]")
+TEST_CASE("SMILES string encoder", "[data_reader][smiles]")
 {
   //For what it's worth, smiles_data_reader::decode_smiles() isn't
   //used during normal operations (training, inferencing).
@@ -47,7 +47,7 @@ TEST_CASE("SMILES string encoder", "[data reader][smiles]")
 
   std::stringstream vocab("# 0 % 1 ( 2 ) 3 + 4 - 5 . 6 / 7 0 8 1 9 2 10 3 11 4 12 5 13 6 14 7 15 8 16 9 17 = 18 @ 19 B 20 C 21 F 22 H 23 I 24 N 25 O 26 P 27 S 28 [ 29 \\ 30 ] 31 c 32 e 33 i 34 l 35 n 36 o 37 p 38 r 39 s 40 <bos> 41 <eos> 42 <pad> 43 <unk> 44");
 
-  lbann::smiles_data_reader *smiles = new lbann::smiles_data_reader(true);
+  auto smiles = std::make_unique<lbann::smiles_data_reader>(true);
   smiles->load_vocab(vocab);
 
   const std::string smi_1("C#CCCNC1=NN(C)C=C1"); // good
@@ -109,9 +109,9 @@ TEST_CASE("SMILES string encoder", "[data reader][smiles]")
   }
 }
 
-TEST_CASE("SMILES istream reader", "[data reader][smiles]")
+TEST_CASE("SMILES istream reader", "[data_reader][smiles]")
 {
-  lbann::smiles_data_reader *smiles = new lbann::smiles_data_reader(true);
+  auto smiles = std::make_unique<lbann::smiles_data_reader>(true);
 
   std::stringstream data;
   data <<
@@ -144,9 +144,9 @@ TEST_CASE("SMILES istream reader", "[data reader][smiles]")
   }
 }
 
-TEST_CASE("SMILES ingestion - REAL/S/H30/SH30M600.smi", "[data reader][smiles]")
+TEST_CASE("SMILES ingestion - REAL/S/H30/SH30M600.smi", "[data_reader][smiles]")
 {
-  lbann::smiles_data_reader *smiles = new lbann::smiles_data_reader(true);
+  auto smiles = std::make_unique<lbann::smiles_data_reader>(true);
 
   /// /p/vast1/atom/arthor_dbs/REAL/S/H30/SH30M600.smi
   std::string const SH30M600_smi =
@@ -173,7 +173,7 @@ CC(=O)N[C@@H]1[C@@H](O)C[C@@](O)(C(=O)N2CC(=O)NCC2C(N)=O)O[C@H]1[C@H](O)[C@H](O)
   }
 }
 
-TEST_CASE("SMILES ingestion - malformed REAL/S/H30/SH30M600.smi", "[data reader][smiles]")
+TEST_CASE("SMILES ingestion - malformed REAL/S/H30/SH30M600.smi", "[data_reader][smiles]")
 {
   lbann::smiles_data_reader *smiles = new lbann::smiles_data_reader(true);
 

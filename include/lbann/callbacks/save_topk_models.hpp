@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -34,15 +34,20 @@
 namespace lbann {
 namespace callback {
 
-/** Save_topk_models for (e.g., inference and other analysis).
-   * @param dir directory to save model
-   * @param k number of models to save, should be less than number of trainers
-   * @param metric_name, evaluation metric
-   * @ordering for the topk, descending order is default
-   * Note: may end up saving more than k models if multiple models (trainers) have the same metric score
+/** @class save_topk_models
+ *  @brief Save the top K models for, e.g., inference and other analysis.
+ *  @note May end up saving more than k models if multiple models
+ *        (trainers) have the same metric score
  */
 class save_topk_models : public save_model {
- public:
+public:
+  /** @brief Constructor
+   *  @param dir directory in which to save model
+   *  @param k number of models to save, should be less than number of trainers
+   *  @param metric_name evaluation metric
+   *  @param ascending_ordering use ascending ordering for the topk; descending
+   *        order is default.
+   */
   save_topk_models(std::string dir, int k, std::string metric_name, bool ascending_ordering=false) :
   save_model(dir,true), m_k(k),m_metric_name(metric_name),m_ascending_ordering(ascending_ordering) {}
   save_topk_models(const save_topk_models&) = default;
@@ -52,7 +57,8 @@ class save_topk_models : public save_model {
   std::string name() const override { return "save_topk_models"; }
 
  private:
-  /*determine if a trainer's model is in top k, computation done by trainer master processes*/
+  // determine if a trainer's model is in top k, computation done by
+  // trainer master processes
   bool am_in_topk(model *m);
   int m_k ;
   std::string m_metric_name;

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -39,11 +39,11 @@ std::unique_ptr<Layer> build_softmax_layer_from_pbuf(
   using LayerType = softmax_layer<TensorDataType, Layout, Device>;
   const auto& sm_mode = proto_layer.softmax().softmax_mode();
   if (sm_mode == "instance" || sm_mode == "")
-    return lbann::make_unique<LayerType>(comm, softmax_mode::INSTANCE);
+    return std::make_unique<LayerType>(comm, softmax_mode::INSTANCE);
   else if (sm_mode == "channel")
-    return lbann::make_unique<LayerType>(comm, softmax_mode::CHANNEL);
+    return std::make_unique<LayerType>(comm, softmax_mode::CHANNEL);
   else
-    return lbann::make_unique<LayerType>(comm, softmax_mode::INVALID);
+    return std::make_unique<LayerType>(comm, softmax_mode::INVALID);
 }
 
 #define PROTO_DEVICE(T, Device) \

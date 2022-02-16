@@ -26,6 +26,7 @@ CLEAN_BUILD=
 DEV_BUILD_FLAGS=
 # Flag for passing subcommands to spack install
 INSTALL_BUILD_EXTRAS=
+BUILD_JOBS="-j $(($(nproc)+2))"
 
 LBANN_VARIANTS=
 CMD_LINE_VARIANTS=
@@ -269,7 +270,7 @@ else
 fi
 
 SPACK_VERSION=$(spack --version | sed 's/-.*//g')
-MIN_SPACK_VERSION=0.16.0
+MIN_SPACK_VERSION=0.17.1
 
 compare_versions ${SPACK_VERSION} ${MIN_SPACK_VERSION}
 VALID_SPACK=$?
@@ -430,9 +431,16 @@ function exit_with_instructions()
     exit 1
 }
 
+##########################################################################################
+# Figure out if there are default dependencies or flags (e.g.  MPI/BLAS library) for the center
+CENTER_DEPENDENCIES=
+CENTER_FLAGS=
+CENTER_BLAS_LIBRARY=
+set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
+
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^hydrogen".* ]]; then
     # If the user didn't supply a specific version of Hydrogen on the command line add one
-    HYDROGEN="^hydrogen${HYDROGEN_VER}"
+    HYDROGEN="^hydrogen${HYDROGEN_VER} ${CENTER_BLAS_LIBRARY}"
 fi
 
 if [[ (! "${LBANN_VARIANTS}" =~ .*"^aluminum".*) && (! "${LBANN_VARIANTS}" =~ .*"~al".*) ]]; then
@@ -443,7 +451,7 @@ fi
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^dihydrogen".* ]]; then
     # If the user didn't supply a specific version of DiHydrogen on the command line add one
     # Due to concretizer errors force the openmp variant for DiHydrogen
-    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER}"
+    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER} ${CENTER_BLAS_LIBRARY}"
 fi
 
 GPU_VARIANTS_ARRAY=('+cuda' '+rocm')
@@ -537,11 +545,6 @@ if [[ -z "${DRY_RUN:-}" ]]; then
     ${CMD} || exit_on_failure "${CMD}"
 fi
 
-# Figure out if there is a default MPI library for the center
-CENTER_DEPENDENCIES=
-CENTER_FLAGS=
-set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
-
 ##########################################################################################
 # See if the is a local spack mirror or buildcache
 if [[ -n "${USER_MIRROR:-}" ]]; then
@@ -594,7 +597,8 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-    CMD="spack external find --scope env:${LBANN_ENV}"
+    # Limit the scope of the external search to minimize overhead time
+    CMD="spack external find --scope env:${LBANN_ENV} bzip2 cmake cuda hwloc ninja libtool ncurses openssl perl pkg-config python sqlite spectrum-mpi mvapich2 openmpi"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -630,7 +634,11 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
 
     # Explicitly mark lbann for development
     if [[ -z "${USER_BUILD:-}" ]]; then
-        CMD="spack develop --no-clone -p ${LBANN_HOME} ${LBANN_SPEC}"
+        # Only "develop" the lbann package with the version number not the entire
+        # spec, because the spec is already handled with the add command.  Including the
+        # entire spec in the develop command triggers a bug in Spack v0.17.1 where the
+        # environment cannot be built twich with the --reuse flag
+        CMD="spack develop --no-clone -p ${LBANN_HOME} lbann${AT_LBANN_LABEL}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     fi
@@ -668,10 +676,12 @@ if [[ "${SPEC_ONLY}" == "TRUE" ]]; then
    fi
 fi
 
-# Try to concretize the environment and catch the return code
-CMD="spack concretize ${INSTALL_BUILD_EXTRAS}"
-echo ${CMD} | tee -a ${LOG}
-[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+if [[ -n "${INSTALL_DEPS:-}" ]]; then
+  # Try to concretize the environment and catch the return code
+  CMD="spack concretize --reuse ${INSTALL_BUILD_EXTRAS}"
+  echo ${CMD} | tee -a ${LOG}
+  [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+fi
 
 # Get the spack hash for LBANN (Ensure that the concretize command has been run so that any impact of external packages is factored in)
 LBANN_SPEC_HASH=$(spack find -cl | grep -v "\-\-\-\-\-\-" | grep lbann${AT_LBANN_LABEL} | awk '{print $1}')
@@ -721,7 +731,7 @@ fi
 
 ##########################################################################################
 # Actually install LBANN from local source
-CMD="spack install ${BUILD_JOBS} ${INSTALL_BUILD_EXTRAS}"
+CMD="spack install --reuse ${BUILD_JOBS} ${INSTALL_BUILD_EXTRAS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 

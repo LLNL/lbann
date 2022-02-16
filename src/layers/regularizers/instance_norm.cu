@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -146,14 +146,13 @@ __global__ void fp_output_kernel(
   const size_t nthreadsz = blockDim.z * gridDim.z;
 
   const TensorDataType mean_scale = 1. / channel_size;
-  const TensorDataType var_correction = double(channel_size) / (channel_size - 1);
   for (size_t k = gidz; k < mini_batch_size; k += nthreadsz) {
     for (size_t j = gidy; j < num_channels; j += nthreadsy) {
       const auto& sum = sums[j+k*sums_ldim];
       const auto& sqsum = sqsums[j+k*sqsums_ldim];
       const auto& mean = sum * mean_scale;
       const auto& sqmean = sqsum * mean_scale;
-      auto var = (sqmean - mean*mean) * var_correction;
+      auto var = (sqmean - mean*mean);
       var = gpu_lib::max(var, TensorDataType{0.});
       const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
       for (size_t i = gidx; i < channel_size; i += nthreadsx) {
@@ -168,8 +167,7 @@ __global__ void fp_output_kernel(
 
 /** @brief Forward prop */
 template <typename TensorDataType>
-void fp_impl(lbann_comm& comm,
-             size_t num_channels,
+void fp_impl(size_t num_channels,
              size_t channel_size,
              TensorDataType epsilon,
              const El::AbstractDistMatrix<TensorDataType>& input,
@@ -250,8 +248,7 @@ void instance_norm_layer<TensorDataType, Layout, Device>::fp_compute()
 {
   const size_t num_channels = this->get_output_dims().front();
   const size_t channel_size = this->get_output_size() / num_channels;
-  fp_impl(*this->get_comm(),
-          num_channels,
+  fp_impl(num_channels,
           channel_size,
           this->m_epsilon,
           this->get_prev_activations(),
@@ -310,7 +307,6 @@ __global__ void bp_statistics_grad_kernel(
   const size_t nthreadsz = blockDim.z * gridDim.z;
 
   const TensorDataType mean_scale = 1. / channel_size;
-  const TensorDataType var_correction = double(channel_size) / (channel_size - 1);
   for (size_t k = gidz; k < mini_batch_size; k += nthreadsz) {
     for (size_t j = gidy; j < num_channels; j += nthreadsy) {
 
@@ -319,7 +315,7 @@ __global__ void bp_statistics_grad_kernel(
       const auto& sqsum = sqsums[j+k*sqsums_ldim];
       const auto& mean = sum * mean_scale;
       const auto& sqmean = sqsum * mean_scale;
-      auto var = (sqmean - mean*mean) * var_correction;
+      auto var = (sqmean - mean*mean);
       var = gpu_lib::max(var, TensorDataType{0.});
       const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
 
@@ -388,14 +384,13 @@ __global__ void bp_input_grad_kernel(
   const size_t nthreadsz = blockDim.z * gridDim.z;
 
   const TensorDataType mean_scale = 1. / channel_size;
-  const TensorDataType var_correction = double(channel_size) / (channel_size - 1);
   for (size_t k = gidz; k < mini_batch_size; k += nthreadsz) {
     for (size_t j = gidy; j < num_channels; j += nthreadsy) {
       const auto& sum = sums[j+k*sums_ldim];
       const auto& sqsum = sqsums[j+k*sqsums_ldim];
       const auto& mean = sum * mean_scale;
       const auto& sqmean = sqsum * mean_scale;
-      auto var = (sqmean - mean*mean) * var_correction;
+      auto var = (sqmean - mean*mean);
       var = gpu_lib::max(var, TensorDataType{0.});
       const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
       const auto& dmean = means_grad[j+k*means_grad_ldim];
@@ -406,7 +401,7 @@ __global__ void bp_input_grad_kernel(
         auto& dx = input_grad[i + j*channel_size + k*input_grad_ldim];
         dx = (dy * inv_stdev
               + dmean * mean_scale
-              + dvar * (x - mean) * 2 * mean_scale * var_correction);
+              + dvar * (x - mean) * 2 * mean_scale);
       }
     }
   }
@@ -415,8 +410,7 @@ __global__ void bp_input_grad_kernel(
 
 /** @brief Backprop */
 template <typename TensorDataType>
-void bp_impl(lbann_comm& comm,
-             size_t num_channels,
+void bp_impl(size_t num_channels,
              size_t channel_size,
              TensorDataType epsilon,
              const El::AbstractDistMatrix<TensorDataType>& input,
@@ -518,8 +512,7 @@ void instance_norm_layer<TensorDataType, Layout, Device>::bp_compute()
 {
   const size_t num_channels = this->get_output_dims().front();
   const size_t channel_size = this->get_output_size() / num_channels;
-  bp_impl(*this->get_comm(),
-          num_channels,
+  bp_impl(num_channels,
           channel_size,
           this->m_epsilon,
           this->get_prev_activations(),

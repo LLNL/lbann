@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -103,4 +103,5 @@ void gpu_memory_usage::on_epoch_begin(model *m) {
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::gpu_memory_usage
+#define LBANN_CLASS_LIBNAME callback_gpu_memory_usage
 #include <lbann/macros/register_class_with_cereal.hpp>

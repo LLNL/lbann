@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -225,7 +225,7 @@ input_distconv_adapter<TensorDataType, T_layout, Dev>::get_shuffler(
   assert_always(shfl_idx >= 0 && shfl_idx < 4);
   auto &shfl = m_shufflers[shfl_idx];
   if (shfl == nullptr) {
-    shfl = make_unique<TensorHostShuffler>(
+    shfl = std::make_unique<TensorHostShuffler>(
         src, dst, src_buf, dst_buf);
   }
   return *shfl;
@@ -264,14 +264,14 @@ void input_distconv_adapter<TensorDataType, T_layout, Dev>::setup_fp_tensors() {
         sample_dist : dist_no_halo;
     // Create a view to the host LBANN matrix
     m_original_host_tensor
-      = make_unique<TensorHost>(shape, loc, original_host_tensor_dist, local_shape);
+      = std::make_unique<TensorHost>(shape, loc, original_host_tensor_dist, local_shape);
 
     // When shuffled, host tensor will have the same distribution as
     // the final output; otherwise, it is just a view to the host
     // LBANN matrix, so no overlap.
     auto host_tensor_dist = m_shuffle_required ? dist : dist_no_halo;
     m_host_tensor
-      = make_unique<TensorHost>(shape, loc, host_tensor_dist);
+      = std::make_unique<TensorHost>(shape, loc, host_tensor_dist);
 
     if (m_shuffle_required) {
       // TODO: This is a temporary hack. Should use
@@ -311,7 +311,7 @@ setup_activations_i(int index) const {
     dist.clear_overlap();
     const auto shape = get_activations_shape(index);
     const auto local_shape = get_activations_local_shape(index);
-    auto t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
+    auto t = std::make_unique<TensorDevType>(shape, loc, dist, local_shape);
     assert0(t->allocate());
     t->zero(hydrogen::cuda::GetDefaultStream());
     return t;

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -243,7 +243,7 @@ void KFAC::train(
           }
           SGDTrainingAlgorithm eval_algo(
             this->get_name()+"_eval",
-            make_unique<EpochTerminationCriteria>(num_validation_epochs));
+            std::make_unique<EpochTerminationCriteria>(num_validation_epochs));
           eval_algo.apply(eval_context, model, dc, eval_mode);
 
           // FIXME (trb 06/07/21): The early stopping callback is part
@@ -1112,15 +1112,15 @@ std::unique_ptr<lbann::KFAC> lbann::make<lbann::KFAC>(
   std::unique_ptr<SGDTerminationCriteria> stopping;
   switch (stopping_criteria.criterion_case()) {
   case lbann_data::SGD::TerminationCriteria::kMaxBatches:
-    stopping = make_unique<BatchTerminationCriteria>(
+    stopping = std::make_unique<BatchTerminationCriteria>(
       stopping_criteria.max_batches());
     break;
   case lbann_data::SGD::TerminationCriteria::kMaxEpochs:
-    stopping = make_unique<EpochTerminationCriteria>(
+    stopping = std::make_unique<EpochTerminationCriteria>(
       stopping_criteria.max_epochs());
     break;
   case lbann_data::SGD::TerminationCriteria::kMaxSeconds:
-    stopping = make_unique<SecondsTerminationCriteria>(
+    stopping = std::make_unique<SecondsTerminationCriteria>(
       stopping_criteria.max_seconds());
     //LBANN_ERROR("Time-based training not yet supported in SGD.");
     break;
@@ -1194,7 +1194,7 @@ std::unique_ptr<lbann::KFAC> lbann::make<lbann::KFAC>(
   if(learning_rate_factor_gru == 0.0)
     learning_rate_factor_gru = learning_rate_factor;
 
-  return make_unique<AlgoType>(
+  return std::make_unique<AlgoType>(
     params.name(),
     std::move(stopping),
     std::move(damping_act_params),

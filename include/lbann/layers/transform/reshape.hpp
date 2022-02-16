@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,10 +31,11 @@
 
 namespace lbann {
 
-/** @brief Reshape tensor.
+/** @brief Reinterpret tensor with new dimensions
  *
- *  Forward and backward prop simply involve setting up tensor views,
- *  and hence are very cheap.
+ *  The input and output tensors must have the same number of entries.
+ *  This layer is very cheap since it just involves setting up tensor
+ *  views.
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class reshape_layer : public data_type_layer<TensorDataType> {
@@ -102,7 +103,7 @@ protected:
       }
       err << ")";
       err << " in " << this->get_type() << " layer "
-            << "\"" << this->get_name() << "\""; 
+            << "\"" << this->get_name() << "\"";
       LBANN_ERROR(err.str());
     }
 

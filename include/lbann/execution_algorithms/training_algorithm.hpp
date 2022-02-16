@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -113,7 +113,6 @@ public:
    *                       been updated according to the algorithm.
    *  @param[in,out] dc The data source for this round of training.
    *  @param[in] mode IMO, superfluous. Will be removed.
-   *  @param[in] term_criteria A description of when to stop training.
    */
   virtual void apply(ExecutionContext& context,
                      model& model,

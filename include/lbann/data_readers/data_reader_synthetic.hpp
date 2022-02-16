@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -42,7 +42,7 @@ namespace lbann {
  */
 class data_reader_synthetic : public generic_data_reader {
  public:
-  //@todo: add what data distribution to use
+  // TODO: add what data distribution to use
   data_reader_synthetic(int num_samples, int num_features, bool shuffle = true);
   data_reader_synthetic(int num_samples, std::vector<int> dims,
                         int num_labels, bool shuffle = true);

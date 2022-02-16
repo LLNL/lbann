@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -159,6 +159,9 @@ OperatorLayer<InputT, OutputT, Layout, D>::fix_type(std::vector<int> const& in)
   return std::vector<size_t>{cbegin(in), cend(in)};
 }
 
+// WARNING: The next 4 functions all assume the minibatch dim is the
+// width of the matrix.
+
 template <typename InputT, typename OutputT, data_layout Layout, El::Device D>
 std::vector<utils::ConstDistTensorView<InputT, D>>
 OperatorLayer<InputT, OutputT, Layout, D>::get_inputs() const
@@ -166,9 +169,11 @@ OperatorLayer<InputT, OutputT, Layout, D>::get_inputs() const
   auto n_parents = this->get_num_parents();
   std::vector<utils::ConstDistTensorView<InputT, D>> out;
   out.reserve(n_parents);
-  for (int p = 0; p < n_parents; ++p)
-    out.emplace_back(this->get_prev_activations(p),
-                     fix_type(this->get_input_dims(p)));
+  for (int p = 0; p < n_parents; ++p) {
+    auto const& prev_acts = this->get_prev_activations(p);
+    out.emplace_back(prev_acts,
+                     splice_dims(prev_acts.Width(), this->get_input_dims(p)));
+  }
   return out;
 }
 
@@ -179,9 +184,10 @@ OperatorLayer<InputT, OutputT, Layout, D>::get_outputs()
   auto n_children = this->get_num_children();
   std::vector<utils::DistTensorView<OutputT, D>> out;
   out.reserve(n_children);
-  for (int c = 0; c < n_children; ++c)
-    out.emplace_back(this->get_activations(c),
-                     fix_type(this->get_output_dims(c)));
+  for (int c = 0; c < n_children; ++c) {
+    auto& acts = this->get_activations(c);
+    out.emplace_back(acts, splice_dims(acts.Width(), this->get_output_dims(c)));
+  }
   return out;
 }
 
@@ -192,9 +198,11 @@ OperatorLayer<InputT, OutputT, Layout, D>::get_grad_wrt_outputs() const
   auto n_children = this->get_num_children();
   std::vector<utils::ConstDistTensorView<OutputT, D>> out;
   out.reserve(n_children);
-  for (int c = 0; c < n_children; ++c)
-    out.emplace_back(this->get_prev_error_signals(c),
-                     fix_type(this->get_output_dims(c)));
+  for (int c = 0; c < n_children; ++c) {
+    auto const& prev_sigs = this->get_prev_error_signals(c);
+    out.emplace_back(prev_sigs,
+                     splice_dims(prev_sigs.Width(), this->get_output_dims(c)));
+  }
   return out;
 }
 
@@ -205,9 +213,11 @@ OperatorLayer<InputT, OutputT, Layout, D>::get_grad_wrt_inputs()
   auto n_parents = this->get_num_parents();
   std::vector<utils::DistTensorView<InputT, D>> out;
   out.reserve(n_parents);
-  for (int p = 0; p < n_parents; ++p)
-    out.emplace_back(this->get_error_signals(p),
-                     fix_type(this->get_input_dims(p)));
+  for (int p = 0; p < n_parents; ++p) {
+    auto& error_sigs = this->get_error_signals(p);
+    out.emplace_back(error_sigs,
+                     splice_dims(error_sigs.Width(), this->get_input_dims(p)));
+  }
   return out;
 }
 

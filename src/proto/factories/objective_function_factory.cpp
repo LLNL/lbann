@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -40,7 +40,7 @@ std::unique_ptr<objective_function>
 construct_objective_function(const lbann_data::ObjectiveFunction& proto_obj) {
 
   // Instantiate objective function
-  auto obj = make_unique<objective_function>();
+  auto obj = std::make_unique<objective_function>();
 
   // Weight regularization terms
   for (int i=0; i<proto_obj.l2_weight_regularization_size(); ++i) {

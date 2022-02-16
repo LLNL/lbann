@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -182,9 +182,9 @@ build_debug_io_callback_from_pbuf(
   case execution_mode::training:
   case execution_mode::validation:
   case execution_mode::testing:
-    return make_unique<debug_io>(phase, lvl);
+    return std::make_unique<debug_io>(phase, lvl);
   default:
-    return make_unique<debug_io>();
+    return std::make_unique<debug_io>();
   }
 }
 
@@ -192,4 +192,5 @@ build_debug_io_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::debug_io
+#define LBANN_CLASS_LIBNAME callback_debug_io
 #include <lbann/macros/register_class_with_cereal.hpp>

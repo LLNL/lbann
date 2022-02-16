@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -261,6 +261,7 @@ to_lbann(lbann_data::TruncationSelectionExchange::MetricStrategy strategy)
 
 } // namespace
 
+/** @brief Builder function for TruncationSelectionExchange. */
 template <>
 std::unique_ptr<lbann::ltfb::TruncationSelectionExchange>
 lbann::make<lbann::ltfb::TruncationSelectionExchange>(
@@ -283,7 +284,7 @@ lbann::make<lbann::ltfb::TruncationSelectionExchange>(
                    return ValueType{kvp.first, to_lbann(kvp.second)};
                  });
 
-  return make_unique<lbann::ltfb::TruncationSelectionExchange>(
+  return std::make_unique<lbann::ltfb::TruncationSelectionExchange>(
     std::move(metric_map),
     msg.truncation_k());
 }

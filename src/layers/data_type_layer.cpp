@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -425,7 +425,7 @@ template <typename T, data_layout Layout,
 auto MakeMatBuilderGPU()
   -> std::unique_ptr<details::MatrixBuilder<T>>
 {
-  return make_unique<
+  return std::make_unique<
       details::DefaultMemoryMatrixBuilder<T,Layout,El::Device::GPU>>();
 }
 
@@ -446,7 +446,7 @@ auto MakeMatBuilderDev(El::Device const device)
 {
   switch (device) {
   case El::Device::CPU:
-    return make_unique<
+    return std::make_unique<
       details::DefaultMemoryMatrixBuilder<T,Layout,El::Device::CPU>>();
 #ifdef LBANN_HAS_GPU
   case El::Device::GPU:
@@ -1111,7 +1111,7 @@ setup_inter_subgrid_comm_based_on_parents(const El::Grid& grid) {
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::
 setup_distconv_adapter(const DataReaderMetaData& dr_metadata) {
-  this->get_distconv_adapter_ptr() = make_unique<data_type_distconv_adapter
+  this->get_distconv_adapter_ptr() = std::make_unique<data_type_distconv_adapter
                                                  <InputTensorDataType,OutputTensorDataType>>(*this);
 }
 

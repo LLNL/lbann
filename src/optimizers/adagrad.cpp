@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -114,7 +114,7 @@ build_adagrad_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Optimizer::AdaGrad const&>(msg);
-  return make_unique<adagrad<TensorDataType>>(TensorDataType(params.learn_rate()),
+  return std::make_unique<adagrad<TensorDataType>>(TensorDataType(params.learn_rate()),
                                               TensorDataType(params.eps()));
 }
 

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -68,8 +68,7 @@ public:
 
 public:
 
-  /**
-   *  @param comm           LBANN communicator.
+  /** @brief Constructor
    *  @param num_embeddings Size of dictionary of embeddings.
    *  @param embedding_dim  Size of embedding vectors.
    *  @param padding_idx    If set, then the corresponding embedding
@@ -218,7 +217,7 @@ void embedding_layer<TensorDataType,Layout,Device>::setup_data(size_t max_mini_b
   // standard deviation 1.
   if (!this->has_weights()) {
     auto w = std::make_shared<WeightsType>(*this->get_comm());
-    auto init = make_unique<normal_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero(),
+    auto init = std::make_unique<normal_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero(),
                                                                 El::TypeTraits<TensorDataType>::One());
     auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_weights");

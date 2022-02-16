@@ -22,9 +22,10 @@ def convert_to_protbuf_enums(subgraph_communication):
 class Model:
     """Neural network model."""
 
-    def __init__(self, epochs, 
+    def __init__(self, epochs,
                  layers=[], weights=[], objective_function=None,
                  metrics=[], callbacks=[],
+                 name=None,
                  summary_dir=None,
                  subgraph_communication=SubgraphCommunication.PT2PT,
                  subgraph_topology=False,
@@ -32,7 +33,9 @@ class Model:
 
         # Scalar fields
         self.epochs = epochs
+        self.name = name
         self.summary_dir = summary_dir
+
         # Get connected layers
         self.layers = list(lbann.core.layer.traverse_layer_graph(layers))
 
@@ -61,6 +64,8 @@ class Model:
         """Construct and return a protobuf message."""
         # Initialize protobuf message
         model = model_pb2.Model()
+        if self.name is not None:
+            model.name = self.name
         model.num_epochs = self.epochs
         model.subgraph_communication = convert_to_protbuf_enums(self.subgraph_communication)
         model.enable_subgraph_topology = self.subgraph_topology

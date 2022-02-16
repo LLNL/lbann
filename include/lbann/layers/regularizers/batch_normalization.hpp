@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -72,7 +72,7 @@ class batch_normalization_distconv_adapter: public data_type_distconv_adapter<Te
 };
 #endif // LBANN_HAS_DISTCONV
 
-/** @brief
+/** @brief Channel-wise batch normalization, including scale/bias
  *
  *  Each input channel is normalized across the mini-batch to have
  *  zero mean and unit standard deviation. Learned scaling factors and
@@ -106,14 +106,14 @@ public:
 
 private:
 
-  /** Decay rate for the running statistics. */
+  /// Decay rate for running statistics
   TensorDataType m_decay;
-  /** Small number to avoid division by zero. */
+  /// Small number for numerical stability
   TensorDataType m_epsilon;
-  /** @brief Size of group to aggregate statistics over.
+  /** @brief Size of process group for computing statistics
    *
-   * If this is 1, the group consists of one process and aggregation
-   * is local. If it is 0, statistics are aggregated globally.
+   *  If this is 1, the group consists of one process and aggregation
+   *  is local. If it is 0, statistics are aggregated globally.
    */
   int m_statistics_group_size;
   /**
@@ -148,7 +148,6 @@ private:
 public:
   /** @brief Set up batch normalization.
    *
-   *  @param comm The communication context for this layer
    *  @param decay Controls the momentum of the running mean/standard
    *         deviation averages.
    *  @param epsilon A small number to avoid division by zero.
@@ -303,7 +302,7 @@ protected:
     this->set_num_weights(4);
     if (!this->has_weights(0)) {
       auto w = std::make_shared<WeightsType>(*this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
+      auto init = std::make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_scale");
       w->set_initializer(std::move(init));
@@ -313,7 +312,7 @@ protected:
     }
     if (!this->has_weights(1)) {
       auto w = std::make_shared<WeightsType>(*this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
+      auto init = std::make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_bias");
       w->set_initializer(std::move(init));
@@ -323,7 +322,7 @@ protected:
     }
     if (!this->has_weights(2)) {
       auto w = std::make_shared<WeightsType>(*this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
+      auto init = std::make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
       this->set_weights(2, w);
@@ -331,7 +330,7 @@ protected:
     }
     if (!this->has_weights(3)) {
       auto w = std::make_shared<WeightsType>(*this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
+      auto init = std::make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
       this->set_weights(3, w);
@@ -394,7 +393,7 @@ protected:
     return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
   }
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
-    this->get_distconv_adapter_ptr() = make_unique<
+    this->get_distconv_adapter_ptr() = std::make_unique<
       batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
   }
   batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() override;
@@ -527,7 +526,7 @@ void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::setup_
     LBANN_ERROR("statistics_group_size must be either 0 or 1 for now.");
   }
 
-  m_bn = make_unique<dc::BatchNormalization<TensorDataType>>(
+  m_bn = std::make_unique<dc::BatchNormalization<TensorDataType>>(
       dc::get_backend(), dc::get_num_dims(l),
       l.m_decay, l.m_epsilon, global_stats);
 }
