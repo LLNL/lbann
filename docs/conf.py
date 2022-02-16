@@ -116,9 +116,6 @@ html_sidebars = { '**': ['globaltoc.html', 'relations.html', 'sourcelink.html', 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'lbanndoc'
 
-# Show todo entries in HTML docs
-todo_include_todos = True
-
 # -- Options for LaTeX output ------------------------------------------------
 
 latex_elements = {
@@ -174,4 +171,8 @@ breathe_default_project = "lbann"
 breathe_projects = {
     "lbann":"doxy_out/xml/",
 }
-extensions = [ 'breathe', 'sphinx.ext.mathjax', 'sphinx.ext.napoleon' ]
+extensions = [ 'breathe', 'sphinx.ext.mathjax', 'sphinx.ext.napoleon',
+               'sphinx.ext.todo' ]
+
+# Show todo entries in HTML docs
+todo_include_todos = True
