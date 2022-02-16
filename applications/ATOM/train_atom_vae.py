@@ -59,7 +59,6 @@ def construct_lc_launcher_args():
     parser.add_argument("--num_samples", type=int, default=None)
     parser.add_argument("--num-io-threads", type=int, default=11)
     parser.add_argument("--vocab", default=None)
-    parser.add_argument("--delimiter", default="c")
     parser.add_argument("--ltfb", type=bool, default=False)
     parser.add_argument("--ltfb-batch-interval", type=int, default=100)
     parser.add_argument("--weights-to-send", type=str, default='')
@@ -249,7 +248,7 @@ def main():
       import torch
       torch.save(run_args, "{}/{}_config.pt".format(experiment_dir, run_args.job_name))
 
-    m_lbann_args=f"--vocab={run_args.vocab} --data_filedir={run_args.data_filedir} --data_filename_train={run_args.data_filename} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --delimiter={run_args.delimiter}}"
+    m_lbann_args=f"--vocab={run_args.vocab} --data_filedir={run_args.data_filedir} --data_filename_train={run_args.data_filename} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads}"
     if(run_args.data_reader_prototext):
       m_lbann_args = " ".join((m_lbann_args, " --use_data_store --preload_data_store "))
     if(run_args.ltfb):

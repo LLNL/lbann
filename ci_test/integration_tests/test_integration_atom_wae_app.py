@@ -261,7 +261,7 @@ def augment_test_func(test_func):
     func.__name__ = test_name
     return func
 
-m_lbann_args=f"--vocab={vocab_loc['vast']} --sequence_length=100  --delimiter=0 --use_data_store --preload_data_store"
+m_lbann_args=f"--vocab={vocab_loc['vast']} --sequence_length=100 --use_data_store --preload_data_store"
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment,
                                      __file__,
