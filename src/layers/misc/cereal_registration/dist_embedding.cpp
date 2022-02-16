@@ -50,14 +50,25 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::serialize(ArchiveT& ar)
 
 } // namespace lbann
 
-#define LBANN_LAYER_NAME dist_embedding_layer
+// Manually register the distributed embedding layer since it has many
+// permutations of supported data and device types
+#include <lbann/macros/common_cereal_registration.hpp>
+#define LBANN_COMMA ,
+#define PROTO_DEVICE(TYPE, DEVICE)                                      \
+  LBANN_ADD_ALL_SERIALIZE_ETI(::lbann::dist_embedding_layer<TYPE LBANN_COMMA DEVICE>); \
+  CEREAL_REGISTER_TYPE_WITH_NAME(                                       \
+    ::lbann::dist_embedding_layer<TYPE LBANN_COMMA DEVICE>,             \
+    "dist_embedding_layer (" #TYPE "," #DEVICE ")");
 
 #ifdef LBANN_HAS_SHMEM
-#include <lbann/macros/register_layer_with_cereal_data_parallel_cpu_only.hpp>
-#endif  // LBANN_HAS_SHMEM
-
+PROTO_DEVICE(float, El::Device::CPU)
+PROTO_DEVICE(double, El::Device::CPU)
+#endif // LBANN_HAS_SHMEM
 #ifdef LBANN_HAS_NVSHMEM
-#include <lbann/macros/register_layer_with_cereal_data_parallel_gpu_only.hpp>
-#endif  // LBANN_HAS_NVSHMEM
+PROTO_DEVICE(float, El::Device::GPU)
+PROTO_DEVICE(double, El::Device::GPU)
+#endif // LBANN_HAS_NVSHMEM
+
+LBANN_REGISTER_DYNAMIC_INIT(dist_embedding_layer);
 
 #endif // defined(LBANN_HAS_SHMEM) || defined(LBANN_HAS_NVSHMEM)
