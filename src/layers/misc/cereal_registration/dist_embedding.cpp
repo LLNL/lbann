@@ -51,6 +51,13 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::serialize(ArchiveT& ar)
 } // namespace lbann
 
 #define LBANN_LAYER_NAME dist_embedding_layer
-#include <lbann/macros/register_layer_with_cereal_data_parallel_only.hpp>
+
+#ifdef LBANN_HAS_SHMEM
+#include <lbann/macros/register_layer_with_cereal_data_parallel_cpu_only.hpp>
+#endif
+
+#ifdef LBANN_HAS_NVSHMEM
+#include <lbann/macros/register_layer_with_cereal_data_parallel_gpu_only.hpp>
+#endif
 
 #endif // defined(LBANN_HAS_SHMEM) || defined(LBANN_HAS_NVSHMEM)
