@@ -38,6 +38,7 @@ expected_test_recon_range = (0.925, 0.94)
 expected_mini_batch_times = {
     'lassen':   0.157,
     'pascal':   0.365,
+    'ray':   0.185,
 }
 
 #@todo: add other cluster if need be
