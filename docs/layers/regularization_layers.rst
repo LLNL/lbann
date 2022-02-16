@@ -54,20 +54,20 @@ Arguments:
 
       (``double``, optional) Decay factor for running statistics
 
-      Default = 0.9
+      Default: 0.9
 
    :epsilon:
 
       (``double``, optional) Small number for numerical stability
 
-      Default = 1e-5
+      Default: 1e-5
 
    :statistics_group_size:
 
       (``int64``, optional) Size of process group for computing
       statistics
 
-      Default = 1
+      Default: 1
 
       A group size of 1 implies purely local statistics. A negative
       group size indicates global statistics (i.e. statistics over the

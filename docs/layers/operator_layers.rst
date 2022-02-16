@@ -130,11 +130,11 @@ Operator is the base class for LBANN operators
 
 Arguments:
 
-   :input_type: The type expected as input
+   :input_type: (``lbann.DataType``) The type expected as input
 
-   :output_type: The type expected as output
+   :output_type: (``lbann.DataType``) The type expected as output
 
-   :device: The device allocation
+   :device: (``lbann.device_allocation``) The device allocation
 
 Methods:
 

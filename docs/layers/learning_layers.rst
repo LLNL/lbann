@@ -58,14 +58,14 @@ Arguments:
 
        (``google.protobuf.BoolValue``, optional) Whether to apply bias
 
-       Default: true
+       Default: ``True``
 
    :transpose:
 
        (``google.protobuf.BoolValue``, optional) Whether to apply
        transpose of weights matrix
 
-       Default: false
+       Default: ``False``
 
 :ref:`Back to Top<learning-layers>`
 
@@ -236,7 +236,7 @@ Deconvolution Layer. Reverses the effects of convolution.
 
 Arguments:
 
-   :has_bias: (``bool``, optional) Default: true
+   :has_bias: (``bool``, optional) Default: ``True``
 
    :bias_initial_value: (``double``) Default: 0
 

@@ -38,7 +38,7 @@ Exponential linear unit
       \alpha (e^x - 1) & x \leq 0
    \end{cases}
 
-:math:`alpha` should be non-negative. See:
+:math:`\alpha` should be non-negative. See:
 
 Djork-Arne Clevert, Thomas Unterthiner, and Sepp Hochreiter. "Fast and
 accurate deep network learning by exponential linear units (ELUs)."
@@ -46,7 +46,7 @@ arXiv preprint arXiv:1511.07289 (2015).
 
 Arguments:
 
-   :alpha: (``double``, optional) Default = 1. Should be >=0
+   :alpha: (``double``, optional) Default: 1. Should be >=0
 
 :ref:`Back to Top<activation-layers>`
 
@@ -93,7 +93,7 @@ vol. 30, no. 1, p. 3. 2013.
 
 Arguments:
 
-   :negative_slope: (``double``, optional) Default = 0.01
+   :negative_slope: (``double``, optional) Default: 0.01
 
 :ref:`Back to Top<activation-layers>`
 
@@ -108,7 +108,9 @@ LogSoftmax
 
 Logarithm of softmax function
 
-:math:`\log \text{softmax}(x)_i = x_i - \log \sum_j e^{x_j}`
+.. math::
+
+   \log \text{softmax}(x)_i = x_i - \log \sum_j e^{x_j}
 
 Arguments: None
 
@@ -125,7 +127,9 @@ Relu
 
 Rectified linear unit
 
-:math:`ReLU(x) = \text{max}(x, 0)`
+.. math::
+
+   \text{ReLU}(x) = \text{max}(x, 0)
 
 Arguments: None
 
@@ -140,11 +144,14 @@ ________________________________________
 Softmax
 ----------------------------------------
 
-:math:`\text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}}`
+.. math::
+
+   \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}}
 
 Arguments:
 
-   :softmax_mode: (``string``, optional) instance (default), channel
+   :softmax_mode: (``string``, optional) Options: instance (default),
+                  channel
 
 :ref:`Back to Top<activation-layers>`
 

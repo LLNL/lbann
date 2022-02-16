@@ -125,6 +125,46 @@ Common Layer Arguments
      (``dictionary``, optional) Configuration for advanced
      parallelization strategies
 
+     Parallel Strategy Options:
+
+        :sample_groups: (``int64``)
+
+        :sample_splits: (``int64``)
+
+        :height_groups: (``int64``)
+
+        :height_splits: (``int64``)
+
+        :width_groups: (``int64``)
+
+        :width_splits: (``int64``)
+
+        :channel_groups: (``int64``)
+
+        :channel_splits: (``int64``)
+
+        :filter_groups: (``int64``)
+
+        :filter_splits: (``int64``)
+
+        For fully-connected layers:
+
+        :replications: (``int64``)
+
+        :procs_per_replica: (``int64``)
+
+        :depth_groups: (``int64``)
+
+        :depth_splits: (``int64``)
+
+     Sub-grid parallelism:
+
+        :sub_branch_tag: (``int64``)
+
+        :sub_branch_resource_percentage: (``int64``)
+
+        :enable_subgraph: (``bool``)
+
 -------------------------------------------
   Deprecated Layer Options
 -------------------------------------------
