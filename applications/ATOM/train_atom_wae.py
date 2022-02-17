@@ -51,7 +51,9 @@ def construct_lc_launcher_args():
     parser.add_argument("--z-dim", type=int, default=512, help="latent space dim")
     parser.add_argument("--g-mean", type=float, default=0.0, help="Gaussian mean")
     parser.add_argument("--g-std", type=float, default=1.0, help="Gaussian std")
-    parser.add_argument("--num-epochs", type=int, default=20)
+    parser.add_argument(
+        "--sgd-num-epochs", type=int, default=20,
+        help="number of training epochs when training with SGD (ignored when training with LTFB)")
     parser.add_argument("--data-reader-prototext", default=None)
     parser.add_argument("--data-filedir", default=None)
     parser.add_argument("--data-filename", default=None)
@@ -66,9 +68,14 @@ def construct_lc_launcher_args():
     parser.add_argument("--vocab", default=None)
     parser.add_argument("--delimiter", default="c")
     parser.add_argument("--no-header", type=bool, default=True)
-    parser.add_argument("--ltfb", type=bool, default=False)
-    parser.add_argument("--ltfb-batch-interval", type=int, default=100)
-    parser.add_argument("--weights-to-send", type=str, default='')
+    parser.add_argument(
+        "--ltfb", type=bool, default=False, help="train with LTFB")
+    parser.add_argument(
+        "--ltfb-batch-interval", type=int, default=100,
+        help="number of SGD steps between LTFB tournaments")
+    parser.add_argument(
+        "--ltfb-num-tournaments", type=int, default=100,
+        help="number of LTFB tournaments")
     parser.add_argument("--warmup", type=bool, default=False)
     parser.add_argument("--lamda", type=float, default=0.00157, help="weighting of adversarial loss")
     # these are specific to the Trainer object
@@ -171,13 +178,6 @@ def construct_model(run_args):
     if(run_args.dump_weights_interval > 0):
       callbacks.append(lbann.CallbackDumpWeights(directory=run_args.dump_weights_dir,
                                               epoch_interval=run_args.dump_weights_interval))
-    if(run_args.ltfb):
-      send_name = ('' if run_args.weights_to_send == 'All' else run_args.weights_to_send) #hack for Merlin empty string
-      weights_to_ex = [w.name for w in weights if send_name in w.name]
-      print("LTFB Weights to exchange ", weights_to_ex)
-      callbacks.append(lbann.CallbackLTFB(batch_interval=run_args.ltfb_batch_interval,metric='recon',
-                                          weights = list2str(weights_to_ex),
-                                          low_score_wins=True,exchange_hyperparameters=True))
 
     callbacks.append(lbann.CallbackReplaceWeights(source_layers=list2str(src_layers),
                                  destination_layers=list2str(dst_layers),
@@ -199,7 +199,7 @@ def construct_model(run_args):
                 target=run_args.lr / 512 * run_args.batch_size, num_epochs=5))
 
     # Construct model
-    return lbann.Model(run_args.num_epochs,
+    return lbann.Model(run_args.sgd_num_epochs,
                        weights=weights,
                        layers=layers,
                        objective_function=obj,
@@ -255,9 +255,33 @@ def main():
         for k, v in config.items():
             setattr(run_args, k, v)
 
+    # Configure training algorithm
+    if run_args.ltfb:
+        tournament_type = lbann.RandomPairwiseExchange
+        tournament = tournament_type(
+            metric_strategies={'recon' : tournament_type.MetricStrategy.LOWER_IS_BETTER},
+            exchange_strategy=tournament_type.ExchangeStrategy('checkpoint_binary'),
+        )
+        algo = lbann.LTFB(
+            "ltfb",
+            local_algo=lbann.BatchedIterativeOptimizer(
+                "sgd",
+                num_iterations=run_args.ltfb_batch_interval,
+            ),
+            metalearning=tournament,
+            metalearning_steps=run_args.ltfb_num_tournaments,
+        )
+    else:
+        algo = lbann.BatchedIterativeOptimizer(
+            "sgd",
+            num_iterations=run_args.ltfb_batch_interval,
+            epoch_count=run_args.sgd_num_epochs,
+        )
+
+    # Configure trainer
     trainer = lbann.Trainer(
-        run_args.batch_size,
-        name=None,
+        mini_batch_size=run_args.batch_size,
+        training_algo=algo,
     )
 
     # define data_reader
