@@ -80,12 +80,12 @@ print_header(std::ostream& os, std::string const& name, unsigned const width)
   auto const key_width = width - 65U;
   os << std::string(width, '=') << "\n"
      << cyan << "Timer: " << nocolor << name << "\n"
-     << red << std::setw(key_width) << std::left << "Label" << nocolor << " | "
-     << red << std::setw(8) << std::left << "Samples" << nocolor << " | "
-     << red << std::setw(10) << std::left << "Total" << nocolor << " | "
-     << red << std::setw(10) << std::left << "Mean" << nocolor << " | "
-     << red << std::setw(10) << std::left << "Min" << nocolor << " | "
-     << red << std::setw(10) << std::left << "Max" << nocolor << " |\n"
+     << green << std::setw(key_width) << std::left << "Label" << nocolor << " | "
+     << green << std::setw(8) << std::left << "Samples" << nocolor << " | "
+     << green << std::setw(10) << std::left << "Total" << nocolor << " | "
+     << green << std::setw(10) << std::left << "Mean" << nocolor << " | "
+     << green << std::setw(10) << std::left << "Min" << nocolor << " | "
+     << green << std::setw(10) << std::left << "Max" << nocolor << " |\n"
      << std::string(key_width, '-')
      << "-|----------|------------|------------|------------|------------|\n";
   // clang-format off
@@ -109,12 +109,12 @@ void TimerMap::print(std::ostream& os_in) const
 
 void TimerMap::print_impl(std::ostream& os,
                           unsigned const width,
-                          unsigned const indent) const
+                          unsigned indent) const
 {
   if (this->timer().samples())
-    print_timer(os, this->key(), this->timer(), width, indent);
+    print_timer(os, this->key(), this->timer(), width, indent++);
   for (auto const& t : m_subscopes)
-    t.print_impl(os, width, indent + 1);
+    t.print_impl(os, width, indent);
 }
 
 } // namespace lbann

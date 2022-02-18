@@ -36,21 +36,17 @@
 
 #include <training_algorithm.pb.h>
 
-#include <cstddef>
-#include <limits>
-#include <unordered_map>
+#include <iostream>
+#include <memory>
+#include <string>
 
 namespace lbann {
 
 SGDTrainingAlgorithm::SGDTrainingAlgorithm(
   std::string name,
   std::unique_ptr<SGDTerminationCriteria> stop)
-  : TrainingAlgorithm{name},
-    m_timers{build_string("SGD::",
-                          name,
-                          " (trainer:",
-                          get_trainer().get_comm()->get_trainer_rank(),
-                          ")")},
+  : TrainingAlgorithm{std::move(name)},
+    m_timers{"<default>"},
     m_stopping_criteria{std::move(stop)},
     m_validation_context{execution_mode::validation, 1UL},
     m_validation_epochs{1UL}
@@ -65,6 +61,11 @@ void SGDTrainingAlgorithm::apply(ExecutionContext& context,
                                  data_coordinator& dc,
                                  execution_mode mode)
 {
+  m_timers = TimerMap{build_string("SGD::",
+                                   this->get_name(),
+                                   " (trainer:",
+                                   get_trainer().get_comm()->get_trainer_rank(),
+                                   ")")};
   SGDExecutionContext& sgd_context =
     dynamic_cast<SGDExecutionContext&>(context);
   const SGDTerminationCriteria& sgd_term = *m_stopping_criteria;
@@ -78,7 +79,7 @@ void SGDTrainingAlgorithm::apply(ExecutionContext& context,
     evaluate(sgd_context, model, dc, mode, sgd_term);
     break;
   default:
-    LBANN_ERROR(std::string{} + "Illegal mode: " + to_string(mode));
+    LBANN_ERROR("Illegal mode: ", to_string(mode));
   }
   if (model.get_comm()->am_trainer_master())
     m_timers.print(std::cout);
