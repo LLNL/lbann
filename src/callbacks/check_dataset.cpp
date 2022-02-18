@@ -183,4 +183,5 @@ void check_dataset::on_test_end(model *m) {
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::check_dataset
+#define LBANN_CLASS_LIBNAME callback_check_dataset
 #include <lbann/macros/register_class_with_cereal.hpp>

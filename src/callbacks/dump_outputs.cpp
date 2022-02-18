@@ -214,4 +214,5 @@ build_dump_outputs_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::dump_outputs
+#define LBANN_CLASS_LIBNAME callback_dump_outputs
 #include <lbann/macros/register_class_with_cereal.hpp>

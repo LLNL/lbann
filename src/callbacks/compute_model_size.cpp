@@ -113,4 +113,5 @@ build_compute_model_size_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::compute_model_size
+#define LBANN_CLASS_LIBNAME callback_compute_model_size
 #include <lbann/macros/register_class_with_cereal.hpp>

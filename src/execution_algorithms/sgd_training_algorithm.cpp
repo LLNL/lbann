@@ -40,24 +40,6 @@
 
 namespace lbann {
 
-SGDTrainingAlgorithm::SGDTrainingAlgorithm(
-  SGDTrainingAlgorithm const& other)
-  : BaseType(other.get_name()),
-    m_stopping_criteria{other.m_stopping_criteria->clone()},
-    m_validation_context{execution_mode::validation, 1UL},
-    m_validation_epochs{1UL}
-{}
-
-SGDTrainingAlgorithm&
-SGDTrainingAlgorithm::operator=(SGDTrainingAlgorithm const& other)
-{
-  BaseType::operator=(other);
-  m_stopping_criteria = other.m_stopping_criteria->clone();
-  m_validation_context = SGDExecutionContext{execution_mode::validation, 1UL};
-  m_validation_epochs = 1UL;
-  return *this;
-}
-
 ////////////////////////////////////////////////////////////
 // Evaluation and training
 ////////////////////////////////////////////////////////////

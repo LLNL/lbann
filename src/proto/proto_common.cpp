@@ -61,8 +61,6 @@ void init_data_readers(
   const bool master = comm->am_world_master();
   std::ostringstream err;
 
-  auto& arg_parser = global_argument_parser();
-
   const lbann_data::DataReader & d_reader = p.data_reader();
   const int size = d_reader.reader_size();
 
@@ -418,26 +416,12 @@ void init_data_readers(
       reader->set_local_file_dir( readme.data_local_filedir() );
     }
 
-    if (arg_parser.get<bool>(LBANN_OPTION_CREATE_TARBALL)) {
-      if (arg_parser.get<int>(LBANN_OPTION_TEST_TARBALL) != -1) {
-        reader->set_absolute_sample_count(arg_parser.get<int>(LBANN_OPTION_TEST_TARBALL));
-        reader->set_use_percent( 0. );
-        reader->set_first_n(0);
-      }
-      else {
-        reader->set_absolute_sample_count( 0. );
-        reader->set_use_percent( 1.0 );
-        reader->set_first_n( 0 );
-      }
-    }
-    else {
-      reader->set_absolute_sample_count( readme.absolute_sample_count() );
-      reader->set_use_percent( readme.percent_of_data_to_use() );
-      reader->set_first_n( readme.first_n() );
+    reader->set_absolute_sample_count( readme.absolute_sample_count() );
+    reader->set_use_percent( readme.percent_of_data_to_use() );
+    reader->set_first_n( readme.first_n() );
 
-      reader->set_gan_labelling(readme.gan_labelling());
-      reader->set_gan_label_value(readme.gan_label_value());
-    }
+    reader->set_gan_labelling(readme.gan_labelling());
+    reader->set_gan_label_value(readme.gan_label_value());
 
     if (readme.role() == "train") {
       reader->set_role("train");
@@ -451,18 +435,8 @@ void init_data_readers(
       reader->set_role("error");
     }
     if (readme.role() == "train") {
-      if (arg_parser.get<bool>(LBANN_OPTION_CREATE_TARBALL) || separate_validation) {
-        reader->set_execution_mode_split_percent(execution_mode::validation, 0. );
-      }
-      else {
-        reader->set_execution_mode_split_percent(execution_mode::validation, readme.validation_percent() );
-      }
-      if (arg_parser.get<bool>(LBANN_OPTION_CREATE_TARBALL) || separate_tournament) {
-        reader->set_execution_mode_split_percent(execution_mode::tournament, 0. );
-      }
-      else {
-        reader->set_execution_mode_split_percent(execution_mode::tournament, readme.tournament_percent() );
-      }
+      reader->set_execution_mode_split_percent(execution_mode::validation, readme.validation_percent() );
+      reader->set_execution_mode_split_percent(execution_mode::tournament, readme.tournament_percent() );
     }
 
     reader->load();
@@ -481,7 +455,7 @@ void init_data_readers(
       data_readers[execution_mode::tournament] = reader;
     }
 
-    if (readme.role() == "train" && !arg_parser.get<bool>(LBANN_OPTION_CREATE_TARBALL)) {
+    if (readme.role() == "train") {
       for(auto m : execution_mode_iterator()) {
         if((m == execution_mode::validation && readme.validation_percent() > 0. && !separate_validation)
            || (m == execution_mode::tournament && readme.tournament_percent() > 0. && !separate_tournament)) {

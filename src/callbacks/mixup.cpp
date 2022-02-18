@@ -130,4 +130,5 @@ build_mixup_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::mixup
+#define LBANN_CLASS_LIBNAME callback_mixup
 #include <lbann/macros/register_class_with_cereal.hpp>

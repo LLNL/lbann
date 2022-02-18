@@ -103,4 +103,5 @@ void gpu_memory_usage::on_epoch_begin(model *m) {
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::gpu_memory_usage
+#define LBANN_CLASS_LIBNAME callback_gpu_memory_usage
 #include <lbann/macros/register_class_with_cereal.hpp>

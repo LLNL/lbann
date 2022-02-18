@@ -35,15 +35,7 @@
 #include "lbann/utils/dnn_lib/onednn.hpp"
 #endif // LBANN_HAS_ONEDNN
 
-// Supported implementations
-#ifdef LBANN_HAS_CUDNN
-#if CUDA_VERSION >= 11000 && CUDNN_VERSION >= 8004 // CUDA 11.0, cuDNN 8.0.4
-#define LBANN_GRU_LAYER_CUDNN_SUPPORTED
-#endif // CUDA_VERSION >= 11000 && CUDNN_VERSION >= 8004
-#endif // LBANN_HAS_CUDNN
-#ifdef LBANN_HAS_ONEDNN_CPU
-#define LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
-#endif // LBANN_HAS_ONEDNN_CPU
+// Supported implementations -- See lbann_config.h
 
 namespace lbann {
 

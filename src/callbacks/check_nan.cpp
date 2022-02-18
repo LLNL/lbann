@@ -303,4 +303,5 @@ void check_nan::on_batch_end(model *m) {
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::check_nan
+#define LBANN_CLASS_LIBNAME callback_check_nan
 #include <lbann/macros/register_class_with_cereal.hpp>

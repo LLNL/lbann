@@ -39,7 +39,7 @@
 
 namespace lbann {
 
-/** @class training_algorithm
+/** @class TrainingAlgorithm
  *  @brief Base class for LBANN training_algorithms.
  *
  *  A "training algorithm" is defined as a method for modifying one or
@@ -82,7 +82,6 @@ namespace lbann {
  *        reading from disk is not sufficient.
  */
 class TrainingAlgorithm
-  : public Cloneable<HasAbstractFunction<TrainingAlgorithm>>
 {
 public:
   /** @name Lifecycle Management */
@@ -170,8 +169,8 @@ public:
 protected:
   /** @name In-hierarchy Lifecycle Management */
   ///@{
-  TrainingAlgorithm(const TrainingAlgorithm& other) = default;
-  TrainingAlgorithm& operator=(const TrainingAlgorithm& other) = default;
+  TrainingAlgorithm(const TrainingAlgorithm& other) = delete;
+  TrainingAlgorithm& operator=(const TrainingAlgorithm& other) = delete;
   TrainingAlgorithm(TrainingAlgorithm&& other) = default;
   TrainingAlgorithm& operator=(TrainingAlgorithm&& other) = default;
   ///@}

@@ -139,4 +139,5 @@ build_timeline_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::timeline
+#define LBANN_CLASS_LIBNAME callback_timeline
 #include <lbann/macros/register_class_with_cereal.hpp>
