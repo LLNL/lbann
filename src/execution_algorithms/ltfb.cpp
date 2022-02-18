@@ -29,6 +29,8 @@
 #include "lbann/execution_algorithms/ltfb/meta_learning_strategy.hpp"
 #include "lbann/execution_algorithms/ltfb/termination_criteria.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/utils/output_helpers.hpp"
+#include "lbann/utils/timer_map.hpp"
 
 #include "training_algorithm.pb.h"
 
@@ -43,6 +45,12 @@ void LTFB::apply(ExecutionContext& context,
                  data_coordinator& dc,
                  execution_mode /*mode*/)
 {
+  TimerMap ltfb_timer(build_string("LTFB::",
+                                   this->get_name(),
+                                   " (trainer:",
+                                   get_trainer().get_comm()->get_trainer_rank(),
+                                   ")"));
+
   auto const& ltfb_term = m_termination_criteria;
   auto& ltfb_ctxt = dynamic_cast<ExeContextType&>(context);
 
@@ -57,13 +65,27 @@ void LTFB::apply(ExecutionContext& context,
   // (e.g., N total sgd batches). That complexity lives in the
   // ltfb::TerminationCriteria class.
   while (!ltfb_term(ltfb_ctxt)) {
-    m_local_algo->apply(m, dc);
-    m_meta_learning_strategy->select_next(m, ltfb_ctxt, dc);
+    {
+      ScopeTimer _(ltfb_timer, "local apply");
+      m_local_algo->apply(m, dc);
+    }
+    {
+      ScopeTimer _(ltfb_timer, "metalearning strategy");
+      m_meta_learning_strategy->select_next(m, ltfb_ctxt, dc);
+    }
+
     ltfb_ctxt.inc_step();
   }
 
-  // Final sweep of local training.
-  m_local_algo->apply(m, dc);
+  // Final sweep of local training. The timer is looped into the inner
+  // loop "local apply" timer.
+  {
+    ScopeTimer _(ltfb_timer, "local apply");
+    m_local_algo->apply(m, dc);
+  }
+
+  if (m.get_comm()->am_trainer_master())
+    ltfb_timer.print(std::cout);
 
   // TODO: How do we support aggregate outputs? What does "output"
   // mean here? Do we communicate among all trainers and just write
