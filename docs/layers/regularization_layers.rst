@@ -96,7 +96,7 @@ Dropout
 
 Probabilistically drop tensor entries
 
-The values multiplied by 1/(keep probability) at training time. Keep
+The values are multiplied by 1/(keep probability) at training time. Keep
 probabilities of 0.5 for fully-connected layers and 0.8 for input
 layers are good starting points. See:
 

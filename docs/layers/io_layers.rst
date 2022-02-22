@@ -28,6 +28,8 @@ Arguments:
 
    :data_field: (``string``, optional) Data field in data reader
 
+   Legacy values are "samples", "labels", "responses".
+
 :ref:`Back to Top<io-layers>`
 
 ________________________________________

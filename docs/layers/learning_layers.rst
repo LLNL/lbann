@@ -31,7 +31,7 @@ ________________________________________
 ChannelwiseFullyConnected
 ----------------------------------------
 
-The ChannelwiseFullyConnected layer appliesan  affine transformation
+The ChannelwiseFullyConnected layer applies an affine transformation
 to tensor channels.
 
 The input tensor is sliced along the first tensor dimension (the
@@ -94,7 +94,7 @@ bias vectors :math:`a,b\in\mathbb{R}^{d_1}`:
 The scale and bias vectors are fused into a single weights tensor to
 reduce the number of gradient allreduces during backprop. In
 particular, the weights tensor is a
-:math:`\text{num\_channels} \times 2` matrix, where the first column
+:math:`\text{num_channels} \times 2` matrix, where the first column
 corresponds to scale terms and the second column to bias terms.
 
 Arguments: None
@@ -232,7 +232,7 @@ ________________________________________
 Deconvolution
 ----------------------------------------
 
-Deconvolution Layer. Reverses the effects of convolution.
+Deconvolution Layer. Transpose of convolution.
 
 Arguments:
 
@@ -396,21 +396,23 @@ GRU
 Stacked gated recurrent unit
 
 Expects two inputs: a 2D input sequence (
-:math:`\text{sequence\_length}\times\text{input\_size}`) and a 2D
+:math:`\text{sequence_length}\times\text{input_size}`) and a 2D
 initial hidden state (
-:math:`\text{num\_layers}times\text{hidden\_size}`).
+:math:`\text{num_layers}\times\text{hidden_size}`).
 
 Uses four weights per GRU cell: "ih\_matrix" (
-:math:`3 \text{hidden\_size}\times\text{input\_size}` for layer 0 and
-:math:`3 \text{hidden\_size}\times\text{hidden\_size}` for other layers),
-"hh\_matrix" (:math:`3 \text{hidden\_size}\times\text{hidden\_size}`),
-"ih_bias" (:math:`3 \text{hidden\_size}`), "hh_bias"
-(:math:`3 \text{hidden\_size}`).
+:math:`3 \text{hidden_size}\times\text{input_size}` for layer 0 and
+:math:`3 \text{hidden_size}\times\text{hidden_size}` for other layers),
+"hh\_matrix" (:math:`3 \text{hidden_size}\times\text{hidden_size}`),
+"ih_bias" (:math:`3 \text{hidden_size}`), "hh_bias"
+(:math:`3 \text{hidden_size}`).
 
 Support is experimental and requires either cuDNN (on GPU) or oneDNN
 (on CPU).
 
-.. todo:: Support bidirectional RNNs
+    .. todo:: Support bidirectional RNNs
+    
+Arguments:
 
    :hidden_size: (``uint64``) Size of each hidden state and output vector
 

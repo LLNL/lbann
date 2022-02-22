@@ -78,7 +78,7 @@ ________________________________________
 Bernoulli
 ----------------------------------------
 
-The Bernoulli layer is a random tensor with a Bernoulli distribution
+The Bernoulli layer is a random tensor with a Bernoulli distribution.
 Randomness is only applied during training. The tensor is filled with
 zeros during evaluation.
 
@@ -325,7 +325,7 @@ ________________________________________
 InTopK
 ----------------------------------------
 
-The InTopK layer is a one-hot vector indicating top-k entries Output
+The InTopK layer is a one-hot vector indicating top-k entries. Output
 tensor has same dimensions as input tensor. Output entries
 corresponding to the top-k input entries are set to one and the rest
 to zero. Ties are broken in favor of entries with smaller indices.
@@ -521,7 +521,7 @@ ________________________________________
 Slice
 ----------------------------------------
 
-The Slice layer slices a tensor along a specified dimension The tensor
+The Slice layer slices a tensor along a specified dimension. The tensor
 is split along one dimension at user-specified points, and each child
 layer recieves one piece.
 

@@ -24,7 +24,7 @@ ________________________________________
 DFTAbs
 ----------------------------------------
 
-Absolute value of discrete Fourier transform One-, two-, or
+Absolute value of discrete Fourier transform. One-, two-, or
 three-dimensional data is allowed. The implementation is meant to be
 as flexible as possible. We use FFTW for the CPU implementation;
 whichever types your implementation of FFTW supports will be supported

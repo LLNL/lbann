@@ -77,7 +77,7 @@ Common Layer Arguments
   :children:
 
      (``Iterable of Layer``, optional) Child layers, i.e. Destinations
-     of input tensors
+     for output tensors
 
      Space-separated list of layer names
 
@@ -93,13 +93,15 @@ Common Layer Arguments
 
      (``string``, optional) Data tensor device
 
+     Options: CPU or GPU
+
      If LBANN has been built with GPU support, default is
      GPU. Otherwise, CPU
 
   :datatype:
 
-     (``lbann.DataType``, optional) Options: CPU or GPU
-
+     (``lbann.DataType``, optional)
+     
      Data type used for activations and weights
 
 -------------------------------------------
