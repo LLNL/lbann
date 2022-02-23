@@ -411,7 +411,7 @@ Support is experimental and requires either cuDNN (on GPU) or oneDNN
 (on CPU).
 
     .. todo:: Support bidirectional RNNs
-    
+
 Arguments:
 
    :hidden_size: (``uint64``) Size of each hidden state and output vector
@@ -424,5 +424,3 @@ Arguments:
       Default: 1
 
 :ref:`Back to Top<learning-layers>`
-
-________________________________________

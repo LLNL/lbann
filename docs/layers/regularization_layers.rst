@@ -279,5 +279,3 @@ Arguments:
 
 
 :ref:`Back to Top<regularization-layers>`
-
-________________________________________

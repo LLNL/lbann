@@ -67,5 +67,3 @@ Arguments:
                  input tensor
 
 :ref:`Back to Top<math-layers>`
-
-________________________________________

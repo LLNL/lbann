@@ -798,5 +798,3 @@ Arguments:
    :dims: (``string``)
 
 :ref:`Back to Top<transform-layers>`
-
-________________________________________

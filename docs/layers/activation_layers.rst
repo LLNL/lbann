@@ -154,5 +154,3 @@ Arguments:
                   channel
 
 :ref:`Back to Top<activation-layers>`
-
-________________________________________

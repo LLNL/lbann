@@ -301,5 +301,3 @@ Arguments:
    :biased: (``bool``) Use biased estimator, i.e. sample variance
 
 :ref:`Back to Top<miscellaneous-layers>`
-
-________________________________________

@@ -75,5 +75,3 @@ rotation angle.
 Arguments: None
 
 :ref:`Back to Top<image-layers>`
-
-________________________________________

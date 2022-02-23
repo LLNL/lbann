@@ -31,5 +31,3 @@ Arguments:
    Legacy values are "samples", "labels", "responses".
 
 :ref:`Back to Top<io-layers>`
-
-________________________________________

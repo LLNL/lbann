@@ -147,5 +147,3 @@ Methods:
       Must be implemented in derived classes
 
 :ref:`Back to Top<operator-layers>`
-
-________________________________________
