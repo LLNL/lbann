@@ -31,7 +31,7 @@ Using Layers
 Layers are used by adding them to the python front end with the
 appropriate arguments and passing them as a list into the
 model. More information about LBANN's layers can be found in
-:ref:`layers-list`. See :ref:`layer-options` for layer parameter option.
+:ref:`layers-list`. See :ref:`layer-arguments` for layer parameter option.
 For example, the input layer, relu layer, and mean squared error layer
 could be included with the following:
 
@@ -54,6 +54,8 @@ Python Front End
                        objective_function,
                        metrics,
                        callbacks)
+
+.. _layer-arguments:
 
 -------------------------------------------
 Common Layer Arguments
@@ -101,7 +103,7 @@ Common Layer Arguments
   :datatype:
 
      (``lbann.DataType``, optional)
-     
+
      Data type used for activations and weights
 
 -------------------------------------------
@@ -187,6 +189,8 @@ Deprecated and unused:
 
   :type: (``string``)
 
+
+.. _layers-list:
 
 ------------------------------------------------
 LBANN Layers List
