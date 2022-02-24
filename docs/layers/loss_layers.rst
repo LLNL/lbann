@@ -165,5 +165,3 @@ Arguments:
    :k: (``int64``)
 
 :ref:`Back to Top<loss-layers>`
-
-________________________________________

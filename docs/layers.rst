@@ -29,11 +29,11 @@ Using Layers
 ------------------------------------------------
 
 Layers are used by adding them to the python front end with the
-appropriate arguments and passing them as a list into the
-model. More information about LBANN's layers can be found in
-:ref:`layers-list`. See :ref:`layer-arguments` for layer parameter option.
-For example, the input layer, relu layer, and mean squared error layer
-could be included with the following:
+appropriate arguments and passing them as a list into the model. More
+information about LBANN's layers can be found in
+:ref:`layers-list`. See :ref:`layer-arguments` for a description of
+layer parameters.  For example, the input layer, relu layer, and mean
+squared error layer could be included with the following:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Python Front End
