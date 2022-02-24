@@ -171,4 +171,8 @@ breathe_default_project = "lbann"
 breathe_projects = {
     "lbann":"doxy_out/xml/",
 }
-extensions = [ 'breathe', 'sphinx.ext.mathjax', 'sphinx.ext.napoleon' ]
+extensions = [ 'breathe', 'sphinx.ext.mathjax', 'sphinx.ext.napoleon',
+               'sphinx.ext.todo' ]
+
+# Show todo entries in HTML docs
+todo_include_todos = True
