@@ -25,7 +25,6 @@ num_nodes = 2
 num_decoder_layers = 3
 
 # Reconstruction loss
-#expected_train_recon_range = (0.500, 0.525)
 expected_train_recon_range = (0.500, 0.555)
 expected_test_recon_range = (0.500, 0.525)
 
