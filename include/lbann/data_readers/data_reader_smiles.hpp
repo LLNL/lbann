@@ -120,7 +120,7 @@ public:
 
 
   /** @brief Sets the name of the metadata file */
-  void set_metadata_filename(std::string fn) { m_metadata_filename = fn; }
+  void set_metadata_filename(std::string fn) { m_metadata_filename = std::move(fn); }
 
   /** @brief Returns the name of the metadata file */
   const std::string& get_metadata_filename()
