@@ -109,7 +109,76 @@ Python Front-end API Documentation
 The following is the full documentation of the Python Front-end class
 that implements this training algorithm.
 
-.. autoclass:: lbann.BatchedIterativeOptimizer
-   :members:
-   :undoc-members:
-   :special-members: __init__
+.. _BatchedIterativeOptimizer:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+lbann.BatchedIterativeOptimizer module
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:class:: BatchedIterativeOptimizer(TrainingAlgorithm)
+
+   Batched gradient descent training algorithm.
+
+   Because LBANN manages optimizers on a weights-specific basis, and
+   those optimizers are (theoretically) allowed to vary from weights
+   to weights, it would be inaccurate to describe this as "SGD" (which
+   would also clash with the "Optimizer" subclass). Nonetheless, this
+   is the well-loved first-order descent algorithm that seems good
+   enough most of the time for most people (or so seems the general
+   consensus).
+
+   Also as a result of the way in which LBANN manages optimizers, the
+   usage requirements for this class are quite sparse: only the
+   stopping criteria are specified. The rest of the behavior of this
+   class is specified in the model.
+
+   .. py:class:: StoppingCriteria()
+
+      Stopping criteria for an instance of BatchedIterativeOptimizer.
+
+      BatchedIterativeOptimizer can be done to a finite batch count, a
+      finite epoch count, or a fixed number of (double-precision)
+      seconds (note: time-based stopping criteria is not publicly
+      available yet; this is just a bit of foreshadowing).
+
+      When used as a subalgorithm within a composite algorithm (see
+      LTFB, below), this specifies the stopping criteria for each
+      invocation. The algorithm stops when any of the criteria is
+      satisfied.
+
+      .. py:method:: __init__(batch_count: int = 0, epoch_count: int =
+                     0, seconds: float = 0.)
+
+         Construct a new BatchedIterativeOptimizer stopping criteria.
+
+         :param int batch_count: Number of minibatches.
+
+         :param int epoch_count: Number of epochs.
+
+         :param float seconds: Number of epochs.
+
+      .. py:method:: export_proto()
+
+         Get a protobuf representation of this object.
+
+         :rtype: AlgoProto.TrainingAlgorithm()
+
+   .. py:method:: __init__(name: str, num_iterations: int = 0,
+                  epoch_count: int = 0, max_seconds: float = 0.)
+
+      Construct a new BatchedIterativeOptimizer instance.
+
+      :param string name: A user-defined name to identify this object
+                          in logs.
+
+      :param int num_iterations: Number of minibatches.
+
+      :param int epoch_count: Number of epochs.
+
+      :param float max_seconds: Maximum training duration (seconds).
+
+   .. py:method:: do_export_proto()
+
+      Get a protobuf representation of this object.
+
+      :rtype: AlgoProto.SGD()

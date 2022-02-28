@@ -93,7 +93,7 @@ metalearning steps (i.e., "tournaments").
 
 
 ---------------------------------------------------
-Truncation Selection Exchange (TSE) Variant of LTFB 
+Truncation Selection Exchange (TSE) Variant of LTFB
 ---------------------------------------------------
 
 TSE is a variant of basic LTFB that replaces random pairwise exchange (RPE)
@@ -121,17 +121,305 @@ Python Front-end API Documentation
 The following is the full documentation of the Python Front-end
 classes that are used to implement this execution algorithm.
 
-.. autoclass:: lbann.LTFB
-   :members:
-   :undoc-members:
-   :special-members: __init__
+.. _LTFB:
 
-.. autoclass:: lbann.MetaLearningStrategy
-   :members:
-   :undoc-members:
-   :special-members: __init__
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+lbann.LTFB module
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: lbann.RandomPairwiseExchange
-   :members:
-   :undoc-members:
-   :special-members: __init__
+.. py:class:: LTFB
+
+   Livermore tournament fast-batch (LTFB) algorithm.
+
+   This training algorithm is a simple composite training algorithm.
+   The MPI universe is subdivided into several "trainers". Each
+   trainer applies a local training algorithm. At the completion of
+   local training, a metaheuristic ("metalearning" algorithm) is
+   applied to select a new set of models to continue.
+
+   The usage requirements for this training algorithm are a
+   fully-specified local training algorithm and stopping criteria for
+   the outer loop.
+
+   .. py:class:: StoppingCriteria()
+
+      Stopping criteria for LTFB.
+
+      .. py:method:: __init__(metalearning_steps: int = 1)
+
+      :param int metalearning_steps: The number of outer-loop
+                                     iterations.
+
+      .. py:method:: export_proto()
+
+      Get a protobuf representation of this object.
+
+      :rtype: AlgoProto.LTFB.TerminationCriteria()
+
+   .. py:method:: __init__(name: str, local_algo: TrainingAlgorithm,
+                  metalearning: MetaLearningStrategy,
+                  metalearning_steps: int = 1)
+
+      :param string name: A user-defined name to identify this object
+                          in logs.
+
+      :param TrainingAlgorithm local_algo: The trainer-local algorithm
+                                           to apply.
+
+      :param MetaLearningStrategy metalearning: The metalearning
+                                                strategy to apply
+                                                after local training.
+
+      :param int metalearning_steps: The number of outer-loop
+                                     iterations.
+
+.. _MetaLearningStrategy:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+lbann.MetaLearningStrategy module
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:class:: MetaLearningStrategy()
+
+   Base class for metalearning strategies for LTFB.
+
+.. py:class:: MutationStrategy()
+
+   The strategy for mutation after a tournament in LTFB.
+
+   When a trainer loses in a LTFB tournament, the winning model is
+   copied over to it and this mutation strategy is applied to the
+   copied model to explore a new model. This is relevant to neural
+   architecture search (NAS).
+
+   .. py:method:: __init__(strategy: str = "null_mutation")
+
+      :param string strategy: The LTFB metalearning strategy.
+
+   .. py:method:: export_proto()
+
+      Get a protobuf representation of this object.
+
+      :rtype: AlgoProto.MutationStrategy.MutationStrategyMsg()
+
+.. _RandomPairwiseExchange:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+lbann.RandomPairwiseExchange module
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:class:: RandomPairwiseExchange(MetaLearningStrategy)
+
+   The classic LTFB pairwise tourament metalearning strategy.
+
+   This metalearning strategy is the original algorithm used for
+   LTFB. After each local training step, all trainers in the LBANN
+   environment pair off and have a "tournament" (if the number of
+   trainers is odd, one competes with itself). The tournament is a
+   simple comparison of a metric value that's read from the
+   model. There is an assumption that a metric with the same name
+   exists in all trainers' models. The tournaments are evaluated on a
+   trainer-specific data set, so it is possible that each trainer in a
+   pair will think a different model has won. The winning model
+   survives and is either used as the initial guess for the next round
+   of local training or returned to the caller.
+
+
+   Since this algorithm relies on a metric with a given name being
+   present in a model, each instance of this metalearning strategy
+   (and, by extension, the training algorithm in which it is used) has
+   an implicit limitation on the set of models to which it can be
+   applied.
+
+   .. py:class:: MetricsStrategy()
+
+      .. py:attribute:: LOWER_IS_BETTER: int = 0
+
+      .. py:attribute:: HIGHER_IS_BETTER: int = 1
+
+   .. py:class:: ExchangeStrategy
+
+      The algorithm for exchanging model data in
+      RandomPairwiseExchange.
+
+      .. warning:: The fate of this class is under consideration. It
+                   would be good for it to converge to a single
+                   algorithm. Hence, no effort has been made here to
+                   mirror the C++ polymorphism in this Python wrapper.
+
+      There are currently three strategies that are subtly different
+      in the way they exchange model data.
+
+      1. "checkpoint_binary": This is the default strategy. Entire
+         models are serialized to binary as though doing a
+         checkpoint. These serialized models are then sent over the
+         wire and deserialized by the receiver. No assumptions are
+         imposed on the model.
+
+
+      2. "checkpoint_file": Models are serialized to disk as though
+         doing a checkpoint. A barrier synchronization is used to
+         guard against races on the file. The target process will
+         unpack the serialized model from file after the barrier. No
+         assumptions are imposed on the model.
+
+
+      3. "sendrecv_weights": Model weights are exchanged
+         individually. Some amount of optimizer state is also
+         exchanged, with an option to exchange all optimizer data
+         (when ``exchange_hyperparameters=True``). This method
+         (IMPLICITLY!!!) assumes that the weights objects to be
+         exchanged appear in the same order in both the source and the
+         target trainers' instances of the model. While extremely
+         fragile hackery could produce other cases that happen to
+         work, this essentially implies that the model topology should
+         be homogenous across all trainers.
+
+      .. py:method:: __init__(strategy: str = "checkpoint_binary",
+                     weights_names: list[str] = [],
+                     exchange_hyperparameters: bool = False,
+                     checkpoint_dir: str = None)
+
+         :param string strategy: Which strategy to use (default:
+                                 "checkpoint_binary").
+
+         :param list[string] weights_name: A list of weights names that
+                                          should be exchanged.
+
+         :param bool exchange_hyperparameters: If True, exchange all
+                                               optimizer state. Only
+                                               applies to the
+                                               "sendrecv_weights"
+                                               strategy.
+
+         :param string checkpoint_dir: A path to a directory for
+                                       storing the checkpoint
+                                       files. Only applies to
+                                       "checkpoint_file".
+
+      .. py:method:: export_proto()
+
+         Get a protobuf representation of this object.
+
+         :rtype: AlgoProto.RandomPairwiseExchange.ExchangeStrategy.
+                 ExchangeStrategyMsg()
+
+         :raises: ValueError("Unknown strategy")
+
+   .. py:method:: __init__(metric_strategies: dict[str,int] = {},
+                  exchange_strategy = ExchangeStrategy(),
+                  mutation_strategy = MutationStrategy())
+
+      Construct a new RandomPairwiseExchange metalearning strategy.
+
+      :param dict[str,int] metric_strategies: FIXME
+
+      :param ExchangeStrategy() exchange_strategy:
+
+      :param MutationStrategy() mutation_strategy:
+
+   .. py:method:: export_proto()
+
+      Get a protobuf representation of this object.
+
+      :rtype: AlgoProto.RandomPairwiseExchange()
+
+.. py:class:: class TruncationSelectionExchange(MetaLearningStrategy)
+
+   Truncation selection  metalearning strategy.
+
+   Rank all trainers in a population of trainers Ranking is done using
+   specified metric strategy Models/topologies/training
+   hyperparameters of any trainer at ranking below truncation_k are
+   replaced with that of a trainer from top of the ranking list.
+
+   .. py:class:: MetricStrategy()
+
+      .. py:attribute:: LOWER_IS_BETTER: int = 0
+
+      .. py:attribute:: HIGHER_IS_BETTER: int = 1
+
+
+      .. py:method:: __init__(metric_strategies: dict[str,int] = {},
+                     truncation_k = 0)
+
+         Construct a new TruncationSelectionExchange metalearning
+         strategy.
+
+         :param dict[str,int] metric_strategies: Map from metric name
+                                                 to the criterion for
+                                                 picking a winner with
+                                                 respect to this
+                                                 metric
+
+         :param int truncation_k: Partitions ranking list to
+                                  top(winners)/bottom(losers)
+
+      .. py:method:: export_proto()
+
+         Get a protobuf representation of this object.
+
+         :rtype: AlgoProto.TruncationSelectionExchange()
+
+.. py:class:: RegularizedEvolution(MetaLearningStrategy)
+
+   This is a meta-learning strategy in population-based training. A
+   sample of trainers is chosen from a population in every
+   tournament. The best trainer is chosen from that sample according
+   to an evaluation metric. Then the model from that best trainer is
+   mutated and replaces the oldest model.
+
+   .. py:class:: MetricStrategy()
+
+      .. py:attribute:: LOWER_IS_BETTER: int = 0
+
+      .. py:attribute:: HIGHER_IS_BETTER: int = 1
+
+   .. py:method:: __init__(metric_name, metric_strategy,
+                  mutation_strategy = MutationStrategy(), sample_size
+                  = 0)
+
+      :param string metric_name: FIXME
+
+      :param string metric_strategy:
+
+      :param MutationStrategy() mutation_strategy:
+
+      :param int sample_size:
+
+   .. py:method:: export_proto():
+
+      Get a protobuf representation of this object.
+
+      :rtype: AlgoProto.RegularizedEvolution()
+
+.. py:class:: KFAC(TrainingAlgorithm)
+
+   Kronecker-Factored Approximate Curvature algorithm.
+
+   Applies second-order information to improve the quality of
+   gradients in SGD-like optimizers.
+
+   .. py:method:: __init__(name: str, first_order_optimizer:
+                  BatchedIterativeOptimizer, **kfac_args)
+
+      Construct a new KFAC algorithm.
+
+      :param string name: A user-defined name to identify this object
+                          in logs.
+
+      :param BatchedIterativeOptimizer first_order_optimizer:  The
+                                                               SGD-like
+                                                               algorithm
+                                                               to
+                                                               apply.
+
+      :param \**kfac_args: See the KFAC message in
+                          lbann/src/proto/training_algorithm.proto for
+                          list of kwargs.
+
+   .. py:method:: do_export_proto()
+
+      Get a protobuf representation of this object.
+
+      :rtype: AlgoProto.KFAC()

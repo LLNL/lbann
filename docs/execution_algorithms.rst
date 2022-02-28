@@ -65,14 +65,36 @@ wish to use.
 Python Front-end API Documentation
 ----------------------------------------
 
+.. _TrainingAlgorithm:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+lbann.TrainingAlgorithm module
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:class:: TrainingAlgorithm()
+
 The :python:`lbann.TrainingAlgorithm` is the base class of all
 training algorithms used in the Python Front-end.
 
-.. autoclass:: lbann.TrainingAlgorithm
-   :members:
-   :undoc-members:
-   :special-members: __init__
+   .. py:method:: __init__(name: str)
 
+      Construct a training algorithm.
+
+      :param string name: A user-defined name to identify this
+                          object in logs.
+   .. py:method:: export_proto()
+
+      Get a protobuf representation of this object.
+
+      :rtype: AlgoProto.TrainingAlgorithm()
+
+   .. py:method:: do_export_proto()
+
+      Get a protobuf representation of this object.
+
+      .. important:: Must be implemented in derived classes.
+
+      :raises: NotImplementedError
 
 .. _available-exe_algos:
 
