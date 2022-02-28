@@ -82,6 +82,7 @@ training algorithms used in the Python Front-end.
 
       :param string name: A user-defined name to identify this
                           object in logs.
+
    .. py:method:: export_proto()
 
       Get a protobuf representation of this object.
