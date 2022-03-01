@@ -60,6 +60,7 @@ set_full_path(THIS_DIR_HEADERS
   nvshmem.hpp
   omp_diagnostics.hpp
   omp_pragma.hpp
+  onnx_utils.hpp
   options.hpp
   peek_map.hpp
   profiling.hpp
