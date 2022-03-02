@@ -110,6 +110,7 @@ public:
 
 #ifdef LBANN_HAS_ONNX
   std::string get_onnx_op_type() const override { return "Conv"; }
+  void fill_onnx_node(onnx::GraphProto& graph) const override;
 #endif //LBANN_HAS_ONNX
 
   /** @name Serialization */
