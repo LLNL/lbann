@@ -109,7 +109,7 @@ while :; do
             ;;
         -e|--extras)
             if [ -n "${2}" ]; then
-                EXTRAS=${2}
+                EXTRAS="${EXTRAS} ${2}"
                 shift
             else
                 echo "\"${1}\" option requires a non-empty option argument" >&2
@@ -652,9 +652,12 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
 
     # Add any extra packages in file EXTRAS that you want to build in conjuction with the LBANN package
     if [[ -n "${EXTRAS:-}" ]]; then
-        CMD="source ${EXTRAS}"
-        echo ${CMD} | tee -a ${LOG}
-        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        for e in ${EXTRAS}
+        do
+            CMD="source ${e}"
+            echo ${CMD} | tee -a ${LOG}
+            [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        done
     fi
 
     # Add any extra packages specified on the command line that you want to build in conjuction with the LBANN package
