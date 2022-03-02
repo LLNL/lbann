@@ -67,11 +67,6 @@ if (LBANN_HAS_OPENCV)
     ${CMAKE_CURRENT_SOURCE_DIR}/image_test.cpp)
 endif (LBANN_HAS_OPENCV)
 
-if (LBANN_HAS_ONNX)
-  list(APPEND THIS_DIR_MPI_CATCH2_TEST_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/onnx_utils_test.cpp)
-endif (LBANN_HAS_ONNX)
-
 # This is actually CUDA-specific. rocFFT will get a new test when we
 # port that over.
 if (LBANN_HAS_CUDA)
