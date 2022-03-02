@@ -652,6 +652,105 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   bp_compute_impl<TensorDataType>(*this);
 }
 
+#ifdef LBANN_HAS_ONNX
+template <typename T, data_layout L, El::Device D>
+void fully_connected_layer<T, L, D>::fill_onnx_node(
+  onnx::GraphProto& graph) const
+{
+  auto const& parent = this->get_parent_layer(0);
+  auto const has_bias = (this->num_weights() > 1UL);
+
+  // Setup the inputs.
+  auto const layer_name = this->get_name();
+  auto const A_name = layer_name + "_" + parent.get_name() + "_reshape";
+  auto const B_name = this->get_weights(0).get_name();
+  auto const C_name = (has_bias ? layer_name + "_bias_reshape" : std::string{});
+
+  // Flatten the input tensor (A, wrt GEMM).
+  {
+    auto* flatten_input_shape = graph.add_initializer();
+    flatten_input_shape->set_name(layer_name + "_" + parent.get_name() +
+                                  "_shape");
+    flatten_input_shape->set_data_type(onnx::TensorProto::INT64);
+    flatten_input_shape->add_dims(2);
+    flatten_input_shape->add_int64_data(0);
+    flatten_input_shape->add_int64_data(-1);
+    flatten_input_shape->set_doc_string(
+      "Shape for " + layer_name + " reshape " + parent.get_name() + " node");
+
+    onnx::NodeProto* flatten_input = graph.add_node();
+    flatten_input->add_input(
+      parent.get_name() + "_" +
+      std::to_string(parent.find_child_layer_index(*this)));
+    flatten_input->add_input(flatten_input_shape->name());
+    flatten_input->add_output(A_name);
+    flatten_input->set_name(A_name);
+    flatten_input->set_op_type("Reshape");
+    flatten_input->set_domain("");
+    flatten_input->set_doc_string("Reshape " + parent.get_name() +
+                                  " for Fully Connected Layer");
+  }
+
+  // Setup the bias node, if applicable.
+  if (has_bias) {
+    // bias = Reshape(data=bias, shape=[1,-1])
+    auto* shape = graph.add_initializer();
+    shape->set_name(this->get_name() + "_bias_shape");
+    shape->set_data_type(onnx::TensorProto::INT64);
+    shape->add_dims(2);
+    shape->add_int64_data(1);
+    shape->add_int64_data(-1);
+    shape->set_doc_string("Shape for " + layer_name + " Bias");
+
+    auto* bias = graph.add_node();
+    bias->add_input(this->get_weights(1).get_name());
+    bias->add_input(shape->name());
+    bias->add_output(this->get_name() + "_bias_reshape");
+    bias->set_name(this->get_name() + "_bias_reshape");
+    bias->set_op_type("Reshape");
+    bias->set_domain("");
+    bias->set_doc_string("Reshape bias for Fully Connected Layer");
+  }
+
+  auto* gemm = graph.add_node();
+  gemm->add_input(A_name);
+  gemm->add_input(B_name);
+  if (has_bias)
+    gemm->add_input(C_name);
+
+  gemm->add_output(layer_name + "_0");
+  gemm->set_name(layer_name + "_0");
+  gemm->set_op_type("Gemm");
+  gemm->set_domain("");
+  gemm->set_doc_string("Gemm node for Fully Connected Layer");
+
+  {
+    auto* alpha = gemm->add_attribute();
+    alpha->set_name("alpha");
+    alpha->set_type(onnx::AttributeProto::FLOAT);
+    alpha->set_f(1);
+  }
+  {
+    auto* beta = gemm->add_attribute();
+    beta->set_name("beta");
+    beta->set_type(onnx::AttributeProto::FLOAT);
+    beta->set_f(has_bias ? 1 : 0);
+  }
+  {
+    auto* transA = gemm->add_attribute();
+    transA->set_name("transA");
+    transA->set_type(onnx::AttributeProto::INT);
+    transA->set_i(m_transpose ? 1 : 0);
+  }
+  {
+    auto* transB = gemm->add_attribute();
+    transB->set_name("transB");
+    transB->set_type(onnx::AttributeProto::INT);
+    transB->set_i(1); // Should be 1 because ONNX will do x*W^T + b
+  }
+}
+#endif // LBANN_HAS_ONNX
+
 template <typename TensorDataType, data_layout layout, El::Device device>
 std::unique_ptr<Layer> build_fully_connected_layer_from_pbuf(
   lbann_comm* comm, lbann_data::Layer const& layer_msg)
