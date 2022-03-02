@@ -31,10 +31,12 @@
 #include "lbann/layers/io/input_layer.hpp"
 #include "lbann/proto/helpers.hpp"
 #include "lbann/utils/factory.hpp"
+#include "lbann/utils/onnx_utils.hpp"
 #include "lbann/utils/summary_impl.hpp"
 
 #include <callbacks.pb.h>
 
+#include <core/DistMatrix/AbstractDistMatrix.hpp>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -60,6 +62,9 @@ void export_onnx::on_setup_end(model* m)
   mp_.set_doc_string("Livermore Big Artificial Neural Network");
 }
 
+template <typename T>
+using ADM = El::AbstractDistMatrix<T>;
+
 void export_onnx::on_train_begin(model* m)
 {
   // graph info
@@ -71,45 +76,34 @@ void export_onnx::on_train_begin(model* m)
   auto const weights_vec = m->get_weights();
   for (auto const weights : weights_vec) {
     auto* initializer = gp->add_initializer();
-    auto dims = weights->get_dims();
-    for (auto const dim : dims) {
-      initializer->add_dims(dim);
-    }
-    const auto& values =
-      dynamic_cast<El::AbstractDistMatrix<DataType>&>(weights->get_values());
+    auto const height_dims = weights->get_matrix_height_dims();
+    auto const width_dims = weights->get_matrix_width_dims();
 
-    El::DistMatrix<DataType, El::CIRC, El::CIRC, El::ELEMENT, El::Device::CPU>
-      tmp(values.Grid(), 0);
+    // Get ready for some fun switch-on-type magic... :/ It gets
+    // prettier every time. Once the weights serialize themselves
+    // properly, this will be handled virtually.
+    auto const& weight_values = weights->get_values();
+    if (auto const* w_dt = dynamic_cast<ADM<DataType> const*>(&weight_values))
+      serialize_to_onnx(*w_dt, height_dims, width_dims, *initializer);
+    else if (auto const* w_f = dynamic_cast<ADM<float> const*>(&weight_values))
+      serialize_to_onnx(*w_f, height_dims, width_dims, *initializer);
+    else if (auto const* w_d = dynamic_cast<ADM<double> const*>(&weight_values))
+      serialize_to_onnx(*w_d, height_dims, width_dims, *initializer);
+#ifdef LBANN_HAS_HALF
+    else if (auto const* w_cpu_fp16 =
+               dynamic_cast<ADM<cpu_half_type> const*>(&weight_values))
+      serialize_to_onnx(*w_cpu_fp16, height_dims, width_dims, *initializer);
+#ifdef LBANN_HAS_GPU_FP16
+    else if (auto const* w_gpu_fp16 =
+               dynamic_cast<ADM<gpu_half_type> const*>(&weight_values))
+      serialize_to_onnx(*w_gpu_fp16, height_dims, width_dims, *initializer);
+#endif // LBANN_HAS_GPU_FP16
+#endif // LBNAN_HAS_HALF
+    else
+      LBANN_ERROR("Unknown datatype for weights tensor.");
 
-    El::Copy(values, tmp);
-
-    if (tmp.CrossRank() == tmp.Root()) {
-      auto const& local = tmp.LockedMatrix();
-      auto const mat_height = tmp.Height();
-      auto const mat_width = tmp.Width();
-
-      if constexpr (std::is_same_v<DataType, float>) {
-        initializer->set_data_type(onnx::TensorProto::FLOAT);
-        for (auto col = decltype(mat_width){0}; col < mat_width; ++col) {
-          for (auto row = decltype(mat_height){0}; row < mat_height; ++row) {
-            initializer->add_float_data(local.CRef(row, col));
-          }
-        }
-      }
-      else if constexpr (std::is_same_v<DataType, double>) {
-        initializer->set_data_type(onnx::TensorProto::DOUBLE);
-        for (auto col = decltype(mat_width){0}; col < mat_width; ++col) {
-          for (auto row = decltype(mat_height){0}; row < mat_height; ++row) {
-            initializer->add_double_data(local.CRef(row, col));
-          }
-        }
-      }
-      else
-        LBANN_ERROR("Unsupported DataType. Export onnx callback supports "
-                    "float and double.");
-    }
     initializer->set_name(weights->get_name());
-    initializer->set_doc_string(weights->get_name());
+    initializer->set_doc_string(weights->get_name() + " tensor values");
   }
 
   auto const layers = m->get_layers();
@@ -135,11 +129,10 @@ build_export_onnx_callback_from_pbuf(const google::protobuf::Message& proto_msg,
 {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackExportOnnx&>(proto_msg);
-  return std::make_unique<export_onnx>(
-    params.print_debug_string(),
-    (params.output_file().size() == 0
-     ? std::string("lbann_output.onnx")
-     : params.output_file()));
+  return std::make_unique<export_onnx>(params.print_debug_string(),
+                                       (params.output_file().size() == 0
+                                          ? std::string("lbann_output.onnx")
+                                          : params.output_file()));
 }
 } // namespace callback
 } // namespace lbann
