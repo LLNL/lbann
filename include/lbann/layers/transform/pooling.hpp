@@ -587,12 +587,34 @@ template <typename T, data_layout L, El::Device D>
 void pooling_layer<T, L, D>::fill_onnx_node(
   onnx::GraphProto& graph) const {
   auto* pool = graph.add_node();
-  auto* attribute = pool->add_attribute();
-  attribute->set_name("kernel_shape");
-  attribute->set_type(onnx::AttributeProto::INTS);
-  //FIXME: What is the size of the kernel along each axis?
-  attribute->add_ints(3);
-  attribute->add_ints(3);
+
+  // Get the attributes setup first
+  {
+    auto* kernel_shape = pool->add_attribute();
+    kernel_shape->set_name("kernel_shape");
+    kernel_shape->set_type(onnx::AttributeProto::INTS);
+    for (auto const& k : this->m_pool_dims)
+      kernel_shape->add_ints(k);
+  }
+  if (!this->m_strides.empty()) {
+    auto* strides = pool->add_attribute();
+    strides->set_name("strides");
+    strides->set_type(onnx::AttributeProto::INTS);
+    for (auto const& s : this->m_strides)
+      strides->add_ints(s);
+  }
+  if (!this->m_pads.empty()) {
+    auto* pads = pool->add_attribute();
+    pads->set_name("pads");
+    pads->set_type(onnx::AttributeProto::INTS);
+    for (auto const& p : this->m_pads) {
+      pads->add_ints(p);
+      pads->add_ints(p);
+    }
+  }
+  // FIXME: This is missing "dilations". However, they're only a valid
+  // attribute for MaxPool, not AveragePool.
+
   for(auto const* parent : this->get_parent_layers()) {
     size_t idx = parent->find_child_layer_index(*this);
     pool->add_input(parent->get_name() + "_" + std::to_string(idx));
