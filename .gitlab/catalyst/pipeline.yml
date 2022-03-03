@@ -203,7 +203,7 @@ release allocation:
 # testing).
 .uses spack environment:
   before_script:
-    - source ${HOME}/spack_repos/spack_${SYSTEM_NAME}.git/share/spack/setup-env.sh
+    - source ${SPACK_REPO}/share/spack/setup-env.sh
     - export SPACK_ARCH=$(spack arch)
     - export SPACK_ARCH_TARGET=$(spack arch -t)
     - spack env activate lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
@@ -217,7 +217,7 @@ release allocation:
   variables:
     # Just the obvious identifier. Which specific node doesn't matter.
     SYSTEM_NAME: catalyst
-    SPACK_REPO: ${HOME}/spack_repos/spack_${SYSTEM_NAME}.git
+#    SPACK_REPO: ${HOME}/spack_repos/spack_${SYSTEM_NAME}.git
     SPACK_REPO: ${HOME}/spack_repos/spack_develop.git
 
     # This is based on the assumption that each runner will only ever

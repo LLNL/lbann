@@ -64,7 +64,7 @@ build and install:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - export BUILD_TASKS=$(($(nproc) + 2))
-    - source ${HOME}/spack_repos/spack_${SYSTEM_NAME}.git/share/spack/setup-env.sh
+    - source ${SPACK_REPO}/share/spack/setup-env.sh
     - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -d
       -l ${SPACK_ENV_NAME} --test --clean-build -j ${BUILD_TASKS}
       -e scripts/common_spack_packages/ci_spack_packages.sh --
@@ -174,7 +174,7 @@ release allocation:
   variables:
     # Just the obvious identifier. Which specific node doesn't matter.
     SYSTEM_NAME: pascal
-    SPACK_REPO: ${HOME}/spack_repos/spack_${SYSTEM_NAME}.git
+#    SPACK_REPO: ${HOME}/spack_repos/spack_${SYSTEM_NAME}.git
     SPACK_REPO: ${HOME}/spack_repos/spack_develop.git
 
     # This is based on the assumption that each runner will only ever
