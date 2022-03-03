@@ -84,7 +84,7 @@ void LTFB::apply(ExecutionContext& context,
     m_local_algo->apply(m, dc);
   }
 
-  if (m.get_comm()->am_trainer_master())
+  if (!m_suppress_timer && m.get_comm()->am_trainer_master())
     ltfb_timer.print(std::cout);
 
   // TODO: How do we support aggregate outputs? What does "output"
@@ -114,5 +114,6 @@ lbann::make<lbann::LTFB>(google::protobuf::Message const& msg_in)
     msg.name(),
     make_abstract<TrainingAlgorithm>(params.local_training_algorithm()),
     make_abstract<ltfb::MetaLearningStrategy>(params.meta_learning_strategy()),
-    ltfb::LTFBTerminationCriteria{stopping.max_tournaments()});
+    ltfb::LTFBTerminationCriteria{stopping.max_tournaments()},
+    params.suppress_timer_output());
 }

@@ -49,7 +49,8 @@ class SGDTrainingAlgorithm : public TrainingAlgorithm
 public:
   /** @brief Construct with a name. */
   SGDTrainingAlgorithm(std::string name,
-                       std::unique_ptr<SGDTerminationCriteria> stop);
+                       std::unique_ptr<SGDTerminationCriteria> stop,
+                       bool suppress_timer_output);
 
   SGDTrainingAlgorithm(const SGDTrainingAlgorithm& other) = delete;
   SGDTrainingAlgorithm& operator=(const SGDTrainingAlgorithm& other) = delete;
@@ -139,6 +140,14 @@ private:
   // future", we'll externalize validation and this won't be an issue.
   SGDExecutionContext m_validation_context;
   size_t m_validation_epochs;
+
+  /** @brief Suppress timer output.
+   *  @deprecated This is a temporary way to disable timer
+   *              output. This will be more configurable in the
+   *              future.
+   */
+  bool m_suppress_timer = false;
+
 };
 
 template <>

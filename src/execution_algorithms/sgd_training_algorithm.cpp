@@ -44,12 +44,14 @@ namespace lbann {
 
 SGDTrainingAlgorithm::SGDTrainingAlgorithm(
   std::string name,
-  std::unique_ptr<SGDTerminationCriteria> stop)
+  std::unique_ptr<SGDTerminationCriteria> stop,
+  bool suppress_timer)
   : TrainingAlgorithm{std::move(name)},
     m_timers{"<default>"},
     m_stopping_criteria{std::move(stop)},
     m_validation_context{execution_mode::validation, 1UL},
-    m_validation_epochs{1UL}
+    m_validation_epochs{1UL},
+    m_suppress_timer{suppress_timer}
 {}
 
 ////////////////////////////////////////////////////////////
@@ -81,7 +83,7 @@ void SGDTrainingAlgorithm::apply(ExecutionContext& context,
   default:
     LBANN_ERROR("Illegal mode: ", to_string(mode));
   }
-  if (model.get_comm()->am_trainer_master())
+  if (!m_suppress_timer && model.get_comm()->am_trainer_master())
     m_timers.print(std::cout);
 }
 
@@ -447,6 +449,44 @@ SGDExecutionContext* SGDTrainingAlgorithm::do_get_new_execution_context() const
 }
 } // namespace lbann
 
+namespace {
+using TermCriteria = lbann_data::SGD::TerminationCriteria;
+using StoppingCriteriaFactory = lbann::generic_factory<
+  lbann::SGDTerminationCriteria,
+  int,
+  lbann::proto::generate_builder_type<lbann::SGDTerminationCriteria,
+                                      TermCriteria const&>>;
+
+StoppingCriteriaFactory make_factory()
+{
+  using namespace lbann;
+  using namespace std;
+  StoppingCriteriaFactory factory;
+  factory.register_builder(TermCriteria::kMaxBatches,
+                           [](TermCriteria const& msg) {
+                             return make_unique<BatchTerminationCriteria>(
+                               msg.max_batches());
+                           });
+  factory.register_builder(TermCriteria::kMaxEpochs,
+                           [](TermCriteria const& msg) {
+                             return make_unique<EpochTerminationCriteria>(
+                               msg.max_epochs());
+                           });
+  factory.register_builder(TermCriteria::kMaxSeconds,
+                           [](TermCriteria const& msg) {
+                             return make_unique<SecondsTerminationCriteria>(
+                               msg.max_seconds());
+                           });
+  return factory;
+}
+
+StoppingCriteriaFactory& term_criteria_factory()
+{
+  static StoppingCriteriaFactory factory = make_factory();
+  return factory;
+}
+
+} // namespace
 template <>
 std::unique_ptr<lbann::SGDTrainingAlgorithm>
 lbann::make<lbann::SGDTrainingAlgorithm>(
@@ -459,24 +499,11 @@ lbann::make<lbann::SGDTrainingAlgorithm>(
   LBANN_ASSERT(params.parameters().UnpackTo(&sgd_params));
 
   auto const& stopping_criteria = sgd_params.stopping_criteria();
-  std::unique_ptr<SGDTerminationCriteria> stopping;
-  switch (stopping_criteria.criterion_case()) {
-  case lbann_data::SGD::TerminationCriteria::kMaxBatches:
-    stopping = std::make_unique<BatchTerminationCriteria>(
-      stopping_criteria.max_batches());
-    break;
-  case lbann_data::SGD::TerminationCriteria::kMaxEpochs:
-    stopping = std::make_unique<EpochTerminationCriteria>(
-      stopping_criteria.max_epochs());
-    break;
-  case lbann_data::SGD::TerminationCriteria::kMaxSeconds:
-    stopping = std::make_unique<SecondsTerminationCriteria>(
-      stopping_criteria.max_seconds());
-    // LBANN_ERROR("Time-based training not yet supported in SGD.");
-    break;
-  default:
-    LBANN_ERROR("No stopping criteria specified.");
-  }
-  return std::make_unique<SGDTrainingAlgorithm>(params.name(),
-                                                std::move(stopping));
+  auto stopping =
+    term_criteria_factory().create_object(stopping_criteria.criterion_case(),
+                                          stopping_criteria);
+  return std::make_unique<SGDTrainingAlgorithm>(
+    params.name(),
+    std::move(stopping),
+    sgd_params.suppress_timer_output());
 }
