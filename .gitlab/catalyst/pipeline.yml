@@ -72,7 +72,7 @@ build and install:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - export BUILD_TASKS=$(($(nproc) + 2))
-    - source ${SPACK_REPO}/share/spack/setup-env.sh
+    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -d
       -l ${SPACK_ENV_NAME} --test --clean-build -j ${BUILD_TASKS}
       -e scripts/common_spack_packages/ci_spack_packages.sh --
@@ -176,7 +176,7 @@ remove spack environment:
   when: always
   script:
     - echo "== CLEANING UP SPACK RESOURCES =="
-    - source ${SPACK_REPO}/share/spack/setup-env.sh
+    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - export SPACK_ARCH_TARGET=$(spack arch -t)
     - export FULL_ENV_NAME=lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
     - |
@@ -203,7 +203,7 @@ release allocation:
 # testing).
 .uses spack environment:
   before_script:
-    - source ${SPACK_REPO}/share/spack/setup-env.sh
+    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - export SPACK_ARCH=$(spack arch)
     - export SPACK_ARCH_TARGET=$(spack arch -t)
     - spack env activate lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
@@ -217,8 +217,8 @@ release allocation:
   variables:
     # Just the obvious identifier. Which specific node doesn't matter.
     SYSTEM_NAME: catalyst
-#    SPACK_REPO: ${HOME}/spack_repos/spack_${SYSTEM_NAME}.git
-    SPACK_REPO: ${HOME}/spack_repos/spack_develop.git
+#    SPACK_REPO: spack_repos/spack_${SYSTEM_NAME}.git
+    SPACK_REPO: spack_repos/spack_develop.git
 
     # This is based on the assumption that each runner will only ever
     # be able to run one pipeline on a given cluster at one time.
