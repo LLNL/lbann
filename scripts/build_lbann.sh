@@ -598,7 +598,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
     # Limit the scope of the external search to minimize overhead time
-    CMD="spack external find --scope env:${LBANN_ENV} bzip2 cmake cuda hwloc ninja libtool ncurses openssl perl pkg-config python sqlite spectrum-mpi mvapich2 openmpi"
+    CMD="spack external find --scope env:${LBANN_ENV} bzip2 cmake cuda cudnn hipblas hwloc ninja libtool nccl ncurses openssl perl pkg-config python rccl rdma-core sqlite spectrum-mpi mvapich2 openmpi"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
