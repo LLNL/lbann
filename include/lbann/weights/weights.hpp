@@ -36,6 +36,9 @@
 #include <memory>
 #include <string>
 #include <vector>
+#ifdef LBANN_HAS_ONNX
+#include <onnx/onnx_pb.h>
+#endif //LBANN_HAS_ONNX
 
 namespace lbann_data {
 class WeightsData;
@@ -266,6 +269,11 @@ public:
    */
   template <typename ArchiveT>
   void serialize(ArchiveT& ar);
+
+#ifdef LBANN_HAS_ONNX
+  /** @brief Add serialized weights initializers to onnx graph */
+  virtual void fill_onnx_node(onnx::GraphProto& graph) const;
+#endif // LBANN_HAS_ONNX
 
   ///@}
   /** @name Expert interface */

@@ -92,6 +92,13 @@ void weights::serialize(ArchiveT& ar)
   //   m_matrix_dist
 }
 
+#ifdef LBANN_HAS_ONNX
+void weights::fill_onnx_node(onnx::GraphProto& graph) const {
+  std::cout << "FIXME base class weights->fill_onnx_node()?" << std::endl;
+
+}
+#endif // LBANN_HAS_ONNX
+
 description weights::get_description() const {
   std::ostringstream ss;
 

@@ -171,6 +171,10 @@ public:
 
   ///@}
 
+#ifdef LBANN_HAS_ONNX
+  void fill_onnx_node(onnx::GraphProto& graph) const override;
+#endif //LBANN_HAS_ONNX
+
 private:
   friend cereal::access;
   data_type_weights();

@@ -33,6 +33,7 @@
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
+#include "lbann/utils/onnx_utils.hpp"
 
 #include <layers.pb.h>
 
@@ -412,6 +413,45 @@ void data_type_weights<TensorDataType>::write_proto(lbann_data::WeightsData* pro
   }
 
 }
+
+#ifdef LBANN_HAS_ONNX
+template <typename T>
+using ADM = El::AbstractDistMatrix<T>;
+
+template <typename T>
+void data_type_weights<T>::fill_onnx_node(onnx::GraphProto& graph) const {
+  auto* initializer = graph.add_initializer();
+  auto const height_dims = this->get_matrix_height_dims();
+  auto const width_dims = this->get_matrix_width_dims();
+
+  // Get ready for some fun switch-on-type magic... :/ It gets
+  // prettier every time. Once the weights serialize themselves
+  // properly, this will be handled virtually.
+  auto const& weight_values = this->get_values();
+  if (auto const* w_dt = dynamic_cast<ADM<DataType> const*>(&weight_values))
+    serialize_to_onnx(*w_dt, height_dims, width_dims, *initializer);
+  else if (auto const* w_f = dynamic_cast<ADM<float> const*>(&weight_values))
+    serialize_to_onnx(*w_f, height_dims, width_dims, *initializer);
+  else if (auto const* w_d = dynamic_cast<ADM<double> const*>(&weight_values))
+    serialize_to_onnx(*w_d, height_dims, width_dims, *initializer);
+#ifdef LBANN_HAS_HALF
+  else if (auto const* w_cpu_fp16 =
+           dynamic_cast<ADM<cpu_half_type> const*>(&weight_values))
+    serialize_to_onnx(*w_cpu_fp16, height_dims, width_dims, *initializer);
+#ifdef LBANN_HAS_GPU_FP16
+  else if (auto const* w_gpu_fp16 =
+           dynamic_cast<ADM<gpu_half_type> const*>(&weight_values))
+    serialize_to_onnx(*w_gpu_fp16, height_dims, width_dims, *initializer);
+#endif // LBANN_HAS_GPU_FP16
+#endif // LBNAN_HAS_HALF
+  else
+    LBANN_ERROR("Unknown datatype for weights tensor.");
+
+  initializer->set_name(this->get_name());
+  initializer->set_doc_string(this->get_name() + " tensor values");
+
+}
+#endif // LBANN_HAS_ONNX
 
 template <typename TensorDataType>
 bool data_type_weights<TensorDataType>::load_from_save(std::string const& ckpt_dir,
