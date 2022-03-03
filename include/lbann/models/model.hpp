@@ -42,6 +42,7 @@
 #include "lbann/proto/factories.hpp"
 #include "lbann/weights/weights.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
+#include <onnx/onnx_pb.h>
 
 // Note (trb): There's what is, IMO, an STL error in GCC in which the
 // dtor for unique_ptr is checking sizeof(T), so this must be a
@@ -234,6 +235,9 @@ public:
   ExecutionContext& get_execution_context() {
     return const_cast<ExecutionContext&>(static_cast<const model&>(*this).get_execution_context());
   }
+
+  /** @brief Serialize model to Onnx format */
+  void serialize_model_to_onnx(onnx::ModelProto& mp);
 
   // ===========================================
   // Model specification

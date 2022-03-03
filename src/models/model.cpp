@@ -45,6 +45,7 @@
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/summary_impl.hpp"
+#include "lbann/utils/onnx_utils.hpp"
 
 #include <model.pb.h>
 #include <optimizers.pb.h>
@@ -390,6 +391,70 @@ std::vector<ViewingWeightsPtr> model::get_weights_pointers() const {
     ptrs.emplace_back(w);
   }
   return ptrs;
+}
+
+//FIXME: Delete when moved
+template <typename T>
+using ADM = El::AbstractDistMatrix<T>;
+
+void model::serialize_model_to_onnx(onnx::ModelProto& mp) {
+  mp.set_ir_version(7);
+  auto* opset = mp.add_opset_import();
+  // The empty string ("") domain indicates the operators defined
+  // as part of the ONNX specification; other domains correspond
+  // to operator sets of other vendors (e.g., they can be used to
+  // provide vendor-specific extensions to ONNX)
+  opset->set_domain("");
+  opset->set_version(14);
+
+  mp.set_producer_name("LBANN");
+  mp.set_producer_version(LBANN_MAKE_STR(LBANN_VERSION));
+  mp.set_domain("lbann/LLNL/com.github");
+  mp.set_model_version(1);
+  mp.set_doc_string("Livermore Big Artificial Neural Network");
+
+  // graph info
+  auto* gp = mp.mutable_graph();
+  gp->set_name(this->get_name());
+
+  auto const weights_vec = this->get_weights();
+  for (auto const weights : weights_vec) {
+    auto* initializer = gp->add_initializer();
+    auto const height_dims = weights->get_matrix_height_dims();
+    auto const width_dims = weights->get_matrix_width_dims();
+
+    // Get ready for some fun switch-on-type magic... :/ It gets
+    // prettier every time. Once the weights serialize themselves
+    // properly, this will be handled virtually.
+    auto const& weight_values = weights->get_values();
+    if (auto const* w_dt = dynamic_cast<ADM<DataType> const*>(&weight_values))
+      serialize_to_onnx(*w_dt, height_dims, width_dims, *initializer);
+    else if (auto const* w_f = dynamic_cast<ADM<float> const*>(&weight_values))
+      serialize_to_onnx(*w_f, height_dims, width_dims, *initializer);
+    else if (auto const* w_d = dynamic_cast<ADM<double> const*>(&weight_values))
+      serialize_to_onnx(*w_d, height_dims, width_dims, *initializer);
+#ifdef LBANN_HAS_HALF
+    else if (auto const* w_cpu_fp16 =
+               dynamic_cast<ADM<cpu_half_type> const*>(&weight_values))
+      serialize_to_onnx(*w_cpu_fp16, height_dims, width_dims, *initializer);
+#ifdef LBANN_HAS_GPU_FP16
+    else if (auto const* w_gpu_fp16 =
+               dynamic_cast<ADM<gpu_half_type> const*>(&weight_values))
+      serialize_to_onnx(*w_gpu_fp16, height_dims, width_dims, *initializer);
+#endif // LBANN_HAS_GPU_FP16
+#endif // LBNAN_HAS_HALF
+    else
+      LBANN_ERROR("Unknown datatype for weights tensor.");
+
+    initializer->set_name(weights->get_name());
+    initializer->set_doc_string(weights->get_name() + " tensor values");
+  }
+
+  auto const layers = this->get_layers();
+  for (auto const* layer : layers) {
+    layer->fill_onnx_node(*gp);
+  }
+  gp->set_doc_string(this->get_name());
 }
 
 // =============================================
