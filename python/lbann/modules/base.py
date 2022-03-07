@@ -97,7 +97,7 @@ class FullyConnectedModule(Module):
             self.weights.append(
                 lbann.Weights(initializer=lbann.HeNormalInitializer(),
                               name=self.name+'_matrix'))
-        if len(self.weights) == 1:
+        if self.bias and len(self.weights) == 1:
             self.weights.append(
                 lbann.Weights(initializer=lbann.ConstantInitializer(value=0.0),
                               name=self.name+'_bias'))
@@ -135,7 +135,7 @@ class ChannelwiseFullyConnectedModule(Module):
   """Basic block for channelwise fully-connected neural networks.
 
     Applies a dense linearity channelwise and a nonlinear activation function.
-  
+
   """
 
   global_count = 0
@@ -285,28 +285,28 @@ class ConvolutionModule(Module):
           raise ValueError("Invalid kernel dimensions passed to {}".format(self.name))
 
         self.stride = list(make_iterable(stride))
-        
+
         if (len(self.stride)) == 1:
           self.stride = self.stride * self.num_dims
         elif (len(self.stride)) != self.num_dims:
           raise ValueError("Invalid stride dimensions passed to {}".format(self.name))
-        
+
         self.padding = list(make_iterable(padding))
-        
+
         if (len(self.padding)) == 1:
           self.padding = self.padding * self.num_dims
         elif (len(self.stride)) != self.num_dims:
           raise ValueError("Invalid padding dimensions passed to {}".format(self.name))
-        
+
         self.dilation = list(make_iterable(dilation))
-        
+
         if (len(self.dilation)) == 1:
           self.dilation = self.dilation * self.num_dims
         elif (len(self.dilation)) != self.num_dims:
           raise ValueError("Invalid dilation dimensions passed to {}".format(self.name))
-        
+
         self.groups = groups
-        
+
         self.bias = bias
         self.weights = list(make_iterable(weights))
         self.transpose = transpose
@@ -325,7 +325,7 @@ class ConvolutionModule(Module):
             self.weights.append(
                 lbann.Weights(initializer=lbann.HeNormalInitializer(),
                               name=self.name+'_kernel'))
-        if len(self.weights) == 1:
+        if self.bias and len(self.weights) == 1:
             self.weights.append(
                 lbann.Weights(initializer=lbann.ConstantInitializer(value=0.0),
                               name=self.name+'_bias'))
