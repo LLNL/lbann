@@ -312,11 +312,20 @@ lbann.RandomPairwiseExchange module
 
       Construct a new RandomPairwiseExchange metalearning strategy.
 
-      :param dict[str,int] metric_strategies: FIXME
+      :param dict[str,int] metric_strategies: Map from metric name to
+                                              the criterion for
+                                              picking a winner with
+                                              respect to this metric.
 
-      :param ExchangeStrategy() exchange_strategy:
+      :param ExchangeStrategy() exchange_strategy: The algorithm for
+                                                   exchanging model
+                                                   data in
+                                                   RandomPairwiseExchange.
 
-      :param MutationStrategy() mutation_strategy:
+      :param MutationStrategy() mutation_strategy: The strategy for
+                                                   mutation after a
+                                                   tournament in
+                                                   LTFB.
 
    .. py:method:: export_proto()
 
@@ -379,13 +388,21 @@ lbann.RandomPairwiseExchange module
                   mutation_strategy = MutationStrategy(), sample_size
                   = 0)
 
-      :param string metric_name: FIXME
+      :param string metric_name: The name of the metric to use for
+                                 evaluation. A metric with this name
+                                 must exist in the model passed to
+                                 apply().
 
-      :param string metric_strategy:
+      :param string metric_strategy: Options: ``LOWER_IS_BETTER``, or
+                                     ``HIGHER_IS_BETTER``.
 
-      :param MutationStrategy() mutation_strategy:
+      :param MutationStrategy() mutation_strategy: The strategy for
+                                                   mutation after a
+                                                   tournament in
+                                                   LTFB.
 
-      :param int sample_size:
+      :param int sample_size: Number of trainers chosen from a
+                              population in every tournament.
 
    .. py:method:: export_proto():
 
