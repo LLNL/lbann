@@ -27,6 +27,7 @@
 #include "lbann/metrics/layer_metric.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/io/persist_impl.hpp"
+#include "lbann/utils/timer.hpp"
 
 namespace lbann {
 

@@ -41,6 +41,7 @@ set_full_path(THIS_DIR_SOURCES
   number_theory.cpp
   omp_diagnostics.cpp
   options.cpp
+  output_helpers.cpp
   profiling.cpp
   protobuf_utils.cpp
   python.cpp
@@ -52,6 +53,7 @@ set_full_path(THIS_DIR_SOURCES
   statistics.cpp
   summary.cpp
   system_info.cpp
+  timer_map.cpp
   trainer_file_utils.cpp
   typename.cpp
   visitor_hooks.cpp

@@ -37,6 +37,7 @@
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/summary_impl.hpp"
 #include "lbann/utils/tensor_impl.hpp"
+#include "lbann/utils/timer.hpp"
 
 namespace {
 template <typename MatrixPtrT>

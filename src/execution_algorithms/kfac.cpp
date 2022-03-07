@@ -119,7 +119,8 @@ void KFAC::apply(
   else {
     SGDTrainingAlgorithm eval_algo(
       this->get_name()+"_eval",
-      m_stopping_criteria->clone());
+      m_stopping_criteria->clone(),
+      /*suppress_timer=*/true);
     auto& eval_context = context.get_sgd_execution_context();
     eval_algo.apply(eval_context, model, dc, mode);
   }
@@ -200,7 +201,8 @@ void KFAC::train(
           }
           SGDTrainingAlgorithm eval_algo(
             this->get_name()+"_eval",
-            std::make_unique<EpochTerminationCriteria>(num_validation_epochs));
+            std::make_unique<EpochTerminationCriteria>(num_validation_epochs),
+            /*suppress_timer=*/true);
           eval_algo.apply(eval_context, model, dc, eval_mode);
 
           // FIXME (trb 06/07/21): The early stopping callback is part

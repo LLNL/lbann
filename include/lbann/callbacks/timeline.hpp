@@ -30,6 +30,7 @@
 #define LBANN_CALLBACKS_CALLBACK_TIMELINE_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/utils/timer.hpp"
 
 #include <unordered_map>
 #include <vector>

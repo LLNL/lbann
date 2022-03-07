@@ -76,7 +76,7 @@ namespace lbann {
  *        model emerges. This draws in other issues to be addressed
  *        elsewhere in LBANN such as "How do we export models?"
  *        Currently, this is done by writing to files on disk via
- *        callbacks. However, one might imagine "in-core" interation
+ *        callbacks. However, one might imagine "in-core" interaction
  *        between training and inference, perhaps in an online
  *        learning scenario, in which repeatedly writing to and
  *        reading from disk is not sufficient.

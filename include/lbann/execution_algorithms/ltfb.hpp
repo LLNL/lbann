@@ -84,11 +84,13 @@ public:
   LTFB(std::string name,
        std::unique_ptr<TrainingAlgorithm> local_training_algorithm,
        std::unique_ptr<ltfb::MetaLearningStrategy> meta_learning_strategy,
-       ltfb::LTFBTerminationCriteria stopping_criteria)
+       ltfb::LTFBTerminationCriteria stopping_criteria,
+       bool suppress_timer)
     : TrainingAlgorithm{std::move(name)},
       m_local_algo{std::move(local_training_algorithm)},
       m_meta_learning_strategy{std::move(meta_learning_strategy)},
-      m_termination_criteria{std::move(stopping_criteria)}
+      m_termination_criteria{std::move(stopping_criteria)},
+      m_suppress_timer{suppress_timer}
   {}
 
   ~LTFB() noexcept = default;
@@ -134,6 +136,12 @@ private:
   /** @brief The LTFB stopping criteria. */
   ltfb::LTFBTerminationCriteria m_termination_criteria;
 
+  /** @brief Suppress timer output.
+   *  @deprecated This is a temporary way to disable timer
+   *              output. This will be more configurable in the
+   *              future.
+   */
+  bool m_suppress_timer = false;
 }; // class LTFB
 
 } // namespace lbann

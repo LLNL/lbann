@@ -28,34 +28,32 @@
 #define LBANN_SGD_TRAINING_ALGORITHM_HPP
 
 #include "lbann/base.hpp"
-#include "lbann/execution_algorithms/factory.hpp"
-#include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/execution_algorithms/factory.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
+#include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/utils/cloneable.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/timer_map.hpp"
+
 #include <google/protobuf/message.h>
+
 #include <memory>
 
 namespace lbann {
 
 /** @brief Base class for LBANN SGD-family training algorithms. */
-class SGDTrainingAlgorithm
-  : public TrainingAlgorithm
+class SGDTrainingAlgorithm : public TrainingAlgorithm
 {
 public:
   /** @brief Construct with a name. */
   SGDTrainingAlgorithm(std::string name,
-                       std::unique_ptr<SGDTerminationCriteria> stop)
-    : TrainingAlgorithm{std::move(name)},
-      m_stopping_criteria{std::move(stop)},
-      m_validation_context{execution_mode::validation, 1UL},
-      m_validation_epochs{1UL}
-  {}
+                       std::unique_ptr<SGDTerminationCriteria> stop,
+                       bool suppress_timer_output);
 
   SGDTrainingAlgorithm(const SGDTrainingAlgorithm& other) = delete;
-  SGDTrainingAlgorithm&
-  operator=(const SGDTrainingAlgorithm& other) = delete;
+  SGDTrainingAlgorithm& operator=(const SGDTrainingAlgorithm& other) = delete;
 
   SGDTrainingAlgorithm(SGDTrainingAlgorithm&& other) = default;
   SGDTrainingAlgorithm& operator=(SGDTrainingAlgorithm&& other) = default;
@@ -96,49 +94,44 @@ public:
    *        it hides the base-class method to give the illusion of a
    *        covariant return.
    */
-  std::unique_ptr<SGDExecutionContext>
-  get_new_execution_context() const
-  {
-    return to_unique_ptr(this->do_get_new_execution_context());
-  }
+  std::unique_ptr<SGDExecutionContext> get_new_execution_context() const;
 
 protected:
   /** Train model on one step / mini-batch of an SGD forward pass */
-  virtual bool train_mini_batch(SGDExecutionContext& c,
-                                model& model,
-                                data_coordinator& dc);
+  bool
+  train_mini_batch(SGDExecutionContext& c, model& model, data_coordinator& dc, ScopeTimer timer);
 
   /** Evaluate model on one step / mini-batch of an SGD forward pass */
-  virtual bool evaluate_mini_batch(SGDExecutionContext& c,
-                                   model& model,
-                                   data_coordinator& dc,
-                                   execution_mode mode);
+  bool evaluate_mini_batch(SGDExecutionContext& c,
+                           model& model,
+                           data_coordinator& dc,
+                           execution_mode mode, ScopeTimer timer);
 
   ////////////////////////////////////////////////////////////
   // Callbacks
   ////////////////////////////////////////////////////////////
 
   /** Execute callbacks at start of training. */
-  virtual void do_train_begin_cbs(model& model);
+  void do_train_begin_cbs(model& model, ScopeTimer timer);
   /** Execute callbacks at end of training. */
-  virtual void do_train_end_cbs(model& model);
+  void do_train_end_cbs(model& model, ScopeTimer timer);
   /** Execute callbacks at start of evaluation. */
-  virtual void do_evaluate_begin_cbs(model& model, execution_mode mode);
+  void do_evaluate_begin_cbs(model& model, execution_mode mode, ScopeTimer timer);
   /** Execute callbacks at end of evaluation. */
-  virtual void do_evaluate_end_cbs(model& model, execution_mode mode);
+  void do_evaluate_end_cbs(model& model, execution_mode mode, ScopeTimer timer);
   /** Execute callbacks at start of epoch. */
-  virtual void do_epoch_begin_cbs(model& model);
+  void do_epoch_begin_cbs(model& model, ScopeTimer timer);
   /** Execute callbacks at end of epoch. */
-  virtual void do_epoch_end_cbs(model& model);
+  void do_epoch_end_cbs(model& model, ScopeTimer timer);
   /** Execute callbacks at start of mini-batch. */
-  virtual void do_batch_begin_cbs(model& model, execution_mode mode);
+  void do_batch_begin_cbs(model& model, execution_mode mode, ScopeTimer timer);
   /** Execute callbacks at end of mini-batch. */
-  virtual void do_batch_end_cbs(model& model, execution_mode mode);
+  void do_batch_end_cbs(model& model, execution_mode mode, ScopeTimer timer);
 
-  SGDExecutionContext*
-  do_get_new_execution_context() const override;
+  SGDExecutionContext* do_get_new_execution_context() const override;
 
 private:
+  TimerMap m_timers;
   std::unique_ptr<SGDTerminationCriteria> m_stopping_criteria;
 
   // FIXME (trb 07/20/21): This is a hack. These aren't actually
@@ -147,6 +140,14 @@ private:
   // future", we'll externalize validation and this won't be an issue.
   SGDExecutionContext m_validation_context;
   size_t m_validation_epochs;
+
+  /** @brief Suppress timer output.
+   *  @deprecated This is a temporary way to disable timer
+   *              output. This will be more configurable in the
+   *              future.
+   */
+  bool m_suppress_timer = false;
+
 };
 
 template <>

@@ -30,15 +30,15 @@
 #define LBANN_UTILS_TIMER_HPP_INCLUDED
 
 #include <chrono>
-#include <type_traits>
 
 namespace lbann {
 
 /** @brief Return time in fractional seconds since an epoch. */
-inline double get_time() {
+inline double get_time()
+{
   using namespace std::chrono;
-  return duration_cast<duration<double>>(
-           steady_clock::now().time_since_epoch()).count();
+  return duration_cast<duration<double>>(steady_clock::now().time_since_epoch())
+    .count();
 }
 
 /** @class Timer
@@ -61,6 +61,7 @@ public:
   using ClockType = std::chrono::steady_clock;
   /** @brief Simplifying typedef. */
   using TimePoint = typename ClockType::time_point;
+
 public:
   Timer() = default;
   ~Timer() noexcept = default;
@@ -72,6 +73,9 @@ public:
   /** @brief Start counting time.
    *
    *  If the clock is already running, this will restart the counter.
+   *
+   *  @post running() returns @c true; stop() or check() will return a
+   *        positive value.
    */
   void start() noexcept { m_start = ClockType::now(); }
 
@@ -79,11 +83,13 @@ public:
    *
    *  Resets the counter, so a subsequent call to stop() or check()
    *  without another start() will return 0.0.
-  */
+   *
+   *  @post running() returns @c false, as if reset() were called.
+   */
   double stop() noexcept
   {
     auto elapsed_time = this->check();
-    m_start = TimePoint();
+    this->reset();
     return elapsed_time;
   }
 
@@ -91,14 +97,22 @@ public:
   double check() const noexcept
   {
     using seconds_type = std::chrono::duration<double>;
-    return (m_start == TimePoint()
-            ? 0.0
-            : seconds_type(ClockType::now() -  m_start).count());
+    return running() ? seconds_type(ClockType::now() - m_start).count() : 0.;
   }
+
+  /** @brief Clear any internal state in the timer.
+   *  @post running() returns @c false; check() and stop() return 0.
+   */
+  void reset() noexcept { m_start = TimePoint{}; }
+
+  /** @brief Check if the timer is running. */
+  bool running() const noexcept { return m_start != TimePoint{}; }
+
 private:
   TimePoint m_start;
-};// class Timer
 
-}  // namespace lbann
+}; // class Timer
 
-#endif  // LBANN_UTILS_TIMER_HPP_INCLUDED
+} // namespace lbann
+
+#endif // LBANN_UTILS_TIMER_HPP_INCLUDED
