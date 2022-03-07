@@ -488,6 +488,14 @@ do
     fi
 done
 
+# Check if the user explicitly doesn't want Python support inside of LBANN
+if [[ ! "${LBANN_VARIANTS}" =~ .*"~python".* ]]; then
+    # If Python support is not disabled add NumPy as an external for sanity
+    # Specifically, for use within the data reader, NumPy has to have the same
+    # C++ std library
+    PKG_LIST="${PKG_LIST} py-numpy@1.16.0:"
+fi
+
 # Record the original command in the log file
 echo "${ORIG_CMD}" | tee -a ${LOG}
 
