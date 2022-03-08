@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -224,7 +224,7 @@ dump_weights::dump_weights(
 {}
 
 dump_weights::dump_weights()
-  : dump_weights("", 1, make_unique<dump_weights_internal::TextFileFormat>())
+  : dump_weights("", 1, std::make_unique<dump_weights_internal::TextFileFormat>())
 {}
 
 template <class Archive>
@@ -312,20 +312,20 @@ build_dump_weights_callback_from_pbuf(
   /// @todo Support binary and distributed binary
   std::unique_ptr<dump_weights_internal::FileFormat> file_format;
   if (params.format().empty() || params.format() == "text") {
-    file_format = make_unique<dump_weights_internal::TextFileFormat>();
+    file_format = std::make_unique<dump_weights_internal::TextFileFormat>();
   }
   if (params.format() == "binary") {
-    file_format = make_unique<dump_weights_internal::BinaryFileFormat>();
+    file_format = std::make_unique<dump_weights_internal::BinaryFileFormat>();
   }
   if (params.format() == "distributed_binary") {
-    file_format = make_unique<dump_weights_internal::DistributedBinaryFileFormat>();
+    file_format = std::make_unique<dump_weights_internal::DistributedBinaryFileFormat>();
   }
   if (file_format == nullptr) {
     LBANN_ERROR("unrecognized file format \"",params.format(),"\"");
   }
 
   // Construct callback
-  return make_unique<dump_weights>(
+  return std::make_unique<dump_weights>(
     params.directory(),
     params.epoch_interval(),
     std::move(file_format));
@@ -336,4 +336,5 @@ build_dump_weights_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::dump_weights
+#define LBANN_CLASS_LIBNAME callback_dump_weights
 #include <lbann/macros/register_class_with_cereal.hpp>

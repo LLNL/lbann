@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -68,7 +68,7 @@ load_inference_model(lbann_comm* lc,
                      std::vector<int> output_dims) {
   persist p;
   p.open_restart(cp_dir.c_str());
-  auto m = make_unique<directed_acyclic_graph_model>(lc, nullptr, nullptr);
+  auto m = std::make_unique<directed_acyclic_graph_model>(lc, nullptr, nullptr);
   m->load_from_checkpoint_shared(p);
   p.close_restart();
 
@@ -310,7 +310,7 @@ std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm* comm,
       << io_threads_offset << std::endl;
   }
 
-  auto io_thread_pool = make_unique<thread_pool>();
+  auto io_thread_pool = std::make_unique<thread_pool>();
   io_thread_pool->launch_pinned_threads(num_io_threads, io_threads_offset);
 
   return io_thread_pool;
@@ -413,7 +413,7 @@ std::unique_ptr<model> build_model_from_prototext(
     if(cb == nullptr) {
       std::vector<std::string> dirs = {active_load_model_dir};
       std::unique_ptr<callback::load_model> load_model_cb =
-        make_unique<callback::load_model>(dirs);
+        std::make_unique<callback::load_model>(dirs);
       cb = load_model_cb.get();
       ret_model->add_callback(std::move(load_model_cb));
 #ifdef LBANN_DEBUG

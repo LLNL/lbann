@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -199,7 +199,7 @@ build_step_minibatch_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, std::shared_ptr<lbann_summary> const&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackStepMinibatch&>(proto_msg);
-  return make_unique<step_minibatch>(params.starting_mbsize(),
+  return std::make_unique<step_minibatch>(params.starting_mbsize(),
                                                     params.step(),
                                                     params.ramp_time());
 }
@@ -217,7 +217,7 @@ build_minibatch_schedule_callback_from_pbuf(
                        proto_step.lr(),
                        proto_step.ramp_time());
   }
-  return make_unique<minibatch_schedule>(params.starting_mbsize(),
+  return std::make_unique<minibatch_schedule>(params.starting_mbsize(),
                                                         steps);
 }
 

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -119,7 +119,7 @@ TEST_CASE("Basic weights tests", "[mpi][weights]")
     DataType const value = El::To<DataType>(1.3);
     REQUIRE_NOTHROW(
       dtw.set_initializer(
-        lbann::make_unique<ConstantInitializer<DataType>>(value)));
+        std::make_unique<ConstantInitializer<DataType>>(value)));
     REQUIRE_NOTHROW(dtw.setup());
     CHECK(count_differing_values(value, get_local_values(dtw)) == 0UL);
 
@@ -192,7 +192,7 @@ TEMPLATE_TEST_CASE("Weights proxy tests.", "[mpi][weights][proxy]",
   MasterDataType const value = El::To<MasterDataType>(5.17);
   REQUIRE_NOTHROW(
     dtw->set_initializer(
-      lbann::make_unique<ConstantInitializer<MasterDataType>>(value)));
+      std::make_unique<ConstantInitializer<MasterDataType>>(value)));
 
   // Set the size for the weights.
   REQUIRE_NOTHROW(dtw->set_dims({weights_height}, {weights_width}));

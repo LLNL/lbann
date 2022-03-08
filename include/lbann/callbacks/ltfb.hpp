@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -61,17 +61,13 @@ class LTFBCommunicationAlgorithm;
  */
 class ltfb : public callback_base {
 public:
-
   /** @brief Construct the LTFB callback
    *  @param batch_interval Number of training mini-batch steps between
    *                        tournaments.
    *  @param metric_name    Metric for tournament evaluation.
-   *  @param weights_names  List of weights to exchange with partner.
-   *                        If empty, then all weights are exchanged.
-   *  @param low_score_wins Whether low-scoring or high-scoring models
-   *                        survive a tournament.
    *  @param comm_algo      Inter-trainer communication scheme.
-   *  @param summarizer     The summarizer to use for this callback
+   *  @param exchange_hyperparameters Whether to exchange hyperparameters
+   *                                  with model information.
    */
   ltfb(El::Int batch_interval,
        std::string metric_name,

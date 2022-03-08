@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -41,7 +41,7 @@ class channelwise_fully_connected_distconv_adapter
 
   public:
     using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
-    
+
     channelwise_fully_connected_distconv_adapter(Layer& layer)
       : data_type_distconv_adapter<TensorDataType>(layer){}
     virtual ~channelwise_fully_connected_distconv_adapter() = default;
@@ -55,9 +55,9 @@ class channelwise_fully_connected_distconv_adapter
     void bp_compute();
 
     dc::Shape get_activations_local_shape(int index=0) const override;
- 
+
     std::unique_ptr<dc::ChannelwiseFullyConnected<TensorDataType>> m_linear_operator;
-    std::unique_ptr<TensorDevType> m_linear; 
+    std::unique_ptr<TensorDevType> m_linear;
     std::unique_ptr<TensorDevType> m_bias;
     std::unique_ptr<TensorDevType> m_linearity_gradient;
     std::unique_ptr<TensorDevType> m_bias_gradient;
@@ -90,7 +90,7 @@ class channelwise_fully_connected_layer
 
 public:
 
-  /** @param comm                   LBANN communicator.
+  /** @brief Constructor.
    *  @param output_channel_dims    Output tensor dimensions,
    *                                excluding the first dimension.
    *  @param bias                   Whether to apply bias.
@@ -139,7 +139,7 @@ protected:
   friend class channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>;
 protected:
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
-  bool is_distconv_supported() const override; 
+  bool is_distconv_supported() const override;
   channelwise_fully_connected_distconv_adapter<TensorDataType,Layout,Device>& get_distconv_adapter() override;
   const channelwise_fully_connected_distconv_adapter<TensorDataType,Layout,Device>& get_distconv_adapter() const override;
 #endif

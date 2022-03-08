@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -147,7 +147,7 @@ public:
   /** @brief this method is made public for testing
    *
    *  On return, every Node will have a (possibly empty) child node named
-   *  <s_metadata_node_name>. The rules: 1) a node inherits the metadata node
+   *  \<s_metadata_node_name\>. The rules: 1) a node inherits the metadata node
    *  of its parent; 2) if the node already has a metadata child, the contents
    *  are preserved; if both parent and child have the same named field,
    *  the child's takes precedence.

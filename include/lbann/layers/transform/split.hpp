@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -244,7 +244,7 @@ protected:
     return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
   }
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
-    this->get_distconv_adapter_ptr() = make_unique<split_distconv_adapter<
+    this->get_distconv_adapter_ptr() = std::make_unique<split_distconv_adapter<
       TensorDataType, T_layout, Dev>>(*this);
   }
   split_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() override;
@@ -311,7 +311,7 @@ template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 std::unique_ptr<typename split_distconv_adapter<TensorDataType, T_layout, Dev>::TensorDevType>
 split_distconv_adapter<TensorDataType, T_layout, Dev>::
 setup_activations_i(int index) const {
-  return make_unique<TensorDevType>(this->get_prev_activations(0));
+  return std::make_unique<TensorDevType>(this->get_prev_activations(0));
 }
 #endif // LBANN_HAS_DISTCONV
 

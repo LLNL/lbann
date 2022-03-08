@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -486,61 +486,9 @@ inline size_t sample_list<sample_name_t>
   return size();
 }
 
-
 template <typename sample_name_t>
 inline void sample_list<sample_name_t>
 ::all_gather_archive(const std::string &archive,
-                     std::vector<std::string>& gathered_archive,
-                     lbann_comm& comm) {
-  if (!global_argument_parser().get<bool>(LBANN_OPTION_ALL_GATHER_OLD)) {
-    all_gather_archive_new(archive, gathered_archive, comm);
-    return;
-  }
-
-  int size_of_list_archive = archive.size();
-  std::vector<int> packed_sizes(comm.get_procs_per_trainer());
-
-  comm.trainer_all_gather(size_of_list_archive, packed_sizes);
-
-  int total_packed_size = 0;
-  std::vector<int> displ;
-  displ.assign(comm.get_procs_per_trainer()+1, 0);
-
-  for (size_t i = 0u; i < packed_sizes.size(); ++i) {
-    const auto sz = packed_sizes[i];
-    displ[i+1] = displ[i] + sz;
-  }
-  total_packed_size = displ.back();
-
-  if (total_packed_size <= 0) {
-    return;
-  }
-
-  std::string all_samples;
-  all_samples.resize(static_cast<size_t>(total_packed_size));
-
-  std::vector<El::byte> local_data(archive.begin(), archive.end());
-  std::vector<El::byte> packed_data(all_samples.size() * sizeof(decltype(all_samples)::value_type));
-  comm.trainer_all_gather(local_data,
-                          packed_data,
-                          packed_sizes,
-                          displ);
-
-  for (size_t i = 0u; i < packed_sizes.size(); ++i) {
-    std::string& buf = gathered_archive[i];
-    const auto sz = packed_sizes[i];
-    displ[i+1] = displ[i] + sz;
-    std::vector<El::byte>::const_iterator first = packed_data.begin() + displ[i];
-    std::vector<El::byte>::const_iterator last = packed_data.begin() + displ[i] + sz;
-    buf.resize(sz);
-    buf.assign(first, last);
-  }
-  return;
-}
-
-template <typename sample_name_t>
-inline void sample_list<sample_name_t>
-::all_gather_archive_new(const std::string &archive,
                      std::vector<std::string>& gathered_archive,
                      lbann_comm& comm) {
 

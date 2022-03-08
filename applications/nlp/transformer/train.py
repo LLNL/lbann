@@ -167,7 +167,7 @@ def make_data_reader():
 def make_batch_script(trainer_params, model_params, script_params):
 
     # Create LBANN objects
-    trainer = lbann.Trainer(mini_batch_size=trainer_params.mini_batch_size)
+    trainer = lbann.Trainer(mini_batch_size=trainer_params['mini_batch_size'])
     model = make_model(**model_params)
     reader = make_data_reader()
 
@@ -200,7 +200,7 @@ def make_batch_script(trainer_params, model_params, script_params):
     # Dump weights after every epoch
     model.callbacks.append(
         lbann.CallbackDumpWeights(
-            basename=os.path.join(script_params['work_dir'], 'weights'),
+            directory=os.path.join(script_params['work_dir'], 'weights'),
             epoch_interval=1,
         )
     )

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -469,6 +469,8 @@ struct LogicalXorOpImpl
     auto const& input0 = inputs[0].data();                                     \
     auto const& input1 = inputs[1].data();                                     \
     auto& output = outputs.front().data();                                     \
+    LBANN_ASSERT(input0.Height() == input1.Height());                          \
+    LBANN_ASSERT(input0.Width() == input1.Width());                            \
     internal::EntrywiseZipInto(input0,                                         \
                                input1,                                         \
                                output,                                         \
@@ -488,6 +490,8 @@ struct LogicalXorOpImpl
     auto const& grad_wrt_output = grads_wrt_outputs.front().data();            \
     auto& grad_wrt_input0 = grads_wrt_inputs[0].data();                        \
     auto& grad_wrt_input1 = grads_wrt_inputs[1].data();                        \
+    LBANN_ASSERT(grad_wrt_input0.Height() == grad_wrt_input1.Height());        \
+    LBANN_ASSERT(grad_wrt_input0.Width() == grad_wrt_input1.Width());          \
     internal::apply_binary_backprop_operator(input0,                           \
                                              input1,                           \
                                              grad_wrt_output,                  \

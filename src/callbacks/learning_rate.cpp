@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -327,7 +327,7 @@ build_step_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackStepLearningRate&>(proto_msg);
-  return make_unique<step_learning_rate>(
+  return std::make_unique<step_learning_rate>(
     params.step(),
     params.amt(),
     parse_list<std::string>(params.weights()));
@@ -338,7 +338,7 @@ build_adaptive_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackAdaptiveLearningRate&>(proto_msg);
-  return make_unique<adaptive_learning_rate>(
+  return std::make_unique<adaptive_learning_rate>(
     params.patience(),
     params.amt(),
     parse_list<std::string>(params.weights()));
@@ -353,7 +353,7 @@ build_drop_fixed_learning_rate_callback_from_pbuf(
   for (int i = 0; i < params.drop_epoch_size(); ++i) {
     drop_epochs.push_back(params.drop_epoch(i));
   }
-  return make_unique<drop_fixed_learning_rate>(
+  return std::make_unique<drop_fixed_learning_rate>(
     std::move(drop_epochs),
     params.amt(),
     parse_list<std::string>(params.weights()));
@@ -366,7 +366,7 @@ build_linear_growth_learning_rate_callback_from_pbuf(
   using CallbackType = linear_growth_learning_rate;
   const auto& params =
     dynamic_cast<const MsgType&>(proto_msg);
-  return make_unique<CallbackType>(params.target(),
+  return std::make_unique<CallbackType>(params.target(),
                                    params.num_epochs(),
                                    params.delay(),
                                    parse_list<std::string>(params.weights()));
@@ -378,7 +378,7 @@ build_optimizerwise_adaptive_learning_rate_callback_from_pbuf(
   using MsgType = lbann_data::Callback::CallbackOptimizerwiseAdaptiveLearningRate;
   using CallbackType = optimizerwise_adaptive_learning_rate;
   const auto& params = dynamic_cast<const MsgType&>(proto_msg);
-  return make_unique<CallbackType>(params.scale(),
+  return std::make_unique<CallbackType>(params.scale(),
                                    parse_list<std::string>(params.weights()));
 }
 
@@ -387,7 +387,7 @@ build_poly_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackPolyLearningRate&>(proto_msg);
-  return make_unique<poly_learning_rate>(
+  return std::make_unique<poly_learning_rate>(
     params.power(),
     params.num_epochs(),
     params.max_iter(),

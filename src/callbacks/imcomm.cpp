@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -179,7 +179,7 @@ build_imcomm_callback_from_pbuf(
     LBANN_ERROR("invalid inter-model communication type (", type_str, ")");
   }
   std::unordered_set<weights*> selected_weights; /// @todo Initialize weights
-  return make_unique<imcomm>(type, selected_weights, summarizer);
+  return std::make_unique<imcomm>(type, selected_weights, summarizer);
 }
 
 } // namespace callback

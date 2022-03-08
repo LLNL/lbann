@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -77,7 +77,7 @@ build_random_resized_crop_with_fixed_aspect_ratio_transform_from_pbuf(
   using namespace lbann_data;
   auto const& params =
     dynamic_cast<Transform::RandomResizedCropWithFixedAspectRatio const&>(msg);
-  return make_unique<random_resized_crop_with_fixed_aspect_ratio>(
+  return std::make_unique<random_resized_crop_with_fixed_aspect_ratio>(
     params.height(), params.width(),
     params.crop_height(), params.crop_width());
 }

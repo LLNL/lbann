@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -179,7 +179,7 @@ build_perturb_weights_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackPerturbWeights&>(proto_msg);
-  return make_unique<perturb_weights>(
+  return std::make_unique<perturb_weights>(
     params.upper(),
     params.lower(),
     params.scale(),
@@ -192,4 +192,5 @@ build_perturb_weights_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::perturb_weights
+#define LBANN_CLASS_LIBNAME callback_perturb_weights
 #include <lbann/macros/register_class_with_cereal.hpp>

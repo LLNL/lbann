@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,15 +35,7 @@
 #include "lbann/utils/dnn_lib/onednn.hpp"
 #endif // LBANN_HAS_ONEDNN
 
-// Supported implementations
-#ifdef LBANN_HAS_CUDNN
-#if CUDA_VERSION >= 11000 && CUDNN_VERSION >= 8004 // CUDA 11.0, cuDNN 8.0.4
-#define LBANN_GRU_LAYER_CUDNN_SUPPORTED
-#endif // CUDA_VERSION >= 11000 && CUDNN_VERSION >= 8004
-#endif // LBANN_HAS_CUDNN
-#ifdef LBANN_HAS_ONEDNN_CPU
-#define LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
-#endif // LBANN_HAS_ONEDNN_CPU
+// Supported implementations -- See lbann_config.h
 
 namespace lbann {
 
@@ -56,7 +48,7 @@ namespace lbann {
  *
  *  Uses four weights per GRU cell: "ih\_matrix" (
  *  @f$ 3 \text{hidden\_size}\times\text{input\_size} @f$ for layer 0
- *  and @f$ 3 \text{hidden\_size}\times\text{hidden\_size} for other
+ *  and @f$ 3 \text{hidden\_size}\times\text{hidden\_size} @f$ for other
  *  layers), "hh\_matrix" (
  *  @f$ 3 \text{hidden\_size}\times\text{hidden\_size} @f$ ),
  *  "ih_bias" ( @f$ 3 \text{hidden\_size} @f$ ),

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -114,7 +114,7 @@ class generic_data_reader {
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
 
-  virtual ~generic_data_reader() {}
+  virtual ~generic_data_reader();
   virtual generic_data_reader* copy() const = 0;
 
   /** Archive for checkpoint and restart */
@@ -259,6 +259,7 @@ class generic_data_reader {
 
   /**
    * Sets the percentage of the dataset to be used for validation.
+   * @param m The execution mode.
    * @param s The percentage used, in the range [0, 1].
    */
   virtual void set_execution_mode_split_percent(execution_mode m, double s);
@@ -737,7 +738,7 @@ class generic_data_reader {
    *        used (samples, labels, responses) or any data_field that exists
    *        within an HDF5 experiment schema, Python DR schema, or synthetic
    *        data reader
-   * @param X The matrix to load data into.
+   * @param Y The matrix to load data into.
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    *

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -79,7 +79,7 @@ protected:
     return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
   }
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
-    this->get_distconv_adapter_ptr() = make_unique<relu_distconv_adapter<
+    this->get_distconv_adapter_ptr() = std::make_unique<relu_distconv_adapter<
       TensorDataType, T_layout, Dev>>(*this);
   }
   relu_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() override;
@@ -122,7 +122,7 @@ setup_distributions(tensor_overlap_constraints &constraints) {
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void relu_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
     size_t workspace_capacity) {
-  m_relu = make_unique<dc::ReLU>(dc::get_backend());
+  m_relu = std::make_unique<dc::ReLU>(dc::get_backend());
   m_relu->setup(this->get_prev_activations(),
                 this->get_activations(),
                 this->get_error_signals(),

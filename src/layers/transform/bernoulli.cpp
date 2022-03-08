@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -40,7 +40,7 @@ std::unique_ptr<Layer> build_bernoulli_layer_from_pbuf(
 
   const auto& params = proto_layer.bernoulli();
   const auto& dims = parse_list<int>(params.neuron_dims());
-  return lbann::make_unique<bernoulli_layer<TensorDataType, Layout, Device>>(
+  return std::make_unique<bernoulli_layer<TensorDataType, Layout, Device>>(
     comm, dims, params.prob());
 
 }

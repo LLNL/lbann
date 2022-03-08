@@ -109,5 +109,4 @@ the following:
   into named sections.
 
 Member functions are functions and should be documented as
-:ref:`above<sg-doc-functions>`. An example of a completely marked up
-file is `include/lbann/utils/any.hpp`.
+:ref:`above<sg-doc-functions>`.

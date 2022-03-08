@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -78,10 +78,11 @@ void save_image(const std::string& filename, const CPUMat& src,
 El::Matrix<uint8_t> get_uint8_t_image(const CPUMat& image,
                                       const std::vector<size_t>& dims);
 /**
- * @brief Encodes image to std:string format
+ * @brief Encodes image to given format
  * @param image The image to convert
  * @param dims The dimensions of the image.
- * @returns std::string Returns image in std::string format
+ * @param img_format The export format.
+ * @returns Returns image in std::string format (byte-string)
  */
 std::string encode_image(const El::Matrix<uint8_t>& image,
                          const std::vector<size_t>& dims,

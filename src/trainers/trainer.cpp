@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -140,7 +140,7 @@ trainer::check_and_build_execution_context(TrainingAlgorithm& alg,
       /// @todo BVE FIXME Figure out how to get a good mini-batch size
       /// in here
       context =
-        make_unique<SGDExecutionContext>(mode, get_max_mini_batch_size());
+        std::make_unique<SGDExecutionContext>(mode, get_max_mini_batch_size());
     }
     else {
       LBANN_ERROR("Unknown execution algorithm type.");
@@ -164,7 +164,7 @@ trainer::check_and_build_execution_context(ExecutionContext& c,
     if (dynamic_cast<observer_ptr</*const */ SGDExecutionContext>>(&c) !=
         nullptr) {
       context =
-        make_unique<SGDExecutionContext>(mode, get_max_mini_batch_size());
+        std::make_unique<SGDExecutionContext>(mode, get_max_mini_batch_size());
     }
     else {
       LBANN_ERROR("Unknown execution context type");
@@ -189,6 +189,18 @@ trainer::get_execution_context(execution_context_key_pair_t key)
   }
   return static_cast<SGDExecutionContext&>(
     *(m_model_execution_context[key].get()));
+}
+
+bool trainer::execution_context_valid(model& m,
+                                      execution_mode mode) const noexcept
+{
+  return execution_context_valid(std::make_pair(&m, mode));
+}
+
+bool trainer::execution_context_valid(
+  execution_context_key_pair_t key) const noexcept
+{
+  return (m_model_execution_context.count(key) != 0);
 }
 
 void trainer::delete_execution_context(execution_context_key_pair_t key)
@@ -227,12 +239,12 @@ void trainer::train(observer_ptr<model> model,
   if (!m_training_alg) {
     std::unique_ptr<SGDTerminationCriteria> stopping;
     if (num_epochs)
-      stopping = make_unique<EpochTerminationCriteria>(num_epochs);
+      stopping = std::make_unique<EpochTerminationCriteria>(num_epochs);
     else
-      stopping = make_unique<BatchTerminationCriteria>(num_batches);
+      stopping = std::make_unique<BatchTerminationCriteria>(num_batches);
 
     m_training_alg = std::make_unique<SGDTrainingAlgorithm>(
-      "sgd_train", std::move(stopping));
+      "sgd_train", std::move(stopping), /*suppress_timer=*/false);
   }
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
   m_training_alg->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
@@ -264,9 +276,10 @@ void trainer::evaluate(observer_ptr<model> model,
                        execution_mode mode,
                        El::Int num_batches)
 {
-  auto sgd = make_unique<SGDTrainingAlgorithm>(
+  auto sgd = std::make_unique<SGDTrainingAlgorithm>(
     "sgd_evaluate",
-    make_unique<EpochTerminationCriteria>(/*num_epochs=*/1UL));
+    std::make_unique<EpochTerminationCriteria>(/*num_epochs=*/1UL),
+    /*suppress_timer=*/true);
   auto ctxt = sgd->get_new_execution_context();
   ctxt->set_execution_mode(mode);
   model->reset_mode(*ctxt, execution_mode::invalid);

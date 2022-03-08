@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -237,7 +237,7 @@ private:
   }
 
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
-    this->get_distconv_adapter_ptr() = make_unique<
+    this->get_distconv_adapter_ptr() = std::make_unique<
       mean_squared_error_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
   }
 
@@ -386,7 +386,7 @@ setup_distributions(tensor_overlap_constraints &constraints) {
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void mean_squared_error_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
     size_t workspace_capacity) {
-  m_mean_squared_error = make_unique<dc::MeanSquaredError>(dc::get_backend());
+  m_mean_squared_error = std::make_unique<dc::MeanSquaredError>(dc::get_backend());
   m_mean_squared_error->setup(this->get_prev_activations(0),
                          this->get_prev_activations(1),
                          this->get_activations(0));

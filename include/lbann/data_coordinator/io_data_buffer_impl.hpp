@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -48,7 +48,7 @@ void data_buffer<TensorDataType>::initialize_buffer_for_data_field(
   // Allocate a buffer if the data field doesn't exist
   if (m_input_buffers.find(data_field) == m_input_buffers.end()) {
     m_input_buffers[data_field] =
-      make_unique<StarVCMatDT<TensorDataType, El::Device::CPU>>(
+      std::make_unique<StarVCMatDT<TensorDataType, El::Device::CPU>>(
         comm->get_trainer_grid());
 #if defined(LBANN_HAS_GPU)
     // Pin the memory so that we get efficient GPU data transfer

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -125,6 +125,7 @@ fast_rng_gen& get_fast_io_generator();
 /** @brief Initialize the random number generator (with optional seed).
  *
  *  @param seed Seed value for the random number generator
+ *  @param num_io_RNGs The number of RNGs for I/O.
  *  @param comm If present, mixes the process's rank within the
  *              trainer into the seed; if not, uses the MPI world
  *              rank.

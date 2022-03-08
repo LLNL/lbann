@@ -1,0 +1,5 @@
+# Code ownership for Github
+
+# CI-related infrastructure
+.gitlab-ci.yml @benson31 @vanessen
+/.gitlab/ @benson31 @vanessen

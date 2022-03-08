@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -101,7 +101,7 @@ public:
   virtual void setup(weights* w) = 0;
 
   /** @brief Add to the objective function gradient w.r.t. the weights.
-   *  @param gradient           Contribution to gradient.
+   *  @param contrib            Contribution to gradient.
    *  @param scale              Scaling factor for gradient
    *                            contribution.
    *  @param allreduce_needed   Whether the gradient contribution
@@ -381,7 +381,7 @@ El::AbstractDistMatrix<TensorDataType>& optimizer::get_gradient_buffer(
   // If the manager hasn't been created, let's make it.
   if (!grad_mgr_ptr) {
     auto mat_info = this->get_matrix_info();
-    grad_mgr_ptr = make_unique<GradMgrType>(
+    grad_mgr_ptr = std::make_unique<GradMgrType>(
       std::get<HEIGHT>(mat_info),
       std::get<WIDTH>(mat_info),
       std::get<DISTDATA>(mat_info));

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -62,7 +62,7 @@ struct Builder<float,Layout,El::Device::GPU>
     using LayerType = uniform_hash_layer<float,
                                          Layout,
                                          El::Device::GPU>;
-    return make_unique<LayerType>(std::forward<Args>(args)...);
+    return std::make_unique<LayerType>(std::forward<Args>(args)...);
   }
 };
 #endif // LBANN_HAS_GPU
@@ -77,7 +77,7 @@ struct Builder<double,Layout,El::Device::GPU>
     using LayerType = uniform_hash_layer<double,
                                          Layout,
                                          El::Device::GPU>;
-    return make_unique<LayerType>(std::forward<Args>(args)...);
+    return std::make_unique<LayerType>(std::forward<Args>(args)...);
   }
 };
 #endif // LBANN_HAS_GPU

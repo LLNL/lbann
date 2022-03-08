@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -39,7 +39,7 @@
 
 namespace lbann {
 
-/** @class training_algorithm
+/** @class TrainingAlgorithm
  *  @brief Base class for LBANN training_algorithms.
  *
  *  A "training algorithm" is defined as a method for modifying one or
@@ -76,13 +76,12 @@ namespace lbann {
  *        model emerges. This draws in other issues to be addressed
  *        elsewhere in LBANN such as "How do we export models?"
  *        Currently, this is done by writing to files on disk via
- *        callbacks. However, one might imagine "in-core" interation
+ *        callbacks. However, one might imagine "in-core" interaction
  *        between training and inference, perhaps in an online
  *        learning scenario, in which repeatedly writing to and
  *        reading from disk is not sufficient.
  */
 class TrainingAlgorithm
-  : public Cloneable<HasAbstractFunction<TrainingAlgorithm>>
 {
 public:
   /** @name Lifecycle Management */
@@ -113,7 +112,6 @@ public:
    *                       been updated according to the algorithm.
    *  @param[in,out] dc The data source for this round of training.
    *  @param[in] mode IMO, superfluous. Will be removed.
-   *  @param[in] term_criteria A description of when to stop training.
    */
   virtual void apply(ExecutionContext& context,
                      model& model,
@@ -168,8 +166,8 @@ public:
 protected:
   /** @name In-hierarchy Lifecycle Management */
   ///@{
-  TrainingAlgorithm(const TrainingAlgorithm& other) = default;
-  TrainingAlgorithm& operator=(const TrainingAlgorithm& other) = default;
+  TrainingAlgorithm(const TrainingAlgorithm& other) = delete;
+  TrainingAlgorithm& operator=(const TrainingAlgorithm& other) = delete;
   TrainingAlgorithm(TrainingAlgorithm&& other) = default;
   TrainingAlgorithm& operator=(TrainingAlgorithm&& other) = default;
   ///@}

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -57,11 +57,11 @@ h5out_32.h5 4 RUN_ID/000000004 RUN_ID/000000005 RUN_ID/000000006 RUN_ID/00000000
 
 } // namespace
 
-TEST_CASE("hdf5 data reader", "[mpi][data reader][sample_list][hdf5]")
+TEST_CASE("hdf5 data reader", "[mpi][data_reader][sample_list][hdf5][.filesystem]")
 {
   auto& comm = unit_test::utilities::current_world_comm();
 
-  lbann::hdf5_data_reader* hdf5_dr = new lbann::hdf5_data_reader();
+  auto hdf5_dr = std::make_unique<lbann::hdf5_data_reader>();
   // Avoid the sample list code checking that the files really exist
   // in the file system
   hdf5_dr->get_sample_list().unset_data_file_check();

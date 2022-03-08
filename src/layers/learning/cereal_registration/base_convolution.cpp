@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -55,3 +55,5 @@ void base_convolution_layer<TensorDataType,Device>::serialize(ArchiveT& ar)
     ::lbann::base_convolution_layer<T LBANN_COMMA D>,                   \
     "base_convolution_layer(" #T "," #D ")")
 #include "lbann/macros/instantiate_device.hpp"
+
+CEREAL_REGISTER_DYNAMIC_INIT(base_convolution_layer);

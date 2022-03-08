@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -136,29 +136,30 @@ std::string stack_trace_file_base = "";
  *  Output signal name and stack trace to standard error and to a file
  *  (if desired).
  */
-void handle_signal(int signal) {
+void handle_signal(int const signal) {
+  const auto rank = get_rank_in_world();
 
   // Print error message and stack trace to standard error
-  std::stringstream ss;
-  ss << "Caught " << signal_description(signal);
-  const auto& rank = get_rank_in_world();
-  if (rank >= 0) { ss << " on rank " << rank; }
-  const exception e(ss.str());
-  e.print_report();
+  std::ostringstream oss;
+  oss << "Caught " << signal_description(signal);
+  if (rank >= 0) { oss << " on rank " << rank; }
+
+  // Hack to use the exception machinery to generate the stack trace
+  // report... I. um. really?
+  exception const e{oss.str()};
+  e.print_report(std::cerr);
 
   // Print error message and stack trace to file
   if (!stack_trace_file_base.empty()) {
-    ss.clear();
-    ss.str(stack_trace_file_base);
-    if (rank >= 0) { ss << "_rank" << rank; }
-    ss << ".txt";
-    std::ofstream fs(ss.str().c_str());
+    std::ostringstream{stack_trace_file_base, std::ios_base::ate}.swap(oss);
+    if (rank >= 0) { oss << "_rank" << rank; }
+    oss << ".txt";
+    std::ofstream fs(oss.str());
     e.print_report(fs);
   }
 
   // Terminate program
   El::mpi::Abort(El::mpi::COMM_WORLD, 1);
-
 }
 
 } // namespace

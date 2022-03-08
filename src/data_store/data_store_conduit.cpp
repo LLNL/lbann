@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -135,10 +135,6 @@ data_store_conduit::~data_store_conduit() {
 void data_store_conduit::setup_checkpoint_test() {
   auto& arg_parser = global_argument_parser();
   std::string c = arg_parser.get<std::string>(LBANN_OPTION_DATA_STORE_TEST_CHECKPOINT);
-  // TODO MRW
-  if (c == "1") {
-    LBANN_ERROR("--data_store_test_checkpoint=1; you probably forgot to specify the spill directory; you must specify --data_store_test_checkpoint=<string>'");
-  }
   if (c == "lassen") {
      c = get_lassen_spill_dir();
   }
@@ -981,13 +977,6 @@ bool data_store_conduit::is_fully_loaded() const {
 }
 
 void data_store_conduit::get_image_sizes(map_is_t &file_sizes, std::vector<std::vector<int>> &indices) {
-  auto& arg_parser = global_argument_parser();
-  /// this block fires if image sizes have been precomputed
-  if (arg_parser.get<std::string>(LBANN_OPTION_IMAGE_SIZES_FILENAME) != "") {
-    LBANN_ERROR("not yet implemented");
-    //TODO dah - implement, if this becomes a bottleneck (but I don't think it will)
-  }
-
   // get list of image file names
   image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
   if (image_reader == nullptr) {

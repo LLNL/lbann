@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -92,7 +92,7 @@ protected:
     return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
   }
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
-    this->get_distconv_adapter_ptr() = make_unique<identity_distconv_adapter<
+    this->get_distconv_adapter_ptr() = std::make_unique<identity_distconv_adapter<
       TensorDataType, Layout, Device>>(*this);
   }
 #endif // LBANN_HAS_DISTCONV

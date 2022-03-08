@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -49,7 +49,7 @@ public:
   directed_acyclic_graph_model(const directed_acyclic_graph_model& other) = default;
   directed_acyclic_graph_model& operator=(const directed_acyclic_graph_model& other) = default;
   ~directed_acyclic_graph_model() override = default;
-  std::unique_ptr<model> copy_model() const override { return make_unique<directed_acyclic_graph_model>(*this); }
+  std::unique_ptr<model> copy_model() const override { return std::make_unique<directed_acyclic_graph_model>(*this); }
   std::string get_type() const override { return "directed acyclic graph"; }
 
   template <typename ArchiveT>

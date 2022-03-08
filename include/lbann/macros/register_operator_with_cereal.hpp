@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -59,3 +59,5 @@
 #undef LBANN_REGISTER_OPERATOR_WITH_CEREAL
 #undef LBANN_REGISTER_OPERATOR_WITH_CEREAL_BASE
 #undef LBANN_COMMA
+
+LBANN_REGISTER_DYNAMIC_INIT(LBANN_OPERATOR_NAME);

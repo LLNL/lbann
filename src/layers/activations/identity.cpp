@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -53,7 +53,7 @@ identity_distconv_adapter<TensorDataType, Layout, Device>::
 setup_activations_i(int index) const {
   assert_eq(index, 0);
   const auto &prev_activations = this->get_prev_activations(0);
-  return make_unique<TensorDevType>(prev_activations);
+  return std::make_unique<TensorDevType>(prev_activations);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -62,7 +62,7 @@ identity_distconv_adapter<TensorDataType, Layout, Device>::
 setup_error_signals_i(int index) const {
   assert_eq(index, 0);
   const auto &prev_error_signals = this->get_prev_error_signals(0);
-  return make_unique<TensorDevType>(prev_error_signals);
+  return std::make_unique<TensorDevType>(prev_error_signals);
 }
 #endif // LBANN_HAS_DISTCONV
 

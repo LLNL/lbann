@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -38,29 +38,18 @@
 #endif
 
 namespace lbann {
-  int get_num_numa_nodes();
 #if defined(LBANN_TOPO_AWARE)
-  void hwloc_print_topo();
 
-#if HWLOC_API_VERSION < 0x00020000
-  // This function is implemented in HWLOC 2.1
-  int hwloc_bitmap_singlify_per_core(hwloc_topology_t topology, hwloc_bitmap_t cpuset, unsigned which);
-#endif
+/** @brief Pretty-print a description of the topology as computed by HWLOC.
+ *  @details Potentially useful for debugging. Not currently used, though.
+ *  @todo Consider removing.
+ */
+void hwloc_print_topo();
 
-  hwloc_cpuset_t get_local_cpuset_for_current_thread(hwloc_topology_t topo);
+// Used in thread_pool.cpp and thread_topology.cpp
+hwloc_cpuset_t get_local_cpuset_for_current_thread(hwloc_topology_t topo);
 
-  /** @brief Return the allocated cpuset for the current thread, masking out
-   *  PUs from spurious "unbound" cores.
-   *  Allocates a bitmap that must be freed by calling function */
-  hwloc_cpuset_t get_allocated_cpuset_for_current_thread(const hwloc_topology_t topo);
-
-  /** @brief Given two sets of CPU bitmaps return the common set of
-      cores */
-  void find_common_core_set_from_cpu_masks(hwloc_topology_t topo,
-                                           hwloc_bitmap_t core_set,
-                                           hwloc_bitmap_t primary_set,
-                                           hwloc_bitmap_t ht_set);
-#endif // LBANN_TOPO_AWAR
-}
+#endif // LBANN_TOPO_AWARE
+} // namespace lbann
 
 #endif // LBANN_UTILS_HW_TOPOLOGY_HPP_INCLUDED
