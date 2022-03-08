@@ -131,7 +131,7 @@ set_center_specific_modules()
                 MODULE_CMD="module purge; module load cgpu modules/3.2.11.4 gcc/8.3.0 cuda/11.1.1 openmpi/4.0.3 cmake/3.18.2"
                 ;;
             "zen3") # Perlmutter
-                MODULE_CMD="module load PrgEnv-cray cuda/11.3.0 cray-mpich/8.1.10 nccl/2.9.8 cudnn/8.2.0 hwloc/2.2.0 cmake/git-20210830 cray-python/3.9.4.1 libfabric/1.11.0.4.79 craype-accel-host"
+		MODULE_CMD="module load PrgEnv-cray craype-x86-rome libfabric/1.11.0.4.75 craype-network-ofi cmake/3.22.0 cce/13.0.0 craype/2.7.13 cray-mpich/8.1.12 cray-libsci/21.08.1.2 PrgEnv-cray/8.2.0 nccl/2.11.4 cudnn/8.2.0 cray-python/3.9.4.2 craype-accel-host cudatoolkit/21.9_11.4"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -206,7 +206,7 @@ set_center_specific_spack_dependencies()
                 CENTER_DEPENDENCIES="^openmpi"
                 ;;
             "zen3") # Perlmutter
-                CENTER_DEPENDENCIES="^mpich@8.1.10"
+                CENTER_DEPENDENCIES="%cce@13.0.0 ^mpich@8.1.12 ^python@3.9.4 ^cuda+allow-unsupported-compilers"
 		CENTER_BLAS_LIBRARY="blas=libsci"
                 ;;
             *)
@@ -398,14 +398,14 @@ cat <<EOF  >> ${yaml}
     all:
       providers:
         mpi: [mpich]
-    cuda:
+    nvhpc:
       buildable: False
       version:
-      - 11.3.0
+      - 21.9
       externals:
-      - spec: cuda@11.3.0 arch=${spack_arch}
+      - spec: nvhpc@21.9 arch=${spack_arch}
         modules:
-        - cuda/11.3.0
+        - cudatoolkit/21.9_11.4
     cudnn:
       buildable: False
       version:
@@ -414,14 +414,6 @@ cat <<EOF  >> ${yaml}
       - spec: cudnn@8.2.0 arch=${spack_arch}
         modules:
         - cudnn/8.2.0
-    hwloc:
-      buildable: False
-      version:
-      - 2.2.0
-      externals:
-      - spec: hwloc@2.2.0 arch=${spack_arch}
-        modules:
-        - hwloc/2.2.0
     cray-libsci:
       buildable: False
       version:
@@ -433,19 +425,19 @@ cat <<EOF  >> ${yaml}
     mpich:
       buildable: False
       version:
-      - 8.1.10
+      - 8.1.12
       externals:
-      - spec: "mpich@8.1.10 arch=${spack_arch}"
+      - spec: "mpich@8.1.12 arch=${spack_arch}"
         modules:
-        - cray-mpich/8.1.10
+        - cray-mpich/8.1.12
     nccl:
       buildable: False
       version:
-      - 2.9.8
+      - 2.11.4
       externals:
-      - spec: nccl@2.9.8 arch=${spack_arch}
+      - spec: nccl@2.11.4 arch=${spack_arch}
         modules:
-        - nccl/2.9.8
+        - nccl/2.11.4
 EOF
                 ;;
             *)
@@ -478,6 +470,7 @@ cat <<EOF >> ${yaml}
       core_compilers:
         - 'gcc@7.5.0'
         - 'clang@12.0.1'
+        - 'cce@13.0.0'
       projections:
         all: '\${PACKAGE}/\${VERSION}'
       all:
