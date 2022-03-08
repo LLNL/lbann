@@ -26,7 +26,10 @@
 #ifndef LBANN_UNIT_TEST_UTILITIES_TEST_HELPERS_HPP_INCLUDED
 #define LBANN_UNIT_TEST_UTILITIES_TEST_HELPERS_HPP_INCLUDED
 
-#include <lbann/utils/memory.hpp>
+#include <lbann/utils/argument_parser.hpp>
+#include <lbann/utils/options.hpp>
+
+#include <memory>
 
 namespace unit_test
 {
@@ -40,9 +43,29 @@ bool IsValidPtr(std::unique_ptr<T> const& ptr) noexcept
 }
 
 template <typename T>
+bool IsValidPtr(std::shared_ptr<T> const& ptr) noexcept
+{
+  return static_cast<bool>(ptr);
+}
+
+template <typename T>
 bool IsValidPtr(T const* ptr) noexcept
 {
   return static_cast<bool>(ptr);
+}
+
+/** @brief Return the global LBANN argument parser reset to its default
+ *         condition.
+ *
+ *  With respect to testing, this means that the options have been
+ *  added as with lbann::construct_all_options().
+ */
+inline lbann::default_arg_parser_type& reset_global_argument_parser()
+{
+  auto& arg_parser = lbann::global_argument_parser();
+  arg_parser.clear();
+  lbann::construct_all_options();
+  return arg_parser;
 }
 
 } // namespace utilities

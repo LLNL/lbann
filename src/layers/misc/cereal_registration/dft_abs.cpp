@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -63,3 +63,5 @@ PROTO_DEVICE(float, El::Device::GPU)
 PROTO_DEVICE(double, El::Device::GPU)
 #endif // LBANN_HAS_GPU
 #endif // LBANN_HAS_FFTW
+
+LBANN_REGISTER_DYNAMIC_INIT(dft_abs_layer);

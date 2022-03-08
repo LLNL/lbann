@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-/** @brief Square of L2 vector norm.
+/** @brief Square of L2 vector norm
  *
  *  @f[ \lVert x\rVert_2^2 = \sum\limits_{i} x_i^2 @f]
  */

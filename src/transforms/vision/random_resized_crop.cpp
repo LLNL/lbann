@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -99,12 +99,12 @@ build_random_resized_crop_transform_from_pbuf(
   auto const& params =
     dynamic_cast<lbann_data::Transform::RandomResizedCrop const&>(msg);
   if (params.scale_min() != 0.0f) {
-    return make_unique<random_resized_crop>(
+    return std::make_unique<random_resized_crop>(
       params.height(), params.width(),
       params.scale_min(), params.scale_max(),
       params.ar_min(), params.ar_max());
   } else {
-    return make_unique<random_resized_crop>(params.height(), params.width());
+    return std::make_unique<random_resized_crop>(params.height(), params.width());
   }
 }
 

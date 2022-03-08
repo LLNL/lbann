@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -190,7 +190,7 @@ build_perturb_adam_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackPerturbAdam&>(proto_msg);
-  return make_unique<perturb_adam>(
+  return std::make_unique<perturb_adam>(
     params.learning_rate_factor(),
     params.beta1_factor(),
     params.beta2_factor(),
@@ -204,4 +204,5 @@ build_perturb_adam_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::perturb_adam
+#define LBANN_CLASS_LIBNAME callback_perturb_adam
 #include <lbann/macros/register_class_with_cereal.hpp>

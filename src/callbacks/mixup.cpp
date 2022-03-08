@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -123,11 +123,12 @@ build_mixup_callback_from_pbuf(
   const auto& layers_list = parse_list<std::string>(params.layers());
   std::unordered_set<std::string> layers(layers_list.begin(),
                                          layers_list.end());
-  return make_unique<mixup>(layers, params.alpha());
+  return std::make_unique<mixup>(layers, params.alpha());
 }
 
 } // namespace callback
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::mixup
+#define LBANN_CLASS_LIBNAME callback_mixup
 #include <lbann/macros/register_class_with_cereal.hpp>

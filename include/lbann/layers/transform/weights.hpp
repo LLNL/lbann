@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,7 +32,7 @@
 
 namespace lbann {
 
-/** @brief Output a weights tensor.
+/** @brief Output a weights tensor
  *
  *  Interfaces with a @c weights object and outputs its tensor.
  */
@@ -129,7 +129,7 @@ public:
     // Initialize default weights if none are provided
     if (!this->has_weights()) {
       auto w = std::make_shared<WeightsType>(*this->get_comm());
-      auto init = make_unique<constant_initializer<DataType>>(DataType(0));
+      auto init = std::make_unique<constant_initializer<DataType>>(DataType(0));
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_weights");
       w->set_initializer(std::move(init));

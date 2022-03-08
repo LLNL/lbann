@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,11 +32,12 @@
 
 namespace lbann {
 
-/** @brief Indicate top-k entries.
+/** @brief One-hot vector indicating top-k entries
  *
- *  Output entries corresponding to the top-k input entries are set to
- *  one and the rest to zero. Ties are broken in favor of entries with
- *  smaller indices.
+ *  Output tensor has same dimensions as input tensor. Output entries
+ *  corresponding to the top-k input entries are set to one and the
+ *  rest to zero. Ties are broken in favor of entries with smaller
+ *  indices.
  */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,

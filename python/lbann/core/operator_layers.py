@@ -53,12 +53,14 @@ def generate_operator_layer(operator_class):
                 device = lbann.DeviceAllocation.CPU
             elif self.device.lower() == 'gpu':
                 device = lbann.DeviceAllocation.GPU
+        elif self.device is not None:
+            raise TypeError('Unknown type for field device ' + str(type(device)))
 
         # Configure operators to match layer
         for o in self.ops:
             o.input_type = self.datatype
             o.output_type = self.datatype
-            o.device_allocation = device
+            o.device = device
 
         # Generate Protobuf message
         return OperatorLayer.export_proto(self)

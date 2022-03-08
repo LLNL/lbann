@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -93,7 +93,7 @@ class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
 };
 #endif // LBANN_HAS_DISTCONV
 
-/** @brief Interface with data reader. */
+/** @brief Interface with data reader */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
@@ -189,7 +189,7 @@ class input_layer : public data_type_layer<TensorDataType> {
     return Dev == El::Device::CPU && T_layout == data_layout::DATA_PARALLEL;
   }
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
-    this->get_distconv_adapter_ptr() = make_unique<distconv_adapter_type>(
+    this->get_distconv_adapter_ptr() = std::make_unique<distconv_adapter_type>(
       *this, m_data_field, dr_metadata.shuffle_required);
   }
   distconv_adapter_type& get_distconv_adapter() override;

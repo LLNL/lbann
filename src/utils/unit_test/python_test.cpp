@@ -1,3 +1,28 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
 // MUST include this
 #include <catch2/catch.hpp>
 
@@ -58,13 +83,25 @@ def throw_exception():
 
     SECTION ("Making syntax error") {
       PyObject* main = PyImport_ImportModule("__main__");
-      std::string func_def = R"(
-def make_syntax_error():
-    this should throw a NameError
+      std::string silence_warnings = R"(
+import os, sys
+stderr_orig = sys.stderr
+stderr_devnull = open(os.devnull, 'w')
+sys.stderr = stderr_devnull
 )";
+      std::string func_def = R"(
+def invalid_func():
+    A SyntaxError should happen here
+)";
+      std::string reenable_warnings = R"(
+sys.stderr = stderr_orig
+stderr_devnull.close()
+)";
+      PyRun_SimpleString(silence_warnings.c_str());
       PyRun_SimpleString(func_def.c_str());
-      PyObject_CallMethod(main, "make_syntax_error", "()");
+      PyObject_CallMethod(main, "invalid_func", "()");
       REQUIRE_THROWS(lbann::python::check_error());
+      PyRun_SimpleString(reenable_warnings.c_str());
       Py_DECREF(main);
       REQUIRE_NOTHROW(lbann::python::check_error());
     }

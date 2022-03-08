@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -140,7 +140,7 @@ build_perturb_dropout_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackPerturbDropout&>(proto_msg);
-  return make_unique<perturb_dropout>(
+  return std::make_unique<perturb_dropout>(
     params.keep_dropout_factor(),
     parse_set<std::string>(params.layers()));
 }
@@ -149,4 +149,5 @@ build_perturb_dropout_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::perturb_dropout
+#define LBANN_CLASS_LIBNAME callback_perturb_dropout
 #include <lbann/macros/register_class_with_cereal.hpp>

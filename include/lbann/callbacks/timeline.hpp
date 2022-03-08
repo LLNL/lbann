@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,6 +30,7 @@
 #define LBANN_CALLBACKS_CALLBACK_TIMELINE_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/utils/timer.hpp"
 
 #include <unordered_map>
 #include <vector>

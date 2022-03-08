@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -64,7 +64,7 @@ CheckpointFile::get_partner_model(model const& m,
         using TensorDataType = DataType;
         using WeightsType = data_type_weights<TensorDataType>;
         restore_weights[w->get_name()] =
-          make_unique<WeightsType>(dynamic_cast<WeightsType&>(*w));
+          std::make_unique<WeightsType>(dynamic_cast<WeightsType&>(*w));
       }
     }
   }

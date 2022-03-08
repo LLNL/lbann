@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -187,9 +187,9 @@ template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_glorot_initializer_from_pbuf(google::protobuf::Message const& msg) {
   if (dynamic_cast<lbann_data::Initializer::GlorotNormalInitializer const*>(&msg))
-    return make_unique<glorot_initializer<TensorDataType>>(probability_distribution::gaussian);
+    return std::make_unique<glorot_initializer<TensorDataType>>(probability_distribution::gaussian);
   else if (dynamic_cast<lbann_data::Initializer::GlorotUniformInitializer const*>(&msg))
-    return make_unique<glorot_initializer<TensorDataType>>(probability_distribution::uniform);
+    return std::make_unique<glorot_initializer<TensorDataType>>(probability_distribution::uniform);
   else {
     LBANN_ERROR("build_glorot_initializer_from_pbuf: Bad message.");
     return nullptr;
@@ -200,9 +200,9 @@ template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_he_initializer_from_pbuf(google::protobuf::Message const& msg) {
   if (dynamic_cast<lbann_data::Initializer::HeNormalInitializer const*>(&msg))
-    return make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
+    return std::make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
   else if (dynamic_cast<lbann_data::Initializer::HeUniformInitializer const*>(&msg))
-    return make_unique<he_initializer<TensorDataType>>(probability_distribution::uniform);
+    return std::make_unique<he_initializer<TensorDataType>>(probability_distribution::uniform);
   else {
     LBANN_ERROR("build_he_initializer_from_pbuf: Bad message.");
     return nullptr;
@@ -213,9 +213,9 @@ template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_lecun_initializer_from_pbuf(google::protobuf::Message const& msg) {
   if (dynamic_cast<lbann_data::Initializer::LeCunNormalInitializer const*>(&msg))
-    return make_unique<lecun_initializer<TensorDataType>>(probability_distribution::gaussian);
+    return std::make_unique<lecun_initializer<TensorDataType>>(probability_distribution::gaussian);
   else if (dynamic_cast<lbann_data::Initializer::LeCunUniformInitializer const*>(&msg))
-    return make_unique<lecun_initializer<TensorDataType>>(probability_distribution::uniform);
+    return std::make_unique<lecun_initializer<TensorDataType>>(probability_distribution::uniform);
   else {
     LBANN_ERROR("build_lecun_initializer_from_pbuf: Bad message.");
     return nullptr;

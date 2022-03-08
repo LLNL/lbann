@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -77,7 +77,7 @@ TEMPLATE_LIST_TEST_CASE("Serializing convolution layer",
   LayerType src_layer(2, 46, src_dims, src_pads, src_strides, src_dilations, 2, true);
   LayerType tgt_layer(3, 41, {3,1,4}, {1,5,9}, {2,6,5}, {2,3,1}, 1, false);
   std::unique_ptr<lbann::Layer>
-    src_layer_ptr = lbann::make_unique<LayerType>(2, 46, src_dims, src_pads, src_strides, src_dilations, 2, true),
+    src_layer_ptr = std::make_unique<LayerType>(2, 46, src_dims, src_pads, src_strides, src_dilations, 2, true),
     tgt_layer_ptr;
 
 #ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES

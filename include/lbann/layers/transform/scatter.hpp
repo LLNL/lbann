@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,17 +32,26 @@
 
 namespace lbann {
 
-/** @brief Scatter values to specified tensor indices.
+/** @brief Scatter values to specified tensor indices
  *
+ *  Expects two input tensors: an @f$ N @f$-D data tensor and a 1D
+ *  index vector. For 1D data:
  *  @f[
  *    y[\text{ind}[i]] = x[i]
  *  @f]
+ *  Out-of-range indices are ignored.
  *
- *  The first input tensor is the values and the second is the
- *  indices. The two input tensors must have the same dimensions, and
- *  the input and output tensors must have the same number of
- *  dimensions. If an index is out-of-range, it is ignored.
+ *  For higher-dimensional data, the layer performs a scatter along
+ *  one dimension. For example, with 2D data and axis=1,
+ *  @f[
+ *    y[i,\text{ind}[j]] = x[i,j]
+ *  @f]
+ *  Currently, only 1D and 2D data is supported.
  *
+ *  The size of the index vector must match the size of the data
+ *  tensor along the scatter dimension.
+ *
+ *  @todo Support higher-dimensional data
  */
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,
@@ -143,7 +152,7 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
     }
     return ss.str();
   };
-  
+
   if(is_values_2D){
     if(this->m_scatter_axis == -1){
       LBANN_ERROR(
@@ -171,13 +180,13 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
   }
 
   // Check tensor dimensions
-  if (input1_dims.size() != 1 || 
-      !(is_values_1D || is_values_2D) || 
+  if (input1_dims.size() != 1 ||
+      !(is_values_1D || is_values_2D) ||
       input0_dims.size() != output_dims.size()) {
     LBANN_ERROR(
       this->get_type()," layer \"",this->get_name(),"\" ",
       "attempted to scatter from a ",input0_dims.size(),"-D tensor ",
-      "(",dims_to_str(input0_dims),"), to a ", output_dims.size(),"-D tensor", 
+      "(",dims_to_str(input0_dims),"), to a ", output_dims.size(),"-D tensor",
       "but the scatter layer currently only supports ",
       "scattering to and from a 1-D or 2-D tensor and the input and output tensors",
       "must have the same number of dimensions");

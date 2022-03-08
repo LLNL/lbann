@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,7 +33,7 @@ namespace lbann {
 
 /** @brief Get index of maximum-value tensor entry
  *
- *  Expects a 1-D input tensor. If multiple entries have the same
+ *  Expects a 1D input tensor. If multiple entries have the same
  *  maximum value, outputs the index of the first one.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>

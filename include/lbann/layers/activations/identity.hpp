@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -47,10 +47,10 @@ class identity_distconv_adapter: public data_type_distconv_adapter<TensorDataTyp
 #endif // LBANN_HAS_DISTCONV
 
 
-/** @brief Output a tensor view.
+/** @brief Output the input tensor
  *
- *  Forward and backward prop simply involve setting up tensor views,
- *  and hence are very cheap.
+ *  This layer is very cheap since it just involves setting up tensor
+ *  views.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class identity_layer : public data_type_layer<TensorDataType> {
@@ -92,7 +92,7 @@ protected:
     return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
   }
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
-    this->get_distconv_adapter_ptr() = make_unique<identity_distconv_adapter<
+    this->get_distconv_adapter_ptr() = std::make_unique<identity_distconv_adapter<
       TensorDataType, Layout, Device>>(*this);
   }
 #endif // LBANN_HAS_DISTCONV

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -1220,24 +1220,24 @@ void kfac_block_gru<Device>::initialize_activations_and_errors(
       //Initialize Dist Matrices
       for (auto& input : this->m_parent_local_activations) {
         if(dtl_parent.get_data_layout() == data_layout::DATA_PARALLEL)
-          input = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          input = std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
         else
-          input = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          input = std::make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
       }
 
       for (auto& error : this->m_child_local_errors) {
 
         if(dtl_child.get_data_layout() == data_layout::DATA_PARALLEL)
-          error = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          error = std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
         else
-          error = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          error = std::make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
       }
 
       int iter = 0;
       for (auto& weight : this->m_weight_values) {
         auto& weights = this->m_layer->get_weights(iter);
         const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
-        weight = make_unique<El::Matrix<DataType, Device>>(dtw->get_values().Height(),dtw->get_values().Width());
+        weight = std::make_unique<El::Matrix<DataType, Device>>(dtw->get_values().Height(),dtw->get_values().Width());
         iter++;
       }
     }
@@ -1257,19 +1257,19 @@ void kfac_block_gru<Device>::initialize_activations_and_errors(
 
     for (auto& input : this->m_parent_local_activations) {
       if(dtl_parent.get_data_layout() == data_layout::DATA_PARALLEL)
-        input = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+        input = std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
       else
-        input = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+        input = std::make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
     }
 
     for (auto& error : this->m_child_local_errors) {
       if(dtl_child.get_data_layout() == data_layout::DATA_PARALLEL)
-        error = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+        error = std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
       else
-        error = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+        error = std::make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
     }
     for (auto& weight : this->m_weight_values) {
-        weight = make_unique<El::Matrix<DataType, Device>>();
+        weight = std::make_unique<El::Matrix<DataType, Device>>();
       }
 
 

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -34,7 +34,7 @@
 
 namespace lbann {
 
-/** @brief Logarithm of softmax function.
+/** @brief Logarithm of softmax function
  *
  *  @f[ \log \text{softmax}(x)_i = x_i - \log \sum_j e^{x_j} @f]
  */

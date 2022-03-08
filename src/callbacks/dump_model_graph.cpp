@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -156,7 +156,7 @@ build_dump_model_graph_callback_from_pbuf(
       dynamic_cast<const lbann_data::Callback::CallbackDumpModelGraph&>(proto_msg);
   const std::string basename = params.basename();
   const bool print = params.print();
-  return make_unique<dump_model_graph>(
+  return std::make_unique<dump_model_graph>(
       basename.size() == 0 ? "model.dot" : basename,
       print);
 }

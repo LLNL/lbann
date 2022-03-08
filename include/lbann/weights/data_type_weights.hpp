@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -163,7 +163,7 @@ public:
 
   /** @brief Serialize the weights object to the archive.
    *  @tparam ArchiveT (Inferred.) The archive type.
-   *  @param ar[in,out] The archive to which to write or from which to
+   *  @param[in,out] ar The archive to which to write or from which to
    *                    read.
    */
   template <typename ArchiveT>

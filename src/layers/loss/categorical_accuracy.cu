@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -155,7 +155,6 @@ void fp_gpu(lbann_comm& comm,
   auto& local_loss = loss.Matrix();
 
   // Dimensions
-  const auto& height = predictions.Height();
   const auto& local_height = local_predictions.Height();
   const auto& local_width = local_predictions.Width();
   if (local_width < 1) { return; }

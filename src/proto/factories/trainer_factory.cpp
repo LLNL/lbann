@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -44,7 +44,7 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm* comm,
 #define TEMPLATE_INSTANTIATION(TensorDataType)                              \
     do {                                                                    \
       if (proto_datatype == TypeToProtoDataType<TensorDataType>::value) {   \
-        dc = lbann::make_unique<buffered_data_coordinator<TensorDataType>>( \
+        dc = std::make_unique<buffered_data_coordinator<TensorDataType>>( \
           comm);                                                            \
       }                                                                     \
     } while (0)
@@ -58,7 +58,7 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm* comm,
 #undef TEMPLATE_INSTANTIATION
 
   // Instantiate trainer
-  auto t = make_unique<trainer>(
+  auto t = std::make_unique<trainer>(
     comm,
     std::move(dc),
     proto_trainer.mini_batch_size(),

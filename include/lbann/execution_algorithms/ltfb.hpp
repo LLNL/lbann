@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -64,10 +64,8 @@ namespace lbann {
  *  then do some other stuff, this class can certainly serve as a
  *  useful guide, but is not likely to be the out-of-the-box solution.
  */
-class LTFB final : public Cloneable<LTFB, TrainingAlgorithm>
+class LTFB final : public TrainingAlgorithm
 {
-  using BaseType = Cloneable<LTFB, TrainingAlgorithm>;
-
 public:
   using TermCriteriaType = ltfb::LTFBTerminationCriteria;
   using ExeContextType = ltfb::LTFBExecutionContext;
@@ -76,26 +74,30 @@ public:
   /** @name Life-cycle management */
   ///@{
   /** @brief Construct LTFB from its component pieces.
-   *  @param local_training_algorithm The training algorithm to be
-   *         used for (trainer-)local training.
-   *  @param meta_learning_strategy The postprocessing algorithm.
+   *  @param[in] name A string identifying this instance of LTFB.
+   *  @param[in] local_training_algorithm The training algorithm to
+   *             be used for (trainer-)local training.
+   *  @param[in] meta_learning_strategy The postprocessing algorithm.
+   *  @param[in] stopping_criteria When to stop the training
+   *             algorithm.
    */
   LTFB(std::string name,
        std::unique_ptr<TrainingAlgorithm> local_training_algorithm,
        std::unique_ptr<ltfb::MetaLearningStrategy> meta_learning_strategy,
-       ltfb::LTFBTerminationCriteria stopping_criteria)
-    : BaseType{std::move(name)}, m_local_algo{std::move(
-                                   local_training_algorithm)},
+       ltfb::LTFBTerminationCriteria stopping_criteria,
+       bool suppress_timer)
+    : TrainingAlgorithm{std::move(name)},
+      m_local_algo{std::move(local_training_algorithm)},
       m_meta_learning_strategy{std::move(meta_learning_strategy)},
-      m_termination_criteria{std::move(stopping_criteria)}
+      m_termination_criteria{std::move(stopping_criteria)},
+      m_suppress_timer{suppress_timer}
   {}
 
-  LTFB(LTFB const& other)
-    : BaseType(other), m_local_algo{other.m_local_algo->clone()},
-      m_meta_learning_strategy{other.m_meta_learning_strategy->clone()},
-      m_termination_criteria{other.m_termination_criteria}
-  {}
   ~LTFB() noexcept = default;
+  LTFB(LTFB const& other) = delete;
+  LTFB& operator=(LTFB const&) = delete;
+  LTFB(LTFB&&) = default;
+  LTFB& operator=(LTFB&&) = default;
   ///@}
   /** @brief Queries */
   ///@{
@@ -114,7 +116,7 @@ public:
              model& m,
              data_coordinator& dc,
              execution_mode mode) final;
-
+  ///@}
 protected:
   /** @brief Covariant return-friendly implementation of
    *         `get_new_exection_context()`.
@@ -134,6 +136,12 @@ private:
   /** @brief The LTFB stopping criteria. */
   ltfb::LTFBTerminationCriteria m_termination_criteria;
 
+  /** @brief Suppress timer output.
+   *  @deprecated This is a temporary way to disable timer
+   *              output. This will be more configurable in the
+   *              future.
+   */
+  bool m_suppress_timer = false;
 }; // class LTFB
 
 } // namespace lbann

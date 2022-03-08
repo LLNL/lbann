@@ -17,6 +17,8 @@ def str_list(it, sep=' '):
     """Convert an iterable object to a string."""
     return sep.join(str(i) for i in make_iterable(it))
 
+list2str = str_list
+
 def make_nd_array(*dims):
     """Create a multi-dimensional array with given dimensions.
 

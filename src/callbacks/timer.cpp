@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -249,11 +249,12 @@ void timer::timing_end(model& m) {
 std::unique_ptr<callback_base>
 build_timer_callback_from_pbuf(
   const google::protobuf::Message&, std::shared_ptr<lbann_summary> const& summarizer) {
-  return make_unique<timer>(summarizer);
+  return std::make_unique<timer>(summarizer);
 }
 
 } // namespace callback
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::timer
+#define LBANN_CLASS_LIBNAME callback_timer
 #include <lbann/macros/register_class_with_cereal.hpp>

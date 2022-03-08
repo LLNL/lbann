@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -178,7 +178,7 @@ void image_data_reader::load() {
     }
     m_sample_list.write(s.str());
   }
-  if (arg_parser.get<bool>("write_sample_label_list") &&
+  if (arg_parser.get<bool>(LBANN_OPTION_WRITE_SAMPLE_LABEL_LIST) &&
       m_comm->am_trainer_master()) {
     if (!(m_keep_sample_order || arg_parser.get<bool>(LBANN_OPTION_KEEP_SAMPLE_ORDER))) {
       std::cout << "Writting sample label list without the option "

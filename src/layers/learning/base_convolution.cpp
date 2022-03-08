@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -322,7 +322,7 @@ base_convolution_layer<TensorDataType,Device>
   }
   if (!this->has_weights(0)) {
     auto w = std::make_shared<WeightsType>(*this->get_comm());
-    auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
+    auto init = std::make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
     auto opt = this->m_model->template create_optimizer<TensorDataType>();
 
     w->set_name(this->get_name() + "_kernel");
@@ -1118,7 +1118,7 @@ base_convolution_layer<TensorDataType,Device>::get_backward_filter_algo_dnn(
 template <typename TensorDataType, El::Device Device>
 void base_convolution_layer<TensorDataType,Device>::setup_distconv_adapter(
     const DataReaderMetaData& dr_metadata) {
-  this->get_distconv_adapter_ptr() = make_unique<
+  this->get_distconv_adapter_ptr() = std::make_unique<
     base_convolution_adapter<TensorDataType, Device>>(*this);
 }
 
@@ -1155,12 +1155,12 @@ void base_convolution_adapter<TensorDataType, Device>::setup_fp_tensors() {
   dc::Shape kernel_shape(kernel_dims);
   std::reverse(kernel_shape.begin(), kernel_shape.end());
   const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-  m_kernel = make_unique<TensorDevType>(kernel_shape, loc, shared_dist);
+  m_kernel = std::make_unique<TensorDevType>(kernel_shape, loc, shared_dist);
 
   if (layer.m_bias_scaling_factor != El::To<TensorDataType>(0)) {
     dc::Shape bias_shape(dc::get_num_dims(layer), 1);
     bias_shape[dc::get_channel_dim()] = layer.get_output_dims()[0];
-    m_bias = make_unique<TensorDevType>(bias_shape, loc, shared_dist);
+    m_bias = std::make_unique<TensorDevType>(bias_shape, loc, shared_dist);
   }
 }
 
@@ -1176,7 +1176,7 @@ void base_convolution_adapter<TensorDataType, Device>::setup_bp_tensors() {
   std::reverse(kernel_shape.begin(), kernel_shape.end());
   const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
 
-  m_kernel_gradient = make_unique<TensorDevType>(kernel_shape, loc, shared_dist);
+  m_kernel_gradient = std::make_unique<TensorDevType>(kernel_shape, loc, shared_dist);
   // Gradient buffer is needed for auto-tuning the bp filter algorithm
   auto* kernel_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(l.get_weights(0).get_optimizer());
   if (kernel_optimizer != nullptr) {
@@ -1191,7 +1191,7 @@ void base_convolution_adapter<TensorDataType, Device>::setup_bp_tensors() {
     if (bias_optimizer != nullptr) {
       dc::Shape bias_shape(dc::get_num_dims(l), 1);
       bias_shape[dc::get_channel_dim()] = l.get_output_dims()[0];
-      m_bias_gradient = make_unique<TensorDevType>(bias_shape, loc, shared_dist);
+      m_bias_gradient = std::make_unique<TensorDevType>(bias_shape, loc, shared_dist);
       // setup_bias_gradients needs strides of the bias tensor,
       // which is set when its view is set.
       assert0(dc::tensor::View(
@@ -1206,7 +1206,7 @@ void base_convolution_adapter<TensorDataType, Device>::setup_layer(
   size_t workspace_capacity) {
   data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
   auto &layer = dynamic_cast<base_convolution_layer<TensorDataType, Device>&>(this->layer());
-  m_conv = make_unique<dc::Convolution<TensorDataType>>(
+  m_conv = std::make_unique<dc::Convolution<TensorDataType>>(
     dc::get_backend(), dc::get_num_dims(layer),
     dc::get_halo_exchange_method());
   if (layer.m_bias_scaling_factor != El::To<TensorDataType>(0)) {

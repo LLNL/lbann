@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -111,15 +111,16 @@ private:
 std::unique_ptr<image_output_strategy>
 build_categorical_accuracy_strategy_from_pbuf(google::protobuf::Message const&);
 
-/** @class Autoencoder Subclass of image_output_strategy to dump autoencoder images
- *  @brief Dump images to event files based on strategy
+/** @class autoencoder_strategy
+ *  @brief Subclass of image_output_strategy to dump autoencoder images.
+ *  @details Dump images to event files based on strategy
  */
 class autoencoder_strategy : public image_output_strategy {
 
 public:
-
-  /** @brief autoencoder_strategy : image_output_strategy Constructor.
-   *  @param sample_indices Vector of sample indices for images
+  /** @brief Constructor
+   *  @param input_layer_name The input layer.
+   *  @param num_images The number of images to dump.
    */
   autoencoder_strategy(std::string const& input_layer_name,
                        size_t num_images = 10)
