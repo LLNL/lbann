@@ -201,7 +201,7 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
     const auto is_output_3D = output_dims.size();
     
     // Matrices need to be 3D
-    if (!is_values_3D || !is_indices_3d){
+    if (!is_values_3D || !is_indices_3D){
        
       LBANN_ERROR(this->get_type(), " Layer \"", this->get_name(),"\" ",
         "has values input (", dims_to_str(input0_dims),") ",

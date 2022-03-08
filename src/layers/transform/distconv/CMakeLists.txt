@@ -2,13 +2,12 @@
 if (LBANN_HAS_DISTCONV)
 if (LBANN_HAS_NVSHMEM)
 set_full_path(THIS_DIR_SOURCES
-  distconv_gather_layer.cpp
-  distconv_scatter_layer.cpp
+  distconv_gather.cpp
+  distconv_scatter.cpp
 )
 set_full_path(THIS_DIR_CU_SOURCES
-  gather_nvshmem.hpp
-  scatter_nvshmem.hpp
-  )
+  distconv_nvshmem_vector_addressing.cu
+)
 endif()
 endif()
 # Propagate the files up the tree
