@@ -465,11 +465,19 @@ EOF
     echo "Setting up a sane definition of how to represent modules."
 cat <<EOF >> ${yaml}
   modules:
+    default:
+      lmod:
+        core_compilers:
+          - 'cce@13.0.0'
+          - 'gcc@7.5.0'
     enable::
       - tcl
       - lmod
     lmod::
       hash_length: 7
+      core_compilers:
+        - 'gcc@7.5.0'
+        - 'clang@12.0.1'
       projections:
         all: '\${PACKAGE}/\${VERSION}'
       all:
