@@ -83,7 +83,16 @@ the :ref:`CMake install <build-with-cmake>`.
 Test LBANN Install
 --------------------
 
-1. If you used the :code:`install_lbann.sh` script for installation or
+0. [HPC Center Required] If you are on typical HPC system get an
+   allocation on a compute node to run your tests.  See your compute
+   center's policy and documentation for where you should build and
+   run code:
+
+    .. code-block:: bash
+
+        <get some sort of compute node>
+
+1. If you used the :code:`build_lbann.sh` script for installation or
    installed in a Spack environment, you will need to activate the Spack LBANN
    environment:
 
