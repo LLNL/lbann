@@ -237,9 +237,6 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
   }
   #endif // LBANN_HAS_DISTCONV
   // Tensor dimensions
-  
-  
-
   // Check if value matrix is 1D or 2D
 
   const auto is_values_1D = input0_dims.size() == 1;
@@ -301,7 +298,6 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
         matching_dim);
       }
     }
-
 }
 
 #ifndef LBANN_SCATTER_LAYER_INSTANTIATE
