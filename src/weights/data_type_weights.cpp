@@ -411,7 +411,6 @@ void data_type_weights<TensorDataType>::write_proto(lbann_data::WeightsData* pro
       }
     }
   }
-
 }
 
 #ifdef LBANN_HAS_ONNX
@@ -424,28 +423,8 @@ void data_type_weights<T>::fill_onnx_node(onnx::GraphProto& graph) const {
   auto const height_dims = this->get_matrix_height_dims();
   auto const width_dims = this->get_matrix_width_dims();
 
-  // Get ready for some fun switch-on-type magic... :/ It gets
-  // prettier every time. Once the weights serialize themselves
-  // properly, this will be handled virtually.
-  auto const& weight_values = this->get_values();
-  if (auto const* w_dt = dynamic_cast<ADM<DataType> const*>(&weight_values))
-    serialize_to_onnx(*w_dt, height_dims, width_dims, *initializer);
-  else if (auto const* w_f = dynamic_cast<ADM<float> const*>(&weight_values))
-    serialize_to_onnx(*w_f, height_dims, width_dims, *initializer);
-  else if (auto const* w_d = dynamic_cast<ADM<double> const*>(&weight_values))
-    serialize_to_onnx(*w_d, height_dims, width_dims, *initializer);
-#ifdef LBANN_HAS_HALF
-  else if (auto const* w_cpu_fp16 =
-           dynamic_cast<ADM<cpu_half_type> const*>(&weight_values))
-    serialize_to_onnx(*w_cpu_fp16, height_dims, width_dims, *initializer);
-#ifdef LBANN_HAS_GPU_FP16
-  else if (auto const* w_gpu_fp16 =
-           dynamic_cast<ADM<gpu_half_type> const*>(&weight_values))
-    serialize_to_onnx(*w_gpu_fp16, height_dims, width_dims, *initializer);
-#endif // LBANN_HAS_GPU_FP16
-#endif // LBNAN_HAS_HALF
-  else
-    LBANN_ERROR("Unknown datatype for weights tensor.");
+  serialize_to_onnx(this->get_values(), height_dims, width_dims,
+                    *initializer);
 
   initializer->set_name(this->get_name());
   initializer->set_doc_string(this->get_name() + " tensor values");

@@ -238,7 +238,7 @@ public:
 
 #ifdef LBANN_HAS_ONNX
   /** @brief Serialize model to Onnx format */
-  void serialize_model_to_onnx(onnx::ModelProto& mp);
+  void serialize_to_onnx(onnx::ModelProto& mp);
 #endif // LBANN_HAS_ONNX
 
   // ===========================================

@@ -28,15 +28,8 @@
 
 #include "lbann/callbacks/export_onnx.hpp"
 
-#include "lbann/layers/io/input_layer.hpp"
-#include "lbann/proto/helpers.hpp"
-#include "lbann/utils/factory.hpp"
-#include "lbann/utils/onnx_utils.hpp"
-#include "lbann/utils/summary_impl.hpp"
-
 #include <callbacks.pb.h>
 
-#include <core/DistMatrix/AbstractDistMatrix.hpp>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -44,13 +37,11 @@
 namespace lbann {
 namespace callback {
 
-
-
 void export_onnx::on_train_end(model* m)
 {
   auto const rank = m->get_comm()->get_rank_in_trainer();
 
-  m->serialize_model_to_onnx(mp_);
+  m->serialize_to_onnx(mp_);
 
   if (rank == 0) {
     std::ofstream onnx_out(m_output_file);

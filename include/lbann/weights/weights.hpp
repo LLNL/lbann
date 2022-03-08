@@ -272,7 +272,7 @@ public:
 
 #ifdef LBANN_HAS_ONNX
   /** @brief Add serialized weights initializers to onnx graph */
-  virtual void fill_onnx_node(onnx::GraphProto& graph) const;
+  virtual void fill_onnx_node(onnx::GraphProto& graph) const = 0;
 #endif // LBANN_HAS_ONNX
 
   ///@}
