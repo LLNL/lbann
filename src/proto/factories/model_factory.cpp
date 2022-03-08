@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -60,9 +60,9 @@ instantiate_model(lbann_comm* comm,
   // Construct model
   const auto& type = proto_model.type();
   if (type.empty() || type == "directed_acyclic_graph_model") {
-    return make_unique<directed_acyclic_graph_model>(
+    return std::make_unique<directed_acyclic_graph_model>(
       comm, std::move(obj),
-      make_unique<lbann_data::Optimizer>(proto_opt));
+      std::make_unique<lbann_data::Optimizer>(proto_opt));
   }
 
   // Throw error if model type is not supported

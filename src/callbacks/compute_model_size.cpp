@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -104,7 +104,7 @@ build_compute_model_size_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackComputeModelSize&>(proto_msg);
-  return make_unique<compute_model_size>(
+  return std::make_unique<compute_model_size>(
     params.output_name(),
     params.batch_interval());
 }
@@ -113,4 +113,5 @@ build_compute_model_size_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::compute_model_size
+#define LBANN_CLASS_LIBNAME callback_compute_model_size
 #include <lbann/macros/register_class_with_cereal.hpp>

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -58,7 +58,7 @@ class buffered_data_coordinator : public data_coordinator {
     for(size_t i = 0; i < m_data_buffers.size(); i++) {
       for(auto m : execution_mode_iterator()) {
         if(m != execution_mode::invalid) {
-          m_data_buffers[i][m] = make_unique<data_buffer<IODataType>>(comm);
+          m_data_buffers[i][m] = std::make_unique<data_buffer<IODataType>>(comm);
         }
       }
     }

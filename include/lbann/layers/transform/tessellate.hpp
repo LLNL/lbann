@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,10 +31,10 @@
 
 namespace lbann {
 
-/** @brief Repeat a tensor until it matches specified dimensions.
+/** @brief Repeat a tensor until it matches specified dimensions
  *
  *  The output dimensions do not need to be integer multiples of the
- *  input dimensions.
+ *  input dimensions. Compare with the NumPy @c tile function.
  *
  *  As an example, tessellating a @f$ 2 \times 2 @f$ matrix into a
  *  @f$ 3 \times 4 @f$ matrix looks like the following:
@@ -50,12 +50,6 @@ namespace lbann {
  *      1 & 2 & 1 & 2
  *    \end{bmatrix}
  *  @f]
- *
- *  Formally, suppose we tessellate an input tensor @f$ X @f$ with
- *  dimensions @f$d_1 \times\cdots\times d_n@f$ to obtain an output
- *  tensor @f$ Y @f$ with dimensions @f$e_1 \times\cdots\times
- *  e_n@f$. Then, denoting the modulo operator with @f$ \% @f$,
- *  @f[ Y_{i_1,\cdots,i_n} = X_{i_1\% d_1,\cdots,i_n\% d_n} @f]
  */
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,

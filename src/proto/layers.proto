@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -44,217 +44,491 @@ enum ConvTensorOpsMode {
   USE_TENSOR_OPS = 2;
 }
 
+/** @brief Neural network tensor operation
+ *
+ *  Layers in a neural network are arranged as a directed acyclic
+ *  graph. They take one input tensor from each parent layer and send
+ *  an output tensor to each child layer. Some layers may recieve
+ *  tensors from weights objects (trainable parameters).
+ *
+ *  LBANN performs implicit mini-batching. If the user specifies a
+ *  layer to handle 3D image data (in channel-height-width format), it
+ *  is stored internally as a 4D tensor (in NCHW format). This scheme
+ *  implies that computation is mostly independent between mini-batch
+ *  samples (with a few exceptions like batchnorm).
+ *
+ *  The default value for fields in protobuf messages is zero-like
+ *  (false for bool, empty string for string). Thus, all defaults are
+ *  zero-like unless otherwise stated.
+ */
 message Layer {
-  string name = 50;
-  string parents = 151;
-  string children = 152;
-  string data_layout = 52;
-  string device_allocation = 55;
-  DataType datatype = 57;
-  string weights = 54;
-  bool num_neurons_from_data_reader = 53;
-  bool freeze = 5;
-  string hint_layer = 56;
-  ParallelStrategy parallel_strategy = 58;
 
-  repeated WeightsData weights_data = 153;
-  string top = 154;
-  string bottom = 155;
-  string type = 156;
+  // ===========================================
+  // Basic layer options
+  // ===========================================
+
+  /** @brief Unique identifier for layer
+   *  @details Must not contain spaces.
+   */
+  string name = 1;
+
+  /** @brief Parent layers
+   *  @details Space-separated list of layer names
+   */
+  string parents = 2;
+  /** @brief Child layers
+   *  @details Space-separated list of layer names
+   */
+  string children = 3;
+  /** @brief Weights objects
+   *
+   *  Space-separated list of weights names. Weights are typically
+   *  used as trainable parameters.
+   */
+  string weights = 4;
+
+  /** @brief Data tensor device
+   *
+   *  If LBANN has been built with GPU support, default is GPU.
+   *  Otherwise, CPU.
+   *
+   *  Options: CPU or GPU
+   */
+  string device_allocation = 5;
+  /** @brief Data tensors datatype */
+  DataType datatype = 6;
+
+  // ===========================================
+  // Advanced options
+  // ===========================================
+
+  /** @brief Hint layer for configuration
+   *
+   *  Advanced option for configuring certain layers. Typically used
+   *  to specify that a layer has the same output dimensions as
+   *  another.
+   */
+  string hint_layer = 10;
+  /** @brief Data tensor layout
+   *  @details Options: data_parallel (default) or model_parallel
+   */
+  string data_layout = 11;
+  /** @brief Configuration for advanced parallelization strategies */
+  ParallelStrategy parallel_strategy = 12;
+
+  // ===========================================
+  // Deprecated options
+  // ===========================================
+
+  /// Deprecated
+  bool num_neurons_from_data_reader = 400;
+  /// Deprecated
+  bool freeze = 401;
+  /// Deprecated and unused
+  repeated WeightsData weights_data = 402;
+  /// Deprecated and unused
+  string top = 403;
+  /// Deprecated and unused
+  string bottom = 404;
+  /// Deprecated and unused
+  string type = 405;
+
+  // ===========================================
+  // Concrete layer types
+  // ===========================================
+  // Note: This is a somewhat hacky implementation of class
+  // inheritance.
 
   oneof layer_type {
-    // Input layers
-    Input input = 2;
 
-    // Operator layers
-    OperatorLayer operator_layer = 701; // Name chosen to avoid collision
+    // Input layer
+    Input input = 20;
+
+    // Operator layer
+    OperatorLayer operator_layer = 21; // Name chosen to avoid collision
 
     // Transform layers
-    Reshape reshape = 306;
-    Pooling pooling = 12;
-    Concatenation concatenation = 300;
-    Slice slice = 301;
-    Split split = 302;
-    Sum sum = 303;
-    Cross_Grid_Sum_Slice cross_grid_sum_slice = 338;
-    Cross_Grid_Sum cross_grid_sum = 339;
-    WeightedSum weighted_sum = 323;
-    Unpooling unpooling = 304;
-    Hadamard hadamard = 308;
-    Constant constant = 309;
-    Reduction reduction = 310;
-    Evaluation evaluation = 311;
-    Gaussian gaussian = 312;
-    Bernoulli bernoulli = 313;
-    Uniform uniform = 314;
-    Crop crop = 316;
-    CategoricalRandom categorical_random = 317;
-    DiscreteRandom discrete_random = 318;
-    Dummy dummy = 319;
-    StopGradient stop_gradient = 320;
-    InTopK in_top_k = 324;
-    Sort sort = 325;
-    WeightsLayer weights_layer = 326;
-    Tessellate tessellate = 327;
-    Scatter scatter = 334;
-    Gather gather = 335;
-    BatchwiseReduceSum batchwise_reduce_sum = 336;
+    Reshape reshape = 50;
+    Pooling pooling = 51;
+    Concatenation concatenation = 52;
+    Slice slice = 53;
+    Split split = 54;
+    Sum sum = 55;
+    Cross_Grid_Sum_Slice cross_grid_sum_slice = 56;
+    Cross_Grid_Sum cross_grid_sum = 57;
+    WeightedSum weighted_sum = 58;
+    Unpooling unpooling = 59;
+    Hadamard hadamard = 60;
+    Constant constant = 61;
+    Reduction reduction = 62;
+    Evaluation evaluation = 63;
+    Gaussian gaussian = 64;
+    Bernoulli bernoulli = 65;
+    Uniform uniform = 66;
+    Crop crop = 67;
+    Dummy dummy = 68;
+    StopGradient stop_gradient = 69;
+    InTopK in_top_k = 70;
+    Sort sort = 71;
+    WeightsLayer weights_layer = 72;
+    Tessellate tessellate = 73;
+    Scatter scatter = 74;
+    Gather gather = 75;
+    BatchwiseReduceSum batchwise_reduce_sum = 76;
+    CategoricalRandom categorical_random = 406; // Deprecated
+    DiscreteRandom discrete_random = 407; // Deprecated
 
     // Learning layers
-    FullyConnected fully_connected = 11;
-    Convolution convolution = 13;
-    Deconvolution deconvolution = 305;
-    Embedding embedding = 328;
-    ChannelwiseScaleBias channelwise_scale_bias = 329;
-    EntrywiseScaleBias entrywise_scale_bias = 330;
-    ChannelwiseFullyConnected channelwise_fully_connected = 331;
-    GRU gru = 333;
+    FullyConnected fully_connected = 100;
+    Convolution convolution = 101;
+    Deconvolution deconvolution = 102;
+    Embedding embedding = 103;
+    ChannelwiseScaleBias channelwise_scale_bias = 104;
+    EntrywiseScaleBias entrywise_scale_bias = 105;
+    ChannelwiseFullyConnected channelwise_fully_connected = 106;
+    GRU gru = 107;
 
     // Loss layers
-    CrossEntropy cross_entropy = 60;
-    MeanSquaredError mean_squared_error = 61;
-    MeanAbsoluteError mean_absolute_error = 62;
-    CategoricalAccuracy categorical_accuracy = 63;
-    TopKCategoricalAccuracy top_k_categorical_accuracy = 64;
-    L2Norm2 l2_norm2 = 65;
-    L1Norm l1_norm = 66;
+    CrossEntropy cross_entropy = 120;
+    MeanSquaredError mean_squared_error = 121;
+    MeanAbsoluteError mean_absolute_error = 122;
+    CategoricalAccuracy categorical_accuracy = 123;
+    TopKCategoricalAccuracy top_k_categorical_accuracy = 124;
+    L2Norm2 l2_norm2 = 125;
+    L1Norm l1_norm = 126;
 
     // Math layers
-    MatMul matmul = 470;
-    DFTAbs dft_abs = 471;
+    MatMul matmul = 140;
+    DFTAbs dft_abs = 141;
 
     // Regularization layers
-    BatchNormalization batch_normalization = 19;
-    LocalResponseNormalization local_response_normalization = 20;
-    Dropout dropout = 21;
-    SeluDropout selu_dropout = 229;
-    EntrywiseBatchNormalization entrywise_batch_normalization = 230;
-    LayerNorm layer_norm = 231;
-    InstanceNorm instance_norm = 232;
+    BatchNormalization batch_normalization = 160;
+    LocalResponseNormalization local_response_normalization = 161;
+    Dropout dropout = 162;
+    SeluDropout selu_dropout = 163;
+    EntrywiseBatchNormalization entrywise_batch_normalization = 164;
+    LayerNorm layer_norm = 165;
+    InstanceNorm instance_norm = 166;
 
     // Activation layers
-    Elu elu = 200;
-    Identity identity = 201;
-    LeakyRelu leaky_relu = 202;
-    LogSoftmax log_softmax = 204;
-    Relu relu = 205;
-    Softmax softmax = 208;
+    Elu elu = 180;
+    Identity identity = 181;
+    LeakyRelu leaky_relu = 182;
+    LogSoftmax log_softmax = 183;
+    Relu relu = 184;
+    Softmax softmax = 185;
 
     // Image layers
-    BilinearResize bilinear_resize = 500;
-    Rotation rotation = 501;
-    CompositeImageTransformation composite_image_transformation = 502;
+    BilinearResize bilinear_resize = 200;
+    Rotation rotation = 201;
+    CompositeImageTransformation composite_image_transformation = 202;
 
     // Miscellaneous layers
-    Covariance covariance = 600;
-    Variance variance = 601;
-    ChannelwiseMean channelwise_mean = 602;
-    MiniBatchIndex mini_batch_index = 603;
-    MiniBatchSize mini_batch_size = 604;
-    Argmax argmax = 605;
-    Argmin argmin = 606;
-    OneHot one_hot = 607;
-    ChannelwiseSoftmax channelwise_softmax = 608;
-    DistEmbedding dist_embedding = 609;
-    UniformHash uniform_hash = 610;
-    RowwiseWeightsNorms rowwise_weights_norms = 611;
+    Covariance covariance = 300;
+    Variance variance = 301;
+    ChannelwiseMean channelwise_mean = 302;
+    MiniBatchIndex mini_batch_index = 303;
+    MiniBatchSize mini_batch_size = 304;
+    Argmax argmax = 305;
+    Argmin argmin = 306;
+    OneHot one_hot = 307;
+    ChannelwiseSoftmax channelwise_softmax = 309;
+    DistEmbedding dist_embedding = 311;
+    UniformHash uniform_hash = 312;
+    RowwiseWeightsNorms rowwise_weights_norms = 313;
 
   }
 
-  ///////////////////////
-  // Operator layers   //
-  ///////////////////////
+  // ---------------------------
+  // Operator layers
+  // ---------------------------
+
+  /** @brief Layer composed of one or more operator objects
+   *
+   *  Operators are applied sequentially.
+   */
   message OperatorLayer {
     repeated Operator ops = 1;
   }
 
-  ///////////////////////
-  // Math layers       //
-  ///////////////////////
+  // ---------------------------
+  // Math layers
+  // ---------------------------
+
+  /** @brief Absolute value of discrete Fourier transform
+   *
+   *  One-, two-, or three-dimensional data is allowed.
+   *
+   *  The implementation is meant to be as flexible as possible. We
+   *  use FFTW for the CPU implementation; whichever types your
+   *  implementation of FFTW supports will be supported in this layer
+   *  at runtime. The GPU implementation uses cuFFT on NVIDIA GPUs and
+   *  will support float and double at runtime (assuming CUDA support
+   *  is enabled). A future implementation will support rocFFT for AMD
+   *  GPUs.
+   *
+   *  Currently, LBANN only supports outputting the same type that is
+   *  used as input. As such, in forward propagation, this will do a
+   *  DFT and then compute the absolute value of the output
+   *  implicitly. The intention is to support immediate customer need
+   *  now; we will generalize this as LBANN learns to support
+   *  different input/output data types.
+   */
   message DFTAbs {}
 
   /** @brief Matrix multiplication.
    *
-   *  Takes two 2D input tensors and outputs their matrix product.
-   *  Matrix products are computed independently for each mini-batch
-   *  sample, in a similar manner as NumPy's matmul function.
+   *  Performs matrix product of two 2D input tensors. If the input
+   *  tensors are 3D, then matrix products are computed independently
+   *  over the first dimension, in a similar manner as NumPy's matmul
+   *  function.
    */
   message MatMul {
-    /** If true, matrices from the first input tensor are transposed
-     *  before multiplication.
-     */
+    /// Whether to transpose matrices from first input tensor
     bool transpose_a = 1;
-    /** If true, matrices from the second input tensor are transposed
-     *  before multiplication.
-     */
+    /// Whether to transpose matrices from second input tensor
     bool transpose_b = 2;
   }
 
-  ///////////////////////
-  // Activation layers //
-  ///////////////////////
+  // ---------------------------
+  // Activation layers
+  // ---------------------------
+
+  /** @brief Exponential linear unit
+   *
+   *  @f[
+   *    \text{ELU}(x; \alpha) =
+   *      \begin{cases}
+   *        x                & x > 0 \\
+   *        \alpha (e^x - 1) & x \leq 0
+   *      \end{cases}
+   *  @f]
+   *  @f$\alpha@f$ should be non-negative. See:
+   *
+   *  Djork-Arne Clevert, Thomas Unterthiner, and Sepp Hochreiter.
+   *  "Fast and accurate deep network learning by exponential linear
+   *  units (ELUs)." arXiv preprint arXiv:1511.07289 (2015).
+   */
   message Elu {
-    double alpha = 1; //default: 1.0; should be >= 0
+    /// Default: 1. Should be >=0.
+    double alpha = 1;
   }
+  /** @brief Output the input tensor
+   *
+   *  This layer is very cheap since it just involves setting up
+   *  tensor views.
+   */
   message Identity {}
+
+  /**
+   *  @f[
+   *    \text{LeakyReLU}(x; \alpha) =
+   *      \begin{cases}
+   *        x        & x > 0 \\
+   *        \alpha x & x \leq 0
+   *      \end{cases}
+   *  @f]
+   *  See:
+   *
+   *  Andrew L. Maas, Awni Y. Hannun, and Andrew Y. Ng. "Rectifier
+   *  nonlinearities improve neural network acoustic models." In
+   *  Proc. ICML, vol. 30, no. 1, p. 3. 2013.
+   */
   message LeakyRelu {
-    double negative_slope = 1; //default: 0.01
+    /// Default: 0.01
+    double negative_slope = 1;
   }
 
-  /** @brief Logarithm of softmax function.
+  /** @brief Logarithm of softmax function
    *
    *  @f[ \log \text{softmax}(x)_i = x_i - \log \sum_j e^{x_j} @f]
    */
   message LogSoftmax {}
 
+  /** @brief Rectified linear unit
+   *
+   *  \f[ ReLU(x) = \text{max}(x, 0) \f]
+   */
   message Relu {}
 
   /**
    *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
    */
   message Softmax {
-    string softmax_mode = 1; // default: "instance"; should be "instance" or "channel"
+    /// Options: instance (default), channel
+    string softmax_mode = 1;
   }
 
-  ///////////////////////
-  // Loss layers //
-  ///////////////////////
+  // ---------------------------
+  // Loss layers
+  // ---------------------------
+
+  /** @brief Cross entropy between probability vectors
+   *
+   *  Given a predicted distribution @f$y@f$ and ground truth
+   *  distribution @f$\hat{y}@f$,
+   *  @f[ CE(y,\hat{y}) = - \sum\limits_{i} \hat{y}_i \log y_i @f]
+   */
   message CrossEntropy {
-    bool use_labels = 1; //default: false
+    /// Advanced option for distconv
+    bool use_labels = 1;
   }
+  /**
+   *  Given a prediction @f$y@f$ and ground truth @f$\hat{y}@f$,
+   *  @f[
+   *    MSE(y,\hat{y})
+   *      = \frac{1}{n} \sum\limits_{i=1}^{n} (y_i - \hat{y}_i)^2
+   *  @f]
+   */
   message MeanSquaredError {}
+  /**
+   *  Given a prediction @f$y@f$ and ground truth @f$\hat{y}@f$,
+   *  @f[
+   *    MAE(y,\hat{y})
+   *      = \frac{1}{n} \sum\limits_{i=1}^{n} | y_i - \hat{y}_i |
+   *  @f]
+   */
   message MeanAbsoluteError {}
+  /** @brief 0-1 loss function
+   *
+   *  Requires two inputs, which are respectively interpreted as
+   *  prediction scores and as a one-hot label vector. The output is
+   *  one if the top entries in both inputs are in the same position
+   *  and is otherwise zero. Ties are broken in favor of entries with
+   *  smaller indices.
+   *  This is primarily intended for use as a metric since it is not
+   *  differentiable.
+   */
   message CategoricalAccuracy {}
+  /**
+   *  Requires two inputs, which are respectively interpreted as
+   *  prediction scores and as a one-hot label vector. The output is
+   *  one if the corresponding label matches one of the top-k
+   *  prediction scores and is otherwise zero. Ties in the top-k
+   *  prediction scores are broken in favor of entries with smaller
+   *  indices.
+   */
   message TopKCategoricalAccuracy {
     int64 k = 1;
   }
+  /** @brief Square of L2 vector norm
+   *
+   *  @f[ \lVert x\rVert_2^2 = \sum\limits_{i} x_i^2 @f]
+   */
   message L2Norm2 {}
+  /** @brief L1 vector norm
+   *
+   *  @f[ \lVert x\rVert_1 = \sum\limits_{i} | x_i | @f]
+   */
   message L1Norm {}
 
-  ///////////////////////////
-  // Regularization layers //
-  ///////////////////////////
+  // ---------------------------
+  // Regularization layers
+  // ---------------------------
+
+  /** @brief Channel-wise batch normalization
+   *
+   *  Each input channel is normalized across the mini-batch to have
+   *  zero mean and unit standard deviation. Learned scaling factors
+   *  and biases are then applied. This uses the standard approach of
+   *  maintaining the running mean and standard deviation (with
+   *  exponential decay) for use at test time.
+   *
+   *  This layer maintains four weights: scales, biases, running
+   *  means, and running variances. Each has a size equal to the
+   *  number of channels. In order to disable the affine operation,
+   *  manually construct weights without optimizers.
+   *
+   *  See:
+   *
+   *  Sergey Ioffe and Christian Szegedy. "Batch Normalization:
+   *  Accelerating Deep Network Training by Reducing Internal
+   *  Covariate Shift." In International Conference on Machine
+   *  Learning, pp. 448-456. 2015.
+   */
   message BatchNormalization {
-    double decay = 1;          //default: 0.9
-    double scale_init = 2;     //default: 1.0
-    double bias_init = 3;      //default: 0.0
-    double epsilon = 4;        //default: 1e-5
-    string stats_aggregation = 5; // default: local; deprecated
-    // default: 1 (local aggregation); set to a negative value for global stats.
+    /** @brief Decay factor for running statistics
+     *  @details Default: 0.9
+     */
+    double decay = 1;
+    /** @brief Small number for numerical stability
+     *  @details Default: 1e-5
+     */
+    double epsilon = 4;
+    /** @brief Size of process group for computing statistics
+     *
+     *  Default: 1
+     *
+     *  A group size of 1 implies purely local statistics. A negative
+     *  group size indicates global statistics (i.e. statistics over
+     *  the entire mini-batch).
+     */
     int64 statistics_group_size = 6;
+
+    /// Deprecated and unused
+    double scale_init = 2;
+    /// Deprecated and unsued
+    double bias_init = 3;
+    /// Deprecated
+    string stats_aggregation = 5;
+
   }
 
+  /** @brief Entry-wise batch normalization
+   *
+   *  Each input entry is normalized across the mini-batch to have
+   *  zero mean and unit standard deviation. This uses the standard
+   *  approach of maintaining the running mean and standard deviation
+   *  (with exponential decay) for use at test time.
+   *
+   *  This layer maintains two weights: running means, and running
+   *  variances. Each has a shape identical to the data tensor. It is
+   *  common to apply an affine operation after this layer, e.g. with
+   *  the entry-wise scale/bias layer.
+   *
+   *  See:
+   *
+   *  Sergey Ioffe and Christian Szegedy. "Batch Normalization:
+   *  Accelerating Deep Network Training by Reducing Internal
+   *  Covariate Shift." In International Conference on Machine
+   *  Learning, pp. 448-456. 2015.
+   */
   message EntrywiseBatchNormalization {
+    /** @brief Decay factor for running statistics
+     *  @details Recommendation: 0.9
+     */
     double decay = 1;
+    /** @brief Small number for numerical stability
+     *  @details Recommendation: 1e-5
+     */
     double epsilon = 2;
   }
 
+  /** @brief Scaled dropout for use with SELU activations.
+   *
+   *  A default keep probability of 0.95 is recommended. See:
+   *
+   *  Gunter Klambauer, Thomas Unterthiner, Andreas Mayr, and Sepp
+   *  Hochreiter. "Self-normalizing neural networks." In Advances in
+   *  Neural Information Processing Systems, pp. 971-980. 2017.
+   */
   message SeluDropout {
-    double keep_prob = 2; //default: 0.95
-    double alpha = 3;     //default: 1.6732632423543772848170429916717
-    double scale = 4;     //default: 1.0507009873554804934193349852946
+    /// Recommendation: 0.95
+    double keep_prob = 2;
+    /// Default: 1.6732632423543772848170429916717
+    double alpha = 3;
+    /// Default: 1.0507009873554804934193349852946
+    double scale = 4;
   }
 
+  /**
+   *  See:
+   *
+   *  Alex Krizhevsky, Ilya Sutskever, and Geoffrey E. Hinton. "ImageNet
+   *  classification with deep convolutional neural networks." In
+   *  Advances in Neural Information Processing Systems,
+   *  pp. 1097-1105. 2012.
+   */
   message LocalResponseNormalization {
     int64 window_width = 4;
     double lrn_alpha = 5;
@@ -262,11 +536,25 @@ message Layer {
     double lrn_k = 7;
   }
 
+  /** @brief Probabilistically drop tensor entries
+   *
+   *  The values multiplied by 1/(keep probability) at training time.
+   *  Keep probabilities of 0.5 for fully-connected layers and 0.8 for
+   *  input layers are good starting points. See:
+   *
+   *  Nitish Srivastava, Geoffrey Hinton, Alex Krizhevsky, Ilya
+   *  Sutskever, and Ruslan Salakhutdinov. "Dropout: a simple way to
+   *  prevent neural networks from overfitting." The Journal of
+   *  Machine Learning Research 15, no. 1 (2014): 1929-1958.
+   */
   message Dropout {
-    double keep_prob = 2;  //default: 0.5
+    /** @brief Probability of keeping each tensor entry
+     *  @details Recommendation: 0.5
+     */
+    double keep_prob = 2;
   }
 
-  /** @brief
+  /** @brief Normalize over data samples
    *
    *  Each data sample is normalized to have zero mean and unit
    *  standard deviation. See:
@@ -274,57 +562,135 @@ message Layer {
    *  Jimmy Lei Ba, Jamie Ryan Kiros, and Geoffrey E. Hinton. "Layer
    *  normalization." arXiv preprint arXiv:1607.06450 (2016).
    *
-   *  Note that this layer does not apply an entry-wise scale and bias
-   *  like in the paper. Use the entry-wise scale/bias layer to
-   *  reproduce that functionality.
+   *  It is common to apply an affine operation after this layer, e.g.
+   *  with the entry-wise scale/bias layer.
    */
   message LayerNorm {
     /** @brief Small number to avoid division by zero.
-     *  @details Default is 1e-5.
+     *  @details Default: 1e-5
      */
     google.protobuf.DoubleValue epsilon = 1;
   }
 
+  /** @brief Normalize over data channels
+   *
+   *  Each channel within a data sample is normalized to have zero
+   *  mean and unit standard deviation. See:
+   *
+   *  Dmitry Ulyanov, Andrea Vedaldi, and Victor Lempitsky. "Instance
+   *  normalization: The missing ingredient for fast stylization."
+   *  arXiv preprint arXiv:1607.08022 (2016).
+   *
+   *  This is equivalent to applying layer normalization independently
+   *  to each channel. It is common to apply an affine operation after
+   *  this layer, e.g. with the channel-wise scale/bias layer.
+   */
   message InstanceNorm {
     /** @brief Small number to avoid division by zero.
-     *  @details Default is 1e-5.
+     *  @details Default: 1e-5
      */
     google.protobuf.DoubleValue epsilon = 1;
   }
 
-  //////////////////
-  // Input layers //
-  //////////////////
+  // ---------------------------
+  // I/O layers
+  // ---------------------------
+
+  /** @brief Data tensor from data reader */
   message Input {
-    string data_field = 1; // legacy names are: samples, labels, responses
+    /** @brief Data field in data reader
+     *
+     *  Legacy values are "samples", "labels", "responses".
+     */
+    string data_field = 1;
   }
 
-  //////////////////////
-  // Transform layers //
-  //////////////////////
+  // ---------------------------
+  // Transform layers
+  // ---------------------------
+
+  /** @brief Reinterpret tensor with new dimensions
+   *
+   *  The input and output tensors must have the same number of
+   *  entries. This layer is very cheap since it just involves setting
+   *  up tensor views.
+   */
   message Reshape {
-    int64 num_dims = 1; //DEPRECATED
-    string dims = 2; //should be space-separated list of ints, e.g, "2 6 7"
+    /** @brief Tensor dimensions
+     *
+     *  Space-separated list of integers. A single dimension may be
+     *  -1, in which case the dimension is inferred.
+     */
+    string dims = 1;
+
+    /// Deprecated and unused
+    int64 num_dims = 2;
   }
 
+  /** @brief Pooling
+   *
+   *  Traverses the spatial dimensions of a data tensor with a sliding
+   *  window and applies a reduction operation.
+   */
   message Pooling {
-    int64 num_dims = 1;
 
-    bool has_vectors = 2;
+    /** @brief Pooling operation
+     *
+     *  Options: max, average, average_no_pad
+     */
+    string pool_mode = 1;
 
-    //these are used if has_vectors = true
-    string pool_dims = 4; //should be space-separated list, e.g, "2 2 3"
-    string pool_pads = 5; //should be space-separated list, e.g, "2 2 3"
-    string pool_strides = 6; //should be space-separated list, e.g, "2 2 3"
+    /** @brief Number of spatial dimensions
+     *
+     *  The first data dimension is treated as the channel dimension,
+     *  and all others are treated as spatial dimensions (recall that
+     *  the mini-batch dimension is implicit).
+     */
+    int64 num_dims = 2;
 
-    //these are used if has_vectors = false
-    int64 pool_dims_i = 10;
-    int64 pool_pads_i = 11;
-    int64 pool_strides_i = 12;
+    /** @brief Whether to use vector-valued options
+     *
+     *  If true, then the pooling is configured with @c pool_dims,
+     *  @c pool_pads, @c pool_strides. Otherwise, @c pool_dims_i,
+     *  @c pool_pads_i, @c pool_strides_i.
+     */
+    bool has_vectors = 3;
 
-    //pool_mode should be one of: max, average, average_no_pad
-    //see: lbann/include/lbann/lbann_base.hpp
-    string pool_mode = 7;
+    /** @brief Pooling window dimensions (vector-valued)
+     *
+     *  Space-separated list of integers, one for each spatial
+     *  dimension. Used when @c has_vectors is enabled.
+     */
+    string pool_dims = 4;
+    /** @brief Pooling padding (vector-valued)
+     *
+     *  Space-separated list of integers, one for each spatial
+     *  dimension. Used when @c has_vectors is enabled.
+     */
+    string pool_pads = 5;
+    /** @brief Pooling strides (vector-valued)
+     *
+     *  Space-separated list of integers, one for each spatial
+     *  dimension. Used when @c has_vectors is enabled.
+     */
+    string pool_strides = 6;
+
+    /** @brief Pooling window dimension (integer-valued)
+     *
+     *  Used when @c has_vectors is disabled.
+     */
+    int64 pool_dims_i = 7;
+    /** @brief Pooling padding (integer-valued)
+     *
+     *  Used when @c has_vectors is disabled.
+     */
+    int64 pool_pads_i = 8;
+    /** @brief Pooling stride (integer-valued)
+     *
+     *  Used when @c has_vectors is disabled.
+     */
+    int64 pool_strides_i = 9;
+
   }
 
   /** @brief Transpose of pooling layer
@@ -336,238 +702,471 @@ message Layer {
    *  @todo GPU support.
    */
   message Unpooling {
+    /** @brief Number of spatial dimensions
+     *
+     *  The first data dimension is treated as the channel dimension,
+     *  and all others are treated as spatial dimensions (recall that
+     *  the mini-batch dimension is implicit).
+     */
     int64 num_dims = 1;
   }
 
-
+  /** @brief Concatenate tensors along specified dimension
+   *
+   *  All input tensors must have identical dimensions, except for the
+   *  concatenation dimension.
+   */
   message Concatenation {
+    /// Tensor dimension to concatenate along
     int64 axis = 1;
   }
 
+  /** @brief Slice tensor along specified dimension
+   *
+   *  The tensor is split along one dimension at user-specified
+   *  points, and each child layer recieves one piece.
+   */
   message Slice {
+
+    /// Tensor dimension to slice along
     int64 axis = 1;
-    string slice_points = 2; //should be space-separated list of ints, e.g, "2 6 7"
-    //the following is for jag_conduit_hdf5;
-    string get_slice_points_from_reader = 4;
-    bool get_slice_points_from_reader_bool = 5;
+    /** @brief Positions at which to slice tensor
+     *
+     *  Space-separated list of integers. Slice points must be in
+     *  ascending order and the number of slice points must be one
+     *  greater than the number of child layers.
+     */
+    string slice_points = 2;
+
+    /** @brief Deprecated
+     *  @details Hack for jag_conduit_hdf5
+     */
+    string get_slice_points_from_reader = 3;
+    /** @brief Deprecated
+     *  @details Hack for jag_conduit_hdf5
+     */
+    bool get_slice_points_from_reader_bool = 4;
   }
 
+  /** @brief Output the input tensor to multiple child layers
+   *
+   *  Rarely needed by users. This layer is used internally to handle
+   *  cases where a layer outputs the same tensor to multiple child
+   *  layers. From a usage perspective, there is little difference
+   *  from an identity layer.
+   *
+   *  This is not to be confused with the split operation in NumPy,
+   *  PyTorch or TensorFlow. The name refers to splits in the compute
+   *  graph.
+   */
   message Split {
   }
 
+  /** @brief Add multiple tensors */
   message Sum {
   }
 
+  /** @brief Add tensors over multiple sub-grids and slice
+   *
+   *  This is experimental functionality for use with sub-grid
+   *  parallelism.
+   */
   message Cross_Grid_Sum_Slice {
   }
-
+  /** @brief Add tensors over multiple sub-grids
+   *
+   *  This is experimental functionality for use with sub-grid
+   *  parallelism.
+   */
   message Cross_Grid_Sum {
   }
 
+  /** @brief Add tensors with scaling factors */
   message WeightedSum {
+    /** Space-separated list of floating-point numbers, one for each
+     *  input tensor.
+     */
     string scaling_factors = 1;
-    //should be a space-separated list of doubles, e.g. "1.0 2.0 -1.0"
   }
 
+  /** @brief Entry-wise tensor product */
   message Hadamard {
   }
 
+  /** @brief Output tensor filled with a single value */
   message Constant {
-    double value=1;
-    string num_neurons=2;
+    /** @brief Value of tensor entries */
+    double value = 1;
+    /** @brief Tensor dimensions
+     *  @details Space-separated list of integers
+     */
+    string num_neurons = 2;
   }
 
-  /** @brief Reduce tensor to scalar. */
+  /** @brief Reduce tensor to scalar */
   message Reduction {
-    string mode=1; // "sum" (default) or "mean"
+    /** @brief Reduction operation
+     *  @details Options: sum (default) or mean
+     */
+    string mode = 1;
   }
 
+  /** @brief Interface with objective function and metrics
+   *
+   *  Rarely needed by users. Evaluation layers are automatically
+   *  created when needed in the compute graph.
+   */
   message Evaluation {
   }
 
+  /** @brief Random tensor with Gaussian/normal distribution */
   message Gaussian {
+    /** @brief Distribution mean */
     double mean = 1;
+    /** @brief Distribution standard deviation */
     double stdev = 2;
+    /** @brief Tensor dimensions
+     *  @details Space-separated list of integers
+     */
     string neuron_dims = 3;
+    /** @brief Only generate random values during training
+     *
+     *  If true, the tensor is filled with the distribution mean
+     *  during evaluation.
+     */
     bool training_only = 4;
   }
 
+  /** @brief Random tensor with Bernoulli distribution
+   *
+   *  Randomness is only applied during training. The tensor is filled
+   *  with zeros during evaluation.
+   */
   message Bernoulli {
+    /** @brief Bernoulli distribution probability */
     double prob = 1;
+    /** @brief Tensor dimensions
+     *  @details Space-separated list of integers
+     */
     string neuron_dims = 2;
   }
 
+  /** @brief Random tensor with uniform distribution */
   message Uniform {
+    /** @brief Distribution minimum */
     double min = 1;
+    /** @brief Distribution maximum */
     double max = 2;
+    /** @brief Tensor dimensions
+     *  @details Space-separated list of integers
+     */
     string neuron_dims = 3;
+    /** @brief Only generate random values during training
+     *
+     *  If true, the tensor is filled with the distribution mean
+     *  during evaluation.
+     */
     bool training_only = 4;
   }
 
-
+  /** @brief Extract crop from tensor at a position
+   *
+   *  Expects two input tensors: an @f$ N @f$-D data tensor and a 1D
+   *  position vector with @f$ N @f$ entries. The position vector
+   *  should be normalized so that values are in @f$ [0,1] @f$. For
+   *  images in CHW format, a position of (0,0,0) corresponds to the
+   *  red-top-left corner and (1,1,1) to the blue-bottom-right corner.
+   */
   message Crop {
+    /** @brief Crop dimensions
+     *  @details Space-separated list of integers
+     */
     string dims = 3;
   }
 
-  message CategoricalRandom {
-  }
-
-  message DiscreteRandom {
-    string values = 1;
-    string dims = 2;
-  }
-
+  /** @brief Placeholder layer with no child layers
+   *
+   *  Rarely needed by users. This layer is used internally to handle
+   *  cases where a layer has no child layers.
+   */
   message Dummy {
   }
 
+  /** @brief Block error signals during back propagation
+   *
+   *  The output is identical to the input, but the back propagation
+   *  output (i.e. the error signal) is always zero. Compare with the
+   *  stop_gradient operation in TensorFlow and Keras. Note that this
+   *  means that computed gradients in preceeding layers are not exact
+   *  gradients of the objective function.
+   */
   message StopGradient {
   }
 
+  /** @brief One-hot vector indicating top-k entries
+   *
+   *  Output tensor has same dimensions as input tensor. Output
+   *  entries corresponding to the top-k input entries are set to one
+   *  and the rest to zero. Ties are broken in favor of entries with
+   *  smaller indices.
+   */
   message InTopK {
+    /// Number of non-zeros in one-hot vector
     int64 k = 1;
   }
 
+  /** @brief Sort tensor entries */
   message Sort {
+    /// Sort entries in descending order
     bool descending = 1;
   }
 
+  /** @brief Output values from a weights tensor
+   *
+   *  Interfaces with a @c weights object.
+   */
   message WeightsLayer {
+    /** @brief Weights tensor dimensions
+     *  @details Space-separated list of integers
+     */
     string dims = 1;
   }
 
+  /** @brief Repeat a tensor until it matches specified dimensions
+   *
+   *  The output tensor dimensions do not need to be integer multiples
+   *  of the input dimensions. Compare with the NumPy @c tile
+   *  function.
+   *
+   *  As an example, tessellating a @f$ 2 \times 2 @f$ matrix into a
+   *  @f$ 3 \times 4 @f$ matrix looks like the following:
+   *  @f[
+   *    \begin{bmatrix}
+   *      1 & 2 \\
+   *      3 & 4
+   *    \end{bmatrix}
+   *    \rightarrow
+   *    \begin{bmatrix}
+   *      1 & 2 & 1 & 2 \\
+   *      3 & 4 & 3 & 4 \\
+   *      1 & 2 & 1 & 2
+   *    \end{bmatrix}
+   *  @f]
+   */
   message Tessellate {
+    /** @brief Output tensor dimensions
+     *  @details Space-separated list of integers
+     */
     string dims = 1;
   }
 
-  /** @brief Scatter values to specified tensor indices.
+  /** @brief Scatter values to specified tensor indices
     *
+    *  Expects two input tensors: an @f$ N @f$-D data tensor and a 1D
+    *  index vector. For 1D data:
     *  @f[
     *    y[\text{ind}[i]] = x[i]
     *  @f]
+    *  Out-of-range indices are ignored.
     *
-    *  If 2D and Axis = 0
-    *  @f[
-    *    y[\text{ind}[i],j] = x[i,j]
-    *  @f]
-    *
-    *  If 2D and Axis = 1
+    *  For higher-dimensional data, the layer performs a scatter along
+    *  one dimension. For example, with 2D data and axis=1,
     *  @f[
     *    y[i,\text{ind}[j]] = x[i,j]
     *  @f]
+    *  Currently, only 1D and 2D data is supported.
     *
-    *  The first input tensor is the values and the second is the
-    *  indices. For the 1D case the inputs must have the same dimensions.
-    *  For the 2D case, the inputs must have either the same number of
-    *  columns (axis=0) or the same number of rows (axis=1). If
-    *  an index is out-of-range, it is ignored.
+    *  The size of the index vector must match the size of the data
+    *  tensor along the scatter dimension.
     *
-    *  @note: In the 2D case the output dimensions change depending on the
-    *  axis. For an (m,n) values input, the output dims are expected to
-    *  be (*,n) for Axis == 0 and (m,*) for Axis == 1.
-    *
-    *  @todo Only flat tensors are currently supported. For higher-order
-    *  tensors, PyTorch
-    *  (https://pytorch.org/docs/master/tensors.html#torch.Tensor.scatter_)
-    *  and TensorFlow
-    *  (https://www.tensorflow.org/api_docs/python/tf/scatter_nd) will
-    *  scatter along a specified dimension.
+    *  @todo Support higher-dimensional data
     */
   message Scatter {
-    /// Output tensor dimensions
+    /** @brief Output tensor dimensions
+     *
+     *  Space-separated list of integers. Number of dimensions must
+     *  match data tensor.
+     */
     string dims = 1;
+    /// Dimension to scatter along
     google.protobuf.UInt64Value axis = 2;
   }
 
-  /** @brief Gather values from specified tensor indices.
+  /** @brief Gather values from specified tensor indices
     *
+    *  Expects two input tensors: an @f$ N @f$-D data tensor and a 1D
+    *  index vector. For 1D data:
     *  @f[
     *    y[i] = x[\text{ind}[i]]
     *  @f]
+    *  If an index is out-of-range, the corresponding output is set to
+    *  zero.
     *
-    *  If 2D and Axis = 0
-    *  @f[
-    *    y[i,j] = x[\text{ind}[i],j]
-    *  @f]
-    *
-    *  If 2D and Axis = 1
+    *  For higher-dimensional data, the layer performs a gather along
+    *  one dimension. For example, with 2D data and axis=1,
     *  @f[
     *    y[i,j] = x[i,\text{ind}[j]]
     *  @f]
+    *  Currently, only 1D and 2D data is supported.
     *
-    *  The first input tensor is the values and the second is the
-    *  indices. The two input tensors must have the same number of
-    *  dimensions, and the output tensor will have the same dimensions as
-    *  the index tensor. If an index is out-of-range, the corresponding
-    *  output is set to zero.
+    *  The size of the the output tensor along the gather dimension is
+    *  equal to the size of the index vector. The remaining dimensions
+    *  of the output tensor are identical to the data tensor.
     *
-    *  @note: In the 2D case, the output dimension changes according
-    *  to the axis. For an (m,n) values input, and a (k) indices input,
-    *  the output tensor will be (k,n) for Axis == 0 and (m, k) for
-    *  Axis == 1
+    *  @todo Support higher-dimensional data
     */
   message Gather {
-
+    /// Dimension to gather along
     google.protobuf.UInt64Value axis = 1;
   }
 
-  /** @brief Sum of tensor entries along batch dimension
+  /** @brief Sum of tensor entries over batch dimension
     *
     *  Output tensor has same shape as input tensor.
     */
   message BatchwiseReduceSum {}
 
-  /////////////////////
-  // Learning layers //
-  /////////////////////
+  /// Deprecated
+  message CategoricalRandom {
+  }
+  /// Deprecated
+  message DiscreteRandom {
+    string values = 1;
+    string dims = 2;
+  }
+
+  // ---------------------------
+  // Learning layers
+  // ---------------------------
 
   /** @brief Affine transformation
    *
    *  Flattens the input tensor, multiplies with a weights matrix, and
-   *  optionally applies an entry-wise bias. Following the
-   *  column-vector convention:
-   *    @f[ y = W * \text{vec}(x) + b @f]
+   *  optionally applies an entry-wise bias. Following a
+   *  row-vector convention:
+   *    @f[ y = \text{vec}(x) W^T + b @f]
    *
    *  Two weights are required if bias is applied: the linearity and the
    *  bias. Only the linearity weights are required if bias is not
    *  applied. If weights aren't provided, the linearity weights are
    *  initialized with He normal initialization and the bias weights are
    *  initialized to zero.
+
+   *  For flat data, this layer is similar to Keras' dense layer or
+   *  PyTorch's linear operation. However, it implicitly flattens
+   *  multi-dimensional data. To avoid this flattening, consider the
+   *  channel-wise fully-connected layer.
    */
   message FullyConnected {
-    // Output tensor size
+    /// Output tensor size
     int64 num_neurons = 1;
-    // Whether to apply entry-wise bias
+    /// Whether to apply entry-wise bias
     bool has_bias = 2;
-    // Whether to apply transpose of weights matrix
+    /// Whether to apply transpose of weights matrix
     bool transpose = 3;
   }
 
+  /** @brief Convolution
+   *
+   *  Applies convolution (more precisely, cross-correlation) to input
+   *  tensor. This is primarily optimized for image data in CHW
+   *  format.
+   *
+   *  Two weights are required if bias is applied: a kernel tensor (in
+   *  KCHW format) and per-channel biases. Only the kernel weights are
+   *  required if bias is not applied. If weights aren't provided, the
+   *  kernel weights are initialized with He normal initialization and
+   *  the bias weights are initialized to zero.
+   */
   message Convolution {
+
+    /** @brief Number of spatial dimensions
+     *
+     *  The first data dimension is treated as the channel dimension,
+     *  and all others are treated as spatial dimensions (recall that
+     *  the mini-batch dimension is implicit).
+     */
     int64 num_dims = 1;
-    int64 num_output_channels = 4;
-    int64 num_groups = 3;
+    /** @brief Channel dimension of output tensor */
+    int64 num_output_channels = 2;
 
-    bool has_vectors = 2;
+    /** @brief Whether to use vector-valued options
+     *
+     *  If true, then the pooling is configured with @c conv_dims,
+     *  @c conv_pads, @c conv_strides, @c conv_dilations. Otherwise,
+     *  @c conv_dims_i, @c conv_pads_i, @c conv_strides_i,
+     *  @c conv_dilations_i.
+     */
+    bool has_vectors = 3;
 
-    // these are used if has_vector = true
-    string conv_dims = 5; //should be space-separated list, e.g, "2 2 3"
-    string conv_pads = 6;  //should be space-separated list, e.g, "2 2 3"
-    string conv_strides = 7; //should be space-separated list, e.g, "2 2 3"
-    string conv_dilations = 8;  //should be space-separated list, e.g. "2 3 3"
+    /** @brief Convolution kernel dimensions (vector-valued)
+     *
+     *  Space-separated list of integers, one for each spatial
+     *  dimension. Used when @c has_vectors is enabled.
+     */
+    string conv_dims = 4;
+    /** @brief Convolution padding (vector-valued)
+     *
+     *  Space-separated list of integers, one for each spatial
+     *  dimension. Used when @c has_vectors is enabled.
+     */
+    string conv_pads = 5;
+    /** @brief Convolution strides (vector-valued)
+     *
+     *  Space-separated list of integers, one for each spatial
+     *  dimension. Used when @c has_vectors is enabled.
+     */
+    string conv_strides = 6;
+    /** @brief Convolution dilations (vector-valued)
+     *
+     *  Space-separated list of integers, one for each spatial
+     *  dimension. Used when @c has_vectors is enabled. Defaults to
+     *  dilations of 1, i.e. undilated convolution.
+     */
+    string conv_dilations = 7;
 
-    // these are used if has_vector = false
-    int64 conv_dims_i = 50;
-    int64 conv_pads_i = 60;
-    int64 conv_strides_i = 70;
-    int64 conv_dilations_i = 80;
+    /** @brief Convolution kernel size (integer-valued)
+     *
+     *  Used when @c has_vectors is disabled.
+     */
+    int64 conv_dims_i = 8;
+    /** @brief Convolution padding (integer-valued)
+     *
+     *  Used when @c has_vectors is disabled.
+     */
+    int64 conv_pads_i = 9;
+    /** @brief Convolution stride (integer-valued)
+     *
+     *  Used when @c has_vectors is disabled.
+     */
+    int64 conv_strides_i = 10;
+    /** @brief Convolution dilation (integer-valued)
+     *
+     *  Default: 1
+     *
+     *  Used when @c has_vectors is disabled.
+     */
+    int64 conv_dilations_i = 11;
 
-    string weight_initialization = 9;     //DEPRECATED
-    bool has_bias = 10;                   //default: true
-    double bias_initial_value = 11;       //default: 0
-    double l2_regularization_factor = 12; //default: 0
+    /** @brief Whether to apply per-channel bias */
+    bool has_bias = 12;
+    /** @brief Number of channel groups for grouped convolution
+     *  @details Default: 1
+     */
+    int64 num_groups = 13;
 
-    // This field is ignored for non-GPU layers.
-    ConvTensorOpsMode conv_tensor_op_mode = 13;
+    /** @brief Special behavior with FP16 tensor cores
+     *  @details Ignored for non-GPU layers.
+     */
+    ConvTensorOpsMode conv_tensor_op_mode = 14;
+
+    /// Deprecated and unused
+    string weight_initialization = 15;
+    /// Deprecated and unused
+    double bias_initial_value = 16;
+    /// Deprecated and unused
+    double l2_regularization_factor = 17;
+
   }
 
   message Deconvolution {
@@ -622,10 +1221,46 @@ message Layer {
     google.protobuf.Int64Value padding_idx = 3;
   }
 
+  /** @brief Apply per-channel scale and bias
+   *
+   *  The input tensor is sliced along the first tensor dimension (the
+   *  "channel" dimension, assuming image data in CHW format) and scale
+   *  and bias terms are applied independently to each slice. More
+   *  precisely, given input and output tensors
+   *  @f$ X,Y\in\mathbb{R}^{d_1\times\cdots\times d_n} @f$
+   *  and scale and bias vectors @f$ a,b\in\mathbb{R}^{d_1} @f$:
+   *  @f[
+   *    Y_{i,j,\cdots} = a_i X_{i,j,\cdots} + b_i
+   *  @f]
+   *
+   *  The scale and bias vectors are fused into a single weights
+   *  tensor to reduce the number of gradient allreduces during
+   *  backprop. In particular, the weights tensor is a
+   *  @f$ \text{num\_channels} \times 2 @f$ matrix, where the first
+   *  column corresponds to scale terms and the second column to bias
+   *  terms.
+   */
   message ChannelwiseScaleBias {}
+
+  /** @brief Apply entry-wise scale and bias
+   *
+   *  Scale and bias terms are applied independently to each tensor
+   *  entry. More precisely, given input, output, scale, and bias
+   *  tensors @f$ X,Y,A,B\in\mathbb{R}^{d_1\times\cdots\times d_n} @f$:
+   *  @f[
+   *    Y = A \circ X + B
+   *  @f]
+   *
+   *  The scale and bias terms are fused into a single weights tensor to
+   *  reduce the number of gradient allreduces during backprop. In
+   *  particular, the weights tensor is a
+   *  @f$ \text{size} \times 2 @f$ matrix, where the first
+   *  column correspond to scale terms and the second column to bias
+   *  terms.
+   */
   message EntrywiseScaleBias {}
 
-  /** @brief Apply affine transformation to tensor channels.
+  /** @brief Apply affine transformation to tensor channels
    *
    *  The input tensor is sliced along the first tensor dimension (the
    *  "channel" dimension for image data in CHW format) and the same
@@ -638,16 +1273,15 @@ message Layer {
    *  applied. If weights aren't provided, the linearity weights are
    *  initialized with He normal initialization and the bias weights are
    *  initialized to zero.
-   *
    */
   message ChannelwiseFullyConnected {
-    /// Output tensor dimensions, excluding the first dimension.
+    /// Output tensor dimensions, excluding the channel dimension
     repeated uint64 output_channel_dims = 1;
-    /** @brief Whether to apply bias.
+    /** @brief Whether to apply bias
      *  @details Default: true
      */
     google.protobuf.BoolValue bias = 2;
-    /** @brief Whether to apply transpose of weights matrix.
+    /** @brief Whether to apply transpose of weights matrix
      *  @details Default: false
      */
     google.protobuf.BoolValue transpose = 3;
@@ -655,10 +1289,10 @@ message Layer {
 
   /** @brief Stacked gated recurrent unit
    *
-   *  Expects two inputs: a 2D input sequence (
-   *  @f$ \text{sequence\_length}\times\text{input\_size} @f$ )
-   *  and a 2D initial hidden state (
-   *  @f$ \text{num\_layers}times\text{hidden\_size} @f$ ).
+   *  Expects two inputs: a 2D input sequence
+   *  ( @f$ \text{sequence\_length}\times\text{input\_size} @f$ )
+   *  and a 2D initial hidden state
+   *  ( @f$ \text{num\_layers}times\text{hidden\_size} @f$ ).
    *
    *  Uses four weights per GRU cell: "ih\_matrix" (
    *  @f$ 3 \text{hidden\_size}\times\text{input\_size} @f$ for layer
@@ -668,24 +1302,33 @@ message Layer {
    *  "ih_bias" ( @f$ 3 \text{hidden\_size} @f$ ),
    *  "hh_bias" ( @f$ 3 \text{hidden\_size} @f$ ).
    *
-   *  Currently only supported on GPU. Requires at least CUDA 11.0 and
-   *  cuDNN 8.0.4.
+   *  Support is experimental and requires either cuDNN (on GPU) or
+   *  oneDNN (on CPU).
    *
-   *  @todo Support CPU
    *  @todo Support bidirectional RNNs
    */
   message GRU {
-    /// Size of each hidden state and output vector
+    /** @brief Size of each hidden state and output vector */
     uint64 hidden_size = 1;
-    /// Number of stacked GRU cells (default: 1)
+    /** @brief Number of stacked GRU cells
+     *  @details Default: 1
+     */
     google.protobuf.UInt64Value num_layers = 2;
   }
 
-  //////////////////
-  // Image layers //
-  //////////////////
+  // ---------------------------
+  // Image layers
+  // ---------------------------
+
+  /** @brief Resize image with bilinear interpolation
+   *
+   *  Expects a 3D input tensor, which is interpreted as an image in
+   *  CHW format. Gradients are not propagated during backprop.
+   */
   message BilinearResize {
+    /** @brief Output image height */
     int64 height = 1;
+    /** @brief Output image width */
     int64 width = 2;
   }
 
@@ -704,48 +1347,102 @@ message Layer {
    */
   message CompositeImageTransformation {}
 
-  //////////////////////////
-  // Miscellaneous layers //
-  //////////////////////////
+  // ---------------------------
+  // Miscellaneous layers
+  // ---------------------------
 
+  /** @brief Covariance between entries of two tensors */
   message Covariance {
-    bool biased = 1; //Whether to use a biased covariance estimate
+    /// Use biased estimator, i.e. sample covariance
+    bool biased = 1;
   }
+
+  /** @brief Variance of tensor entries */
   message Variance {
-    bool biased = 1; //Whether to use a biased variance estimate
+    /// Use biased estimator, i.e. sample variance
+    bool biased = 1;
   }
+
+  /** @brief Mean values across channel dimension
+   *
+   *  The input tensor is sliced along the first tensor dimension (the
+   *  "channel" dimension for image data in CHW format) and the mean
+   *  value is computed for each slice.
+   */
   message ChannelwiseMean {}
+
+  /** @brief Position of data sample within mini-batch
+   *
+   *  LBANN does implicit mini-batching and data samples are usually
+   *  processed independently. This layer is helpful if some
+   *  mini-batch samples need to be processed differently from others.
+   */
   message MiniBatchIndex {}
+
+  /** @brief Size of current mini-batch */
   message MiniBatchSize {}
 
-  // Get index of maximum-value tensor entry
-  //
-  // Expects a 1-D input tensor. If multiple entries have the same
-  // maximum value, outputs the index of the first one.
+  /** @brief Get index of maximum-value tensor entry
+   *
+   *  Expects a 1D input tensor. If multiple entries have the same
+   *  maximum value, outputs the index of the first one.
+   */
   message Argmax {}
 
-  // Get index of minimum-value tensor entry
-  //
-  // Expects a 1-D input tensor. If multiple entries have the same
-  // minimum value, outputs the index of the first one.
+  /** @brief Get index of minimum-value tensor entry
+   *
+   *  Expects a 1D input tensor. If multiple entries have the same
+   *  minimum value, outputs the index of the first one.
+   */
   message Argmin {}
 
-  // Convert index to a one-hot vector
-  //
-  // Expects a scalar input tensor and outputs a 1-D output tensor.
-  // The input is interpreted as an index, and output entries are one
-  // if they correspond to that index and zero otherwise. If the input
-  // is outside [0,size), then the output is all zeros.
+  /** @brief Convert index to a one-hot vector
+   *
+   *  Expects a scalar input tensor and outputs a 1D tensor.
+   *  The input is interpreted as an index, and output entries are one
+   *  if they correspond to that index and zero otherwise.
+   *  Out-of-range indices are ignored.
+   */
   message OneHot {
-    // Size of one-hot vector
+    /// Size of one-hot vector
     int64 size = 1;
   }
 
+  /** @brief Softmax across channel dimension
+   *
+   *  The input tensor is sliced along the first tensor dimension (the
+   *  "channel" dimension for image data in CHW format) and the
+   *  softmax function is computed for each slice.
+   */
   message ChannelwiseSoftmax {}
 
-  /** @brief Embedding layer with distributed weights.
+  /** @brief Embedding layer with distributed weights
    *
-   *  @warning This is extremely experimental.
+
+   *  This is similar to the embedding layer, which takes integer
+   *  indices and returns embedding vectors from a lookup table.
+   *  However, the embedding vectors are distributed between processes
+   *  and one-sided inter-process communication is performed with
+   *  OpenSHMEM (on CPU) or NVSHMEM (on GPU).
+   *
+   *  The main benefit of this model-parallel approach is to handle
+   *  cases where the embedding vectors don't fit on one process. It
+   *  should also have better scaling properties when the mini-batch
+   *  size is very large.
+   *
+   *  To take advantage of sparse gradients, the distributed embedding
+   *  layer provides the option to bypass the optimizer (which
+   *  currently only supports dense gradients) and perform sparse SGD
+   *  directly on the embedding weights. If enabled, SGD occurs during
+   *  the layers "update" phase (i.e. in the virtual update_compute
+   *  function). Otherwise, the layer converts sparse gradients to a
+   *  dense tensor and passes it into the usual optimizer. This is a
+   *  hack and will be deprecated once the optimizer class supports
+   *  sparse gradients.
+   *
+   *  @warning This is experimental.
+   *
+   *  @todo Sparse SGD with optimizer class
    */
   message DistEmbedding {
 
@@ -804,37 +1501,17 @@ message Layer {
 
 } // message Layer
 
-//note: I'd like to put this enum inside of Layer, but if I do the enum values
-//      become, e.g, Layer_Imcomm_EXCLUDE, which is just ugly
-enum Imcomm {
-  DEFAULT = 0; //add Layer to Imcomm callback if all_learning_layers = true in
-               //the CallbackImComm
-  EXCLUDE = 1; //*do not* add Layer to Imcomm callback if all_learning_layers = true in
-               //the CallbackImComm
-  INCLUDE = 2;  //add Layer to Imcomm callback regardless of whether all_learning_layers
-                //in the CallbackImComm is set to true or false
-}
-
-// Weight data for exporting
-message WeightsShape {
-  repeated int64 dim = 1 [packed = true];
-}
-
-message WeightsData {
-  WeightsShape shape = 5;
-  string name = 1;
-  int64 height = 2;
-  int64 width = 3;
-  //@todo assume float above, add other datatype
-  repeated float data = 4 [packed=true];
-
-  Imcomm imcomm = 55;
-}
-
 //========================================================================
 // Parallel strategies for generalized layer-wise parallelism
 //========================================================================
+
+/** @brief Configuration for advanced parallelization strategies */
 message ParallelStrategy {
+
+  // ---------------------------
+  // distconv
+  // ---------------------------
+
   int64 sample_groups = 1;
   int64 sample_splits = 2;
   int64 height_groups = 3;
@@ -850,7 +1527,40 @@ message ParallelStrategy {
   int64 procs_per_replica = 12;
   int64 depth_groups = 13;
   int64 depth_splits = 14;
+
+  // ---------------------------
+  // Sub-grid parallelism
+  // ---------------------------
+
   int64 sub_branch_tag = 15;
   int64 sub_branch_resource_percentage = 16;
   bool enable_subgraph = 17;
+
+}
+
+// =============================================
+// Deprecated messages
+// =============================================
+
+/// Deprecated
+message WeightsShape {
+  repeated int64 dim = 1 [packed = true];
+}
+/// Deprecated
+message WeightsData {
+  WeightsShape shape = 5;
+  string name = 1;
+  int64 height = 2;
+  int64 width = 3;
+  repeated float data = 4 [packed=true];
+  Imcomm imcomm = 55;
+}
+/// Deprecated
+enum Imcomm {
+  DEFAULT = 0; //add Layer to Imcomm callback if all_learning_layers = true in
+               //the CallbackImComm
+  EXCLUDE = 1; //*do not* add Layer to Imcomm callback if all_learning_layers = true in
+               //the CallbackImComm
+  INCLUDE = 2;  //add Layer to Imcomm callback regardless of whether all_learning_layers
+                //in the CallbackImComm is set to true or false
 }

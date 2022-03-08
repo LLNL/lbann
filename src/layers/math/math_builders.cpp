@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -41,7 +41,7 @@ std::unique_ptr<Layer> build_matmul_layer_from_pbuf(
   if constexpr (Layout == data_layout::DATA_PARALLEL) {
     using LayerType = matmul_layer<TensorDataType, Layout, Device>;
     const auto& params = proto_layer.matmul();
-    return lbann::make_unique<LayerType>(
+    return std::make_unique<LayerType>(
       comm,
       params.transpose_a(),
       params.transpose_b());

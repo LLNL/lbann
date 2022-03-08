@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -53,6 +53,8 @@ message SGD {
   }
 
   TerminationCriteria stopping_criteria = 1;
+  // This is temporary
+  bool suppress_timer_output = 489;
 }// message SGD
 
 // Is-a TrainingAlgorithm
@@ -64,6 +66,9 @@ message LTFB {
   TrainingAlgorithm local_training_algorithm = 1;
   google.protobuf.Any meta_learning_strategy = 2;
   TerminationCriteria stopping_criteria = 3;
+
+  // This is temporary
+  bool suppress_timer_output = 489;
 }// message LTFB
 
 message MutationStrategy {

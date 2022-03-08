@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -56,7 +56,7 @@ namespace El
  *
  *  @tparam ArchiveT (Inferred) The Cereal archive type to use.
  *  @tparam T (Inferred) The data type of the matrix.
- *  @param archive The Cereal archive into which the matrix will be written.
+ *  @param ar The Cereal archive into which the matrix will be written.
  *  @param mat The matrix to serialize.
  *  @throws lbann::exception Thrown when the matrix is actually a view.
  *  @ingroup serialization
@@ -81,7 +81,7 @@ namespace details
  *
  *  @tparam ArchiveT (Inferred) The Cereal archive type to use.
  *  @tparam T (Inferred) The data type of the matrix.
- *  @param archive The Cereal archive into which the matrix will be written.
+ *  @param ar The Cereal archive into which the matrix will be written.
  *  @param mat The matrix to serialize.
  *  @throws lbann::exception Thrown when the matrix is actually a view.
  *  @ingroup serialization
@@ -189,7 +189,7 @@ void load(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
  *
  *  @tparam ArchiveT (Inferred) The Cereal archive type to use.
  *  @tparam T (Inferred) The data type of the matrix.
- *  @param archive The Cereal archive into which the matrix will be written.
+ *  @param ar The Cereal archive into which the matrix will be written.
  *  @param mat The distributed matrix to serialize.
  *  @throws lbann::exception Thrown when the matrix is actually a view.
  *  @ingroup serialization
@@ -202,7 +202,7 @@ void save(ArchiveT& ar, ::El::AbstractDistMatrix<T> const& mat);
  *
  *  @tparam ArchiveT (Inferred) The Cereal archive type to use.
  *  @tparam T (Inferred) The data type of the matrix.
- *  @param archive The Cereal archive from which the matrix will be read.
+ *  @param ar The Cereal archive from which the matrix will be read.
  *  @param mat The target matrix to deserialize into.
  *  @throws lbann::exception The input matrix is already setup as a view.
  *  @ingroup serialization
@@ -217,10 +217,11 @@ void load(ArchiveT& ar, ::El::AbstractDistMatrix<T>& mat);
  *  as well as the global height/width.
  *
  *  @tparam ArchiveT (Inferred) The Cereal archive type to use.
- *  @tparam T (Inferred) The data type of the matrix.  @param archive
- *  The Cereal archive into which the matrix will be written.  @param
- *  mat The distributed matrix to serialize.  @throws lbann::exception
- *  Thrown when the matrix is actually a view.  @ingroup serialization
+ *  @tparam T (Inferred) The data type of the matrix.
+ *  @param ar The Cereal archive into which the matrix will be written.
+ *  @param mat The distributed matrix to serialize.
+ *  @throws lbann::exception  Thrown when the matrix is actually a view.
+ *  @ingroup serialization
  */
 template <typename ArchiveT, typename T,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
@@ -230,7 +231,7 @@ void save(ArchiveT& ar, ::El::AbstractDistMatrix<T> const& mat);
  *
  *  @tparam ArchiveT (Inferred) The Cereal archive type to use.
  *  @tparam T (Inferred) The data type of the matrix.
- *  @param archive The Cereal archive from which the matrix will be read.
+ *  @param ar The Cereal archive from which the matrix will be read.
  *  @param mat The target matrix to deserialize into.
  *  @throws lbann::exception The input matrix is already setup as a view.
  *  @ingroup serialization

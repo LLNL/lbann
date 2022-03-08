@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -203,7 +203,7 @@ build_dump_outputs_callback_from_pbuf(
   const auto& layer_names = parse_set<std::string>(params.layers());
   const auto& modes =
     parse_set<execution_mode>(params.execution_modes());
-  return make_unique<dump_outputs>(layer_names,
+  return std::make_unique<dump_outputs>(layer_names,
                                                   modes,
                                                   params.batch_interval(),
                                                   params.directory(),
@@ -214,4 +214,5 @@ build_dump_outputs_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::dump_outputs
+#define LBANN_CLASS_LIBNAME callback_dump_outputs
 #include <lbann/macros/register_class_with_cereal.hpp>

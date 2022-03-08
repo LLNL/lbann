@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -262,6 +262,7 @@ to_lbann(lbann_data::RegularizedEvolution::MetricStrategy strategy)
 
 } // namespace
 
+/** @brief Builder function for RegularizedEvolution. */
 template <>
 std::unique_ptr<lbann::ltfb::RegularizedEvolution>
 lbann::make<lbann::ltfb::RegularizedEvolution>(
@@ -273,7 +274,7 @@ lbann::make<lbann::ltfb::RegularizedEvolution>(
 
   using MutationStrategyType = lbann::ltfb::MutationStrategy;
 
-  return make_unique<lbann::ltfb::RegularizedEvolution>(
+  return std::make_unique<lbann::ltfb::RegularizedEvolution>(
     msg.metric_name(),
     to_lbann(msg.metric_strategy()),
     make_abstract<MutationStrategyType>(msg.mutation_strategy()),

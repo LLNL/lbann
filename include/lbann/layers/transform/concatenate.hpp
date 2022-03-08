@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -51,7 +51,11 @@ class concatenate_distconv_adapter : public data_type_distconv_adapter<TensorDat
 };
 #endif // LBANN_HAS_DISTCONV
 
-/** @brief Concatenate tensors along specified dimension. */
+/** @brief Concatenate tensors along specified dimension
+ *
+ *  All input tensors must have identical dimensions, except for the
+ *  concatenation dimension.
+ */
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
@@ -134,7 +138,7 @@ private:
         && m_concat_dim == 0;
   }
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
-    this->get_distconv_adapter_ptr() = make_unique<
+    this->get_distconv_adapter_ptr() = std::make_unique<
       concatenate_distconv_adapter<TensorDataType, Layout, Device>>(*this);
   }
   concatenate_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() override;
@@ -270,7 +274,7 @@ void concatenate_layer<TensorDataType,Layout,Device>::fp_setup_outputs(El::Int m
     {
       output.AlignWith(input0);
     }
-    
+
     output.Resize(this->get_output_size(), input0.Width());
   }
 }
@@ -341,7 +345,7 @@ void concatenate_layer<TensorDataType,Layout,Device>::fp_compute() {
   {
     fp_compute_impl(*this, m_concat_dim);
   }
-  
+
 
 }
 
@@ -401,7 +405,7 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inpu
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
-  
+
   const auto& input_dims = this->get_input_dims();
   const size_t num_dims = input_dims.size();
 
@@ -427,7 +431,7 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
   {
     bp_compute_impl(*this, m_concat_dim);
   }
-  
+
 
 }
 

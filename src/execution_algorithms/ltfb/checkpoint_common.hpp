@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,10 +33,9 @@
 
 namespace lbann {
 namespace ltfb {
-namespace {
 
 // Pack model to ship off
-std::string pack(model const& m)
+inline static std::string pack(model const& m)
 {
   std::ostringstream oss;
   {
@@ -47,9 +46,9 @@ std::string pack(model const& m)
 }
 
 // Send a string to the root of the destination trainer
-void send_string(lbann_comm const& comm,
-                 std::string const& str,
-                 int destination_trainer)
+inline static void send_string(lbann_comm const& comm,
+                               std::string const& str,
+                               int destination_trainer)
 {
   size_t size = str.length();
   comm.send(&size, 1, destination_trainer, /*rank=*/0);
@@ -60,7 +59,7 @@ void send_string(lbann_comm const& comm,
 }
 
 // Receive a string from the root of src_trainer
-std::string recv_string(lbann_comm const& comm, int src_trainer)
+inline static std::string recv_string(lbann_comm const& comm, int src_trainer)
 {
   size_t size = 0;
   comm.recv(&size, 1, src_trainer);
@@ -71,7 +70,7 @@ std::string recv_string(lbann_comm const& comm, int src_trainer)
 }
 
 // Unpack received model
-void unpack(model& m, std::string const& str)
+inline static void unpack(model& m, std::string const& str)
 {
   std::istringstream iss(str);
   {
@@ -79,8 +78,6 @@ void unpack(model& m, std::string const& str)
     ar(m);
   }
 }
-
-} // namespace
 
 inline static void restore_model_weights(
   model& m,
@@ -158,7 +155,8 @@ inline static std::string sendrecv_string(lbann_comm const& c,
 }
 
 template <typename T>
-static void exchange(lbann_comm const& c, T& object, El::Int partner_trainer)
+inline static void
+exchange(lbann_comm const& c, T& object, El::Int partner_trainer)
 {
   std::ostringstream oss;
   {

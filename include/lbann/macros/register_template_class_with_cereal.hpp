@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -45,3 +45,9 @@
 
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
+
+#ifndef LBANN_CLASS_LIBNAME
+#define LBANN_CLASS_LIBNAME LBANN_CLASS_NAME
+#endif
+
+LBANN_REGISTER_DYNAMIC_INIT(LBANN_CLASS_LIBNAME);

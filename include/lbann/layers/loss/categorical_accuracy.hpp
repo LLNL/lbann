@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-/** @brief 0-1 loss function.
+/** @brief 0-1 loss function
  *
  *  Requires two inputs, which are respectively interpreted as
  *  prediction scores and as a one-hot label vector. The output is one

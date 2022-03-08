@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -65,7 +65,7 @@
     lbann_comm* comm, lbann_data::Layer const&)                         \
   {                                                                     \
     using LayerType = LAYER_NAME##_layer<TensorDataType, Layout, Device>; \
-    return make_unique<LayerType>(comm);                                \
+    return std::make_unique<LayerType>(comm);                                \
   }
 
 /** @brief A utility macro for easily adding ETI for layer builders
@@ -366,18 +366,12 @@ public:
     return TypeName<DataType>();
   };
 
-
-  void set_num_spliting_groups(int num_grps)
-  {
-    m_num_spliting_groups = num_grps;
-  }
   //enable subgraph parallelism for this layer
   //to set variable for ssplit layer
   void set_enable_subgraph_variable()
   {
     m_parallel_strategy.enable_subgraph=true;
   }
-
 
   /** @brief Human-readable description. */
 
@@ -841,7 +835,7 @@ private:
    */
   friend void attempt_move_error_signal(
     Layer& parent, Layer const& child,
-    std::unique_ptr<BaseDistMat> signals);
+    std::unique_ptr<BaseDistMat> signal);
   friend void attempt_view_error_signal(
     Layer& parent, Layer const& child,
     const BaseDistMat& signals);

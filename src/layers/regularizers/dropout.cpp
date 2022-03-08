@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,7 +35,7 @@ std::unique_ptr<Layer> build_dropout_layer_from_pbuf(
   lbann_comm* comm, lbann_data::Layer const& layer_msg)
 {
   const auto& params = layer_msg.dropout();
-  return lbann::make_unique<dropout_layer<TensorDataType, layout, device>>(
+  return std::make_unique<dropout_layer<TensorDataType, layout, device>>(
     params.keep_prob());
 }
 

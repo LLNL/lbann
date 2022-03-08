@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -93,11 +93,11 @@ model::model(const model& other) :
 
   // Deep copies
   m_default_optimizer_msg = (other.m_default_optimizer_msg
-                             ? make_unique<lbann_data::Optimizer>(
+                             ? std::make_unique<lbann_data::Optimizer>(
                                *other.m_default_optimizer_msg)
                              : nullptr);
   m_objective_function = (other.m_objective_function
-                          ? make_unique<objective_function>(*other.m_objective_function)
+                          ? std::make_unique<objective_function>(*other.m_objective_function)
                           : nullptr);
   for (const auto& m : other.m_metrics) {
     m_metrics.emplace_back(m ? m->copy() : nullptr);
@@ -152,7 +152,7 @@ model& model::operator=(const model& other) {
   // Deep copies
   m_execution_context  = other.m_execution_context;
   m_objective_function = (other.m_objective_function
-                          ? make_unique<objective_function>(*other.m_objective_function)
+                          ? std::make_unique<objective_function>(*other.m_objective_function)
                           : nullptr);
   m_metrics.clear();
   for (const auto& m : other.m_metrics) {
@@ -187,7 +187,7 @@ model& model::operator=(const model& other) {
                   "has a null pointer in its list of weights");
     }
     m_weights.emplace_back(
-      make_unique<data_type_weights<DataType>>(
+      std::make_unique<data_type_weights<DataType>>(
         dynamic_cast<data_type_weights<DataType>&>(*other_weights)));
     weights_map[other_weights.get()] = m_weights.back();
   }

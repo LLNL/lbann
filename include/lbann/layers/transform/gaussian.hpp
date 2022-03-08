@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,7 +33,7 @@
 
 namespace lbann {
 
-/** @brief Random values from Gaussian/normal distribution. */
+/** @brief Random tensor with Gaussian/normal distribution */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
@@ -45,9 +45,8 @@ private:
   TensorDataType m_stdev;
   /** @brief Whether to have deterministic output when not training.
    *
-   *  Applies to execution modes other than training, e.g. validation
-   *  and inference. If true, outputs are all equal to the
-   *  distribution mean when not training.
+   *  If true, the tensor is filled with the distribution mean during
+   *  evaluation.
    */
   bool m_training_only;
 

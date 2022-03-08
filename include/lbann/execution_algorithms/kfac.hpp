@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -57,9 +57,8 @@ namespace lbann {
  *  deep convolutional neural networks." Proceedings of the IEEE
  *  Conference on Computer Vision and Pattern Recognition. 2019.
  */
-class KFAC final : public Cloneable<KFAC, TrainingAlgorithm>
+class KFAC final : public TrainingAlgorithm
 {
-  using BaseType = Cloneable<KFAC, TrainingAlgorithm>;
 
 public:
   using TermCriteriaType = SGDTerminationCriteria;
@@ -89,9 +88,11 @@ public:
     double learning_rate_factor_gru,
     size_t compute_interval);
 
-  KFAC(KFAC const& other);
-  KFAC& operator=(const KFAC& other);
   ~KFAC() noexcept = default;
+  KFAC(KFAC const& other) = delete;
+  KFAC& operator=(const KFAC& other) = delete;
+  KFAC(KFAC&& other) = default;
+  KFAC& operator=(KFAC&& other) = default;
   ///@}
   /** @brief Queries */
   ///@{

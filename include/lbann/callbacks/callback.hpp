@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -47,7 +47,7 @@
 #define LBANN_ADD_DEFAULT_CALLBACK_BUILDER(Class, FunctionName)  \
   inline std::unique_ptr<callback_base> FunctionName(           \
     const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&) {          \
-    return lbann::make_unique<Class>();                          \
+    return std::make_unique<Class>();                          \
   }
 
 namespace cereal

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -50,7 +50,7 @@ struct LogicalNotOpImpl {
     auto const& b = x != DataT(0.0) && !gpu_lib::isnan(x);
     return !b ? DataT(1.0) : DataT(0.0);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& /*x*/, DataT const& /*dy*/) const {
     return DataT(0.0);
   }
 };
@@ -61,7 +61,7 @@ struct NegativeOpImpl {
   inline __device__ DataT operator()(DataT const& x) const {
     return -x;
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& /*x*/, DataT const& dy) const {
     return -dy;
   }
 };
@@ -76,7 +76,7 @@ struct SignOpImpl {
     else if (x < zero) { return -one; }
     else               { return zero; }
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& /*x*/, DataT const& /*dy*/) const {
     return DataT(0.0);
   }
 };
@@ -87,7 +87,7 @@ struct RoundOpImpl {
   inline __device__ DataT operator()(DataT const& x) const {
     return gpu_lib::round(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& /*x*/, DataT const& /*dy*/) const {
     return DataT(0.0);
   }
 };
@@ -98,7 +98,7 @@ struct CeilOpImpl {
   inline __device__ DataT operator()(DataT const& x) const {
     return gpu_lib::ceil(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& /*x*/, DataT const& /*dy*/) const {
     return DataT(0.0);
   }
 };
@@ -109,7 +109,7 @@ struct FloorOpImpl {
   inline __device__ DataT operator()(DataT const& x) const {
     return gpu_lib::floor(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& /*x*/, DataT const& /*dy*/) const {
     return DataT(0.0);
   }
 };

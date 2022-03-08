@@ -174,10 +174,6 @@ int main(int argc, char* argv[])
                                  trainer.get_callbacks_with_ownership(),
                                  training_dr_linearized_data_size);
 
-    if (arg_parser.get<bool>(LBANN_OPTION_CREATE_TARBALL)) {
-      return EXIT_SUCCESS;
-    }
-
     if (!arg_parser.get<bool>(LBANN_OPTION_EXIT_AFTER_SETUP)) {
 
       // Train model

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -66,7 +66,6 @@ public:
 
   /** @brief Construct a Hypergradient Adam optimizer object
    *
-   *  @param comm                   Communication context for this object
    *  @param init_learning_rate     Initial Adam learning rate (0.001 is
    *                                reasonable).
    *  @param hyper_learning_rate    Hypergradient learning rate.

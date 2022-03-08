@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -241,7 +241,7 @@ std::unique_ptr<weights_initializer>
 build_constant_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::ConstantInitializer const&>(msg);
-  return make_unique<constant_initializer<TensorDataType>>(El::To<TensorDataType>(params.value()));
+  return std::make_unique<constant_initializer<TensorDataType>>(El::To<TensorDataType>(params.value()));
 }
 
 template <typename TensorDataType>
@@ -249,7 +249,7 @@ std::unique_ptr<weights_initializer>
 build_value_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::ValueInitializer const&>(msg);
-  return make_unique<value_initializer<TensorDataType>>(parse_list<TensorDataType>(params.values()));
+  return std::make_unique<value_initializer<TensorDataType>>(parse_list<TensorDataType>(params.values()));
 }
 
 template <typename TensorDataType>
@@ -257,7 +257,7 @@ std::unique_ptr<weights_initializer>
 build_numpy_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::NumpyInitializer const&>(msg);
-  return make_unique<numpy_initializer<TensorDataType>>(params.file());
+  return std::make_unique<numpy_initializer<TensorDataType>>(params.file());
 }
 
 template <typename TensorDataType>
@@ -268,9 +268,9 @@ build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& min = El::To<TensorDataType>(params.min());
   const auto& max = El::To<TensorDataType>(params.max());
   if (min != 0.0 || max != 0.0) {
-    return make_unique<uniform_initializer<TensorDataType>>(min, max);
+    return std::make_unique<uniform_initializer<TensorDataType>>(min, max);
   } else {
-    return make_unique<uniform_initializer<TensorDataType>>();
+    return std::make_unique<uniform_initializer<TensorDataType>>();
   }
 }
 
@@ -282,9 +282,9 @@ build_normal_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& mean = El::To<TensorDataType>(params.mean());
   const auto& standard_deviation = El::To<TensorDataType>(params.standard_deviation());
   if (mean != 0.0 || standard_deviation != 0.0) {
-    return make_unique<normal_initializer<TensorDataType>>(mean, standard_deviation);
+    return std::make_unique<normal_initializer<TensorDataType>>(mean, standard_deviation);
   } else {
-    return make_unique<normal_initializer<TensorDataType>>();
+    return std::make_unique<normal_initializer<TensorDataType>>();
   }
 }
 

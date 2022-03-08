@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -124,7 +124,7 @@ build_check_metric_callback_from_pbuf(
     dynamic_cast<const lbann_data::Callback::CallbackCheckMetric&>(proto_msg);
   const auto& modes =
     parse_set<execution_mode>(params.execution_modes());
-  return make_unique<check_metric>(params.metric(),
+  return std::make_unique<check_metric>(params.metric(),
                                                   modes,
                                                   params.lower_bound(),
                                                   params.upper_bound(),
@@ -135,4 +135,5 @@ build_check_metric_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::check_metric
+#define LBANN_CLASS_LIBNAME callback_check_metric
 #include <lbann/macros/register_class_with_cereal.hpp>

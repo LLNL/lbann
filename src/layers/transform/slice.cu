@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -308,6 +308,7 @@ void fp_compute_impl(
     grid_dims.x = (max_output_dims[3] + block_size - 1) / block_size;
     grid_dims.y = max_output_dims[2];
     grid_dims.z = max_output_dims[1];
+    gpu_lib::clip_grid_dims(grid_dims);
     hydrogen::gpu::LaunchKernel(
       slice4d_kernel<TensorDataType>,
       grid_dims, block_dims, 0, sync_info,
@@ -459,6 +460,7 @@ void bp_compute_impl(
     grid_dims.x = (max_output_grad_dims[3] + block_size - 1) / block_size;
     grid_dims.y = max_output_grad_dims[2];
     grid_dims.z = max_output_grad_dims[1];
+    gpu_lib::clip_grid_dims(grid_dims);
     hydrogen::gpu::LaunchKernel(
       concat4d_kernel<TensorDataType>,
       grid_dims, block_dims, 0, sync_info,

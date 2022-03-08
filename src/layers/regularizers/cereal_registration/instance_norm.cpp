@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -62,3 +62,5 @@ void instance_norm_layer<TensorDataType,Layout,Device>::serialize(ArchiveT& ar) 
   PROTO_GPU(T)
 
 #include "lbann/macros/instantiate.hpp"
+
+CEREAL_REGISTER_DYNAMIC_INIT(instance_norm_layer);

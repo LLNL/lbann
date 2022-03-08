@@ -1,5 +1,5 @@
  ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -88,7 +88,7 @@ public:
 public:
   matrix_ptr_type MakeEmpty(El::Grid const& g, El::Int root) const final
   {
-    auto ret = make_unique<concrete_matrix_type>(g, root);
+    auto ret = std::make_unique<concrete_matrix_type>(g, root);
     ret->Matrix().SetMemoryMode(memory_mode_);
     return ret;
   }

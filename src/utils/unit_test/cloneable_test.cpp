@@ -1,25 +1,61 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch.hpp>
+#include "TestHelpers.hpp"
 #include "lbann/utils/cloneable.hpp"
+#include <memory>
 
 using namespace lbann;
 
-struct Base : Cloneable<NonLeafClass<Base>> {};
-struct Derived : Cloneable<Derived, Base> {};
+struct Base : Cloneable<NonLeafClass<Base>>
+{
+};
+struct Derived : Cloneable<Derived, Base>
+{
+};
 
-struct DiamondBase : Cloneable<NonLeafClass<DiamondBase>> {};
-struct DiamondDerivedLeft
-  : Cloneable<HasAbstractFunction<DiamondDerivedLeft>,
-              AsVirtualBase<DiamondBase>>
-{};
-struct DiamondDerivedRight
-  : Cloneable<HasAbstractFunction<DiamondDerivedRight>,
-              AsVirtualBase<DiamondBase>>
-{};
+struct DiamondBase : Cloneable<NonLeafClass<DiamondBase>>
+{
+};
+struct DiamondDerivedLeft : Cloneable<HasAbstractFunction<DiamondDerivedLeft>,
+                                      AsVirtualBase<DiamondBase>>
+{
+};
+struct DiamondDerivedRight : Cloneable<HasAbstractFunction<DiamondDerivedRight>,
+                                       AsVirtualBase<DiamondBase>>
+{
+};
 struct DiamondDerivedBottom
   : Cloneable<DiamondDerivedBottom, DiamondDerivedLeft, DiamondDerivedRight>
-{};
+{
+};
 
-struct StandaloneCloneable : Cloneable<StandaloneCloneable> {};
+struct StandaloneCloneable : Cloneable<StandaloneCloneable>
+{
+};
 
 TEST_CASE("Testing cloneable mechanism -- standalone class", "[utils]")
 {
@@ -57,13 +93,15 @@ TEST_CASE("Testing cloneable mechanism -- inheritance diamond", "[utils]")
   REQUIRE(dynamic_cast<DiamondDerivedBottom const*>(eptr.get()));
 }
 
-struct DeepBase : Cloneable<HasAbstractFunction<DeepBase>> {};
-struct DeepMidDerived
-  : Cloneable<HasAbstractFunction<DeepMidDerived>, DeepBase>
-{};
-struct DeepMostDerived
-  : Cloneable<DeepMostDerived, DeepMidDerived>
-{};
+struct DeepBase : Cloneable<HasAbstractFunction<DeepBase>>
+{
+};
+struct DeepMidDerived : Cloneable<HasAbstractFunction<DeepMidDerived>, DeepBase>
+{
+};
+struct DeepMostDerived : Cloneable<DeepMostDerived, DeepMidDerived>
+{
+};
 
 TEST_CASE("Testing cloneable mechanism -- deep hierarchy", "[utils]")
 {
@@ -100,8 +138,7 @@ static_assert(IsCloneable_v<Derived>(), "Derived should be cloneable.");
 static_assert(IsCloneable_v<StandaloneCloneable>(),
               "StandaloneCloneable should be cloneable.");
 
-static_assert(IsCloneable_v<DiamondBase>(),
-              "DiamondBase should be cloneable.");
+static_assert(IsCloneable_v<DiamondBase>(), "DiamondBase should be cloneable.");
 static_assert(IsCloneable_v<DiamondDerivedLeft>(),
               "DiamondDerivedLeft should be cloneable.");
 static_assert(IsCloneable_v<DiamondDerivedRight>(),
@@ -109,8 +146,7 @@ static_assert(IsCloneable_v<DiamondDerivedRight>(),
 static_assert(IsCloneable_v<DiamondDerivedBottom>(),
               "DiamondDerivedBottom should be cloneable.");
 
-static_assert(IsCloneable_v<DeepBase>(),
-              "DeepBase should be cloneable.");
+static_assert(IsCloneable_v<DeepBase>(), "DeepBase should be cloneable.");
 static_assert(IsCloneable_v<DeepMidDerived>(),
               "DeepMidDerived should be cloneable.");
 static_assert(IsCloneable_v<DeepMostDerived>(),
@@ -124,7 +160,8 @@ static_assert(!IsCloneable_v<double>(), "double should not be cloneable.");
 
 // A class that returns by raw pointer doesn't fit the Cloneable
 // concept as defined here.
-struct NotTheRightCloneable {
+struct NotTheRightCloneable
+{
   NotTheRightCloneable* clone() const;
 };
 
@@ -135,7 +172,8 @@ static_assert(!IsCloneable_v<NotTheRightCloneable>(),
 // provide the right clone signature but don't use the cloneable
 // method. This would be difficult to enforce as well, especially
 // since the Cloneable infrastructure could be written out long-hand.
-struct ShouldBeOk {
+struct ShouldBeOk
+{
   std::unique_ptr<ShouldBeOk> clone() const;
 };
 
@@ -158,3 +196,53 @@ static_assert(IsCloneable_v<NoCovariantCloneBase>(),
               "NoCovariantCloneBase should appear to be cloneable.");
 static_assert(!IsCloneable_v<NoCovariantCloneConcrete>(),
               "NoCovariantCloneConcrete should not be cloneable.");
+
+// Cloning all objects in a contain full of cloneable objects.
+
+TEST_CASE("Testing cloneable mechanism -- vector clone", "[utils]")
+{
+  SECTION("Unique Ptr")
+  {
+    using container_type = std::vector<std::unique_ptr<DeepBase>>;
+    container_type ptrs;
+    ptrs.push_back(std::make_unique<DeepMostDerived>());
+    ptrs.push_back(std::make_unique<DeepMostDerived>());
+    ptrs.push_back(std::make_unique<DeepMostDerived>());
+
+    auto cloned_ptrs = clone_all(ptrs);
+    static_assert(std::is_same_v<decltype(cloned_ptrs), container_type>, "");
+    for (auto const& p : cloned_ptrs)
+      CHECK(unit_test::utilities::IsValidPtr(p));
+  }
+  SECTION("Shared Ptr")
+  {
+    using container_type = std::vector<std::shared_ptr<DeepBase>>;
+    container_type ptrs;
+    ptrs.push_back(std::make_unique<DeepMostDerived>());
+    ptrs.push_back(std::make_unique<DeepMostDerived>());
+    ptrs.push_back(std::make_unique<DeepMostDerived>());
+
+    auto cloned_ptrs = clone_all(ptrs);
+    static_assert(std::is_same_v<decltype(cloned_ptrs), container_type>, "");
+    for (auto const& p : cloned_ptrs)
+      CHECK(unit_test::utilities::IsValidPtr(p));
+  }
+}
+
+// Sanity check the IsCloneablePtr predicate.
+static_assert(IsCloneablePtr<DeepMidDerived*>,
+              "DeepMidDerived supports Cloneable.");
+static_assert(IsCloneablePtr<DeepMidDerived const*>,
+              "DeepMidDerived supports Cloneable.");
+static_assert(IsCloneablePtr<std::shared_ptr<DeepMostDerived>>,
+              "DeepMostDerived supports Cloneable.");
+static_assert(IsCloneablePtr<std::shared_ptr<DeepMostDerived const>>,
+              "DeepMostDerived supports Cloneable.");
+static_assert(IsCloneablePtr<std::unique_ptr<DeepBase>>,
+              "DeepBase supports Cloneable.");
+static_assert(IsCloneablePtr<std::unique_ptr<DeepBase const>>,
+              "DeepBase supports Cloneable.");
+
+static_assert(!IsCloneablePtr<int*>, "int does not support Cloneable.");
+static_assert(!IsCloneablePtr<std::unique_ptr<char[]>>,
+              "char does not support Cloneable.");

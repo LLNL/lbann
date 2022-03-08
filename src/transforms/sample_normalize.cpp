@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -48,7 +48,7 @@ void sample_normalize::apply(utils::type_erased_matrix& data, std::vector<size_t
 
 std::unique_ptr<transform>
 build_sample_normalize_transform_from_pbuf(google::protobuf::Message const&) {
-  return make_unique<sample_normalize>();
+  return std::make_unique<sample_normalize>();
 }
 
 }  // namespace transform

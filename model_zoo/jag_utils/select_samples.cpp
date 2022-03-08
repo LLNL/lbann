@@ -140,7 +140,7 @@ int main(int argc, char **argv) {
     cout << "SUCESS - FINISHED!\n";
 
   } catch (lbann::exception& e) {
-    if (options::get()->get_bool(LBANN_OPTION_STACK_TRACE_TO_FILE)) {
+    if (arg_parser.get<bool>(LBANN_OPTION_STACK_TRACE_TO_FILE)) {
       ostringstream ss("stack_trace");
       const auto& rank = lbann::get_rank_in_world();
       if (rank >= 0) {

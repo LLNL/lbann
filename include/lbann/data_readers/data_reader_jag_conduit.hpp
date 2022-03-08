@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -197,7 +197,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   int get_num_data() const override;
   int get_num_labels() const override;
   int get_linearized_label_size() const override;
-  int get_linearized_size(const std::string& desc) const override;
 
   std::vector<El::Int> get_slice_points(const slice_points_mode var_category,
                                         bool& is_supported) override;

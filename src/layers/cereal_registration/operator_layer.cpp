@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,6 +28,10 @@
 #include "lbann/utils/serialize.hpp"
 #include "lbann/macros/common_cereal_registration.hpp"
 #include <cereal/types/polymorphic.hpp>
+
+// Note (trb 02/07/2022): This does not use the
+// "register_layer_with_cereal.hpp" file because the operator layer
+// exposes both the input and output types.
 
 #undef LBANN_COMMA
 #undef LBANN_REGISTER_LAYER_WITH_CEREAL_BASE
@@ -59,3 +63,5 @@
 #undef LBANN_REGISTER_LAYER_WITH_CEREAL
 #undef LBANN_REGISTER_LAYER_WITH_CEREAL_BASE
 #undef LBANN_COMMA
+
+LBANN_REGISTER_DYNAMIC_INIT(LBANN_LAYER_NAME);

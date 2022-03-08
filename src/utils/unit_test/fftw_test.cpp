@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -272,7 +272,7 @@ TEMPLATE_TEST_CASE("Testing FFTW wrapper (R2C)",
       auto const& input_bwd_ij = input_bwd.CRef(row, col);
 
       // Ehhhh this is fine for now...
-      CHECK(input_bwd_ij == Approx(scale_factor*input_ij).epsilon(0.025));
+      CHECK(input_bwd_ij == Approx(scale_factor*input_ij).epsilon(0.05));
     }
   }
 }
@@ -347,9 +347,9 @@ TEMPLATE_TEST_CASE("Testing FFTW wrapper (C2C)",
 
       // Ehhhh this is fine for now...
       CHECK(RealPart(input_bwd_ij)
-            == Approx(scale_factor*RealPart(input_ij)).epsilon(0.025));
+            == Approx(scale_factor*RealPart(input_ij)).epsilon(0.05));
       CHECK(ImagPart(input_bwd_ij)
-            == Approx(scale_factor*ImagPart(input_ij)).epsilon(0.025));
+            == Approx(scale_factor*ImagPart(input_ij)).epsilon(0.05));
     }
   }
 }
@@ -408,9 +408,9 @@ TEMPLATE_TEST_CASE("Testing FFTW wrapper (C2C-InPlace)",
       auto const& mat_orig_ij = mat_orig.CRef(row, col);
 
       // Ehhhh this is fine for now...
-      CHECK(Approx(RealPart(mat_ij)).epsilon(0.025)
+      CHECK(Approx(RealPart(mat_ij)).epsilon(0.05)
             == scale_factor*RealPart(mat_orig_ij));
-      CHECK(Approx(ImagPart(mat_ij)).epsilon(0.025)
+      CHECK(Approx(ImagPart(mat_ij)).epsilon(0.05)
             == scale_factor*ImagPart(mat_orig_ij));
     }
   }

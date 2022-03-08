@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -108,7 +108,7 @@ void normalize::apply(utils::type_erased_matrix& data, CPUMat& out,
 std::unique_ptr<transform>
 build_normalize_transform_from_pbuf(google::protobuf::Message const& msg) {
   auto& pb_trans = dynamic_cast<lbann_data::Transform::Normalize const&>(msg);
-  return make_unique<normalize>(
+  return std::make_unique<normalize>(
     parse_list<float>(pb_trans.means()),
     parse_list<float>(pb_trans.stddevs()));
 }

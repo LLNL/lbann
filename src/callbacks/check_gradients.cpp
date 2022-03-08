@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -376,7 +376,7 @@ build_check_gradients_callback_from_pbuf(
     dynamic_cast<const lbann_data::Callback::CallbackCheckGradients&>(proto_msg);
   const auto& modes =
     parse_set<execution_mode>(params.execution_modes());
-  return make_unique<check_gradients>(modes,
+  return std::make_unique<check_gradients>(modes,
                                       params.step_size(),
                                       params.verbose(),
                                       params.error_on_failure());
@@ -386,4 +386,5 @@ build_check_gradients_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::check_gradients
+#define LBANN_CLASS_LIBNAME callback_check_gradients
 #include <lbann/macros/register_class_with_cereal.hpp>

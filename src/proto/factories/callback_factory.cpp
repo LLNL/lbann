@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -254,7 +254,7 @@ std::unique_ptr<lbann_summary> construct_summarizer(lbann_comm* comm,
       LBANN_ERROR("summary directory ", dir, " does not exist.");
     }
 
-    return make_unique<lbann_summary>(dir, comm);
+    return std::make_unique<lbann_summary>(dir, comm);
   }
   return nullptr;
 }

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -429,6 +429,8 @@ ExchangeStrategyFactory& get_exchange_factory()
 } // namespace
 
 // For ExchangeStrategy
+
+/** @brief Factory function for ExchangeStrategy objects. */
 template <>
 std::unique_ptr<lbann::ltfb::RandomPairwiseExchange::ExchangeStrategy>
 lbann::make_abstract<lbann::ltfb::RandomPairwiseExchange::ExchangeStrategy>(
@@ -450,6 +452,7 @@ lbann::make_abstract<lbann::ltfb::RandomPairwiseExchange::ExchangeStrategy>(
     exchange_params);
 }
 
+/** @brief Builder function for RandomPairwiseExchange. */
 template <>
 std::unique_ptr<lbann::ltfb::RandomPairwiseExchange>
 lbann::make<lbann::ltfb::RandomPairwiseExchange>(
@@ -474,7 +477,7 @@ lbann::make<lbann::ltfb::RandomPairwiseExchange>(
   using ExchangeStrategyType =
     lbann::ltfb::RandomPairwiseExchange::ExchangeStrategy;
   using MutationStrategyType = lbann::ltfb::MutationStrategy;
-  return make_unique<lbann::ltfb::RandomPairwiseExchange>(
+  return std::make_unique<lbann::ltfb::RandomPairwiseExchange>(
     std::move(metric_map),
     make_abstract<ExchangeStrategyType>(msg.exchange_strategy()),
     make_abstract<MutationStrategyType>(msg.mutation_strategy()));

@@ -1,3 +1,29 @@
+################################################################################
+## Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+## Produced at the Lawrence Livermore National Laboratory.
+## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+##
+## LLNL-CODE-697807.
+## All rights reserved.
+##
+## This file is part of LBANN: Livermore Big Artificial Neural Network
+## Toolkit. For details, see http://software.llnl.gov/LBANN or
+## https://github.com/LLNL/LBANN.
+##
+## Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+## may not use this file except in compliance with the License.  You may
+## obtain a copy of the License at:
+##
+## http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+## implied. See the License for the specific language governing
+## permissions and limitations under the license.
+################################################################################
+
 # This will create IMPORTED targets for LBANN. The executables will be
 # LBANN::<exe-name>-bin (e.g., LBANN::lbann-bin) and the library will
 # be LBANN::lbann.
@@ -38,20 +64,35 @@ set(LBANN_DATATYPE @LBANN_DATATYPE@)
 set(LBANN_DETERMINISTIC @LBANN_DETERMINISTIC@)
 set(LBANN_GNU_LINUX @LBANN_GNU_LINUX@)
 set(LBANN_HAS_ALUMINUM @LBANN_HAS_ALUMINUM@)
+set(LBANN_HAS_BOOST @LBANN_HAS_BOOST@)
 set(LBANN_HAS_CEREAL @LBANN_HAS_CEREAL@)
+set(LBANN_HAS_CEREAL_XML_ARCHIVES @LBANN_HAS_CEREAL_XML_ARCHIVES@)
 set(LBANN_HAS_CNPY @LBANN_HAS_CNPY@)
-set(LBANN_HAS_CONDUIT @LBANN_WITH_CONDUIT@)
 set(LBANN_HAS_CUDA @LBANN_HAS_CUDA@)
 set(LBANN_HAS_CUDNN @LBANN_HAS_CUDNN@)
-set(LBANN_HAS_DOXYGEN @LBANN_HAS_DOXYGEN@)
-set(LBANN_HAS_HYDROGEN @LBANN_HAS_HYDROGEN@)
 set(LBANN_HAS_DIHYDROGEN @LBANN_HAS_DIHYDROGEN@)
+set(LBANN_HAS_DISTCONV @LBANN_HAS_DISTCONV@)
+set(LBANN_HAS_DOXYGEN @LBANN_HAS_DOXYGEN@)
+set(LBANN_HAS_EMBEDDED_PYTHON @LBANN_HAS_EMBEDDED_PYTHON@)
+set(LBANN_HAS_FFTW @LBANN_HAS_FFTW@
+set(LBANN_HAS_FFTW_FLOAT @LBANN_HAS_FFTW_FLOAT@)
+set(LBANN_HAS_FFTW_DOUBLE @LBANN_HAS_FFTW_DOUBLE@)
+set(LBANN_HAS_GPU_FP16 @LBANN_HAS_GPU_FP16@)
+set(LBANN_HAS_HALF @LBANN_HAS_HALF@)
+set(LBANN_HAS_HYDROGEN @LBANN_HAS_HYDROGEN@)
 set(LBANN_HAS_LBANN_PROTO @LBANN_HAS_LBANN_PROTO@)
+set(LBANN_HAS_MIOPEN @LBANN_HAS_MIOPEN@)
+set(LBANN_HAS_NVSHMEM @LBANN_HAS_NVSHMEM@)
+SET(LBANN_HAS_ONEDNN @LBANN_HAS_ONEDNN@)
+SET(LBANN_HAS_ONEDNN_CPU @LBANN_HAS_ONEDNN_CPU@)
+SET(LBANN_HAS_ONEDNN_GPU @LBANN_HAS_ONEDNN_GPU@)
+SET(LBANN_HAS_ONEDNN_V1 @LBANN_HAS_ONEDNN_V1@)
+set(LBANN_HAS_ONNX @LBANN_HAS_ONNX@)
 set(LBANN_HAS_OPENCV @LBANN_HAS_OPENCV@)
 set(LBANN_HAS_NCCL2 @LBANN_HAS_NCCL2@)
 set(LBANN_HAS_PROTOBUF @LBANN_HAS_PROTOBUF@)
 set(LBANN_HAS_PYTHON_FRONTEND @LBANN_HAS_PYTHON_FRONTEND@)
-set(LBANN_HAS_EMBEDDED_PYTHON @LBANN_HAS_EMBEDDED_PYTHON@)
+set(LBANN_HAS_ROCM @LBANN_HAS_ROCM@)
 set(LBANN_HAS_TBINF @LBANN_HAS_TBINF@)
 set(LBANN_HAS_VTUNE @LBANN_HAS_VTUNE@)
 set(LBANN_NVPROF @LBANN_NVPROF@)
@@ -61,54 +102,27 @@ set(LBANN_EXPLICIT_LIBDL @LBANN_EXPLICIT_LIBDL@)
 # Setup dependencies
 include(CMakeFindDependencyMacro)
 
-find_package(Threads REQUIRED)
+find_dependency(Threads)
 
 find_dependency(Clara)
 
 if (LBANN_HAS_PYTHON_FRONTEND OR LBANN_HAS_EMBEDDED_PYTHON)
-  find_package(Python REQUIRED COMPONENTS Interpreter Development)
+  find_dependency(Python COMPONENTS Interpreter Development)
 endif ()
 
 if (LBANN_HAS_CEREAL)
-  find_package(CEREAL NO_MODULE QUIET
-    HINTS ${CEREAL_DIR} $ENV{CEREAL_DIR}
-    PATH_SUFFIXES share/cmake/cereal
-    NO_DEFAULT_PATH)
-  if (NOT CEREAL_FOUND)
-    find_package(CEREAL NO_MODULE QUIET)
-  endif ()
-  if (NOT CEREAL_FOUND AND NOT CEREAL_DIR)
-    set(CEREAL_DIR "@CEREAL_DIR@")
-    find_package(CEREAL NO_MODULE REQUIRED)
-  endif ()
-  if (NOT CEREAL_FOUND)
-    message(FATAL_ERROR "Required dependency CEREAL not found.")
-  endif ()
+  find_dependency(CEREAL CONFIG NAMES cereal)
 endif ()
 
-if (NOT HWLOC_DIR)
-  set(HWLOC_DIR "@HWLOC_DIR@")
-endif ()
 if (LBANN_TOPO_AWARE)
-  find_package(HWLOC REQUIRED)
-  set(LBANN_TOPO_AWARE ${HWLOC_FOUND})
+  find_dependency(HWLOC)
 endif ()
 
 # Next, Hydrogen. We can probably inherit Aluminum-ness from
 # there, as well as MPI and OpenMP.
 if (LBANN_HAS_HYDROGEN)
-  if (NOT Hydrogen_DIR AND NOT HYDROGEN_DIR)
-    set(Hydrogen_DIR "@Hydrogen_DIR@")
-  endif ()
   set(MIN_H_VERSION "@HYDROGEN_VERSION@")
-  find_package(Hydrogen ${MIN_H_VERSION} NO_MODULE QUIET
-    HINTS ${Hydrogen_DIR} ${HYDROGEN_DIR} $ENV{Hydrogen_DIR} $ENV{HYDROGEN_DIR}
-    PATH_SUFFIXES lib/cmake/hydrogen
-    NO_DEFAULT_PATH)
-
-  if (NOT Hydrogen_FOUND)
-    find_package(Hydrogen ${MIN_H_VERSION} NO_MODULE REQUIRED)
-  endif ()
+  find_dependency(Hydrogen ${MIN_H_VERSION} CONFIG)
 
   # Fake Hydrogen components
   set(__hydrogen_have_cuda @_HYDROGEN_HAVE_CUDA@)
@@ -149,40 +163,13 @@ else ()
     "This should not be possible.")
 endif (LBANN_HAS_HYDROGEN)
 
-if (LBANN_HAS_DIHYDROGEN)
-  set(MIN_H2_VERSION "@H2_VERSION@")
-  find_package(DiHydrogen NO_MODULE QUIET
-    HINTS ${DiHydrogen_DIR} ${DIHYDROGEN_DIR} ${H2_DIR}
-    $ENV{DiHydrogen_DIR} $ENV{DIHYDROGEN_DIR} $ENV{H2_DIR}
-    PATH_SUFFIXES lib64/cmake/dihydrogen lib/cmake/dihydrogen
-    NO_DEFAULT_PATH)
-  find_package(DiHydrogen NO_MODULE REQUIRED)
-
-  # Ensure DiHydrogen features match
-  if (H2_VERSION VERSION_LESS MIN_H2_VERSION)
-    message(FATAL_ERROR
-      "Incompatible DiHydrogen version found: ${H2_VERSION}. "
-      "Required minimum version is: ${MIN_H2_VERSION}")
-  endif ()
+if (LBANN_HAS_DISTCONV)
+  find_dependency(DiHydrogen "@H2_VERSION@" CONFIG
+    COMPONENTS Meta Patterns DistConv)
+else ()
+  find_dependency(DiHydrogen "@H2_VERSION@" CONFIG
+    COMPONENTS Meta Patterns)
 endif (LBANN_HAS_DIHYDROGEN)
-
-# Start with Aluminum. If we can inherit MPI, OpenMPI, etc, from there, super.
-if (LBANN_HAS_ALUMINUM)
-  set(MIN_AL_VERSION "@ALUMINUM_VERSION@")
-  find_package(Aluminum "${MIN_AL_VERSION}" NO_MODULE QUIET
-    HINTS ${Aluminum_DIR} ${ALUMINUM_DIR} ${AL_DIR}
-    $ENV{Aluminum_DIR} $ENV{ALUMINUM_DIR} $ENV{AL_DIR}
-    PATH_SUFFIXES lib64/cmake/aluminum lib/cmake/aluminum
-    NO_DEFAULT_PATH)
-  find_package(Aluminum NO_MODULE REQUIRED)
-
-  # Ensure Aluminum features match
-  if (ALUMINUM_VERSION VERSION_LESS MIN_AL_VERSION)
-    message(FATAL_ERROR
-      "Incompatible Aluminum version found: ${ALUMINUM_VERSION}. "
-      "Required minimum version is: ${MIN_AL_VERSION}")
-  endif ()
-endif (LBANN_HAS_ALUMINUM)
 
 include(SetupOpenMP)
 include(SetupMPI)
@@ -193,142 +180,56 @@ endif ()
 include(SetupProtobuf)
 
 if (LBANN_HAS_CNPY)
-  if (NOT CNPY_DIR)
-    set(CNPY_DIR "@CNPY_DIR@")
-  endif ()
-
-  find_package(CNPY REQUIRED)
+  find_dependency(CNPY)
 endif (LBANN_HAS_CNPY)
 
 if (LBANN_HAS_OPENCV)
-  if (NOT OPENCV_DIR AND NOT OpenCV_DIR)
-    set(OpenCV_DIR "@OpenCV_DIR@")
-    find_package(OpenCV NO_MODULE
-      HINTS ${OpenCV_DIR} ${OPENCV_DIR} $ENV{OpenCV_DIR} $ENV{OPENCV_DIR}
-      PATH_SUFFIXES share/OpenCV
-      NO_DEFAULT_PATH)
-    if (NOT OpenCV_FOUND)
-      find_package(OpenCV NO_MODULE REQUIRED)
-    endif ()
-  endif ()
+  find_dependency(OpenCV CONFIG)
 endif (LBANN_HAS_OPENCV)
 
 # Setup CUDA dependencies
 if (LBANN_HAS_CUDA)
-  if (CMAKE_CUDA_STANDARD LESS LBANN_CUDA_STANDARD
-      OR CMAKE_CUDA_STANDARD EQUAL 98 OR NOT CMAKE_CUDA_STANDARD)
-    set(CMAKE_CUDA_STANDARD "${LBANN_CUDA_STANDARD}")
-  endif ()
-  set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
+  find_dependency(CUDAToolkit)
+  find_dependency(cuDNN)
 
-  if (NOT CUDNN_DIR)
-    set(CUDNN_DIR "@CUDNN_DIR@")
+  if (LBANN_HAS_NVSHMEM)
+    find_dependency(NVSHMEM)
   endif ()
-  if (NOT CUDNN_DIR AND NOT CUDNN_LIBRARY AND NOT CUDNN_INCLUDE_PATH)
-    set(CUDNN_LIBRARY "@CUDNN_LIBRARY@")
-    set(CUDNN_INCLUDE_PATH "@CUDNN_INCLUDE_PATH@")
-  endif ()
-
-  enable_language(CUDA)
-  include(SetupCUDAToolkit)
 endif (LBANN_HAS_CUDA)
 
-set(_LBANN_CONDUIT_DIR "@Conduit_DIR@")
-set(_LBANN_HDF5_DIR "@HDF5_DIR@")
+if (LBANN_HAS_ROCM)
+  find_dependency(hip CONFIG)
+  find_dependency(MIOpen CONFIG)
+  if (LBANN_HAS_FFTW)
+    find_dependency(rocfft CONFIG)
+  endif ()
+endif ()
+
+# FIXME: Make FFTW module understand FLOAT/DOUBLE components. Then use
+# that to propagate inforamation here.
+if (LBANN_HAS_FFTW)
+  find_dependency(FFTW)
+endif ()
+
+if (LBANN_HAS_BOOST)
+  find_dependency(Boost)
+endif ()
+
 if (LBANN_HAS_CONDUIT)
-  # Apparently we have to find HDF5, too.
-  find_package(HDF5 CONFIG QUIET
-    HINTS ${HDF5_DIR} $ENV{HDF5_DIR} ${_LBANN_HDF5_DIR}
-    PATH_SUFFIXES share/cmake/hdf5
-    NO_DEFAULT_PATH)
-  if (NOT HDF5_FOUND)
-    find_package(HDF5 CONFIG QUIET)
-  endif ()
-  if (NOT HDF5_FOUND)
-    enable_language(C) # WHY??????????????
-    find_package(HDF5 REQUIRED)
-    set(HDF5_FOUND_WITH_MODULE TRUE)
-  else ()
-    message(STATUS "Found HDF5: ${HDF5_DIR}")
-  endif ()
-
-  find_package(Conduit CONFIG QUIET
-    HINTS ${Conduit_DIR} $ENV{Conduit_DIR}
-    ${CONDUIT_DIR} $ENV{CONDUIT_DIR}
-    ${_LBANN_CONDUIT_DIR}
-    PATH_SUFFIXES lib64/cmake lib/cmake
-    NO_DEFAULT_PATH)
-  if (NOT Conduit_FOUND)
-    find_package(Conduit CONFIG REQUIRED
-      PATH_SUFFIXES lib64/cmake lib/cmake)
-  endif ()
-  message(STATUS "Found CONDUIT: ${Conduit_DIR}")
-
-  # Ugh. I don't like that this requires intimate knowledge of
-  # specific targets that CONDUIT exports. It should support
-  # components.
-  if (NOT TARGET conduit_relay_mpi)
-    message(FATAL_ERROR "CONDUIT does not have proper MPI support.")
-  endif ()
-
-  if (NOT TARGET conduit OR NOT TARGET conduit_relay
-      OR NOT TARGET conduit_blueprint)
-    message(FATAL_ERROR "Missing some CONDUIT required library.")
-  endif ()
-
-  if (NOT TARGET conduit::conduit)
-    add_library(conduit::conduit INTERFACE IMPORTED)
-  endif ()
-
-  set(_conduit_interface_link_libs
-    "conduit;conduit_relay;conduit_relay_mpi;conduit_blueprint")
-
-  # Remove -pthread from linkage, if found
-  foreach (_lib IN LISTS _conduit_interface_link_libs)
-    if (TARGET ${_lib})
-      get_property(_tmp_interface_link_libs TARGET ${_lib}
-        PROPERTY INTERFACE_LINK_LIBRARIES)
-
-      list(FIND _tmp_interface_link_libs "-pthread" _pthread_idx)
-      if (_pthread_idx GREATER_EQUAL 0)
-        list(REMOVE_AT _tmp_interface_link_libs ${_pthread_idx})
-
-        set_property(TARGET ${_lib} PROPERTY
-          INTERFACE_LINK_LIBRARIES ${_tmp_interface_link_libs})
-      endif ()
-
-      get_property(_tmp_interface_compile_opts TARGET ${_lib}
-        PROPERTY INTERFACE_COMPILE_OPTIONS)
-      set_property(TARGET ${_lib}
-        PROPERTY INTERFACE_COMPILE_OPTIONS
-          $<$<COMPILE_LANGUAGE:CXX>:${_tmp_interface_compile_opts}>)
-    endif ()
-  endforeach ()
-
-  get_filename_component(_conduit_include_dirs
-    "${CONDUIT_INCLUDE_DIRS}" DIRECTORY)
-
-  if (HDF5_FOUND_WITH_MODULE)
-    list(APPEND _conduit_interface_link_libs
-      ${HDF5_LIBRARIES})
-
-    list(APPEND _conduit_include_dirs
-      "${HDF5_INCLUDE_DIRS}")
-  endif ()
-
-  set_property(TARGET conduit::conduit
-    PROPERTY
-    INTERFACE_INCLUDE_DIRECTORIES
-    "${_conduit_include_dirs}")
-
-  set_target_properties(conduit::conduit
-    PROPERTIES
-    INTERFACE_LINK_LIBRARIES
-    "${_conduit_interface_link_libs}")
-
-  set(CONDUIT_LIBRARIES conduit::conduit)
+  find_dependency(Conduit "@CONDUIT_VERSION@" CONFIG REQUIRED)
 endif (LBANN_HAS_CONDUIT)
 
+if (LBANN_HAS_ONNX)
+  find_dependency(ONNX CONFIG)
+endif ()
+
+if (LBANN_HAS_ONEDNN)
+  find_dependency(DNNL "@DNNL_VERSION@")
+endif ()
+
+find_dependency(ZSTR)
+
+# FIXME: Handle QUIET and REQUIRED flags properly
 if (LBANN_EXPLICIT_LIBDL AND NOT DL_LIBRARY)
   find_library(DL_LIBRARY dl DOC "The dynamic loader library.")
   if (DL_LIBRARY)

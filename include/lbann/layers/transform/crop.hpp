@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,13 +32,13 @@
 
 namespace lbann {
 
-/** @brief Crop tensor.
+/** @brief Extract crop from tensor at a position
  *
- *  Extract a crop from an @f$ N @f$-D tensor. The second input tensor
- *  is interpreted as a normalized crop position in @f$ [0,1)^N
- *  @f$. For images in CHW format, a position of (0,0,0) corresponds
- *  to the red-top-left corner and (1,1,1) to the blue-bottom-right
- *  corner. The crop size is determined at setup.
+ *  Expects two input tensors: an @f$ N @f$-D data tensor and a 1D
+ *  position vector with @f$ N @f$ entries. The position vector should
+ *  be normalized so that values are in @f$ [0,1] @f$. For images in
+ *  CHW format, a position of (0,0,0) corresponds to the red-top-left
+ *  corner and (1,1,1) to the blue-bottom-right corner.
  */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,

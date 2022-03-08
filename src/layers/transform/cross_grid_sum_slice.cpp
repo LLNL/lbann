@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -44,7 +44,7 @@ build_cross_grid_sum_slice_layer_from_pbuf(lbann_comm* comm,
   }
 
   using LayerType = cross_grid_sum_slice_layer<TensorDataType, Device>;
-  return make_unique<LayerType>(comm);
+  return std::make_unique<LayerType>(comm);
 }
 
 #define PROTO_DEVICE(T, D)                                                     \
