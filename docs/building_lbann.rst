@@ -338,8 +338,11 @@ or
                     -- <variants>
 
 2.  A second option is to install additonal Python packages via Pip.
+    To ensure that this is done with the correct version of Python
+    that LBANN was built with, activate the spack environment:
 
    .. code-block:: console
+        spack env activate -p <name of environment>
         <path to lbann repo>/scripts/build_lbann.sh <options>
                     --pip <requirements.txt>
                     -- <variants>
