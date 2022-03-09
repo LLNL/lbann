@@ -461,38 +461,6 @@ cat <<EOF >> ${yaml}
       lmod:
         core_compilers:
           - 'cce@13.0.0'
-          - 'gcc@7.5.0'
-    enable::
-      - tcl
-      - lmod
-    lmod::
-      hash_length: 7
-      core_compilers:
-        - 'gcc@7.5.0'
-        - 'clang@12.0.1'
-        - 'cce@13.0.0'
-      projections:
-        all: '\${PACKAGE}/\${VERSION}'
-      all:
-        filter:
-          # Exclude changes to any of these variables
-          environment_blacklist:
-          - 'CPATH'
-          - 'LIBRARY_PATH'
-      ^python:
-        autoload:  'direct'
-    tcl:
-      hash_length: 7
-      projections:
-        all: '\${PACKAGE}/\${VERSION}'
-      all:
-        filter:
-          # Exclude changes to any of these variables
-          environment_blacklist:
-          - 'CPATH'
-          - 'LIBRARY_PATH'
-      ^python:
-        autoload:  'direct'
 EOF
 }
 
