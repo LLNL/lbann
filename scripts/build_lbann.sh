@@ -861,10 +861,6 @@ if [[ -z "${USER_BUILD:-}" ]]; then
     echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
     echo "  ninja install" | tee -a ${LOG}
 fi
-echo "To use this version of LBANN use the module system without the need for activating the environment (does not require being in an environment)" | tee -a ${LOG}
-echo "  module load lbann/${LBANN_LABEL}-${LBANN_SPEC_HASH}" | tee -a ${LOG}
-echo "or have spack load the module auto-magically. It is installed in a spack environment named ${LBANN_ENV}, access it via: (has to be executed from the environment)"  | tee -a ${LOG}
-echo "  spack load lbann${AT_LBANN_LABEL} arch=${SPACK_ARCH}" | tee -a ${LOG}
 echo "Additional Python packages for working with LBANN can be added either via PIP or by concretizing them together in spack., activate the spack environment then" | tee -a ${LOG}
 echo "To install them via PIP: 1) the spack environment (see above) and 2) issue the following command" | tee -a ${LOG}
 echo "  python3 -m pip install -r <requirements file>" | tee -a ${LOG}
