@@ -1,4 +1,5 @@
-LBANN_REPO_PATH="https://github.com/LLNL/lbann/raw/develop"
+#LBANN_REPO_PATH="https://github.com/LLNL/lbann/raw/develop"
+LBANN_REPO_PATH="https://github.com/bvanessen/lbann/raw/feature_add_pip_deps"
 curl -fsSL -O ${LBANN_REPO_PATH}/scripts/build_lbann.sh
 curl -fsSL -O ${LBANN_REPO_PATH}/scripts/customize_build_env.sh
 curl -fsSL -O ${LBANN_REPO_PATH}/scripts/utilities.sh
