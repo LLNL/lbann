@@ -83,10 +83,12 @@ the :ref:`CMake install <build-with-cmake>`.
 Test LBANN Install
 --------------------
 
-0. [HPC Center Required] If you are on typical HPC system get an
-   allocation on a compute node to run your tests.  See your compute
-   center's policy and documentation for where you should build and
-   run code:
+0. [HPC Center Option] If you are on typical HPC system you may want
+   to get an allocation on a compute node to compile your code and run
+   your tests.  See your compute center's policy and documentation for
+   where you should build and run code.  Note that the LBANN Python
+   Front End (PFE) launcher can run from an allocated compute node or
+   dispatch to a set of known job launchers:
 
     .. code-block:: bash
 
