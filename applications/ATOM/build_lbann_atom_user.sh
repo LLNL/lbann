@@ -4,6 +4,7 @@ curl -fsSL -O ${LBANN_REPO_PATH}/scripts/build_lbann.sh
 curl -fsSL -O ${LBANN_REPO_PATH}/scripts/customize_build_env.sh
 curl -fsSL -O ${LBANN_REPO_PATH}/scripts/utilities.sh
 curl -fsSL -O ${LBANN_REPO_PATH}/applications/ATOM/external_packages_atom.sh
+curl -fsSL -O ${LBANN_REPO_PATH}/applications/ATOM/requirements.txt
 
 chmod +x build_lbann.sh customize_build_env.sh utilities.sh external_packages_atom.sh
 
