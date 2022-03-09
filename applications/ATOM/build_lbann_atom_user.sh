@@ -25,7 +25,14 @@ CENTER_USER_VARIANTS=
 SPACK_ARCH_TARGET=$(spack arch -t)
 set_center_specific_variants ${CENTER} ${SPACK_ARCH_TARGET}
 
-CMD="./build_lbann.sh -j $(($(nproc)+2)) -d -l atom -s -u develop -e external_packages_atom.sh -- ${CENTER_USER_VARIANTS}"
-#CMD="./build_lbann.sh -j $(($(nproc)+2)) -d -l atom -s -u develop --pip requirements.txt -p rdkit -- ${CENTER_USER_VARIANTS}"
+
+case ${SPACK_ARCH_TARGET} in
+    "power9le" | "power8le")
+        CMD="./build_lbann.sh -j $(($(nproc)+2)) -d -l atom -s -u develop -e external_packages_atom.sh -- ${CENTER_USER_VARIANTS}"
+        ;;
+    *)
+        CMD="./build_lbann.sh -j $(($(nproc)+2)) -d -l atom -s -u develop --pip requirements.txt -p rdkit -- ${CENTER_USER_VARIANTS}"
+        ;;
+esac
 echo ${CMD}
 ${CMD}
