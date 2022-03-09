@@ -2,3 +2,4 @@ numpy
 protobuf
 six
 torch
+scikit-learn
