@@ -244,7 +244,7 @@ void trainer::train(observer_ptr<model> model,
       stopping = std::make_unique<BatchTerminationCriteria>(num_batches);
 
     m_training_alg = std::make_unique<SGDTrainingAlgorithm>(
-      "sgd_train", std::move(stopping));
+      "sgd_train", std::move(stopping), /*suppress_timer=*/false);
   }
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
   m_training_alg->setup_models(
@@ -282,7 +282,8 @@ void trainer::evaluate(observer_ptr<model> model,
 {
   auto sgd = std::make_unique<SGDTrainingAlgorithm>(
     "sgd_evaluate",
-    std::make_unique<EpochTerminationCriteria>(/*num_epochs=*/1UL));
+    std::make_unique<EpochTerminationCriteria>(/*num_epochs=*/1UL),
+    /*suppress_timer=*/true);
   auto ctxt = sgd->get_new_execution_context();
   ctxt->set_execution_mode(mode);
   model->reset_mode(*ctxt, execution_mode::invalid);

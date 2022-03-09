@@ -36,6 +36,7 @@
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/utils/timer.hpp"
 
 #include <callbacks.pb.h>
 

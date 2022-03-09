@@ -109,7 +109,7 @@ while :; do
             ;;
         -e|--extras)
             if [ -n "${2}" ]; then
-                EXTRAS=${2}
+                EXTRAS="${EXTRAS} ${2}"
                 shift
             else
                 echo "\"${1}\" option requires a non-empty option argument" >&2
@@ -598,7 +598,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
     # Limit the scope of the external search to minimize overhead time
-    CMD="spack external find --scope env:${LBANN_ENV} bzip2 cmake cuda hwloc ninja libtool ncurses openssl perl pkg-config python sqlite spectrum-mpi mvapich2 openmpi"
+    CMD="spack external find --scope env:${LBANN_ENV} bzip2 cmake cuda cudnn hipblas hwloc ninja libtool nccl ncurses openssl perl pkg-config python rccl rdma-core sqlite spectrum-mpi mvapich2 openmpi"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -652,9 +652,12 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
 
     # Add any extra packages in file EXTRAS that you want to build in conjuction with the LBANN package
     if [[ -n "${EXTRAS:-}" ]]; then
-        CMD="source ${EXTRAS}"
-        echo ${CMD} | tee -a ${LOG}
-        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        for e in ${EXTRAS}
+        do
+            CMD="source ${e}"
+            echo ${CMD} | tee -a ${LOG}
+            [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        done
     fi
 
     # Add any extra packages specified on the command line that you want to build in conjuction with the LBANN package

@@ -43,6 +43,12 @@ bool IsValidPtr(std::unique_ptr<T> const& ptr) noexcept
 }
 
 template <typename T>
+bool IsValidPtr(std::shared_ptr<T> const& ptr) noexcept
+{
+  return static_cast<bool>(ptr);
+}
+
+template <typename T>
 bool IsValidPtr(T const* ptr) noexcept
 {
   return static_cast<bool>(ptr);

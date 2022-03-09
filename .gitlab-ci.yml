@@ -31,11 +31,11 @@
 stages:
   - run-all-clusters
 
-# catalyst testing:
-#   stage: run-all-clusters
-#   trigger:
-#     strategy: depend
-#     include: .gitlab/catalyst/pipeline.yml
+catalyst testing:
+  stage: run-all-clusters
+  trigger:
+    strategy: depend
+    include: .gitlab/catalyst/pipeline.yml
 
 # corona testing:
 #   stage: run-all-clusters

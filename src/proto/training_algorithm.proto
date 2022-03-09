@@ -53,6 +53,8 @@ message SGD {
   }
 
   TerminationCriteria stopping_criteria = 1;
+  // This is temporary
+  bool suppress_timer_output = 489;
 }// message SGD
 
 // Is-a TrainingAlgorithm
@@ -64,6 +66,9 @@ message LTFB {
   TrainingAlgorithm local_training_algorithm = 1;
   google.protobuf.Any meta_learning_strategy = 2;
   TerminationCriteria stopping_criteria = 3;
+
+  // This is temporary
+  bool suppress_timer_output = 489;
 }// message LTFB
 
 message MutationStrategy {

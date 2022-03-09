@@ -2,7 +2,10 @@
 # library target name is "lbann".
 add_executable(lbann-bin lbann.cpp)
 target_link_libraries(lbann-bin lbann)
-set_target_properties(lbann-bin PROPERTIES OUTPUT_NAME lbann)
+set_target_properties(lbann-bin
+  PROPERTIES
+  OUTPUT_NAME lbann
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 set(LBANN_EXE_TGTS lbann-bin)
 

@@ -43,6 +43,12 @@ Users are advised to view `the Doxygen API Documentation
    hyperparameter_tuning
 
 .. toctree::
+   :maxdepth: 2
+   :caption: LBANN Layers
+
+   layers
+
+.. toctree::
    :maxdepth: 1
    :caption: Data Ingestion
 
