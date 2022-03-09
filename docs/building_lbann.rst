@@ -98,11 +98,11 @@ into system install packages (e.g. MPI).
          LBANN_EXTRAS="-p py-torch@1.7.1 -p py-numpy" \
          /bin/bash -c "$(curl -fsSL https://github.com/LLNL/lbann/raw/develop/scripts/.build_lbann_as_user.sh)"
 
-2. Once this is done, you can load LBANN:
+2. Once this is done, you can load LBANN by activating the spack environment:
 
    .. code-block:: bash
 
-      spack load lbann@<version>
+      spack env activate -p lbann-user-broadwell
 
 .. _install_lbann_as_user:
 
