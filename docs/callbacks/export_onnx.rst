@@ -17,8 +17,6 @@ printed to :python:`onnx_debug.txt`. These options can be controlled
 using the :ref:`callback-arguments`. The files are created in the
 LBANN run directory.
 
-Models with weights are not currently supported.
-
 ---------------------------------------------
 Execution Points
 ---------------------------------------------
