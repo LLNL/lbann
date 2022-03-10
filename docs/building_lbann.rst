@@ -320,6 +320,7 @@ PIP to install Python-only requirements.
    command line options:
 
    .. code-block:: console
+
         <path to lbann repo>/scripts/build_lbann.sh <options>
                     -e scripts/common_spack_packages/ci_spack_packages.sh
                     -- <variants>
@@ -327,12 +328,14 @@ PIP to install Python-only requirements.
 or
 
    .. code-block:: console
+
         <path to lbann repo>/scripts/build_lbann.sh <options>
                     -e applications/ATOM/external_packages_atom.sh
                     -- <variants>
 or
 
    .. code-block:: console
+
         <path to lbann repo>/scripts/build_lbann.sh <options>
                     -p py-numpy
                     -- <variants>
@@ -342,6 +345,7 @@ or
     that LBANN was built with, activate the spack environment:
 
    .. code-block:: console
+
         spack env activate -p <name of environment>
         <path to lbann repo>/scripts/build_lbann.sh <options>
                     --pip <requirements.txt>
