@@ -171,7 +171,12 @@ public:
 
   ///@}
 
+
 #ifdef LBANN_HAS_ONNX
+  /** @brief Add weights data to onnx graph.
+   *  Adds serialized weights into graph initializers. Each initializer
+   *  will have the name of the corresponding weights object.
+   */
   void fill_onnx_node(onnx::GraphProto& graph) const override;
 #endif //LBANN_HAS_ONNX
 
