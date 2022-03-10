@@ -79,6 +79,8 @@ the :ref:`CMake install <build-with-cmake>`.
           <https://spack.readthedocs.io/en/latest/configuration.html>`_.
 
 
+.. _test-lbann-install:
+
 --------------------
 Test LBANN Install
 --------------------

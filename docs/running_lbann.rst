@@ -8,6 +8,13 @@ Running LBANN
 ============================================================
 
 ------------------------------------------------
+Sanity check with a simple test using LeNet
+------------------------------------------------
+
+In the :ref:`Quick Start <test-lbann-install` guide there is an
+example of how to run a standard LeNet model using LBANN.
+
+------------------------------------------------
 Anatomy of an LBANN experiment
 ------------------------------------------------
 
@@ -240,43 +247,13 @@ Setup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The :python:`lbann` Python package is installed as part of the LBANN
-build process. However, it is necessary to update the
-:bash:`PYTHONPATH` environment variable to make sure Python detect
-it. There are several ways to do this:
-
-+ If LBANN has been built with the Spack user build process, loading
-  LBANN will automatically update :bash:`PYTHONPATH`:
+build process.  If you used the :code:`build_lbann.sh` script for
+installation or installed in a Spack environment, you will need to
+activate the Spack LBANN environment:
 
 .. code-block:: bash
 
-    module load lbann
-
-.. warning:: The above will *not* work if LBANN has been built with
-             :bash:`scripts/build_lbann_lc.sh` or with the Spack
-             developer build process.
-
-+ LBANN includes a modulefile that updates :bash:`PYTHONPATH`:
-
-.. code-block:: bash
-
-    module use <install directory>/etc/modulefiles
-    module load lbann-<version>
-
-+ Directly manipulate :bash:`PYTHONPATH`:
-
-.. code-block:: bash
-
-    export PYTHONPATH=<install directory>/lib/python<version>/site-packages:${PYTHONPATH}
-
-Note that LBANN depends on the Protobuf Python package, which can be
-installed with:
-
-.. code-block:: bash
-
-    pip install protobuf
-
-If the user does not own the site-packages directory, then it may be
-necessary to pass the :bash:`--user` flag to pip.
+    spack env activate -p lbann
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Basic usage
@@ -453,3 +430,48 @@ The LBANN Protobuf format is defined in `src/proto/lbann.proto
 is important to remember that the default value of a Protobuf field is
 logically zero (e.g. false for Boolean fields and empty for string
 fields).
+
+------------------------------------------------
+Setup of LBANN for manual CMake build (advanced)
+------------------------------------------------
+
+If LBANN was compiled and installed directly using CMake there is a
+bit more work that is required to ensure that the Python front end
+will work.  The :python:`lbann` Python package is installed as part of
+the LBANN build process.However, it is necessary to update the
+:bash:`PYTHONPATH` environment variable to make sure Python detect
+it. There are several ways to do this:
+
++ If LBANN has been built with the Spack user build process, loading
+  LBANN will automatically update :bash:`PYTHONPATH`:
+
+.. code-block:: bash
+
+    module load lbann
+
+.. warning:: The above will *not* work if LBANN has been built with
+             :bash:`scripts/build_lbann_lc.sh` or with the Spack
+             developer build process.
+
++ LBANN includes a modulefile that updates :bash:`PYTHONPATH`:
+
+.. code-block:: bash
+
+    module use <install directory>/etc/modulefiles
+    module load lbann-<version>
+
++ Directly manipulate :bash:`PYTHONPATH`:
+
+.. code-block:: bash
+
+    export PYTHONPATH=<install directory>/lib/python<version>/site-packages:${PYTHONPATH}
+
+Note that LBANN depends on the Protobuf Python package, which can be
+installed with:
+
+.. code-block:: bash
+
+    pip install protobuf
+
+If the user does not own the site-packages directory, then it may be
+necessary to pass the :bash:`--user` flag to pip.
