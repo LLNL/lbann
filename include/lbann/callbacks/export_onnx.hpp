@@ -53,11 +53,11 @@ public:
    *  @param output_file Output filename (default = lbann_output.onnx)
    *  @param print_debug_string Print debug string to file onnx_debug.txt
    */
-  export_onnx(bool print_debug_string = false,
-              std::string output_file = "lbann_output.onnx")
+  export_onnx(std::string output_filename = "lbann_output.onnx",
+              std::string debug_string_filename = "")
     : callback_base(/*batch_interval=*/1),
-      m_print_debug_string(print_debug_string),
-      m_output_file(output_file)
+      m_output_filename(output_filename),
+      m_debug_string_filename(debug_string_filename)
   {}
 
   /** @brief Copy interface */
@@ -73,11 +73,11 @@ public:
 
 private:
 
-  /* @brief option to print onnx debug string */
-  bool m_print_debug_string;
-
   /* @brief name of output file. Default = lbann_output.onnx */
-  std::string m_output_file;
+  std::string m_output_filename;
+
+  /* @brief option to print onnx debug file. Default = none */
+  std::string m_debug_string_filename;
 
   /* @brief onnx ModelProto object */
   onnx::ModelProto mp_;

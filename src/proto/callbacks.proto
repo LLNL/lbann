@@ -421,7 +421,7 @@ message Callback {
 
   /** @brief Export trained model in onnx format */
   message CallbackExportOnnx {
-    bool print_debug_string = 1; // print debug string to stdout
-    string output_file = 2; // name of onnx output file
+    string output_filename = 1; // name of onnx output file
+    string debug_string_filename = 2; // print debug string to file
   }
 }
