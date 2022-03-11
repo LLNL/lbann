@@ -1169,32 +1169,83 @@ message Layer {
 
   }
 
+  /** @brief Convolution transpose
+   *
+   *  This operation is the transpose of standard deep learning
+   *  convolution.
+   *
+   *  Pedantic comments: this operation is commonly called
+   *  "deconvolution" in the deep learning community, but it is not a
+   *  true deconvolution. Also, the "convolution" operation commonly
+   *  used in the deep learning is actually cross-correlation.
+   */
   message Deconvolution {
+
+    /// Number of spatial dimensions
     int64 num_dims = 1;
-    int64 num_output_channels = 4;
-    int64 num_groups = 3;
 
-    bool has_vectors = 2;
+    /// Channel dimension of output tensor
+    int64 out_channels = 2;
 
-    // these are used if has_vector = true
-    string conv_dims = 5; //should be space-separated list, e.g, "2 2 3"
-    string conv_pads = 6;  //should be space-separated list, e.g, "2 2 3"
-    string conv_strides = 7; //should be space-separated list, e.g, "2 2 3"
-    string conv_dilations = 8;  //should be space-separated list, e.g. "2 3 3"
+    /** @brief Convolution kernel dimensions
+     */
+    repeated int64 kernel_size = 3;
 
-    // these are used if has_vector = false
-    int64 conv_dims_i = 50;
-    int64 conv_pads_i = 60;
-    int64 conv_strides_i = 70;
-    int64 conv_dilations_i = 80;
+    /** @brief Convolution stride
+     *  @brief Default: 1
+     */
+    repeated int64 stride = 4;
+    /** @brief Convolution padding
+     *  @details Default: 0
+     */
+    repeated int64 padding = 5;
+    /** @brief Padding for output tensor
+     *  @details The output tensor size is ambiguous when the
+     *  convolution is strided. If this is not set, then we will
+     *  output the smallest valid output tensor.
+     */
+    repeated int64 output_padding = 6;
+    /** @brief Number of convolution groups
+     *  @details Default: 1
+     */
+    google.protobuf.Int64Value groups = 7;
+    /** @brief Whether to apply channel-wise bias
+     *  @details Default: True
+     */
+    google.protobuf.BoolValue has_bias = 8;
+    /** @brief Convolution dilation
+     *  @details Default: 1
+     */
+    repeated int64 dilation = 9;
 
-    string weight_initialization = 9;     //DEPRECATED
-    bool has_bias = 10;                   //default: true
-    double bias_initial_value = 11;       //default: 0
-    double l2_regularization_factor = 12; //default: 0
+    /** @brief Special behavior with FP16 tensor cores
+     *  @details Ignored for non-GPU layers.
+     */
+    ConvTensorOpsMode conv_tensor_op_mode = 10;
 
-    // This field is ignored for non-GPU layers.
-    ConvTensorOpsMode conv_tensor_op_mode = 13;
+    /// Deprecated
+    int64 num_output_channels = 20;
+    /// Deprecated
+    int64 num_groups = 21;
+    /// Deprecated
+    bool has_vectors = 22;
+    /// Deprecated
+    string conv_dims = 23;
+    /// Deprecated
+    string conv_pads = 24;
+    /// Deprecated
+    string conv_strides = 25;
+    /// Deprecated
+    string conv_dilations = 26;
+    /// Deprecated
+    int64 conv_dims_i = 27;
+    /// Deprecated
+    int64 conv_pads_i = 28;
+    /// Deprecated
+    int64 conv_strides_i = 29;
+    /// Deprecated
+    int64 conv_dilations_i = 30;
+
   }
 
   /** @brief Lookup table to embedding vectors.
