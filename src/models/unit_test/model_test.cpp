@@ -70,8 +70,8 @@ auto make_model(lbann::lbann_comm& comm)
                                                 -1,
                                                 my_proto.optimizer(),
                                                 my_proto.trainer(),
-                                                my_proto.model()) ;
-  my_model->setup(1UL, metadata);
+                                                my_proto.model());
+  my_model->setup(1UL, metadata, {&comm.get_trainer_grid()});
   return my_model;
 }
 
@@ -84,7 +84,7 @@ TEST_CASE("Serializing models", "[mpi][model][serialize]")
 
   auto& comm = unit_test::utilities::current_world_comm();
 
-  auto const& g = comm.get_trainer_grid();
+  auto& g = comm.get_trainer_grid();
   lbann::utils::grid_manager mgr(g);
 
   std::stringstream ss;
@@ -107,7 +107,7 @@ TEST_CASE("Serializing models", "[mpi][model][serialize]")
     if (IsValidPtr(model_tgt_ptr))
     {
       auto metadata = mock_datareader_metadata();
-      REQUIRE_NOTHROW(model_tgt_ptr->setup(1UL, metadata));
+      REQUIRE_NOTHROW(model_tgt_ptr->setup(1UL, metadata, {&g}));
       // if (comm.get_rank_in_world() == 1)
       //   std::cout << model_tgt_ptr->get_description()
       //             << std::endl;
@@ -129,7 +129,7 @@ TEST_CASE("Serializing models", "[mpi][model][serialize]")
     if (IsValidPtr(model_tgt_ptr))
     {
       auto metadata = mock_datareader_metadata();
-      REQUIRE_NOTHROW(model_tgt_ptr->setup(1UL, metadata));
+      REQUIRE_NOTHROW(model_tgt_ptr->setup(1UL, metadata, {&g}));
       // if (comm.get_rank_in_world() == 1)
       //   std::cout << model_tgt_ptr->get_description()
       //             << std::endl;

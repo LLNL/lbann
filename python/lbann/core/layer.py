@@ -70,8 +70,11 @@ class Layer(abc.ABC):
             proto.datatype = self.datatype
         if self.hint_layer:
             proto.hint_layer = self.hint_layer.name
-        for k, v in self.parallel_strategy.items():
-            setattr(proto.parallel_strategy, k, v)
+        if self.parallel_strategy:
+            lbann.core.util.set_protobuf_message(
+                proto.parallel_strategy,
+                **self.parallel_strategy)
+            proto.parallel_strategy.SetInParent()
         return proto
 
     def add_parent(self, parent):

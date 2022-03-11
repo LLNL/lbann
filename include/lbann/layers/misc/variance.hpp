@@ -99,8 +99,8 @@ protected:
     : variance_layer(nullptr, false)
   {}
 
-  void setup_matrices(const El::Grid& grid) override {
-    data_type_layer<TensorDataType>::setup_matrices(grid);
+  void setup_data(size_t max_mini_batch_size) override {
+    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
     auto dist_data = this->get_prev_activations().DistData();
     dist_data.colDist = El::STAR;
     m_means.reset(AbsDistMatrixType::Instantiate(dist_data));

@@ -107,7 +107,6 @@ protected:
   friend class cereal::access;
   fully_connected_layer();
 
-  void setup_matrices(const El::Grid& grid) override;
   void setup_data(size_t max_mini_batch_size) override;
 
   void fp_compute() override;

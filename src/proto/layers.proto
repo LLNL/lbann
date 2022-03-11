@@ -1583,8 +1583,18 @@ message ParallelStrategy {
   // Sub-grid parallelism
   // ---------------------------
 
+  /** @brief Identifying tag for process grid
+   *
+   *  Tag 0 corresponds to the trainer grid. If the tag is unspecified
+   *  or negative, the process grid is chosen based on heuristics.
+   */
+  google.protobuf.Int64Value grid_tag = 21;
+
+  /// @todo Remove
   int64 sub_branch_tag = 15;
+  /// @todo Remove
   int64 sub_branch_resource_percentage = 16;
+  /// @todo Remove
   bool enable_subgraph = 17;
 
 }

@@ -75,7 +75,7 @@ load_inference_model(lbann_comm* lc,
   // Must use a mock datareader with input and output dims for setup
   // TODO: avoid need for datareader altogether
   auto dr_metadata = mock_dr_metadata(input_dims, output_dims);
-  m->setup(mbs, dr_metadata);
+  m->setup(mbs, dr_metadata, get_trainer().get_grids());
 
   return m;
 }
@@ -270,6 +270,44 @@ trainer& construct_trainer(lbann_comm* comm,
 
   if (arg_parser.get<bool>(LBANN_OPTION_DISABLE_BACKGROUND_IO_ACTIVITY)) {
     global_trainer_->allow_background_io_activity(false);
+  }
+
+  // Create sub-grids in block order
+  const int num_subgrids_block
+    = arg_parser.get<int>(LBANN_OPTION_NUM_SUBGRIDS_BLOCK_ORDER);
+  if (num_subgrids_block > 0) {
+
+    // Check sub-grid size
+    const int trainer_size = comm->get_procs_per_trainer();
+    const int subgrid_size = trainer_size / num_subgrids_block;
+    if (trainer_size != subgrid_size * num_subgrids_block) {
+      LBANN_ERROR(
+        "attempted to divide a trainer grid with ",trainer_size," processes ",
+        "into ",num_subgrids_block," equally-sized sub-grids");
+    }
+
+    // Construct sub-grids
+    std::vector<int> trainer_ranks(subgrid_size);
+    for (int root_rank=0; root_rank<trainer_size; root_rank+=subgrid_size) {
+      std::iota(trainer_ranks.begin(), trainer_ranks.end(), root_rank);
+      El::mpi::Comm trainer_comm;
+      El::mpi::Group trainer_group, subgrid_group;
+      El::mpi::Dup(comm->get_trainer_comm(), trainer_comm);
+      El::mpi::CommGroup(trainer_comm, trainer_group);
+      El::mpi::Incl(
+        trainer_group,
+        trainer_ranks.size(),
+        trainer_ranks.data(),
+        subgrid_group);
+      global_trainer_->add_grid(
+        make_unique<El::Grid>(
+          std::move(trainer_comm),
+          subgrid_group,
+          subgrid_size,
+          El::COLUMN_MAJOR));
+      El::mpi::Free(trainer_group);
+    }
+
   }
 
   // Report useful information

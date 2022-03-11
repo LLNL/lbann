@@ -235,6 +235,7 @@ void RegularizedEvolution::select_next(model& m,
     auto&& metadata = trainer.get_data_coordinator().get_dr_metadata();
     m.setup(trainer.get_max_mini_batch_size(),
             metadata,
+            trainer.get_grids(),
             /*force*/ true);
   }
 }

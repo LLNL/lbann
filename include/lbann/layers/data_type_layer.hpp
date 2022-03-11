@@ -217,7 +217,7 @@ protected:
    *  'construct_matrix' function. If any matrices have already been
    *  setup, they are destroyed and reinstantiated.
    */
-  void setup_matrices(const El::Grid& grid) override;
+  void setup_matrices(const std::vector<El::Grid*>& grids) override;
 
   /** Setup layer data.
    *  Called by the 'setup' function. Memory is allocated for

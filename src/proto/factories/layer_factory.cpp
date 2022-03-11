@@ -586,10 +586,10 @@ std::unique_ptr<Layer> construct_layer(
   int num_parallel_readers,
   const lbann_data::Layer& proto_layer) {
 
+  // Construct layer
   auto const& factory = get_layer_factory<TensorDataType, Layout, Device>();
   auto const& msg =
     helpers::get_oneof_message(proto_layer, "layer_type");
-
   std::unique_ptr<Layer> l = factory.create_object(
     msg.GetDescriptor()->name(), comm, proto_layer);
   if(!l) {
@@ -601,6 +601,12 @@ std::unique_ptr<Layer> construct_layer(
                   "\" are not constructible with any type other than the "
                   "default DataType.");
   }
+
+  // Set additional parameters
+  if (proto_layer.parallel_strategy().has_grid_tag()) {
+    l->set_grid_tag(proto_layer.parallel_strategy().grid_tag().value());
+  }
+
   return l;
 }
 

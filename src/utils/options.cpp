@@ -247,6 +247,13 @@ void construct_std_options()
                         "[STD] Primary grid size per trainer. "
                         "Disables Sub-grid parallelism, when it is 0",
                         0);
+  arg_parser.add_option(LBANN_OPTION_NUM_SUBGRIDS_BLOCK_ORDER,
+                        {"--num-subgrids", "--num-subgrids-block-order"},
+                        utils::ENV("LBANN_NUM_SUBGRIDS"),
+                        "[STD] Divide each trainer into equally-sized "
+                        "sub-grids with blocked ordering",
+                        0);
+
 }
 
 void construct_datastore_options()

@@ -49,9 +49,8 @@ namespace {
 std::string stringify_dims(const std::vector<size_t>& dims)
 {
   std::ostringstream oss;
-  oss << dims.front();
-  for (size_t i = 1; i < dims.size(); ++i)
-    oss << "x" << dims[i];
+  for (size_t i = 0; i < dims.size(); ++i)
+    oss << (i > 0 ? "x" : "") << dims[i];
   return oss.str();
 }
 

@@ -7,7 +7,6 @@ import numpy as np
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
-print("Current file:",current_file, __file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
 import tools
@@ -19,9 +18,9 @@ import tools
 # the functions below to ingest data.
 
 # Data
-np.random.seed(201910244)
-_num_samples = 128
-_sample_size = 64
+np.random.seed(202201183)
+_num_samples = 25
+_sample_size = 6
 _samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
 
 # Sample access functions
@@ -76,27 +75,38 @@ def construct_model(lbann):
     callbacks = []
 
     # ------------------------------------------
-    # Data-parallel layout
+    # LBANN implementation
     # ------------------------------------------
 
     # LBANN implementation
-    x = x_lbann
-    y = lbann.Identity(x, data_layout='data_parallel')
-
-    branch1 = lbann.Identity(y, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':1,'enable_subgraph':True})
-    branch2 = lbann.Identity(y, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':2,'enable_subgraph':True})
-
-    sum_branch = lbann.Sum([branch1,branch2],parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':True})
-    z = lbann.L2Norm2(sum_branch)
+    ### @todo Layers with optimized inter-grid communication
+    x = lbann.Split(
+        x_lbann,
+        parallel_strategy = {'grid_tag':0})
+    x1 = lbann.Identity(
+        x,
+        parallel_strategy = {'grid_tag':1})
+    x2 = lbann.Identity(
+        x,
+        parallel_strategy = {'grid_tag':2})
+    y1 = lbann.Sin(x1)
+    y2 = lbann.Cos(x2)
+    y = lbann.Sum(
+        lbann.Identity(y1, parallel_strategy = {'grid_tag':0}),
+        lbann.Identity(y2, parallel_strategy = {'grid_tag':0}))
+    z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel layout'))
+    metrics.append(lbann.Metric(z, name='obj'))
 
+    # ------------------------------------------
     # NumPy implementation
+    # ------------------------------------------
+
     vals = []
     for i in range(num_samples()):
         x = get_sample(i).astype(np.float64)
-        y = x
-        z = tools.numpy_l2norm2(2*y)
+        y = np.sin(x) + np.cos(x)
+        z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
@@ -106,8 +116,6 @@ def construct_model(lbann):
         upper_bound=val+tol,
         error_on_failure=True,
         execution_modes='test'))
-
-
 
     # ------------------------------------------
     # Gradient checking
@@ -120,7 +128,7 @@ def construct_model(lbann):
     # ------------------------------------------
 
     num_epochs = 0
-    return lbann.Model(num_epochs,subgraph_communication=lbann.SubgraphCommunication.COLL_OPT,
+    return lbann.Model(num_epochs,
                        layers=lbann.traverse_layer_graph(x_lbann),
                        objective_function=obj,
                        metrics=metrics,
@@ -167,5 +175,8 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-for _test_func in tools.create_tests(setup_experiment, __file__):
+for _test_func in tools.create_tests(
+        setup_experiment,
+        __file__,
+        environment={'LBANN_NUM_SUBGRIDS': 2}):
     globals()[_test_func.__name__] = _test_func

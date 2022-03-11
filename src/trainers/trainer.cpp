@@ -247,7 +247,11 @@ void trainer::train(observer_ptr<model> model,
       "sgd_train", std::move(stopping), /*suppress_timer=*/false);
   }
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
-  m_training_alg->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
+  m_training_alg->setup_models(
+    {model},
+    get_max_mini_batch_size(),
+    dr_metadata,
+    get_grids());
 
   // FIXME (trb 04/27/2021): This is a hack to support the current
   // checkpoint/restart mechanisms. This needs to be refactored to be
@@ -285,13 +289,31 @@ void trainer::evaluate(observer_ptr<model> model,
   model->reset_mode(*ctxt, execution_mode::invalid);
 
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
-  sgd->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
+  sgd->setup_models({model}, get_max_mini_batch_size(), dr_metadata, get_grids());
 
   if (m_comm->get_grid_type() == GridType::NO_GRID or
       m_comm->get_grid_type() == GridType::PRIMARY_GRID) {
     sgd->evaluate(*ctxt, *model, get_data_coordinator(), mode,
                   EpochTerminationCriteria(/*num_epochs=*/1UL));
   }
+}
+
+// =============================================
+// Sub-grid management
+// =============================================
+
+std::vector<El::Grid*> trainer::get_grids() const {
+  std::vector<El::Grid*> grids;
+  grids.reserve(m_grids.size()+1);
+  grids.push_back(&get_comm()->get_trainer_grid());
+  for (const auto& g : m_grids) {
+    grids.push_back(g.get());
+  }
+  return grids;
+}
+
+void trainer::add_grid(std::unique_ptr<El::Grid> g) {
+  m_grids.emplace_back(std::move(g));
 }
 
 // =============================================

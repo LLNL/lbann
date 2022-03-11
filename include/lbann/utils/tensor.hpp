@@ -167,6 +167,22 @@ private:
   std::vector<size_t> m_dims;
 }; // MatrixAsTensorView
 
+/** @brief Copy between two tensors on different process grids */
+template <typename TDT>
+void do_tensor_copy_between_grids(
+  const BaseDistMat& src,
+  El::AbstractDistMatrix<TDT>& tgt);
+
+/** @brief Copy between two tensors on different process grids */
+template <typename TDT,
+          El::Dist ColDist,
+          El::Dist RowDist,
+          El::DistWrap Wrap,
+          El::Device Device>
+void do_tensor_copy_between_grids(
+  const BaseDistMat& src,
+  El::DistMatrix<TDT, ColDist, RowDist, Wrap, Device>& tgt);
+
 } // namespace details
 
 template <typename T, El::Device D>

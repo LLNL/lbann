@@ -751,6 +751,7 @@ void ltfb::on_batch_begin(model* m)
     local_model.setup(
       trainer_.get_max_mini_batch_size(),
       metadata,
+      trainer_.get_grids(),
       true);
   }
 

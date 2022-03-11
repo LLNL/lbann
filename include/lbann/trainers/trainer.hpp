@@ -237,6 +237,11 @@ public:
                 El::Int num_batches = 0);
 
   ///@}
+  /** @name Sub-grid management */
+  ///@{
+  std::vector<El::Grid*> get_grids() const;
+  void add_grid(std::unique_ptr<El::Grid> g);
+  ///@}
   /** @name Checkpointing */
   ///@{
 
@@ -309,6 +314,13 @@ private:
   /** @brief Communication domain for the trainer. */
   lbann_comm* m_comm;
 
+  /** @brief Processor grids for sub-grid parallelism
+   *
+   *  Does not include grid 0, which corresponds to the trainer's MPI
+   *  communicator.
+   */
+  std::vector<std::unique_ptr<El::Grid>> m_grids;
+
   /** @brief Maximum possible minibatch size supported by models and
    *         layers in this trainer.
    *  @note This field will eventually be local to the particular,
@@ -329,6 +341,7 @@ private:
 
   /** @brief Flag that allows input layers to fetch data in the background. */
   bool m_background_io_allowed;
+
 };
 
 /** @brief Get a reference to the global trainer visible to this rank. */

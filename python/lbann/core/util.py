@@ -161,34 +161,12 @@ def _generate_class(message_descriptor,
             message = proto
 
         # Set message
+        kwargs = {}
         for field_name in field_names:
-            val = getattr(self, field_name)
+            val = getattr(self, field_name, None)
             if val is not None:
-                try:
-                    field = getattr(message, field_name)
-                    field_descriptor = field_descriptors[field_name]
-                    if field_descriptor.message_type in _protobuf_type_wrappers:
-                        field.SetInParent()
-                        field.value = val
-                    elif field_descriptor.label == google.protobuf.descriptor.FieldDescriptor.LABEL_REPEATED:
-                        iterable_val = make_iterable(val)
-                        if field_descriptor.type == field_descriptor.TYPE_MESSAGE:
-                            field.extend([x.export_proto() for x in iterable_val])
-                        else:
-                            field.extend(iterable_val)
-                    elif isinstance(val, google.protobuf.message.Message):
-                        getattr(message, field_name).MergeFrom(val)
-                    elif callable(getattr(val, "export_proto", None)):
-                        # 'val' is (hopefully) an LBANN class
-                        # representation of a protobuf message.
-                        getattr(message, field_name).MergeFrom(val.export_proto())
-                    else:
-                        setattr(message, field_name, val)
-                except:
-                    raise TypeError('{} is invalid type for {}.{}'
-                                    .format(type(val).__name__,
-                                            self.__class__.__name__,
-                                            field_name))
+                kwargs[field_name] = val
+        set_protobuf_message(message, **kwargs)
 
         # Return Protobuf message
         return proto
@@ -253,6 +231,50 @@ def generate_classes_from_protobuf_message(message,
                                            base_kwargs,
                                            base_has_export_proto))
     return classes
+
+def set_protobuf_message(message, **kwargs):
+
+    field_descriptors = message.DESCRIPTOR.fields_by_name
+
+    # Iterate through kwargs
+    for field_name, value in kwargs.items():
+
+        # Make sure kwarg corresponds to field in message
+        if field_name not in field_descriptors:
+            raise KeyError(
+                f'Protobuf message {message.DESCRIPTOR.name} '
+                f'has no field "{field_name}"')
+
+        # Do nothing if value is None
+        if value is None:
+            continue
+
+        # Attempt to set field
+        try:
+            field = getattr(message, field_name)
+            field_descriptor = field_descriptors[field_name]
+            if field_descriptor.message_type in _protobuf_type_wrappers:
+                field.SetInParent()
+                field.value = value
+            elif field_descriptor.label == google.protobuf.descriptor.FieldDescriptor.LABEL_REPEATED:
+                iterable_value = make_iterable(value)
+                if field_descriptor.type == field_descriptor.TYPE_MESSAGE:
+                    field.extend([x.export_proto() for x in iterable_value])
+                else:
+                    field.extend(iterable_value)
+            elif isinstance(value, google.protobuf.message.Message):
+                getattr(message, field_name).MergeFrom(value)
+            elif callable(getattr(value, "export_proto", None)):
+                # 'value' is (hopefully) an LBANN class
+                # representation of a protobuf message.
+                getattr(message, field_name).MergeFrom(value.export_proto())
+            else:
+                setattr(message, field_name, value)
+        except:
+            raise TypeError(
+                f'Attempted to set field "{field_name}" in '
+                f'Protobuf message {message.DESCRIPTOR.name} '
+                f'with a {type(value).__name__}')
 
 def get_parallel_strategy_args(**kwargs):
     """A wrapper function to create parallel_strategy arguments for
