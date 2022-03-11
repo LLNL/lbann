@@ -75,7 +75,7 @@ build and install:
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -d
       -l ${SPACK_ENV_NAME} --test --clean-build -j ${BUILD_TASKS}
-      -e ./scripts/common_spack_packages/ci_spack_packages.sh --
+      --ci_pip --
       +deterministic +vision +numpy ${SPACK_SPECS}
     - export TEST_TASKS_PER_NODE=4
     - export TEST_MPIBIND_FLAG="--mpibind=off"
