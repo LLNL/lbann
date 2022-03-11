@@ -13,7 +13,54 @@ import numpy as np
 
 import lbann
 import lbann.modules
-from lbann.util import str_list
+from lbann.util import str_list, make_iterable
+
+class LayerNorm(lbann.modules.Module):
+    """See https://pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html"""
+
+    global_count = 0  # Static counter, used for default names
+
+    def __init__(
+            self,
+            normalized_shape,
+            name=None,
+    ):
+        super().__init__()
+        LayerNorm.global_count += 1
+        self.normalized_shape = make_iterable(normalized_shape)
+        self.name = (name
+                     if name
+                     else f'layernorm{LayerNorm.global_count}')
+
+        # Initialize weights
+        self.weight = lbann.Weights(
+            initializer=lbann.ConstantInitializer(value=1),
+            name=f'{self.name}_weight',
+        )
+        self.bias = lbann.Weights(
+            initializer=lbann.ConstantInitializer(value=0),
+            name=f'{self.name}_bias',
+        )
+
+    def forward(self, x):
+
+        # Normalization
+        x = lbann.InstanceNorm(x)
+
+        # Affine transform
+        s = lbann.WeightsLayer(
+            weights=self.weight,
+            dims=f'1 {str_list(self.normalized_shape)}',
+        )
+        s = lbann.Tessellate(s, hint_layer=x)
+        b = lbann.WeightsLayer(
+            weights=self.bias,
+            dims=f'1 {str_list(self.normalized_shape)}',
+        )
+        b = lbann.Tessellate(b, hint_layer=x)
+        x = lbann.Add(lbann.Multiply(s,x), b)
+        return x
+
 
 class TransformerEncoderLayer(lbann.modules.Module):
     """Building block for encoder in Transformer model.
@@ -60,6 +107,8 @@ class TransformerEncoderLayer(lbann.modules.Module):
             num_heads,
             name=f'{self.name}_attention'
         )
+        self.norm1 = LayerNorm(self.embed_dim, name=f'{self.name}_norm1')
+        self.norm2 = LayerNorm(self.embed_dim, name=f'{self.name}_norm2')
 
         # Weights for fully-connected layers
         self.fc1_weights = [
@@ -98,7 +147,7 @@ class TransformerEncoderLayer(lbann.modules.Module):
                 name=f'{name}_drop1',
             )
         z = lbann.Sum(x, y, name=f'{name}_sum1')
-        z = lbann.InstanceNorm(z, name=f'{name}_norm1')
+        z = self.norm1(z)
         x = z
 
         # Feedforward network with residual connection
@@ -128,7 +177,7 @@ class TransformerEncoderLayer(lbann.modules.Module):
                 name=f'{name}_drop3',
             )
         z = lbann.Sum(x, y, name=f'{name}_sum2')
-        z = lbann.InstanceNorm(z, name=f'{name}_norm2')
+        z = self.norm2(z)
         return z
 
 class TransformerDecoderLayer(lbann.modules.Module):
@@ -182,6 +231,9 @@ class TransformerDecoderLayer(lbann.modules.Module):
             num_heads,
             name=f'{self.name}_attention2'
         )
+        self.norm1 = LayerNorm(self.embed_dim, name=f'{self.name}_norm1')
+        self.norm2 = LayerNorm(self.embed_dim, name=f'{self.name}_norm2')
+        self.norm3 = LayerNorm(self.embed_dim, name=f'{self.name}_norm3')
 
         # Weights for fully-connected layers
         self.fc1_weights = [
@@ -226,7 +278,7 @@ class TransformerDecoderLayer(lbann.modules.Module):
                 name=f'{name}_drop1',
             )
         z = lbann.Sum(x, y, name=f'{name}_sum1')
-        z = lbann.InstanceNorm(z, name=f'{name}_norm1')
+        z = self.norm1(z)
         x = z
 
         # Attention on encoder output with residual connection
@@ -238,7 +290,7 @@ class TransformerDecoderLayer(lbann.modules.Module):
                 name=f'{name}_drop2',
             )
         z = lbann.Sum(x, y, name=f'{name}_sum2')
-        z = lbann.InstanceNorm(z, name=f'{name}_norm2')
+        z = self.norm2(z)
         x = z
 
         # Feedforward network with residual connection
@@ -268,7 +320,7 @@ class TransformerDecoderLayer(lbann.modules.Module):
                 name=f'{name}_drop4',
             )
         z = lbann.Sum(x, y, name=f'{name}_sum3')
-        z = lbann.InstanceNorm(z, name=f'{name}_norm3')
+        z = self.norm3(z)
         return z
 
 class Transformer(lbann.modules.Module):

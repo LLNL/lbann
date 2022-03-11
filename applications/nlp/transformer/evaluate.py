@@ -166,6 +166,10 @@ def load_transformer(weights_prefix):
         layer.linear1.bias = load_parameter(f'{prefix}_fc1_bias.txt')
         layer.linear2.weight = load_parameter(f'{prefix}_fc2_matrix.txt')
         layer.linear2.bias = load_parameter(f'{prefix}_fc2_bias.txt')
+        layer.norm1.weight = load_parameter(f'{prefix}_norm1_weight.txt')
+        layer.norm1.bias = load_parameter(f'{prefix}_norm1_bias.txt')
+        layer.norm2.weight = load_parameter(f'{prefix}_norm2_weight.txt')
+        layer.norm2.bias = load_parameter(f'{prefix}_norm2_bias.txt')
 
     # Load weights for decoder
     for i, layer in enumerate(transformer.decoder.layers):
@@ -202,6 +206,12 @@ def load_transformer(weights_prefix):
         layer.linear1.bias = load_parameter(f'{prefix}_fc1_bias.txt')
         layer.linear2.weight = load_parameter(f'{prefix}_fc2_matrix.txt')
         layer.linear2.bias = load_parameter(f'{prefix}_fc2_bias.txt')
+        layer.norm1.weight = load_parameter(f'{prefix}_norm1_weight.txt')
+        layer.norm1.bias = load_parameter(f'{prefix}_norm1_bias.txt')
+        layer.norm2.weight = load_parameter(f'{prefix}_norm2_weight.txt')
+        layer.norm2.bias = load_parameter(f'{prefix}_norm2_bias.txt')
+        layer.norm3.weight = load_parameter(f'{prefix}_norm3_weight.txt')
+        layer.norm3.bias = load_parameter(f'{prefix}_norm3_bias.txt')
 
     return transformer
 
