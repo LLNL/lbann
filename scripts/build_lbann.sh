@@ -56,18 +56,20 @@ Build LBANN: has preconfigured module lists for LLNL LC, OLCF, and NERSC systems
 Usage: ${SCRIPT} [options] -- [list of spack variants]
 Options:
   ${C}--help${N}                     Display this help message and exit.
+  ${C}--ci-pip${N}                   PIP install CI required Python packages
   ${C}--clean-build${N}              Delete the local link to the build directory
   ${C}--clean-deps${N}               Forcibly uninstall Hydrogen, Aluminum, and DiHydrogen dependencies
   ${C}--configure-only${N}           Stop after adding all packages to the environment
   ${C}-d | --define-env${N}          Define (create) a Spack environment, including the lbann dependencies, for building LBANN from local source
   ${C}--dry-run${N}                  Dry run the commands (no effect)
-  ${C}-e | --extras <PATH>${N}       Add other packages from file at PATH to the Spack environment in addition to LBANN
+  ${C}-e | --extras <PATH>${N}       Add other packages from file at PATH to the Spack environment in addition to LBANN (Flag can be repeated)
   ${C}-j | --build-jobs <N>${N}      Number of parallel processes to use for compiling, e.g. -j \$((\$(nproc)+2))
   ${C}-l | --label <LABEL>${N}       LBANN version label prefix: (default label is local-<SPACK_ARCH_TARGET>,
                              and is built and installed in the spack environment lbann-<label>-<SPACK_ARCH_TARGET>
   ${C}-m | --mirror <PATH>${N}       Specify a Spack mirror (and buildcache)
   ${C}--no-modules${N}               Don't try to load any modules (use the existing users environment)
   ${C}-p | --pkg <PACKAGE>${N}       Add package PACKAGE to the Spack environment in addition to LBANN (Flag can be repeated)
+  ${C}--pip <requirements.txt>${N}   PIP install Python packages in requirements.txt with the version of Python used by LBANN (Flag can be repeated)
   ${C}--tmp-build-dir${N}            Put the build directory in tmp space
   ${C}--spec-only${N}                Stop after a spack spec command
   ${C}-s | --stable${N}              Use the latest stable defaults not the head of Hydrogen, DiHydrogen and Aluminum repos
@@ -91,6 +93,9 @@ while :; do
             # Help message
             help_message
             exit 1
+            ;;
+        --ci-pip)
+            PIP_EXTRAS="${PIP_EXTRAS} ${LBANN_HOME}/ci_test/requirements.txt"
             ;;
         --clean-build)
             CLEAN_BUILD="TRUE"
@@ -150,6 +155,15 @@ while :; do
         -p|--pkg)
             if [ -n "${2}" ]; then
                 PKG_LIST="${PKG_LIST} ${2}"
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
+            ;;
+        --pip)
+            if [ -n "${2}" ]; then
+                PIP_EXTRAS="${PIP_EXTRAS} ${2}"
                 shift
             else
                 echo "\"${1}\" option requires a non-empty option argument" >&2
@@ -474,6 +488,16 @@ do
     fi
 done
 
+# Check if the user explicitly doesn't want Python support inside of LBANN
+if [[ ! "${LBANN_VARIANTS}" =~ .*"~python".* ]]; then
+    # If Python support is not disabled add NumPy as an external for sanity
+    # Specifically, for use within the data reader, NumPy has to have the same
+    # C++ std library
+    if [[ ! "${PKG_LIST}" =~ .*"py-numpy".* ]]; then
+        PKG_LIST="${PKG_LIST} py-numpy@1.16.0:"
+    fi
+fi
+
 # Record the original command in the log file
 echo "${ORIG_CMD}" | tee -a ${LOG}
 
@@ -783,6 +807,16 @@ if [[ -n "${UPDATE_BUILDCACHE:-}" && -r "${UPDATE_BUILDCACHE:-}" ]]; then
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
 
+# Install any extra Python packages via PIP if requested
+if [[ -n "${PIP_EXTRAS:-}" ]]; then
+    for p in ${PIP_EXTRAS}
+    do
+        CMD="python -m pip install -r ${p}"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    done
+fi
+
 # Don't use the output of this file since it will not exist if the compilation is not successful
 # LBANN_BUILD_DIR=$(grep "PROJECT_BINARY_DIR:" ${LBANN_HOME}/spack-build-out.txt | awk '{print $2}')
 
@@ -827,10 +861,10 @@ if [[ -z "${USER_BUILD:-}" ]]; then
     echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
     echo "  ninja install" | tee -a ${LOG}
 fi
-echo "To use this version of LBANN use the module system without the need for activating the environment (does not require being in an environment)" | tee -a ${LOG}
-echo "  module load lbann/${LBANN_LABEL}-${LBANN_SPEC_HASH}" | tee -a ${LOG}
-echo "or have spack load the module auto-magically. It is installed in a spack environment named ${LBANN_ENV}, access it via: (has to be executed from the environment)"  | tee -a ${LOG}
-echo "  spack load lbann${AT_LBANN_LABEL} arch=${SPACK_ARCH}" | tee -a ${LOG}
+echo "Additional Python packages for working with LBANN can be added either via PIP or by concretizing them together in spack., activate the spack environment then" | tee -a ${LOG}
+echo "To install them via PIP: 1) the spack environment (see above) and 2) issue the following command" | tee -a ${LOG}
+echo "  python3 -m pip install -r <requirements file>" | tee -a ${LOG}
+echo "To install them via Spack: include them on the build_lbann.sh script command line argument via -e <path to text file of packages> or -p <spack package name>" | tee -a ${LOG}
 echo "##########################################################################################" | tee -a ${LOG}
 echo "All details of the run are logged to ${LOG}"
 echo "##########################################################################################"

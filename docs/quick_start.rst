@@ -79,11 +79,24 @@ the :ref:`CMake install <build-with-cmake>`.
           <https://spack.readthedocs.io/en/latest/configuration.html>`_.
 
 
+.. _test-lbann-install:
+
 --------------------
 Test LBANN Install
 --------------------
 
-1. If you used the :code:`install_lbann.sh` script for installation or
+0. [HPC Center Option] If you are on typical HPC system you may want
+   to get an allocation on a compute node to compile your code and run
+   your tests.  See your compute center's policy and documentation for
+   where you should build and run code.  Note that the LBANN Python
+   Front End (PFE) launcher can run from an allocated compute node or
+   dispatch to a set of known job launchers:
+
+    .. code-block:: bash
+
+        <get some sort of compute node>
+
+1. If you used the :code:`build_lbann.sh` script for installation or
    installed in a Spack environment, you will need to activate the Spack LBANN
    environment:
 

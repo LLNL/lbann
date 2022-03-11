@@ -2,6 +2,7 @@ LBANN_REPO_PATH="https://github.com/LLNL/lbann/raw/develop"
 curl -fsSL -O ${LBANN_REPO_PATH}/scripts/build_lbann.sh
 curl -fsSL -O ${LBANN_REPO_PATH}/scripts/customize_build_env.sh
 curl -fsSL -O ${LBANN_REPO_PATH}/scripts/utilities.sh
+curl -fsSL -O ${LBANN_REPO_PATH}/ci_test/requirements.txt
 
 chmod +x build_lbann.sh customize_build_env.sh utilities.sh
 
@@ -44,6 +45,6 @@ if [[ -n "${LBANN_EXTRAS}" ]]; then
     EXTRAS="${LBANN_EXTRAS}"
 fi
 
-CMD="./build_lbann.sh -j $(($(nproc)+2)) -d -s -u ${VERSION} ${EXTRAS} -- ${VARIANTS}"
+CMD="./build_lbann.sh -j $(($(nproc)+2)) -d -s -u ${VERSION} --pip ./requirements.txt ${EXTRAS} -- ${VARIANTS}"
 echo ${CMD}
 ${CMD}

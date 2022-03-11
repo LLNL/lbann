@@ -3,6 +3,7 @@ curl -fsSL -O ${LBANN_REPO_PATH}/scripts/build_lbann.sh
 curl -fsSL -O ${LBANN_REPO_PATH}/scripts/customize_build_env.sh
 curl -fsSL -O ${LBANN_REPO_PATH}/scripts/utilities.sh
 curl -fsSL -O ${LBANN_REPO_PATH}/applications/ATOM/external_packages_atom.sh
+curl -fsSL -O ${LBANN_REPO_PATH}/applications/ATOM/requirements.txt
 
 chmod +x build_lbann.sh customize_build_env.sh utilities.sh external_packages_atom.sh
 
@@ -23,6 +24,14 @@ CENTER_USER_VARIANTS=
 SPACK_ARCH_TARGET=$(spack arch -t)
 set_center_specific_variants ${CENTER} ${SPACK_ARCH_TARGET}
 
-CMD="./build_lbann.sh -j $(($(nproc)+2)) -d -s -u develop -e external_packages_atom.sh -- ${CENTER_USER_VARIANTS}"
+
+case ${SPACK_ARCH_TARGET} in
+    "power9le" | "power8le")
+        CMD="./build_lbann.sh -j $(($(nproc)+2)) -d -l atom -s -u develop -e external_packages_atom.sh -- ${CENTER_USER_VARIANTS}"
+        ;;
+    *)
+        CMD="./build_lbann.sh -j $(($(nproc)+2)) -d -l atom -s -u develop --pip requirements.txt -p rdkit -- ${CENTER_USER_VARIANTS}"
+        ;;
+esac
 echo ${CMD}
 ${CMD}
