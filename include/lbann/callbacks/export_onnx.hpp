@@ -50,7 +50,7 @@ class export_onnx : public callback_base {
 
 public:
   /** @brief export_onnx Constructor.
-   *  @param output_file Output filename (default = lbann_output.onnx)
+   *  @param output_filename Output filename (default = lbann.onnx)
    *  @param print_debug_string Print debug string to file onnx_debug.txt
    */
   export_onnx(std::string output_filename,
