@@ -47,7 +47,7 @@ void export_onnx::on_train_end(model* m)
     std::ofstream onnx_out(m_output_filename);
     mp_.SerializeToOstream(&onnx_out);
 
-    if (m_debug_string_filename != "") {
+    if (m_debug_string_filename.length()) {
       std::ofstream debug(m_debug_string_filename);
       debug << mp_.DebugString();
     }
