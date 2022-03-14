@@ -62,6 +62,11 @@ if (LBANN_HAS_FFTW)
     ${CMAKE_CURRENT_SOURCE_DIR}/fftw_test.cpp)
 endif (LBANN_HAS_FFTW)
 
+if (LBANN_HAS_ONNX)
+  list(APPEND THIS_DIR_MPI_CATCH2_TEST_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/onnx_utils_test.cpp)
+endif ()
+
 if (LBANN_HAS_OPENCV)
   list(APPEND THIS_DIR_SEQ_CATCH2_TEST_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/image_test.cpp)
