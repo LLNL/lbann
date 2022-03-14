@@ -43,9 +43,6 @@ void export_onnx::on_train_end(model* m)
 
   m->serialize_to_onnx(mp_);
 
-  std::cout << "OUTPUT=" << m_output_filename << ", DEBUG="
-            << m_debug_string_filename << std::endl;
-
   if (rank == 0) {
     std::ofstream onnx_out(m_output_filename);
     mp_.SerializeToOstream(&onnx_out);
@@ -63,11 +60,8 @@ build_export_onnx_callback_from_pbuf(const google::protobuf::Message& proto_msg,
 {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackExportOnnx&>(proto_msg);
-  return std::make_unique<export_onnx>(
-    (params.output_filename().size() == 0
-     ? std::string("lbann_output.onnx") : params.output_filename(),
-     params.debug_string_filename().size() == 0
-     ? std::string("") : params.debug_string_filename()));
+  return std::make_unique<export_onnx>(params.output_filename(),
+                                       params.debug_string_filename());
 }
 } // namespace callback
 } // namespace lbann

@@ -53,11 +53,13 @@ public:
    *  @param output_file Output filename (default = lbann_output.onnx)
    *  @param print_debug_string Print debug string to file onnx_debug.txt
    */
-  export_onnx(std::string output_filename = "lbann_output.onnx",
-              std::string debug_string_filename = "")
+  export_onnx(std::string output_filename,
+              std::string debug_string_filename)
     : callback_base(/*batch_interval=*/1),
-      m_output_filename(output_filename),
-      m_debug_string_filename(debug_string_filename)
+      m_output_filename{output_filename.size() ?
+                        std::move(output_filename) :
+                        std::string("lbann.onnx")},
+      m_debug_string_filename{std::move(debug_string_filename)}
   {}
 
   /** @brief Copy interface */
@@ -73,7 +75,7 @@ public:
 
 private:
 
-  /* @brief name of output file. Default = lbann_output.onnx */
+  /* @brief name of output file. Default = lbann.onnx */
   std::string m_output_filename;
 
   /* @brief option to print onnx debug file. Default = none */
