@@ -41,15 +41,16 @@ void export_onnx::on_train_end(model* m)
 {
   auto const rank = m->get_comm()->get_rank_in_trainer();
 
-  m->serialize_to_onnx(mp_);
+  onnx::ModelProto mp;
+  m->serialize_to_onnx(mp);
 
   if (rank == 0) {
     std::ofstream onnx_out(m_output_filename);
-    mp_.SerializeToOstream(&onnx_out);
+    mp.SerializeToOstream(&onnx_out);
 
     if (m_debug_string_filename.length()) {
       std::ofstream debug(m_debug_string_filename);
-      debug << mp_.DebugString();
+      debug << mp.DebugString();
     }
   }
 }

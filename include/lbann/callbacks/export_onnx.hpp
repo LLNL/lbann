@@ -51,7 +51,8 @@ class export_onnx : public callback_base {
 public:
   /** @brief export_onnx Constructor.
    *  @param output_filename Output filename (default = lbann.onnx)
-   *  @param debug_string_filename Name of file to which debug string is printed. If not set, the debug string is not output.
+   *  @param debug_string_filename Name of file to which debug string is
+   *  printed. If not set, the debug string is not output.
    */
   export_onnx(std::string output_filename,
               std::string debug_string_filename)
@@ -80,9 +81,6 @@ private:
 
   /* @brief option to print onnx debug file. Default = none */
   std::string m_debug_string_filename;
-
-  /* @brief onnx ModelProto object */
-  onnx::ModelProto mp_;
 
 }; // class export_onnx
 
