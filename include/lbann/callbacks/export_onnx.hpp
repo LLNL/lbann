@@ -51,7 +51,7 @@ class export_onnx : public callback_base {
 public:
   /** @brief export_onnx Constructor.
    *  @param output_filename Output filename (default = lbann.onnx)
-   *  @param print_debug_string Print debug string to file onnx_debug.txt
+   *  @param debug_string_filename Name of file to which debug string is printed. If not set, the debug string is not output.
    */
   export_onnx(std::string output_filename,
               std::string debug_string_filename)
