@@ -3,9 +3,14 @@ add_subdirectory(utilities)
 
 # Add the sequential test main() function
 add_executable(seq-catch-tests
-  SequentialCatchMain.cpp "${LBANN_SEQ_CATCH2_TEST_FILES}")
+  SequentialCatchMain.cpp
+  "${LBANN_SEQ_CATCH2_TEST_FILES}")
 target_link_libraries(seq-catch-tests
-  PRIVATE unit_test_utilities lbann Catch2::Catch2)
+  PRIVATE
+  unit_test_utilities
+  lbann
+  Catch2::Catch2
+  $<$<BOOL:${LBANN_HAS_PROTOBUF}>:LBANNTestProto>)
 
 # Don't have ctest automatically run the catch test this allows
 # a Spack-based install to fail when using the --test option if a
