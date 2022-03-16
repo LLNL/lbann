@@ -126,15 +126,16 @@ protected:
     this->set_output_dims(this->get_input_dims());
     const auto output_dims_ = this->get_output_dims();
     std::vector<size_t> output_dims(output_dims_.begin(), output_dims_.end());
-    const auto output_size = this->get_output_size();
 
     // Initialize default weights if none are provided
     if (this->num_weights() > 2) {
-      std::stringstream err;
-      err << "attempted to setup layer \"" << this->get_name() << "\" "
-          << "with an invalid number of weights "
-          << "(found " << this->num_weights() << ", expected 2)";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR("attempted to setup layer \"",
+                  this->get_name(),
+                  "\" ",
+                  "with an invalid number of weights ",
+                  "(found ",
+                  this->num_weights(),
+                  ", expected 2)");
     }
     this->set_num_weights(2);
     if (!this->has_weights(0)) {
