@@ -46,7 +46,9 @@ allocate lc resources:
     GIT_STRATEGY: none
   script:
     - echo "== ACQUIRING SLURM RESOURCES =="
-    - salloc --exclusive -N 2 -p pbatch -t 120 --no-shell -J ${JOB_NAME}
+    - echo "LBANN_CI_RUN_WEEKLY=${LBANN_CI_RUN_WEEKLY}"
+    - export TEST_TIME=$([[ -n "${LBANN_CI_RUN_WEEKLY}" ]] && echo "90" || echo "30")
+    - salloc --exclusive -N 2 -p pbatch -t ${TEST_TIME} --no-shell -J ${JOB_NAME}
   timeout: 6h
 
 # Build LBANN and establish the Spack environment for this pipeline.
@@ -65,7 +67,7 @@ build and install:
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - export BUILD_TASKS=$(($(nproc) + 2))
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - srun --jobid=${JOB_ID} -N 1 -t 20 ./scripts/build_lbann.sh -d
+    - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -d
       -l ${SPACK_ENV_NAME} --test --clean-build -j ${BUILD_TASKS} --
       +deterministic +vision +numpy ${SPACK_SPECS}
     - export TEST_TASKS_PER_NODE=4
@@ -194,6 +196,10 @@ release allocation:
 
     # Catch2 output.
     RESULTS_DIR: results-${CI_PIPELINE_ID}
+
+    # This needs to be imported here, too. Failure to do so causes
+    # problems if it's not set.
+    LBANN_CI_RUN_WEEKLY: ${LBANN_CI_RUN_WEEKLY}
 
   tags:
     - corona

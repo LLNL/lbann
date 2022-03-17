@@ -33,6 +33,8 @@ stages:
 
 catalyst testing:
   stage: run-all-clusters
+  variables:
+    LBANN_CI_RUN_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
   trigger:
     strategy: depend
     include: .gitlab/catalyst/pipeline.yml
@@ -45,18 +47,24 @@ catalyst testing:
 
 lassen testing:
   stage: run-all-clusters
+  variables:
+    LBANN_CI_RUN_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
   trigger:
     strategy: depend
     include: .gitlab/lassen/pipeline.yml
 
 pascal testing:
   stage: run-all-clusters
+  variables:
+    LBANN_CI_RUN_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
   trigger:
     strategy: depend
     include: .gitlab/pascal/pipeline.yml
 
 ray testing:
   stage: run-all-clusters
+  variables:
+    LBANN_CI_RUN_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
   trigger:
     strategy: depend
     include: .gitlab/ray/pipeline.yml
