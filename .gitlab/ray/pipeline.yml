@@ -48,7 +48,7 @@ build and test everything:
     - echo "== BUILDING AND TESTING LBANN =="
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - export SPACK_ENV_NAME=${SPACK_ENV_NAME}
-    - lalloc 2 -W 90 -q pbatch ci_test/run.sh
+    - lalloc 2 -W 90 -q pbatch ci_test/run.sh ${LBANN_CI_RUN_WEEKLY:+--weekly}
   artifacts:
     when: always
     paths:

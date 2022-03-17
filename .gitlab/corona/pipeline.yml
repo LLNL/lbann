@@ -108,7 +108,7 @@ integration tests:
     - export OMP_NUM_THREADS=10
     - export SLURM_JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - cd ci_test/integration_tests
-    - python3 -m pytest -s -vv --durations=0 --junitxml=results.xml
+    - python3 -m pytest -s -vv --durations=0 ${LBANN_CI_RUN_WEEKLY:+--weekly} --junitxml=results.xml
   artifacts:
     when: always
     paths:
