@@ -227,8 +227,6 @@ def main():
     m_lbann_args=f"--vocab={run_args.vocab} --data_filedir={run_args.data_filedir} --data_filename_train={run_args.data_filename} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads}"
     if(run_args.data_reader_prototext):
       m_lbann_args = " ".join((m_lbann_args, " --use_data_store --preload_data_store "))
-    if(run_args.ltfb):
-      m_lbann_args = " ".join((m_lbann_args, "--ltfb"))
     if(run_args.procs_per_trainer):
       m_lbann_args = " ".join((m_lbann_args, f"--procs_per_trainer={run_args.procs_per_trainer}"))
 
