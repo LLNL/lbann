@@ -119,6 +119,16 @@ public:
   void load_list_of_samples(const std::string sample_list_file);
 
 
+  /** @brief Sets the name of the metadata file */
+  void set_metadata_filename(std::string fn) { m_metadata_filename = std::move(fn); }
+
+  /** @brief Returns the name of the metadata file */
+  const std::string& get_metadata_filename()
+  {
+    return m_metadata_filename;
+  }
+
+
 private:
 
   // note: linearized_size is m_sequence_length+2; the +2 is for the
@@ -150,7 +160,7 @@ private:
   short m_bos = 422;
   short m_eos = 423;
 
-  bool m_has_header = false;
+  std::string m_metadata_filename;
 
   std::unordered_map<char, short> m_vocab;
   std::unordered_map<short,std::string> m_vocab_inv;

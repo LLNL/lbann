@@ -79,7 +79,7 @@ void smiles_data_reader::copy_members(const smiles_data_reader &rhs) {
   m_unk = rhs.m_unk;
   m_bos = rhs.m_bos;
   m_eos = rhs.m_eos;
-  m_has_header = rhs.m_has_header;
+  m_metadata_filename = rhs.m_metadata_filename;
   m_missing_char_in_vocab_count = rhs.m_missing_char_in_vocab_count;
   m_missing_chars = rhs.m_missing_chars;
   m_vocab = rhs.m_vocab;
@@ -647,11 +647,11 @@ void smiles_data_reader::read_offset_data(std::vector<SampleData> &data) {
 }
 
 void smiles_data_reader::read_metadata_file(
- std::vector<size_t>& samples_per_file,
- std::vector<std::string>& data_filenames,
- std::vector<std::string>& offsets_filenames) {
+  std::vector<size_t>& samples_per_file,
+  std::vector<std::string>& data_filenames,
+  std::vector<std::string>& offsets_filenames) {
   // open the metadata file
-  const std::string metadata_fn = get_label_filename();
+  const std::string metadata_fn = get_metadata_filename();
   if (metadata_fn.empty()) {
     LBANN_ERROR("label filename is empty");
   }
