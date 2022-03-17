@@ -28,6 +28,7 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/im2col.hpp"
@@ -318,9 +319,7 @@ base_convolution_layer<TensorDataType,Device>
   const auto& output_dims = this->get_output_dims();
   const auto& kernel_dims_ = this->get_kernel_dims();
   std::vector<size_t> kernel_dims(kernel_dims_.begin(), kernel_dims_.end());
-  const auto& kernel_size = std::accumulate(kernel_dims.begin(),
-                                            kernel_dims.end(),
-                                            1, std::multiplies<int>());
+  const auto kernel_size = get_linear_size(kernel_dims);
 
   // Initialize default weights if none are provided
   if (this->num_weights() > 2) {
@@ -782,9 +781,7 @@ base_convolution_layer<TensorDataType,Device>
     output_dims = this->get_input_dims();
   }
   const auto& kernel_dims = this->get_kernel_dims();
-  const auto& kernel_size = std::accumulate(kernel_dims.begin(),
-                                            kernel_dims.end(),
-                                            1, std::multiplies<int>());
+  const auto kernel_size = get_linear_size(kernel_dims);
 
   // Initialize matrices
   const int m = output_size / output_dims[0];
@@ -845,9 +842,7 @@ base_convolution_layer<TensorDataType,Device>
     output_dims = this->get_input_dims();
   }
   const auto& kernel_dims = this->get_kernel_dims();
-  const auto& kernel_size = std::accumulate(kernel_dims.begin(),
-                                            kernel_dims.end(),
-                                            1, std::multiplies<int>());
+  const auto kernel_size = get_linear_size(kernel_dims);
 
   // Initialize matrices
   const int m = kernel_size / input_dims[0];
@@ -932,9 +927,7 @@ void base_convolution_layer<TensorDataType,Device>
   const int num_output_channels = output_dims[0];
   const int num_per_output_channel = this->get_output_size() / num_output_channels;
   const auto& kernel_dims = this->get_kernel_dims();
-  const auto& kernel_size = std::accumulate(kernel_dims.begin(),
-                                            kernel_dims.end(),
-                                            1, std::multiplies<int>());
+  const auto kernel_size = get_linear_size(kernel_dims);
 
   // Compute bias gradient
   // Note: Sum is computed with Kahan summation

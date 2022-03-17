@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/random_resized_crop_with_fixed_aspect_ratio.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
@@ -39,7 +40,7 @@ void random_resized_crop_with_fixed_aspect_ratio::apply(
   utils::type_erased_matrix& data, std::vector<size_t>& dims) {
   cv::Mat src = utils::get_opencv_mat(data, dims);
   std::vector<size_t> new_dims = {dims[0], m_crop_h, m_crop_w};
-  auto dst_real = El::Matrix<uint8_t>(utils::get_linearized_size(new_dims), 1);
+  auto dst_real = El::Matrix<uint8_t>(get_linear_size(new_dims), 1);
   cv::Mat dst = utils::get_opencv_mat(dst_real, new_dims);
   // Compute the projected crop area in the original image, crop it, and resize.
   const float zoom = std::min(float(src.rows) / float(m_h),

@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/random_resized_crop.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
@@ -39,7 +40,7 @@ void random_resized_crop::apply(utils::type_erased_matrix& data,
                                 std::vector<size_t>& dims) {
   cv::Mat src = utils::get_opencv_mat(data, dims);
   std::vector<size_t> new_dims = {dims[0], m_h, m_w};
-  auto dst_real = El::Matrix<uint8_t>(utils::get_linearized_size(new_dims), 1);
+  auto dst_real = El::Matrix<uint8_t>(get_linear_size(new_dims), 1);
   cv::Mat dst = utils::get_opencv_mat(dst_real, new_dims);
   size_t x = 0, y = 0, h = 0, w = 0;
   const size_t area = dims[1]*dims[2];

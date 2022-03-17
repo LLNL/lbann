@@ -27,8 +27,9 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 #include <opencv2/imgcodecs.hpp>
-#include "lbann/utils/image.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/image.hpp"
 #include "lbann/utils/opencv.hpp"
 
 namespace lbann {
@@ -160,7 +161,7 @@ void opencv_decode(El::Matrix<uint8_t>& buf, El::Matrix<uint8_t>& dst,
             static_cast<size_t>(real_decoded.cols)};
     // If we did not guess the size right, need to copy.
     if (real_decoded.ptr() != dst.Buffer()) {
-      dst.Resize(utils::get_linearized_size(dims), 1);
+      dst.Resize(get_linear_size(dims), 1);
       cv_dst = utils::get_opencv_mat(dst, dims);
       real_decoded.copyTo(cv_dst);
     }
@@ -174,7 +175,7 @@ void opencv_decode(El::Matrix<uint8_t>& buf, El::Matrix<uint8_t>& dst,
             static_cast<size_t>(decoded.rows),
             static_cast<size_t>(decoded.cols)};
     // Copy to dst.
-    dst.Resize(utils::get_linearized_size(dims), 1);
+    dst.Resize(get_linear_size(dims), 1);
     cv::Mat cv_dst = utils::get_opencv_mat(dst, dims);
     decoded.copyTo(cv_dst);
   }
@@ -229,7 +230,7 @@ std::string encode_image(const El::Matrix<uint8_t>& image,
 El::Matrix<uint8_t> get_uint8_t_image(const CPUMat& image,
                                       const std::vector<size_t>& dims) {
   // Create the output matrix
-  size_t const size = utils::get_linearized_size(dims);
+  size_t const size = get_linear_size(dims);
   El::Matrix<uint8_t> output_mat(size, 1);
 
   // Create views into the source and destination matrices

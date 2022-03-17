@@ -107,11 +107,6 @@ inline cv::Mat get_opencv_mat(El::Matrix<uint8_t>& data, const std::vector<size_
                  data.Buffer());
 }
 
-/** Get the linearized size of dims. */
-inline size_t get_linearized_size(const std::vector<size_t>& dims) {
-  return std::accumulate(dims.begin(), dims.end(), 1, std::multiplies<size_t>());
-}
-
 }  // namespace utils
 }  // namespace lbann
 

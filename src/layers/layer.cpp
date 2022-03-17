@@ -283,8 +283,7 @@ int Layer::get_input_size(size_t input_index) const {
   if (dims.empty()) {
     return 0;
   } else {
-    return std::accumulate(dims.begin(), dims.end(), 1,
-                           std::multiplies<int>());
+    return get_linear_size(dims);
   }
 }
 
@@ -312,8 +311,7 @@ int Layer::get_output_size(size_t output_index) const {
   if (dims.empty()) {
     return 0;
   } else {
-    return std::accumulate(dims.begin(), dims.end(), 1,
-                           std::multiplies<int>());
+    return get_linear_size(dims);
   }
 }
 

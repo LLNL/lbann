@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/random_affine.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
@@ -37,7 +38,7 @@ namespace transform {
 
 void random_affine::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
   cv::Mat src = utils::get_opencv_mat(data, dims);
-  auto dst_real = El::Matrix<uint8_t>(utils::get_linearized_size(dims), 1);
+  auto dst_real = El::Matrix<uint8_t>(get_linear_size(dims), 1);
   cv::Mat dst = utils::get_opencv_mat(dst_real, dims);
   // Compute the random quantities for the transform.
   // For converting to radians:

@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/weights/weights.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/io/file_io.hpp"
@@ -129,9 +130,7 @@ std::vector<size_t> weights::get_dims() const {
   return dims;
 }
 size_t weights::get_size() const {
-  const auto& dims = get_dims();
-  return std::accumulate(dims.begin(), dims.end(),
-                         1, std::multiplies<size_t>());
+  return get_linear_size(get_dims());
 }
 std::vector<size_t> weights::get_matrix_height_dims() const {
   return m_matrix_height_dims;
@@ -140,14 +139,10 @@ std::vector<size_t> weights::get_matrix_width_dims() const {
   return m_matrix_width_dims;
 }
 size_t weights::get_matrix_height() const {
-  const auto& dims = get_matrix_height_dims();
-  return std::accumulate(dims.begin(), dims.end(),
-                         1, std::multiplies<size_t>());
+  return get_linear_size(get_matrix_height_dims());
 }
 size_t weights::get_matrix_width() const {
-  const auto& dims = get_matrix_width_dims();
-  return std::accumulate(dims.begin(), dims.end(),
-                         1, std::multiplies<size_t>());
+  return get_linear_size(get_matrix_width_dims());
 }
 void weights::set_dims(std::vector<size_t> matrix_height_dims,
                        std::vector<size_t> matrix_width_dims) {

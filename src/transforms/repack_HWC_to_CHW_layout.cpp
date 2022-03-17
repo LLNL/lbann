@@ -25,13 +25,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/repack_HWC_to_CHW_layout.hpp"
-#include "lbann/utils/vision.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 
 namespace lbann {
 namespace transform {
 
 void repack_HWC_to_CHW_layout::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
-  auto dst = CPUMat(utils::get_linearized_size(dims), 1);
+  auto dst = CPUMat(get_linear_size(dims), 1);
   apply(data, dst, dims);
   data.emplace<DataType>(std::move(dst));
 }
@@ -46,7 +46,7 @@ void repack_HWC_to_CHW_layout::apply(utils::type_erased_matrix& data, CPUMat& ou
     LBANN_ERROR("RepackHWCtoCHWLayout does not support non-contiguous destination.");
   }
   const DataType* __restrict__ src_buf = src.LockedBuffer();
-  const size_t out_size = utils::get_linearized_size(dims);
+  const size_t out_size = get_linear_size(dims);
   if (static_cast<size_t>(out.Height() * out.Width()) != out_size) {
     LBANN_ERROR("Transform output does not have sufficient space.");
   }

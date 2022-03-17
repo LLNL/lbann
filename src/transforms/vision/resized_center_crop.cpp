@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/resized_center_crop.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
@@ -38,7 +39,7 @@ namespace transform {
 void resized_center_crop::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
   cv::Mat src = utils::get_opencv_mat(data, dims);
   std::vector<size_t> new_dims = {dims[0], m_crop_h, m_crop_w};
-  auto dst_real = El::Matrix<uint8_t>(utils::get_linearized_size(new_dims), 1);
+  auto dst_real = El::Matrix<uint8_t>(get_linear_size(new_dims), 1);
   cv::Mat dst = utils::get_opencv_mat(dst_real, new_dims);
   // This computes the projected crop area in the original image, crops it,
   // then resizes it.
