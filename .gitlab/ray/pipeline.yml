@@ -46,12 +46,13 @@ build and test everything:
   stage: everything
   script:
     - echo "== BUILDING AND TESTING LBANN =="
-    - echo "LBANN_CI_RUN_WEEKLY=${LBANN_CI_RUN_WEEKLY}"
+    - echo "${WITH_WEEKLY:+Running with --weekly}"
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - export SPACK_ENV_NAME=${SPACK_ENV_NAME}
-    - export TEST_WEEKLY=${LBANN_CI_RUN_WEEKLY:+--weekly}
-    - export TEST_TIME=$([[ -n "${LBANN_CI_RUN_WEEKLY}" ]] && echo "120" || echo "90")
-    - lalloc 2 -W ${TEST_TIME} -q pbatch ci_test/run.sh ${TEST_WEEKLY}
+    - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "120" || echo "90")
+    - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
+    - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
+    - lalloc ${LBANN_NNODES} -W ${TEST_TIME} -q pbatch ci_test/run.sh ${WEEKLY_FLAG}
   artifacts:
     when: always
     paths:
