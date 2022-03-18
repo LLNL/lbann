@@ -20,8 +20,6 @@ import data.imagenet
 # ==============================================
 
 # Training options
-num_nodes = 2
-#num_nodes = 4
 imagenet_fraction = 0.280994  # Train with 360K out of 1.28M samples
 
 # Top-5 classification accuracy (percent)
@@ -32,14 +30,13 @@ imagenet_fraction = 0.280994  # Train with 360K out of 1.28M samples
 ################################################################################
 # Weekly training options and targets
 ################################################################################
-# Reconstruction loss
 weekly_options_and_targets = {
+    'num_nodes': 4,
     'num_epochs': 5,
     'mini_batch_size': 256,
     'expected_train_accuracy_range': (9, 15),
     'expected_test_accuracy_range': (15, 24),
     'percent_of_data_to_use': imagenet_fraction,
-    # Weekly operates on 4 compute nodes
     'expected_mini_batch_times': {
         'pascal': 0.154, # 0.100,
         'lassen': 0.050,
@@ -51,15 +48,15 @@ weekly_options_and_targets = {
 # Nightly training options and targets
 ################################################################################
 nightly_options_and_targets = {
+    'num_nodes': 2,
     'num_epochs': 3,
     'mini_batch_size': 256,
-    'expected_train_accuracy_range': (.6, 0.7),
+    'expected_train_accuracy_range': (.6, 1.1),
     'expected_test_accuracy_range': (0.45, 0.6),
     'percent_of_data_to_use': imagenet_fraction * 0.01,
-    # Nightly operates on 2 compute nodes
     'expected_mini_batch_times': {
-        'pascal': 0.900, # 0.100,
-        'lassen': 0.050,
+        'pascal': 1.574,
+        'lassen': 0.070,
         'ray':    0.075,
     }
 }
@@ -91,7 +88,7 @@ def setup_experiment(lbann, weekly):
     data_reader.reader[1].role = 'test'
 
     optimizer = lbann.SGD(learn_rate=0.01, momentum=0.9)
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, options['num_nodes']
 
 def construct_model(lbann, num_epochs):
     """Construct LBANN model.
@@ -220,6 +217,5 @@ def augment_test_func(test_func):
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment,
                                      __file__,
-                                     nodes=num_nodes,
                                      lbann_args=['--load_full_sample_list_once']):
     globals()[_test_func.__name__] = augment_test_func(_test_func)

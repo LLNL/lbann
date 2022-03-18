@@ -696,7 +696,10 @@ def create_tests(setup_func,
         import lbann.contrib.launcher
 
         # Setup LBANN experiment
-        trainer, model, data_reader, optimizer = setup_func(lbann, weekly)
+        trainer, model, data_reader, optimizer, req_num_nodes = setup_func(lbann, weekly)
+
+        if req_num_nodes:
+            kwargs['nodes'] = req_num_nodes
 
         # Configure kwargs to LBANN launcher
         _kwargs = copy.deepcopy(kwargs)

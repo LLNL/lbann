@@ -19,9 +19,6 @@ import tools
 # ==============================================
 
 # Training options
-num_epochs = 10
-mini_batch_size = 512
-num_nodes = 2
 num_decoder_layers = 3
 
 # Average mini-batch time (in sec) for each LC system
@@ -33,10 +30,12 @@ num_decoder_layers = 3
 ################################################################################
 # Reconstruction loss
 weekly_options_and_targets = {
+    'num_nodes': 2,
+    'num_epochs': 10,
+    'mini_batch_size': 512,
     'expected_train_recon_range': (0.500, 0.555),
     'expected_test_recon_range': (0.500, 0.525),
     'percent_of_data_to_use': 1.0,
-    # Weekly operates on 4 compute nodes
     'expected_mini_batch_times': {
         'lassen':   0.20,
         'pascal':   0.365,
@@ -48,10 +47,12 @@ weekly_options_and_targets = {
 # Nightly training options and targets
 ################################################################################
 nightly_options_and_targets = {
+    'num_nodes': 2,
+    'num_epochs': 10,
+    'mini_batch_size': 512,
     'expected_train_recon_range': (1.16, 1.175),
     'expected_test_recon_range': (1.11, 1.13),
     'percent_of_data_to_use': 0.01,
-    # Nightly operates on 2 compute nodes
     'expected_mini_batch_times': {
         'lassen':   0.20,
         'pascal':   0.460,
@@ -81,26 +82,26 @@ def setup_experiment(lbann, weekly):
       print('Skip - ' + message)
       pytest.skip(message)
 
-    trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
-    model = construct_model(lbann)
+    if weekly:
+        options = weekly_options_and_targets
+    else:
+        options = nightly_options_and_targets
+
+    trainer = lbann.Trainer(mini_batch_size=options['mini_batch_size'])
+    model = construct_model(lbann, options['num_epochs'])
 
     #see: <LBANN>ci_test/common_python/data/atom/data_reader_mpro.prototext
     #     for data_reader prototext
     import data.atom
     data_reader = data.atom.make_data_reader(lbann)
 
-    if weekly:
-        options = weekly_options_and_targets
-    else:
-        options = nightly_options_and_targets
-
     # Use less training data for the integration test
     data_reader.reader[0].percent_of_data_to_use = options['percent_of_data_to_use']
 
     opt = lbann.Adam(learn_rate=3e-4, beta1=0.9, beta2=0.99, eps=1e-8)
-    return trainer, model, data_reader, opt
+    return trainer, model, data_reader, opt, options['num_nodes']
 
-def construct_model(lbann):
+def construct_model(lbann, num_epochs):
     """Construct LBANN model.
     Args:
         lbann (module): Module for LBANN Python frontend
@@ -270,6 +271,5 @@ m_lbann_args=f"--vocab={vocab_loc['vast']} --sequence_length=100 --use_data_stor
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment,
                                      __file__,
-                                     lbann_args=[m_lbann_args],
-                                     nodes=num_nodes):
+                                     lbann_args=[m_lbann_args]):
     globals()[_test_func.__name__] = augment_test_func(_test_func)

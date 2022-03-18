@@ -20,7 +20,6 @@ import data.imagenet
 # ==============================================
 
 # Training options
-num_nodes = 2 #4
 imagenet_fraction = 0.280994  # Train with 360K out of 1.28M samples
 
 # Top-5 classification accuracy (percent)
@@ -30,12 +29,12 @@ imagenet_fraction = 0.280994  # Train with 360K out of 1.28M samples
 ################################################################################
 # Reconstruction loss
 weekly_options_and_targets = {
+    'num_nodes': 4,
     'num_epochs': 5,
     'mini_batch_size': 256,
     'expected_train_accuracy_range': (45, 50),
     'expected_test_accuracy_range': (40, 55),
     'percent_of_data_to_use': imagenet_fraction,
-    # Weekly operates on 4 compute nodes
     'expected_mini_batch_times': {
         'pascal': 0.25,
         'lassen': 0.10,
@@ -47,15 +46,15 @@ weekly_options_and_targets = {
 # Nightly training options and targets
 ################################################################################
 nightly_options_and_targets = {
+    'num_nodes': 2,
     'num_epochs': 3,
     'mini_batch_size': 256,
-    'expected_train_accuracy_range': (45, 50),
-    'expected_test_accuracy_range': (40, 55),
+    'expected_train_accuracy_range': (3, 4),
+    'expected_test_accuracy_range': (1.5, 2),
     'percent_of_data_to_use': imagenet_fraction * 0.01,
-    # Weekly operates on 2 compute nodes
     'expected_mini_batch_times': {
         'pascal': 0.25,
-        'lassen': 0.10,
+        'lassen': 0.15,
         'ray':    0.15,
     }
 }
@@ -86,7 +85,7 @@ def setup_experiment(lbann, weekly):
     data_reader.reader[1].role = 'test'
 
     optimizer = lbann.SGD(learn_rate=0.1, momentum=0.9)
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, options['num_nodes']
 
 def construct_model(lbann, num_epochs):
     """Construct LBANN model.
@@ -215,6 +214,5 @@ def augment_test_func(test_func):
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment,
                                      __file__,
-                                     nodes=num_nodes,
                                      lbann_args=['--load_full_sample_list_once']):
     globals()[_test_func.__name__] = augment_test_func(_test_func)
