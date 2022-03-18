@@ -1,5 +1,5 @@
 ################################################################################
-## Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 ## Produced at the Lawrence Livermore National Laboratory.
 ## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 ## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -46,9 +46,13 @@ build and test everything:
   stage: everything
   script:
     - echo "== BUILDING AND TESTING LBANN =="
+    - echo "${WITH_WEEKLY:+Running with --weekly}"
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - export SPACK_ENV_NAME=${SPACK_ENV_NAME}
-    - lalloc 2 -W 90 -q pbatch ci_test/run.sh
+    - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "120" || echo "90")
+    - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
+    - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
+    - lalloc ${LBANN_NNODES} -W ${TEST_TIME} -q pbatch ci_test/run.sh ${WEEKLY_FLAG}
   artifacts:
     when: always
     paths:
@@ -93,6 +97,11 @@ remove spack environment:
 
     # This is needed to ensure that we run as lbannusr.
     LLNL_SERVICE_USER: lbannusr
+
+    # This needs to be imported here, too. Failure to do so causes
+    # problems if it's not set.
+    LBANN_CI_RUN_WEEKLY: ${LBANN_CI_RUN_WEEKLY}
+
   tags:
     - ray
     - shell
