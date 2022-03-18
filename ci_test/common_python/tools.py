@@ -679,7 +679,7 @@ def create_tests(setup_func,
         # Make sure test name is prefixed with 'test_'
         test_name_base = 'test_' + test_name_base
 
-    def test_func(cluster, dirname):
+    def test_func(cluster, dirname, weekly):
         """Function that can interact with PyTest.
 
         Returns a dict containing log files and other output data.
@@ -696,7 +696,7 @@ def create_tests(setup_func,
         import lbann.contrib.launcher
 
         # Setup LBANN experiment
-        trainer, model, data_reader, optimizer = setup_func(lbann)
+        trainer, model, data_reader, optimizer = setup_func(lbann, weekly)
 
         # Configure kwargs to LBANN launcher
         _kwargs = copy.deepcopy(kwargs)
