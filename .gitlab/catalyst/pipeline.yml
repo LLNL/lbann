@@ -1,5 +1,5 @@
 ################################################################################
-## Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 ## Produced at the Lawrence Livermore National Laboratory.
 ## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 ## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -133,7 +133,9 @@ integration tests:
     - export OMP_NUM_THREADS=10
     - export SLURM_JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - cd ci_test/integration_tests
-    - python3 -m pytest -s -vv --durations=0 ${LBANN_CI_RUN_WEEKLY:+--weekly} --junitxml=results.xml
+    - export WEEKLY=${LBANN_CI_RUN_WEEKLY:+--weekly}
+    - echo "python3 -m pytest -s -vv --durations=0 ${WEEKLY} --junitxml=results.xml"
+    - python3 -m pytest -s -vv --durations=0 ${WEEKLY} --junitxml=results.xml
   artifacts:
     when: always
     paths:
