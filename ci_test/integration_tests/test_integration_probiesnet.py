@@ -31,10 +31,10 @@ weekly_options_and_targets = {
     'num_epochs': 10,
     'mini_batch_size': 32,
     'expected_train_pc_range': (0.89, 0.92),
-    'expected_test_pc_range': (0.90, 0.925),
+    'expected_test_pc_range': (0.90, 0.931),
     'percent_of_data_to_use': 1.0,
     'expected_mini_batch_times': {
-        'lassen':   0.0051,
+        'lassen':   0.0069, # Old as of 3/21/2022 0.0051,
         'pascal':   0.2267, # Old as of 3/21/2022 0.0146,
     }
 }
@@ -50,7 +50,7 @@ nightly_options_and_targets = {
     'expected_test_pc_range': (0.66, 0.68),
     'percent_of_data_to_use': 0.01,
     'expected_mini_batch_times': {
-        'lassen':   0.0051,
+        'lassen':   0.0069,
         'pascal':   0.172,
     }
 }

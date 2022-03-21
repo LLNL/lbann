@@ -50,7 +50,7 @@ nightly_options_and_targets = {
     'num_epochs': 3,
     'mini_batch_size': 256,
     'expected_train_accuracy_range': (3, 4),
-    'expected_test_accuracy_range': (1.5, 2),
+    'expected_test_accuracy_range': (1.5, 2.1),
     'percent_of_data_to_use': imagenet_fraction * 0.01,
     'expected_mini_batch_times': {
         'pascal': 0.78,
