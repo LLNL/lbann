@@ -24,25 +24,26 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/models/model.hpp"
+
 #include "lbann/base.hpp"
 #include "lbann/comm_impl.hpp"
-#include "lbann/models/model.hpp"
-#include "lbann/trainers/trainer.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/callbacks/save_model.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/layers/io/input_layer.hpp"
 #include "lbann/layers/transform/dummy.hpp"
-#include "lbann/layers/transform/split.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
-#include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/layers/transform/split.hpp"
 #include "lbann/metrics/layer_metric.hpp"
-
-
-#include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/description.hpp"
-#include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/utils/distconv.hpp"
+#include "lbann/utils/graph.hpp"
+#include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/summary_impl.hpp"
 
@@ -56,8 +57,6 @@
 #include <iomanip>
 #include <queue>
 #include <unordered_set>
-
-#include "lbann/utils/distconv.hpp"
 
 namespace lbann {
 
@@ -78,12 +77,9 @@ model::model(lbann_comm* comm,
   static El::Int num_models = 0;
   m_name = "model" + std::to_string(num_models);
   num_models++;
-
-
-
-
-
 }
+
+model::model() : model(&utils::get_current_comm(), nullptr, nullptr) {}
 
 model::model(const model& other) :
   m_execution_context(other.m_execution_context),
@@ -244,7 +240,6 @@ description model::get_description() const {
 
   // Construct description object
   description desc(get_name());
-  desc.add("Type", get_type());
 
   // Layer topology
   description layer_topology_desc("Layer topology:");
@@ -1530,14 +1525,45 @@ void  model::setup_subgrids(){
 
 }
 
-void model::setup_layer_execution_order() {
+void model::setup_layer_execution_order()
+{
+  // Construct layer graph
+  // Note: Each layer depends on its parent layers and its hint layer.
+  const auto& layers = this->get_layers();
+  const El::Int num_layers = layers.size();
+  std::set<El::Int> nodes;
+  std::map<El::Int, std::set<El::Int>> edges;
+  std::unordered_map<const Layer*, El::Int> layer_indices;
+  for (El::Int node = 0; node < num_layers; ++node) {
+    nodes.insert(node);
+    layer_indices[layers[node]] = node;
+  }
+  for (El::Int node = 0; node < num_layers; ++node) {
+    const auto& l = layers[node];
+    for (const auto& child : l->get_child_layers()) {
+      edges[node].insert(layer_indices[child]);
+    }
+    if (l->get_hint_layer() != nullptr) {
+      edges[layer_indices[l->get_hint_layer()]].insert(node);
+    }
+  }
+
+  // Topologically sort layers
+  const auto& sorted_order = graph::topological_sort(nodes, edges);
+  reorder_layers(sorted_order);
+  ensure_input_layers_first();
+}
+
+void model::ensure_input_layers_first()
+{
 
   // Find input layers
   std::vector<El::Int> input_layers, other_layers;
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    if (dynamic_cast<input_layer<DataType>*>(&get_layer(i)) != nullptr) {
+    if (get_layer(i).get_type() == "input") {
       input_layers.push_back(i);
-    } else {
+    }
+    else {
       other_layers.push_back(i);
     }
   }
@@ -1545,11 +1571,12 @@ void model::setup_layer_execution_order() {
   // Reorder layers so input layers are executed first
   std::vector<El::Int> gather_indices;
   gather_indices.insert(gather_indices.end(),
-                        input_layers.begin(), input_layers.end());
+                        input_layers.begin(),
+                        input_layers.end());
   gather_indices.insert(gather_indices.end(),
-                        other_layers.begin(), other_layers.end());
+                        other_layers.begin(),
+                        other_layers.end());
   reorder_layers(gather_indices);
-
 }
 
 void model::setup_layers(
@@ -2561,6 +2588,3 @@ void model::print_distributions() const {
 #endif // LBANN_HAS_DISTCONV
 
 }  // namespace lbann
-
-#define LBANN_CLASS_NAME model
-#include <lbann/macros/register_class_with_cereal.hpp>

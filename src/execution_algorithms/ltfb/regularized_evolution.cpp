@@ -33,7 +33,6 @@
 #include "lbann/base.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
-#include "lbann/models/directed_acyclic_graph.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/proto/helpers.hpp"
 #include "lbann/trainers/trainer.hpp"

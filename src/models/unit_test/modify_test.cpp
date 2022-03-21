@@ -32,7 +32,6 @@
 #include "lbann/layers/activations/relu.hpp"
 #include "lbann/layers/layer.hpp"
 #include <lbann/base.hpp>
-#include <lbann/models/directed_acyclic_graph.hpp>
 #include <lbann/models/model.hpp>
 #include <lbann/utils/lbann_library.hpp>
 

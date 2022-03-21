@@ -30,7 +30,6 @@
 #include "MPITestHelpers.hpp"
 
 #include <lbann/base.hpp>
-#include <lbann/models/directed_acyclic_graph.hpp>
 #include <lbann/models/model.hpp>
 #include <lbann/layers/io/input_layer.hpp>
 #include <lbann/utils/memory.hpp>

@@ -27,7 +27,7 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/ltfb.hpp"
 #include "lbann/utils/random_number_generators.hpp"
-#include "lbann/models/directed_acyclic_graph.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/optimizers/sgd.hpp"
 #include "lbann/optimizers/adam.hpp"
 #include "lbann/proto/proto_common.hpp"
@@ -719,8 +719,8 @@ void ltfb::on_batch_begin(model* m)
   if (comm.am_world_master()) {
     std::cout << message_prefix + "exchanging model data...\n";
   }
-  using ModelType = directed_acyclic_graph_model;
-  ModelType partner_model(dynamic_cast<ModelType&>(local_model));
+
+  model partner_model(local_model);
   if (comm_algo_)
     comm_algo_->exchange_models(partner_model, partner_trainer, step);
   else

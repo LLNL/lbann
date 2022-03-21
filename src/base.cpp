@@ -654,7 +654,6 @@ CEREAL_FORCE_DYNAMIC_INIT(SGDExecutionContext);
 CEREAL_FORCE_DYNAMIC_INIT(data_coordinator);
 CEREAL_FORCE_DYNAMIC_INIT(data_type_weights);
 CEREAL_FORCE_DYNAMIC_INIT(dataset);
-CEREAL_FORCE_DYNAMIC_INIT(directed_acyclic_graph_model);
 CEREAL_FORCE_DYNAMIC_INIT(l2_weight_regularization);
 CEREAL_FORCE_DYNAMIC_INIT(layer_metric);
 CEREAL_FORCE_DYNAMIC_INIT(layer_term);

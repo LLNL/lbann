@@ -33,7 +33,6 @@
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/utils/summary.hpp"
-#include "lbann/utils/graph.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/metrics/metric.hpp"
@@ -47,7 +46,7 @@
 // dtor for unique_ptr is checking sizeof(T), so this must be a
 // complete type. Sigh. (The greater implication of this is that you
 // cannot have `unique_ptr<IncompleteType>` as a drop-in for
-// `IncompleteType*`, which is annoying.
+// `IncompleteType*`, which is annoying.)
 #include <optimizers.pb.h>
 
 #include <vector>
@@ -79,8 +78,7 @@ public:
         std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg = nullptr);
   model(const model& other);
   model& operator=(const model& other);
-  virtual ~model() = default;
-  virtual std::unique_ptr<model> copy_model() const = 0;
+  ~model() = default;
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize(Archive & ar);
@@ -88,12 +86,6 @@ public:
   // ===========================================
   // Access functions
   // ===========================================
-
-  /** @brief Model type's name.
-   *  @details Should be a brief, human-readable description of the
-   *  model's architecture.
-   */
-  virtual std::string get_type() const = 0;
 
   /** @brief Model instance name.
    *  @details Each model in a trainer should have a unique, and
@@ -169,7 +161,7 @@ public:
 
 
   /** @brief Human-readable description. */
-  virtual description get_description() const;
+  description get_description() const;
 
   /** @brief Mathematical function to be minimized during training. */
   observer_ptr<objective_function> get_objective_function() const {
@@ -199,7 +191,7 @@ public:
   std::vector<ViewingWeightsPtr> get_weights_pointers() const;
 
   /** @brief Get the list of callbacks for the model. */
-  virtual std::vector<observer_ptr<callback_base>> get_callbacks() {
+  std::vector<observer_ptr<callback_base>> get_callbacks() {
     std::vector<observer_ptr<callback_base>> callback_list;
     callback_list.reserve(m_callbacks.size());
     for (const auto& ptr : m_callbacks) {
@@ -208,7 +200,7 @@ public:
     return callback_list;
   }
 
-  virtual std::vector<std::shared_ptr<callback_base>>& get_callbacks_with_ownership() {
+  std::vector<std::shared_ptr<callback_base>>& get_callbacks_with_ownership() {
     return m_callbacks;
   }
 
@@ -240,7 +232,7 @@ public:
   // ===========================================
 
   /** @brief Add layer to model. */
-  virtual void add_layer(OwningLayerPtr&& l);
+  void add_layer(OwningLayerPtr&& l);
 
   /** @brief Add weights to model. */
   void add_weights(OwningWeightsPtr&& w);
@@ -309,15 +301,15 @@ public:
 
   /** @details Must be called after model specification and before
    *  execution. */
-  virtual void setup(
+  void setup(
     size_t max_mini_batch_size,
     DataReaderMetaData& dr_metadata,
     const std::vector<El::Grid*>& grids,
     bool force=false);
 
-  virtual void make_data_store_preloaded(execution_mode mode);
+  void make_data_store_preloaded(execution_mode mode);
 
-  virtual void mark_data_store_explicitly_loading(execution_mode mode);
+  void mark_data_store_explicitly_loading(execution_mode mode);
 
   // ===========================================
   // Summarizer
@@ -327,30 +319,30 @@ public:
    * Summarize statistics (e.g. timers, counters); these should be computable
    * quickly.
    */
-  virtual void summarize_stats(lbann_summary& summarizer);
+  void summarize_stats(lbann_summary& summarizer);
   /**
    * Summarize matrices (e.g. means); these are called less frequently and can
    * be more expensive.
    */
-  virtual void summarize_matrices(lbann_summary& summarizer);
+  void summarize_matrices(lbann_summary& summarizer);
 
   // ===========================================
   // Checkpointing
   // ===========================================
 
   /** @brief Checkpoint model to given file descriptor, return number of bytes written */
-  virtual bool save_to_checkpoint_shared(persist& p);
+  bool save_to_checkpoint_shared(persist& p);
   /** @brief Restore model by reading checkpoint from given file descriptor, return number of bytes read */
-  virtual bool load_from_checkpoint_shared(persist& p);
+  bool load_from_checkpoint_shared(persist& p);
 
-  virtual bool save_to_checkpoint_distributed(persist& p);
-  virtual bool load_from_checkpoint_distributed(persist& p);
+  bool save_to_checkpoint_distributed(persist& p);
+  bool load_from_checkpoint_distributed(persist& p);
 
   /** @brief Saves the model explicitly if the save_model callback is present */
-  virtual bool save_model();
+  bool save_model();
 
   /** @brief Write model to proto file */
-  virtual void write_proto(lbann_data::Model* proto);
+  void write_proto(lbann_data::Model* proto);
 
 protected:
 
@@ -371,7 +363,7 @@ protected:
    *  maps. If a pointer is not a key in the corresponding map, the
    *  pointer is not changed.
    */
-  virtual void remap_pointers(
+  void remap_pointers(
     const std::unordered_map<Layer*,ViewingLayerPtr>& layer_map,
     const std::unordered_map<weights*,ViewingWeightsPtr>& weights_map);
 
@@ -386,7 +378,7 @@ protected:
    *  For general DAG models, users need to manually specify each
    *  layer to freeze in the model description prototext.
    */
-  virtual void freeze_layers_under_frozen_surface() {}
+  void freeze_layers_under_frozen_surface() {}
 
   /** @brief Set up topology of layer graph.
    *
@@ -394,57 +386,60 @@ protected:
    *  layer graph are added to the model and all parent/child
    *  relationships between layers are reciprocated.
    */
-  virtual void setup_layer_topology();
+  void setup_layer_topology();
 
   /** setup sub grids for the sub graph parallelism
 
   */
-  virtual void setup_subgrids();
+  void setup_subgrids();
 
-  virtual void get_subgrids_order(std::vector<int> &ranks_order, int num_branches);
+  void get_subgrids_order(std::vector<int> &ranks_order, int num_branches);
 
-  virtual int get_max_subgraph_branches();
+  int get_max_subgraph_branches();
 
-  virtual void check_subgraph_parallelism();
+  void check_subgraph_parallelism();
 
-  virtual void setup_subgrid_layers_run_condition();
+  void setup_subgrid_layers_run_condition();
 
-  virtual void get_parent_subgrid_tags(int layer_index );
+  void get_parent_subgrid_tags(int layer_index );
 
-  virtual void get_subgraph_subgrids_ranks(std::vector<int> &parent_ranks, std::vector<int> &subgrid_ranks, int layer_index,int number_ranks_in_grid);
+  void get_subgraph_subgrids_ranks(std::vector<int> &parent_ranks, std::vector<int> &subgrid_ranks, int layer_index,int number_ranks_in_grid);
 
-  virtual void get_resources_for_spliting_point(std::vector<int> &parent_ranks,
+  void get_resources_for_spliting_point(std::vector<int> &parent_ranks,
                   std::vector<int> &subgrid_ranks,
                   int layer_index,
                   int number_ranks_in_grid,
                   int num_subgrids);
-  virtual void get_resources_for_merge_layers(std::set<int>& pooled_set,int child_index, int num_subgrids);
+  void get_resources_for_merge_layers(std::set<int>& pooled_set,int child_index, int num_subgrids);
 
-  virtual void get_resources_for_input_layer(std::vector<int>& masterSubGrid, int num_subgrids);
+  void get_resources_for_input_layer(std::vector<int>& masterSubGrid, int num_subgrids);
 
-  virtual void setup_subcommunicators();
+  void setup_subcommunicators();
 
   /** @brief Set up layer execution order.
    *
-   *  Called in setup function.
+   *  Called in setup function. A topological sort applied is to the
+   *  layer list so that we can traverse the directed acyclic graph
+   *  without violating dependencies.
    */
+  void setup_layer_execution_order();
 
-  virtual void setup_layer_execution_order();
   /** @brief Set up layers.
    *
    *  Called in setup function.
    */
-  virtual void setup_layers(
+  void setup_layers(
     size_t max_mini_batch_size,
     DataReaderMetaData& dr_metadata,
     const std::vector<El::Grid*>& grids);
+
   /** @brief Set up weights.
    *
    *  Called in setup function. All weights being used by layers or
    *  the objective function are added to the model and all unused
    *  weights are deleted.
    */
-  virtual void setup_weights();
+  void setup_weights();
 
 public:
   // ===========================================
@@ -452,64 +447,64 @@ public:
   // ===========================================
 
   /** @brief Reset model pointer and execution mode. */
-  virtual void reset_mode(ExecutionContext& context, execution_mode mode);
+  void reset_mode(ExecutionContext& context, execution_mode mode);
   /** @brief Reset model statistics for an epoch. */
-  virtual void reset_epoch_statistics(execution_mode mode);
+  void reset_epoch_statistics(execution_mode mode);
 
   /** @brief Forward propagation step. */
-  virtual void forward_prop(execution_mode mode);
+  void forward_prop(execution_mode mode);
   /** @brief Backward propagation step. */
-  virtual void backward_prop();
+  void backward_prop();
   /** Evaluate any metrics in the model */
-  virtual void evaluate_metrics(execution_mode mode,
+  void evaluate_metrics(execution_mode mode,
                                 size_t current_mini_batch_size);
   /** @brief Clear each optimizer's gradient.
    *
    *  This must be called before training forward prop since layers
    *  set an optimizer flag during forward prop.
    */
-  virtual void clear_gradients();
+  void clear_gradients();
   /** @brief Update weights step. */
-  virtual void update_weights();
+  void update_weights();
   /** @brief Update layers step. */
-  virtual bool update_layers();
+  bool update_layers();
   /** @brief Reconcile weight values.
    *
    *  If weight values are duplicated across multiple processes, they
    *  are set to the average across the processes.
    */
-  virtual void reconcile_weight_values();
+  void reconcile_weight_values();
 
   // ===========================================
   // Callbacks
   // ===========================================
 
   /** @brief Execute callbacks at end of setup. */
-  virtual void do_setup_end_cbs();
+  void do_setup_end_cbs();
   /** @brief Execute callbacks at start of model forward propagation. */
-  virtual void do_model_forward_prop_begin_cbs(execution_mode mode);
+  void do_model_forward_prop_begin_cbs(execution_mode mode);
   /** @brief Execute callbacks at end of model forward propagation. */
-  virtual void do_model_forward_prop_end_cbs(execution_mode mode);
+  void do_model_forward_prop_end_cbs(execution_mode mode);
   /** @brief Execute callbacks at start of layer forward propagation. */
-  virtual void do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l);
+  void do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l);
   /** @brief Execute callbacks at end of layer forward propagation. */
-  virtual void do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l);
+  void do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l);
   /** @brief Execute callbacks at start of model backward propagation. */
-  virtual void do_model_backward_prop_begin_cbs();
+  void do_model_backward_prop_begin_cbs();
   /** @brief Execute callbacks at end of model backward propagation. */
-  virtual void do_model_backward_prop_end_cbs();
+  void do_model_backward_prop_end_cbs();
   /** @brief Execute callbacks at start of layer backward propagation. */
-  virtual void do_layer_backward_prop_begin_cbs(Layer *l);
+  void do_layer_backward_prop_begin_cbs(Layer *l);
   /** @brief Execute callbacks at end of layer backward propagation. */
-  virtual void do_layer_backward_prop_end_cbs(Layer *l);
+  void do_layer_backward_prop_end_cbs(Layer *l);
   /** @brief Execute callbacks at start of model optimization. */
-  virtual void do_model_optimize_begin_cbs();
+  void do_model_optimize_begin_cbs();
   /** @brief Execute callbacks at end of model optimization. */
-  virtual void do_model_optimize_end_cbs();
+  void do_model_optimize_end_cbs();
   /** @brief Execute callbacks at the start of weight optimization. */
-  virtual void do_weight_optimize_begin_cbs(weights *w);
+  void do_weight_optimize_begin_cbs(weights *w);
   /** @brief Execute callbacks at the end of weight optimization. */
-  virtual void do_weight_optimize_end_cbs(weights *w);
+  void do_weight_optimize_end_cbs(weights *w);
 
 
 #ifdef LBANN_HAS_DISTCONV
@@ -517,6 +512,9 @@ public:
   size_t get_max_mini_batch_size_distconv() const { return m_max_mini_batch_size_distconv; }
 #endif
 
+private:
+  friend cereal::access;
+  model();
 
 private:
   // map to store all distinct grids in the model
@@ -637,6 +635,8 @@ private:
    *                        newly created layers.
    */
   void add_split_layers(std::unordered_set<std::string>& layer_names);
+
+  void ensure_input_layers_first();
 
 #ifdef LBANN_HAS_DISTCONV
   void setup_distconv();
