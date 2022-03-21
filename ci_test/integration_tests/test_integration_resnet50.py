@@ -53,7 +53,7 @@ nightly_options_and_targets = {
     'expected_test_accuracy_range': (1.5, 2),
     'percent_of_data_to_use': imagenet_fraction * 0.01,
     'expected_mini_batch_times': {
-        'pascal': 0.25,
+        'pascal': 0.78,
         'lassen': 0.15,
         'ray':    0.15,
     }

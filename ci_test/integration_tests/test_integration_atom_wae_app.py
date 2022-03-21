@@ -219,7 +219,7 @@ def augment_test_func(test_func):
     def func(cluster, dirname,weekly):
 
         # Run LBANN experiment
-        experiment_output = test_func(cluster, dirname)
+        experiment_output = test_func(cluster, dirname, weekly)
 
         # Parse LBANN log file
         train_recon = None

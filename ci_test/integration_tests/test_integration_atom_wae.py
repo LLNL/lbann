@@ -28,7 +28,6 @@ num_decoder_layers = 3
 ################################################################################
 # Weekly training options and targets
 ################################################################################
-# Reconstruction loss
 weekly_options_and_targets = {
     'num_nodes': 2,
     'num_epochs': 10,
