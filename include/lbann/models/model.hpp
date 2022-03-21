@@ -29,18 +29,18 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
-#include "lbann/layers/layer.hpp"
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
-#include "lbann/utils/summary.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/metrics/metric.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/proto/factories.hpp"
-#include "lbann/weights/weights.hpp"
+#include "lbann/utils/summary.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
+#include "lbann/weights/weights.hpp"
 
 // Note (trb): There's what is, IMO, an STL error in GCC in which the
 // dtor for unique_ptr is checking sizeof(T), so this must be a
@@ -49,9 +49,9 @@
 // `IncompleteType*`, which is annoying.)
 #include <optimizers.pb.h>
 
-#include <vector>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 // Forward-declare protobuf class
 namespace lbann_data {
@@ -66,9 +66,9 @@ class TrainingAlgorithm;
 class callback_base;
 
 /** @brief Abstract base class for neural network models. */
-class model {
+class model
+{
 public:
-
   // ===========================================
   // Life cycle functions
   // ===========================================
@@ -81,7 +81,8 @@ public:
   ~model() = default;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   // ===========================================
   // Access functions
@@ -103,10 +104,7 @@ public:
     vector_communication_subgraph = type;
   }
 
-  int get_subgrid_communication_type()
-  {
-    return vector_communication_subgraph;
-  }
+  int get_subgrid_communication_type() { return vector_communication_subgraph; }
 
   void set_subgraph_num_parent_resources(int num_resources)
   {
@@ -118,35 +116,20 @@ public:
     return subgraph_num_resources_parent;
   }
 
-  void set_subgrid_topology(bool type)
-  {
-    enable_subgraph_topology = type;
-  }
+  void set_subgrid_topology(bool type) { enable_subgraph_topology = type; }
 
-  bool get_subgrid_topology()
-  {
-    return enable_subgraph_topology;
-  }
+  bool get_subgrid_topology() { return enable_subgraph_topology; }
 
-  void enable_subgraph_parallelism()
-  {
-    apply_subgraph_parallelism = true;
-  }
+  void enable_subgraph_parallelism() { apply_subgraph_parallelism = true; }
 
-  bool is_subgraph_parallelism_enabled()
-  {
-    return apply_subgraph_parallelism;
-  }
+  bool is_subgraph_parallelism_enabled() { return apply_subgraph_parallelism; }
 
   int get_num_resources_non_branch_layers()
   {
     return num_resources_non_branch_layers;
   }
 
-  int get_num_resources_branch_layers()
-  {
-    return num_resources_branch_layers;
-  }
+  int get_num_resources_branch_layers() { return num_resources_branch_layers; }
 
   void set_num_resources_non_branch_layers(int num)
   {
@@ -158,13 +141,12 @@ public:
     num_resources_branch_layers = num;
   }
 
-
-
   /** @brief Human-readable description. */
   description get_description() const;
 
   /** @brief Mathematical function to be minimized during training. */
-  observer_ptr<objective_function> get_objective_function() const {
+  observer_ptr<objective_function> get_objective_function() const
+  {
     return m_objective_function.get();
   }
 
@@ -191,7 +173,8 @@ public:
   std::vector<ViewingWeightsPtr> get_weights_pointers() const;
 
   /** @brief Get the list of callbacks for the model. */
-  std::vector<observer_ptr<callback_base>> get_callbacks() {
+  std::vector<observer_ptr<callback_base>> get_callbacks()
+  {
     std::vector<observer_ptr<callback_base>> callback_list;
     callback_list.reserve(m_callbacks.size());
     for (const auto& ptr : m_callbacks) {
@@ -200,31 +183,34 @@ public:
     return callback_list;
   }
 
-  std::vector<std::shared_ptr<callback_base>>& get_callbacks_with_ownership() {
+  std::vector<std::shared_ptr<callback_base>>& get_callbacks_with_ownership()
+  {
     return m_callbacks;
   }
 
   /** @brief Get the model's comm. */
-  lbann_comm *get_comm() const {
-    return m_comm;
-  }
+  lbann_comm* get_comm() const { return m_comm; }
 
   /** Check to see if there is a valid training context for the model */
-  bool has_valid_execution_context() const {
+  bool has_valid_execution_context() const
+  {
     return (m_execution_context != nullptr);
   }
 
   /** Grab the training context of the model */
-  const ExecutionContext& get_execution_context() const {
-    if(m_execution_context == nullptr) {
+  const ExecutionContext& get_execution_context() const
+  {
+    if (m_execution_context == nullptr) {
       LBANN_ERROR("execution context is not set");
     }
     return *m_execution_context;
   }
 
   /** Grab the training context of the model */
-  ExecutionContext& get_execution_context() {
-    return const_cast<ExecutionContext&>(static_cast<const model&>(*this).get_execution_context());
+  ExecutionContext& get_execution_context()
+  {
+    return const_cast<ExecutionContext&>(
+      static_cast<const model&>(*this).get_execution_context());
   }
 
   // ===========================================
@@ -254,7 +240,7 @@ public:
    *  Only weight values are placed, pointers and layer structure are in place.
    *  Weights to be copied are of the same name
    */
-  void copy_trained_weights_from(std::vector<weights *>& w);
+  void copy_trained_weights_from(std::vector<weights*>& w);
 
   /** @brief Construct an instance of the default optimizer.
    *
@@ -272,7 +258,10 @@ public:
   /** @brief Set a flag that can be used to enable / disable the
    *         background I/O activities
    */
-  void allow_background_io_activity(bool enable) { m_background_io_allowed = enable; }
+  void allow_background_io_activity(bool enable)
+  {
+    m_background_io_allowed = enable;
+  }
 
   /** @brief Are background I/O activities enabled by the input layers */
   bool background_io_activity_allowed() { return m_background_io_allowed; }
@@ -301,11 +290,10 @@ public:
 
   /** @details Must be called after model specification and before
    *  execution. */
-  void setup(
-    size_t max_mini_batch_size,
-    DataReaderMetaData& dr_metadata,
-    const std::vector<El::Grid*>& grids,
-    bool force=false);
+  void setup(size_t max_mini_batch_size,
+             DataReaderMetaData& dr_metadata,
+             const std::vector<El::Grid*>& grids,
+             bool force = false);
 
   void make_data_store_preloaded(execution_mode mode);
 
@@ -330,9 +318,11 @@ public:
   // Checkpointing
   // ===========================================
 
-  /** @brief Checkpoint model to given file descriptor, return number of bytes written */
+  /** @brief Checkpoint model to given file descriptor, return number of bytes
+   * written */
   bool save_to_checkpoint_shared(persist& p);
-  /** @brief Restore model by reading checkpoint from given file descriptor, return number of bytes read */
+  /** @brief Restore model by reading checkpoint from given file descriptor,
+   * return number of bytes read */
   bool load_from_checkpoint_shared(persist& p);
 
   bool save_to_checkpoint_distributed(persist& p);
@@ -345,7 +335,6 @@ public:
   void write_proto(lbann_data::Model* proto);
 
 protected:
-
   /** @brief Reorder layer list with a gather.
    *
    *  The new layer list is the same length as @c gather_indices and
@@ -364,8 +353,8 @@ protected:
    *  pointer is not changed.
    */
   void remap_pointers(
-    const std::unordered_map<Layer*,ViewingLayerPtr>& layer_map,
-    const std::unordered_map<weights*,ViewingWeightsPtr>& weights_map);
+    const std::unordered_map<Layer*, ViewingLayerPtr>& layer_map,
+    const std::unordered_map<weights*, ViewingWeightsPtr>& weights_map);
 
   /** @brief
    *
@@ -393,7 +382,7 @@ protected:
   */
   void setup_subgrids();
 
-  void get_subgrids_order(std::vector<int> &ranks_order, int num_branches);
+  void get_subgrids_order(std::vector<int>& ranks_order, int num_branches);
 
   int get_max_subgraph_branches();
 
@@ -401,18 +390,24 @@ protected:
 
   void setup_subgrid_layers_run_condition();
 
-  void get_parent_subgrid_tags(int layer_index );
+  void get_parent_subgrid_tags(int layer_index);
 
-  void get_subgraph_subgrids_ranks(std::vector<int> &parent_ranks, std::vector<int> &subgrid_ranks, int layer_index,int number_ranks_in_grid);
+  void get_subgraph_subgrids_ranks(std::vector<int>& parent_ranks,
+                                   std::vector<int>& subgrid_ranks,
+                                   int layer_index,
+                                   int number_ranks_in_grid);
 
-  void get_resources_for_spliting_point(std::vector<int> &parent_ranks,
-                  std::vector<int> &subgrid_ranks,
-                  int layer_index,
-                  int number_ranks_in_grid,
-                  int num_subgrids);
-  void get_resources_for_merge_layers(std::set<int>& pooled_set,int child_index, int num_subgrids);
+  void get_resources_for_spliting_point(std::vector<int>& parent_ranks,
+                                        std::vector<int>& subgrid_ranks,
+                                        int layer_index,
+                                        int number_ranks_in_grid,
+                                        int num_subgrids);
+  void get_resources_for_merge_layers(std::set<int>& pooled_set,
+                                      int child_index,
+                                      int num_subgrids);
 
-  void get_resources_for_input_layer(std::vector<int>& masterSubGrid, int num_subgrids);
+  void get_resources_for_input_layer(std::vector<int>& masterSubGrid,
+                                     int num_subgrids);
 
   void setup_subcommunicators();
 
@@ -428,10 +423,9 @@ protected:
    *
    *  Called in setup function.
    */
-  void setup_layers(
-    size_t max_mini_batch_size,
-    DataReaderMetaData& dr_metadata,
-    const std::vector<El::Grid*>& grids);
+  void setup_layers(size_t max_mini_batch_size,
+                    DataReaderMetaData& dr_metadata,
+                    const std::vector<El::Grid*>& grids);
 
   /** @brief Set up weights.
    *
@@ -456,8 +450,7 @@ public:
   /** @brief Backward propagation step. */
   void backward_prop();
   /** Evaluate any metrics in the model */
-  void evaluate_metrics(execution_mode mode,
-                                size_t current_mini_batch_size);
+  void evaluate_metrics(execution_mode mode, size_t current_mini_batch_size);
   /** @brief Clear each optimizer's gradient.
    *
    *  This must be called before training forward prop since layers
@@ -486,30 +479,32 @@ public:
   /** @brief Execute callbacks at end of model forward propagation. */
   void do_model_forward_prop_end_cbs(execution_mode mode);
   /** @brief Execute callbacks at start of layer forward propagation. */
-  void do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l);
+  void do_layer_forward_prop_begin_cbs(execution_mode mode, Layer* l);
   /** @brief Execute callbacks at end of layer forward propagation. */
-  void do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l);
+  void do_layer_forward_prop_end_cbs(execution_mode mode, Layer* l);
   /** @brief Execute callbacks at start of model backward propagation. */
   void do_model_backward_prop_begin_cbs();
   /** @brief Execute callbacks at end of model backward propagation. */
   void do_model_backward_prop_end_cbs();
   /** @brief Execute callbacks at start of layer backward propagation. */
-  void do_layer_backward_prop_begin_cbs(Layer *l);
+  void do_layer_backward_prop_begin_cbs(Layer* l);
   /** @brief Execute callbacks at end of layer backward propagation. */
-  void do_layer_backward_prop_end_cbs(Layer *l);
+  void do_layer_backward_prop_end_cbs(Layer* l);
   /** @brief Execute callbacks at start of model optimization. */
   void do_model_optimize_begin_cbs();
   /** @brief Execute callbacks at end of model optimization. */
   void do_model_optimize_end_cbs();
   /** @brief Execute callbacks at the start of weight optimization. */
-  void do_weight_optimize_begin_cbs(weights *w);
+  void do_weight_optimize_begin_cbs(weights* w);
   /** @brief Execute callbacks at the end of weight optimization. */
-  void do_weight_optimize_end_cbs(weights *w);
-
+  void do_weight_optimize_end_cbs(weights* w);
 
 #ifdef LBANN_HAS_DISTCONV
   /* @brief Return the maximum mini-batch size used by Distconv. */
-  size_t get_max_mini_batch_size_distconv() const { return m_max_mini_batch_size_distconv; }
+  size_t get_max_mini_batch_size_distconv() const
+  {
+    return m_max_mini_batch_size_distconv;
+  }
 #endif
 
 private:
@@ -520,15 +515,16 @@ private:
   // map to store all distinct grids in the model
   std::unordered_map<std::string, std::shared_ptr<El::Grid>> grids;
 
-  std::unordered_map<std::string, std::shared_ptr<El::mpi::Comm>> subCommunicatorsSubgrids;
-  // map to store all distinct mpi groups in the model (one to one mapping with grids)
-  std::unordered_map<std::string, std::unique_ptr<El::mpi::Group>> grids_mpi_groups;
-
-
+  std::unordered_map<std::string, std::shared_ptr<El::mpi::Comm>>
+    subCommunicatorsSubgrids;
+  // map to store all distinct mpi groups in the model (one to one mapping with
+  // grids)
+  std::unordered_map<std::string, std::unique_ptr<El::mpi::Group>>
+    grids_mpi_groups;
 
 private:
-
-  /** Pointer to the execution context object used for training or evaluating this model */
+  /** Pointer to the execution context object used for training or evaluating
+   * this model */
   observer_ptr<ExecutionContext> m_execution_context;
 
   /** @brief LBANN communicator. */
@@ -536,18 +532,21 @@ private:
 
   /*experimental code for Sub graph*/
   /** Enable vector communication for the subgraph parallelism */
-  //0: send-recv based subgrid communication
-  //1: collective based subgrid communication without optimization that requires specific assumptions like subgrids should have same size and creates sub-communicators everytime
-  //2: collective based subgrid communication with optimization
+  // 0: send-recv based subgrid communication
+  // 1: collective based subgrid communication without optimization that
+  // requires specific assumptions like subgrids should have same size and
+  // creates sub-communicators everytime 2: collective based subgrid
+  // communication with optimization
 
   int vector_communication_subgraph = 0;
 
-  //Number of resources for parent (common) grid
-  //0: use all resources (default)
+  // Number of resources for parent (common) grid
+  // 0: use all resources (default)
   int subgraph_num_resources_parent = 0;
 
-  //0: no topology aware design
-  //1: master grid in round robin manner of nodes (GPUs per node 4)  1 3 5 7, 2 4 6 8
+  // 0: no topology aware design
+  // 1: master grid in round robin manner of nodes (GPUs per node 4)  1 3 5 7, 2
+  // 4 6 8
   bool enable_subgraph_topology = false;
 
   // whether subgraph parallelism is enabled or not for the model
