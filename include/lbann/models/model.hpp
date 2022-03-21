@@ -334,7 +334,7 @@ public:
   /** @brief Write model to proto file */
   void write_proto(lbann_data::Model* proto);
 
-protected:
+private:
   /** @brief Reorder layer list with a gather.
    *
    *  The new layer list is the same length as @c gather_indices and
