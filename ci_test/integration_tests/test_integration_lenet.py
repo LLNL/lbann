@@ -35,7 +35,7 @@ expected_mini_batch_times = {
     'pascal':   0.0020, # Changed as of 1/18/22 0.0014, # 0.0013,
     'catalyst': 0.0073, # 0.0055,
     'lassen':   0.0022,
-    'ray':      0.0025,
+    'ray':      0.0029, # Changed as of 3/22/22 0.0025,
     'corona':   0.0117, # 0.0075,
 }
 
