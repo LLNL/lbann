@@ -72,7 +72,7 @@ nightly_options_and_targets = {
     'expected_mini_batch_times': {
         "pascal": 0.925, # Weird performance behavior 3/21/2022 - 0.1225,
         "lassen": 0.808, # Weird performance regression 3/21/2022 - 0.0440,
-        "ray" : 0.0607,
+        "ray" : 0.578,
         "catalyst" : 7.45,
     }
 }

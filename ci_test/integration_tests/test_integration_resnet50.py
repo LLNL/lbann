@@ -55,7 +55,7 @@ nightly_options_and_targets = {
     'expected_mini_batch_times': {
         'pascal': 0.43,
         'lassen': 0.15,
-        'ray':    0.15,
+        'ray':    0.23,
     }
 }
 
