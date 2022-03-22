@@ -327,9 +327,18 @@ description model::get_description() const
   return desc;
 }
 
-std::vector<metric*> model::get_metrics() const
+std::vector<metric*> model::get_metrics()
 {
   std::vector<metric*> ptrs;
+  for (const auto& ptr : m_metrics) {
+    ptrs.push_back(ptr.get());
+  }
+  return ptrs;
+}
+
+std::vector<metric const*> model::get_metrics() const
+{
+  std::vector<metric const*> ptrs;
   for (const auto& ptr : m_metrics) {
     ptrs.push_back(ptr.get());
   }
@@ -372,9 +381,9 @@ std::vector<Layer*> model::get_layers()
   return layer_list;
 }
 
-const std::vector<Layer*> model::get_layers() const
+std::vector<Layer const*> model::get_layers() const
 {
-  std::vector<Layer*> layer_list;
+  std::vector<Layer const*> layer_list;
   layer_list.reserve(m_layers.size());
   for (const auto& ptr : m_layers) {
     layer_list.push_back(ptr.get());
@@ -391,9 +400,9 @@ std::vector<weights*> model::get_weights()
   return weights_list;
 }
 
-const std::vector<weights*> model::get_weights() const
+std::vector<weights const*> model::get_weights() const
 {
-  std::vector<weights*> weights_list;
+  std::vector<weights const*> weights_list;
   for (const auto& w : m_weights) {
     weights_list.push_back(w.get());
   }
@@ -2595,18 +2604,18 @@ void model::write_proto(lbann_data::Model* proto)
   //   proto->set_mini_batch_size(m_max_mini_batch_size);
 }
 
-bool model::save_model()
+void model::save_model()
 {
   for (auto&& c : m_callbacks) {
     if (auto* cb = dynamic_cast<callback::save_model*>(c.get())) {
-      return cb->do_save_model(this);
+      cb->do_save_model(this);
+      return;
     }
   }
   if (m_comm->am_trainer_master()) {
     LBANN_WARNING(
       "save_model was called, but the callback_save_model was not loaded");
   }
-  return false;
 }
 
 #ifdef LBANN_HAS_DISTCONV

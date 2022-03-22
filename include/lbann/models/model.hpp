@@ -80,85 +80,37 @@ public:
   model& operator=(const model& other);
   ~model() = default;
 
-  /** Archive for checkpoint and restart */
-  template <class Archive>
-  void serialize(Archive& ar);
+  /** @brief Metadata Accessors */
+  ///@{
 
-  // ===========================================
-  // Access functions
-  // ===========================================
-
-  /** @brief Model instance name.
-   *  @details Each model in a trainer should have a unique, and
-   *  preferably human-readable, name.
-   */
-  std::string get_name() const noexcept { return m_name; }
   /** @brief Model instance name.
    *  @details Each model in a trainer should have a unique, and
    *  preferably human-readable, name.
    */
   void set_name(std::string name);
 
-  void set_subgrid_communication_type(int type)
-  {
-    vector_communication_subgraph = type;
-  }
-
-  int get_subgrid_communication_type() { return vector_communication_subgraph; }
-
-  void set_subgraph_num_parent_resources(int num_resources)
-  {
-    subgraph_num_resources_parent = num_resources;
-  }
-
-  int get_subgraph_num_parent_resources()
-  {
-    return subgraph_num_resources_parent;
-  }
-
-  void set_subgrid_topology(bool type) { enable_subgraph_topology = type; }
-
-  bool get_subgrid_topology() { return enable_subgraph_topology; }
-
-  void enable_subgraph_parallelism() { apply_subgraph_parallelism = true; }
-
-  bool is_subgraph_parallelism_enabled() { return apply_subgraph_parallelism; }
-
-  int get_num_resources_non_branch_layers()
-  {
-    return num_resources_non_branch_layers;
-  }
-
-  int get_num_resources_branch_layers() { return num_resources_branch_layers; }
-
-  void set_num_resources_non_branch_layers(int num)
-  {
-    num_resources_non_branch_layers = num;
-  }
-
-  void set_num_resources_branch_layers(int num)
-  {
-    num_resources_branch_layers = num;
-  }
+  /** @brief Model instance name.
+   *  @details Each model in a trainer should have a unique, and
+   *  preferably human-readable, name.
+   */
+  std::string get_name() const noexcept;
 
   /** @brief Human-readable description. */
   description get_description() const;
 
-  /** @brief Mathematical function to be minimized during training. */
-  observer_ptr<objective_function> get_objective_function() const
-  {
-    return m_objective_function.get();
-  }
+  /** @brief Get the model's comm. */
+  lbann_comm* get_comm() const noexcept;
 
-  /** @brief Return the model's metrics. */
-  std::vector<metric*> get_metrics() const;
+  ///@}
+  /** @brief Machine-learning object accessors */
+  ///@{
 
   /** @brief Size of model's list of layers. */
   El::Int get_num_layers() const noexcept;
   /** @param pos Position in model's list of layers. */
   Layer& get_layer(El::Int pos);
   /** @param pos Position in model's list of layers. */
-  const Layer& get_layer(El::Int pos) const;
+  Layer const& get_layer(El::Int pos) const;
   /** @brief Return list of layers in model.
    *  @details The list is in execution order for forward propagation.
    */
@@ -166,56 +118,24 @@ public:
   /** @brief Return list of layers in model.
    *  @details The list is in execution order for forward propagation.
    */
-  const std::vector<Layer*> get_layers() const;
-
-  const std::vector<weights*> get_weights() const;
+  std::vector<Layer const*> get_layers() const;
   std::vector<weights*> get_weights();
+  std::vector<weights const*> get_weights() const;
   std::vector<ViewingWeightsPtr> get_weights_pointers() const;
 
-  /** @brief Get the list of callbacks for the model. */
-  std::vector<observer_ptr<callback_base>> get_callbacks()
-  {
-    std::vector<observer_ptr<callback_base>> callback_list;
-    callback_list.reserve(m_callbacks.size());
-    for (const auto& ptr : m_callbacks) {
-      callback_list.push_back(ptr.get());
-    }
-    return callback_list;
-  }
+  /** @brief Mathematical function to be minimized during training. */
+  observer_ptr<objective_function const>
+  get_objective_function() const noexcept;
 
-  std::vector<std::shared_ptr<callback_base>>& get_callbacks_with_ownership()
-  {
-    return m_callbacks;
-  }
+  observer_ptr<objective_function> get_objective_function() noexcept;
 
-  /** @brief Get the model's comm. */
-  lbann_comm* get_comm() const { return m_comm; }
+  /** @brief Return the model's metrics. */
+  std::vector<metric*> get_metrics();
+  std::vector<metric const*> get_metrics() const;
 
-  /** Check to see if there is a valid training context for the model */
-  bool has_valid_execution_context() const
-  {
-    return (m_execution_context != nullptr);
-  }
-
-  /** Grab the training context of the model */
-  const ExecutionContext& get_execution_context() const
-  {
-    if (m_execution_context == nullptr) {
-      LBANN_ERROR("execution context is not set");
-    }
-    return *m_execution_context;
-  }
-
-  /** Grab the training context of the model */
-  ExecutionContext& get_execution_context()
-  {
-    return const_cast<ExecutionContext&>(
-      static_cast<const model&>(*this).get_execution_context());
-  }
-
-  // ===========================================
-  // Model specification
-  // ===========================================
+  ///@}
+  /** @name Model specification */
+  ///@{
 
   /** @brief Add layer to model. */
   void add_layer(OwningLayerPtr&& l);
@@ -229,11 +149,24 @@ public:
   /** @brief Register a new callback for the model. */
   void add_callback(std::shared_ptr<callback_base> cb);
 
-  /** @brief Register a new callback for the model. */
-  //  void add_callbacks(std::vector<std::shared_ptr<callback_base>>& cb);
-
   /** @brief Register a new metric for the model. */
   void add_metric(std::unique_ptr<metric> m);
+
+  /** @brief Insert layer in model. */
+  void insert_layer(OwningLayerPtr&& l, std::string const& parent_name);
+
+  /** @brief Remove layer from model. */
+  void remove_layer(std::string const& name);
+
+  /** @brief Replace layer in model. */
+  void replace_layer(OwningLayerPtr&& l, std::string const& name);
+
+  void swap_layers(model& other);
+  void swap_weights(model& other);
+  void swap_metrics(model& other);
+  void swap_objective_function(model& other);
+
+  ///@}
 
   /** @brief Copy trained weights from input parameter w.
    *
@@ -247,42 +180,15 @@ public:
    *  If there is no default optimizer, a null pointer is returned.
    */
   template <typename TensorDataType>
-  std::unique_ptr<optimizer> create_optimizer() const
-  {
-    if (m_default_optimizer_msg)
-      return proto::construct_optimizer<TensorDataType>(
-        *m_default_optimizer_msg);
-    return nullptr;
-  }
+  std::unique_ptr<optimizer> create_optimizer() const;
 
   /** @brief Set a flag that can be used to enable / disable the
    *         background I/O activities
    */
-  void allow_background_io_activity(bool enable)
-  {
-    m_background_io_allowed = enable;
-  }
+  void allow_background_io_activity(bool enable) noexcept;
 
   /** @brief Are background I/O activities enabled by the input layers */
-  bool background_io_activity_allowed() { return m_background_io_allowed; }
-
-  void swap_layers(model& other);
-  void swap_weights(model& other);
-  void swap_metrics(model& other);
-  void swap_objective_function(model& other);
-
-  // ===========================================
-  // Model modification
-  // ===========================================
-
-  /** @brief Insert layer in model. */
-  void insert_layer(OwningLayerPtr&& l, std::string const& name);
-
-  /** @brief Remove layer from model. */
-  void remove_layer(std::string const& name);
-
-  /** @brief Replace layer in model. */
-  void replace_layer(OwningLayerPtr&& l, std::string const& name);
+  bool background_io_activity_allowed() const noexcept;
 
   // ===========================================
   // Setup
@@ -295,28 +201,26 @@ public:
              const std::vector<El::Grid*>& grids,
              bool force = false);
 
-  void make_data_store_preloaded(execution_mode mode);
+  /** @name Summarization */
+  ///@{
 
-  void mark_data_store_explicitly_loading(execution_mode mode);
-
-  // ===========================================
-  // Summarizer
-  // ===========================================
-
-  /**
-   * Summarize statistics (e.g. timers, counters); these should be computable
-   * quickly.
+  /** @brief Summarize statistics (e.g. timers, counters).
+   *  @details These should be computable quickly.
    */
   void summarize_stats(lbann_summary& summarizer);
-  /**
-   * Summarize matrices (e.g. means); these are called less frequently and can
-   * be more expensive.
+
+  /** @brief Summarize matrices (e.g. means).
+   *  @details These are called less frequently and can be more expensive.
    */
   void summarize_matrices(lbann_summary& summarizer);
 
-  // ===========================================
-  // Checkpointing
-  // ===========================================
+  ///@}
+  /** @name Checkpointing and serialization. */
+  ///@{
+
+  /** @brief Serialization for checkpoint and restart with Cereal. */
+  template <class Archive>
+  void serialize(Archive& ar);
 
   /** @brief Checkpoint model to given file descriptor, return number of bytes
    * written */
@@ -328,13 +232,44 @@ public:
   bool save_to_checkpoint_distributed(persist& p);
   bool load_from_checkpoint_distributed(persist& p);
 
-  /** @brief Saves the model explicitly if the save_model callback is present */
-  bool save_model();
-
   /** @brief Write model to proto file */
   void write_proto(lbann_data::Model* proto);
 
+  /** @brief Saves the model explicitly if the save_model callback is present.
+   *
+   * @deprecated This function both holds on to the notion that models
+   *             support callbacks (the majority of those in the
+   *             current iteration of callbacks should be thought of
+   *             as extensions to training algorithms rather than
+   *             extensions of models) and is only used by the
+   *             "cycgan" and "aecycgan" drivers, which themselves are
+   *             not well-supported.
+   */
+  void save_model();
+
+  ///@}
+  /** @brief Subgraph Parallelism Interface */
+  ///@{
+
+  void set_subgrid_communication_type(int type) noexcept;
+  int get_subgrid_communication_type() const noexcept;
+  void set_subgraph_num_parent_resources(int num_resources) noexcept;
+  int get_subgraph_num_parent_resources() const noexcept;
+  void set_subgrid_topology(bool type) noexcept;
+  bool get_subgrid_topology() const noexcept;
+  void enable_subgraph_parallelism() noexcept;
+  bool is_subgraph_parallelism_enabled() const noexcept;
+  int get_num_resources_non_branch_layers() const noexcept;
+  int get_num_resources_branch_layers() const noexcept;
+  void set_num_resources_non_branch_layers(int num) noexcept;
+  void set_num_resources_branch_layers(int num) noexcept;
+
+  ///@}
+
 private:
+  /** @brief Setup-related implementation */
+  ///@{
+
   /** @brief Reorder layer list with a gather.
    *
    *  The new layer list is the same length as @c gather_indices and
@@ -356,19 +291,6 @@ private:
     const std::unordered_map<Layer*, ViewingLayerPtr>& layer_map,
     const std::unordered_map<weights*, ViewingWeightsPtr>& weights_map);
 
-  /** @brief
-   *
-   *  In case that a layer is frozen, also freeze layers that precede
-   *  it if that makes senses for the particular model, such as
-   *  sequential or siamese.  For othe models, users can manually
-   *  control the behaivor by indicating whether to freeze each layer
-   *  in the model description prototext.
-   *
-   *  For general DAG models, users need to manually specify each
-   *  layer to freeze in the model description prototext.
-   */
-  void freeze_layers_under_frozen_surface() {}
-
   /** @brief Set up topology of layer graph.
    *
    *  Called in setup function. All layers in connected component of
@@ -376,40 +298,6 @@ private:
    *  relationships between layers are reciprocated.
    */
   void setup_layer_topology();
-
-  /** setup sub grids for the sub graph parallelism
-
-  */
-  void setup_subgrids();
-
-  void get_subgrids_order(std::vector<int>& ranks_order, int num_branches);
-
-  int get_max_subgraph_branches();
-
-  void check_subgraph_parallelism();
-
-  void setup_subgrid_layers_run_condition();
-
-  void get_parent_subgrid_tags(int layer_index);
-
-  void get_subgraph_subgrids_ranks(std::vector<int>& parent_ranks,
-                                   std::vector<int>& subgrid_ranks,
-                                   int layer_index,
-                                   int number_ranks_in_grid);
-
-  void get_resources_for_spliting_point(std::vector<int>& parent_ranks,
-                                        std::vector<int>& subgrid_ranks,
-                                        int layer_index,
-                                        int number_ranks_in_grid,
-                                        int num_subgrids);
-  void get_resources_for_merge_layers(std::set<int>& pooled_set,
-                                      int child_index,
-                                      int num_subgrids);
-
-  void get_resources_for_input_layer(std::vector<int>& masterSubGrid,
-                                     int num_subgrids);
-
-  void setup_subcommunicators();
 
   /** @brief Set up layer execution order.
    *
@@ -435,10 +323,59 @@ private:
    */
   void setup_weights();
 
+  ///@}
+  /** @name Subgraph parallelism implementation */
+  ///@{
+
+  /** @brief Setup sub grids for the sub graph parallelism */
+  void setup_subgrids();
+
+  void get_subgrids_order(std::vector<int>& ranks_order, int num_branches);
+  int get_max_subgraph_branches();
+  void check_subgraph_parallelism();
+  void setup_subgrid_layers_run_condition();
+  void get_parent_subgrid_tags(int layer_index);
+  void get_subgraph_subgrids_ranks(std::vector<int>& parent_ranks,
+                                   std::vector<int>& subgrid_ranks,
+                                   int layer_index,
+                                   int number_ranks_in_grid);
+  void get_resources_for_spliting_point(std::vector<int>& parent_ranks,
+                                        std::vector<int>& subgrid_ranks,
+                                        int layer_index,
+                                        int number_ranks_in_grid,
+                                        int num_subgrids);
+  void get_resources_for_merge_layers(std::set<int>& pooled_set,
+                                      int child_index,
+                                      int num_subgrids);
+  void get_resources_for_input_layer(std::vector<int>& masterSubGrid,
+                                     int num_subgrids);
+  void setup_subcommunicators();
+
+  ///@}
+
 public:
   // ===========================================
   // Execution
   // ===========================================
+
+  /** @brief Get the list of callbacks for the model. */
+  std::vector<observer_ptr<callback_base>> get_callbacks();
+
+  std::vector<std::shared_ptr<callback_base>>&
+  get_callbacks_with_ownership() noexcept;
+
+  /** Check to see if there is a valid training context for the model */
+  bool has_valid_execution_context() const noexcept;
+
+  /** Grab the training context of the model */
+  ExecutionContext const& get_execution_context() const;
+
+  /** Grab the training context of the model */
+  ExecutionContext& get_execution_context();
+
+  void make_data_store_preloaded(execution_mode mode);
+
+  void mark_data_store_explicitly_loading(execution_mode mode);
 
   /** @brief Reset model pointer and execution mode. */
   void reset_mode(ExecutionContext& context, execution_mode mode);
@@ -501,10 +438,7 @@ public:
 
 #ifdef LBANN_HAS_DISTCONV
   /* @brief Return the maximum mini-batch size used by Distconv. */
-  size_t get_max_mini_batch_size_distconv() const
-  {
-    return m_max_mini_batch_size_distconv;
-  }
+  size_t get_max_mini_batch_size_distconv() const noexcept;
 #endif
 
 private:
@@ -598,6 +532,7 @@ private:
    */
   bool m_model_is_setup = false;
 
+private:
   // ===========================================
   // Functions to add utility layers
   // ===========================================
@@ -638,17 +573,154 @@ private:
   void ensure_input_layers_first();
 
 #ifdef LBANN_HAS_DISTCONV
+private:
   void setup_distconv();
   void setup_distributions();
   void print_distributions() const;
 
+private:
   /** @brief The maximum mini-batch size used by Distconv.
    *  @details This should be set before setup_distconv() is called.
    */
   size_t m_max_mini_batch_size_distconv;
 
 #endif // LBANN_HAS_DISTCONV
-};
+};     // class model
+
+inline std::string model::get_name() const noexcept { return m_name; }
+
+inline observer_ptr<objective_function> model::get_objective_function() noexcept
+{
+  return m_objective_function.get();
+}
+
+inline observer_ptr<objective_function const>
+model::get_objective_function() const noexcept
+{
+  return m_objective_function.get();
+}
+
+inline std::vector<observer_ptr<callback_base>> model::get_callbacks()
+{
+  std::vector<observer_ptr<callback_base>> callback_list;
+  callback_list.reserve(m_callbacks.size());
+  for (const auto& ptr : m_callbacks) {
+    callback_list.push_back(ptr.get());
+  }
+  return callback_list;
+}
+
+inline std::vector<std::shared_ptr<callback_base>>&
+model::get_callbacks_with_ownership() noexcept
+{
+  return m_callbacks;
+}
+
+inline lbann_comm* model::get_comm() const noexcept { return m_comm; }
+
+inline bool model::has_valid_execution_context() const noexcept
+{
+  return (m_execution_context != nullptr);
+}
+
+inline ExecutionContext const& model::get_execution_context() const
+{
+  if (m_execution_context == nullptr) {
+    LBANN_ERROR("execution context is not set");
+  }
+  return *m_execution_context;
+}
+
+inline ExecutionContext& model::get_execution_context()
+{
+  return const_cast<ExecutionContext&>(
+    static_cast<const model&>(*this).get_execution_context());
+}
+
+template <typename TensorDataType>
+inline std::unique_ptr<optimizer> model::create_optimizer() const
+{
+  if (m_default_optimizer_msg)
+    return proto::construct_optimizer<TensorDataType>(*m_default_optimizer_msg);
+  return nullptr;
+}
+
+inline void model::allow_background_io_activity(bool enable) noexcept
+{
+  m_background_io_allowed = enable;
+}
+
+inline bool model::background_io_activity_allowed() const noexcept
+{
+  return m_background_io_allowed;
+}
+
+inline void model::set_subgrid_communication_type(int type) noexcept
+{
+  vector_communication_subgraph = type;
+}
+
+inline int model::get_subgrid_communication_type() const noexcept
+{
+  return vector_communication_subgraph;
+}
+
+inline void model::set_subgraph_num_parent_resources(int num_resources) noexcept
+{
+  subgraph_num_resources_parent = num_resources;
+}
+
+inline int model::get_subgraph_num_parent_resources() const noexcept
+{
+  return subgraph_num_resources_parent;
+}
+
+inline void model::set_subgrid_topology(bool type) noexcept
+{
+  enable_subgraph_topology = type;
+}
+
+inline bool model::get_subgrid_topology() const noexcept
+{
+  return enable_subgraph_topology;
+}
+
+inline void model::enable_subgraph_parallelism() noexcept
+{
+  apply_subgraph_parallelism = true;
+}
+
+inline bool model::is_subgraph_parallelism_enabled() const noexcept
+{
+  return apply_subgraph_parallelism;
+}
+
+inline int model::get_num_resources_non_branch_layers() const noexcept
+{
+  return num_resources_non_branch_layers;
+}
+
+inline int model::get_num_resources_branch_layers() const noexcept
+{
+  return num_resources_branch_layers;
+}
+
+inline void model::set_num_resources_non_branch_layers(int num) noexcept
+{
+  num_resources_non_branch_layers = num;
+}
+
+inline void model::set_num_resources_branch_layers(int num) noexcept
+{
+  num_resources_branch_layers = num;
+}
+
+#ifdef LBANN_HAS_DISTCONV
+inline size_t model::get_max_mini_batch_size_distconv() const noexcept
+{
+  return m_max_mini_batch_size_distconv;
+}
+#endif
 
 } // namespace lbann
 
