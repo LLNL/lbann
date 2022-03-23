@@ -30,7 +30,7 @@
 #include "distconv/base.hpp"
 #include "distconv/tensor/tensor.hpp"
 #include "distconv/tensor/tensor_mpi.hpp"
-
+#include "lbann/layers/transform/distconv/distconv_nvshmem_vector_addressing.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
 namespace distconv{
@@ -49,10 +49,10 @@ namespace distconv{
                 tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output);
 
     template<typename Allocator>
-    int backward(const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &output_grad,       
-                 const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &indices,           
-                 tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &values_grad,             
-                 tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &indices_grad);
+    int backward(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,       
+                 const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices,           
+                 tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &values_grad,             
+                 tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices_grad);
 
   protected:
     Backend &m_backend;

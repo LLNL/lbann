@@ -55,6 +55,9 @@
 
 #include "lbann/layers/learning/distconv/distconv_layers.hpp"
 #include "lbann/layers/math/distconv/distconv_matmul.hpp"
+#include "lbann/layers/transform/distconv/distconv_scatter.hpp"
+#include "lbann/layers/transform/distconv/distconv_gather.hpp"
+
 
 namespace lbann {
 
@@ -137,6 +140,13 @@ using MatMul = ::distconv::MatMul<Backend, TensorDataType>;
 using Softmax = ::distconv::Softmax<Backend>;
 using CrossEntropy = ::distconv::CrossEntropy<Backend>;
 using MeanSquaredError = ::distconv::MeanSquaredError<Backend>;
+
+#ifdef LBANN_HAS_NVSHMEM
+template <typename TensorDataType>
+using Scatter = ::distconv::Scatter<Backend, TensorDataType>;
+template <typename TensorDataType>
+using Gather = ::distconv::Gather<Backend, TensorDataType>;
+#endif // LBANN_HAS_NVSHMEM
 
 using ::distconv::get_sample_dim;
 using ::distconv::get_channel_dim;

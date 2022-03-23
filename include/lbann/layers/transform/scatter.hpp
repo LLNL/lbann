@@ -47,7 +47,7 @@ class scatter_distconv_adapter
   public:
     using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
 
-    scatter_distconv_adapter(Layer &layer) : data_type_distconv_adapter(layer){}
+    scatter_distconv_adapter(Layer &layer) : data_type_distconv_adapter<TensorDataType>(layer){}
     virtual ~scatter_distconv_adapter() = default;
 
     void setup_distribution(tensor_overlap_constraints &constraints) override;
@@ -205,15 +205,15 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
        
       LBANN_ERROR(this->get_type(), " Layer \"", this->get_name(),"\" ",
         "has values input (", dims_to_str(input0_dims),") ",
-        "has indices input (", dims_to_str(inpu1_dims),"). ", 
+        "has indices input (", dims_to_str(input1_dims),"). ", 
         "Distconv requires both to be 3D. ");
     }
     // The 0-th dimension of the values and indices must match
     if (input0_dims[0] != input1_dims[0]){
       LBANN_ERROR(this->get_type(), " Layer \"", this->get_name(),"\" ",
         "has values input (", dims_to_str(input0_dims),") ",
-        "has indices input (", dims_to_str(inpu1_dims),"). ", 
-        "Distconv requires the 0-th dimension to match. ")
+        "has indices input (", dims_to_str(input1_dims),"). ", 
+        "Distconv requires the 0-th dimension to match. ");
     }
 
     // The 1st and 2D dimension of the values and output must match
@@ -223,8 +223,8 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
     if (output_dim_fail){
       LBANN_ERROR(this->get_type(), " Layer \"", this->get_name(),"\" ",
         "has values input (", dims_to_str(input0_dims),") ",
-        "has indices input (", dims_to_str(inpu1_dims),"). ", 
-        "Distconv requires the 0-th dimension to match. ")
+        "has indices input (", dims_to_str(input1_dims),"). ", 
+        "Distconv requires the 0-th dimension to match. ");
     }
 
     // Enable distconv only for scatter along the 0-th dimension
