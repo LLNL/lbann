@@ -39,6 +39,7 @@
 //#include "./data_reader_common_catch2.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/hash.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 #include "lbann/utils/threads/thread_utils.hpp"
@@ -218,8 +219,7 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
     fields[data_field] = dims;
     ++f;
     auto local_mat = std::make_unique<lbann::CPUMat>();
-    auto sample_size =
-      std::accumulate(dims.begin(), dims.end(), 1, std::multiplies<int>());
+    auto sample_size = lbann::get_linear_size(dims);
     local_mat->Resize(sample_size, num_samples);
     El::Zeros_seq(*local_mat, sample_size, num_samples);
     local_input_buffers[data_field] = local_mat.get();

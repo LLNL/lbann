@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/to_lbann_layout.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
@@ -32,7 +33,7 @@ namespace lbann {
 namespace transform {
 
 void to_lbann_layout::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
-  auto dst = CPUMat(utils::get_linearized_size(dims), 1);
+  auto dst = CPUMat(get_linear_size(dims), 1);
   apply(data, dst, dims);
   data.emplace<DataType>(std::move(dst));
 }
@@ -48,7 +49,7 @@ void to_lbann_layout::apply(utils::type_erased_matrix& data, CPUMat& out,
     LBANN_ERROR("ToLBANNLayout does not support non-contiguous destination.");
   }
   const uint8_t* __restrict__ src_buf = src.ptr();
-  const size_t out_size = utils::get_linearized_size(dims);
+  const size_t out_size = get_linear_size(dims);
   if (static_cast<size_t>(out.Height() * out.Width()) != out_size) {
     LBANN_ERROR("Transform output does not have sufficient space.");
   }

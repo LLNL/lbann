@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/vertical_flip.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
@@ -36,7 +37,7 @@ namespace transform {
 void vertical_flip::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
   if (transform::get_bool_random(m_p)) {
     cv::Mat src = utils::get_opencv_mat(data, dims);
-    auto dst_real = El::Matrix<uint8_t>(utils::get_linearized_size(dims), 1);
+    auto dst_real = El::Matrix<uint8_t>(get_linear_size(dims), 1);
     cv::Mat dst = utils::get_opencv_mat(dst_real, dims);
     cv::flip(src, dst, 0);
     data.emplace<uint8_t>(std::move(dst_real));

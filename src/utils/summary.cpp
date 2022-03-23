@@ -27,11 +27,11 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/utils/summary_impl.hpp"
 
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #ifdef LBANN_HAS_OPENCV
 #include "lbann/utils/image.hpp"
 #endif // LBANN_HAS_OPENCV
-#include "lbann/utils/vision.hpp"
 
 namespace lbann {
 
@@ -62,11 +62,11 @@ void lbann_summary::report_image(std::string const& tag,
                                  int step) {
   std::vector<size_t> dims(dims_in.begin(), dims_in.end());
 
-  if (static_cast<size_t>(image.Height()) != utils::get_linearized_size(dims))
+  if (static_cast<size_t>(image.Height()) != get_linear_size(dims))
   {
     LBANN_ERROR("Image height \"", image.Height(),
                 "\" does not match expected value \"",
-                utils::get_linearized_size(dims), "\".");
+                get_linear_size(dims), "\".");
   }
 
   auto uint8_img = get_uint8_t_image(image, dims);

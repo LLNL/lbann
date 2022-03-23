@@ -84,7 +84,6 @@ set_full_path(THIS_DIR_HEADERS
   typename.hpp
   vector_dynamic_cast.hpp
   vectorwrapbuf.hpp
-  vision.hpp
   visitor_hooks.hpp
 )
 if (LBANN_HAS_FFTW)

@@ -51,8 +51,8 @@ namespace distconv{
     const auto& input_dims = input.get_local_shape();
     const auto& output_dims = output.get_local_shape();
 
-    const auto& input_size = std::accumulate(input_dims.begin(), input_dims.begin()+1, 1, std::multiplies<size_t>());
-    const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
+    const auto& input_size = input_dims[0] * input_dims[1];
+    const auto& output_size = output_dims[0] * output_dims[1];
 
     const auto linearity_input_size = transpose_A ? output_size : input_size;
     const auto linearity_output_size = transpose_A ? input_size : output_size;
@@ -61,7 +61,7 @@ namespace distconv{
     const auto num_local_channels = output_dims[2];
     const auto local_mini_batch_size = output_dims[3];
 
-    // Check if buffer is not null possibly 
+    // Check if buffer is not null possibly
 
     if(output.get_buffer() == nullptr){
       util::MPIRootPrintStreamInfo()<< "output buffer is null";
@@ -75,17 +75,28 @@ namespace distconv{
       util::MPIRootPrintStreamInfo() <<"linearity buffer is null";
     }
 
-    El::Matrix<DataType, El::Device::GPU> in_mat(input_size, local_mini_batch_size*num_local_channels, input.get_buffer(), input_size);
-    El::Matrix<DataType, El::Device::GPU> out_mat(output_size, local_mini_batch_size*num_local_channels, output.get_buffer(), output_size);
-    El::Matrix<DataType, El::Device::GPU> weights(linearity_output_size, linearity_input_size, linearity.get_buffer(), linearity_output_size);
+    El::Matrix<DataType, El::Device::GPU> in_mat(input_size,
+                                                 local_mini_batch_size *
+                                                   num_local_channels,
+                                                 input.get_buffer(),
+                                                 input_size);
+    El::Matrix<DataType, El::Device::GPU> out_mat(output_size,
+                                                  local_mini_batch_size *
+                                                    num_local_channels,
+                                                  output.get_buffer(),
+                                                  output_size);
+    El::Matrix<DataType, El::Device::GPU> weights(linearity_output_size,
+                                                  linearity_input_size,
+                                                  linearity.get_buffer(),
+                                                  linearity_output_size);
 
-    El::Gemm(transpose_A ? El::TRANSPOSE: El::NORMAL,
-               El::NORMAL,
-               one, 
-               weights,
-               in_mat,
-               zero,
-               out_mat);
+    El::Gemm(transpose_A ? El::TRANSPOSE : El::NORMAL,
+             El::NORMAL,
+             one,
+             weights,
+             in_mat,
+             zero,
+             out_mat);
 
     return 0;
   }
@@ -94,23 +105,31 @@ namespace distconv{
   template <typename Allocator>
   int
   ChannelwiseFullyConnected<Backend, DataType>
-  ::apply_bias(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &bias, 
+  ::apply_bias(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &bias,
                  tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output)
-  { 
+  {
     if (output.get_local_size() == 0) return 0;
 
     const auto& one = El::TypeTraits<DataType>::One();
 
     const auto& output_dims = output.get_local_shape();
-    const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
+    const auto& output_size = output_dims[0] * output_dims[1];
 
     const auto num_local_channels = output_dims[2];
     const auto local_mini_batch_size = output_dims[3];
 
-    El::Matrix<DataType, El::Device::GPU>  ones(local_mini_batch_size * num_local_channels, 1);
-
-    El::Matrix<DataType, El::Device::GPU>  out_mat(output_size, local_mini_batch_size*num_local_channels, output.get_buffer(), output_size);
-    El::Matrix<DataType, El::Device::GPU>  bias_vec(output_size, 1, bias.get_buffer(), output_size);
+    El::Matrix<DataType, El::Device::GPU> ones(local_mini_batch_size *
+                                                 num_local_channels,
+                                               1);
+    El::Matrix<DataType, El::Device::GPU> out_mat(output_size,
+                                                  local_mini_batch_size *
+                                                    num_local_channels,
+                                                  output.get_buffer(),
+                                                  output_size);
+    El::Matrix<DataType, El::Device::GPU> bias_vec(output_size,
+                                                   1,
+                                                   bias.get_buffer(),
+                                                   output_size);
 
     El::Fill(ones, one);
 
@@ -140,8 +159,8 @@ namespace distconv{
     const auto& input_dims = input_grad.get_local_shape();
     const auto& output_dims = output_grad.get_local_shape();
 
-    const auto& input_size = std::accumulate(input_dims.begin(), input_dims.begin()+1, 1, std::multiplies<size_t>());
-    const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
+    const auto& input_size = input_dims[0] * input_dims[1];
+    const auto& output_size = output_dims[0] * ouput_dims[1];
 
     const auto linearity_input_size = transpose_A ? output_size : input_size;
     const auto linearity_output_size = transpose_A ? input_size : output_size;
@@ -149,9 +168,20 @@ namespace distconv{
     const auto num_local_channels = output_dims[2];
     const auto local_mini_batch_size = output_dims[3];
 
-    El::Matrix<DataType, El::Device::GPU>  output_grad_mat(output_size, local_mini_batch_size*num_local_channels, output_grad.get_buffer(),output_size);
-    El::Matrix<DataType, El::Device::GPU>  input_grad_mat(input_size, local_mini_batch_size*num_local_channels, input_grad.get_buffer(), input_size);
-    El::Matrix<DataType, El::Device::GPU>  weights(linearity_output_size, linearity_input_size, linearity.get_buffer(), linearity_output_size);
+    El::Matrix<DataType, El::Device::GPU> output_grad_mat(
+      output_size,
+      local_mini_batch_size * num_local_channels,
+      output_grad.get_buffer(),
+      output_size);
+    El::Matrix<DataType, El::Device::GPU> input_grad_mat(
+      input_size,
+      local_mini_batch_size * num_local_channels,
+      input_grad.get_buffer(),
+      input_size);
+    El::Matrix<DataType, El::Device::GPU> weights(linearity_output_size,
+                                                  linearity_input_size,
+                                                  linearity.get_buffer(),
+                                                  linearity_output_size);
 
     El::Gemm(transpose_A ? El::NORMAL : El::TRANSPOSE,
              El::NORMAL,
@@ -170,7 +200,7 @@ namespace distconv{
   backward_wrt_weight(bool transpose_A,
                       DataType dst_scale,
                       DataType gradient_scale,
-                      const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input, 
+                      const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input,
                       const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,
                       tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &linearity_grad)
   {
@@ -180,15 +210,15 @@ namespace distconv{
     if(is_empty_input ||
        is_empty_weights ||
        is_empty_grad){
-      // No op 
+      // No op
       return 0;
     }
 
     const auto& input_dims = input.get_local_shape();
     const auto& output_dims = output_grad.get_local_shape();
 
-    const auto& input_size = std::accumulate(input_dims.begin(), input_dims.begin()+1, 1, std::multiplies<size_t>());
-    const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
+    const auto& input_size = input_dims[0] * input_dims[1];
+    const auto& output_size = output_dims[0] * output_dims[1];
 
     const auto linearity_input_size = transpose_A ? output_size : input_size;
     const auto linearity_output_size = transpose_A ? input_size : output_size;
@@ -196,10 +226,22 @@ namespace distconv{
     const auto num_local_channels = output_dims[2];
     const auto local_mini_batch_size = output_dims[3];
 
-    El::Matrix<DataType, El::Device::GPU>  input_mat(input_size, local_mini_batch_size*num_local_channels, input.get_buffer(), input_size);
-    El::Matrix<DataType, El::Device::GPU>  output_grad_mat(output_size, local_mini_batch_size*num_local_channels, output_grad.get_buffer(), output_size);
-    El::Matrix<DataType, El::Device::GPU>  linearity_grad_mat(linearity_output_size, linearity_input_size, linearity_grad.get_buffer(), linearity_output_size);
-    
+    El::Matrix<DataType, El::Device::GPU> input_mat(input_size,
+                                                    local_mini_batch_size *
+                                                      num_local_channels,
+                                                    input.get_buffer(),
+                                                    input_size);
+    El::Matrix<DataType, El::Device::GPU> output_grad_mat(
+      output_size,
+      local_mini_batch_size * num_local_channels,
+      output_grad.get_buffer(),
+      output_size);
+    El::Matrix<DataType, El::Device::GPU> linearity_grad_mat(
+      linearity_output_size,
+      linearity_input_size,
+      linearity_grad.get_buffer(),
+      linearity_output_size);
+
     if(transpose_A){
       El::Gemm(El::NORMAL, El::TRANSPOSE,
                gradient_scale, input_mat, output_grad_mat,
@@ -233,16 +275,24 @@ namespace distconv{
 
     const auto& one = El::TypeTraits<DataType>::One();
     const auto& output_dims = output_grad.get_local_shape();
-    const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
+    const auto& output_size = output_dims[0] * output_dims[1];
 
     const auto num_local_channels = output_dims[2];
     const auto local_mini_batch_size = output_dims[3];
 
-    El::Matrix<DataType, El::Device::GPU>  ones(local_mini_batch_size * num_local_channels, 1);
-    
-    El::Matrix<DataType, El::Device::GPU>  out_grad_mat(output_size, local_mini_batch_size*num_local_channels, output_grad.get_buffer(), output_size);
-    El::Matrix<DataType, El::Device::GPU>  bias_grad_vec(output_size, 1, bias_grad.get_buffer(), output_size);
-    
+    El::Matrix<DataType, El::Device::GPU> ones(local_mini_batch_size *
+                                                 num_local_channels,
+                                               1);
+    El::Matrix<DataType, El::Device::GPU> out_grad_mat(output_size,
+                                                       local_mini_batch_size *
+                                                         num_local_channels,
+                                                       output_grad.get_buffer(),
+                                                       output_size);
+    El::Matrix<DataType, El::Device::GPU> bias_grad_vec(output_size,
+                                                        1,
+                                                        bias_grad.get_buffer(),
+                                                        output_size);
+
     El::Fill(ones, one);
     El::Gemv(El::NORMAL,
              gradient_scale, out_grad_mat, ones,
@@ -279,9 +329,9 @@ namespace distconv{
     T gradient_scale,                                                                   \
     T dst_scale,                                                                        \
     const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &output_gradient, \
-    tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &bias_gradient);           
+    tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &bias_gradient);
 
 ETI(float, cudnn::BackendCUDNN)
 ETI(double, cudnn::BackendCUDNN)
-#undef ETI 
+#undef ETI
 } // namespace distconv

@@ -30,9 +30,9 @@
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/serialize.hpp"
-#include "lbann/utils/vision.hpp"
 #include "lbann/transforms/repack_HWC_to_CHW_layout.hpp"
 #include "lbann/transforms/scale_and_translate.hpp"
 
@@ -1375,11 +1375,11 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
       std::vector<size_t> dims = {num_channels, static_cast<size_t>(m_image_height), static_cast<size_t>(m_image_width)};
       std::vector<size_t> ch_dims = {static_cast<size_t>(m_image_height), static_cast<size_t>(m_image_width)};
       auto tll = lbann::transform::repack_HWC_to_CHW_layout();
-
+      size_t const linear_size = get_linear_size(dims);
       for(size_t i=0u; i < num_images; ++i) {
-        CPUMat img_mat = CPUMat(utils::get_linearized_size(dims), 1, img_data[i].data(), utils::get_linearized_size(dims));
+        CPUMat img_mat = CPUMat(linear_size, 1, img_data[i].data(), linear_size);
         utils::type_erased_matrix te_img(std::move(img_mat));
-        CPUMat tgt_mat = CPUMat(utils::get_linearized_size(dims), 1);
+        CPUMat tgt_mat = CPUMat(linear_size, 1);
         tll.apply(te_img, X_v[i], dims);
         const std::vector<size_t> ch_sizes(num_channels, m_image_height * m_image_width);
         std::vector<CPUMat> X_ch_v = create_datum_views(X_v[i], ch_sizes, mb_idx);
