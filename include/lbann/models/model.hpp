@@ -29,30 +29,29 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
-#include "lbann/layers/layer.hpp"
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
-#include "lbann/utils/summary.hpp"
-#include "lbann/utils/graph.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/metrics/metric.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/proto/factories.hpp"
-#include "lbann/weights/weights.hpp"
+#include "lbann/utils/summary.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
+#include "lbann/weights/weights.hpp"
 
 // Note (trb): There's what is, IMO, an STL error in GCC in which the
 // dtor for unique_ptr is checking sizeof(T), so this must be a
 // complete type. Sigh. (The greater implication of this is that you
 // cannot have `unique_ptr<IncompleteType>` as a drop-in for
-// `IncompleteType*`, which is annoying.
+// `IncompleteType*`, which is annoying.)
 #include <optimizers.pb.h>
 
-#include <vector>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 // Forward-declare protobuf class
 namespace lbann_data {
@@ -67,9 +66,9 @@ class TrainingAlgorithm;
 class callback_base;
 
 /** @brief Abstract base class for neural network models. */
-class model {
+class model
+{
 public:
-
   // ===========================================
   // Life cycle functions
   // ===========================================
@@ -79,112 +78,39 @@ public:
         std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg = nullptr);
   model(const model& other);
   model& operator=(const model& other);
-  virtual ~model() = default;
-  virtual std::unique_ptr<model> copy_model() const = 0;
+  ~model() = default;
 
-  /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  /** @brief Metadata Accessors */
+  ///@{
 
-  // ===========================================
-  // Access functions
-  // ===========================================
-
-  /** @brief Model type's name.
-   *  @details Should be a brief, human-readable description of the
-   *  model's architecture.
-   */
-  virtual std::string get_type() const = 0;
-
-  /** @brief Model instance name.
-   *  @details Each model in a trainer should have a unique, and
-   *  preferably human-readable, name.
-   */
-  std::string get_name() const noexcept { return m_name; }
   /** @brief Model instance name.
    *  @details Each model in a trainer should have a unique, and
    *  preferably human-readable, name.
    */
   void set_name(std::string name);
 
-  void set_subgrid_communication_type(int type)
-  {
-    vector_communication_subgraph = type;
-  }
-
-  int get_subgrid_communication_type()
-  {
-    return vector_communication_subgraph;
-  }
-
-  void set_subgraph_num_parent_resources(int num_resources)
-  {
-    subgraph_num_resources_parent = num_resources;
-  }
-
-  int get_subgraph_num_parent_resources()
-  {
-    return subgraph_num_resources_parent;
-  }
-
-  void set_subgrid_topology(bool type)
-  {
-    enable_subgraph_topology = type;
-  }
-
-  bool get_subgrid_topology()
-  {
-    return enable_subgraph_topology;
-  }
-
-  void enable_subgraph_parallelism()
-  {
-    apply_subgraph_parallelism = true;
-  }
-
-  bool is_subgraph_parallelism_enabled()
-  {
-    return apply_subgraph_parallelism;
-  }
-
-  int get_num_resources_non_branch_layers()
-  {
-    return num_resources_non_branch_layers;
-  }
-
-  int get_num_resources_branch_layers()
-  {
-    return num_resources_branch_layers;
-  }
-
-  void set_num_resources_non_branch_layers(int num)
-  {
-    num_resources_non_branch_layers = num;
-  }
-
-  void set_num_resources_branch_layers(int num)
-  {
-    num_resources_branch_layers = num;
-  }
-
-
+  /** @brief Model instance name.
+   *  @details Each model in a trainer should have a unique, and
+   *  preferably human-readable, name.
+   */
+  std::string get_name() const noexcept;
 
   /** @brief Human-readable description. */
-  virtual description get_description() const;
+  description get_description() const;
 
-  /** @brief Mathematical function to be minimized during training. */
-  observer_ptr<objective_function> get_objective_function() const {
-    return m_objective_function.get();
-  }
+  /** @brief Get the model's comm. */
+  lbann_comm* get_comm() const noexcept;
 
-  /** @brief Return the model's metrics. */
-  std::vector<metric*> get_metrics() const;
+  ///@}
+  /** @brief Machine-learning object accessors */
+  ///@{
 
   /** @brief Size of model's list of layers. */
   El::Int get_num_layers() const noexcept;
   /** @param pos Position in model's list of layers. */
   Layer& get_layer(El::Int pos);
   /** @param pos Position in model's list of layers. */
-  const Layer& get_layer(El::Int pos) const;
+  Layer const& get_layer(El::Int pos) const;
   /** @brief Return list of layers in model.
    *  @details The list is in execution order for forward propagation.
    */
@@ -192,55 +118,27 @@ public:
   /** @brief Return list of layers in model.
    *  @details The list is in execution order for forward propagation.
    */
-  const std::vector<Layer*> get_layers() const;
-
-  const std::vector<weights*> get_weights() const;
+  std::vector<Layer const*> get_layers() const;
   std::vector<weights*> get_weights();
+  std::vector<weights const*> get_weights() const;
   std::vector<ViewingWeightsPtr> get_weights_pointers() const;
 
-  /** @brief Get the list of callbacks for the model. */
-  virtual std::vector<observer_ptr<callback_base>> get_callbacks() {
-    std::vector<observer_ptr<callback_base>> callback_list;
-    callback_list.reserve(m_callbacks.size());
-    for (const auto& ptr : m_callbacks) {
-      callback_list.push_back(ptr.get());
-    }
-    return callback_list;
-  }
+  /** @brief Mathematical function to be minimized during training. */
+  observer_ptr<objective_function const>
+  get_objective_function() const noexcept;
 
-  virtual std::vector<std::shared_ptr<callback_base>>& get_callbacks_with_ownership() {
-    return m_callbacks;
-  }
+  observer_ptr<objective_function> get_objective_function() noexcept;
 
-  /** @brief Get the model's comm. */
-  lbann_comm *get_comm() const {
-    return m_comm;
-  }
+  /** @brief Return the model's metrics. */
+  std::vector<metric*> get_metrics();
+  std::vector<metric const*> get_metrics() const;
 
-  /** Check to see if there is a valid training context for the model */
-  bool has_valid_execution_context() const {
-    return (m_execution_context != nullptr);
-  }
-
-  /** Grab the training context of the model */
-  const ExecutionContext& get_execution_context() const {
-    if(m_execution_context == nullptr) {
-      LBANN_ERROR("execution context is not set");
-    }
-    return *m_execution_context;
-  }
-
-  /** Grab the training context of the model */
-  ExecutionContext& get_execution_context() {
-    return const_cast<ExecutionContext&>(static_cast<const model&>(*this).get_execution_context());
-  }
-
-  // ===========================================
-  // Model specification
-  // ===========================================
+  ///@}
+  /** @name Model specification */
+  ///@{
 
   /** @brief Add layer to model. */
-  virtual void add_layer(OwningLayerPtr&& l);
+  void add_layer(OwningLayerPtr&& l);
 
   /** @brief Add weights to model. */
   void add_weights(OwningWeightsPtr&& w);
@@ -251,51 +149,11 @@ public:
   /** @brief Register a new callback for the model. */
   void add_callback(std::shared_ptr<callback_base> cb);
 
-  /** @brief Register a new callback for the model. */
-  //  void add_callbacks(std::vector<std::shared_ptr<callback_base>>& cb);
-
   /** @brief Register a new metric for the model. */
   void add_metric(std::unique_ptr<metric> m);
 
-  /** @brief Copy trained weights from input parameter w.
-   *
-   *  Only weight values are placed, pointers and layer structure are in place.
-   *  Weights to be copied are of the same name
-   */
-  void copy_trained_weights_from(std::vector<weights *>& w);
-
-  /** @brief Construct an instance of the default optimizer.
-   *
-   *  If there is no default optimizer, a null pointer is returned.
-   */
-  template <typename TensorDataType>
-  std::unique_ptr<optimizer> create_optimizer() const
-  {
-    if (m_default_optimizer_msg)
-      return proto::construct_optimizer<TensorDataType>(
-        *m_default_optimizer_msg);
-    return nullptr;
-  }
-
-  /** @brief Set a flag that can be used to enable / disable the
-   *         background I/O activities
-   */
-  void allow_background_io_activity(bool enable) { m_background_io_allowed = enable; }
-
-  /** @brief Are background I/O activities enabled by the input layers */
-  bool background_io_activity_allowed() { return m_background_io_allowed; }
-
-  void swap_layers(model& other);
-  void swap_weights(model& other);
-  void swap_metrics(model& other);
-  void swap_objective_function(model& other);
-
-  // ===========================================
-  // Model modification
-  // ===========================================
-
   /** @brief Insert layer in model. */
-  void insert_layer(OwningLayerPtr&& l, std::string const& name);
+  void insert_layer(OwningLayerPtr&& l, std::string const& parent_name);
 
   /** @brief Remove layer from model. */
   void remove_layer(std::string const& name);
@@ -303,56 +161,114 @@ public:
   /** @brief Replace layer in model. */
   void replace_layer(OwningLayerPtr&& l, std::string const& name);
 
+  void swap_layers(model& other);
+  void swap_weights(model& other);
+  void swap_metrics(model& other);
+  void swap_objective_function(model& other);
+
+  ///@}
+
+  /** @brief Copy trained weights from input parameter w.
+   *
+   *  Only weight values are placed, pointers and layer structure are in place.
+   *  Weights to be copied are of the same name
+   */
+  void copy_trained_weights_from(std::vector<weights*>& w);
+
+  /** @brief Construct an instance of the default optimizer.
+   *
+   *  If there is no default optimizer, a null pointer is returned.
+   */
+  template <typename TensorDataType>
+  std::unique_ptr<optimizer> create_optimizer() const;
+
+  /** @brief Set a flag that can be used to enable / disable the
+   *         background I/O activities
+   */
+  void allow_background_io_activity(bool enable) noexcept;
+
+  /** @brief Are background I/O activities enabled by the input layers */
+  bool background_io_activity_allowed() const noexcept;
+
   // ===========================================
   // Setup
   // ===========================================
 
   /** @details Must be called after model specification and before
    *  execution. */
-  virtual void setup(
-    size_t max_mini_batch_size,
-    DataReaderMetaData& dr_metadata,
-    const std::vector<El::Grid*>& grids,
-    bool force=false);
+  void setup(size_t max_mini_batch_size,
+             DataReaderMetaData& dr_metadata,
+             const std::vector<El::Grid*>& grids,
+             bool force = false);
 
-  virtual void make_data_store_preloaded(execution_mode mode);
+  /** @name Summarization */
+  ///@{
 
-  virtual void mark_data_store_explicitly_loading(execution_mode mode);
-
-  // ===========================================
-  // Summarizer
-  // ===========================================
-
-  /**
-   * Summarize statistics (e.g. timers, counters); these should be computable
-   * quickly.
+  /** @brief Summarize statistics (e.g. timers, counters).
+   *  @details These should be computable quickly.
    */
-  virtual void summarize_stats(lbann_summary& summarizer);
-  /**
-   * Summarize matrices (e.g. means); these are called less frequently and can
-   * be more expensive.
+  void summarize_stats(lbann_summary& summarizer);
+
+  /** @brief Summarize matrices (e.g. means).
+   *  @details These are called less frequently and can be more expensive.
    */
-  virtual void summarize_matrices(lbann_summary& summarizer);
+  void summarize_matrices(lbann_summary& summarizer);
 
-  // ===========================================
-  // Checkpointing
-  // ===========================================
+  ///@}
+  /** @name Checkpointing and serialization. */
+  ///@{
 
-  /** @brief Checkpoint model to given file descriptor, return number of bytes written */
-  virtual bool save_to_checkpoint_shared(persist& p);
-  /** @brief Restore model by reading checkpoint from given file descriptor, return number of bytes read */
-  virtual bool load_from_checkpoint_shared(persist& p);
+  /** @brief Serialization for checkpoint and restart with Cereal. */
+  template <class Archive>
+  void serialize(Archive& ar);
 
-  virtual bool save_to_checkpoint_distributed(persist& p);
-  virtual bool load_from_checkpoint_distributed(persist& p);
+  /** @brief Checkpoint model to given file descriptor, return number of bytes
+   * written */
+  bool save_to_checkpoint_shared(persist& p);
+  /** @brief Restore model by reading checkpoint from given file descriptor,
+   * return number of bytes read */
+  bool load_from_checkpoint_shared(persist& p);
 
-  /** @brief Saves the model explicitly if the save_model callback is present */
-  virtual bool save_model();
+  bool save_to_checkpoint_distributed(persist& p);
+  bool load_from_checkpoint_distributed(persist& p);
 
   /** @brief Write model to proto file */
-  virtual void write_proto(lbann_data::Model* proto);
+  void write_proto(lbann_data::Model* proto);
 
-protected:
+  /** @brief Saves the model explicitly if the save_model callback is present.
+   *
+   * @deprecated This function both holds on to the notion that models
+   *             support callbacks (the majority of those in the
+   *             current iteration of callbacks should be thought of
+   *             as extensions to training algorithms rather than
+   *             extensions of models) and is only used by the
+   *             "cycgan" and "aecycgan" drivers, which themselves are
+   *             not well-supported.
+   */
+  void save_model();
+
+  ///@}
+  /** @brief Subgraph Parallelism Interface */
+  ///@{
+
+  void set_subgrid_communication_type(int type) noexcept;
+  int get_subgrid_communication_type() const noexcept;
+  void set_subgraph_num_parent_resources(int num_resources) noexcept;
+  int get_subgraph_num_parent_resources() const noexcept;
+  void set_subgrid_topology(bool type) noexcept;
+  bool get_subgrid_topology() const noexcept;
+  void enable_subgraph_parallelism() noexcept;
+  bool is_subgraph_parallelism_enabled() const noexcept;
+  int get_num_resources_non_branch_layers() const noexcept;
+  int get_num_resources_branch_layers() const noexcept;
+  void set_num_resources_non_branch_layers(int num) noexcept;
+  void set_num_resources_branch_layers(int num) noexcept;
+
+  ///@}
+
+private:
+  /** @brief Setup-related implementation */
+  ///@{
 
   /** @brief Reorder layer list with a gather.
    *
@@ -371,22 +287,9 @@ protected:
    *  maps. If a pointer is not a key in the corresponding map, the
    *  pointer is not changed.
    */
-  virtual void remap_pointers(
-    const std::unordered_map<Layer*,ViewingLayerPtr>& layer_map,
-    const std::unordered_map<weights*,ViewingWeightsPtr>& weights_map);
-
-  /** @brief
-   *
-   *  In case that a layer is frozen, also freeze layers that precede
-   *  it if that makes senses for the particular model, such as
-   *  sequential or siamese.  For othe models, users can manually
-   *  control the behaivor by indicating whether to freeze each layer
-   *  in the model description prototext.
-   *
-   *  For general DAG models, users need to manually specify each
-   *  layer to freeze in the model description prototext.
-   */
-  virtual void freeze_layers_under_frozen_surface() {}
+  void remap_pointers(
+    const std::unordered_map<Layer*, ViewingLayerPtr>& layer_map,
+    const std::unordered_map<weights*, ViewingWeightsPtr>& weights_map);
 
   /** @brief Set up topology of layer graph.
    *
@@ -394,143 +297,168 @@ protected:
    *  layer graph are added to the model and all parent/child
    *  relationships between layers are reciprocated.
    */
-  virtual void setup_layer_topology();
-
-  /** setup sub grids for the sub graph parallelism
-
-  */
-  virtual void setup_subgrids();
-
-  virtual void get_subgrids_order(std::vector<int> &ranks_order, int num_branches);
-
-  virtual int get_max_subgraph_branches();
-
-  virtual void check_subgraph_parallelism();
-
-  virtual void setup_subgrid_layers_run_condition();
-
-  virtual void get_parent_subgrid_tags(int layer_index );
-
-  virtual void get_subgraph_subgrids_ranks(std::vector<int> &parent_ranks, std::vector<int> &subgrid_ranks, int layer_index,int number_ranks_in_grid);
-
-  virtual void get_resources_for_spliting_point(std::vector<int> &parent_ranks,
-                  std::vector<int> &subgrid_ranks,
-                  int layer_index,
-                  int number_ranks_in_grid,
-                  int num_subgrids);
-  virtual void get_resources_for_merge_layers(std::set<int>& pooled_set,int child_index, int num_subgrids);
-
-  virtual void get_resources_for_input_layer(std::vector<int>& masterSubGrid, int num_subgrids);
-
-  virtual void setup_subcommunicators();
+  void setup_layer_topology();
 
   /** @brief Set up layer execution order.
    *
-   *  Called in setup function.
+   *  Called in setup function. A topological sort applied is to the
+   *  layer list so that we can traverse the directed acyclic graph
+   *  without violating dependencies.
    */
+  void setup_layer_execution_order();
 
-  virtual void setup_layer_execution_order();
   /** @brief Set up layers.
    *
    *  Called in setup function.
    */
-  virtual void setup_layers(
-    size_t max_mini_batch_size,
-    DataReaderMetaData& dr_metadata,
-    const std::vector<El::Grid*>& grids);
+  void setup_layers(size_t max_mini_batch_size,
+                    DataReaderMetaData& dr_metadata,
+                    const std::vector<El::Grid*>& grids);
+
   /** @brief Set up weights.
    *
    *  Called in setup function. All weights being used by layers or
    *  the objective function are added to the model and all unused
    *  weights are deleted.
    */
-  virtual void setup_weights();
+  void setup_weights();
+
+  ///@}
+  /** @name Subgraph parallelism implementation */
+  ///@{
+
+  /** @brief Setup sub grids for the sub graph parallelism */
+  void setup_subgrids();
+
+  void get_subgrids_order(std::vector<int>& ranks_order, int num_branches);
+  int get_max_subgraph_branches();
+  void check_subgraph_parallelism();
+  void setup_subgrid_layers_run_condition();
+  void get_parent_subgrid_tags(int layer_index);
+  void get_subgraph_subgrids_ranks(std::vector<int>& parent_ranks,
+                                   std::vector<int>& subgrid_ranks,
+                                   int layer_index,
+                                   int number_ranks_in_grid);
+  void get_resources_for_spliting_point(std::vector<int>& parent_ranks,
+                                        std::vector<int>& subgrid_ranks,
+                                        int layer_index,
+                                        int number_ranks_in_grid,
+                                        int num_subgrids);
+  void get_resources_for_merge_layers(std::set<int>& pooled_set,
+                                      int child_index,
+                                      int num_subgrids);
+  void get_resources_for_input_layer(std::vector<int>& masterSubGrid,
+                                     int num_subgrids);
+  void setup_subcommunicators();
+
+  ///@}
 
 public:
   // ===========================================
   // Execution
   // ===========================================
 
+  /** @brief Get the list of callbacks for the model. */
+  std::vector<observer_ptr<callback_base>> get_callbacks();
+
+  std::vector<std::shared_ptr<callback_base>>&
+  get_callbacks_with_ownership() noexcept;
+
+  /** Check to see if there is a valid training context for the model */
+  bool has_valid_execution_context() const noexcept;
+
+  /** Grab the training context of the model */
+  ExecutionContext const& get_execution_context() const;
+
+  /** Grab the training context of the model */
+  ExecutionContext& get_execution_context();
+
+  void make_data_store_preloaded(execution_mode mode);
+
+  void mark_data_store_explicitly_loading(execution_mode mode);
+
   /** @brief Reset model pointer and execution mode. */
-  virtual void reset_mode(ExecutionContext& context, execution_mode mode);
+  void reset_mode(ExecutionContext& context, execution_mode mode);
   /** @brief Reset model statistics for an epoch. */
-  virtual void reset_epoch_statistics(execution_mode mode);
+  void reset_epoch_statistics(execution_mode mode);
 
   /** @brief Forward propagation step. */
-  virtual void forward_prop(execution_mode mode);
+  void forward_prop(execution_mode mode);
   /** @brief Backward propagation step. */
-  virtual void backward_prop();
+  void backward_prop();
   /** Evaluate any metrics in the model */
-  virtual void evaluate_metrics(execution_mode mode,
-                                size_t current_mini_batch_size);
+  void evaluate_metrics(execution_mode mode, size_t current_mini_batch_size);
   /** @brief Clear each optimizer's gradient.
    *
    *  This must be called before training forward prop since layers
    *  set an optimizer flag during forward prop.
    */
-  virtual void clear_gradients();
+  void clear_gradients();
   /** @brief Update weights step. */
-  virtual void update_weights();
+  void update_weights();
   /** @brief Update layers step. */
-  virtual bool update_layers();
+  bool update_layers();
   /** @brief Reconcile weight values.
    *
    *  If weight values are duplicated across multiple processes, they
    *  are set to the average across the processes.
    */
-  virtual void reconcile_weight_values();
+  void reconcile_weight_values();
 
   // ===========================================
   // Callbacks
   // ===========================================
 
   /** @brief Execute callbacks at end of setup. */
-  virtual void do_setup_end_cbs();
+  void do_setup_end_cbs();
   /** @brief Execute callbacks at start of model forward propagation. */
-  virtual void do_model_forward_prop_begin_cbs(execution_mode mode);
+  void do_model_forward_prop_begin_cbs(execution_mode mode);
   /** @brief Execute callbacks at end of model forward propagation. */
-  virtual void do_model_forward_prop_end_cbs(execution_mode mode);
+  void do_model_forward_prop_end_cbs(execution_mode mode);
   /** @brief Execute callbacks at start of layer forward propagation. */
-  virtual void do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l);
+  void do_layer_forward_prop_begin_cbs(execution_mode mode, Layer* l);
   /** @brief Execute callbacks at end of layer forward propagation. */
-  virtual void do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l);
+  void do_layer_forward_prop_end_cbs(execution_mode mode, Layer* l);
   /** @brief Execute callbacks at start of model backward propagation. */
-  virtual void do_model_backward_prop_begin_cbs();
+  void do_model_backward_prop_begin_cbs();
   /** @brief Execute callbacks at end of model backward propagation. */
-  virtual void do_model_backward_prop_end_cbs();
+  void do_model_backward_prop_end_cbs();
   /** @brief Execute callbacks at start of layer backward propagation. */
-  virtual void do_layer_backward_prop_begin_cbs(Layer *l);
+  void do_layer_backward_prop_begin_cbs(Layer* l);
   /** @brief Execute callbacks at end of layer backward propagation. */
-  virtual void do_layer_backward_prop_end_cbs(Layer *l);
+  void do_layer_backward_prop_end_cbs(Layer* l);
   /** @brief Execute callbacks at start of model optimization. */
-  virtual void do_model_optimize_begin_cbs();
+  void do_model_optimize_begin_cbs();
   /** @brief Execute callbacks at end of model optimization. */
-  virtual void do_model_optimize_end_cbs();
+  void do_model_optimize_end_cbs();
   /** @brief Execute callbacks at the start of weight optimization. */
-  virtual void do_weight_optimize_begin_cbs(weights *w);
+  void do_weight_optimize_begin_cbs(weights* w);
   /** @brief Execute callbacks at the end of weight optimization. */
-  virtual void do_weight_optimize_end_cbs(weights *w);
-
+  void do_weight_optimize_end_cbs(weights* w);
 
 #ifdef LBANN_HAS_DISTCONV
   /* @brief Return the maximum mini-batch size used by Distconv. */
-  size_t get_max_mini_batch_size_distconv() const { return m_max_mini_batch_size_distconv; }
+  size_t get_max_mini_batch_size_distconv() const noexcept;
 #endif
 
+private:
+  friend cereal::access;
+  model();
 
 private:
   // map to store all distinct grids in the model
   std::unordered_map<std::string, std::shared_ptr<El::Grid>> grids;
 
-  std::unordered_map<std::string, std::shared_ptr<El::mpi::Comm>> subCommunicatorsSubgrids;
-  // map to store all distinct mpi groups in the model (one to one mapping with grids)
-  std::unordered_map<std::string, std::unique_ptr<El::mpi::Group>> grids_mpi_groups;
-
-
+  std::unordered_map<std::string, std::shared_ptr<El::mpi::Comm>>
+    subCommunicatorsSubgrids;
+  // map to store all distinct mpi groups in the model (one to one mapping with
+  // grids)
+  std::unordered_map<std::string, std::unique_ptr<El::mpi::Group>>
+    grids_mpi_groups;
 
 private:
-
-  /** Pointer to the execution context object used for training or evaluating this model */
+  /** Pointer to the execution context object used for training or evaluating
+   * this model */
   observer_ptr<ExecutionContext> m_execution_context;
 
   /** @brief LBANN communicator. */
@@ -538,18 +466,21 @@ private:
 
   /*experimental code for Sub graph*/
   /** Enable vector communication for the subgraph parallelism */
-  //0: send-recv based subgrid communication
-  //1: collective based subgrid communication without optimization that requires specific assumptions like subgrids should have same size and creates sub-communicators everytime
-  //2: collective based subgrid communication with optimization
+  // 0: send-recv based subgrid communication
+  // 1: collective based subgrid communication without optimization that
+  // requires specific assumptions like subgrids should have same size and
+  // creates sub-communicators everytime 2: collective based subgrid
+  // communication with optimization
 
   int vector_communication_subgraph = 0;
 
-  //Number of resources for parent (common) grid
-  //0: use all resources (default)
+  // Number of resources for parent (common) grid
+  // 0: use all resources (default)
   int subgraph_num_resources_parent = 0;
 
-  //0: no topology aware design
-  //1: master grid in round robin manner of nodes (GPUs per node 4)  1 3 5 7, 2 4 6 8
+  // 0: no topology aware design
+  // 1: master grid in round robin manner of nodes (GPUs per node 4)  1 3 5 7, 2
+  // 4 6 8
   bool enable_subgraph_topology = false;
 
   // whether subgraph parallelism is enabled or not for the model
@@ -601,6 +532,7 @@ private:
    */
   bool m_model_is_setup = false;
 
+private:
   // ===========================================
   // Functions to add utility layers
   // ===========================================
@@ -638,18 +570,157 @@ private:
    */
   void add_split_layers(std::unordered_set<std::string>& layer_names);
 
+  void ensure_input_layers_first();
+
 #ifdef LBANN_HAS_DISTCONV
+private:
   void setup_distconv();
   void setup_distributions();
   void print_distributions() const;
 
+private:
   /** @brief The maximum mini-batch size used by Distconv.
    *  @details This should be set before setup_distconv() is called.
    */
   size_t m_max_mini_batch_size_distconv;
 
 #endif // LBANN_HAS_DISTCONV
-};
+};     // class model
+
+inline std::string model::get_name() const noexcept { return m_name; }
+
+inline observer_ptr<objective_function> model::get_objective_function() noexcept
+{
+  return m_objective_function.get();
+}
+
+inline observer_ptr<objective_function const>
+model::get_objective_function() const noexcept
+{
+  return m_objective_function.get();
+}
+
+inline std::vector<observer_ptr<callback_base>> model::get_callbacks()
+{
+  std::vector<observer_ptr<callback_base>> callback_list;
+  callback_list.reserve(m_callbacks.size());
+  for (const auto& ptr : m_callbacks) {
+    callback_list.push_back(ptr.get());
+  }
+  return callback_list;
+}
+
+inline std::vector<std::shared_ptr<callback_base>>&
+model::get_callbacks_with_ownership() noexcept
+{
+  return m_callbacks;
+}
+
+inline lbann_comm* model::get_comm() const noexcept { return m_comm; }
+
+inline bool model::has_valid_execution_context() const noexcept
+{
+  return (m_execution_context != nullptr);
+}
+
+inline ExecutionContext const& model::get_execution_context() const
+{
+  if (m_execution_context == nullptr) {
+    LBANN_ERROR("execution context is not set");
+  }
+  return *m_execution_context;
+}
+
+inline ExecutionContext& model::get_execution_context()
+{
+  return const_cast<ExecutionContext&>(
+    static_cast<const model&>(*this).get_execution_context());
+}
+
+template <typename TensorDataType>
+inline std::unique_ptr<optimizer> model::create_optimizer() const
+{
+  if (m_default_optimizer_msg)
+    return proto::construct_optimizer<TensorDataType>(*m_default_optimizer_msg);
+  return nullptr;
+}
+
+inline void model::allow_background_io_activity(bool enable) noexcept
+{
+  m_background_io_allowed = enable;
+}
+
+inline bool model::background_io_activity_allowed() const noexcept
+{
+  return m_background_io_allowed;
+}
+
+inline void model::set_subgrid_communication_type(int type) noexcept
+{
+  vector_communication_subgraph = type;
+}
+
+inline int model::get_subgrid_communication_type() const noexcept
+{
+  return vector_communication_subgraph;
+}
+
+inline void model::set_subgraph_num_parent_resources(int num_resources) noexcept
+{
+  subgraph_num_resources_parent = num_resources;
+}
+
+inline int model::get_subgraph_num_parent_resources() const noexcept
+{
+  return subgraph_num_resources_parent;
+}
+
+inline void model::set_subgrid_topology(bool type) noexcept
+{
+  enable_subgraph_topology = type;
+}
+
+inline bool model::get_subgrid_topology() const noexcept
+{
+  return enable_subgraph_topology;
+}
+
+inline void model::enable_subgraph_parallelism() noexcept
+{
+  apply_subgraph_parallelism = true;
+}
+
+inline bool model::is_subgraph_parallelism_enabled() const noexcept
+{
+  return apply_subgraph_parallelism;
+}
+
+inline int model::get_num_resources_non_branch_layers() const noexcept
+{
+  return num_resources_non_branch_layers;
+}
+
+inline int model::get_num_resources_branch_layers() const noexcept
+{
+  return num_resources_branch_layers;
+}
+
+inline void model::set_num_resources_non_branch_layers(int num) noexcept
+{
+  num_resources_non_branch_layers = num;
+}
+
+inline void model::set_num_resources_branch_layers(int num) noexcept
+{
+  num_resources_branch_layers = num;
+}
+
+#ifdef LBANN_HAS_DISTCONV
+inline size_t model::get_max_mini_batch_size_distconv() const noexcept
+{
+  return m_max_mini_batch_size_distconv;
+}
+#endif
 
 } // namespace lbann
 

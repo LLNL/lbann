@@ -31,7 +31,6 @@
 
 #include <lbann/base.hpp>
 #include <lbann/execution_algorithms/batch_functional_inference_algorithm.hpp>
-#include <lbann/models/directed_acyclic_graph.hpp>
 #include <lbann/models/model.hpp>
 #include <lbann/utils/lbann_library.hpp>
 

@@ -29,7 +29,6 @@
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/execution_algorithms/factory.hpp"
 #include "lbann/execution_algorithms/training_algorithm.hpp"
-#include "lbann/models/directed_acyclic_graph.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/make_abstract.hpp"

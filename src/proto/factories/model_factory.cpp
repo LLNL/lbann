@@ -29,18 +29,13 @@
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/metrics/layer_metric.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/models/directed_acyclic_graph.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
-#include "lbann/utils/memory.hpp"
 
 #include <model.pb.h>
 #include <objective_functions.pb.h>
 
-#include <iostream>
-#include <map>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -55,19 +50,14 @@ std::unique_ptr<model>
 instantiate_model(lbann_comm* comm,
                   std::unique_ptr<objective_function> obj,
                   const lbann_data::Optimizer& proto_opt,
-                  const lbann_data::Model& proto_model) {
+                  const lbann_data::Model& /*proto_model*/)
+{
 
   // Construct model
-  const auto& type = proto_model.type();
-  if (type.empty() || type == "directed_acyclic_graph_model") {
-    return std::make_unique<directed_acyclic_graph_model>(
-      comm, std::move(obj),
-      std::make_unique<lbann_data::Optimizer>(proto_opt));
-  }
-
-  // Throw error if model type is not supported
-  LBANN_ERROR("unknown model type (", type, ")");
-  return nullptr;
+  return std::make_unique<model>(
+    comm,
+    std::move(obj),
+    std::make_unique<lbann_data::Optimizer>(proto_opt));
 }
 
 /** Setup pointers from objective function to layers.

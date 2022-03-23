@@ -38,7 +38,7 @@
 #include "lbann/execution_algorithms/batch_functional_inference_algorithm.hpp"
 
 /// Models
-#include "lbann/models/directed_acyclic_graph.hpp"
+#include "lbann/models/model.hpp"
 
 /// Activation layers
 #include "lbann/layers/activations/elu.hpp"

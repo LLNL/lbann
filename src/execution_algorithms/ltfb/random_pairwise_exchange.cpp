@@ -31,7 +31,6 @@
 #include "lbann/base.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
-#include "lbann/models/directed_acyclic_graph.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/proto/helpers.hpp"
 #include "lbann/trainers/trainer.hpp"
@@ -313,13 +312,7 @@ void RandomPairwiseExchange::select_next(model& m,
                                                    : partner_trainer);
 
   if (tournament_winner == partner_trainer) {
-    // FIXME (trb 03/18/21): This is ... not great. We need to
-    // unravel the "fake" polymorphism in the model non-hierarchy
-    // soon.
-    using DAGModel = directed_acyclic_graph_model;
-    auto& local_model = dynamic_cast<DAGModel&>(m);
-    auto& partner_dag_model = dynamic_cast<DAGModel&>(*partner_model);
-    local_model = std::move(partner_dag_model);
+    m = std::move(*partner_model);
 
     // Winning model mutates according to mutation strategy
     m_mutate_algo->mutate(m, step);

@@ -27,7 +27,7 @@
 #include "lbann/comm.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader.hpp"
-#include "lbann/models/directed_acyclic_graph.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/lbann_library.hpp"
 
@@ -60,15 +60,15 @@ auto mock_dr_metadata(std::vector<int> input_dims,
 }
 
 // Loads a model from checkpoint and sets up model for inference
-std::unique_ptr<model>
-load_inference_model(lbann_comm* lc,
-                     std::string cp_dir,
-                     int mbs,
-                     std::vector<int> input_dims,
-                     std::vector<int> output_dims) {
+std::unique_ptr<model> load_inference_model(lbann_comm* lc,
+                                            std::string cp_dir,
+                                            int mbs,
+                                            std::vector<int> input_dims,
+                                            std::vector<int> output_dims)
+{
   persist p;
   p.open_restart(cp_dir.c_str());
-  auto m = std::make_unique<directed_acyclic_graph_model>(lc, nullptr, nullptr);
+  auto m = std::make_unique<model>(lc, nullptr, nullptr);
   m->load_from_checkpoint_shared(p);
   p.close_restart();
 
