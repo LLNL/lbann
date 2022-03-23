@@ -67,24 +67,7 @@ public:
 
   void load() override;
 
-  bool fetch_data_field(data_field_type data_field, CPUMat& Y, int data_id, int mb_idx) override;
-
   bool fetch_conduit_node(conduit::Node& sample, int data_id) override;
-
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override
-  {
-    return fetch_data_field(INPUT_DATA_TYPE_SAMPLES, X, data_id, mb_idx);
-  }
-
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override
-  {
-    return fetch_data_field(INPUT_DATA_TYPE_RESPONSES, Y, data_id, mb_idx);
-  }
-
-  bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override
-  {
-    return fetch_data_field(INPUT_DATA_TYPE_LABELS, Y, data_id, mb_idx);
-  }
 
   /** @brief Sets the name of the yaml experiment file */
   void set_experiment_schema_filename(std::string fn)
@@ -240,16 +223,6 @@ private:
   //=========================================================================
   // methods follow
   //=========================================================================
-
-  /** Returns a pointer to the requested data field.
-   *
-   *  The caller must cast to the appropriate type, as specified by 'dtype_out,'
-   *  which is one of: float32, float64, int32, int64, uint64, uint32
-   */
-  const void* get_data(const size_t sample_id_in,
-                       data_field_type data_field,
-                       size_t& num_elts_out,
-                       std::string& dtype_out) const;
 
   const std::vector<int> get_data_dims(std::string name = "") const;
 
