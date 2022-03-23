@@ -51,8 +51,8 @@ namespace distconv{
     const auto& input_dims = input.get_local_shape();
     const auto& output_dims = output.get_local_shape();
 
-    const auto& input_size = input_dims[0];
-    const auto& output_size = output_dims[0];
+    const auto& input_size = input_dims[0] * input_dims[1];
+    const auto& output_size = output_dims[0] * output_dims[1];
 
     const auto linearity_input_size = transpose_A ? output_size : input_size;
     const auto linearity_output_size = transpose_A ? input_size : output_size;
@@ -113,7 +113,7 @@ namespace distconv{
     const auto& one = El::TypeTraits<DataType>::One();
 
     const auto& output_dims = output.get_local_shape();
-    const auto& output_size = output_dims[0];
+    const auto& output_size = output_dims[0] * output_dims[1];
 
     const auto num_local_channels = output_dims[2];
     const auto local_mini_batch_size = output_dims[3];
@@ -159,8 +159,8 @@ namespace distconv{
     const auto& input_dims = input_grad.get_local_shape();
     const auto& output_dims = output_grad.get_local_shape();
 
-    const auto& input_size = input_dims[0];
-    const auto& output_size = output_dims[0];
+    const auto& input_size = input_dims[0] * input_dims[1];
+    const auto& output_size = output_dims[0] * ouput_dims[1];
 
     const auto linearity_input_size = transpose_A ? output_size : input_size;
     const auto linearity_output_size = transpose_A ? input_size : output_size;
@@ -217,8 +217,8 @@ namespace distconv{
     const auto& input_dims = input.get_local_shape();
     const auto& output_dims = output_grad.get_local_shape();
 
-    const auto& input_size = input_dims[0];
-    const auto& output_size = output_dims[0];
+    const auto& input_size = input_dims[0] * input_dims[1];
+    const auto& output_size = output_dims[0] * output_dims[1];
 
     const auto linearity_input_size = transpose_A ? output_size : input_size;
     const auto linearity_output_size = transpose_A ? input_size : output_size;
@@ -275,7 +275,7 @@ namespace distconv{
 
     const auto& one = El::TypeTraits<DataType>::One();
     const auto& output_dims = output_grad.get_local_shape();
-    const auto& output_size = output_dims[0];
+    const auto& output_size = output_dims[0] * output_dims[1];
 
     const auto num_local_channels = output_dims[2];
     const auto local_mini_batch_size = output_dims[3];
