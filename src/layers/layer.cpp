@@ -279,12 +279,7 @@ std::vector<int> Layer::get_input_dims(size_t input_index) const {
 }
 
 int Layer::get_input_size(size_t input_index) const {
-  const auto& dims = get_input_dims(input_index);
-  if (dims.empty()) {
-    return 0;
-  } else {
-    return get_linear_size(dims);
-  }
+  return get_linear_size(get_input_dims(input_index));
 }
 
 std::vector<int> Layer::get_output_dims(size_t output_index) const {
@@ -307,12 +302,7 @@ std::vector<int> Layer::get_output_dims(size_t output_index) const {
 }
 
 int Layer::get_output_size(size_t output_index) const {
-  const auto& dims = get_output_dims(output_index);
-  if (dims.empty()) {
-    return 0;
-  } else {
-    return get_linear_size(dims);
-  }
+  return get_linear_size(get_output_dims(output_index));
 }
 
 void Layer::set_output_dims(std::vector<int> dims, size_t output_index) {
