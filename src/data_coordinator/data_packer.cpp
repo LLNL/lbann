@@ -28,13 +28,15 @@
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
+
+namespace data_packer {
 /*
  * The data_packer class is designed to extract data fields from
  * Conduit nodes and pack them into Hydrogen matrices.
  */
 
-size_t data_packer::extract_data_fields_from_samples(std::vector<conduit::Node>& samples,
-                                                   std::map<data_field_type, CPUMat*>& input_buffers)
+size_t extract_data_fields_from_samples(std::vector<conduit::Node>& samples,
+                                        std::map<data_field_type, CPUMat*>& input_buffers)
 {
   auto mb_idx = 0;
   for (auto& [data_field, X] : input_buffers) {
@@ -58,17 +60,20 @@ size_t data_packer::extract_data_fields_from_samples(std::vector<conduit::Node>&
   return mb_idx;
 }
 
-size_t data_packer::extract_data_field_from_sample(data_field_type data_field,
-                                  conduit::Node& sample,
-                                  CPUMat& X,
-                                  //                             int data_id,
-                                  int mb_idx)
+size_t extract_data_field_from_sample(data_field_type data_field,
+                                      conduit::Node& sample,
+                                      CPUMat& X,
+                                      //                             int data_id,
+                                      int mb_idx)
 {
   // Check to make sure that each Conduit node only has a single
   // sample
   if (sample.number_of_children() != 1) {
     LBANN_ERROR("Unsupported number of samples per Conduit node");
   }
+  // LBANN_MSG("Here is the schema for node ", sample.child(0).name());
+  // sample.schema().print();
+
   std::string data_id = sample.child(0).name();
   if (!sample.is_compact()) {
     //    sample.print();
@@ -95,6 +100,12 @@ size_t data_packer::extract_data_field_from_sample(data_field_type data_field,
   conduit::Node const& data_field_node = sample[ss.str()];
 
   size_t n_elts = data_field_node.dtype().number_of_elements();
+
+  if ((El::Int)n_elts != X.Height()) {
+    LBANN_ERROR("data field ", data_field, " has ", n_elts,
+                " elements, but the matrix only has a linearized size (height) of ",
+                X.Height());
+  }
 
   // const void* r;
   std::string dtype = data_field_node.dtype().name();
@@ -144,5 +155,44 @@ size_t data_packer::extract_data_field_from_sample(data_field_type data_field,
   }
   return n_elts;
 }
+#if 0
+size_t data_packer::transform_data_fields(std::map<data_field_type, CPUMat*>& input_buffers,
+                                          std::map<data_field_type, transform::transform_pipeline>& input_transformatons)
+{
+  auto mb_idx = 0;
+  for (auto& [data_field, X] : input_buffers) {
+    if(input_transformations.find(data_field) == input_transformers.end()) {
+      continue;
+    }
+    mb_idx = 0;
+    size_t n_elts = 0;
+    for (auto& idx : X.Width()) {
+      size_t tmp_n_elts = 0;
+      tmp_n_elts = extract_data_field_from_sample(data_field, sample, *X, mb_idx);
+      if(n_elts == 0) {
+        n_elts = tmp_n_elts;
+      }
+      if(tmp_n_elts != n_elts) {
+        LBANN_ERROR("Unexpected number of elements extracted from the data field ",
+                    data_field,
+                    " found ", tmp_n_elts,
+                    " expected ", n_elts);
+      }
+      ++mb_idx;
+    }
+  }
 
+}
+  size_t transform_data_field(transform::transform_pipeline& transform_pipeline,
+                                  CPUMat& X,
+                                  //                             int data_id,
+                                  int mb_idx)
+{
+  auto X_v = El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
+  //  auto X_v = create_datum_view(X, mb_idx);
+  transform_pipeline.apply(image, X_v, dims);
+}
+#endif
+
+} // namespace data_packer
 } // namespace lbann

@@ -35,17 +35,18 @@
 
 namespace lbann {
 
-class data_packer {
- public:
+namespace data_packer {
 
-  static size_t extract_data_fields_from_samples(std::vector<conduit::Node>& samples,
-                                               std::map<data_field_type, CPUMat*>& input_buffers);
+  size_t extract_data_fields_from_samples(std::vector<conduit::Node>& samples,
+                                          std::map<data_field_type, CPUMat*>& input_buffers);
 
-  static size_t extract_data_field_from_sample(data_field_type data_field,
-                                    conduit::Node& sample,
-                                    CPUMat& X,
-                                    int mb_idx);
-};
+  /** Copies data from the requested data field into the Hydrogen matrix.
+   */
+  size_t extract_data_field_from_sample(data_field_type data_field,
+                                        conduit::Node& sample,
+                                        CPUMat& X,
+                                        int mb_idx);
+} // namespace data_packer
 
 } // namespace lbann
 
