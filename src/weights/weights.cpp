@@ -138,14 +138,18 @@ std::vector<size_t> weights::get_matrix_height_dims() const {
 std::vector<size_t> weights::get_matrix_width_dims() const {
   return m_matrix_width_dims;
 }
-size_t weights::get_matrix_height() const {
-  return get_linear_size(get_matrix_height_dims());
+size_t weights::get_matrix_height() const
+{
+  return m_matrix_height_dims.size() ? get_linear_size(m_matrix_height_dims)
+                                     : 1UL;
 }
-size_t weights::get_matrix_width() const {
-  return get_linear_size(get_matrix_width_dims());
+size_t weights::get_matrix_width() const
+{
+  return m_matrix_width_dims.size() ? get_linear_size(m_matrix_width_dims) : 1;
 }
 void weights::set_dims(std::vector<size_t> matrix_height_dims,
-                       std::vector<size_t> matrix_width_dims) {
+                       std::vector<size_t> matrix_width_dims)
+{
   m_matrix_height_dims = std::move(matrix_height_dims);
   m_matrix_width_dims = std::move(matrix_width_dims);
   do_set_dims_(matrix_height_dims, matrix_width_dims);
