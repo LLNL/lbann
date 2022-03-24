@@ -24,7 +24,6 @@
 ## permissions and limitations under the license.
 ################################################################################
 set_full_path(THIS_DIR_SEQ_CATCH2_TEST_FILES
-  helpers_test.cpp
   parse_list_test.cpp
   parse_set_test.cpp
   trim_test.cpp
