@@ -25,9 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/transform/batchwise_reduce_sum.hpp"
-#include "lbann/proto/helpers.hpp"
-
-#include <lbann/proto/proto_common.hpp>
+#include "lbann/proto/proto_common.hpp"
 #include <layers.pb.h>
 
 namespace lbann {

@@ -31,8 +31,8 @@
 #include "lbann/callbacks/summarize_images.hpp"
 #include "lbann/layers/io/input_layer.hpp"
 
-#include "lbann/proto/helpers.hpp"
 #include "lbann/utils/factory.hpp"
+#include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/summary_impl.hpp"
 
 #include <callbacks.pb.h>
@@ -49,8 +49,8 @@ namespace {
 using factory_type = lbann::generic_factory<
   image_output_strategy,
   std::string,
-  proto::generate_builder_type<image_output_strategy,
-                               google::protobuf::Message const&>,
+  generate_builder_type<image_output_strategy,
+                        google::protobuf::Message const&>,
   default_key_error_policy>;
 
 void register_default_builders(factory_type& factory) {
@@ -78,7 +78,7 @@ std::unique_ptr<image_output_strategy>
 construct_strategy(google::protobuf::Message const& proto_msg) {
   auto const& factory = get_strategy_factory();
   auto const& msg =
-    proto::helpers::get_oneof_message(proto_msg, "strategy_type");
+    protobuf::get_oneof_message(proto_msg, "strategy_type");
   return factory.create_object(msg.GetDescriptor()->name(), msg);
 }
 

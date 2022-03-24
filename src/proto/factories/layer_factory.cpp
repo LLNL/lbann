@@ -25,8 +25,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/proto/factories.hpp"
-#include "lbann/proto/helpers.hpp"
 #include "lbann/utils/factory.hpp"
+#include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/typename.hpp"
 
 #include "lbann/layers/layer.hpp"
@@ -588,10 +588,9 @@ std::unique_ptr<Layer> construct_layer(
 
   // Construct layer
   auto const& factory = get_layer_factory<TensorDataType, Layout, Device>();
-  auto const& msg =
-    helpers::get_oneof_message(proto_layer, "layer_type");
-  std::unique_ptr<Layer> l = factory.create_object(
-    msg.GetDescriptor()->name(), comm, proto_layer);
+  auto const& msg = protobuf::get_oneof_message(proto_layer, "layer_type");
+  std::unique_ptr<Layer> l =
+    factory.create_object(msg.GetDescriptor()->name(), comm, proto_layer);
   if(!l) {
     if (typeid(TensorDataType) == typeid(DataType))
       l = construct_layer_legacy<DataType, Layout, Device>(

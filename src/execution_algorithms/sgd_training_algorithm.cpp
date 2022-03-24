@@ -454,8 +454,8 @@ using TermCriteria = lbann_data::SGD::TerminationCriteria;
 using StoppingCriteriaFactory = lbann::generic_factory<
   lbann::SGDTerminationCriteria,
   int,
-  lbann::proto::generate_builder_type<lbann::SGDTerminationCriteria,
-                                      TermCriteria const&>>;
+  lbann::generate_builder_type<lbann::SGDTerminationCriteria,
+                               TermCriteria const&>>;
 
 StoppingCriteriaFactory make_factory()
 {

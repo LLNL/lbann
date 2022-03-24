@@ -39,16 +39,6 @@ namespace lbann
 namespace proto
 {
 
-template <typename OutT, typename... Args>
-struct GenerateBuilderType_struct
-{
-  using type = std::function<std::unique_ptr<OutT>(Args...)>;
-};
-
-template <typename OutT, typename... Args>
-using generate_builder_type =
-  typename GenerateBuilderType_struct<OutT, Args...>::type;
-
 namespace helpers
 {
 

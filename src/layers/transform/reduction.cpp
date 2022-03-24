@@ -26,9 +26,8 @@
 
 #define LBANN_REDUCTION_LAYER_INSTANTIATE
 #include "lbann/layers/transform/reduction.hpp"
-#include "lbann/proto/helpers.hpp"
+#include "lbann/proto/proto_common.hpp"
 
-#include <lbann/proto/proto_common.hpp>
 #include <layers.pb.h>
 
 namespace lbann {
