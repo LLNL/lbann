@@ -5,9 +5,6 @@ set_full_path(THIS_DIR_SOURCES
   distconv_gather.cpp
   distconv_scatter.cpp
 )
-set_full_path(THIS_DIR_CU_SOURCES
-  distconv_nvshmem_vector_addressing.cu
-)
 endif()
 endif()
 # Propagate the files up the tree

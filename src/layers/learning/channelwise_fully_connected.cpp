@@ -219,7 +219,6 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
   TensorDataType dst_scale, gradient_scale;
 
-
   assert0(dc::tensor::View(*m_linear,linearity.LockedBuffer()));
 
   m_linear_operator->backward_wrt_input(layer.m_transpose,

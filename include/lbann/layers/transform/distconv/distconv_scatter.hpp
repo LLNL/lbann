@@ -39,7 +39,7 @@ namespace distconv{
     using LocaleMPI = tensor::LocaleMPI;
     
     public:
-      Scatter(Backend &backend):m_backend(backend){};
+      Scatter(Backend &backend):m_backend(backend){}
     
     template<typename Allocator>
     int forward(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input,
@@ -54,6 +54,7 @@ namespace distconv{
     void setup();
   protected:
     Backend &m_backend;
+    DataType* m_workspace_buffer;
     std::unique_ptr<tensor::ScatterNVSHMEM<DataType>> m_dist_scatter;
   };  // class definition Scatter
 } // namespace distconv

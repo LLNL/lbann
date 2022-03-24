@@ -52,9 +52,9 @@ namespace distconv{
     util::MPIRootPrintStreamInfo() << output;
     #endif
 
-    const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
-    const auto& indices_size = std::accumulate(indices_dims.begin(), indices_dims.begin()+1, 1, std::multiplies<size_t>());
-    const auto& values_size = std::accumulate(values_dims.begin(), values_dims.begin()+1, 1, std::multiplies<size_t>());
+    const auto& output_size = output_dims[1];
+    const auto& indices_size = indices_dims[2];
+    const auto& values_size = values_dims[1];
 
     const auto local_mini_batch_size = output_dims[3];
 
@@ -74,17 +74,26 @@ namespace distconv{
     }
    
     // Cast the local matrices and convert to 2D EL matrices
-    El::Matrix<DataType, El::Device::GPU> out_mat(output_size, local_mini_batch_size, output.get_buffer(), output_size);
-    El::Matrix<DataType, El::Device::GPU> val_mat(values_size, local_mini_batch_size, val.get_buffer(), values_size);
-    El::Matrix<DataType, El::Device::GPU> ind_mat(ind_size, local_mini_batch_size, ind.get_buffer(), indices_size);
+    El::Matrix<DataType, El::Device::GPU> out_mat(output_size,
+                                                  local_mini_batch_size,
+                                                  output.get_buffer(),
+                                                  output_size);
+
+    El::Matrix<DataType, El::Device::GPU> val_mat(values_size,
+                                                  local_mini_batch_size,
+                                                  values.get_buffer(),
+                                                  values_size);
+
+    El::Matrix<DataType, El::Device::GPU> ind_mat(indices_size,
+                                                  local_mini_batch_size,
+                                                  indices.get_buffer(),
+                                                  indices_size);
     
     //  Attach values matrix to the NVSHMEM buffer
     // The size of the NVSHMEM_values buffer is for the local values matrix
 
-
     // Retreive value vectors onto the NVSHMEM workspace buffer 
     // The NVSHMEM workspace buffer is the size of the local output matrix 
-
 
     // Copy the local workspace buffer onto the output matrix
     return 0;
@@ -99,6 +108,13 @@ namespace distconv{
              tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &values_grad, 
              tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices_grad){
     return 0;
+  }
+
+  template<typename Backend, typename DataType>
+  void 
+  Scatter<Backend, DataType>
+  ::setup(){
+    return ;
   }
 
 // Explicit template instantiation

@@ -50,7 +50,7 @@ class scatter_distconv_adapter
     scatter_distconv_adapter(Layer &layer) : data_type_distconv_adapter<TensorDataType>(layer){}
     virtual ~scatter_distconv_adapter() = default;
 
-    void setup_distribution(tensor_overlap_constraints &constraints) override;
+    void setup_distributions(tensor_overlap_constraints &constraints) override;
     void setup_layer(size_t workspace_capacity) override;
     void fp_compute();
     void bp_compute();
@@ -121,14 +121,13 @@ protected:
   void bp_compute() override;
 #ifdef LBANN_HAS_DISTCONV
   friend class scatter_distconv_adapter<TensorDataType, Layout, Device>;
-  void setup_distconv_adapter();
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
   bool is_distconv_supported() const override;
   scatter_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() override;
   const scatter_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() const override;
 #endif // LBANN_HAS_DISTCONV
 private:
   int m_scatter_axis;
-
 };
 
 // =========================================================
@@ -299,6 +298,111 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
       }
     }
 }
+
+#ifdef LBANN_HAS_DISTCONV
+
+// =============================================================
+// DistConv-enabled Scatter member functions
+// =============================================================
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+bool
+scatter_layer<TensorDataType, Layout, Device>
+::is_distconv_supported() const {
+  return Device==El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+scatter_layer<TensorDataType,Layout,Device>
+::setup_distconv_adapter(const DataReaderMetaData& dr_metadata){
+  this->get_distconv_adapter_ptr() = std::make_unique<scatter_distconv_adapter<
+    TensorDataType, Layout, Device>>(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+const scatter_distconv_adapter <TensorDataType, Layout, Device>&
+scatter_layer<TensorDataType, Layout, Device>
+::get_distconv_adapter() const{
+  return dynamic_cast<const scatter_distconv_adapter<
+  TensorDataType, Layout, Device>&>(data_type_layer<TensorDataType>::get_distconv_adapter());
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+scatter_distconv_adapter <TensorDataType, Layout, Device>&
+scatter_layer<TensorDataType, Layout, Device>
+::get_distconv_adapter(){
+  return const_cast<scatter_distconv_adapter<TensorDataType, Layout, Device>&>(
+    static_cast<const scatter_layer<TensorDataType, Layout, Device>&>(*this).get_distconv_adapter());
+}
+
+// =============================================================
+// Scatter DistConv Adapter implementation
+// =============================================================
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+scatter_distconv_adapter<TensorDataType, Layout, Device>
+::setup_distributions(tensor_overlap_constraints &constraints){
+  data_type_distconv_adapter<TensorDataType>::setup_distributions(constraints);
+  // no overlap needed
+  for (auto &d: this->m_prev_activations_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_activations_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_prev_error_signals_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_error_signals_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+scatter_distconv_adapter<TensorDataType, Layout, Device>
+::setup_layer(size_t workspace_capacity){
+  data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
+  m_scatter_operator = make_unique<dc::Scatter<TensorDataType>>(dc::get_backend());
+  // Follow the convention from MSE 
+  // MSE also has two input vectors being partitioned 
+
+  m_scatter_operator->setup(); 
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+scatter_distconv_adapter<TensorDataType, Layout, Device>
+::fp_compute(){
+  // Compute the forward pass
+  m_scatter_operator->forward(this->get_prev_activations(0),
+                              this->get_prev_activations(1),
+                              this->get_activations()); 
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+scatter_distconv_adapter<TensorDataType, Layout, Device>
+::bp_compute(){
+  // Compute the backward pass 
+  m_scatter_operator->backward(this->get_prev_error_signals(),  
+                               this->get_prev_activations(1),
+                               this->get_error_signals(0),   // Values gradient
+                               this->get_error_signals(1));  // Indices gradient. Will be 0'ed out
+}
+
+#endif //  LBANN_HAS_DISTCONV
+
 
 #ifndef LBANN_SCATTER_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device)                                                \

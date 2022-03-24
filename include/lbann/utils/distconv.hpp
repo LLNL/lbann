@@ -55,9 +55,12 @@
 
 #include "lbann/layers/learning/distconv/distconv_layers.hpp"
 #include "lbann/layers/math/distconv/distconv_matmul.hpp"
+
+#ifdef LBANN_HAS_NVSHMEM
 #include "lbann/layers/transform/distconv/distconv_scatter.hpp"
 #include "lbann/layers/transform/distconv/distconv_gather.hpp"
-
+#include "lbann/layers/transform/distconv/distconv_nvshmem_vector_addressing.hpp"
+#endif // LBANN_HAS_NVSHMEM
 
 namespace lbann {
 

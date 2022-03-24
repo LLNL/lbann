@@ -24,13 +24,10 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_LEARNING_DISTCONV_GATHER_NVSHMEM
-#define LBANN_LAYERS_LEARNING_DISTCONV_GATHER_NVSHMEM
-#include "lbann/base.hpp"
-#include "lbann/layers/layer.hpp"
+#ifndef LBANN_LAYERS_TRANSFORM_DISTCONV_NVSHMEM_VECTOR_ADDRESSING
+#define LBANN_LAYERS_TRANSFORM_DISTCONV_NVSHMEM_VECTOR_ADDRESSING
 
-#ifdef DISTCONV_HAS_NVSHMEM
-
+#ifdef LBANN_HAS_NVSHMEM
 #include "distconv/tensor/allreduce.hpp"
 #include "distconv/tensor/memory_cuda.hpp"
 #include "distconv/util/util_mpi.hpp"
@@ -40,16 +37,16 @@
 namespace distconv{
   namespace tensor{
     template <typename DataType>
-    struct ScatterNVHSMEMDevice{
+    struct NVHSMEMDevice{
       int m_pid;
       int m_num_processes;
       DataType *m_buf;
-      util::nvshmem::SyncArrayDevice m_sync;
-      ScatterNVHSMEMDevice(int pid,
-                           int num_processes, 
-                           DataType* buf, 
-                           const util::nvshmem::SyncArrayDevice &sync):
-        m_pid(pid), m_num_processes(num_processes), m_buf(buf) m_sync(sync){}
+      util::nvshmem::SyncArrayDevice m_sync_device;
+      NVHSMEMDevice(int pid,
+                    int num_processes, 
+                    DataType* buf, 
+                    const util::nvshmem::SyncArrayDevice &sync_device):
+        m_pid(pid), m_num_processes(num_processes), m_buf(buf), m_sync_device(sync_device){}
     };
 
     template <typename DataType>
@@ -66,11 +63,11 @@ namespace distconv{
                                            m_pid(nvshmem_my_pe()),  // NVSHMEM function 
                                            m_np(nvshmem_n_pes()){}  // NVSHMEM function
       template <typename T>
-      ScatterNVHSMEMDevice<T> get_for_device(){
-        return ScatterNVHSMEMDevice<T>(m_pid,
-                                       m_np,
-                                       static_cast<T*>(m_buf.get()),
-                                       m_sync.get_for_device());
+      NVHSMEMDevice<T> get_for_device(){
+        return NVHSMEMDevice<T>(m_pid,
+                                m_np,
+                                static_cast<T*>(m_buf.get()),
+                                m_sync.get_for_device());
       }
 
       void buffer_init(size_t count){
@@ -84,19 +81,6 @@ namespace distconv{
         m_buf.allocate(count * sizeof(DataType));
         m_buf.memset(0);
       }
-    };
-    
-    template <typename DataType>
-    struct GatherNVHSMEMDevice{
-      int m_pid;
-      int m_num_processes;
-      DataType *m_buf;
-      util::nvshmem::SyncArrayDevice m_sync;
-      GatherNVHSMEMDevice(int pid,
-                           int num_processes, 
-                           DataType* buf, 
-                           const util::nvshmem::SyncArrayDevice &sync):
-        m_pid(pid), m_num_processes(num_processes), m_buf(buf) m_sync(sync){}
     };
 
     template <typename DataType>
@@ -114,11 +98,11 @@ namespace distconv{
                                            m_pid(nvshmem_my_pe()),
                                            m_np(nvshmem_n_pes()){}  // NVSHMEM function}
       template <typename T>
-      GatherNVHSMEMDevice<T> get_for_device(){
-        return GatherNVHSMEMDevice<T>(m_pid,
-                                       m_np,
-                                       static_cast<T*>(m_buf.get()),
-                                       m_sync.get_for_device());
+      NVHSMEMDevice<T> get_for_device(){
+        return NVHSMEMDevice<T>(m_pid,
+                                m_np,
+                                static_cast<T*>(m_buf.get()),
+                                m_sync.get_for_device());
       }
 
       void buffer_init(size_t count){
@@ -135,5 +119,5 @@ namespace distconv{
     };
   } // namespace distconv::tensor
 } // namespace distconv
-#endif // DISTCONV_HAS_NVSHMEM
-#endif //LBANN_LAYERS_LEARNING_DISTCONV_GATHER_NVSHMEM
+#endif // LBANN_HAS_NVSHMEM
+#endif //LBANN_LAYERS_TRANSFORM_DISTCONV_NVSHMEM_VECTOR_ADDRESSING
