@@ -141,14 +141,6 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(data_buffer
   /// Check to make sure that the local matrix has space for data
   data_buffer<IODataType>& buf = get_data_buffer(buffer_map, mode);
 
-  /// Make sure that every rank participates in the data store prior
-  /// to seeing if the local rank's position is valid.  Note that
-  /// every rank will hold data that may be used in the last mini-batch
-  if (dr->data_store_active()) {
-    dr->get_data_store().exchange_mini_batch_data(dr->get_position() - dr->get_base_offset() - dr->get_model_offset(),
-                                                  dr->get_loaded_mini_batch_size());
-  }
-
   buf.m_num_samples_fetched = 0;
   /// BVE FIXME change the guard
   if (this->m_comm->get_rank_in_trainer() < num_parallel_readers &&
