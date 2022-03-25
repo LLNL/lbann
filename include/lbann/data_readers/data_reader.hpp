@@ -342,7 +342,6 @@ class generic_data_reader {
   void start_data_store_mini_batch_exchange();
   void finish_data_store_mini_batch_exchange();
 
-
   /**
    * During the network's update phase, the data reader will
    * advanced the current position pointer.  If the pointer wraps

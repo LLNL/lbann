@@ -208,9 +208,9 @@ int lbann::generic_data_reader::fetch(
 void lbann::generic_data_reader::start_data_store_mini_batch_exchange() {
   int loaded_batch_size = get_loaded_mini_batch_size();
 
-  /// Make sure that every rank participates in the data store prior
-  /// to seeing if the local rank's position is valid.  Note that
-  /// every rank will hold data that may be used in the last mini-batch
+  // Make sure that every rank participates in the data store prior
+  // to seeing if the local rank's position is valid.  Note that
+  // every rank will hold data that may be used in the last mini-batch
   if (data_store_active()) {
     m_data_store->start_exchange_mini_batch_data(m_current_pos-m_base_offset-m_model_offset, loaded_batch_size);
   }
@@ -218,9 +218,9 @@ void lbann::generic_data_reader::start_data_store_mini_batch_exchange() {
 }
 
 void lbann::generic_data_reader::finish_data_store_mini_batch_exchange() {
-  /// Make sure that every rank participates in the data store prior
-  /// to seeing if the local rank's position is valid.  Note that
-  /// every rank will hold data that may be used in the last mini-batch
+  // Make sure that every rank participates in the data store prior
+  // to seeing if the local rank's position is valid.  Note that
+  // every rank will hold data that may be used in the last mini-batch
   if (data_store_active()) {
     m_data_store->finish_exchange_mini_batch_data();
   }
