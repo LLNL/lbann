@@ -141,14 +141,6 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(data_buffer
   /// Check to make sure that the local matrix has space for data
   data_buffer<IODataType>& buf = get_data_buffer(buffer_map, mode);
 
-  /// Make sure that every rank participates in the data store prior
-  /// to seeing if the local rank's position is valid.  Note that
-  /// every rank will hold data that may be used in the last mini-batch
-  if (dr->data_store_active()) {
-    dr->get_data_store().exchange_mini_batch_data(dr->get_position() - dr->get_base_offset() - dr->get_model_offset(),
-                                                  dr->get_loaded_mini_batch_size());
-  }
-
   buf.m_num_samples_fetched = 0;
   /// BVE FIXME change the guard
   if (this->m_comm->get_rank_in_trainer() < num_parallel_readers &&
@@ -225,6 +217,11 @@ void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode) 
   // If there is no valid data and there is not already a background
   // thread to fetch the data, queue up the background thread
   if(active_buffer.num_samples_ready() == 0 && !active_buffer.is_data_fetched_in_background()) {
+    // Start data store exchange if necessary (this should be move
+    // earlier as a future optimization)
+    get_data_reader(mode)->start_data_store_mini_batch_exchange();
+    // Finish data store exchange before accessing samples
+    get_data_reader(mode)->finish_data_store_mini_batch_exchange();
     std::future<void> background_fetch_done = get_io_thread_pool().submit_job(
       std::bind(&buffered_data_coordinator::fetch_data_in_background, this, this->get_active_buffer_idx(mode), mode));
     active_buffer.set_data_fetch_future(std::move(background_fetch_done));
@@ -264,6 +261,11 @@ bool buffered_data_coordinator<TensorDataType>::epoch_complete(execution_mode mo
   // in epoch.  In a future PR this state should be moved to the data coordinator
   if(!m_data_set_processed && m_trainer->background_io_activity_allowed()) {
     int next_active_buffer = this->get_active_buffer_idx(mode) + 1;
+    // Start data store exchange if necessary (this should be move
+    // earlier as a future optimization)
+    get_data_reader(mode)->start_data_store_mini_batch_exchange();
+    // Finish data store exchange before accessing samples
+    get_data_reader(mode)->finish_data_store_mini_batch_exchange();
     std::future<void> background_fetch_done = get_io_thread_pool().submit_job(
       std::bind(&buffered_data_coordinator::fetch_data_in_background, this, next_active_buffer, mode));
     data_buffer_map_t& next_io_buffer_map = m_data_buffers[next_active_buffer % m_data_buffers.size()];
