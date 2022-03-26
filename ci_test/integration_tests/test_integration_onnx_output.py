@@ -24,7 +24,7 @@ import onnxruntime
 # Training options
 num_epochs = 5
 mini_batch_size = 64
-num_nodes = 1
+num_nodes = 2
 
 
 # ==============================================
@@ -38,6 +38,10 @@ def setup_experiment(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
+    # Skip test if ONNX option not enabled
+    if not lbann.has_feature("ONNX"):
+        pytest.skip("This test requires ONNX.")
+
     trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model(lbann)
 
