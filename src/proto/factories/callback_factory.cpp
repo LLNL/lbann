@@ -51,7 +51,6 @@
 #include "lbann/callbacks/hang.hpp"
 #include "lbann/callbacks/imcomm.hpp"
 #include "lbann/callbacks/learning_rate.hpp"
-#include "lbann/callbacks/ltfb.hpp"
 #include "lbann/callbacks/mixup.hpp"
 #include "lbann/callbacks/monitor_io.hpp"
 #include "lbann/callbacks/perturb_adam.hpp"
