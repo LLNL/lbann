@@ -135,20 +135,21 @@ trainer& construct_trainer(lbann_comm* comm,
                            lbann_data::Trainer* pb_trainer,
                            lbann_data::LbannPB& pb)
 {
-  if (pb_trainer->num_parallel_readers() > comm->get_procs_per_trainer()) {
-    pb_trainer->set_num_parallel_readers(comm->get_procs_per_trainer());
+  int const procs_per_trainer = comm->get_procs_per_trainer();
+  if (pb_trainer->num_parallel_readers() > procs_per_trainer) {
+    pb_trainer->set_num_parallel_readers(procs_per_trainer);
   }
-  auto& arg_parser = global_argument_parser();
+  auto const& arg_parser = global_argument_parser();
 
   // Adjust the number of parallel readers; this may be adjusted
   // after calling split_trainers()
   // set_num_parallel_readers(*comm, pb);
 
   // Check to see if the model wants to reduce the I/O parallelism
-  bool serialized_io = false;
-  if(pb_trainer->serialize_io()) {
-    std::cout << "Trainer " << pb_trainer->name() << " serialized the I/O threads" << std::endl;
-    serialized_io = true;
+  bool const serialized_io = pb_trainer->serialize_io();
+  if (serialized_io) {
+    std::cout << "Trainer " << pb_trainer->name()
+              << " serialized the I/O threads" << std::endl;
   }
 
   // Initalize a per-trainer I/O thread pool
@@ -156,8 +157,8 @@ trainer& construct_trainer(lbann_comm* comm,
     construct_io_thread_pool(comm, serialized_io);
 
   // Setup I/O threads
-  auto io_threads_per_process = io_thread_pool->get_num_threads();
-  auto io_threads_offset = io_thread_pool->get_threads_offset();
+  auto const io_threads_per_process = io_thread_pool->get_num_threads();
+  auto const io_threads_offset = io_thread_pool->get_threads_offset();
 
   // Set algorithmic blocksize in Hydrogen
   if (pb_trainer->hydrogen_block_size() > 0) {
@@ -186,11 +187,13 @@ trainer& construct_trainer(lbann_comm* comm,
   if (arg_parser.get<std::string>(LBANN_OPTION_CKPT_DIR) != "") {
     for (auto&& c : global_trainer_->get_callbacks()) {
       {
-        auto* cb = dynamic_cast<callback::checkpoint*>(c);
-        if(cb != nullptr) {
-          cb->set_checkpoint_dir(arg_parser.get<std::string>(LBANN_OPTION_CKPT_DIR));
-          if(comm->am_trainer_master()) {
-            std::cout << "Setting the checkpoint directory to " << cb->get_checkpoint_dir() << std::endl;
+        auto* const cb = dynamic_cast<callback::checkpoint*>(c);
+        if (cb != nullptr) {
+          cb->set_checkpoint_dir(
+            arg_parser.get<std::string>(LBANN_OPTION_CKPT_DIR));
+          if (comm->am_trainer_master()) {
+            std::cout << "Setting the checkpoint directory to "
+                      << cb->get_checkpoint_dir() << std::endl;
           }
         }
       }
@@ -199,11 +202,13 @@ trainer& construct_trainer(lbann_comm* comm,
   if (arg_parser.get<std::string>(LBANN_OPTION_RESTART_DIR) != "") {
     for (auto&& c : global_trainer_->get_callbacks()) {
       {
-        auto* cb = dynamic_cast<callback::checkpoint*>(c);
-        if(cb != nullptr) {
-          cb->set_restart_dir(arg_parser.get<std::string>(LBANN_OPTION_RESTART_DIR));
-          if(comm->am_trainer_master()) {
-            std::cout << "Setting the restart directory to " << cb->get_restart_dir() << std::endl;
+        auto* const cb = dynamic_cast<callback::checkpoint*>(c);
+        if (cb != nullptr) {
+          cb->set_restart_dir(
+            arg_parser.get<std::string>(LBANN_OPTION_RESTART_DIR));
+          if (comm->am_trainer_master()) {
+            std::cout << "Setting the restart directory to "
+                      << cb->get_restart_dir() << std::endl;
           }
         }
       }
@@ -211,12 +216,9 @@ trainer& construct_trainer(lbann_comm* comm,
   }
 
   // Root of the random seed tree
-  int root_random_seed = lbann_default_random_seed;
-
-  // Change random seed if requested
-  if (pb_trainer->random_seed() > 0) {
-    root_random_seed = pb_trainer->random_seed();
-  }
+  int const root_random_seed =
+    (pb_trainer->random_seed() ? pb_trainer->random_seed()
+                               : lbann_default_random_seed);
 
   // Random seed used for the general RNGs
   int random_seed = root_random_seed;
@@ -230,16 +232,16 @@ trainer& construct_trainer(lbann_comm* comm,
     data_seq_random_seed = random_seed;
   }
 #else
-  if(comm->am_world_master()) {
-    std::cout <<
-      "--------------------------------------------------------------------------------------------------------------------\n"
-      "ALERT: executing with LBANN_DETERMINISTIC flag to minimize reduce numerical variance -- performance will be degraded\n"
-      "--------------------------------------------------------------------------------------------------------------------\n";
+  if (comm->am_world_master()) {
+    std::cout << std::string(116, '-') << '\n'
+              << "ALERT: executing with LBANN_DETERMINISTIC flag to minimize "
+                 "reduce numerical variance -- performance will be degraded\n"
+              << std::string(116, '-') << std::endl;
   }
   if (!pb_trainer->random_init_trainers_identically()) {
-    if(comm->am_trainer_master()) {
-      std::cout << "WARNING: forcing 'random_init_trainers_identically' " <<
-        "due to sequential consistency" << std::endl;
+    if (comm->am_trainer_master()) {
+      std::cout << "WARNING: forcing 'random_init_trainers_identically' "
+                << "due to sequential consistency" << std::endl;
     }
   }
 #endif
@@ -248,22 +250,43 @@ trainer& construct_trainer(lbann_comm* comm,
   init_random(random_seed, io_threads_per_process);
   init_data_seq_random(data_seq_random_seed);
   init_ltfb_random(root_random_seed);
-  global_trainer_->set_random_seeds(root_random_seed, random_seed, data_seq_random_seed);
+  global_trainer_->set_random_seeds(root_random_seed,
+                                    random_seed,
+                                    data_seq_random_seed);
 
-  // Collect everyone's random seeds
-  std::vector<int> root_random_seeds(comm->get_procs_in_world());
-  comm->world_all_gather(root_random_seed, root_random_seeds);
-  std::vector<int> random_seeds(comm->get_procs_in_world());
-  comm->world_all_gather(random_seed, random_seeds);
-  std::vector<int> data_seq_random_seeds(comm->get_procs_in_world());
-  comm->world_all_gather(data_seq_random_seed, data_seq_random_seeds);
+  bool const allow_global_statistics =
+    arg_parser.get<bool>(LBANN_OPTION_ALLOW_MULTITRAINER_GLOBAL_STATISTICS);
+  bool const multitrainer_verbose =
+    arg_parser.get<bool>(LBANN_OPTION_MULTITRAINER_VERBOSE);
+  std::vector<int> root_random_seeds;
+  std::vector<int> random_seeds;
+  std::vector<int> data_seq_random_seeds;
+  if (allow_global_statistics && multitrainer_verbose) {
+    // Collect everyone's random seeds
+    root_random_seeds.resize(comm->get_procs_in_world());
+    random_seeds.resize(comm->get_procs_in_world());
+    data_seq_random_seeds.resize(comm->get_procs_in_world());
+    comm->world_all_gather(root_random_seed, root_random_seeds);
+    comm->world_all_gather(random_seed, random_seeds);
+    comm->world_all_gather(data_seq_random_seed, data_seq_random_seeds);
+  }
+  else {
+    // Collect random seeds from everyone in the trainer
+    root_random_seeds.resize(procs_per_trainer);
+    random_seeds.resize(procs_per_trainer);
+    data_seq_random_seeds.resize(procs_per_trainer);
+    comm->trainer_all_gather(root_random_seed, root_random_seeds);
+    comm->trainer_all_gather(random_seed, random_seeds);
+    comm->trainer_all_gather(data_seq_random_seed, data_seq_random_seeds);
+  }
 
-  // Update the sample lists to accomodate multi-trainer / multi-model specification
+  // Update the sample lists to accomodate multi-trainer / multi-model
+  // specification
   customize_data_readers_sample_list(*comm, pb);
 
   // Initialize data readers
   //@todo: code not in place for correctly handling image preprocessing
-  std::map<execution_mode, generic_data_reader *> data_readers;
+  std::map<execution_mode, generic_data_reader*> data_readers;
   init_data_readers(comm, pb, data_readers);
 
   global_trainer_->setup(std::move(io_thread_pool), data_readers);
@@ -273,54 +296,54 @@ trainer& construct_trainer(lbann_comm* comm,
   }
 
   // Create sub-grids in block order
-  const int num_subgrids_block
-    = arg_parser.get<int>(LBANN_OPTION_NUM_SUBGRIDS_BLOCK_ORDER);
+  const int num_subgrids_block =
+    arg_parser.get<int>(LBANN_OPTION_NUM_SUBGRIDS_BLOCK_ORDER);
   if (num_subgrids_block > 0) {
 
     // Check sub-grid size
     const int trainer_size = comm->get_procs_per_trainer();
     const int subgrid_size = trainer_size / num_subgrids_block;
     if (trainer_size != subgrid_size * num_subgrids_block) {
-      LBANN_ERROR(
-        "attempted to divide a trainer grid with ",trainer_size," processes ",
-        "into ",num_subgrids_block," equally-sized sub-grids");
+      LBANN_ERROR("attempted to divide a trainer grid with ",
+                  trainer_size,
+                  " processes ",
+                  "into ",
+                  num_subgrids_block,
+                  " equally-sized sub-grids");
     }
 
     // Construct sub-grids
     std::vector<int> trainer_ranks(subgrid_size);
-    for (int root_rank=0; root_rank<trainer_size; root_rank+=subgrid_size) {
+    for (int root_rank = 0; root_rank < trainer_size;
+         root_rank += subgrid_size) {
       std::iota(trainer_ranks.begin(), trainer_ranks.end(), root_rank);
       El::mpi::Comm trainer_comm;
       El::mpi::Group trainer_group, subgrid_group;
       El::mpi::Dup(comm->get_trainer_comm(), trainer_comm);
       El::mpi::CommGroup(trainer_comm, trainer_group);
-      El::mpi::Incl(
-        trainer_group,
-        trainer_ranks.size(),
-        trainer_ranks.data(),
-        subgrid_group);
-      global_trainer_->add_grid(
-        make_unique<El::Grid>(
-          std::move(trainer_comm),
-          subgrid_group,
-          subgrid_size,
-          El::COLUMN_MAJOR));
+      El::mpi::Incl(trainer_group,
+                    trainer_ranks.size(),
+                    trainer_ranks.data(),
+                    subgrid_group);
+      global_trainer_->add_grid(make_unique<El::Grid>(std::move(trainer_comm),
+                                                      subgrid_group,
+                                                      subgrid_size,
+                                                      El::COLUMN_MAJOR));
       El::mpi::Free(trainer_group);
     }
-
   }
 
   // Report useful information
   if (comm->am_world_master()) {
-    print_lbann_configuration(comm,
-                              io_threads_per_process,
-                              io_threads_offset);
-    std::cout << "\n"
-              << global_trainer_->get_description()
-              << std::endl;
+    print_lbann_configuration(comm, io_threads_per_process, io_threads_offset);
+    std::cout << "\n" << global_trainer_->get_description() << std::endl;
 
     // User feedback
-    print_parameters(*comm, pb, root_random_seeds, random_seeds, data_seq_random_seeds);
+    print_parameters(*comm,
+                     pb,
+                     root_random_seeds,
+                     random_seeds,
+                     data_seq_random_seeds);
   }
 
   return *global_trainer_;

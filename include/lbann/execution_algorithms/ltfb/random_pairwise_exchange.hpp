@@ -165,9 +165,11 @@ public:
 private:
   /** @brief Get the value of the given metric from the model. */
   std::unordered_map<std::string, EvalType>
-  evaluate_model(model& m, LTFBExecutionContext& ctxt, data_coordinator& dc) const;
+  evaluate_model(model& m,
+                 LTFBExecutionContext& ctxt,
+                 data_coordinator& dc) const;
   /** @brief Generate a new trainer partner from the comm. */
-  El::Int get_partner_trainer(lbann_comm const& c) const noexcept;
+  int get_partner_trainer(lbann_comm const& c) const noexcept;
   /** @brief Evaluate the output of two models according to the input
    *         metric strategies.
    *

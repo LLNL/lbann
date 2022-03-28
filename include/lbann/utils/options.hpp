@@ -42,9 +42,16 @@ namespace lbann {
 #define LBANN_OPTION_DISABLE_SIGNAL_HANDLER "disable_signal_handler"
 #define LBANN_OPTION_EXIT_AFTER_SETUP "exit_after_setup"
 #define LBANN_OPTION_GENERATE_MULTI_PROTO "generate_multi_proto"
-#define LBANN_OPTION_LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE "load_model_weights_dir_is_complete"
-#define LBANN_OPTION_LTFB_ALLOW_GLOBAL_STATISTICS "LTFB Allow global statistics"
+#define LBANN_OPTION_LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE                        \
+  "load_model_weights_dir_is_complete"
+// Deprecated -- "LTFB Callback"
+#define LBANN_OPTION_LTFB_ALLOW_GLOBAL_STATISTICS \
+  "LTFB Allow global statistics"
+// Deprecated -- "LTFB Callback"
 #define LBANN_OPTION_LTFB_VERBOSE "ltfb_verbose"
+#define LBANN_OPTION_MULTITRAINER_VERBOSE "multitrainer_verbose"
+#define LBANN_OPTION_ALLOW_MULTITRAINER_GLOBAL_STATISTICS \
+  "Allow multitrainer global statistics"
 #define LBANN_OPTION_NO_IM_COMM "no_im_comm"
 #define LBANN_OPTION_PRELOAD_DATA_STORE "preload_data_store"
 #define LBANN_OPTION_PRINT_AFFINITY "print_affinity"
