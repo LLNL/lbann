@@ -256,6 +256,12 @@ void restore_model_weights(
 std::string sendrecv_string(lbann_comm const& c, std::string const& src,
                             El::Int partner_trainer)
 {
+#ifdef LBANN_HAS_ALUMINUM
+  El::mpi::EnsureComm<size_t, El::Collective::SENDRECV>(
+    c.get_world_comm(),
+    El::SyncInfo<El::Device::CPU>{});
+#endif
+
   if (!c.am_trainer_master())
     return "";
 
