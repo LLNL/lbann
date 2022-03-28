@@ -196,29 +196,31 @@ El::Int get_partner_trainer(lbann_comm& comm,
   std::shuffle(trainers.begin(), trainers.end(), get_ltfb_generator());
 
   if (comm.am_world_master()) { // Root process
-    auto& arg_parser = global_argument_parser();
-    bool ltfb_verbose =
-      arg_parser.get<bool>(LBANN_OPTION_LTFB_VERBOSE);
+    auto const& arg_parser = global_argument_parser();
+    bool const ltfb_verbose = arg_parser.get<bool>(LBANN_OPTION_LTFB_VERBOSE);
     bool skipped_reporting_trainers = false;
     // Print partner assignments to standard output
-    std::stringstream msg;
+    std::ostringstream msg;
     msg << message_prefix << "tournament partners -";
     for (El::Int i = 0; i < num_trainers; i += 2) {
       // By default only print out 3 pairs of trainer mappings unless
       // LTFB has verbose reporting
-      if(i < 3 || i == (num_trainers-2) || i == (num_trainers-1) || ltfb_verbose) {
-        msg << (i > 0 && !skipped_reporting_trainers ? "," : "") << " {" << trainers[i];
+      if (i < 3 || i == (num_trainers - 2) || i == (num_trainers - 1) ||
+          ltfb_verbose) {
+        msg << (i > 0 && !skipped_reporting_trainers ? "," : "") << " {"
+            << trainers[i];
         if (i + 1 < num_trainers) {
           msg << "," << trainers[i + 1];
         }
         msg << "}";
-      }else if(!skipped_reporting_trainers) {
+      }
+      else if (!skipped_reporting_trainers) {
         msg << " ...";
         skipped_reporting_trainers = true;
       }
     }
     msg << "\n";
-    std::cout << msg.str() << std::endl << std::flush;
+    std::cout << msg.str() << std::endl;
   }
 
   // Setup partner assignments for all processes

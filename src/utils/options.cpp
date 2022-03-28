@@ -57,15 +57,26 @@ void construct_std_options()
     LBANN_OPTION_LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE,
     {"--load_model_weights_dir_is_complete"},
     "[STD] Use load_model_weights_dir as given, ignoring checkpoint hierarchy");
-  arg_parser.add_flag(LBANN_OPTION_LTFB_ALLOW_GLOBAL_STATISTICS,
-                      {"--ltfb_allow_global_statistics"},
-                      utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
+  arg_parser.add_flag(
+    LBANN_OPTION_LTFB_ALLOW_GLOBAL_STATISTICS,
+    {"--ltfb_allow_global_statistics"},
+    utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
+    "[STD, deprecated] Allow the print_statistics callback to report "
+    "global (inter-trainer) summary statistics.");
+  arg_parser.add_flag(LBANN_OPTION_LTFB_VERBOSE,
+                      {"--ltfb_verbose"},
+                      utils::ENV("LBANN_LTFB_VERBOSE"),
+                      "[STD, deprecated] Increases number of per-trainer "
+                      "messages that are reported");
+  arg_parser.add_flag(LBANN_OPTION_ALLOW_MULTITRAINER_GLOBAL_STATISTICS,
+                      {"--ltfb_global_multitrainer_statistics"},
+                      utils::ENV("LBANN_ALLOW_MULTITRAINER_GLOBAL_STATISTICS"),
                       "[STD] Allow the print_statistics callback to report "
                       "global (inter-trainer) summary statistics.");
   arg_parser.add_flag(
-    LBANN_OPTION_LTFB_VERBOSE,
-    {"--ltfb_verbose"},
-    utils::ENV("LBANN_LTFB_VERBOSE"),
+    LBANN_OPTION_MULTITRAINER_VERBOSE,
+    {"--multitrainer_verbose"},
+    utils::ENV("LBANN_MULTITRAINER_VERBOSE"),
     "[STD] Increases number of per-trainer messages that are reported");
   arg_parser.add_flag(
     LBANN_OPTION_NO_IM_COMM,
