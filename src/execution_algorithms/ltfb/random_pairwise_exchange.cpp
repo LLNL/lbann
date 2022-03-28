@@ -211,15 +211,15 @@ RandomPairwiseExchange::evaluate_model(model& m,
   return metric_values;
 }
 
-El::Int RandomPairwiseExchange::get_partner_trainer(
+int RandomPairwiseExchange::get_partner_trainer(
   lbann_comm const& comm) const noexcept
 {
   // Assign partner trainers
   // Note: The first trainer in 'trainers' is paired with the
   // second, the third with the fourth, and so on. If there are an
   // odd number of trainers, the last one is partnered with itself.
-  const El::Int num_trainers = comm.get_num_trainers();
-  std::vector<El::Int> trainers(num_trainers);
+  int const num_trainers = comm.get_num_trainers();
+  std::vector<int> trainers(num_trainers);
   std::iota(trainers.begin(), trainers.end(), 0);
   // Everyone use a special RNG that is only for LTFB so that they
   // can all communicate the same pairs without communication
@@ -233,7 +233,7 @@ El::Int RandomPairwiseExchange::get_partner_trainer(
     // Print partner assignments to standard output
     std::ostringstream msg;
     msg << "tournament partners -";
-    for (El::Int i = 0; i < num_trainers; i += 2) {
+    for (int i = 0; i < num_trainers; i += 2) {
       // By default only print out 3 pairs of trainer mappings unless
       // LTFB has verbose reporting
       if (i < 3 || i == (num_trainers - 2) || i == (num_trainers - 1) ||
@@ -255,10 +255,10 @@ El::Int RandomPairwiseExchange::get_partner_trainer(
   }
 
   // Setup partner assignments for all processes
-  std::vector<El::Int> send_buffer(num_trainers);
-  for (El::Int i = 0; i < num_trainers; i += 2) {
-    const auto& trainer1 = trainers[i];
-    const auto& trainer2 = (i + 1 < num_trainers) ? trainers[i + 1] : trainer1;
+  std::vector<int> send_buffer(num_trainers);
+  for (int i = 0; i < num_trainers; i += 2) {
+    auto const& trainer1 = trainers[i];
+    auto const& trainer2 = (i + 1 < num_trainers) ? trainers[i + 1] : trainer1;
     send_buffer[trainer1] = trainer2;
     send_buffer[trainer2] = trainer1;
   }
@@ -300,8 +300,8 @@ void RandomPairwiseExchange::select_next(model& m,
 
   LBANN_LOG_WORLD_MASTER(comm, message_prefix, "starting tournament...");
 
-  El::Int const local_trainer = comm.get_trainer_rank();
-  El::Int const partner_trainer = get_partner_trainer(comm);
+  int const local_trainer = comm.get_trainer_rank();
+  int const partner_trainer = get_partner_trainer(comm);
 
   LBANN_LOG_WORLD_MASTER(comm, message_prefix, "evaluating local model...");
 
@@ -321,7 +321,7 @@ void RandomPairwiseExchange::select_next(model& m,
 
   // If we win, we do nothing. The input model is the winner, so no
   // further action is required. Otherwise, swap models.
-  El::Int const tournament_winner =
+  int const tournament_winner =
     (local_is_better(local_scores, partner_scores) ? local_trainer
                                                    : partner_trainer);
 
