@@ -65,6 +65,7 @@ void construct_std_options()
   arg_parser.add_flag(
     LBANN_OPTION_LTFB_VERBOSE,
     {"--ltfb_verbose"},
+    utils::ENV("LBANN_LTFB_VERBOSE"),
     "[STD] Increases number of per-trainer messages that are reported");
   arg_parser.add_flag(
     LBANN_OPTION_NO_IM_COMM,

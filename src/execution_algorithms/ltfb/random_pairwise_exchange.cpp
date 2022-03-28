@@ -226,15 +226,26 @@ El::Int RandomPairwiseExchange::get_partner_trainer(
   std::shuffle(trainers.begin(), trainers.end(), get_ltfb_generator());
 
   if (comm.am_world_master()) { // Root process
+    auto& arg_parser = global_argument_parser();
+    bool ltfb_verbose =
+      arg_parser.get<bool>(LBANN_OPTION_LTFB_VERBOSE);
+    bool skipped_reporting_trainers = false;
     // Print partner assignments to standard output
     std::ostringstream msg;
     msg << "tournament partners -";
     for (El::Int i = 0; i < num_trainers; i += 2) {
-      msg << (i > 0 ? "," : "") << " {" << trainers[i];
-      if (i + 1 < num_trainers) {
-        msg << "," << trainers[i + 1];
+      // By default only print out 3 pairs of trainer mappings unless
+      // LTFB has verbose reporting
+      if(i < 3 || i == (num_trainers-2) || i == (num_trainers-1) || ltfb_verbose) {
+        msg << (i > 0 && !skipped_reporting_trainers ? "," : "") << " {" << trainers[i];
+        if (i + 1 < num_trainers) {
+          msg << "," << trainers[i + 1];
+        }
+        msg << "}";
+      }else if(!skipped_reporting_trainers) {
+        msg << " ...";
+        skipped_reporting_trainers = true;
       }
-      msg << "}";
     }
     msg << "\n";
     LBANN_LOG_WORLD_MASTER(comm, msg.str());

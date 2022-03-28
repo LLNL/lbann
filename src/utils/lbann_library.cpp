@@ -250,13 +250,30 @@ trainer& construct_trainer(lbann_comm* comm,
   init_ltfb_random(root_random_seed);
   global_trainer_->set_random_seeds(root_random_seed, random_seed, data_seq_random_seed);
 
-  // Collect everyone's random seeds
-  std::vector<int> root_random_seeds(comm->get_procs_in_world());
-  comm->world_all_gather(root_random_seed, root_random_seeds);
-  std::vector<int> random_seeds(comm->get_procs_in_world());
-  comm->world_all_gather(random_seed, random_seeds);
-  std::vector<int> data_seq_random_seeds(comm->get_procs_in_world());
-  comm->world_all_gather(data_seq_random_seed, data_seq_random_seeds);
+  bool allow_global_statistics =
+    arg_parser.get<bool>(LBANN_OPTION_LTFB_ALLOW_GLOBAL_STATISTICS);
+  bool ltfb_verbose =
+    arg_parser.get<bool>(LBANN_OPTION_LTFB_VERBOSE);
+  std::vector<int> root_random_seeds;
+  std::vector<int> random_seeds;
+  std::vector<int> data_seq_random_seeds;
+  if(allow_global_statistics && ltfb_verbose) {
+    // Collect everyone's random seeds
+    root_random_seeds.resize(comm->get_procs_in_world());
+    random_seeds.resize(comm->get_procs_in_world());
+    data_seq_random_seeds.resize(comm->get_procs_in_world());
+    comm->world_all_gather(root_random_seed, root_random_seeds);
+    comm->world_all_gather(random_seed, random_seeds);
+    comm->world_all_gather(data_seq_random_seed, data_seq_random_seeds);
+  }else {
+    // Collect random seeds from everyone in the trainer
+    root_random_seeds.resize(comm->get_procs_per_trainer());
+    random_seeds.resize(comm->get_procs_per_trainer());
+    data_seq_random_seeds.resize(comm->get_procs_per_trainer());
+    comm->trainer_all_gather(root_random_seed, root_random_seeds);
+    comm->trainer_all_gather(random_seed, random_seeds);
+    comm->trainer_all_gather(data_seq_random_seed, data_seq_random_seeds);
+  }
 
   // Update the sample lists to accomodate multi-trainer / multi-model specification
   customize_data_readers_sample_list(*comm, pb);

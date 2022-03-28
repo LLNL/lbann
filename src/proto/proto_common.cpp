@@ -915,6 +915,10 @@ void print_parameters(const lbann_comm& comm,
             << "  cuda:                       " << (disable_cuda ? "disabled" : "enabled") << std::endl
             << "  cudnn:                      " << (disable_cudnn ? "disabled" : "enabled") << std::endl;
   auto& arg_parser = global_argument_parser();
+  bool allow_global_statistics =
+    arg_parser.get<bool>(LBANN_OPTION_LTFB_ALLOW_GLOBAL_STATISTICS);
+  bool ltfb_verbose =
+    arg_parser.get<bool>(LBANN_OPTION_LTFB_VERBOSE);
   std::stringstream root_rng, rng, data_seq_rng;
   for(size_t i = 0; i < random_seeds.size(); i++) {
     int trainer_rank = comm.map_world_rank_to_trainer_rank(i);
@@ -930,6 +934,17 @@ void print_parameters(const lbann_comm& comm,
       rng << "... ";
       data_seq_rng << "... ";
     }
+  }
+  if(!(allow_global_statistics && ltfb_verbose) && comm.get_num_trainers() > 1) {
+    std::stringstream msg;
+    if(comm.get_num_trainers() == 2) {
+      msg << "trainer 1";
+    }else {
+      msg << "trainers 1 to " << comm.get_num_trainers()-1;
+    }
+    root_rng << "... (Omitting RNGs from " << msg.str() << ")";
+    rng << "... (Omitting RNGs from " << msg.str() << ")";
+    data_seq_rng << "... (Omitting RNGs from " << msg.str() << ")";
   }
   std::cout << "  root_random_seed[t][r]:     " << root_rng.str() << std::endl;
   std::cout << "  random_seed[t][r]:          " << rng.str() << std::endl;
