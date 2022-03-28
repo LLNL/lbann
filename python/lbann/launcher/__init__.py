@@ -155,6 +155,8 @@ def make_batch_script(script_file=None,
                       reservation=None,
                       launcher_args=[],
                       environment={},
+                      preamble_cmds=[],
+                      cleanup_cmds=[],
                       experiment_dir=None):
     """Construct batch script manager.
 
@@ -221,8 +223,9 @@ def make_batch_script(script_file=None,
         else:
             work_dir = os.path.join(os.getcwd())
         timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        # Differentiate the work directory with a few key parameters
         work_dir = os.path.join(work_dir,
-                                '{}_{}'.format(timestamp, job_name))
+                                '{}_n{}_ppn{}_{}'.format(job_name, nodes, procs_per_node, timestamp))
         i = 1
         while os.path.lexists(work_dir):
             i += 1
@@ -280,8 +283,16 @@ def make_batch_script(script_file=None,
         raise RuntimeError('unsupported job scheduler ({})'
                            .format(scheduler))
 
+    # Set batch script preamble commands
+    for cmd in preamble_cmds:
+        script.add_command(cmd)
+
     # Set batch script environment
     for variable, value in environment.items():
         script.add_command('export {0}={1}'.format(variable, value))
+
+    # Set batch script cleanup commmands
+    for cmd in cleanup_cmds:
+        script.add_command(cmd)
 
     return script
