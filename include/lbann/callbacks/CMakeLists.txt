@@ -50,7 +50,6 @@ set_full_path(THIS_DIR_HEADERS
   gradient_clipping.hpp
   hang.hpp
   learning_rate.hpp
-  ltfb.hpp
   memory_profiler.hpp
   mixup.hpp
   monitor_io.hpp
