@@ -178,7 +178,7 @@ void smiles_data_reader::do_preload_data_store() {
     const std::map<size_t, size_t>& local_to_index =  m_local_to_index[filename];
     size_t min_offset = std::numeric_limits<size_t>::max();
     size_t max_offset = 0;
-    short len_of_last_offset = 0;
+    size_t len_of_last_offset = 0;
 
     // Create local batches for fetching from a contiguous buffer
     std::map<size_t, size_t> samples_in_range;
