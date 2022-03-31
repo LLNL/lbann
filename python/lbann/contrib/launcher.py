@@ -75,10 +75,8 @@ elif is_olcf_center():
         launcher = lbann.contrib.olcf.launcher
 elif is_riken_center():
     _center = 'riken'
-    print('We are at riken')
     import lbann.contrib.riken.systems
     if lbann.contrib.riken.systems.is_riken_system():
-        print('We are going to use the riken launcher')
         import lbann.contrib.riken.launcher
         launcher = lbann.contrib.riken.launcher
 
