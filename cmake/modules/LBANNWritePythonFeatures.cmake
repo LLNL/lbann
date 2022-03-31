@@ -32,7 +32,7 @@ function (write_python_features_module)
     "    lbann_features.add(option[10:])\n"
     "\n"
     "def has_feature(feature_name):\n"
-    "  return feature_name in lbann_features\n"
+    "  return feature_name.upper() in lbann_features\n"
     "\n"
     "def get_features():\n"
     "    return lbann_features\n"
