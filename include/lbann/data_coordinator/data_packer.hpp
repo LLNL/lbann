@@ -31,21 +31,28 @@
 
 #include "lbann/base.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
-#include "conduit/conduit_node.hpp"
+
+// Forward-declare Conduit nodes.
+namespace conduit {
+class Node;
+}
 
 namespace lbann {
-
 namespace data_packer {
 
-  size_t extract_data_fields_from_samples(std::vector<conduit::Node>& samples,
-                                          std::map<data_field_type, CPUMat*>& input_buffers);
+size_t extract_data_fields_from_samples(
+  std::vector<conduit::Node> const& samples,
+  std::map<data_field_type, CPUMat*>& input_buffers);
 
-  /** Copies data from the requested data field into the Hydrogen matrix.
-   */
-  size_t extract_data_field_from_sample(data_field_type data_field,
-                                        conduit::Node& sample,
-                                        CPUMat& X,
-                                        int mb_idx);
+/** @brief Copies data from the requested data field into the Hydrogen
+ *         matrix.
+ *  @returns The linearized size of the data field.
+ */
+size_t extract_data_field_from_sample(data_field_type const& data_field,
+                                      conduit::Node const& sample,
+                                      CPUMat& X,
+                                      int mb_idx);
+
 } // namespace data_packer
 
 } // namespace lbann

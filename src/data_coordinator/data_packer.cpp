@@ -27,134 +27,109 @@
 #include "lbann/data_coordinator/data_packer.hpp"
 #include "lbann/utils/exception.hpp"
 
-namespace lbann {
+#include <conduit/conduit_data_type.hpp>
+#include <conduit/conduit_node.hpp>
+#include <conduit/conduit_utils.hpp>
 
+namespace lbann {
 namespace data_packer {
-/*
- * The data_packer class is designed to extract data fields from
+
+/* The data_packer class is designed to extract data fields from
  * Conduit nodes and pack them into Hydrogen matrices.
  */
-
-size_t extract_data_fields_from_samples(std::vector<conduit::Node>& samples,
-                                        std::map<data_field_type, CPUMat*>& input_buffers)
+size_t extract_data_fields_from_samples(
+  std::vector<conduit::Node> const& samples,
+  std::map<data_field_type, CPUMat*>& input_buffers)
 {
-  auto mb_idx = 0;
-  for (auto& [data_field, X] : input_buffers) {
-    mb_idx = 0;
-    size_t n_elts = 0;
-    for (auto& sample : samples) {
-      size_t tmp_n_elts = 0;
-      tmp_n_elts = extract_data_field_from_sample(data_field, sample, *X, mb_idx);
-      if(n_elts == 0) {
+  auto const num_samples = samples.size();
+  for (auto const& [data_field, X] : input_buffers) {
+    size_t n_elts = 0UL;
+    for (size_t mb_idx = 0UL; mb_idx < num_samples; ++mb_idx) {
+      auto const& sample = samples[mb_idx];
+      size_t const tmp_n_elts =
+        extract_data_field_from_sample(data_field, sample, *X, mb_idx);
+      if (n_elts == 0) {
         n_elts = tmp_n_elts;
       }
-      if(tmp_n_elts != n_elts) {
-        LBANN_ERROR("Unexpected number of elements extracted from the data field ",
-                    data_field,
-                    " found ", tmp_n_elts,
-                    " expected ", n_elts);
+      if (tmp_n_elts != n_elts) {
+        LBANN_ERROR(
+          "Unexpected number of elements extracted from the data field ",
+          data_field,
+          " found ",
+          tmp_n_elts,
+          " expected ",
+          n_elts);
       }
-      ++mb_idx;
     }
   }
-  return mb_idx;
+  return samples.size();
 }
 
-size_t extract_data_field_from_sample(data_field_type data_field,
-                                      conduit::Node& sample,
-                                      CPUMat& X,
-                                      //                             int data_id,
-                                      int mb_idx)
+template <typename OutT, typename SampleT>
+static void write_column(OutT* const out,
+                         SampleT const* const sample,
+                         size_t const sample_size)
 {
+  std::copy_n(sample, sample_size, out);
+}
+
+size_t extract_data_field_from_sample(data_field_type const& data_field,
+                                      conduit::Node const& sample,
+                                      CPUMat& X,
+                                      int const mb_idx)
+{
+  std::string const data_id = sample.child(0).name();
+  auto const sample_path = conduit::utils::join_path(data_id, data_field);
+
   // Check to make sure that each Conduit node only has a single
   // sample
-  if (sample.number_of_children() != 1) {
+  if (sample.number_of_children() != 1)
     LBANN_ERROR("Unsupported number of samples per Conduit node");
-  }
-  // LBANN_MSG("Here is the schema for node ", sample.child(0).name());
-  // sample.schema().print();
+  if (!sample.has_path(sample_path))
+    LBANN_ERROR("Conduit node has no such path: ", sample_path);
+  if (!sample.is_compact())
+    LBANN_WARNING("m_data[", data_id, "] does not have a compact layout");
 
-  std::string data_id = sample.child(0).name();
-  if (!sample.is_compact()) {
-    //    sample.print();
-    LBANN_WARNING("m_data[",  data_id, "] does not have a compact layout");
-  }
-#if 0
-  if (!sample.is_contiguous()) {
-    //    sample.print();
-    LBANN_WARNING("m_data[",  data_id, "] does not have a contiguous layout");
-  }
-  if (sample.data_ptr() == nullptr) {
-    LBANN_WARNING("m_data[", data_id, "] does not have a valid data pointer");
-  }
-  if (sample.contiguous_data_ptr() == nullptr) {
-    LBANN_WARNING("m_data[", data_id, "] does not have a valid contiguous data pointer");
-  }
-#endif
-  std::ostringstream ss;
-  ss << sample.child(0).name() + "/" << data_field;
-  if (!sample.has_path(ss.str())) {
-    LBANN_ERROR("no path: ", ss.str());
+  conduit::Node const& data_field_node = sample[sample_path];
+  size_t const n_elts = data_field_node.dtype().number_of_elements();
+  if (n_elts != static_cast<size_t>(X.Height())) {
+    LBANN_ERROR(
+      "data field ",
+      data_field,
+      " has ",
+      n_elts,
+      " elements, but the matrix only has a linearized size (height) of ",
+      X.Height());
   }
 
-  conduit::Node const& data_field_node = sample[ss.str()];
-
-  size_t n_elts = data_field_node.dtype().number_of_elements();
-
-  if ((El::Int)n_elts != X.Height()) {
-    LBANN_ERROR("data field ", data_field, " has ", n_elts,
-                " elements, but the matrix only has a linearized size (height) of ",
-                X.Height());
-  }
-
-  // const void* r;
-  std::string dtype = data_field_node.dtype().name();
-  if (dtype == "float64") {
-    const auto* data = data_field_node.as_float64_ptr();
-    // if(data_field_node.dtype().is_compact()) {
-
-    // }
-    for (size_t j = 0; j < n_elts; ++j) {
-      X(j, mb_idx) = data[j];
-    }
-  }
-  else if (dtype == "float32") {
-    const auto* data = data_field_node.as_float32_ptr();
-    for (size_t j = 0; j < n_elts; ++j) {
-      X(j, mb_idx) = data[j];
-    }
-  }
-  else if (dtype == "int64") {
-    const auto* data = data_field_node.as_int64_ptr();
-    for (size_t j = 0; j < n_elts; ++j) {
-      X(j, mb_idx) = data[j];
-    }
-  }
-  else if (dtype == "int32") {
-    const auto* data = data_field_node.as_int32_ptr();
-    for (size_t j = 0; j < n_elts; ++j) {
-      X(j, mb_idx) = data[j];
-    }
-  }
-  else if (dtype == "uint64") {
-    const auto* data = data_field_node.as_uint64_ptr();
-    for (size_t j = 0; j < n_elts; ++j) {
-      X(j, mb_idx) = data[j];
-    }
-  }
-  else if (dtype == "uint32") {
-    const auto* data = data_field_node.as_uint32_ptr();
-    for (size_t j = 0; j < n_elts; ++j) {
-      X(j, mb_idx) = data[j];
-    }
-  }
-  else {
+  auto* const X_column = X.Buffer() + X.LDim() * mb_idx;
+  switch (data_field_node.dtype().id()) {
+  case conduit::DataType::FLOAT64_ID:
+    write_column(X_column, data_field_node.as_float64_ptr(), n_elts);
+    break;
+  case conduit::DataType::FLOAT32_ID:
+    write_column(X_column, data_field_node.as_float32_ptr(), n_elts);
+    break;
+  case conduit::DataType::INT64_ID:
+    write_column(X_column, data_field_node.as_int64_ptr(), n_elts);
+    break;
+  case conduit::DataType::INT32_ID:
+    write_column(X_column, data_field_node.as_int32_ptr(), n_elts);
+    break;
+  case conduit::DataType::UINT64_ID:
+    write_column(X_column, data_field_node.as_uint64_ptr(), n_elts);
+    break;
+  case conduit::DataType::UINT32_ID:
+    write_column(X_column, data_field_node.as_uint32_ptr(), n_elts);
+    break;
+  default:
     LBANN_ERROR("unknown dtype; not float32/64, int32/64, or uint32/64; dtype "
                 "is reported to be: ",
-                dtype);
+                data_field_node.dtype().name());
   }
   return n_elts;
 }
+
 #if 0
 size_t data_packer::transform_data_fields(std::map<data_field_type, CPUMat*>& input_buffers,
                                           std::map<data_field_type, transform::transform_pipeline>& input_transformatons)
