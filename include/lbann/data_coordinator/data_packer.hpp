@@ -40,18 +40,48 @@ class Node;
 namespace lbann {
 namespace data_packer {
 
-size_t extract_data_fields_from_samples(
+/** @brief Copy data fields from Conduit nodes to Hydrogen matrices.
+ *
+ *  Given a list of samples, each potentially containing multiple
+ *  fields, this extracts each of the given fields into an appropriate
+ *  matrix. The fields to be extracted are the keys of the
+ *  input_buffers map, with their corresponding matrices as their
+ *  values. The batch of samples is considered to be ordered, and the
+ *  data from the ith sample is written into the ith column of the
+ *  corresponding matrix.
+ *
+ *  @param[in] samples The list of Conduit nodes holding sample data.
+ *  @param[in,out] input_buffers A map of data field identifiers to
+ *         Hydrogen matrices. The matrices must have the correct size
+ *         on input (height equal to the linear size of the respective
+ *         data field and width equal to the minibatch size). Any data
+ *         in the matrix on input will be overwritten.
+ */
+void extract_data_fields_from_samples(
   std::vector<conduit::Node> const& samples,
   std::map<data_field_type, CPUMat*>& input_buffers);
 
 /** @brief Copies data from the requested data field into the Hydrogen
  *         matrix.
+ *
+ *  The data corresponding to the data_field field in the sample
+ *  Conduit node is unpacked into the sample_idxth column of the input
+ *  matrix, X. The type of the data is converted to
+ *  lbann::DataType. The data must be float, double, int32, int64,
+ *  uint32, or uint64.
+ *
+ *  @param[in] data_field The identifier of the field to extract.
+ *  @param[in] sample The Conduit node holding the sample data.
+ *  @param[in,out] X The matrix into which to put the extracted
+ *         sample. Its height must match the linearized sample size,
+ *         and its width must be at least sample_idx.
+ *  @param[in] sample_idx The column of X into which the sample is placed.
  *  @returns The linearized size of the data field.
  */
 size_t extract_data_field_from_sample(data_field_type const& data_field,
                                       conduit::Node const& sample,
                                       CPUMat& X,
-                                      int mb_idx);
+                                      size_t sample_idx);
 
 } // namespace data_packer
 

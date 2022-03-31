@@ -25,44 +25,32 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_coordinator/data_packer.hpp"
+
 #include "lbann/utils/exception.hpp"
 
 #include <conduit/conduit_data_type.hpp>
 #include <conduit/conduit_node.hpp>
 #include <conduit/conduit_utils.hpp>
 
-namespace lbann {
-namespace data_packer {
-
 /* The data_packer class is designed to extract data fields from
  * Conduit nodes and pack them into Hydrogen matrices.
  */
-size_t extract_data_fields_from_samples(
+void lbann::data_packer::extract_data_fields_from_samples(
   std::vector<conduit::Node> const& samples,
   std::map<data_field_type, CPUMat*>& input_buffers)
 {
   auto const num_samples = samples.size();
   for (auto const& [data_field, X] : input_buffers) {
-    size_t n_elts = 0UL;
+    LBANN_ASSERT_DEBUG(num_samples <= static_cast<size_t>(X->Width()));
     for (size_t mb_idx = 0UL; mb_idx < num_samples; ++mb_idx) {
-      auto const& sample = samples[mb_idx];
-      size_t const tmp_n_elts =
-        extract_data_field_from_sample(data_field, sample, *X, mb_idx);
-      if (n_elts == 0) {
-        n_elts = tmp_n_elts;
-      }
-      if (tmp_n_elts != n_elts) {
-        LBANN_ERROR(
-          "Unexpected number of elements extracted from the data field ",
-          data_field,
-          " found ",
-          tmp_n_elts,
-          " expected ",
-          n_elts);
-      }
+      // This call will verify that the extracted sample has the
+      // expected size. In particular, the extracted sample's
+      // linearized size must equal the height of the input matrix
+      // X. The assertion above verifies that the matrix X has
+      // sufficient width to accommodate the sample.
+      extract_data_field_from_sample(data_field, samples[mb_idx], *X, mb_idx);
     }
   }
-  return samples.size();
 }
 
 template <typename OutT, typename SampleT>
@@ -73,10 +61,11 @@ static void write_column(OutT* const out,
   std::copy_n(sample, sample_size, out);
 }
 
-size_t extract_data_field_from_sample(data_field_type const& data_field,
-                                      conduit::Node const& sample,
-                                      CPUMat& X,
-                                      int const mb_idx)
+size_t lbann::data_packer::extract_data_field_from_sample(
+  data_field_type const& data_field,
+  conduit::Node const& sample,
+  CPUMat& X,
+  size_t const mb_idx)
 {
   std::string const data_id = sample.child(0).name();
   auto const sample_path = conduit::utils::join_path(data_id, data_field);
@@ -87,8 +76,10 @@ size_t extract_data_field_from_sample(data_field_type const& data_field,
     LBANN_ERROR("Unsupported number of samples per Conduit node");
   if (!sample.has_path(sample_path))
     LBANN_ERROR("Conduit node has no such path: ", sample_path);
+#ifdef LBANN_DEBUG
   if (!sample.is_compact())
-    LBANN_WARNING("m_data[", data_id, "] does not have a compact layout");
+    LBANN_WARNING("sample[", data_id, "] does not have a compact layout");
+#endif
 
   conduit::Node const& data_field_node = sample[sample_path];
   size_t const n_elts = data_field_node.dtype().number_of_elements();
@@ -168,6 +159,3 @@ size_t data_packer::transform_data_fields(std::map<data_field_type, CPUMat*>& in
   transform_pipeline.apply(image, X_v, dims);
 }
 #endif
-
-} // namespace data_packer
-} // namespace lbann
