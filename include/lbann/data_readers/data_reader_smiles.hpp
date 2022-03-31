@@ -44,7 +44,7 @@ namespace lbann {
 class smiles_data_reader : public data_reader_sample_list<sample_list_ifstream<long long>> {
 public:
   // Types for mapping a sample id to an <offset,length> locator
-  using offset_t = std::pair<long long, short>;
+  using offset_t = std::pair<long long, unsigned short>;
   using offset_map_t = std::unordered_map<size_t, offset_t>;
 
   smiles_data_reader(const bool shuffle);
@@ -79,7 +79,7 @@ public:
     const size_t index_in,
     std::string& filename_out,
     size_t& offset_out,
-    short& length_out) const;
+    unsigned short& length_out) const;
 
   /** This method is for use during testing and development.
    *  Returns the set of indices whose samples are cached in
@@ -90,7 +90,7 @@ public:
   /** This method made public for use during testing.
    *  Convert SMILES string to a vector of shorts
    */
-  bool encode_smiles(const char *smiles, short size, std::vector<unsigned short> &data);
+  bool encode_smiles(const char *smiles, unsigned short size, std::vector<unsigned short> &data);
   /** This method made public for use during testing.
    *  Convert SMILES string to a vector of shorts
    */
@@ -113,7 +113,7 @@ public:
    *  Insert an entry into a map: index -> (offset, length),
    *  where 'index' is an alias for an entry in the shuffled_indices
    */
-  void set_offset(size_t index, long long offset, short length);
+  void set_offset(size_t index, long long offset, unsigned short length);
 
   /** This method made public for use during testing. */
   void load_list_of_samples(const std::string sample_list_file);
@@ -136,17 +136,17 @@ private:
   int m_sequence_length = 0;
 
   const size_t OffsetBinarySize = sizeof(long long);
-  const size_t LengthBinarySize = sizeof(short);
+  const size_t LengthBinarySize = sizeof(unsigned short);
   const std::streamsize OffsetAndLengthBinarySize = OffsetBinarySize+LengthBinarySize;
 
   struct SampleData {
     SampleData() {}
-    SampleData(int idx, long long off, short len)
+    SampleData(int idx, long long off, unsigned short len)
       : index(idx),  offset(off), length(len) {
     }
     size_t index;
     long long offset;
-    short length;
+    unsigned short length;
   };
 
   int m_linearized_data_size = 0;
