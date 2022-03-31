@@ -41,7 +41,10 @@
 #include "lbann/utils/summary.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 #include "lbann/weights/weights.hpp"
+
+#ifdef LBANN_HAS_ONNX
 #include <onnx/onnx_pb.h>
+#endif // LBANN_HAS_ONNX
 
 // Note (trb): There's what is, IMO, an STL error in GCC in which the
 // dtor for unique_ptr is checking sizeof(T), so this must be a
