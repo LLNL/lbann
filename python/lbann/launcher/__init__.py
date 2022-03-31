@@ -9,6 +9,39 @@ import lbann.launcher.lsf
 import lbann.launcher.pjm
 from lbann.util import make_iterable, nvprof_command
 
+def make_timestamped_work_dir(work_dir=None,
+                              experiment_dir=None,
+                              job_name='lbann',
+                              **kwargs,
+):
+    # Create work directory if not provided
+    if not work_dir:
+       work_dir = experiment_dir
+    if not work_dir:
+        if 'LBANN_EXPERIMENT_DIR' in os.environ:
+            work_dir = os.environ['LBANN_EXPERIMENT_DIR']
+        else:
+            work_dir = os.path.join(os.getcwd())
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        work_dir = os.path.join(work_dir,
+                                '{}_{}'.format(timestamp, job_name))
+        # Differentiate the work directory with a few key parameters
+        if kwargs['nodes']:
+            work_dir = ('{}_n{}'.format(work_dir, kwargs['nodes']))
+        if kwargs['procs_per_node']:
+            work_dir = ('{}_ppn{}'.format(work_dir, kwargs['procs_per_node']))
+
+        i = 1
+        while os.path.lexists(work_dir):
+            i += 1
+            work_dir = os.path.join(
+                os.path.dirname(work_dir),
+                '{}_{}_{}'.format(timestamp, job_name, i))
+    work_dir = os.path.realpath(work_dir)
+    os.makedirs(work_dir, exist_ok=True)
+
+    return work_dir
+
 # ==============================================
 # Run experiments
 # ==============================================
@@ -215,25 +248,11 @@ def make_batch_script(script_file=None,
         scheduler = 'openmpi'
 
     # Create work directory if not provided
-    if not work_dir:
-       work_dir = experiment_dir
-    if not work_dir:
-        if 'LBANN_EXPERIMENT_DIR' in os.environ:
-            work_dir = os.environ['LBANN_EXPERIMENT_DIR']
-        else:
-            work_dir = os.path.join(os.getcwd())
-        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        # Differentiate the work directory with a few key parameters
-        work_dir = os.path.join(work_dir,
-                                '{}_n{}_ppn{}_{}'.format(job_name, nodes, procs_per_node, timestamp))
-        i = 1
-        while os.path.lexists(work_dir):
-            i += 1
-            work_dir = os.path.join(
-                os.path.dirname(work_dir),
-                '{}_{}_{}'.format(timestamp, job_name, i))
-    work_dir = os.path.realpath(work_dir)
-    os.makedirs(work_dir, exist_ok=True)
+    work_dir = make_timestamped_work_dir(work_dir=work_dir,
+                                         experiment_dir=experiment_dir,
+                                         job_name=job_name,
+                                         nodes=nodes,
+                                         procs_per_node=procs_per_node)
 
     # Create batch script manager
     if not script_file:

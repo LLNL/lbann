@@ -3,7 +3,6 @@ import socket
 import lbann
 import lbann.launcher
 from lbann.util import make_iterable, nvprof_command
-import re
 
 # ==============================================
 # Detect the current compute center

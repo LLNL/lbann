@@ -23,7 +23,7 @@ class PJMBatchScript(BatchScript):
                  procs_per_node=1,
                  time_limit=None,
                  job_name=None,
-                 partition='small',
+                 partition=None,
                  launcher='mpiexec',
                  launcher_args=[],
                  interpreter='/bin/bash'):
@@ -41,7 +41,7 @@ class PJMBatchScript(BatchScript):
                 (default: none).
             job_name (str, optional): Job name (default: none).
             partition (str, optional): Scheduler partition
-                (default: small).
+                (default: none).
             launcher (str, optional): Parallel command launcher
                 (default: mpiexec).
             launcher_args (`Iterable` of `str`, optional):
@@ -78,7 +78,7 @@ class PJMBatchScript(BatchScript):
         self.add_header_line(f'#PJM --mpi "shape={self.nodes}"')
         self.add_header_line(f'#PJM --mpi "max-proc-per-node={self.procs_per_node}"')
         self.add_header_line(f'#PJM --sparam "wait-time=600"')
-        
+
     def add_parallel_command(self,
                              command,
                              work_dir=None,
@@ -121,16 +121,10 @@ class PJMBatchScript(BatchScript):
         args.extend(make_iterable(launcher_args))
         args.extend([
             f'-n {nodes*procs_per_node}',
-#            f'--map-by ppr:{procs_per_node}:node',
-#            f'-wdir {work_dir}'
         ])
         args.extend([
-            '-mca plm_ple_memory_allocation_policy interleave_all',
-#            '-mca plm_ple_memory_allocation_policy bind_local',
-#            '-mca opal_progress_thread_mode 3',
             '-stdout-proc ./output.%j/%/1000r/stdout',
             '-stderr-proc ./output.%j/%/1000r/stderr',
-#            ' numactl --physcpubind=12-59 --membind=4-7'
         ])
         args.extend(make_iterable(command))
         self.add_command(args)

@@ -1,4 +1,5 @@
 import os
+import shutil
 from lbann.contrib.riken.systems import *
 import lbann.launcher
 from lbann.util import make_iterable
@@ -24,6 +25,7 @@ def make_batch_script(
     scheduler=scheduler(),
     launcher_args=[],
     environment={},
+    preamble_cmds=[],
     *args,
     **kwargs,
 ):
@@ -39,6 +41,16 @@ def make_batch_script(
     launcher_args = list(make_iterable(launcher_args))
     environment = environment.copy()
 
+    kwargs['work_dir'] = lbann.launcher.make_timestamped_work_dir(procs_per_node=procs_per_node, **kwargs)
+    work_dir = kwargs['work_dir']
+
+    LBANN_BIN=shutil.which('lbann')
+    '# Cache commonly-used files'
+    preamble_cmds.append(f'llio_transfer --purge {LBANN_BIN}')
+    preamble_cmds.append(f'llio_transfer --purge {work_dir}/experiment.prototext')
+    preamble_cmds.append(f'llio_transfer {LBANN_BIN}')
+    preamble_cmds.append(f'llio_transfer {work_dir}/experiment.prototext')
+
     # Helper function to configure environment variables
     # Note: User-provided values take precedence, followed by values
     # in the environment, followed by default values.
@@ -46,42 +58,22 @@ def make_batch_script(
         if key not in environment:
             environment[key] = os.getenv(key, default)
 
-    # Setup GPU bindings
-    # Note: Each Hydrogen process is assigned to the GPU index that
-    # matches its node communicator rank. This is not compatible with
-    # mpibind, which assigns a GPU with index 0 to each process. We
-    # can't use an exclusive GPU compute mode since processes may
-    # touch the wrong GPU while figuring out ownership.
-    # if scheduler == 'pjm':
-    #     launcher_args.extend(['OMP_SCHEDULE=static',
-    #                           'OMP_BIND=close',
-    #                           'FLIB_FASTOMP=FALSE OMP_NESTED=TRUE',
-    #                           'LD_PRELOAD=/usr/lib64/libhwloc.so.15'])
-
-                              # export OMP_WAIT_POLICY=ACTIVE
-#'GOMP_SPINCOUNT=0',
-        
-    # Optimized thread affinity for Pascal
-    # Note: Both GPUs are on socket 0, so we only use cores on that
-    # socket.
+    # Optimized thread affinity for Fugaku
     if system == 'fugaku':
         cores_per_proc = cores_per_node(system) // procs_per_node
-#        set_environment('AL_PROGRESS_RANKS_PER_NUMA_NODE', procs_per_node)
         set_environment('OMP_THREAD_LIMIT', cores_per_proc)
         set_environment('OMP_NUM_THREADS', cores_per_proc - 1)
         set_environment('LBANN_NUM_IO_THREADS', 1)
-#        set_environment('OMP_SCHEDULE', 'static')
-#        set_environment('OMP_BIND', 'close')
-#        set_environment('OMP_NESTED', 'TRUE')
-#        set_environment('FLIB_FASTOMP', 'FALSE')
-        set_environment('LD_PRELOAD', '/usr/lib64/libhwloc.so.15:libtcmalloc.so')
-         
+        set_environment('OMP_BIND', 'close')
+        set_environment('LD_PRELOAD', '/usr/lib64/libhwloc.so.15')
+        set_environment('LD_LIBRARY_PATH', '$(/home/system/tool/sort_libp)')
 
     return lbann.launcher.make_batch_script(
         procs_per_node=procs_per_node,
         scheduler=scheduler,
         launcher_args=launcher_args,
         environment=environment,
+        preamble_cmds=preamble_cmds,
         *args,
         **kwargs,
     )
