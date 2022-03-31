@@ -355,7 +355,7 @@ bool lbann::generic_data_reader::fetch_data_block_conduit(
 {
   locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
 
-  if (mb_size > samples.size()) {
+  if (static_cast<size_t>(mb_size) > samples.size()) {
     LBANN_ERROR("unable to fetch data to conduit nodes, vector length ", samples.size(),
                 " is smaller than mini-batch size", mb_size);
   }
