@@ -28,6 +28,7 @@
 #define RESHAPE_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 
 namespace lbann {
 
@@ -82,10 +83,7 @@ protected:
       }
     }
     if (unspecified_dim >= 0) {
-      const auto& specified_size = std::accumulate(output_dims.begin(),
-                                                   output_dims.end(),
-                                                   1,
-                                                   std::multiplies<int>());
+      const auto specified_size = get_linear_size(output_dims);
       output_dims[unspecified_dim] = this->get_input_size() / specified_size;
       this->set_output_dims(output_dims);
     }

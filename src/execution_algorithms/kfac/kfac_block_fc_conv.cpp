@@ -28,6 +28,7 @@
 #include "lbann/execution_algorithms/kfac/kfac_block_fc_conv.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_util.hpp"
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/im2col.hpp"
 
 
@@ -58,9 +59,7 @@ void kfac_block_fc_conv<Device>::compute_local_kronecker_factors(
   m_height_A = local_activations.Height();
   if(m_is_conv) {
     const auto conv_dims = get_conv_layer()->get_conv_dims();
-    m_height_A = num_input_channels
-        *std::accumulate(conv_dims.begin(), conv_dims.end(),
-                         1, std::multiplies<int>());
+    m_height_A = num_input_channels * get_linear_size(conv_dims);
   }
   if(m_has_bias)
     m_height_A++;
@@ -575,9 +574,7 @@ int kfac_block_fc_conv<Device>::get_inverse_matrices_size(lbann_comm *comm)
 
   if(m_is_conv) {
     const auto conv_dims = get_conv_layer()->get_conv_dims();
-    my_height_A = num_input_channels
-        *std::accumulate(conv_dims.begin(), conv_dims.end(),
-                         1, std::multiplies<int>());
+    my_height_A = num_input_channels * get_linear_size(conv_dims);
   }
   if(m_has_bias)
     my_height_A++;

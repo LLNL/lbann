@@ -107,7 +107,7 @@ set_center_specific_modules()
                 MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 cuda/11.4.1 mvapich2/2.3.6 python/3.7.2"
                 ;;
             "ivybridge") # Catalyst
-                MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 mvapich2/2.3.6 python/3.7.2"
+                MODULE_CMD="module --force unload StdEnv; module load gcc/10.2.1 mvapich2/2.3 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
                 MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 python/3.7.2 opt rocm/4.2.0 openmpi-gnu/4.0"
@@ -177,10 +177,15 @@ set_center_specific_spack_dependencies()
                 # CENTER_FLAGS="+lld"
                 # CENTER_BLAS_LIBRARY="blas=essl"
                 ;;
-            "broadwell" | "haswell" | "sandybridge" | "ivybridge") # Pascal, RZHasGPU, Surface, Catalyst
+            "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 # On LC the mvapich2 being used is built against HWLOC v1
                CENTER_DEPENDENCIES="%clang ^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10"
                CENTER_FLAGS="+lld"
+                ;;
+            "ivybridge") # Catalyst
+                # On LC the mvapich2 being used is built against HWLOC v1
+               CENTER_DEPENDENCIES="%gcc ^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10"
+               CENTER_FLAGS="+gold"
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
@@ -246,7 +251,7 @@ set_center_specific_externals()
 
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
-            "broadwell" | "haswell" | "sandybridge")
+            "broadwell" | "haswell" | "sandybridge" | "ivybridge")
 cat <<EOF  >> ${yaml}
   packages:
     rdma-core:

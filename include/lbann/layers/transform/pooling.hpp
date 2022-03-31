@@ -27,9 +27,8 @@
 #ifndef LBANN_LAYER_POOLING_HPP_INCLUDED
 #define LBANN_LAYER_POOLING_HPP_INCLUDED
 
-#include <utility>
-#include <vector>
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/dnn_enums.hpp"
 #ifdef LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/helpers.hpp"
@@ -38,6 +37,9 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/im2col.hpp"
 #include "lbann/utils/distconv.hpp"
+
+#include <utility>
+#include <vector>
 
 namespace lbann {
 
@@ -144,10 +146,7 @@ public:
 #endif // LBANN_HAS_DNN_LIB
   {
     // Initialize input dimensions and pooling parameters
-    m_pool_size = std::accumulate(m_pool_dims.begin(),
-                                  m_pool_dims.end(),
-                                  1,
-                                  std::multiplies<int>());
+    m_pool_size = get_linear_size(m_pool_dims);
 
   }
 

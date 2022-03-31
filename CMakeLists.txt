@@ -332,9 +332,9 @@ if (LBANN_HAS_CUDA)
     set(LBANN_WITH_CUDNN ON)
   endif ()
 
-  find_package(CUDAToolkit REQUIRED) # Hydrogen will have found this,
-                                     # but it doesn't hurt to find it
-                                     # again.
+  find_package(CUDAToolkit 11.0.0 REQUIRED)
+  # Hydrogen will have found this, but it doesn't hurt to find it
+  # again.
   find_package(cuDNN REQUIRED)
   set(LBANN_HAS_CUDNN ${cuDNN_FOUND})
   set(LBANN_HAS_DNN_LIB ${cuDNN_FOUND})
@@ -632,6 +632,12 @@ if (LBANN_HAS_CUDA)
       CUDA_SEPARABLE_COMPILATION ON)
   endif ()
 
+  # We leak some C++17 into .cu files. Oops, but also CUDA 11 has been
+  # out for a while.
+  set_target_properties(lbann
+    PROPERTIES
+    CUDA_STANDARD 17)
+
   # Enable device lambdas with nvcc
   check_compiler_flag(CUDA "--expt-extended-lambda"
     CUDA_COMPILER_SUPPORTS_EXTENDED_LAMBDA)
@@ -909,6 +915,7 @@ append_str_tf(_str
   LBANN_HAS_HYDROGEN
   LBANN_HAS_LBANN_PROTO
   LBANN_HAS_NCCL2
+  LBANN_HAS_NVSHMEM
   LBANN_HAS_ONEDNN
   LBANN_HAS_ONEDNN_CPU
   LBANN_HAS_ONEDNN_GPU

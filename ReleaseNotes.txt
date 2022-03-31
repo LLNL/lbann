@@ -31,6 +31,9 @@ Support for new layers:
 - Updated deconvolution layer to match PyTorch's API
 
 Python front-end:
+ - Added support for buidling and launching jobs on Fugaku
+ - Added Riken as a known compute center
+ - Added support for PJM as job launcher
 
 Performance optimizations:
  - Enabled the input layers to use a view of the I/O buffers in the

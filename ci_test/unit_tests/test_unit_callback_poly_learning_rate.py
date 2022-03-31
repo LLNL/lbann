@@ -30,7 +30,7 @@ lr_end = 0.1
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -42,7 +42,7 @@ def setup_experiment(lbann):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.SGD(learn_rate=lr_start)
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -120,10 +120,10 @@ def augment_test_func(test_func):
     test_name = test_func.__name__
 
     # Define test function
-    def func(cluster, dirname):
+    def func(cluster, dirname, weekly):
 
         # Run LBANN experiment
-        experiment_output = test_func(cluster, dirname)
+        experiment_output = test_func(cluster, dirname, weekly)
 
         # Parse LBANN log file
         lr_list = []

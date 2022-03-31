@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/adjust_saturation.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
@@ -51,7 +52,7 @@ void adjust_saturation::apply(utils::type_erased_matrix& data, std::vector<size_
     // If need be, we could do this computation in-place by manually computing
     // the grayscale value of each pixel.
     std::vector<size_t> gray_dims = {1, dims[1], dims[2]};
-    const size_t gray_size = utils::get_linearized_size(gray_dims);
+    const size_t gray_size = get_linear_size(gray_dims);
     auto gray_real = El::Matrix<uint8_t>(gray_size, 1);
     cv::Mat gray = utils::get_opencv_mat(gray_real, gray_dims);
     cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);

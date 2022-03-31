@@ -29,7 +29,7 @@ std::string smiles_reader_prototext = R"ptext(data_reader {
     role: "train"
     shuffle: true
     percent_of_data_to_use: 1.0
-    label_filename: "TMPDIR/metadata"
+    metadata_filename: "TMPDIR/metadata"
     sample_list: "TMPDIR/sample_list"
     validation_percent: 0.2
   }

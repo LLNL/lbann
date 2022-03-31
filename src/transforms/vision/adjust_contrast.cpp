@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/adjust_contrast.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
@@ -50,7 +51,7 @@ void adjust_contrast::apply(utils::type_erased_matrix& data, std::vector<size_t>
   if (dims[0] == 1) {
     // Already grayscale, just compute the mean.
     uint64_t sum = 0;
-    const size_t size = utils::get_linearized_size(dims);
+    const size_t size = get_linear_size(dims);
     const uint8_t* __restrict__ gray_buf = src.ptr();
     for (size_t i = 0; i < size; ++i) {
       sum += gray_buf[i];
@@ -59,7 +60,7 @@ void adjust_contrast::apply(utils::type_erased_matrix& data, std::vector<size_t>
       std::round(static_cast<double>(sum) / static_cast<double>(size)));
   } else {
     std::vector<size_t> gray_dims = {1, dims[1], dims[2]};
-    const size_t size = utils::get_linearized_size(gray_dims);
+    const size_t size = get_linear_size(gray_dims);
     auto gray_real = El::Matrix<uint8_t>(size, 1);
     cv::Mat gray = utils::get_opencv_mat(gray_real, gray_dims);
     cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
@@ -77,7 +78,7 @@ void adjust_contrast::apply(utils::type_erased_matrix& data, std::vector<size_t>
   // Mix the gray mean with the original image.
   uint8_t* __restrict__ src_buf = src.ptr();
   const float one_minus_factor = 1.0f - m_factor;
-  const size_t size = utils::get_linearized_size(dims);
+  const size_t size = get_linear_size(dims);
   for (size_t i = 0; i < size; ++i) {
     src_buf[i] = cv::saturate_cast<uint8_t>(
       src_buf[i]*m_factor + gray_mean*one_minus_factor);

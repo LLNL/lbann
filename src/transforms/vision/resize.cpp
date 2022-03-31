@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/resize.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
@@ -38,7 +39,7 @@ namespace transform {
 void resize::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
   cv::Mat src = utils::get_opencv_mat(data, dims);
   std::vector<size_t> new_dims = {dims[0], m_h, m_w};
-  auto dst_real = El::Matrix<uint8_t>(utils::get_linearized_size(new_dims), 1);
+  auto dst_real = El::Matrix<uint8_t>(get_linear_size(new_dims), 1);
   cv::Mat dst = utils::get_opencv_mat(dst_real, new_dims);
   cv::resize(src, dst, dst.size(), 0, 0, cv::INTER_LINEAR);
   data.emplace<uint8_t>(std::move(dst_real));

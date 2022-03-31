@@ -35,7 +35,7 @@ expected_mini_batch_times = {
     'pascal':   0.0020, # Changed as of 1/18/22 0.0014, # 0.0013,
     'catalyst': 0.0073, # 0.0055,
     'lassen':   0.0022,
-    'ray':      0.0025,
+    'ray':      0.0029, # Changed as of 3/22/22 0.0025,
     'corona':   0.0117, # 0.0075,
 }
 
@@ -43,7 +43,7 @@ expected_mini_batch_times = {
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -58,7 +58,7 @@ def setup_experiment(lbann):
     data_reader.reader[0].validation_percent = 0
 
     optimizer = lbann.SGD(learn_rate=0.01, momentum=0.9)
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, num_nodes
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -120,10 +120,10 @@ def augment_test_func(test_func):
     test_name = test_func.__name__
 
     # Define test function
-    def func(cluster, dirname):
+    def func(cluster, dirname, weekly):
 
         # Run LBANN experiment
-        experiment_output = test_func(cluster, dirname)
+        experiment_output = test_func(cluster, dirname, weekly)
 
         # Parse LBANN log file
         train_accuracy = None
@@ -168,6 +168,5 @@ def augment_test_func(test_func):
 
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment,
-                                     __file__,
-                                     nodes=num_nodes):
+                                     __file__):
     globals()[_test_func.__name__] = augment_test_func(_test_func)

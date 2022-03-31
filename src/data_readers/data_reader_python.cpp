@@ -97,9 +97,7 @@ int python_reader::get_num_labels() const {
   return 1;
 }
 int python_reader::get_linearized_data_size() const {
-  const auto& dims = get_data_dims();
-  return std::accumulate(dims.begin(), dims.end(), 1,
-                         std::multiplies<int>());
+  return get_linear_size(get_data_dims());
 }
 int python_reader::get_linearized_label_size() const {
   return get_num_labels();

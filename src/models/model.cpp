@@ -24,25 +24,26 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/base.hpp"
-#include "lbann/comm_impl.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/trainers/trainer.hpp"
+
+#include "lbann/base.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/callbacks/save_model.hpp"
+#include "lbann/comm_impl.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/layers/io/input_layer.hpp"
 #include "lbann/layers/transform/dummy.hpp"
-#include "lbann/layers/transform/split.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
-#include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/layers/transform/split.hpp"
 #include "lbann/metrics/layer_metric.hpp"
-
-
-#include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/description.hpp"
-#include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/utils/distconv.hpp"
+#include "lbann/utils/graph.hpp"
+#include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/summary_impl.hpp"
 #include "lbann/utils/onnx_utils.hpp"
@@ -50,15 +51,13 @@
 #include <model.pb.h>
 #include <optimizers.pb.h>
 
-#include <mpi.h>
-
+#include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <memory>
+#include <sstream>
 #include <string>
-#include <unistd.h>
-#include <iomanip>
-#include <queue>
-#include <unordered_set>
-
-#include "lbann/utils/distconv.hpp"
+#include <unordered_map>
 
 namespace lbann {
 
@@ -79,27 +78,26 @@ model::model(lbann_comm* comm,
   static El::Int num_models = 0;
   m_name = "model" + std::to_string(num_models);
   num_models++;
-
-
-
-
-
 }
 
-model::model(const model& other) :
-  m_execution_context(other.m_execution_context),
-  m_comm(other.m_comm),
-  m_name(other.m_name),
-  m_model_is_setup(false) {
+model::model() : model(&utils::get_current_comm(), nullptr, nullptr) {}
+
+model::model(const model& other)
+  : m_execution_context(other.m_execution_context),
+    m_comm(other.m_comm),
+    m_name(other.m_name),
+    m_model_is_setup(false)
+{
 
   // Deep copies
-  m_default_optimizer_msg = (other.m_default_optimizer_msg
-                             ? std::make_unique<lbann_data::Optimizer>(
-                               *other.m_default_optimizer_msg)
-                             : nullptr);
-  m_objective_function = (other.m_objective_function
-                          ? std::make_unique<objective_function>(*other.m_objective_function)
-                          : nullptr);
+  m_default_optimizer_msg =
+    (other.m_default_optimizer_msg
+       ? std::make_unique<lbann_data::Optimizer>(*other.m_default_optimizer_msg)
+       : nullptr);
+  m_objective_function =
+    (other.m_objective_function
+       ? std::make_unique<objective_function>(*other.m_objective_function)
+       : nullptr);
   for (const auto& m : other.m_metrics) {
     m_metrics.emplace_back(m ? m->copy() : nullptr);
   }
@@ -108,11 +106,13 @@ model::model(const model& other) :
   }
 
   // Copy layers
-  std::unordered_map<Layer*,ViewingLayerPtr> layer_map;
+  std::unordered_map<Layer*, ViewingLayerPtr> layer_map;
   m_layers.reserve(other.m_layers.size());
   for (const auto& other_layer : other.m_layers) {
     if (other_layer == nullptr) {
-      LBANN_ERROR("model \"",other.get_name(),"\" ",
+      LBANN_ERROR("model \"",
+                  other.get_name(),
+                  "\" ",
                   "has a null pointer in its list of layers");
     }
     m_layers.emplace_back(other_layer->copy());
@@ -121,29 +121,30 @@ model::model(const model& other) :
   }
 
   // Copy weights
-  std::unordered_map<weights*,ViewingWeightsPtr> weights_map;
+  std::unordered_map<weights*, ViewingWeightsPtr> weights_map;
   m_weights.reserve(other.m_weights.size());
   for (const auto& other_weights : other.m_weights) {
     if (other_weights == nullptr) {
-      LBANN_ERROR("model \"",other.get_name(),"\" ",
+      LBANN_ERROR("model \"",
+                  other.get_name(),
+                  "\" ",
                   "has a null pointer in its list of weights");
     }
-    m_weights.emplace_back(std::make_shared<data_type_weights<DataType>>(dynamic_cast<data_type_weights<DataType>&>(*other_weights)));
+    m_weights.emplace_back(std::make_shared<data_type_weights<DataType>>(
+      dynamic_cast<data_type_weights<DataType>&>(*other_weights)));
     weights_map[other_weights.get()] = m_weights.back();
   }
 
-
   // Fix pointers
   remap_pointers(layer_map, weights_map);
-
-
-
 }
 
-model& model::operator=(const model& other) {
+model& model::operator=(const model& other)
+{
 
   // Delete objects
-  // if (m_execution_context  != nullptr) { delete m_execution_context; } /// @todo BVE FIXME what do we do with smart pointers here
+  // if (m_execution_context  != nullptr) { delete m_execution_context; } ///
+  // @todo BVE FIXME what do we do with smart pointers here
 
   // Shallow copies
   m_comm = other.m_comm;
@@ -151,10 +152,11 @@ model& model::operator=(const model& other) {
   m_model_is_setup = false;
 
   // Deep copies
-  m_execution_context  = other.m_execution_context;
-  m_objective_function = (other.m_objective_function
-                          ? std::make_unique<objective_function>(*other.m_objective_function)
-                          : nullptr);
+  m_execution_context = other.m_execution_context;
+  m_objective_function =
+    (other.m_objective_function
+       ? std::make_unique<objective_function>(*other.m_objective_function)
+       : nullptr);
   m_metrics.clear();
   for (const auto& m : other.m_metrics) {
     m_metrics.emplace_back(m ? m->copy() : nullptr);
@@ -165,12 +167,14 @@ model& model::operator=(const model& other) {
   }
 
   // Copy layers
-  std::unordered_map<Layer*,ViewingLayerPtr> layer_map;
+  std::unordered_map<Layer*, ViewingLayerPtr> layer_map;
   m_layers.clear();
   m_layers.reserve(other.m_layers.size());
   for (const auto& other_layer : other.m_layers) {
     if (other_layer == nullptr) {
-      LBANN_ERROR("model \"",other.get_name(),"\" ",
+      LBANN_ERROR("model \"",
+                  other.get_name(),
+                  "\" ",
                   "has a null pointer in its list of layers");
     }
     m_layers.emplace_back(other_layer->copy());
@@ -179,48 +183,47 @@ model& model::operator=(const model& other) {
   }
 
   // Copy weights
-  std::unordered_map<weights*,ViewingWeightsPtr> weights_map;
+  std::unordered_map<weights*, ViewingWeightsPtr> weights_map;
   m_weights.clear();
   m_weights.reserve(other.m_weights.size());
   for (const auto& other_weights : other.m_weights) {
     if (other_weights == nullptr) {
-      LBANN_ERROR("model \"",other.get_name(),"\" ",
+      LBANN_ERROR("model \"",
+                  other.get_name(),
+                  "\" ",
                   "has a null pointer in its list of weights");
     }
-    m_weights.emplace_back(
-      std::make_unique<data_type_weights<DataType>>(
-        dynamic_cast<data_type_weights<DataType>&>(*other_weights)));
+    m_weights.emplace_back(std::make_unique<data_type_weights<DataType>>(
+      dynamic_cast<data_type_weights<DataType>&>(*other_weights)));
     weights_map[other_weights.get()] = m_weights.back();
   }
 
-
-
   // Fix pointers
   remap_pointers(layer_map, weights_map);
-
-
 
   return *this;
 }
 
 template <class Archive>
-void model::serialize(Archive & ar) {
+void model::serialize(Archive& ar)
+{
   ar(
-    //CEREAL_NVP(m_execution_context),
+    // CEREAL_NVP(m_execution_context),
     CEREAL_NVP(m_name),
-    //CEREAL_NVP(m_comm),
+    // CEREAL_NVP(m_comm),
     CEREAL_NVP(m_layers),
     CEREAL_NVP(m_weights),
-    //CEREAL_NVP(m_default_optimizer_msg),
+    // CEREAL_NVP(m_default_optimizer_msg),
     CEREAL_NVP(m_objective_function),
     CEREAL_NVP(m_metrics),
-    //CEREAL_NVP(m_callbacks),
+    // CEREAL_NVP(m_callbacks),
     CEREAL_NVP(m_background_io_allowed)
-    //CEREAL_NVP(m_model_is_setup)
+  // CEREAL_NVP(m_model_is_setup)
 #ifdef LBANN_HAS_DISTCONV
-    , CEREAL_NVP(m_max_mini_batch_size_distconv)
+      ,
+    CEREAL_NVP(m_max_mini_batch_size_distconv)
 #endif // LBANN_HAS_DISTCONV
-     );
+  );
 
   ar.serializeDeferments();
   if constexpr (utils::IsInputArchive<Archive>)
@@ -231,59 +234,61 @@ void model::serialize(Archive & ar) {
 // Access functions
 // =============================================
 
-void model::set_name(std::string name) {
+void model::set_name(std::string name)
+{
   if (name.empty()) {
-    std::ostringstream err;
-    err << "attempted to rename model \"" << get_name() << "\" "
-        << "with empty string";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("attempted to rename model \"",
+                get_name(),
+                "\" with empty string");
   }
   m_name = std::move(name);
 }
 
-description model::get_description() const {
+description model::get_description() const
+{
 
   // Construct description object
   description desc(get_name());
-  desc.add("Type", get_type());
 
   // Layer topology
   description layer_topology_desc("Layer topology:");
   for (El::Int k = 0; k < get_num_layers(); ++k) {
     const auto& l = get_layer(k);
-    std::stringstream ss;
-    ss << l.get_name() << " (" << l.get_type() << "): {";
+    std::ostringstream oss;
+    oss << l.get_name() << " (" << l.get_type() << "): {";
     const auto& parents = l.get_parent_layers();
     const auto& children = l.get_child_layers();
     for (size_t i = 0; i < parents.size(); ++i) {
-      ss << (i > 0 ? ", " : "");
+      oss << (i > 0 ? ", " : "");
       if (parents[i] == nullptr) {
-        ss << "unknown layer";
-      } else {
-        ss << parents[i]->get_name() << " (";
+        oss << "unknown layer";
+      }
+      else {
+        oss << parents[i]->get_name() << " (";
         const auto& dims = l.get_input_dims(i);
         for (size_t j = 0; j < dims.size(); ++j) {
-          ss << (j > 0 ? "x" : "") << dims[j];
+          oss << (j > 0 ? "x" : "") << dims[j];
         }
-        ss << ")";
+        oss << ")";
       }
     }
-    ss << "} -> {";
+    oss << "} -> {";
     for (size_t i = 0; i < children.size(); ++i) {
-      ss << (i > 0 ? ", " : "");
+      oss << (i > 0 ? ", " : "");
       if (children[i] == nullptr) {
-        ss << "unknown layer";
-      } else {
-        ss << children[i]->get_name() << " (";
+        oss << "unknown layer";
+      }
+      else {
+        oss << children[i]->get_name() << " (";
         const auto& dims = l.get_output_dims(i);
         for (size_t j = 0; j < dims.size(); ++j) {
-          ss << (j > 0 ? "x" : "") << dims[j];
+          oss << (j > 0 ? "x" : "") << dims[j];
         }
-        ss << ")";
+        oss << ")";
       }
     }
-    ss << "}";
-    layer_topology_desc.add(ss.str());
+    oss << "}";
+    layer_topology_desc.add(oss.str());
   }
   desc.add(std::string{});
   desc.add(layer_topology_desc);
@@ -301,7 +306,8 @@ description model::get_description() const {
   for (const auto& w : m_weights) {
     if (w == nullptr) {
       weights_desc.add("unknown weights");
-    } else {
+    }
+    else {
       weights_desc.add(w->get_description());
     }
   }
@@ -320,10 +326,10 @@ description model::get_description() const {
 
   // Result
   return desc;
-
 }
 
-std::vector<metric*> model::get_metrics() const {
+std::vector<metric*> model::get_metrics()
+{
   std::vector<metric*> ptrs;
   for (const auto& ptr : m_metrics) {
     ptrs.push_back(ptr.get());
@@ -331,28 +337,43 @@ std::vector<metric*> model::get_metrics() const {
   return ptrs;
 }
 
-El::Int model::get_num_layers() const noexcept {
-  return m_layers.size();
+std::vector<metric const*> model::get_metrics() const
+{
+  std::vector<metric const*> ptrs;
+  for (const auto& ptr : m_metrics) {
+    ptrs.push_back(ptr.get());
+  }
+  return ptrs;
 }
-Layer& model::get_layer(El::Int pos) {
+
+El::Int model::get_num_layers() const noexcept { return m_layers.size(); }
+Layer& model::get_layer(El::Int pos)
+{
   // Item 3, p. 23 in "Effective C++", 3rd ed., by Scott Meyers
   return const_cast<Layer&>(static_cast<const model&>(*this).get_layer(pos));
 }
-const Layer& model::get_layer(El::Int pos) const {
-  std::stringstream err;
+
+Layer const& model::get_layer(El::Int pos) const
+{
   if (pos < 0 || pos >= get_num_layers()) {
-    err << "could not access layer in model \"" << get_name() << "\" "
-        << "(requested index " << pos << ", "
-        << "but there are " << get_num_layers() << " layers)";
-    LBANN_ERROR(err.str());
-  } else if (m_layers[pos] == nullptr) {
-    err << "model \"" << get_name() << "\" "
-        << "has a null pointer in its layer list";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("could not access layer in model \"",
+                get_name(),
+                "\" (requested index ",
+                pos,
+                ", but there are ",
+                get_num_layers(),
+                " layers)");
+  }
+  else if (m_layers[pos] == nullptr) {
+    LBANN_ERROR("model \"",
+                get_name(),
+                "\" has a null pointer in its layer list");
   }
   return *m_layers[pos];
 }
-std::vector<Layer*> model::get_layers() {
+
+std::vector<Layer*> model::get_layers()
+{
   std::vector<Layer*> layer_list;
   layer_list.reserve(m_layers.size());
   for (const auto& ptr : m_layers) {
@@ -360,8 +381,10 @@ std::vector<Layer*> model::get_layers() {
   }
   return layer_list;
 }
-const std::vector<Layer*> model::get_layers() const {
-  std::vector<Layer*> layer_list;
+
+std::vector<Layer const*> model::get_layers() const
+{
+  std::vector<Layer const*> layer_list;
   layer_list.reserve(m_layers.size());
   for (const auto& ptr : m_layers) {
     layer_list.push_back(ptr.get());
@@ -369,7 +392,8 @@ const std::vector<Layer*> model::get_layers() const {
   return layer_list;
 }
 
-std::vector<weights*> model::get_weights() {
+std::vector<weights*> model::get_weights()
+{
   std::vector<weights*> weights_list;
   for (const auto& w : m_weights) {
     weights_list.push_back(w.get());
@@ -377,15 +401,17 @@ std::vector<weights*> model::get_weights() {
   return weights_list;
 }
 
-const std::vector<weights*> model::get_weights() const {
-  std::vector<weights*> weights_list;
+std::vector<weights const*> model::get_weights() const
+{
+  std::vector<weights const*> weights_list;
   for (const auto& w : m_weights) {
     weights_list.push_back(w.get());
   }
   return weights_list;
 }
 
-std::vector<ViewingWeightsPtr> model::get_weights_pointers() const {
+std::vector<ViewingWeightsPtr> model::get_weights_pointers() const
+{
   std::vector<ViewingWeightsPtr> ptrs;
   for (const auto& w : m_weights) {
     ptrs.emplace_back(w);
@@ -431,12 +457,15 @@ void model::serialize_to_onnx(onnx::ModelProto& mp) {
 // Model specification
 // =============================================
 
-void model::add_layer(OwningLayerPtr&& ptr) {
+void model::add_layer(OwningLayerPtr&& ptr)
+{
 
   // Check for null pointer
   if (ptr == nullptr) {
     LBANN_ERROR("attempted to add a null pointer as layer to ",
-                "model \"",get_name(),"\"");
+                "model \"",
+                get_name(),
+                "\"");
   }
 
   // Check that the new layer name is unique
@@ -447,8 +476,12 @@ void model::add_layer(OwningLayerPtr&& ptr) {
   const auto& name = ptr->get_name();
   for (const auto& l : m_layers) {
     if (l->get_name() == name) {
-      LBANN_ERROR("attempted to add layer \"",name,"\" to ",
-                  "model \"",get_name(),"\", ",
+      LBANN_ERROR("attempted to add layer \"",
+                  name,
+                  "\" to ",
+                  "model \"",
+                  get_name(),
+                  "\", ",
                   "but the model already contains a layer with that name");
     }
   }
@@ -456,15 +489,17 @@ void model::add_layer(OwningLayerPtr&& ptr) {
   // Add layer to model
   m_layers.emplace_back(std::move(ptr));
   m_layers.back()->set_model(this);
-
 }
 
-void model::add_weights(OwningWeightsPtr&& ptr) {
+void model::add_weights(OwningWeightsPtr&& ptr)
+{
 
   // Check for null pointer
   if (ptr == nullptr) {
     LBANN_ERROR("attempted to add a null pointer as weights to ",
-                "model \"",get_name(),"\"");
+                "model \"",
+                get_name(),
+                "\"");
   }
 
   // Check that the new weights name is unique
@@ -475,99 +510,115 @@ void model::add_weights(OwningWeightsPtr&& ptr) {
   const auto& name = ptr->get_name();
   for (const auto& w : m_weights) {
     if (w->get_name() == name) {
-      LBANN_ERROR("attempted to add weights \"",name,"\" to ",
-                  "model \"",get_name(),"\", ",
+      LBANN_ERROR("attempted to add weights \"",
+                  name,
+                  "\" to ",
+                  "model \"",
+                  get_name(),
+                  "\", ",
                   "but the model already contains weights with that name");
     }
   }
 
   // Add weights to model
   m_weights.emplace_back(std::move(ptr));
-
 }
 
-void model::remove_weights(std::string const& removable_weight_name) {
-  auto const removable_weight_iterator = std::find_if(
-                             cbegin(m_weights),
-                             cend(m_weights),
-                             [&removable_weight_name](auto const& w) {
-                               return w->get_name() == removable_weight_name;
-                             });
+void model::remove_weights(std::string const& removable_weight_name)
+{
+  auto const removable_weight_iterator =
+    std::find_if(cbegin(m_weights),
+                 cend(m_weights),
+                 [&removable_weight_name](auto const& w) {
+                   return w->get_name() == removable_weight_name;
+                 });
   if (removable_weight_iterator != cend(m_weights))
     m_weights.erase(removable_weight_iterator);
   else
-    LBANN_ERROR(
-      "Attempted to remove weight",
-      " \"", removable_weight_name, "\", ",
-      "but no such weight exists");
+    LBANN_ERROR("Attempted to remove weight",
+                " \"",
+                removable_weight_name,
+                "\", ",
+                "but no such weight exists");
 }
 
-void model::add_callback(std::shared_ptr<callback_base> cb) {
+void model::add_callback(std::shared_ptr<callback_base> cb)
+{
   if (cb == nullptr) {
-    LBANN_ERROR(
-      "attempted to add a null pointer as callback to ",
-      "model \"",get_name(),"\"");
+    LBANN_ERROR("attempted to add a null pointer as callback to ",
+                "model \"",
+                get_name(),
+                "\"");
   }
   m_callbacks.emplace_back(std::move(cb));
 }
 
-void model::add_metric(std::unique_ptr<metric> m) {
+void model::add_metric(std::unique_ptr<metric> m)
+{
   if (m == nullptr) {
-    LBANN_ERROR(
-      "attempted to add a null pointer as a metric to ",
-      "model \"",get_name(),"\"");
+    LBANN_ERROR("attempted to add a null pointer as a metric to ",
+                "model \"",
+                get_name(),
+                "\"");
   }
   m_metrics.emplace_back(std::move(m));
 }
 
-void model::copy_trained_weights_from(std::vector<weights*>& new_weights) {
+void model::copy_trained_weights_from(std::vector<weights*>& new_weights)
+{
   if (new_weights.empty()) {
-    if(m_comm->am_world_master()) std::cout << "No trained weights to copy " << std::endl;
+    if (m_comm->am_world_master())
+      std::cout << "No trained weights to copy " << std::endl;
     return;
   }
-  for(size_t i = 0; i < new_weights.size(); ++i) {
+  for (size_t i = 0; i < new_weights.size(); ++i) {
     for (size_t j = 0; j < m_weights.size(); ++j) {
-      //copy only trained weights (that is unfrozen layer)
-      if(m_weights[j]->get_name() == new_weights[i]->get_name() && !new_weights[i]->is_frozen()) {
+      // copy only trained weights (that is unfrozen layer)
+      if (m_weights[j]->get_name() == new_weights[i]->get_name() &&
+          !new_weights[i]->is_frozen()) {
 #ifdef LBANN_DEBUG
-        if(m_comm->am_world_master()) std::cout << " Replacing " << m_weights[j]->get_name() << " with " << new_weights[i]->get_name() << std::endl;
+        if (m_comm->am_world_master())
+          std::cout << " Replacing " << m_weights[j]->get_name() << " with "
+                    << new_weights[i]->get_name() << std::endl;
 #endif
-        dynamic_cast<data_type_weights<DataType>&>(*m_weights[j].get()).set_values(
-          dynamic_cast<data_type_weights<DataType> const&>(*new_weights[i]).get_values());
+        dynamic_cast<data_type_weights<DataType>&>(*m_weights[j].get())
+          .set_values(
+            dynamic_cast<data_type_weights<DataType> const&>(*new_weights[i])
+              .get_values());
       }
     }
   }
 }
 
-void model::swap_layers(model& other) {
-  std::swap(m_layers, other.m_layers);
-}
+void model::swap_layers(model& other) { std::swap(m_layers, other.m_layers); }
 
-void model::swap_weights(model& other) {
+void model::swap_weights(model& other)
+{
   std::swap(m_weights, other.m_weights);
 }
 
-void model::swap_metrics(model& other) {
+void model::swap_metrics(model& other)
+{
   std::swap(m_metrics, other.m_metrics);
 }
 
-void model::swap_objective_function(model& other) {
+void model::swap_objective_function(model& other)
+{
   std::swap(m_objective_function, other.m_objective_function);
 }
 
-void model::reorder_layers(const std::vector<El::Int>& gather_indices) {
-  std::stringstream err;
-
+void model::reorder_layers(const std::vector<El::Int>& gather_indices)
+{
   // Check that gather indices are in valid range
   const auto& num_layers = get_num_layers();
-  if (std::any_of(gather_indices.begin(), gather_indices.end(),
+  if (std::any_of(gather_indices.begin(),
+                  gather_indices.end(),
                   [num_layers](El::Int index) {
                     return index < 0 || index >= num_layers;
                   })) {
-    err << "attempted to reorder layer list for "
-        << "model \"" << get_name() << "\" "
-        << "with invalid gather index";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("Attempted to reorder layer list for model \"",
+                get_name(),
+                "\" with invalid gather index");
   }
 
   // Reorder layers
@@ -580,17 +631,17 @@ void model::reorder_layers(const std::vector<El::Int>& gather_indices) {
   // Check that layer list has no null pointers
   for (const auto& l : m_layers) {
     if (l == nullptr) {
-      err << "found a null pointer in the layer list for "
-          << "model \"" << get_name() << "\" after reordering";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR("Found a null pointer in the layer list for model \"",
+                  get_name(),
+                  "\" after reordering");
     }
   }
-
 }
 
 void model::remap_pointers(
-  const std::unordered_map<Layer*,ViewingLayerPtr>& layer_map,
-  const std::unordered_map<weights*,ViewingWeightsPtr>& weights_map) {
+  const std::unordered_map<Layer*, ViewingLayerPtr>& layer_map,
+  const std::unordered_map<weights*, ViewingWeightsPtr>& weights_map)
+{
 
   // Fix pointers in objective function
   if (m_objective_function != nullptr) {
@@ -644,21 +695,22 @@ void model::remap_pointers(
     l.set_layer_pointers(layer_pointers);
     l.set_weights_pointers(weights_pointers);
   }
-
 }
 
 // =============================================
 // Setup
 // =============================================
 
-void model::setup(
-  size_t max_mini_batch_size,
-  DataReaderMetaData& dr_metadata,
-  const std::vector<El::Grid*>& grids_,
-  bool force) {
+void model::setup(size_t max_mini_batch_size,
+                  DataReaderMetaData& dr_metadata,
+                  const std::vector<El::Grid*>& grids_,
+                  bool force)
+{
 
   // Bail out if the model is already setup
-  if(m_model_is_setup && !force) { return; }
+  if (m_model_is_setup && !force) {
+    return;
+  }
 
   for (const auto& cb : m_callbacks) {
     if (dynamic_cast<callback::checkpoint const*>(cb.get()))
@@ -671,13 +723,11 @@ void model::setup(
 
   setup_layer_topology();
   setup_layer_execution_order();
-  if(this->is_subgraph_parallelism_enabled())
-  {
+  if (this->is_subgraph_parallelism_enabled()) {
     setup_subgrids();
   }
 
   setup_layers(max_mini_batch_size, dr_metadata, grids_);
-
 
   // Setup weights
   setup_weights();
@@ -707,7 +757,8 @@ void model::setup(
   m_model_is_setup = true;
 }
 
-void model::setup_layer_topology() {
+void model::setup_layer_topology()
+{
 
   // Check that layer list is valid
   // Note: Throws an exception if the layer list contains two layers
@@ -718,9 +769,12 @@ void model::setup_layer_topology() {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
     if (layer_names.count(l.get_name()) > 0) {
-      LBANN_ERROR(
-        "model \"",get_name(),"\" "
-        "has multiple layers named \"",l.get_name(),"\"");
+      LBANN_ERROR("model \"",
+                  get_name(),
+                  "\" "
+                  "has multiple layers named \"",
+                  l.get_name(),
+                  "\"");
     }
     layer_set.insert(&l);
     layer_names.insert(l.get_name());
@@ -730,16 +784,24 @@ void model::setup_layer_topology() {
     for (const auto& ptr : l.get_layer_pointers()) {
       auto* raw_ptr = ptr.lock().get();
       if (raw_ptr != nullptr && layer_set.count(raw_ptr) == 0) {
-        auto message = build_string(
-          l.get_type()," layer \"",l.get_name(),"\" ",
-          "(in model \"",get_name(),"\") has a pointer to ",
-          raw_ptr->get_type()," layer \"",raw_ptr->get_name(),"\" ");
+        auto message = build_string(l.get_type(),
+                                    " layer \"",
+                                    l.get_name(),
+                                    "\" ",
+                                    "(in model \"",
+                                    get_name(),
+                                    "\") has a pointer to ",
+                                    raw_ptr->get_type(),
+                                    " layer \"",
+                                    raw_ptr->get_name(),
+                                    "\" ");
         if (raw_ptr->get_model() == nullptr) {
           message += "(not in a model)";
         }
         else {
-          message += build_string(
-            "(in model \"",raw_ptr->get_model()->get_name(),"\")");
+          message += build_string("(in model \"",
+                                  raw_ptr->get_model()->get_name(),
+                                  "\")");
         }
         LBANN_ERROR(message);
       }
@@ -748,10 +810,10 @@ void model::setup_layer_topology() {
 
   // Make sure parent/child relationships are reciprocated
   for (auto& l : m_layers) {
-    for (int i=0; i<l->get_num_parents(); ++i) {
+    for (int i = 0; i < l->get_num_parents(); ++i) {
       const_cast<Layer&>(l->get_parent_layer(i)).add_child_layer(l);
     }
-    for (int i=0; i<l->get_num_children(); ++i) {
+    for (int i = 0; i < l->get_num_children(); ++i) {
       const_cast<Layer&>(l->get_child_layer(i)).add_parent_layer(l);
     }
   }
@@ -760,158 +822,142 @@ void model::setup_layer_topology() {
   add_evaluation_layers(layer_set, layer_names);
   add_dummy_layers(layer_names);
   add_split_layers(layer_names);
-
 }
 
-void model::get_parent_subgrid_tags(int layer_index ){
+void model::get_parent_subgrid_tags(int layer_index)
+{
   // Finds sub-graph tags of parents
 
-  // If a layer has multiple parents then each parent can have tag either similar to previous parents
-  // or can have a different tag
+  // If a layer has multiple parents then each parent can have tag either
+  // similar to previous parents or can have a different tag
 
-  // This function finds number of different sub-grids in parents and assign a unique tag to each parent
-  // based on the ranks of parent
-	const auto& layers = this->get_layers();
-	const std::vector<const Layer*>& parents = layers[layer_index]->get_parent_layers();
-	std::vector < std::set < int>> diff_subgrids;
-	std::vector<int> parent_tags(parents.size());
+  // This function finds number of different sub-grids in parents and assign a
+  // unique tag to each parent based on the ranks of parent
+  const auto& layers = this->get_layers();
+  const std::vector<const Layer*>& parents =
+    layers[layer_index]->get_parent_layers();
+  std::vector<std::set<int>> diff_subgrids;
+  std::vector<int> parent_tags(parents.size());
 
-	for (int i = 0; i < int(parents.size()); ++i)
-	{
-		std::set<int> parent_subgrid_ranks_set = parents[i]->get_subgrid_ranks();
-		if(diff_subgrids.size()==0)
-		{
-		    diff_subgrids.push_back(parent_subgrid_ranks_set);
-        parent_tags[i] = 0;
-		}
-		else
-		{
+  for (int i = 0; i < int(parents.size()); ++i) {
+    std::set<int> parent_subgrid_ranks_set = parents[i]->get_subgrid_ranks();
+    if (diff_subgrids.size() == 0) {
+      diff_subgrids.push_back(parent_subgrid_ranks_set);
+      parent_tags[i] = 0;
+    }
+    else {
 
-		    bool flag_found = false;
-		    for(int j=0; j< int(diff_subgrids.size()); ++j)
-		    {
-		        if(parent_subgrid_ranks_set==diff_subgrids[j])
-		        {
-		            parent_tags[i] = j;
-		            flag_found = true;
-		            break;
-		        }
-		    }
+      bool flag_found = false;
+      for (int j = 0; j < int(diff_subgrids.size()); ++j) {
+        if (parent_subgrid_ranks_set == diff_subgrids[j]) {
+          parent_tags[i] = j;
+          flag_found = true;
+          break;
+        }
+      }
 
-		    if(flag_found==false)
-		    {
-		        parent_tags[i] = int(diff_subgrids.size());
-		        diff_subgrids.push_back(parent_subgrid_ranks_set);
-		    }
-		}
-	}
+      if (flag_found == false) {
+        parent_tags[i] = int(diff_subgrids.size());
+        diff_subgrids.push_back(parent_subgrid_ranks_set);
+      }
+    }
+  }
 
   layers[layer_index]->reset_parent_tags(
-  							std::vector<int>(parent_tags.begin(),parent_tags.end()) );
+    std::vector<int>(parent_tags.begin(), parent_tags.end()));
   layers[layer_index]->set_num_spliting_groups(int(diff_subgrids.size()));
-
-
 }
 
-void model::check_subgraph_parallelism(){
-  // Enables sub-graph parallelism if a layer has a sub-graph tag greater than zero
+void model::check_subgraph_parallelism()
+{
+  // Enables sub-graph parallelism if a layer has a sub-graph tag greater than
+  // zero
   const auto& layers = this->get_layers();
   const El::Int num_layers = layers.size();
   for (El::Int node = 0; node < num_layers; ++node) {
-    if(layers[node]->get_parallel_strategy().sub_branch_tag != 0)
-    {
+    if (layers[node]->get_parallel_strategy().sub_branch_tag != 0) {
       this->enable_subgraph_parallelism();
       break;
     }
-
   }
 }
 
 void model::setup_subgrid_layers_run_condition()
 {
-  // This function setups sub-grid run condition for a layer in forward and backward pass
+  // This function setups sub-grid run condition for a layer in forward and
+  // backward pass
   const auto& layers = this->get_layers();
   const El::Int num_layers = layers.size();
   int myrank = El::mpi::Rank();
   for (El::Int node = 0; node < num_layers; ++node) {
     auto layer_subgrid_ranks = layers[node]->get_subgrid_ranks();
-    if(layer_subgrid_ranks.find(myrank) != layer_subgrid_ranks.end()
-          || layers[node]->get_name()=="layer1")
-    {
+    if (layer_subgrid_ranks.find(myrank) != layer_subgrid_ranks.end() ||
+        layers[node]->get_name() == "layer1") {
 
       layers[node]->set_run_layer_in_subgraph();
     }
 
-
-    else if((layers[node]->get_type()=="slice") ||
-        (layers[node]->get_type()=="split") )
-    {
-      //check child subgrids
-      const std::vector<const Layer*>& childs = layers[node]->get_child_layers();
+    else if ((layers[node]->get_type() == "slice") ||
+             (layers[node]->get_type() == "split")) {
+      // check child subgrids
+      const std::vector<const Layer*>& childs =
+        layers[node]->get_child_layers();
       std::set<int> pooled_set;
 
-      for(int child= 0; child < int(childs.size()); ++child)
-      {
-        std::set<int> temp_set(pooled_set.begin(),pooled_set.end());
+      for (int child = 0; child < int(childs.size()); ++child) {
+        std::set<int> temp_set(pooled_set.begin(), pooled_set.end());
         pooled_set.clear();
         auto child_subgrid_ranks = childs[child]->get_subgrid_ranks();
-        std::set_union(temp_set.begin(), temp_set.end(),
-                    child_subgrid_ranks.begin(),
-                    child_subgrid_ranks.end(),
-                    std::inserter(pooled_set, pooled_set.begin()));
+        std::set_union(temp_set.begin(),
+                       temp_set.end(),
+                       child_subgrid_ranks.begin(),
+                       child_subgrid_ranks.end(),
+                       std::inserter(pooled_set, pooled_set.begin()));
       }
-      if(pooled_set.find(myrank)!= pooled_set.end())
-      {
+      if (pooled_set.find(myrank) != pooled_set.end()) {
         layers[node]->set_run_layer_in_subgraph();
       }
     }
 
-
-    else if((layers[node]->get_type()=="concatenate") ||
-        (layers[node]->get_type()=="sum") )
-    {
-      const std::vector<const Layer*>& parents = layers[node]->get_parent_layers();
+    else if ((layers[node]->get_type() == "concatenate") ||
+             (layers[node]->get_type() == "sum")) {
+      const std::vector<const Layer*>& parents =
+        layers[node]->get_parent_layers();
       std::set<int> pooled_set;
 
-      for(int parent= 0; parent< int(parents.size());++parent)
-      {
-        std::set<int> temp_set(pooled_set.begin(),pooled_set.end());
+      for (int parent = 0; parent < int(parents.size()); ++parent) {
+        std::set<int> temp_set(pooled_set.begin(), pooled_set.end());
         pooled_set.clear();
         auto parent_subgrid_ranks = parents[parent]->get_subgrid_ranks();
-        std::set_union(temp_set.begin(), temp_set.end(),
-                    parent_subgrid_ranks.begin(),
-                    parent_subgrid_ranks.end(),
-                    std::inserter(pooled_set, pooled_set.begin()));
+        std::set_union(temp_set.begin(),
+                       temp_set.end(),
+                       parent_subgrid_ranks.begin(),
+                       parent_subgrid_ranks.end(),
+                       std::inserter(pooled_set, pooled_set.begin()));
       }
-      if(pooled_set.find(myrank)!= pooled_set.end())
-      {
+      if (pooled_set.find(myrank) != pooled_set.end()) {
         layers[node]->set_run_layer_in_subgraph();
       }
     }
-
-
   }
 
-  //Print the layer and associated ranks on which it will run
+  // Print the layer and associated ranks on which it will run
 
-  if(myrank==0)
-  {
-
+  if (myrank == 0) {
 
     for (El::Int node = 0; node < num_layers; ++node) {
-      std::cout<<"Rank:"<<myrank<<" Layer name:"<<layers[node]->get_name()<<" Subgrid Ranks:";
-      for (int const& rank : (layers[node]->get_subgrid_ranks()))
-      {
-          std::cout << rank << ' ';
+      std::cout << "Rank:" << myrank
+                << " Layer name:" << layers[node]->get_name()
+                << " Subgrid Ranks:";
+      for (int const& rank : (layers[node]->get_subgrid_ranks())) {
+        std::cout << rank << ' ';
       }
-      std::cout<<"\n";
+      std::cout << "\n";
     }
   }
-
-
 }
 
-void model::get_subgrids_order(std::vector<int> &ranks_order, int num_branches)
+void model::get_subgrids_order(std::vector<int>& ranks_order, int num_branches)
 {
   // function to get ranks in order according to the topology
   // more topology aware designs can be defined here
@@ -919,159 +965,142 @@ void model::get_subgrids_order(std::vector<int> &ranks_order, int num_branches)
   int size_grid = ranks_order.size();
 
   std::vector<int> temp_ranks(ranks_order.begin(), ranks_order.end());
-  std::sort(temp_ranks.begin(),temp_ranks.end());
+  std::sort(temp_ranks.begin(), temp_ranks.end());
   int rank = 0;
 
-  //parent grid has more ranks than subgrids but less than total number of ranks
-  bool cond_parent_have_more_resources = (size_grid / (this->get_num_resources_branch_layers()/num_branches) ) > 1;
+  // parent grid has more ranks than subgrids but less than total number of
+  // ranks
+  bool cond_parent_have_more_resources =
+    (size_grid / (this->get_num_resources_branch_layers() / num_branches)) > 1;
 
-  //No need to order when parent's total resources are less than subgrids
-  //Topology aware design for this case is implemented in get_input_resources and merge_resources layer
-  if(this->get_subgrid_topology()==true &&
-    (this->get_num_resources_non_branch_layers() == this->get_num_resources_branch_layers()
-      || cond_parent_have_more_resources))
-  {
+  // No need to order when parent's total resources are less than subgrids
+  // Topology aware design for this case is implemented in get_input_resources
+  // and merge_resources layer
+  if (this->get_subgrid_topology() == true &&
+      (this->get_num_resources_non_branch_layers() ==
+         this->get_num_resources_branch_layers() ||
+       cond_parent_have_more_resources)) {
 
     int size_branch = size_grid / num_branches;
-    for (int i =0; i < size_branch; ++i)
-    {
-        for (int j=0; j< num_branches; ++j)
-        {
-            ranks_order[j*size_branch + i] = temp_ranks[rank];
-            rank++;
-        }
-
+    for (int i = 0; i < size_branch; ++i) {
+      for (int j = 0; j < num_branches; ++j) {
+        ranks_order[j * size_branch + i] = temp_ranks[rank];
+        rank++;
+      }
     }
-
   }
-  else
-  {
-    for(El::Int i = 0; i < size_grid; ++i)
-    {
+  else {
+    for (El::Int i = 0; i < size_grid; ++i) {
       ranks_order[i] = temp_ranks[rank];
       rank++;
     }
   }
-
-
 }
 
 int model::get_max_subgraph_branches()
 {
-  //gives max number of subgraph branches
-	const auto& layers = this->get_layers();
-	const El::Int num_layers = layers.size();
-	int max_branches = 1;
+  // gives max number of subgraph branches
+  const auto& layers = this->get_layers();
+  const El::Int num_layers = layers.size();
+  int max_branches = 1;
 
-	for (El::Int node = 0; node < num_layers; ++node) {
-		max_branches = std::max(max_branches, layers[node]->get_parallel_strategy().sub_branch_tag);
-	}
-	return max_branches;
+  for (El::Int node = 0; node < num_layers; ++node) {
+    max_branches =
+      std::max(max_branches,
+               layers[node]->get_parallel_strategy().sub_branch_tag);
+  }
+  return max_branches;
 }
 
-void model::get_subgraph_subgrids_ranks(std::vector<int> &parent_ranks,
-									std::vector<int> &subgrid_ranks,
-									int layer_index,
-									int number_ranks_in_grid
-									)
+void model::get_subgraph_subgrids_ranks(std::vector<int>& parent_ranks,
+                                        std::vector<int>& subgrid_ranks,
+                                        int layer_index,
+                                        int number_ranks_in_grid)
 {
-    //assings ranks to the subgrids
-    //Assumes Parents ranks are in sorted order
-    const auto& layers = this->get_layers();
-    const int num_branches = parent_ranks.size() / number_ranks_in_grid;
-    subgrid_ranks.resize(number_ranks_in_grid);
+  // assings ranks to the subgrids
+  // Assumes Parents ranks are in sorted order
+  const auto& layers = this->get_layers();
+  const int num_branches = parent_ranks.size() / number_ranks_in_grid;
+  subgrid_ranks.resize(number_ranks_in_grid);
 
-    if(this->get_subgrid_topology()==true)
-    {
-    	for(int i = 0; i < number_ranks_in_grid; ++i)
-    	{
-    		subgrid_ranks[i] = parent_ranks[ i*num_branches
-    							+ layers[layer_index]->get_parallel_strategy().sub_branch_tag
-    							- 1];
-
-    	}
-
+  if (this->get_subgrid_topology() == true) {
+    for (int i = 0; i < number_ranks_in_grid; ++i) {
+      subgrid_ranks[i] = parent_ranks
+        [i * num_branches +
+         layers[layer_index]->get_parallel_strategy().sub_branch_tag - 1];
     }
-    else
-    {
-    	subgrid_ranks.clear();
+  }
+  else {
+    subgrid_ranks.clear();
 
-    	for (int i = 0; i<int(parent_ranks.size()); ++i)
-	    {
-  			if(i >= (layers[layer_index]->get_parallel_strategy().sub_branch_tag - 1)*number_ranks_in_grid
-  				&& i < (layers[layer_index]->get_parallel_strategy().sub_branch_tag )*number_ranks_in_grid)
-    			{
-    				subgrid_ranks.push_back(parent_ranks[i]);
-    			}
-	    }
+    for (int i = 0; i < int(parent_ranks.size()); ++i) {
+      if (i >=
+            (layers[layer_index]->get_parallel_strategy().sub_branch_tag - 1) *
+              number_ranks_in_grid &&
+          i < (layers[layer_index]->get_parallel_strategy().sub_branch_tag) *
+                number_ranks_in_grid) {
+        subgrid_ranks.push_back(parent_ranks[i]);
+      }
     }
+  }
 }
 
-void getOrderFromIndex(std::vector<int> &rankOrder, std::string str)
+void getOrderFromIndex(std::vector<int>& rankOrder, std::string str)
 {
-   std::string word = "";
-   rankOrder.clear();
-   for (auto x : str)
-   {
-       if (x == ' ')
-       {
-           if(word!="")
-           {
-              rankOrder.push_back(std::stoi(word));
-           }
+  std::string word = "";
+  rankOrder.clear();
+  for (auto x : str) {
+    if (x == ' ') {
+      if (word != "") {
+        rankOrder.push_back(std::stoi(word));
+      }
 
-           word = "";
-       }
-       else
-       {
-           word = word + x;
-       }
-   }
-   rankOrder.push_back(std::stoi(word));
+      word = "";
+    }
+    else {
+      word = word + x;
+    }
+  }
+  rankOrder.push_back(std::stoi(word));
 }
 
-void model::get_resources_for_spliting_point(std::vector<int> &parent_ranks,
-                  std::vector<int> &subgrid_ranks,
-                  int layer_index,
-                  int number_ranks_in_grid,
-                  int num_subgrids
-                  )
+void model::get_resources_for_spliting_point(std::vector<int>& parent_ranks,
+                                             std::vector<int>& subgrid_ranks,
+                                             int layer_index,
+                                             int number_ranks_in_grid,
+                                             int num_subgrids)
 {
   const auto& layers = this->get_layers();
 
-  if(this->get_num_resources_non_branch_layers() != this->get_num_resources_branch_layers())
-  {
-    //branch tag of first subgrid is 1
-    if(this->get_subgrid_topology()==true)
-    {
-      int sub_branch_tag = layers[layer_index]->get_parallel_strategy().sub_branch_tag -1;
+  if (this->get_num_resources_non_branch_layers() !=
+      this->get_num_resources_branch_layers()) {
+    // branch tag of first subgrid is 1
+    if (this->get_subgrid_topology() == true) {
+      int sub_branch_tag =
+        layers[layer_index]->get_parallel_strategy().sub_branch_tag - 1;
       int num_ranks = this->get_num_resources_branch_layers() / num_subgrids;
 
       subgrid_ranks.clear();
       subgrid_ranks.resize(num_ranks);
 
-      for(int rank=0; rank<num_ranks; ++rank)
-      {
-        subgrid_ranks[rank] = (rank*num_subgrids)  + sub_branch_tag;
+      for (int rank = 0; rank < num_ranks; ++rank) {
+        subgrid_ranks[rank] = (rank * num_subgrids) + sub_branch_tag;
       }
-
     }
-    else
-    {
-      int sub_branch_tag = layers[layer_index]->get_parallel_strategy().sub_branch_tag -1;
+    else {
+      int sub_branch_tag =
+        layers[layer_index]->get_parallel_strategy().sub_branch_tag - 1;
       int num_ranks = this->get_num_resources_branch_layers() / num_subgrids;
       const int start_rank = sub_branch_tag * num_ranks;
       subgrid_ranks.clear();
       subgrid_ranks.resize(num_ranks);
 
-      for(int rank=0; rank<num_ranks; ++rank)
-      {
-        subgrid_ranks[rank] = rank+start_rank;
+      for (int rank = 0; rank < num_ranks; ++rank) {
+        subgrid_ranks[rank] = rank + start_rank;
       }
     }
   }
-  else
-  {
+  else {
     this->get_subgraph_subgrids_ranks(parent_ranks,
                                       subgrid_ranks,
                                       layer_index,
@@ -1079,98 +1108,100 @@ void model::get_resources_for_spliting_point(std::vector<int> &parent_ranks,
   }
 }
 
-
-void model::get_resources_for_merge_layers(std::set<int>& pooled_set, int child_index, int num_subgrids)
+void model::get_resources_for_merge_layers(std::set<int>& pooled_set,
+                                           int child_index,
+                                           int num_subgrids)
 {
   const auto& layers = this->get_layers();
-  const std::vector<const Layer*>& parents = layers[child_index]->get_parent_layers();
+  const std::vector<const Layer*>& parents =
+    layers[child_index]->get_parent_layers();
 
   std::vector<int> child_parent_tags = layers[child_index]->get_parent_tags();
-  if(this->get_num_resources_non_branch_layers() != this->get_num_resources_branch_layers()
-      && *std::max_element(child_parent_tags.begin(), child_parent_tags.end()) > 0)
+  if (this->get_num_resources_non_branch_layers() !=
+        this->get_num_resources_branch_layers() &&
+      *std::max_element(child_parent_tags.begin(), child_parent_tags.end()) > 0)
   // Two level subgrid support only
   // subgrids in parent layers should be different
-  //modify to create subgrid within subgrids
+  // modify to create subgrid within subgrids
   {
 
     std::vector<int> pooled_vector;
 
-    this->get_resources_for_input_layer(pooled_vector,num_subgrids);
+    this->get_resources_for_input_layer(pooled_vector, num_subgrids);
 
     pooled_set.clear();
 
-    for (int i = 0 ; i < int(pooled_vector.size()); i++) pooled_set.insert(pooled_vector[i]);
-
-
+    for (int i = 0; i < int(pooled_vector.size()); i++)
+      pooled_set.insert(pooled_vector[i]);
   }
-  else
-  {
-    for(int parent= 0; parent< int(parents.size());++parent)
-    {
-      std::set<int> temp_set(pooled_set.begin(),pooled_set.end());
+  else {
+    for (int parent = 0; parent < int(parents.size()); ++parent) {
+      std::set<int> temp_set(pooled_set.begin(), pooled_set.end());
       pooled_set.clear();
       auto parent_subgrid_ranks = parents[parent]->get_subgrid_ranks();
-      std::set_union(temp_set.begin(), temp_set.end(),
-                  parent_subgrid_ranks.begin(),
-                  parent_subgrid_ranks.end(),
-                  std::inserter(pooled_set, pooled_set.begin()));
+      std::set_union(temp_set.begin(),
+                     temp_set.end(),
+                     parent_subgrid_ranks.begin(),
+                     parent_subgrid_ranks.end(),
+                     std::inserter(pooled_set, pooled_set.begin()));
     }
   }
 }
 
-void model::get_resources_for_input_layer(std::vector<int>& masterSubGrid, int num_subgrids)
+void model::get_resources_for_input_layer(std::vector<int>& masterSubGrid,
+                                          int num_subgrids)
 {
   masterSubGrid.resize(this->get_num_resources_non_branch_layers());
 
-  if(this->get_num_resources_non_branch_layers() != this->get_num_resources_branch_layers())
-  {
-    if(this->get_subgrid_topology()==true)
-    {
-      int ranks_per_grid = this->get_num_resources_branch_layers() / num_subgrids;
-      int offset = num_subgrids /  (this->get_num_resources_non_branch_layers() / ranks_per_grid);
-      for (int i = 0; i<this->get_num_resources_non_branch_layers(); ++i) masterSubGrid[i] = i*offset;
+  if (this->get_num_resources_non_branch_layers() !=
+      this->get_num_resources_branch_layers()) {
+    if (this->get_subgrid_topology() == true) {
+      int ranks_per_grid =
+        this->get_num_resources_branch_layers() / num_subgrids;
+      int offset = num_subgrids / (this->get_num_resources_non_branch_layers() /
+                                   ranks_per_grid);
+      for (int i = 0; i < this->get_num_resources_non_branch_layers(); ++i)
+        masterSubGrid[i] = i * offset;
     }
-    else
-    {
-      for (int i = 0; i<this->get_num_resources_non_branch_layers(); ++i) masterSubGrid[i] = i;
+    else {
+      for (int i = 0; i < this->get_num_resources_non_branch_layers(); ++i)
+        masterSubGrid[i] = i;
     }
-
   }
-  else
-  {
-     for (int i = 0; i<this->get_num_resources_non_branch_layers(); ++i) masterSubGrid[i] = i;
+  else {
+    for (int i = 0; i < this->get_num_resources_non_branch_layers(); ++i)
+      masterSubGrid[i] = i;
   }
 }
 
 void model::setup_subcommunicators()
 {
-  // Because of this optimization we cannot have dynamic number of sub-graph in a model
-  // For example: In a model, module1 cannnot different number of sub-graphs than module2
+  // Because of this optimization we cannot have dynamic number of sub-graph in
+  // a model For example: In a model, module1 cannnot different number of
+  // sub-graphs than module2
   std::string one_index = "1";
 
   const auto& layers = this->get_layers();
   const El::Int num_layers = layers.size();
 
   for (El::Int node = 0; node < num_layers; ++node) {
-    if((layers[node]->get_type()=="slice"
-        || layers[node]->get_type()=="split"
-        || layers[node]->get_type()=="concatenate"
-        || layers[node]->get_type()=="sum")
-      && layers[node]->get_parallel_strategy().enable_subgraph==true)
-    {
-      if(subCommunicatorsSubgrids.find(one_index) != subCommunicatorsSubgrids.end())
-      {
-        layers[node]->reset_inter_subgrid_vc_comm(subCommunicatorsSubgrids[one_index]);
+    if ((layers[node]->get_type() == "slice" ||
+         layers[node]->get_type() == "split" ||
+         layers[node]->get_type() == "concatenate" ||
+         layers[node]->get_type() == "sum") &&
+        layers[node]->get_parallel_strategy().enable_subgraph == true) {
+      if (subCommunicatorsSubgrids.find(one_index) !=
+          subCommunicatorsSubgrids.end()) {
+        layers[node]->reset_inter_subgrid_vc_comm(
+          subCommunicatorsSubgrids[one_index]);
       }
-      else
-      {
+      else {
         subCommunicatorsSubgrids[one_index] = std::make_shared<El::mpi::Comm>();
         const auto& childs = layers[node]->get_child_layers();
 
         int indexSubgrid = -1;
-        for(int child = 0 ; child < layers[node]->get_num_children(); ++child )
-        {
-          if(childs[child]->get_mygrid()->InGrid())
+        for (int child = 0; child < layers[node]->get_num_children(); ++child) {
+          if (childs[child]->get_mygrid()->InGrid())
 
           {
             indexSubgrid = child;
@@ -1180,32 +1211,31 @@ void model::setup_subcommunicators()
         const int posInSubGrid = childs[indexSubgrid]->get_mygrid()->VCRank();
         const int posInGrid = layers[node]->get_mygrid()->ViewingRank();
         El::mpi::Split(layers[node]->get_comm()->get_trainer_comm(),
-                        posInSubGrid,
-                        posInGrid,
-                        *subCommunicatorsSubgrids[one_index]);
+                       posInSubGrid,
+                       posInGrid,
+                       *subCommunicatorsSubgrids[one_index]);
 
-        layers[node]->reset_inter_subgrid_vc_comm(subCommunicatorsSubgrids[one_index]);
+        layers[node]->reset_inter_subgrid_vc_comm(
+          subCommunicatorsSubgrids[one_index]);
       }
     }
 
-    if(layers[node]->get_type()=="cross_grid_sum" ||
-      layers[node]->get_type()=="cross_grid_sum_slice")
-    {
-      layers[node]->reset_inter_subgrid_vc_comm(subCommunicatorsSubgrids[one_index]);
+    if (layers[node]->get_type() == "cross_grid_sum" ||
+        layers[node]->get_type() == "cross_grid_sum_slice") {
+      layers[node]->reset_inter_subgrid_vc_comm(
+        subCommunicatorsSubgrids[one_index]);
     }
-
-
   }
-
 }
 
-void  model::setup_subgrids(){
+void model::setup_subgrids()
+{
 
   // Function to setup subgrids when subgraph parallelism is enabled
 
   const auto& layers = this->get_layers();
   const El::Int num_layers = layers.size();
-  const El::GridOrder orderGrid =  El::COLUMN_MAJOR;
+  const El::GridOrder orderGrid = El::COLUMN_MAJOR;
   const int rank = m_comm->get_rank_in_trainer();
 
   std::string grid_global_index = "";
@@ -1213,20 +1243,19 @@ void  model::setup_subgrids(){
   El::mpi::Group worldGroup;
 
   El::mpi::Comm sub_comm = El::mpi::NewWorldComm();
-  El::Int commSize = El::mpi::Size( sub_comm);
+  El::Int commSize = El::mpi::Size(sub_comm);
 
-  if(this->get_subgraph_num_parent_resources()==0)
-  {
-    //does not matter resources for branch layer as long as it is smaller than non branch layers
+  if (this->get_subgraph_num_parent_resources() == 0) {
+    // does not matter resources for branch layer as long as it is smaller than
+    // non branch layers
     this->set_num_resources_branch_layers(commSize);
     this->set_num_resources_non_branch_layers(commSize);
   }
-  else
-  {
+  else {
     this->set_num_resources_branch_layers(commSize);
-    this->set_num_resources_non_branch_layers(this->get_subgraph_num_parent_resources());
+    this->set_num_resources_non_branch_layers(
+      this->get_subgraph_num_parent_resources());
   }
-
 
   std::vector<int> masterSubGridRankOrder;
 
@@ -1236,132 +1265,138 @@ void  model::setup_subgrids(){
 
   get_subgrids_order(masterSubGridRankOrder, max_branches);
 
-  //Start will all the ranks for the layer
-  //std::set <int > initial_ranks;
-  std::set <int > initial_ranks_global(masterSubGridRankOrder.begin(),masterSubGridRankOrder.end());
+  // Start will all the ranks for the layer
+  // std::set <int > initial_ranks;
+  std::set<int> initial_ranks_global(masterSubGridRankOrder.begin(),
+                                     masterSubGridRankOrder.end());
 
   // index based on ranks
-  for (auto it=masterSubGridRankOrder.begin(); it != masterSubGridRankOrder.end(); ++it)
-        grid_global_index += " " + std::to_string(*it);
+  for (auto it = masterSubGridRankOrder.begin();
+       it != masterSubGridRankOrder.end();
+       ++it)
+    grid_global_index += " " + std::to_string(*it);
 
-  grids_mpi_groups[grid_global_index] = std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
+  grids_mpi_groups[grid_global_index] =
+    std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
 
-  El::mpi::CommGroup( El::mpi::NewWorldComm(), worldGroup);
+  El::mpi::CommGroup(El::mpi::NewWorldComm(), worldGroup);
 
-
-  //  Not changing the order in the index as it will create problem for layers such as concatenate
-  //  and sum.
-  El::mpi::Incl( worldGroup, masterSubGridRankOrder.size(), masterSubGridRankOrder.data(),
-                    *grids_mpi_groups[grid_global_index] );
-
+  //  Not changing the order in the index as it will create problem for layers
+  //  such as concatenate and sum.
+  El::mpi::Incl(worldGroup,
+                masterSubGridRankOrder.size(),
+                masterSubGridRankOrder.data(),
+                *grids_mpi_groups[grid_global_index]);
 
   std::unique_ptr<El::Grid> temp_ptr;
 
-  grids[grid_global_index] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),
-                                                        *grids_mpi_groups[grid_global_index],
-                                                        masterSubGridRankOrder.size(),
-                                                        orderGrid );
+  grids[grid_global_index] =
+    std::make_shared<El::Grid>(El::mpi::NewWorldComm(),
+                               *grids_mpi_groups[grid_global_index],
+                               masterSubGridRankOrder.size(),
+                               orderGrid);
 
   for (El::Int node = 0; node < num_layers; ++node) {
     layers[node]->enable_subgraph_parallelism();
 
-    //special cases
-    if(layers[node]->get_type()=="split" || layers[node]->get_type()=="sum" || layers[node]->get_type()=="slice" || layers[node]->get_type()=="concatenate")
-    {
-      layers[node]->set_communication_flag(this->get_subgrid_communication_type());
+    // special cases
+    if (layers[node]->get_type() == "split" ||
+        layers[node]->get_type() == "sum" ||
+        layers[node]->get_type() == "slice" ||
+        layers[node]->get_type() == "concatenate") {
+      layers[node]->set_communication_flag(
+        this->get_subgrid_communication_type());
 
-      //set enable subgrpah parallelism variable for split layers
-      if(layers[node]->get_type()=="split")
-      {
+      // set enable subgrpah parallelism variable for split layers
+      if (layers[node]->get_type() == "split") {
         auto childs = layers[node]->get_child_layers();
-        if(childs[0]->get_parallel_strategy().sub_branch_tag > 0)
-        {
+        if (childs[0]->get_parallel_strategy().sub_branch_tag > 0) {
           layers[node]->set_enable_subgraph_variable();
         }
       }
-
     }
 
-
-    //these layers have global grid. Grid that has every rank
-    if(layers[node]->get_type() == "input" || layers[node]->get_type() == "constant" )
-    {
-      if(this->get_num_resources_non_branch_layers() < this->get_num_resources_branch_layers()
-         && layers[node]->get_type() == "inputs" )
-      {
-        // layers[node]->subgrid_ranks.reset(new std::set<int >(initial_ranks_input.begin(),initial_ranks_input.end()));
+    // these layers have global grid. Grid that has every rank
+    if (layers[node]->get_type() == "input" ||
+        layers[node]->get_type() == "constant") {
+      if (this->get_num_resources_non_branch_layers() <
+            this->get_num_resources_branch_layers() &&
+          layers[node]->get_type() == "inputs") {
+        // layers[node]->subgrid_ranks.reset(new std::set<int
+        // >(initial_ranks_input.begin(),initial_ranks_input.end()));
         // layers[node]->subgrid_index = grid_input_index;
         // layers[node]->mygrid = grids[grid_input_index];
       }
-      else
-      {
-        // layers[node]->subgrid_ranks.reset(new std::set<int >(initial_ranks_global.begin(),initial_ranks_global.end()));
+      else {
+        // layers[node]->subgrid_ranks.reset(new std::set<int
+        // >(initial_ranks_global.begin(),initial_ranks_global.end()));
         layers[node]->reset_subgrid_ranks(initial_ranks_global);
         layers[node]->set_subgrid_index(grid_global_index);
         layers[node]->reset_mygrid(grids[grid_global_index]);
       }
-
-
-
     }
-    else
-    {
-      if(layers[node]->get_parallel_strategy().sub_branch_tag == 0)
-        // A layer might be a common layer or
-        // there is no need to divide resources at this point (continuation of previous grids)
+    else {
+      if (layers[node]->get_parallel_strategy().sub_branch_tag == 0)
+      // A layer might be a common layer or
+      // there is no need to divide resources at this point (continuation of
+      // previous grids)
       {
-        const std::vector<const Layer*>& parents = layers[node]->get_parent_layers();
+        const std::vector<const Layer*>& parents =
+          layers[node]->get_parent_layers();
         auto mychilds = layers[node]->get_child_layers();
-        //when layer has only one parent no branching copy everthing from parent
+        // when layer has only one parent no branching copy everthing from
+        // parent
 
-        if(parents.size()==0)
-        {
-          // layers[node]->subgrid_ranks.reset(new std::set<int >(initial_ranks_global.begin(),initial_ranks_global.end()));
+        if (parents.size() == 0) {
+          // layers[node]->subgrid_ranks.reset(new std::set<int
+          // >(initial_ranks_global.begin(),initial_ranks_global.end()));
           layers[node]->reset_subgrid_ranks(initial_ranks_global);
           layers[node]->set_subgrid_index(grid_global_index);
           // layers[node]->mygrid = grids[grid_global_index];
           layers[node]->reset_mygrid(grids[grid_global_index]);
-
         }
-        else if(parents[0]->get_type() == "cross_grid_sum" || parents[0]->get_type() == "cross_grid_sum_slice")
-        {
-          //layers name are unique
-          std::vector<const Layer*> allchilds =  parents[0]->get_child_layers();
+        else if (parents[0]->get_type() == "cross_grid_sum" ||
+                 parents[0]->get_type() == "cross_grid_sum_slice") {
+          // layers name are unique
+          std::vector<const Layer*> allchilds = parents[0]->get_child_layers();
           int subgrid_number = -1;
-          for (int child_index = 0; child_index < int(allchilds.size()); ++child_index)
-          {
-            if(allchilds[child_index]->get_name() == layers[node]->get_name())
-            {
+          for (int child_index = 0; child_index < int(allchilds.size());
+               ++child_index) {
+            if (allchilds[child_index]->get_name() ==
+                layers[node]->get_name()) {
               subgrid_number = child_index;
             }
           }
 
+          const Layer* parent_with_same_subgrid =
+            parents[0]->get_parent_layers()[subgrid_number];
+          std::cout << "Rank:" << rank
+                    << " On Child Layer:" << layers[node]->get_name()
+                    << " Subgrid index is:"
+                    << parent_with_same_subgrid->get_subgrid_index() << "\n";
 
-          const Layer* parent_with_same_subgrid = parents[0]->get_parent_layers()[subgrid_number];
-          std::cout<<"Rank:"<<rank<<" On Child Layer:"<< layers[node]->get_name() <<" Subgrid index is:"<<parent_with_same_subgrid->get_subgrid_index()<<"\n";
-
-          std::set <int > layer_ranks = parent_with_same_subgrid->get_subgrid_ranks();
+          std::set<int> layer_ranks =
+            parent_with_same_subgrid->get_subgrid_ranks();
           layers[node]->reset_subgrid_ranks(layer_ranks);
-          layers[node]->set_subgrid_index(parent_with_same_subgrid->get_subgrid_index());
+          layers[node]->set_subgrid_index(
+            parent_with_same_subgrid->get_subgrid_index());
           layers[node]->reset_mygrid(grids[layers[node]->get_subgrid_index()]);
-
         }
-        else if(parents.size()==1)
-        {
+        else if (parents.size() == 1) {
 
-          std::set <int > layer_ranks = parents[0]->get_subgrid_ranks();
-          // layers[node]->subgrid_ranks.reset(new std::set<int>(layer_ranks.begin(),layer_ranks.end()));
+          std::set<int> layer_ranks = parents[0]->get_subgrid_ranks();
+          // layers[node]->subgrid_ranks.reset(new
+          // std::set<int>(layer_ranks.begin(),layer_ranks.end()));
           layers[node]->reset_subgrid_ranks(layer_ranks);
           layers[node]->set_subgrid_index(parents[0]->get_subgrid_index());
           // layers[node]->mygrid = grids[layers[node]->subgrid_index];
           layers[node]->reset_mygrid(grids[layers[node]->get_subgrid_index()]);
         }
-        else if( parents.size() == mychilds.size() &&
-                 parents.size() > 1 )
-        {
+        else if (parents.size() == mychilds.size() && parents.size() > 1) {
 
-          // parent for each rank will be based on subgrid it belongs to in previous layer
-          // Starting rank will have the parent that belongs to first sub-grid
+          // parent for each rank will be based on subgrid it belongs to in
+          // previous layer Starting rank will have the parent that belongs to
+          // first sub-grid
 
           // Example: S# (Sub-grid number #), 8 ranks, topology-aware
           // S1: 0,4
@@ -1370,209 +1405,245 @@ void  model::setup_subgrids(){
           // S4: 3,7
 
           // cross_grid_sum layer will have 4 parents and 4 childs
-          // Rank4: will have sub-grid 1. First parent and child will be used for computation and communication
-          // Rank2 will have sub-grid 3. Third parent and child will be used for computation and communication
+          // Rank4: will have sub-grid 1. First parent and child will be used
+          // for computation and communication Rank2 will have sub-grid 3. Third
+          // parent and child will be used for computation and communication
           int my_parent_based_rank = -1;
 
-          for (int parent_index = 0; parent_index < int(parents.size()); ++parent_index)
-          {
-            std::set <int > layer_ranks = parents[parent_index]->get_subgrid_ranks();
-            if(layer_ranks.find(rank) != layer_ranks.end())
-            {
+          for (int parent_index = 0; parent_index < int(parents.size());
+               ++parent_index) {
+            std::set<int> layer_ranks =
+              parents[parent_index]->get_subgrid_ranks();
+            if (layer_ranks.find(rank) != layer_ranks.end()) {
               my_parent_based_rank = parent_index;
             }
           }
-          std::cout<<"Parent_index is:"<<my_parent_based_rank<<"\n";
-          // Initialize the subgrid of common layers like cross_grid_sum with the subgrid based on own rank
-          std::set <int > layer_ranks = parents[my_parent_based_rank]->get_subgrid_ranks();
+          std::cout << "Parent_index is:" << my_parent_based_rank << "\n";
+          // Initialize the subgrid of common layers like cross_grid_sum with
+          // the subgrid based on own rank
+          std::set<int> layer_ranks =
+            parents[my_parent_based_rank]->get_subgrid_ranks();
           layers[node]->reset_subgrid_ranks(layer_ranks);
-          layers[node]->set_subgrid_index(parents[my_parent_based_rank]->get_subgrid_index());
+          layers[node]->set_subgrid_index(
+            parents[my_parent_based_rank]->get_subgrid_index());
           layers[node]->reset_mygrid(grids[layers[node]->get_subgrid_index()]);
-
         }
 
-        else
-        {
+        else {
 
-          get_parent_subgrid_tags(node );
+          get_parent_subgrid_tags(node);
 
-          //when layer has multiple parents, pool resources (ranks) from parents
+          // when layer has multiple parents, pool resources (ranks) from
+          // parents
           std::set<int> pooled_set;
 
-          this->get_resources_for_merge_layers(pooled_set,node,max_branches);
+          this->get_resources_for_merge_layers(pooled_set, node, max_branches);
 
-
-          // layers[node]->subgrid_ranks.reset(new std::set<int> (pooled_set.begin(),pooled_set.end()));
+          // layers[node]->subgrid_ranks.reset(new std::set<int>
+          // (pooled_set.begin(),pooled_set.end()));
           layers[node]->reset_subgrid_ranks(pooled_set);
 
-          //create new grid
-          std::vector<int > ranks_in_grid(pooled_set.begin(), pooled_set.end());
+          // create new grid
+          std::vector<int> ranks_in_grid(pooled_set.begin(), pooled_set.end());
 
-          if(layers[node]->get_num_spliting_groups() == 1)
-          {
-            getOrderFromIndex(ranks_in_grid,parents[0]->get_subgrid_index());
+          if (layers[node]->get_num_spliting_groups() == 1) {
+            getOrderFromIndex(ranks_in_grid, parents[0]->get_subgrid_index());
           }
-          else
-          {
-            get_subgrids_order(ranks_in_grid, layers[node]->get_num_spliting_groups());
+          else {
+            get_subgrids_order(ranks_in_grid,
+                               layers[node]->get_num_spliting_groups());
           }
-
-
 
           grid_temp_index = "";
-          for (auto it=ranks_in_grid.begin(); it != ranks_in_grid.end(); ++it)
+          for (auto it = ranks_in_grid.begin(); it != ranks_in_grid.end(); ++it)
             grid_temp_index += " " + std::to_string(*it);
 
-          if(grids.find(grid_temp_index) != grids.end())
-          //subgrid already exist with required resources
+          if (grids.find(grid_temp_index) != grids.end())
+          // subgrid already exist with required resources
           {
             layers[node]->set_subgrid_index(grid_temp_index);
             // layers[node]->mygrid = grids[grid_temp_index];
             layers[node]->reset_mygrid(grids[grid_temp_index]);
           }
-          else
-          {
+          else {
 
-            grids_mpi_groups[grid_temp_index] = std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
-            El::mpi::Incl( worldGroup, ranks_in_grid.size(), ranks_in_grid.data(), *grids_mpi_groups[grid_temp_index] );
+            grids_mpi_groups[grid_temp_index] =
+              std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
+            El::mpi::Incl(worldGroup,
+                          ranks_in_grid.size(),
+                          ranks_in_grid.data(),
+                          *grids_mpi_groups[grid_temp_index]);
 
-
-            grids[grid_temp_index] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[grid_temp_index], ranks_in_grid.size(), orderGrid );
+            grids[grid_temp_index] =
+              std::make_shared<El::Grid>(El::mpi::NewWorldComm(),
+                                         *grids_mpi_groups[grid_temp_index],
+                                         ranks_in_grid.size(),
+                                         orderGrid);
             layers[node]->set_subgrid_index(grid_temp_index);
             // layers[node]->mygrid = grids[grid_temp_index];
             layers[node]->reset_mygrid(grids[grid_temp_index]);
 
             std::string temp_print;
 
-            for(int vec_index = 0; vec_index<int(ranks_in_grid.size());++vec_index)
-            {
+            for (int vec_index = 0; vec_index < int(ranks_in_grid.size());
+                 ++vec_index) {
               std::string s = std::to_string(ranks_in_grid[vec_index]);
               temp_print.append(s);
               temp_print.append(" ");
             }
-
-
           }
-
         }
       }
 
-      else
-      {
-        //custom number of resources and edge cases not supported
+      else {
+        // custom number of resources and edge cases not supported
 
-        const std::vector<const Layer*>& parents = layers[node]->get_parent_layers();
-        auto parent  = parents[0];
+        const std::vector<const Layer*>& parents =
+          layers[node]->get_parent_layers();
+        auto parent = parents[0];
         int num_divisions = 1;
         auto childs = parents[0]->get_child_layers();
-        std::set <int> parent_layer_ranks = parents[0]->get_subgrid_ranks();
-        std::vector <int> my_sub_ranks ;
+        std::set<int> parent_layer_ranks = parents[0]->get_subgrid_ranks();
+        std::vector<int> my_sub_ranks;
 
+        bool flag_subgrid_found = false;
 
+        for (El::Int child = 0; child < int(childs.size()); ++child) {
+          num_divisions = std::max(
+            num_divisions,
+            int(childs[child]->get_parallel_strategy().sub_branch_tag));
 
-        bool flag_subgrid_found  = false;
-
-        for(El::Int child = 0; child<int(childs.size());++child)
-        {
-          num_divisions = std::max(num_divisions, int(childs[child]->get_parallel_strategy().sub_branch_tag));
-
-          //check if the grid is initialized for the childs with similar tag
-          if(childs[child]->get_subgrid_index() != "" && int(childs[child]->get_parallel_strategy().sub_branch_tag) == (layers[node]->get_parallel_strategy().sub_branch_tag ))
-          {
+          // check if the grid is initialized for the childs with similar tag
+          if (childs[child]->get_subgrid_index() != "" &&
+              int(childs[child]->get_parallel_strategy().sub_branch_tag) ==
+                (layers[node]->get_parallel_strategy().sub_branch_tag)) {
             layers[node]->set_subgrid_index(childs[child]->get_subgrid_index());
-            layers[node]->reset_subgrid_ranks(childs[child]->get_subgrid_ranks());
-            layers[node]->reset_mygrid(grids[childs[child]->get_subgrid_index()]);
-            layers[node]->set_num_spliting_groups(childs[child]->get_num_spliting_groups());
+            layers[node]->reset_subgrid_ranks(
+              childs[child]->get_subgrid_ranks());
+            layers[node]->reset_mygrid(
+              grids[childs[child]->get_subgrid_index()]);
+            layers[node]->set_num_spliting_groups(
+              childs[child]->get_num_spliting_groups());
             flag_subgrid_found = true;
-
           }
-
         }
 
-        if(flag_subgrid_found){
+        if (flag_subgrid_found) {
           continue;
         }
 
-        int number_ranks_in_grid = ( parent[0].get_subgrid_ranks().size())/num_divisions;
+        int number_ranks_in_grid =
+          (parent[0].get_subgrid_ranks().size()) / num_divisions;
 
-        std::vector<int> parent_ranks_vec(parent_layer_ranks.begin(),parent_layer_ranks.end());
+        std::vector<int> parent_ranks_vec(parent_layer_ranks.begin(),
+                                          parent_layer_ranks.end());
 
-        this->get_resources_for_spliting_point(
-        							parent_ranks_vec,
-									my_sub_ranks,
-									node,
-									number_ranks_in_grid,
-                  num_divisions
-									);
+        this->get_resources_for_spliting_point(parent_ranks_vec,
+                                               my_sub_ranks,
+                                               node,
+                                               number_ranks_in_grid,
+                                               num_divisions);
 
-
-
-        //create new grid
-        std::vector<int> ranks_in_grid(my_sub_ranks.begin(), my_sub_ranks.end());
+        // create new grid
+        std::vector<int> ranks_in_grid(my_sub_ranks.begin(),
+                                       my_sub_ranks.end());
         grid_temp_index = "";
-        for (auto it=ranks_in_grid.begin(); it != ranks_in_grid.end(); ++it)
+        for (auto it = ranks_in_grid.begin(); it != ranks_in_grid.end(); ++it)
           grid_temp_index += " " + std::to_string(*it);
 
-
-        if(grids.find(grid_temp_index) != grids.end())
-        //subgrid already exist with required resources
+        if (grids.find(grid_temp_index) != grids.end())
+        // subgrid already exist with required resources
         {
           layers[node]->set_subgrid_index(grid_temp_index);
           layers[node]->reset_mygrid(grids[grid_temp_index]);
           layers[node]->set_num_spliting_groups(num_divisions);
-          layers[node]->reset_subgrid_ranks(std::set<int> (my_sub_ranks.begin(),my_sub_ranks.end()));
+          layers[node]->reset_subgrid_ranks(
+            std::set<int>(my_sub_ranks.begin(), my_sub_ranks.end()));
         }
-        else
-        {
-          grids_mpi_groups[grid_temp_index] = std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
-          El::mpi::Incl( worldGroup, ranks_in_grid.size(), ranks_in_grid.data(), *grids_mpi_groups[grid_temp_index] );
+        else {
+          grids_mpi_groups[grid_temp_index] =
+            std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
+          El::mpi::Incl(worldGroup,
+                        ranks_in_grid.size(),
+                        ranks_in_grid.data(),
+                        *grids_mpi_groups[grid_temp_index]);
 
-          grids[grid_temp_index] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[grid_temp_index], ranks_in_grid.size(), orderGrid );
+          grids[grid_temp_index] =
+            std::make_shared<El::Grid>(El::mpi::NewWorldComm(),
+                                       *grids_mpi_groups[grid_temp_index],
+                                       ranks_in_grid.size(),
+                                       orderGrid);
 
           layers[node]->set_subgrid_index(grid_temp_index);
-          layers[node]->reset_subgrid_ranks(std::set<int>(my_sub_ranks.begin(),my_sub_ranks.end()));
+          layers[node]->reset_subgrid_ranks(
+            std::set<int>(my_sub_ranks.begin(), my_sub_ranks.end()));
           layers[node]->reset_mygrid(grids[grid_temp_index]);
           layers[node]->set_num_spliting_groups(num_divisions);
-
         }
 
         std::string temp_print;
 
-        for(int vec_index = 0; vec_index<int(ranks_in_grid.size());++vec_index)
-        {
+        for (int vec_index = 0; vec_index < int(ranks_in_grid.size());
+             ++vec_index) {
           std::string s = std::to_string(ranks_in_grid[vec_index]);
           temp_print.append(s);
           temp_print.append(" ");
         }
-
       }
-
     }
-
   }
 
-
-  if(El::mpi::Rank()==0)
-  {
-    std::cout<<"Number of subgrids created:"<<grids.size()<<"\n";
-    for (auto const& pair: grids) {
-      std::cout << "{" << pair.first << ": "  << "}\n";
+  if (El::mpi::Rank() == 0) {
+    std::cout << "Number of subgrids created:" << grids.size() << "\n";
+    for (auto const& pair : grids) {
+      std::cout << "{" << pair.first << ": "
+                << "}\n";
     }
   }
 
   this->setup_subgrid_layers_run_condition();
   this->setup_subcommunicators();
-
 }
 
-void model::setup_layer_execution_order() {
+void model::setup_layer_execution_order()
+{
+  // Construct layer graph
+  // Note: Each layer depends on its parent layers and its hint layer.
+  const auto& layers = this->get_layers();
+  const El::Int num_layers = layers.size();
+  std::set<El::Int> nodes;
+  std::map<El::Int, std::set<El::Int>> edges;
+  std::unordered_map<const Layer*, El::Int> layer_indices;
+  for (El::Int node = 0; node < num_layers; ++node) {
+    nodes.insert(node);
+    layer_indices[layers[node]] = node;
+  }
+  for (El::Int node = 0; node < num_layers; ++node) {
+    const auto& l = layers[node];
+    for (const auto& child : l->get_child_layers()) {
+      edges[node].insert(layer_indices[child]);
+    }
+    if (l->get_hint_layer() != nullptr) {
+      edges[layer_indices[l->get_hint_layer()]].insert(node);
+    }
+  }
+
+  // Topologically sort layers
+  const auto& sorted_order = graph::topological_sort(nodes, edges);
+  reorder_layers(sorted_order);
+  ensure_input_layers_first();
+}
+
+void model::ensure_input_layers_first()
+{
 
   // Find input layers
   std::vector<El::Int> input_layers, other_layers;
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    if (dynamic_cast<input_layer<DataType>*>(&get_layer(i)) != nullptr) {
+    if (get_layer(i).get_type() == "input") {
       input_layers.push_back(i);
-    } else {
+    }
+    else {
       other_layers.push_back(i);
     }
   }
@@ -1580,17 +1651,18 @@ void model::setup_layer_execution_order() {
   // Reorder layers so input layers are executed first
   std::vector<El::Int> gather_indices;
   gather_indices.insert(gather_indices.end(),
-                        input_layers.begin(), input_layers.end());
+                        input_layers.begin(),
+                        input_layers.end());
   gather_indices.insert(gather_indices.end(),
-                        other_layers.begin(), other_layers.end());
+                        other_layers.begin(),
+                        other_layers.end());
   reorder_layers(gather_indices);
-
 }
 
-void model::setup_layers(
-  size_t max_mini_batch_size,
-  DataReaderMetaData& dr_metadata,
-  const std::vector<El::Grid*>& grids_) {
+void model::setup_layers(size_t max_mini_batch_size,
+                         DataReaderMetaData& dr_metadata,
+                         const std::vector<El::Grid*>& grids_)
+{
 
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
@@ -1600,40 +1672,41 @@ void model::setup_layers(
   }
 }
 
-void model::setup_weights() {
-
-
+void model::setup_weights()
+{
 
   // Sort weights by name
   // Note: For run-to-run consistency. Names are assumed to be unique.
-  std::sort(m_weights.begin(), m_weights.end(),
-            [] (const OwningWeightsPtr& x,
-                const OwningWeightsPtr& y) {
+  std::sort(m_weights.begin(),
+            m_weights.end(),
+            [](const OwningWeightsPtr& x, const OwningWeightsPtr& y) {
               return x->get_name().compare(y->get_name()) < 0;
             });
 
   // Setup weights
-  for (auto&& w : m_weights) { w->setup(); }
-
+  for (auto&& w : m_weights) {
+    w->setup();
+  }
 }
 
 void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
-                                  std::unordered_set<std::string>& layer_names) {
-  std::stringstream err;
-
+                                  std::unordered_set<std::string>& layer_names)
+{
   // Add evaluation layers corresponding to objective function layer terms
   for (auto* t : m_objective_function->get_terms()) {
     auto* term = dynamic_cast<layer_term*>(t);
     if (term != nullptr) {
       auto* l_raw_ptr = &term->get_layer();
       if (layer_set.count(l_raw_ptr) == 0) {
-        err << "model \"" << get_name() << "\" "
-            << "has an objective function layer term corresponding to "
-            << "layer \"" << l_raw_ptr->get_name() << "\", "
-            << "which isn't in the model's list of layers";
-        LBANN_ERROR(err.str());
+        LBANN_ERROR(
+          "model \"",
+          get_name(),
+          "\" has an objective function layer term corresponding to layer \"",
+          l_raw_ptr->get_name(),
+          "\", which isn't in the model's list of layers");
       }
-      if (dynamic_cast<abstract_evaluation_layer<DataType>*>(l_raw_ptr) == nullptr) {
+      if (dynamic_cast<abstract_evaluation_layer<DataType>*>(l_raw_ptr) ==
+          nullptr) {
 
         // Get viewing pointer to layer
         ViewingLayerPtr l_view_ptr;
@@ -1644,17 +1717,19 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
           }
         }
         if (l_view_ptr.lock().get() == nullptr) {
-          LBANN_ERROR(
-            get_name()," could not get viewing pointer for ",
-            l_raw_ptr->get_name()," layer \"",l_raw_ptr->get_name(),"\"");
+          LBANN_ERROR(get_name(),
+                      " could not get viewing pointer for ",
+                      l_raw_ptr->get_name(),
+                      " layer \"",
+                      l_raw_ptr->get_name(),
+                      "\"");
         }
 
         // Create evaluation layer
-        OwningLayerPtr eval(
-          abstract_evaluation_layer<DataType>::construct(
-            l_raw_ptr->get_comm(),
-            l_raw_ptr->get_data_layout(),
-            l_raw_ptr->get_device_allocation()));
+        OwningLayerPtr eval(abstract_evaluation_layer<DataType>::construct(
+          l_raw_ptr->get_comm(),
+          l_raw_ptr->get_data_layout(),
+          l_raw_ptr->get_device_allocation()));
 
         // Set evaluation layer name
         El::Int name_index = 1;
@@ -1674,7 +1749,6 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
         eval->add_parent_layer(l_view_ptr);
         term->set_layer(eval);
         add_layer(std::move(eval));
-
       }
     }
   }
@@ -1685,12 +1759,15 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
     if (met != nullptr) {
       auto* l_raw_ptr = &met->get_layer();
       if (layer_set.count(l_raw_ptr) == 0) {
-        err << "layer metric \"" << met->name() << "\" "
-            << "corresponds to layer \"" << l_raw_ptr->get_name() << "\", "
-            << "which is not in model \"" << get_name() << "\"";
-        LBANN_ERROR(err.str());
+        LBANN_ERROR("layer metric \"",
+                    met->name(),
+                    "\" corresponds to layer \"",
+                    l_raw_ptr->get_name(),
+                    "\", which is not in model \"",
+                    get_name(),
+                    "\"");
       }
-      if (dynamic_cast<abstract_evaluation_layer<DataType>*>(l_raw_ptr) == nullptr) {
+      if (!dynamic_cast<abstract_evaluation_layer<DataType>*>(l_raw_ptr)) {
 
         // Get viewing pointer to layer
         ViewingLayerPtr l_view_ptr;
@@ -1701,17 +1778,19 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
           }
         }
         if (l_view_ptr.lock().get() == nullptr) {
-          LBANN_ERROR(
-            get_name()," could not get viewing pointer for ",
-            l_raw_ptr->get_name()," layer \"",l_raw_ptr->get_name(),"\"");
+          LBANN_ERROR(get_name(),
+                      " could not get viewing pointer for ",
+                      l_raw_ptr->get_name(),
+                      " layer \"",
+                      l_raw_ptr->get_name(),
+                      "\"");
         }
 
         // Create evaluation layer
-        OwningLayerPtr eval(
-          abstract_evaluation_layer<DataType>::construct(
-            l_raw_ptr->get_comm(),
-            l_raw_ptr->get_data_layout(),
-            l_raw_ptr->get_device_allocation()));
+        OwningLayerPtr eval(abstract_evaluation_layer<DataType>::construct(
+          l_raw_ptr->get_comm(),
+          l_raw_ptr->get_data_layout(),
+          l_raw_ptr->get_device_allocation()));
 
         // Set evaluation layer name
         El::Int name_index = 1;
@@ -1731,42 +1810,49 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
         eval->add_parent_layer(l_view_ptr);
         met->set_layer(eval);
         add_layer(std::move(eval));
-
       }
     }
   }
-
 }
 
-void model::add_dummy_layers(std::unordered_set<std::string>& layer_names) {
-  for (size_t i=0; i<m_layers.size(); ++i) {
+void model::add_dummy_layers(std::unordered_set<std::string>& layer_names)
+{
+  for (size_t i = 0; i < m_layers.size(); ++i) {
     auto& l = get_layer(i);
     while (l.get_num_children() < l.get_expected_num_child_layers()) {
 
       // Create dummy layer
       OwningLayerPtr dummy;
-      using args_tuple = std::tuple<data_layout,El::Device>;
+      using args_tuple = std::tuple<data_layout, El::Device>;
       args_tuple args(l.get_data_layout(), l.get_device_allocation());
       if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::CPU)) {
-        dummy.reset(new dummy_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm));
+        dummy.reset(new dummy_layer<DataType,
+                                    data_layout::DATA_PARALLEL,
+                                    El::Device::CPU>(m_comm));
       }
       if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::CPU)) {
-        dummy.reset(new dummy_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm));
+        dummy.reset(new dummy_layer<DataType,
+                                    data_layout::MODEL_PARALLEL,
+                                    El::Device::CPU>(m_comm));
       }
 #ifdef LBANN_HAS_GPU
       if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::GPU)) {
-        dummy.reset(new dummy_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm));
+        dummy.reset(new dummy_layer<DataType,
+                                    data_layout::DATA_PARALLEL,
+                                    El::Device::GPU>(m_comm));
       }
       if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::GPU)) {
-        dummy.reset(new dummy_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm));
+        dummy.reset(new dummy_layer<DataType,
+                                    data_layout::MODEL_PARALLEL,
+                                    El::Device::GPU>(m_comm));
       }
 #endif // LBANN_HAS_GPU
       if (dummy == nullptr) {
-        std::stringstream err;
-        err << "could not construct dummy layer corresponding to "
-            << "layer \"" << l.get_name() << "\" "
-            << "in model \"" << get_name() << "\"";
-        LBANN_ERROR(err.str());
+        LBANN_ERROR("Could not construct dummy layer corresponding to layer \"",
+                    l.get_name(),
+                    "\" in model \"",
+                    get_name(),
+                    "\"");
       }
 
       // Set dummy layer name
@@ -1783,13 +1869,13 @@ void model::add_dummy_layers(std::unordered_set<std::string>& layer_names) {
       l.add_child_layer(dummy);
       dummy->add_parent_layer(m_layers[i]);
       add_layer(std::move(dummy));
-
     }
   }
 }
 
-void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
-  for (size_t i=0; i<m_layers.size(); ++i) {
+void model::add_split_layers(std::unordered_set<std::string>& layer_names)
+{
+  for (size_t i = 0; i < m_layers.size(); ++i) {
     auto& l = get_layer(i);
 
     // Add split layer if layer expects one child but has multiple
@@ -1797,28 +1883,36 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
 
       // Create split layer
       OwningLayerPtr split;
-      using args_tuple = std::tuple<data_layout,El::Device>;
+      using args_tuple = std::tuple<data_layout, El::Device>;
       args_tuple args(l.get_data_layout(), l.get_device_allocation());
       if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::CPU)) {
-        split.reset(new split_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm));
+        split.reset(new split_layer<DataType,
+                                    data_layout::DATA_PARALLEL,
+                                    El::Device::CPU>(m_comm));
       }
       if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::CPU)) {
-        split.reset(new split_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm));
+        split.reset(new split_layer<DataType,
+                                    data_layout::MODEL_PARALLEL,
+                                    El::Device::CPU>(m_comm));
       }
 #ifdef LBANN_HAS_GPU
       if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::GPU)) {
-        split.reset(new split_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm));
+        split.reset(new split_layer<DataType,
+                                    data_layout::DATA_PARALLEL,
+                                    El::Device::GPU>(m_comm));
       }
       if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::GPU)) {
-        split.reset(new split_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm));
+        split.reset(new split_layer<DataType,
+                                    data_layout::MODEL_PARALLEL,
+                                    El::Device::GPU>(m_comm));
       }
 #endif // LBANN_HAS_GPU
       if (split == nullptr) {
-        std::stringstream err;
-        err << "could not construct split layer corresponding to "
-            << "layer \"" << l.get_name() << "\" "
-            << "in model \"" << get_name() << "\"";
-        LBANN_ERROR(err.str());
+        LBANN_ERROR("Could not construct split layer corresponding to layer \"",
+                    l.get_name(),
+                    "\" in model \"",
+                    get_name(),
+                    "\"");
       }
 
       // Set split layer name
@@ -1837,7 +1931,7 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
       ps = orig_ps;
 
       // Setup relationships between split layer and child layers
-      for (int j=0; j<l.get_num_children(); ++j) {
+      for (int j = 0; j < l.get_num_children(); ++j) {
         auto& child = const_cast<Layer&>(l.get_child_layer(j));
         split->add_child_layer(l.get_child_layer_pointer(j));
         child.replace_parent_layer(split, child.find_parent_layer_index(l));
@@ -1850,27 +1944,28 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
 
       // Add split layer to layer list
       add_layer(std::move(split));
-
     }
-
   }
 }
 
-void model::insert_layer(OwningLayerPtr&& new_layer, std::string const& preceding_layer_name) {
+void model::insert_layer(OwningLayerPtr&& new_layer,
+                         std::string const& preceding_layer_name)
+{
 
   // Find preceding layer after which to insert new layer
   int preceding_layer_index = -1;
-  for (int i=0; i<this->get_num_layers(); ++i) {
+  for (int i = 0; i < this->get_num_layers(); ++i) {
     if (this->get_layer(i).get_name() == preceding_layer_name) {
       preceding_layer_index = i;
       break;
     }
   }
   if (preceding_layer_index < 0) {
-    LBANN_ERROR(
-      "Attempted to insert layer after ",
-      "layer \"",preceding_layer_name,"\", ",
-      "but no such layer exists");
+    LBANN_ERROR("Attempted to insert layer after ",
+                "layer \"",
+                preceding_layer_name,
+                "\", ",
+                "but no such layer exists");
   }
 
   auto& l = get_layer(preceding_layer_index);
@@ -1880,7 +1975,8 @@ void model::insert_layer(OwningLayerPtr&& new_layer, std::string const& precedin
   LBANN_ASSERT(l.get_num_children() == 1);
 
   // Child of preceding layer
-  auto& child = const_cast<Layer&>(l.get_child_layer(0)); // assuming only one child
+  auto& child =
+    const_cast<Layer&>(l.get_child_layer(0)); // assuming only one child
 
   // Setup relationship between new layer and child layer
   new_layer->add_child_layer(l.get_child_layer_pointer(0));
@@ -1893,24 +1989,25 @@ void model::insert_layer(OwningLayerPtr&& new_layer, std::string const& precedin
 
   // Add new_layer to layer list
   add_layer(std::move(new_layer));
-
 }
 
-void model::remove_layer(std::string const& removable_layer_name) {
+void model::remove_layer(std::string const& removable_layer_name)
+{
 
   // Find index of removable layer
   int removable_layer_index = -1;
-  for (int i=0; i<this->get_num_layers(); ++i) {
+  for (int i = 0; i < this->get_num_layers(); ++i) {
     if (this->get_layer(i).get_name() == removable_layer_name) {
       removable_layer_index = i;
       break;
     }
   }
   if (removable_layer_index < 0) {
-    LBANN_ERROR(
-      "Attempted to remove layer",
-      " \"",removable_layer_name,"\", ",
-      "but no such layer exists");
+    LBANN_ERROR("Attempted to remove layer",
+                " \"",
+                removable_layer_name,
+                "\", ",
+                "but no such layer exists");
   }
 
   auto& l = get_layer(removable_layer_index);
@@ -1919,32 +2016,40 @@ void model::remove_layer(std::string const& removable_layer_name) {
   LBANN_ASSERT(l.get_num_parents() == 1);
   LBANN_ASSERT(l.get_num_children() == 1);
 
-  // Other checks also have to be done - like cannot delete activation function between two layers, etc
+  // Other checks also have to be done - like cannot delete activation function
+  // between two layers, etc
 
   // Parent and child of removable layer
-  auto& parent = const_cast<Layer&>(l.get_parent_layer(0)); // assuming only one parent
-  auto& child = const_cast<Layer&>(l.get_child_layer(0)); // assuming only one child
+  auto& parent =
+    const_cast<Layer&>(l.get_parent_layer(0)); // assuming only one parent
+  auto& child =
+    const_cast<Layer&>(l.get_child_layer(0)); // assuming only one child
 
   // Setup relationship between parent layer and child layer
-  child.replace_parent_layer(l.get_parent_layer_pointer(0), child.find_parent_layer_index(l));
-  parent.replace_child_layer(l.get_child_layer_pointer(0), parent.find_child_layer_index(l));
+  child.replace_parent_layer(l.get_parent_layer_pointer(0),
+                             child.find_parent_layer_index(l));
+  parent.replace_child_layer(l.get_child_layer_pointer(0),
+                             parent.find_child_layer_index(l));
 
   // Remove weights for the old layer
   // NOTE : We assume that layers do not share weights
-  auto old_weights_ptrs = m_layers[removable_layer_index]->get_weights_pointers();
+  auto old_weights_ptrs =
+    m_layers[removable_layer_index]->get_weights_pointers();
   for (auto const& w : old_weights_ptrs) {
-     this->remove_weights(std::shared_ptr<weights>(w)->get_name());
+    this->remove_weights(std::shared_ptr<weights>(w)->get_name());
   }
 
   // Destroy memory of removable layer - for now, remove from m_layers
-  m_layers.erase(m_layers.cbegin()+removable_layer_index);
+  m_layers.erase(m_layers.cbegin() + removable_layer_index);
 }
 
-void model::replace_layer(OwningLayerPtr&& new_layer, std::string const& old_layer_name) {
+void model::replace_layer(OwningLayerPtr&& new_layer,
+                          std::string const& old_layer_name)
+{
 
   // Find old layer
   int old_layer_index = -1;
-  for (int i=0; i<this->get_num_layers(); ++i) {
+  for (int i = 0; i < this->get_num_layers(); ++i) {
     if (this->get_layer(i).get_name() == old_layer_name) {
       old_layer_index = i;
       break;
@@ -1952,10 +2057,11 @@ void model::replace_layer(OwningLayerPtr&& new_layer, std::string const& old_lay
   }
 
   if (old_layer_index < 0) {
-    LBANN_ERROR(
-      "Attempted to replace layer",
-      " \"",old_layer_name,"\", ",
-      "but no such layer exists");
+    LBANN_ERROR("Attempted to replace layer",
+                " \"",
+                old_layer_name,
+                "\", ",
+                "but no such layer exists");
   }
 
   // Old Layer
@@ -1966,14 +2072,18 @@ void model::replace_layer(OwningLayerPtr&& new_layer, std::string const& old_lay
   LBANN_ASSERT(l.get_num_children() == 1);
 
   // Parent and child of old Layer
-  auto& parent = const_cast<Layer&>(l.get_parent_layer(0)); // assuming only one parent
-  auto& child = const_cast<Layer&>(l.get_child_layer(0)); // assuming only one child
+  auto& parent =
+    const_cast<Layer&>(l.get_parent_layer(0)); // assuming only one parent
+  auto& child =
+    const_cast<Layer&>(l.get_child_layer(0)); // assuming only one child
 
-  // Setup relationship between the new layer and child of old layer (which becomes child of new layer)
+  // Setup relationship between the new layer and child of old layer (which
+  // becomes child of new layer)
   new_layer->add_child_layer(l.get_child_layer_pointer(0));
   child.replace_parent_layer(new_layer, child.find_parent_layer_index(l));
 
-  // Setup relationship between parent of old layer (which becomes parent of new layer) and new layer
+  // Setup relationship between parent of old layer (which becomes parent of new
+  // layer) and new layer
   parent.replace_child_layer(new_layer, parent.find_child_layer_index(l));
   new_layer->add_parent_layer(l.get_parent_layer_pointer(0));
 
@@ -1981,11 +2091,11 @@ void model::replace_layer(OwningLayerPtr&& new_layer, std::string const& old_lay
   // NOTE : We assume that layers do not share weights
   auto old_weights_ptrs = m_layers[old_layer_index]->get_weights_pointers();
   for (auto const& w : old_weights_ptrs) {
-     this->remove_weights(std::shared_ptr<weights>(w)->get_name());
+    this->remove_weights(std::shared_ptr<weights>(w)->get_name());
   }
 
   // Destroy memory of old layer - for now, remove from m_layers
-  m_layers.erase(m_layers.cbegin()+old_layer_index);
+  m_layers.erase(m_layers.cbegin() + old_layer_index);
 
   // Add new layer to layer list
   add_layer(std::move(new_layer));
@@ -1997,29 +2107,34 @@ void model::replace_layer(OwningLayerPtr&& new_layer, std::string const& old_lay
 // only used in callbacks/ltfb.cpp; from that file:
 // "Note that this is a temporary fix
 // for the current use of the tournament"
-void model::make_data_store_preloaded(execution_mode mode) {
+void model::make_data_store_preloaded(execution_mode mode)
+{
   data_coordinator& dc = get_trainer().get_data_coordinator();
-  auto *data_store = dc.get_data_reader(mode)->get_data_store_ptr();
-  if(data_store != nullptr && !data_store->is_fully_loaded()) {
+  auto* data_store = dc.get_data_reader(mode)->get_data_store_ptr();
+  if (data_store != nullptr && !data_store->is_fully_loaded()) {
     dc.get_data_reader(mode)->get_data_store_ptr()->set_loading_is_complete();
-    dc.get_data_reader(mode)->get_data_store_ptr()->set_is_explicitly_loading(false);
+    dc.get_data_reader(mode)->get_data_store_ptr()->set_is_explicitly_loading(
+      false);
   }
 }
 
 // only used in callbacks/ltfb.cpp; from that file:
 // "Note that this is a temporary fix
 // for the current use of the tournament"
-void model::mark_data_store_explicitly_loading(execution_mode mode) {
+void model::mark_data_store_explicitly_loading(execution_mode mode)
+{
   data_coordinator& dc = get_trainer().get_data_coordinator();
-  auto *data_store = dc.get_data_reader(mode)->get_data_store_ptr();
-  if(data_store != nullptr && !data_store->is_fully_loaded()) {
-    dc.get_data_reader(mode)->get_data_store_ptr()->set_is_explicitly_loading(true);
+  auto* data_store = dc.get_data_reader(mode)->get_data_store_ptr();
+  if (data_store != nullptr && !data_store->is_fully_loaded()) {
+    dc.get_data_reader(mode)->get_data_store_ptr()->set_is_explicitly_loading(
+      true);
   }
 }
 
 // At the start of the epoch, set the execution mode and make sure
 // that each layer points to this model
-void model::reset_mode(ExecutionContext& context, execution_mode mode) {
+void model::reset_mode(ExecutionContext& context, execution_mode mode)
+{
   if (mode == execution_mode::invalid) {
     m_execution_context = nullptr;
     return;
@@ -2032,92 +2147,86 @@ void model::reset_mode(ExecutionContext& context, execution_mode mode) {
 }
 
 // At the end of the epoch, clean up the objective function and metrics
-void model::reset_epoch_statistics(execution_mode mode) {
+void model::reset_epoch_statistics(execution_mode mode)
+{
   get_objective_function()->reset_statistics(mode);
   for (const auto& m : m_metrics) {
     m->reset_statistics(mode);
   }
 }
 
-void model::evaluate_metrics(execution_mode mode, size_t current_mini_batch_size) {
+void model::evaluate_metrics(execution_mode mode,
+                             size_t current_mini_batch_size)
+{
   for (const auto& m : m_metrics) {
     m->evaluate(mode, current_mini_batch_size);
   }
 }
 
-void model::clear_gradients() {
+void model::clear_gradients()
+{
   for (auto&& w : m_weights) {
     auto&& opt = w->get_optimizer();
-    if (opt != nullptr) { opt->clear_gradient(); }
+    if (opt != nullptr) {
+      opt->clear_gradient();
+    }
   }
 }
 
-void model::forward_prop(execution_mode mode) {
+void model::forward_prop(execution_mode mode)
+{
   do_model_forward_prop_begin_cbs(mode);
 
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
 
-    if(this->is_subgraph_parallelism_enabled())
-    {
-      if(l.get_run_layer_in_subgraph() || l.get_name()=="layer1")
-      {
+    if (this->is_subgraph_parallelism_enabled()) {
+      if (l.get_run_layer_in_subgraph() || l.get_name() == "layer1") {
         do_layer_forward_prop_begin_cbs(mode, &l);
         l.forward_prop();
         do_layer_forward_prop_end_cbs(mode, &l);
-
       }
-      else
-      {
+      else {
         // To Do: Fix last batch problem in sub-graph parallelism
-        //experimental code to fix last batch problem in subgraph parallelism
+        // experimental code to fix last batch problem in subgraph parallelism
       }
-
     }
-    else
-    {
+    else {
       do_layer_forward_prop_begin_cbs(mode, &l);
       l.forward_prop();
       do_layer_forward_prop_end_cbs(mode, &l);
-
     }
   }
   do_model_forward_prop_end_cbs(mode);
-
 }
 
-void model::backward_prop() {
+void model::backward_prop()
+{
 
   do_model_backward_prop_begin_cbs();
 
-  for (El::Int i = get_num_layers()-1; i >= 0; --i) {
+  for (El::Int i = get_num_layers() - 1; i >= 0; --i) {
 
     // Perform backward prop step on current layer
     auto& l = get_layer(i);
 
-    if(this->is_subgraph_parallelism_enabled())
-    {
+    if (this->is_subgraph_parallelism_enabled()) {
 
-      if(l.get_run_layer_in_subgraph())
-      {
+      if (l.get_run_layer_in_subgraph()) {
         do_layer_backward_prop_begin_cbs(&l);
         l.back_prop();
         do_layer_backward_prop_end_cbs(&l);
       }
-      else
-      {
+      else {
         // To Do: Fix last batch problem in sub-graph parallelism
-        //experimental code to fix last batch problem in subgraph parallelism
+        // experimental code to fix last batch problem in subgraph parallelism
       }
-
     }
-    else
-    {
+    else {
       do_layer_backward_prop_begin_cbs(&l);
       l.back_prop();
       do_layer_backward_prop_end_cbs(&l);
     }
-
 
     // Terminate early if all gradients have been computed
     bool all_gradients_computed = true;
@@ -2129,21 +2238,23 @@ void model::backward_prop() {
       }
     }
 
-    //in parent having less resources case
-    //last slice layer does not run as gradients are not present for ranks that are not
-    // in parent grid leading to hang
+    // in parent having less resources case
+    // last slice layer does not run as gradients are not present for ranks that
+    // are not
+    //  in parent grid leading to hang
 
-    //Tim or Tom: What is your suggestation?
-    if (all_gradients_computed  && this->is_subgraph_parallelism_enabled()==false) { break; }
-
+    // Tim or Tom: What is your suggestation?
+    if (all_gradients_computed &&
+        this->is_subgraph_parallelism_enabled() == false) {
+      break;
+    }
   }
 
   do_model_backward_prop_end_cbs();
-
-
 }
 
-void model::update_weights() {
+void model::update_weights()
+{
   do_model_optimize_begin_cbs();
 
   // Apply optimization step to weights
@@ -2167,15 +2278,17 @@ void model::update_weights() {
   do_model_optimize_end_cbs();
 }
 
-bool model::update_layers() {
+bool model::update_layers()
+{
   bool finished = true;
-  for (El::Int i = get_num_layers()-1; i >= 0; --i) {
+  for (El::Int i = get_num_layers() - 1; i >= 0; --i) {
     finished = get_layer(i).update() && finished;
   }
   return finished;
 }
 
-void model::reconcile_weight_values() {
+void model::reconcile_weight_values()
+{
 
   // Launch non-blocking communication to reconcile weights
   // Note: Heuristically, forward prop consumes weights in the same
@@ -2192,21 +2305,24 @@ void model::reconcile_weight_values() {
   }
 
   // Wait for communication to finish
-  for (auto& req : reqs) { m_comm->wait(req); }
-
+  for (auto& req : reqs) {
+    m_comm->wait(req);
+  }
 }
 
 // =============================================
 // Callbacks
 // =============================================
 
-void model::do_setup_end_cbs() {
+void model::do_setup_end_cbs()
+{
   for (const auto& cb : m_callbacks) {
     cb->on_setup_end(this);
   }
 }
 
-void model::do_model_forward_prop_begin_cbs(execution_mode mode) {
+void model::do_model_forward_prop_begin_cbs(execution_mode mode)
+{
   for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::training:
@@ -2225,7 +2341,8 @@ void model::do_model_forward_prop_begin_cbs(execution_mode mode) {
   }
 }
 
-void model::do_model_forward_prop_end_cbs(execution_mode mode) {
+void model::do_model_forward_prop_end_cbs(execution_mode mode)
+{
   for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::training:
@@ -2247,7 +2364,8 @@ void model::do_model_forward_prop_end_cbs(execution_mode mode) {
 /** @todo Consistent behavior between train, validation, and test
  *  modes
  */
-void model::do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l) {
+void model::do_layer_forward_prop_begin_cbs(execution_mode mode, Layer* l)
+{
   for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::training:
@@ -2269,7 +2387,8 @@ void model::do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l) {
 /** @todo Consistent behavior between train, validation, and test
  *  modes
  */
-void model::do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l) {
+void model::do_layer_forward_prop_end_cbs(execution_mode mode, Layer* l)
+{
   for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::training:
@@ -2288,7 +2407,8 @@ void model::do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l) {
   }
 }
 
-void model::do_model_backward_prop_begin_cbs() {
+void model::do_model_backward_prop_begin_cbs()
+{
   for (const auto& cb : m_callbacks) {
     if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_begin(this);
@@ -2296,7 +2416,8 @@ void model::do_model_backward_prop_begin_cbs() {
   }
 }
 
-void model::do_model_backward_prop_end_cbs() {
+void model::do_model_backward_prop_end_cbs()
+{
   for (const auto& cb : m_callbacks) {
     if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_end(this);
@@ -2304,7 +2425,8 @@ void model::do_model_backward_prop_end_cbs() {
   }
 }
 
-void model::do_layer_backward_prop_begin_cbs(Layer *l) {
+void model::do_layer_backward_prop_begin_cbs(Layer* l)
+{
   for (const auto& cb : m_callbacks) {
     if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_begin(this, l);
@@ -2312,7 +2434,8 @@ void model::do_layer_backward_prop_begin_cbs(Layer *l) {
   }
 }
 
-void model::do_layer_backward_prop_end_cbs(Layer *l) {
+void model::do_layer_backward_prop_end_cbs(Layer* l)
+{
   for (const auto& cb : m_callbacks) {
     if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_end(this, l);
@@ -2320,7 +2443,8 @@ void model::do_layer_backward_prop_end_cbs(Layer *l) {
   }
 }
 
-void model::do_model_optimize_begin_cbs() {
+void model::do_model_optimize_begin_cbs()
+{
   for (const auto& cb : m_callbacks) {
     if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_optimize_begin(this);
@@ -2328,7 +2452,8 @@ void model::do_model_optimize_begin_cbs() {
   }
 }
 
-void model::do_model_optimize_end_cbs() {
+void model::do_model_optimize_end_cbs()
+{
   for (const auto& cb : m_callbacks) {
     if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_optimize_end(this);
@@ -2336,7 +2461,8 @@ void model::do_model_optimize_end_cbs() {
   }
 }
 
-void model::do_weight_optimize_begin_cbs(weights *w) {
+void model::do_weight_optimize_begin_cbs(weights* w)
+{
   for (const auto& cb : m_callbacks) {
     if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_optimize_begin(this, w);
@@ -2344,7 +2470,8 @@ void model::do_weight_optimize_begin_cbs(weights *w) {
   }
 }
 
-void model::do_weight_optimize_end_cbs(weights *w) {
+void model::do_weight_optimize_end_cbs(weights* w)
+{
   for (const auto& cb : m_callbacks) {
     if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_optimize_end(this, w);
@@ -2356,35 +2483,35 @@ void model::do_weight_optimize_end_cbs(weights *w) {
 // Summarizer
 // =============================================
 
-void model::summarize_stats(lbann_summary& summarizer) {
+void model::summarize_stats(lbann_summary& summarizer)
+{
   const auto& c = get_execution_context();
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     get_layer(i).summarize_stats(summarizer, c.get_step());
   }
-  summarizer.reduce_scalar("objective",
-                           m_objective_function->get_mean_value(c.get_execution_mode()),
+  summarizer.reduce_scalar(
+    "objective",
+    m_objective_function->get_mean_value(c.get_execution_mode()),
+    c.get_step());
+  summarizer.reduce_scalar("objective_evaluation_time",
+                           m_objective_function->get_evaluation_time(),
                            c.get_step());
-  summarizer.reduce_scalar(
-    "objective_evaluation_time",
-    m_objective_function->get_evaluation_time(),
-    c.get_step());
-  summarizer.reduce_scalar(
-    "objective_differentiation_time",
-    m_objective_function->get_differentiation_time(),
-    c.get_step());
+  summarizer.reduce_scalar("objective_differentiation_time",
+                           m_objective_function->get_differentiation_time(),
+                           c.get_step());
   m_objective_function->reset_counters();
   double total_metric_time = 0.0;
   for (auto&& m : m_metrics) {
     total_metric_time += m->get_evaluate_time();
     m->reset_counters();
   }
-  summarizer.reduce_scalar(
-    "metric_evaluation_time",
-    total_metric_time,
-    c.get_step());
+  summarizer.reduce_scalar("metric_evaluation_time",
+                           total_metric_time,
+                           c.get_step());
 }
 
-void model::summarize_matrices(lbann_summary& summarizer) {
+void model::summarize_matrices(lbann_summary& summarizer)
+{
   const auto& c = get_execution_context();
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     get_layer(i).summarize_matrices(summarizer, c.get_step());
@@ -2396,19 +2523,20 @@ void model::summarize_matrices(lbann_summary& summarizer) {
 // =============================================
 
 /* struct used to serialize mode fields in file and MPI transfer */
-struct lbann_model_header {
+struct lbann_model_header
+{
   uint32_t callback_type;
 };
 
-bool model::save_to_checkpoint_shared(persist& p) {
+bool model::save_to_checkpoint_shared(persist& p)
+{
   const std::string trainer_dir = p.get_checkpoint_dir();
 
   // This "pushes" the model-specific directory to the "stack". After
   // the call, p.get_checkpoint_dir() returns the model-specific
   // directory.
-  p.open_checkpoint_dir(
-    file::join_path(trainer_dir, this->get_name()),
-    m_comm->am_trainer_master());
+  p.open_checkpoint_dir(file::join_path(trainer_dir, this->get_name()),
+                        m_comm->am_trainer_master());
 
   // Make sure that the master has had a chance to create the directories
   // (trb 12/14/2020): I don't think this matters; all output is from
@@ -2417,8 +2545,7 @@ bool model::save_to_checkpoint_shared(persist& p) {
 
   // Open the stream for writing
   std::ofstream ofs;
-  if (m_comm->am_trainer_master())
-  {
+  if (m_comm->am_trainer_master()) {
     ofs.open(file::join_path(p.get_checkpoint_dir(), "model.bin"));
     LBANN_ASSERT(ofs.good());
   }
@@ -2433,14 +2560,14 @@ bool model::save_to_checkpoint_shared(persist& p) {
   return true;
 }
 
-bool model::load_from_checkpoint_shared(persist& p) {
+bool model::load_from_checkpoint_shared(persist& p)
+{
   const std::string trainer_dir = p.get_checkpoint_dir();
   p.open_restart(file::join_path(trainer_dir, get_name()));
   // Assume checkpoint reload from epoch end not step end
 
   std::ifstream ifs;
-  if (m_comm->am_trainer_master())
-  {
+  if (m_comm->am_trainer_master()) {
     ifs.open(file::join_path(p.get_checkpoint_dir(), "model.bin"));
     LBANN_ASSERT(ifs.good());
   }
@@ -2459,7 +2586,8 @@ bool model::load_from_checkpoint_shared(persist& p) {
   return true;
 }
 
-bool model::save_to_checkpoint_distributed(persist& p){
+bool model::save_to_checkpoint_distributed(persist& p)
+{
   const std::string trainer_dir = p.get_checkpoint_dir();
   p.open_checkpoint_dir(file::join_path(trainer_dir, get_name()), true);
 
@@ -2476,8 +2604,7 @@ bool model::save_to_checkpoint_distributed(persist& p){
 
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
   {
-    std::ofstream  ofs_xml(
-      file::join_path(p.get_checkpoint_dir(), "model.xml"));
+    std::ofstream ofs_xml(file::join_path(p.get_checkpoint_dir(), "model.xml"));
     cereal::XMLOutputArchive ar(ofs_xml);
     ar(*this);
   }
@@ -2487,7 +2614,8 @@ bool model::save_to_checkpoint_distributed(persist& p){
   return true;
 }
 
-bool model::load_from_checkpoint_distributed(persist& p){
+bool model::load_from_checkpoint_distributed(persist& p)
+{
   const std::string trainer_dir = p.get_checkpoint_dir();
   p.open_restart(file::join_path(trainer_dir, get_name()));
 
@@ -2504,32 +2632,37 @@ bool model::load_from_checkpoint_distributed(persist& p){
   return true;
 }
 
-void model::write_proto(lbann_data::Model* proto) {
+void model::write_proto(lbann_data::Model* proto)
+{
   proto->Clear();
   // if (m_comm->am_world_master())
   //   proto->set_mini_batch_size(m_max_mini_batch_size);
 }
 
-bool model::save_model() {
+void model::save_model()
+{
   for (auto&& c : m_callbacks) {
-    if (auto *cb = dynamic_cast<callback::save_model*>(c.get())) {
-      return cb->do_save_model(this);
+    if (auto* cb = dynamic_cast<callback::save_model*>(c.get())) {
+      cb->do_save_model(this);
+      return;
     }
   }
   if (m_comm->am_trainer_master()) {
-    LBANN_WARNING("save_model was called, but the callback_save_model was not loaded");
+    LBANN_WARNING(
+      "save_model was called, but the callback_save_model was not loaded");
   }
-  return false;
 }
 
 #ifdef LBANN_HAS_DISTCONV
-void model::setup_distconv() {
+void model::setup_distconv()
+{
   std::stringstream dc_enabled, dc_disabled;
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    auto &layer = get_layer(i);
+    auto& layer = get_layer(i);
     if (layer.distconv_enabled()) {
       dc_enabled << " " << layer.get_name();
-    } else {
+    }
+    else {
       dc_disabled << " " << layer.get_name();
     }
   }
@@ -2541,61 +2674,75 @@ void model::setup_distconv() {
   print_distributions();
   // Setup fp tensors
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    auto &layer = get_layer(i);
-    if (!layer.distconv_enabled()) continue;
+    auto& layer = get_layer(i);
+    if (!layer.distconv_enabled())
+      continue;
     layer.get_distconv_adapter().setup_fp_tensors();
   }
   // Setup bp tensors in an reverse order
   for (El::Int i = get_num_layers() - 1; i >= 0; --i) {
-    auto &layer = get_layer(i);
-    if (!layer.distconv_enabled()) continue;
+    auto& layer = get_layer(i);
+    if (!layer.distconv_enabled())
+      continue;
     layer.get_distconv_adapter().setup_bp_tensors();
   }
   // Final setup.
   auto workspace_capacity = dc::get_workspace_capacity();
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    auto &layer = get_layer(i);
-    if (!layer.distconv_enabled()) continue;
+    auto& layer = get_layer(i);
+    if (!layer.distconv_enabled())
+      continue;
     layer.get_distconv_adapter().setup_layer(workspace_capacity);
   }
 }
 
-void model::setup_distributions() {
+void model::setup_distributions()
+{
   tensor_overlap_constraints constraints;
   // Initialize the distributions and constraints
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    if (!get_layer(i).distconv_enabled()) continue;
+    if (!get_layer(i).distconv_enabled())
+      continue;
     get_layer(i).get_distconv_adapter().setup_distributions(constraints);
   }
   // Add inter-layer distribution constraints
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    if (!get_layer(i).distconv_enabled()) continue;
+    if (!get_layer(i).distconv_enabled())
+      continue;
 
-    get_layer(i).get_distconv_adapter().impose_adjacent_overlap_constraints(constraints);
+    get_layer(i).get_distconv_adapter().impose_adjacent_overlap_constraints(
+      constraints);
   }
   constraints.find_valid_overlap();
 }
 
-void model::print_distributions() const {
-  std::stringstream ss;
+void model::print_distributions() const
+{
+  std::ostringstream ss;
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     const auto& layer = get_layer(i);
     if (layer.distconv_enabled()) {
-      ss << layer.get_name()  << " disributions: "
-         << "prev_activations: " << layer.get_distconv_adapter().get_prev_activations_dist()
-         << ", activations: " << layer.get_distconv_adapter().get_activations_dist()
-         << ", error_signals: " << layer.get_distconv_adapter().get_error_signals_dist()
-         << ", prev_error_signals: " << layer.get_distconv_adapter().get_prev_activations_dist()
+      ss << layer.get_name() << " disributions: "
+         << "prev_activations: "
+         << layer.get_distconv_adapter().get_prev_activations_dist()
+         << ", activations: "
+         << layer.get_distconv_adapter().get_activations_dist()
+         << ", error_signals: "
+         << layer.get_distconv_adapter().get_error_signals_dist()
+         << ", prev_error_signals: "
+         << layer.get_distconv_adapter().get_prev_activations_dist() << "\n";
+    }
+    else {
+      ss << layer.get_name() << ": distconv disabled"
          << "\n";
-    } else {
-      ss << layer.get_name() << ": distconv disabled" << "\n";
     }
   }
   dc::MPIRootPrintStreamDebug() << ss.str();
 }
 #endif // LBANN_HAS_DISTCONV
 
-}  // namespace lbann
+} // namespace lbann
 
 #define LBANN_CLASS_NAME model
+#define LBANN_SKIP_CEREAL_REGISTRATION
 #include <lbann/macros/register_class_with_cereal.hpp>

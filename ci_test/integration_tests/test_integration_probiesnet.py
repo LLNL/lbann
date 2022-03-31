@@ -19,29 +19,49 @@ import tools
 # Options
 # ==============================================
 
-# Training options
-num_epochs = 10
-mini_batch_size = 32
-num_nodes = 1
-
-# Reconstruction loss
-expected_train_pc_range = (0.89, 0.92)
-expected_test_pc_range = (0.90, 0.925)
-
 # Average mini-batch time (in sec) for each LC system
 # Note that run times are with LBANN_DETERMINISTIC set
 # Commented out times are prior to thread safe RNGs
-expected_mini_batch_times = {
-    'lassen':   0.0051,
-    'pascal':   0.0146,
+
+################################################################################
+# Weekly training options and targets
+################################################################################
+weekly_options_and_targets = {
+    'num_nodes': 1,
+    'num_epochs': 10,
+    'mini_batch_size': 32,
+    'expected_train_pc_range': (0.89, 0.92),
+    'expected_test_pc_range': (0.90, 0.931),
+    'percent_of_data_to_use': 1.0,
+    'expected_mini_batch_times': {
+        'lassen':   0.0069, # Old as of 3/21/2022 0.0051,
+        'pascal':   0.2267, # Old as of 3/21/2022 0.0146,
+    }
 }
+
+################################################################################
+# Nightly training options and targets
+################################################################################
+nightly_options_and_targets = {
+    'num_nodes': 1,
+    'num_epochs': 10,
+    'mini_batch_size': 32,
+    'expected_train_pc_range': (0.57, 0.59),
+    'expected_test_pc_range': (0.66, 0.68),
+    'percent_of_data_to_use': 0.01,
+    'expected_mini_batch_times': {
+        'lassen':   0.0069,
+        'pascal':   0.172,
+    }
+}
+
 # ==============================================
 # Setup LBANN experiment
 # ==============================================
 def list2str(l):
     return ' '.join(l)
 
-def make_data_reader(lbann):
+def make_data_reader(lbann, percent_of_data_to_use):
     """Make Protobuf message for HRRL  data reader.
 
     """
@@ -56,10 +76,12 @@ def make_data_reader(lbann):
         google.protobuf.text_format.Merge(f.read(), message)
     message = message.data_reader
 
+    message.reader[0].percent_of_data_to_use = percent_of_data_to_use
+
     # Set paths
     return message
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -71,15 +93,20 @@ def setup_experiment(lbann):
       print('Skip - ' + message)
       pytest.skip(message)
 
-    trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
-    model = construct_model(lbann)
+    if weekly:
+        options = weekly_options_and_targets
+    else:
+        options = nightly_options_and_targets
 
-    data_reader = make_data_reader(lbann)
+    trainer = lbann.Trainer(mini_batch_size=options['mini_batch_size'])
+    model = construct_model(lbann, options['num_epochs'])
+
+    data_reader = make_data_reader(lbann, options['percent_of_data_to_use'])
 
     opt = lbann.Adam(learn_rate=0.0002,beta1=0.9,beta2=0.99,eps=1e-8)
-    return trainer, model, data_reader, opt
+    return trainer, model, data_reader, opt, options['num_nodes']
 
-def construct_model(lbann):
+def construct_model(lbann, num_epochs):
     """Construct LBANN model.
     Args:
         lbann (module): Module for LBANN Python frontend
@@ -167,13 +194,15 @@ def augment_test_func(test_func):
     test_name = test_func.__name__
 
     # Define test function
-    def func(cluster, dirname,weekly):
+    def func(cluster, dirname, weekly):
 
-        if not weekly:
-            pytest.skip('This app runs {} with weekly builds only'.format(test_name))
+        if weekly:
+            targets = weekly_options_and_targets
+        else:
+            targets = nightly_options_and_targets
 
         # Run LBANN experiment
-        experiment_output = test_func(cluster, dirname)
+        experiment_output = test_func(cluster, dirname, weekly)
 
         # Parse LBANN log file
         train_pc = None
@@ -192,24 +221,24 @@ def augment_test_func(test_func):
                     mini_batch_times.append(float(match.group(1)))
 
         # Check if training reconstruction is within expected range
-        assert (expected_train_pc_range[0]
+        assert (targets['expected_train_pc_range'][0]
                 < train_pc
-                < expected_train_pc_range[1]), \
+                < targets['expected_train_pc_range'][1]), \
                 'train pearson correlation is outside expected range'
 
         # Check if testing reconstruction  is within expected range
-        assert (expected_test_pc_range[0]
+        assert (targets['expected_test_pc_range'][0]
                 < test_pc
-                < expected_test_pc_range[1]), \
+                < targets['expected_test_pc_range'][1]), \
                 'test pearson correlation is outside expected range'
 
         # Check if mini-batch time is within expected range
         # Note: Skip first epoch since its runtime is usually an outlier
         mini_batch_times = mini_batch_times[1:]
         mini_batch_time = sum(mini_batch_times) / len(mini_batch_times)
-        assert (0.75 * expected_mini_batch_times[cluster]
+        assert (0.75 * targets['expected_mini_batch_times'][cluster]
                 < mini_batch_time
-                < 1.25 * expected_mini_batch_times[cluster]), \
+                < 1.25 * targets['expected_mini_batch_times'][cluster]), \
                 'average mini-batch time is outside expected range'
 
     # Return test function from factory function
@@ -220,6 +249,5 @@ m_lbann_args=f"--use_data_store --preload_data_store"
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment,
                                      __file__,
-                                     lbann_args=[m_lbann_args],
-                                     nodes=num_nodes):
+                                     lbann_args=[m_lbann_args]):
     globals()[_test_func.__name__] = augment_test_func(_test_func)

@@ -52,8 +52,8 @@ CheckpointFile::get_partner_model(model const& m,
   auto const& comm = *m.get_comm();
 
   // Start by copying this model, then do the exchange.
-  auto partner_model_ptr = m.copy_model();
-  auto& partner_model = *partner_model_ptr;
+  auto partner_model_ptr = std::make_unique<model>(m);
+  model& partner_model = *partner_model_ptr;
 
   // Keep track of weights that shouldn't be exchanged
   std::unordered_map<std::string, std::unique_ptr<weights>> restore_weights;

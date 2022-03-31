@@ -96,7 +96,7 @@ def pytorch_pooling(data,
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -108,7 +108,7 @@ def setup_experiment(lbann):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -297,5 +297,5 @@ def construct_data_reader(lbann):
 # Create test functions that can interact with PyTest
 # Note: Create test name by removing ".py" from file name
 _test_name = os.path.splitext(os.path.basename(current_file))[0]
-for _test_func in tools.create_tests(setup_experiment, _test_name):
+for _test_func in tools.create_tests(setup_experiment, _test_name, skip_clusters=["catalyst"]):
     globals()[_test_func.__name__] = _test_func

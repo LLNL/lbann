@@ -30,7 +30,7 @@
 #include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/weights/data_type_weights.hpp"
-#include "lbann/models/directed_acyclic_graph.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/serialize.hpp"
 
@@ -62,25 +62,25 @@ void load_weights_from_checkpoint(model& m,
   }
 
   // Create a temporary model
-  directed_acyclic_graph_model dagm(comm, nullptr, nullptr);
+  model tmp_model(comm, nullptr, nullptr);
   {
     std::ifstream ifs(model_ckpt_file);
     RootedBinaryInputArchive ar(ifs, comm->get_trainer_grid());
-    ar(dagm);
+    ar(tmp_model);
   }
 
   // Loop through the weights in this model and attempt to restore
   // their values from the temporary model's weights with the same
   // name.
-  auto dagm_weights_map = make_weights_map(dagm.get_weights());
+  auto tmp_weights_map = make_weights_map(tmp_model.get_weights());
   auto const model_weights = m.get_weights();
   for (auto* w : model_weights)
   {
-    auto dagm_w_iter = dagm_weights_map.find(w->get_name());
-    if (dagm_w_iter != dagm_weights_map.end())
+    auto tmp_w_iter = tmp_weights_map.find(w->get_name());
+    if (tmp_w_iter != tmp_weights_map.end())
     {
-      auto* dagm_w = dagm_w_iter->second;
-      w->steal_values(*dagm_w);
+      auto* tmp_w = tmp_w_iter->second;
+      w->steal_values(*tmp_w);
       // TODO: Replace with logging API
       if (comm->am_trainer_master()) {
         std::cout << "Restored weights \"" << w->get_name() << "\" "

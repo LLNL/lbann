@@ -1,5 +1,5 @@
 ################################################################################
-## Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 ## Produced at the Lawrence Livermore National Laboratory.
 ## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 ## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -48,7 +48,10 @@ allocate lc resources:
     GIT_STRATEGY: none
   script:
     - echo "== ACQUIRING SLURM RESOURCES =="
-    - salloc --exclusive -N 2 -p pbatch -t 120 --no-shell -J ${JOB_NAME}
+    - echo "${WITH_WEEKLY:+Running with --weekly}"
+    - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "120" || echo "90")
+    - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
+    - salloc --exclusive -N ${LBANN_NNODES} -p pbatch -t ${TEST_TIME} --no-shell -J ${JOB_NAME}
   timeout: 6h
 
 # This replaces "test_compiler.py". This has the advantage that it
@@ -131,7 +134,9 @@ integration tests:
     - export OMP_NUM_THREADS=10
     - export SLURM_JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - cd ci_test/integration_tests
-    - python3 -m pytest -s -vv --durations=0 --junitxml=results.xml
+    - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
+    - echo "python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml"
+    - python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml
   artifacts:
     when: always
     paths:
@@ -252,6 +257,10 @@ release allocation:
     # allowed in pipeline files either, which is why this is not an
     # absolute path).
     RESULTS_DIR: results-${CI_PIPELINE_ID}
+
+    # This needs to be imported here, too. Failure to do so causes
+    # problems if it's not set.
+    LBANN_CI_RUN_WEEKLY: ${LBANN_CI_RUN_WEEKLY}
 
   tags:
     - catalyst

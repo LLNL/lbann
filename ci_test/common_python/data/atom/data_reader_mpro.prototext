@@ -5,7 +5,7 @@ data_reader {
     shuffle: true
     percent_of_data_to_use: 0.1
     sample_list: "/p/vast1/lbann/datasets/atom/mpro_inhib/mpro_inhib_kekulized_train_smiles.sample_list"
-    label_filename: "/p/vast1/lbann/datasets/atom/mpro_inhib/mpro_inhib_kekulized_train_smiles.metadata"
+    metadata_filename: "/p/vast1/lbann/datasets/atom/mpro_inhib/mpro_inhib_kekulized_train_smiles.metadata"
   }
   reader {
     name: "smiles"
@@ -13,6 +13,6 @@ data_reader {
     shuffle: false
     percent_of_data_to_use: 0.01
     sample_list: "/p/vast1/lbann/datasets/atom/mpro_inhib/mpro_inhib_kekulized_test_smiles.sample_list"
-    label_filename: "/p/vast1/lbann/datasets/atom/mpro_inhib/mpro_inhib_kekulized_test_smiles.metadata"
+    metadata_filename: "/p/vast1/lbann/datasets/atom/mpro_inhib/mpro_inhib_kekulized_test_smiles.metadata"
   }
 }

@@ -79,7 +79,7 @@ void smiles_data_reader::copy_members(const smiles_data_reader &rhs) {
   m_unk = rhs.m_unk;
   m_bos = rhs.m_bos;
   m_eos = rhs.m_eos;
-  m_has_header = rhs.m_has_header;
+  m_metadata_filename = rhs.m_metadata_filename;
   m_missing_char_in_vocab_count = rhs.m_missing_char_in_vocab_count;
   m_missing_chars = rhs.m_missing_chars;
   m_vocab = rhs.m_vocab;
@@ -178,7 +178,7 @@ void smiles_data_reader::do_preload_data_store() {
     const std::map<size_t, size_t>& local_to_index =  m_local_to_index[filename];
     size_t min_offset = std::numeric_limits<size_t>::max();
     size_t max_offset = 0;
-    short len_of_last_offset = 0;
+    size_t len_of_last_offset = 0;
 
     // Create local batches for fetching from a contiguous buffer
     std::map<size_t, size_t> samples_in_range;
@@ -386,7 +386,7 @@ bool smiles_data_reader::encode_smiles(const std::string &smiles, std::vector<un
   return encode_smiles(smiles.data(), smiles.size(), data);
 }
 
-bool smiles_data_reader::encode_smiles(const char *smiles, short size, std::vector<unsigned short> &data) {
+bool smiles_data_reader::encode_smiles(const char *smiles, unsigned short size, std::vector<unsigned short> &data) {
   static int count = 0;
   bool found_all_characters_in_vocab = true;
 
@@ -582,7 +582,7 @@ void smiles_data_reader::read_offset_data(std::vector<SampleData> &data) {
   // Create a buffer for reading in each offsets file
   std::vector<char> iobuffer(buf_size);
   long long offset;
-  short length;
+  unsigned short length;
   for (size_t j=0; j<data_filenames.size(); j++) {
     if (m_filename_to_local_id_set.find(data_filenames[j]) != m_filename_to_local_id_set.end()) {
       std::ifstream in;
@@ -647,11 +647,11 @@ void smiles_data_reader::read_offset_data(std::vector<SampleData> &data) {
 }
 
 void smiles_data_reader::read_metadata_file(
- std::vector<size_t>& samples_per_file,
- std::vector<std::string>& data_filenames,
- std::vector<std::string>& offsets_filenames) {
+  std::vector<size_t>& samples_per_file,
+  std::vector<std::string>& data_filenames,
+  std::vector<std::string>& offsets_filenames) {
   // open the metadata file
-  const std::string metadata_fn = get_label_filename();
+  const std::string metadata_fn = get_metadata_filename();
   if (metadata_fn.empty()) {
     LBANN_ERROR("label filename is empty");
   }
@@ -722,7 +722,7 @@ void smiles_data_reader::get_sample_origin(
     const size_t index_in,
     std::string& filename_out,
     size_t& offset_out,
-    short& length_out) const {
+    unsigned short& length_out) const {
 
   offset_map_t::const_iterator t2 = m_sample_offsets.find(index_in);
   if (t2 == m_sample_offsets.end()) {
@@ -738,7 +738,7 @@ void smiles_data_reader::get_sample_origin(
   filename_out = t3->second;
 }
 
-void smiles_data_reader::set_offset(size_t index, long long offset, short length) {
+void smiles_data_reader::set_offset(size_t index, long long offset, unsigned short length) {
   m_sample_offsets[index] = std::make_pair(offset, length);
 }
 
