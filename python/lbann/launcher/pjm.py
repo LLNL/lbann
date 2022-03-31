@@ -23,7 +23,7 @@ class PJMBatchScript(BatchScript):
                  procs_per_node=1,
                  time_limit=None,
                  job_name=None,
-                 partition='eap-small',
+                 partition=None,
                  launcher='mpiexec',
                  launcher_args=[],
                  interpreter='/bin/bash'):
@@ -41,7 +41,7 @@ class PJMBatchScript(BatchScript):
                 (default: none).
             job_name (str, optional): Job name (default: none).
             partition (str, optional): Scheduler partition
-                (default: eap-small).
+                (default: none).
             launcher (str, optional): Parallel command launcher
                 (default: mpiexec).
             launcher_args (`Iterable` of `str`, optional):
@@ -68,17 +68,17 @@ class PJMBatchScript(BatchScript):
         if self.time_limit is not None:
             # Job run time limit value
             self.add_header_line(f'#PJM -L "elapse={_time_string(self.time_limit)}"')
-#        if self.job_name is not None:
-#            self.add_header_line(f'#SBATCH --job-name={self.job_name}')
+        if self.job_name is not None:
+            self.add_header_line(f'#PJM --name {self.job_name}')
         if self.partition is not None:
             # Specify resource group
             self.add_header_line(f'#PJM -L "rscgrp={self.partition}"')
 
+        self.add_header_line(f'#PJM -L "rscunit=rscunit_ft01" # Specify resource unit')
         self.add_header_line(f'#PJM --mpi "shape={self.nodes}"')
         self.add_header_line(f'#PJM --mpi "max-proc-per-node={self.procs_per_node}"')
-        self.add_body_line(f'export OMP_NUM_THREADS=10')
-        self.add_body_line(f'export LBANN_NUM_IO_THREADS=2')
-        
+        self.add_header_line(f'#PJM --sparam "wait-time=600"')
+
     def add_parallel_command(self,
                              command,
                              work_dir=None,
@@ -117,16 +117,14 @@ class PJMBatchScript(BatchScript):
             launcher_args = self.launcher_args
 
         # Construct mpiexec invocation
-        args = [f'GOMP_SPINCOUNT=0 OMP_SCHEDULE=static FLIB_FASTOMP=FALSE OMP_NESTED=TRUE LD_PRELOAD=/usr/lib64/libhwloc.so.5 {launcher}']
+        args = [f'{launcher}']
         args.extend(make_iterable(launcher_args))
         args.extend([
             f'-n {nodes*procs_per_node}',
-            f'--map-by ppr:{procs_per_node}:node',
-            f'-wdir {work_dir}'
         ])
         args.extend([
-            '-mca plm_ple_memory_allocation_policy bind_local',
-#            ' numactl --physcpubind=12-59 --membind=4-7'
+            '-stdout-proc ./output.%j/%/1000r/stdout',
+            '-stderr-proc ./output.%j/%/1000r/stderr',
         ])
         args.extend(make_iterable(command))
         self.add_command(args)
