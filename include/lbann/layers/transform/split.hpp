@@ -259,14 +259,14 @@ void split_layer<T, L, D>::fill_onnx_node(onnx::GraphProto& graph) const
   const auto& parent = this->get_parent_layer();
   const size_t idx_in_parent = parent.find_child_layer_index(*this);
   for (auto const* child : this->get_child_layers()) {
-    auto* node = graph.add_node();
-    node->add_input(parent.get_name() + "_" + std::to_string(idx_in_parent));
+    auto* identity = graph.add_node();
+    identity->add_input(parent.get_name() + "_" + std::to_string(idx_in_parent));
     size_t idx = this->find_child_layer_index(*child);
-    node->add_output(this->get_name() + "_" + std::to_string(idx));
-    node->set_name(this->get_name() + std::to_string(idx));
-    node->set_op_type("Identity");
-    node->set_domain("");
-    node->set_doc_string(this->get_type());
+    identity->add_output(this->get_name() + "_" + std::to_string(idx));
+    identity->set_name(this->get_name() + "_" + std::to_string(idx));
+    identity->set_op_type("Identity");
+    identity->set_domain("");
+    identity->set_doc_string(this->get_type());
   }
 }
 #endif // LBANN_HAS_ONNX

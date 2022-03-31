@@ -200,6 +200,10 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+#ifdef LBANN_HAS_ONNX
+  void fill_onnx_node(onnx::GraphProto& graph) const override;
+#endif //LBANN_HAS_ONNX
+
   description get_description() const override {
     auto desc = data_type_layer<TensorDataType>::get_description();
     std::stringstream ss;
@@ -576,6 +580,69 @@ private:
 #endif // LBANN_HAS_DISTCONV
 
 };
+
+#ifdef LBANN_HAS_ONNX
+template <typename T, data_layout L, El::Device D>
+void pooling_layer<T, L, D>::fill_onnx_node(
+  onnx::GraphProto& graph) const {
+  auto* pool = graph.add_node();
+
+  // Get the attributes setup first
+  {
+    auto* kernel_shape = pool->add_attribute();
+    kernel_shape->set_name("kernel_shape");
+    kernel_shape->set_type(onnx::AttributeProto::INTS);
+    for (auto const& k : this->m_pool_dims)
+      kernel_shape->add_ints(k);
+  }
+  if (!this->m_strides.empty()) {
+    auto* strides = pool->add_attribute();
+    strides->set_name("strides");
+    strides->set_type(onnx::AttributeProto::INTS);
+    for (auto const& s : this->m_strides)
+      strides->add_ints(s);
+  }
+  if (!this->m_pads.empty()) {
+    auto* pads = pool->add_attribute();
+    pads->set_name("pads");
+    pads->set_type(onnx::AttributeProto::INTS);
+    for (auto const& p : this->m_pads) {
+      pads->add_ints(p);
+      pads->add_ints(p);
+    }
+  }
+  // FIXME: This is missing "dilations". However, they're only a valid
+  // attribute for MaxPool, not AveragePool.
+
+  for(auto const* parent : this->get_parent_layers()) {
+    size_t idx = parent->find_child_layer_index(*this);
+    pool->add_input(parent->get_name() + "_" + std::to_string(idx));
+  }
+  for(size_t ii = 0; ii < this->num_weights(); ii++)
+    pool->add_input(this->get_weights(ii).get_name());
+  for(auto const* child : this->get_child_layers()) {
+    size_t idx = this->find_child_layer_index(*child);
+    pool->add_output(this->get_name() + "_" + std::to_string(idx));
+  }
+  pool->set_name(this->get_name());
+
+  switch(m_pool_mode) {
+  case pooling_mode::MAX:
+    pool->set_op_type("MaxPool"); break;
+  case pooling_mode::MAX_DETERMINISTIC:
+    pool->set_op_type("MaxPool"); break;
+  case pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING:
+    pool->set_op_type("AveragePool"); break;
+  case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING:
+    pool->set_op_type("AveragePool"); break;
+  default:
+    LBANN_ERROR("pooling_layer: no ONNX implementation for pooling mode");
+  }
+
+  pool->set_domain("");
+  pool->set_doc_string(this->get_type());
+}
+#endif
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

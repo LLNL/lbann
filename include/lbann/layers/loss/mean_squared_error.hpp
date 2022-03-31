@@ -267,36 +267,64 @@ template <typename T, data_layout L, El::Device D>
 void mean_squared_error_layer<T, L, D>::fill_onnx_node(
   onnx::GraphProto& graph) const
 {
-  auto* diff = graph.add_node();
+  // def mean_squared_error(x, y):
+  // z = x - y
+  auto* sub = graph.add_node();
   for (auto const* parent : this->get_parent_layers()) {
     size_t idx = parent->find_child_layer_index(*this);
-    diff->add_input(parent->get_name() + "_" + std::to_string(idx));
+    sub->add_input(parent->get_name() + "_" + std::to_string(idx));
   }
-  diff->add_output(this->get_name() + "diff_0");
-  diff->set_name(this->get_name() + "diff");
-  diff->set_op_type("Sub");
-  diff->set_domain("");
-  diff->set_doc_string("First node representing Mean Squared Error Layer");
+  sub->add_output(this->get_name() + "_sub");
+  sub->set_name(this->get_name() + "_sub");
+  sub->set_op_type("Sub");
+  sub->set_domain("");
+  sub->set_doc_string("Sub node for Mean Squared Error Layer");
 
+  // z = z * z
+  // FIXME: Use Pow instead of Sub?
   auto* square = graph.add_node();
-  square->add_input(diff->output(0));
-  square->add_input(diff->output(0));
-  square->add_output("square_0");
-  square->set_name("square");
+  square->add_input(sub->output(0));
+  square->add_input(sub->output(0));
+  square->add_output(this->get_name() + "_square");
+  square->set_name(this->get_name() + "_square");
   square->set_op_type("Mul");
   square->set_domain("");
-  square->set_doc_string("Second node representing Mean Squared Error Layer");
+  square->set_doc_string("Square node for Mean Squared Error Layer");
 
-  auto* mse = graph.add_node();
-  mse->add_input(square->output(0));
+  // z = Reshape(data=z, shape=[0,-1])
+  auto* shape = graph.add_initializer();
+  shape->set_name(this->get_name() + "_square_shape");
+  shape->set_data_type(onnx::TensorProto::INT64);
+  shape->add_dims(2);
+  shape->add_int64_data(0);
+  shape->add_int64_data(-1);
+  shape->set_doc_string(this->get_name() + "shape to reshape square");
+
+  auto* reshape = graph.add_node();
+  reshape->add_input(square->output(0));
+  reshape->add_input(shape->name());
+  reshape->add_output(this->get_name() + "_square_reshape");
+  reshape->set_name(this->get_name() + "_square_reshape");
+  reshape->set_op_type("Reshape");
+  reshape->set_domain("");
+  reshape->set_doc_string("Reshape square for Mean Squared Error Layer");
+
+  // z = ReduceMean(data=z, axes=-1)
+  // return z
+  auto* reduce_mean = graph.add_node();
+  auto* attribute = reduce_mean->add_attribute();
+  attribute->set_name("axes");
+  attribute->set_type(onnx::AttributeProto::INTS);
+  attribute->add_ints(-1);
+  reduce_mean->add_input(square->output(0));
   for (auto const* child : this->get_child_layers()) {
     size_t idx = this->find_child_layer_index(*child);
-    mse->add_output(this->get_name() + "_" + std::to_string(idx));
+    reduce_mean->add_output(this->get_name() + "_" + std::to_string(idx));
   }
-  mse->set_name("mse");
-  mse->set_op_type("Mean");
-  mse->set_domain("");
-  mse->set_doc_string("Third node representing Mean Squared Error Layer");
+  reduce_mean->set_name(this->get_name() + "_reducemean");
+  reduce_mean->set_op_type("ReduceMean");
+  reduce_mean->set_domain("");
+  reduce_mean->set_doc_string("ReduceMean node for Mean Squared Error Layer");
 }
 #endif // LBANN_HAS_ONNX
 

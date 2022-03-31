@@ -92,6 +92,10 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+#ifdef LBANN_HAS_ONNX
+  void fill_onnx_node(onnx::GraphProto& graph) const override;
+#endif //LBANN_HAS_ONNX
+
   description get_description() const override;
 
   /** @name Serialization */

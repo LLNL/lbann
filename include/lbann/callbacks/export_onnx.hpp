@@ -50,11 +50,18 @@ class export_onnx : public callback_base {
 
 public:
   /** @brief export_onnx Constructor.
-   *  @param output_file Output filename (default = lbann_output.onnx)
-   *  @param print_debug_string Option to print debug string to stdout
+   *  @param output_filename Output filename (default = lbann.onnx)
+   *  @param debug_string_filename Name of file to which debug string is
+   *  printed. If not set, the debug string is not output.
    */
-  export_onnx(bool print_debug_string = false,
-              std::string output_file = "lbann_output.onnx");
+  export_onnx(std::string output_filename,
+              std::string debug_string_filename)
+    : callback_base(/*batch_interval=*/1),
+      m_output_filename{output_filename.size() ?
+                        std::move(output_filename) :
+                        std::string("lbann.onnx")},
+      m_debug_string_filename{std::move(debug_string_filename)}
+  {}
 
   /** @brief Copy interface */
   export_onnx* copy() const override {
@@ -64,22 +71,16 @@ public:
   /** @brief Return name of callback */
   std::string name() const override { return "export_onnx"; }
 
-  /* @brief gather model info */
-  void on_setup_end(model* m) override;
-
   /* @brief gather graph/layer info */
-  void on_train_begin(model* m) override;
+  void on_train_end(model* m) override;
 
 private:
 
-  /* @brief option to print onnx debug string */
-  bool m_print_debug_string;
+  /* @brief name of output file. Default = lbann.onnx */
+  std::string m_output_filename;
 
-  /* @brief name of output file. Default = lbann_output.onnx */
-  std::string m_output_file;
-
-  /* @brief onnx ModelProto object */
-  onnx::ModelProto mp_;
+  /* @brief option to print onnx debug file. Default = none */
+  std::string m_debug_string_filename;
 
 }; // class export_onnx
 

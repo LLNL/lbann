@@ -87,3 +87,4 @@ from lbann.core.trainer import *
 from lbann.core.training_algorithm import *
 from lbann.core.weights import *
 from lbann.launcher import run
+from lbann.lbann_features import *

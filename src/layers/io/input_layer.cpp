@@ -164,8 +164,7 @@ void input_layer<T,L,D>::fill_onnx_node(onnx::GraphProto& graph) const
     auto* input = graph.add_input();
     input->set_name(this->get_name() + "_" + std::to_string(idx));
     auto* input_type = input->mutable_type();
-    // FIXME: enum type. 1 is float. Get TensorDataType?
-    input_type->mutable_tensor_type()->set_elem_type(1);
+    input_type->mutable_tensor_type()->set_elem_type(onnx::TensorProto::FLOAT);
 
     auto* dims = input_type->mutable_tensor_type()->mutable_shape()->add_dim();
     dims->set_dim_param("batch");

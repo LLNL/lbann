@@ -41,6 +41,7 @@
 #include "lbann/utils/summary.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 #include "lbann/weights/weights.hpp"
+#include <onnx/onnx_pb.h>
 
 // Note (trb): There's what is, IMO, an STL error in GCC in which the
 // dtor for unique_ptr is checking sizeof(T), so this must be a
@@ -133,6 +134,14 @@ public:
   std::vector<metric*> get_metrics();
   std::vector<metric const*> get_metrics() const;
 
+#ifdef LBANN_HAS_ONNX
+  /** @brief Serialize model to Onnx format */
+  void serialize_to_onnx(onnx::ModelProto& mp);
+#endif // LBANN_HAS_ONNX
+
+  // ===========================================
+  // Model specification
+  // ===========================================
   ///@}
   /** @name Model specification */
   ///@{

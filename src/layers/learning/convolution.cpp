@@ -32,6 +32,10 @@
 
 #include <layers.pb.h>
 
+#ifdef LBANN_HAS_ONNX
+#include <onnx/onnx_pb.h>
+#endif
+
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -160,6 +164,62 @@ void convolution_layer<TensorDataType,Layout,Device>::bp_compute() {
     BaseConvLayer::apply_transposed_convolution_im2col(false);
   }
 }
+
+#ifdef LBANN_HAS_ONNX
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void convolution_layer<TensorDataType, Layout, Device>::fill_onnx_node(
+  onnx::GraphProto& graph) const
+{
+  Layer::fill_onnx_node(graph);
+  onnx::NodeProto* conv = nullptr;
+  // We need the node whose name matches the layer name. The node
+  // *SHOULD* be the most recently added node (i.e., the highest
+  // index), but the loop isn't so hard.
+  {
+    auto const this_name = this->get_name();
+    auto const num_nodes = graph.node_size();
+    for (int i = num_nodes; i != 0; --i) {
+      if (graph.node(i-1).name() == this_name) {
+        conv = graph.mutable_node(i-1);
+        break;
+      }
+    }
+  }
+  if (!conv)
+    LBANN_ERROR("Bad assumptions about node names.");
+
+  if (!this->m_strides.empty()) {
+    auto* strides = conv->add_attribute();
+    strides->set_name("strides");
+    strides->set_type(onnx::AttributeProto::INTS);
+    for (auto const& s : this->m_strides)
+      strides->add_ints(s);
+  }
+  if (!this->m_pads.empty()) {
+    auto* pads = conv->add_attribute();
+    pads->set_name("pads");
+    pads->set_type(onnx::AttributeProto::INTS);
+    for (auto const& p : this->m_pads) {
+      pads->add_ints(p);
+      pads->add_ints(p);
+    }
+  }
+  if (!this->m_dilations.empty()) {
+    auto* dilations = conv->add_attribute();
+    dilations->set_name("dilations");
+    dilations->set_type(onnx::AttributeProto::INTS);
+    for (auto const& p : this->m_dilations) {
+      dilations->add_ints(p);
+    }
+  }
+  if (this->m_groups > 1) {
+    auto* group = conv->add_attribute();
+    group->set_name("group");
+    group->set_type(onnx::AttributeProto::INT);
+    group->set_i(this->m_groups);
+  }
+}
+#endif // LBANN_HAS_ONNX
 
 #if defined LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Device>

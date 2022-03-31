@@ -33,6 +33,7 @@
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
+#include "lbann/utils/onnx_utils.hpp"
 
 #include <layers.pb.h>
 
@@ -410,8 +411,26 @@ void data_type_weights<TensorDataType>::write_proto(lbann_data::WeightsData* pro
       }
     }
   }
+}
+
+#ifdef LBANN_HAS_ONNX
+template <typename T>
+using ADM = El::AbstractDistMatrix<T>;
+
+template <typename T>
+void data_type_weights<T>::fill_onnx_node(onnx::GraphProto& graph) const {
+  auto* initializer = graph.add_initializer();
+  auto const height_dims = this->get_matrix_height_dims();
+  auto const width_dims = this->get_matrix_width_dims();
+
+  serialize_to_onnx(this->get_values(), height_dims, width_dims,
+                    *initializer);
+
+  initializer->set_name(this->get_name());
+  initializer->set_doc_string(this->get_name() + " tensor values");
 
 }
+#endif // LBANN_HAS_ONNX
 
 template <typename TensorDataType>
 bool data_type_weights<TensorDataType>::load_from_save(std::string const& ckpt_dir,

@@ -795,6 +795,14 @@ install(
 # approaches, we should use them.
 if (LBANN_HAS_PYTHON_FRONTEND)
 
+  include(LBANNWritePythonFeatures)
+  get_property(LBANN_HAS_VARIABLES DIRECTORY PROPERTY VARIABLES)
+  list(FILTER LBANN_HAS_VARIABLES INCLUDE REGEX "^LBANN_HAS_.*")
+  set(_LBANN_FEATURES_FILE "${CMAKE_BINARY_DIR}/lbann_features.py")
+  write_python_features_module(
+    OUTPUT_FILE "${_LBANN_FEATURES_FILE}"
+    VARIABLES ${LBANN_HAS_VARIABLES})
+
   # Construct config file
   # NOTE (trb): python_config.ini is installed by setup.py
   set(_PYTHON_CONFIG_INI ${CMAKE_BINARY_DIR}/python_config.ini)

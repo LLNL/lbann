@@ -22,36 +22,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-///////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+#ifndef LBANN_UTILS_TAGGED_DISPATCH_HPP_INCLUDED
+#define LBANN_UTILS_TAGGED_DISPATCH_HPP_INCLUDED
 
-#include <catch2/catch.hpp>
-#include "TestHelpers.hpp"
-#include "MPITestHelpers.hpp"
+namespace lbann {
 
-// The code being tested
-#include <lbann/callbacks/export_onnx.hpp>
-
-#include "lbann/callbacks/callback.hpp"
-#include <google/protobuf/message.h>
-#include <lbann/base.hpp>
-
-#include <onnx/onnx_pb.h>
-
-#include <iostream>
-#include <memory>
-
-
-using unit_test::utilities::IsValidPtr;
-TEST_CASE("Serializing \"export onnx\" callback",
-          "[mpi][callback][serialize][onnx]")
+template <typename T>
+struct TypeTag
 {
-  using CallbackType = lbann::callback::export_onnx;
+};
 
-  auto& world_comm = unit_test::utilities::current_world_comm();
-  auto const& g = world_comm.get_trainer_grid();
-  lbann::utils::grid_manager mgr(g);
-
-  CallbackType callback();
-
-  // FIXME: Testing if onnx is defined? How to do this?
-}
+} // namespace lbann
+#endif // LBANN_UTILS_TAGGED_DISPATCH_HPP_INCLUDED

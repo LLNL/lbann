@@ -106,6 +106,10 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+#ifdef LBANN_HAS_ONNX
+  void fill_onnx_node(onnx::GraphProto& graph) const override;
+#endif // LBANN_HAS_ONNX
+
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims({1});
@@ -277,6 +281,75 @@ private:
   }
 #endif // LBANN_HAS_DISTCONV
 };
+
+#ifdef LBANN_HAS_ONNX
+template <typename T, data_layout L, El::Device D>
+void cross_entropy_layer<T, L, D>::fill_onnx_node(
+  onnx::GraphProto& graph) const {
+  auto const parents = this->get_parent_layers();
+  //z = Log(input=x)
+  auto* log = graph.add_node();
+  size_t idx = parents[0]->find_child_layer_index(*this);
+  log->add_input(parents[0]->get_name() + "_" + std::to_string(idx));
+  log->add_output(this->get_name() + "_log");
+  log->set_name(this->get_name() + "_log");
+  log->set_op_type("Log");
+  log->set_domain("");
+  log->set_doc_string("Log node for Cross Entropy Layer");
+
+  //z = Mul(A=y, B=z)
+  auto* mul = graph.add_node();
+  idx = parents[1]->find_child_layer_index(*this);
+  mul->add_input(parents[1]->get_name() + "_" + std::to_string(idx));
+  mul->add_input(log->output(0));
+  mul->add_output(this->get_name() + "_mul");
+  mul->set_name(this->get_name() + "_mul");
+  mul->set_op_type("Mul");
+  mul->set_domain("");
+  mul->set_doc_string("Multiply node for Cross Entropy Layer");
+
+  //z = Reshape(data=z, shape=[0,-1])
+  auto* shape = graph.add_initializer();
+  shape->set_name(this->get_name() + "_mul_shape");
+  shape->set_data_type(onnx::TensorProto::INT64);
+  shape->add_dims(2);
+  shape->add_int64_data(0);
+  shape->add_int64_data(-1);
+  shape->set_doc_string(this->get_name() +
+                        " shape to reshape multiply");
+
+  auto* reshape = graph.add_node();
+  reshape->add_input(mul->output(0));
+  reshape->add_input(shape->name());
+  reshape->add_output(this->get_name() + "_mul_reshape");
+  reshape->set_name(this->get_name() + "_mul_reshape");
+  reshape->set_op_type("Reshape");
+  reshape->set_domain("");
+  reshape->set_doc_string("Reshape muultiply result for Cross Entropy Layer");
+
+  //z = ReduceSum(data=z, axes=-1)
+
+  auto* axes = graph.add_initializer();
+  axes->set_name(this->get_name() + "_reducesum_axes");
+  axes->set_data_type(onnx::TensorProto::INT64);
+  axes->add_dims(1);
+  axes->add_int64_data(-1);
+  axes->set_doc_string(this->get_name() + "ReduceSum axes");
+
+  auto* reduce_sum = graph.add_node();
+  reduce_sum->add_input(reshape->output(0));
+  reduce_sum->add_input(axes->name());
+  for (auto const* child : this->get_child_layers()) {
+    idx = this->find_child_layer_index(*child);
+    reduce_sum->add_output(this->get_name() + "_" + std::to_string(idx));
+  }
+  reduce_sum->set_name(this->get_name() + "_reducesum");
+  reduce_sum->set_op_type("ReduceSum");
+  reduce_sum->set_domain("");
+  reduce_sum->set_doc_string("ReduceSum node for Cross Entropy Layer");
+
+}
+#endif //LBANN_HAS_ONNX
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

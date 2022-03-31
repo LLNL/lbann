@@ -46,6 +46,7 @@
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/summary_impl.hpp"
+#include "lbann/utils/onnx_utils.hpp"
 
 #include <model.pb.h>
 #include <optimizers.pb.h>
@@ -417,6 +418,40 @@ std::vector<ViewingWeightsPtr> model::get_weights_pointers() const
   }
   return ptrs;
 }
+
+#ifdef LBANN_HAS_ONNX
+void model::serialize_to_onnx(onnx::ModelProto& mp) {
+  mp.set_ir_version(7);
+  auto* opset = mp.add_opset_import();
+  // The empty string ("") domain indicates the operators defined
+  // as part of the ONNX specification; other domains correspond
+  // to operator sets of other vendors (e.g., they can be used to
+  // provide vendor-specific extensions to ONNX)
+  opset->set_domain("");
+  opset->set_version(14);
+
+  mp.set_producer_name("LBANN");
+  mp.set_producer_version(LBANN_MAKE_STR(LBANN_VERSION));
+  mp.set_domain("lbann/LLNL/com.github");
+  mp.set_model_version(1);
+  mp.set_doc_string("Livermore Big Artificial Neural Network");
+
+  // graph info
+  auto* gp = mp.mutable_graph();
+  gp->set_name(this->get_name());
+
+  for (auto const* weights : this->get_weights()) {
+    weights->fill_onnx_node(*gp);
+  }
+
+  auto const layers = this->get_layers();
+  for (auto const* layer : layers) {
+    layer->fill_onnx_node(*gp);
+  }
+
+  gp->set_doc_string(this->get_name());
+}
+#endif // LBANN_HAS_ONNX
 
 // =============================================
 // Model specification
