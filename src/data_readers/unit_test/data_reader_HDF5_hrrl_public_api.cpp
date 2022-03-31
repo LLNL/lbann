@@ -355,6 +355,7 @@ TEST_CASE("Data reader hdf5 conduit fetch tests",
     El::Matrix<El::Int> indices_fetched;
     indices_fetched.Resize(1,1);
     auto valid = hdf5_dr->fetch(samples, indices_fetched, 1);
+    REQUIRE(valid > 0);
 
     // Check the primary data fields
     std::vector<std::string> fields = {"Epmax", "Etot", "Image", "N", "T", "alpha"};
