@@ -37,6 +37,8 @@
 #include "lbann/utils/threads/thread_pool.hpp"
 #include "lbann/utils/timer.hpp"
 
+#include "conduit/conduit_node.hpp"
+
 #include <omp.h>
 #include <future>
 

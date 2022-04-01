@@ -42,14 +42,17 @@
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/random_number_generators.hpp"
 
-#include "conduit/conduit_node.hpp"
-
 #include <cassert>
 #include <algorithm>
 #include <string>
 #include <vector>
 #include <unistd.h>
 #include <unordered_set>
+
+// Forward-declare Conduit nodes.
+namespace conduit {
+  class Node;
+}
 
 #define NOT_IMPLEMENTED(n) { \
   std::stringstream s; \
