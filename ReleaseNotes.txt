@@ -68,6 +68,10 @@ I/O & data readers:
    models.
  - Added support in the generic data reader and synthetic data reader
    clases for arbitrary data fields.
+ - Added support for data readers to return full Conduit nodes to the
+   Data Coordinator.
+ - Data coordinator can now directly return packed data fields to
+   input layers.
 
 Build system:
 
