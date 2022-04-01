@@ -29,48 +29,51 @@
 namespace lbann {
 
 El::Matrix<int, El::Device::CPU>
-batch_functional_inference_algorithm::infer(observer_ptr<model> model) {
-    size_t mbs = get_trainer().get_max_mini_batch_size();
-    El::Matrix<int, El::Device::CPU> labels(mbs, 1);
+batch_functional_inference_algorithm::infer(observer_ptr<model> model)
+{
+  size_t mbs = get_trainer().get_max_mini_batch_size();
+  El::Matrix<int, El::Device::CPU> labels(mbs, 1);
 
-    auto c = SGDExecutionContext(execution_mode::inference, mbs);
-    model->reset_mode(c, execution_mode::inference);
-    get_trainer().get_data_coordinator().reset_mode(c);
+  auto c = SGDExecutionContext(execution_mode::inference, mbs);
+  model->reset_mode(c, execution_mode::inference);
+  get_trainer().get_data_coordinator().reset_mode(c);
 
-    get_trainer().get_data_coordinator().fetch_data(execution_mode::inference);
-    model->forward_prop(execution_mode::inference);
-    get_labels(*model, labels);
+  get_trainer().get_data_coordinator().fetch_data(execution_mode::inference);
+  model->forward_prop(execution_mode::inference);
+  get_labels(*model, labels);
 
-    return labels;
-  }
+  return labels;
+}
 
-  void batch_functional_inference_algorithm::get_labels(model& model,\
-                  El::Matrix<int, El::Device::CPU> &labels) {
-    int pred_label = 0;
-    float max, col_value;
+void batch_functional_inference_algorithm::get_labels(
+  model& model,
+  El::Matrix<int, El::Device::CPU>& labels)
+{
+  int pred_label = 0;
+  float max, col_value;
 
-    for (const auto* l : model.get_layers()) {
-      // Find the output layer
-      if (l->get_type() == "softmax") {
-        auto const& dtl = dynamic_cast<lbann::data_type_layer<float> const&>(*l);
-        const auto& outputs = dtl.get_activations();
+  for (const auto* l : model.get_layers()) {
+    // Find the output layer
+    if (l->get_type() == "softmax") {
+      auto const& dtl = dynamic_cast<lbann::data_type_layer<float> const&>(*l);
+      const auto& outputs = dtl.get_activations();
 
-        // Find the prediction for each sample
-        int col_count = outputs.Width();
-        int row_count = outputs.Height();
-        for (int i=0; i<col_count; i++) {
-          max = 0;
-          for (int j=0; j<row_count; j++) {
-            col_value = outputs.Get(i, j);
-            if (col_value > max) {
-              max = col_value;
-              pred_label = j;
-            }
+      // Find the prediction for each sample
+      int col_count = outputs.Width();
+      int row_count = outputs.Height();
+      for (int i = 0; i < col_count; i++) {
+        max = 0;
+        for (int j = 0; j < row_count; j++) {
+          col_value = outputs.Get(i, j);
+          if (col_value > max) {
+            max = col_value;
+            pred_label = j;
           }
-          labels(i) = pred_label;
         }
+        labels(i) = pred_label;
       }
     }
   }
+}
 
 } // namespace lbann
