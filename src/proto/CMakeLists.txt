@@ -35,6 +35,7 @@ if (LBANN_HAS_PROTOBUF)
     lbann.proto
     callbacks.proto
     datatype.proto
+    data_coordinator.proto
     layers.proto
     metrics.proto
     model.proto

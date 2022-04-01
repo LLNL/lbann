@@ -28,43 +28,19 @@ syntax = "proto3";
 
 package lbann_data;
 
+import "transforms.proto";
+
 import "datatype.proto";
 
-import "callbacks.proto";
+message TransformDataField {
+  string data_field = 1;
+  string execution_phase = 2; // train, validation, test, tournament
+  repeated Transform transforms = 600;  // Ordered list of transforms to apply.
+}
 
-import "training_algorithm.proto";
+message DataCoordinator {
+  DataType datatype = 1;
+  string io_buffer = 2;         // Options: "partitioned" (default)
 
-import "data_coordinator.proto";
-
-message Trainer {
-
-  // Unique identifier
-  string name = 1;
-
-  // I/O threads per parallel process
-  //
-  // These threads are typically used to perform data ingestion in the
-  // background.
-  int64 num_parallel_readers = 3;
-  bool  serialize_io = 101;
-
-  repeated Callback callback = 20;
-  int64 mini_batch_size = 12;
-
-  // -------------------------------
-  // Advanced options
-  // -------------------------------
-
-  // If false, trainers will have their trainer rank mixed into their random seed.
-  bool random_init_trainers_identically = 4;
-
-  // Set a random seed for the entire trainer
-  int64 random_seed = 30;
-
-  // Algorithmic block size for Hydrogen
-  int64 hydrogen_block_size = 100;
-
-  DataCoordinator data_coordinator = 200;
-
-  TrainingAlgorithm training_algorithm = 300;
+  repeated TransformDataField transforms = 600;  // Ordered list of transforms to apply.
 }
