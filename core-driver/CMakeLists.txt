@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.18.0)
-project(my_lbann_test C CXX)
+cmake_minimum_required(VERSION 3.21.0)
+project(my_lbann_test CXX)
 find_package(LBANN 0.102.0 REQUIRED)
 find_package(Conduit CONFIG REQUIRED)
 add_executable(Main main.cpp)
