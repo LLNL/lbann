@@ -31,6 +31,8 @@
 #include "lbann/models/model.hpp"
 #include "lbann/proto/proto_common.hpp"
 
+#include <conduit/conduit_node.hpp>
+
 namespace lbann {
 
 const int lbann_default_random_seed = 42;
