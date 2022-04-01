@@ -108,7 +108,7 @@ TEST_CASE("Test batch_function_inference_algorithm", "[inference]")
   {
     El::Fill(data, one);
 
-    inf_alg.infer(model.get(), data, mbs_class_n);
+    inf_alg.infer(model.get());
     const auto* l = model->get_layers()[1];
     auto const& dtl = dynamic_cast<lbann::data_type_layer<float> const&>(*l);
     const auto& output = dtl.get_activations();
@@ -125,7 +125,7 @@ TEST_CASE("Test batch_function_inference_algorithm", "[inference]")
     El::Fill(data, zero);
     El::FillDiagonal(data, one);
 
-    auto labels = inf_alg.infer(model.get(), data, mbs_class_n);
+    auto labels = inf_alg.infer(model.get());
 
     for (int i=0; i<labels.Height(); i++) {
       REQUIRE(labels(i) == i);

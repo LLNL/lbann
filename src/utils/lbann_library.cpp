@@ -24,9 +24,11 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/comm.hpp"
 #include "lbann/comm_impl.hpp"
+
 #include "lbann/data_readers/data_reader.hpp"
+#include "lbann/data_readers/data_reader_conduit.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/lbann_library.hpp"
@@ -40,6 +42,8 @@
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/load_model.hpp"
 #include "lbann/utils/argument_parser.hpp"
+
+#include <conduit/conduit_node.hpp>
 
 #include <cstdlib>
 #include <lbann.pb.h>
@@ -110,7 +114,7 @@ void setup_inference_env(lbann_comm* lc,
                          std::vector<int> output_dims)
 {
   // Setup data reader
-  lbann::conduit_data_reader* reader = new conduit_data_reader();
+  auto reader = std::make_unique<conduit_data_reader>();
   reader->set_comm(lc);
   reader->set_num_parallel_readers(lc->get_procs_per_trainer());
   reader->set_mini_batch_size(mbs);
@@ -118,12 +122,9 @@ void setup_inference_env(lbann_comm* lc,
   reader->set_label_dims(output_dims);
 
   // Add data store
-  auto data_store = new lbann::data_store_conduit(reader);
-  reader->set_data_store(data_store);
+  reader->set_data_store(new lbann::data_store_conduit(reader.get()));
 
   // Setup data coordinator and trainer
-  std::map<execution_mode, generic_data_reader*> data_readers = {
-    {execution_mode::inference, reader}};
   std::unique_ptr<thread_pool> io_thread_pool =
     construct_io_thread_pool(lc, false);
   auto io_threads_per_process = io_thread_pool->get_num_threads();
@@ -141,6 +142,13 @@ void setup_inference_env(lbann_comm* lc,
                                     random_seed,
                                     data_seq_random_seed);
 
+  // FIXME: The global trainer holds a data coordinator that holds
+  // this map. When the aforementioned data coordinator is destroyed,
+  // it deletes the data readers that it's holding. Therefore, we
+  // release the pointer that we hold and hope no exceptions occur
+  // before the data coordinator takes control of the pointer.
+  std::map<execution_mode, generic_data_reader*> data_readers = {
+    {execution_mode::inference, reader.release()}};
   global_trainer_->setup(std::move(io_thread_pool), data_readers);
 }
 
@@ -157,7 +165,7 @@ load_inference_model(lbann_comm* lc,
   // Load checkpoint
   persist p;
   p.open_restart(cp_dir.c_str());
-  auto m = make_unique<directed_acyclic_graph_model>(lc, nullptr, nullptr);
+  auto m = make_unique<model>(lc, nullptr, nullptr);
   m->load_from_checkpoint_shared(p);
   p.close_restart();
 
