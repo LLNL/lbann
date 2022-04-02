@@ -31,7 +31,7 @@ namespace lbann {
 El::Matrix<int, El::Device::CPU>
 batch_functional_inference_algorithm::infer(observer_ptr<model> model)
 {
-  size_t mbs = get_trainer().get_max_mini_batch_size();
+  size_t const mbs = get_trainer().get_max_mini_batch_size();
   El::Matrix<int, El::Device::CPU> labels(mbs, 1);
 
   auto c = SGDExecutionContext(execution_mode::inference, mbs);

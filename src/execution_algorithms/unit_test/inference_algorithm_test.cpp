@@ -61,7 +61,7 @@ model {
 }
 )ptext";
 
-auto mock_datareader_metadata(int class_n)
+auto mock_datareader_metadata(int const class_n)
 {
   lbann::DataReaderMetaData md;
   auto& md_dims = md.data_dims;
@@ -71,13 +71,15 @@ auto mock_datareader_metadata(int class_n)
   return md;
 }
 
-auto make_model(lbann::lbann_comm& comm, int class_n)
+lbann_data::LbannPB get_model_protobuf()
 {
   lbann_data::LbannPB my_proto;
   if (!pb::TextFormat::ParseFromString(model_prototext, &my_proto))
     throw "Parsing protobuf failed.";
-  // Construct a trainer so that the model can register the input layer
-  lbann::construct_trainer(&comm, my_proto.mutable_trainer(), my_proto);
+  return my_proto;
+}
+auto make_model(lbann::lbann_comm& comm, lbann_data::LbannPB& my_proto, int class_n)
+{
   auto metadata = mock_datareader_metadata(class_n);
   auto my_model = lbann::proto::construct_model(&comm,
                                                 -1,
@@ -109,8 +111,13 @@ TEST_CASE("Test batch_function_inference_algorithm", "[inference]")
   auto& comm = unit_test::utilities::current_world_comm();
   auto const& g = comm.get_trainer_grid();
 
-  auto model = make_model(comm, mbs_class_n);
+  auto my_proto = get_model_protobuf(); // the pbuf msg is a global string
+
+  // Construct a trainer so that the model can register the input layer
+  lbann::construct_trainer(&comm, my_proto.mutable_trainer(), my_proto);
+
   lbann::setup_inference_env(&comm, mbs_class_n, {mbs_class_n}, {mbs_class_n});
+  auto model = make_model(comm, my_proto, mbs_class_n);
   auto inf_alg = lbann::batch_functional_inference_algorithm();
   SECTION("Model data insert and forward prop")
   {
@@ -140,7 +147,7 @@ TEST_CASE("Test batch_function_inference_algorithm", "[inference]")
     El::FillDiagonal(data, one);
 
     std::map<std::string, DMat> samples;
-    samples["data/labels"] = std::move(data);
+    samples["data/samples"] = std::move(data);
     lbann::set_inference_samples(samples);
 
     auto labels = inf_alg.infer(model.get());
