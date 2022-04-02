@@ -113,7 +113,7 @@ std::unique_ptr<model> load_inference_model(lbann_comm* lc,
  * @param[in] model A trained model
  * @return Matrix of predicted labels
  */
-El::Matrix<int, El::Device::CPU>
+El::Matrix<El::Int, El::Device::CPU>
 inference(observer_ptr<model> model);
 
 int allocate_trainer_resources(lbann_comm *comm);

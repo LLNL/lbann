@@ -28,11 +28,11 @@
 
 namespace lbann {
 
-El::Matrix<int, El::Device::CPU>
+El::Matrix<El::Int, El::Device::CPU>
 batch_functional_inference_algorithm::infer(observer_ptr<model> model)
 {
   size_t const mbs = get_trainer().get_max_mini_batch_size();
-  El::Matrix<int, El::Device::CPU> labels(mbs, 1);
+  El::Matrix<El::Int, El::Device::CPU> labels(mbs, 1);
 
   auto c = SGDExecutionContext(execution_mode::inference, mbs);
   model->reset_mode(c, execution_mode::inference);
@@ -47,32 +47,43 @@ batch_functional_inference_algorithm::infer(observer_ptr<model> model)
 
 void batch_functional_inference_algorithm::get_labels(
   model& model,
-  El::Matrix<int, El::Device::CPU>& labels)
+  El::Matrix<El::Int, El::Device::CPU>& labels)
 {
-  int pred_label = 0;
-  float max, col_value;
-
-  for (const auto* l : model.get_layers()) {
-    // Find the output layer
-    if (l->get_type() == "softmax") {
-      auto const& dtl = dynamic_cast<lbann::data_type_layer<float> const&>(*l);
-      const auto& outputs = dtl.get_activations();
-
-      // Find the prediction for each sample
-      int col_count = outputs.Width();
-      int row_count = outputs.Height();
-      for (int i = 0; i < col_count; i++) {
-        max = 0;
-        for (int j = 0; j < row_count; j++) {
-          col_value = outputs.Get(i, j);
-          if (col_value > max) {
-            max = col_value;
-            pred_label = j;
-          }
-        }
-        labels(i) = pred_label;
-      }
+  Layer const* softmax = nullptr;
+  auto const layer_list = model.get_layers();
+  for (auto const* const l_tmp : layer_list) {
+    if (l_tmp->get_type() == "softmax") {
+      softmax = l_tmp;
+      break;
     }
+  }
+  if (!softmax)
+    LBANN_ERROR("get_labels only supported when model contains a softmax. This "
+                "is a known limitation and we're working on it.");
+  try {
+    auto const& dtl =
+      dynamic_cast<lbann::data_type_layer<float> const&>(*softmax);
+    const auto& outputs = dtl.get_activations();
+
+    // Find the prediction for each sample
+    El::Int const col_count = outputs.Width();
+    El::Int const row_count = outputs.Height();
+    LBANN_ASSERT(col_count == labels.Height());
+    for (El::Int col = 0; col < col_count; ++col) {
+      float max = 0.f;
+      El::Int pred_label = 0;
+      for (El::Int row = 0; row < row_count; ++row) {
+        float const col_value = outputs.Get(row, col);
+        if (col_value > max) {
+          max = col_value;
+          pred_label = row;
+        }
+      }
+      labels(col, 0) = pred_label;
+    }
+  }
+  catch (std::bad_cast const&) {
+    LBANN_ERROR("Softmax layer does not have data type \"float\"");
   }
 }
 

@@ -120,6 +120,7 @@ void setup_inference_env(lbann_comm* lc,
   reader->set_mini_batch_size(mbs);
   reader->set_data_dims(input_dims);
   reader->set_label_dims(output_dims);
+  reader->set_shuffle(false);
 
   // Add data store
   reader->set_data_store(new lbann::data_store_conduit(reader.get()));
@@ -177,7 +178,7 @@ load_inference_model(lbann_comm* lc,
   return m;
 }
 
-El::Matrix<int, El::Device::CPU>
+El::Matrix<El::Int, El::Device::CPU>
 inference(observer_ptr<model> model) {
   auto inf_alg = batch_functional_inference_algorithm();
   return inf_alg.infer(model);

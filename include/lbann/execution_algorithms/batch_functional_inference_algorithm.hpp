@@ -74,14 +74,14 @@ public:
    * @param[in] model A trained model
    * @return Matrix of predicted labels (by index)
    */
-  El::Matrix<int, El::Device::CPU> infer(observer_ptr<model> model);
+  El::Matrix<El::Int, El::Device::CPU> infer(observer_ptr<model> model);
 
 protected:
   /** @brief Finds the predicted category in a models softmax layer
    * @param[in] model A model that has been used for inference
    * @param[in] labels A matrix to place predicted category labels
    */
-  void get_labels(model& model, El::Matrix<int, El::Device::CPU>& labels);
+  void get_labels(model& model, El::Matrix<El::Int, El::Device::CPU>& labels);
 };
 
 } // namespace lbann
