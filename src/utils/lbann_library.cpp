@@ -615,7 +615,7 @@ void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int
 #else
   std::cout << "NOT detected" << std::endl;
 #endif // LBANN_HAS_ALUMINUM
-  std::cout << "  GPU     : ";
+  std::cout << "  GPU      : ";
 #ifdef LBANN_HAS_GPU
   std::cout << "detected" << std::endl;
 #else
