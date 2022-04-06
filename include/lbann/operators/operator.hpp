@@ -43,6 +43,10 @@
 
 #include <google/protobuf/message.h>
 
+#ifdef LBANN_HAS_ONNX
+#include <onnx/onnx_pb.h>
+#endif
+
 #include <string>
 #include <vector>
 
@@ -130,6 +134,10 @@ public:
   template <typename ArchiveT>
   void serialize(ArchiveT& ar);
 
+#ifdef LBANN_HAS_ONNX
+  virtual std::vector<onnx::NodeProto> get_onnx_nodes() const;
+#endif
+
   ///@}
   /** @name Computational interface */
   ///@{
@@ -164,7 +172,7 @@ private:
   virtual void set_proto_params(lbann_data::Operator&) const = 0;
   /** @brief Concrete operator description. */
   virtual void do_fill_description(Description&) const = 0;
-};
+}; // class Operator
 
 template <typename InputT, typename OutputT, El::Device D>
 void Operator<InputT, OutputT, D>::write_proto(
@@ -207,6 +215,16 @@ template <typename InputT, typename OutputT, El::Device D>
 template <typename ArchiveT>
 void Operator<InputT, OutputT, D>::serialize(ArchiveT& ar)
 {}
+
+#ifdef LBANN_HAS_ONNX
+template <typename InputT, typename OutputT, El::Device D>
+std::vector<onnx::NodeProto> Operator<InputT, OutputT, D>::get_onnx_nodes() const
+{
+  // The default assumption is that we don't know how to represent
+  // this operator in ONNX terms yet.
+  return {};
+}
+#endif
 
 } // namespace lbann
 #endif // LBANN_OPERATORS_OPERATOR_HPP_INCLUDED

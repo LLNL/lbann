@@ -32,7 +32,9 @@
 #include "lbann/operators/elementwise_operator.hpp"
 #include "lbann/utils/cloneable.hpp"
 
-#include "lbann/proto/operators.pb.h"
+#include <onnx/onnx-ml.pb.h>
+#include <operators.pb.h>
+
 
 /** @file
  *
@@ -49,6 +51,16 @@
 #include "lbann/utils/cloneable.hpp"
 
 #include "lbann/proto/operators.pb.h"
+
+#ifdef LBANN_HAS_ONNX
+#define ADD_GET_ONNX_NODES_API()                                               \
+  std::vector<onnx::NodeProto> get_onnx_nodes() const final                    \
+  {                                                                            \
+    return get_onnx_nodes_impl(*this);                                         \
+  }
+#else
+#define ADD_GET_ONNX_NODES_API()
+#endif // LBANN_HAS_ONNX
 
 // These are all single-type operators.
 
@@ -88,6 +100,7 @@
                             ::cereal::base_class<OperatorType>(this)),         \
          CEREAL_NVP(m_constant));                                              \
     }                                                                          \
+    ADD_GET_ONNX_NODES_API()                                                   \
     DataT get_constant() const noexcept                                        \
     {                                                                          \
       return m_constant;                                                       \
@@ -123,7 +136,7 @@ namespace lbann {
 // x + c -- treated as commutative.
 LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(AddConstant, "add constant");
 
-// x + c -- treated as commutative.
+// x * c -- treated as commutative.
 LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(Scale, "scale");
 
 // x - C -- yes, could be "plus -C", but so could 7-4 be 7+-4, but
@@ -148,6 +161,104 @@ LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(GreaterEqualConstant,
                                             "greater-equals constant");
 LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(GreaterConstant,
                                             "greater than constant");
+
+inline onnx::NodeProto get_constant_node(float val)
+{
+  onnx::NodeProto const_node;
+  auto* const_val = const_node.add_attribute();
+  const_val->set_name("value_float");
+  const_val->set_type(onnx::AttributeProto::FLOAT);
+  const_val->set_f(val);
+  return const_node;
+}
+
+template <typename T, El::Device D>
+std::vector<onnx::NodeProto> get_onnx_nodes_impl(
+  AddConstantOperator<T, D> const op)
+{
+  std::vector<onnx::NodeProto> nodes(2UL);
+  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.front().set_op_type("PostConstant");
+  nodes.back().set_op_type("Add");
+  return nodes;
+}
+
+template <typename T, El::Device D>
+std::vector<onnx::NodeProto> get_onnx_nodes_impl(
+  ScaleOperator<T, D> const)
+{
+  return {};
+}
+
+template <typename T, El::Device D>
+std::vector<onnx::NodeProto> get_onnx_nodes_impl(
+  SubtractConstantOperator<T, D> const)
+{
+  return {};
+}
+
+template <typename T, El::Device D>
+std::vector<onnx::NodeProto> get_onnx_nodes_impl(
+  ConstantSubtractOperator<T, D> const)
+{
+  return {};
+}
+
+template <typename T, El::Device D>
+std::vector<onnx::NodeProto> get_onnx_nodes_impl(
+  MaxConstantOperator<T, D> const)
+{
+  return {};
+}
+
+template <typename T, El::Device D>
+std::vector<onnx::NodeProto> get_onnx_nodes_impl(
+  MinConstantOperator<T, D> const)
+{
+  return {};
+}
+
+template <typename T, El::Device D>
+std::vector<onnx::NodeProto> get_onnx_nodes_impl(
+  EqualConstantOperator<T, D> const)
+{
+  return {};
+}
+
+template <typename T, El::Device D>
+std::vector<onnx::NodeProto> get_onnx_nodes_impl(
+  NotEqualConstantOperator<T, D> const)
+{
+  return {};
+}
+
+template <typename T, El::Device D>
+std::vector<onnx::NodeProto> get_onnx_nodes_impl(
+  LessConstantOperator<T, D> const)
+{
+  return {};
+}
+
+template <typename T, El::Device D>
+std::vector<onnx::NodeProto> get_onnx_nodes_impl(
+  LessEqualConstantOperator<T, D> const)
+{
+  return {};
+}
+
+template <typename T, El::Device D>
+std::vector<onnx::NodeProto> get_onnx_nodes_impl(
+  GreaterConstantOperator<T, D> const)
+{
+  return {};
+}
+
+template <typename T, El::Device D>
+std::vector<onnx::NodeProto> get_onnx_nodes_impl(
+  GreaterEqualConstantOperator<T, D> const)
+{
+  return {};
+}
 
 } // namespace lbann
 #endif // LBANN_INCLUDE_LBANN_OPERATORS_BINARY_WITH_CONSTANT_HPP_INCLUDED
