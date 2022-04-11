@@ -141,10 +141,13 @@ T gpu_lib::block_reduce(T val) {
 
 // Unary math functions
 #if __CUDA_ARCH__ >= 530
+template <>
 __device__ __forceinline__
 bool gpu_lib::isfinite(__half const& x) { return !(::__isnan(x) || ::__hisinf(x)); }
+template <>
 __device__ __forceinline__
 bool gpu_lib::isinf(__half const& x) { return ::__hisinf(x); }
+template <>
 __device__ __forceinline__
 bool gpu_lib::isnan(__half const& x) { return ::__hisnan(x); }
 
