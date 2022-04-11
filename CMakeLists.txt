@@ -205,6 +205,11 @@ find_package(Clara REQUIRED)
 find_package(CEREAL CONFIG REQUIRED NAMES CEREAL cereal)
 set(LBANN_HAS_CEREAL ${CEREAL_FOUND})
 # The imported target is just called "cereal". Super.
+if (TARGET cereal)
+  set(CEREAL_LIBRARIES cereal)
+elseif (TARGET cereal::cereal)
+  set(CEREAL_LIBRARIES cereal::cereal)
+endif ()
 
 # Setup the linear algebra library
 find_package(Hydrogen 1.5.0 CONFIG REQUIRED)
@@ -588,7 +593,7 @@ target_link_libraries(lbann PUBLIC
   ${CLARA_LIBRARIES}
   ${LBANN_PYTHON_LIBS}
   protobuf::libprotobuf
-  cereal
+  ${CEREAL_LIBRARIES}
   ZSTR::ZSTR)
 
 if (LBANN_HAS_OPENCV)
