@@ -91,6 +91,8 @@ int allocate_trainer_resources(lbann_comm *comm) {
   bool trainer_async_comm_subgrid = arg_parser.get<bool>(LBANN_OPTION_TRAINER_ENABLE_SUBGRID_ASYNC_COMM);
   bool trainer_topo_aware_subgrid = arg_parser.get<bool>(LBANN_OPTION_TRAINER_ENABLE_TOPO_AWARE_SUBGRID);
 
+  std::cout<<"Async Comm:"<<trainer_async_comm_subgrid<<"\n";
+
   if (procs_per_trainer == 0) {
     procs_per_trainer = comm->get_procs_in_world();
   }

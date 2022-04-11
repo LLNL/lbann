@@ -205,6 +205,10 @@ void KFAC::train(
   // Run callbacks.
   do_train_begin_cbs(model);
 
+  if(sgd_context.get_epoch() == 0){
+    m_has_kronecker_inverse = false;
+  }
+
   // Start iterating
   bool is_start_of_epoch = true;
   sgd_context.start_timer();
@@ -228,6 +232,7 @@ void KFAC::train(
     if (train_mini_batch(kfac_context, model, dc)) {
       // Finalize epoch
       sgd_context.inc_epoch();
+      std::cout<<"Inverse comm:"<<m_time_span_inverse_comm<<" "<<m_time_span_backward_comm<<" "<<m_time_span_forward_comm <<" "<<m_time_span_precond_comm<<"\n";
 
       if(comm.get_KFAC_subgrid_create_two_models()
         or comm.get_grid_type()==GridType::NO_GRID
@@ -343,11 +348,7 @@ bool KFAC::train_mini_batch(
         // sync_weights_model(model, model.get_comm());
         model.forward_prop(execution_mode::training);
       }
-      if(comm.get_KFAC_subgrid_create_two_models()
-          and comm.get_grid_type()==GridType::PRIMARY_GRID
-          and compute_inverse
-          and comm.enable_subgrid_async_communication())
-          end_old_async_weights_model(model, model.get_comm(),kfac_context);
+
       if(compute_inverse)
         on_forward_prop_end(kfac_context, model);
 
@@ -371,10 +372,22 @@ bool KFAC::train_mini_batch(
         finished = dc.epoch_complete(execution_mode::training);
       }
 
-      if(compute_inverse)
+      if(comm.get_KFAC_subgrid_create_two_models()
+          and comm.get_grid_type()==GridType::PRIMARY_GRID
+          and compute_inverse
+          and comm.enable_subgrid_async_communication())
+          end_old_async_weights_model(model, model.get_comm(),kfac_context);
+
+      if(compute_inverse){
         on_backward_prop_end(kfac_context, model);
+      }
+
+
       else if(comm.get_grid_type()==GridType::NO_GRID or m_has_kronecker_inverse==true)
       {
+        auto t_start = std::chrono::high_resolution_clock::now();
+
+
         if(comm.get_KFAC_subgrid_create_two_models() or comm.get_grid_type() == GridType::PRIMARY_GRID or comm.get_grid_type() == GridType::NO_GRID){
           for(auto& block : kfac_context.m_blocks){
               if((size_t) comm.get_rank_in_trainer() != block->get_inverse_proc_rank() and m_distribute_precondition_compute)
@@ -397,6 +410,8 @@ bool KFAC::train_mini_batch(
           if(m_distribute_precondition_compute)
             allgather_precondition_gradient(comm, kfac_context);
         }
+        auto t_stop = std::chrono::high_resolution_clock::now();
+        m_time_span_precond_comm += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
       }
 
 
@@ -1204,10 +1219,14 @@ void KFAC::on_forward_prop_end(
 
     m_has_kronecker_inverse = true;
   }
+  auto t_start = std::chrono::high_resolution_clock::now();
   for(auto& block : context.m_blocks) {
     // Start forward end exchange (like activations and weights)
     block->start_communication_forward_end(&comm);
   }
+  auto t_stop = std::chrono::high_resolution_clock::now();
+  m_time_span_forward_comm += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
+
 
 }
 
@@ -1263,6 +1282,7 @@ void KFAC::on_backward_prop_end(
   if(context.m_blocks.size() == 0){
     LBANN_ERROR("K-FAC blocks have not been setup");
   }
+  auto t_start = std::chrono::high_resolution_clock::now();
   for(auto& block : context.m_blocks) {
     // Exchange activations and errors
     block->end_communication_forward_end(&comm);
@@ -1270,6 +1290,8 @@ void KFAC::on_backward_prop_end(
     if(comm.get_grid_type() == GridType::SECONDARY_GRID)
       block->end_communication_backward_end(&comm);
   }
+  auto t_stop = std::chrono::high_resolution_clock::now();
+  m_time_span_backward_comm += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
 
 
   if(comm.get_grid_type() == GridType::SECONDARY_GRID or comm.get_grid_type() == GridType::NO_GRID)
@@ -1418,6 +1440,7 @@ void KFAC::on_backward_prop_end(
 
         bool apply_precondition = false;
 
+
         if(m_use_KFAC_epoch.size() <= current_epoch)
           apply_precondition = true;
         else
@@ -1485,7 +1508,7 @@ std::vector<bool> parse_sgd_kfac_combination_interval(std::string const& str){
       }
 
       use_KFAC_epoch.push_back(use_kfac);
-    }   
+    }
   }
   return use_KFAC_epoch;
 }

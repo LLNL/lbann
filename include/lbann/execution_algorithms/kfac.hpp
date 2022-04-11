@@ -270,7 +270,7 @@ private:
   // std::vector<El::mpi::Request<DataType>> m_inverse_matrix_communication_reqs, m_weights_communication_reqs;
   std::vector<ReqT>m_inverse_matrix_communication_reqs, m_weights_communication_reqs;
 
-  int m_time_span_inverse_comm=0,m_time_span_inverse_send_recv=0;
+  int m_time_span_inverse_comm=0,m_time_span_inverse_send_recv=0, m_time_span_forward_comm=0, m_time_span_backward_comm=0, m_time_span_precond_comm=0;
 
   std::vector<bool> m_use_KFAC_epoch;
 

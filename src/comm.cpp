@@ -148,6 +148,8 @@ void lbann_comm::split_trainer_grid(
   m_create_two_models = create_two_models;
   m_subgrid_async_progress = enable_async_comm;
   bool enable_topology_aware = enable_topo_aware; 
+  // enable_topology_aware = true;
+  std::cout<<"Topoaware In comm:"<<enable_topo_aware<<"\n";
 
   // If primary grid size is not given then split resources equally between
   // primary and secondary grid

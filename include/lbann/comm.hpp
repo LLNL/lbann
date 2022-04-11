@@ -199,7 +199,13 @@ public:
   /** Return the COMM_WORLD rank of the rank'th processor in trainer. */
   inline int get_world_rank(int trainer, int rank) const noexcept
   {
-    return m_procs_per_trainer * trainer + rank;
+    if(m_secondary_grid_ranks.size() == 0){
+      return m_procs_per_trainer * trainer + rank;
+    }
+    else{
+      return (m_secondary_grid_ranks.size() + m_primary_grid_ranks.size()) * trainer + rank;
+    }
+
   }
   /** Return the "rank" of the trainer that this rank is in */
   inline int map_world_rank_to_trainer_rank(int world_rank) const noexcept

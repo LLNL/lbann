@@ -221,6 +221,12 @@ void TranslateBetweenGridsVCAsync
   std::vector<ReqT>& Requests);
 
 template<typename T, El::Device Device>
+void TranslateBetweenGridsVCAsyncDirect
+( const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,
+  El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B,
+  std::vector<ReqT>& Requests);
+
+template<typename T, El::Device Device>
 void TranslateBetweenGridsSTARAsync
 (const El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& A,
   El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& B,

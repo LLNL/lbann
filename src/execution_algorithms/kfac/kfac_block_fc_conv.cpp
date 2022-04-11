@@ -276,10 +276,20 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
   auto& weights = this->m_layer->get_weights(0);
   optimizer *w_optimizer = weights.get_optimizer();
   auto* w_dto = dynamic_cast<data_type_optimizer<DataType>*>(w_optimizer);
+  auto learning_rate = w_dto->get_learning_rate();
   auto& Ainv = m_kronecker_inverse_A;
   auto& Ginv = m_kronecker_inverse_G;
   const auto& w_grads_orig = w_dto->get_gradient().LockedMatrix();
   El::Matrix<DataType, Device> w_gradients;
+
+  auto& w_grads_scaling = this->get_workspace_matrix(
+          "w_grads_scaling", 1, 1);
+  auto& b_grads_scaling = this->get_workspace_matrix(
+          "b_grads_scaling", 1, 1);
+
+  auto& w_grads_scaling_mat = this->get_workspace_matrix(
+          "w_grads_scaling_mat", w_grads_orig.Height(), w_grads_orig.Width());
+  
   // w_gradients is already synchronized among processes.
   if(m_is_conv) {
     const auto num_output_channels = this->m_layer->get_output_dims()[0];
@@ -345,6 +355,20 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
     grad_buffer_v.Attach(Fgrad.Width(), Fgrad.Height(),
                          grad_buffer.Buffer(),
                          Fgrad.Width());
+
+    //Cliping 
+    // El::Gemm(
+    //   El::NORMAL, El::NORMAL, El::TypeTraits<DataType>::One(), 
+    //   El::Reshape(1, Fgrad.Height()*Fgrad.Width(), Fgrad), 
+    //   El::Reshape(w_grads_orig.Height()*w_grads_orig.Width(), 1, w_grads_orig), 
+    //   El::TypeTraits<DataType>::Zero(), w_grads_scaling
+    // );
+
+    El::Matrix<DataType> XCPU(Fgrad);
+    auto w_grads_scaling = El::Dot(XCPU, XCPU);
+    auto w_grads_scaling_factor = std::min(1.0, std::sqrt (0.001 / (w_grads_scaling * learning_rate * learning_rate)));
+    El::Scale(w_grads_scaling_factor, Fgrad);
+      
     El::Transpose(Fgrad, grad_buffer_v);
   } else {
     assert(Fgrad.Height() == w_gradients.Height());
@@ -353,16 +377,60 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
     if(m_has_bias) {
       auto& biases = this->m_layer->get_weights(1);
       optimizer *b_optimizer = biases.get_optimizer();
+      auto* b_dto = dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer);
+      const auto& b_grads_orig = b_dto->get_gradient().LockedMatrix();
+
+
       auto& grad_buffer_biases = b_optimizer->get_gradient_buffer(
           dst_scale, gradient_scale, false);
       auto Fgrad_weights = El::View(
           Fgrad, El::ALL, El::IR(0, grad_buffer.Width()));
       auto Fgrad_biases = El::View(
           Fgrad, El::ALL, El::IR(grad_buffer.Width(), grad_buffer.Width()+1));
+
+      auto& b_grads_scaled = this->get_workspace_matrix(
+          "b_grads_scaling_mat", b_grads_orig.Height(), b_grads_orig.Width());
+
+      //Cliping 
+      // El::Gemm(
+      //   El::NORMAL, El::NORMAL, El::TypeTraits<DataType>::One(), 
+      //   El::Reshape(1, Fgrad_weights.Height()*Fgrad_weights.Width(), Fgrad_weights), 
+      //   El::Reshape(w_grads_orig.Height()*w_grads_orig.Width(), 1, w_grads_orig), 
+      //   El::TypeTraits<DataType>::Zero(), w_grads_scaling
+      // );
+      // El::Gemm(
+      //   El::NORMAL, El::NORMAL, El::TypeTraits<DataType>::One(), 
+      //   El::Reshape(1, Fgrad_biases.Height()*Fgrad_biases.Width(), Fgrad_biases), 
+      //   El::Reshape(b_grads_orig.Height()*b_grads_orig.Width(), 1, b_grads_orig), 
+      //   El::TypeTraits<DataType>::Zero(), b_grads_scaling
+      // );
+      El::Matrix<DataType> XCPU(Fgrad_weights);
+      El::Matrix<DataType> BCPU(Fgrad_biases);
+      auto w_grads_scaling = El::Dot(XCPU, XCPU);
+      auto b_grads_scaling = El::Dot(BCPU, BCPU); 
+
+      auto w_grads_scaling_factor = std::min(1.0, std::sqrt (0.001 / (w_grads_scaling * learning_rate * learning_rate)));
+      auto w_bias_scaling_factor = std::min(1.0, std::sqrt (0.001 / (b_grads_scaling * learning_rate * learning_rate)));
+
+      El::Scale(w_grads_scaling_factor, Fgrad_weights);
+      El::Scale(w_bias_scaling_factor, Fgrad_biases);
+
       El::Copy(Fgrad_weights, grad_buffer.Matrix());
       El::Copy(Fgrad_biases, grad_buffer_biases.Matrix());
 
     } else {
+      //Cliping 
+      // El::Gemm(
+      //   El::NORMAL, El::NORMAL, El::TypeTraits<DataType>::One(), 
+      //   El::Reshape(1, Fgrad.Height()*Fgrad.Width(), Fgrad), 
+      //   El::Reshape(w_grads_orig.Height()*w_grads_orig.Width(), 1, w_grads_orig), 
+      //   El::TypeTraits<DataType>::Zero(), w_grads_scaling
+      // );
+      El::Matrix<DataType> XCPU(Fgrad);
+      auto w_grads_scaling = El::Dot(XCPU, XCPU);
+      auto w_grads_scaling_factor = std::min(1.0, std::sqrt (0.001 / (w_grads_scaling * learning_rate * learning_rate)));
+      El::Scale(w_grads_scaling_factor, Fgrad);
+
       El::Copy(Fgrad, grad_buffer.Matrix());
     }
   }
@@ -398,7 +466,7 @@ void kfac_block_fc_conv<Device>::start_communication_forward_end(
   int num_local_activations = 1;
   const auto parent = this->m_layer->get_parent_layers()[0];
   const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
-  const auto& local_activations = dtl_parent.get_activations();
+  const auto& parent_activations = dtl_parent.get_activations();
 
   if(comm->get_KFAC_subgrid_create_two_models() or comm->get_grid_type() == GridType::NO_GRID ){
     this->m_parent_local_activations.resize(num_local_activations);
@@ -426,18 +494,27 @@ void kfac_block_fc_conv<Device>::start_communication_forward_end(
 
     std::vector<El::mpi::Request<DataType>> requests;
 
+    // if(typeid(parent_activations.LockedBuffer()) != typeid(this->m_parent_local_activations[0]->Buffer()))
+    //   std::cout<<"You are dead:"<<dtl_parent.get_name()<<" "<<typeid(parent_activations.LockedBuffer()).name()<< " "<<typeid(this->m_parent_local_activations[0]->Buffer()).name()<<" "<<typeid(DataType).name()<<"\n";
+
     if(comm->enable_subgrid_async_communication()==false)
     {
-      El::Copy(local_activations,*this->m_parent_local_activations[0]);
+      El::Copy(parent_activations,*this->m_parent_local_activations[0]);
     }
     else{
-      const auto local_activations_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_activations));
+      // const auto local_activations_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_activations));
+      El::DistMatrixReadProxy<DataType, DataType, El::STAR, El::VC, El::ELEMENT, Device> star_vc_prox(parent_activations);
+      El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device> const& star_vc_mat = star_vc_prox.GetLocked();
+      
       auto local_activations0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[0]));
       auto subset0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[0]));
 
-      kfac::TranslateBetweenGridsVCAsync(*local_activations_vc,
+      // kfac::TranslateBetweenGridsVCAsync(star_vc_mat,
+      //                                         *local_activations0,
+      //                                         *subset0,
+      //                                         this->m_requests_forward_end);
+      kfac::TranslateBetweenGridsVCAsyncDirect(star_vc_mat,
                                               *local_activations0,
-                                              *subset0,
                                               this->m_requests_forward_end);
 
 
@@ -452,7 +529,7 @@ void kfac_block_fc_conv<Device>::start_communication_forward_end(
       else
         input = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
     }
-    El::LockedView( *(this->m_parent_local_activations[0]), local_activations );
+    El::LockedView( *(this->m_parent_local_activations[0]), parent_activations );
   }
 
 }
@@ -470,7 +547,7 @@ void kfac_block_fc_conv<Device>::end_communication_forward_end(
       ::Al::Wait<::Al::NCCLBackend>(req);
     }
 
-    if(primary_grid_ranks.size() < secondary_grid_ranks.size()){
+    if(primary_grid_ranks.size() < secondary_grid_ranks.size() and false){
       auto local_activations0 = dynamic_cast<
           El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[0]));
       auto subset0 = dynamic_cast<
@@ -524,9 +601,12 @@ void kfac_block_fc_conv<Device>::start_communication_backward_end(
       auto local_errors0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_child_local_errors[0]));
       auto subset1 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[1]));
 
-      kfac::TranslateBetweenGridsVCAsync(*local_errors_vc,
+      // kfac::TranslateBetweenGridsVCAsync(*local_errors_vc,
+      //                                         *local_errors0,
+      //                                         *subset1,
+      //                                         this->m_requests_backward_end);
+      kfac::TranslateBetweenGridsVCAsyncDirect(*local_errors_vc,
                                               *local_errors0,
-                                              *subset1,
                                               this->m_requests_backward_end);
     }//Async progress
   }
@@ -555,7 +635,7 @@ void kfac_block_fc_conv<Device>::end_communication_backward_end(
       ::Al::Wait<::Al::NCCLBackend>(req);
     }
 
-    if(primary_grid_ranks.size() < secondary_grid_ranks.size()){
+    if(primary_grid_ranks.size() < secondary_grid_ranks.size() and false){
       auto local_errors0 = dynamic_cast<
           El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_child_local_errors[0]));
       auto subset1 = dynamic_cast<
@@ -629,17 +709,23 @@ void kfac_block_fc_conv<Device>::initialize_activations_and_errors(
       auto subset0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[0]));
       auto subset1 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[1]));
 
-      kfac::TranslateBetweenGridsVCAsync(*local_activations_vc,
+      // kfac::TranslateBetweenGridsVCAsync(*local_activations_vc,
+      //                                         *local_activations0,
+      //                                         *subset0,
+      //                                         Requests);
+      kfac::TranslateBetweenGridsVCAsyncDirect(*local_activations_vc,
                                               *local_activations0,
-                                              *subset0,
                                               Requests);
       for(auto& req:Requests){
         ::Al::Wait<::Al::NCCLBackend>(req);
       }
       Requests.clear();
-      kfac::TranslateBetweenGridsVCAsync(*local_errors_vc,
+      // kfac::TranslateBetweenGridsVCAsync(*local_errors_vc,
+      //                                         *local_errors0,
+      //                                         *subset1,
+      //                                         Requests);
+      kfac::TranslateBetweenGridsVCAsyncDirect(*local_errors_vc,
                                               *local_errors0,
-                                              *subset1,
                                               Requests);
       auto primary_grid_ranks = comm->get_primary_grid_ranks();
       auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
