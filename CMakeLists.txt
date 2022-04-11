@@ -202,7 +202,7 @@ find_package(Threads REQUIRED)
 # Argument parsing backend
 find_package(Clara REQUIRED)
 
-find_package(CEREAL CONFIG REQUIRED)
+find_package(CEREAL CONFIG REQUIRED NAMES CEREAL cereal)
 set(LBANN_HAS_CEREAL ${CEREAL_FOUND})
 # The imported target is just called "cereal". Super.
 
