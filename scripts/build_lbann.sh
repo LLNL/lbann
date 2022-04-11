@@ -283,7 +283,7 @@ else
     exit 1
 fi
 
-SPACK_VERSION=$(spack --version | sed 's/-.*//g')
+SPACK_VERSION=$(spack --version | sed 's/-.*//g' | sed 's/[(].*[)]//g')
 MIN_SPACK_VERSION=0.17.1
 
 compare_versions ${SPACK_VERSION} ${MIN_SPACK_VERSION}

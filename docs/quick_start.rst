@@ -59,7 +59,7 @@ the :ref:`CMake install <build-with-cmake>`.
 
         git clone https://github.com/llnl/lbann
         cd ./lbann
-        ./scripts/install_lbann.sh -e lbann
+        ./scripts/build_lbann.sh -d -- +cuda +half
 
     View other options available by passing the :code:`-h` option to the
     script.

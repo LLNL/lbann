@@ -111,7 +111,7 @@ if (LBANN_HAS_PYTHON_FRONTEND OR LBANN_HAS_EMBEDDED_PYTHON)
 endif ()
 
 if (LBANN_HAS_CEREAL)
-  find_dependency(CEREAL CONFIG NAMES cereal)
+  find_dependency(CEREAL CONFIG NAMES cereal CEREAL)
 endif ()
 
 if (LBANN_TOPO_AWARE)
