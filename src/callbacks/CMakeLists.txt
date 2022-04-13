@@ -49,7 +49,6 @@ set_full_path(THIS_DIR_SOURCES
   imcomm.cpp
   learning_rate.cpp
   load_model.cpp
-  ltfb.cpp
   mixup.cpp
   monitor_io.cpp
   perturb_adam.cpp

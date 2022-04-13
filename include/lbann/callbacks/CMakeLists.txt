@@ -48,7 +48,6 @@ set_full_path(THIS_DIR_HEADERS
   hang.hpp
   imcomm.hpp
   learning_rate.hpp
-  ltfb.hpp
   mixup.hpp
   monitor_io.hpp
   perturb_adam.hpp
