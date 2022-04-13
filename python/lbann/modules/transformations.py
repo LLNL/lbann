@@ -95,7 +95,7 @@ def PeriodicPadding2D(x, height, width, padding=1):
     x = lbann.Concatenation([left, x, right], axis=2)
     return x
 
-def PeriodicPadding3D(x, height, width, depth, padding=1):
+def PeriodicPadding3D(x, depth, height, width, padding=1, name=None):
     """ For 3D volumes of the shape (B, *, depth, height, width)
         Args:
             x (lbann.Layer): input tensor to padded of the shape (*, depth, height, width)
@@ -122,6 +122,8 @@ def PeriodicPadding3D(x, height, width, depth, padding=1):
     h1 = lbann.Identity(height_slices)
     _ = lbann.Identity(height_slices)
     h2 = lbann.Identity(height_slices)
+
+    x = lbann.Concatenation([h1, x, h2], axis=2)
 
     width_slices = lbann.Slice(x,
                                slice_points=str_list([0, padding, width-padding, width]),
