@@ -35,6 +35,8 @@ CMD_LINE_VARIANTS=
 HYDROGEN_VER="@develop"
 ALUMINUM_VER="@master"
 DIHYDROGEN_VER="@develop"
+# Default variants for Conduit to minimize dependencies
+CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis"
 
 ################################################################
 # Help message
@@ -468,6 +470,11 @@ if [[ ! "${LBANN_VARIANTS}" =~ .*"^dihydrogen".* ]]; then
     DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER} ${CENTER_BLAS_LIBRARY}"
 fi
 
+if [[ ! "${LBANN_VARIANTS}" =~ .*"^conduit".* ]]; then
+    # If the user didn't supply a specific set of variants for Condiuit on the command line add one
+    CONDUIT="^conduit${CONDUIT_VARIANTS}"
+fi
+
 GPU_VARIANTS_ARRAY=('+cuda' '+rocm')
 DEPENDENT_PACKAGES_GPU_VARIANTS=
 for GPU_VARIANTS in ${GPU_VARIANTS_ARRAY[@]}
@@ -604,7 +611,7 @@ fi
 
 ##########################################################################################
 # Establish the spec for LBANN
-LBANN_SPEC="lbann${AT_LBANN_LABEL} ${CENTER_FLAGS} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CENTER_DEPENDENCIES}"
+LBANN_SPEC="lbann${AT_LBANN_LABEL} ${CENTER_FLAGS} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CONDUIT} ${CENTER_DEPENDENCIES}"
 ##########################################################################################
 
 ##########################################################################################

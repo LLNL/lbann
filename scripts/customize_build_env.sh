@@ -217,7 +217,7 @@ set_center_specific_spack_dependencies()
                 ;;
             "zen3") # Perlmutter
                 CENTER_DEPENDENCIES="%cce@13.0.0 ^mpich@8.1.12 ^python@3.9.4 ^cuda+allow-unsupported-compilers"
-		CENTER_BLAS_LIBRARY="blas=libsci"
+                CENTER_BLAS_LIBRARY="blas=libsci"
                 ;;
             *)
                 echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
@@ -236,7 +236,7 @@ set_center_specific_spack_dependencies()
         case ${spack_arch_target} in
             "skylake")
                 CENTER_DEPENDENCIES="^hdf5+hl"
-		CENTER_BLAS_LIBRARY="blas=accelerate"
+                CENTER_BLAS_LIBRARY="blas=accelerate"
                 ;;
             *)
                 echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
