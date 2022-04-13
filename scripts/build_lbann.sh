@@ -611,6 +611,12 @@ LBANN_SPEC="lbann${AT_LBANN_LABEL} ${CENTER_FLAGS} ${LBANN_VARIANTS} ${HYDROGEN}
 # Add things to the environment
 ##########################################################################################
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
+    # Set the environment to use CURL rather than url fetcher since it has issues
+    # on LC platforms
+    CMD="spack config add config:url_fetch_method:curl"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
     # See if there are any center-specific externals
     SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
     CMD="set_center_specific_externals ${CENTER} ${SPACK_ARCH_TARGET} ${SPACK_ARCH} ${SPACK_ENV_YAML_FILE}"
