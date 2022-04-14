@@ -15,7 +15,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
 onnx_model = current_dir + '/experiments/test_integration_onnx_output/lbann.onnx'
 import tools
 import data.mnist
-import onnxruntime
+
+try:
+    import onnxruntime
+except ModuleNotFoundError:
+    pytest.skip("Skipping ONNX runtime test; onnxruntime not found.",
+                allow_module_level=True)
 
 # ==============================================
 # Options
