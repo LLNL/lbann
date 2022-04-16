@@ -37,7 +37,8 @@ message ObjectiveFunction {
 
   message L2WeightRegularization {
     double scale_factor = 1;
-    string weights = 2;   // If empty, L2 regularization is applied to all weights
+    repeated string weights = 2;
+    // If no weights listed, L2 regularization is applied to all weights
   }
 
   repeated LayerTerm layer_term = 1;

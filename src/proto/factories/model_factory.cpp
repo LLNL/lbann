@@ -207,13 +207,17 @@ void assign_weights_to_objective_function(
     auto&& term = dynamic_cast<l2_weight_regularization*>(obj_terms[i]);
     if (term != nullptr) {
       ++num_l2_weight_regularization_terms;
-      const auto& params = proto_obj.l2_weight_regularization(num_l2_weight_regularization_terms-1);
+      const auto& params = proto_obj.l2_weight_regularization(
+        num_l2_weight_regularization_terms - 1);
       std::vector<ViewingWeightsPtr> term_weights;
-      for (auto&& weights_name : parse_list<std::string>(params.weights())) {
+      for (int wid = 0; wid < params.weights_size(); ++wid) {
+        auto const& weights_name = params.weights(wid);
         auto&& w = names_to_weights[weights_name];
         if (w.expired()) {
           LBANN_ERROR("attempted to apply L2 weight regularization to "
-                      "weights \"", weights_name, "\", "
+                      "weights \"",
+                      weights_name,
+                      "\", "
                       "but no such weights exists");
         }
         term_weights.push_back(w);
@@ -221,7 +225,6 @@ void assign_weights_to_objective_function(
       term->set_weights_pointers(term_weights);
     }
   }
-
 }
 
 } // namespace
