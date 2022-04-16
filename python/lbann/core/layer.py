@@ -58,9 +58,9 @@ class Layer(abc.ABC):
     def export_proto(self):
         """Construct and return a protobuf message."""
         proto = layers_pb2.Layer()
-        proto.parents = ' '.join([l.name for l in self.parents])
-        proto.children = ' '.join([l.name for l in self.children])
-        proto.weights = ' '.join([w.name for w in self.weights])
+        proto.parents[:] = [l.name for l in self.parents]
+        proto.children[:] = [l.name for l in self.children]
+        proto.weights[:] = [w.name for w in self.weights]
         proto.name = self.name
         if self.device:
             proto.device_allocation = self.device

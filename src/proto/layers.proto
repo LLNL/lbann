@@ -68,24 +68,23 @@ message Layer {
   // ===========================================
 
   /** @brief Unique identifier for layer
-   *  @details Must not contain spaces.
    */
   string name = 1;
 
   /** @brief Parent layers
-   *  @details Space-separated list of layer names
+   *  @details List of layer names
    */
-  string parents = 2;
+  repeated string parents = 2;
   /** @brief Child layers
-   *  @details Space-separated list of layer names
+   *  @details List of layer names
    */
-  string children = 3;
+  repeated string children = 3;
   /** @brief Weights objects
    *
-   *  Space-separated list of weights names. Weights are typically
-   *  used as trainable parameters.
+   *  List of weights names. Weights are typically used as trainable
+   *  parameters.
    */
-  string weights = 4;
+  repeated string weights = 4;
 
   /** @brief Data tensor device
    *

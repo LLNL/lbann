@@ -52,7 +52,6 @@ instantiate_model(lbann_comm* comm,
                   const lbann_data::Optimizer& proto_opt,
                   const lbann_data::Model& /*proto_model*/)
 {
-
   // Construct model
   return std::make_unique<model>(
     comm,
@@ -155,11 +154,12 @@ void assign_weights_to_layers(
   }
 
   // Find weights assigned to each layer
-  for (int i=0; i<proto_model.layer_size(); ++i) {
+  for (int i=0; i < proto_model.layer_size(); ++i) {
     const auto& proto_layer = proto_model.layer(i);
     auto layer_weights = layer_list[i]->get_weights_pointers();
     const bool is_frozen = layer_list[i]->is_frozen();
-    for (auto&& name : parse_list<std::string>(proto_layer.weights())) {
+    for (int ii = 0; ii < proto_layer.weights_size(); ++ii) {
+      auto const& name = proto_layer.weights(ii);
       if (names_to_weights.count(name) < 1) {
         LBANN_ERROR("could not find weights named "
                     "\"", name, "\", "
