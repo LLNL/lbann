@@ -142,6 +142,13 @@ auto lbann::protobuf::as_vector(google::protobuf::RepeatedPtrField<T> const& rf)
   return std::vector<T>{rf.cbegin(), rf.cend()};
 }
 
+template <typename OutT, typename InT>
+auto lbann::protobuf::to_vector(google::protobuf::RepeatedField<InT> const& rf)
+  -> std::vector<OutT>
+{
+  return std::vector<OutT>{rf.cbegin(), rf.cend()};
+}
+
 template <typename T>
 auto lbann::protobuf::as_set(google::protobuf::Message const& msg,
                              std::string const& field_name) -> std::set<T>
@@ -165,6 +172,13 @@ inline auto lbann::protobuf::as_set(
   -> std::set<std::string>
 {
   return std::set<std::string>{rf.cbegin(), rf.cend()};
+}
+
+template <typename OutT, typename InT>
+auto lbann::protobuf::to_set(google::protobuf::RepeatedField<InT> const& rf)
+  -> std::set<OutT>
+{
+  return std::set<OutT>{rf.cbegin(), rf.cend()};
 }
 
 template <typename T>
@@ -191,6 +205,13 @@ inline auto lbann::protobuf::as_unordered_set(
   -> std::unordered_set<std::string>
 {
   return std::unordered_set<std::string>{rf.cbegin(), rf.cend()};
+}
+
+template <typename OutT, typename InT>
+auto lbann::protobuf::to_unordered_set(
+  google::protobuf::RepeatedField<InT> const& rf) -> std::unordered_set<OutT>
+{
+  return std::unordered_set<OutT>{rf.cbegin(), rf.cend()};
 }
 
 #endif // LBANN_UTILS_PROTOBUF_IMPL_HPP_INCLUDED

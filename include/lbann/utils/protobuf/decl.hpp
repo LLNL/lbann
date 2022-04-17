@@ -117,6 +117,17 @@ auto as_vector(google::protobuf::RepeatedField<T> const&) -> std::vector<T>;
 template <typename T>
 auto as_vector(google::protobuf::RepeatedPtrField<T> const&) -> std::vector<T>;
 
+/** @brief Convert the repeated field to an STL vector of given type.
+ *
+ *  The input type must implicitly convert to the output
+ *  type. Narrowing conversions are allowed and the onus is on the
+ *  caller to prevent any associated problems. In the worst case, a
+ *  caller could instead call `as_vector` and manually copy the values.
+ */
+template <typename OutT, typename InT>
+auto to_vector(google::protobuf::RepeatedField<InT> const& rf)
+  -> std::vector<OutT>;
+
 /** @brief Extract the values from the named field as a set. */
 template <typename T>
 auto as_set(google::protobuf::Message const& msg, std::string const& field_name)
@@ -135,6 +146,13 @@ auto as_set(google::protobuf::RepeatedField<T> const&) -> std::set<T>;
  */
 auto as_set(google::protobuf::RepeatedPtrField<std::string> const&)
   -> std::set<std::string>;
+
+/** @brief Convert the repeated field to an STL set of given type.
+ *
+ *  The same warnings apply as for to_vector.
+ */
+template <typename OutT, typename InT>
+auto to_set(google::protobuf::RepeatedField<InT> const&) -> std::set<OutT>;
 
 /** @brief Extract the values from the named field as an unordered_set. */
 template <typename T>
@@ -155,6 +173,14 @@ auto as_unordered_set(google::protobuf::RepeatedField<T> const&)
  */
 auto as_unordered_set(google::protobuf::RepeatedPtrField<std::string> const&)
   -> std::unordered_set<std::string>;
+
+/** @brief Convert the repeated field to an STL unordered_set of given type.
+ *
+ *  The same warnings apply as for to_vector.
+ */
+template <typename OutT, typename InT>
+auto to_unordered_set(google::protobuf::RepeatedField<InT> const&)
+  -> std::unordered_set<OutT>;
 
 ///@}
 /** @name Message I/O */

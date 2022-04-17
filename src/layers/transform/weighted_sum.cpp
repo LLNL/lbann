@@ -27,19 +27,23 @@
 #define LBANN_WEIGHTED_SUM_LAYER_INSTANTIATE
 #include "lbann/layers/transform/weighted_sum.hpp"
 
-#include <lbann/proto/proto_common.hpp>
+#include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/protobuf.hpp"
+
 #include <lbann.pb.h>
 
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_weighted_sum_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const& proto_layer)
+std::unique_ptr<Layer>
+build_weighted_sum_layer_from_pbuf(lbann_comm* comm,
+                                   lbann_data::Layer const& proto_layer)
 {
   using LayerType = weighted_sum_layer<TensorDataType, Layout, Device>;
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, weighted_sum);
   const auto& params = proto_layer.weighted_sum();
-  const auto& scaling_factors = parse_list<DataType>(params.scaling_factors());
+  const auto& scaling_factors =
+    protobuf::to_vector<DataType>(params.scaling_factors());
   return std::make_unique<LayerType>(comm, scaling_factors);
 }
 

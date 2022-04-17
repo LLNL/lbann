@@ -213,14 +213,6 @@ Arguments:
 
       Ignored for non-GPU layers.
 
-Deprecated and unused arguments:
-
-   :weight_initialization: (``string``)
-
-   :bias_initial_value: (``double``)
-
-   :l2_regularization_factor: (``double``)
-
 :ref:`Back to Top<learning-layers>`
 
 ________________________________________

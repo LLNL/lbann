@@ -27,29 +27,31 @@
 #define LBANN_BERNOULLI_LAYER_INSTANTIATE
 #include "lbann/layers/transform/bernoulli.hpp"
 
-#include <lbann/proto/proto_common.hpp>
+#include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/protobuf.hpp"
+
 #include <layers.pb.h>
 
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_bernoulli_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const& proto_layer) {
-
+std::unique_ptr<Layer>
+build_bernoulli_layer_from_pbuf(lbann_comm* comm,
+                                lbann_data::Layer const& proto_layer)
+{
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, bernoulli);
-
   const auto& params = proto_layer.bernoulli();
-  const auto& dims = parse_list<int>(params.neuron_dims());
   return std::make_unique<bernoulli_layer<TensorDataType, Layout, Device>>(
-    comm, dims, params.prob());
-
+    comm,
+    protobuf::to_vector<int>(params.neuron_dims()),
+    params.prob());
 }
 
-#define PROTO_DEVICE(T, Device)                                         \
-  template class bernoulli_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class bernoulli_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  template class bernoulli_layer<T, data_layout::DATA_PARALLEL, Device>;       \
+  template class bernoulli_layer<T, data_layout::MODEL_PARALLEL, Device>;      \
   LBANN_LAYER_BUILDER_ETI(bernoulli, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

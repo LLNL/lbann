@@ -178,6 +178,18 @@ my_enums: TWO
           std::vector<lbann::protobuf::int32>{0, 1, 2, 0, 1, 2});
   }
 
+  SECTION("To vector - static field")
+  {
+    CHECK(lbann::protobuf::to_vector<double>(msg.my_floats()) ==
+          std::vector<double>{1., 2., 2., 3.});
+    CHECK(lbann::protobuf::to_vector<int>(msg.my_uint32s()) ==
+          std::vector<int>{1, 2, 3, 3, 3});
+    CHECK(lbann::protobuf::to_vector<int>(msg.my_int64s()) ==
+          std::vector<int>{16, 32, 64});
+    CHECK(lbann::protobuf::as_vector(msg.my_enums()) ==
+          std::vector<lbann::protobuf::int32>{0, 1, 2, 0, 1, 2});
+  }
+
   SECTION("As vector - dynamic field")
   {
     CHECK(lbann::protobuf::as_vector<float>(msg, "my_floats") ==
@@ -217,6 +229,20 @@ my_enums: TWO
           std::set<lbann::protobuf::int32>{0, 1, 2});
   }
 
+  SECTION("To set - static field")
+  {
+    CHECK(lbann::protobuf::to_set<double>(msg.my_floats()) ==
+          std::set<double>{1.f, 2.f, 3.f});
+    CHECK(lbann::protobuf::to_set<double>(msg.my_doubles()) ==
+          std::set<double>{13., 14., 15.});
+    CHECK(lbann::protobuf::to_set<int>(msg.my_uint32s()) ==
+          std::set<int>{1, 2, 3});
+    CHECK(lbann::protobuf::to_set<int>(msg.my_int64s()) ==
+          std::set<int>{16, 32, 64});
+    CHECK(lbann::protobuf::to_set<int>(msg.my_enums()) ==
+          std::set<int>{0, 1, 2});
+  }
+
   SECTION("As set - dynamic field")
   {
     CHECK(lbann::protobuf::as_set<float>(msg, "my_floats") ==
@@ -249,6 +275,20 @@ my_enums: TWO
           std::unordered_set<lbann::protobuf::int64>{16L, 32L, 64L});
     CHECK(lbann::protobuf::as_unordered_set(msg.my_enums()) ==
           std::unordered_set<lbann::protobuf::int32>{0, 1, 2});
+  }
+
+  SECTION("To unordered set - static field")
+  {
+    CHECK(lbann::protobuf::to_unordered_set<double>(msg.my_floats()) ==
+          std::unordered_set<double>{1.f, 2.f, 3.f});
+    CHECK(lbann::protobuf::to_unordered_set<double>(msg.my_doubles()) ==
+          std::unordered_set<double>{13., 14., 15.});
+    CHECK(lbann::protobuf::to_unordered_set<int>(msg.my_uint32s()) ==
+          std::unordered_set<int>{1, 2, 3});
+    CHECK(lbann::protobuf::to_unordered_set<int>(msg.my_int64s()) ==
+          std::unordered_set<int>{16, 32, 64});
+    CHECK(lbann::protobuf::to_unordered_set<int>(msg.my_enums()) ==
+          std::unordered_set<int>{0, 1, 2});
   }
 
   SECTION("As unordered_set - dynamic field")

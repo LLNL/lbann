@@ -542,9 +542,6 @@ Deprecated arguments:
    :get_slice_points_from_reader: (``string``) Do not use unless using
                                   the Jag dataset.
 
-   :get_slice_points_from_reader_bool: (``bool``) Do not use unless
-                                       using the Jag dataset.
-
 :ref:`Back to Top<transform-layers>`
 
 ________________________________________

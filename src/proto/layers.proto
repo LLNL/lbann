@@ -620,10 +620,7 @@ message Layer {
      *  Space-separated list of integers. A single dimension may be
      *  -1, in which case the dimension is inferred.
      */
-    string dims = 1;
-
-    /// Deprecated and unused
-    int64 num_dims = 2;
+    repeated int64 dims = 1;
   }
 
   /** @brief Pooling
@@ -660,19 +657,19 @@ message Layer {
      *  Space-separated list of integers, one for each spatial
      *  dimension. Used when @c has_vectors is enabled.
      */
-    string pool_dims = 4;
+    repeated int64 pool_dims = 4;
     /** @brief Pooling padding (vector-valued)
      *
      *  Space-separated list of integers, one for each spatial
      *  dimension. Used when @c has_vectors is enabled.
      */
-    string pool_pads = 5;
+    repeated int64 pool_pads = 5;
     /** @brief Pooling strides (vector-valued)
      *
      *  Space-separated list of integers, one for each spatial
      *  dimension. Used when @c has_vectors is enabled.
      */
-    string pool_strides = 6;
+    repeated int64 pool_strides = 6;
 
     /** @brief Pooling window dimension (integer-valued)
      *
@@ -735,16 +732,12 @@ message Layer {
      *  ascending order and the number of slice points must be one
      *  greater than the number of child layers.
      */
-    string slice_points = 2;
+    repeated int64 slice_points = 2;
 
     /** @brief Deprecated
      *  @details Hack for jag_conduit_hdf5
      */
     string get_slice_points_from_reader = 3;
-    /** @brief Deprecated
-     *  @details Hack for jag_conduit_hdf5
-     */
-    bool get_slice_points_from_reader_bool = 4;
   }
 
   /** @brief Output the input tensor to multiple child layers
@@ -785,7 +778,7 @@ message Layer {
     /** Space-separated list of floating-point numbers, one for each
      *  input tensor.
      */
-    string scaling_factors = 1;
+    repeated double scaling_factors = 1;
   }
 
   /** @brief Entry-wise tensor product */
@@ -799,7 +792,7 @@ message Layer {
     /** @brief Tensor dimensions
      *  @details Space-separated list of integers
      */
-    string num_neurons = 2;
+    repeated int64 num_neurons = 2;
   }
 
   /** @brief Reduce tensor to scalar */
@@ -827,7 +820,7 @@ message Layer {
     /** @brief Tensor dimensions
      *  @details Space-separated list of integers
      */
-    string neuron_dims = 3;
+    repeated int64 neuron_dims = 3;
     /** @brief Only generate random values during training
      *
      *  If true, the tensor is filled with the distribution mean
@@ -847,7 +840,7 @@ message Layer {
     /** @brief Tensor dimensions
      *  @details Space-separated list of integers
      */
-    string neuron_dims = 2;
+    repeated int64 neuron_dims = 2;
   }
 
   /** @brief Random tensor with uniform distribution */
@@ -859,7 +852,7 @@ message Layer {
     /** @brief Tensor dimensions
      *  @details Space-separated list of integers
      */
-    string neuron_dims = 3;
+    repeated int64 neuron_dims = 3;
     /** @brief Only generate random values during training
      *
      *  If true, the tensor is filled with the distribution mean
@@ -880,7 +873,7 @@ message Layer {
     /** @brief Crop dimensions
      *  @details Space-separated list of integers
      */
-    string dims = 3;
+    repeated int64 dims = 3;
   }
 
   /** @brief Placeholder layer with no child layers
@@ -928,7 +921,7 @@ message Layer {
     /** @brief Weights tensor dimensions
      *  @details Space-separated list of integers
      */
-    string dims = 1;
+    repeated int64 dims = 1;
   }
 
   /** @brief Repeat a tensor until it matches specified dimensions
@@ -956,7 +949,7 @@ message Layer {
     /** @brief Output tensor dimensions
      *  @details Space-separated list of integers
      */
-    string dims = 1;
+    repeated int64 dims = 1;
   }
 
   /** @brief Scatter values to specified tensor indices
@@ -986,7 +979,7 @@ message Layer {
      *  Space-separated list of integers. Number of dimensions must
      *  match data tensor.
      */
-    string dims = 1;
+    repeated int64 dims = 1;
     /// Dimension to scatter along
     google.protobuf.UInt64Value axis = 2;
   }
@@ -1030,8 +1023,8 @@ message Layer {
   }
   /// Deprecated
   message DiscreteRandom {
-    string values = 1;
-    string dims = 2;
+    repeated double values = 1;
+    repeated int64 dims = 2;
   }
 
   // ---------------------------
@@ -1103,26 +1096,29 @@ message Layer {
      *  Space-separated list of integers, one for each spatial
      *  dimension. Used when @c has_vectors is enabled.
      */
-    string conv_dims = 4;
+    repeated int64 conv_dims = 4;
+
     /** @brief Convolution padding (vector-valued)
      *
      *  Space-separated list of integers, one for each spatial
      *  dimension. Used when @c has_vectors is enabled.
      */
-    string conv_pads = 5;
+    repeated int64 conv_pads = 5;
+
     /** @brief Convolution strides (vector-valued)
      *
      *  Space-separated list of integers, one for each spatial
      *  dimension. Used when @c has_vectors is enabled.
      */
-    string conv_strides = 6;
+    repeated int64 conv_strides = 6;
+
     /** @brief Convolution dilations (vector-valued)
      *
      *  Space-separated list of integers, one for each spatial
      *  dimension. Used when @c has_vectors is enabled. Defaults to
      *  dilations of 1, i.e. undilated convolution.
      */
-    string conv_dilations = 7;
+    repeated int64 conv_dilations = 7;
 
     /** @brief Convolution kernel size (integer-valued)
      *
@@ -1158,13 +1154,6 @@ message Layer {
      *  @details Ignored for non-GPU layers.
      */
     ConvTensorOpsMode conv_tensor_op_mode = 14;
-
-    /// Deprecated and unused
-    string weight_initialization = 15;
-    /// Deprecated and unused
-    double bias_initial_value = 16;
-    /// Deprecated and unused
-    double l2_regularization_factor = 17;
 
   }
 

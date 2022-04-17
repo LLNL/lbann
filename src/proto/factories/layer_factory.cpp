@@ -27,6 +27,7 @@
 #include "lbann/proto/factories.hpp"
 #include "lbann/utils/factory.hpp"
 #include "lbann/utils/protobuf.hpp"
+#include "lbann/utils/protobuf/decl.hpp"
 #include "lbann/utils/typename.hpp"
 
 #include "lbann/layers/layer.hpp"
@@ -303,18 +304,17 @@ std::unique_ptr<Layer> construct_layer_legacy(
   // arguments.
   if (proto_layer.has_reshape()) {
     const auto& params = proto_layer.reshape();
-    std::vector<int> dims = parse_list<int>(params.dims());
-    if (params.num_dims() != 0) {
-      LBANN_WARNING("found unused and deprecated prototext field (Reshape.num_dims)");
-    }
     if (proto_layer.num_neurons_from_data_reader()) {
-      dims.clear();
       if (training_dr_linearized_data_size == -1) {
         LBANN_ERROR("Training data reader does not exist!");
       }
-      dims.push_back(training_dr_linearized_data_size);
+      return std::make_unique<reshape_layer<TensorDataType, Layout, Device>>(
+        comm,
+        std::vector<int>{training_dr_linearized_data_size});
     }
-    return std::make_unique<reshape_layer<TensorDataType, Layout, Device>>(comm, dims);
+    return std::make_unique<reshape_layer<TensorDataType, Layout, Device>>(
+      comm,
+      protobuf::to_vector<int>(params.dims()));
   }
 
   // Currently this cannot be suitably removed from this function
@@ -324,42 +324,48 @@ std::unique_ptr<Layer> construct_layer_legacy(
     const auto& params = proto_layer.slice();
     std::vector<size_t> slice_points;
 
-    auto layer = std::make_unique<slice_layer<TensorDataType, Layout, Device>>(comm);
+    auto layer =
+      std::make_unique<slice_layer<TensorDataType, Layout, Device>>(comm);
 
     if (params.get_slice_points_from_reader() != "") {
-      const slice_points_mode var = slice_points_mode_from_string(params.get_slice_points_from_reader());
+      const slice_points_mode var =
+        slice_points_mode_from_string(params.get_slice_points_from_reader());
       layer->setup_slice_points(params.axis(), true, var);
-    } else {
-      std::string slice_point_method_name = "'slice_points'";
-      slice_points = parse_list<size_t>(params.slice_points());
+    }
+    else {
+      std::string const slice_point_method_name = "'slice_points'";
+      slice_points = protobuf::to_vector<size_t>(params.slice_points());
       if (slice_points.size() < 2u) {
-        err << "Failed to get slice points via " << slice_point_method_name << '.';
-        LBANN_ERROR(err.str());
+        LBANN_ERROR("Failed to get slice points via ",
+                    slice_point_method_name,
+                    '.');
         return nullptr;
       }
       layer->setup_slice_points(params.axis(), slice_points);
     }
     return layer;
   }
+
   if (proto_layer.has_gaussian()) {
     const auto& params = proto_layer.gaussian();
-    const auto& dims = parse_list<int>(params.neuron_dims());
+    const auto& dims = protobuf::to_vector<int>(params.neuron_dims());
     double mean = params.mean();
     double stdev = params.stdev();
     if (mean == 0.0 && stdev == 0.0) {
       mean = 0.0;
       stdev = 1.0;
     }
-    return std::make_unique<gaussian_layer<TensorDataType,Layout,Device>>(
+    return std::make_unique<gaussian_layer<TensorDataType, Layout, Device>>(
       comm,
       dims,
       mean,
       stdev,
       params.training_only());
   }
+
   if (proto_layer.has_uniform()) {
     const auto& params = proto_layer.uniform();
-    const auto& dims = parse_list<int>(params.neuron_dims());
+    const auto& dims = protobuf::to_vector<int>(params.neuron_dims());
     double min = params.min();
     double max = params.max();
     if (min == 0.0 && max == 0.0) {
@@ -373,43 +379,65 @@ std::unique_ptr<Layer> construct_layer_legacy(
       max,
       params.training_only());
   }
+
   if (proto_layer.has_unpooling()) {
-    if (Layout == data_layout::DATA_PARALLEL && Device == El::Device::CPU) {
-      return std::make_unique<unpooling_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
-    } else {
+    if constexpr (Layout == data_layout::DATA_PARALLEL &&
+                  Device == El::Device::CPU) {
+      return std::make_unique<unpooling_layer<TensorDataType,
+                                              data_layout::DATA_PARALLEL,
+                                              El::Device::CPU>>(comm);
+    }
+    else {
       LBANN_ERROR("unpooling layer is only supported with "
                   "a data-parallel layout and on CPU");
+      return nullptr;
     }
   }
+
   if (proto_layer.has_discrete_random()) {
     const auto& params = proto_layer.discrete_random();
-    const auto& values = parse_list<DataType>(params.values());
-    const auto& dims = parse_list<int>(params.dims());
-    if (Layout == data_layout::DATA_PARALLEL
-        && Device == El::Device::CPU) {
-      return std::make_unique<discrete_random_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>>(
-               comm, values, dims);
-    } else {
+    if constexpr (Layout == data_layout::DATA_PARALLEL &&
+                  Device == El::Device::CPU) {
+      return std::make_unique<discrete_random_layer<TensorDataType,
+                                                    data_layout::DATA_PARALLEL,
+                                                    El::Device::CPU>>(
+        comm,
+        protobuf::to_vector<DataType>(params.values()),
+        protobuf::to_vector<int>(params.dims()));
+    }
+    else {
       LBANN_ERROR("discrete random layer is only supported on CPU");
+      return nullptr;
     }
   }
+
   if (proto_layer.has_in_top_k()) {
     const auto& params = proto_layer.in_top_k();
-    return std::make_unique<in_top_k_layer<TensorDataType, Layout, Device>>(comm, params.k());
+    return std::make_unique<in_top_k_layer<TensorDataType, Layout, Device>>(
+      comm,
+      params.k());
   }
+
   if (proto_layer.has_sort()) {
     const auto& params = proto_layer.sort();
-    if (Layout == data_layout::DATA_PARALLEL) {
-      return std::make_unique<sort_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(comm, params.descending());
-    } else {
+    if constexpr (Layout == data_layout::DATA_PARALLEL) {
+      return std::make_unique<
+        sort_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
+        comm,
+        params.descending());
+    }
+    else {
       LBANN_ERROR("sort layer is only supported with "
                   "a data-parallel layout");
+      return nullptr;
     }
   }
+
   if (proto_layer.has_tessellate()) {
     const auto& params = proto_layer.tessellate();
-    const auto& dims = parse_list<int>(params.dims());
-    return std::make_unique<tessellate_layer<TensorDataType, Layout, Device>>(comm, dims);
+    return std::make_unique<tessellate_layer<TensorDataType, Layout, Device>>(
+      comm,
+      protobuf::to_vector<int>(params.dims()));
   }
 
   // Regularizer layers
