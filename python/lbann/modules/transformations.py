@@ -96,9 +96,9 @@ def PeriodicPadding2D(x, height, width, padding=1):
     return x
 
 def PeriodicPadding3D(x, depth, height, width, padding=1, name=None):
-    """ For 3D volumes of the shape (B, *, depth, height, width)
+    """ For 3D volumes of the shape (B, *, channel, depth, height, width)
         Args:
-            x (lbann.Layer): input tensor to padded of the shape (*, depth, height, width)
+            x (lbann.Layer): input tensor to padded of the shape (*, channel, depth, height, width)
             depth (int): 1st dimension of the 4D tensor
             height (int): 2nd dimension of the 4D tensor
             width (int): 3rd dimension of the 4D tensor
@@ -107,6 +107,9 @@ def PeriodicPadding3D(x, depth, height, width, padding=1, name=None):
             (lbann.Layer): Returns periodically padded layer of
                            shape (*, depth + padding, height + padding, width + padding)
     """
+    #  To do: Hack to get around slice and concatenation limitation. Remove when
+    #         support for arbitrary dimensional slice + concatenation is added
+    x = lbann.Reshape(x, dims=str_list([-1, depth, height * width])) #  Shape (C, D, H * W)
     depth_slices = lbann.Slice(x,
                                slice_points=str_list([0, padding, depth-padding, depth]),
                                axis=1)
@@ -116,21 +119,31 @@ def PeriodicPadding3D(x, depth, height, width, padding=1, name=None):
 
     x = lbann.Concatenation([d1, x, d2], axis=1)
 
+    #  To do: Hack to get around slice and concatenation limitation. Remove when
+    #         support for arbitrary dimensional slice + concatenation is added
+    x = lbann.Reshape(x, dims=str_list([-1, height,  width]))  #  Shape (C * D, H ,  W)
     height_slices = lbann.Slice(x,
                                 slice_points=str_list([0, padding, height-padding, height]),
-                                axis=2)
+                                axis=1)
     h1 = lbann.Identity(height_slices)
     _ = lbann.Identity(height_slices)
     h2 = lbann.Identity(height_slices)
 
-    x = lbann.Concatenation([h1, x, h2], axis=2)
+    x = lbann.Concatenation([h1, x, h2], axis=1)
 
     width_slices = lbann.Slice(x,
                                slice_points=str_list([0, padding, width-padding, width]),
-                               axis=3)
+                               axis=2)
     w1 = lbann.Identity(width_slices)
     _ = lbann.Identity(width_slices)
     w2 = lbann.Identity(width_slices)
 
-    x = lbann.Concatenation([w1, x, w2], axis=3)
+    x = lbann.Concatenation([w1, x, w2], axis=2)
+
+    #  To do: Hack to get around slice and concatenation limitation. Remove when
+    #         support for arbitrary dimensional slice + concatenation is added
+    x = lbann.Reshape(x, dims=str_list([-1,
+                                        depth + 2 * padding, 
+                                        height + 2 * padding,
+                                        width + 2 * padding])) 
     return x

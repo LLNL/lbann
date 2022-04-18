@@ -170,28 +170,28 @@ def construct_model(lbann):
                                                    error_on_failure=True,
                                                    execution_modes='test')
 
-    # x_3D = lbann.Reshape(x_lbann,
-    #                      dims=tools.str_list(_sample_dims_3d))
-    # y = PeriodicPadding3D(x_3D,
-    #                       _sample_dims_3d[1],
-    #                       _sample_dims_3d[2],
-    #                       _sample_dims_3d[3],
-    #                       padding=1)
-    # z = lbann.L2Norm2(y)
-    # obj.append(z)
-    # metrics.append(lbann.Metric(z, name="Padding_3D"))
-    # x_np = _samples.reshape([_num_samples] + _sample_dims_3d)
-    # y_np = periodic_padding_3D(x_np, padding=1)
-    # z_np = tools.numpy_l2norm2(y_np) / _num_samples
+    x_3D = lbann.Reshape(x_lbann,
+                         dims=tools.str_list(_sample_dims_3d))
+    y = PeriodicPadding3D(x_3D,
+                          _sample_dims_3d[1],
+                          _sample_dims_3d[2],
+                          _sample_dims_3d[3],
+                          padding=1)
+    z = lbann.L2Norm2(y)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name="Padding_3D"))
+    x_np = _samples.reshape([_num_samples] + _sample_dims_3d)
+    y_np = periodic_padding_3D(x_np, padding=1)
+    z_np = tools.numpy_l2norm2(y_np) / _num_samples
 
-    # tol = 8 * z_np * np.finfo(np.float32).eps
+    tol = 8 * z_np * np.finfo(np.float32).eps
 
-    # metric_callback_3d = lbann.CallbackCheckMetric(metric=metrics[-1].name,
-    #                                                lower_bound=z_np - tol,
-    #                                                upper_bound=z_np + tol,
-    #                                                error_on_failure=True,
-    #                                                execution_modes='test')
-    # metrics.append(lbann.Metric(z, name="Padding_3D"))
+    metric_callback_3d = lbann.CallbackCheckMetric(metric=metrics[-1].name,
+                                                   lower_bound=z_np - tol,
+                                                   upper_bound=z_np + tol,
+                                                   error_on_failure=True,
+                                                   execution_modes='test')
+    metrics.append(lbann.Metric(z, name="Padding_3D"))
 
     # ------------------------------------------
     # Gradient checking
