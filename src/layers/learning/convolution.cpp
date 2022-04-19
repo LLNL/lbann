@@ -394,11 +394,10 @@ struct ConvLayerBuilder
   static std::unique_ptr<Layer> Build(lbann_comm* comm,
                                       lbann_data::Layer const& proto_layer)
   {
-
     const auto& params = proto_layer.convolution();
     const auto& num_output_channels = params.num_output_channels();
     const auto& bias = params.has_bias();
-    int const num_groups = std::max(params.num_groups(), 1LL);
+    int const num_groups = std::max(params.num_groups(), protobuf::int64{1});
 
     if (params.has_vectors()) {
       auto const dims = protobuf::to_vector<int>(params.conv_dims());
@@ -406,7 +405,7 @@ struct ConvLayerBuilder
       auto const strides = protobuf::to_vector<int>(params.conv_strides());
       auto const dilations =
         params.conv_dilations_size() == 0
-          ? std::vector<int>(params.conv_dilations_size(), 1LL)
+          ? std::vector<int>(params.conv_dilations_size(), 1)
           : protobuf::to_vector<int>(params.conv_dilations());
 #ifdef LBANN_HAS_DNN_LIB
       auto ret =
