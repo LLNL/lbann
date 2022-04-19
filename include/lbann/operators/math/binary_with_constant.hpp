@@ -32,8 +32,9 @@
 #include "lbann/operators/elementwise_operator.hpp"
 #include "lbann/utils/cloneable.hpp"
 
+#ifdef LBANN_HAS_ONNX
 #include <onnx/onnx-ml.pb.h>
-#include <operators.pb.h>
+#endif // LBANN_HAS_ONNX
 
 
 /** @file
@@ -165,6 +166,9 @@ LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(GreaterConstant,
 inline onnx::NodeProto get_constant_node(float val)
 {
   onnx::NodeProto const_node;
+  const_node.add_output("const_val");
+  const_node.set_domain("");
+  const_node.set_doc_string("Const value for binary with constant operations");
   auto* const_val = const_node.add_attribute();
   const_val->set_name("value_float");
   const_val->set_type(onnx::AttributeProto::FLOAT);
@@ -185,79 +189,124 @@ std::vector<onnx::NodeProto> get_onnx_nodes_impl(
 
 template <typename T, El::Device D>
 std::vector<onnx::NodeProto> get_onnx_nodes_impl(
-  ScaleOperator<T, D> const)
+  ScaleOperator<T, D> const op)
 {
-  return {};
+  std::vector<onnx::NodeProto> nodes(2UL);
+  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.front().set_op_type("PostConstant");
+  nodes.back().set_op_type("Mul");
+  return nodes;
 }
 
 template <typename T, El::Device D>
 std::vector<onnx::NodeProto> get_onnx_nodes_impl(
-  SubtractConstantOperator<T, D> const)
+  SubtractConstantOperator<T, D> const op)
 {
-  return {};
+  std::vector<onnx::NodeProto> nodes(2UL);
+  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.front().set_op_type("PostConstant");
+  nodes.back().set_op_type("Sub");
+  return nodes;
 }
 
 template <typename T, El::Device D>
 std::vector<onnx::NodeProto> get_onnx_nodes_impl(
-  ConstantSubtractOperator<T, D> const)
+  ConstantSubtractOperator<T, D> const op)
 {
-  return {};
+  std::vector<onnx::NodeProto> nodes(2UL);
+  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.front().set_op_type("PreConstant");
+  nodes.back().set_op_type("Sub");
+  return nodes;
 }
 
 template <typename T, El::Device D>
 std::vector<onnx::NodeProto> get_onnx_nodes_impl(
-  MaxConstantOperator<T, D> const)
+  MaxConstantOperator<T, D> const op)
 {
-  return {};
+  std::vector<onnx::NodeProto> nodes(2UL);
+  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.front().set_op_type("PreConstant");
+  nodes.back().set_op_type("Max");
+  return nodes;
 }
 
 template <typename T, El::Device D>
 std::vector<onnx::NodeProto> get_onnx_nodes_impl(
-  MinConstantOperator<T, D> const)
+  MinConstantOperator<T, D> const op)
 {
-  return {};
+  std::vector<onnx::NodeProto> nodes(2UL);
+  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.front().set_op_type("PreConstant");
+  nodes.back().set_op_type("Min");
+  return nodes;
 }
 
 template <typename T, El::Device D>
 std::vector<onnx::NodeProto> get_onnx_nodes_impl(
-  EqualConstantOperator<T, D> const)
+  EqualConstantOperator<T, D> const op)
 {
-  return {};
+  std::vector<onnx::NodeProto> nodes(2UL);
+  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.front().set_op_type("PreConstant");
+  nodes.back().set_op_type("Equal");
+  return nodes;
 }
 
 template <typename T, El::Device D>
 std::vector<onnx::NodeProto> get_onnx_nodes_impl(
-  NotEqualConstantOperator<T, D> const)
+  NotEqualConstantOperator<T, D> const op)
 {
-  return {};
+  std::vector<onnx::NodeProto> nodes(3UL);
+  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.front().set_op_type("PreConstant");
+  nodes.at(1).set_op_type("Not");
+  nodes.back().set_op_type("Equal");
+  return nodes;
 }
 
 template <typename T, El::Device D>
 std::vector<onnx::NodeProto> get_onnx_nodes_impl(
-  LessConstantOperator<T, D> const)
+  LessConstantOperator<T, D> const op)
 {
-  return {};
+  std::vector<onnx::NodeProto> nodes(2UL);
+  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.front().set_op_type("PostConstant");
+  nodes.back().set_op_type("Less");
+  return nodes;
 }
 
 template <typename T, El::Device D>
 std::vector<onnx::NodeProto> get_onnx_nodes_impl(
-  LessEqualConstantOperator<T, D> const)
+  LessEqualConstantOperator<T, D> const op)
 {
-  return {};
+  std::vector<onnx::NodeProto> nodes(2UL);
+  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.front().set_op_type("PostConstant");
+  nodes.back().set_op_type("LessOrEqual");
+  return nodes;
 }
 
 template <typename T, El::Device D>
 std::vector<onnx::NodeProto> get_onnx_nodes_impl(
-  GreaterConstantOperator<T, D> const)
+  GreaterConstantOperator<T, D> const op)
 {
-  return {};
+  std::vector<onnx::NodeProto> nodes(2UL);
+  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.front().set_op_type("PreConstant");
+  nodes.back().set_op_type("Greater");
+  return nodes;
 }
 
 template <typename T, El::Device D>
 std::vector<onnx::NodeProto> get_onnx_nodes_impl(
-  GreaterEqualConstantOperator<T, D> const)
+  GreaterEqualConstantOperator<T, D> const op)
 {
-  return {};
+  std::vector<onnx::NodeProto> nodes(2UL);
+  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.front().set_op_type("PreConstant");
+  nodes.back().set_op_type("GreaterOrEqual");
+  return nodes;
 }
 
 } // namespace lbann

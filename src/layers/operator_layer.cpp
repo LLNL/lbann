@@ -57,4 +57,63 @@ void OperatorLayer<T, O, L, D>::write_specific_proto(
   op->set_device_allocation(proto::ProtoDevice<D>);
 }
 
+#ifdef LBANN_HAS_ONNX
+template <typename T, typename O, data_layout L, El::Device D>
+void OperatorLayer<T, O, L, D>::fill_onnx_node(
+  onnx::GraphProto& graph) const
+{
+    std::vector<onnx::NodeProto> nodes(2UL);
+    nodes.front().add_attribute()->set_type(onnx::AttributeProto::FLOAT);
+    nodes.front().add_attribute()->set_f(El::To<float>(5));
+    nodes.front().set_op_type("PostConstant");
+    nodes.back().set_op_type("Add");
+
+  //OperatorPtr op;
+  //auto nodes = op->get_onnx_nodes();
+  const auto* parent = this->get_parent_layers()[0];
+
+  auto* const_node = graph.add_node();
+  *const_node = nodes.front();
+
+  auto* node = graph.add_node();
+  *node = nodes.back();
+  node->set_name(this->get_name());
+  node->set_domain("");
+  node->set_doc_string(this->get_name());
+  if(const_node->op_type() == "PostConstant")
+  {
+    node->add_input(parent->get_name() + "_0");
+    node->add_input(const_node->output(0));
+    const_node->set_op_type("Constant");
+  }
+  else if(const_node->op_type() == "PreConstant")
+  {
+    node->add_input(const_node->output(0));
+    node->add_input(parent->get_name() + "_0");
+    const_node->set_op_type("Constant");
+  }
+  else
+    LBANN_ERROR("Unknown onnx op type for constant.");
+
+  // Not equal operator
+  if(nodes.size() == 3)
+  {
+    node->add_output("EqualOperator");
+    auto* not_node = graph.add_node();
+    not_node->add_input(node->output(0));
+    not_node->add_output(this->get_child_layers()[0]->get_name() + "_0");
+    not_node->set_name("Not operator");
+    not_node->set_op_type("Not");
+    not_node->set_domain("");
+    not_node->set_doc_string("Not node for not equal operation.");
+  }
+  else if(nodes.size() == 2)
+  {
+    node->add_output(this->get_child_layers()[0]->get_name() + "_0");
+  }
+  else
+    LBANN_ERROR("Expected two or three nodes for binary constant operation, received ", nodes.size());
+}
+#endif // LBANN_HAS_ONNX
+
 } // namespace lbann
