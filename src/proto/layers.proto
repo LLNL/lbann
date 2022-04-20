@@ -617,7 +617,7 @@ message Layer {
   message Reshape {
     /** @brief Tensor dimensions
      *
-     *  Space-separated list of integers. A single dimension may be
+     *  List of integers. A single dimension may be
      *  -1, in which case the dimension is inferred.
      */
     repeated int64 dims = 1;
@@ -654,19 +654,19 @@ message Layer {
 
     /** @brief Pooling window dimensions (vector-valued)
      *
-     *  Space-separated list of integers, one for each spatial
+     *  List of integers, one for each spatial
      *  dimension. Used when @c has_vectors is enabled.
      */
     repeated int64 pool_dims = 4;
     /** @brief Pooling padding (vector-valued)
      *
-     *  Space-separated list of integers, one for each spatial
+     *  List of integers, one for each spatial
      *  dimension. Used when @c has_vectors is enabled.
      */
     repeated int64 pool_pads = 5;
     /** @brief Pooling strides (vector-valued)
      *
-     *  Space-separated list of integers, one for each spatial
+     *  List of integers, one for each spatial
      *  dimension. Used when @c has_vectors is enabled.
      */
     repeated int64 pool_strides = 6;
@@ -728,7 +728,7 @@ message Layer {
     int64 axis = 1;
     /** @brief Positions at which to slice tensor
      *
-     *  Space-separated list of integers. Slice points must be in
+     *  List of integers. Slice points must be in
      *  ascending order and the number of slice points must be one
      *  greater than the number of child layers.
      */
@@ -775,7 +775,7 @@ message Layer {
 
   /** @brief Add tensors with scaling factors */
   message WeightedSum {
-    /** Space-separated list of floating-point numbers, one for each
+    /** List of floating-point numbers, one for each
      *  input tensor.
      */
     repeated double scaling_factors = 1;
@@ -790,7 +790,7 @@ message Layer {
     /** @brief Value of tensor entries */
     double value = 1;
     /** @brief Tensor dimensions
-     *  @details Space-separated list of integers
+     *  @details List of integers
      */
     repeated int64 num_neurons = 2;
   }
@@ -818,7 +818,7 @@ message Layer {
     /** @brief Distribution standard deviation */
     double stdev = 2;
     /** @brief Tensor dimensions
-     *  @details Space-separated list of integers
+     *  @details List of integers
      */
     repeated int64 neuron_dims = 3;
     /** @brief Only generate random values during training
@@ -838,7 +838,7 @@ message Layer {
     /** @brief Bernoulli distribution probability */
     double prob = 1;
     /** @brief Tensor dimensions
-     *  @details Space-separated list of integers
+     *  @details List of integers
      */
     repeated int64 neuron_dims = 2;
   }
@@ -850,7 +850,7 @@ message Layer {
     /** @brief Distribution maximum */
     double max = 2;
     /** @brief Tensor dimensions
-     *  @details Space-separated list of integers
+     *  @details List of integers
      */
     repeated int64 neuron_dims = 3;
     /** @brief Only generate random values during training
@@ -871,7 +871,7 @@ message Layer {
    */
   message Crop {
     /** @brief Crop dimensions
-     *  @details Space-separated list of integers
+     *  @details List of integers
      */
     repeated int64 dims = 3;
   }
@@ -919,7 +919,7 @@ message Layer {
    */
   message WeightsLayer {
     /** @brief Weights tensor dimensions
-     *  @details Space-separated list of integers
+     *  @details List of integers
      */
     repeated int64 dims = 1;
   }
@@ -947,7 +947,7 @@ message Layer {
    */
   message Tessellate {
     /** @brief Output tensor dimensions
-     *  @details Space-separated list of integers
+     *  @details List of integers
      */
     repeated int64 dims = 1;
   }
@@ -976,7 +976,7 @@ message Layer {
   message Scatter {
     /** @brief Output tensor dimensions
      *
-     *  Space-separated list of integers. Number of dimensions must
+     *  List of integers. Number of dimensions must
      *  match data tensor.
      */
     repeated int64 dims = 1;
@@ -1093,28 +1093,28 @@ message Layer {
 
     /** @brief Convolution kernel dimensions (vector-valued)
      *
-     *  Space-separated list of integers, one for each spatial
+     *  List of integers, one for each spatial
      *  dimension. Used when @c has_vectors is enabled.
      */
     repeated int64 conv_dims = 4;
 
     /** @brief Convolution padding (vector-valued)
      *
-     *  Space-separated list of integers, one for each spatial
+     *  List of integers, one for each spatial
      *  dimension. Used when @c has_vectors is enabled.
      */
     repeated int64 conv_pads = 5;
 
     /** @brief Convolution strides (vector-valued)
      *
-     *  Space-separated list of integers, one for each spatial
+     *  List of integers, one for each spatial
      *  dimension. Used when @c has_vectors is enabled.
      */
     repeated int64 conv_strides = 6;
 
     /** @brief Convolution dilations (vector-valued)
      *
-     *  Space-separated list of integers, one for each spatial
+     *  List of integers, one for each spatial
      *  dimension. Used when @c has_vectors is enabled. Defaults to
      *  dilations of 1, i.e. undilated convolution.
      */

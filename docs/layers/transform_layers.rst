@@ -90,7 +90,7 @@ Arguments:
 
       (``string``) Tensor dimensions
 
-      Space-separated list of integers
+      List of integers
 
 :ref:`Back to Top<transform-layers>`
 
@@ -132,7 +132,7 @@ Arguments:
 
       (``string``) Tensor dimensions
 
-      Space-separated list of integers
+      List of integers
 
 :ref:`Back to Top<transform-layers>`
 
@@ -157,7 +157,7 @@ Arguments:
  :dims:
 
     (``string``) Crop dimensions
-    Space-separated list of integers
+    List of integers
 
 :ref:`Back to Top<transform-layers>`
 
@@ -290,7 +290,7 @@ Arguments:
 
       (``string``) Tensor dimensions
 
-      Space-separated list of integers
+      List of integers
 
    :training_only:
 
@@ -376,21 +376,21 @@ Arguments:
 
       (``string``) Pooling window dimensions (vector-valued)
 
-      Space-separated list of integers, one for each spatial
+      List of integers, one for each spatial
       dimension. Used when ``has_vectors`` is enabled.
 
    :pool_pads:
 
       (``string``) Pooling padding (vector-valued)
 
-      Space-separated list of integers, one for each spatial
+      List of integers, one for each spatial
       dimension. Used when ``has_vectors`` is enabled.
 
    :pool_strides:
 
       (``string``) Pooling strides (vector-valued)
 
-      Space-separated list of integers, one for each spatial
+      List of integers, one for each spatial
       dimension. Used when ``has_vectors`` is enabled.
 
    :pool_dims_i:
@@ -455,7 +455,7 @@ Arguments:
 
       (``string``) Tensor dimensions
 
-      Space-separated list of integers. A single dimension may be
+      List of integers. A single dimension may be
       -1, in which case the dimension is inferred.
 
 Deprecated and unused arguments:
@@ -505,7 +505,7 @@ Arguments:
 
       (``string``) Output tensor dimensions
 
-      Space-separated list of integers. Number of dimensions must
+      List of integers. Number of dimensions must
       match data tensor.
 
    :axis: (``google.protobuf.UInt64Value``) Dimension to scatter along
@@ -533,7 +533,7 @@ Arguments:
 
       (``string``) Positions at which to slice tensor
 
-      Space-separated list of integers. Slice points must be in
+      List of integers. Slice points must be in
       ascending order and the number of slice points must be one
       greater than the number of child layers.
 
@@ -656,7 +656,7 @@ Arguments:
 
       (``string``) Output tensor dimensions
 
-      Space-separated list of integers
+      List of integers
 
 :ref:`Back to Top<transform-layers>`
 
@@ -681,7 +681,7 @@ Arguments:
 
       (``string``) Tensor dimensions
 
-      Space-separated list of integers
+      List of integers
 
    :training_only:
 
@@ -735,7 +735,7 @@ The WeightedSum layer adds tensors with scaling factors.
 
 Arguments:
 
-   :scaling_factors: (``string``) Space-separated list of
+   :scaling_factors: (``string``) List of
                      floating-point numbers, one for each input tensor.
 
 :ref:`Back to Top<transform-layers>`
@@ -758,7 +758,7 @@ Arguments:
 
       (``string``) Weights tensor dimensions
 
-      Space-separated list of integers
+      List of integers
 
 :ref:`Back to Top<transform-layers>`
 

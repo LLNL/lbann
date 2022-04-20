@@ -147,28 +147,28 @@ Arguments:
 
        (``string``) Convolution kernel dimensions (vector-valued)
 
-       Space-separated list of integers, one for each spatial
+       List of integers, one for each spatial
        dimension. Used when ``has_vectors`` is enabled.
 
    :conv_pads:
 
        (``string``) Convolution padding (vector-valued)
 
-       Space-separated list of integers, one for each spatial
+       List of integers, one for each spatial
        dimension. Used when ``has_vectors`` is enabled.
 
    :conv_strides:
 
        (``string``) Convolution strides (vector-valued)
 
-       Space-separated list of integers, one for each spatial
+       List of integers, one for each spatial
        dimension. Used when ``has_vectors`` is enabled.
 
    :conv_dilations:
 
        (``string``) Convolution dilations (vector-valued)
 
-       Space-separated list of integers, one for each spatial
+       List of integers, one for each spatial
        dimension. Used when ``has_vectors`` is enabled. Defaults to
        dilations of 1, i.e. undilated convolution.
 

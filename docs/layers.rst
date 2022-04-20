@@ -74,14 +74,14 @@ Common Layer Arguments
      (``Iterable of Layer``, optional) Parent layers, i.e. Sources
      of input tensors
 
-     Space-separated list of layer names
+     List of layer names
 
   :children:
 
      (``Iterable of Layer``, optional) Child layers, i.e. Destinations
      for output tensors
 
-     Space-separated list of layer names
+     List of layer names
 
   :weights:
 
@@ -89,7 +89,7 @@ Common Layer Arguments
 
      Typically used as trainable parameters
 
-     Space-separated list of weights names
+     List of weights names
 
   :device_allocation:
 
