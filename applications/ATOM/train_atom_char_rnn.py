@@ -12,8 +12,6 @@ import torch
 import lbann
 import lbann.contrib.launcher
 import lbann.modules
-from lbann.util import str_list
-
 
 def construct_lc_launcher_args():
 
@@ -114,7 +112,7 @@ def construct_model(run_args):
     x_slice = lbann.Slice(
         _input,
         axis=0,
-        slice_points=str_list(range(sequence_length + 1)),
+        slice_points=range(sequence_length + 1),
         name="inp_slice",
     )
 

@@ -6,7 +6,6 @@ import json
 import numpy as np
 
 import lbann
-from lbann.util import str_list
 import lbann.contrib.args
 import lbann.contrib.launcher
 
@@ -175,10 +174,10 @@ config.load_weights = os.path.abspath('./pretrained_weights')
 # Construct the model
 input_ = lbann.Slice(
     lbann.Input(data_field="samples"),
-    slice_points=str_list([0, 1, 1 + np.prod(config.input_shape)]),
+    slice_points=[0, 1, 1 + np.prod(config.input_shape)],
 )
 labels = lbann.Identity(input_)
-sample = lbann.Reshape(input_, dims=str_list(config.input_shape))
+sample = lbann.Reshape(input_, dims=config.input_shape)
 roberta = RoBERTa(config, load_weights=config.load_weights)
 out = roberta(sample)
 out = lbann.ChannelwiseFullyConnected(out, output_channel_dims=[1000])

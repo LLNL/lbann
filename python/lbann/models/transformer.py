@@ -13,7 +13,7 @@ import numpy as np
 
 import lbann
 import lbann.modules
-from lbann.util import str_list, make_iterable
+from lbann.util import make_iterable
 
 class LayerNorm(lbann.modules.Module):
     """See https://pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html"""
@@ -50,12 +50,12 @@ class LayerNorm(lbann.modules.Module):
         # Affine transform
         s = lbann.WeightsLayer(
             weights=self.weight,
-            dims=f'1 {str_list(self.normalized_shape)}',
+            dims=f'1 {self.normalized_shape}',
         )
         s = lbann.Tessellate(s, hint_layer=x)
         b = lbann.WeightsLayer(
             weights=self.bias,
-            dims=f'1 {str_list(self.normalized_shape)}',
+            dims=f'1 {self.normalized_shape}',
         )
         b = lbann.Tessellate(b, hint_layer=x)
         x = lbann.Add(lbann.Multiply(s,x), b)
@@ -416,12 +416,12 @@ class Transformer(lbann.modules.Module):
                 if self.hidden_size % 2 != 0:
                     vals.pop()
             weights = lbann.Weights(
-                initializer=lbann.ValueInitializer(values=str_list(vals)),
+                initializer=lbann.ValueInitializer(values=vals),
                 optimizer=None,
                 name=f'{self.name}_positional{sequence_length}_weights',
             )
             self._positional_encoding_cache[sequence_length] = lbann.WeightsLayer(
-                dims=str_list([sequence_length, self.hidden_size]),
+                dims=[sequence_length, self.hidden_size],
                 weights=weights,
                 name=f'{self.name}_positional{sequence_length}',
             )
@@ -441,12 +441,12 @@ class Transformer(lbann.modules.Module):
         if size not in self._subsequent_mask_cache:
             vals = np.triu(np.full((size,size), -1e9), k=1)
             weights = lbann.Weights(
-                initializer=lbann.ValueInitializer(values=str_list(np.nditer(vals))),
+                initializer=lbann.ValueInitializer(values=np.nditer(vals)),
                 optimizer=None,
                 name=f'{self.name}_mask{size}_weights',
             )
             self._subsequent_mask_cache[size] = lbann.WeightsLayer(
-                dims=str_list([size, size]),
+                dims=[size, size],
                 weights=weights,
                 name=f'{self.name}_mask{size}',
             )

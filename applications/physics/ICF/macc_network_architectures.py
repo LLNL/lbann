@@ -1,6 +1,6 @@
 import lbann
 import lbann.modules.base
-from lbann.util import str_list, list2str
+from lbann.util import list2str
 
 
 #Synonymous to fc_gen0

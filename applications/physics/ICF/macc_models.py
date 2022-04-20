@@ -1,6 +1,6 @@
 import lbann
 import macc_network_architectures
-from lbann.util import str_list, list2str
+from lbann.util import list2str
 
 def construct_jag_wae_model(ydim,
                             zdim,
@@ -20,7 +20,7 @@ def construct_jag_wae_model(ydim,
     input = lbann.Input(data_field='samples', name='inp_data')
     # data is 64*64*4 images + 15 scalar + 5 param
     #inp_slice = lbann.Slice(input, axis=0, slice_points="0 16399 16404",name='inp_slice')
-    inp_slice = lbann.Slice(input, axis=0, slice_points=str_list([0,ydim,ydim+5]),name='inp_slice')
+    inp_slice = lbann.Slice(input, axis=0, slice_points=[0,ydim,ydim+5],name='inp_slice')
     gt_y = lbann.Identity(inp_slice,name='gt_y')
     gt_x = lbann.Identity(inp_slice, name='gt_x') #param not used
 
@@ -100,7 +100,7 @@ def construct_macc_surrogate_model(xdim,
     # Layer graph
     input = lbann.Input(data_field='samples',name='inp_data')
     # data is 64*64*4 images + 15 scalar + 5 param
-    inp_slice = lbann.Slice(input, axis=0, slice_points=str_list([0,ydim,ydim+xdim]),name='inp_slice')
+    inp_slice = lbann.Slice(input, axis=0, slice_points=[0,ydim,ydim+xdim],name='inp_slice')
     gt_y = lbann.Identity(inp_slice,name='gt_y')
     gt_x = lbann.Identity(inp_slice, name='gt_x') #param not used
 

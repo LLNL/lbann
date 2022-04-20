@@ -1,6 +1,5 @@
 import lbann
 import math
-from lbann.util import str_list
 from lbann.modules.graph import NNConv
 from lbann.modules import ChannelwiseFullyConnectedModule
 import numpy as np
@@ -139,26 +138,26 @@ def graph_data_splitter(_input,
 		  split_indices[i] = split_indices[i] + split_indices[i - 1]
 
 		graph_input = lbann.Slice(_input, axis=0,
-		  slice_points=str_list(split_indices))
+		  slice_points=split_indices)
 
-		neighbor_feature_dims = str_list([NUM_EDGES, 1, EMBEDDING_DIM])
+		neighbor_feature_dims = [NUM_EDGES, 1, EMBEDDING_DIM]
 
 		node_feature_columns = [lbann.Reshape(lbann.Identity(graph_input),
-		  dims=str_list([NUM_NODES]),
+		  dims=[NUM_NODES],
 		  name="node_ft_{}_col".format(x)) for x in range(NUM_NODE_FEATURES)]
 
 		edge_feature_columns = [lbann.Reshape(lbann.Identity(graph_input),
-		  dims=str_list([NUM_EDGES]),
+		  dims=[NUM_EDGES],
 		  name="edge_ft_{}_col".format(x)) for x in range(NUM_EDGE_FEATURES)]
 
 		source_nodes = lbann.Reshape(lbann.Identity(graph_input),
-		  dims=str_list([NUM_EDGES]),
+		  dims=[NUM_EDGES],
 		  name="source_nodes")
 		target_nodes = lbann.Reshape(lbann.Identity(graph_input),
-		  dims=str_list([NUM_EDGES]),
+		  dims=[NUM_EDGES],
 		  name="target_nodes")
 		label = lbann.Reshape(lbann.Identity(graph_input),
-		  dims=str_list([1]),
+		  dims=[1],
 		  name="Graph_Label")
 
 		embedded_node_features = AtomEncoder(node_feature_columns, EMBEDDING_DIM)

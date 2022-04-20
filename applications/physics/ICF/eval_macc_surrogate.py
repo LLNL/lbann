@@ -5,7 +5,6 @@ from os.path import abspath, dirname, join
 import google.protobuf.text_format as txtf
 import lbann.contrib.launcher
 import lbann.contrib.args
-from lbann.util import str_list
 import datetime
 
 # ==============================================
@@ -104,7 +103,7 @@ def construct_model():
     # Layer graph
     input = lbann.Input(data_field='samples',name='inp_data')
     # data is 64*64*4 images + 15 scalar + 5 param
-    inp_slice = lbann.Slice(input, axis=0, slice_points=str_list([0,args.ydim,args.ydim+args.xdim]),name='inp_slice')
+    inp_slice = lbann.Slice(input, axis=0, slice_points=[0,args.ydim,args.ydim+args.xdim],name='inp_slice')
     gt_y = lbann.Identity(inp_slice,name='gt_y')
     gt_x = lbann.Identity(inp_slice, name='gt_x') #param not used
 

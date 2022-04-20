@@ -1,6 +1,6 @@
 import lbann
 import models.wae as molwae
-from lbann.util import str_list, list2str
+from lbann.util import list2str
 
 def construct_atom_wae_model(pad_index,
                              sequence_length,

@@ -5,7 +5,6 @@ import os.path
 import lbann
 import lbann.models
 import lbann.contrib.launcher
-from lbann.util import str_list
 
 import dataset
 
@@ -46,7 +45,7 @@ def make_model(
     embeddings_tokens = lbann.Identity(lbann.Slice(
         input_,
         axis=0,
-        slice_points=str_list([0, 2*sequence_length-1]),
+        slice_points=[0, 2*sequence_length-1],
     ))
     embeddings = lbann.Embedding(
         embeddings_tokens,
@@ -62,7 +61,7 @@ def make_model(
     embeddings_slice = lbann.Slice(
         embeddings,
         axis=0,
-        slice_points=str_list([0, sequence_length, 2*sequence_length-1]),
+        slice_points=[0, sequence_length, 2*sequence_length-1],
     )
     encoder_input = lbann.Identity(embeddings_slice)
     decoder_input = lbann.Identity(embeddings_slice)
@@ -87,13 +86,13 @@ def make_model(
         transpose=True,
     )
     preds = lbann.ChannelwiseSoftmax(preds)
-    preds = lbann.Slice(preds, axis=0, slice_points=str_list(range(sequence_length)))
+    preds = lbann.Slice(preds, axis=0, slice_points=range(sequence_length))
     preds = [lbann.Identity(preds) for _ in range(sequence_length-1)]
 
     # Count number of non-pad tokens
     label_tokens = lbann.Identity(lbann.Slice(
         input_,
-        slice_points=str_list([sequence_length+1, 2*sequence_length]),
+        slice_points=[sequence_length+1, 2*sequence_length],
     ))
     pads = lbann.Constant(value=pad_index, num_neurons=str(sequence_length-1))
     is_not_pad = lbann.NotEqual(label_tokens, pads)
@@ -102,23 +101,23 @@ def make_model(
     # Cross entropy loss with label smoothing
     label_tokens = lbann.Slice(
         label_tokens,
-        slice_points=str_list(range(sequence_length)),
+        slice_points=range(sequence_length),
     )
     label_tokens = [lbann.Identity(label_tokens) for _ in range(sequence_length-1)]
     if label_smoothing > 0:
         uniform_label = lbann.Constant(
             value=1/vocab_size,
-            num_neurons=str_list([1, vocab_size])
+            num_neurons=[1, vocab_size]
         )
     loss = []
     for i in range(sequence_length-1):
         label = lbann.OneHot(label_tokens[i], size=vocab_size)
-        label = lbann.Reshape(label, dims=str_list([1, vocab_size]))
+        label = lbann.Reshape(label, dims=[1, vocab_size])
         if label_smoothing > 0:
             label = lbann.WeightedSum(
                 label,
                 uniform_label,
-                scaling_factors=str_list([1-label_smoothing, label_smoothing]),
+                scaling_factors=[1-label_smoothing, label_smoothing],
             )
         loss.append(lbann.CrossEntropy(preds[i], label))
     loss = lbann.Concatenation(loss)

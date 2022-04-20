@@ -32,16 +32,16 @@ def positive_samples_loss(
                     * scale_decay**np.abs(j-i)
                 )
     scales = lbann.Weights(
-        initializer=lbann.ValueInitializer(values=utils.str_list(np.nditer(scales))),
+        initializer=lbann.ValueInitializer(values=np.nditer(scales)),
         optimizer=lbann.NoOptimizer(),
     )
-    scales = lbann.WeightsLayer(dims=utils.str_list(scale_dims), weights=scales)
+    scales = lbann.WeightsLayer(dims=scale_dims, weights=scales)
     loss = lbann.MatMul(
-        lbann.Reshape(scores, dims='1 -1'),
-        lbann.Reshape(scales, dims='1 -1'),
+        lbann.Reshape(scores, dims=[1, -1]),
+        lbann.Reshape(scales, dims=[1, -1]),
         transpose_b=True,
     )
-    loss = lbann.Reshape(loss, dims='1')
+    loss = lbann.Reshape(loss, dims=[1])
     return loss
 
 def negative_samples_loss(embeddings, negative_samples_embeddings):
@@ -50,8 +50,8 @@ def negative_samples_loss(embeddings, negative_samples_embeddings):
         negative_samples_embeddings,
         transpose_b=True,
     )
-    scores = lbann.WeightedSum(scores, scaling_factors='-1')
+    scores = lbann.WeightedSum(scores, scaling_factors=[-1])
     scores = lbann.LogSigmoid(scores)
     loss = lbann.Reduction(scores, mode='average')
-    loss = lbann.WeightedSum(loss, scaling_factors='-1')
+    loss = lbann.WeightedSum(loss, scaling_factors=[-1])
     return loss

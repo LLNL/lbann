@@ -12,7 +12,6 @@ import models.vae as molvae
 import lbann
 import lbann.contrib.launcher
 import lbann.modules
-from lbann.util import str_list
 
 def list2str(l):
     return ' '.join(l)

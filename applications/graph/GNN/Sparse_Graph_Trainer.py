@@ -1,5 +1,4 @@
 import lbann
-from lbann.util import str_list
 from lbann.modules.graph import GINConv, GCNConv, GraphConv, GatedGraphConv
 from itertools import accumulate
 
@@ -27,10 +26,10 @@ def Graph_Data_Parser(_lbann_input_,
     slice_points = [0, num_nodes*node_feature_size, max_edges, max_edges, num_classes]
     shifted_slice_points = list(accumulate(slice_points))
     sliced_input = lbann.Slice(_lbann_input_,
-                               slice_points=str_list(shifted_slice_points),
+                               slice_points=shifted_slice_points,
                                name="Sliced_Graph_Input")
     node_features = lbann.Reshape(lbann.Identity(sliced_input),
-                                  dims=str_list([num_nodes, node_feature_size]),
+                                  dims=[num_nodes, node_feature_size],
                                   name="Node_Feature_Matrix")
     source_indices = lbann.Identity(sliced_input)
     target_indices = lbann.Identity(sliced_input)
@@ -266,14 +265,14 @@ def make_model(num_vertices = None,
     #----------------------------------
 
     average_vector = lbann.Constant(value = 1/num_vertices,
-                                    num_neurons = str_list([1,num_vertices]),
+                                    num_neurons = [1,num_vertices],
                                     name="Average_Vector")
 
     x = lbann.MatMul(average_vector,x, name="Node_Feature_Reduction")
 
     # X is now a vector with output_channel dimensions
 
-    x = lbann.Reshape(x, dims = str_list([output_channels]), name = "Squeeze")
+    x = lbann.Reshape(x, dims = [output_channels], name = "Squeeze")
     x = lbann.FullyConnected(x, num_neurons = 64, name = "hidden_layer_1")
     x = lbann.Relu(x, name = "hidden_layer_1_activation")
     x = lbann.FullyConnected(x, num_neurons = num_classes,

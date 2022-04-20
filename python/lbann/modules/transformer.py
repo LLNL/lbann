@@ -2,7 +2,7 @@
 import math
 import lbann
 from .base import Module, FullyConnectedModule
-from lbann.util import make_iterable, str_list
+from lbann.util import make_iterable
 
 class MultiheadAttention(Module):
     """Parallel instances of scaled dot-product attention.
@@ -112,8 +112,7 @@ class MultiheadAttention(Module):
         )
 
         # Slice embedding vectors for each head
-        slice_points = str_list(self.head_dim * i
-                                for i in range(self.num_heads+1))
+        slice_points = [self.head_dim * i for i in range(self.num_heads+1)]
         queries_slice = lbann.Slice(
             queries_fc,
             axis=1,

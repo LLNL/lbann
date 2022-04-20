@@ -1,6 +1,6 @@
 import lbann
 import jag_network_architectures
-from lbann.util import str_list, list2str
+from lbann.util import list2str
 
 def construct_jag_wae_model(y_dim,
                             z_dim,

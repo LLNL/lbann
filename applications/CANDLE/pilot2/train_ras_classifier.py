@@ -24,7 +24,7 @@ def num_samples():
 def sample_dims():
     return [dims]
 
-def str_list(l):
+def l:
     return ' '.join([str(i) for i in l])
 # ==============================================
 # Setup and launch experiment
@@ -48,13 +48,13 @@ def construct_model():
     fc3 = fc(num_classes, name='fc3')
     # Layer graph
     input = lbann.Input(name='inp_tensor', target_mode = 'classification')
-    inp_slice = lbann.Slice(input, axis=0, slice_points=str_list([0, dims-1, dims]),name='inp_slice')
+    inp_slice = lbann.Slice(input, axis=0, slice_points=[0, dims-1, dims], name='inp_slice')
     xdata = lbann.Identity(inp_slice)
     ylabel = lbann.Identity(inp_slice, name='gt_y')
     #NHWC to NCHW
-    x = lbann.Reshape(xdata, dims='14 13 13')
+    x = lbann.Reshape(xdata, dims=[14, 13, 13])
     x = conv2(conv1(x))
-    x = lbann.Reshape(x, dims='3380')
+    x = lbann.Reshape(x, dims=[3380])
     x = lbann.Dropout(lbann.Relu(fc1(x)),keep_prob=0.5)
     x = lbann.Dropout(fc2(x),keep_prob=0.5)
     pred = lbann.Softmax(fc3(x))

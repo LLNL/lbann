@@ -1,7 +1,6 @@
-import lbann 
-from  lbann.modules import Module 
-from lbann.util import str_list
-import math 
+import lbann
+from  lbann.modules import Module
+import math
 
 
 class DenseGCNConv(Module):
@@ -12,13 +11,13 @@ class DenseGCNConv(Module):
         DenseGCNConv.global_count += 1
 
         self.name = (name if name else 'Dense_GCN_{}'.format(DenseGCNConv.global_count))
-        
-        
+
+
         bounds = math.sqrt(6.0 / (input_channels + output_channels))
         self.weights = lbann.Weights(initializer = lbann.UniformInitializer(min=-bounds,max=bounds),
                                     name=self.name+'_Weights')
 
-        self.W = lbann.WeightsLayer(dims = str_list([input_channels, output_channels]),
+        self.W = lbann.WeightsLayer(dims = [input_channels, output_channels],
                                name = self.name+'_layer',
                                weights =self.weights)
     def forward(self,X,A):

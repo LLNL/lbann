@@ -1,5 +1,4 @@
 import lbann
-from lbann.util import str_list
 from lbann.modules.graph import DenseGCNConv, DenseGraphConv
 
 
@@ -113,16 +112,16 @@ def make_model(num_vertices = None,
     feature_matrix_size = num_vertices * node_features
 
     graph_input = lbann.Slice(input_, axis = 0 ,
-                              slice_points = str_list([0,feature_matrix_size,graph_dims, sample_dims]),
+                              slice_points = [0,feature_matrix_size,graph_dims, sample_dims],
                               name = "Graph_Input")
 
 
     feature_matrix = lbann.Reshape(graph_input,
-                                   dims = str_list([num_vertices, node_features]),
+                                   dims = [num_vertices, node_features],
                                    name="Node_features")
 
     adj_matrix = lbann.Reshape(graph_input,
-                               dims = str_list([num_vertices,num_vertices]),
+                               dims = [num_vertices,num_vertices],
                                name="Adj_Mat")
 
     target = lbann.Identity(graph_input, name="Target")
@@ -144,10 +143,10 @@ def make_model(num_vertices = None,
     # Apply Reduction on Node Features
     #----------------------------------
 
-    average_vector = lbann.Constant(value = 1/num_vertices, num_neurons = str_list([1,num_vertices]), name="Average_Vector")
+    average_vector = lbann.Constant(value = 1/num_vertices, num_neurons = [1,num_vertices], name="Average_Vector")
     x = lbann.MatMul(average_vector,x, name="Node_Feature_Reduction") # X is now a vector with output_channel dimensions
 
-    x = lbann.Reshape(x, dims= str_list([out_channel]), name="Squeeze")
+    x = lbann.Reshape(x, dims= [out_channel], name="Squeeze")
     x = lbann.FullyConnected(x, num_neurons=256, name="hidden_layer_1")
     x = lbann.Relu(x, name="hidden_layer_1_activation")
     x = lbann.FullyConnected(x, num_neurons=num_classes, name="Output_Fully_Connected")

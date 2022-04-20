@@ -225,10 +225,10 @@ def construct_model(lbann):
     h = h_lbann
     h = lbann.Reshape(
         lbann.Slice(
-            lbann.Reshape(h, dims='-1'),
+            lbann.Reshape(h, dims=[-1]),
             slice_points=[0, hidden_size],
         ),
-        dims='1 -1',
+        dims=[1, -1],
     )
     y = lbann.GRU(
         x,

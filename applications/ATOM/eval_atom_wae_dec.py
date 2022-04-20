@@ -13,7 +13,6 @@ import models.wae as molwae
 import lbann
 import lbann.contrib.launcher
 import lbann.modules
-from lbann.util import str_list
 
 def list2str(l):
     return ' '.join(l)
@@ -110,7 +109,7 @@ def construct_model(run_args):
     input_ = lbann.Input(data_field='samples',name='inp_data')
     #Note input assumes to come from encoder script concatenation of input smiles + z
     inp_slice = lbann.Slice(input_, axis=0,
-                             slice_points=str_list([0, sequence_length, sequence_length+run_args.z_dim]),
+                             slice_points=[0, sequence_length, sequence_length+run_args.z_dim],
                              name='inp_slice')
     inp_smile = lbann.Identity(inp_slice,name='inp_smile')
     z  = lbann.Identity(inp_slice, name='z')
@@ -127,7 +126,7 @@ def construct_model(run_args):
     print("save output? ", save_output, "out dir ",  run_args.dump_outputs_dir)
     #uncomment below for random sampling
     #z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=str(run_args.z_dim))
-    x = lbann.Slice(inp_smile, slice_points=str_list([0, input_feature_dims]))
+    x = lbann.Slice(inp_smile, slice_points=[0, input_feature_dims])
     x = lbann.Identity(x)
     waemodel = molwae.MolWAE(input_feature_dims,
                            dictionary_size,

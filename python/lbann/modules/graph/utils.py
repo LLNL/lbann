@@ -1,6 +1,4 @@
 import lbann
-from lbann.util import str_list
-
 
 def GraphExpand(features, indices, name=None):
     """Places the features according the indices to an expanded matrix
@@ -14,13 +12,13 @@ def GraphExpand(features, indices, name=None):
     """
     GraphExpand.count += 1
     if (name is None):
-        name = f"graph_expand_{GraphExpand.count}" 
+        name = f"graph_expand_{GraphExpand.count}"
     return lbann.Gather(features, indices, axis=0, name=name)
 
 def GraphReduce(features, indices, dims, name=None):
     """Performs a sum-reduction of the features according the indices.
-       output[indices[i]] += features[i] 
-        
+       output[indices[i]] += features[i]
+
        Args:
             features (layer) : 2D matrix with shape (E, F)
             indices (layer): 1D matrix with shape (E)
@@ -30,7 +28,7 @@ def GraphReduce(features, indices, dims, name=None):
     GraphReduce.count += 1
     if (name is None):
         name = f"graph_reduce_{GraphReduce.count}"
-    return lbann.Scatter(features, indices, dims=str_list(dims), axis=0, name=name)
+    return lbann.Scatter(features, indices, dims=dims, axis=0, name=name)
 
 GraphReduce.count = 0
 GraphExpand.count = 0

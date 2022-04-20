@@ -201,7 +201,7 @@ else:
 embeddings_slice = lbann.Slice(
     embeddings,
     axis=0,
-    slice_points=utils.str_list([0, num_negative_samples, num_negative_samples+walk_length]),
+    slice_points=[0, num_negative_samples, num_negative_samples+walk_length],
 )
 negative_samples_embeddings = lbann.Identity(embeddings_slice)
 walk_embeddings = lbann.Identity(embeddings_slice)

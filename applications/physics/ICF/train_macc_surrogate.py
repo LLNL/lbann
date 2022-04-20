@@ -4,7 +4,6 @@ from os.path import abspath, dirname, join
 import google.protobuf.text_format as txtf
 import lbann.contrib.launcher
 import lbann.contrib.args
-from lbann.util import str_list
 
 # ==============================================
 # Setup and launch experiment

@@ -1,7 +1,5 @@
 import lbann
 from lbann.modules import Module, ChannelwiseFullyConnectedModule
-from lbann.util import str_list
-
 
 class DenseNNConv(Module):
   """Details of the kernel is available at:
@@ -39,9 +37,9 @@ class DenseNNConv(Module):
 
     num_edges = self.num_nodes ** 2
 
-    edge_ft_shape = str_list([num_edges, self.input_channels, self.output_channels])
-    node_ft_tensor_shape = str_list([self.num_nodes, self.num_nodes, self.output_channels])
-    node_ft_mat_shape = str_list([self.num_nodes, self.output_channels])
+    edge_ft_shape = [num_edges, self.input_channels, self.output_channels]
+    node_ft_tensor_shape = [self.num_nodes, self.num_nodes, self.output_channels]
+    node_ft_mat_shape = [self.num_nodes, self.output_channels]
 
     transformed_edge_ft_tensor = None
 

@@ -13,12 +13,6 @@ def make_iterable(obj):
     else:
         return (obj,)
 
-def str_list(it, sep=' '):
-    """Return a iterable object."""
-    return make_iterable(it)
-
-list2str = str_list
-
 def make_nd_array(*dims):
     """Create a multi-dimensional array with given dimensions.
 
