@@ -68,8 +68,7 @@ message Initializer {
    *  fully-connected layer's linearity weights are column-major.
    */
   message ValueInitializer {
-    /// Space-separated list of values
-    string values = 1;
+    repeated double values = 1;
   }
   /** @brief Fill weights with values from a NumPy file.
    *
