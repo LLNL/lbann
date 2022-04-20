@@ -21,7 +21,7 @@ def construct_jag_wae_model(ydim,
     # Layer graph
     input = lbann.Input(data_field='samples', name='inp_data')
     # data is 64*64*4 images + 15 scalar + 5 param
-    #inp_slice = lbann.Slice(input, axis=0, slice_points="0 16399 16404",name='inp_slice')
+    #inp_slice = lbann.Slice(input, axis=0, slice_points=[0, 16399, 16404],name='inp_slice')
     inp_slice = lbann.Slice(input, axis=0, slice_points=[0,ydim,ydim+5],name='inp_slice')
     gt_y = lbann.Identity(inp_slice,name='gt_y')
     gt_x = lbann.Identity(inp_slice, name='gt_x') #param not used
@@ -39,7 +39,7 @@ def construct_jag_wae_model(ydim,
     d1_fake_bce = lbann.SigmoidBinaryCrossEntropy([d1_fake,zero],name='d1_fake_bce')
     d_adv_bce = lbann.SigmoidBinaryCrossEntropy([d_adv,one],name='d_adv_bce')
     img_loss = lbann.MeanSquaredError([pred_y,gt_y])
-    rec_error = lbann.L2Norm2(lbann.WeightedSum([pred_y,gt_y], scaling_factors="1 -1"))
+    rec_error = lbann.L2Norm2(lbann.WeightedSum([pred_y,gt_y], scaling_factors=[1, -1]))
 
     layers = list(lbann.traverse_layer_graph(input))
     # Setup objective function
@@ -144,8 +144,8 @@ def construct_macc_surrogate_model(xdim,
     L_cyc = lbann.Add(L_cyc_y, L_cyc_x)
 
     #loss_gen0  = L_l2_y + lamda_cyc*L_cyc
-    loss_gen0  = lbann.WeightedSum([L_l2_y,L_cyc], scaling_factors=f'1 {lambda_cyc}')
-    loss_gen1  = lbann.WeightedSum([L_l2_x,L_cyc_y], scaling_factors=f'1 {lambda_cyc}')
+    loss_gen0  = lbann.WeightedSum([L_l2_y,L_cyc], scaling_factors=[1, lambda_cyc])
+    loss_gen1  = lbann.WeightedSum([L_l2_x,L_cyc_y], scaling_factors=[1, lambda_cyc])
     #loss_gen1  =  L_l2_x + lamda_cyc*L_cyc_y
 
 

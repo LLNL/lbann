@@ -99,7 +99,7 @@ def construct_model(lbann):
                         data_layout='data_parallel',
                         parallel_strategy=create_parallel_strategy(
                             num_height_groups))
-    y = lbann.Reshape(y, dims=str(sample_dims()))
+    y = lbann.Reshape(y, dims=sample_dims())
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
@@ -131,7 +131,7 @@ def construct_model(lbann):
                         data_layout='model_parallel',
                         parallel_strategy=create_parallel_strategy(
                             num_height_groups))
-    y = lbann.Reshape(y, dims=str(sample_dims()))
+    y = lbann.Reshape(y, dims=sample_dims())
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='model-parallel layout'))

@@ -146,8 +146,8 @@ def construct_model():
     L_cyc = lbann.Add(L_cyc_y, L_cyc_x)
 
     #loss_gen0  = L_l2_y + lamda_cyc*L_cyc
-    loss_gen0  = lbann.WeightedSum([L_l2_y,L_cyc], scaling_factors=f'1 {args.lamda_cyc}')
-    loss_gen1  = lbann.WeightedSum([L_l2_x,L_cyc_y], scaling_factors=f'1 {args.lamda_cyc}')
+    loss_gen0  = lbann.WeightedSum([L_l2_y,L_cyc], scaling_factors=[1, args.lamda_cyc])
+    loss_gen1  = lbann.WeightedSum([L_l2_x,L_cyc_y], scaling_factors=[1, args.lamda_cyc])
     #loss_gen1  =  L_l2_x + lamda_cyc*L_cyc_y
 
 

@@ -52,7 +52,7 @@ class Combo(lbann.modules.Module):
        self.concatT = TrackModule(neuron_dims, activation, keep_prob, name=self.name+'concat_track')
 
     def forward(self,x):
-         x_slice = lbann.Slice(x, axis=0, slice_points="0 921 4750 8579",name='inp_slice')
+         x_slice = lbann.Slice(x, axis=0, slice_points=[0, 921, 4750, 8579],name='inp_slice')
          gene = self.geneT(lbann.Identity(x_slice))
          drug1 = self.drug1T(lbann.Identity(x_slice))
          drug2 = self.drug2T(lbann.Identity(x_slice))

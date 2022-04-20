@@ -22,7 +22,7 @@ def construct_jag_wae_model(y_dim,
     # Layer graph
     input = lbann.Input(data_field='samples',name='inp_data')
     # data is 64*64*4 images + 15 scalar + 5 param
-    inp_slice = lbann.Slice(input, axis=0, slice_points="0 16399 16404",name='inp_slice')
+    inp_slice = lbann.Slice(input, axis=0, slice_points=[0, 16399, 16404],name='inp_slice')
     gt_y = lbann.Identity(inp_slice,name='gt_y')
     gt_x = lbann.Identity(inp_slice, name='gt_x') #param not used
 
@@ -37,7 +37,7 @@ def construct_jag_wae_model(y_dim,
     d_adv_bce = lbann.SigmoidBinaryCrossEntropy([d_adv,one],name='d_adv_bce')
 
     img_loss = lbann.MeanSquaredError([pred_y,gt_y])
-    rec_error = lbann.L2Norm2(lbann.WeightedSum([pred_y,gt_y], scaling_factors="1 -1"))
+    rec_error = lbann.L2Norm2(lbann.WeightedSum([pred_y,gt_y], scaling_factors=[1, -1]))
 
     layers = list(lbann.traverse_layer_graph(input))
     # Setup objective function

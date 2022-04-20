@@ -213,7 +213,7 @@ class MolVAE(lbann.modules.Module):
         eps = lbann.Gaussian(mean=0, stdev=1,hint_layer=mu)
 
         # z = mu + (logvar / 2).exp() * eps
-        z = lbann.Add([mu, (lbann.Multiply([lbann.Exp(lbann.WeightedSum(logvar,scaling_factors='0.5')),eps]))])
+        z = lbann.Add([mu, (lbann.Multiply([lbann.Exp(lbann.WeightedSum(logvar,scaling_factors=[0.5])),eps]))])
 
         # kl_loss = 0.5 * (logvar.exp() + mu ** 2 - 1 - logvar).sum(1).mean()
         kl_loss = lbann.Reduction(
@@ -222,7 +222,7 @@ class MolVAE(lbann.modules.Module):
                 lbann.Square(mu),
                 self.constant(1, hint_layer=mu),
                 logvar,
-                scaling_factors='0.5 0.5 -0.5 -0.5',
+                scaling_factors=[0.5, 0.5, -0.5, -0.5],
             ),
             mode='sum',
         )

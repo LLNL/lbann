@@ -125,7 +125,7 @@ def make_model(num_vertices = None,
                                name="Adj_Mat")
 
     target = lbann.Identity(graph_input, name="Target")
-    target = lbann.Reshape(target, dims=str(num_classes))
+    target = lbann.Reshape(target, dims=[num_classes])
 
     #----------------------------------
     # Perform Graph Convolution

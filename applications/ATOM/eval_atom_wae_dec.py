@@ -122,7 +122,7 @@ def construct_model(run_args):
 
     print("save output? ", save_output, "out dir ",  run_args.dump_outputs_dir)
     #uncomment below for random sampling
-    #z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=str(run_args.z_dim))
+    #z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=[run_args.z_dim])
     x = lbann.Slice(inp_smile, slice_points=[0, input_feature_dims])
     x = lbann.Identity(x)
     waemodel = molwae.MolWAE(input_feature_dims,

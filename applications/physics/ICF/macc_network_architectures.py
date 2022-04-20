@@ -129,11 +129,11 @@ class MACCWAE(lbann.modules.Module):
         return self.enc_out(self.enc_fc2(self.enc_fc1(self.enc_fc0(y))))
 
     def encoder_cnn(self,y):
-        img_sca = lbann.Slice(y, axis=0, slice_points="0 16384 16399", name=self.name+'_y_slice')
+        img_sca = lbann.Slice(y, axis=0, slice_points=[0, 16384, 16399], name=self.name+'_y_slice')
         #assume C first, is data C first?
         img = lbann.Reshape(img_sca, dims=[4, 64, 64],name=self.name+'enc_reshape0')
         x = self.enc_conv[2](self.enc_conv[1](self.enc_conv[0](img)))
-        x = lbann.Reshape(x, dims=str(16*8*8), name=self.name+'enc_reshape1')
+        x = lbann.Reshape(x, dims=[16*8*8], name=self.name+'enc_reshape1')
         h_stack = lbann.Concatenation([x,img_sca],axis=0)
         z = self.enc_out(h_stack)
         return z
@@ -147,10 +147,10 @@ class MACCWAE(lbann.modules.Module):
     def decoder_cnn(self,z):
         x = self.dec_cnn_fc(z)
         sca = self.dec_fc_sca(lbann.Identity(x))
-        img = lbann.Reshape(lbann.Identity(x), dims="16 8 8", name=self.name+'dec_reshape0')
+        img = lbann.Reshape(lbann.Identity(x), dims=[16, 8, 8], name=self.name+'dec_reshape0')
         img = self.dec_convT[2](lbann.Relu(self.dec_convT[1](lbann.Relu(self.dec_convT[0](img)))))
         #concat for common interface, slice in output
-        img = lbann.Reshape(img, dims=str(64*64*4), name=self.name+'dec_reshape1') #?? check tensor shape
+        img = lbann.Reshape(img, dims=[64*64*4], name=self.name+'dec_reshape1') #?? check tensor shape
         #todo check that concat size == dec_out_dim
         return lbann.Concatenation([img,sca],axis=0)
 

@@ -24,8 +24,6 @@ def num_samples():
 def sample_dims():
     return [dims]
 
-def l:
-    return ' '.join([str(i) for i in l])
 # ==============================================
 # Setup and launch experiment
 # ==============================================

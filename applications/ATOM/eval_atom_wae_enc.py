@@ -110,7 +110,7 @@ def construct_model(run_args):
     save_output = False
 
     print("save output? ", save_output, "out dir ",  run_args.dump_outputs_dir)
-    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=str(run_args.z_dim))
+    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=[run_args.z_dim])
 
     x = lbann.Slice(input_, slice_points=[0, input_feature_dims])
     x = lbann.Identity(x)

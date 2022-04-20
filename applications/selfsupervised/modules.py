@@ -110,7 +110,7 @@ class FcBnRelu(lbann.modules.Module):
                 initializer=lbann.ConstantInitializer(value=1.0)),
             lbann.Weights(
                 name='{0}_bn_scalebias'.format(self.name),
-                initializer=lbann.ValueInitializer(values=' '.join([str(x) for x in scalebias_vals])))]
+                initializer=lbann.ValueInitializer(values=scalebias_vals))]
 
     def forward(self, x):
         self.instance += 1

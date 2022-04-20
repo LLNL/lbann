@@ -258,7 +258,7 @@ class MolWAE(lbann.modules.Module):
         h_0 = self.decoder_lat(z)
         # h_0 = h_0.unsqueeze(0).repeat(self.decoder_rnn.num_layers, 1, 1)
         h_0 = lbann.Reshape(h_0, dims=[1, 512])
-        h_0 = lbann.Tessellate(h_0, dims=(3, 512))
+        h_0 = lbann.Tessellate(h_0, dims=[3, 512])
 
         # output, _ = self.decoder_rnn(x_input, h_0)
         output = self.decoder_rnn(x_input, h_0)

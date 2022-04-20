@@ -294,7 +294,7 @@ class GRU(Module):
                     lbann.WeightedSum(
                         self.ones,
                         zt,
-                        scaling_factors='1 -1', data_layout=self.data_layout
+                        scaling_factors=[1, -1], data_layout=self.data_layout
                     ),
                     nt,
                     data_layout=self.data_layout
@@ -442,7 +442,7 @@ class ChannelwiseGRU(Module):
                     lbann.WeightedSum(
                         self.ones,
                         zt,
-                        scaling_factors='1 -1', data_layout=self.data_layout
+                        scaling_factors=[1, -1], data_layout=self.data_layout
                     ),
                     nt,
                     data_layout=self.data_layout
