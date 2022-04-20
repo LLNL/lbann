@@ -54,8 +54,8 @@ def construct_atom_wae_model(pad_index,
         save_output=save_output)(input_,z)
 
 
-    zero  = lbann.Constant(value=0.0,num_neurons='1',name='zero')
-    one  = lbann.Constant(value=1.0,num_neurons='1',name='one')
+    zero  = lbann.Constant(value=0.0,num_neurons=[1],name='zero')
+    one  = lbann.Constant(value=1.0,num_neurons=[1],name='one')
 
     d1_real_bce = lbann.SigmoidBinaryCrossEntropy([d1_real,one],name='d1_real_bce')
     d1_fake_bce = lbann.SigmoidBinaryCrossEntropy([d1_fake,zero],name='d1_fake_bce')

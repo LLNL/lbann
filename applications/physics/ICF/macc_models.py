@@ -24,8 +24,8 @@ def construct_jag_wae_model(ydim,
     gt_y = lbann.Identity(inp_slice,name='gt_y')
     gt_x = lbann.Identity(inp_slice, name='gt_x') #param not used
 
-    zero  = lbann.Constant(value=0.0,num_neurons='1',name='zero')
-    one  = lbann.Constant(value=1.0,num_neurons='1',name='one')
+    zero  = lbann.Constant(value=0.0,num_neurons=[1],name='zero')
+    one  = lbann.Constant(value=1.0,num_neurons=[1],name='one')
 
     z_dim = 20  #Latent space dim
 
@@ -104,8 +104,8 @@ def construct_macc_surrogate_model(xdim,
     gt_y = lbann.Identity(inp_slice,name='gt_y')
     gt_x = lbann.Identity(inp_slice, name='gt_x') #param not used
 
-    zero  = lbann.Constant(value=0.0,num_neurons='1',name='zero')
-    one  = lbann.Constant(value=1.0,num_neurons='1',name='one')
+    zero  = lbann.Constant(value=0.0,num_neurons=[1],name='zero')
+    one  = lbann.Constant(value=1.0,num_neurons=[1],name='one')
 
 
     z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="20")

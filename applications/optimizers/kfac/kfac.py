@@ -131,7 +131,7 @@ elif args.model == "gru":
             num_neurons=[1, 28],
             name=f'_zeros'
         )
-    x = lbann.Reshape(x, dims='28 28')
+    x = lbann.Reshape(x, dims=[28, 28])
     x = lbann.GRU(x, zeros,hidden_size=28)
     x = lbann.Relu(x)
     x = lbann.FullyConnected(

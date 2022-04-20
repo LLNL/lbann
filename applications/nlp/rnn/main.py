@@ -56,7 +56,7 @@ embeddings = lbann.Embedding(input_,
 embeddings_slice = lbann.Slice(embeddings,
                                axis=0,
                                slice_points=range(sequence_length+1))
-embeddings_list = [lbann.Reshape(embeddings_slice, dims='-1')
+embeddings_list = [lbann.Reshape(embeddings_slice, dims=[-1])
                    for _ in range(sequence_length)]
 
 # Layer modules

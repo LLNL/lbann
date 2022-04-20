@@ -292,7 +292,7 @@ class MolWAE(lbann.modules.Module):
               axis=0,
               slice_points=range(self.input_feature_dims+1),
           )
-          y_slice = [lbann.Reshape(y_slice, dims='-1') for _ in range(self.input_feature_dims)]
+          y_slice = [lbann.Reshape(y_slice, dims=[-1]) for _ in range(self.input_feature_dims)]
           arg_max = [lbann.Argmax(yi, device='CPU') for yi in y_slice]
 
           return y, arg_max

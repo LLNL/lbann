@@ -85,11 +85,11 @@ def mean_squared_error(
     )
     scales = lbann.WeightsLayer(dims=scale_dims, weights=scales)
     prods = lbann.MatMul(
-        lbann.Reshape(prods, dims='1 -1'),
-        lbann.Reshape(scales, dims='1 -1'),
+        lbann.Reshape(prods, dims=[1, -1]),
+        lbann.Reshape(scales, dims=[1, -1]),
         transpose_b=True,
     )
-    prods = lbann.Reshape(prods, dims='1')
+    prods = lbann.Reshape(prods, dims=[1])
 
     # MSE(x,y) = ( norm(x)^2 + norm(y)^T - 2*prod(x,y) ) / dim(x)
     scale = 1 / (data_dim * sequence_length)
