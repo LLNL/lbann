@@ -25,11 +25,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_IN_TOP_K_LAYER_INSTANTIATE
-#include "lbann/comm_impl.hpp"
 #include "lbann/layers/transform/in_top_k.hpp"
+
+#include "lbann/comm_impl.hpp"
+
 #include <algorithm>
 #include <limits>
-
 
 namespace lbann {
 

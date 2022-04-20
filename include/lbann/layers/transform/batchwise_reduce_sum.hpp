@@ -68,8 +68,6 @@ protected:
 
 };
 
-LBANN_DEFINE_LAYER_BUILDER(batchwise_reduce_sum);
-
 #ifndef LBANN_BATCHWISE_REDUCE_SUM_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device)                         \
   extern template class batchwise_reduce_sum_layer<     \

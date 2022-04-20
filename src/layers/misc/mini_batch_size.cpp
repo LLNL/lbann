@@ -29,10 +29,61 @@
 
 namespace lbann {
 
-#define PROTO_DEVICE(T, Device) \
+template <typename T, data_layout L, El::Device D>
+mini_batch_size_layer<T, L, D>::mini_batch_size_layer(lbann_comm* comm)
+  : data_type_layer<T>(comm)
+{
+  this->m_expected_num_parent_layers = 0;
+}
+
+template <typename T, data_layout L, El::Device D>
+auto mini_batch_size_layer<T, L, D>::copy() const -> mini_batch_size_layer*
+{
+  return new mini_batch_size_layer(*this);
+}
+
+template <typename T, data_layout L, El::Device D>
+std::string mini_batch_size_layer<T, L, D>::get_type() const
+{
+  return "mini-batch size";
+}
+
+template <typename T, data_layout L, El::Device D>
+data_layout mini_batch_size_layer<T, L, D>::get_data_layout() const
+{
+  return L;
+}
+
+template <typename T, data_layout L, El::Device D>
+El::Device mini_batch_size_layer<T, L, D>::get_device_allocation() const
+{
+  return D;
+}
+
+template <typename T, data_layout L, El::Device D>
+void mini_batch_size_layer<T, L, D>::setup_dims(DataReaderMetaData& dr_metadata)
+{
+  data_type_layer<T>::setup_dims(dr_metadata);
+  this->set_output_dims({1});
+}
+
+template <typename T, data_layout L, El::Device D>
+void mini_batch_size_layer<T, L, D>::fp_setup_outputs(El::Int mini_batch_size)
+{
+  data_type_layer<T>::fp_setup_outputs(mini_batch_size);
+  m_mini_batch_size = mini_batch_size;
+}
+
+template <typename T, data_layout L, El::Device D>
+void mini_batch_size_layer<T, L, D>::fp_compute()
+{
+  El::Fill(this->get_activations(), El::To<T>(m_mini_batch_size));
+}
+
+#define PROTO_DEVICE(T, Device)                                                \
   template class mini_batch_size_layer<T, data_layout::DATA_PARALLEL, Device>; \
   template class mini_batch_size_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

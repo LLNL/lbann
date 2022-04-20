@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_MISC_CHANNELWISE_MEAN_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
@@ -71,8 +72,8 @@ protected:
 
   void fp_compute() override;
   void bp_compute() override;
-
 };
+
 
 #ifndef LBANN_CHANNELWISE_MEAN_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

@@ -29,7 +29,7 @@
 
 namespace lbann {
 
-#define PROTO_DEVICE(T, Device) \
+#define PROTO_DEVICE(T, Device)                                         \
   template class gaussian_layer<T, data_layout::DATA_PARALLEL, Device>; \
   template class gaussian_layer<T, data_layout::MODEL_PARALLEL, Device>
 

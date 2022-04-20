@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_LOSS_TOP_K_CATEGORICAL_ACCURACY_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
@@ -109,8 +110,9 @@ private:
 
   /** Parameter for top-k search. */
   /*const*/ El::Int m_k;
-
 };
+
+LBANN_DEFINE_LAYER_BUILDER(top_k_categorical_accuracy);
 
 #ifndef LBANN_TOP_K_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
 

@@ -206,7 +206,6 @@ protected:
   void bp_compute() final {}
 };
 
-LBANN_DEFINE_LAYER_BUILDER(cross_grid_sum_slice);
 
 #ifndef LBANN_CROSS_GRID_SUM_SLICE_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device)                                                \

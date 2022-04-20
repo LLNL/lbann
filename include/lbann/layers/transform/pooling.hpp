@@ -817,7 +817,6 @@ bp_compute() {
 }
 #endif // LBANN_HAS_DISTCONV
 
-LBANN_DEFINE_LAYER_BUILDER(pooling);
 
 #ifndef LBANN_POOLING_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

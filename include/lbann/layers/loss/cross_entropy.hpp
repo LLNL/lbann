@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_LOSS_CROSS_ENTROPY_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/utils/distconv.hpp"
 
 namespace lbann {
@@ -443,6 +444,8 @@ void cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
                          this->get_activations(0));
 }
 #endif // LBANN_HAS_DISTCONV
+
+LBANN_DEFINE_LAYER_BUILDER(cross_entropy);
 
 #ifndef LBANN_CROSS_ENTROPY_LAYER_INSTANTIATE
 

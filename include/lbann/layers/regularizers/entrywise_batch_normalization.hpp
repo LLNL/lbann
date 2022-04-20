@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_REGULARIZERS_ENTRYWISE_BATCH_NORMALIZATION_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/memory.hpp"
 
@@ -191,8 +192,9 @@ private:
    * These are fused for performance when doing non-local batchnorm.
    */
   std::unique_ptr<AbsDistMatrixType> m_batch_statistics_gradient;
-
 };
+
+LBANN_DEFINE_LAYER_BUILDER(entrywise_batch_normalization);
 
 #ifndef LBANN_ENTRYWISE_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

@@ -107,6 +107,7 @@ protected:
 
 };
 
+
 #ifndef LBANN_UNIFORM_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \
   extern template class uniform_layer<T, data_layout::DATA_PARALLEL, Device>; \

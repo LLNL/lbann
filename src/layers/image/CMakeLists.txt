@@ -28,7 +28,9 @@ set_full_path(THIS_DIR_SOURCES
   bilinear_resize.cpp
   rotation.cpp
   composite_image_transformation.cpp
-  )
+
+  bilinear_resize_builder.cpp
+)
 
 if (LBANN_HAS_GPU)
   # Add the CUDA source files for this directory

@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_ACTIVATIONS_ELU_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
@@ -84,6 +85,8 @@ private:
   TensorDataType m_alpha;
 
 };
+
+LBANN_DEFINE_LAYER_BUILDER(elu);
 
 #ifndef LBANN_ELU_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

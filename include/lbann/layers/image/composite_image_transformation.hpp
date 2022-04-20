@@ -28,14 +28,15 @@
 #define LBANN_LAYERS_IMAGE_COMPOSITE_IMAGE_TRANSFORMATION_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
 /** @brief Rotate a image clockwise around its center, then shear , then translate
  *
  *  Expects 4 inputs: a 3D image tensor in CHW format, a scalar
- *  rotation angle, a tensor for (X,Y) shear factor, a tensor 
- *  for (X,Y) translate. 
+ *  rotation angle, a tensor for (X,Y) shear factor, a tensor
+ *  for (X,Y) translate.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class composite_image_transformation_layer : public data_type_layer<TensorDataType> {
@@ -103,6 +104,8 @@ protected:
     }
   }
 };
+
+LBANN_DEFINE_LAYER_BUILDER(composite_image_transformation);
 
 #ifndef LBANN_COMPOSITE_IMAGE_TRANSFORMATION_LAYER_INSTANTIATE
 #define PROTO(T) \

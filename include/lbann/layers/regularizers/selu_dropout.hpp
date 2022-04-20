@@ -28,6 +28,7 @@
 #define LBANN_LAYER_REGULARIZER_SELU_DROPOUT_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
 
 namespace lbann {
@@ -194,6 +195,8 @@ public:
   /** Current dropout mask (a scaled Bernoulli random matrix). */
   AbsDistMatrixType *m_mask;
 };
+
+LBANN_DEFINE_LAYER_BUILDER(selu_dropout);
 
 #ifndef LBANN_SELU_DROPOUT_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

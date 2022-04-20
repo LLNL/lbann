@@ -107,7 +107,6 @@ private:
   std::unique_ptr<impl_type> pimpl_;
 };// class dft_abs_layer
 
-LBANN_DEFINE_LAYER_BUILDER(dft_abs);
 
 #ifndef LBANN_DFT_ABS_LAYER_INSTANTIATE
 

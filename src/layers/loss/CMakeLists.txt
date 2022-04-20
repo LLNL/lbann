@@ -32,6 +32,9 @@ set_full_path(THIS_DIR_SOURCES
   mean_absolute_error.cpp
   mean_squared_error.cpp
   top_k_categorical_accuracy.cpp
+
+  cross_entropy_builder.cpp
+  top_k_categorical_accuracy_builder.cpp
   )
 
 if (LBANN_HAS_GPU)

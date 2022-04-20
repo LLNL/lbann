@@ -27,7 +27,28 @@
 #define LBANN_COMPOSITE_IMAGE_TRANSFORMATION_LAYER_INSTANTIATE
 #include "lbann/layers/image/composite_image_transformation.hpp"
 
+#include <layers.pb.h>
+
 #include <math.h>
+
+template <typename T, lbann::data_layout L, El::Device D>
+std::unique_ptr<lbann::Layer>
+lbann::build_composite_image_transformation_layer_from_pbuf(
+  lbann_comm* comm,
+  lbann_data::Layer const& proto_layer)
+{
+  if constexpr (L == data_layout::DATA_PARALLEL && D == El::Device::CPU) {
+    return std::make_unique<
+      composite_image_transformation_layer<T,
+                                           data_layout::DATA_PARALLEL,
+                                           El::Device::CPU>>(comm);
+  }
+  else {
+    LBANN_ERROR("composite image transformation layer is only supported with "
+                "a data-parallel layout and on CPU");
+    return nullptr;
+  }
+}
 
 namespace lbann {
 
@@ -89,11 +110,11 @@ void composite_image_transformation_layer<TensorDataType, Layout, Device>::fp_co
           const auto& rotated_col = (output_row - row_center) * sin(angle_rad) + (output_col - col_center) * cos(angle_rad) + col_center;
           const auto& rotated_row =  (output_row - row_center) * cos(angle_rad) - (output_col - col_center) * sin(angle_rad) + row_center;
 
-	  // Shear the rotated point 
+	  // Shear the rotated point
           const auto& shear_col = rotated_col + shear_X*rotated_row;
           const auto& shear_row = rotated_row + shear_Y*rotated_col;
 
-	  // Translate the shear point 
+	  // Translate the shear point
           const auto& translated_col = shear_col + translate_X;
           const auto& translated_row = shear_row + translate_Y;
 
@@ -124,11 +145,11 @@ void composite_image_transformation_layer<TensorDataType, Layout, Device>::fp_co
                                            	+ input_row0 * input_width
                                             	+ input_col0,
                                             	sample);
-	  
+
                	auto& pixel01 = local_input(channel * input_height * input_width
                                             	+ input_row0 * input_width
                                             	+ input_col1,
-                                           	 sample);	
+                                           	 sample);
 
           	auto& pixel10 = local_input(channel * input_height * input_width
                                             	+ input_row1 * input_width
@@ -139,8 +160,8 @@ void composite_image_transformation_layer<TensorDataType, Layout, Device>::fp_co
                                            	+ input_row1 * input_width
                                             	+ input_col1,
                                             	sample);
- 
- 
+
+
           	// Bilinear interpolation
          	pixel_output = (pixel00 * (one - unit_col) * (one - unit_row)
                        	+ pixel01 * unit_col * (one - unit_row)
@@ -157,10 +178,17 @@ void composite_image_transformation_layer<TensorDataType, Layout, Device>::fp_co
   }
 }
 
-#define PROTO(T) \
-  template class composite_image_transformation_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  template class composite_image_transformation_layer<                         \
+    T,                                                                         \
+    data_layout::DATA_PARALLEL,                                                \
+    El::Device::CPU>
 
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
+
+#define PROTO_DEVICE(T, D)                                                     \
+  LBANN_LAYER_BUILDER_ETI(composite_image_transformation, T, D)
+#include "lbann/macros/instantiate_device.hpp"
 
 } // namespace lbann

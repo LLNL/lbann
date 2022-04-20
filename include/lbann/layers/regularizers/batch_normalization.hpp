@@ -28,6 +28,7 @@
 #define LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/distconv.hpp"
 
@@ -527,6 +528,8 @@ void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::setup_
       l.m_decay, l.m_epsilon, global_stats);
 }
 #endif // LBANN_HAS_DISTCONV
+
+LBANN_DEFINE_LAYER_BUILDER(batch_normalization);
 
 #ifndef LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

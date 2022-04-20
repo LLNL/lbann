@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_REGULARIZERS_LAYER_NORM_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 
 #include <memory>
 
@@ -187,6 +188,8 @@ void layer_norm_layer<TensorDataType,Layout,Device>::setup_data(size_t max_mini_
   m_statistics.reset(AbsDistMatrixType::Instantiate(dist));
   m_statistics_gradient.reset(AbsDistMatrixType::Instantiate(dist));
 }
+
+LBANN_DEFINE_LAYER_BUILDER(layer_norm);
 
 // =========================================================
 // Explicit template instantiation

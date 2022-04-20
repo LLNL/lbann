@@ -27,7 +27,24 @@
 #define LBANN_ROTATION_LAYER_INSTANTIATE
 #include "lbann/layers/image/rotation.hpp"
 
+#include <layers.pb.h>
+
 #include <math.h>
+
+template <typename T, lbann::data_layout L, El::Device D>
+std::unique_ptr<lbann::Layer>
+lbann::build_rotation_layer_from_pbuf(lbann_comm* comm,
+                                      lbann_data::Layer const& proto_layer)
+{
+  if constexpr (L == data_layout::DATA_PARALLEL && D == El::Device::CPU)
+    return std::make_unique<
+      rotation_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
+  else {
+    LBANN_ERROR("rotation layer is only supported with "
+                "a data-parallel layout and on CPU");
+    return nullptr;
+  }
+}
 
 namespace lbann {
 
@@ -99,11 +116,11 @@ void rotation_layer<TensorDataType, Layout, Device>::fp_compute() {
                                            	+ input_row0 * input_width
                                             	+ input_col0,
                                             	sample);
-	  
+
           	auto& pixel01 = local_input(channel * input_height * input_width
                                             	+ input_row0 * input_width
                                             	+ input_col1,
-                                           	 sample);	
+                                           	 sample);
 
           	auto& pixel10 = local_input(channel * input_height * input_width
                                             	+ input_row1 * input_width
@@ -114,8 +131,8 @@ void rotation_layer<TensorDataType, Layout, Device>::fp_compute() {
                                            	+ input_row1 * input_width
                                             	+ input_col1,
                                             	sample);
- 
- 
+
+
           	// Bilinear interpolation
          	pixel_output = (pixel00 * (one - unit_col) * (one - unit_row)
                        	+ pixel01 * unit_col * (one - unit_row)
@@ -137,5 +154,8 @@ void rotation_layer<TensorDataType, Layout, Device>::fp_compute() {
 
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
+
+#define PROTO_DEVICE(T, D) LBANN_LAYER_BUILDER_ETI(rotation, T, D)
+#include "lbann/macros/instantiate_device.hpp"
 
 } // namespace lbann

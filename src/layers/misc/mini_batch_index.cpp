@@ -29,10 +29,82 @@
 
 namespace lbann {
 
-#define PROTO_DEVICE(T, Device) \
-  template class mini_batch_index_layer<T, data_layout::DATA_PARALLEL, Device>; \
+template <typename T, data_layout L, El::Device D>
+mini_batch_index_layer<T, L, D>::mini_batch_index_layer(lbann_comm* comm)
+  : data_type_layer<T>(comm)
+{
+  this->m_expected_num_parent_layers = 0;
+}
+
+template <typename T, data_layout L, El::Device D>
+auto mini_batch_index_layer<T, L, D>::copy() const -> mini_batch_index_layer*
+{
+  return new mini_batch_index_layer(*this);
+}
+
+template <typename T, data_layout L, El::Device D>
+std::string mini_batch_index_layer<T, L, D>::get_type() const
+{
+  return "mini-batch index";
+}
+
+template <typename T, data_layout L, El::Device D>
+data_layout mini_batch_index_layer<T, L, D>::get_data_layout() const
+{
+  return L;
+}
+
+template <typename T, data_layout L, El::Device D>
+El::Device mini_batch_index_layer<T, L, D>::get_device_allocation() const
+{
+  return D;
+}
+
+template <typename T, data_layout L, El::Device D>
+void mini_batch_index_layer<T, L, D>::setup_dims(
+  DataReaderMetaData& dr_metadata)
+{
+  data_type_layer<T>::setup_dims(dr_metadata);
+  this->set_output_dims({1});
+}
+
+template <typename T, data_layout L, El::Device D>
+void mini_batch_index_layer<T, L, D>::fp_compute()
+{
+  using CPUMatType = El::Matrix<T, El::Device::CPU>;
+
+  // Get output matrix
+  auto& output = this->get_activations();
+  auto& local_output = output.Matrix();
+  const auto& local_width = local_output.Width();
+
+  // Create temporary matrix if output matrix is not on CPU
+  CPUMatType local_output_v;
+  if (local_output.GetDevice() == El::Device::CPU) {
+    El::View(local_output_v, local_output);
+  }
+  else {
+    local_output_v.Resize(1, local_width);
+  }
+
+  // Populate matrix on CPU
+  LBANN_OMP_PARALLEL_FOR
+  for (El::Int col = 0; col < local_width; ++col) {
+    local_output_v(0, col) = El::To<T>(output.GlobalCol(col));
+  }
+
+  // Copy result from CPU if needed
+  if (!local_output_v.Viewing()) {
+    El::Copy(local_output_v, local_output);
+  }
+}
+
+#define PROTO_DEVICE(T, Device)                                                \
+  template class mini_batch_index_layer<T,                                     \
+                                        data_layout::DATA_PARALLEL,            \
+                                        Device>;                               \
   template class mini_batch_index_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

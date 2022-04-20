@@ -159,7 +159,6 @@ void evaluation_layer<T, L, D>::fill_onnx_node(onnx::GraphProto& graph) const
 }
 #endif // LBANN_HAS_ONNX
 
-LBANN_DEFINE_LAYER_BUILDER(evaluation);
 
 #ifndef LBANN_EVALUATION_LAYER_INSTANTIATE
 #define PROTO(T)                           \

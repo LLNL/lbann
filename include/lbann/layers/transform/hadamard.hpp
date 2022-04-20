@@ -143,7 +143,6 @@ protected:
 
 };
 
-LBANN_DEFINE_LAYER_BUILDER(hadamard);
 
 #ifndef LBANN_HADAMARD_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_ROWWISE_WEIGHTS_NORMS_LAYER_INSTANTIATE
-#include "lbann/layers/misc/rowwise_weights_norms.hpp"
+#include "lbann/layers/misc/rowwise_weights_norms_impl.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {

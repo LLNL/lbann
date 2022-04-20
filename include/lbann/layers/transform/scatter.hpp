@@ -207,12 +207,9 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
 
 }
 
-LBANN_DEFINE_LAYER_BUILDER(scatter);
-
 #ifndef LBANN_SCATTER_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device)                 \
-  extern template class scatter_layer<          \
-    T, data_layout::DATA_PARALLEL, Device>;
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class scatter_layer<T, data_layout::DATA_PARALLEL, Device>;
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
 #endif // LBANN_SCATTER_LAYER_INSTANTIATE

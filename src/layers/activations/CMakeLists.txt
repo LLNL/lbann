@@ -31,6 +31,9 @@ set_full_path(THIS_DIR_SOURCES
   leaky_relu.cpp
   log_softmax.cpp
   softmax.cpp
+
+  elu_builder.cpp
+  leaky_relu_builder.cpp
   softmax_builder.cpp
   )
 

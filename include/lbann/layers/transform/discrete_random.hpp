@@ -28,6 +28,7 @@
 #define LBANN_LAYER_DISCRETE_RANDOM_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/random.hpp"
 
@@ -133,8 +134,8 @@ class discrete_random_layer : public data_type_layer<TensorDataType> {
     }
 
   }
-
 };
+
 
 #ifndef LBANN_DISCRETE_RANDOM_LAYER_INSTANTIATE
 #define PROTO(T)                           \

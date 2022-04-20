@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_ACTIVATIONS_LEAKY_RELU_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/utils/distconv.hpp"
 
 namespace lbann {
@@ -153,6 +154,8 @@ void leaky_relu_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
   m_leaky_relu = std::make_unique<dc::LeakyReLU>(dc::get_backend());
 }
 #endif // LBANN_HAS_DISTCONV
+
+LBANN_DEFINE_LAYER_BUILDER(leaky_relu);
 
 #ifndef LBANN_LEAKY_RELU_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

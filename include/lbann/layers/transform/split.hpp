@@ -315,7 +315,6 @@ setup_activations_i(int index) const {
 }
 #endif // LBANN_HAS_DISTCONV
 
-LBANN_DEFINE_LAYER_BUILDER(split);
 
 #ifndef LBANN_SPLIT_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

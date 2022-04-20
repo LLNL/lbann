@@ -146,7 +146,6 @@ protected:
 
 };
 
-LBANN_DEFINE_LAYER_BUILDER(weighted_sum);
 
 #ifndef LBANN_WEIGHTED_SUM_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \
