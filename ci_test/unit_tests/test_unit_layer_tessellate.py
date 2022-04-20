@@ -66,9 +66,9 @@ def construct_model(lbann):
                               initializer=lbann.ConstantInitializer(value=0.0),
                               name='input_weights')
     x = lbann.Sum(lbann.Reshape(lbann.Input(data_field='samples'),
-                                dims=tools.str_list(_sample_dims)),
+                                dims=_sample_dims),
                   lbann.WeightsLayer(weights=x_weights,
-                                     dims=tools.str_list(_sample_dims)))
+                                     dims=_sample_dims))
     x_lbann = x
 
     # Objects for LBANN model
@@ -84,7 +84,7 @@ def construct_model(lbann):
     output_dims = (7,4,3)
     x = x_lbann
     y = lbann.Tessellate(x,
-                         dims=tools.str_list(output_dims),
+                         dims=output_dims,
                          data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
@@ -114,7 +114,7 @@ def construct_model(lbann):
     output_dims = (2,1,9)
     x = x_lbann
     y = lbann.Tessellate(x,
-                         dims=tools.str_list(output_dims),
+                         dims=output_dims,
                          data_layout='model_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)

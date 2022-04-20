@@ -70,7 +70,7 @@ def construct_model(lbann):
     x = lbann.Input(data_field='samples')
     x_slice = lbann.Slice(
         x,
-        slice_points=tools.str_list([0,input_size,input_size+output_size]),
+        slice_points=[0,input_size,input_size+output_size],
     )
     x0_weights = lbann.Weights(
         optimizer=lbann.SGD(),
@@ -79,7 +79,7 @@ def construct_model(lbann):
     )
     x0 = lbann.Sum(
         lbann.Identity(x_slice),
-        lbann.WeightsLayer(weights=x0_weights, dims=tools.str_list(input_size)),
+        lbann.WeightsLayer(weights=x0_weights, dims=input_size),
     )
     x1 = lbann.Identity(x_slice)
 
@@ -89,7 +89,7 @@ def construct_model(lbann):
     # Apply gather
     y0 = lbann.Gather(x0, x1)
     y1 = lbann.Concatenation([
-        lbann.Constant(value=i+1, num_neurons='1')
+        lbann.Constant(value=i+1, num_neurons=[1])
         for i in range(output_size)
     ])
     y = lbann.Multiply(y0, y1)
@@ -131,18 +131,18 @@ def construct_model(lbann):
     #
     ######################################################################
 
-    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([num_rows, num_columns]))
+    x0 = lbann.Reshape(x0_lbann, dims=[num_rows, num_columns])
 
     x1 = lbann.Identity(x1_lbann, name="indices_2D_axis_0")
 
     y0 = lbann.Gather(x0,x1, name="Gather_2D_axis_0", axis=0)
 
     y1 = lbann.Concatenation([
-        lbann.Constant(value=i+1, num_neurons='1')
+        lbann.Constant(value=i+1, num_neurons=[1])
         for i in range(num_columns * output_size)])
 
-    y0 = lbann.Reshape(y0, dims=tools.str_list([num_columns * output_size]))
-    y1 = lbann.Reshape(y1, dims=tools.str_list([num_columns * output_size]))
+    y0 = lbann.Reshape(y0, dims=[num_columns * output_size])
+    y1 = lbann.Reshape(y1, dims=[num_columns * output_size])
 
     y = lbann.Multiply(y0, y1)
 
@@ -183,18 +183,18 @@ def construct_model(lbann):
     #
     ######################################################################
 
-    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([num_rows, num_columns]))
+    x0 = lbann.Reshape(x0_lbann, dims=[num_rows, num_columns])
 
     x1 = lbann.Identity(x1_lbann, name="Indices_2D")
 
     y0 = lbann.Gather(x0,x1, name="Gather_2D", axis=1)
 
     y1 = lbann.Concatenation([
-        lbann.Constant(value=i+1, num_neurons='1')
+        lbann.Constant(value=i+1, num_neurons=[1])
         for i in range(num_rows * output_size)])
 
-    y0 = lbann.Reshape(y0, dims=tools.str_list([num_rows * output_size]))
-    y1 = lbann.Reshape(y1, dims=tools.str_list([num_rows * output_size]))
+    y0 = lbann.Reshape(y0, dims=[num_rows * output_size])
+    y1 = lbann.Reshape(y1, dims=[num_rows * output_size])
 
     y = lbann.Multiply(y0, y1)
 

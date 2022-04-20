@@ -117,10 +117,10 @@ def construct_model(lbann, num_epochs):
     # Layer graph
     input_ = lbann.Slice(
         lbann.Input(data_field="samples"),
-        slice_points=lbann.util.str_list([0, 1, 1 + np.prod(config.input_shape)]),
+        slice_points=[0, 1, 1 + np.prod(config.input_shape)],
     )
     labels = lbann.Identity(input_)
-    samples = lbann.Reshape(input_, dims=lbann.util.str_list(config.input_shape))
+    samples = lbann.Reshape(input_, dims=config.input_shape)
     x = lbann.models.RoBERTa(config, load_weights=weights_dir)(samples)
     log_probs = lbann.LogSoftmax(
         lbann.FullyConnected(x, num_neurons=config.num_classes, has_bias=False)

@@ -6,7 +6,6 @@ import os.path
 import sys
 import numpy as np
 import pytest
-from lbann.util import str_list
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -104,9 +103,9 @@ def construct_model(lbann):
 
     # Inputs and error signals are from data reader
     input_ = lbann.Input(data_field='samples')
-    input_slice = lbann.Slice(input_, slice_points=str_list([0,_in_size,_in_size+_out_size]))
-    x = lbann.Reshape(input_slice, dims=str_list([-1,1,1]))
-    dy = lbann.Reshape(input_slice, dims=str_list([-1,1,1]))
+    input_slice = lbann.Slice(input_, slice_points=[0,_in_size,_in_size+_out_size])
+    x = lbann.Reshape(input_slice, dims=[-1,1,1])
+    dy = lbann.Reshape(input_slice, dims=[-1,1,1])
 
     # Convolution layer
     w = lbann.Weights(
@@ -135,11 +134,11 @@ def construct_model(lbann):
     # Extract weights entries
     w = lbann.WeightsLayer(
         weights=w,
-        dims=str_list([_out_size,_in_size,1,1]),
+        dims=[_out_size,_in_size,1,1],
     )
     w = lbann.Slice(
-        lbann.Reshape(w, dims=str_list([-1])),
-        slice_points=str_list(range(_out_size*_in_size+1)),
+        lbann.Reshape(w, dims=[-1]),
+        slice_points=range(_out_size*_in_size+1),
     )
     w = [lbann.Identity(w) for _ in range(_out_size*_in_size)]
 

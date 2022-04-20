@@ -64,9 +64,9 @@ def construct_model(lbann):
                               initializer=lbann.ConstantInitializer(value=0.0),
                               name='input_weights')
     x = lbann.Sum(lbann.Reshape(lbann.Input(data_field='samples'),
-                                dims=tools.str_list(_sample_size)),
+                                dims=_sample_size),
                   lbann.WeightsLayer(weights=x_weights,
-                                     dims=tools.str_list(_sample_size)))
+                                     dims=_sample_size))
     x_lbann = x
 
     # Objects for LBANN model
@@ -82,7 +82,7 @@ def construct_model(lbann):
     ### @todo Layers with optimized inter-grid communication
     x = lbann.Slice(
         x_lbann,
-        slice_points=tools.str_list([0, _sample_size//2, _sample_size]))
+        slice_points=[0, _sample_size//2, _sample_size])
     x1 = lbann.Identity(
         x,
         parallel_strategy = {'grid_tag':1})

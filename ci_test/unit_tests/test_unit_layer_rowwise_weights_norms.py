@@ -91,11 +91,11 @@ def construct_model(lbann):
     w = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(
-            values=tools.str_list(np.nditer(mat, order='F')),
+            values=np.nditer(mat, order='F'),
         ),
     )
     dummy = lbann.FullyConnected(
-        lbann.Constant(num_neurons=tools.str_list([width])),
+        lbann.Constant(num_neurons=[width]),
         weights=w,
         num_neurons=height,
         data_layout='data_parallel',
@@ -107,8 +107,8 @@ def construct_model(lbann):
         data_layout='data_parallel',
     )
     z = lbann.MatMul(
-        lbann.Reshape(x, dims=tools.str_list([1,-1])),
-        lbann.Reshape(y, dims=tools.str_list([1,-1])),
+        lbann.Reshape(x, dims=[1,-1]),
+        lbann.Reshape(y, dims=[1,-1]),
         transpose_b=True,
     )
     layers.append(dummy)
@@ -131,11 +131,11 @@ def construct_model(lbann):
     w = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(
-            values=tools.str_list(np.nditer(mat, order='F')),
+            values=np.nditer(mat, order='F'),
         ),
     )
     dummy = lbann.FullyConnected(
-        lbann.Constant(num_neurons=tools.str_list([width])),
+        lbann.Constant(num_neurons=[width]),
         weights=w,
         num_neurons=height,
         data_layout='model_parallel',
@@ -147,8 +147,8 @@ def construct_model(lbann):
         data_layout='model_parallel',
     )
     z = lbann.MatMul(
-        lbann.Reshape(x, dims=tools.str_list([1,-1])),
-        lbann.Reshape(y, dims=tools.str_list([1,-1])),
+        lbann.Reshape(x, dims=[1,-1]),
+        lbann.Reshape(y, dims=[1,-1]),
         transpose_b=True,
     )
     layers.append(dummy)

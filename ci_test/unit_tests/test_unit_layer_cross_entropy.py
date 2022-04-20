@@ -95,11 +95,11 @@ def construct_model(lbann):
                                initializer=lbann.ConstantInitializer(value=0.0),
                                name='input1_weights')
     x_slice = lbann.Slice(lbann.Input(data_field='samples'),
-                          slice_points=tools.str_list([0, slice_size, 2*slice_size]))
+                          slice_points=[0, slice_size, 2*slice_size])
     x0 = lbann.Sum(x_slice,
-                   lbann.WeightsLayer(weights=x0_weights, dims=str(slice_size)))
+                   lbann.WeightsLayer(weights=x0_weights, dims=[slice_size]))
     x1 = lbann.Sum(x_slice,
-                   lbann.WeightsLayer(weights=x1_weights, dims=str(slice_size)))
+                   lbann.WeightsLayer(weights=x1_weights, dims=[slice_size]))
     x0_lbann = x0
     x1_lbann = x1
 
