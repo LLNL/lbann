@@ -120,8 +120,6 @@ std::unique_ptr<lbann::weights> lbann::proto::construct_weights(
   if (!comm)
     LBANN_ERROR("Cannot have a null communicator.");
 
-  std::stringstream err;
-
   auto proto_datatype = proto_weights.datatype();
 
   // Instantiate weights
@@ -158,13 +156,15 @@ std::unique_ptr<lbann::weights> lbann::proto::construct_weights(
 
   // Set weights name if provided
   const auto& name = proto_weights.name();
-  const auto& parsed_name = parse_list<std::string>(name);
   if (!name.empty()) {
-    if (parsed_name.empty() || parsed_name.front() != name) {
-      err << "weights name \"" << name << "\" is invalid since it "
-          << "contains whitespace";
-      LBANN_ERROR(err.str());
-    }
+    // FIXME (trb 04/15/22): I don't think this should still be an
+    // issue since weights lists in layers are now "repeated"
+    // protobuf fields and not space-separated strings. OTOH, we
+    // shouldn't allow names like "foo\vbar" or "fu\n\name".
+    if (name.find_first_of(" \n\r\t\v\f") != std::string::npos)
+      LBANN_ERROR("Weights name \"",
+                  name,
+                  "\" is invalid since it contains whitespace.");
     w->set_name(name);
   }
 
