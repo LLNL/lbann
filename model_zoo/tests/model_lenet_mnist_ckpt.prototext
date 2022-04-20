@@ -176,14 +176,16 @@ model {
   }
 
   layer {
-    parents: "prob label"
+    parents: "prob"
+    parents: "label"
     name: "cross_entropy"
     data_layout: "data_parallel"
     cross_entropy {}
   }
 
   layer {
-    parents: "prob label"
+    parents: "prob"
+    parents: "label"
     name: "accuracy"
     data_layout: "data_parallel"
     categorical_accuracy {}
