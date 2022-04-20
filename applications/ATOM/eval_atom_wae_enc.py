@@ -14,9 +14,6 @@ import lbann
 import lbann.contrib.launcher
 import lbann.modules
 
-def list2str(l):
-    return ' '.join(l)
-
 lbann_exe = abspath(lbann.lbann_exe())
 lbann_exe = join(dirname(lbann_exe), 'lbann_inf')
 

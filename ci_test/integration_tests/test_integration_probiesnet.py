@@ -58,8 +58,6 @@ nightly_options_and_targets = {
 # ==============================================
 # Setup LBANN experiment
 # ==============================================
-def list2str(l):
-    return ' '.join(l)
 
 def make_data_reader(lbann, percent_of_data_to_use):
     """Make Protobuf message for HRRL  data reader.

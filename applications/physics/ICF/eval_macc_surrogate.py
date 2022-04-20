@@ -89,9 +89,6 @@ args = parser.parse_args()
 print("Pretrained dir ", args.pretrained_dir)
 assert args.pretrained_dir, "evaluate script asssumes a pretrained MaCC model"
 
-def list2str(l):
-    return ' '.join(l)
-
 def construct_model():
     """Construct MACC surrogate model.
 

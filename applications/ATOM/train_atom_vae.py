@@ -13,9 +13,6 @@ import lbann
 import lbann.contrib.launcher
 import lbann.modules
 
-def list2str(l):
-    return ' '.join(l)
-
 def construct_lc_launcher_args():
 
     # defaults correspond to the settings needed for training on the moses dataset

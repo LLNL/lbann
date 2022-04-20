@@ -1,6 +1,8 @@
 import lbann
 import macc_network_architectures
-from lbann.util import list2str
+
+def list2str(l):
+    return ' '.join(l)
 
 def construct_jag_wae_model(ydim,
                             zdim,
