@@ -56,10 +56,19 @@ lbann::build_composite_image_transformation_layer_from_pbuf(
   lbann_data::Layer const&)
 {
   if constexpr (L == data_layout::DATA_PARALLEL && D == El::Device::CPU) {
-    return std::make_unique<
-      composite_image_transformation_layer<T,
-                                           data_layout::DATA_PARALLEL,
-                                           El::Device::CPU>>(comm);
+    if constexpr (std::is_same_v<T, float>)
+      return std::make_unique<
+        composite_image_transformation_layer<float,
+                                             data_layout::DATA_PARALLEL,
+                                             El::Device::CPU>>(comm);
+    else if constexpr (std::is_same_v<T, double>)
+      return std::make_unique<
+        composite_image_transformation_layer<double,
+                                             data_layout::DATA_PARALLEL,
+                                             El::Device::CPU>>(comm);
+    else
+      LBANN_ERROR("composite_image_transformation_layer is only supported for "
+                  "\"float\" and \"double\".");
   }
   else {
     LBANN_ERROR("composite image transformation layer is only supported with "
@@ -74,8 +83,17 @@ lbann::build_rotation_layer_from_pbuf(lbann_comm* comm,
                                       lbann_data::Layer const&)
 {
   if constexpr (L == data_layout::DATA_PARALLEL && D == El::Device::CPU)
-    return std::make_unique<
-      rotation_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
+    if constexpr (std::is_same_v<T, float>)
+      return std::make_unique<
+        rotation_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>>(
+        comm);
+    else if constexpr (std::is_same_v<T, double>)
+      return std::make_unique<
+        rotation_layer<double, data_layout::DATA_PARALLEL, El::Device::CPU>>(
+        comm);
+    else
+      LBANN_ERROR(
+        "rotation_layer is only supported for \"float\" and \"double\".");
   else {
     LBANN_ERROR("rotation layer is only supported with a data-parallel layout "
                 "and on CPU");

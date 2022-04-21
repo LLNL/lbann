@@ -26,8 +26,6 @@
 
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
 
-#include "lbann/utils/protobuf.hpp"
-
 #include <layers.pb.h>
 
 template <typename T, lbann::data_layout L, El::Device D>
@@ -37,9 +35,17 @@ lbann::build_entrywise_batch_normalization_layer_from_pbuf(
   lbann_data::Layer const& proto_layer)
 {
   auto const& params = proto_layer.entrywise_batch_normalization();
-  return std::make_unique<entrywise_batch_normalization_layer<T, L, D>>(
-    params.decay(),
-    params.epsilon());
+  if constexpr (std::is_same_v<T, float>)
+    return std::make_unique<entrywise_batch_normalization_layer<float, L, D>>(
+      params.decay(),
+      params.epsilon());
+  else if constexpr (std::is_same_v<T, double>)
+    return std::make_unique<entrywise_batch_normalization_layer<double, L, D>>(
+      params.decay(),
+      params.epsilon());
+  else
+    LBANN_ERROR("entrywise_batch_normalization_layer is only supported for "
+                "\"float\" and \"double\".");
 }
 
 namespace lbann {

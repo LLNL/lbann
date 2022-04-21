@@ -43,7 +43,7 @@ lbann::build_elu_layer_from_pbuf(lbann_comm* comm,
   auto const& params = proto_layer.elu();
   auto const alpha = params.alpha();
   if (alpha != 0.0)
-    return std::make_unique<elu_layer<T, L, D>>(comm, alpha);
+    return std::make_unique<elu_layer<T, L, D>>(comm, El::To<T>(alpha));
   else
     return std::make_unique<elu_layer<T, L, D>>(comm);
 }
@@ -63,7 +63,9 @@ lbann::build_leaky_relu_layer_from_pbuf(lbann_comm* comm,
   auto const& params = proto_layer.leaky_relu();
   auto const negative_slope = params.negative_slope();
   if (negative_slope != 0.0)
-    return std::make_unique<leaky_relu_layer<T, L, D>>(comm, negative_slope);
+    return std::make_unique<leaky_relu_layer<T, L, D>>(
+      comm,
+      El::To<T>(negative_slope));
   else
     return std::make_unique<leaky_relu_layer<T, L, D>>(comm);
 }

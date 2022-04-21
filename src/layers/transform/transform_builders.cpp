@@ -149,8 +149,8 @@ lbann::build_gaussian_layer_from_pbuf(lbann_comm* comm,
   }
   return std::make_unique<gaussian_layer<T, L, D>>(comm,
                                                    dims,
-                                                   mean,
-                                                   stdev,
+                                                   El::To<T>(mean),
+                                                   El::To<T>(stdev),
                                                    params.training_only());
 }
 
@@ -252,8 +252,8 @@ lbann::build_uniform_layer_from_pbuf(lbann_comm* comm,
   }
   return std::make_unique<uniform_layer<T, L, D>>(comm,
                                                   dims,
-                                                  min,
-                                                  max,
+                                                  El::To<T>(min),
+                                                  El::To<T>(max),
                                                   params.training_only());
 }
 

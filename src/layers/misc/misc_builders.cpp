@@ -86,7 +86,7 @@ struct DFTTypeSupported<double, El::Device::GPU> : std::true_type
 template <typename T,
           El::Device D,
           typename = El::EnableWhen<DFTTypeSupported<T, D>>>
-vstd::unique_ptr<Layer> build_dft_layer(lbann_comm* comm)
+std::unique_ptr<Layer> build_dft_layer(lbann_comm* comm)
 {
   return std::make_unique<dft_abs_layer<T, D>>(comm);
 }

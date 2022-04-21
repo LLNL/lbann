@@ -51,7 +51,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 class elu_layer : public data_type_layer<TensorDataType> {
 public:
   elu_layer() : elu_layer(nullptr, El::To<TensorDataType>(1)) {}
-  elu_layer(lbann_comm *comm, TensorDataType alpha = 1)
+  elu_layer(lbann_comm *comm, TensorDataType alpha = El::To<TensorDataType>(1))
     : data_type_layer<TensorDataType>(comm), m_alpha(alpha) {}
   elu_layer* copy() const override { return new elu_layer(*this); }
   std::string get_type() const override { return "ELU"; }

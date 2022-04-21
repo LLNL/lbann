@@ -26,8 +26,6 @@
 
 #include "lbann/layers/regularizers/layer_norm.hpp"
 
-#include "lbann/utils/protobuf.hpp"
-
 #include <layers.pb.h>
 
 template <typename T, lbann::data_layout L, El::Device D>
@@ -35,16 +33,21 @@ std::unique_ptr<lbann::Layer>
 lbann::build_layer_norm_layer_from_pbuf(lbann_comm* /*comm*/,
                                         lbann_data::Layer const& proto_layer)
 {
-  const auto& params = proto_layer.layer_norm();
-  const double epsilon =
+  auto const& params = proto_layer.layer_norm();
+  double const epsilon =
     (params.has_epsilon() ? params.epsilon().value() : 1e-5);
-  return std::make_unique<layer_norm_layer<T, L, D>>(epsilon);
+  if constexpr (std::is_same_v<T, float>)
+    return std::make_unique<layer_norm_layer<float, L, D>>(epsilon);
+  else if constexpr (std::is_same_v<T, double>)
+    return std::make_unique<layer_norm_layer<double, L, D>>(epsilon);
+  else
+    LBANN_ERROR(
+      "layer_norm_layer is only supported for \"float\" and \"double\".");
 }
 
 namespace lbann {
 
-#define PROTO_DEVICE(T, Device)                                                \
-  LBANN_LAYER_BUILDER_ETI(layer_norm, T, Device)
+#define PROTO_DEVICE(T, Device) LBANN_LAYER_BUILDER_ETI(layer_norm, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
 

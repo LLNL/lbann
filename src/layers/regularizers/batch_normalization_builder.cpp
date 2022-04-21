@@ -26,9 +26,8 @@
 
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 
-#include "lbann/utils/protobuf.hpp"
-
 #include <layers.pb.h>
+#include <type_traits>
 
 template <typename T, lbann::data_layout L, El::Device D>
 std::unique_ptr<lbann::Layer> lbann::build_batch_normalization_layer_from_pbuf(
@@ -36,7 +35,8 @@ std::unique_ptr<lbann::Layer> lbann::build_batch_normalization_layer_from_pbuf(
   lbann_data::Layer const& proto_layer)
 {
   const auto& params = proto_layer.batch_normalization();
-  if constexpr (L == data_layout::DATA_PARALLEL) {
+  if constexpr (L == data_layout::DATA_PARALLEL &&
+                (std::is_same_v<T, float> || std::is_same_v<T, double>)) {
     int statistics_group_size = params.statistics_group_size();
     if (statistics_group_size < 0) {
       statistics_group_size = 0; // Global statistics.
@@ -65,15 +65,22 @@ std::unique_ptr<lbann::Layer> lbann::build_batch_normalization_layer_from_pbuf(
     // Set defaults if not given.
     auto const decay = params.decay() == 0.0 ? 0.9 : params.decay();
     auto const epsilon = params.epsilon() == 0.0 ? 1e-5 : params.epsilon();
-    return std::make_unique<
-      batch_normalization_layer<T, data_layout::DATA_PARALLEL, D>>(
-      decay,
-      epsilon,
-      statistics_group_size);
+    if constexpr (std::is_same_v<T, float>)
+      return std::make_unique<
+        batch_normalization_layer<float, data_layout::DATA_PARALLEL, D>>(
+        decay,
+        epsilon,
+        statistics_group_size);
+    else
+      return std::make_unique<
+        batch_normalization_layer<double, data_layout::DATA_PARALLEL, D>>(
+        decay,
+        epsilon,
+        statistics_group_size);
   }
   else {
-    LBANN_ERROR("batch normalization layer is only supported with "
-                "a data-parallel layout");
+    LBANN_ERROR("batch normalization layer is only supported for \"float\" and "
+                "\"double\" with a data-parallel layout");
     return nullptr;
   }
 }
