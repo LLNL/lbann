@@ -31,7 +31,7 @@ def construct_jag_wae_model(ydim,
 
     z_dim = 20  #Latent space dim
 
-    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="20")
+    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=20)
     model = macc_network_architectures.MACCWAE(zdim,ydim,cf=mcf,use_CNN=useCNN)
     d1_real, d1_fake, d_adv, pred_y  = model(z,gt_y)
 
@@ -110,7 +110,7 @@ def construct_macc_surrogate_model(xdim,
     one  = lbann.Constant(value=1.0,num_neurons=[1],name='one')
 
 
-    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="20")
+    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=20)
     wae = macc_network_architectures.MACCWAE(zdim,ydim,cf=wae_mcf,use_CNN=useCNN) #pretrained, freeze
     inv = macc_network_architectures.MACCInverse(xdim,cf=surrogate_mcf)
     fwd = macc_network_architectures.MACCForward(zdim,cf=surrogate_mcf)

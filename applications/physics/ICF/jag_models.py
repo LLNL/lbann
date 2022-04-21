@@ -29,7 +29,7 @@ def construct_jag_wae_model(y_dim,
     zero  = lbann.Constant(value=0.0,num_neurons=[1],name='zero')
     one  = lbann.Constant(value=1.0,num_neurons=[1],name='one')
 
-    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="20")
+    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=20)
     d1_real, d1_fake, d_adv, pred_y  = jag_network_architectures.WAE(z_dim,y_dim)(z,gt_y)
 
     d1_real_bce = lbann.SigmoidBinaryCrossEntropy([d1_real,one],name='d1_real_bce')

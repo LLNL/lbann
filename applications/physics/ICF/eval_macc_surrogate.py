@@ -108,7 +108,7 @@ def construct_model():
     one  = lbann.Constant(value=1.0,num_neurons=[1],name='one')
 
 
-    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="20")
+    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=20)
     wae = macc_models.MACCWAE(args.zdim,args.ydim,cf=args.wae_mcf,use_CNN=args.useCNN) #pretrained, freeze
     inv = macc_models.MACCInverse(args.xdim,cf=args.surrogate_mcf)
     fwd = macc_models.MACCForward(args.zdim,cf=args.surrogate_mcf)

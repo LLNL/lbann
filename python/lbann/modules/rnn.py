@@ -215,7 +215,7 @@ class GRU(Module):
 
         self.ones = lbann.Constant(
             value=1.0,
-            num_neurons=str(size),
+            num_neurons=size,
             data_layout=self.data_layout,
             name=self.name+'_ones',
         )

@@ -35,7 +35,7 @@ class L2WeightRegularization(ObjectiveFunctionTerm):
         """Construct and return a protobuf message."""
         proto = objective_functions_pb2.ObjectiveFunction.L2WeightRegularization()
         proto.scale_factor = self.scale
-        proto.weights = ' '.join([w.name for w in self.weights])
+        proto.weights = [w.name for w in self.weights]
         return proto
 
 class ObjectiveFunction:

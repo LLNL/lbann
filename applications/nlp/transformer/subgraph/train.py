@@ -110,7 +110,7 @@ def make_model(
         input_,
         slice_points=[sequence_length+1, 2*sequence_length],
     ))
-    pads = lbann.Constant(value=pad_index, num_neurons=str(sequence_length-1))
+    pads = lbann.Constant(value=pad_index, num_neurons=sequence_length-1)
     is_not_pad = lbann.NotEqual(label_tokens, pads)
     num_not_pad = lbann.Reduction(is_not_pad, mode='sum')
 
