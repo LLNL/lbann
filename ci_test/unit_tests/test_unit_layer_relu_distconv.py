@@ -94,7 +94,7 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    x = lbann.Reshape(x, dims="4 2 6")
+    x = lbann.Reshape(x, dims=[4, 2, 6])
     y = lbann.Relu(x, data_layout='data_parallel',
                    parallel_strategy=create_parallel_strategy(
                        num_height_groups))
@@ -125,7 +125,7 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    x = lbann.Reshape(x, dims="4 2 6")
+    x = lbann.Reshape(x, dims=[4, 2, 6])
     y = lbann.Relu(x, data_layout='model_parallel',
                    parallel_strategy=create_parallel_strategy(
                        num_height_groups))

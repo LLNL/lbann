@@ -90,11 +90,11 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    x = lbann.Reshape(x, dims="4 4 3")
+    x = lbann.Reshape(x, dims=[4, 4, 3])
     y = lbann.Identity(x, data_layout='data_parallel',
                        parallel_strategy=create_parallel_strategy(
                            num_height_groups))
-    x = lbann.Reshape(x, dims="48")
+    x = lbann.Reshape(x, dims=[48])
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
