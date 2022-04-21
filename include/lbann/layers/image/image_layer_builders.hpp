@@ -23,31 +23,16 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#ifndef LBANN_LAYERS_IMAGE_IMAGE_LAYER_BUILDERS_HPP_INCLUDED
+#define LBANN_LAYERS_IMAGE_IMAGE_LAYER_BUILDERS_HPP_INCLUDED
 
-#include "lbann/layers/activations/softmax.hpp"
-
-#include <lbann/proto/proto_common.hpp>
-#include <layers.pb.h>
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_softmax_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const& proto_layer)
-{
-  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, softmax);
-  using LayerType = softmax_layer<TensorDataType, Layout, Device>;
-  const auto& sm_mode = proto_layer.softmax().softmax_mode();
-  if (sm_mode == "instance" || sm_mode == "")
-    return std::make_unique<LayerType>(comm, softmax_mode::INSTANCE);
-  else if (sm_mode == "channel")
-    return std::make_unique<LayerType>(comm, softmax_mode::CHANNEL);
-  else
-    return std::make_unique<LayerType>(comm, softmax_mode::INVALID);
-}
-
-#define PROTO_DEVICE(T, Device) \
-  LBANN_LAYER_BUILDER_ETI(softmax, T, Device)
-#include "lbann/macros/instantiate_device.hpp"
+LBANN_DEFINE_LAYER_BUILDER(bilinear_resize);
+LBANN_DEFINE_LAYER_BUILDER(composite_image_transformation);
+LBANN_DEFINE_LAYER_BUILDER(rotation);
 
 } // namespace lbann
+#endif // LBANN_LAYERS_IMAGE_IMAGE_LAYER_BUILDERS_HPP_INCLUDED

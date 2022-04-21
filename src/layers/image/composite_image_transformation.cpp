@@ -27,28 +27,7 @@
 #define LBANN_COMPOSITE_IMAGE_TRANSFORMATION_LAYER_INSTANTIATE
 #include "lbann/layers/image/composite_image_transformation.hpp"
 
-#include <layers.pb.h>
-
 #include <math.h>
-
-template <typename T, lbann::data_layout L, El::Device D>
-std::unique_ptr<lbann::Layer>
-lbann::build_composite_image_transformation_layer_from_pbuf(
-  lbann_comm* comm,
-  lbann_data::Layer const& proto_layer)
-{
-  if constexpr (L == data_layout::DATA_PARALLEL && D == El::Device::CPU) {
-    return std::make_unique<
-      composite_image_transformation_layer<T,
-                                           data_layout::DATA_PARALLEL,
-                                           El::Device::CPU>>(comm);
-  }
-  else {
-    LBANN_ERROR("composite image transformation layer is only supported with "
-                "a data-parallel layout and on CPU");
-    return nullptr;
-  }
-}
 
 namespace lbann {
 
@@ -185,10 +164,5 @@ void composite_image_transformation_layer<TensorDataType, Layout, Device>::fp_co
     El::Device::CPU>
 
 #include "lbann/macros/instantiate.hpp"
-#undef PROTO
-
-#define PROTO_DEVICE(T, D)                                                     \
-  LBANN_LAYER_BUILDER_ETI(composite_image_transformation, T, D)
-#include "lbann/macros/instantiate_device.hpp"
 
 } // namespace lbann

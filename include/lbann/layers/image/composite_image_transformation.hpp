@@ -105,8 +105,6 @@ protected:
   }
 };
 
-LBANN_DEFINE_LAYER_BUILDER(composite_image_transformation);
-
 #ifndef LBANN_COMPOSITE_IMAGE_TRANSFORMATION_LAYER_INSTANTIATE
 #define PROTO(T) \
   extern template class composite_image_transformation_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>

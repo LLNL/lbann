@@ -112,8 +112,6 @@ private:
   /*const*/ El::Int m_k;
 };
 
-LBANN_DEFINE_LAYER_BUILDER(top_k_categorical_accuracy);
-
 #ifndef LBANN_TOP_K_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
 
 #define PROTO_DEVICE(T, Device)                           \

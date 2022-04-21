@@ -86,8 +86,6 @@ private:
 
 };
 
-LBANN_DEFINE_LAYER_BUILDER(elu);
-
 #ifndef LBANN_ELU_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \
   extern template class elu_layer<T, data_layout::DATA_PARALLEL, Device>; \

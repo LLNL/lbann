@@ -32,9 +32,7 @@ set_full_path(THIS_DIR_SOURCES
   log_softmax.cpp
   softmax.cpp
 
-  elu_builder.cpp
-  leaky_relu_builder.cpp
-  softmax_builder.cpp
+  activation_layer_builders.cpp
   )
 
 if (LBANN_HAS_GPU)

@@ -27,24 +27,7 @@
 #define LBANN_ROTATION_LAYER_INSTANTIATE
 #include "lbann/layers/image/rotation.hpp"
 
-#include <layers.pb.h>
-
 #include <math.h>
-
-template <typename T, lbann::data_layout L, El::Device D>
-std::unique_ptr<lbann::Layer>
-lbann::build_rotation_layer_from_pbuf(lbann_comm* comm,
-                                      lbann_data::Layer const& proto_layer)
-{
-  if constexpr (L == data_layout::DATA_PARALLEL && D == El::Device::CPU)
-    return std::make_unique<
-      rotation_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
-  else {
-    LBANN_ERROR("rotation layer is only supported with "
-                "a data-parallel layout and on CPU");
-    return nullptr;
-  }
-}
 
 namespace lbann {
 
@@ -153,9 +136,5 @@ void rotation_layer<TensorDataType, Layout, Device>::fp_compute() {
   template class rotation_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
 
 #include "lbann/macros/instantiate.hpp"
-#undef PROTO
-
-#define PROTO_DEVICE(T, D) LBANN_LAYER_BUILDER_ETI(rotation, T, D)
-#include "lbann/macros/instantiate_device.hpp"
 
 } // namespace lbann

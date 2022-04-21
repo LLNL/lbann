@@ -445,8 +445,6 @@ void cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
 }
 #endif // LBANN_HAS_DISTCONV
 
-LBANN_DEFINE_LAYER_BUILDER(cross_entropy);
-
 #ifndef LBANN_CROSS_ENTROPY_LAYER_INSTANTIATE
 
 #define PROTO_DEVICE(T, Device)              \

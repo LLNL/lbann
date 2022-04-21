@@ -29,7 +29,7 @@ set_full_path(THIS_DIR_SOURCES
   rotation.cpp
   composite_image_transformation.cpp
 
-  bilinear_resize_builder.cpp
+  image_layer_builders.cpp
 )
 
 if (LBANN_HAS_GPU)

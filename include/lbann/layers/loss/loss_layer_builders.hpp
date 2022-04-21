@@ -23,30 +23,20 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#ifndef LBANN_LAYERS_LOSS_LOSS_BUILDERS_HPP_INCLUDED
+#define LBANN_LAYERS_LOSS_LOSS_BUILDERS_HPP_INCLUDED
 
-#include "lbann/layers/activations/elu.hpp"
-
-#include "lbann/utils/protobuf.hpp"
-
-#include <layers.pb.h>
-
-template <typename T, lbann::data_layout L, El::Device D>
-std::unique_ptr<lbann::Layer>
-lbann::build_elu_layer_from_pbuf(lbann_comm* comm,
-                                 lbann_data::Layer const& proto_layer)
-{
-  auto const& params = proto_layer.elu();
-  auto const alpha = params.alpha();
-  if (alpha != 0.0)
-    return std::make_unique<elu_layer<T, L, D>>(comm, alpha);
-  else
-    return std::make_unique<elu_layer<T, L, D>>(comm);
-}
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
-#define PROTO_DEVICE(T, Device) LBANN_LAYER_BUILDER_ETI(elu, T, Device)
-
-#include "lbann/macros/instantiate_device.hpp"
+LBANN_DEFINE_LAYER_BUILDER(categorical_accuracy);
+LBANN_DEFINE_LAYER_BUILDER(cross_entropy);
+LBANN_DEFINE_LAYER_BUILDER(l1_norm);
+LBANN_DEFINE_LAYER_BUILDER(l2_norm2);
+LBANN_DEFINE_LAYER_BUILDER(mean_absolute_error);
+LBANN_DEFINE_LAYER_BUILDER(mean_squared_error);
+LBANN_DEFINE_LAYER_BUILDER(top_k_categorical_accuracy);
 
 } // namespace lbann
+#endif // LBANN_LAYERS_LOSS_LOSS_BUILDERS_HPP_INCLUDED

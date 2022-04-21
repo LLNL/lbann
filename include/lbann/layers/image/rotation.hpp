@@ -115,8 +115,6 @@ protected:
   }
 };
 
-LBANN_DEFINE_LAYER_BUILDER(rotation);
-
 #ifndef LBANN_ROTATION_LAYER_INSTANTIATE
 #define PROTO(T) \
   extern template class rotation_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>

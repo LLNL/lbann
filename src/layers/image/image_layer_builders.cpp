@@ -24,9 +24,11 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/layers/image/bilinear_resize.hpp"
+#include "lbann/layers/image/image_layer_builders.hpp"
 
-#include "lbann/utils/protobuf.hpp"
+#include "lbann/layers/image/bilinear_resize.hpp"
+#include "lbann/layers/image/composite_image_transformation.hpp"
+#include "lbann/layers/image/rotation.hpp"
 
 #include <layers.pb.h>
 
@@ -42,15 +44,51 @@ std::unique_ptr<lbann::Layer> lbann::build_bilinear_resize_layer_from_pbuf(
                                                                params.height(),
                                                                params.width());
   }
-  LBANN_ERROR("bilinear resize layer is only supported with "
-              "a data-parallel layout");
+  LBANN_ERROR(
+    "bilinear resize layer is only supported with a data-parallel layout");
   return nullptr;
+}
+
+template <typename T, lbann::data_layout L, El::Device D>
+std::unique_ptr<lbann::Layer>
+lbann::build_composite_image_transformation_layer_from_pbuf(
+  lbann_comm* comm,
+  lbann_data::Layer const&)
+{
+  if constexpr (L == data_layout::DATA_PARALLEL && D == El::Device::CPU) {
+    return std::make_unique<
+      composite_image_transformation_layer<T,
+                                           data_layout::DATA_PARALLEL,
+                                           El::Device::CPU>>(comm);
+  }
+  else {
+    LBANN_ERROR("composite image transformation layer is only supported with "
+                "a data-parallel layout and on CPU");
+    return nullptr;
+  }
+}
+
+template <typename T, lbann::data_layout L, El::Device D>
+std::unique_ptr<lbann::Layer>
+lbann::build_rotation_layer_from_pbuf(lbann_comm* comm,
+                                      lbann_data::Layer const&)
+{
+  if constexpr (L == data_layout::DATA_PARALLEL && D == El::Device::CPU)
+    return std::make_unique<
+      rotation_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
+  else {
+    LBANN_ERROR("rotation layer is only supported with a data-parallel layout "
+                "and on CPU");
+    return nullptr;
+  }
 }
 
 namespace lbann {
 
 #define PROTO_DEVICE(T, Device)                                                \
-  LBANN_LAYER_BUILDER_ETI(bilinear_resize, T, Device)
+  LBANN_LAYER_BUILDER_ETI(bilinear_resize, T, Device);                         \
+  LBANN_LAYER_BUILDER_ETI(composite_image_transformation, T, Device);          \
+  LBANN_LAYER_BUILDER_ETI(rotation, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
 

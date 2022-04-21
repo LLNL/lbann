@@ -120,8 +120,6 @@ private:
   El::Int m_width;
 };
 
-LBANN_DEFINE_LAYER_BUILDER(bilinear_resize);
-
 #ifndef LBANN_BILINEAR_RESIZE_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \
   extern template class bilinear_resize_layer<T, data_layout::DATA_PARALLEL, Device>

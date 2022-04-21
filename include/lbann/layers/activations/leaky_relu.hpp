@@ -155,8 +155,6 @@ void leaky_relu_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
 }
 #endif // LBANN_HAS_DISTCONV
 
-LBANN_DEFINE_LAYER_BUILDER(leaky_relu);
-
 #ifndef LBANN_LEAKY_RELU_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \
   extern template class leaky_relu_layer<T, data_layout::DATA_PARALLEL, Device>; \

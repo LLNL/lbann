@@ -31,20 +31,12 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/layers/operator_layer.hpp"
 
+#include "lbann/layers/activations/activation_layer_builders.hpp"
+#include "lbann/layers/image/image_layer_builders.hpp"
+#include "lbann/layers/loss/loss_layer_builders.hpp"
 #include "lbann/layers/math/math_builders.hpp"
 #include "lbann/layers/misc/misc_builders.hpp"
 #include "lbann/layers/transform/transform_builders.hpp"
-
-// These guys have inline lambda builders
-#include "lbann/layers/activations/identity.hpp"
-#include "lbann/layers/activations/leaky_relu.hpp"
-#include "lbann/layers/activations/log_softmax.hpp"
-#include "lbann/layers/activations/relu.hpp"
-#include "lbann/layers/loss/categorical_accuracy.hpp"
-#include "lbann/layers/loss/l1_norm.hpp"
-#include "lbann/layers/loss/l2_norm2.hpp"
-#include "lbann/layers/loss/mean_absolute_error.hpp"
-#include "lbann/layers/loss/mean_squared_error.hpp"
 
 // This is the one remaining "if" branch of the legacy factory function.
 #include "lbann/layers/transform/reshape.hpp"
@@ -61,15 +53,6 @@ namespace lbann {
 
 // Declarations of the builder functions.
 
-// Activations
-LBANN_DEFINE_LAYER_BUILDER(elu);
-LBANN_DEFINE_LAYER_BUILDER(softmax);
-
-// Image
-LBANN_DEFINE_LAYER_BUILDER(bilinear_resize);
-LBANN_DEFINE_LAYER_BUILDER(composite_image_transformation);
-LBANN_DEFINE_LAYER_BUILDER(rotation);
-
 // I/O
 LBANN_DEFINE_LAYER_BUILDER(input);
 
@@ -82,10 +65,6 @@ LBANN_DEFINE_LAYER_BUILDER(embedding);
 LBANN_DEFINE_LAYER_BUILDER(entrywise_scale_bias);
 LBANN_DEFINE_LAYER_BUILDER(fully_connected);
 LBANN_DEFINE_LAYER_BUILDER(gru);
-
-// Loss
-LBANN_DEFINE_LAYER_BUILDER(cross_entropy);
-LBANN_DEFINE_LAYER_BUILDER(top_k_categorical_accuracy);
 
 // Regularizers
 LBANN_DEFINE_LAYER_BUILDER(batch_normalization);
@@ -104,9 +83,7 @@ namespace {
 using factory_type = lbann::generic_factory<
   lbann::Layer,
   std::string,
-  generate_builder_type<lbann::Layer,
-                        lbann_comm*,
-                        const lbann_data::Layer&>,
+  generate_builder_type<lbann::Layer, lbann_comm*, const lbann_data::Layer&>,
   nullptr_key_error_policy>;
 
 /** @brief Singleton holder for a factory.
@@ -120,7 +97,6 @@ template <typename T, data_layout L, El::Device D>
 class factory_manager
 {
 public:
-
   factory_manager() { register_default_builders(); }
   factory_type const& get() const noexcept { return factory_; }
 
@@ -140,7 +116,8 @@ private:
     })
 
   // Builder registration happens here
-  void register_default_builders() {
+  void register_default_builders()
+  {
 
     // For now, we add a custom builder that will use the same
     // input/output type for the multi-precision-capable
@@ -201,22 +178,19 @@ private:
 
     // Activations
     LBANN_REGISTER_BUILDER(Elu, elu);
-    LBANN_REGISTER_DEFAULT_BUILDER(Identity, identity);
+    LBANN_REGISTER_BUILDER(Identity, identity);
     LBANN_REGISTER_BUILDER(LeakyRelu, leaky_relu);
-    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(LogSoftmax, log_softmax);
-    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(Relu, relu);
+    LBANN_REGISTER_BUILDER(LogSoftmax, log_softmax);
+    LBANN_REGISTER_BUILDER(Relu, relu);
     LBANN_REGISTER_BUILDER(Softmax, softmax);
 
     // Loss Layers
-    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(CategoricalAccuracy,
-                                             categorical_accuracy);
+    LBANN_REGISTER_BUILDER(CategoricalAccuracy, categorical_accuracy);
     LBANN_REGISTER_BUILDER(CrossEntropy, cross_entropy);
-    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(L1Norm, l1_norm);
-    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(L2Norm2, l2_norm2);
-    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(MeanAbsoluteError,
-                                             mean_absolute_error);
-    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(MeanSquaredError,
-                                             mean_squared_error);
+    LBANN_REGISTER_BUILDER(L1Norm, l1_norm);
+    LBANN_REGISTER_BUILDER(L2Norm2, l2_norm2);
+    LBANN_REGISTER_BUILDER(MeanAbsoluteError, mean_absolute_error);
+    LBANN_REGISTER_BUILDER(MeanSquaredError, mean_squared_error);
     LBANN_REGISTER_BUILDER(TopKCategoricalAccuracy, top_k_categorical_accuracy);
 
     // Regularizer layers
@@ -250,7 +224,6 @@ private:
     LBANN_REGISTER_BUILDER(RowwiseWeightsNorms, rowwise_weights_norms);
     LBANN_REGISTER_BUILDER(UniformHash, uniform_hash);
     LBANN_REGISTER_BUILDER(Variance, variance);
-
   }
 
   // Just to be clear/safe.
@@ -264,18 +237,19 @@ private:
 template <typename T, data_layout L, El::Device D>
 factory_type const& get_layer_factory() noexcept
 {
-  static factory_manager<T,L,D> factory_mgr_;
+  static factory_manager<T, L, D> factory_mgr_;
   return factory_mgr_.get();
 }
 
 } // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> construct_layer_legacy(
-  lbann_comm* comm,
-  int training_dr_linearized_data_size,
-  int num_parallel_readers,
-  const lbann_data::Layer& proto_layer) {
+std::unique_ptr<Layer>
+construct_layer_legacy(lbann_comm* comm,
+                       int training_dr_linearized_data_size,
+                       int num_parallel_readers,
+                       const lbann_data::Layer& proto_layer)
+{
 
   // Transform layers
   // Currently this cannot be suitably removed from this function
@@ -299,15 +273,14 @@ std::unique_ptr<Layer> construct_layer_legacy(
   // Throw exception if layer has not been constructed
   LBANN_ERROR("could not construct layer ", proto_layer.name());
   return nullptr;
-
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> construct_layer(
-  lbann_comm* comm,
-  int training_dr_linearized_data_size,
-  int num_parallel_readers,
-  const lbann_data::Layer& proto_layer) {
+std::unique_ptr<Layer> construct_layer(lbann_comm* comm,
+                                       int training_dr_linearized_data_size,
+                                       int num_parallel_readers,
+                                       const lbann_data::Layer& proto_layer)
+{
 
   // Construct layer
   auto const& factory = get_layer_factory<TensorDataType, Layout, Device>();
