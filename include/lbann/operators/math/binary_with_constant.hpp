@@ -181,9 +181,9 @@ std::vector<onnx::NodeProto> get_onnx_nodes_impl(
   AddConstantOperator<T, D> const op)
 {
   std::vector<onnx::NodeProto> nodes(2UL);
-  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
-  nodes.front().set_op_type("PostConstant");
-  nodes.back().set_op_type("Add");
+  nodes.front().set_op_type("Add");
+  nodes.back() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.back().set_op_type("PostConstant");
   return nodes;
 }
 
@@ -192,9 +192,9 @@ std::vector<onnx::NodeProto> get_onnx_nodes_impl(
   ScaleOperator<T, D> const op)
 {
   std::vector<onnx::NodeProto> nodes(2UL);
-  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
-  nodes.front().set_op_type("PostConstant");
-  nodes.back().set_op_type("Mul");
+  nodes.front().set_op_type("Mul");
+  nodes.back() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.back().set_op_type("PostConstant");
   return nodes;
 }
 
@@ -203,9 +203,9 @@ std::vector<onnx::NodeProto> get_onnx_nodes_impl(
   SubtractConstantOperator<T, D> const op)
 {
   std::vector<onnx::NodeProto> nodes(2UL);
-  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
-  nodes.front().set_op_type("PostConstant");
-  nodes.back().set_op_type("Sub");
+  nodes.front().set_op_type("Sub");
+  nodes.back() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.back().set_op_type("PostConstant");
   return nodes;
 }
 
@@ -214,9 +214,9 @@ std::vector<onnx::NodeProto> get_onnx_nodes_impl(
   ConstantSubtractOperator<T, D> const op)
 {
   std::vector<onnx::NodeProto> nodes(2UL);
-  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
-  nodes.front().set_op_type("PreConstant");
-  nodes.back().set_op_type("Sub");
+  nodes.front().set_op_type("Sub");
+  nodes.back() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.back().set_op_type("PreConstant");
   return nodes;
 }
 
@@ -225,9 +225,9 @@ std::vector<onnx::NodeProto> get_onnx_nodes_impl(
   MaxConstantOperator<T, D> const op)
 {
   std::vector<onnx::NodeProto> nodes(2UL);
-  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
-  nodes.front().set_op_type("PreConstant");
-  nodes.back().set_op_type("Max");
+  nodes.front().set_op_type("Max");
+  nodes.back() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.back().set_op_type("PreConstant");
   return nodes;
 }
 
@@ -236,9 +236,9 @@ std::vector<onnx::NodeProto> get_onnx_nodes_impl(
   MinConstantOperator<T, D> const op)
 {
   std::vector<onnx::NodeProto> nodes(2UL);
-  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
-  nodes.front().set_op_type("PreConstant");
-  nodes.back().set_op_type("Min");
+  nodes.front().set_op_type("Min");
+  nodes.back() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.back().set_op_type("PreConstant");
   return nodes;
 }
 
@@ -247,9 +247,9 @@ std::vector<onnx::NodeProto> get_onnx_nodes_impl(
   EqualConstantOperator<T, D> const op)
 {
   std::vector<onnx::NodeProto> nodes(2UL);
-  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
-  nodes.front().set_op_type("PreConstant");
-  nodes.back().set_op_type("Equal");
+  nodes.front().set_op_type("Equal");
+  nodes.back() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.back().set_op_type("PreConstant");
   return nodes;
 }
 
@@ -258,10 +258,10 @@ std::vector<onnx::NodeProto> get_onnx_nodes_impl(
   NotEqualConstantOperator<T, D> const op)
 {
   std::vector<onnx::NodeProto> nodes(3UL);
-  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
-  nodes.front().set_op_type("PreConstant");
+  nodes.front().set_op_type("Equal");
+  nodes.back() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.back().set_op_type("PreConstant");
   nodes.at(1).set_op_type("Not");
-  nodes.back().set_op_type("Equal");
   return nodes;
 }
 
@@ -270,9 +270,9 @@ std::vector<onnx::NodeProto> get_onnx_nodes_impl(
   LessConstantOperator<T, D> const op)
 {
   std::vector<onnx::NodeProto> nodes(2UL);
-  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
-  nodes.front().set_op_type("PostConstant");
-  nodes.back().set_op_type("Less");
+  nodes.front().set_op_type("Less");
+  nodes.back() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.back().set_op_type("PostConstant");
   return nodes;
 }
 
@@ -281,9 +281,9 @@ std::vector<onnx::NodeProto> get_onnx_nodes_impl(
   LessEqualConstantOperator<T, D> const op)
 {
   std::vector<onnx::NodeProto> nodes(2UL);
-  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
-  nodes.front().set_op_type("PostConstant");
-  nodes.back().set_op_type("LessOrEqual");
+  nodes.front().set_op_type("LessOrEqual");
+  nodes.back() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.back().set_op_type("PostConstant");
   return nodes;
 }
 
@@ -292,9 +292,9 @@ std::vector<onnx::NodeProto> get_onnx_nodes_impl(
   GreaterConstantOperator<T, D> const op)
 {
   std::vector<onnx::NodeProto> nodes(2UL);
-  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
-  nodes.front().set_op_type("PreConstant");
-  nodes.back().set_op_type("Greater");
+  nodes.front().set_op_type("Greater");
+  nodes.back() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.back().set_op_type("PreConstant");
   return nodes;
 }
 
@@ -303,9 +303,9 @@ std::vector<onnx::NodeProto> get_onnx_nodes_impl(
   GreaterEqualConstantOperator<T, D> const op)
 {
   std::vector<onnx::NodeProto> nodes(2UL);
-  nodes.front() = get_constant_node(El::To<float>(op.get_constant()));
-  nodes.front().set_op_type("PreConstant");
-  nodes.back().set_op_type("GreaterOrEqual");
+  nodes.front().set_op_type("GreaterOrEqual");
+  nodes.back() = get_constant_node(El::To<float>(op.get_constant()));
+  nodes.back().set_op_type("PreConstant");
   return nodes;
 }
 

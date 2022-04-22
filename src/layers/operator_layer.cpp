@@ -62,57 +62,65 @@ template <typename T, typename O, data_layout L, El::Device D>
 void OperatorLayer<T, O, L, D>::fill_onnx_node(
   onnx::GraphProto& graph) const
 {
-    std::vector<onnx::NodeProto> nodes(2UL);
-    nodes.front().add_attribute()->set_type(onnx::AttributeProto::FLOAT);
-    nodes.front().add_attribute()->set_f(El::To<float>(5));
-    nodes.front().set_op_type("PostConstant");
-    nodes.back().set_op_type("Add");
+  const auto& parents = this->get_parent_layers();
+  auto nodes = m_ops.front()->get_onnx_nodes();
 
-  //OperatorPtr op;
-  //auto nodes = op->get_onnx_nodes();
-  const auto* parent = this->get_parent_layers()[0];
+  auto* op_node = graph.add_node();
+  *op_node = nodes.front();
 
-  auto* const_node = graph.add_node();
-  *const_node = nodes.front();
+  op_node->set_name(this->get_name());
+  op_node->set_domain("");
+  op_node->set_doc_string(this->get_name());
 
-  auto* node = graph.add_node();
-  *node = nodes.back();
-  node->set_name(this->get_name());
-  node->set_domain("");
-  node->set_doc_string(this->get_name());
-  if(const_node->op_type() == "PostConstant")
+  //binary operators
+  if(nodes.size() == 1)
   {
-    node->add_input(parent->get_name() + "_0");
-    node->add_input(const_node->output(0));
-    const_node->set_op_type("Constant");
+    for(auto* parent : parents)
+    {
+      size_t idx = parent->find_child_layer_index(*this);
+      op_node->add_input(parent->get_name() + "_" + std::to_string(idx));
+    }
   }
-  else if(const_node->op_type() == "PreConstant")
+  // Binary w/ constant operators
+  else if(nodes.size() == 2 || nodes.size() == 3)
   {
-    node->add_input(const_node->output(0));
-    node->add_input(parent->get_name() + "_0");
+    auto* const_node = graph.add_node();
+    *const_node = nodes.back();
+    if(const_node->op_type() == "PostConstant")
+    {
+      op_node->add_input(parents[0]->get_name() + "_0");
+      op_node->add_input(const_node->output(0));
+    }
+    else if(const_node->op_type() == "PreConstant")
+    {
+      op_node->add_input(const_node->output(0));
+      op_node->add_input(parents[0]->get_name() + "_0");
+    }
+    else
+      LBANN_ERROR("Unknown onnx op type for constant.");
+
     const_node->set_op_type("Constant");
   }
   else
-    LBANN_ERROR("Unknown onnx op type for constant.");
+      LBANN_ERROR("Expected 1-3 ONNX nodes for binary operation, received ", nodes.size());
 
   // Not equal operator
   if(nodes.size() == 3)
   {
-    node->add_output("EqualOperator");
+    op_node->add_output("EqualOperator");
     auto* not_node = graph.add_node();
-    not_node->add_input(node->output(0));
-    not_node->add_output(this->get_child_layers()[0]->get_name() + "_0");
+    not_node->add_input(op_node->output(0));
     not_node->set_name("Not operator");
     not_node->set_op_type("Not");
     not_node->set_domain("");
     not_node->set_doc_string("Not node for not equal operation.");
+    op_node = not_node;
   }
-  else if(nodes.size() == 2)
-  {
-    node->add_output(this->get_child_layers()[0]->get_name() + "_0");
+
+  for (auto const* child : this->get_child_layers()) {
+    auto idx = this->find_child_layer_index(*child);
+    op_node->add_output(this->get_name() + "_" + std::to_string(idx));
   }
-  else
-    LBANN_ERROR("Expected two or three nodes for binary constant operation, received ", nodes.size());
 }
 #endif // LBANN_HAS_ONNX
 
