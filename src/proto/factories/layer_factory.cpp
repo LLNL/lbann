@@ -45,10 +45,6 @@
 
 #include <layers.pb.h>
 
-#ifdef LBANN_HAS_DNN_LIB
-#include "lbann/utils/dnn_lib/helpers.hpp"
-#endif // LBANN_HAS_DNN_LIB
-
 namespace lbann {
 
 // Declarations of the builder functions.
@@ -104,16 +100,6 @@ private:
   // This macro simplifies the process of adding default builders
 #define LBANN_REGISTER_BUILDER(KEY, LAYER_NAME)                                \
   factory_.register_builder(#KEY, build_##LAYER_NAME##_layer_from_pbuf<T, L, D>)
-#define LBANN_REGISTER_DEFAULT_BUILDER(KEY, LAYER_NAME)                        \
-  factory_.register_builder(#KEY, [](lbann_comm*, lbann_data::Layer const&) {  \
-    return std::make_unique<LAYER_NAME##_layer<T, L, D>>();                    \
-  })
-#define LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(KEY, LAYER_NAME)              \
-  factory_.register_builder(                                                   \
-    #KEY,                                                                      \
-    [](lbann_comm* comm, lbann_data::Layer const&) {                           \
-      return std::make_unique<LAYER_NAME##_layer<T, L, D>>(comm);              \
-    })
 
   // Builder registration happens here
   void register_default_builders()
@@ -125,9 +111,7 @@ private:
     // infrastructure considers multiple in/out types.
     factory_.register_builder(
       "OperatorLayer",
-      [](lbann_comm* c, lbann_data::Layer const& params) {
-        return build_operator_layer_from_pbuf<T, T, L, D>(c, params);
-      });
+      build_operator_layer_from_pbuf<T, T, L, D>);
 
     // Input layer
     LBANN_REGISTER_BUILDER(Input, input);
@@ -225,10 +209,7 @@ private:
     LBANN_REGISTER_BUILDER(UniformHash, uniform_hash);
     LBANN_REGISTER_BUILDER(Variance, variance);
   }
-
-  // Just to be clear/safe.
-#undef LBANN_REGISTER_DEFAULT_BUILDER
-#undef LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM
+#undef LBANN_REGISTER_BUILDER
 
 private:
   factory_type factory_;
