@@ -65,9 +65,9 @@ def construct_model(lbann):
                               initializer=lbann.ConstantInitializer(value=0.0),
                               name='input_weights')
     x = lbann.Sum(lbann.Reshape(lbann.Input(data_field='samples'),
-                                dims=tools.str_list(_input_size)),
+                                dims=_input_size),
                   lbann.WeightsLayer(weights=x_weights,
-                                     dims=tools.str_list(_input_size)))
+                                     dims=_input_size))
     x_lbann = x
 
     # Objects for LBANN model
@@ -103,13 +103,13 @@ def construct_model(lbann):
     linearity_weights = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(
-            values=tools.str_list(np.nditer(linearity, order='F'))
+            values=np.nditer(linearity, order='F')
         )
     )
     bias_weights = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(
-            values=tools.str_list(np.nditer(bias))
+            values=np.nditer(bias)
         )
     )
     x = x_lbann
@@ -141,13 +141,13 @@ def construct_model(lbann):
     linearity_weights = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(
-            values=tools.str_list(np.nditer(linearity, order='F'))
+            values=np.nditer(linearity, order='F')
         )
     )
     bias_weights = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(
-            values=tools.str_list(np.nditer(bias))
+            values=np.nditer(bias)
         )
     )
     x = x_lbann
@@ -179,7 +179,7 @@ def construct_model(lbann):
     linearity_weights = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(
-            values=tools.str_list(np.nditer(linearity, order='C'))
+            values=np.nditer(linearity, order='C')
         )
     )
     x = x_lbann
@@ -211,7 +211,7 @@ def construct_model(lbann):
     linearity_weights = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(
-            values=tools.str_list(np.nditer(linearity, order='C'))
+            values=np.nditer(linearity, order='C')
         )
     )
     x = x_lbann

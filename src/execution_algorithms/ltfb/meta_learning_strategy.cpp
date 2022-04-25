@@ -27,8 +27,8 @@
 #include "lbann/execution_algorithms/ltfb/random_pairwise_exchange.hpp"
 #include "lbann/execution_algorithms/ltfb/regularized_evolution.hpp"
 #include "lbann/execution_algorithms/ltfb/truncation_selection_exchange.hpp"
-#include "lbann/proto/helpers.hpp"
 #include "lbann/utils/make_abstract.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include <google/protobuf/message.h>
 #include <training_algorithm.pb.h>
@@ -76,7 +76,7 @@ lbann::make_abstract<lbann::ltfb::MetaLearningStrategy>(
   google::protobuf::Message const& params)
 {
   return get_factory().create_object(
-    proto::helpers::message_type(
+    protobuf::message_type(
       dynamic_cast<google::protobuf::Any const&>(params)),
     params);
 }

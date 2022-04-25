@@ -27,8 +27,6 @@
 #define LBANN_PROTO_OPERATOR_FACTORY_HPP_INCLUDED
 
 #include "lbann/operators/operator.hpp"
-
-#include "lbann/proto/helpers.hpp"
 #include "lbann/utils/factory.hpp"
 
 #include <string>
@@ -41,8 +39,8 @@ template <typename InT, typename OutT, El::Device D>
 using OperatorFactory =
   generic_factory<Operator<InT, OutT, D>,
                   std::string,
-                  proto::generate_builder_type<Operator<InT, OutT, D>,
-                                               lbann_data::Operator const&>>;
+                  generate_builder_type<Operator<InT, OutT, D>,
+                                        lbann_data::Operator const&>>;
 
 /** @brief Access the global operator factory for these types.
  *

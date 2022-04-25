@@ -58,8 +58,6 @@ nightly_options_and_targets = {
 # ==============================================
 # Setup LBANN experiment
 # ==============================================
-def list2str(l):
-    return ' '.join(l)
 
 def make_data_reader(lbann, percent_of_data_to_use):
     """Make Protobuf message for HRRL  data reader.
@@ -120,7 +118,7 @@ def construct_model(lbann, num_epochs):
 
     num_labels = 5
 
-    images = lbann.Reshape(images, dims='1 300 300')
+    images = lbann.Reshape(images, dims=[1, 300, 300])
 
 
     pred = model.PROBIESNet(num_labels)(images)

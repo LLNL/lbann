@@ -70,7 +70,7 @@ def construct_model(lbann):
     )
     x = lbann.Multiply(
         lbann.Input(data_field='samples'),
-        lbann.WeightsLayer(weights=x_weights, dims=tools.str_list(_sample_size)),
+        lbann.WeightsLayer(weights=x_weights, dims=_sample_size),
     )
 
     # Compute variance along batch dimension

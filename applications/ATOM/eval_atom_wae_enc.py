@@ -13,10 +13,6 @@ import models.wae as molwae
 import lbann
 import lbann.contrib.launcher
 import lbann.modules
-from lbann.util import str_list
-
-def list2str(l):
-    return ' '.join(l)
 
 lbann_exe = abspath(lbann.lbann_exe())
 lbann_exe = join(dirname(lbann_exe), 'lbann_inf')
@@ -114,9 +110,9 @@ def construct_model(run_args):
     save_output = False
 
     print("save output? ", save_output, "out dir ",  run_args.dump_outputs_dir)
-    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=str(run_args.z_dim))
+    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=[run_args.z_dim])
 
-    x = lbann.Slice(input_, slice_points=str_list([0, input_feature_dims]))
+    x = lbann.Slice(input_, slice_points=[0, input_feature_dims])
     x = lbann.Identity(x)
     waemodel = molwae.MolWAE(input_feature_dims,
                            dictionary_size,

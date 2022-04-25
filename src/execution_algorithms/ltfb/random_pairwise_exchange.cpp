@@ -32,10 +32,10 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/proto/helpers.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include <training_algorithm.pb.h>
 
@@ -364,7 +364,7 @@ namespace {
 using ExchangeStrategyFactory = lbann::generic_factory<
   lbann::ltfb::RandomPairwiseExchange::ExchangeStrategy,
   std::string,
-  lbann::proto::generate_builder_type<
+  lbann::generate_builder_type<
     lbann::ltfb::RandomPairwiseExchange::ExchangeStrategy,
     std::set<std::string>,
     google::protobuf::Message const&>>;
@@ -453,9 +453,9 @@ lbann::make_abstract<lbann::ltfb::RandomPairwiseExchange::ExchangeStrategy>(
     weights_names.emplace(params.weights_name(id));
 
   auto const& exchange_params =
-    proto::helpers::get_oneof_message(params, "strategy");
+    protobuf::get_oneof_message(params, "strategy");
   return get_exchange_factory().create_object(
-    proto::helpers::message_type(exchange_params),
+    protobuf::message_type(exchange_params),
     std::move(weights_names),
     exchange_params);
 }
@@ -477,9 +477,10 @@ lbann::make<lbann::ltfb::RandomPairwiseExchange>(
                  msg.metric_name_strategy_map().cend(),
                  std::inserter(metric_map, metric_map.end()),
                  [](auto const& kvp) {
-                   using MapType = std::unordered_map<std::string, MetricStrategy>;
+                   using MapType =
+                     std::unordered_map<std::string, MetricStrategy>;
                    using ValueType = typename MapType::value_type;
-                   return ValueType{ kvp.first, to_lbann(kvp.second) };
+                   return ValueType{kvp.first, to_lbann(kvp.second)};
                  });
 
   using ExchangeStrategyType =

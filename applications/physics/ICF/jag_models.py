@@ -1,6 +1,8 @@
 import lbann
 import jag_network_architectures
-from lbann.util import str_list, list2str
+
+def list2str(l):
+    return ' '.join(l)
 
 def construct_jag_wae_model(y_dim,
                             z_dim,
@@ -20,14 +22,14 @@ def construct_jag_wae_model(y_dim,
     # Layer graph
     input = lbann.Input(data_field='samples',name='inp_data')
     # data is 64*64*4 images + 15 scalar + 5 param
-    inp_slice = lbann.Slice(input, axis=0, slice_points="0 16399 16404",name='inp_slice')
+    inp_slice = lbann.Slice(input, axis=0, slice_points=[0, 16399, 16404],name='inp_slice')
     gt_y = lbann.Identity(inp_slice,name='gt_y')
     gt_x = lbann.Identity(inp_slice, name='gt_x') #param not used
 
-    zero  = lbann.Constant(value=0.0,num_neurons='1',name='zero')
-    one  = lbann.Constant(value=1.0,num_neurons='1',name='one')
+    zero  = lbann.Constant(value=0.0,num_neurons=[1],name='zero')
+    one  = lbann.Constant(value=1.0,num_neurons=[1],name='one')
 
-    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="20")
+    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=20)
     d1_real, d1_fake, d_adv, pred_y  = jag_network_architectures.WAE(z_dim,y_dim)(z,gt_y)
 
     d1_real_bce = lbann.SigmoidBinaryCrossEntropy([d1_real,one],name='d1_real_bce')
@@ -35,7 +37,7 @@ def construct_jag_wae_model(y_dim,
     d_adv_bce = lbann.SigmoidBinaryCrossEntropy([d_adv,one],name='d_adv_bce')
 
     img_loss = lbann.MeanSquaredError([pred_y,gt_y])
-    rec_error = lbann.L2Norm2(lbann.WeightedSum([pred_y,gt_y], scaling_factors="1 -1"))
+    rec_error = lbann.L2Norm2(lbann.WeightedSum([pred_y,gt_y], scaling_factors=[1, -1]))
 
     layers = list(lbann.traverse_layer_graph(input))
     # Setup objective function

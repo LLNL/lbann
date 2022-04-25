@@ -12,8 +12,6 @@ import torch
 import lbann
 import lbann.contrib.launcher
 import lbann.modules
-from lbann.util import str_list
-
 
 def construct_lc_launcher_args():
 
@@ -114,7 +112,7 @@ def construct_model(run_args):
     x_slice = lbann.Slice(
         _input,
         axis=0,
-        slice_points=str_list(range(sequence_length + 1)),
+        slice_points=range(sequence_length + 1),
         name="inp_slice",
     )
 
@@ -137,7 +135,7 @@ def construct_model(run_args):
 
     last_output = lbann.Constant(
         value=0.0,
-        num_neurons="{}".format(run_args.hidden),
+        num_neurons=run_args.hidden,
         data_layout=data_layout,
         name="lstm_init_output",
     )
@@ -166,7 +164,7 @@ def construct_model(run_args):
         ce = lbann.CrossEntropy([y_soft, gt], name="loss_" + str(i))
         # mask padding in input
         pad_mask = lbann.NotEqual(
-            [idl[i], lbann.Constant(value=pad_index, num_neurons="1")],
+            [idl[i], lbann.Constant(value=pad_index, num_neurons=1)],
         )
         ce_mask = lbann.Multiply([pad_mask, ce], name="loss_mask_" + str(i))
         loss.append(lbann.LayerTerm(ce_mask, scale=1 / (sequence_length - 1)))

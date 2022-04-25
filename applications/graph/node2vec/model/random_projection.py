@@ -10,25 +10,25 @@ def random_projection(indices, num_projections, projection_dim):
     # Note: proj_indices(i) = index*projection_dim + i
     proj_indices = lbann.WeightedSum(
         indices,
-        scaling_factors=utils.str_list(projection_dim),
+        scaling_factors=projection_dim,
     )
     iota = lbann.WeightsLayer(
-        dims=utils.str_list(projection_dim),
+        dims=projection_dim,
         weights=lbann.Weights(
             initializer=lbann.ValueInitializer(
-                values=utils.str_list(range(projection_dim))
+                values=range(projection_dim)
             ),
             optimizer=lbann.NoOptimizer(),
         ),
     )
     proj_indices = lbann.Sum(
         lbann.Tessellate(
-            lbann.Reshape(proj_indices, dims=utils.str_list([num_projections, 1])),
-            dims=utils.str_list([num_projections, projection_dim]),
+            lbann.Reshape(proj_indices, dims=[num_projections, 1]),
+            dims=[num_projections, projection_dim],
         ),
         lbann.Tessellate(
-            lbann.Reshape(iota, dims=utils.str_list([1, projection_dim])),
-            dims=utils.str_list([num_projections, projection_dim]),
+            lbann.Reshape(iota, dims=[1, projection_dim]),
+            dims=[num_projections, projection_dim],
         ),
     )
 
@@ -36,20 +36,20 @@ def random_projection(indices, num_projections, projection_dim):
     proj = lbann.UniformHash(proj_indices)
     ones = lbann.Constant(
         value=1,
-        num_neurons=utils.str_list([num_projections, projection_dim]),
+        num_neurons=[num_projections, projection_dim],
     )
     eps = 0.001
     proj = lbann.ErfInv(
         lbann.WeightedSum(
             proj,
             ones,
-            scaling_factors=utils.str_list([2*(1-eps), -(1-eps)]),
+            scaling_factors=[2*(1-eps), -(1-eps)],
         )
     )
     proj = lbann.InstanceNorm(proj)
     proj = lbann.WeightedSum(
         proj,
-        scaling_factors=utils.str_list(1/projection_dim),
+        scaling_factors=1/projection_dim,
     )
     return proj
 
@@ -80,16 +80,16 @@ def mean_squared_error(
                     * scale_decay**np.abs(j-i)
                 )
     scales = lbann.Weights(
-        initializer=lbann.ValueInitializer(values=utils.str_list(np.nditer(scales))),
+        initializer=lbann.ValueInitializer(values=np.nditer(scales)),
         optimizer=lbann.NoOptimizer(),
     )
-    scales = lbann.WeightsLayer(dims=utils.str_list(scale_dims), weights=scales)
+    scales = lbann.WeightsLayer(dims=scale_dims, weights=scales)
     prods = lbann.MatMul(
-        lbann.Reshape(prods, dims='1 -1'),
-        lbann.Reshape(scales, dims='1 -1'),
+        lbann.Reshape(prods, dims=[1, -1]),
+        lbann.Reshape(scales, dims=[1, -1]),
         transpose_b=True,
     )
-    prods = lbann.Reshape(prods, dims='1')
+    prods = lbann.Reshape(prods, dims=[1])
 
     # MSE(x,y) = ( norm(x)^2 + norm(y)^T - 2*prod(x,y) ) / dim(x)
     scale = 1 / (data_dim * sequence_length)
@@ -97,7 +97,7 @@ def mean_squared_error(
         lbann.L2Norm2(source_sequence),
         lbann.L2Norm2(target_sequence),
         prods,
-        scaling_factors=utils.str_list([scale, scale, -2*scale])
+        scaling_factors=[scale, scale, -2*scale]
     )
 
 class ChannelwiseFullyConnectedAutoencoder(lbann.modules.Module):
@@ -117,7 +117,7 @@ class ChannelwiseFullyConnectedAutoencoder(lbann.modules.Module):
         )
 
     def encode(self, x):
-        x = lbann.Reshape(x, dims=utils.str_list([-1, self.input_dim]))
+        x = lbann.Reshape(x, dims=[-1, self.input_dim])
         for i, dim in enumerate(self.hidden_dims):
             x = lbann.ChannelwiseFullyConnected(
                 x,
@@ -135,7 +135,7 @@ class ChannelwiseFullyConnectedAutoencoder(lbann.modules.Module):
         return x
 
     def decode(self, x):
-        x = lbann.Reshape(x, dims=utils.str_list([-1, self.output_dim]))
+        x = lbann.Reshape(x, dims=[-1, self.output_dim])
         for i in range(len(self.hidden_dims)):
             x = lbann.ChannelwiseFullyConnected(
                 x,

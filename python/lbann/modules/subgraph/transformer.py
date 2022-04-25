@@ -2,7 +2,7 @@
 import math
 import lbann
 from lbann.modules.base import Module, FullyConnectedModule
-from lbann.util import make_iterable, str_list
+from lbann.util import make_iterable
 
 class MultiheadAttention(Module):
     """Parallel instances of scaled dot-product attention.
@@ -86,7 +86,7 @@ class MultiheadAttention(Module):
                           name=f'{self.name}_output_matrix'),
             lbann.Weights(initializer=lbann.ConstantInitializer(value=0),
                           name=f'{self.name}_output_bias'),
-        ] 
+        ]
 
     def forward(self, queries, keys, values, mask=None):
         """Apply multi-head attention.
@@ -137,8 +137,7 @@ class MultiheadAttention(Module):
         )
 
         # Slice embedding vectors for each head
-        slice_points = str_list(self.head_dim * i
-                                for i in range(self.num_heads+1))
+        slice_points = [self.head_dim * i for i in range(self.num_heads+1)]
         queries_slice = lbann.Slice(
             queries_fc,
             axis=1,
@@ -168,7 +167,7 @@ class MultiheadAttention(Module):
             head_name = f'{name}_myattention_head{head}'
 
             # Attention inputs
-            
+
             if(ENABLE_SUBGRAPH):
                 if(head%int(self.num_heads/BRANCHES)==0):
                     tag+=1
@@ -209,10 +208,10 @@ class MultiheadAttention(Module):
             attentions.append(lbann.MatMul(y, v, name=head_name))
 
 
-            #Strong scaling 
-            
+            #Strong scaling
 
-       
+
+
 
         # Concatenate heads and apply fully-connected layer
         if(ENABLE_SUBGRAPH):
@@ -376,8 +375,7 @@ class MultiheadAttentionAllSubGraph(Module):
         )
 
         # Slice embedding vectors for each head
-        slice_points = str_list(self.head_dim * i
-                                for i in range(self.num_heads+1))
+        slice_points = [self.head_dim * i for i in range(self.num_heads+1)]
         queries_slice = lbann.Slice(
             queries_fc,
             axis=1,
@@ -403,14 +401,14 @@ class MultiheadAttentionAllSubGraph(Module):
         # Compute scaled dot-product attention for each head
         attentions = []
 
-        #variable to combine heads locally in sub-grids 
+        #variable to combine heads locally in sub-grids
         temp_attentions = []
         tag=0
         for head in range(self.num_heads):
             head_name = f'{name}_myattention_head{head}'
 
             # Attention inputs
-            
+
             if(ENABLE_SUBGRAPH):
                 if(head%int(self.num_heads/BRANCHES)==0):
                     temp_attentions.append([])
@@ -452,14 +450,14 @@ class MultiheadAttentionAllSubGraph(Module):
             # attentions.append(lbann.MatMul(y, v, name=head_name))
 
 
-            
+
             temp_attentions[-1].append(y)
 
-        
+
         for count, temp_attention in enumerate(temp_attentions):
 
             if(self.BRANCHES == self.num_heads):
-                # No need to concat the heads at subgrid level 
+                # No need to concat the heads at subgrid level
                 # if number of subgrids is equal to number of heads
                 attention_single_subgrid = temp_attentions[count][0]
             else:
@@ -479,8 +477,8 @@ class MultiheadAttentionAllSubGraph(Module):
             attentions.append(attention_single_subgrid)
 
 
-        #Strong scaling 
-        
+        #Strong scaling
+
 
         grid_sum_slice = lbann.Cross_Grid_Sum_Slice(attentions)
 
@@ -626,8 +624,7 @@ class MultiheadAttentionAllSubGraphInputSubGrids(Module):
 
 
         # Slice embedding vectors for each head
-        slice_points = str_list(self.head_dim  * i 
-                                for i in range(int(self.num_heads/self.BRANCHES)+1))
+        slice_points = [self.head_dim  * i for i in range(int(self.num_heads/self.BRANCHES)+1)]
 
 
         #Queries strong scaling in CFC
@@ -655,7 +652,7 @@ class MultiheadAttentionAllSubGraphInputSubGrids(Module):
                 axis=1,
                 slice_points=slice_points,
                 name=f'{name}_subgrid{head}_queries_slice',
-                
+
             )
 
             queries_fc.append(temp)
@@ -724,7 +721,7 @@ class MultiheadAttentionAllSubGraphInputSubGrids(Module):
             )
             values_fc.append(temp)
 
-  
+
         queries_slice = []
         keys_slice = []
         values_slice = []
@@ -743,7 +740,7 @@ class MultiheadAttentionAllSubGraphInputSubGrids(Module):
         # Compute scaled dot-product attention for each head
         attentions = []
 
-        #variable to combine heads locally in sub-grids 
+        #variable to combine heads locally in sub-grids
         temp_attentions = []
         tag=0
         for head in range(self.num_heads):
@@ -753,8 +750,8 @@ class MultiheadAttentionAllSubGraphInputSubGrids(Module):
             if(head%int(self.num_heads/BRANCHES)==0):
                 temp_attentions.append([])
                 tag+=1
-            
-            
+
+
             q = lbann.Identity(queries_slice[head])
             k = lbann.Identity(keys_slice[head])
             v = lbann.Identity(values_slice[head])
@@ -787,14 +784,14 @@ class MultiheadAttentionAllSubGraphInputSubGrids(Module):
             # attentions.append(lbann.MatMul(y, v, name=head_name))
 
 
-            
+
             temp_attentions[-1].append(y)
 
-        
+
         for count, temp_attention in enumerate(temp_attentions):
 
             if(self.BRANCHES == self.num_heads):
-                # No need to concat the heads at subgrid level 
+                # No need to concat the heads at subgrid level
                 # if number of subgrids is equal to number of heads
                 attention_single_subgrid = temp_attentions[count][0]
             else:
@@ -814,8 +811,8 @@ class MultiheadAttentionAllSubGraphInputSubGrids(Module):
             attentions.append(attention_single_subgrid)
 
 
-        #Strong scaling 
-        
+        #Strong scaling
+
 
         grid_sum_slice = lbann.Cross_Grid_Sum_Slice(attentions)
 
@@ -823,5 +820,5 @@ class MultiheadAttentionAllSubGraphInputSubGrids(Module):
 
         for head in range(self.BRANCHES):
             attentions.append( lbann.Identity(grid_sum_slice) )
-            
+
         return attentions

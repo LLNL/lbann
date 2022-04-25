@@ -30,6 +30,7 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/random.hpp"
 
 #include <weights.pb.h>
@@ -246,10 +247,12 @@ build_constant_initializer_from_pbuf(google::protobuf::Message const& msg) {
 
 template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
-build_value_initializer_from_pbuf(google::protobuf::Message const& msg) {
+build_value_initializer_from_pbuf(google::protobuf::Message const& msg)
+{
   const auto& params =
     dynamic_cast<lbann_data::Initializer::ValueInitializer const&>(msg);
-  return std::make_unique<value_initializer<TensorDataType>>(parse_list<TensorDataType>(params.values()));
+  return std::make_unique<value_initializer<TensorDataType>>(
+    protobuf::to_vector<TensorDataType>(params.values()));
 }
 
 template <typename TensorDataType>

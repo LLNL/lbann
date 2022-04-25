@@ -12,10 +12,6 @@ def make_iterable(obj):
     else:
         return (obj,)
 
-def str_list(it):
-    """Convert an iterable object to a space-separated string."""
-    return ' '.join([str(i) for i in make_iterable(it)])
-
 def ceildiv(x, y):
     """ceil(x/y)"""
     return -(-x // y)

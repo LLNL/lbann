@@ -4,7 +4,6 @@ import operator
 import numpy as np
 import lbann
 import lbann.modules
-from lbann.util import str_list
 
 class FFTShift(lbann.modules.Module):
     """Shift zero-frequency component of discrete Fourier transform to
@@ -47,16 +46,16 @@ class FFTShift(lbann.modules.Module):
 
         # Construct LBANN layer graph
         size = np.prod(dims)
-        x = lbann.Reshape(x, dims=str_list([size]))
+        x = lbann.Reshape(x, dims=[size])
         inds = lbann.WeightsLayer(
             weights=lbann.Weights(
-                lbann.ValueInitializer(values=str_list(inds.flatten())),
+                lbann.ValueInitializer(values=inds.flatten()),
                 optimizer=lbann.NoOptimizer(),
             ),
-            dims=str_list([size]),
+            dims=[size],
         )
         y = lbann.Gather(x, inds)
-        return lbann.Reshape(y, dims=str_list(dims))
+        return lbann.Reshape(y, dims=dims)
 
 # Test fftshift by performing metric checking and gradient checking
 if __name__ == "__main__":
@@ -88,21 +87,21 @@ if __name__ == "__main__":
     # LBANN implementation
     lbann_x = lbann.WeightsLayer(
         weights=lbann.Weights(
-            lbann.ValueInitializer(values=str_list(np_x.flatten())),
+            lbann.ValueInitializer(values=np_x.flatten()),
         ),
-        dims=str_list(np_x.shape),
+        dims=np_x.shape,
     )
     lbann_y = FFTShift()(lbann_x, dims)
     lbann_scales = lbann.WeightsLayer(
         weights=lbann.Weights(
-            lbann.ValueInitializer(values=str_list(np_scales)),
+            lbann.ValueInitializer(values=np_scales),
             optimizer=lbann.NoOptimizer(),
         ),
-        dims=str_list(np_scales.shape),
+        dims=np_scales.shape,
     )
     lbann_z = lbann.MatMul(
-        lbann.Reshape(lbann_y, dims=str_list([1,-1])),
-        lbann.Reshape(lbann_scales, dims=str_list([-1,1]))
+        lbann.Reshape(lbann_y, dims=[1,-1]),
+        lbann.Reshape(lbann_scales, dims=[-1,1])
     )
 
     # Construct LBANN model with metric checking and gradient checking

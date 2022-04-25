@@ -23,49 +23,10 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#ifndef LBANN_UTILS_PROTOBUF_HPP_INCLUDED
+#define LBANN_UTILS_PROTOBUF_HPP_INCLUDED
 
-#ifndef LBANN_PROTO_HELPERS_HPP_INCLUDED
-#define LBANN_PROTO_HELPERS_HPP_INCLUDED
+#include "protobuf/decl.hpp"
+#include "protobuf/impl.hpp"
 
-#include <google/protobuf/any.pb.h>
-#include <google/protobuf/message.h>
-
-#include <functional>
-#include <memory>
-#include <string>
-
-namespace lbann
-{
-namespace proto
-{
-
-template <typename OutT, typename... Args>
-struct GenerateBuilderType_struct
-{
-  using type = std::function<std::unique_ptr<OutT>(Args...)>;
-};
-
-template <typename OutT, typename... Args>
-using generate_builder_type =
-  typename GenerateBuilderType_struct<OutT, Args...>::type;
-
-namespace helpers
-{
-
-/** @brief Test whether the message has the oneof field. */
-bool has_oneof(
-  google::protobuf::Message const& msg, std::string const& oneof_name);
-
-/** @brief Get a "derived type" message from the given message. */
-google::protobuf::Message const&
-get_oneof_message(
-  google::protobuf::Message const& msg_in, std::string const& oneof_name);
-
-/** @brief Get the name of the message type as a string. */
-std::string message_type(google::protobuf::Message const& m);
-std::string message_type(google::protobuf::Any const& m);
-
-}// namespace helpers
-}// namespace proto
-}// namespace lbann
-#endif /* LBANN_PROTO_HELPERS_HPP_INCLUDED */
+#endif // LBANN_UTILS_PROTOBUF_HPP_INCLUDED

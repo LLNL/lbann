@@ -1,6 +1,8 @@
 import lbann
 import models.wae as molwae
-from lbann.util import str_list, list2str
+
+def list2str(l):
+    return ' '.join(l)
 
 def construct_atom_wae_model(pad_index,
                              sequence_length,
@@ -42,7 +44,7 @@ def construct_atom_wae_model(pad_index,
     save_output = True if dump_outputs_dir else False
 
     print("save output? ", save_output, "out dir ",  dump_outputs_dir)
-    z = lbann.Gaussian(mean=g_mean,stdev=g_std, neuron_dims=str(z_dim))
+    z = lbann.Gaussian(mean=g_mean,stdev=g_std, neuron_dims=[z_dim])
     recon, d1_real, d1_fake, d_adv, arg_max  = molwae.MolWAE(
         input_feature_dims,
         dictionary_size,
@@ -54,8 +56,8 @@ def construct_atom_wae_model(pad_index,
         save_output=save_output)(input_,z)
 
 
-    zero  = lbann.Constant(value=0.0,num_neurons='1',name='zero')
-    one  = lbann.Constant(value=1.0,num_neurons='1',name='one')
+    zero  = lbann.Constant(value=0.0,num_neurons=[1],name='zero')
+    one  = lbann.Constant(value=1.0,num_neurons=[1],name='one')
 
     d1_real_bce = lbann.SigmoidBinaryCrossEntropy([d1_real,one],name='d1_real_bce')
     d1_fake_bce = lbann.SigmoidBinaryCrossEntropy([d1_fake,zero],name='d1_fake_bce')

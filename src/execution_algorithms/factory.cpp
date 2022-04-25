@@ -27,8 +27,8 @@
 #include "lbann/execution_algorithms/kfac.hpp"
 #include "lbann/execution_algorithms/ltfb.hpp"
 #include "lbann/execution_algorithms/sgd_training_algorithm.hpp"
-#include "lbann/proto/helpers.hpp"
 #include "lbann/utils/make_abstract.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include <google/protobuf/message.h>
 #include <memory>
@@ -67,6 +67,6 @@ lbann::make_abstract<lbann::TrainingAlgorithm>(
   auto const& algo_params =
     dynamic_cast<lbann_data::TrainingAlgorithm const&>(params);
   return get_factory().create_object(
-    proto::helpers::message_type(algo_params.parameters()),
+    protobuf::message_type(algo_params.parameters()),
     params);
 }

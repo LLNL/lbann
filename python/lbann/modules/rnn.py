@@ -3,7 +3,7 @@
 import math
 import lbann
 from .base import Module, FullyConnectedModule, ChannelwiseFullyConnectedModule
-from lbann.util import make_iterable, str_list
+from lbann.util import make_iterable
 
 class LSTMCell(Module):
     """Long short-term memory cell."""
@@ -92,7 +92,7 @@ class LSTMCell(Module):
 
         # Get gates and cell update
         slice = lbann.Slice(fc,
-                            slice_points=str_list([0, self.size, 4*self.size]),
+                            slice_points=[0, self.size, 4*self.size],
                             name=name + '_fc_slice',
                             data_layout=self.data_layout)
         cell_update = lbann.Tanh(slice,
@@ -102,7 +102,7 @@ class LSTMCell(Module):
                                 name=name + '_sigmoid',
                                 data_layout=self.data_layout)
         slice = lbann.Slice(sigmoid,
-                            slice_points=str_list([0, self.size, 2*self.size, 3*self.size]),
+                            slice_points=[0, self.size, 2*self.size, 3*self.size],
                             name=name + '_sigmoid_slice',
                             data_layout=self.data_layout)
         f = lbann.Identity(slice, name=name + '_forget_gate',
@@ -215,7 +215,7 @@ class GRU(Module):
 
         self.ones = lbann.Constant(
             value=1.0,
-            num_neurons=str(size),
+            num_neurons=size,
             data_layout=self.data_layout,
             name=self.name+'_ones',
         )
@@ -243,7 +243,7 @@ class GRU(Module):
 
         # Get gates and cell update
         fc1_slice = lbann.Slice(fc1,
-                            slice_points=str_list([0, self.size, 2*self.size, 3*self.size]),
+                            slice_points=[0, self.size, 2*self.size, 3*self.size],
                             name=name + '_fc1_slice',
                             data_layout=self.data_layout)
         Wir_x = lbann.Identity(fc1_slice, name=name + '_Wrx',
@@ -254,7 +254,7 @@ class GRU(Module):
                            data_layout=self.data_layout)
 
         fc2_slice = lbann.Slice(fc2,
-                            slice_points=str_list([0, self.size, 2*self.size, 3*self.size]),
+                            slice_points=[0, self.size, 2*self.size, 3*self.size],
                             name=name + '_fc2_slice',
                             data_layout=self.data_layout)
         Whr_prev = lbann.Identity(fc2_slice, name=name + '_Wrh',
@@ -294,7 +294,7 @@ class GRU(Module):
                     lbann.WeightedSum(
                         self.ones,
                         zt,
-                        scaling_factors='1 -1', data_layout=self.data_layout
+                        scaling_factors=[1, -1], data_layout=self.data_layout
                     ),
                     nt,
                     data_layout=self.data_layout
@@ -316,7 +316,7 @@ class ChannelwiseGRU(Module):
         """Initialize GRU cell.
 
         Args:
-            num_channels (int): The number of rows in the matrix to perform GRU 
+            num_channels (int): The number of rows in the matrix to perform GRU
             size (int): Size of output tensor.
             bias (bool): Whether to apply biases after linearity.
             weights (`Weights` or iterator of `Weights`): Weights in
@@ -332,10 +332,10 @@ class ChannelwiseGRU(Module):
         """
 
         super().__init__()
-        ChannelwiseGRU.global_count += 1 
+        ChannelwiseGRU.global_count += 1
         self.step = 0
         self.size = size
-        self.num_channels = num_channels 
+        self.num_channels = num_channels
         self.name = (name if name else f'gru{ChannelwiseGRU.global_count}')
         self.data_layout = 'data_parallel'
         scale = 1 / math.sqrt(self.size)
@@ -360,12 +360,12 @@ class ChannelwiseGRU(Module):
                                                      name=self.name + '_hh_fc')
         self.ones = lbann.Constant(
             value=1.0,
-            num_neurons = str_list([num_channels, size]),
+            num_neurons = [num_channels, size],
             name=self.name+'_ones')
 
     def forward(self, x, prev_state):
-        """ Apply GRU step channelwise 
-        Args: 
+        """ Apply GRU step channelwise
+        Args:
             x (Layer): Input (shape: (num_channels, *))
             prev_state (Layer): Sate from previous GRU step  (shape: (num_channels, size))
         Returns:
@@ -379,7 +379,7 @@ class ChannelwiseGRU(Module):
         mat_size = self.num_channels * self.size
 
         prev_state = lbann.Reshape(prev_state,
-                                   dims=str_list([self.num_channels, self.size]),
+                                   dims=[self.num_channels, self.size],
                                    name=name+"_prev_state_reshape")
 
         fc1 = self.ih_fc(x)
@@ -387,29 +387,29 @@ class ChannelwiseGRU(Module):
 
         fc1_slice = lbann.Slice(fc1,
                                 axis=1,
-                                slice_points=str_list([0, self.size, 2*self.size, 3*self.size]))
-        
-        Wir_x =lbann.Reshape(lbann.Identity(fc1_slice), 
-                             dims=str_list([self.num_channels, self.size]),
+                                slice_points=[0, self.size, 2*self.size, 3*self.size])
+
+        Wir_x =lbann.Reshape(lbann.Identity(fc1_slice),
+                             dims=[self.num_channels, self.size],
                              name=name+'_Wir_x')
-        Wiz_z =lbann.Reshape(lbann.Identity(fc1_slice), 
-                             dims=str_list([self.num_channels, self.size]),
+        Wiz_z =lbann.Reshape(lbann.Identity(fc1_slice),
+                             dims=[self.num_channels, self.size],
                              name=name+'_Wiz_z')
-        Win_x =lbann.Reshape(lbann.Identity(fc1_slice), 
-                             dims=str_list([self.num_channels, self.size]),
+        Win_x =lbann.Reshape(lbann.Identity(fc1_slice),
+                             dims=[self.num_channels, self.size],
                              name=name+'_Win_x')
         fc2_slice = lbann.Slice(fc2,
                                 axis=1,
-                                slice_points=str_list([0, self.size, 2*self.size, 3*self.size]))
+                                slice_points=[0, self.size, 2*self.size, 3*self.size])
 
         Whr_x =lbann.Reshape(lbann.Identity(fc2_slice),
-                             dims=str_list([self.num_channels, self.size]),
-                             name=name+'_Whr_x')   
+                             dims=[self.num_channels, self.size],
+                             name=name+'_Whr_x')
         Whz_z =lbann.Reshape(lbann.Identity(fc2_slice),
-                             dims=str_list([self.num_channels, self.size]),
-                             name=name+'_Whz_z') 
+                             dims=[self.num_channels, self.size],
+                             name=name+'_Whz_z')
         Whn_x =lbann.Reshape(lbann.Identity(fc2_slice),
-                             dims=str_list([self.num_channels, self.size]),
+                             dims=[self.num_channels, self.size],
                              name=name+'_Whn_x')
 
         rt = \
@@ -442,7 +442,7 @@ class ChannelwiseGRU(Module):
                     lbann.WeightedSum(
                         self.ones,
                         zt,
-                        scaling_factors='1 -1', data_layout=self.data_layout
+                        scaling_factors=[1, -1], data_layout=self.data_layout
                     ),
                     nt,
                     data_layout=self.data_layout
@@ -451,6 +451,6 @@ class ChannelwiseGRU(Module):
                 name=name+ '_output', data_layout=self.data_layout,
             )
 
-        ht = lbann.Reshape(ht, dims=str_list([self.num_channels, self.size]))
+        ht = lbann.Reshape(ht, dims=[self.num_channels, self.size])
 
         return ht, ht

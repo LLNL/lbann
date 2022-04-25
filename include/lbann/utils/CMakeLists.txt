@@ -64,6 +64,7 @@ set_full_path(THIS_DIR_HEADERS
   options.hpp
   peek_map.hpp
   profiling.hpp
+  protobuf.hpp
   protobuf_serializable.hpp
   protobuf_utils.hpp
   python.hpp

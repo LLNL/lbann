@@ -155,15 +155,15 @@ def construct_model(lbann):
     embedding_size = 42
     dictionary_size = 42
 
-    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="128")
+    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=128)
     recon, d1_real, d1_fake, d_adv, _ = molwae.MolWAE(input_feature_dims,
                                                       dictionary_size,
                                                       embedding_size,
                                                       pad_index,
                                                       num_decoder_layers)(input_,z)
 
-    zero  = lbann.Constant(value=0.0,num_neurons='1',name='zero')
-    one  = lbann.Constant(value=1.0,num_neurons='1',name='one')
+    zero  = lbann.Constant(value=0.0,num_neurons=[1],name='zero')
+    one  = lbann.Constant(value=1.0,num_neurons=[1],name='one')
 
     d1_real_bce = lbann.SigmoidBinaryCrossEntropy([d1_real,one],name='d1_real_bce')
     d1_fake_bce = lbann.SigmoidBinaryCrossEntropy([d1_fake,zero],name='d1_fake_bce')

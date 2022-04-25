@@ -26,6 +26,8 @@
 #ifndef LBANN_PROTO_OPERATOR_FACTORY_IMPL_HPP_INCLUDED
 #define LBANN_PROTO_OPERATOR_FACTORY_IMPL_HPP_INCLUDED
 
+#include "lbann_config.hpp"
+
 #include "lbann/proto/factories.hpp"
 #include "lbann/proto/operator_factory.hpp"
 
@@ -34,8 +36,7 @@
 #include "lbann/operators/math/math_builders.hpp"
 #include "lbann/operators/operator.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
-#include "lbann/proto/helpers.hpp"
-#include "lbann_config.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 namespace lbann {
 namespace proto {
@@ -152,7 +153,7 @@ auto lbann::proto::construct_operator(lbann_data::Operator const& msg)
   LBANN_ASSERT(ProtoDevice<D> ==
                proto::resolve_default_device(msg.device_allocation()));
 
-  auto const name = proto::helpers::message_type(msg.parameters());
+  auto const name = protobuf::message_type(msg.parameters());
   return get_operator_factory<InputT, OutputT, D>().create_object(name, msg);
 }
 

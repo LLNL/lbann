@@ -12,7 +12,6 @@ import models.wae as molwae
 import lbann
 import lbann.contrib.launcher
 import lbann.modules
-from lbann.util import str_list, list2str
 import atom_models
 
 def construct_lc_launcher_args():

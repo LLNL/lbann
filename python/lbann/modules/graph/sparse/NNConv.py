@@ -1,7 +1,5 @@
 import lbann
 from lbann.modules import Module, ChannelwiseFullyConnectedModule
-from lbann.util import str_list
-
 
 class NNConv(Module):
     """Details of the kernel is available at:
@@ -83,11 +81,11 @@ class NNConv(Module):
             for each node.
         """
 
-        ## These reshapes do not change the nn output but enables channelwise partitioning 
-        ## for distconv channelwiseFC natively 
-        
-        node_features = lbann.Reshape(node_features, dims=str_list([self.num_nodes, 1, self.input_channels]))
-        edge_features = lbann.Reshape(edge_features, dims=str_list([self.num_edges, 1, self.edge_input_channels]))
+        ## These reshapes do not change the nn output but enables channelwise partitioning
+        ## for distconv channelwiseFC natively
+
+        node_features = lbann.Reshape(node_features, dims=[self.num_nodes, 1, self.input_channels])
+        edge_features = lbann.Reshape(edge_features, dims=[self.num_edges, 1, self.edge_input_channels])
 
         updated_node_features = self.node_nn(node_features)
 
@@ -101,9 +99,9 @@ class NNConv(Module):
 
         edge_values = \
             lbann.Reshape(edge_update,
-                          dims=str_list([self.num_edges,
-                                         self.input_channels,
-                                         self.output_channels]),
+                          dims=[self.num_edges,
+                                self.input_channels,
+                                self.output_channels],
                           name=self.name+"_edge_mat_reshape")
         edge_values = \
             lbann.MatMul(neighbor_features, edge_values)
@@ -127,11 +125,11 @@ class NNConv(Module):
         edge_feature_dims = [self.num_edges , self.output_channels]
 
         edge_values = lbann.Reshape(edge_values,
-                                    dims=str_list(edge_feature_dims),
+                                    dims=edge_feature_dims,
                                     name=self.name+"_neighbor_features")
         edge_reduce = lbann.Scatter(edge_values,
                                     edge_indices,
-                                    dims=str_list(node_feature_dims),
+                                    dims=node_feature_dims,
                                     axis=0,
                                     name=self.name+"_aggregate")
 

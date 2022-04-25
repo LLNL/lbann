@@ -5,7 +5,7 @@ This also contains modules for fully-connected and convolution layers.
 """
 import abc
 import lbann
-from lbann.util import make_iterable, str_list
+from lbann.util import make_iterable
 
 
 class Module(abc.ABC):
@@ -356,10 +356,10 @@ class ConvolutionModule(Module):
         kwargs['parallel_strategy'] = self.parallel_strategy
         kwargs['has_vectors'] = True
 
-        kwargs['conv_dims'] = str_list(self.kernel_dims)
-        kwargs['conv_pads'] = str_list(self.padding)
-        kwargs['conv_dilations'] = str_list(self.dilation)
-        kwargs['conv_strides'] = str_list(self.stride)
+        kwargs['conv_dims'] = self.kernel_dims
+        kwargs['conv_pads'] = self.padding
+        kwargs['conv_dilations'] = self.dilation
+        kwargs['conv_strides'] = self.stride
 
 
         if(self.transpose):

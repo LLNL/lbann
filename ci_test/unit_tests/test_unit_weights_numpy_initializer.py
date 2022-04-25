@@ -80,13 +80,13 @@ def construct_model(lbann):
     np.save(weights_file, weights_values)
 
     # LBANN implementation
-    x = lbann.Reshape(x_lbann, dims=tools.str_list(_sample_dims))
+    x = lbann.Reshape(x_lbann, dims=_sample_dims)
     weights = lbann.Weights(
         initializer=lbann.NumpyInitializer(file=weights_file),
     )
     weights = lbann.WeightsLayer(
         weights=weights,
-        dims=tools.str_list(_sample_dims),
+        dims=_sample_dims,
     )
     y = lbann.Multiply(x, weights)
     z = lbann.L2Norm2(y)

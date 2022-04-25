@@ -47,7 +47,7 @@ responses = lbann.Input(data_field='responses')
 
 num_labels = 5
 
-images = lbann.Reshape(images, dims='1 300 300')
+images = lbann.Reshape(images, dims=[1, 300, 300])
 
 
 pred = model.PROBIESNet(num_labels)(images)

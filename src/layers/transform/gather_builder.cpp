@@ -25,9 +25,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/transform/gather.hpp"
-#include "lbann/proto/helpers.hpp"
+#include "lbann/proto/proto_common.hpp"
 
-#include <lbann/proto/proto_common.hpp>
 #include <layers.pb.h>
 
 namespace lbann {

@@ -109,7 +109,7 @@ meansq = lbann.Square(mu, name="meansq")
 
 kldiv_plus_half = lbann.WeightedSum([meansq, var, logsd],
                                     name="kldiv_plus_half",
-                                    scaling_factors='0.5 0.5 -1')
+                                    scaling_factors=[0.5, 0.5, -1])
 
 kldiv_full = lbann.Rsqrt(kldiv_plus_half, name="kldiv_full")
 

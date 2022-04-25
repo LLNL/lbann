@@ -13,7 +13,6 @@ import models.wae as molwae
 import lbann
 import lbann.contrib.launcher
 import lbann.modules
-from lbann.util import str_list
 
 def list2str(l):
     return ' '.join(l)
@@ -125,8 +124,8 @@ def construct_model(run_args):
     recon, d1_real, d1_fake, d_adv, arg_max = waemodel(input_,z)
 
 
-    zero  = lbann.Constant(value=0.0,num_neurons='1',name='zero')
-    one  = lbann.Constant(value=1.0,num_neurons='1',name='one')
+    zero  = lbann.Constant(value=0.0,num_neurons=[1],name='zero')
+    one  = lbann.Constant(value=1.0,num_neurons=[1],name='one')
 
     d1_real_bce = lbann.SigmoidBinaryCrossEntropy([d1_real,one],name='d1_real_bce')
     d1_fake_bce = lbann.SigmoidBinaryCrossEntropy([d1_fake,zero],name='d1_fake_bce')

@@ -37,7 +37,7 @@ def construct_model():
     mean = lbann.Divide(lbann.BatchwiseReduceSum(responses), mini_batch_size)
     SS_tot = lbann.Divide(lbann.BatchwiseReduceSum(lbann.Square(lbann.Subtract(responses, mean))), mini_batch_size)
     eps = lbann.Constant(value=1e-07,hint_layer=SS_tot)
-    r2 = lbann.Subtract(lbann.Constant(value=1, num_neurons='1'), lbann.Divide(SS_res, lbann.Add(SS_tot,eps)))
+    r2 = lbann.Subtract(lbann.Constant(value=1, num_neurons=[1]), lbann.Divide(SS_res, lbann.Add(SS_tot,eps)))
 
     metrics = [lbann.Metric(mse, name='mse')]
     metrics.append(lbann.Metric(r2, name='r2'))

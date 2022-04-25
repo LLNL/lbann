@@ -26,9 +26,6 @@
 #ifndef LBANN_EXECUTION_ALGORITHMS_LTFB_MUTATION_STRATEGY_HPP_INCLUDED
 #define LBANN_EXECUTION_ALGORITHMS_LTFB_MUTATION_STRATEGY_HPP_INCLUDED
 
-#include "lbann/proto/helpers.hpp"
-#include "lbann/utils/factory.hpp"
-#include "lbann/utils/factory_error_policies.hpp"
 #include "lbann/utils/make_abstract.hpp"
 
 #include <google/protobuf/message.h>

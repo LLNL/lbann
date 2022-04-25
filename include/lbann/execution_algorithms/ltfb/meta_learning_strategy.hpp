@@ -28,7 +28,6 @@
 
 #include "execution_context.hpp"
 
-#include "lbann/proto/helpers.hpp"
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/factory.hpp"
 #include "lbann/utils/make_abstract.hpp"
@@ -83,11 +82,11 @@ public:
 /** @brief A factory for constructing MetaLearningStrategy objects from Protobuf
  *         messages.
  */
-using MetaLearningStrategyFactory = generic_factory<
-  MetaLearningStrategy,
-  std::string,
-  proto::generate_builder_type<MetaLearningStrategy,
-                               google::protobuf::Message const&>>;
+using MetaLearningStrategyFactory =
+  generic_factory<MetaLearningStrategy,
+                  std::string,
+                  generate_builder_type<MetaLearningStrategy,
+                                        google::protobuf::Message const&>>;
 
 using MetaLearningStrategyKey = MetaLearningStrategyFactory::id_type;
 using MetaLearningStrategyBuilder = MetaLearningStrategyFactory::builder_type;

@@ -79,7 +79,7 @@ def construct_model(lbann):
     # LBANN implementation
     embedding_weights = lbann.Weights(
         optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(embeddings)))
+        initializer=lbann.ValueInitializer(values=np.nditer(embeddings))
     )
     x = x_lbann
     y = lbann.DistEmbedding(x,
@@ -121,7 +121,7 @@ def construct_model(lbann):
     # LBANN implementation
     embedding_weights = lbann.Weights(
         optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(embeddings)))
+        initializer=lbann.ValueInitializer(values=np.nditer(embeddings))
     )
     x = x_lbann
     y = lbann.DistEmbedding(x,

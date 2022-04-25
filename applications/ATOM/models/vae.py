@@ -3,10 +3,6 @@ import lbann
 import lbann.modules
 from lbann.util import make_iterable
 
-def str_list(l):
-    """Convert an iterable object to a space-separated string."""
-    return ' '.join(str(i) for i in make_iterable(l))
-
 class GRUModule(lbann.modules.Module):
 
     global_count = 0  # Static counter, used for default names
@@ -55,7 +51,7 @@ class GRUModule(lbann.modules.Module):
         # Default initial hidden state
         self.zeros = lbann.Constant(
             value=0,
-            num_neurons=str_list([num_layers, hidden_size]),
+            num_neurons=[num_layers, hidden_size],
             name=f'{self.name}_zeros',
             device=self.device,
             datatype=self.datatype,
@@ -156,7 +152,7 @@ class MolVAE(lbann.modules.Module):
         :return: float, recon component of loss
         """
 
-        x = lbann.Slice(x, slice_points=str_list([0, self.input_feature_dims]))
+        x = lbann.Slice(x, slice_points=[0, self.input_feature_dims])
         x = lbann.Identity(x)
         x_emb = lbann.Embedding(
             x,
@@ -192,8 +188,8 @@ class MolVAE(lbann.modules.Module):
 
         h = lbann.Slice(
             h,
-            slice_points=str_list([self.input_feature_dims-1,
-                                   self.input_feature_dims]),
+            slice_points=[self.input_feature_dims-1,
+                          self.input_feature_dims],
             axis=0,
         )
         h = lbann.Identity(h)
@@ -217,7 +213,7 @@ class MolVAE(lbann.modules.Module):
         eps = lbann.Gaussian(mean=0, stdev=1,hint_layer=mu)
 
         # z = mu + (logvar / 2).exp() * eps
-        z = lbann.Add([mu, (lbann.Multiply([lbann.Exp(lbann.WeightedSum(logvar,scaling_factors='0.5')),eps]))])
+        z = lbann.Add([mu, (lbann.Multiply([lbann.Exp(lbann.WeightedSum(logvar,scaling_factors=[0.5])),eps]))])
 
         # kl_loss = 0.5 * (logvar.exp() + mu ** 2 - 1 - logvar).sum(1).mean()
         kl_loss = lbann.Reduction(
@@ -226,7 +222,7 @@ class MolVAE(lbann.modules.Module):
                 lbann.Square(mu),
                 self.constant(1, hint_layer=mu),
                 logvar,
-                scaling_factors='0.5 0.5 -0.5 -0.5',
+                scaling_factors=[0.5, 0.5, -0.5, -0.5],
             ),
             mode='sum',
         )
@@ -245,15 +241,15 @@ class MolVAE(lbann.modules.Module):
         # z_0 = z.unsqueeze(1).repeat(1, x_emb.size(1), 1)
         # x_input = torch.cat([x_emb, z_0], dim=-1)
         z_0 = lbann.Tessellate(
-            lbann.Reshape(z, dims=str_list([1, 128])),
-            dims=str_list([self.input_feature_dims, 128]),
+            lbann.Reshape(z, dims=[1, 128]),
+            dims=[self.input_feature_dims, 128],
         )
         x_input = lbann.Concatenation(x_emb, z_0, axis=1)
 
         h_0 = self.decoder_lat(z)
         # h_0 = h_0.unsqueeze(0).repeat(self.decoder_rnn.num_layers, 1, 1)
-        h_0 = lbann.Reshape(h_0, dims=str_list([1, 512]))
-        h_0 = lbann.Tessellate(h_0, dims=str_list((3, 512)))
+        h_0 = lbann.Reshape(h_0, dims=[1, 512])
+        h_0 = lbann.Tessellate(h_0, dims=(3, 512))
 
         # output, _ = self.decoder_rnn(x_input, h_0)
         output = self.decoder_rnn(x_input, h_0)
@@ -288,14 +284,14 @@ class MolVAE(lbann.modules.Module):
         y = lbann.Slice(
             y,
             axis=0,
-            slice_points=str_list([0, self.input_feature_dims-1]),
+            slice_points=[0, self.input_feature_dims-1],
         )
         y = lbann.Identity(y)
 
         # x[:, 1:]
         x = lbann.Slice(
             x,
-            slice_points=str_list([1, self.input_feature_dims]),
+            slice_points=[1, self.input_feature_dims],
         )
         x = lbann.Identity(x)
 
@@ -315,11 +311,11 @@ class MolVAE(lbann.modules.Module):
             for row in range(self.input_feature_dims-1)
         ]
         offsets = lbann.Weights(
-            initializer=lbann.ValueInitializer(values=str_list(offsets)),
+            initializer=lbann.ValueInitializer(values=offsets),
             optimizer=lbann.NoOptimizer(),
         )
         offsets = lbann.WeightsLayer(
-            dims=str_list([self.input_feature_dims-1]),
+            dims=[self.input_feature_dims-1],
             weights=offsets,
         )
         y_inds = lbann.Add(x, offsets)
@@ -355,14 +351,14 @@ class MolVAE(lbann.modules.Module):
         )
         z = lbann.Log(z)
         z = lbann.MatMul(
-            lbann.Reshape(keep_mask, dims=str_list([1, -1])),
+            lbann.Reshape(keep_mask, dims=[1, -1]),
             z,
         )
-        z = lbann.Reshape(z, dims=str_list([1]))
+        z = lbann.Reshape(z, dims=[1])
 
         # Compute cross entropy
         recon_loss = lbann.Gather(
-            lbann.Reshape(y, dims=str_list([-1])),
+            lbann.Reshape(y, dims=[-1]),
             y_inds,
         )
         recon_loss = lbann.Reduction(recon_loss, mode='sum')
@@ -374,7 +370,7 @@ class MolVAE(lbann.modules.Module):
     def constant(self, value, dims=[], datatype=None, hint_layer=None):
         return lbann.Constant(
             value=value,
-            num_neurons=str_list(dims),
+            num_neurons=dims,
             datatype=datatype,
             hint_layer=hint_layer,
         )

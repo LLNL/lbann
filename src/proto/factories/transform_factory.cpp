@@ -48,26 +48,24 @@
 
 #include "lbann/proto/factories.hpp"
 #include "lbann/proto/proto_common.hpp"
-#include "lbann/proto/helpers.hpp"
 #include "lbann/utils/factory.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include <reader.pb.h>
 #include <transforms.pb.h>
 
-namespace lbann {
-namespace proto {
 namespace {
 
 using factory_type = lbann::generic_factory<
-  transform::transform,
+  lbann::transform::transform,
   std::string,
-  generate_builder_type<transform::transform,
-                        google::protobuf::Message const&>,
-  default_key_error_policy>;
+  lbann::generate_builder_type<lbann::transform::transform,
+                               google::protobuf::Message const&>,
+  lbann::default_key_error_policy>;
 
 void register_default_builders(factory_type& factory) {
-  using namespace transform;
+  using namespace lbann::transform;
   factory.register_builder("Normalize", build_normalize_transform_from_pbuf);
   factory.register_builder("SampleNormalize", build_sample_normalize_transform_from_pbuf);
   factory.register_builder("Scale", build_scale_transform_from_pbuf);
@@ -109,23 +107,21 @@ factory_type const& get_transform_factory() noexcept {
 
 }// namespace <anon>
 
-std::unique_ptr<transform::transform> construct_transform(
-  const lbann_data::Transform& trans) {
+std::unique_ptr<lbann::transform::transform>
+lbann::proto::construct_transform(const lbann_data::Transform& trans)
+{
 
   auto const& factory = get_transform_factory();
-  auto const& msg =
-    helpers::get_oneof_message(trans, "transform_type");
+  auto const& msg = protobuf::get_oneof_message(trans, "transform_type");
   return factory.create_object(msg.GetDescriptor()->name(), msg);
 }
 
-transform::transform_pipeline construct_transform_pipeline(
-  const lbann_data::Reader& data_reader) {
+lbann::transform::transform_pipeline lbann::proto::construct_transform_pipeline(
+  const lbann_data::Reader& data_reader)
+{
   transform::transform_pipeline tp;
   for (int i = 0; i < data_reader.transforms_size(); ++i) {
     tp.add_transform(construct_transform(data_reader.transforms(i)));
   }
   return tp;
 }
-
-}  // namespace proto
-}  // namespace lbann

@@ -69,7 +69,7 @@ def construct_model(lbann):
         )
     x_lbann = lbann.Input(data_field='samples')
     x = x_lbann
-    y = lbann.WeightsLayer(weights=w, dims='1')
+    y = lbann.WeightsLayer(weights=w, dims=[1])
     z = lbann.Multiply(x, y)
     metrics.append(lbann.Metric(z, name='value'))
 

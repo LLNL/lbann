@@ -147,28 +147,28 @@ Arguments:
 
        (``string``) Convolution kernel dimensions (vector-valued)
 
-       Space-separated list of integers, one for each spatial
+       List of integers, one for each spatial
        dimension. Used when ``has_vectors`` is enabled.
 
    :conv_pads:
 
        (``string``) Convolution padding (vector-valued)
 
-       Space-separated list of integers, one for each spatial
+       List of integers, one for each spatial
        dimension. Used when ``has_vectors`` is enabled.
 
    :conv_strides:
 
        (``string``) Convolution strides (vector-valued)
 
-       Space-separated list of integers, one for each spatial
+       List of integers, one for each spatial
        dimension. Used when ``has_vectors`` is enabled.
 
    :conv_dilations:
 
        (``string``) Convolution dilations (vector-valued)
 
-       Space-separated list of integers, one for each spatial
+       List of integers, one for each spatial
        dimension. Used when ``has_vectors`` is enabled. Defaults to
        dilations of 1, i.e. undilated convolution.
 
@@ -212,14 +212,6 @@ Arguments:
       (``ConvTensorOpsMode``) Special behavior with FP16 tensor cores
 
       Ignored for non-GPU layers.
-
-Deprecated and unused arguments:
-
-   :weight_initialization: (``string``)
-
-   :bias_initial_value: (``double``)
-
-   :l2_regularization_factor: (``double``)
 
 :ref:`Back to Top<learning-layers>`
 

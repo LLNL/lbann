@@ -26,9 +26,11 @@
 
 #define LBANN_WEIGHTS_LAYER_INSTANTIATE
 #include "lbann/layers/transform/weights.hpp"
-#include "lbann/models/model.hpp"
 
-#include <lbann/proto/proto_common.hpp>
+#include "lbann/models/model.hpp"
+#include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/protobuf.hpp"
+
 #include <lbann.pb.h>
 
 namespace lbann {
@@ -156,15 +158,16 @@ void weights_layer<TensorDataType,Layout,Device>::bp_compute() {
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_weights_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const& proto_layer)
+std::unique_ptr<Layer>
+build_weights_layer_from_pbuf(lbann_comm* comm,
+                              lbann_data::Layer const& proto_layer)
 {
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, weights_layer);
   using LayerType = weights_layer<TensorDataType, Layout, Device>;
 
   const auto& params = proto_layer.weights_layer();
-  const auto& dims = parse_list<El::Int>(params.dims());
-  return std::make_unique<LayerType>(dims);
+  return std::make_unique<LayerType>(
+    protobuf::to_vector<El::Int>(params.dims()));
 }
 
 // Explicit template instantiation

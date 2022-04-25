@@ -163,19 +163,22 @@ model {
   layer {
     name: "layer15"
     parents: "layer14"
-    children: "layer16 layer17"
+    children: "layer16"
+    children: "layer17"
     softmax {
     }
   }
   layer {
     name: "layer17"
-    parents: "layer15 label"
+    parents: "layer15"
+    parents: "label"
     categorical_accuracy {
     }
   }
   layer {
     name: "layer16"
-    parents: "layer15 label"
+    parents: "layer15"
+    parents: "label"
     cross_entropy {
     }
   }

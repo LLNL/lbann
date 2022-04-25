@@ -28,10 +28,10 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm_impl.hpp"
-#include "lbann/proto/helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/factory.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include <training_algorithm.pb.h>
 
@@ -352,8 +352,8 @@ namespace {
 using MutationStrategyFactory = lbann::generic_factory<
   lbann::ltfb::MutationStrategy,
   std::string,
-  lbann::proto::generate_builder_type<lbann::ltfb::MutationStrategy,
-                                      google::protobuf::Message const&>>;
+  lbann::generate_builder_type<lbann::ltfb::MutationStrategy,
+                               google::protobuf::Message const&>>;
 
 std::unique_ptr<lbann::ltfb::NullMutation>
 make_null_mutation(google::protobuf::Message const& msg)
@@ -415,8 +415,8 @@ lbann::make_abstract<lbann::ltfb::MutationStrategy>(
   auto const& params = dynamic_cast<ProtoStrategy const&>(msg);
 
   auto const& mutate_params =
-    proto::helpers::get_oneof_message(params, "strategy");
+    protobuf::get_oneof_message(params, "strategy");
   return get_mutation_factory().create_object(
-    proto::helpers::message_type(mutate_params),
+    protobuf::message_type(mutate_params),
     mutate_params);
 }

@@ -68,9 +68,9 @@ def construct_model(lbann):
                               initializer=lbann.ConstantInitializer(value=0.0),
                               name='input_weights')
     x = lbann.Sum(lbann.Reshape(lbann.Input(data_field='samples'),
-                                dims=tools.str_list(_sample_size)),
+                                dims=_sample_size),
                   lbann.WeightsLayer(weights=x_weights,
-                                     dims=tools.str_list(_sample_size)))
+                                     dims=_sample_size))
     x_lbann = x
 
     # Objects for LBANN model
@@ -90,11 +90,11 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    x = lbann.Reshape(x, dims="4 4 3")
+    x = lbann.Reshape(x, dims=[4, 4, 3])
     y = lbann.Identity(x, data_layout='data_parallel',
                        parallel_strategy=create_parallel_strategy(
                            num_height_groups))
-    x = lbann.Reshape(x, dims="48")
+    x = lbann.Reshape(x, dims=[48])
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))

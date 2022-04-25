@@ -27,7 +27,9 @@
 #define LBANN_POOLING_LAYER_INSTANTIATE
 #include "lbann/layers/transform/pooling.hpp"
 
-#include <lbann/proto/proto_common.hpp>
+#include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/protobuf.hpp"
+
 #include <lbann.pb.h>
 
 namespace lbann {
@@ -68,22 +70,22 @@ std::unique_ptr<Layer> build_pooling_layer_from_pbuf(
 
   using BuilderType = Builder<TensorDataType, Layout, Device>;
   const auto& params = proto_layer.pooling();
-
-  const auto& mode_str = params.pool_mode();
-  pooling_mode mode = to_pool_mode(mode_str);
+  pooling_mode const mode = to_pool_mode(params.pool_mode());
   if (params.has_vectors()) {
-    const auto& dims = parse_list<int>(params.pool_dims());
-    const auto& pads = parse_list<int>(params.pool_pads());
-    const auto& strides = parse_list<int>(params.pool_strides());
-    return BuilderType::Build(
-      comm, dims.size(), dims, pads, strides, mode);
-  } else {
-    const auto& num_dims = params.num_dims();
-    const auto& dim = params.pool_dims_i();
-    const auto& pad = params.pool_pads_i();
-    const auto& stride = params.pool_strides_i();
-    return BuilderType::Build(
-      comm, num_dims, dim, pad, stride, mode);
+    return BuilderType::Build(comm,
+                              params.pool_dims_size(),
+                              protobuf::to_vector<int>(params.pool_dims()),
+                              protobuf::to_vector<int>(params.pool_pads()),
+                              protobuf::to_vector<int>(params.pool_strides()),
+                              mode);
+  }
+  else {
+    return BuilderType::Build(comm,
+                              params.num_dims(),
+                              params.pool_dims_i(),
+                              params.pool_pads_i(),
+                              params.pool_strides_i(),
+                              mode);
   }
 }
 

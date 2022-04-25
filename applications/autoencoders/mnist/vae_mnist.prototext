@@ -158,7 +158,9 @@ model {
     name: "kldiv_plus_half"
     data_layout: "data_parallel"
     weighted_sum {
-      scaling_factors: "0.5 0.5 -1"
+      scaling_factors: 0.5
+      scaling_factors: 0.5
+      scaling_factors: -1.0
     }
   }
   layer {

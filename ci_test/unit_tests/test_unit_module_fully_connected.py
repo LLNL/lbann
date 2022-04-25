@@ -83,7 +83,7 @@ def construct_model(lbann):
     # Input data
     x = lbann.Slice(
         lbann.Input(data_field='samples'),
-        slice_points=tools.str_list([0, _input_size, _input_size*2]),
+        slice_points=[0, _input_size, _input_size*2],
     )
     x0 = lbann.Identity(x)
     x1 = lbann.Identity(x)
@@ -96,10 +96,10 @@ def construct_model(lbann):
         weights=[
             lbann.Weights(
                 initializer=lbann.ValueInitializer(
-                    values=tools.str_list(np.nditer(w_np)))),
+                    values=np.nditer(w_np))),
             lbann.Weights(
                 initializer=lbann.ValueInitializer(
-                    values=tools.str_list(np.nditer(b_np)))),
+                    values=np.nditer(b_np))),
         ],
         activation=lbann.Tanh,
     )

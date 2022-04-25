@@ -15,10 +15,6 @@ import data.mnist
 
 from lbann.util import make_iterable
 
-def str_list(l):
-    """Convert an iterable object to a space-separated string."""
-    return ' '.join(str(i) for i in make_iterable(l))
-
 # ----------------------------------
 # Command-line arguments
 # ----------------------------------
@@ -132,10 +128,10 @@ elif args.model == "cnn":
 elif args.model == "gru":
     zeros = lbann.Constant(
             value=0,
-            num_neurons=str_list([1, 28]),
+            num_neurons=[1, 28],
             name=f'_zeros'
         )
-    x = lbann.Reshape(x, dims='28 28')
+    x = lbann.Reshape(x, dims=[28, 28])
     x = lbann.GRU(x, zeros,hidden_size=28)
     x = lbann.Relu(x)
     x = lbann.FullyConnected(

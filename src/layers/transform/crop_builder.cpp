@@ -26,7 +26,9 @@
 
 #include "lbann/layers/transform/crop.hpp"
 
-#include <lbann/proto/proto_common.hpp>
+#include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/protobuf.hpp"
+
 #include <lbann.pb.h>
 
 namespace lbann {
@@ -60,14 +62,15 @@ struct Builder<TensorDataType, data_layout::DATA_PARALLEL, Device>
 }// namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_crop_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const& proto_layer)
+std::unique_ptr<Layer>
+build_crop_layer_from_pbuf(lbann_comm* comm,
+                           lbann_data::Layer const& proto_layer)
 {
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, crop);
 
   using BuilderType = Builder<TensorDataType, Layout, Device>;
   const auto& params = proto_layer.crop();
-  return BuilderType::Build(comm, parse_list<int>(params.dims()));
+  return BuilderType::Build(comm, protobuf::to_vector<int>(params.dims()));
 }
 
 // Builder function ETI

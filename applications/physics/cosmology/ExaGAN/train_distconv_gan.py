@@ -7,10 +7,6 @@ from lbann.core.util import get_parallel_strategy_args
 import lbann
 import lbann.modules as lm
 
-def list2str(l):
-    return ' '.join([str(i) for i in l])
-
-
 def construct_lc_launcher_args():
     parser = argparse.ArgumentParser()
     lbann.contrib.args.add_scheduler_arguments(parser)
@@ -90,15 +86,15 @@ def construct_model(args):
 
     g_device = 'GPU'
     input_ = lbann.Input(name='input', data_field='samples')
-    input_ = lbann.Reshape(input_, dims=list2str(_sample_dims),name='in_reshape', device=g_device),
+    input_ = lbann.Reshape(input_, dims=_sample_dims,name='in_reshape', device=g_device),
     x1 = lbann.Identity(input_, parallel_strategy=None, name='x1')
     x2 = lbann.Identity(input_, name='x2') if args.compute_mse else None
 
-    zero  = lbann.Constant(value=0.0,num_neurons='1',name='zero',device=g_device)
-    one  = lbann.Constant(value=1.0,num_neurons='1',name='one', device=g_device)
+    zero  = lbann.Constant(value=0.0,num_neurons=[1],name='zero',device=g_device)
+    one  = lbann.Constant(value=1.0,num_neurons=[1],name='one', device=g_device)
 
-    z = lbann.Reshape(lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="64", name='noise_vec', device=g_device),
-                      dims='1 64', name='noise_vec_reshape',device=g_device)
+    z = lbann.Reshape(lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=[64], name='noise_vec', device=g_device),
+                      dims=[1, 64], name='noise_vec_reshape',device=g_device)
     print("RUN ARGS ", args)
 
     d1_real,d1_fake,d_adv, gen_img = model.Exa3DGAN(args.input_width,args.input_channel,
@@ -134,7 +130,6 @@ def construct_model(args):
     if (mse is not None):
       obj.append(mse)
       metrics.append(lbann.Metric(mse, name='MSE'))
-
 
     callbacks.append(lbann.CallbackPrint())
     callbacks.append(lbann.CallbackTimer())

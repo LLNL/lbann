@@ -5,8 +5,6 @@ import os
 
 import lbann
 import lbann.modules
-from lbann.util import str_list
-
 
 ACT2FN = {
     "relu": lbann.Relu,
@@ -21,7 +19,7 @@ ACT2FN = {
 def create_position_ids_from_input_ids(
     input_ids, input_shape, padding_idx, past_key_values_length=0
 ):
-    padding_idx = lbann.Constant(value=padding_idx, num_neurons=str_list(input_shape))
+    padding_idx = lbann.Constant(value=padding_idx, num_neurons=input_shape)
     mask = lbann.NotEqual(input_ids, padding_idx)
     incremental_indices = lbann.Multiply(
         lbann.AddConstant(
@@ -101,7 +99,7 @@ class RobertaEmbeddings(lbann.modules.Module):
 
         if token_type_ids is None:
             token_type_ids = lbann.Constant(
-                value=0, num_neurons=str_list(self.input_shape)
+                value=0, num_neurons=self.input_shape
             )
 
         if inputs_embeds is None:
@@ -162,14 +160,14 @@ class RobertaEmbeddings(lbann.modules.Module):
         )
         position_ids = lbann.WeightsLayer(
             weights=lbann.Weights(
-                initializer=lbann.ValueInitializer(values=str_list(position_ids)),
+                initializer=lbann.ValueInitializer(values=position_ids),
                 optimizer=lbann.NoOptimizer(),
             ),
-            dims=str_list([sequence_length]),
+            dims=[sequence_length],
         )
-        position_ids = lbann.Reshape(position_ids, dims=str_list([1, sequence_length]))
+        position_ids = lbann.Reshape(position_ids, dims=[1, sequence_length])
         position_ids = lbann.Tessellate(
-            position_ids, dims=str_list(self.input_shape[:-1])
+            position_ids, dims=self.input_shape[:-1]
         )
         return position_ids
 
@@ -232,7 +230,7 @@ class RobertaLayer(lbann.modules.Module):
         attention_mask=None,
         head_mask=None,
     ):
-        hidden_states = lbann.Reshape(hidden_states, dims=str_list(self.input_shape))
+        hidden_states = lbann.Reshape(hidden_states, dims=self.input_shape)
         attention_output = self.attention(
             hidden_states,
             attention_mask,
@@ -267,7 +265,7 @@ class RobertaSelfAttention(lbann.modules.Module):
 
     def transpose_for_scores(self, x, dims):
         new_x_shape = dims[:-1] + (self.num_attention_heads, self.attention_head_size)
-        x = lbann.Reshape(x, dims=lbann.util.str_list(new_x_shape))
+        x = lbann.Reshape(x, dims=new_x_shape)
         return lbann.modules.Permute(
             x, new_x_shape, axes=(0, 2, 1, 3), return_dims=True
         )
@@ -345,10 +343,10 @@ class RobertaSelfAttention(lbann.modules.Module):
         # Normalize the attention scores to probabilities.
         attention_scores = lbann.Reshape(
             attention_scores,
-            dims=str_list([np.prod(attention_shape[:-1]), attention_shape[-1]]),
+            dims=[np.prod(attention_shape[:-1]), attention_shape[-1]],
         )
         attention_probs = lbann.ChannelwiseSoftmax(attention_scores)
-        attention_probs = lbann.Reshape(attention_probs, dims=str_list(attention_shape))
+        attention_probs = lbann.Reshape(attention_probs, dims=attention_shape)
 
         # This is actually dropping out entire tokens to attend to, which might
         # seem a bit unusual, but is taken from the original Transformer paper.
@@ -375,7 +373,7 @@ class RobertaSelfAttention(lbann.modules.Module):
             return_dims=True,
         )
         new_context_layer_shape = context_shape[:-2] + (self.all_head_size,)
-        context_layer = lbann.Reshape(context_layer, dims=str_list(self.input_shape))
+        context_layer = lbann.Reshape(context_layer, dims=self.input_shape)
 
         return context_layer
 
@@ -523,7 +521,7 @@ class RobertaPooler(lbann.modules.Module):
         # We "pool" the model by simply taking the hidden state corresponding
         # to the first token.
         first_token_tensor = lbann.Slice(
-            hidden_states, axis=1, slice_points=str_list([0, 1])
+            hidden_states, axis=1, slice_points=[0, 1]
         )
         pooled_output = lbann.modules.PytorchLinear(
             first_token_tensor,
@@ -578,11 +576,11 @@ class RoBERTa(lbann.modules.Module):
             self.attn_mask_shape[3],
         ]
         extended_attention_mask = lbann.Reshape(
-            attention_mask, dims=str_list([self.input_shape[0], 1, self.input_shape[1]])
+            attention_mask, dims=[self.input_shape[0], 1, self.input_shape[1]]
         )
         extended_attention_mask = lbann.Reshape(
-            lbann.Tessellate(extended_attention_mask, dims=str_list(tmp_attn_shape)),
-            dims=str_list(self.attn_mask_shape),
+            lbann.Tessellate(extended_attention_mask, dims=tmp_attn_shape),
+            dims=self.attn_mask_shape,
         )
         return extended_attention_mask
 
@@ -598,12 +596,12 @@ class RoBERTa(lbann.modules.Module):
 
         if attention_mask is None:
             attention_mask = lbann.Constant(
-                value=1, num_neurons=str_list(self.input_shape)
+                value=1, num_neurons=self.input_shape
             )
 
         if token_type_ids is None:
             token_type_ids = lbann.Constant(
-                value=0, num_neurons=str_list(self.input_shape)
+                value=0, num_neurons=self.input_shape
             )
 
         if head_mask is None:
@@ -611,7 +609,7 @@ class RoBERTa(lbann.modules.Module):
 
         extended_attention_mask = self.extend_attention_mask(attention_mask)
 
-        input_ids = lbann.Reshape(input_ids, dims=str_list(self.input_shape))
+        input_ids = lbann.Reshape(input_ids, dims=self.input_shape)
         embedding_output = self.embeddings(
             input_ids=input_ids,
             position_ids=position_ids,

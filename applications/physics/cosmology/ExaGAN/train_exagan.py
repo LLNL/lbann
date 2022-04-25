@@ -20,12 +20,12 @@ def construct_model():
     # Layer graph
     input = lbann.Input(data_field='samples',name='inp_img')
     #label flipping
-    label_flip_rand = lbann.Uniform(min=0,max=1, neuron_dims='1')
-    label_flip_prob = lbann.Constant(value=0.01, num_neurons='1')
+    label_flip_rand = lbann.Uniform(min=0,max=1, neuron_dims=[1])
+    label_flip_prob = lbann.Constant(value=0.01, num_neurons=[1])
     one = lbann.GreaterEqual(label_flip_rand,label_flip_prob, name='is_real')
     zero = lbann.LogicalNot(one,name='is_fake')
 
-    z = lbann.Reshape(lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="64", name='noise_vec'),dims='1 64')
+    z = lbann.Reshape(lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=[64], name='noise_vec'),dims=[1, 64])
     d1_real, d1_fake, d_adv, gen_img  = ExaGAN.CosmoGAN()(input,z)
 
     d1_real_bce = lbann.SigmoidBinaryCrossEntropy([d1_real,one],name='d1_real_bce')

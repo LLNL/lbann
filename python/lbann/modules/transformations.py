@@ -1,7 +1,6 @@
 import numpy as np
 
 import lbann
-from lbann.util import str_list
 
 _permute_cache = {}
 _cumsum_cache = {}
@@ -16,11 +15,11 @@ def Permute(x, dims, axes=None, name="", return_dims=False):
         inds = np.arange(size).reshape(dims, order="C").transpose(axes)
         inds = lbann.Weights(
             initializer=lbann.ValueInitializer(
-                values=str_list(np.nditer(inds, order="C")),
+                values=np.nditer(inds, order="C"),
             ),
             optimizer=lbann.NoOptimizer(),
         )
-        inds = lbann.WeightsLayer(dims=str_list([size]), weights=inds)
+        inds = lbann.WeightsLayer(dims=[size], weights=inds)
         _permute_cache[key] = inds
 
     # Apply transpose with gather
@@ -29,9 +28,9 @@ def Permute(x, dims, axes=None, name="", return_dims=False):
         new_dims = dims[::-1]
     else:
         new_dims = np.array(dims)[list(axes)]
-    x = lbann.Reshape(x, dims=str_list([size]))
+    x = lbann.Reshape(x, dims=[size])
     y = lbann.Gather(x, inds)
-    y = lbann.Reshape(y, dims=str_list(list(new_dims)), name=name)
+    y = lbann.Reshape(y, dims=list(new_dims), name=name)
 
     if return_dims:
         return y, tuple(new_dims)
@@ -50,11 +49,11 @@ def Cumsum(x, dims, axis=0):
         tril_ones = np.tril(np.full(shape, 1, dtype=int), k=0)
         tril_ones = lbann.Weights(
             initializer=lbann.ValueInitializer(
-                values=str_list(np.nditer(tril_ones, order="C")),
+                values=np.nditer(tril_ones, order="C"),
             ),
             optimizer=lbann.NoOptimizer(),
         )
-        tril_ones = lbann.WeightsLayer(dims=str_list(shape), weights=tril_ones)
+        tril_ones = lbann.WeightsLayer(dims=shape, weights=tril_ones)
         _cumsum_cache[shape] = tril_ones
 
     # Apply cumsum
