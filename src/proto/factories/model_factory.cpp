@@ -156,17 +156,17 @@ void assign_weights_to_layers(
   // Find weights assigned to each layer
   for (int i=0; i < proto_model.layer_size(); ++i) {
     const auto& proto_layer = proto_model.layer(i);
-    auto layer_weights = layer_list[i]->get_weights_pointers();
-    const bool is_frozen = layer_list[i]->is_frozen();
-    for (int ii = 0; ii < proto_layer.weights_size(); ++ii) {
-      auto const& name = proto_layer.weights(ii);
-      if (names_to_weights.count(name) < 1) {
-        LBANN_ERROR("could not find weights named "
-                    "\"", name, "\", "
-                    "which are expected by layer ",
-                    layer_list[i]->get_name());
+    auto& layer_obj = *layer_list[i];
+    auto layer_weights = layer_obj.get_weights_pointers();
+    const bool is_frozen = layer_obj.is_frozen();
+    for (auto const& weights_name : proto_layer.weights()) {
+      if (names_to_weights.count(weights_name) < 1) {
+        LBANN_ERROR("could not find weights named \"",
+                    weights_name,
+                    "\", which are expected by layer ",
+                    layer_obj.get_name());
       }
-      auto& ptr = names_to_weights[name];
+      auto& ptr = names_to_weights[weights_name];
       auto& w = *ptr.lock();
       if (is_frozen) {
         w.freeze();
@@ -176,7 +176,7 @@ void assign_weights_to_layers(
       }
       layer_weights.push_back(ptr);
     }
-    layer_list[i]->set_weights_pointers(layer_weights);
+    layer_obj.set_weights_pointers(layer_weights);
   }
 
 }
@@ -210,15 +210,13 @@ void assign_weights_to_objective_function(
       const auto& params = proto_obj.l2_weight_regularization(
         num_l2_weight_regularization_terms - 1);
       std::vector<ViewingWeightsPtr> term_weights;
-      for (int wid = 0; wid < params.weights_size(); ++wid) {
-        auto const& weights_name = params.weights(wid);
+      for (auto const& weights_name : params.weights()) {
         auto&& w = names_to_weights[weights_name];
         if (w.expired()) {
-          LBANN_ERROR("attempted to apply L2 weight regularization to "
-                      "weights \"",
-                      weights_name,
-                      "\", "
-                      "but no such weights exists");
+          LBANN_ERROR(
+            "attempted to apply L2 weight regularization to weights \"",
+            weights_name,
+            "\", but no such weights exists");
         }
         term_weights.push_back(w);
       }
