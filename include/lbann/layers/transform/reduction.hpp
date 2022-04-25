@@ -205,7 +205,6 @@ protected:
 
 };
 
-LBANN_DEFINE_LAYER_BUILDER(reduction);
 
 #ifndef LBANN_REDUCTION_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device)                 \

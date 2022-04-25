@@ -30,6 +30,7 @@
 #include "lbann/data_coordinator/buffered_data_coordinator.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/exception.hpp"
@@ -199,6 +200,8 @@ class input_layer : public data_type_layer<TensorDataType> {
 ///@}
 #endif // LBANN_HAS_DISTCONV
 };
+
+LBANN_DEFINE_LAYER_BUILDER(input);
 
 #ifndef LBANN_INPUT_LAYER_INSTANTIATE
 

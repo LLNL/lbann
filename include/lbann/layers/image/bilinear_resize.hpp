@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_IMAGE_BILINEAR_RESIZE_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
@@ -117,7 +118,6 @@ private:
    *  Data is assumed to be in CHW format.
    */
   El::Int m_width;
-
 };
 
 #ifndef LBANN_BILINEAR_RESIZE_LAYER_INSTANTIATE

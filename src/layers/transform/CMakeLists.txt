@@ -26,21 +26,17 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
   batchwise_reduce_sum.cpp
-  batchwise_reduce_sum_builder.cpp
   bernoulli.cpp
   categorical_random.cpp
   concatenate.cpp
-  concatenate_builder.cpp
   constant.cpp
   crop.cpp
-  crop_builder.cpp
   cross_grid_sum_slice.cpp
   cross_grid_sum.cpp
   discrete_random.cpp
   dummy.cpp
   evaluation.cpp
   gather.cpp
-  gather_builder.cpp
   gaussian.cpp
   hadamard.cpp
   in_top_k.cpp
@@ -48,7 +44,6 @@ set_full_path(THIS_DIR_SOURCES
   reduction.cpp
   reshape.cpp
   scatter.cpp
-  scatter_builder.cpp
   slice.cpp
   sort.cpp
   split.cpp
@@ -59,6 +54,8 @@ set_full_path(THIS_DIR_SOURCES
   unpooling.cpp
   weighted_sum.cpp
   weights.cpp
+
+  transform_builders.cpp
   )
 
 if (LBANN_HAS_GPU)

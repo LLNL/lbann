@@ -85,7 +85,6 @@ protected:
 };
 
 // Builder function
-LBANN_DEFINE_LAYER_BUILDER(channelwise_softmax);
 
 // =========================================================
 // Implementation

@@ -99,11 +99,11 @@ void rotation_layer<TensorDataType, Layout, Device>::fp_compute() {
                                            	+ input_row0 * input_width
                                             	+ input_col0,
                                             	sample);
-	  
+
           	auto& pixel01 = local_input(channel * input_height * input_width
                                             	+ input_row0 * input_width
                                             	+ input_col1,
-                                           	 sample);	
+                                           	 sample);
 
           	auto& pixel10 = local_input(channel * input_height * input_width
                                             	+ input_row1 * input_width
@@ -114,8 +114,8 @@ void rotation_layer<TensorDataType, Layout, Device>::fp_compute() {
                                            	+ input_row1 * input_width
                                             	+ input_col1,
                                             	sample);
- 
- 
+
+
           	// Bilinear interpolation
          	pixel_output = (pixel00 * (one - unit_col) * (one - unit_row)
                        	+ pixel01 * unit_col * (one - unit_row)
@@ -136,6 +136,5 @@ void rotation_layer<TensorDataType, Layout, Device>::fp_compute() {
   template class rotation_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
 
 #include "lbann/macros/instantiate.hpp"
-#undef PROTO
 
 } // namespace lbann

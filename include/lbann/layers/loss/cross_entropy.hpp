@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_LOSS_CROSS_ENTROPY_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/utils/distconv.hpp"
 
 namespace lbann {

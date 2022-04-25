@@ -177,7 +177,6 @@ private:
   void bp_compute() final { }
 };
 
-LBANN_DEFINE_LAYER_BUILDER(cross_grid_sum);
 
 #ifndef LBANN_CROSS_GRID_SUM_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device)                                                \

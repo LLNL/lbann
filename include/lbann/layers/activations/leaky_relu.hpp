@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_ACTIVATIONS_LEAKY_RELU_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/utils/distconv.hpp"
 
 namespace lbann {
@@ -66,7 +67,8 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 class leaky_relu_layer : public data_type_layer<TensorDataType> {
 public:
   leaky_relu_layer() : leaky_relu_layer(nullptr, El::To<TensorDataType>(0.01)) {}
-  leaky_relu_layer(lbann_comm *comm, TensorDataType negative_slope = 0.01)
+  leaky_relu_layer(lbann_comm *comm,
+                   TensorDataType negative_slope = El::To<TensorDataType>(0.01))
     : data_type_layer<TensorDataType>(comm), m_negative_slope(negative_slope) {}
   leaky_relu_layer* copy() const override { return new leaky_relu_layer(*this); }
   std::string get_type() const override { return "leaky ReLU"; }

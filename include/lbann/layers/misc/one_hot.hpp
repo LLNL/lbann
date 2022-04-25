@@ -88,7 +88,6 @@ protected:
 
 };
 
-LBANN_DEFINE_LAYER_BUILDER(one_hot);
 
 #ifndef LBANN_ONE_HOT_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device)                 \

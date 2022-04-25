@@ -81,7 +81,6 @@ public:
 };
 
 // Builder function
-LBANN_DEFINE_LAYER_BUILDER(weights);
 
 // Explicit template instantiation
 #ifndef LBANN_WEIGHTS_LAYER_INSTANTIATE

@@ -28,6 +28,7 @@
 #define LBANN_LAYER_IN_TOP_K_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
@@ -90,7 +91,6 @@ class in_top_k_layer : public data_type_layer<TensorDataType> {
 
   /** Parameter for top-k search. */
   El::Int m_k;
-
 };
 
 #ifndef LBANN_IN_TOP_K_LAYER_INSTANTIATE

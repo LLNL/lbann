@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_IMAGE_ROTATION_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 

@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_TRANSFORM_TESSELLATE_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 

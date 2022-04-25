@@ -32,6 +32,8 @@ set_full_path(THIS_DIR_SOURCES
   mean_absolute_error.cpp
   mean_squared_error.cpp
   top_k_categorical_accuracy.cpp
+
+  loss_layer_builders.cpp
   )
 
 if (LBANN_HAS_GPU)

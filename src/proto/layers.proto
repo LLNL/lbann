@@ -125,12 +125,6 @@ message Layer {
   bool freeze = 401;
   /// Deprecated and unused
   repeated WeightsData weights_data = 402;
-  /// Deprecated and unused
-  string top = 403;
-  /// Deprecated and unused
-  string bottom = 404;
-  /// Deprecated and unused
-  string type = 405;
 
   // ===========================================
   // Concrete layer types

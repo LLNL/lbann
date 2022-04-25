@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_MISC_COVARIANCE_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
@@ -143,8 +144,8 @@ private:
   std::unique_ptr<AbsDistMatrixType> m_means;
   /** Workspace. */
   std::unique_ptr<AbsDistMatrixType> m_workspace;
-
 };
+
 
 #ifndef LBANN_COVARIANCE_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

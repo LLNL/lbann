@@ -30,15 +30,15 @@ set_full_path(THIS_DIR_SOURCES
   channelwise_mean.cpp
   channelwise_softmax.cpp
   covariance.cpp
-  dft_abs_builder.cpp
   dist_embedding.cpp
   mini_batch_index.cpp
   mini_batch_size.cpp
   one_hot.cpp
-  one_hot_builder.cpp
   rowwise_weights_norms.cpp
   uniform_hash.cpp
   variance.cpp
+
+  misc_builders.cpp
   )
 
 if (LBANN_HAS_FFTW)

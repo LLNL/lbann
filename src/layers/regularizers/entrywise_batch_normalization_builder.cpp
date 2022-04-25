@@ -23,34 +23,36 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef LBANN_LAYERS_MATH_DFT_ABS_BUILDER_HPP_
-#define LBANN_LAYERS_MATH_DFT_ABS_BUILDER_HPP_
 
-#include <lbann/base.hpp>
+#include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
 
-#include <memory>
+#include <layers.pb.h>
 
-// Forward declarations of Google protobuf classes
-namespace lbann_data
+template <typename T, lbann::data_layout L, El::Device D>
+std::unique_ptr<lbann::Layer>
+lbann::build_entrywise_batch_normalization_layer_from_pbuf(
+  lbann_comm* comm,
+  lbann_data::Layer const& proto_layer)
 {
-class Layer;
-}// namespace lbann_data
+  auto const& params = proto_layer.entrywise_batch_normalization();
+  if constexpr (std::is_same_v<T, float>)
+    return std::make_unique<entrywise_batch_normalization_layer<float, L, D>>(
+      params.decay(),
+      params.epsilon());
+  else if constexpr (std::is_same_v<T, double>)
+    return std::make_unique<entrywise_batch_normalization_layer<double, L, D>>(
+      params.decay(),
+      params.epsilon());
+  else
+    LBANN_ERROR("entrywise_batch_normalization_layer is only supported for "
+                "\"float\" and \"double\".");
+}
 
-namespace lbann
-{
+namespace lbann {
 
-// Forward declarations of LBANN classes
-class Layer;
-class lbann_comm;
+#define PROTO_DEVICE(T, Device)                                                \
+  LBANN_LAYER_BUILDER_ETI(entrywise_batch_normalization, T, Device)
 
-/** @brief Build an dft_abs_layer from a protobuf message.
- *
- *  @note The layout parameter must be here, even though it's not on
- *  the class. This is for a technical reason related to the factory.
-*/
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_dft_abs_layer_from_pbuf(
-  lbann_comm*, lbann_data::Layer const&);
+#include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
-#endif // LBANN_LAYERS_MATH_DFT_ABS_BUILDER_HPP_
+} // namespace lbann

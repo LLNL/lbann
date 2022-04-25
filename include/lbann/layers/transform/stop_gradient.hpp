@@ -75,7 +75,6 @@ protected:
 
 };
 
-LBANN_DEFINE_LAYER_BUILDER(stop_gradient);
 
 #ifndef LBANN_STOP_GRADIENT_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

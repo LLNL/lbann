@@ -28,6 +28,7 @@
 #define LBANN_LAYER_UNPOOLING_HPP_INCLUDED
 
 #include <vector>
+#include "lbann/layers/layer.hpp"
 #include "lbann/layers/transform/pooling.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/im2col.hpp"
@@ -267,6 +268,7 @@ class unpooling_layer : public data_type_layer<TensorDataType> {
   }
 
 };
+
 
 #ifndef LBANN_UNPOOLING_LAYER_INSTANTIATE
 #define PROTO(T)                           \

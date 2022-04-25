@@ -23,26 +23,19 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#ifndef LBANN_LAYERS_ACTIVATION_ACTIVATION_BUILDERS_HPP_INCLUDED
+#define LBANN_LAYERS_ACTIVATION_ACTIVATION_BUILDERS_HPP_INCLUDED
 
-#include "lbann/layers/transform/concatenate.hpp"
-
-#include <lbann/proto/proto_common.hpp>
-#include <layers.pb.h>
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_concatenate_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const& proto_layer)
-{
-  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, concatenation);
-  using LayerType = concatenate_layer<TensorDataType, Layout, Device>;
-  const auto& axis = proto_layer.concatenation().axis();
-  return std::make_unique<LayerType>(comm, axis);
-}
-
-#define PROTO_DEVICE(T, Device) \
-  LBANN_LAYER_BUILDER_ETI(concatenate, T, Device)
-#include "lbann/macros/instantiate_device.hpp"
+LBANN_DEFINE_LAYER_BUILDER(elu);
+LBANN_DEFINE_LAYER_BUILDER(identity);
+LBANN_DEFINE_LAYER_BUILDER(leaky_relu);
+LBANN_DEFINE_LAYER_BUILDER(log_softmax);
+LBANN_DEFINE_LAYER_BUILDER(relu);
+LBANN_DEFINE_LAYER_BUILDER(softmax);
 
 } // namespace lbann
+#endif // LBANN_LAYERS_ACTIVATION_ACTIVATION_BUILDERS_HPP_INCLUDED

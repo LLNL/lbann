@@ -357,8 +357,6 @@ private:
 
 };
 
-LBANN_DEFINE_LAYER_BUILDER(crop);
-
 #ifndef LBANN_CROP_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \
   extern template class crop_layer<T, data_layout::DATA_PARALLEL, Device>

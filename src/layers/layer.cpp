@@ -518,17 +518,13 @@ void Layer::back_prop() {
 void Layer::write_proto(lbann_data::Layer* proto) const {
   proto->Clear();
   proto->set_name(get_name());
-  proto->set_type(get_type());
-  if (get_num_parents() > 0) {
-    proto->set_bottom(get_parent_layer(0).get_name());
-  }
-  proto->set_top(get_name());
   //Add weights
   for (size_t i=0; i<num_weights(); ++i) {
     auto weight_proto = proto->add_weights_data();
     get_weights(i).write_proto(weight_proto);
   }
 }
+
 #ifdef LBANN_HAS_ONNX
 void Layer::fill_onnx_node(onnx::GraphProto& graph) const {
   auto* node = graph.add_node();

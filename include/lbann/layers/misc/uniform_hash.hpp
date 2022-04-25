@@ -80,49 +80,6 @@ protected:
 
 };
 
-// Builder function
-LBANN_DEFINE_LAYER_BUILDER(uniform_hash);
-
-// ---------------------------------------------
-// Implementation
-// ---------------------------------------------
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-uniform_hash_layer<TensorDataType,Layout,Device>::uniform_hash_layer(
-  lbann_comm* comm)
-  : data_type_layer<TensorDataType>(comm)
-{}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-uniform_hash_layer<TensorDataType,Layout,Device>* uniform_hash_layer<TensorDataType,Layout,Device>::copy() const {
-  return new uniform_hash_layer(*this);
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::string uniform_hash_layer<TensorDataType,Layout,Device>::get_type() const {
-  return "uniform hash";
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-data_layout uniform_hash_layer<TensorDataType,Layout,Device>::get_data_layout() const {
-  return Layout;
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-El::Device uniform_hash_layer<TensorDataType,Layout,Device>::get_device_allocation() const {
-  return Device;
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void uniform_hash_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& dr_metadata) {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-  this->set_output_dims(this->get_input_dims());
-}
-
-// ---------------------------------------------
-// Explicit template instantiation
-// ---------------------------------------------
-
 #ifdef LBANN_HAS_GPU
 #ifndef LBANN_UNIFORM_HASH_LAYER_INSTANTIATE
 #define PROTO(T)                                        \

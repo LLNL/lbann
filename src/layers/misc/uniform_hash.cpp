@@ -29,67 +29,36 @@
 
 namespace lbann {
 
-// ---------------------------------------------
-// Builder function
-// ---------------------------------------------
-
-namespace
-{
-
-template <typename T, data_layout L, El::Device D>
-struct Builder
-{
-  template <typename... Args>
-  static std::unique_ptr<Layer> Build(Args&&...)
-  {
-    LBANN_ERROR(
-      "Attempted to construct uniform_hash_layer ",
-      "with invalid parameters ",
-      "(TensorDataType=",TypeName<T>(),", ",
-      "Layout=",to_string(L),", ",
-      "Device=",to_string(D),")");
-    return nullptr;
-  }
-};
-
-#ifdef LBANN_HAS_GPU
-template <data_layout Layout>
-struct Builder<float,Layout,El::Device::GPU>
-{
-  template <typename... Args>
-  static std::unique_ptr<Layer> Build(Args&&... args)
-  {
-    using LayerType = uniform_hash_layer<float,
-                                         Layout,
-                                         El::Device::GPU>;
-    return std::make_unique<LayerType>(std::forward<Args>(args)...);
-  }
-};
-#endif // LBANN_HAS_GPU
-
-#ifdef LBANN_HAS_GPU
-template <data_layout Layout>
-struct Builder<double,Layout,El::Device::GPU>
-{
-  template <typename... Args>
-  static std::unique_ptr<Layer> Build(Args&&... args)
-  {
-    using LayerType = uniform_hash_layer<double,
-                                         Layout,
-                                         El::Device::GPU>;
-    return std::make_unique<LayerType>(std::forward<Args>(args)...);
-  }
-};
-#endif // LBANN_HAS_GPU
-
-} // namespace <anon>
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+uniform_hash_layer<TensorDataType,Layout,Device>::uniform_hash_layer(
+  lbann_comm* comm)
+  : data_type_layer<TensorDataType>(comm)
+{}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_uniform_hash_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const&)
-{
-  using BuilderType = Builder<TensorDataType, Layout, Device>;
-  return BuilderType::Build(comm);
+uniform_hash_layer<TensorDataType,Layout,Device>* uniform_hash_layer<TensorDataType,Layout,Device>::copy() const {
+  return new uniform_hash_layer(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::string uniform_hash_layer<TensorDataType,Layout,Device>::get_type() const {
+  return "uniform hash";
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+data_layout uniform_hash_layer<TensorDataType,Layout,Device>::get_data_layout() const {
+  return Layout;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+El::Device uniform_hash_layer<TensorDataType,Layout,Device>::get_device_allocation() const {
+  return Device;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void uniform_hash_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& dr_metadata) {
+  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  this->set_output_dims(this->get_input_dims());
 }
 
 // ---------------------------------------------
@@ -105,10 +74,5 @@ std::unique_ptr<Layer> build_uniform_hash_layer_from_pbuf(
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 #endif // LBANN_HAS_GPU
-
-#define PROTO_DEVICE(T, Device) \
-  LBANN_LAYER_BUILDER_ETI(uniform_hash, T, Device)
-#include "lbann/macros/instantiate_device.hpp"
-#undef PROTO_DEVICE
 
 } // namespace lbann

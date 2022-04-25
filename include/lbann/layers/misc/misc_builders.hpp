@@ -23,16 +23,26 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#ifndef LBANN_LAYERS_MISC_MISC_BUILDERS_HPP_INCLUDED
+#define LBANN_LAYERS_MISC_MISC_BUILDERS_HPP_INCLUDED
 
-#define LBANN_GAUSSIAN_LAYER_INSTANTIATE
-#include "lbann/layers/transform/gaussian.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
-#define PROTO_DEVICE(T, Device)                                         \
-  template class gaussian_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class gaussian_layer<T, data_layout::MODEL_PARALLEL, Device>
+LBANN_DEFINE_LAYER_BUILDER(argmax);
+LBANN_DEFINE_LAYER_BUILDER(argmin);
+LBANN_DEFINE_LAYER_BUILDER(channelwise_mean);
+LBANN_DEFINE_LAYER_BUILDER(channelwise_softmax);
+LBANN_DEFINE_LAYER_BUILDER(covariance);
+LBANN_DEFINE_LAYER_BUILDER(dft_abs);
+LBANN_DEFINE_LAYER_BUILDER(dist_embedding);
+LBANN_DEFINE_LAYER_BUILDER(mini_batch_index);
+LBANN_DEFINE_LAYER_BUILDER(mini_batch_size);
+LBANN_DEFINE_LAYER_BUILDER(one_hot);
+LBANN_DEFINE_LAYER_BUILDER(rowwise_weights_norms);
+LBANN_DEFINE_LAYER_BUILDER(uniform_hash);
+LBANN_DEFINE_LAYER_BUILDER(variance);
 
-#include "lbann/macros/instantiate_device.hpp"
-
-}// namespace lbann
+} // namespace lbann
+#endif // LBANN_LAYERS_MISC_MISC_BUILDERS_HPP_INCLUDED

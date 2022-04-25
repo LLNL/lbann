@@ -26,6 +26,7 @@
 
 #define LBANN_ARGMIN_LAYER_INSTANTIATE
 #include "lbann/layers/misc/argmin.hpp"
+
 #include <algorithm>
 
 namespace lbann {
