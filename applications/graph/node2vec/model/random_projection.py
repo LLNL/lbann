@@ -13,7 +13,7 @@ def random_projection(indices, num_projections, projection_dim):
         scaling_factors=projection_dim,
     )
     iota = lbann.WeightsLayer(
-        dims=.projection_dim,
+        dims=projection_dim,
         weights=lbann.Weights(
             initializer=lbann.ValueInitializer(
                 values=range(projection_dim)
