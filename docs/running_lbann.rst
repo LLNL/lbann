@@ -317,10 +317,9 @@ A simple example
     # Input data
     image = lbann.Input(data_field="samples")
     label = lbann.Input(data_field="labels")
-    input_ = lbann.Identity(image)
 
     # Softmax classifier
-    y = lbann.FullyConnected(input_, num_neurons = 10, has_bias = True)
+    y = lbann.FullyConnected(image, num_neurons = 10, has_bias = True)
     pred = lbann.Softmax(y)
 
     # Loss function and accuracy
