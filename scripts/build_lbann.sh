@@ -449,8 +449,9 @@ function exit_with_instructions()
 
 ##########################################################################################
 # Figure out if there are default dependencies or flags (e.g.  MPI/BLAS library) for the center
+CENTER_COMPILER=
 CENTER_DEPENDENCIES=
-CENTER_FLAGS=
+CENTER_LINKER_FLAGS=
 CENTER_BLAS_LIBRARY=
 set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
 
@@ -474,6 +475,24 @@ if [[ ! "${LBANN_VARIANTS}" =~ .*"^conduit".* ]]; then
     # If the user didn't supply a specific set of variants for Condiuit on the command line add one
     CONDUIT="^conduit${CONDUIT_VARIANTS}"
 fi
+
+if [[ "${LBANN_VARIANTS}" =~ (.*)(%[0-9a-zA-Z:\.@]+)(.*) ]]; then
+    # If the user specified a compiler on the command line, extract it here for use when propagating to
+    # other packages
+    CENTER_COMPILER=${BASH_REMATCH[2]}
+    LBANN_VARIANTS="${BASH_REMATCH[1]} ${BASH_REMATCH[3]}"
+fi
+
+if [[ "${CENTER_COMPILER}" =~ .*"%clang".* ]]; then
+    # If the compiler is clang use the LLD fast linker
+    CENTER_LINKER_FLAGS="+lld"
+fi
+
+if [[ "${CENTER_COMPILER}" =~ .*"%gcc".* ]]; then
+    # If the compiler is gcc use the gold fast linker
+    CENTER_LINKER_FLAGS="+gold"
+fi
+
 
 GPU_VARIANTS_ARRAY=('+cuda' '+rocm')
 DEPENDENT_PACKAGES_GPU_VARIANTS=
@@ -611,7 +630,7 @@ fi
 
 ##########################################################################################
 # Establish the spec for LBANN
-LBANN_SPEC="lbann${AT_LBANN_LABEL} ${CENTER_FLAGS} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CONDUIT} ${CENTER_DEPENDENCIES}"
+LBANN_SPEC="lbann${AT_LBANN_LABEL} ${CENTER_COMPILER} ${CENTER_LINKER_FLAGS} target=${SPACK_ARCH_TARGET} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CONDUIT} ${CENTER_DEPENDENCIES}"
 ##########################################################################################
 
 ##########################################################################################
@@ -623,6 +642,12 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     CMD="spack config add config:url_fetch_method:curl"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+    # Set the environment to vaoid concretizing for microarchitectures that are
+    # incompatible with the current host on LC platforms
+    # CMD="spack config add config:concretizer:targets:host_compatible:true"
+    # echo ${CMD} | tee -a ${LOG}
+    # [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
     # See if there are any center-specific externals
     SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
@@ -701,7 +726,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     if [[ -n "${PKG_LIST:-}" ]]; then
         for p in ${PKG_LIST}
         do
-            CMD="spack add ${p}"
+            CMD="spack add ${p} ${CENTER_COMPILER} target=${SPACK_ARCH_TARGET}"
             echo ${CMD} | tee -a ${LOG}
             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
         done

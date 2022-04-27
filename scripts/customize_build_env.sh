@@ -106,7 +106,7 @@ set_center_specific_modules()
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 cuda/11.4.1 mvapich2/2.3.6 python/3.7.2"
                 ;;
-            "ivybridge") # Catalyst
+            "ivybridge" | "cascadelake") # Catalyst, Ruby
                 MODULE_CMD="module --force unload StdEnv; module load gcc/10.2.1 mvapich2/2.3 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
@@ -167,35 +167,35 @@ set_center_specific_spack_dependencies()
         # MIRRORS="/p/vast1/lbann/spack/mirror /p/vast1/atom/spack/mirror"
         case ${spack_arch_target} in
             "power9le") # Lassen
+                CENTER_COMPILER="%gcc"
                 CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp ^cuda@11.1.105 ^libtool@2.4.2 ^python@3.9.10"
-                CENTER_FLAGS="+gold"
                 CENTER_BLAS_LIBRARY="blas=openblas"
-                # CENTER_DEPENDENCIES="%clang ^spectrum-mpi ^cuda@11.1.105 ^libtool@2.4.2 ^python@3.9.10"
-                # CENTER_FLAGS="+lld"
+                # CENTER_COMPILER="%clang"
+                # CENTER_DEPENDENCIES="^spectrum-mpi ^cuda@11.1.105 ^libtool@2.4.2 ^python@3.9.10"
                 # CENTER_BLAS_LIBRARY="blas=essl"
                 ;;
             "power8le") # Ray
+                CENTER_COMPILER="%gcc"
                 CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp ^cuda@11.1.105 ^libtool@2.4.2 ^python@3.9.10"
-                CENTER_FLAGS="+gold"
                 CENTER_BLAS_LIBRARY="blas=openblas"
+                # CENTER_COMPILER="%clang"
                 # CENTER_DEPENDENCIES="%clang ^spectrum-mpi ^cuda@11.1.105 ^libtool@2.4.2 ^py-packaging@17.1 ^python@3.9.10 ^py-scipy@1.6.3"
-                # CENTER_FLAGS="+lld"
                 # CENTER_BLAS_LIBRARY="blas=essl"
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 # On LC the mvapich2 being used is built against HWLOC v1
-               CENTER_DEPENDENCIES="%clang ^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10"
-               CENTER_FLAGS="+lld"
+                CENTER_COMPILER="%clang"
+                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10"
                 ;;
-            "ivybridge") # Catalyst
+            "ivybridge" | "cascadelake") # Catalyst, Ruby
                 # On LC the mvapich2 being used is built against HWLOC v1
-               CENTER_DEPENDENCIES="%gcc ^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10"
-               CENTER_FLAGS="+gold"
+                CENTER_COMPILER="%gcc"
+                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10"
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
+                CENTER_COMPILER="%clang"
                 CENTER_DEPENDENCIES="^openmpi ^hwloc@2.3.0"
-                CENTER_FLAGS="+lld"
                 ;;
             *)
                 echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
@@ -216,7 +216,8 @@ set_center_specific_spack_dependencies()
                 CENTER_DEPENDENCIES="^openmpi"
                 ;;
             "zen3") # Perlmutter
-                CENTER_DEPENDENCIES="%cce@13.0.0 ^mpich@8.1.12 ^python@3.9.4 ^cuda+allow-unsupported-compilers"
+                CENTER_COMPILER="%cce@13.0.0"
+                CENTER_DEPENDENCIES="^mpich@8.1.12 ^python@3.9.4 ^cuda+allow-unsupported-compilers"
                 CENTER_BLAS_LIBRARY="blas=libsci"
                 ;;
             *)
