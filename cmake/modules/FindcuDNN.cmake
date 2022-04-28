@@ -62,7 +62,7 @@ if (CUDNN_INCLUDE_PATH)
 #include <stdio.h>
 #include <cudnn_version.h>
 int main() {
-  printf(\"%d.%d.%d\\n\", CUDNN_MAJOR, CUDNN_MINOR, CUDNN_PATCHLEVEL);
+  printf(\"%d.%d.%d\", CUDNN_MAJOR, CUDNN_MINOR, CUDNN_PATCHLEVEL);
   return 0;
 }
 ")
