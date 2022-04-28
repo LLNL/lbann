@@ -22,6 +22,7 @@ LBANN_ENV=
 INSTALL_DEPS=
 DRY_RUN=
 CLEAN_BUILD=
+ALLOW_BACKEND_BUILDS=
 # Flag for passing subcommands to spack dev-build
 DEV_BUILD_FLAGS=
 # Flag for passing subcommands to spack install
@@ -81,6 +82,7 @@ Options:
   ${C}--aluminum-repo <PATH>${N}     Use a local repository for the Aluminum library
   ${C}--update-buildcache <PATH>${N} Update a buildcache defined by the Spack mirror (Expert Only)
   ${C}-u | --user <VERSION>${N}      Build from the GitHub repo -- as a "user" not developer using optional <VERSION> tag
+  ${C}--allow-backend-builds${N}     Allow for builds that are not compatible with the host target architecture
   ${C}--${N}                         Pass all variants to spack after the dash dash (--)
 EOF
 }
@@ -236,6 +238,9 @@ while :; do
                 ALUMINUM_VER=
                 DIHYDROGEN_VER=
             fi
+            ;;
+        --allow-backend-builds)
+            ALLOW_BACKEND_BUILDS="TRUE"
             ;;
         --)
             shift
@@ -630,7 +635,7 @@ fi
 
 ##########################################################################################
 # Establish the spec for LBANN
-LBANN_SPEC="lbann${AT_LBANN_LABEL} ${CENTER_COMPILER} ${CENTER_LINKER_FLAGS} target=${SPACK_ARCH_TARGET} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CONDUIT} ${CENTER_DEPENDENCIES}"
+LBANN_SPEC="lbann${AT_LBANN_LABEL} ${CENTER_COMPILER} ${CENTER_LINKER_FLAGS} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CONDUIT} ${CENTER_DEPENDENCIES}"
 ##########################################################################################
 
 ##########################################################################################
@@ -645,9 +650,11 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
 
     # Set the environment to vaoid concretizing for microarchitectures that are
     # incompatible with the current host on LC platforms
-    # CMD="spack config add config:concretizer:targets:host_compatible:true"
-    # echo ${CMD} | tee -a ${LOG}
-    # [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    if [[ -z "${ALLOW_BACKEND_BUILDS:-}" ]]; then
+        CMD="spack config add concretizer:targets:host_compatible:true"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    fi
 
     # See if there are any center-specific externals
     SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
@@ -726,7 +733,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     if [[ -n "${PKG_LIST:-}" ]]; then
         for p in ${PKG_LIST}
         do
-            CMD="spack add ${p} ${CENTER_COMPILER} target=${SPACK_ARCH_TARGET}"
+            CMD="spack add ${p} ${CENTER_COMPILER}"
             echo ${CMD} | tee -a ${LOG}
             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
         done
