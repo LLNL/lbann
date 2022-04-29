@@ -281,10 +281,23 @@ function uninstall_specific_versions()
     fi
 }
 
+# This should be a commit hash (NOT a tag) that needs to exist in the
+# spack repository that is checked out. It's a minimum version, so
+# more commits is fine.
+MIN_SPACK_COMMIT=c06f69d0bffad688f668db41cb6acad894a745ac
+
 # "spack" is just a shell function; it may not be exported to this
 # scope. Just to be sure, reload the shell integration.
 if [ -n "${SPACK_ROOT}" ]; then
-    source ${SPACK_ROOT}/share/spack/setup-env.sh
+    pushd ${SPACK_ROOT}
+    if git merge-base --is-ancestor ${MIN_SPACK_COMMIT} HEAD &> /dev/null;
+    then
+        source ${SPACK_ROOT}/share/spack/setup-env.sh
+    else
+        echo "ERROR: Spack needs at least commit ${MIN_SPACK_COMMIT}."
+        echo "ERROR: Please update spack."
+    fi
+    popd
 else
     echo "Spack required.  Please set SPACK_ROOT environment variable"
     exit 1
