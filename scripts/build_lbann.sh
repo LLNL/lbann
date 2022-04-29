@@ -658,7 +658,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-    # Set the environment to vaoid concretizing for microarchitectures that are
+    # Set the environment to avoid concretizing for microarchitectures that are
     # incompatible with the current host on LC platforms
     if [[ -z "${ALLOW_BACKEND_BUILDS:-}" ]]; then
         CMD="spack config add concretizer:targets:host_compatible:true"
