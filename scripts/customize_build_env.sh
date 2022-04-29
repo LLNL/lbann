@@ -104,7 +104,8 @@ set_center_specific_modules()
                 # MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2 essl/6.2.1"
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
-                MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 cuda/11.4.1 mvapich2/2.3.6 python/3.7.2"
+                MODULE_CMD_GCC="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.4.1 mvapich2/2.3 python/3.7.2"
+                MODULE_CMD_CLANG="module --force unload StdEnv; module load clang/12.0.1 cuda/11.4.1 mvapich2/2.3.6 python/3.7.2"
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
                 MODULE_CMD="module --force unload StdEnv; module load gcc/10.2.1 mvapich2/2.3 python/3.7.2"

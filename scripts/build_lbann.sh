@@ -498,7 +498,6 @@ if [[ "${CENTER_COMPILER}" =~ .*"%gcc".* ]]; then
     CENTER_LINKER_FLAGS="+gold"
 fi
 
-
 GPU_VARIANTS_ARRAY=('+cuda' '+rocm')
 DEPENDENT_PACKAGES_GPU_VARIANTS=
 for GPU_VARIANTS in ${GPU_VARIANTS_ARRAY[@]}
@@ -536,11 +535,22 @@ if [[ ! -n "${SKIP_MODULES:-}" ]]; then
     # Activate modules
     MODULE_CMD=
     set_center_specific_modules ${CENTER} ${SPACK_ARCH_TARGET}
+    if [[ "${CENTER_COMPILER}" =~ .*"%clang".* && -n "${MODULE_CMD_CLANG}" && -z "${MODULE_CMD}" ]]; then
+        # If the compiler is clang use the specificed set of modules
+        MODULE_CMD=${MODULE_CMD_CLANG}
+    fi
+
+    if [[ "${CENTER_COMPILER}" =~ .*"%gcc".* && -n "${MODULE_CMD_GCC}" && -z "${MODULE_CMD}" ]]; then
+        # If the compiler is gcc use the specificed set of modules
+        MODULE_CMD=${MODULE_CMD_GCC}
+    fi
+
     if [[ -n ${MODULE_CMD} ]]; then
         echo ${MODULE_CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { eval ${MODULE_CMD} || exit_on_failure "${MODULE_CMD}"; }
     fi
 fi
+
 
 # If the dependencies are being installed then you should clean things up
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
