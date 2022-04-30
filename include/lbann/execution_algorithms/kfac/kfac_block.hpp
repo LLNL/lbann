@@ -58,11 +58,15 @@ class kfac_block {
   kfac_block(Layer* layer,
              kfac::KFACExecutionContext* context,
              size_t layer_id,
-             size_t inverse_proc_rank)
+             size_t inverse_proc_rank,
+             bool enable_copy_errors,
+             bool enable_copy_activations)
       : m_layer(layer),
         m_layer_id(layer_id),
         m_inverse_proc_rank(inverse_proc_rank),
-        m_context(context) {
+        m_context(context),
+        m_enable_copy_errors(enable_copy_errors),
+        m_enable_copy_activations(enable_copy_activations) {
     m_has_kronecker_inverse = false;
   }
   virtual ~kfac_block() = default;
@@ -229,6 +233,12 @@ class kfac_block {
   /** @brief The target layer. */
   Layer *m_layer;
 
+  /** @brief Enable copying of errors to enhance async communication. */
+  bool m_enable_copy_errors;
+
+  /** @brief Enable copying of activations to enhance async communication. */
+  bool m_enable_copy_activations;
+
   /** @brief The layer ID in the model.
       TODO: Remove this. */
   const size_t m_layer_id;
@@ -241,7 +251,8 @@ class kfac_block {
 
   /** @brief distributed martices for activations and gradients. */
   std::vector<std::unique_ptr<AbsDistMat>> m_parent_local_activations,
-    m_child_local_errors, m_weight_gradients, m_subset_matrix;
+    m_child_local_errors, m_weight_gradients, m_subset_matrix, m_errors_copy,
+    m_activations_copy;
 
   /** @brief Translatebetweengrid  funciton has a basic implementation for STAR,STAR
    * distributed matrices. Therefore, using local matrices for weights  */

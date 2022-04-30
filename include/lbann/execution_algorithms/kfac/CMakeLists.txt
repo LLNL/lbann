@@ -30,6 +30,7 @@ set_full_path(THIS_DIR_HEADERS
   kfac_block.hpp
   kfac_block_bn.hpp
   kfac_block_fc_conv.hpp
+  kfac_block_channelwise_fc.hpp
   kfac_block_gru.hpp
   kfac_util.hpp
   )

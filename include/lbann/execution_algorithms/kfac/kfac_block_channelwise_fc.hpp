@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,101 +24,36 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_BLOCK_FC_CONV_HPP_INCLUDED
-#define LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_BLOCK_FC_CONV_HPP_INCLUDED
+#ifndef LBANN_EXECUTION_ALGORITHMS_KFAC_BLOCK_CHANNELWISE_FC_HPP_INCLUDED
+#define LBANN_EXECUTION_ALGORITHMS_KFAC_BLOCK_CHANNELWISE_FC_HPP_INCLUDED
 
 #include "lbann/execution_algorithms/kfac/kfac_block.hpp"
-#include "lbann/layers/learning/convolution.hpp"
 
 namespace lbann {
 
-namespace kfac_fc_conv_util {
-
-/** @brief Get diagonal elements of a matrix. **/
-template <El::Device Device>
-void get_diagonal(
-    El::Matrix<DataType, Device>& diag,
-    const El::Matrix<DataType, Device>& A,
-    const El::SyncInfo<Device>& sync_info);
-
-/** @brief Transpose NC(D)HW matrix to N(D)HWC. **/
-template <El::Device Device>
-void conv_transpose(
-    const El::Matrix<DataType, Device>& activations,
-    El::Matrix<DataType, Device>& act_columns,
-    size_t mini_batch_size, size_t num_channels,
-    size_t spatial_prod,
-    const El::SyncInfo<Device>& sync_info);
-
-/** @brief im2col. **/
-template <El::Device Device>
-void im2col(const El::Matrix<DataType, Device>& im,
-            El::Matrix<DataType, Device>& col,
-            const int num_channels,
-            const int im_num_dims,
-            const int * im_dims,
-            const int * im_pads,
-            const int * window_dims,
-            const int * window_strides,
-            const int batch_size,
-            const El::SyncInfo<Device>& sync_info);
-
-} // namespace kfac_fc_conv_util
 
 /** An FC/conv building block for K-FAC.
  * TODO: Split into kfac_block_fc and kfac_block_conv.
  */
 template <El::Device Device>
-class kfac_block_fc_conv: public kfac_block<Device> {
+class kfac_block_channelwise_fc: public kfac_block<Device> {
  public:
 
   /** Constructor.
    */
-  kfac_block_fc_conv(Layer* layer,
+  kfac_block_channelwise_fc(Layer* layer,
                      kfac::KFACExecutionContext* context,
                      const size_t layer_id,
                      const size_t inverse_proc_rank,
                      const bool enable_copy_errors,
-                     const bool enable_copy_activations,
-                     const bool is_conv)
+                     const bool enable_copy_activations)
       : kfac_block<Device>(layer, context, layer_id, inverse_proc_rank, enable_copy_errors, enable_copy_activations),
-        m_is_conv(is_conv), m_has_bias(layer->num_weights() > 1) {
-    if(m_is_conv) {
-      m_conv_input_spatial_prod = 1;
-      const auto input_dims = layer->get_input_dims();
-      for(auto i = input_dims.begin()+1; i != input_dims.end(); i++) {
-        m_conv_input_spatial_prod *= *i;
-        m_conv_input_spatial_dims.push_back(*i);
-      }
+        m_has_bias(layer->num_weights() > 1) {
 
-      m_conv_output_spatial_prod = 1;
-      const auto output_dims = layer->get_output_dims();
-      for(auto i = output_dims.begin()+1; i != output_dims.end(); i++) {
-        m_conv_output_spatial_prod *= *i;
-        m_conv_output_spatial_dims.push_back(*i);
-      }
-
-      if(input_dims.size() != 3 && input_dims.size() != 4) {
-        std::stringstream err;
-        err << "The K-FAC only supports 2D or 3D tensors."
-            << " layer: " << layer->get_name()
-            << ", input_dims: ";
-        for(auto i = input_dims.begin(); i != input_dims.end(); i++)
-          err << (std::distance(input_dims.begin(), i) > 0 ? "," : "") << *i;
-        LBANN_ERROR(err.str());
-      }
-    }
-
-    if(m_is_conv && m_has_bias) {
-      std::stringstream err;
-      err << "The K-FAC does not currently support biases for convolutional layers."
-          << " layer: " << layer->get_name();
-      LBANN_ERROR(err.str());
-    }
   }
 
-  kfac_block_fc_conv(const kfac_block_fc_conv&) = default;
-  kfac_block_fc_conv& operator=(const kfac_block_fc_conv&) = default;
+  kfac_block_channelwise_fc(const kfac_block_channelwise_fc&) = default;
+  kfac_block_channelwise_fc& operator=(const kfac_block_channelwise_fc&) = default;
 
   void compute_local_kronecker_factors(
       lbann_comm* comm,
@@ -191,8 +126,7 @@ class kfac_block_fc_conv: public kfac_block<Device> {
 
   std::string get_info() const override {
     std::ostringstream oss;
-    oss << kfac_block<Device>::get_info()
-        << ", is_conv=" << m_is_conv;
+    oss << kfac_block<Device>::get_info();
     return oss.str();
   }
 
@@ -203,18 +137,6 @@ class kfac_block_fc_conv: public kfac_block<Device> {
       El::AbstractMatrix<DataType>& factor,
       const El::AbstractMatrix<DataType>& activations,
       DataType alpha);
-
-  /** @brief Gets the Kronecker factor matrix of a convolutional layer. **/
-  static void get_kronecker_factor_conv(
-      El::Matrix<DataType, Device>& factor,
-      El::Matrix<DataType, Device>& Acol,
-      const El::Matrix<DataType, Device>& activations,
-      DataType alpha,
-      size_t local_batch_size, size_t num_channels,
-      const std::vector<int>& spatial_dims,
-      const convolution_layer<DataType, data_layout::DATA_PARALLEL, Device> *l_conv,
-      bool use_im2col,
-      const El::SyncInfo<Device>& sync_info);
 
   /** @brief Returns the pi constant. **/
   static double compute_pi(
@@ -233,7 +155,7 @@ class kfac_block_fc_conv: public kfac_block<Device> {
   get_internal_matrix_info() const override;
 
   /** @brief Information to perform its computation. **/
-  const bool m_is_conv, m_has_bias;
+  const bool m_has_bias;
   size_t m_conv_input_spatial_prod, m_conv_output_spatial_prod;
   std::vector<int> m_conv_input_spatial_dims, m_conv_output_spatial_dims;
 
@@ -263,4 +185,4 @@ class kfac_block_fc_conv: public kfac_block<Device> {
 
 } // namespace lbann
 
-#endif  // LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_BLOCK_FC_CONV_HPP_INCLUDED
+#endif  // LBANN_EXECUTION_ALGORITHMS_KFAC_kfac_block_channelwise_fc_HPP_INCLUDED

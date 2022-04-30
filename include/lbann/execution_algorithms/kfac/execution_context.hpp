@@ -114,6 +114,19 @@ public:
   void load_from_checkpoint_distributed(persist& p) override;
   ///@}
 
+  void print_workspace_size(model& model){
+    auto& comm = *model.get_comm();
+    int tot_size = 0;
+    for (auto const &pair: m_workspace) {
+        std::cout<<"Workspace Rank:"<<comm.get_rank_in_world()
+            <<" "<<"Name:"<<pair.first<<
+            <<" "<<"size:"<<pair.second.Height()<<" "<<pair.second.Width()<<"\n";
+        tot_size += pair.second.Height() * pair.second.Width();
+    }
+    std::cout<<"Workspace Rank:"<<comm.get_rank_in_world()
+            <<" "<<"Total size:"<<tot_size<<"\n";
+  }
+
 private:
 
   SGDExecutionContext m_sgd_execution_context;

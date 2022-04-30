@@ -191,4 +191,8 @@ message KFAC {
 
   bool use_eigen_decomposition = 20; // default: false
 
+  bool enable_copy_errors = 22; // default: false
+
+  bool enable_copy_activations = 23; // default: false
+
 }//message KFAC

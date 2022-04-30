@@ -96,6 +96,8 @@ class KFAC;
 template <hydrogen::Device Device>
 class kfac_block_fc_conv;
 template <hydrogen::Device Device>
+class kfac_block_channelwise_fc;
+template <hydrogen::Device Device>
 class kfac_block_bn;
 template <hydrogen::Device Device>
 class kfac_block_gru;
@@ -289,6 +291,8 @@ class Layer {
   friend class KFAC;
   template <hydrogen::Device Device>
   friend class kfac_block_fc_conv;
+  template <hydrogen::Device Device>
+  friend class kfac_block_channelwise_fc;
   template <hydrogen::Device Device>
   friend class kfac_block_bn;
   template <hydrogen::Device Device>

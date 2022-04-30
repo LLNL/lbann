@@ -116,8 +116,10 @@ class kfac_block_gru: public kfac_block<Device> {
   kfac_block_gru(Layer* layer,
                  kfac::KFACExecutionContext* context,
                  size_t layer_id,
-                 size_t inverse_proc_rank)
-      : kfac_block<Device>(layer, context, layer_id, inverse_proc_rank) {
+                 size_t inverse_proc_rank,
+                 bool enable_copy_errors,
+                 bool enable_copy_activations)
+      : kfac_block<Device>(layer, context, layer_id, inverse_proc_rank, enable_copy_errors, enable_copy_activations) {
 
     check_dnn_lib_spec();
 

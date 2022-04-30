@@ -29,6 +29,7 @@ set_full_path(THIS_DIR_SOURCES
   kfac_block.cpp
   kfac_block_bn.cpp
   kfac_block_fc_conv.cpp
+  kfac_block_channelwise_fc.cpp
   kfac_block_gru.cpp
   kfac_util.cpp
 )

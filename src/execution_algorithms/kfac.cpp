@@ -33,10 +33,12 @@
 #include "lbann/execution_algorithms/kfac/kfac_block.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_block_bn.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_block_fc_conv.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_block_channelwise_fc.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_block_gru.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_util.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/learning/fully_connected.hpp"
+#include "lbann/layers/learning/channelwise_fully_connected.hpp"
 #include "lbann/layers/learning/convolution.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/models/model.hpp"
@@ -71,7 +73,10 @@ KFAC::KFAC(
   double learning_rate_factor_gru,
   size_t compute_interval,
   bool distribute_precondition_compute,
-  bool use_eigen_decomposition)
+  bool use_eigen_decomposition,
+  bool enable_copy_errors,
+  bool enable_copy_activations)
+
   : TrainingAlgorithm{std::move(name)},
     m_stopping_criteria{std::move(stop)},
     m_damping_act_params{std::move(damping_act_params)},
@@ -93,7 +98,9 @@ KFAC::KFAC(
     m_learning_rate_factor_gru{learning_rate_factor_gru},
     m_compute_interval{compute_interval},
     m_distribute_precondition_compute{distribute_precondition_compute},
-    m_use_eigen_decomposition{use_eigen_decomposition}
+    m_use_eigen_decomposition{use_eigen_decomposition},
+    m_enable_copy_errors{enable_copy_errors},
+    m_enable_copy_activations{enable_copy_activations}
 {}
 
 KFAC::KFAC(KFAC const& other)
@@ -117,7 +124,9 @@ KFAC::KFAC(KFAC const& other)
     m_learning_rate_factor{other.m_learning_rate_factor},
     m_compute_interval{other.m_compute_interval},
     m_distribute_precondition_compute{other.m_distribute_precondition_compute},
-    m_use_eigen_decomposition{other.m_use_eigen_decomposition}
+    m_use_eigen_decomposition{other.m_use_eigen_decomposition},
+    m_enable_copy_errors{other.m_enable_copy_errors},
+    m_enable_copy_activations{other.m_enable_copy_activations}
 {}
 
 KFAC& KFAC::operator=(KFAC const& other) {
@@ -142,6 +151,9 @@ KFAC& KFAC::operator=(KFAC const& other) {
   m_compute_interval = other.m_compute_interval;
   m_distribute_precondition_compute = other.m_distribute_precondition_compute;
   m_use_eigen_decomposition = other.m_use_eigen_decomposition;
+  m_enable_copy_errors = m_enable_copy_errors;
+  m_enable_copy_activations = m_enable_copy_activations;
+
   return *this;
 }
 
@@ -232,7 +244,24 @@ void KFAC::train(
     if (train_mini_batch(kfac_context, model, dc)) {
       // Finalize epoch
       sgd_context.inc_epoch();
-      std::cout<<"Inverse comm:"<<m_time_span_inverse_comm<<" "<<m_time_span_backward_comm<<" "<<m_time_span_forward_comm <<" "<<m_time_span_precond_comm<<"\n";
+
+      //profiling code
+      std::cout<<"Comm rank:"<<comm.get_rank_in_world()<<" Primary Grid:"<< (comm.get_grid_type() == GridType::PRIMARY_GRID) <<" Inverse comm:"<<m_time_span_inverse_comm \
+      <<" backward:"<<m_time_span_backward_comm<<" "<<m_time_span_backward_comm_end \
+      <<" forward:"<<m_time_span_forward_comm <<" "<<m_time_span_forward_comm_end \
+      <<" InvPre:"<<m_time_span_precond_comm
+      <<" Forward:"<<m_time_forward_pass
+      <<" backward:"<<m_time_backward_pass
+      <<" KFAC:"<<m_time_kfac<<"\n";
+      m_time_span_inverse_comm = 0;
+      m_time_span_backward_comm = 0;
+      m_time_span_backward_comm_end = 0;
+      m_time_span_forward_comm = 0;
+      m_time_span_forward_comm_end = 0;
+      m_time_span_precond_comm = 0;
+      m_time_forward_pass = 0;
+      m_time_backward_pass =0;
+      m_time_kfac = 0;
 
       if(comm.get_KFAC_subgrid_create_two_models()
         or comm.get_grid_type()==GridType::NO_GRID
@@ -276,6 +305,7 @@ void KFAC::train(
 
         // Trigger new epoch stuff next iteration (if there is one).
         is_start_of_epoch = true;
+        kfac_context.print_workspace_size(model);
       }
     }
 
@@ -305,6 +335,7 @@ bool KFAC::train_mini_batch(
   model& model,
   data_coordinator& dc)
 {
+  bool profile=true;
   auto& sgd_context = kfac_context.get_sgd_execution_context();
   auto current_epoch = sgd_context.get_epoch();
 
@@ -345,8 +376,17 @@ bool KFAC::train_mini_batch(
 
         // Forward prop step
         model.clear_gradients();
-        // sync_weights_model(model, model.get_comm());
+
+        if(profile){
+          cudaDeviceSynchronize();
+        }
+        auto t_start = std::chrono::high_resolution_clock::now();
         model.forward_prop(execution_mode::training);
+        if(profile){
+          cudaDeviceSynchronize();
+        }
+        auto t_stop = std::chrono::high_resolution_clock::now();
+        m_time_forward_pass += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
       }
 
       if(compute_inverse)
@@ -365,8 +405,19 @@ bool KFAC::train_mini_batch(
           sgd_context.get_current_mini_batch_size());
 
         // Backward prop step
+        if(profile){
+          cudaDeviceSynchronize();
+        }
+        auto t_start = std::chrono::high_resolution_clock::now();
+
         model.get_objective_function()->differentiate();
         model.backward_prop();
+
+        if(profile){
+          cudaDeviceSynchronize();
+        }
+        auto t_stop = std::chrono::high_resolution_clock::now();
+        m_time_backward_pass += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
       }
       else{
         finished = dc.epoch_complete(execution_mode::training);
@@ -379,7 +430,16 @@ bool KFAC::train_mini_batch(
           end_old_async_weights_model(model, model.get_comm(),kfac_context);
 
       if(compute_inverse){
+        if(profile){
+          cudaDeviceSynchronize();
+        }
+        auto t_start = std::chrono::high_resolution_clock::now();
         on_backward_prop_end(kfac_context, model);
+        if(profile){
+          cudaDeviceSynchronize();
+        }
+        auto t_stop = std::chrono::high_resolution_clock::now();
+        m_time_kfac += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
       }
 
 
@@ -400,12 +460,13 @@ bool KFAC::train_mini_batch(
                 apply_precondition = true;
               else
                 apply_precondition = m_use_KFAC_epoch[current_epoch];
-              if(apply_precondition)
+              if(apply_precondition){
                 block->compute_preconditioned_gradients(
                     &comm,
                     is_gru ? m_learning_rate_factor_gru : m_learning_rate_factor,
                     m_print_matrix, m_print_matrix_summary,
                     m_print_time);
+              }
           }
           if(m_distribute_precondition_compute)
             allgather_precondition_gradient(comm, kfac_context);
@@ -1140,11 +1201,13 @@ void KFAC::on_forward_prop_end(
       const auto l_conv = dynamic_cast<convolution_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
       const auto l_bn = dynamic_cast<batch_normalization_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
       const auto l_gru = dynamic_cast<gru_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
+      const auto l_cw_fc = dynamic_cast<channelwise_fully_connected_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
       const bool is_fc = (l_fc != nullptr);
       const bool is_conv = (l_conv != nullptr);
       const bool is_bn = (l_bn != nullptr);
       const bool is_gru = (l_gru != nullptr);
-      if(!(is_fc || is_conv || is_bn || is_gru))
+      const bool is_cw_fc = (l_cw_fc != nullptr);
+      if(!(is_fc || is_conv || is_bn || is_gru || is_cw_fc))
         continue;
 
       if(std::find(m_disable_layers.begin(), m_disable_layers.end(), l->get_name()) != m_disable_layers.end()) {
@@ -1178,17 +1241,25 @@ void KFAC::on_forward_prop_end(
         LBANN_ERROR(err.str());
       }
 
+      bool enable_copy_errors = this->m_enable_copy_errors;
+      bool enable_copy_activations = this->m_enable_copy_activations;
+
+      std::cout<<"Enable copy errors:"<<enable_copy_errors<<" Enable copy act"<<enable_copy_activations<<"\n";
       std::shared_ptr<kfac_block<Device>> block;
       if(is_fc || is_conv) {
         block = std::make_shared<kfac_block_fc_conv<Device>>(
-            l, &context, layer_id, proc_rank, is_conv);
+            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, is_conv);
       } else if(is_bn) {
         block = std::make_shared<kfac_block_bn<Device>>(
-            l, &context, layer_id, proc_rank);
+            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations);
       } else if(is_gru) {
         block = std::make_shared<kfac_block_gru<Device>>(
-            l, &context, layer_id, proc_rank);
+            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations);
+      } else if(is_cw_fc){
+        block = std::make_shared<kfac_block_channelwise_fc<Device>>(
+            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations);
       }
+
 
       context.m_blocks.push_back(std::move(block));
       if(m_inverse_strategy != kfac::kfac_inverse_strategy::ROOT)
@@ -1206,6 +1277,17 @@ void KFAC::on_forward_prop_end(
     prof_region_end("kfac-setup", prof_sync);
   }
 
+  auto t_start_f = std::chrono::high_resolution_clock::now();
+  for(auto& block : context.m_blocks) {
+    // Start forward end exchange (like activations and weights)
+    if(m_has_kronecker_inverse and this->m_enable_copy_activations)
+    {
+      block->end_communication_forward_end(&comm);
+    }
+  }
+  auto t_stop_f = std::chrono::high_resolution_clock::now();
+  m_time_span_forward_comm_end += std::chrono::duration_cast<std::chrono::microseconds>(t_stop_f - t_start_f).count();
+
   for(auto& block : context.m_blocks)
     block->on_forward_prop_end(&comm);
 
@@ -1219,9 +1301,23 @@ void KFAC::on_forward_prop_end(
 
     m_has_kronecker_inverse = true;
   }
+  auto t_start_b = std::chrono::high_resolution_clock::now();
+  for(auto& block : context.m_blocks) {
+    // Start forward end exchange (like activations and weights)
+    if(m_has_kronecker_inverse and this->m_enable_copy_errors)
+    {
+      block->end_communication_backward_end(&comm);
+    }
+  }
+  auto t_stop_b = std::chrono::high_resolution_clock::now();
+  m_time_span_backward_comm_end += std::chrono::duration_cast<std::chrono::microseconds>(t_stop_b - t_start_b).count();
+
+
+  CHECK_CUDA(cudaDeviceSynchronize());
   auto t_start = std::chrono::high_resolution_clock::now();
   for(auto& block : context.m_blocks) {
     // Start forward end exchange (like activations and weights)
+
     block->start_communication_forward_end(&comm);
   }
   auto t_stop = std::chrono::high_resolution_clock::now();
@@ -1274,18 +1370,31 @@ void KFAC::on_backward_prop_end(
 
   if(context.get_step()>1 and
     (comm.get_grid_type()==GridType::PRIMARY_GRID or comm.get_grid_type()==GridType::SECONDARY_GRID)){
+      auto t_start = std::chrono::high_resolution_clock::now();
 
       end_send_recv_inverse_matrices(context, &comm);
+      auto t_stop = std::chrono::high_resolution_clock::now();
+      m_time_span_inverse_comm += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
     }
 
   // List up layers to be updated
   if(context.m_blocks.size() == 0){
     LBANN_ERROR("K-FAC blocks have not been setup");
   }
+
+  auto t_start_f = std::chrono::high_resolution_clock::now();
+  for(auto& block : context.m_blocks) {
+    if(comm.get_grid_type() == GridType::SECONDARY_GRID or m_enable_copy_activations == false)
+      block->end_communication_forward_end(&comm);
+  }
+  auto t_stop_f = std::chrono::high_resolution_clock::now();
+  m_time_span_forward_comm_end += std::chrono::duration_cast<std::chrono::microseconds>(t_stop_f - t_start_f).count();
+
+  CHECK_CUDA(cudaDeviceSynchronize());
   auto t_start = std::chrono::high_resolution_clock::now();
   for(auto& block : context.m_blocks) {
     // Exchange activations and errors
-    block->end_communication_forward_end(&comm);
+    // block->end_communication_forward_end(&comm);
     block->start_communication_backward_end(&comm);
     if(comm.get_grid_type() == GridType::SECONDARY_GRID)
       block->end_communication_backward_end(&comm);
@@ -1445,25 +1554,29 @@ void KFAC::on_backward_prop_end(
           apply_precondition = true;
         else
           apply_precondition = m_use_KFAC_epoch[current_epoch];
-        if(apply_precondition)
+        if(apply_precondition){
           block->compute_preconditioned_gradients(
               &comm,
               is_gru ? m_learning_rate_factor_gru : m_learning_rate_factor,
               m_print_matrix, m_print_matrix_summary,
               m_print_time);
+        }
     	}
       if(m_distribute_precondition_compute)
         allgather_precondition_gradient(comm, context);
 
     }
-    for(auto& block : context.m_blocks) {
-      // Exchange activations and errors
-      if(comm.get_grid_type() == GridType::PRIMARY_GRID)
-        block->end_communication_backward_end(&comm);
+    if(comm.get_grid_type() == GridType::PRIMARY_GRID and this->m_enable_copy_errors==false)
+    {
+      for(auto& block : context.m_blocks) {
+        // Exchange activations and errors
+          block->end_communication_backward_end(&comm);
+      }
     }
   }
 
   if(is_first_step) {
+    int kfac_inverse_size = 0;
     for(auto& block : context.m_blocks) {
       for(auto& info : block->get_internal_matrix_info()) {
         std::ostringstream oss;
@@ -1475,8 +1588,14 @@ void KFAC::on_backward_prop_end(
             << "x" << std::get<2>(info)
             << ")" << std::endl;
         std::cout << oss.str();
+        if(std::get<0>(info).find("inverse_A")!=std::string::npos
+          or std::get<0>(info).find("inverse_A")!=std::string::npos or true)
+        {
+          kfac_inverse_size += (int)std::get<1>(info) *(int)std::get<2>(info);
+        }
       }
     }
+    std::cout<<"Total Inverse size:"<<kfac_inverse_size<<"\n";
   }
 
 }
@@ -1588,6 +1707,8 @@ std::unique_ptr<lbann::KFAC> lbann::make<lbann::KFAC>(
   const size_t update_interval_steps = kfac_params.update_interval_steps();
   const size_t compute_interval = El::Max(kfac_params.compute_interval(), 1);
   const bool distribute_precondition_compute = kfac_params.distribute_precondition_compute();
+  const bool enable_copy_errors = kfac_params.enable_copy_errors();
+  const bool enable_copy_activations = kfac_params.enable_copy_activations();
   const bool use_eigen_decomposition = kfac_params.use_eigen_decomposition();
 
   const std::string inverse_strategy_str = kfac_params.inverse_strategy();
@@ -1637,6 +1758,7 @@ std::unique_ptr<lbann::KFAC> lbann::make<lbann::KFAC>(
     learning_rate_factor_gru,
     compute_interval,
     distribute_precondition_compute,
-    use_eigen_decomposition);
-
+    use_eigen_decomposition,
+    enable_copy_errors,
+    enable_copy_activations);
 }

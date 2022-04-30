@@ -88,7 +88,9 @@ public:
     double learning_rate_factor_gru,
     size_t compute_interval,
     bool distribute_precondition_compute,
-    bool use_eigen_decomposition);
+    bool use_eigen_decomposition,
+    bool enable_copy_errors,
+    bool enable_copy_activations);
 
   ~KFAC() noexcept = default;
   KFAC(KFAC const& other) = delete;
@@ -260,6 +262,12 @@ private:
   /** @brief distribute precondition gradient compute. */
   bool m_distribute_precondition_compute;
 
+  /** @brief copy errors to a temporary matrix to increase overlap of compute and communication. */
+  bool m_enable_copy_errors;
+
+  /** @brief copy activations to a temporary matrix to increase overlap of compute and communication. */
+  bool m_enable_copy_activations;
+
   /** @brief use eigen value decomposition for inversing the matrix. */
   bool m_use_eigen_decomposition;
 
@@ -270,7 +278,16 @@ private:
   // std::vector<El::mpi::Request<DataType>> m_inverse_matrix_communication_reqs, m_weights_communication_reqs;
   std::vector<ReqT>m_inverse_matrix_communication_reqs, m_weights_communication_reqs;
 
-  int m_time_span_inverse_comm=0,m_time_span_inverse_send_recv=0, m_time_span_forward_comm=0, m_time_span_backward_comm=0, m_time_span_precond_comm=0;
+  int m_time_span_inverse_comm=0,
+      m_time_span_inverse_send_recv=0, 
+      m_time_span_forward_comm=0, 
+      m_time_span_forward_comm_end=0, 
+      m_time_span_backward_comm=0, 
+      m_time_span_backward_comm_end=0, 
+      m_time_span_precond_comm=0,
+      m_time_forward_pass=0,
+      m_time_backward_pass=0,
+      m_time_kfac=0;
 
   std::vector<bool> m_use_KFAC_epoch;
 
