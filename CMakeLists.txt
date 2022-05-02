@@ -26,7 +26,7 @@
 cmake_minimum_required(VERSION 3.21)
 cmake_policy(VERSION 3.21)
 
-project(LBANN CXX)
+project(LBANN C CXX)
 
 # Prevent in-source builds
 if (PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
