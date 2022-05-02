@@ -92,7 +92,7 @@ class CosmoGAN(lbann.modules.Module):
                                       lbann.SafeDivide(
                                       lbann.Add(lbann.Constant(value=1.0, hint_layer=y),lbann.Identity(y)),
                                       lbann.Subtract(lbann.Constant(value=1.0, hint_layer=y),lbann.Identity(y))),
-                                      scaling_factors=str(self.datascale))
+                                      scaling_factors=self.datascale)
         linear_scale = 1/self.linear_scaler
-        CH2 = lbann.Tanh(lbann.WeightedSum(inv_transform,scaling_factors=str(linear_scale)))
+        CH2 = lbann.Tanh(lbann.WeightedSum(inv_transform,scaling_factors=linear_scale))
         return CH2

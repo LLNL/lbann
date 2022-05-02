@@ -66,7 +66,7 @@ def make_model(
     )
     embeddings = lbann.WeightedSum(
         embeddings,
-        scaling_factors=str(math.sqrt(embed_dim)),
+        scaling_factors=math.sqrt(embed_dim),
     )
     embeddings_slice = lbann.Slice(
         embeddings,

@@ -50,12 +50,12 @@ class LayerNorm(lbann.modules.Module):
         # Affine transform
         s = lbann.WeightsLayer(
             weights=self.weight,
-            dims=f'1 {self.normalized_shape}',
+            dims=[1] + list(make_iterable(self.normalized_shape)),
         )
         s = lbann.Tessellate(s, hint_layer=x)
         b = lbann.WeightsLayer(
             weights=self.bias,
-            dims=f'1 {self.normalized_shape}',
+            dims=[1] + list(make_iterable(self.normalized_shape)),
         )
         b = lbann.Tessellate(b, hint_layer=x)
         x = lbann.Add(lbann.Multiply(s,x), b)
@@ -441,7 +441,7 @@ class Transformer(lbann.modules.Module):
         if size not in self._subsequent_mask_cache:
             vals = np.triu(np.full((size,size), -1e9), k=1)
             weights = lbann.Weights(
-                initializer=lbann.ValueInitializer(values=np.nditer(vals)),
+                initializer=lbann.ValueInitializer(values=vals.flat),
                 optimizer=None,
                 name=f'{self.name}_mask{size}_weights',
             )
