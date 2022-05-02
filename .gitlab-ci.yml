@@ -63,6 +63,15 @@ pascal testing:
     strategy: depend
     include: .gitlab/pascal/pipeline.yml
 
+pascal testing (compilers):
+  stage: run-all-clusters
+  variables:
+    SPACK_SPECS: "%gcc@8.3.1 +cuda +half +fft"
+    BUILD_SCRIPT_OPTIONS: "--no-default-mirror"
+  trigger:
+    strategy: depend
+    include: .gitlab/pascal/pipeline_compiler_tests.yml
+
 ray testing:
   stage: run-all-clusters
   variables:
