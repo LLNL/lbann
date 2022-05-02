@@ -139,11 +139,11 @@ release allocation:
 
     # These are system-specific specs that should be forwarded to the
     # build script
-    BUILD_SCRIPT_OPTIONS:
+#    BUILD_SCRIPT_OPTIONS: ""
     
     # These are system-specific specs that should be forwarded to the
     # build script
-    SPACK_SPECS: "+cuda +half +fft"
+#    SPACK_SPECS: "+cuda +half +fft"
 
     # This variable is the name used to identify the job in the Slurm
     # queue. We need this to be able to access the correct jobid.
