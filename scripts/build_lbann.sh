@@ -70,6 +70,7 @@ Options:
   ${C}-l | --label <LABEL>${N}       LBANN version label prefix: (default label is local-<SPACK_ARCH_TARGET>,
                              and is built and installed in the spack environment lbann-<label>-<SPACK_ARCH_TARGET>
   ${C}-m | --mirror <PATH>${N}       Specify a Spack mirror (and buildcache)
+  ${C}--no-default-mirrors>${N}      Disable the default set of mirrors
   ${C}--no-modules${N}               Don't try to load any modules (use the existing users environment)
   ${C}-p | --pkg <PACKAGE>${N}       Add package PACKAGE to the Spack environment in addition to LBANN (Flag can be repeated)
   ${C}--pip <requirements.txt>${N}   PIP install Python packages in requirements.txt with the version of Python used by LBANN (Flag can be repeated)
@@ -152,6 +153,9 @@ while :; do
                 echo "\"${1}\" option requires a non-empty option argument" >&2
                 exit 1
             fi
+            ;;
+        --no-default-mirrors)
+            SKIP_MIRRORS="TRUE"
             ;;
         --no-modules)
             SKIP_MODULES="TRUE"
@@ -296,6 +300,7 @@ if [ -n "${SPACK_ROOT}" ]; then
     else
         echo "ERROR: Spack needs at least commit ${MIN_SPACK_COMMIT}."
         echo "ERROR: Please update spack."
+        exit 1
     fi
     popd
 else

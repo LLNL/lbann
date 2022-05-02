@@ -158,13 +158,15 @@ set_center_specific_spack_dependencies()
     local spack_arch_target="$2"
 
     if [[ ${center} = "llnl_lc" ]]; then
-        POSSIBLE_MIRRORS="/p/vast1/lbann/spack/mirror /p/vast1/atom/spack/mirror"
-        for m in ${POSSIBLE_MIRRORS}
-        do
-            if [[ -r "${m}" ]]; then
-                MIRRORS="${m} $MIRRORS"
-            fi
-        done
+        if [[ -z "${SKIP_MIRRORS:-}" ]]; then
+            POSSIBLE_MIRRORS="/p/vast1/lbann/spack/mirror /p/vast1/atom/spack/mirror"
+            for m in ${POSSIBLE_MIRRORS}
+            do
+                if [[ -r "${m}" ]]; then
+                    MIRRORS="${m} $MIRRORS"
+                fi
+            done
+        fi
         # MIRRORS="/p/vast1/lbann/spack/mirror /p/vast1/atom/spack/mirror"
         case ${spack_arch_target} in
             "power9le") # Lassen
