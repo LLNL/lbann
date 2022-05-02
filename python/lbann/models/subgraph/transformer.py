@@ -1416,7 +1416,7 @@ class Transformer(lbann.modules.Module):
 		if size not in self._subsequent_mask_cache:
 			vals = np.triu(np.full((size,size), -1e9), k=1)
 			weights = lbann.Weights(
-				initializer=lbann.ValueInitializer(values=np.nditer(vals)),
+				initializer=lbann.ValueInitializer(values=vals.flat),
 				optimizer=None,
 				name=f'{self.name}_mask{size}_weights',
 			)
