@@ -60,6 +60,7 @@ build and install:
       - spack-build-*/build.ninja
       - spack-build-*/spack-*.txt
       - ${RESULTS_DIR}/*
+      - build_script.bash
   script:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
