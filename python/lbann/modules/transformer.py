@@ -151,7 +151,7 @@ class MultiheadAttention(Module):
             )
             y = lbann.WeightedSum(
                 y,
-                scaling_factors=str(1 / math.sqrt(self.head_dim)),
+                scaling_factors=1 / math.sqrt(self.head_dim),
                 name=f'{head_name}_scale',
             )
             if mask:
