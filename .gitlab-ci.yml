@@ -67,7 +67,7 @@ pascal compiler testing:
   stage: run-all-clusters
   variables:
     SPACK_SPECS: "%gcc@8.3.1 +cuda +half +fft"
-    BUILD_SCRIPT_OPTIONS: "--no-default-mirror"
+    BUILD_SCRIPT_OPTIONS: "--no-default-mirrors"
   trigger:
     strategy: depend
     include: .gitlab/pascal/pipeline_compiler_tests.yml
