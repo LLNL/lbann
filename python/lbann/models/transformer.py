@@ -50,12 +50,12 @@ class LayerNorm(lbann.modules.Module):
         # Affine transform
         s = lbann.WeightsLayer(
             weights=self.weight,
-            dims=[1].extend(make_iterable(self.normalized_shape)),
+            dims=[1] + list(make_iterable(self.normalized_shape)),
         )
         s = lbann.Tessellate(s, hint_layer=x)
         b = lbann.WeightsLayer(
             weights=self.bias,
-            dims=[1].extend(make_iterable(self.normalized_shape)),
+            dims=[1] + list(make_iterable(self.normalized_shape)),
         )
         b = lbann.Tessellate(b, hint_layer=x)
         x = lbann.Add(lbann.Multiply(s,x), b)
