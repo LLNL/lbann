@@ -379,16 +379,16 @@ void data_type_weights<TensorDataType>::reconcile_values(Al::request& req) {
 }
 
 template <typename TensorDataType>
-void data_type_weights<TensorDataType>::write_proto(lbann_data::WeightsData* proto) const {
+void data_type_weights<TensorDataType>::write_proto(lbann_data::WeightsData& proto) const {
 
   // Set proto properties
-  proto->Clear();
-  proto->set_name(this->get_name());
+  proto.Clear();
+  proto.set_name(this->get_name());
   for (const auto& d : this->get_dims()) {
-    proto->mutable_shape()->add_dim(d);
+    proto.mutable_shape()->add_dim(d);
   }
-  proto->set_height(this->get_matrix_height());
-  proto->set_width(this->get_matrix_width());
+  proto.set_height(this->get_matrix_height());
+  proto.set_width(this->get_matrix_width());
 
   // Write weight values to prototext on world master process
   CircMatDT<TensorDataType, El::Device::CPU> values = *m_values; /// @todo What if weights are on GPU?
@@ -407,7 +407,7 @@ void data_type_weights<TensorDataType>::write_proto(lbann_data::WeightsData* pro
      */
     for (El::Int i = 0; i < height; ++i) {
       for (El::Int j = 0; j < width; ++j) {
-        proto->add_data(local_values(i,j));
+        proto.add_data(local_values(i,j));
       }
     }
   }

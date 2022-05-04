@@ -515,14 +515,18 @@ void Layer::back_prop() {
 
 }
 
-void Layer::write_proto(lbann_data::Layer* proto) const {
-  proto->Clear();
-  proto->set_name(get_name());
+void Layer::write_proto(lbann_data::Layer& proto) {
+  proto.Clear();
+  proto.set_name(get_name());
   //Add weights
   for (size_t i=0; i<num_weights(); ++i) {
-    auto weight_proto = proto->add_weights_data();
-    get_weights(i).write_proto(weight_proto);
+    // FIXME: Add weights data
+    //auto weight_proto = proto.add_weights_data();
+    //get_weights(i).write_proto(weight_proto);
+    std::cout << "fixme: I think they said ignore this?" << std::endl;
   }
+
+  this->write_specific_proto(proto);
 }
 
 #ifdef LBANN_HAS_ONNX

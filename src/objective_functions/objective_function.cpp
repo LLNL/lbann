@@ -200,6 +200,13 @@ void objective_function::set_weights_pointers(std::vector<ViewingWeightsPtr> w) 
   }
 }
 
+//void objective_function::write_proto(lbann_data::ObjectiveFunction& proto) const
+//{
+  // FIXME: Add this back in
+  //for (auto const& term : m_terms)
+  //  term->add_to_proto(proto);
+//}
+
 }  // namespace lbann
 
 #define LBANN_SKIP_CEREAL_REGISTRATION

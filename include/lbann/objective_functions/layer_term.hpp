@@ -58,6 +58,8 @@ public:
   template <typename ArchiveT>
   void serialize(ArchiveT& ar);
 
+  //void add_to_proto(lbann_data::ObjectiveFunction& proto) const final;
+
 private:
 
   /** Get corresponding evaluation layer. */

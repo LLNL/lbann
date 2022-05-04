@@ -38,7 +38,7 @@ class ProtobufSerializable
 public:
   virtual ~ProtobufSerializable() = default;
   /** @brief Write the object to a protobuf message. */
-  virtual void write_proto(google::protobuf::Message& proto) const = 0;
+  void write_proto(google::protobuf::Message& proto) const;
 }; // class ProtobufSerializable
 
 } // namespace lbann

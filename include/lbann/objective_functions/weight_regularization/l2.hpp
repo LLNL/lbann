@@ -85,6 +85,9 @@ public:
    */
   void compute_weight_regularization() override;
 
+  //FIXME: Add this back in
+  //void add_to_proto(lbann_data::ObjectiveFunction& proto) const final;
+
 private:
 
   /** Contributions to evaluated value. */

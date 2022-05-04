@@ -227,6 +227,14 @@ void l2_weight_regularization::compute_weight_regularization() {
   }
 }
 
+//void l2_weight_regularization::add_to_proto(lbann_data::ObjectiveFunction& proto) const final {
+//  auto* term_msg = proto.add_l2_weight_regularization();
+//  term_msg->set_scale_factor(this->m_scale_factor);
+//  for (auto const& w : this->get_weights_pointers())
+//    if (w)
+//      term_msg->add_weights(w->get_name());
+//}
+
 } // namespace lbann
 
 #define LBANN_CLASS_NAME l2_weight_regularization

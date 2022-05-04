@@ -156,7 +156,7 @@ public:
   bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list) override;
 
   /** Write weights to proto file */
-  void write_proto(lbann_data::WeightsData* proto) const override;
+  void write_proto(lbann_data::WeightsData& proto) const;
 
   /** @name Serialization */
   ///@{

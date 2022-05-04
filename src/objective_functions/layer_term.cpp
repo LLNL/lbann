@@ -96,6 +96,13 @@ void layer_term::differentiate() {
   // get_evaluation_layer().set_scale(m_scale_factor);
 }
 
+//FIXME: Add this back in
+//void layer_term::add_to_proto(lbann_data::ObjectiveFunction& proto) const final {
+//  auto* term_msg = proto.add_layer_term();
+//  term_msg->set_scale_factor(this->m_scale_factor);
+//  term_msg->set_layer(this->get_layer().get_name());
+//}
+
 }  // namespace lbann
 
 #define LBANN_CLASS_NAME layer_term
