@@ -31,13 +31,13 @@
 stages:
   - run-all-clusters
 
-# catalyst testing:
-#   stage: run-all-clusters
-#   variables:
-#     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
-#   trigger:
-#     strategy: depend
-#     include: .gitlab/catalyst/pipeline.yml
+catalyst testing:
+  stage: run-all-clusters
+  variables:
+    WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
+  trigger:
+    strategy: depend
+    include: .gitlab/catalyst/pipeline.yml
 
 # corona testing:
 #   stage: run-all-clusters
@@ -47,21 +47,21 @@ stages:
 #     strategy: depend
 #     include: .gitlab/corona/pipeline.yml
 
-# lassen testing:
-#   stage: run-all-clusters
-#   variables:
-#     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
-#   trigger:
-#     strategy: depend
-#     include: .gitlab/lassen/pipeline.yml
+lassen testing:
+  stage: run-all-clusters
+  variables:
+    WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
+  trigger:
+    strategy: depend
+    include: .gitlab/lassen/pipeline.yml
 
-# pascal testing:
-#   stage: run-all-clusters
-#   variables:
-#     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
-#   trigger:
-#     strategy: depend
-#     include: .gitlab/pascal/pipeline.yml
+pascal testing:
+  stage: run-all-clusters
+  variables:
+    WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
+  trigger:
+    strategy: depend
+    include: .gitlab/pascal/pipeline.yml
 
 pascal compiler testing:
   stage: run-all-clusters
@@ -72,10 +72,10 @@ pascal compiler testing:
     strategy: depend
     include: .gitlab/pascal/pipeline_compiler_tests.yml
 
-# ray testing:
-#   stage: run-all-clusters
-#   variables:
-#     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
-#   trigger:
-#     strategy: depend
-#     include: .gitlab/ray/pipeline.yml
+ray testing:
+  stage: run-all-clusters
+  variables:
+    WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
+  trigger:
+    strategy: depend
+    include: .gitlab/ray/pipeline.yml
