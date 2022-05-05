@@ -34,7 +34,7 @@ CMD_LINE_VARIANTS=
 
 # Default versions of Hydrogen, DiHydrogen, and Aluminum - use head of repo
 HYDROGEN_VER="@develop"
-ALUMINUM_VER="@master"
+ALUMINUM_VER="@1.0.0-lbann"
 DIHYDROGEN_VER="@develop"
 # Default variants for Conduit to minimize dependencies
 CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis"
@@ -544,6 +544,11 @@ if [[ ! "${LBANN_VARIANTS}" =~ .*"~python".* ]]; then
     if [[ ! "${PKG_LIST}" =~ .*"py-numpy".* ]]; then
         PKG_LIST="${PKG_LIST} py-numpy@1.16.0:"
     fi
+    # Include PyTest as a top level dependency because of a spack bug that fails
+    # to add it for building things like NumPy
+    if [[ ! "${PKG_LIST}" =~ .*"py-pytest".* ]]; then
+        PKG_LIST="${PKG_LIST} py-pytest"
+    fi
 fi
 
 # Record the original command in the log file
@@ -669,6 +674,7 @@ LBANN_SPEC="lbann${AT_LBANN_LABEL} ${CENTER_COMPILER} ${CENTER_LINKER_FLAGS} ${L
 ##########################################################################################
 # Add things to the environment
 ##########################################################################################
+SPACK_SOLVE_EXTRA_PACKAGES=
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
     # Set the environment to use CURL rather than url fetcher since it has issues
     # on LC platforms
@@ -762,13 +768,14 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
         for p in ${PKG_LIST}
         do
             CMD="spack add ${p} ${CENTER_COMPILER}"
+            SPACK_SOLVE_EXTRA_PACKAGES="${p} ${CENTER_COMPILER} ${SPACK_SOLVE_EXTRA_PACKAGES}"
             echo ${CMD} | tee -a ${LOG}
             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
         done
     fi
 fi
 
-CMD="spack solve -l ${LBANN_SPEC}"
+CMD="spack solve --reuse -l ${LBANN_SPEC} ${SPACK_SOLVE_EXTRA_PACKAGES}"
 if [[ "${SPEC_ONLY}" == "TRUE" ]]; then
    echo ${CMD} | tee -a ${LOG}
    if [[ -z "${DRY_RUN:-}" ]]; then
