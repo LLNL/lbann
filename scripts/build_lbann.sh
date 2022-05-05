@@ -22,6 +22,7 @@ LBANN_ENV=
 INSTALL_DEPS=
 DRY_RUN=
 CLEAN_BUILD=
+ALLOW_BACKEND_BUILDS=
 # Flag for passing subcommands to spack dev-build
 DEV_BUILD_FLAGS=
 # Flag for passing subcommands to spack install
@@ -33,7 +34,7 @@ CMD_LINE_VARIANTS=
 
 # Default versions of Hydrogen, DiHydrogen, and Aluminum - use head of repo
 HYDROGEN_VER="@develop"
-ALUMINUM_VER="@master"
+ALUMINUM_VER="@1.0.0-lbann"
 DIHYDROGEN_VER="@develop"
 # Default variants for Conduit to minimize dependencies
 CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis"
@@ -69,6 +70,7 @@ Options:
   ${C}-l | --label <LABEL>${N}       LBANN version label prefix: (default label is local-<SPACK_ARCH_TARGET>,
                              and is built and installed in the spack environment lbann-<label>-<SPACK_ARCH_TARGET>
   ${C}-m | --mirror <PATH>${N}       Specify a Spack mirror (and buildcache)
+  ${C}--no-default-mirrors>${N}      Disable the default set of mirrors
   ${C}--no-modules${N}               Don't try to load any modules (use the existing users environment)
   ${C}-p | --pkg <PACKAGE>${N}       Add package PACKAGE to the Spack environment in addition to LBANN (Flag can be repeated)
   ${C}--pip <requirements.txt>${N}   PIP install Python packages in requirements.txt with the version of Python used by LBANN (Flag can be repeated)
@@ -81,6 +83,7 @@ Options:
   ${C}--aluminum-repo <PATH>${N}     Use a local repository for the Aluminum library
   ${C}--update-buildcache <PATH>${N} Update a buildcache defined by the Spack mirror (Expert Only)
   ${C}-u | --user <VERSION>${N}      Build from the GitHub repo -- as a "user" not developer using optional <VERSION> tag
+  ${C}--allow-backend-builds${N}     Allow for builds that are not compatible with the host target architecture
   ${C}--${N}                         Pass all variants to spack after the dash dash (--)
 EOF
 }
@@ -150,6 +153,9 @@ while :; do
                 echo "\"${1}\" option requires a non-empty option argument" >&2
                 exit 1
             fi
+            ;;
+        --no-default-mirrors)
+            SKIP_MIRRORS="TRUE"
             ;;
         --no-modules)
             SKIP_MODULES="TRUE"
@@ -237,6 +243,9 @@ while :; do
                 DIHYDROGEN_VER=
             fi
             ;;
+        --allow-backend-builds)
+            ALLOW_BACKEND_BUILDS="TRUE"
+            ;;
         --)
             shift
             CMD_LINE_VARIANTS=${*}
@@ -276,10 +285,24 @@ function uninstall_specific_versions()
     fi
 }
 
+# This should be a commit hash (NOT a tag) that needs to exist in the
+# spack repository that is checked out. It's a minimum version, so
+# more commits is fine.
+MIN_SPACK_COMMIT=c06f69d0bffad688f668db41cb6acad894a745ac
+
 # "spack" is just a shell function; it may not be exported to this
 # scope. Just to be sure, reload the shell integration.
 if [ -n "${SPACK_ROOT}" ]; then
-    source ${SPACK_ROOT}/share/spack/setup-env.sh
+    pushd ${SPACK_ROOT}
+    if git merge-base --is-ancestor ${MIN_SPACK_COMMIT} HEAD &> /dev/null;
+    then
+        source ${SPACK_ROOT}/share/spack/setup-env.sh
+    else
+        echo "ERROR: Spack needs at least commit ${MIN_SPACK_COMMIT}."
+        echo "ERROR: Please update spack."
+        exit 1
+    fi
+    popd
 else
     echo "Spack required.  Please set SPACK_ROOT environment variable"
     exit 1
@@ -449,8 +472,9 @@ function exit_with_instructions()
 
 ##########################################################################################
 # Figure out if there are default dependencies or flags (e.g.  MPI/BLAS library) for the center
+CENTER_COMPILER=
 CENTER_DEPENDENCIES=
-CENTER_FLAGS=
+CENTER_LINKER_FLAGS=
 CENTER_BLAS_LIBRARY=
 set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
 
@@ -473,6 +497,23 @@ fi
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^conduit".* ]]; then
     # If the user didn't supply a specific set of variants for Condiuit on the command line add one
     CONDUIT="^conduit${CONDUIT_VARIANTS}"
+fi
+
+if [[ "${LBANN_VARIANTS}" =~ (.*)(%[0-9a-zA-Z:\.@]+)(.*) ]]; then
+    # If the user specified a compiler on the command line, extract it here for use when propagating to
+    # other packages
+    CENTER_COMPILER=${BASH_REMATCH[2]}
+    LBANN_VARIANTS="${BASH_REMATCH[1]} ${BASH_REMATCH[3]}"
+fi
+
+if [[ "${CENTER_COMPILER}" =~ .*"%clang".* ]]; then
+    # If the compiler is clang use the LLD fast linker
+    CENTER_LINKER_FLAGS="+lld"
+fi
+
+if [[ "${CENTER_COMPILER}" =~ .*"%gcc".* ]]; then
+    # If the compiler is gcc use the gold fast linker
+    CENTER_LINKER_FLAGS="+gold"
 fi
 
 GPU_VARIANTS_ARRAY=('+cuda' '+rocm')
@@ -503,6 +544,11 @@ if [[ ! "${LBANN_VARIANTS}" =~ .*"~python".* ]]; then
     if [[ ! "${PKG_LIST}" =~ .*"py-numpy".* ]]; then
         PKG_LIST="${PKG_LIST} py-numpy@1.16.0:"
     fi
+    # Include PyTest as a top level dependency because of a spack bug that fails
+    # to add it for building things like NumPy
+    if [[ ! "${PKG_LIST}" =~ .*"py-pytest".* ]]; then
+        PKG_LIST="${PKG_LIST} py-pytest"
+    fi
 fi
 
 # Record the original command in the log file
@@ -512,11 +558,22 @@ if [[ ! -n "${SKIP_MODULES:-}" ]]; then
     # Activate modules
     MODULE_CMD=
     set_center_specific_modules ${CENTER} ${SPACK_ARCH_TARGET}
+    if [[ "${CENTER_COMPILER}" =~ .*"%clang".* && -n "${MODULE_CMD_CLANG}" && -z "${MODULE_CMD}" ]]; then
+        # If the compiler is clang use the specificed set of modules
+        MODULE_CMD=${MODULE_CMD_CLANG}
+    fi
+
+    if [[ "${CENTER_COMPILER}" =~ .*"%gcc".* && -n "${MODULE_CMD_GCC}" && -z "${MODULE_CMD}" ]]; then
+        # If the compiler is gcc use the specificed set of modules
+        MODULE_CMD=${MODULE_CMD_GCC}
+    fi
+
     if [[ -n ${MODULE_CMD} ]]; then
         echo ${MODULE_CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { eval ${MODULE_CMD} || exit_on_failure "${MODULE_CMD}"; }
     fi
 fi
+
 
 # If the dependencies are being installed then you should clean things up
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
@@ -611,18 +668,27 @@ fi
 
 ##########################################################################################
 # Establish the spec for LBANN
-LBANN_SPEC="lbann${AT_LBANN_LABEL} ${CENTER_FLAGS} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CONDUIT} ${CENTER_DEPENDENCIES}"
+LBANN_SPEC="lbann${AT_LBANN_LABEL} ${CENTER_COMPILER} ${CENTER_LINKER_FLAGS} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CONDUIT} ${CENTER_DEPENDENCIES}"
 ##########################################################################################
 
 ##########################################################################################
 # Add things to the environment
 ##########################################################################################
+SPACK_SOLVE_EXTRA_PACKAGES=
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
     # Set the environment to use CURL rather than url fetcher since it has issues
     # on LC platforms
     CMD="spack config add config:url_fetch_method:curl"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+    # Set the environment to avoid concretizing for microarchitectures that are
+    # incompatible with the current host on LC platforms
+    if [[ -z "${ALLOW_BACKEND_BUILDS:-}" ]]; then
+        CMD="spack config add concretizer:targets:host_compatible:true"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    fi
 
     # See if there are any center-specific externals
     SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
@@ -701,14 +767,15 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     if [[ -n "${PKG_LIST:-}" ]]; then
         for p in ${PKG_LIST}
         do
-            CMD="spack add ${p}"
+            CMD="spack add ${p} ${CENTER_COMPILER}"
+            SPACK_SOLVE_EXTRA_PACKAGES="${p} ${CENTER_COMPILER} ${SPACK_SOLVE_EXTRA_PACKAGES}"
             echo ${CMD} | tee -a ${LOG}
             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
         done
     fi
 fi
 
-CMD="spack solve -l ${LBANN_SPEC}"
+CMD="spack solve --reuse -l ${LBANN_SPEC} ${SPACK_SOLVE_EXTRA_PACKAGES}"
 if [[ "${SPEC_ONLY}" == "TRUE" ]]; then
    echo ${CMD} | tee -a ${LOG}
    if [[ -z "${DRY_RUN:-}" ]]; then
