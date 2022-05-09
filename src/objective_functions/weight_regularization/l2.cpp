@@ -33,6 +33,7 @@
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/utils/serialize.hpp"
 #include <h2/patterns/multimethods/SwitchDispatcher.hpp>
+#include <objective_functions.pb.h>
 
 namespace lbann {
 
@@ -227,13 +228,16 @@ void l2_weight_regularization::compute_weight_regularization() {
   }
 }
 
-//void l2_weight_regularization::add_to_proto(lbann_data::ObjectiveFunction& proto) const final {
-//  auto* term_msg = proto.add_l2_weight_regularization();
-//  term_msg->set_scale_factor(this->m_scale_factor);
-//  for (auto const& w : this->get_weights_pointers())
-//    if (w)
-//      term_msg->add_weights(w->get_name());
-//}
+void l2_weight_regularization::add_to_proto(lbann_data::ObjectiveFunction& proto) const {
+  auto* term_msg = proto.add_l2_weight_regularization();
+  term_msg->set_scale_factor(this->m_scale_factor);
+  for (auto const& w : this->get_weights_pointers())
+    // This is a weak ptr. Is this ok?
+    if (!w.expired()) {
+      term_msg->add_weights(w.lock()->get_name());
+      // FIXME(KLG): Do I need to w.reset() ?
+    }
+}
 
 } // namespace lbann
 

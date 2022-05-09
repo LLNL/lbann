@@ -32,9 +32,9 @@
 #include "lbann/weights/weights.hpp"
 // FIXME Added to try to resolve lbann_data:: not declared error
 // Forward-declare protobuf classes
-//namespace lbann_data {
-//class ObjectiveFunction;
-//}
+namespace lbann_data {
+class ObjectiveFunction;
+}
 
 namespace lbann {
 
@@ -94,7 +94,7 @@ class objective_function_term {
 
   /** Add Objective function data to prototext */
   // FIXME: make pure virtual
-  //virtual void add_to_proto(lbann_data::ObjectiveFunction& proto) const = 0;
+  virtual void add_to_proto(lbann_data::ObjectiveFunction& proto) const = 0;
 
  protected:
 

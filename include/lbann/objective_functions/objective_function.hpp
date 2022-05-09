@@ -30,12 +30,6 @@
 #include "lbann/objective_functions/objective_function_term.hpp"
 #include "lbann/metrics/metric.hpp"
 
-// FIXME Added to try to resolve lbann_data:: not declared error
-// Forward-declare protobuf classes
-//namespace lbann_data {
-//class ObjectiveFunction;
-//}
-
 namespace lbann {
 
 /** Objective function class. */
@@ -124,8 +118,9 @@ class objective_function {
     m_evaluation_time = 0.0;
     m_differentiation_time = 0.0;
   }
-  /** FIXME */
-  //void write_proto(lbann_data::ObjectiveFunction& proto) const;
+
+  /** Add Objection Function data to prototext */
+  void write_proto(lbann_data::ObjectiveFunction& proto) const;
 
  private:
 
