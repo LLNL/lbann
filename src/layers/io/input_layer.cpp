@@ -35,6 +35,7 @@
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 
 template <typename T, lbann::data_layout L, El::Device D>
 std::unique_ptr<lbann::Layer>
@@ -203,6 +204,15 @@ void input_layer<T,L,D>::fill_onnx_node(onnx::GraphProto& graph) const
 }
 #endif // LBANN_HAS_ONNX
 
+//FIXME(KLG): Remove this
+#include "lbann/proto/datatype_helpers.hpp"
+template <typename T, data_layout L, El::Device D>
+void input_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_input();
+  msg->set_data_field(m_data_field);
+}
+
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
@@ -226,7 +236,6 @@ input_distconv_adapter(
   // Input data is only processed when its consumer layer is also
   // enabled for distconv
   m_is_input_processed = layer.get_child_layer().distconv_enabled();
-
 }
 
 template <typename TensorDataType,
