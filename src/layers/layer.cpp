@@ -518,13 +518,23 @@ void Layer::back_prop() {
 void Layer::write_proto(lbann_data::Layer& proto) {
   proto.Clear();
   proto.set_name(get_name());
-  //Add weights
-  for (size_t i=0; i<num_weights(); ++i) {
-    // FIXME: Add weights data
-    //auto weight_proto = proto.add_weights_data();
-    //get_weights(i).write_proto(weight_proto);
-    std::cout << "fixme: I think they said ignore this?" << std::endl;
+  for (auto const* parent : this->get_parent_layers()) {
+    proto.add_parents(parent->get_name());
   }
+  for (auto const* child : this->get_child_layers()) {
+    proto.add_children(child->get_name());
+  }
+  for (size_t i=0; i<num_weights(); ++i) {
+    // FIXME(KLG): Add weights data
+    //auto weight_proto = proto.add_weights();
+    //get_weights(i).write_proto(weight_proto);
+  }
+  proto.set_device_allocation(to_string(this->get_device_allocation()));
+  proto.set_data_layout(to_string(this->get_data_layout()));
+  if(this->get_hint_layer())
+    proto.set_hint_layer(this->get_hint_layer()->get_name());
+  //FIXME(KLG): How set this?
+  //proto.set_parallel_strategy();
 
   this->write_specific_proto(proto);
 }

@@ -472,8 +472,9 @@ public:
   void write_proto(lbann_data::Layer& proto);
 
 protected:
-
-  virtual void write_specific_proto(lbann_data::Layer& proto) {}
+  /** @brief Add layer specific data to prototext */
+  //FIXME(KLG): Make pure virtual
+  virtual void write_specific_proto(lbann_data::Layer& proto) const {}
 
 public:
 
