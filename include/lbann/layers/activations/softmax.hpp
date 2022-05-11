@@ -117,6 +117,9 @@ public:
   std::string get_onnx_op_type() const override { return "Softmax"; }
 #endif //LBANN_HAS_ONNX
 
+   /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   void setup_dims(DataReaderMetaData& dr_metadata) final {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());

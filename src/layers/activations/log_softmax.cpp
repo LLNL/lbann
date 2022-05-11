@@ -27,6 +27,7 @@
 #define LBANN_LOG_SOFTMAX_LAYER_INSTANTIATE
 #include "lbann/comm_impl.hpp"
 #include "lbann/layers/activations/log_softmax.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 
 namespace lbann {
 
@@ -131,6 +132,12 @@ void bp(lbann_comm& comm,
 }
 
 } // namespace
+
+template <typename T, data_layout L, El::Device D>
+void log_softmax_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_log_softmax();
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void log_softmax_layer<TensorDataType, Layout, Device>::fp_compute() {

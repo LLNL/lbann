@@ -26,6 +26,7 @@
 
 #define LBANN_ELU_LAYER_INSTANTIATE
 #include "lbann/layers/activations/elu.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 
 namespace lbann {
 
@@ -68,6 +69,13 @@ void local_bp(TensorDataType alpha,
 }
 
 } // namespace
+
+template <typename T, data_layout L, El::Device D>
+void elu_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_elu();
+  msg->set_alpha(m_alpha);
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void elu_layer<TensorDataType, Layout, Device>::fp_compute() {

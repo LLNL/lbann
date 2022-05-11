@@ -29,6 +29,7 @@
 #include "lbann/layers/activations/softmax.hpp"
 
 #include "lbann/utils/dnn_lib/softmax.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 
 namespace lbann {
 
@@ -153,6 +154,13 @@ void bp_model_parallel(
 }
 
 } // namespace
+
+template <typename T, data_layout L, El::Device D>
+void softmax_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_softmax();
+  msg->set_softmax_mode(m_mode);
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void softmax_layer<TensorDataType, Layout, Device>::fp_compute() {

@@ -26,6 +26,7 @@
 
 #define LBANN_LEAKY_RELU_LAYER_INSTANTIATE
 #include "lbann/layers/activations/leaky_relu.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 
 namespace lbann {
 
@@ -68,6 +69,13 @@ void local_bp(TensorDataType negative_slope,
 }
 
 } // namespace
+
+template <typename T, data_layout L, El::Device D>
+void leaky_relu_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_leaky_relu();
+  msg->set_negative_slope(m_negative_slope);
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void leaky_relu_layer<TensorDataType, Layout, Device>::fp_compute() {

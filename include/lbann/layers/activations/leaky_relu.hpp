@@ -81,6 +81,9 @@ public:
     return desc;
   }
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   /** @name Serialization */
   ///@{
 
