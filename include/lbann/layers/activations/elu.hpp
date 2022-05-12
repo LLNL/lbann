@@ -30,6 +30,11 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
 
+// Forward-declare protobuf classes
+namespace lbann_data {
+class Layer;
+}
+
 namespace lbann {
 
 /** @brief Exponential linear unit
