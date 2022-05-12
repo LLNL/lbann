@@ -27,16 +27,8 @@
 #define LBANN_RELU_LAYER_INSTANTIATE
 #include "lbann/layers/activations/relu.hpp"
 #include "lbann/utils/entrywise_operator.hpp"
-#include "lbann/proto/datatype_helpers.hpp"
-#include <layers.pb.h>
 
 namespace lbann {
-
-template <typename T, data_layout L, El::Device D>
-void relu_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
-  proto.set_datatype(proto::ProtoDataType<T>);
-  proto.mutable_relu();
-}
 
 namespace {
 

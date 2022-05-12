@@ -26,17 +26,8 @@
 
 #define LBANN_ELU_LAYER_INSTANTIATE
 #include "lbann/layers/activations/elu.hpp"
-#include "lbann/proto/datatype_helpers.hpp"
-#include <layers.pb.h>
 
 namespace lbann {
-
-template <typename T, data_layout L, El::Device D>
-void elu_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
-  proto.set_datatype(proto::ProtoDataType<T>);
-  auto* msg = proto.mutable_elu();
-  msg->set_alpha(m_alpha);
-}
 
 namespace {
 

@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_ACTIVATIONS_SOFTMAX_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/dnn_enums.hpp"
 #if defined LBANN_HAS_DNN_LIB
@@ -35,6 +36,7 @@
 #include "lbann/utils/dnn_lib/softmax.hpp"
 #endif // defined LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/softmax.hpp"
+#include <layers.pb.h>
 
 // Threshold outputs to a minimum value.
 
@@ -227,6 +229,24 @@ private:
   const softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() const final;
 #endif // LBANN_HAS_DISTCONV
 };
+
+template <typename T, data_layout L, El::Device D>
+void softmax_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_softmax();
+  //FIXME(KLG): Something like this??
+  switch (m_mode)
+  {
+    case softmax_mode::INSTANCE:
+      msg->set_softmax_mode("INSTANCE");
+      break;
+    case softmax_mode::CHANNEL:
+      msg->set_softmax_mode("CHANNEL");
+      break;
+    default:
+      LBANN_ERROR("Invalid softmax mode requested.");
+  }
+}
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
