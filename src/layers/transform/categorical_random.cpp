@@ -26,6 +26,8 @@
 
 #define LBANN_CATEGORICAL_RANDOM_LAYER_INSTANTIATE
 #include "lbann/layers/transform/categorical_random.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 namespace {
@@ -66,6 +68,12 @@ struct Builder<El::gpu_half_type, data_layout::DATA_PARALLEL, El::Device::CPU>
   }
 };
 #endif // LBANN_HAS_GPU_FP16
+}// namespace
+
+template <typename T, data_layout L, El::Device D>
+void categorical_random_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_categorical_random();
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

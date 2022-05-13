@@ -30,8 +30,10 @@
 #include "lbann/models/model.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 
 #include <lbann.pb.h>
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -63,6 +65,15 @@ data_layout weights_layer<TensorDataType,Layout,Device>::get_data_layout() const
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 El::Device weights_layer<TensorDataType,Layout,Device>::get_device_allocation() const {
   return Device;
+}
+
+template <typename T, data_layout L, El::Device D>
+void weights_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_weights_layer();
+  //FIXME(KLG): Is this right?
+  for (auto const& dim : this->get_output_dims())
+    msg->add_dims(dim);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

@@ -26,8 +26,19 @@
 
 #define LBANN_RESHAPE_LAYER_INSTANTIATE
 #include "lbann/layers/transform/reshape.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
+
+template <typename T, data_layout L, El::Device D>
+void reshape_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_reshape();
+  //FIXME(KLG): Is this the right dim?
+  for (auto const& dim : this->get_output_dims())
+    msg->add_dims(dim);
+}
 
 #define PROTO_DEVICE(T, Device) \
   template class reshape_layer<T, data_layout::DATA_PARALLEL, Device>; \

@@ -29,6 +29,8 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -97,6 +99,9 @@ public:
   std::string get_type() const override { return "tessellate"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
@@ -233,6 +238,14 @@ private:
                      AbsMatrixType& gradient_wrt_input);
 
 };
+
+template <typename T, data_layout L, El::Device D>
+void tessellate_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_tessellate();
+  for (auto const& dim : this->get_output_dims())
+    msg->add_dims(dim);
+}
 
 #ifndef LBANN_TESSELLATE_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

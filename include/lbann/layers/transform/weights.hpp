@@ -71,6 +71,9 @@ public:
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
  protected:
 
   void setup_data(size_t max_mini_batch_size) override;

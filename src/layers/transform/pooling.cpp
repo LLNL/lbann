@@ -28,8 +28,10 @@
 #include "lbann/layers/transform/pooling.hpp"
 
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/protobuf.hpp"
 
+#include <layers.pb.h>
 #include <lbann.pb.h>
 
 namespace lbann {
@@ -61,6 +63,40 @@ struct Builder<TensorDataType, data_layout::DATA_PARALLEL, Device>
   }
 };
 }// namespace
+
+template <typename T, data_layout L, El::Device D>
+void pooling_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_pooling();
+  //FIXME(KLG): Does this work?
+  switch (m_pool_mode)
+  {
+    case pooling_mode::MAX_DETERMINISTIC:
+      msg->set_pool_mode("MAX_DETERMINISTIC");
+      break;
+    case pooling_mode::MAX:
+      msg->set_pool_mode("MAX");
+      break;
+    case pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING:
+      msg->set_pool_mode("AVERAGE_COUNT_INCLUDE_PADDING");
+      break;
+    case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING:
+      msg->set_pool_mode("AVERAGE_COUNT_EXCLUDE_PADDING");
+      break;
+    default:
+      LBANN_ERROR("Invalid pooling mode requested.");
+  }
+  //FIXME(KLG): is this right?
+  msg->set_num_dims(m_pool_dims.size());
+  //FIXME(KLG): Has_vectors will just equal true, per Tom
+  msg->set_has_vectors(true);
+  for (auto const& dim : m_pool_dims)
+    msg->add_pool_dims(dim);
+  for (auto const& pad : m_pads)
+    msg->add_pool_pads(pad);
+  for (auto const& stride : m_strides)
+    msg->add_pool_strides(stride);
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<Layer> build_pooling_layer_from_pbuf(

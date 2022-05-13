@@ -29,8 +29,10 @@
 
 #include <vector>
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/distconv.hpp"
+#include <lbann.pb.h>
 
 namespace lbann {
 
@@ -82,6 +84,9 @@ public:
   std::string get_type() const override { return "split"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
 #ifdef LBANN_HAS_ONNX
   void fill_onnx_node(onnx::GraphProto& graph) const override;
@@ -251,6 +256,12 @@ protected:
   const split_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() const override;
 #endif // LBANN_HAS_DISTCONV
 };
+
+template <typename T, data_layout L, El::Device D>
+void split_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_split();
+}
 
 #ifdef LBANN_HAS_ONNX
 template <typename T, data_layout L, El::Device D>

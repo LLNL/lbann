@@ -28,7 +28,9 @@
 #define LBANN_LAYERS_TRANSFORM_SCATTER_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/exception.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -79,6 +81,9 @@ public:
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
 protected:
   friend class cereal::access;
   scatter_layer()
@@ -95,6 +100,16 @@ private:
 // =========================================================
 // Implementation
 // =========================================================
+
+template <typename T, data_layout L, El::Device D>
+void scatter_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_scatter();
+  for (auto const& dim : this->get_output_dims())
+    msg->add_dims(dim);
+  //FIXME: Why does it say "no member set_axis"? Would normal int work here?
+  //msg->set_axis(dynamic_cast<google::protobuf::UInt64Value>(m_scatter_axis));
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 scatter_layer<TensorDataType,Layout,Device>::scatter_layer(

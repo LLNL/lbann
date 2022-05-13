@@ -28,6 +28,7 @@
 #include "lbann/layers/transform/bernoulli.hpp"
 
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/protobuf.hpp"
 
 #include <layers.pb.h>
@@ -45,6 +46,16 @@ build_bernoulli_layer_from_pbuf(lbann_comm* comm,
     comm,
     protobuf::to_vector<int>(params.neuron_dims()),
     params.prob());
+}
+
+template <typename T, data_layout L, El::Device D>
+void bernoulli_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_bernoulli();
+  msg->set_prob(m_prob);
+  //FIXME(KLG): Is this right?
+  for (auto const& dim : this->get_output_dims())
+    msg->add_neuron_dims(dim);
 }
 
 #define PROTO_DEVICE(T, Device)                                                \

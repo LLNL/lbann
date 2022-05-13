@@ -34,6 +34,7 @@
 #include "lbann/utils/exception.hpp"
 
 #include <lbann/proto/proto_common.hpp>
+#include "lbann/proto/datatype_helpers.hpp"
 #include <layers.pb.h>
 
 namespace lbann {
@@ -81,6 +82,9 @@ public:
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   description get_description() const override;
 
@@ -151,6 +155,13 @@ private:
 // =========================================================
 // Implementation
 // =========================================================
+
+template <typename T, data_layout L, El::Device D>
+void concatenate_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_concatenation();
+  msg->set_axis(m_concat_dim);
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 concatenate_layer<TensorDataType,Layout,Device>::concatenate_layer(

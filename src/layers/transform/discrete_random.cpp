@@ -31,7 +31,21 @@
 
 #include <layers.pb.h>
 
+#include "lbann/proto/datatype_helpers.hpp"
+
+
 namespace lbann {
+
+template <typename T, data_layout L, El::Device D>
+void discrete_random_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_discrete_random();
+  for (auto const& value : m_values)
+    msg->add_values(value);
+  //FIXME(KLG): Is this right?
+  for (auto const& dim : this->get_output_dims())
+    msg->add_dims(dim);
+}
 
 #define PROTO(T)                                                               \
   template class discrete_random_layer<T,                                      \

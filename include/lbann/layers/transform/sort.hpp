@@ -29,6 +29,8 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -98,6 +100,9 @@ class sort_layer : public data_type_layer<TensorDataType> {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   description get_description() const override {
     auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Descending", m_descending);
@@ -154,6 +159,13 @@ class sort_layer : public data_type_layer<TensorDataType> {
   std::unique_ptr<El::AbstractMatrix<El::Int>> m_indices;
 
 };
+
+template <typename T, data_layout L, El::Device D>
+void sort_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_sort();
+  msg->set_descending(m_descending);
+}
 
 #ifndef LBANN_SORT_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

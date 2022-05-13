@@ -29,10 +29,12 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/trainers/trainer.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -64,6 +66,9 @@ public:
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   description get_description() const override;
 
@@ -137,6 +142,16 @@ private:
 // =========================================================
 // Implementation
 // =========================================================
+
+template <typename T, data_layout L, El::Device D>
+void slice_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_slice();
+  //FIXME(KLG): Where get this? Is m_slice_dim right?
+  msg->set_axis(m_slice_dim);
+  for (auto const& slice_point : m_slice_points)
+    msg->add_slice_points(slice_point);
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 slice_layer<TensorDataType,Layout,Device>::slice_layer(lbann_comm *comm)

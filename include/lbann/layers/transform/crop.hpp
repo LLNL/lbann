@@ -28,7 +28,9 @@
 #define LBANN_LAYER_CROP_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/exception.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -101,6 +103,9 @@ public:
   std::string get_type() const override { return "crop"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   void setup_data(size_t max_mini_batch_size) override {
     data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
@@ -356,6 +361,14 @@ private:
   void bp_compute_3d();
 
 };
+
+template <typename T, data_layout L, El::Device D>
+void crop_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_crop();
+  for (auto const& dim : this->get_output_dims())
+    msg->add_dims(dim);
+}
 
 #ifndef LBANN_CROP_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \
