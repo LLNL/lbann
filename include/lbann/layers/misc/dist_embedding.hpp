@@ -34,7 +34,9 @@
 #include "lbann/models/model.hpp"
 #include "lbann/optimizers/sgd.hpp"
 #include "lbann/weights/weights_helpers.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/memory.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -87,6 +89,9 @@ public:
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   description get_description() const override;
 
@@ -209,6 +214,17 @@ private:
 // ---------------------------------------------
 // Implementation
 // ---------------------------------------------
+
+template <typename T, data_layout L, El::Device D>
+void dist_embeding_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_dist_embedding();
+  msg->set_num_embeddings(m_num_embeddings);
+  msg->set_embedding_dim(m_embedding_dim);
+  msg->set_sparse_sgd(m_sparse_sgd);
+  msg->set_learning_rate(m_learning_rate);
+  msg->set_barrier_in_forward_prop(m_barrier_in_forward_prop);
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 dist_embedding_layer<TensorDataType,Layout,Device>::dist_embedding_layer(

@@ -29,6 +29,8 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -62,6 +64,9 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
 protected:
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
@@ -74,6 +79,11 @@ protected:
   void bp_compute() override;
 };
 
+template <typename T, data_layout L, El::Device D>
+void channelwise_mean_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_channelwise_mean();
+}
 
 #ifndef LBANN_CHANNELWISE_MEAN_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

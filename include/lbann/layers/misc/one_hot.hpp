@@ -28,6 +28,9 @@
 #define LBANN_LAYERS_MISC_ONE_HOT_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -60,6 +63,9 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
 protected:
 
   friend class cereal::access;
@@ -88,6 +94,13 @@ protected:
 
 };
 
+template <typename T, data_layout L, El::Device D>
+void one_hot_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_one_hot();
+  //FIXME(KLG): Is this right?
+  msg->set_size(this->get_output_dims().size());
+}
 
 #ifndef LBANN_ONE_HOT_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device)                 \
