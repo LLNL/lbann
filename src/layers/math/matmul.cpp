@@ -26,9 +26,11 @@
 
 #define LBANN_MATMUL_LAYER_INSTANTIATE
 #include "lbann/layers/math/matmul.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #ifdef LBANN_HAS_GPU
 #include "lbann/utils/gpu/helpers.hpp"
 #endif // LBANN_HAS_GPU
+#include <layers.pb.h>
 #include<iostream>
 namespace lbann {
 
@@ -52,7 +54,7 @@ void fp_compute_impl(matmul_layer<TensorDataType,data_layout::DATA_PARALLEL,El::
   const auto input0_dims = l.get_input_dims(0);
   const auto input1_dims = l.get_input_dims(1);
   const auto output_dims = l.get_output_dims();
-  // Check if matrix is 3D or 2D 
+  // Check if matrix is 3D or 2D
   const El::Int mat_depth = (input0_dims.size()>2) ? *(input0_dims.rbegin()+2) : 1;
 
   const El::Int input0_height = *(input0_dims.rbegin()+1);
@@ -66,8 +68,8 @@ void fp_compute_impl(matmul_layer<TensorDataType,data_layout::DATA_PARALLEL,El::
   // Compute matrix multiplication for each mini-batch sample
   // Note: Elemental matrices are in Fortran layout while LBANN
   // tensors are in C layout.
-  
-  // Calculate stride for each matrix depending on the depth 
+
+  // Calculate stride for each matrix depending on the depth
   const auto input0_stride = input0_height * input0_width;
   const auto input1_stride = input1_height * input1_width;
   const auto output_stride = output_height * output_width;
@@ -91,7 +93,6 @@ void fp_compute_impl(matmul_layer<TensorDataType,data_layout::DATA_PARALLEL,El::
                El::TypeTraits<TensorDataType>::Zero(), output_v);
     }
   }
-
 }
 
 template <typename TensorDataType>
@@ -107,7 +108,7 @@ void bp_compute_impl(matmul_layer<TensorDataType,data_layout::DATA_PARALLEL,El::
   auto& local_input0_grad = dynamic_cast<LocalMat&>(l.get_local_error_signals(0));
   auto& local_input1_grad = dynamic_cast<LocalMat&>(l.get_local_error_signals(1));
   const auto& local_mini_batch_size = local_input0.Width();
-  if (!local_input0.Contiguous() || !local_input1.Contiguous() || !local_output_grad.Contiguous() 
+  if (!local_input0.Contiguous() || !local_input1.Contiguous() || !local_output_grad.Contiguous()
       || !local_input0_grad.Contiguous() || !local_input1_grad.Contiguous()) {
     LBANN_ERROR(l.get_type()," layer \"",l.get_name(),"\" ",
             "has non-contiguous data buffers");
@@ -116,7 +117,7 @@ void bp_compute_impl(matmul_layer<TensorDataType,data_layout::DATA_PARALLEL,El::
   const auto input0_dims = l.get_input_dims(0);
   const auto input1_dims = l.get_input_dims(1);
   const auto output_dims = l.get_output_dims();
-  // Check if matrix is 3D or 2D 
+  // Check if matrix is 3D or 2D
   const El::Int mat_depth = (input0_dims.size()>2) ? *(input0_dims.rbegin()+2) : 1;
 
   const El::Int input0_height = *(input0_dims.rbegin()+1);
@@ -130,7 +131,7 @@ void bp_compute_impl(matmul_layer<TensorDataType,data_layout::DATA_PARALLEL,El::
   // Note: Elemental matrices are in Fortran layout while LBANN
   // tensors are in C layout.
 
-  // Calculate stride for each matrix depending on the depth 
+  // Calculate stride for each matrix depending on the depth
   const auto input0_stride = input0_height * input0_width;
   const auto input1_stride = input1_height * input1_width;
   const auto output_stride = output_height * output_width;
@@ -176,7 +177,7 @@ void bp_compute_impl(matmul_layer<TensorDataType,data_layout::DATA_PARALLEL,El::
                  El::TypeTraits<TensorDataType>::One(), output_grad_v, input0_v,
                  El::TypeTraits<TensorDataType>::Zero(), input1_grad_v);
       }
-    }    
+    }
   }
 }
 
@@ -192,7 +193,7 @@ void fp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
   const auto& local_input1 = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(1));
   auto& local_output = dynamic_cast<LocalMat&>(l.get_local_activations());
   const auto& local_mini_batch_size = local_input0.Width();
-  
+
   if (!local_input0.Contiguous() || !local_input1.Contiguous() || !local_output.Contiguous()) {
     LBANN_ERROR(l.get_type()," layer \"",l.get_name(),"\" ",
             "has non-contiguous data buffers");
@@ -204,7 +205,7 @@ void fp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
   const auto input0_dims = l.get_input_dims(0);
   const auto input1_dims = l.get_input_dims(1);
   const auto output_dims = l.get_output_dims();
-  // Check if matrix is 3D or 2D 
+  // Check if matrix is 3D or 2D
   const El::Int mat_depth =   (input0_dims.size()>2) ? *(input0_dims.rbegin()+2) : 1;
 
   const El::Int input0_height = *(input0_dims.rbegin()+1);
@@ -216,7 +217,7 @@ void fp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
 
   const auto num_matrices = mat_depth * local_mini_batch_size;
   const auto input0_stride = input0_height * input0_width;
-  const auto input1_stride = input1_height * input1_width; 
+  const auto input1_stride = input1_height * input1_width;
   const auto output_stride = output_height * output_width;
 
   // Compute gradients for each mini-batch sample
@@ -262,8 +263,8 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
 
   // Return immediately if nothing needs to be done
   if (local_mini_batch_size < 1) { return; }
-  
-  if (!local_input0.Contiguous() || !local_input1.Contiguous() || !local_output_grad.Contiguous() 
+
+  if (!local_input0.Contiguous() || !local_input1.Contiguous() || !local_output_grad.Contiguous()
       || !local_input0_grad.Contiguous() || !local_input1_grad.Contiguous()) {
     LBANN_ERROR(l.get_type()," layer \"",l.get_name(),"\" ",
             "has non-contiguous data buffers");
@@ -273,7 +274,7 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
   const auto input1_dims = l.get_input_dims(1);
   const auto output_dims = l.get_output_dims();
 
-  // Check if matrix is 3D or 2D 
+  // Check if matrix is 3D or 2D
   const El::Int mat_depth =   (input0_dims.size()>2) ? *(input0_dims.rbegin()+2) : 1;
 
   const El::Int input0_height = *(input0_dims.rbegin()+1);
@@ -285,12 +286,12 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
 
   const auto num_matrices = mat_depth * local_mini_batch_size;
   const auto input0_stride = input0_height * input0_width;
-  const auto input1_stride = input1_height * input1_width; 
+  const auto input1_stride = input1_height * input1_width;
   const auto output_stride = output_height * output_width;
 
-  const auto input0_grad_stride = input0_stride; 
-  const auto input1_grad_stride = input1_stride; 
-  const auto output_grad_stride = output_stride; 
+  const auto input0_grad_stride = input0_stride;
+  const auto input1_grad_stride = input1_stride;
+  const auto output_grad_stride = output_stride;
 
   // Compute gradients for each mini-batch sample
   // Note: cuBLAS expects matrices in Fortran layout while LBANN
@@ -301,7 +302,7 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
     auto multisync = MakeMultiSync(gpu::get_sync_info(local_input0_grad),
                                    gpu::get_sync_info(local_input1),
                                    gpu::get_sync_info(local_output_grad));
-    
+
 
     if (transpose_input0) {
       gpu_blas::GemmStridedBatched(
@@ -365,6 +366,14 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
   }
 }
 #endif // LBANN_HAS_GPU
+
+template <typename T, data_layout L, El::Device D>
+void matmul_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_matmul();
+  msg->set_transpose_a(m_transpose_a);
+  msg->set_transpose_b(m_transpose_b);
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void matmul_layer<TensorDataType, Layout, Device>::fp_compute() {

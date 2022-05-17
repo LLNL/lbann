@@ -28,6 +28,7 @@
 #define LBANN_LAYER_MATH_MATMUL_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 
 namespace lbann {
 
@@ -63,6 +64,9 @@ public:
   El::Device get_device_allocation() const override;
 
   description get_description() const override;
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   template <typename ArchiveT>
   void serialize(ArchiveT& ar);
