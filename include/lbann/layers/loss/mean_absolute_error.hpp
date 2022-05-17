@@ -28,6 +28,8 @@
 #define LBANN_LAYERS_LOSS_MEAN_ABSOLUTE_ERROR_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -84,6 +86,9 @@ public:
   std::string get_type() const override { return "mean absolute error"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
@@ -181,6 +186,12 @@ private:
   std::unique_ptr<AbsDistMatrixType> m_workspace;
 
 };
+
+template <typename T, data_layout L, El::Device D>
+void mean_absolute_error_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_mean_absolute_error();
+}
 
 #ifndef LBANN_MEAN_ABSOLUTE_ERROR_LAYER_INSTANTIATE
 

@@ -28,6 +28,8 @@
 #define LBANN_LAYERS_LOSS_CATEGORICAL_ACCURACY_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -70,6 +72,9 @@ public:
   void fill_onnx_node(onnx::GraphProto& graph) const override;
 #endif // LBANN_HAS_ONNX
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims({1});
@@ -104,6 +109,12 @@ protected:
   {}
 
 };
+
+template <typename T, data_layout L, El::Device D>
+void categorical_accuracy_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_categorical_accuracy();
+}
 
 #ifdef LBANN_HAS_ONNX
 template <typename T, data_layout L, El::Device D>

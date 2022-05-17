@@ -28,6 +28,8 @@
 #define LBANN_LAYERS_LOSS_L1_NORM_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -74,6 +76,9 @@ public:
   std::string get_type() const override { return "L1 norm"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
@@ -146,6 +151,12 @@ private:
   std::unique_ptr<AbsDistMatrixType> m_workspace;
 
 };
+
+template <typename T, data_layout L, El::Device D>
+void l1_norm_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_l1_norm();
+}
 
 #ifndef LBANN_L1_NORM_LAYER_INSTANTIATE
 
