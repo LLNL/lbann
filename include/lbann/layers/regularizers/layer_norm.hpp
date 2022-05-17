@@ -29,7 +29,9 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 
+#include <layers.pb.h>
 #include <memory>
 
 namespace lbann {
@@ -74,6 +76,9 @@ public:
   El::Device get_device_allocation() const override;
   description get_description() const override;
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   /** @name Serialization */
   ///@{
 
@@ -113,6 +118,14 @@ private:
 // =========================================================
 // Implementation
 // =========================================================
+
+template <typename T, data_layout L, El::Device D>
+void layer_norm_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  //auto* msg = proto.mutable_layer_norm();
+  //FIXME(KLG): Why no member named set_epsilon?
+  //msg->set_epsilon(m_epsilon);
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 layer_norm_layer<TensorDataType,Layout,Device>::layer_norm_layer(

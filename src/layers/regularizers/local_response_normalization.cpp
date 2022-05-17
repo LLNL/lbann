@@ -26,7 +26,8 @@
 
 #define LBANN_LOCAL_RESPONSE_NORMALIZATION_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
-#include "layers.pb.h"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 namespace {
@@ -60,6 +61,16 @@ struct lrn_builder<TensorDataType, data_layout::MODEL_PARALLEL, device> {
     return nullptr;
   }
 };
+}// namespace
+
+template <typename T, data_layout L, El::Device D>
+void local_response_normalization_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_local_response_normalization();
+  msg->set_window_width(m_window_width);
+  msg->set_lrn_alpha(m_alpha);
+  msg->set_lrn_beta(m_beta);
+  msg->set_lrn_k(m_k);
 }
 
 template <typename TensorDataType, data_layout layout, El::Device device>

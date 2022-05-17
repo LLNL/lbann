@@ -29,7 +29,6 @@
 #include <h2/meta/Core.hpp>
 #include <h2/meta/TypeList.hpp>
 #include <h2/patterns/multimethods/SwitchDispatcher.hpp>
-#include "layers.pb.h"
 
 namespace lbann
 {

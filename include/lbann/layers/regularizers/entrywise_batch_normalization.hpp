@@ -30,7 +30,9 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/memory.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -102,6 +104,9 @@ public:
   std::string get_type() const override { return "entry-wise batch normalization"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   description get_description() const override {
     auto desc = data_type_layer<TensorDataType>::get_description();
@@ -193,6 +198,14 @@ private:
    */
   std::unique_ptr<AbsDistMatrixType> m_batch_statistics_gradient;
 };
+
+template <typename T, data_layout L, El::Device D>
+void entrywise_batch_normalization_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_entrywise_batch_normalization();
+  msg->set_decay(m_decay);
+  msg->set_epsilon(m_epsilon);
+}
 
 LBANN_DEFINE_LAYER_BUILDER(entrywise_batch_normalization);
 
