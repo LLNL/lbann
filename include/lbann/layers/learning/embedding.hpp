@@ -28,8 +28,10 @@
 #define LBANN_LAYERS_LEARNING_EMBEDDING_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/memory.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -89,6 +91,9 @@ public:
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   description get_description() const override;
 
   /** @name Serialization */
@@ -130,6 +135,16 @@ private:
 // =========================================================
 // Implementation
 // =========================================================
+
+template <typename T, data_layout L, El::Device D>
+void embedding_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_embedding();
+  msg->set_num_embeddings(m_num_embeddings);
+  msg->set_embedding_dim(m_embedding_dim);
+  //FIXME: Why doesn't this work?
+  //msg->set_padding_idx(dynamic_cast<google::protobuf::UInt64Value>(m_padding_idx));
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 embedding_layer<TensorDataType,Layout,Device>::embedding_layer(

@@ -29,6 +29,8 @@
 #define LBANN_CONVOLUTION_LAYER_INSTANTIATE
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/layers/learning/deconvolution.hpp"
+
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/protobuf.hpp"
@@ -431,6 +433,36 @@ build_deconvolution_layer_from_pbuf(lbann_comm* comm,
                             ensure_dims(params.dilation(), /*default=*/1),
                             groups,
                             bias);
+}
+
+template <typename T, data_layout L, El::Device D>
+void deconvolution_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_deconvolution();
+  //FIXME(KLG): This is probably wrong
+  msg->set_num_dims(this->get_output_dims().size());
+  msg->set_out_channels(this->m_output_channels);
+  //FIXME(KLG): Is this right?
+  for (auto const& size : this->get_conv_dims())
+    msg->add_kernel_size(size);
+  for (auto const& stride : this->get_strides())
+    msg->add_stride(stride);
+  for (auto const& pad : this->get_pads())
+    msg->add_padding(pad);
+  for (auto const& output_pad : this->m_output_pads)
+    msg->add_output_padding(output_pad);
+  //FIXME(KLG): Why doesn't this work? (no member named set_groups)
+  //msg->set_groups(dynamic_cast<google::protobuf::UInt64Value>(this->m_groups));
+  //FIXME(KLG): Does this work here?
+  //auto const has_bias = (this->num_weights() > 1UL);
+  //FIXME(KLG): Why doesn't this work (no member named set_has_bias)
+  //msg->set_has_bias(has_bias);
+  for (auto const& dilation : this->get_dilations())
+    msg->add_dilation(dilation);
+  //FIXME(KLG): What is this?
+#ifdef LBANN_HAS_GPU
+  //msg->set_conv_tensor_op_mode(conv_tensor_op_mode);
+#endif //LBANN_HAS_GPU
 }
 
 // =========================================================

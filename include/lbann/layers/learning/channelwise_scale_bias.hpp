@@ -28,8 +28,10 @@
 #define LBANN_LAYER_LEARNING_CHANNELWISE_SCALE_BIAS_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/exception.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -88,6 +90,9 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   void setup_data(size_t max_mini_batch_size) override;
 
   /** @name Serialization */
@@ -111,6 +116,13 @@ private:
 };
 
 // Implementation
+
+template <typename T, data_layout L, El::Device D>
+void channelwise_scale_bias_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_channelwise_scale_bias();
+}
+
 template <typename TensorDataType, data_layout Layout, El::Device Dev>
 channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
 ::channelwise_scale_bias_layer(lbann_comm *comm)

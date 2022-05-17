@@ -29,6 +29,7 @@
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/layers/learning/convolution.hpp"
 
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf.hpp"
 
@@ -223,6 +224,34 @@ void convolution_layer<TensorDataType, Layout, Device>::fill_onnx_node(
   }
 }
 #endif // LBANN_HAS_ONNX
+
+template <typename T, data_layout L, El::Device D>
+void convolution_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+
+  //FIXME(KLG): TOM: Only follow has_vectors=true path
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_convolution();
+  //FIXME(KLG): Is this right or is it num_data_dims?
+  msg->set_num_dims(this->get_output_dims().size());
+  msg->set_num_output_channels(this->m_output_channels);
+  msg->set_has_vectors(true);
+  for (auto const& conv_dim : this->get_conv_dims())
+    msg->add_conv_dims(conv_dim);
+  for (auto const& conv_pad : this->get_pads())
+    msg->add_conv_pads(conv_pad);
+  for (auto const& conv_stride : this->get_strides())
+    msg->add_conv_strides(conv_stride);
+  for (auto const& conv_dilation : this->get_dilations())
+    msg->add_conv_dilations(conv_dilation);
+  //FIXME(KLG): Does this work here?
+  auto const has_bias = (this->num_weights() > 1UL);
+  msg->set_has_bias(has_bias);
+  msg->set_num_groups(this->m_groups);
+  //FIXME(KLG): What is this?
+#ifdef LBANN_HAS_GPU
+  //msg->set_conv_tensor_op_mode(this->conv_tensor_op_mode);
+#endif // LBANN_HAS_GPU
+}
 
 #if defined LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Device>
