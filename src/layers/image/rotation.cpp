@@ -27,9 +27,17 @@
 #define LBANN_ROTATION_LAYER_INSTANTIATE
 #include "lbann/layers/image/rotation.hpp"
 
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 #include <math.h>
 
 namespace lbann {
+
+template <typename T, data_layout L, El::Device D>
+void rotation_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_rotation();
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void rotation_layer<TensorDataType, Layout, Device>::fp_compute() {
