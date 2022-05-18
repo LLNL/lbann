@@ -59,8 +59,7 @@ void OperatorLayer<T, O, L, D>::write_specific_proto(
 
 #ifdef LBANN_HAS_ONNX
 template <typename T, typename O, data_layout L, El::Device D>
-void OperatorLayer<T, O, L, D>::fill_onnx_node(
-  onnx::GraphProto& graph) const
+void OperatorLayer<T, O, L, D>::fill_onnx_node(onnx::GraphProto& graph) const
 {
   const auto& parents = this->get_parent_layers();
   auto nodes = m_ops.front()->get_onnx_nodes();
@@ -72,27 +71,22 @@ void OperatorLayer<T, O, L, D>::fill_onnx_node(
   op_node->set_domain("");
   op_node->set_doc_string(this->get_name());
 
-  //binary operators
-  if(nodes.size() == 1)
-  {
-    for(auto* parent : parents)
-    {
+  // binary operators
+  if (nodes.size() == 1) {
+    for (auto* parent : parents) {
       size_t idx = parent->find_child_layer_index(*this);
       op_node->add_input(parent->get_name() + "_" + std::to_string(idx));
     }
   }
   // Binary w/ constant operators
-  else if(nodes.size() == 2 || nodes.size() == 3)
-  {
+  else if (nodes.size() == 2 || nodes.size() == 3) {
     auto* const_node = graph.add_node();
     *const_node = nodes.back();
-    if(const_node->op_type() == "PostConstant")
-    {
+    if (const_node->op_type() == "PostConstant") {
       op_node->add_input(parents[0]->get_name() + "_0");
       op_node->add_input(const_node->output(0));
     }
-    else if(const_node->op_type() == "PreConstant")
-    {
+    else if (const_node->op_type() == "PreConstant") {
       op_node->add_input(const_node->output(0));
       op_node->add_input(parents[0]->get_name() + "_0");
     }
@@ -102,11 +96,11 @@ void OperatorLayer<T, O, L, D>::fill_onnx_node(
     const_node->set_op_type("Constant");
   }
   else
-      LBANN_ERROR("Expected 1-3 ONNX nodes for binary operation, received ", nodes.size());
+    LBANN_ERROR("Expected 1-3 ONNX nodes for binary operation, received ",
+                nodes.size());
 
   // Not equal operator
-  if(nodes.size() == 3)
-  {
+  if (nodes.size() == 3) {
     op_node->add_output("EqualOperator");
     auto* not_node = graph.add_node();
     not_node->add_input(op_node->output(0));

@@ -83,7 +83,7 @@ public:
 
 #ifdef LBANN_HAS_ONNX
   void fill_onnx_node(onnx::GraphProto& graph) const override;
-#endif //LBANN_HAS_ONNX
+#endif // LBANN_HAS_ONNX
 
   void fp_compute() final;
   void bp_compute() final;
