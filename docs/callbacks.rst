@@ -82,6 +82,7 @@ Available Callbacks
 .. toctree::
    :maxdepth: 1
 
+   Export Onnx <callbacks/export_onnx>
    Summarize images <callbacks/summarize_images>
 
 ..
