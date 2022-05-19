@@ -142,8 +142,7 @@ void embedding_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) cons
   auto* msg = proto.mutable_embedding();
   msg->set_num_embeddings(m_num_embeddings);
   msg->set_embedding_dim(m_embedding_dim);
-  //FIXME: Why doesn't this work?
-  //msg->set_padding_idx(dynamic_cast<google::protobuf::UInt64Value>(m_padding_idx));
+  msg->mutable_padding_idx()->set_value(m_padding_idx);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

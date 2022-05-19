@@ -107,8 +107,7 @@ void scatter_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const 
   auto* msg = proto.mutable_scatter();
   for (auto const& dim : this->get_output_dims())
     msg->add_dims(dim);
-  //FIXME: Why does it say "no member set_axis"? Would normal int work here?
-  //msg->set_axis(dynamic_cast<google::protobuf::UInt64Value>(m_scatter_axis));
+  msg->mutable_axis()->set_value(m_scatter_axis);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
