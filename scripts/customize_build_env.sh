@@ -29,7 +29,7 @@ set_center_specific_fields()
         elif [[ ${DOMAINNAME} = "riken.jp" ]]; then
             CENTER="riken"
         else
-            CENTER="llnl_lc"
+            CENTER="unknown"
         fi
         COMPILER="gnu"
     fi
