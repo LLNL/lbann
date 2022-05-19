@@ -123,6 +123,7 @@ public:
    *  operator from protobuf.
    */
   void write_proto(google::protobuf::Message& msg) const;
+
   /** @name Serialization */
   ///@{
 

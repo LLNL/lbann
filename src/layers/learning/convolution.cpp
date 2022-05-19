@@ -247,7 +247,7 @@ void convolution_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) co
   auto const has_bias = (this->num_weights() > 1UL);
   msg->set_has_bias(has_bias);
   msg->set_num_groups(this->m_groups);
-  //FIXME(KLG): What is this?
+  //FIXME(KLG): What is conv_tensor_op_mode?
 #ifdef LBANN_HAS_GPU
   //msg->set_conv_tensor_op_mode(this->conv_tensor_op_mode);
 #endif // LBANN_HAS_GPU

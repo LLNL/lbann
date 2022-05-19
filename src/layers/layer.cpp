@@ -533,7 +533,7 @@ void Layer::write_proto(lbann_data::Layer& proto) {
   proto.set_data_layout(to_string(this->get_data_layout()));
   if(this->get_hint_layer())
     proto.set_hint_layer(this->get_hint_layer()->get_name());
-  //FIXME(KLG): How set this?
+  //FIXME(KLG): How to set this?
   //proto.set_parallel_strategy();
 
   this->write_specific_proto(proto);

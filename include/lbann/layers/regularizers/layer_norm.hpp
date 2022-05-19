@@ -122,9 +122,8 @@ private:
 template <typename T, data_layout L, El::Device D>
 void layer_norm_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);
-  //auto* msg = proto.mutable_layer_norm();
-  //FIXME(KLG): Why no member named set_epsilon?
-  //msg->set_epsilon(m_epsilon);
+  auto* msg = proto.mutable_layer_norm();
+  msg->mutable_epsilon()->set_value(m_epsilon);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

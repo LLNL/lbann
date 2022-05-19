@@ -39,14 +39,12 @@ namespace lbann
 template <typename T, data_layout L, El::Device D>
 void channelwise_fully_connected_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);
-  //auto* msg = proto.mutable_channelwise_fully_connected();
-  //FIXME(KLG): How do I get this?
-  //for (auto const& dim : this->output_channel_dims)
-    //msg->add_output_channel_dims(dim);
-  //FIXME(KLG): no member named set_bias
-  //msg->set_bias(this->bias);
-  //FIXME(KLG): no member named set_transpose
-  //msg->set_transpose(this->transpose);
+  auto* msg = proto.mutable_channelwise_fully_connected();
+  //FIXME(KLG): Is this right?
+  for (auto const& dim : this->get_output_dims())
+    msg->add_output_channel_dims(dim);
+  msg->mutable_bias()->set_value(m_has_bias);
+  msg->mutable_transpose()->set_value(m_transpose);
 }
 
 // =========================================================

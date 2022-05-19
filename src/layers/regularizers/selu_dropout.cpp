@@ -134,10 +134,9 @@ void selu_dropout<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_selu_dropout();
   msg->set_keep_prob(m_keep_prob);
-  //FIXME(KLG): Are these two right, and what to do with El::TensorDataType?
   msg->set_alpha(m_alpha_prime);
   //FIXME(KLG): How do I get this?
-  //msg->set_scale(this->m_scale);
+  //msg->set_scale(scale);
 }
 
 template <typename T, data_layout L, El::Device D>

@@ -30,7 +30,7 @@
 #include "lbann/base.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/weights/weights.hpp"
-// FIXME Added to try to resolve lbann_data:: not declared error
+
 // Forward-declare protobuf classes
 namespace lbann_data {
 class ObjectiveFunction;
