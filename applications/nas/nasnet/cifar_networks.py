@@ -64,7 +64,7 @@ def generate_genomes(pop_size,
 
         if doTrain:
             genotype = micro_encoding.decode(genome)
-            print("Newtwork id, bitstring, genome, genotype ", network_id, bit_string, genome, genotype)
+            #print("Newtwork id, bitstring, genome, genotype ", network_id, bit_string, genome, genotype)
             networks.append(genome)
             genotypes.append(genotype)
             network_id +=1
