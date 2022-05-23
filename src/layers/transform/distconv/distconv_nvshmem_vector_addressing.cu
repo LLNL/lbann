@@ -29,7 +29,7 @@
 #include "lbann/layers/transform/distconv/distconv_nvshmem_vector_addressing.hpp"
 namespace distconv{
   namespace{
-
+    
   template <typename T> __device__ __forceinline__
   T* memcpy_warp(T* __restrict__ dest, const T* __restrict__ src, int n) {
     constexpr int warp_size = 32;
