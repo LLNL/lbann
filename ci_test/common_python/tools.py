@@ -700,7 +700,7 @@ def create_tests(setup_func,
 
         if req_num_nodes:
             kwargs['nodes'] = req_num_nodes
-
+        
         # Configure kwargs to LBANN launcher
         _kwargs = copy.deepcopy(kwargs)
         if 'work_dir' not in _kwargs:
@@ -714,8 +714,8 @@ def create_tests(setup_func,
             del _kwargs['work_subdir']
 
         # Delete the work directory
-        if os.path.isdir(_kwargs['work_dir']):
-            shutil.rmtree(_kwargs['work_dir'])
+        #if os.path.isdir(_kwargs['work_dir']):
+        #    shutil.rmtree(_kwargs['work_dir'])
 
         if 'job_name' not in _kwargs:
             _kwargs['job_name'] = f'lbann_{test_name}'
