@@ -75,7 +75,6 @@ def periodic_padding_2D(data, padding):
       (np.array): Padded atensor with shape
                   (B, c, h+2*padding, h+2*padding)
     """
-    print(data.shape)
     _, c, h, w = data.shape
     top_slice = data[:, :, :padding, :]
     bottom_slice = data[:, :, h - padding:, :]
@@ -209,6 +208,8 @@ def construct_model(lbann):
                        objective_function=obj,
                        metrics=metrics,
                        callbacks=callbacks)
+
+
 def construct_data_reader(lbann):
     """Construct Protobuf message for Python data reader.
 
