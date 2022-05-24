@@ -139,9 +139,9 @@ def construct_model(lbann):
     x_weights = lbann.Weights(optimizer=lbann.SGD(),
                               initializer=lbann.ConstantInitializer(value=0.0))
     x = lbann.Sum(lbann.Reshape(lbann.Input(data_field='samples'),
-                                dims=tools.str_list(_sample_dims)),
+                                dims=_sample_dims),
                   lbann.WeightsLayer(weights=x_weights,
-                                     dims=tools.str_list(_sample_dims)))
+                                     dims=_sample_dims))
     x_lbann = x
 
     # Objects for LBANN model
@@ -150,7 +150,7 @@ def construct_model(lbann):
     callbacks = []
 
     x_2D = lbann.Reshape(x_lbann,
-                         dims=tools.str_list(_sample_dims))
+                         dims=_sample_dims)
     y = PeriodicPadding2D(x_2D,
                           _sample_dims[1],
                           _sample_dims[2],
@@ -171,7 +171,7 @@ def construct_model(lbann):
                                                    execution_modes='test')
 
     x_3D = lbann.Reshape(x_lbann,
-                         dims=tools.str_list(_sample_dims_3d))
+                         dims=_sample_dims_3d)
     y = PeriodicPadding3D(x_3D,
                           _sample_dims_3d[1],
                           _sample_dims_3d[2],
