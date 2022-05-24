@@ -65,6 +65,7 @@ def Cumsum(x, dims, axis=0):
         x = lbann.MatMul(x, tril_ones, transpose_b=True)
         return x
 
+
 def PeriodicPadding2D(x, height, width, padding=1):
     """ For 2D images of the shape (B, *, height, width)
         Args:
@@ -77,7 +78,7 @@ def PeriodicPadding2D(x, height, width, padding=1):
                            shape (*, height + padding, width + padding)
     """
     horizontal_slices = lbann.Slice(x,
-                                    slice_points=str_list([0, padding, height-padding, height]),
+                                    slice_points=[0, padding, height - padding, height],
                                     axis=1)
     top = lbann.Identity(horizontal_slices)
     _ = lbann.Identity(horizontal_slices)
@@ -86,7 +87,7 @@ def PeriodicPadding2D(x, height, width, padding=1):
     x = lbann.Concatenation([top, x, bottom], axis=1)
 
     vertical_slices = lbann.Slice(x,
-                                  slice_points=str_list([0, padding, width-padding, width]),
+                                  slice_points=[0, padding, width - padding, width],
                                   axis=2)
     left = lbann.Identity(vertical_slices)
     _ = lbann.Identity(vertical_slices)
@@ -94,6 +95,7 @@ def PeriodicPadding2D(x, height, width, padding=1):
 
     x = lbann.Concatenation([left, x, right], axis=2)
     return x
+
 
 def PeriodicPadding3D(x, depth, height, width, padding=1, name=None):
     """ For 3D volumes of the shape (B, *, channel, depth, height, width)
@@ -109,9 +111,9 @@ def PeriodicPadding3D(x, depth, height, width, padding=1, name=None):
     """
     #  To do: Hack to get around slice and concatenation limitation. Remove when
     #         support for arbitrary dimensional slice + concatenation is added
-    x = lbann.Reshape(x, dims=str_list([-1, depth, height * width])) #  Shape (C, D, H * W)
+    x = lbann.Reshape(x, dims=[-1, depth, height * width])  # Shape (C, D, H * W)
     depth_slices = lbann.Slice(x,
-                               slice_points=str_list([0, padding, depth-padding, depth]),
+                               slice_points=[0, padding, depth - padding, depth],
                                axis=1)
     d1 = lbann.Identity(depth_slices)
     _ = lbann.Identity(depth_slices)
@@ -121,9 +123,9 @@ def PeriodicPadding3D(x, depth, height, width, padding=1, name=None):
 
     #  To do: Hack to get around slice and concatenation limitation. Remove when
     #         support for arbitrary dimensional slice + concatenation is added
-    x = lbann.Reshape(x, dims=str_list([-1, height,  width]))  #  Shape (C * D, H ,  W)
+    x = lbann.Reshape(x, dims=[-1, height, width])  # Shape (C * D, H ,  W)
     height_slices = lbann.Slice(x,
-                                slice_points=str_list([0, padding, height-padding, height]),
+                                slice_points=[0, padding, height - padding, height],
                                 axis=1)
     h1 = lbann.Identity(height_slices)
     _ = lbann.Identity(height_slices)
@@ -132,7 +134,7 @@ def PeriodicPadding3D(x, depth, height, width, padding=1, name=None):
     x = lbann.Concatenation([h1, x, h2], axis=1)
 
     width_slices = lbann.Slice(x,
-                               slice_points=str_list([0, padding, width-padding, width]),
+                               slice_points=[0, padding, width - padding, width],
                                axis=2)
     w1 = lbann.Identity(width_slices)
     _ = lbann.Identity(width_slices)
@@ -142,8 +144,8 @@ def PeriodicPadding3D(x, depth, height, width, padding=1, name=None):
 
     #  To do: Hack to get around slice and concatenation limitation. Remove when
     #         support for arbitrary dimensional slice + concatenation is added
-    x = lbann.Reshape(x, dims=str_list([-1,
-                                        depth + 2 * padding, 
-                                        height + 2 * padding,
-                                        width + 2 * padding])) 
+    x = lbann.Reshape(x, dims=[-1,
+                               depth + 2 * padding,
+                               height + 2 * padding,
+                               width + 2 * padding])
     return x
