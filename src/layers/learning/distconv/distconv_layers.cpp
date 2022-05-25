@@ -160,7 +160,7 @@ namespace distconv{
     const auto& output_dims = output_grad.get_local_shape();
 
     const auto& input_size = input_dims[0] * input_dims[1];
-    const auto& output_size = output_dims[0] * ouput_dims[1];
+    const auto& output_size = output_dims[0] * output_dims[1];
 
     const auto linearity_input_size = transpose_A ? output_size : input_size;
     const auto linearity_output_size = transpose_A ? input_size : output_size;
