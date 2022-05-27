@@ -89,7 +89,7 @@ namespace distconv{
                                                   indices.get_buffer(),
                                                   indices_size);
     
-    //  Attach values matrix to the NVSHMEM buffer
+    // Attach values matrix to the NVSHMEM buffer
     // The size of the NVSHMEM_values buffer is for the local values matrix
 
     // Retreive value vectors onto the NVSHMEM workspace buffer 

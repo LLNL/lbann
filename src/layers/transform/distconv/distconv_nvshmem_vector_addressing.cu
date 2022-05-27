@@ -27,6 +27,7 @@
 /** Copy between two device buffers, using all threads in a warp. */
 #define LBANN_TRANSFORM_DISTCONV_NVSHMEM_VECTOR_ADDRESSING_INSTANTIATE
 #include "lbann/layers/transform/distconv/distconv_nvshmem_vector_addressing.hpp"
+
 namespace distconv{
   namespace{
     
@@ -101,9 +102,9 @@ namespace distconv{
     if (status != 0) {
       LBANN_ERROR(
         "Failed to launch NVSHMEM collective kernel ",
-        "(error ",status,")");s
+        "(error ",status,")");
+    }
   }
-
   } // anonymous namespace <anon>
 
   namespace tensor{

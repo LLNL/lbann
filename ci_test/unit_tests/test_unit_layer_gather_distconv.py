@@ -17,29 +17,28 @@ import tools
 
 # Data
 width = 13
-height = 7
+height = 17
 input_size = width * height
-output_size = 5
+output_size = 23
 seed = 20210127
 
 
+# Sample access functions
 def get_sample(index):
-    # Sample access functions
     np.random.seed(seed + index)
     values = [np.random.normal() for _ in range(input_size)]
-    indices = [np.random.uniform(-1, output_size + 1) for _ in range(height)]
+    indices = [np.random.uniform(-1, output_size + 1) for _ in range(output_size)]
     return values + indices
 
 def num_samples():
     return 23
 
 def sample_dims():
-    return (input_size + height,)
+    return (input_size + output_size,)
 
 # ==============================================
 # Setup LBANN experiment
 # ==============================================
-
 
 def setup_experiment(lbann):
     """Construct LBANN experiment.
@@ -55,12 +54,11 @@ def setup_experiment(lbann):
     optimizer = lbann.NoOptimizer()
     return trainer, model, data_reader, optimizer
 
-
 def construct_model(lbann):
     """Construct LBANN model.
 
-    Args:
-        lbann (module): Module for LBANN Python frontend
+      Args:
+          lbann (module): Module for LBANN Python frontend
 
     """
     # Objects for LBANN model
@@ -72,20 +70,13 @@ def construct_model(lbann):
     # Note: Sum with a weights layer so that gradient checking will
     # verify that error signals are correct.
     x = lbann.Input(data_field='samples')
-    x_slice = lbann.Slice(
-        x,
-        slice_points=[0, input_size, input_size + height],
-    )
-    x0_weights = lbann.Weights(
-        optimizer=lbann.SGD(),
-        initializer=lbann.ConstantInitializer(value=0.0),
-        name='input_weights',
-    )
-    x0 = lbann.Sum(
-        lbann.Identity(x_slice),
-        lbann.WeightsLayer(weights=x0_weights, dims=input_size),
-    )
-
+    x_slice = lbann.Slice(x,
+                          slice_points=[0, input_size, input_size + output_size])
+    x0_weights = lbann.Weights(optimizer=lbann.SGD(),
+                               initializer=lbann.ConstantInitializer(value=0.0),
+                               name='input_weights')
+    x0 = lbann.Sum(lbann.Identity(x_slice),
+                   lbann.WeightsLayer(weights=x0_weights, dims=input_size))
     x1 = lbann.Identity(x_slice)
 
     ######################################################################
@@ -95,13 +86,9 @@ def construct_model(lbann):
     ######################################################################
 
     x0 = lbann.Reshape(x0, dims=[height, width, 1], name="values_distconv_axis_0")
-    x1 = lbann.Reshape(x1, dims=[height, 1, 1], name="indices_distconv_axis_0")
+    x1 = lbann.Reshape(x1, dims=[output_size, 1, 1], name="indices_distconv_axis_0")
 
-
-    # output should be (output_size, width, 1)
-
-    y0 = lbann.Scatter(x0, x1, dims=[output_size, width, 1], axis=0, name="Scatter_distconv_axis_0") 
-
+    y0 = lbann.Gather(x0, x1, dims=[output_size, width, 1], axis=0, name="Gather_distconv_axis_0") 
     y1 = lbann.Concatenation([
         lbann.Constant(value=i + 1, num_neurons='1')
         for i in range(output_size * width)
@@ -113,23 +100,23 @@ def construct_model(lbann):
     y = lbann.Multiply(y0, y1)
 
     z = lbann.L2Norm2(y)
-
     obj.append(z)
     vals = []
+
     for i in range(num_samples()):
         _x = get_sample(i)
-        x0 = np.array(_x[:input_size]).reshape((height, width))
-        x1 = _x[input_size:input_size + height]
+        values = np.array(_x[:input_size]).reshape((height, width))
+        indices = _x[:input_size]
+        output = np.zeros((output_size, width))
 
-        y0 = np.zeros((output_size, width))
-
-        for i in range(height):
-            if 0 <= x1[i] < output_size:
-                for j in range(width):
-                    y0[int(x1[i])][j] += x0[i][j]
+        for row in range(height):
+            ind = indices[row]
+            if 0 <=  ind < output_size:
+                for cols in range(width):
+                    output[row][cols] = values[int(ind)][cols]
         z = 0
-        for i in range(width * output_size):
-            z += ((i + 1) * y0.flatten()[i])**2
+        for elem in range(width * output_size):
+            z += ((i + 1) * output.flatten()[elem])**2
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
@@ -139,9 +126,6 @@ def construct_model(lbann):
         upper_bound=val + tol,
         error_on_failure=True,
         execution_modes='test'))
-
-    # Gradient checking
-
     callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # Construct model
@@ -153,8 +137,6 @@ def construct_model(lbann):
                        objective_function=obj,
                        metrics=metrics,
                        callbacks=callbacks)
-
-
 def construct_data_reader(lbann):
     """Construct Protobuf message for Python data reader.
 
