@@ -168,6 +168,7 @@ message Layer {
     Scatter scatter = 74;
     Gather gather = 75;
     BatchwiseReduceSum batchwise_reduce_sum = 76;
+    TensorPermute permute = 77;
     CategoricalRandom categorical_random = 406; // Deprecated
     DiscreteRandom discrete_random = 407; // Deprecated
 
@@ -1011,6 +1012,18 @@ message Layer {
     *  Output tensor has same shape as input tensor.
     */
   message BatchwiseReduceSum {}
+
+  /** @brief Permute a tensor's indices ("tensor transpose")
+   *
+   *  @note This name was chosen to not conflict with the existing
+   *        LBANN module API for "Permute", which can be implemented
+   *        with some reshapes and a gather if this layer is not
+   *        available. However, the C++ class name is just
+   *        "PermuteLayer".
+   */
+  message TensorPermute {
+    repeated uint32 axes = 1;
+  }
 
   /// Deprecated
   message CategoricalRandom {

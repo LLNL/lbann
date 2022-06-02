@@ -72,6 +72,7 @@
 
 #cmakedefine LBANN_HAS_CUDA
 #cmakedefine LBANN_HAS_CUDNN
+#cmakedefine LBANN_HAS_CUTENSOR
 #ifdef LBANN_HAS_CUDA
 #cmakedefine LBANN_HAS_NVSHMEM
 #cmakedefine LBANN_NVPROF

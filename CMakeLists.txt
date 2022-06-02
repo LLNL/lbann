@@ -337,12 +337,16 @@ if (LBANN_HAS_CUDA)
     set(LBANN_WITH_CUDNN ON)
   endif ()
 
-  find_package(CUDAToolkit 11.0.0 REQUIRED)
   # Hydrogen will have found this, but it doesn't hurt to find it
   # again.
+  find_package(CUDAToolkit 11.0.0 REQUIRED)
+
   find_package(cuDNN REQUIRED)
   set(LBANN_HAS_CUDNN ${cuDNN_FOUND})
   set(LBANN_HAS_DNN_LIB ${cuDNN_FOUND})
+
+  find_package(cuTENSOR)
+  set(LBANN_HAS_CUTENSOR ${cuTENSOR_FOUND})
 
   # Special stuff for the GRU layer
   if ((CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0.0")
@@ -355,6 +359,10 @@ if (LBANN_HAS_CUDA)
     CUDA::nvToolsExt
     CUDA::cufft
     cuda::cudnn)
+
+  if (LBANN_HAS_CUTENSOR)
+    list(APPEND LBANN_CUDA_LIBS cuTENSOR::cuTENSOR)
+  endif ()
 
   if (LBANN_HAS_ALUMINUM AND AL_HAS_NCCL)
     set(LBANN_HAS_NCCL2 TRUE)
@@ -535,6 +543,7 @@ if (LBANN_WITH_UNIT_TESTING)
   add_subdirectory(src/layers/activations/unit_test)
   add_subdirectory(src/layers/learning/unit_test)
   add_subdirectory(src/layers/regularizers/unit_test)
+  add_subdirectory(src/layers/transform/unit_test)
   add_subdirectory(src/models/unit_test)
   add_subdirectory(src/proto/unit_test)
   add_subdirectory(src/operators/math/unit_test)
@@ -925,6 +934,7 @@ append_str_tf(_str
   LBANN_HAS_CNPY
   LBANN_HAS_CUDA
   LBANN_HAS_CUDNN
+  LBANN_HAS_CUTENSOR
   LBANN_HAS_DIHYDROGEN
   LBANN_HAS_DISTCONV
   LBANN_HAS_DOXYGEN
