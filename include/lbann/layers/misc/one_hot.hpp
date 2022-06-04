@@ -98,8 +98,7 @@ template <typename T, data_layout L, El::Device D>
 void one_hot_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_one_hot();
-  //FIXME(KLG): Is this right?
-  msg->set_size(this->get_output_dims().size());
+  msg->set_size(this->get_output_dims()[0]);
 }
 
 #ifndef LBANN_ONE_HOT_LAYER_INSTANTIATE

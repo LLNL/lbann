@@ -68,34 +68,28 @@ template <typename T, data_layout L, El::Device D>
 void pooling_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_pooling();
-  //FIXME(KLG): Does this work?
   switch (m_pool_mode)
   {
     case pooling_mode::MAX_DETERMINISTIC:
-      msg->set_pool_mode("MAX_DETERMINISTIC");
+      msg->set_pool_mode("max");
       break;
     case pooling_mode::MAX:
-      msg->set_pool_mode("MAX");
+      msg->set_pool_mode("max");
       break;
     case pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING:
-      msg->set_pool_mode("AVERAGE_COUNT_INCLUDE_PADDING");
+      msg->set_pool_mode("average");
       break;
     case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING:
-      msg->set_pool_mode("AVERAGE_COUNT_EXCLUDE_PADDING");
+      msg->set_pool_mode("average_no_pad");
       break;
     default:
       LBANN_ERROR("Invalid pooling mode requested.");
   }
-  //FIXME(KLG): is this right?
   msg->set_num_dims(m_pool_dims.size());
-  //FIXME(KLG): Has_vectors will just equal true, per Tom
   msg->set_has_vectors(true);
-  for (auto const& dim : m_pool_dims)
-    msg->add_pool_dims(dim);
-  for (auto const& pad : m_pads)
-    msg->add_pool_pads(pad);
-  for (auto const& stride : m_strides)
-    msg->add_pool_strides(stride);
+  protobuf::assign_to_repeated(*msg->mutable_pool_dims(), m_pool_dims);
+  protobuf::assign_to_repeated(*msg->mutable_pool_pads(), m_pads);
+  protobuf::assign_to_repeated(*msg->mutable_pool_strides(), m_strides);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

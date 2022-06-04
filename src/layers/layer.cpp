@@ -524,16 +524,14 @@ void Layer::write_proto(lbann_data::Layer& proto) {
   for (auto const* child : this->get_child_layers()) {
     proto.add_children(child->get_name());
   }
-  for (size_t i=0; i<num_weights(); ++i) {
-    // FIXME(KLG): Add weights data
-    //auto weight_proto = proto.add_weights();
-    //get_weights(i).write_proto(weight_proto);
-  }
+  for (size_t ii = 0; ii <  this->num_weights(); ii++)
+    proto.add_weights(this->get_weights(ii).get_name());
+
   proto.set_device_allocation(to_string(this->get_device_allocation()));
   proto.set_data_layout(to_string(this->get_data_layout()));
   if(this->get_hint_layer())
     proto.set_hint_layer(this->get_hint_layer()->get_name());
-  //FIXME(KLG): How to set this?
+  //FIXME(KLG): Ignore for now. (Tom's problem)
   //proto.set_parallel_strategy();
 
   this->write_specific_proto(proto);

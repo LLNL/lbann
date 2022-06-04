@@ -30,6 +30,7 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/utils/protobuf.hpp"
 #include <layers.pb.h>
 
 namespace lbann {
@@ -243,8 +244,7 @@ template <typename T, data_layout L, El::Device D>
 void tessellate_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_tessellate();
-  for (auto const& dim : this->get_output_dims())
-    msg->add_dims(dim);
+  protobuf::assign_to_repeated(*msg->mutable_dims(), this->get_output_dims());
 }
 
 #ifndef LBANN_TESSELLATE_LAYER_INSTANTIATE

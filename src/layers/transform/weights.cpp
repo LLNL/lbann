@@ -71,9 +71,7 @@ template <typename T, data_layout L, El::Device D>
 void weights_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_weights_layer();
-  //FIXME(KLG): Is this right?
-  for (auto const& dim : this->get_output_dims())
-    msg->add_dims(dim);
+  protobuf::assign_to_repeated(*msg->mutable_dims(), this->get_output_dims());
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

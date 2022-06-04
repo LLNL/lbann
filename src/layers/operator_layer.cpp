@@ -52,7 +52,6 @@ void OperatorLayer<T, O, L, D>::write_specific_proto(lbann_data::Layer& proto) c
   auto* op = msg->add_ops();
   op->set_input_datatype(proto::ProtoDataType<T>);
   op->set_input_datatype(proto::ProtoDataType<O>);
-  //FIXME(KLG): Is this right?
   op->set_device_allocation(proto::ProtoDevice<D>);
 }
 

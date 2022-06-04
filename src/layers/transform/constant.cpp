@@ -57,9 +57,8 @@ void constant_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_constant();
   msg->set_value(m_value);
-  //FIXME(KLG): Totally guessed at this. num_neurons is not a thing!
-  for (auto const& dim : this->get_output_dims())
-    msg->add_num_neurons(dim);
+  protobuf::assign_to_repeated(*msg->mutable_num_neurons(),
+                               this->get_output_dims());
 }
 
 #define PROTO_DEVICE(T, Device) \

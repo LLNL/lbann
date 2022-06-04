@@ -234,7 +234,6 @@ template <typename T, data_layout L, El::Device D>
 void softmax_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_softmax();
-  //FIXME(KLG): Something like this??
   switch (m_mode)
   {
     case softmax_mode::INSTANCE:

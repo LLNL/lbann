@@ -51,14 +51,13 @@ template <typename T, data_layout L, El::Device D>
 void reduction_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_reduction();
-  //FIXME(KLG): Is this right?
   switch (m_mode)
   {
     case reduction_mode::SUM:
-      msg->set_mode("SUM");
+      msg->set_mode("sum");
       break;
     case reduction_mode::AVERAGE:
-      msg->set_mode("AVERAGE");
+      msg->set_mode("mean");
       break;
     default:
       LBANN_ERROR("Invalid reduction mode requested.");

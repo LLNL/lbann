@@ -27,6 +27,7 @@
 #define LBANN_GAUSSIAN_LAYER_INSTANTIATE
 #include "lbann/layers/transform/gaussian.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/utils/protobuf.hpp"
 #include <layers.pb.h>
 
 namespace lbann {
@@ -37,8 +38,8 @@ void gaussian_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const
   auto* msg = proto.mutable_gaussian();
   msg->set_mean(m_mean);
   msg->set_stdev(m_stdev);
-  for (auto const& dim : this->get_output_dims())
-    msg->add_neuron_dims(dim);
+  protobuf::assign_to_repeated(*msg->mutable_neuron_dims(),
+                               this->get_output_dims());
   msg->set_training_only(m_training_only);
 }
 

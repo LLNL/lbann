@@ -40,9 +40,9 @@ template <typename T, data_layout L, El::Device D>
 void channelwise_fully_connected_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_channelwise_fully_connected();
-  //FIXME(KLG): Is this right?
-  for (auto const& dim : this->get_output_dims())
-    msg->add_output_channel_dims(dim);
+  auto const& dims = this->get_output_dims();
+  for (int ii = 1; ii < dims.size(); ii++)
+    msg->add_output_channel_dims(dims[ii]);
   msg->mutable_bias()->set_value(m_has_bias);
   msg->mutable_transpose()->set_value(m_transpose);
 }

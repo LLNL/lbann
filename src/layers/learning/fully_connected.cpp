@@ -648,8 +648,7 @@ template <typename T, data_layout L, El::Device D>
 void fully_connected_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_fully_connected();
-  //FIXME(KLG): Is this right?
-  msg->set_num_neurons(this->get_output_dims().size());
+  msg->set_num_neurons(get_linear_size(this->get_output_dims()));
   auto const has_bias = (this->num_weights() > 1UL);
   msg->set_has_bias(has_bias);
   msg->set_transpose(m_transpose);

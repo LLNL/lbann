@@ -28,6 +28,7 @@
 #define LBANN_UNIFORM_LAYER_INSTANTIATE
 #include "lbann/layers/transform/uniform.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/utils/protobuf.hpp"
 #include <layers.pb.h>
 
 namespace lbann {
@@ -38,9 +39,8 @@ void uniform_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const 
   auto* msg = proto.mutable_uniform();
   msg->set_min(m_min);
   msg->set_max(m_max);
-  //FIXME(KLG): Is this right?
-  for (auto const& dim : this->get_output_dims())
-    msg->add_neuron_dims(dim);
+  protobuf::assign_to_repeated(*msg->mutable_neuron_dims(),
+                               this->get_output_dims());
   msg->set_training_only(m_training_only);
 }
 

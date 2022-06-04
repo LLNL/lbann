@@ -53,8 +53,8 @@ template <typename T, data_layout L, El::Device D>
 void weighted_sum_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_weighted_sum();
-  for (auto const& scaling_factor : m_scaling_factors)
-    msg->add_scaling_factors(scaling_factor);
+  protobuf::assign_to_repeated(*msg->mutable_scaling_factors(),
+                               m_scaling_factors);
 }
 
 #define PROTO_DEVICE(T, Device) \

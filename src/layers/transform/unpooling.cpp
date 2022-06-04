@@ -1,4 +1,3 @@
-
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
@@ -35,9 +34,9 @@ namespace lbann {
 template <typename T, data_layout L, El::Device D>
 void unpooling_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);
-  auto* msg = proto.mutable_unpooling();
-  //FIXME(KLG): Is this right?
-  msg->set_num_dims(this->get_output_dims().size());
+  proto.mutable_unpooling();
+  // Unused
+  // msg->set_num_dims(this->get_output_dims().size());
 }
 
 #define PROTO(T)                                                               \

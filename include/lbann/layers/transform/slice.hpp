@@ -34,6 +34,7 @@
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/trainers/trainer.hpp"
+#include "lbann/utils/protobuf.hpp"
 #include <layers.pb.h>
 
 namespace lbann {
@@ -147,10 +148,8 @@ template <typename T, data_layout L, El::Device D>
 void slice_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_slice();
-  //FIXME(KLG): Where get this? Is m_slice_dim right?
   msg->set_axis(m_slice_dim);
-  for (auto const& slice_point : m_slice_points)
-    msg->add_slice_points(slice_point);
+  protobuf::assign_to_repeated(*msg->mutable_slice_points(), m_slice_points);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

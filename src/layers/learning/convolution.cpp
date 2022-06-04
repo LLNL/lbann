@@ -37,7 +37,7 @@
 
 #ifdef LBANN_HAS_ONNX
 #include <onnx/onnx_pb.h>
-#endif
+#endif // LBANN_HAS_ONNX
 
 namespace lbann {
 
@@ -227,30 +227,26 @@ void convolution_layer<TensorDataType, Layout, Device>::fill_onnx_node(
 
 template <typename T, data_layout L, El::Device D>
 void convolution_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
-
-  //FIXME(KLG): TOM: Only follow has_vectors=true path
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_convolution();
-  //FIXME(KLG): Is this right or is it num_data_dims?
-  msg->set_num_dims(this->get_output_dims().size());
+  msg->set_num_dims(this->get_conv_dims().size());
   msg->set_num_output_channels(this->m_output_channels);
   msg->set_has_vectors(true);
-  for (auto const& conv_dim : this->get_conv_dims())
-    msg->add_conv_dims(conv_dim);
-  for (auto const& conv_pad : this->get_pads())
-    msg->add_conv_pads(conv_pad);
-  for (auto const& conv_stride : this->get_strides())
-    msg->add_conv_strides(conv_stride);
-  for (auto const& conv_dilation : this->get_dilations())
-    msg->add_conv_dilations(conv_dilation);
-  //FIXME(KLG): Does this work here?
+  protobuf::assign_to_repeated(*msg->mutable_conv_dims(),
+                               this->get_conv_dims());
+  protobuf::assign_to_repeated(*msg->mutable_conv_pads(),
+                               this->get_pads());
+  protobuf::assign_to_repeated(*msg->mutable_conv_strides(),
+                               this->get_strides());
+  protobuf::assign_to_repeated(*msg->mutable_conv_dilations(),
+                               this->get_dilations());
   auto const has_bias = (this->num_weights() > 1UL);
   msg->set_has_bias(has_bias);
   msg->set_num_groups(this->m_groups);
-  //FIXME(KLG): What is conv_tensor_op_mode?
-#ifdef LBANN_HAS_GPU
-  //msg->set_conv_tensor_op_mode(this->conv_tensor_op_mode);
-#endif // LBANN_HAS_GPU
+#ifdef LBANN_HAS_DNN_LIB
+  msg->set_conv_tensor_op_mode(dnn_lib::convert_to_proto_math_type(
+                                 this->m_convolution_math_type));
+#endif // LBANN_HAS_DNN_LIB
 }
 
 #if defined LBANN_HAS_DISTCONV
