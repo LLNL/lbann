@@ -41,6 +41,19 @@
 // Template definitions
 namespace lbann {
 namespace protobuf {
+
+// FIXME(KLG): Is this the right spot for this?
+template <typename T, typename ContainerT>
+void assign_to_repeated(google::protobuf::RepeatedField<T>& field,
+                        ContainerT const& values)
+{
+  /** @todo Change to Assign if older versions of protobuf are no
+   *  longer supported.
+   */
+  field.Clear();
+  field.Add(begin(values), end(values));
+}
+
 namespace details {
 
 template <typename T>

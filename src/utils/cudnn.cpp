@@ -1571,8 +1571,7 @@ cudnnMathType_t get_default_convolution_math_type() noexcept
 using ProtoTensorOpEnumType = decltype(lbann_data::DEFAULT_TENSOR_OPS);
 cudnnMathType_t convert_to_dnn_math_type(ProtoTensorOpEnumType mt)
 {
-  switch (mt)
-  {
+  switch (mt) {
   case lbann_data::DEFAULT_TENSOR_OPS:
     return dnn_lib::get_default_convolution_math_type();
   case lbann_data::NO_TENSOR_OPS:
@@ -1583,6 +1582,18 @@ cudnnMathType_t convert_to_dnn_math_type(ProtoTensorOpEnumType mt)
     LBANN_ERROR("Bad math type value.");
   }
   return CUDNN_DEFAULT_MATH;
+}
+
+ProtoTensorOpEnumType convert_to_proto_math_type(cudnnMathType_t mt)
+{
+  switch(mt) {
+    case CUDNN_DEFAULT_MATH:
+      return lbann_data::NO_TENSOR_OPS;
+    case CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION:
+      return lbann_data::USE_TENSOR_OPS;
+    default:
+      return lbann_data::DEFAULT_TENSOR_OPS;
+  }
 }
 
 #define PROTO(T)                                        \
