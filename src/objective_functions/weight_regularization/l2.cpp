@@ -232,10 +232,8 @@ void l2_weight_regularization::add_to_proto(lbann_data::ObjectiveFunction& proto
   auto* term_msg = proto.add_l2_weight_regularization();
   term_msg->set_scale_factor(this->m_scale_factor);
   for (auto const& w : this->get_weights_pointers())
-    // This is a weak ptr. Is this ok?
     if (!w.expired()) {
       term_msg->add_weights(w.lock()->get_name());
-      // FIXME(KLG): Do I need to w.reset() ?
     }
 }
 
