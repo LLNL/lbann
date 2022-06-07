@@ -54,7 +54,8 @@ class scatter_distconv_adapter
     void setup_layer(size_t workspace_capacity) override;
     void fp_compute();
     void bp_compute();
-
+    dc::Shape get_activations_local_shape(int index=0) const override;
+    
     std::unique_ptr<dc::Scatter<TensorDataType>> m_scatter_operator;
     size_t m_workspace_buffer_size{0};
   };
@@ -380,6 +381,17 @@ scatter_distconv_adapter<TensorDataType, Layout, Device>
   // MSE also has two input vectors being partitioned 
 
   m_scatter_operator->setup(); 
+}
+template <typename TensorDataType, data_layout Layout, EL::Device Device>
+dc::Shape
+scatter_distconv_adapter<TensorDataType, Layout, Device>
+::get_activations_local_shape(int index) const{
+  const auto &layer = dynamic_cast<const channelwise_fully_connected_layer
+    <TensorDataType, Layout, Device>&>(this->layer());
+  auto output_dims = layer.get_output_dims();
+  std::reverse(std::begin(output_dims), std::end(output_dims));
+  const auto output_shape = dc::Shape(output_dims);
+  return output_shape; 
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

@@ -319,6 +319,15 @@ namespace distconv{
       // Copy the local workspace buffer onto the output matrix
 
       ensure_buffer(buffer_size);
+      constexpr size_t block_size = 32;
+      dim3 block_dims, grid_dims;
+      block_dims.x = block_size;
+      grid_dims.x = output_rows_size;
+      grid_dims.y = local_mini_batch_size;
+
+      Size3 values_shape = {local_mini_batch_size, values_rows_size, values_cols_size};
+      Size2 indices_shape = {local_mini_batch_size, values_rows_size};
+      Size3 buffer_shape = {local_mini_batch_size, output_rows_size, values_cols_size};
       Scatter_NVSHMEM_Kernel<<<block_dims, grid_dims, 0, m_stream>>>(values,
                                                                 values_shape,
                                                                 indices,
