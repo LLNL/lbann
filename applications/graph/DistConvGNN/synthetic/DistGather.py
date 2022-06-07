@@ -6,11 +6,11 @@ import lbann.contrib.launcher
 import lbann.contrib.args
 
 
-desc = ("Benchmarking code for distributed scatter with NVSHMEM")
+desc = ("Benchmarking code for distributed father with NVSHMEM")
 
 parser = argparse.ArgumentParser(description=desc)
 
-parser.add_argument('--job-name', action='store', default='distributed_scatter', type=str,
+parser.add_argument('--job-name', action='store', default='distributed_gather', type=str,
                     help='job name', metavar='NAME')
 
 parser.add_argument('--mini-batch-size', action='store', default=4, type=int,
@@ -28,6 +28,10 @@ parser.add_argument('--num-cols', action='store', default=2, type=int,
 parser.add_argument('--out-rows', action='store', default=16, type=int,
                     help='number of rows of the output matrix (default: 16)', metavar='NUM')
 
+parser.add_argument('--enable-distconv', action='store_true')
+parser.add_argument('--disable-distconv', dest='enable-distconv',action='store_false')
+parser.set_defaults(feature=True)
+
 lbann.contrib.args.add_scheduler_arguments(parser)
 args = parser.parse_args()
 
@@ -36,6 +40,7 @@ NUM_ROWS = args.num_rows
 NUM_COLS = args.num_cols
 OUT_ROWS = args.out_rows
 NUM_NODES = args.nodes
+DISTCONV_ENABLED = args.enable_distconv
 
 #  Write to a config file so the synthetic data generator can generate appropriate data
 config = configparser.ConfigParser()
@@ -83,24 +88,36 @@ def main():
 
   values = lbann.Identity(sliced_inputs)
 
-  indices = lbann.Reshape(lbann.Identity(sliced_inputs), dims=[indices_vector_size, 1, 1], name='indices_array')
-  
+  if DISTCONV_ENABLED:
+    values_dims = [NUM_ROWS, NUM_COLS, 1]
+    index_dims = [indices_vector_size, 1, 1]
+  else:
+    values_dims = [NUM_ROWS, NUM_COLS]
+    index_dims = [indices_vector_size]
+
+  indices = lbann.Reshape(lbann.Identity(sliced_inputs), dims=index_dims, name='indices_array')
+
   # This is a hack to get around copying both parent tensors to DiHydrogen tensors in the Scatter layer
   # Currently we only support copying of only one of the parent tensors per distconv enabled layer
 
-  indices = lbann.Relu(indices, parallel_strategy=create_parallel_strategy(4))
+  indices = lbann.Relu(indices, parallel_strategy=create_parallel_strategy(NUM_NODES))
 
-  values = lbann.Reshape(values, dims=[NUM_ROWS, NUM_COLS, 1], name='values_matrix')
+  values = lbann.Reshape(values, dims=values_dims, name='values_matrix')
 
-  values_x = lbann.Sum(values, lbann.WeightsLayer(weights=x_weights, dims=[NUM_ROWS, NUM_COLS, 1]))
+  values_x = lbann.Sum(values, lbann.WeightsLayer(weights=x_weights, dims=values_dims))
 
   # Only supporting fully distconv mode currently. So number of nodes == number of splits
-
-  output = lbann.Gather(values_x,
-                        indices,
-                        axis=0,
-                        name='output_matrix',
-                        parallel_strategy=create_parallel_strategy(NUM_NODES))
+  if DISTCONV_ENABLED:
+    output = lbann.Gather(values_x,
+                          indices,
+                          axis=0,
+                          name='output_matrix',
+                          parallel_strategy=create_parallel_strategy(NUM_NODES))
+  else:
+   output = lbann.Gather(values_x,
+                         indices,
+                         axis=0,
+                         name='output_matrix') 
 
   y = lbann.L2Norm2(output)
 
