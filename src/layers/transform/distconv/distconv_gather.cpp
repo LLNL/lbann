@@ -36,59 +36,49 @@ namespace distconv{
   ::forward(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &values, 
           const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices,
           tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output){
+    
     if(output.get_buffer() == nullptr){
       util::MPIRootPrintStreamInfo() << "output buffer is null";
+      return 0;
     }
-    const auto& values_dims = values.get_local_shape(); // Should be {1, F, E, B}
-    const auto& indices_dims = indices.get_local_shape(); // Should be {1, 1, E, B}
-    const auto& output_dims = output.get_local_shape(); // Should be {1, F, C, B}
+      
+    if(values.get_buffer() == nullptr){
+      util::MPIRootPrintStreamInfo() << "values buffer is null";
+      return 0;
+    }
+
+    if(indices.get_buffer() == nullptr){
+      util::MPIRootPrintStreamInfo() << "indices buffer is null";
+      return 0;
+    }
+
+    const auto& values_shape = values.get_local_shape();    // Should be {1, F, N, B}
+    const auto& indices_shape = indices.get_local_shape();  // Should be {1, 1, E, B}
+    const auto& output_shape = output.get_local_shape();    // Should be {1, F, E, B}
 
     // Debug prints -- delete before PR
     #if 1
-       util::MPIRootPrintStreamInfo() << "Values Dims: " << values_dims
-      << "Indices Dims: " << indices_dims << "Output Dims: "<< output_dims; 
-
-    util::MPIRootPrintStreamInfo() << values; 
-    util::MPIRootPrintStreamInfo() << indices;
-    util::MPIRootPrintStreamInfo() << output;
+       util::MPIRootPrintStreamInfo() << "Values Dims: " << values_shape
+      << "\tIndices Dims: " << indices_shape << "\tOutput Dims: "<< output_shape; 
+    // util::MPIRootPrintStreamInfo() << values; 
+    // util::MPIRootPrintStreamInfo() << indices;
+    // util::MPIRootPrintStreamInfo() << output;
     #endif
 
-    const auto& output_size = output_dims[1];
-    const auto& indices_size = indices_dims[2];
-    const auto& values_size = values_dims[1];
+    const auto& num_columns = values_shape[1];
+    const auto& num_values_rows = values_shape[2];
+    const auto& local_mini_batch_size = values_shape[3];
+    const auto& num_output_rows = output_shape[2];
 
-    const auto local_mini_batch_size = output_dims[3];
-
-    const auto input_length = output_dims[2];
-    const auto output_length = indices_dims[2];
-
-    if(output.get_buffer() == nullptr){
-      util::MPIRootPrintStreamInfo() << "output buffer is null";
-    }
-      
-    if (values.get_buffer() == nullptr){
-      util::MPIRootPrintStreamInfo() << "values buffer is null";
-    }
-
-    if (indices.get_buffer() == nullptr){
-      util::MPIRootPrintStreamInfo() << "indices buffer is null";
-    }
-   
-    // Cast the local matrices and convert to 2D EL matrices
-    El::Matrix<DataType, El::Device::GPU> out_mat(output_size, local_mini_batch_size, output.get_buffer(), output_size);
-    El::Matrix<DataType, El::Device::GPU> val_mat(values_size, local_mini_batch_size, values.get_buffer(), values_size);
-    El::Matrix<DataType, El::Device::GPU> ind_mat(indices_size, local_mini_batch_size, indices.get_buffer(), indices_size);
+    m_dist_gather->gather(values.get_buffer(),
+                          indices.get_buffer(),
+                          output.get_buffer(),
+                          local_mini_batch_size,
+                          num_values_rows,
+                          num_columns,
+                          num_output_rows);
     
-    //  Attach values matrix to the NVSHMEM buffer
-    // The size of the NVSHMEM_values buffer is for the local values matrix
-
-
-    // Retreive value vectors onto the NVSHMEM workspace buffer 
-    // The NVSHMEM workspace buffer is the size of the local output matrix 
-
-
-    // Copy the local workspace buffer onto the output matrix
-    return 0;
+    return 1;
   }
 
   template<typename Backend, typename DataType>
@@ -99,15 +89,46 @@ namespace distconv{
              const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices, 
              tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &values_grad, 
              tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices_grad){
-    return 0;
+    
+    const auto& output_grad_shape = output_grad.get_local_shape(); // Should be {1, F, E, B}
+    const auto& indices_shape = indices.get_local_shape();  // Should be {1, 1, E, B}
+    const auto& values_grad_shape = values_grad.get_local_shape();  // Should be {1, F, N, B}
+
+    const auto num_columns = output_grad_shape[1];            // F
+    const auto num_output_grad_rows = output_grad_shape[2];   // E
+    const auto local_mini_batch_size = output_grad_shape[3];  // B
+    const auto num_values_grad_rows = values_grad_shape[2];   // N
+
+    if(output_grad.get_buffer() == nullptr){
+      util::MPIRootPrintStreamInfo() << "output grad buffer is null";
+      return 0; 
+    }
+
+    if(indices.get_buffer() == nullptr){
+      util::MPIRootPrintStreamInfo() << "indices buffer is null";
+      return 0;
+    }
+
+    if(values_grad.get_buffer() == nullptr){
+      util::MPIRootPrintStreamInfo() << "values grad buffer is null";
+      return 0;
+    }
+
+    m_dist_scatter->scatter(output_grad.get_buffer(),
+                            indices.get_buffer(),
+                            values_grad.get_buffer(),
+                            local_mini_batch_size,
+                            num_output_grad_rows,
+                            num_columns,
+                            num_values_grad_rows);
+    return 1;
   }
 
   template<typename Backend, typename DataType>
+  void
   Gather<Backend, DataType>
-  ::~Gather(){
-    if(m_workspace_buffer != nullptr){
-      nvshmem_free(m_workspace_buffer);
-    }
+  ::setup(){
+    return ;
   }
 
 // Explicit template instantiation

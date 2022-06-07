@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_TRANSFORM_DISTCONV_NVSHMEM_VECTOR_ADDRESSING
 #define LBANN_LAYERS_TRANSFORM_DISTCONV_NVSHMEM_VECTOR_ADDRESSING
 
-#ifdef LBANN_HAS_NVSHMEM
+#if defined(LBANN_HAS_NVSHMEM) && defined(LBANN_HAS_DISTCONV)
 #include "distconv/tensor/allreduce.hpp"
 #include "distconv/tensor/memory_cuda.hpp"
 #include "distconv/util/util_mpi.hpp"
@@ -35,6 +35,27 @@
 #include "distconv/util/nvshmem.hpp"
 
 namespace distconv{
+  namespace util{
+    /**
+     * @brief Array with fixed type and size
+     * 
+     */
+    template <typename T, size_t N>
+    struct gpu_array {
+      T vals[N];
+      __host__ __device__ __forceinline__ size_t size() const {
+        return N;
+      }
+
+      __host__ __device__ __forceinline__ T& operator[](size_t i){
+        return vals[i];
+      }
+
+      __host__ __device__ __forceinline__ const T& operator[](size_t i) const{
+        return vals[i];
+      } 
+    };
+  } // namespace <distconv::util>
   namespace tensor{
     template <typename DataType>
     struct NVHSMEMDevice{
@@ -56,31 +77,51 @@ namespace distconv{
         int m_pid;
         int m_np;
         Memory<NVSHMEMAllocator> m_buf;
+        Memory<NVSHMEMAllocator> m_output_buf;
         util::nvshmem::SyncArray m_sync;
-        Memory<NVSHMEMAllocator> m_native_sync;
+        // Memory<NVSHMEMAllocator> m_native_sync;
       public:
         ScatterNVSHMEM(cudaStream_t stream):m_stream(stream),
-                                           m_pid(nvshmem_my_pe()),  // NVSHMEM function 
-                                           m_np(nvshmem_n_pes()){}  // NVSHMEM function
-      template <typename T>
-      NVHSMEMDevice<T> get_for_device(){
-        return NVHSMEMDevice<T>(m_pid,
+                                            m_pid(nvshmem_my_pe()),  // NVSHMEM function 
+                                            m_np(nvshmem_n_pes()),   // NVSHMEM function
+                                            m_sync(0){}  
+      
+      NVHSMEMDevice<DataType> get_for_device(){
+        return NVHSMEMDevice<DataType>(m_pid,
                                 m_np,
-                                static_cast<T*>(m_buf.get()),
+                                static_cast<DataType*>(m_buf.get()),
                                 m_sync.get_for_device());
       }
 
-      void buffer_init(size_t count){
+      void ensure_buffer(size_t count){        
         size_t cur_size = m_buf.get_size() / sizeof(DataType);
         if (cur_size >= count){
-          util::MPIPrintStreamInfo() << "Buffer large enough. Continuining";
+          util::MPIRootPrintStreamInfo() << "Buffer large enough. Continuining";
           return ; 
         }
 
-        util::MPIPrintStreamInfo() << "Allocating NVSHMEM buffer of size " << count; 
+        util::MPIRootPrintStreamInfo() << "Attempting to allocate NVSHMEM buffer of size " << count * sizeof(DataType); 
         m_buf.allocate(count * sizeof(DataType));
+        util::MPIRootPrintStreamInfo() << "Succesfully allocated NVSHMEM buffer of size " << count * sizeof(DataType);
         m_buf.memset(0);
+        
       }
+      void ensure_output_buffer(size_t count){
+        size_t cur_size = m_output_buf.get_size() / sizeof(DataType);
+        if (cur_size >= count){
+          return ; 
+        }
+        m_output_buf.allocate(count * sizeof(DataType));
+        m_output_buf.memset(0);
+      }
+
+      void scatter(const DataType* values, 
+                   const DataType* indices,
+                   DataType* output,
+                   const size_t local_mini_batch_size,
+                   const size_t values_rows_size,
+                   const size_t values_col_size,
+                   const size_t output_rows_size);
     };
 
     template <typename DataType>
@@ -90,22 +131,24 @@ namespace distconv{
         int m_pid;
         int m_np;
         Memory<NVSHMEMAllocator> m_buf;
+        Memory<NVSHMEMAllocator> m_output_buf;
         util::nvshmem::SyncArray m_sync;
-        Memory<NVSHMEMAllocator> m_native_sync;
+        // Memory<NVSHMEMAllocator> m_native_sync;
       
       public:
         GatherNVSHMEM(cudaStream_t stream):m_stream(stream), 
-                                           m_pid(nvshmem_my_pe()),
-                                           m_np(nvshmem_n_pes()){}  // NVSHMEM function}
-      template <typename T>
-      NVHSMEMDevice<T> get_for_device(){
-        return NVHSMEMDevice<T>(m_pid,
-                                m_np,
-                                static_cast<T*>(m_buf.get()),
-                                m_sync.get_for_device());
+                                           m_pid(nvshmem_my_pe()),  // NVSHMEM function
+                                           m_np(nvshmem_n_pes()),   // NVSHMEM function
+                                           m_sync(0){}  
+        ~GatherNVSHMEM() = default;
+      NVHSMEMDevice<DataType> get_for_device(){
+        return NVHSMEMDevice<DataType>(m_pid,
+                                       m_np,
+                                       static_cast<DataType*>(m_buf.get()),
+                                       m_sync.get_for_device());
       }
 
-      void buffer_init(size_t count){
+      void ensure_buffer(size_t count){
         size_t cur_size = m_buf.get_size() / sizeof(DataType);
         if (cur_size >= count){
           util::MPIPrintStreamInfo() << "Buffer large enough. Continuining";
@@ -116,7 +159,15 @@ namespace distconv{
         m_buf.allocate(count * sizeof(DataType));
         m_buf.memset(0);
       }
+      void gather(const DataType* values,
+                  const DataType* indices,
+                  DataType* output,
+                  const size_t local_mini_batch_size,
+                  const size_t values_rows_size,
+                  const size_t values_cols_size,
+                  const size_t output_rows_size);
     };
+  
   } // namespace distconv::tensor
 } // namespace distconv
 #endif // LBANN_HAS_NVSHMEM

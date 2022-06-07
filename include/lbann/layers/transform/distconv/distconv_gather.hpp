@@ -33,6 +33,7 @@
 #include "lbann/layers/transform/distconv/distconv_nvshmem_vector_addressing.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
+
 namespace distconv{
   template <typename Backend, typename DataType>
   class Gather{
@@ -40,7 +41,6 @@ namespace distconv{
     
     public:
       Gather(Backend &backend):m_backend(backend){};
-      ~Gather();
 
     template<typename Allocator>
     int forward(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input,
@@ -52,11 +52,11 @@ namespace distconv{
                  const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices,           
                  tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &values_grad,             
                  tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices_grad);
-
+    void setup();
   protected:
     Backend &m_backend;
-    DataType* m_workspace_buffer;
-    std::unique_ptr<tensor::GatherNVSHMEM<DataType>> m_dist_gather;
+    std::unique_ptr<tensor::GatherNVSHMEM<DataType>> m_dist_gather;  // Forward prop
+    std::unique_ptr<tensor::ScatterNVSHMEM<DataType>> m_dist_scatter;  // Backward prop
   };  // class definition Gather
 } // namespace distconv
 #endif // LBANN_HAS_DISTCONV

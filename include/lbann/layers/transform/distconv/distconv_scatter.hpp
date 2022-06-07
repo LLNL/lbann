@@ -33,14 +33,18 @@
 #include "lbann/layers/transform/distconv/distconv_nvshmem_vector_addressing.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
+
 namespace distconv{
   template <typename Backend, typename DataType>
   class Scatter{
     using LocaleMPI = tensor::LocaleMPI;
     
     public:
-      Scatter(Backend &backend):m_backend(backend){}
-    
+      Scatter(Backend &backend):m_backend(backend){
+        m_dist_scatter = util::make_unique<tensor::ScatterNVSHMEM<DataType>>(m_backend.get_stream());
+        m_dist_gather = util::make_unique<tensor::GatherNVSHMEM<DataType>>(m_backend.get_stream());
+      }
+
     template<typename Allocator>
     int forward(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input,
                 const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices,
@@ -54,8 +58,8 @@ namespace distconv{
     void setup();
   protected:
     Backend &m_backend;
-    DataType* m_workspace_buffer;
-    std::unique_ptr<tensor::ScatterNVSHMEM<DataType>> m_dist_scatter;
+    std::unique_ptr<tensor::ScatterNVSHMEM<DataType>> m_dist_scatter;  // Forward prop
+    std::unique_ptr<tensor::GatherNVSHMEM<DataType>> m_dist_gather; // Backwad prop
   };  // class definition Scatter
 } // namespace distconv
 #endif // LBANN_HAS_DISTCONV

@@ -194,6 +194,7 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
   // and indices
   
   #ifdef LBANN_HAS_DISTCONV
+ 
   if (this->distconv_enabled()){
     const auto is_values_3D = input0_dims.size(); 
     const auto is_indices_3D = input1_dims.size();
@@ -238,6 +239,7 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
   // Tensor dimensions
   // Check if value matrix is 1D or 2D
 
+
   const auto is_values_1D = input0_dims.size() == 1;
   const auto is_values_2D = input0_dims.size() == 2;
 
@@ -279,8 +281,8 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
     LBANN_ERROR(
       this->get_type()," layer \"",this->get_name(),"\" ",
       "attempted to scatter from a ",input0_dims.size(),"-D tensor ",
-      "(",dims_to_str(input0_dims),"), to a ", output_dims.size(),"-D tensor",
-      "but the scatter layer currently only supports ",
+      "(",dims_to_str(input0_dims),"), to a ", output_dims.size(),"-D tensor ",
+      "but the scatter layer currently only supports ", 
       "scattering to and from a 1-D or 2-D tensor and the input and output tensors",
       "must have the same number of dimensions");
   }
@@ -401,6 +403,11 @@ scatter_distconv_adapter<TensorDataType, Layout, Device>
                                this->get_error_signals(1));  // Indices gradient. Will be 0'ed out
 }
 
+#define PROTO_DEVICE(T, Device)                    \
+  template class scatter_distconv_adapter<         \
+    T,data_layout::DATA_PARALLEL, Device>
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
 #endif //  LBANN_HAS_DISTCONV
 
 
