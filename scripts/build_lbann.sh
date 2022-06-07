@@ -638,7 +638,7 @@ if [[ -n "${USER_MIRROR:-}" ]]; then
     MIRRORS="${MIRRORS:-} ${USER_MIRROR}"
 fi
 
-if [[ -n "${INSTALL_DEPS:-}" ]]; then
+if [[ -n "${INSTALL_DEPS:-}" && -z "${SKIP_MIRRORS:-}" ]]; then
     CMD="spack mirror add binary_mirror  https://binaries.spack.io/releases/v0.18"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
