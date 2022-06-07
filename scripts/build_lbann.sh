@@ -309,7 +309,7 @@ else
 fi
 
 SPACK_VERSION=$(spack --version | sed 's/-.*//g' | sed 's/[(].*[)]//g')
-MIN_SPACK_VERSION=0.17.1
+MIN_SPACK_VERSION=0.18.0
 
 compare_versions ${SPACK_VERSION} ${MIN_SPACK_VERSION}
 VALID_SPACK=$?
@@ -591,11 +591,9 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
     # Force the environment to concretize together with any additional packages
-    SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
-cat <<EOF  >> ${SPACK_ENV_YAML_FILE}
-  concretization: together
-EOF
-
+    CMD="spack config add concretizer:unify:true"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
 
 if [[ -z "${USER_BUILD:-}" ]]; then
@@ -638,6 +636,16 @@ fi
 if [[ -n "${USER_MIRROR:-}" ]]; then
     # Allow the user to overwrite a standard mirror
     MIRRORS="${MIRRORS:-} ${USER_MIRROR}"
+fi
+
+if [[ -n "${INSTALL_DEPS:-}" ]]; then
+    CMD="spack mirror add binary_mirror  https://binaries.spack.io/releases/v0.18"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    # Tell Spack to trust the keys in the build cache
+    CMD="spack buildcache keys --install --trust"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
 
 if [[ -n "${INSTALL_DEPS:-}" && -n "${MIRRORS:-}" ]]; then
