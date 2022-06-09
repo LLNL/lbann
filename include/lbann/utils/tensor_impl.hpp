@@ -27,8 +27,11 @@
 #ifndef LBANN_UTILS_TENSOR_IMPL_HPP
 #define LBANN_UTILS_TENSOR_IMPL_HPP
 
-#include "lbann/utils/tensor.hpp"
 #include "lbann_config.hpp"
+#include "lbann/utils/tensor.hpp"
+
+#include <El/blas_like/level1/Copy/TranslateBetweenGrids.hpp>
+#include <El/blas_like/level1/Copy/Translate.hpp>
 
 namespace lbann {
 
