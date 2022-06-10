@@ -155,7 +155,7 @@ lbann.BatchedIterativeOptimizer module
 
          :param int epoch_count: Number of epochs.
 
-         :param float seconds: Number of epochs.
+         :param float seconds: Time limit in seconds.
 
       .. py:method:: export_proto()
 

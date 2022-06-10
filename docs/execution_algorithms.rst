@@ -109,3 +109,4 @@ Supported algorithms
    Batched inference <execution_algorithms/batched_inference>
    Batched first-order optimization <execution_algorithms/batched_iterative_optimization>
    LTFB <execution_algorithms/ltfb>
+   KFAC <execution_algorithms/kfac>

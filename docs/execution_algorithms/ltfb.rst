@@ -124,7 +124,7 @@ classes that are used to implement this execution algorithm.
 .. _LTFB:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-lbann.LTFB module
+lbann.LTFB Interface
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. py:class:: LTFB
@@ -175,9 +175,9 @@ lbann.LTFB module
 
 .. _MetaLearningStrategy:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-lbann.MetaLearningStrategy module
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+lbann.MetaLearningStrategy Interface
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. py:class:: MetaLearningStrategy()
 
@@ -204,9 +204,9 @@ lbann.MetaLearningStrategy module
 
 .. _RandomPairwiseExchange:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-lbann.RandomPairwiseExchange module
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+lbann.RandomPairwiseExchange Interface
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. py:class:: RandomPairwiseExchange(MetaLearningStrategy)
 
@@ -409,34 +409,3 @@ lbann.RandomPairwiseExchange module
       Get a protobuf representation of this object.
 
       :rtype: AlgoProto.RegularizedEvolution()
-
-.. py:class:: KFAC(TrainingAlgorithm)
-
-   Kronecker-Factored Approximate Curvature algorithm.
-
-   Applies second-order information to improve the quality of
-   gradients in SGD-like optimizers.
-
-   .. py:method:: __init__(name: str, first_order_optimizer:
-                  BatchedIterativeOptimizer, **kfac_args)
-
-      Construct a new KFAC algorithm.
-
-      :param string name: A user-defined name to identify this object
-                          in logs.
-
-      :param BatchedIterativeOptimizer first_order_optimizer:  The
-                                                               SGD-like
-                                                               algorithm
-                                                               to
-                                                               apply.
-
-      :param \**kfac_args: See the KFAC message in
-                          lbann/src/proto/training_algorithm.proto for
-                          list of kwargs.
-
-   .. py:method:: do_export_proto()
-
-      Get a protobuf representation of this object.
-
-      :rtype: AlgoProto.KFAC()
