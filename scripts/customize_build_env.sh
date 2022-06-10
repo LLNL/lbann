@@ -132,7 +132,7 @@ set_center_specific_modules()
                 MODULE_CMD="module purge; module load cgpu modules/3.2.11.4 gcc/8.3.0 cuda/11.1.1 openmpi/4.0.3 cmake/3.18.2"
                 ;;
             "zen3") # Perlmutter
-		MODULE_CMD="module load PrgEnv-cray craype-x86-rome libfabric/1.11.0.4.75 craype-network-ofi cmake/3.22.0 cce/13.0.0 craype/2.7.13 cray-mpich/8.1.12 cray-libsci/21.08.1.2 PrgEnv-cray/8.2.0 nccl/2.11.4 cudnn/8.2.0 cray-python/3.9.4.2 craype-accel-host cudatoolkit/21.9_11.4"
+		MODULE_CMD="module load PrgEnv-cray/8.3.3 craype-x86-milan libfabric/1.11.0.4.116 craype-network-ofi cmake/3.22.0 cce/13.0.2 craype/2.7.15 cray-mpich/8.1.15 cray-libsci/21.08.1.2 nccl/2.11.4 cudnn/8.3.2 cray-python/3.9.7.1 craype-accel-host cudatoolkit/11.5"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -219,9 +219,11 @@ set_center_specific_spack_dependencies()
                 CENTER_DEPENDENCIES="^openmpi"
                 ;;
             "zen3") # Perlmutter
-                CENTER_COMPILER="%cce@13.0.0"
-                CENTER_DEPENDENCIES="^mpich@8.1.12 ^python@3.9.4 ^cuda+allow-unsupported-compilers"
+                CENTER_COMPILER="%cce@13.0.2"
+                CENTER_DEPENDENCIES="^cray-mpich@8.1.15~wrappers ^python@3.9.7 ^cuda+allow-unsupported-compilers"
                 CENTER_BLAS_LIBRARY="blas=libsci"
+                # Override the conduit variants for the cray compilers
+                CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis~blt_find_mpi"
                 ;;
             *)
                 echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
@@ -411,23 +413,23 @@ cat <<EOF  >> ${yaml}
   packages:
     all:
       providers:
-        mpi: [mpich]
+        mpi: [cray-mpich]
     nvhpc:
       buildable: False
       version:
-      - 21.9
+      - 21.11
       externals:
-      - spec: nvhpc@21.9 arch=${spack_arch}
+      - spec: nvhpc@21.11 arch=${spack_arch}
         modules:
-        - cudatoolkit/21.9_11.4
+        - cudatoolkit/11.5
     cudnn:
       buildable: False
       version:
-      - 8.2.0
+      - 8.3.2
       externals:
-      - spec: cudnn@8.2.0 arch=${spack_arch}
+      - spec: cudnn@8.3.2 arch=${spack_arch}
         modules:
-        - cudnn/8.2.0
+        - cudnn/8.3.2
     cray-libsci:
       buildable: False
       version:
@@ -436,14 +438,14 @@ cat <<EOF  >> ${yaml}
       - spec: cray-libsci@21.08.1.2 arch=${spack_arch}
         modules:
         - cray-libsci/21.08.1.2
-    mpich:
+    cray-mpich:
       buildable: False
       version:
-      - 8.1.12
+      - 8.1.15
       externals:
-      - spec: "mpich@8.1.12 arch=${spack_arch}"
+      - spec: "cray-mpich@8.1.15~wrappers arch=${spack_arch}"
         modules:
-        - cray-mpich/8.1.12
+        - cray-mpich/8.1.15
     nccl:
       buildable: False
       version:
