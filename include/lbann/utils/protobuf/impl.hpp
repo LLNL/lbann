@@ -54,6 +54,16 @@ void assign_to_repeated(google::protobuf::RepeatedField<T>& field,
   field.Add(begin(values), end(values));
 }
 
+template <typename ContainerT>
+std::string to_space_sep_string(ContainerT values)
+{
+  std::string combined;
+  for (auto const& value : values)
+    combined += (value + " ");
+
+  return combined;
+}
+
 namespace details {
 
 template <typename T>

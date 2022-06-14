@@ -87,6 +87,15 @@ void debug::serialize(Archive & ar) {
      CEREAL_NVP(m_modes));
 }
 
+void debug::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_debug();
+  std::string modes;
+  for (auto const& mode : m_modes)
+    modes += (to_string(mode) + " ");
+  msg->set_phase(modes);
+}
+
 // Status updates for batch beginnings/endings
 void debug::on_batch_begin(model *m) {
   const auto& c = m->get_execution_context();

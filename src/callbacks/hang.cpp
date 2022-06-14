@@ -40,6 +40,12 @@ void hang::serialize(Archive & ar) {
      CEREAL_NVP(m_rank_to_hang));
 }
 
+void hang::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_hang();
+  msg->set_rank(m_rank_to_hang);
+}
+
 void hang::setup(model* m)
 {
   if (m->get_comm()->am_world_master()) {

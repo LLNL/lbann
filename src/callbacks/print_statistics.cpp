@@ -54,6 +54,13 @@ void print_statistics::serialize(Archive & ar) {
      CEREAL_NVP(m_print_global_stat_only));
 }
 
+void print_statistics::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_print();
+  msg->set_interval(m_batch_interval);
+  msg->set_print_global_stat_only(m_print_global_stat_only);
+}
+
 void print_statistics::setup(model *m) {
 #ifdef LBANN_VERSION
   lbann_comm *comm = m->get_comm();

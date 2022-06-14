@@ -228,6 +228,18 @@ check_gradients::serialize(Archive & ar) {
      CEREAL_NVP(m_error_on_failure));
 }
 
+void check_gradients::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_check_gradients();
+  msg->set_step_size(m_step_size);
+  msg->set_verbose(m_verbose);
+  msg->set_error_on_failure(m_error_on_failure);
+  std::string modes;
+  for (auto const& mode : m_modes)
+    modes += (to_string(mode) + " ");
+  msg->set_execution_modes(modes);
+}
+
 void check_gradients::do_check_gradients(model& m) const {
 
   // Get objects from model

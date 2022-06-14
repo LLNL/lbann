@@ -61,6 +61,12 @@ void timeline::serialize(Archive & ar) {
      CEREAL_NVP(m_opt_times));
 }
 
+void timeline::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_timeline();
+  msg->set_directory(m_outdir);
+}
+
 void timeline::on_train_begin(model *m) {
   // Set up layers and weights.
   for (const auto& l : m->get_layers()) {

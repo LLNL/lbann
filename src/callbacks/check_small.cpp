@@ -61,6 +61,11 @@ void check_small::serialize(Archive & ar) {
        ::cereal::base_class<callback_base>(this)));
 }
 
+void check_small::write_specific_proto(lbann_data::Callback& proto) const
+{
+  proto.mutable_check_small();
+}
+
 void check_small::on_forward_prop_end(model *m, Layer *l) {
   const auto& c = m->get_execution_context();
   auto& dtl = dynamic_cast<data_type_layer<DataType>&>(*l);

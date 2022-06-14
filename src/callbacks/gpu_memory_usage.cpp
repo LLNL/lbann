@@ -64,6 +64,11 @@ void gpu_memory_usage::serialize(Archive & ar) {
        ::cereal::base_class<callback_base>(this)));
 }
 
+void gpu_memory_usage::write_specific_proto(lbann_data::Callback& proto) const
+{
+  proto.mutable_gpu_memory_usage();
+}
+
 void gpu_memory_usage::on_epoch_begin(model *m) {
 #ifdef LBANN_HAS_CUDA
   size_t available;

@@ -87,6 +87,9 @@ class imcomm : public callback_base {
   std::string name() const override { return "imcomm"; }
 
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /** @brief Summarize relevant statistics. */
   template <typename T>
   void do_summary(model const& m, data_type_weights<T>& w, EvalType im_time);

@@ -36,15 +36,15 @@ namespace callback {
 
 /** @brief Compute number of parameters in model.
  *
- *  The model size is output into a user-provided weights object, 
+ *  The model size is output into a user-provided weights object,
  *  which is expected to have one entry.
  */
 class compute_model_size : public callback_base {
 public:
 
-  /** 
-   *  @param batch_interval Number of training mini-batch steps 
-   *  @param output_name   To hold computed value 
+  /**
+   *  @param batch_interval Number of training mini-batch steps
+   *  @param output_name   To hold computed value
    */
   compute_model_size(std::string output_name,
                El::Int batch_interval = 1);
@@ -64,6 +64,8 @@ public:
   ///@}
 
 private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
 
   friend class cereal::access;
   compute_model_size();
@@ -72,11 +74,11 @@ private:
    *  output_name.
    */
   std::string m_output_name;
-  
+
   weights* m_output;
   /** Compute model size. */
   void compute_size(model& m);
-  
+
 };
 
 // Builder function

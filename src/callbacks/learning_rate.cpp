@@ -30,6 +30,7 @@
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/weights/data_type_weights.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include "callback_helpers.hpp"
 
@@ -131,6 +132,15 @@ float step_learning_rate::global_schedule(model *m) {
   }
 }
 
+void step_learning_rate::write_specific_proto(
+  lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_step_learning_rate();
+  msg->set_weights(protobuf::to_space_sep_string(this->get_weights_names()));
+  msg->set_step(m_step);
+  msg->set_amt(m_amt);
+}
+
 adaptive_learning_rate::adaptive_learning_rate(
   size_t patience, float amt) :
   adaptive_learning_rate(patience, amt,
@@ -173,6 +183,15 @@ float adaptive_learning_rate::global_schedule(model *m) {
   }
 }
 
+void adaptive_learning_rate::write_specific_proto(
+  lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_adaptive_learning_rate();
+  msg->set_weights(protobuf::to_space_sep_string(this->get_weights_names()));
+  msg->set_patience(m_patience);
+  msg->set_amt(m_amt);
+}
+
 drop_fixed_learning_rate::drop_fixed_learning_rate(
   std::vector<size_t> drop_epochs, float amt) :
   drop_fixed_learning_rate(std::move(drop_epochs), amt,
@@ -184,6 +203,15 @@ drop_fixed_learning_rate::drop_fixed_learning_rate(
   m_amt(amt), m_drop_epochs(std::move(drop_epochs)) {
   // Sort in reverse order.
   std::sort(m_drop_epochs.rbegin(), m_drop_epochs.rend());
+}
+
+void drop_fixed_learning_rate::write_specific_proto(
+  lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_drop_fixed_learning_rate();
+  msg->set_weights(protobuf::to_space_sep_string(this->get_weights_names()));
+  protobuf::assign_to_repeated(*msg->mutable_drop_epoch(), m_drop_epochs);
+  msg->set_amt(m_amt);
 }
 
 float drop_fixed_learning_rate::global_schedule(model* m) {
@@ -241,6 +269,16 @@ float linear_growth_learning_rate::global_schedule(model *m) {
   }
 }
 
+void linear_growth_learning_rate::write_specific_proto(
+  lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_linear_growth_learning_rate();
+  msg->set_weights(protobuf::to_space_sep_string(this->get_weights_names()));
+  msg->set_target(m_target);
+  msg->set_num_epochs(m_num_epochs);
+  msg->set_delay(m_delay);
+}
+
 /**
  * This constructor takes the policy specific parameters, the exponent (p)
  * and the maximum number of iterations (max_iter).
@@ -296,6 +334,17 @@ float poly_learning_rate::optimizer_schedule(model *m, optimizer &opt) {
   return (m_start_lr - m_end_lr) * scale + m_end_lr;
 }
 
+void poly_learning_rate::write_specific_proto(
+  lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_poly_learning_rate();
+  msg->set_weights(protobuf::to_space_sep_string(this->get_weights_names()));
+  msg->set_power(m_p);
+  msg->set_num_epochs(m_num_epochs);
+  msg->set_max_iter(m_max_iter);
+  msg->set_end_lr(m_end_lr);
+}
+
 optimizerwise_adaptive_learning_rate::
 optimizerwise_adaptive_learning_rate(
   float scale) :
@@ -320,6 +369,14 @@ float optimizerwise_adaptive_learning_rate::optimizer_schedule(
   } else {
     return dto.get_learning_rate();
   }
+}
+
+void optimizerwise_adaptive_learning_rate::write_specific_proto(
+  lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_optimizerwise_adaptive_learning_rate();
+  msg->set_weights(protobuf::to_space_sep_string(this->get_weights_names()));
+  msg->set_scale(m_scale);
 }
 
 std::unique_ptr<callback_base>

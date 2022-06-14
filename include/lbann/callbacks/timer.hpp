@@ -85,6 +85,8 @@ public:
   ///@}
 
 private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
 
   /** Timing session start times. */
   std::map<execution_mode,EvalType> m_start_times;

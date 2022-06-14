@@ -33,6 +33,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include <callbacks.pb.h>
 #include <model.pb.h>
@@ -179,6 +180,12 @@ void load_model::serialize(Archive & ar) {
      CEREAL_NVP(m_loaded));
 }
 
+void load_model::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_load_model();
+  msg->set_dirs(protobuf::to_space_sep_string(m_dirs));
+  msg->set_extension(m_extension);
+}
 void load_model::on_train_begin(model *m) {
   if(!m_loaded) {
     for (const auto& d : m_dirs) {

@@ -79,6 +79,19 @@ check_metric::serialize(Archive & ar) {
      CEREAL_NVP(m_error_on_failure));
 }
 
+void check_metric::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_check_metric();
+  msg->set_metric(m_metric_name);
+  msg->set_lower_bound(m_lower_bound);
+  msg->set_upper_bound(m_upper_bound);
+  msg->set_error_on_failure(m_error_on_failure);
+  std::string modes;
+  for (auto const& mode : m_modes)
+    modes += (to_string(mode) + " ");
+  msg->set_execution_modes(modes);
+}
+
 void check_metric::do_check_metric(const model& m) const {
   const auto& c = m.get_execution_context();
   std::stringstream err;

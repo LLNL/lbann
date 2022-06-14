@@ -38,13 +38,13 @@ namespace callback {
 /** @brief Hyperparameter exploration of optimizer learning rate.
  *
  *  Goes through optimizers in a model and perturbs
- *  the learning rate. Current implementation supports 
+ *  the learning rate. Current implementation supports
  *  random perturbation, performed in log space.
  *  More precisely, random values are drawn from normal distributions
  *  (with user-provided standard deviations) and added to
  *  @f$\log(\text{learning rate})@f$.
- *  Currently implementation can be extended to support other 
- *  exploration techniques e.g., Resample 
+ *  Currently implementation can be extended to support other
+ *  exploration techniques e.g., Resample
  */
 class perturb_learning_rate : public callback_base {
 public:
@@ -83,6 +83,8 @@ public:
   ///@}
 
 private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
 
   friend class cereal::access;
   perturb_learning_rate();

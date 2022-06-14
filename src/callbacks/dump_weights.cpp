@@ -302,6 +302,38 @@ void dump_weights::do_dump_weights(const model& m, visitor_hook hook) {
 
 }
 
+/** @brief Checks if FormatT matches parameter format. */
+template <typename FormatT>
+static bool is(dump_weights_internal::FileFormat const& format)
+{
+  return dynamic_cast<FormatT const*>(&format);
+}
+/** @brief Returns weights file_format as string. */
+static std::string to_string(dump_weights_internal::FileFormat const& format)
+{
+  using Text = dump_weights_internal::TextFileFormat;
+  using Binary = dump_weights_internal::BinaryFileFormat;
+  using DistBinary = dump_weights_internal::DistributedBinaryFileFormat;
+
+  if (is<Text>(format))
+    return "text";
+  else if (is<Binary>(format))
+    return "binary";
+  else if (is<DistBinary>(format))
+    return "distributed_binary";
+  else
+    LBANN_ERROR("Unknown format type.");
+  return "unknown"; // unreachable but silences compiler warnings.
+}
+
+void dump_weights::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_dump_weights();
+  msg->set_directory(m_directory);
+  msg->set_epoch_interval(m_epoch_interval);
+  msg->set_format(to_string(*m_file_format));
+}
+
 std::unique_ptr<callback_base>
 build_dump_weights_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {

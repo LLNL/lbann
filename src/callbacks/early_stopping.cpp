@@ -53,6 +53,12 @@ void early_stopping::serialize(Archive & ar) {
      CEREAL_NVP(m_wait));
 }
 
+void early_stopping::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_early_stopping();
+  msg->set_patience(m_patience);
+}
+
 /// Monitor the objective function to see if the validation score
 /// continues to improve
 void early_stopping::on_validation_end(model *m) {

@@ -62,6 +62,9 @@ class print_statistics : public callback_base {
   ///@}
 
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /** Print objective function and metrics to standard output. */
   void report_results(model *m);
   bool m_print_global_stat_only;

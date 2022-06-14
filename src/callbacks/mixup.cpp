@@ -31,6 +31,7 @@
 #include "lbann/utils/beta.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include <callbacks.pb.h>
 
@@ -50,6 +51,13 @@ void mixup::serialize(Archive & ar) {
        ::cereal::base_class<callback_base>(this)),
      CEREAL_NVP(m_layers),
      CEREAL_NVP(m_alpha));
+}
+
+void mixup::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_mixup();
+  msg->set_layers(protobuf::to_space_sep_string(m_layers));
+  msg->set_alpha(m_alpha);
 }
 
 void mixup::on_forward_prop_end(model *m, Layer *l) {

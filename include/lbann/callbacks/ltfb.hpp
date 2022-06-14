@@ -32,6 +32,11 @@
 #include <set>
 #include <vector>
 
+// Forward-declare protobuf classes
+namespace lbann_data {
+class CallbackLTFB;
+}
+
 namespace lbann {
 namespace callback {
 
@@ -82,6 +87,8 @@ public:
   void on_batch_begin(model *m) override;
 
 private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
 
   /** @brief Metric for tournament evaluation. */
   std::string m_metric_name;

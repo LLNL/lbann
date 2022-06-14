@@ -55,6 +55,13 @@ void compute_model_size::serialize(Archive & ar) {
      CEREAL_NVP(m_output_name));
 }
 
+void compute_model_size::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_compute_model_size();
+  msg->set_output_name(m_output_name);
+  msg->set_batch_interval(m_batch_interval);
+}
+
 void compute_model_size::setup(model* m) {
    for (auto* w : m->get_weights()) {
       if(w->get_name() == m_output_name){
@@ -70,7 +77,7 @@ void compute_model_size::setup(model* m) {
 
 void compute_model_size::on_batch_begin(model* m) {
   const auto& c = m->get_execution_context();
-  if (m_output != nullptr && 
+  if (m_output != nullptr &&
       c.get_step() % m_batch_interval == 0 &&
       c.get_step() > 0) {
     compute_size(*m);
@@ -95,7 +102,7 @@ void compute_model_size::compute_size(model& m){
 
   auto& out_w = dynamic_cast<data_type_weights<DataType>&>(*m_output);
   out_w.set_value(model_size,0);
-  
+
 }
 
 

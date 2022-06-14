@@ -64,6 +64,13 @@ void profiler::serialize(Archive & ar) {
      CEREAL_NVP(m_skip_init));
 }
 
+void profiler::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_profiler();
+  msg->set_sync(m_sync);
+  msg->set_skip_init(m_skip_init);
+}
+
 void profiler::on_epoch_begin(model *m) {
   const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   // Skip the first epoch

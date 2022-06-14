@@ -58,6 +58,12 @@ class learning_rate : public callback_base {
   using callback_base::on_backward_prop_end;
   /** Apply local/per-optimizer learning rate schedules. */
   void on_backward_prop_end(model *m) override;
+
+  std::vector<std::string> get_weights_names() const
+  {
+    return m_weights_names;
+  }
+
  protected:
   /**
    * This is called at the end of every epoch to update the learning
@@ -125,6 +131,9 @@ class step_learning_rate : public learning_rate {
  protected:
   float global_schedule(model *m) override;
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /** Number of epochs between each learning rate decrease. */
   size_t m_step;
   /** Amount to decrease the learning rate by. */
@@ -160,6 +169,9 @@ class adaptive_learning_rate : public learning_rate {
  protected:
   float global_schedule(model *m) override;
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /** Number of epochs to wait for improvements. */
   size_t m_patience;
   /** Amount to decrease the learning rate by. */
@@ -204,6 +216,9 @@ class drop_fixed_learning_rate : public learning_rate {
  protected:
   float global_schedule(model *m) override;
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /// Amount to decrease the learning rate by.
   float m_amt;
   /**
@@ -248,6 +263,9 @@ class linear_growth_learning_rate : public learning_rate {
  protected:
   float global_schedule(model *m) override;
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /// Initial learning rate.
   float m_base_lr;
   /// Target learning rate to reach.
@@ -289,6 +307,9 @@ class poly_learning_rate : public learning_rate {
   float global_schedule(model *m) override;
   float optimizer_schedule(model *m, optimizer &opt) override;
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /// The exponent to compute new learning rate in poly policy
   double m_p;
   /// The number of epochs for training
@@ -328,6 +349,9 @@ class optimizerwise_adaptive_learning_rate : public learning_rate {
  protected:
   float optimizer_schedule(model *m, optimizer &opt) override;
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   float m_scale;
 };
 

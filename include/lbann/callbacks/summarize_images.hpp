@@ -37,6 +37,12 @@
 #include <lbann/base.hpp>
 #include <string>
 #include <vector>
+
+// Forward-declare protobuf classes
+namespace lbann_data {
+class Callback_CallbackSummarizeImages;
+}
+
 namespace lbann {
 namespace callback {
 
@@ -51,6 +57,8 @@ public:
   get_image_indices(model const&) const = 0;
   virtual std::string get_tag(std::string const& layer_name,
                               El::Int index, El::Int epoch) const = 0;
+  virtual void write_strategy_proto(
+    lbann_data::Callback_CallbackSummarizeImages& msg) const = 0;
   virtual ~image_output_strategy() = default;
 
 }; //class image_output_strategy
@@ -92,6 +100,10 @@ public:
                       El::Int index, El::Int epoch) const final;
 
 private:
+  /** @brief Write strategy specific data to prototext */
+  void write_strategy_proto(
+    lbann_data::Callback_CallbackSummarizeImages& msg) const final;
+
    /** @brief Tests whether image should be dumped based on criteria
     *  @returns bool Value is true if matches criteria and false otherwise
     */
@@ -136,6 +148,10 @@ public:
   /** @brief Construct tag for image */
   std::string get_tag(std::string const& layer_name,
                       El::Int index, El::Int epoch) const final;
+
+  /** @brief Write strategy specific data to prototext */
+  void write_strategy_proto(
+    lbann_data::Callback_CallbackSummarizeImages& msg) const final;
 
 private:
 
@@ -186,6 +202,9 @@ public:
 
   /** @brief Hook to pull data from lbann run */
   void on_batch_evaluate_end(model* m) override;
+
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
 
 private:
 

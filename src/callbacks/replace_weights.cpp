@@ -27,6 +27,7 @@
 #include "lbann/callbacks/replace_weights.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include "callback_helpers.hpp"
 
@@ -59,6 +60,14 @@ void replace_weights::on_batch_end(model *m) {
       m_dst_layers[i]->replace_weights(*m_src_layers[i]);
     }
   }
+}
+
+void replace_weights::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_replace_weights();
+  msg->set_source_layers(protobuf::to_space_sep_string(m_src_layer_names));
+  msg->set_destination_layers(protobuf::to_space_sep_string(m_dst_layer_names));
+  msg->set_batch_interval(m_batch_interval);
 }
 
 std::unique_ptr<callback_base>

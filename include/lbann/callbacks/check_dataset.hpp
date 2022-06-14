@@ -71,6 +71,9 @@ class check_dataset : public callback_base {
   ///@}
 
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /** @brief Basename for writing files. */
   std::string m_basename;
 

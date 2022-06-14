@@ -69,6 +69,10 @@ class check_small : public callback_base {
 
   ///@}
 
+private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
 };
 
 // Builder function

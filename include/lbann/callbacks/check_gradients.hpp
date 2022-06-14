@@ -82,6 +82,8 @@ public:
   ///@}
 
 private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
 
   /** Execution modes with gradient checks. */
   std::set<execution_mode> m_modes;

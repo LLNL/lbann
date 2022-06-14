@@ -68,6 +68,17 @@ void perturb_weights::serialize(Archive & ar) {
      CEREAL_NVP(m_perturb_probability));
 }
 
+void perturb_weights::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_perturb_weights();
+  msg->set_upper(m_upper);
+  msg->set_lower(m_lower);
+  msg->set_scale(m_scale);
+  msg->set_perturb_probability(m_perturb_probability);
+  msg->set_output_name(m_output_name);
+  msg->set_batch_interval(m_batch_interval);
+}
+
 void perturb_weights::setup(model* m) {
    weights* m_output = nullptr;
 

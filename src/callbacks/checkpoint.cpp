@@ -502,6 +502,19 @@ bool checkpoint::restart(model *m) {
     });
 }
 
+void checkpoint::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_checkpoint();
+  msg->set_checkpoint_dir(m_checkpoint_dir);
+  msg->set_restart_dir(m_restart_dir);
+  msg->set_checkpoint_epochs(m_checkpoint_epochs);
+  msg->set_checkpoint_steps(m_checkpoint_steps);
+  msg->set_checkpoint_secs(m_checkpoint_secs);
+  msg->set_per_rank_dir(m_per_rank_dir);
+  msg->set_ckpt_dist_epochs(m_ckpt_dist_epochs);
+  msg->set_ckpt_dist_steps(m_ckpt_dist_steps);
+}
+
 void checkpoint::do_distributed_checkpoint(
   lbann_comm& comm,
   trainer& t,
