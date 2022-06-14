@@ -58,9 +58,9 @@ public:
   template <typename ArchiveT>
   void serialize(ArchiveT& ar);
 
-  void add_to_proto(lbann_data::ObjectiveFunction& proto) const final;
-
 private:
+  /** @brief Add objective function data to prototext */
+  void write_specific_proto(lbann_data::ObjectiveFunction& proto) const final;
 
   /** Get corresponding evaluation layer. */
   /*abstract_evaluation_*/Layer& get_evaluation_layer();

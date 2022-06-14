@@ -93,8 +93,7 @@ class objective_function_term {
   void set_weights_pointers(std::vector<ViewingWeightsPtr> w);
 
   /** Add Objective function data to prototext */
-  // FIXME: make pure virtual
-  virtual void add_to_proto(lbann_data::ObjectiveFunction& proto) const = 0;
+  virtual void write_specific_proto(lbann_data::ObjectiveFunction& proto) const = 0;
 
  protected:
 

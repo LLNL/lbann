@@ -228,7 +228,7 @@ void l2_weight_regularization::compute_weight_regularization() {
   }
 }
 
-void l2_weight_regularization::add_to_proto(lbann_data::ObjectiveFunction& proto) const {
+void l2_weight_regularization::write_specific_proto(lbann_data::ObjectiveFunction& proto) const {
   auto* term_msg = proto.add_l2_weight_regularization();
   term_msg->set_scale_factor(this->m_scale_factor);
   for (auto const& w : this->get_weights_pointers())
