@@ -177,12 +177,11 @@ def construct_model(lbann):
     y = lbann.Convolution(x,
                           weights=(kernel_weights, bias_weights),
                           num_dims=2,
-                          num_output_channels=kernel_dims[0],
-                          has_vectors=True,
-                          conv_dims=kernel_dims[2:],
-                          conv_strides=strides,
-                          conv_pads=pads,
-                          conv_dilations=dilations,
+                          out_channels=kernel_dims[0],
+                          kernel_size=kernel_dims[2:],
+                          stride=strides,
+                          padding=pads,
+                          dilation=dilations,
                           has_bias=True)
     z = lbann.L2Norm2(y)
     obj.append(z)
@@ -230,13 +229,12 @@ def construct_model(lbann):
     y = lbann.Convolution(x,
                           weights=(kernel_weights),
                           num_dims=2,
-                          num_output_channels=kernel_dims[0],
-                          has_vectors=True,
-                          conv_dims=kernel_dims[2:],
-                          conv_strides=strides,
-                          conv_pads=pads,
-                          conv_dilations=dilations,
-                          num_groups=num_groups,
+                          out_channels=kernel_dims[0],
+                          kernel_size=kernel_dims[2:],
+                          stride=strides,
+                          padding=pads,
+                          dilation=dilations,
+                          groups=num_groups,
                           has_bias=False)
     z = lbann.L2Norm2(y)
     obj.append(z)
