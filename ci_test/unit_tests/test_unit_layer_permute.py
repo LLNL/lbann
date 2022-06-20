@@ -4,6 +4,7 @@ import os.path
 import sys
 import numpy as np
 import functools
+import pytest
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
