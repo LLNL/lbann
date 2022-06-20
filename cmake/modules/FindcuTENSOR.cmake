@@ -62,7 +62,14 @@ find_library(cuTENSOR_LIBRARY cutensor
   lib
   NO_DEFAULT_PATH
   DOC "The cuTENSOR library.")
-find_library(cuTENSOR_LIBRARY cutensor)
+find_library(cuTENSOR_LIBRARY cutensor
+  PATH_SUFFIXES
+  lib64/${CUDAToolkit_VERSION_MAJOR}.${CUDAToolkit_VERSION_MINOR}
+  lib64/${CUDAToolkit_VERSION_MAJOR}
+  lib/${CUDAToolkit_VERSION_MAJOR}.${CUDAToolkit_VERSION_MINOR}
+  lib/${CUDAToolkit_VERSION_MAJOR}
+  lib64
+  lib)
 
 # Get the version string
 set(cuTENSOR_VERSION)
