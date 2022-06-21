@@ -134,10 +134,8 @@ void selu_dropout<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_selu_dropout();
   msg->set_keep_prob(m_keep_prob);
-  //FIXME(KLG): This is wrong (Tom's problem)
-  //msg->set_alpha(m_alpha_prime);
-  //FIXME(KLG): How do I get this? (Tom's problem)
-  //msg->set_scale(scale);
+  msg->set_alpha(-m_alpha_prime);
+  msg->set_scale(El::To<T>(1));
 }
 
 template <typename T, data_layout L, El::Device D>
