@@ -24,11 +24,11 @@ def mnist_dir(system = system()):
     from http://yann.lecun.com/exdb/mnist/ and uncompressing.
 
     """
-    return parallel_file_system_path(system) + 'lbann/datasets/MNIST'
+    return parallel_file_system_path(system) + 'lbann/datasets/mnist'
 
 def cifar10_dir(system = system()):
     """CIFAR10 directory on LC systems."""
-    return parallel_file_system_path(system) + 'lbann/datasets/cifar10-bin'
+    return parallel_file_system_path(system) + 'lbann/datasets/cifar10'
 
 def imagenet_dir(system = system(), data_set = 'training',
                  num_classes = 1000):
