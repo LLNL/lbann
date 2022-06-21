@@ -111,7 +111,8 @@ set_center_specific_modules()
                 MODULE_CMD="module --force unload StdEnv; module load gcc/10.2.1 mvapich2/2.3 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
-                MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 python/3.7.2 opt rocm/4.2.0 openmpi-gnu/4.0"
+                MODULE_CMD="module load gcc-tce/10.2.1 rocm/4.5.2 mvapich2-tce/2.3.6"
+#                MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 python/3.7.2 opt rocm/4.2.0 openmpi-gnu/4.0"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -198,7 +199,8 @@ set_center_specific_spack_dependencies()
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_COMPILER="%clang"
-                CENTER_DEPENDENCIES="^openmpi ^hwloc@2.3.0"
+#                CENTER_DEPENDENCIES="^mvapich2"
+#                CENTER_DEPENDENCIES="^openmpi ^hwloc@2.3.0"
                 ;;
             *)
                 echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
@@ -300,12 +302,12 @@ cat <<EOF  >> ${yaml}
     - compiler:
         spec: clang@amd
         paths:
-          cc: /opt/rocm-4.2.0/llvm/bin/clang
-          cxx: /opt/rocm-4.2.0/llvm/bin/clang++
-          f77: /usr/bin/gfortran
-          fc: /usr/bin/gfortran
+          cc: /opt/rocm-4.5.2/llvm/bin/clang
+          cxx: /opt/rocm-4.5.2/llvm/bin/clang++
+          f77: /usr/tce/bin/gfortran
+          fc: /usr/tce/bin/gfortran
         flags: {}
-        operating_system: rhel7
+        operating_system: rhel8
         target: x86_64
         modules: []
         environment: {}
@@ -314,48 +316,48 @@ cat <<EOF  >> ${yaml}
     hip:
       buildable: False
       version:
-      - 4.2.0
+      - 4.5.2
       externals:
-      - spec: hip@4.2.0 arch=${spack_arch}
-        prefix: /opt/rocm-4.2.0/hip
+      - spec: hip@4.5.2 arch=${spack_arch}
+        prefix: /opt/rocm-4.5.2/hip
         extra_attributes:
           compilers:
-            c: /opt/rocm-4.2.0/llvm/bin/clang
-            c++: /opt/rocm-4.2.0/llvm/bin/clang++
-            hip: /opt/rocm-4.2.0/hip/bin/hipcc
+            c: /opt/rocm-4.5.2/llvm/bin/clang
+            c++: /opt/rocm-4.5.2/llvm/bin/clang++
+            hip: /opt/rocm-4.5.2/hip/bin/hipcc
     hipcub:
       buildable: False
       version:
-      - 4.2.0
+      - 4.5.2
       externals:
-      - spec: hipcub@4.2.0 arch=${spack_arch}
-        prefix: /opt/rocm-4.2.0/hipcub
+      - spec: hipcub@4.5.2 arch=${spack_arch}
+        prefix: /opt/rocm-4.5.2/hipcub
         extra_attributes:
           compilers:
-            c: /opt/rocm-4.2.0/llvm/bin/clang
-            c++: /opt/rocm-4.2.0/llvm/bin/clang++
+            c: /opt/rocm-4.5.2/llvm/bin/clang
+            c++: /opt/rocm-4.5.2/llvm/bin/clang++
     hsa-rocr-dev:
       buildable: False
       version:
-      - 4.2.0
+      - 4.5.2
       externals:
-      - spec: hsa-rocr-dev@4.2.0 arch=${spack_arch}
-        prefix: /opt/rocm-4.2.0
+      - spec: hsa-rocr-dev@4.5.2 arch=${spack_arch}
+        prefix: /opt/rocm-4.5.2
         extra_attributes:
           compilers:
-            c: /opt/rocm-4.2.0/llvm/bin/clang
-            c++: /opt/rocm-4.2.0/llvm/bin/clang++
+            c: /opt/rocm-4.5.2/llvm/bin/clang
+            c++: /opt/rocm-4.5.2/llvm/bin/clang++
     llvm-amdgpu:
       buildable: False
       version:
-      - 4.2.0
+      - 4.5.2
       externals:
-      - spec: llvm-amdgpu@4.2.0 arch=${spack_arch}
-        prefix: /opt/rocm-4.2.0/llvm
+      - spec: llvm-amdgpu@4.5.2 arch=${spack_arch}
+        prefix: /opt/rocm-4.5.2/llvm
         extra_attributes:
           compilers:
-            c: /opt/rocm-4.2.0/llvm/bin/clang
-            c++: /opt/rocm-4.2.0/llvm/bin/clang++
+            c: /opt/rocm-4.5.2/llvm/bin/clang
+            c++: /opt/rocm-4.5.2/llvm/bin/clang++
     rdma-core:
       buildable: False
       version:
@@ -370,6 +372,14 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: openmpi@4.0.0 arch=${spack_arch}
         prefix: /opt/openmpi/4.0/gnu
+    mvapich2:
+      buildable: False
+      version:
+      - 2.3.6
+      externals:
+      - spec: mvapich2@2.3.6  arch=${spack_arch}
+        modules:
+        - mvapich2-tce/2.3.6
 EOF
                 ;;
             *)
@@ -483,20 +493,27 @@ EOF
 cleanup_clang_compilers()
 {
     local center="$1"
-    local yaml="$2"
+    local spack_arch_os="$2"
+    local yaml="$3"
 
     if [[ ${center} = "llnl_lc" ]]; then
-	# Point compilers that don't have a fortran compiler a default one
-	sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/usr\/tce\/packages\/gcc\/gcc-8.3.1\/bin\/gfortran/g' ${yaml}
-	echo "Updating Clang compiler's to see the gfortran compiler."
+        if [[ ${spack_arch_os} = "rhel7" ]]; then
+            # Point compilers that don't have a fortran compiler a default one
+            sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/usr\/tce\/packages\/gcc\/gcc-8.3.1\/bin\/gfortran/g' ${yaml}
+            echo "Updating Clang compiler's to see the gfortran compiler."
 
-        # LC uses a old default gcc and clang needs a newer default gcc toolchain
-        # Also set LC clang compilers to use lld for faster linking ldflags: -fuse-ld=lld
-        perl -i.perl_bak -0pe 's/(- compiler:.*?spec: clang.*?flags:) (\{\})/$1 \{cflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.3.1, cxxflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.3.1\}/smg' ${yaml}
+            # LC uses a old default gcc and clang needs a newer default gcc toolchain
+            # Also set LC clang compilers to use lld for faster linking ldflags: -fuse-ld=lld
+            perl -i.perl_bak -0pe 's/(- compiler:.*?spec: clang.*?flags:) (\{\})/$1 \{cflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.3.1, cxxflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.3.1\}/smg' ${yaml}
+        else
+            # Point compilers that don't have a fortran compiler a default one
+            sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/usr\/tce\/bin\/gfortran/g' ${yaml}
+            echo "Updating Clang compiler's to see the gfortran compiler."
+        fi
     else
-	# Point compilers that don't have a fortran compiler a default one
-	sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/usr\/bin\/gfortran/g' ${yaml}
-	echo "Updating Clang compiler's to see the gfortran compiler."
+        # Point compilers that don't have a fortran compiler a default one
+        sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/usr\/bin\/gfortran/g' ${yaml}
+        echo "Updating Clang compiler's to see the gfortran compiler."
     fi
 }
 

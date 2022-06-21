@@ -288,7 +288,7 @@ function uninstall_specific_versions()
 # This should be a commit hash (NOT a tag) that needs to exist in the
 # spack repository that is checked out. It's a minimum version, so
 # more commits is fine.
-MIN_SPACK_COMMIT=c06f69d0bffad688f668db41cb6acad894a745ac
+MIN_SPACK_COMMIT=15c35a3cff138c3777d756b61ec1940883260d20
 
 # "spack" is just a shell function; it may not be exported to this
 # scope. Just to be sure, reload the shell integration.
@@ -320,80 +320,6 @@ if [[ ${VALID_SPACK} -eq 2 ]]; then
 fi
 
 ##########################################################################################
-# Make sure that Spack is using Clingo
-function ask_permission()
-{
-    local question="$1"
-    echo "${question}"
-    read -p "Continue (y/n)? " choice
-    case "$choice" in
-        y|Y ) RESPONSE=1 ;;
-        n|N ) RESPONSE=0 ;;
-        * ) RESPONSE=0 ;;
-    esac
-    return ${RESPONSE}
-}
-
-SPACK_SITE_CONFIG="${SPACK_ROOT}/etc/spack/config.yaml"
-if [[ ! -f "${SPACK_SITE_CONFIG}" ]]; then
-    ask_permission "No site specific ${SPACK_SITE_CONFIG} file found, create one?"
-    RESPONSE=$?
-    if [[ ${RESPONSE} -eq 1 ]]; then
-        echo "Creating a new ${SPACK_SITE_CONFIG} file."
-        if [[ -z "${DRY_RUN:-}" ]]; then
-            cat <<EOF >> ${SPACK_SITE_CONFIG}
-config:
-  concretizer: clingo
-EOF
-        fi
-    else
-        echo "${SCRIPT} requires use of Spack's clingo optimizer -- please enable it"
-        echo "e.g. create a site specific config at ${SPACK_SITE_CONFIG}"
-        cat <<EOF
-config:
-  concretizer: clingo
-EOF
-        exit 1
-    fi
-else
-    SPACK_CONCRETIZER=$(grep "concretizer:" ${SPACK_SITE_CONFIG} | awk '{print $2}')
-    if [[ -z "${SPACK_CONCRETIZER}" ]]; then
-        ask_permission "Site specific ${SPACK_SITE_CONFIG} file does not have a explicit concretizer field, add one?"
-        RESPONSE=$?
-        if [[ ${RESPONSE} -eq 1 ]]; then
-            CMD="cp ${SPACK_SITE_CONFIG} ${SPACK_SITE_CONFIG}.pre_lbann"
-            echo "Appending 'concretizer: clingo' and saving old config ${CMD}"
-            if [[ -z "${DRY_RUN:-}" ]]; then
-                ${CMD}
-                cat <<EOF >> ${SPACK_SITE_CONFIG}
-  concretizer: clingo
-EOF
-            fi
-        else
-            echo "${SCRIPT} requires use of Spack's clingo optimizer -- please enable it"
-            echo "e.g. add the line to ${SPACK_SITE_CONFIG}"
-            cat <<EOF
-  concretizer: clingo
-EOF
-            exit 1
-        fi
-    else
-        if [[ ! "${SPACK_CONCRETIZER}" == "clingo" ]]; then
-            echo "${SCRIPT} requires use of Spack's clingo optimizer -- please enable it"
-            echo "e.g. edit the line in ${SPACK_SITE_CONFIG}"
-            cat <<EOF
-  concretizer: original
-EOF
-            echo "to look like"
-            cat <<EOF
-  concretizer: clingo
-EOF
-            exit 1
-        fi
-    fi
-fi
-##########################################################################################
-
 # Detect system parameters
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 
@@ -406,6 +332,7 @@ set_center_specific_fields
 SPACK_ARCH=$(spack arch)
 SPACK_ARCH_TARGET=$(spack arch -t)
 SPACK_ARCH_PLATFORM=$(spack arch -p)
+SPACK_ARCH_OS=$(spack arch -o)
 SPACK_ARCH_GENERIC_TARGET=$(spack python -c "import archspec.cpu as cpu; print(str(cpu.host().family))")
 # Create a modified spack arch with generic target architecture
 SPACK_ARCH_PLATFORM_GENERIC_TARGET="${SPACK_ARCH_PLATFORM}-${SPACK_ARCH_GENERIC_TARGET}"
@@ -709,11 +636,16 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
     # Limit the scope of the external search to minimize overhead time
-    CMD="spack external find --scope env:${LBANN_ENV} bzip2 cmake cuda cudnn hipblas hwloc ninja libtool nccl ncurses openssl perl pkg-config python rccl rdma-core sqlite spectrum-mpi mvapich2 openmpi"
+    # Use standard tags for common packages
+    CMD="spack external find --scope env:${LBANN_ENV} --tag core-packages --tag build-tools"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-    CMD="cleanup_clang_compilers ${CENTER} ${SPACK_ENV_YAML_FILE}"
+    CMD="spack external find --scope env:${LBANN_ENV} bzip2 cuda cudnn hipblas hwloc nccl ncurses perl python rccl rdma-core sqlite spectrum-mpi mvapich2 openmpi"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+    CMD="cleanup_clang_compilers ${CENTER} ${SPACK_ARCH_OS} ${SPACK_ENV_YAML_FILE}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -783,7 +715,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     fi
 fi
 
-CMD="spack solve --reuse -l ${LBANN_SPEC} ${SPACK_SOLVE_EXTRA_PACKAGES}"
+CMD="spack solve -l ${LBANN_SPEC} ${SPACK_SOLVE_EXTRA_PACKAGES}"
 if [[ "${SPEC_ONLY}" == "TRUE" ]]; then
    echo ${CMD} | tee -a ${LOG}
    if [[ -z "${DRY_RUN:-}" ]]; then
@@ -793,7 +725,7 @@ fi
 
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
   # Try to concretize the environment and catch the return code
-  CMD="spack concretize --reuse ${INSTALL_BUILD_EXTRAS}"
+  CMD="spack concretize ${INSTALL_BUILD_EXTRAS}"
   echo ${CMD} | tee -a ${LOG}
   [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
@@ -846,7 +778,7 @@ fi
 
 ##########################################################################################
 # Actually install LBANN from local source
-CMD="spack install --reuse ${BUILD_JOBS} ${INSTALL_BUILD_EXTRAS}"
+CMD="spack install ${BUILD_JOBS} ${INSTALL_BUILD_EXTRAS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
