@@ -41,8 +41,8 @@ else
     exit 1
 fi
 
-SPACK_VERSION=$(spack --version | sed 's/-.*//g')
-MIN_SPACK_VERSION=0.16.0
+SPACK_VERSION=$(spack --version | sed 's/-.*//g' | sed 's/[(].*[)]//g')
+MIN_SPACK_VERSION=0.18.0
 
 source ${LBANN_DIR}/scripts/utilities.sh
 
