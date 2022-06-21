@@ -299,6 +299,8 @@ if [ -n "${SPACK_ROOT}" ]; then
         source ${SPACK_ROOT}/share/spack/setup-env.sh
     else
         echo "ERROR: Spack needs at least commit ${MIN_SPACK_COMMIT}."
+        HEAD_SHA=$(git rev-parse --verify HEAD)
+        echo "ERROR: It is currently at  ${HEAD_SHA}."
         echo "ERROR: Please update spack."
         exit 1
     fi
