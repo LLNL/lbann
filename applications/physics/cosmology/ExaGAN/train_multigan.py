@@ -129,7 +129,7 @@ def construct_model(args):
                       dims=[1,64], name='noise_vec_reshape',device=g_device)
     print("RUN ARGS ", args) 
 
-    losses = model.Exa3DGAN(args.input_width,args.input_channel,
+    losses = model.Exa3DMultiGAN(args.input_width,args.input_channel,
                              g_device,ps,use_bn=args.use_bn,num_discblocks=args.num_discblocks,
                              enable_subgraph=args.enable_subgraph)(x1,z)
     print("LEN losses ", len(losses))
@@ -157,7 +157,6 @@ def construct_model(args):
     
     gen_img = losses[-1] 
     mse = lbann.MeanSquaredError([gen_img, x2], name='MSE') if args.compute_mse else None
-    #mse = lbann.MeanSquaredError([gen_img, x2], name='MSE') if args.compute_mse or args.spectral_loss else None
 
     if args.spectral_loss:
       dft_gen_img = lbann.DFTAbs(f_invtransform(gen_img))

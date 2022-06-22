@@ -83,8 +83,9 @@ class ConvBNRelu(lbann.modules.Module):
 
 
 
-class Exa3DGAN(lbann.modules.Module):
-    """Generative model for 3D cosmology.
+class Exa3DMultiGAN(lbann.modules.Module):
+    """(Conditional) Generative model for 3D cosmology.
+        It is not conditional by default. For conditional GAN, call forward method with labels (sigma parameters) 
 
         Args:
             input_width (int): Size of input image i.e., one of 3D spatial dimensions (default=64)
@@ -105,7 +106,7 @@ class Exa3DGAN(lbann.modules.Module):
 
        self.instance = 0
        self.name = (name if name
-                     else 'Exa3DGAN{0}'.format(Exa3DGAN.global_count))
+                     else 'Exa3DMultiGAN{0}'.format(Exa3DMultiGAN.global_count))
        convbnrelu = ConvBNRelu
        fc = lbann.modules.FullyConnectedModule
        conv = lbann.modules.Convolution3dModule
@@ -179,32 +180,40 @@ class Exa3DGAN(lbann.modules.Module):
                             weights=[lbann.Weights(initializer=self.inits['convT'])])
 
 
-    def forward(self, img, z):
+    def forward(self, img, z,label=None):
         out = []
-        gen_img = self.forward_generator_bn(z,self.g_ps)
+        gen_img = self.forward_generator_bn(z,self.g_ps,label)
 
         b1 = lbann.Identity(img)
         b2 = lbann.StopGradient(gen_img)
         b3 = lbann.Identity(gen_img)
         for bId in range(self.num_blocks):
-            out.append(self.forward_discriminator1(b1, bId))
-            out.append(self.forward_discriminator1(b2,bId))
-            out.append(self.forward_discriminator2(b3,bId))
+            if label:
+                out.append(self.forward_discriminator1(b1, bId,lbann.Identity(label)))
+                out.append(self.forward_discriminator1(b2,bId,lbann.Identity(label)))
+                out.append(self.forward_discriminator2(b3,bId,lbann.Identity(label)))
+            else:
+                out.append(self.forward_discriminator1(b1, bId))
+                out.append(self.forward_discriminator1(b2,bId))
+                out.append(self.forward_discriminator2(b3,bId))
         out.append(gen_img)   
         return out
 
-    def forward_discriminator1(self,y,bId=0):
+    def forward_discriminator1(self,y,bId=0,x=None):
         print("Bid",bId)
+        if x: y = self.imgX(y,x)
         if self.enable_subgraph: y = lbann.Identity(y, parallel_strategy = {'sub_branch_tag':bId+1,'enable_subgraph':True})
         x = self.d1_conv[bId][3](self.d1_conv[bId][2](self.d1_conv[bId][1](self.d1_conv[bId][0](y))))
         return self.d1_fc[bId](x)
 
-    def forward_discriminator2(self,y,bId=0):
+    def forward_discriminator2(self,y,bId=0,x=None):
+        if x: y = self.imgX(y,x)
         if self.enable_subgraph: y = lbann.Identity(y, parallel_strategy = {'sub_branch_tag':bId+1,'enable_subgraph':True})
         x = self.d2_conv[bId][3](self.d2_conv[bId][2](self.d2_conv[bId][1](self.d2_conv[bId][0](y))))
         return self.d2_fc[bId](x) 
  
-    def forward_generator(self,z,ps=None):
+    def forward_generator(self,z,ps=None,x=None):
+        if x: z = self.noiseX(z,x)
         x = lbann.FullyConnected(z, num_neurons = np.prod(self.outc_dims), has_bias = True, device=self.g_device)
         x = lbann.Reshape(x, dims=self.outc_dims,name='gen_zin_reshape',device=self.g_device) 
         x = lbann.Relu(self.g_convT[0](x), name='g_relu0',parallel_strategy=ps,device=self.g_device)
@@ -212,11 +221,26 @@ class Exa3DGAN(lbann.modules.Module):
         x = lbann.Relu(self.g_convT[2](x), name='g_relu2',parallel_strategy=ps,device=self.g_device)
         return self.g_convT3(x) 
  
-    def forward_generator_bn(self,z,ps=None):
+    def forward_generator_bn(self,z,ps=None,x=None):
+        if x: z = self.noiseX(z,x)
         x = lbann.FullyConnected(z, num_neurons = np.prod(self.outc_dims), has_bias = True, device=self.g_device)
         x = lbann.Reshape(x, dims=self.outc_dims,name='gen_zin_reshape',device=self.g_device) 
         x = lbann.Relu(lbann.BatchNormalization(self.g_convT[0](x),decay=0.9,scale_init=1.0,epsilon=1e-5))
         x = lbann.Relu(lbann.BatchNormalization(self.g_convT[1](x),decay=0.9,scale_init=1.0,epsilon=1e-5))
         x = lbann.Relu(lbann.BatchNormalization(self.g_convT[2](x),decay=0.9,scale_init=1.0,epsilon=1e-5))
         return self.g_convT3(x) 
+
+    #Concatenate image (y) and label (x)
+    def imgX(self, img, x):
+        x_flat = lbann.Tessellate(x, dims=[self.input_width**3])
+        img_flat = lbann.Reshape(img, dims=[self.input_channel*self.input_width**3])
+        y_flat = lbann.Concatenation(img_flat, x_flat)
+        y = lbann.Reshape(y_flat, dims=[self.input_channel+1] + 3*[self.input_width])
+        return y
+    #Concatenate noise(z) and label (x)
+    #@todo: parameterize z dim
+    def noiseX(self, z, x):
+        x = lbann.Tessellate(x, dims=[64])
+        x = lbann.Reshape(x, dims=[self.input_channel, 64])
+        return lbann.Reshape(lbann.Concatenation(z,x,axis=0),dims=[self.input_channel+1,64])
 
