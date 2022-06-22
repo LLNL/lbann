@@ -106,8 +106,8 @@ if args.model == "mlp":
 elif args.model == "cnn":
     for i, num_channels in enumerate([20, 50]):
         x = lbann.Convolution(
-            x, num_dims=2, num_output_channels=num_channels,
-            conv_dims_i=5, conv_pads_i=0, conv_strides_i=1,
+            x, num_dims=2, out_channels=num_channels,
+            kernel_size=5, padding=0, stride=1,
             has_bias=has_bias,
             name="conv{}".format(i+1))
         x = lbann.Relu(x)

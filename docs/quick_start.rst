@@ -292,9 +292,9 @@ Using LBANN, that same neural network can be built with:
         images = lbann.Identity(input_)
         labels = lbann.Identity(input_)
 
-        x = lbann.Convolution(images, num_dims=2, num_output_channels=20,
-                              num_groups=1, conv_dims_i=5, conv_strides_i=1,
-                              conv_dilations_i=1, has_bias=True)
+        x = lbann.Convolution(images, num_dims=2, out_channels=20,
+                              num_groups=1, kernel_size=5, stride=1,
+                              dilation=1, has_bias=True)
         x = lbann.Relu(x)
         x = lbann.Pooling(x, num_dims=2, pool_dims_i=2,
                           pool_strides_i=2, pool_mode='max')

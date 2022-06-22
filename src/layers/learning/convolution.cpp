@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <google/protobuf/stubs/port.h>
 #define LBANN_CONVOLUTION_LAYER_INSTANTIATE
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/layers/learning/convolution.hpp"
@@ -391,91 +392,50 @@ namespace {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 struct ConvLayerBuilder
 {
-  static std::unique_ptr<Layer> Build(lbann_comm* comm,
-                                      lbann_data::Layer const& proto_layer)
+  static std::unique_ptr<Layer> Build(lbann_data::Layer const& proto_layer)
   {
-    const auto& params = proto_layer.convolution();
-    const auto& num_output_channels = params.num_output_channels();
-    const auto& bias = params.has_bias();
-    int const num_groups = std::max(params.num_groups(), protobuf::int64{1});
+    auto const& params = proto_layer.convolution();
+    int const num_dims = params.num_dims();
+    int const num_output_channels = params.out_channels();
+    int const num_groups = params.has_groups() ? params.groups().value() : 1;
+    bool const bias = params.has_has_bias() ? params.has_bias().value() : true;
 
-    if (params.has_vectors()) {
-      auto const dims = protobuf::to_vector<int>(params.conv_dims());
-      auto const pads = protobuf::to_vector<int>(params.conv_pads());
-      auto const strides = protobuf::to_vector<int>(params.conv_strides());
-      auto const dilations =
-        params.conv_dilations_size() == 0
-          ? std::vector<int>(params.conv_dilations_size(), 1)
-          : protobuf::to_vector<int>(params.conv_dilations());
+    // Fill in a repeated field. If it's empty, a vector of the default
+    // value will be used. If it's length 1, the remaining values will
+    // be filled in with the value of that entry.
+    auto const ensure_dims =
+      [&num_dims](auto const& repeated_field,
+                  int const default_value) -> std::vector<int> {
+      auto vec = repeated_field.size()
+                   ? protobuf::to_vector<int>(repeated_field)
+                   : std::vector<int>(num_dims, default_value);
+      if (vec.size() == 1)
+        vec.assign(num_dims, vec.front());
+      return vec;
+    };
+
+    auto ret =
+      std::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
+        num_dims,
+        num_output_channels,
+        ensure_dims(params.kernel_size(), /*NOTUSED=*/-1),
+        ensure_dims(params.padding(), /*default=*/0),
+        ensure_dims(params.stride(), /*default=*/1),
+        ensure_dims(params.dilation(), /*default=*/1),
+        num_groups,
+        bias);
 #ifdef LBANN_HAS_DNN_LIB
-      auto ret =
-        std::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
-          dims.size(),
-          num_output_channels,
-          dims,
-          pads,
-          strides,
-          dilations,
-          num_groups,
-          bias);
-      ret->set_dnn_math_mode(
-        dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
-      return ret;
-#else
-      return std::make_unique<
-        convolution_layer<TensorDataType, Layout, Device>>(dims.size(),
-                                                           num_output_channels,
-                                                           dims,
-                                                           pads,
-                                                           strides,
-                                                           dilations,
-                                                           num_groups,
-                                                           bias);
-#endif // LBANN_HAS_DNN_LIB
-    }
-    else {
-      const auto& num_dims = params.num_dims();
-      const auto& dim = params.conv_dims_i();
-      const auto& pad = params.conv_pads_i();
-      const auto& stride = params.conv_strides_i();
-      int dilation = params.conv_dilations_i();
-      if (dilation == 0) {
-        dilation = 1;
-      }
-#ifdef LBANN_HAS_DNN_LIB
-      auto ret =
-        std::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
-          num_dims,
-          num_output_channels,
-          dim,
-          pad,
-          stride,
-          dilation,
-          num_groups,
-          bias);
-      ret->set_dnn_math_mode(
-        dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
-      return ret;
-#else
-      return std::make_unique<
-        convolution_layer<TensorDataType, Layout, Device>>(num_dims,
-                                                           num_output_channels,
-                                                           dim,
-                                                           pad,
-                                                           stride,
-                                                           dilation,
-                                                           num_groups,
-                                                           bias);
-#endif // LBANN_HAS_DNN_LIB
-    }
+    ret->set_dnn_math_mode(
+      dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
+#endif
+    return ret;
   }
 };
 
 template <typename TensorDataType, El::Device Device>
 struct ConvLayerBuilder<TensorDataType, data_layout::MODEL_PARALLEL, Device>
 {
-  static std::unique_ptr<Layer> Build(lbann_comm* comm,
-                                      lbann_data::Layer const& proto_layer)
+  static std::unique_ptr<Layer> Build(lbann_data::Layer const& proto_layer)
   {
     LBANN_ERROR("convolution layer is only supported with "
                 "a data-parallel layout");
@@ -486,11 +446,11 @@ struct ConvLayerBuilder<TensorDataType, data_layout::MODEL_PARALLEL, Device>
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<Layer>
-build_convolution_layer_from_pbuf(lbann_comm* comm,
+build_convolution_layer_from_pbuf(lbann_comm* /*comm*/,
                                   const lbann_data::Layer& proto_layer)
 {
   using Builder = ConvLayerBuilder<TensorDataType, Layout, Device>;
-  return Builder::Build(comm, proto_layer);
+  return Builder::Build(proto_layer);
 }
 
 #define PROTO_DEVICE(T, Device)                                                \

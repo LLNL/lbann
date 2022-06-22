@@ -10,11 +10,12 @@ import lbann.models
 import lbann.models.resnet
 from search import micro_encoding
 from os.path import join
+
+current_file = os.path.realpath(__file__)
+current_dir = os.path.dirname(current_file)
+sys.path.insert(0, current_dir)
 import data.cifar10
-
-sys.path.insert(0, os.getenv('PWD'))
 import search.model as cifar
-
 
 Genotype = namedtuple('Genotype', 'normal normal_concat reduce reduce_concat')
 Genotype_norm = namedtuple('Genotype', 'normal normal_concat')
@@ -43,7 +44,7 @@ def generate_genomes(pop_size,
     networks = []
     genotypes = []
     network_id = 0
-        
+
     while len(networks) < pop_size:
         bit_string = []
         for c in range(n_cell):
@@ -84,7 +85,7 @@ def create_networks(exp_dir,
         trainer_id = 0
         # Setup shared data reader and optimizer
         reader = data.cifar10.make_data_reader(num_classes=10)
-        opt = lbann.Adam(learn_rate=0.0002,beta1=0.9,beta2=0.99,eps=1e-8) 
+        opt = lbann.Adam(learn_rate=0.0002,beta1=0.9,beta2=0.99,eps=1e-8)
         genotypes = generate_genomes(pop_size,num_blocks,num_ops,num_cells)
         for g in genotypes:
             mymodel = cifar.NetworkCIFAR(16, 10, 8, False, g)
@@ -98,7 +99,7 @@ def create_networks(exp_dir,
             top1 = lbann.CategoricalAccuracy(probs, labels)
 
             obj = lbann.ObjectiveFunction([cross_entropy])
-    
+
 
             metrics = lbann.Metric(top1, name='accuracy', unit='%')
 
@@ -115,7 +116,7 @@ def create_networks(exp_dir,
 
             # Setup trainer
             trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
-            
+
             if use_ltfb:
                 print("Using LTFB ")
                 SGD = lbann.BatchedIterativeOptimizer
@@ -123,10 +124,10 @@ def create_networks(exp_dir,
                 ES = lbann.RandomPairwiseExchange.ExchangeStrategy(strategy='checkpoint_binary')
                 metalearning = RPE(
                    metric_strategies={'accuracy': RPE.MetricStrategy.HIGHER_IS_BETTER},
-                   exchange_strategy=ES)  
+                   exchange_strategy=ES)
                 ltfb = lbann.LTFB("ltfb",
                               metalearning=metalearning,
-                              local_algo=SGD("local sgd", num_iterations=625), 
+                              local_algo=SGD("local sgd", num_iterations=625),
                               metalearning_steps=num_epochs)
 
                 trainer = lbann.Trainer(mini_batch_size=mini_batch_size,
@@ -139,9 +140,7 @@ def create_networks(exp_dir,
                optimizer=opt,
                data_reader=reader,
                trainer=trainer)
-            
-            trainer_id +=1
-    
-        return trainer, model, reader, opt 
-    
 
+            trainer_id +=1
+
+        return trainer, model, reader, opt

@@ -24,11 +24,14 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/utils/protobuf/decl.hpp"
+#include <google/protobuf/repeated_field.h>
 #define LBANN_CONVOLUTION_LAYER_INSTANTIATE
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/layers/learning/deconvolution.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include <layers.pb.h>
 
@@ -387,133 +390,55 @@ struct Builder<TensorDataType,data_layout::DATA_PARALLEL,Device>
 } // namespace <anon>
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_deconvolution_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const& proto_layer)
+std::unique_ptr<Layer>
+build_deconvolution_layer_from_pbuf(lbann_comm* comm,
+                                    lbann_data::Layer const& proto_layer)
 {
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, deconvolution);
   const auto& params = proto_layer.deconvolution();
 
-  const int num_dims = params.num_dims();
-  int out_channels = params.out_channels();
-  int groups = params.has_groups() ? params.groups().value() : 1;
-  const bool bias = params.has_has_bias() ? params.has_bias().value() : true;
+  int const num_dims = params.num_dims();
+  int const out_channels = params.out_channels();
+  int const groups = params.has_groups() ? params.groups().value() : 1;
+  bool const bias = params.has_has_bias() ? params.has_bias().value() : true;
 
-  // Kernel dimensions
-  std::vector<int> kernel_size;
-  for (int i=0; i<params.kernel_size_size(); ++i) {
-    kernel_size.push_back(params.kernel_size(i));
-  }
-  if (params.kernel_size_size() == 1) {
-    kernel_size.assign(num_dims, kernel_size.front());
-  }
+  // Fill in a repeated field. If it's empty, a vector of the default
+  // value will be used. If it's length 1, the remaining values will
+  // be filled in with the value of that entry.
+  auto const ensure_dims =
+    [&num_dims](auto const& repeated_field,
+                int const default_value) -> std::vector<int> {
+    auto vec = repeated_field.size()
+                 ? protobuf::to_vector<int>(repeated_field)
+                 : std::vector<int>(num_dims, default_value);
+    if (vec.size() == 1)
+      vec.assign(num_dims, vec.front());
+    return vec;
+  };
 
-  // Stride
-  // Note: Defaults to 1
-  std::vector<int> stride;
-  for (int i=0; i<params.stride_size(); ++i) {
-    stride.push_back(params.stride(i));
-  }
-  if (stride.empty()) {
-    stride.push_back(1);
-  }
-  if (stride.size() == 1) {
-    stride.assign(num_dims, stride.front());
-  }
-
-  // Padding
-  // Note: Defaults to 0
-  std::vector<int> padding;
-  for (int i=0; i<params.padding_size(); ++i) {
-    padding.push_back(params.padding(i));
-  }
-  if (padding.empty()) {
-    padding.push_back(0);
-  }
-  if (padding.size() == 1) {
-    padding.assign(num_dims, padding.front());
-  }
-
-  // Output padding
-  // Note: Defaults to 0
-  std::vector<int> output_padding;
-  for (int i=0; i<params.output_padding_size(); ++i) {
-    output_padding.push_back(params.output_padding(i));
-  }
-  if (output_padding.empty()) {
-    output_padding.push_back(0);
-  }
-  if (output_padding.size() == 1) {
-    output_padding.assign(num_dims, output_padding.front());
-  }
-
-  // Dilation
-  // Note: Defaults to 1
-  std::vector<int> dilation;
-  for (int i=0; i<params.dilation_size(); ++i) {
-    dilation.push_back(params.dilation(i));
-  }
-  if (dilation.empty()) {
-    dilation.push_back(1);
-  }
-  if (dilation.size() == 1) {
-    dilation.assign(num_dims, dilation.front());
-  }
-
-  // Deprecated options
-  if (params.out_channels()==0 && params.num_output_channels()!=0) {
-    out_channels = params.num_output_channels();
-  }
-  if (!params.has_groups() && params.num_groups()!=0) {
-    groups = params.num_groups();
-  }
-  if (params.kernel_size_size() == 0) {
-    if (!params.conv_dims().empty()) {
-      kernel_size = parse_list<int>(params.conv_dims());
-    }
-    if (params.conv_dims_i() != 0) {
-      kernel_size.assign(num_dims, params.conv_dims_i());
-    }
-  }
-  if (params.padding_size() == 0) {
-    if (!params.conv_pads().empty()) {
-      padding = parse_list<int>(params.conv_pads());
-    }
-    if (params.conv_pads_i() != 0) {
-      padding.assign(num_dims, params.conv_pads_i());
-    }
-  }
-  if (params.stride_size() == 0) {
-    if (!params.conv_strides().empty()) {
-      stride = parse_list<int>(params.conv_strides());
-    }
-    if (params.conv_strides_i() != 0) {
-      stride.assign(num_dims, params.conv_strides_i());
-    }
-  }
-  if (params.dilation_size() == 0) {
-    if (!params.conv_dilations().empty()) {
-      dilation = parse_list<int>(params.conv_dilations());
-    }
-    if (params.conv_dilations_i() != 0) {
-      dilation.assign(num_dims, params.conv_dilations_i());
-    }
-  }
+  // Kernel dimensions must be given - NO default. Must exist.
+  LBANN_ASSERT(params.kernel_size_size() > 0);
 
   // Construct layer
   using BuilderType = Builder<TensorDataType, Layout, Device>;
-  return BuilderType::Build(
-    proto_layer, num_dims, out_channels,
-    kernel_size, padding, output_padding, stride, dilation, groups, bias);
-
+  return BuilderType::Build(proto_layer,
+                            num_dims,
+                            out_channels,
+                            ensure_dims(params.kernel_size(), /*NOTUSED=*/-1),
+                            ensure_dims(params.padding(), /*default=*/0),
+                            ensure_dims(params.output_padding(), /*default=*/0),
+                            ensure_dims(params.stride(), /*default=*/1),
+                            ensure_dims(params.dilation(), /*default=*/1),
+                            groups,
+                            bias);
 }
 
 // =========================================================
 // Explicit template instantiation
 // =========================================================
 
-#define PROTO_DEVICE(T, Device)                         \
-  template class deconvolution_layer<                   \
-    T, data_layout::DATA_PARALLEL, Device>;             \
+#define PROTO_DEVICE(T, Device)                                                \
+  template class deconvolution_layer<T, data_layout::DATA_PARALLEL, Device>;   \
   LBANN_LAYER_BUILDER_ETI(deconvolution, T, Device)
 #include "lbann/macros/instantiate_device.hpp"
 

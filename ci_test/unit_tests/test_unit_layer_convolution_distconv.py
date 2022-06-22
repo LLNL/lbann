@@ -188,12 +188,11 @@ def construct_model(lbann):
         y = lbann.Convolution(x,
                               weights=(kernel_weights, ),
                               num_dims=num_dims,
-                              num_output_channels=kernel_dims[0],
-                              has_vectors=True,
-                              conv_dims=kernel_dims[2:],
-                              conv_strides=strides,
-                              conv_pads=pads,
-                              conv_dilations=dilations,
+                              out_channels=kernel_dims[0],
+                              kernel_size=kernel_dims[2:],
+                              stride=strides,
+                              padding=pads,
+                              dilation=dilations,
                               has_bias=False,
                               parallel_strategy=create_parallel_strategy(
                                   num_height_groups))

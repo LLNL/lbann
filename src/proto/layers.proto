@@ -1073,38 +1073,42 @@ message Layer {
      *  the mini-batch dimension is implicit).
      */
     int64 num_dims = 1;
-    /** @brief Channel dimension of output tensor */
-    int64 num_output_channels = 2;
 
-    /** @brief Whether to use vector-valued options
-     *
-     *  If true, then the pooling is configured with @c conv_dims,
-     *  @c conv_pads, @c conv_strides, @c conv_dilations. Otherwise,
-     *  @c conv_dims_i, @c conv_pads_i, @c conv_strides_i,
-     *  @c conv_dilations_i.
-     */
-    bool has_vectors = 3;
+    /** @brief Channel dimension of output tensor */
+    int64 out_channels = 2;
 
     /** @brief Convolution kernel dimensions (vector-valued)
      *
      *  List of integers, one for each spatial
      *  dimension. Used when @c has_vectors is enabled.
      */
-    repeated int64 conv_dims = 4;
-
-    /** @brief Convolution padding (vector-valued)
-     *
-     *  List of integers, one for each spatial
-     *  dimension. Used when @c has_vectors is enabled.
-     */
-    repeated int64 conv_pads = 5;
+    repeated int64 kernel_size = 3;
 
     /** @brief Convolution strides (vector-valued)
      *
      *  List of integers, one for each spatial
      *  dimension. Used when @c has_vectors is enabled.
      */
-    repeated int64 conv_strides = 6;
+    repeated int64 stride = 4;
+
+    /** @brief Convolution padding (vector-valued)
+     *
+     *  List of integers, one for each spatial
+     *  dimension. Used when @c has_vectors is enabled.
+     */
+    repeated int64 padding = 5;
+
+    // Deconv: output_padding = 6;
+
+    /** @brief Number of convolution groups
+     *  @details Default: 1
+     */
+    google.protobuf.Int64Value groups = 7;
+
+    /** @brief Whether to apply channel-wise bias
+     *  @details Default: True
+     */
+    google.protobuf.BoolValue has_bias = 8;
 
     /** @brief Convolution dilations (vector-valued)
      *
@@ -1112,37 +1116,7 @@ message Layer {
      *  dimension. Used when @c has_vectors is enabled. Defaults to
      *  dilations of 1, i.e. undilated convolution.
      */
-    repeated int64 conv_dilations = 7;
-
-    /** @brief Convolution kernel size (integer-valued)
-     *
-     *  Used when @c has_vectors is disabled.
-     */
-    int64 conv_dims_i = 8;
-    /** @brief Convolution padding (integer-valued)
-     *
-     *  Used when @c has_vectors is disabled.
-     */
-    int64 conv_pads_i = 9;
-    /** @brief Convolution stride (integer-valued)
-     *
-     *  Used when @c has_vectors is disabled.
-     */
-    int64 conv_strides_i = 10;
-    /** @brief Convolution dilation (integer-valued)
-     *
-     *  Default: 1
-     *
-     *  Used when @c has_vectors is disabled.
-     */
-    int64 conv_dilations_i = 11;
-
-    /** @brief Whether to apply per-channel bias */
-    bool has_bias = 12;
-    /** @brief Number of channel groups for grouped convolution
-     *  @details Default: 1
-     */
-    int64 num_groups = 13;
+    repeated int64 dilation = 9;
 
     /** @brief Special behavior with FP16 tensor cores
      *  @details Ignored for non-GPU layers.
@@ -1204,29 +1178,6 @@ message Layer {
      *  @details Ignored for non-GPU layers.
      */
     ConvTensorOpsMode conv_tensor_op_mode = 10;
-
-    /// Deprecated
-    int64 num_output_channels = 20;
-    /// Deprecated
-    int64 num_groups = 21;
-    /// Deprecated
-    bool has_vectors = 22;
-    /// Deprecated
-    string conv_dims = 23;
-    /// Deprecated
-    string conv_pads = 24;
-    /// Deprecated
-    string conv_strides = 25;
-    /// Deprecated
-    string conv_dilations = 26;
-    /// Deprecated
-    int64 conv_dims_i = 27;
-    /// Deprecated
-    int64 conv_pads_i = 28;
-    /// Deprecated
-    int64 conv_strides_i = 29;
-    /// Deprecated
-    int64 conv_dilations_i = 30;
 
   }
 
