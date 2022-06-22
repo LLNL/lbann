@@ -380,11 +380,22 @@ if (LBANN_HAS_ROCM)
   find_package(hip CONFIG REQUIRED)
   enable_language(HIP)
   find_package(MIOpen CONFIG REQUIRED)
+
+  find_library(HSA_LIBRARY hsa-runtime64
+    HINTS ${ROCM_PATH}/hsa $ENV{ROCM_PATH}/hsa
+    PATH_SUFFIXES lib lib64
+    DOC "HSA runtime library"
+    NO_DEFAULT_PATH)
+  find_library(HSA_LIBRARY hsa-runtime64)
+
   set(LBANN_HAS_MIOPEN ${MIOpen_FOUND})
   set(LBANN_HAS_DNN_LIB ${MIOpen_FOUND})
   set(LBANN_ROCM_LIBS
     hip::host
     MIOpen)
+  if (HSA_LIBRARY)
+    list(APPEND LBANN_ROCM_LIBS "${HSA_LIBRARY}")
+  endif ()
 
   if (LBANN_HAS_FFTW)
     find_package(rocfft CONFIG REQUIRED)
