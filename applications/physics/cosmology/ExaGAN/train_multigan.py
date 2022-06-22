@@ -90,6 +90,10 @@ def construct_lc_launcher_args():
         '--dump-outputs', action='store_true',
         help='Dump outputs')
 
+    parser.add_argument(
+        '--enable-subgraph', action='store_true',
+        help='Enable subgraph parallelism')
+
     return parser.parse_args()
 
 
@@ -126,7 +130,8 @@ def construct_model(args):
     print("RUN ARGS ", args) 
 
     losses = model.Exa3DGAN(args.input_width,args.input_channel,
-                             g_device,ps,use_bn=args.use_bn,num_discblocks=args.num_discblocks)(x1,z)
+                             g_device,ps,use_bn=args.use_bn,num_discblocks=args.num_discblocks,
+                             enable_subgraph=args.enable_subgraph)(x1,z)
     print("LEN losses ", len(losses))
  
     layers=list(lbann.traverse_layer_graph([input,z,zero,one]))

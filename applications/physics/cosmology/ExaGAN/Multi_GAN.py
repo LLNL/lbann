@@ -81,16 +81,6 @@ class ConvBNRelu(lbann.modules.Module):
                     self.name, self.instance))
         return layer
 
-class Deconvolution3dModule(lbann.modules.ConvolutionModule):
-    """Basic block for 3D deconvolutional neural networks.
-
-    Applies a deconvolution and a nonlinear activation function.
-    This is a wrapper class for ConvolutionModule.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(3, transpose=True, *args, **kwargs)
-
 
 
 class Exa3DGAN(lbann.modules.Module):
@@ -103,18 +93,19 @@ class Exa3DGAN(lbann.modules.Module):
             disc_ps (lbann.ParallelStrategy): Parallel strategy for discriminator network (default=None).
             gen_ps (lbann.ParallelStrategy): Parallel strategy for generator network (default=None).
             use_bn (bool): Whether or not batch normalization layers are used (default= False).
+            enable_subgraph (bool): Whether or not use subgraph parallelism in discriminator layers (default= False).
             name (str): Module name.
     """
 
     global_count = 0  # Static counter, used for default names
 
     def __init__(self, input_width=64, input_channel=1,gen_device='GPU',
-                 disc_ps=None, gen_ps=None,use_bn=False,num_discblocks=1,name=None):
+                 disc_ps=None, gen_ps=None,use_bn=False,num_discblocks=1,
+                 enable_subgraph=False,name=None):
 
        self.instance = 0
        self.name = (name if name
                      else 'Exa3DGAN{0}'.format(Exa3DGAN.global_count))
-
        convbnrelu = ConvBNRelu
        fc = lbann.modules.FullyConnectedModule
        conv = lbann.modules.Convolution3dModule
@@ -127,6 +118,7 @@ class Exa3DGAN(lbann.modules.Module):
        self.d_ps = disc_ps 
        self.g_ps = gen_ps 
        self.use_bn = use_bn
+       self.enable_subgraph = enable_subgraph
 
        assert self.input_width in [64,128, 256, 512]
 
@@ -164,13 +156,9 @@ class Exa3DGAN(lbann.modules.Module):
                                   name=self.name+'_disc2_conv'+str(i)+'b'+str(b), 
                                   activation=lbann.Relu,
                                   parallel_strategy=self.d_ps,
-                                  #conv_weights=[lbann.Weights(initializer=self.inits['conv'])])
                                   conv_weights=[lbann.Weights(initializer=self.inits['conv'],name=self.name+'_d2_convw'+str(i)+'b'+str(b))])
-                   #for i in range(len(d_channels))] 
                    for i in range(len(d_channels))] for b in range(self.num_blocks)] 
 
-       #self.d2_fc = fc(1,name=self.name+'_disc2_fc',
-       #                weights=[lbann.Weights(initializer=self.inits['dense'])])
        self.d2_fc = [fc(1,name=self.name+'_disc2_fc_b'+str(b),
                        weights=[lbann.Weights(initializer=self.inits['dense'], name=self.name+'_d2_fcw_b'+str(b))])
                      for b in range(self.num_blocks)]
@@ -185,20 +173,11 @@ class Exa3DGAN(lbann.modules.Module):
                        weights=[lbann.Weights(initializer=self.inits['convT'])])
                        for i in range(len(g_channels))] 
 
-       #self.g_convT3 = conv(input_channel, kernel_size, stride, padding, activation=lbann.Tanh,
        self.g_convT3 = conv(1, kernel_size, stride, padding, activation=lbann.Tanh,
                             parallel_strategy=self.g_ps,
                             name='gen_img',transpose=True,
                             weights=[lbann.Weights(initializer=self.inits['convT'])])
 
-    '''
-    def forward(self, img, z=None):
-        d1_real = self.forward_discriminator1(img)  #instance1
-        gen_img = self.forward_generator_bn(z,self.g_ps)
-        d1_fake = self.forward_discriminator1(lbann.StopGradient(gen_img,name='stop_gradient')) #instance2
-        d_adv = self.forward_discriminator2(gen_img) #instance 3 //need to freeze
-        return d1_real,d1_fake,d_adv,gen_img
-    '''
 
     def forward(self, img, z):
         out = []
@@ -208,9 +187,6 @@ class Exa3DGAN(lbann.modules.Module):
         b2 = lbann.StopGradient(gen_img)
         b3 = lbann.Identity(gen_img)
         for bId in range(self.num_blocks):
-            #Add subgraph parallelism in next two lines
-            #img = lbann.Identity(img, parallel_strategy = {'sub_branch_tag':bId+1,'enable_subgraph':True})
-            #gen_img = lbann.Identity(gen_img, parallel_strategy = {'sub_branch_tag':bId+1,'enable_subgraph':True})
             out.append(self.forward_discriminator1(b1, bId))
             out.append(self.forward_discriminator1(b2,bId))
             out.append(self.forward_discriminator2(b3,bId))
@@ -219,15 +195,13 @@ class Exa3DGAN(lbann.modules.Module):
 
     def forward_discriminator1(self,y,bId=0):
         print("Bid",bId)
-        #Uncomment to enable subgraph
-        #y = lbann.Identity(y, parallel_strategy = {'sub_branch_tag':bId+1,'enable_subgraph':True})
+        if self.enable_subgraph: y = lbann.Identity(y, parallel_strategy = {'sub_branch_tag':bId+1,'enable_subgraph':True})
         x = self.d1_conv[bId][3](self.d1_conv[bId][2](self.d1_conv[bId][1](self.d1_conv[bId][0](y))))
         return self.d1_fc[bId](x)
 
     def forward_discriminator2(self,y,bId=0):
-        #y = lbann.Identity(y, parallel_strategy = {'sub_branch_tag':bId+1,'enable_subgraph':True})
+        if self.enable_subgraph: y = lbann.Identity(y, parallel_strategy = {'sub_branch_tag':bId+1,'enable_subgraph':True})
         x = self.d2_conv[bId][3](self.d2_conv[bId][2](self.d2_conv[bId][1](self.d2_conv[bId][0](y))))
-        #x = self.d2_conv[3](self.d2_conv[2](self.d2_conv[1](self.d2_conv[0](y))))
         return self.d2_fc[bId](x) 
  
     def forward_generator(self,z,ps=None):
