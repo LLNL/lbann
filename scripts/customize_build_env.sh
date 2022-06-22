@@ -111,7 +111,7 @@ set_center_specific_modules()
                 MODULE_CMD="module --force unload StdEnv; module load gcc/10.2.1 mvapich2/2.3 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
-                MODULE_CMD="module load gcc-tce/10.2.1 rocm/4.5.2 mvapich2-tce/2.3.6"
+                MODULE_CMD="module load gcc-tce/10.2.1 rocm/4.5.2; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1"
 #                MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 python/3.7.2 opt rocm/4.2.0 openmpi-gnu/4.0"
                 ;;
             *)
@@ -198,8 +198,8 @@ set_center_specific_spack_dependencies()
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_COMPILER="%clang"
-#                CENTER_DEPENDENCIES="^mvapich2"
+                CENTER_COMPILER="%clang@amd"
+                CENTER_DEPENDENCIES="^openmpi"
 #                CENTER_DEPENDENCIES="^openmpi ^hwloc@2.3.0"
                 ;;
             *)
@@ -368,18 +368,10 @@ cat <<EOF  >> ${yaml}
     openmpi:
       buildable: False
       version:
-      - 4.0
+      - 4.1.1
       externals:
-      - spec: openmpi@4.0.0 arch=${spack_arch}
-        prefix: /opt/openmpi/4.0/gnu
-    mvapich2:
-      buildable: False
-      version:
-      - 2.3.6
-      externals:
-      - spec: mvapich2@2.3.6  arch=${spack_arch}
-        modules:
-        - mvapich2-tce/2.3.6
+      - spec: openmpi@4.1.1 arch=${spack_arch}
+        prefix: /opt/toss/openmpi/4.1/gnu
 EOF
                 ;;
             *)
