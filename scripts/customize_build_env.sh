@@ -112,7 +112,6 @@ set_center_specific_modules()
                 ;;
             "zen" | "zen2") # Corona
                 MODULE_CMD="module load gcc-tce/10.2.1 rocm/4.5.2; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1"
-#                MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 python/3.7.2 opt rocm/4.2.0 openmpi-gnu/4.0"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
