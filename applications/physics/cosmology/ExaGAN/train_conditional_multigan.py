@@ -105,6 +105,10 @@ def construct_lc_launcher_args():
         '--enable-subgraph', action='store_true',
         help='Enable subgraph parallelism')
 
+    parser.add_argument(
+        '--use-hdf5-reader', action='store_true',
+        help='Use scalable IO HDF5 reader (default (for now) is Python reader')
+
     return parser.parse_args()
 
 
@@ -128,15 +132,21 @@ def construct_model(args):
                 height_groups=args.depth_groups)
 
     g_device = 'GPU'
-    input = lbann.Input(data_field='samples',name='input',device=g_device)
-    sl_pt = args.input_width**3
-    print('slice_pt', sl_pt) 
-    inp_slice = lbann.Slice(input, axis=0, slice_points=[0,sl_pt, sl_pt+1],name='inp_slice')
-    input_ = lbann.Reshape(lbann.Identity(inp_slice), dims=_sample_dims,name='in_reshape', device=g_device)
-    input_ = f_transform(input_) #normalization (see above) here
+    if args.use_hdf5_reader:
+        input_ = lbann.Input(data_field='img')
+        labels = lbann.Input(data_field='sigma')
+    else :
+        input = lbann.Input(data_field='samples',name='input',device=g_device)
+        sl_pt = args.input_width**3
+        print('slice_pt', sl_pt) 
+        inp_slice = lbann.Slice(input, axis=0, slice_points=[0,sl_pt, sl_pt+1],name='inp_slice')
+        input_ = lbann.Reshape(lbann.Identity(inp_slice), dims=_sample_dims,name='in_reshape', device=g_device)
+        labels = lbann.Identity(inp_slice,name='xlabel')
 
+    input_ = f_transform(input_) #normalization (see above) here
     x1 = lbann.Identity(input_, parallel_strategy=None, name='x1')
     x2 = lbann.Identity(input_, name='x2') if args.compute_mse or args.spectral_loss else None
+
 
     zero  = lbann.Constant(value=0.0,num_neurons=1,name='zero',device=g_device)
     one  = lbann.Constant(value=1.0,num_neurons=1,name='one', device=g_device)
@@ -144,7 +154,6 @@ def construct_model(args):
     z = lbann.Reshape(lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=64, name='noise_vec', device=g_device),
                       dims=[1,64], name='noise_vec_reshape',device=g_device)
 
-    labels = lbann.Identity(inp_slice,name='xlabel')
     print("RUN ARGS ", args) 
 
     losses = model.Exa3DMultiGAN(args.input_width,args.input_channel,
@@ -250,6 +259,20 @@ if __name__ == '__main__':
     import cgan_data_reader as cdr
     print("Using Python Data READER!!!!")
     data_reader = cdr.construct_python_data_reader()
+    if args.use_hdf5_reader:
+        # hdf5 data reader
+        print("Using HDF5 sample list READER!!!!")
+        cur_dir = dirname(abspath(__file__))
+        data_reader_prototext = join(cur_dir,
+                             'cosmo_hdf5_data',
+                             'hdf5_reader.prototext') 
+        # Load data reader from prototext
+        data_reader_proto = lbann.lbann_pb2.LbannPB()
+        with open(data_reader_prototext, 'r') as f:
+            txtf.Merge(f.read(), data_reader_proto)
+        data_reader = data_reader_proto.data_reader
+
+    
     #Remove cosmoflow/hdf5 stuff
     environment.pop('LBANN_DISTCONV_COSMOFLOW_PARALLEL_IO')
     environment.pop('LBANN_DISTCONV_NUM_IO_PARTITIONS')

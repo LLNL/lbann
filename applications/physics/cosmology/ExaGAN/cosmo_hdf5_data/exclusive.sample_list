@@ -1,0 +1,6 @@
+CONDUIT_HDF5_EXCLUSION
+30 0 3
+/global/cfs/cdirs/m3363/vayyar/cosmogan_data/raw_data/3d_data/dataset4_smoothing_4univ_cgan_varying_sigma_128cube/hdf5_format
+/test_data_sigma_0.5.h5 10 0
+/test_data_sigma_0.8.h5 10 0
+/test_data_sigma_1.1.h5 10 0
