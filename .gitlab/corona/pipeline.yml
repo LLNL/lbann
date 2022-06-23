@@ -145,7 +145,7 @@ remove spack environment:
   when: always
   script:
     - echo "== CLEANING UP SPACK RESOURCES =="
-    - source ${HOME}/spack_repos/spack_${SPACK_REPO}.git/share/spack/setup-env.sh
+    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - export SPACK_ARCH_TARGET=$(spack arch -t)
     - export FULL_ENV_NAME=lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
     - |
