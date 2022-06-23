@@ -27,7 +27,7 @@ ALLOW_BACKEND_BUILDS=
 DEV_BUILD_FLAGS=
 # Flag for passing subcommands to spack install
 INSTALL_BUILD_EXTRAS=
-BUILD_JOBS="-j $(($(nproc)+2))"
+BUILD_JOBS="-j $(($(nproc)/2+2))"
 
 LBANN_VARIANTS=
 CMD_LINE_VARIANTS=
