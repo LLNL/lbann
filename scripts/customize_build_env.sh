@@ -308,7 +308,7 @@ cat <<EOF  >> ${yaml}
           fc: /usr/tce/bin/gfortran
         flags: {}
         operating_system: rhel8
-        target: x86_64
+        target: zen2
         modules: []
         environment: {}
         extra_rpaths: []
