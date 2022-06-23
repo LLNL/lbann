@@ -67,6 +67,7 @@ build and install:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - export BUILD_TASKS=$(($(nproc) + 2))
+    - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -d
       -l ${SPACK_ENV_NAME} --test --clean-build -j ${BUILD_TASKS} --
