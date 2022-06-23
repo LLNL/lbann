@@ -63,6 +63,7 @@ if (LBANN_HAS_GPU)
     list(APPEND THIS_DIR_SOURCES
       "${CMAKE_CURRENT_SOURCE_DIR}/permute/cutensor_support.hpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/permute/cutensor_permuteimpl.hpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/permute/permuteimpl.hpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/permute/tensor_dims_utils.hpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/permute.cpp"
     )

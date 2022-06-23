@@ -28,71 +28,79 @@
 #define LBANN_PERMUTE_LAYER_INSTANTIATE
 #include "lbann/layers/transform/permute.hpp"
 
-#include "permute/cutensor_permuteimpl.hpp"
+#include "permute/permuteimpl.hpp"
 
 #include "lbann/utils/description.hpp"
+
 #include <memory>
+#include <sstream>
+#include <string>
+#include <vector>
 
 namespace lbann {
 
+// PIMPL
+
 template <typename T>
-class PermuteLayer<T>::PermuteImpl
+PermuteLayer<T>::PermuteImpl::PermuteImpl(
+  std::vector<int> const& perm_row_major)
+  : m_device_impl{RowMajorPerm{perm_row_major}}
+{}
+
+template <typename T>
+std::vector<int>
+PermuteLayer<T>::PermuteImpl::setup_dims(std::vector<int> const& input_dims)
 {
-public:
-  using DeviceImplType = cuTENSOR_PermuteImpl;
-  using MatType = El::Matrix<T, El::Device::GPU>;
-  using DimsType = typename DeviceImplType::DimsType;
+  using IndexType = typename DimsType::value_type;
+  m_device_impl.set_dims(RowMajor(vec_convert<IndexType>(input_dims)));
+  return vec_convert<int>(RowMajor(m_device_impl.output_dims()).get());
+}
 
-public:
-  // LBANN uses row-major tensor ordering.
-  PermuteImpl(std::vector<int> const& perm_row_major)
-    : m_device_impl{RowMajorPerm{perm_row_major}}
-  {}
-  PermuteImpl(PermuteImpl const& other) = default;
+template <typename T>
+void PermuteLayer<T>::PermuteImpl::forward_prop(MatType const& input,
+                                                MatType& output) const
+{
+  if (input.Width() == El::Int{0} || output.Width() == El::Int{0})
+    return;
+  m_device_impl.permute(input, output);
+}
 
-  // Returns the row-major output dims.
-  std::vector<int> setup_dims(std::vector<int> const& input_dims)
-  {
-    using IndexType = typename DimsType::value_type;
-    m_device_impl.set_dims(RowMajor(vec_convert<IndexType>(input_dims)));
-    return vec_convert<int>(RowMajor(m_device_impl.output_dims()).get());
-  }
+// Activations don't actually matter here...
+template <typename T>
+void PermuteLayer<T>::PermuteImpl::backward_prop(MatType const& grad_wrt_out,
+                                                 MatType& grad_wrt_in)
+{
+  if (grad_wrt_out.Width() == El::Int{0} || grad_wrt_in.Width() == El::Int{0})
+    return;
+  m_device_impl.inverse_permute(grad_wrt_out, grad_wrt_in);
+}
 
-  void forward_prop(MatType const& input, MatType& output) const
-  {
-    if (input.Width() == El::Int{0} || output.Width() == El::Int{0})
-      return;
-    m_device_impl.permute(input, output);
-  }
+template <typename T>
+std::vector<int> PermuteLayer<T>::PermuteImpl::get_perm() const
+{
+  return RowMajorPerm{m_device_impl.perm()}.get();
+}
 
-  // Activations don't actually matter here...
-  void backward_prop(MatType const& grad_wrt_out, MatType& grad_wrt_in)
-  {
-    if (grad_wrt_out.Width() == El::Int{0} || grad_wrt_in.Width() == El::Int{0})
-      return;
-    m_device_impl.inverse_permute(grad_wrt_out, grad_wrt_in);
-  }
+template <typename T>
+std::string PermuteLayer<T>::PermuteImpl::describe_perm() const
+{
+  RowMajorPerm const perm_rm(m_device_impl.perm());
+  std::ostringstream oss;
+  oss << "(";
+  for (size_t ii = 0; ii < perm_rm.size(); ++ii)
+    oss << (ii == 0UL ? " " : ", ") << perm_rm.get()[ii];
+  oss << " )";
+  return oss.str();
+}
 
-  std::vector<int> get_perm() const
-  {
-    return RowMajorPerm{m_device_impl.perm()}.get();
-  }
+template <typename T>
+void PermuteLayer<T>::PermuteImpl::swap(PermuteImpl& other)
+{
+  std::swap(m_device_impl, other.m_device_impl);
+}
 
-  std::string describe_perm() const
-  {
-    RowMajorPerm const perm_rm(m_device_impl.perm());
-    std::ostringstream oss;
-    oss << "(";
-    for (size_t ii = 0; ii < perm_rm.size(); ++ii)
-      oss << (ii == 0UL ? " " : ", ") << perm_rm.get()[ii];
-    oss << " )";
-    return oss.str();
-  }
-
-private:
-  DeviceImplType m_device_impl;
-
-}; // class PermuteImpl
+// PermuteLayer Implementation
+// public:
 
 template <typename T>
 PermuteLayer<T>::PermuteLayer(std::vector<int> const& axes_rm)
@@ -121,6 +129,30 @@ auto PermuteLayer<T>::operator=(PermuteLayer const& other) -> PermuteLayer&
 template <typename T>
 PermuteLayer<T>::~PermuteLayer()
 {}
+
+template <typename T>
+auto PermuteLayer<T>::copy() const -> PermuteLayer*
+{
+  return new PermuteLayer(*this);
+}
+
+template <typename T>
+std::string PermuteLayer<T>::get_type() const
+{
+  return "permute";
+}
+
+template <typename T>
+data_layout PermuteLayer<T>::get_data_layout() const
+{
+  return lbann::data_layout::DATA_PARALLEL;
+}
+
+template <typename T>
+El::Device PermuteLayer<T>::get_device_allocation() const
+{
+  return El::Device::GPU;
+}
 
 template <typename T>
 void PermuteLayer<T>::swap(PermuteLayer& other)
@@ -176,6 +208,11 @@ void PermuteLayer<T>::bp_compute()
                           static_cast<MatType&>(grad_wrt_input));
   }
 }
+
+// protected:
+
+template <typename T>
+PermuteLayer<T>::PermuteLayer() : PermuteLayer(std::vector<int>{}) {}
 
 #define PROTO(T) template class PermuteLayer<T>
 #define LBANN_INSTANTIATE_GPU_HALF

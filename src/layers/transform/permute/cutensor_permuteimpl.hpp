@@ -117,6 +117,10 @@ public:
                        El::Matrix<DataT, El::Device::GPU>& out) const;
 
   ///@}
+  /** @name Modifiers */
+  ///@{
+  void swap(cuTENSOR_PermuteImpl& other);
+  ///@}
 
 private:
   /** @brief Keep track of descriptors so we don't have to repeatedly
@@ -305,6 +309,15 @@ void cuTENSOR_PermuteImpl::inverse_permute(
     out_modes.data(),
     CUDAScalarType<DataT>,
     static_cast<El::SyncInfo<El::Device::GPU>>(multisync).Stream()));
+}
+
+inline void cuTENSOR_PermuteImpl::swap(cuTENSOR_PermuteImpl& other)
+{
+  std::swap(m_perm, other.m_perm);
+  std::swap(m_input_dims, other.m_input_dims);
+  std::swap(m_output_dims, other.m_output_dims);
+  std::swap(m_input_modes, other.m_input_modes);
+  std::swap(m_output_modes, other.m_output_modes);
 }
 
 } // namespace

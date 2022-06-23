@@ -72,6 +72,7 @@ public:
 
   // Convenience
   auto size() const noexcept { return m_data.size(); }
+  void swap(NamedVector& other) { swap(m_data, other.m_data); }
 };
 
 template <typename IndexT>

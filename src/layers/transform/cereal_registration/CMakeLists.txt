@@ -52,7 +52,12 @@ set_full_path(THIS_DIR_SOURCES
   unpooling.cpp
   weighted_sum.cpp
   weights.cpp
-  )
+)
+
+if (LBANN_HAS_CUTENSOR)
+  list(APPEND THIS_DIR_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/permute.cpp")
+endif ()
 
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)

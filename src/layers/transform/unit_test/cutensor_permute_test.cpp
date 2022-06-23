@@ -25,11 +25,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 // MUST include this
-#include <algorithm>
 #include <catch2/catch.hpp>
 
 #include "../permute/cutensor_permuteimpl.hpp"
 #include "lbann/utils/dim_helpers.hpp"
+
+#include <algorithm>
+#include <sstream>
+#include <string>
+#include <vector>
 
 template <typename T>
 static std::string stringify_vec(std::vector<T> const& vec)

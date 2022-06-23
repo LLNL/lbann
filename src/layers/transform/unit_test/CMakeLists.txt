@@ -28,8 +28,16 @@ if (LBANN_HAS_CUTENSOR)
     cutensor_permute_test.cpp
     tensor_dims_utils_test.cpp
   )
+
+  set_full_path(THIS_DIR_MPI_CATCH2_TEST_FILES
+    permute_layer_test.cpp
+  )
 endif ()
 
 set(LBANN_SEQ_CATCH2_TEST_FILES
   "${LBANN_SEQ_CATCH2_TEST_FILES}"
   "${THIS_DIR_SEQ_CATCH2_TEST_FILES}" PARENT_SCOPE)
+
+set(LBANN_MPI_CATCH2_TEST_FILES
+  "${LBANN_MPI_CATCH2_TEST_FILES}"
+  "${THIS_DIR_MPI_CATCH2_TEST_FILES}" PARENT_SCOPE)

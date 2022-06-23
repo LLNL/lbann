@@ -92,39 +92,7 @@ private:
 
 #ifdef LBANN_HAS_CUDA
 // No member of this class will actually be instantiated unless LBANN
-// is build with GPU support on a CUDA platform.
-
-// Implementation
-// public:
-
-template <typename T>
-auto PermuteLayer<T>::copy() const -> PermuteLayer*
-{
-  return new PermuteLayer(*this);
-}
-
-template <typename T>
-std::string PermuteLayer<T>::get_type() const
-{
-  return "permute";
-}
-
-template <typename T>
-data_layout PermuteLayer<T>::get_data_layout() const
-{
-  return lbann::data_layout::DATA_PARALLEL;
-}
-
-template <typename T>
-El::Device PermuteLayer<T>::get_device_allocation() const
-{
-  return El::Device::GPU;
-}
-
-// protected:
-
-template <typename T>
-PermuteLayer<T>::PermuteLayer() : PermuteLayer(std::vector<int>{}) {}
+// is built with GPU support on a CUDA platform.
 
 #ifndef LBANN_PERMUTE_LAYER_INSTANTIATE
 #define PROTO(T) extern template class PermuteLayer<T>
