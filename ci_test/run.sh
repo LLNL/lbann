@@ -29,7 +29,7 @@ while :; do
     shift
 done
 
-echo "I think that I will use spack ${HOME}/${SPACK_REPO}"
+# Use the spack provided by the CI
 source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
 
 # "spack" is just a shell function; it may not be exported to this
