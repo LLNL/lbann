@@ -198,7 +198,7 @@ set_center_specific_spack_dependencies()
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_COMPILER="%clang@amd"
+                CENTER_COMPILER="%clang@13.0.0-amd"
                 CENTER_DEPENDENCIES="^openmpi"
 #                CENTER_DEPENDENCIES="^openmpi ^hwloc@2.3.0"
                 ;;
@@ -300,7 +300,7 @@ EOF
 cat <<EOF  >> ${yaml}
   compilers:
     - compiler:
-        spec: clang@amd
+        spec: clang@13.0.0-amd
         paths:
           cc: /opt/rocm-4.5.2/llvm/bin/clang
           cxx: /opt/rocm-4.5.2/llvm/bin/clang++
@@ -308,7 +308,7 @@ cat <<EOF  >> ${yaml}
           fc: /usr/tce/bin/gfortran
         flags: {}
         operating_system: rhel8
-        target: zen2
+        target: x86_64
         modules: []
         environment: {}
         extra_rpaths: []
