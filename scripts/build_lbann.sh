@@ -518,11 +518,6 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     CMD="spack env create ${LBANN_ENV}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-
-    # Force the environment to concretize together with any additional packages
-    CMD="spack config add concretizer:unify:true"
-    echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
 
 if [[ -z "${USER_BUILD:-}" ]]; then
@@ -550,6 +545,8 @@ if [[ -n "${CLEAN_DEPS:-}" ]]; then
     uninstall_specific_versions "dihydrogen" "${DIHYDROGEN_VER}"
 fi
 
+##########################################################################################
+# Activate the environment
 CMD="spack env activate -p ${LBANN_ENV}"
 echo ${CMD} | tee -a ${LOG}
 if [[ -z "${DRY_RUN:-}" ]]; then
@@ -558,6 +555,15 @@ if [[ -z "${DRY_RUN:-}" ]]; then
         exit 1
     fi
     ${CMD} || exit_on_failure "${CMD}"
+fi
+
+##########################################################################################
+# Force a unified environment
+if [[ -n "${INSTALL_DEPS:-}" ]]; then
+    # Force the environment to concretize together with any additional packages
+    CMD="spack config add concretizer:unify:true"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
 
 ##########################################################################################
