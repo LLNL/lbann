@@ -645,7 +645,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
 
     # Limit the scope of the external search to minimize overhead time
     # Use standard tags for common packages
-    CMD="spack external find --scope env:${LBANN_ENV} --tag core-packages --tag build-tools"
+    CMD="spack external find --scope env:${LBANN_ENV} --tag core-packages --tag build-tools --tag rocm"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 

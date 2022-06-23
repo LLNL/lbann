@@ -198,9 +198,8 @@ set_center_specific_spack_dependencies()
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_COMPILER="%clang@13.0.0-amd"
-                CENTER_DEPENDENCIES="^openmpi"
-#                CENTER_DEPENDENCIES="^openmpi ^hwloc@2.3.0"
+                CENTER_COMPILER="%rocmcc@4.5.2"
+                CENTER_DEPENDENCIES="^openmpi@4.1.1 ^hip@4.5.2"
                 ;;
             *)
                 echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
@@ -298,33 +297,7 @@ EOF
                 ;;
             "zen" | "zen2")
 cat <<EOF  >> ${yaml}
-  compilers:
-    - compiler:
-        spec: clang@13.0.0-amd
-        paths:
-          cc: /opt/rocm-4.5.2/llvm/bin/clang
-          cxx: /opt/rocm-4.5.2/llvm/bin/clang++
-          f77: /usr/tce/bin/gfortran
-          fc: /usr/tce/bin/gfortran
-        flags: {}
-        operating_system: rhel8
-        target: x86_64
-        modules: []
-        environment: {}
-        extra_rpaths: []
   packages:
-    hip:
-      buildable: False
-      version:
-      - 4.5.2
-      externals:
-      - spec: hip@4.5.2 arch=${spack_arch}
-        prefix: /opt/rocm-4.5.2/hip
-        extra_attributes:
-          compilers:
-            c: /opt/rocm-4.5.2/llvm/bin/clang
-            c++: /opt/rocm-4.5.2/llvm/bin/clang++
-            hip: /opt/rocm-4.5.2/hip/bin/hipcc
     hipcub:
       buildable: False
       version:
@@ -332,17 +305,6 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: hipcub@4.5.2 arch=${spack_arch}
         prefix: /opt/rocm-4.5.2/hipcub
-        extra_attributes:
-          compilers:
-            c: /opt/rocm-4.5.2/llvm/bin/clang
-            c++: /opt/rocm-4.5.2/llvm/bin/clang++
-    hsa-rocr-dev:
-      buildable: False
-      version:
-      - 4.5.2
-      externals:
-      - spec: hsa-rocr-dev@4.5.2 arch=${spack_arch}
-        prefix: /opt/rocm-4.5.2
         extra_attributes:
           compilers:
             c: /opt/rocm-4.5.2/llvm/bin/clang
