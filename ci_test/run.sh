@@ -29,6 +29,9 @@ while :; do
     shift
 done
 
+# Use the spack provided by the CI
+source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
+
 # "spack" is just a shell function; it may not be exported to this
 # scope. Just to be sure, reload the shell integration.
 if [ -n "${SPACK_ROOT}" ]; then
@@ -38,8 +41,8 @@ else
     exit 1
 fi
 
-SPACK_VERSION=$(spack --version | sed 's/-.*//g')
-MIN_SPACK_VERSION=0.16.0
+SPACK_VERSION=$(spack --version | sed 's/-.*//g' | sed 's/[(].*[)]//g')
+MIN_SPACK_VERSION=0.18.0
 
 source ${LBANN_DIR}/scripts/utilities.sh
 

@@ -67,6 +67,7 @@ build and install:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - export BUILD_TASKS=$(($(nproc) + 2))
+    - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -d
       -l ${SPACK_ENV_NAME} --test --clean-build -j ${BUILD_TASKS} --
@@ -145,7 +146,7 @@ remove spack environment:
   when: always
   script:
     - echo "== CLEANING UP SPACK RESOURCES =="
-    - source ${HOME}/spack_repos/spack_${SYSTEM_NAME}.git/share/spack/setup-env.sh
+    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - export SPACK_ARCH_TARGET=$(spack arch -t)
     - export FULL_ENV_NAME=lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
     - |
@@ -188,7 +189,7 @@ release allocation:
 
     # These are system-specific specs that should be forwarded to the
     # build script
-    SPACK_SPECS: "+rocm +half +fft"
+    SPACK_SPECS: "+rocm"
 
     # This variable is the name used to identify the job in the Slurm
     # queue. We need this to be able to access the correct jobid.
