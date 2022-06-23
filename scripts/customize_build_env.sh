@@ -69,7 +69,7 @@ set_center_specific_gpu_arch()
                 ;;
             "zen" | "zen2") # Corona
                 # Use a HIP Clang variant
-                GPU_ARCH_VARIANTS="amdgpu_target=gfx906 %clang@amd"
+                GPU_ARCH_VARIANTS="amdgpu_target=gfx906"
                 ;;
             *)
                 ;;
