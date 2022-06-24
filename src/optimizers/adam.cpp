@@ -124,7 +124,7 @@ void adam<TensorDataType>::setup(WeightsType* w) {
 }
 
 template <typename TensorDataType>
-void adam<TensorDataType>::write_specific_proto(
+void adam<TensorDataType>::write_proto(
   lbann_data::Optimizer& proto) const
 {
   auto* opt = proto.mutable_adam();

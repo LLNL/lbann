@@ -96,7 +96,7 @@ void sgd<TensorDataType>::setup(WeightsType* w) {
 }
 
 template <typename TensorDataType>
-void sgd<TensorDataType>::write_specific_proto(
+void sgd<TensorDataType>::write_proto(
   lbann_data::Optimizer& proto) const
 {
   auto* opt = proto.mutable_sgd();

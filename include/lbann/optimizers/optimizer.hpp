@@ -220,10 +220,8 @@ public:
 
   ///@}
 
-protected:
-
-  /** @brief Add layer specific data to prototext */
-  virtual void write_specific_proto(lbann_data::Optimizer& proto) const = 0;
+  /** @brief Add optimizer data to prototext */
+  virtual void write_proto(lbann_data::Optimizer& proto) const = 0;
 
   /** @brief Manage gradient information. */
   class GradientHelper {

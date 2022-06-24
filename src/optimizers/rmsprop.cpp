@@ -71,7 +71,7 @@ void rmsprop<TensorDataType>::setup(WeightsType* w) {
 }
 
 template <typename TensorDataType>
-void rmsprop<TensorDataType>::write_specific_proto(
+void rmsprop<TensorDataType>::write_proto(
   lbann_data::Optimizer& proto) const
 {
   auto* opt = proto.mutable_rmsprop();

@@ -64,7 +64,7 @@ void adagrad<TensorDataType>::setup(WeightsType* w) {
 }
 
 template <typename TensorDataType>
-void adagrad<TensorDataType>::write_specific_proto(
+void adagrad<TensorDataType>::write_proto(
   lbann_data::Optimizer& proto) const
 {
   auto* opt = proto.mutable_adagrad();

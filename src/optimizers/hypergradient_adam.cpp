@@ -100,7 +100,7 @@ void hypergradient_adam<TensorDataType>::setup(WeightsType* w) {
 }
 
 template <typename TensorDataType>
-void hypergradient_adam<TensorDataType>::write_specific_proto(
+void hypergradient_adam<TensorDataType>::write_proto(
   lbann_data::Optimizer& proto) const
 {
   auto* opt = proto.mutable_hypergradient_adam();

@@ -116,14 +116,7 @@ public:
 
   ///@}
 
-  /** @brief Add optimizer to prototext */
-  void write_proto(lbann_data::Optimizer& proto) const
-  { this->write_specific_proto(proto); }
-
 protected:
-
-  /** @brief Add optimizer specific data to prototext */
-  virtual void write_specific_proto(lbann_data::Optimizer& proto) const = 0;
 
   data_type_optimizer(const data_type_optimizer& other);
   data_type_optimizer& operator=(const data_type_optimizer& other);

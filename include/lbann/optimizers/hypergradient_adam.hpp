@@ -97,10 +97,10 @@ public:
   using OptimizerType::setup;
   void setup(WeightsType* w = nullptr) override;
 
-protected:
+  /** Add optimizer data to prototext */
+  void write_proto(lbann_data::Optimizer& opt) const final;
 
-  /** Add optimizer specific data to prototext */
-  void write_specific_proto(lbann_data::Optimizer& opt) const final;
+protected:
 
   /** @brief Computation for an optimization step. */
   void step_compute(AbsDistMatrixType& values,

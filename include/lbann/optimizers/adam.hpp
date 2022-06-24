@@ -143,10 +143,10 @@ public:
 
   ///@}
 
-protected:
+  /** Add optimizer data to prototext */
+  void write_proto(lbann_data::Optimizer& opt) const final;
 
-  /** Add optimizer specific data to prototext */
-  void write_specific_proto(lbann_data::Optimizer& opt) const final;
+protected:
 
   friend cereal::access;
 
