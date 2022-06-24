@@ -14,7 +14,8 @@ from os.path import join
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, current_dir)
-import data.cifar10
+sys.path.insert(0, join(current_dir, 'data'));
+import cifar10
 import search.model as cifar
 
 Genotype = namedtuple('Genotype', 'normal normal_concat reduce reduce_concat')
