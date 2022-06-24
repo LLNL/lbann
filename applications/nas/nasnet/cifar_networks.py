@@ -15,7 +15,7 @@ current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, current_dir)
 sys.path.insert(0, join(current_dir, 'data'));
-import cifar10
+import cifar10 as cifar10data
 import search.model as cifar
 
 Genotype = namedtuple('Genotype', 'normal normal_concat reduce reduce_concat')
@@ -85,7 +85,7 @@ def create_networks(exp_dir,
                     ):
         trainer_id = 0
         # Setup shared data reader and optimizer
-        reader = data.cifar10.make_data_reader(num_classes=10)
+        reader = cifar10data.make_data_reader(num_classes=10)
         opt = lbann.Adam(learn_rate=0.0002,beta1=0.9,beta2=0.99,eps=1e-8)
         genotypes = generate_genomes(pop_size,num_blocks,num_ops,num_cells)
         for g in genotypes:
