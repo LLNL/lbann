@@ -230,19 +230,18 @@ void convolution_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) co
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_convolution();
   msg->set_num_dims(this->get_conv_dims().size());
-  msg->set_num_output_channels(this->m_output_channels);
-  msg->set_has_vectors(true);
-  protobuf::assign_to_repeated(*msg->mutable_conv_dims(),
-                               this->get_conv_dims());
-  protobuf::assign_to_repeated(*msg->mutable_conv_pads(),
-                               this->get_pads());
-  protobuf::assign_to_repeated(*msg->mutable_conv_strides(),
+  msg->set_out_channels(this->m_output_channels);
+  protobuf::assign_to_repeated(*msg->mutable_kernel_size(),
+                               this->get_kernel_dims());
+  protobuf::assign_to_repeated(*msg->mutable_stride(),
                                this->get_strides());
-  protobuf::assign_to_repeated(*msg->mutable_conv_dilations(),
-                               this->get_dilations());
+  protobuf::assign_to_repeated(*msg->mutable_padding(),
+                               this->get_pads());
+  msg->mutable_groups()->set_value(this->m_groups);
   auto const has_bias = (this->num_weights() > 1UL);
-  msg->set_has_bias(has_bias);
-  msg->set_num_groups(this->m_groups);
+  msg->mutable_has_bias()->set_value(has_bias);
+  protobuf::assign_to_repeated(*msg->mutable_dilation(),
+                               this->get_dilations());
 #ifdef LBANN_HAS_DNN_LIB
   msg->set_conv_tensor_op_mode(dnn_lib::convert_to_proto_math_type(
                                  this->m_convolution_math_type));
