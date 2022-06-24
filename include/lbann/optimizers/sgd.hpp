@@ -122,6 +122,9 @@ public:
 
 protected:
 
+  /** Add optimizer specific data to prototext */
+  void write_specific_proto(lbann_data::Optimizer& opt) const final;
+
   /** @brief Default constructor.
    *  @details This constructor exists as an implementation detail of
    *  the serialization code. It is not for general use.

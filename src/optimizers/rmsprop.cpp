@@ -71,6 +71,16 @@ void rmsprop<TensorDataType>::setup(WeightsType* w) {
 }
 
 template <typename TensorDataType>
+void rmsprop<TensorDataType>::write_specific_proto(
+  lbann_data::Optimizer& proto) const
+{
+  auto* opt = proto.mutable_rmsprop();
+  opt->set_learn_rate(this->get_learning_rate());
+  opt->set_decay_rate(m_decay_rate);
+  opt->set_eps(m_eps);
+}
+
+template <typename TensorDataType>
 void rmsprop<TensorDataType>::step_compute(AbsDistMatrixType& values,
                                            const AbsDistMatrixType& gradient) {
   switch (values.GetLocalDevice()) {

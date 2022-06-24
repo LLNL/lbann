@@ -41,7 +41,7 @@
 #endif //LBANN_HAS_ONNX
 
 namespace lbann_data {
-class WeightsData;
+class Weights;
 }
 
 namespace lbann {
@@ -257,7 +257,7 @@ public:
   virtual bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list) = 0;
 
   /** Write weights to proto file */
-  void write_proto(lbann_data::WeightsData& proto) const;
+  virtual void write_proto(lbann_data::Weights& proto) const = 0;
 
   /** @name Serialization */
   ///@{

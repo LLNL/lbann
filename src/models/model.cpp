@@ -2639,9 +2639,39 @@ void model::write_proto(lbann_data::Model& proto)
 
   proto.Clear();
   proto.set_name(this->get_name());
-  //proto.set_objective_function(this->get_objective_function());
-  //proto.add_metric(this->get_metrics());
-  //proto.set_data_layout();
+  this->get_objective_function()->write_proto(*proto.mutable_objective_function());
+  for (auto const* metric : this->get_metrics()){
+    auto* met = proto.add_metric()->mutable_layer_metric();
+    met->set_name(metric->name());
+    met->set_unit(metric->get_unit());
+  }
+  //FIXME(KLG): Data layout is a single string but I have to get it from the layers?
+  auto layout = this->get_layer(0).get_data_layout();
+  switch (layout) {
+  case data_layout::DATA_PARALLEL:
+    proto.set_data_layout("data_parallel");
+    break;
+  case data_layout::MODEL_PARALLEL:
+    proto.set_data_layout("model_parallel");
+    break;
+  default:
+    LBANN_ERROR("Invalid data layout");
+  }
+  for (auto* layer : this->get_layers()) {
+    layer->write_proto(*proto.add_layer());
+  }
+  for (auto* weights : this->get_weights()) {
+    weights->write_proto(*proto.add_weights());
+  }
+  for (auto* callback : this->get_callbacks()) {
+    callback->write_proto(*proto.add_callback());
+  }
+  for (auto const& l : m_layers) {
+    auto* l_msg = proto.add_layer();
+    l->write_proto(*l_msg);
+  }
+
+  //FIXME(KLG): unused proto fields?
   //proto.set_num_epochs();
   //proto.set_num_batches();
   //proto.set_evaluation_frequency();
@@ -2651,20 +2681,7 @@ void model::write_proto(lbann_data::Model& proto)
   //proto.subgraph_parent_grid_resources();
 
   //proto.set_disable_cuda();
-
-  //proto.add_layer();
-
-  //proto.add_weights();
-
-  //proto.add_callback();
-
   //proto.set_summarizer();
-
-  for (auto const& l : m_layers)
-  {
-    auto* l_msg = proto.add_layer();
-    l->write_proto(*l_msg);
-  }
 
 }
 

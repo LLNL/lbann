@@ -99,6 +99,9 @@ public:
 
 protected:
 
+  /** Add optimizer specific data to prototext */
+  void write_specific_proto(lbann_data::Optimizer& opt) const final;
+
   /** @brief Computation for an optimization step. */
   void step_compute(AbsDistMatrixType& values,
                     const AbsDistMatrixType& gradient) override;

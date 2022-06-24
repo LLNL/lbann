@@ -63,6 +63,13 @@ void constant_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
 }
 
 template <typename TensorDataType>
+void constant_initializer<TensorDataType>::write_specific_proto(
+  lbann_data::Initializer& init) const
+{
+  init.mutable_constant_initializer()->set_value(m_value);
+}
+
+template <typename TensorDataType>
 void value_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
 
   // Check that number of values matches weights matrix
@@ -103,6 +110,14 @@ void value_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
 #endif // HYDROGEN_HAVE_GPU
   }
 
+}
+
+template <typename TensorDataType>
+void value_initializer<TensorDataType>::write_specific_proto(
+  lbann_data::Initializer& init) const
+{
+  protobuf::assign_to_repeated(*init.mutable_value_initializer()->
+                               mutable_values(), m_values);
 }
 
 template <typename TensorDataType>
@@ -204,6 +219,13 @@ void numpy_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
 }
 
 template <typename TensorDataType>
+void numpy_initializer<TensorDataType>::write_specific_proto(
+  lbann_data::Initializer& init) const
+{
+  init.mutable_numpy_initializer()->set_file(m_file);
+}
+
+template <typename TensorDataType>
 description uniform_initializer<TensorDataType>::get_description() const {
   auto desc = data_type_weights_initializer<TensorDataType>::get_description();
   std::stringstream ss;
@@ -220,6 +242,15 @@ void uniform_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
 }
 
 template <typename TensorDataType>
+void uniform_initializer<TensorDataType>::write_specific_proto(
+  lbann_data::Initializer& init) const
+{
+  auto* msg = init.mutable_uniform_initializer();
+  msg->set_min(m_min);
+  msg->set_max(m_max);
+}
+
+template <typename TensorDataType>
 description normal_initializer<TensorDataType>::get_description() const {
   auto desc = data_type_weights_initializer<TensorDataType>::get_description();
   desc.add("Mean", m_mean);
@@ -231,6 +262,15 @@ template <typename TensorDataType>
 void normal_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
   gaussian_fill(matrix, matrix.Height(), matrix.Width(),
                 m_mean, m_standard_deviation);
+}
+
+template <typename TensorDataType>
+void normal_initializer<TensorDataType>::write_specific_proto(
+  lbann_data::Initializer& init) const
+{
+  auto* msg = init.mutable_normal_initializer();
+  msg->set_mean(m_mean);
+  msg->set_standard_deviation(m_standard_deviation);
 }
 
 //

@@ -124,6 +124,17 @@ void adam<TensorDataType>::setup(WeightsType* w) {
 }
 
 template <typename TensorDataType>
+void adam<TensorDataType>::write_specific_proto(
+  lbann_data::Optimizer& proto) const
+{
+  auto* opt = proto.mutable_adam();
+  opt->set_learn_rate(this->get_learning_rate());
+  opt->set_beta1(m_beta1);
+  opt->set_beta2(m_beta2);
+  opt->set_eps(m_eps);
+}
+
+template <typename TensorDataType>
 void adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
                                         const AbsDistMatrixType& gradient) {
   static const auto one = TensorDataType(1.);

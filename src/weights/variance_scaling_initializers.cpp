@@ -168,13 +168,43 @@ TensorDataType glorot_initializer<TensorDataType>::get_variance(El::Int fan_in, 
 }
 
 template <typename TensorDataType>
+void glorot_initializer<TensorDataType>::write_specific_proto(
+  lbann_data::Initializer& init) const
+{
+  if (this->get_prob_dist() == probability_distribution::uniform)
+    init.mutable_glorot_uniform_initializer();
+  else
+    init.mutable_glorot_normal_initializer();
+}
+
+template <typename TensorDataType>
 TensorDataType he_initializer<TensorDataType>::get_variance(El::Int fan_in, El::Int fan_out) {
   return El::To<TensorDataType>(2.0) / El::To<TensorDataType>(fan_in);
 }
 
 template <typename TensorDataType>
+void he_initializer<TensorDataType>::write_specific_proto(
+  lbann_data::Initializer& init) const
+{
+  if (this->get_prob_dist() == probability_distribution::uniform)
+    init.mutable_he_uniform_initializer();
+  else
+    init.mutable_he_normal_initializer();
+}
+
+template <typename TensorDataType>
 TensorDataType lecun_initializer<TensorDataType>::get_variance(El::Int fan_in, El::Int fan_out) {
   return El::TypeTraits<TensorDataType>::One() / El::To<TensorDataType>(fan_in);
+}
+
+template <typename TensorDataType>
+void lecun_initializer<TensorDataType>::write_specific_proto(
+  lbann_data::Initializer& init) const
+{
+  if (this->get_prob_dist() == probability_distribution::uniform)
+    init.mutable_lecun_uniform_initializer();
+  else
+    init.mutable_lecun_normal_initializer();
 }
 
 //

@@ -145,8 +145,8 @@ public:
 
 protected:
 
-  /** Add optimizer specific data to prototext */
-  void write_specific_proto(lbann_data::Optimizer& opt) const final;
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Optimizer& proto) const final;
 
   friend cereal::access;
 

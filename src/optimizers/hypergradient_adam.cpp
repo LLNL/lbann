@@ -100,6 +100,18 @@ void hypergradient_adam<TensorDataType>::setup(WeightsType* w) {
 }
 
 template <typename TensorDataType>
+void hypergradient_adam<TensorDataType>::write_specific_proto(
+  lbann_data::Optimizer& proto) const
+{
+  auto* opt = proto.mutable_hypergradient_adam();
+  opt->set_init_learning_rate(this->get_learning_rate());
+  opt->set_hyper_learning_rate(m_hyper_learning_rate);
+  opt->set_beta1(m_beta1);
+  opt->set_beta2(m_beta2);
+  opt->set_eps(m_eps);
+}
+
+template <typename TensorDataType>
 void hypergradient_adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
                                                       const AbsDistMatrixType& gradient) {
   if (values.GetLocalDevice() != El::Device::CPU) {

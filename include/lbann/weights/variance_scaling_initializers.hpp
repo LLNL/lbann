@@ -67,6 +67,10 @@ public:
   /** Set fan-out parameter. */
   void set_fan_out(El::Int fan_out) { m_fan_out = fan_out; }
 
+  /** Get probability distribution. */
+  probability_distribution get_prob_dist() const
+  { return m_prob_dist; }
+
 private:
   /** Get probability distribution variance. */
   virtual TensorDataType get_variance(El::Int fan_in, El::Int fan_out) = 0;
@@ -95,6 +99,11 @@ public:
   glorot_initializer(probability_distribution prob_dist)
     : BaseType(prob_dist) {}
   std::string get_type() const override { return "Glorot"; }
+
+protected:
+  /** @brief Add initializer specific data to prototext */
+  void write_specific_proto(lbann_data::Initializer& init) const final;
+
 private:
   TensorDataType get_variance(El::Int fan_in, El::Int fan_out) override;
 };
@@ -110,6 +119,11 @@ public:
   he_initializer(probability_distribution prob_dist)
     : BaseType(prob_dist) {}
   std::string get_type() const override { return "He"; }
+
+protected:
+  /** @brief Add initializer specific data to prototext */
+  void write_specific_proto(lbann_data::Initializer& init) const final;
+
 private:
   TensorDataType get_variance(El::Int fan_in, El::Int fan_out) override;
 };
@@ -125,6 +139,11 @@ public:
   lecun_initializer(probability_distribution prob_dist)
     : BaseType(prob_dist) {}
   std::string get_type() const override { return "LeCun"; }
+
+protected:
+  /** @brief Add initializer specific data to prototext */
+  void write_specific_proto(lbann_data::Initializer& init) const final;
+
 private:
   TensorDataType get_variance(El::Int fan_in, El::Int fan_out) override;
 };

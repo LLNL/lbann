@@ -42,7 +42,6 @@
 namespace lbann {
 namespace protobuf {
 
-// FIXME(KLG): Is this the right spot for this?
 template <typename T, typename ContainerT>
 void assign_to_repeated(google::protobuf::RepeatedField<T>& field,
                         ContainerT const& values)

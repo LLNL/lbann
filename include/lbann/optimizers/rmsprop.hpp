@@ -81,6 +81,9 @@ public:
 
 protected:
 
+  /** Add optimizer specific data to prototext */
+  void write_specific_proto(lbann_data::Optimizer& opt) const final;
+
   friend cereal::access;
 
   /** @brief Default constructor.

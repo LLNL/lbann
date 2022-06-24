@@ -31,10 +31,6 @@
 #include "lbann/weights/initializer.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
 
-namespace lbann_data {
-class WeightsData;
-}
-
 namespace cereal
 {
   class access;
@@ -156,7 +152,7 @@ public:
   bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list) override;
 
   /** Write weights to proto file */
-  void write_proto(lbann_data::WeightsData& proto) const;
+  void write_proto(lbann_data::Weights& proto) const final;
 
   /** @name Serialization */
   ///@{
