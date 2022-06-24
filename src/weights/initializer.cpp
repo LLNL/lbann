@@ -63,7 +63,7 @@ void constant_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
 }
 
 template <typename TensorDataType>
-void constant_initializer<TensorDataType>::write_specific_proto(
+void constant_initializer<TensorDataType>::write_proto(
   lbann_data::Initializer& init) const
 {
   init.mutable_constant_initializer()->set_value(m_value);
@@ -113,7 +113,7 @@ void value_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
 }
 
 template <typename TensorDataType>
-void value_initializer<TensorDataType>::write_specific_proto(
+void value_initializer<TensorDataType>::write_proto(
   lbann_data::Initializer& init) const
 {
   protobuf::assign_to_repeated(*init.mutable_value_initializer()->
@@ -219,7 +219,7 @@ void numpy_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
 }
 
 template <typename TensorDataType>
-void numpy_initializer<TensorDataType>::write_specific_proto(
+void numpy_initializer<TensorDataType>::write_proto(
   lbann_data::Initializer& init) const
 {
   init.mutable_numpy_initializer()->set_file(m_file);
@@ -242,7 +242,7 @@ void uniform_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
 }
 
 template <typename TensorDataType>
-void uniform_initializer<TensorDataType>::write_specific_proto(
+void uniform_initializer<TensorDataType>::write_proto(
   lbann_data::Initializer& init) const
 {
   auto* msg = init.mutable_uniform_initializer();
@@ -265,7 +265,7 @@ void normal_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
 }
 
 template <typename TensorDataType>
-void normal_initializer<TensorDataType>::write_specific_proto(
+void normal_initializer<TensorDataType>::write_proto(
   lbann_data::Initializer& init) const
 {
   auto* msg = init.mutable_normal_initializer();

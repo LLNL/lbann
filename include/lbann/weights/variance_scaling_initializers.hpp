@@ -100,9 +100,8 @@ public:
     : BaseType(prob_dist) {}
   std::string get_type() const override { return "Glorot"; }
 
-protected:
-  /** @brief Add initializer specific data to prototext */
-  void write_specific_proto(lbann_data::Initializer& init) const final;
+  /** @brief Add initializer data to prototext */
+  void write_proto(lbann_data::Initializer& init) const final;
 
 private:
   TensorDataType get_variance(El::Int fan_in, El::Int fan_out) override;
@@ -120,9 +119,8 @@ public:
     : BaseType(prob_dist) {}
   std::string get_type() const override { return "He"; }
 
-protected:
-  /** @brief Add initializer specific data to prototext */
-  void write_specific_proto(lbann_data::Initializer& init) const final;
+  /** @brief Add initializer data to prototext */
+  void write_proto(lbann_data::Initializer& init) const final;
 
 private:
   TensorDataType get_variance(El::Int fan_in, El::Int fan_out) override;
@@ -140,9 +138,8 @@ public:
     : BaseType(prob_dist) {}
   std::string get_type() const override { return "LeCun"; }
 
-protected:
-  /** @brief Add initializer specific data to prototext */
-  void write_specific_proto(lbann_data::Initializer& init) const final;
+  /** @brief Add initializer data to prototext */
+  void write_proto(lbann_data::Initializer& init) const final;
 
 private:
   TensorDataType get_variance(El::Int fan_in, El::Int fan_out) override;

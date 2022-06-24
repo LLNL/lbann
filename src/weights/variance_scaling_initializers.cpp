@@ -168,7 +168,7 @@ TensorDataType glorot_initializer<TensorDataType>::get_variance(El::Int fan_in, 
 }
 
 template <typename TensorDataType>
-void glorot_initializer<TensorDataType>::write_specific_proto(
+void glorot_initializer<TensorDataType>::write_proto(
   lbann_data::Initializer& init) const
 {
   if (this->get_prob_dist() == probability_distribution::uniform)
@@ -183,7 +183,7 @@ TensorDataType he_initializer<TensorDataType>::get_variance(El::Int fan_in, El::
 }
 
 template <typename TensorDataType>
-void he_initializer<TensorDataType>::write_specific_proto(
+void he_initializer<TensorDataType>::write_proto(
   lbann_data::Initializer& init) const
 {
   if (this->get_prob_dist() == probability_distribution::uniform)
@@ -198,7 +198,7 @@ TensorDataType lecun_initializer<TensorDataType>::get_variance(El::Int fan_in, E
 }
 
 template <typename TensorDataType>
-void lecun_initializer<TensorDataType>::write_specific_proto(
+void lecun_initializer<TensorDataType>::write_proto(
   lbann_data::Initializer& init) const
 {
   if (this->get_prob_dist() == probability_distribution::uniform)

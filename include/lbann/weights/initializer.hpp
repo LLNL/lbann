@@ -80,13 +80,7 @@ public:
   virtual void fill(AbsDistMatrixType& matrix) = 0;
 
   /** @brief Add initializer to prototext */
-  void write_proto(lbann_data::Initializer& proto) const
-  { this->write_specific_proto(proto); }
-
-protected:
-
-  /** @brief Add initializer specific data to prototext */
-  virtual void write_specific_proto(lbann_data::Initializer& proto) const = 0;
+  virtual void write_proto(lbann_data::Initializer& proto) const = 0;
 
 };
 
@@ -112,9 +106,8 @@ public:
   description get_description() const override;
   void fill(AbsDistMatrixType& matrix) override;
 
-protected:
-  /** @brief Add initializer specific data to prototext */
-  void write_specific_proto(lbann_data::Initializer& init) const final;
+  /** @brief Add initializer data to prototext */
+  void write_proto(lbann_data::Initializer& init) const final;
 
 private:
 
@@ -151,9 +144,8 @@ public:
   std::string get_type() const override { return "value"; }
   void fill(AbsDistMatrixType& matrix) override;
 
-protected:
-  /** @brief Add initializer specific data to prototext */
-  void write_specific_proto(lbann_data::Initializer& init) const final;
+  /** @brief Add initializer data to prototext */
+  void write_proto(lbann_data::Initializer& init) const final;
 
 private:
 
@@ -187,9 +179,8 @@ public:
   std::string get_type() const override { return "NumPy"; }
   void fill(AbsDistMatrixType& matrix) override;
 
-protected:
-  /** @brief Add initializer specific data to prototext */
-  void write_specific_proto(lbann_data::Initializer& init) const final;
+  /** @brief Add initializer data to prototext */
+  void write_proto(lbann_data::Initializer& init) const final;
 
 private:
 
@@ -221,9 +212,8 @@ public:
   description get_description() const override;
   void fill(AbsDistMatrixType& matrix) override;
 
-protected:
-  /** @brief Add initializer specific data to prototext */
-  void write_specific_proto(lbann_data::Initializer& init) const final;
+  /** @brief Add initializer data to prototext */
+  void write_proto(lbann_data::Initializer& init) const final;
 
 private:
 
@@ -259,9 +249,8 @@ public:
   description get_description() const override;
   void fill(AbsDistMatrixType& matrix) override;
 
-protected:
-  /** @brief Add initializer specific data to prototext */
-  void write_specific_proto(lbann_data::Initializer& init) const final;
+  /** @brief Add initializer data to prototext */
+  void write_proto(lbann_data::Initializer& init) const final;
 
 private:
 
