@@ -40,7 +40,7 @@ void embedding_layer<TensorDataType,Layout,Device>::fp_compute() {
   const size_t input_size = this->get_input_size();
   const size_t local_mini_batch_size = local_input.Width();
 
-  // Populate out put matrix with values from embedding matrix
+  // Populate output matrix with values from embedding matrix
   MatType embedding_v, output_v;
   for (size_t j=0; j<local_mini_batch_size; ++j) {
     for (size_t i=0; i<input_size; ++i) {
