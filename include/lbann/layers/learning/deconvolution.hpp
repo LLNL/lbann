@@ -92,9 +92,6 @@ public:
 
   El::Device get_device_allocation() const override { return Device; }
 
-  /** Add layer specific data to prototext */
-  void write_specific_proto(lbann_data::Layer& proto) const final;
-
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 
   /** @name Serialization */
@@ -106,6 +103,9 @@ public:
   ///@}
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
   deconvolution_layer();

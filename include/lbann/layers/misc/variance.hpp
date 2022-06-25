@@ -89,9 +89,6 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  /** Add layer specific data to prototext */
-  void write_specific_proto(lbann_data::Layer& proto) const final;
-
   description get_description() const override {
     auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Biased", m_biased);
@@ -99,6 +96,9 @@ public:
   }
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
   variance_layer()

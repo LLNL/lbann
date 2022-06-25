@@ -72,9 +72,6 @@ public:
   void fill_onnx_node(onnx::GraphProto& graph) const override;
 #endif // LBANN_HAS_ONNX
 
-  /** Add layer specific data to prototext */
-  void write_specific_proto(lbann_data::Layer& proto) const final;
-
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims({1});
@@ -102,6 +99,9 @@ public:
   void fp_compute() override;
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
   categorical_accuracy_layer()

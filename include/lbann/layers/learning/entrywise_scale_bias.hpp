@@ -85,9 +85,6 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  /** Add layer specific data to prototext */
-  void write_specific_proto(lbann_data::Layer& proto) const final;
-
   /** @name Serialization */
   ///@{
 
@@ -99,6 +96,9 @@ public:
   void setup_data(size_t max_mini_batch_size) override;
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   void fp_compute() override;
   void bp_compute() override;

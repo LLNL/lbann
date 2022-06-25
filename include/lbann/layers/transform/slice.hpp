@@ -68,9 +68,6 @@ public:
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
 
-  /** Add layer specific data to prototext */
-  void write_specific_proto(lbann_data::Layer& proto) const final;
-
   description get_description() const override;
 
   void setup_slice_points(size_t slice_dim,
@@ -88,6 +85,9 @@ public:
   }
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   El::SyncInfo<Device> syncSubGridCommunication = El::SyncInfo<Device>();
 

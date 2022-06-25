@@ -89,14 +89,14 @@ public:
   }
   El::Device get_device_allocation() const override { return Device; }
 
-  /** Add layer specific data to prototext */
-  void write_specific_proto(lbann_data::Layer& proto) const final;
-
   description get_description() const override {
     return data_type_layer<TensorDataType>::get_description();
   }
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
   dft_abs_layer()

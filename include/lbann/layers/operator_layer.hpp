@@ -81,9 +81,6 @@ public:
   data_layout get_data_layout() const final;
   El::Device get_device_allocation() const final;
 
-  /** Add layer specific data to prototext */
-  void write_specific_proto(lbann_data::Layer& proto) const final;
-
   void fp_compute() final;
   void bp_compute() final;
 
@@ -91,6 +88,11 @@ public:
 
   template <typename ArchiveT>
   void serialize(ArchiveT&);
+
+protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
 private:
   friend cereal::access;

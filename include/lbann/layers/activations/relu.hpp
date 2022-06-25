@@ -65,9 +65,6 @@ public:
   std::string get_onnx_op_type() const override { return "Relu"; }
 #endif // LBANN_HAS_ONNX
 
-  /** Add layer specific data to prototext */
-  void write_specific_proto(lbann_data::Layer& proto) const final;
-
   /** @name Serialization */
   ///@{
 
@@ -77,6 +74,10 @@ public:
   ///@}
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   void fp_compute() override;
   void bp_compute() override;
 #ifdef LBANN_HAS_DISTCONV

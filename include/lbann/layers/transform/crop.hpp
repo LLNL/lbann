@@ -105,9 +105,6 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Add layer specific data to prototext */
-  void write_specific_proto(lbann_data::Layer& proto) const final;
-
   void setup_data(size_t max_mini_batch_size) override {
     data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
     const auto& input = this->get_prev_activations();
@@ -160,6 +157,9 @@ public:
   }
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
   crop_layer()

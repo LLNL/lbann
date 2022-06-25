@@ -91,9 +91,6 @@ public:
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
 
-  /** Add layer specific data to prototext */
-  void write_specific_proto(lbann_data::Layer& proto) const final;
-
   description get_description() const override;
 
   /** @name Serialization */
@@ -105,6 +102,9 @@ public:
   ///@}
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
   embedding_layer();

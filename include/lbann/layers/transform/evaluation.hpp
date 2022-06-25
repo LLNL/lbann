@@ -123,10 +123,11 @@ public:
   void fill_onnx_node(onnx::GraphProto& graph) const override;
 #endif // LBANN_HAS_ONNX
 
+protected:
+
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
-protected:
   friend class cereal::access;
   evaluation_layer()
     : evaluation_layer(nullptr)

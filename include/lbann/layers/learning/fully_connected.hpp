@@ -96,9 +96,6 @@ public:
   void fill_onnx_node(onnx::GraphProto& graph) const override;
 #endif //LBANN_HAS_ONNX
 
-  /** Add layer specific data to prototext */
-  void write_specific_proto(lbann_data::Layer& proto) const final;
-
   description get_description() const override;
 
   /** @name Serialization */
@@ -110,6 +107,9 @@ public:
   ///@}
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
   fully_connected_layer();

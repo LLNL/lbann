@@ -78,9 +78,6 @@ public:
 
   El::Device get_device_allocation() const final;
 
-  /** Add layer specific data to prototext */
-  void write_specific_proto(lbann_data::Layer& proto) const final;
-
   void setup_dims(DataReaderMetaData& dr_metadata) final;
 
   void setup_data(size_t max_mini_batch_size) final;
@@ -92,6 +89,11 @@ public:
   void serialize(ArchiveT& ar);
 
   ///@}
+
+protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
 private:
   /** Drop out units in forward propagation. */

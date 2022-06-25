@@ -69,9 +69,6 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Add layer specific data to prototext */
-  void write_specific_proto(lbann_data::Layer& proto) const final;
-
   description get_description() const override {
     auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("k", m_k);
@@ -79,6 +76,9 @@ public:
   }
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
   top_k_categorical_accuracy_layer()
