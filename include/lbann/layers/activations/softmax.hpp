@@ -246,7 +246,7 @@ void softmax_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const 
       msg->set_softmax_mode("channel");
       break;
     default:
-      LBANN_ERROR("Invalid softmax mode requested.");
+      msg->set_softmax_mode("invalid");
   }
 }
 
