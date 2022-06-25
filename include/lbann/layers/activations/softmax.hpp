@@ -240,10 +240,10 @@ void softmax_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const 
   switch (m_mode)
   {
     case softmax_mode::INSTANCE:
-      msg->set_softmax_mode("INSTANCE");
+      msg->set_softmax_mode("instance");
       break;
     case softmax_mode::CHANNEL:
-      msg->set_softmax_mode("CHANNEL");
+      msg->set_softmax_mode("channel");
       break;
     default:
       LBANN_ERROR("Invalid softmax mode requested.");
