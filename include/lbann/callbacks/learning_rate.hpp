@@ -58,8 +58,8 @@ class learning_rate : public callback_base {
   using callback_base::on_backward_prop_end;
   /** Apply local/per-optimizer learning rate schedules. */
   void on_backward_prop_end(model *m) override;
-
-  std::vector<std::string> get_weights_names() const
+protected:
+  std::vector<std::string> const& get_weights_names() const
   {
     return m_weights_names;
   }
