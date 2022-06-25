@@ -51,7 +51,7 @@ void OperatorLayer<T, O, L, D>::write_specific_proto(lbann_data::Layer& proto) c
   auto* msg = proto.mutable_operator_layer();
   auto* op = msg->add_ops();
   op->set_input_datatype(proto::ProtoDataType<T>);
-  op->set_input_datatype(proto::ProtoDataType<O>);
+  op->set_output_datatype(proto::ProtoDataType<O>);
   op->set_device_allocation(proto::ProtoDevice<D>);
 }
 
