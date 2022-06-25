@@ -32,11 +32,6 @@
 #include <set>
 #include <vector>
 
-// Forward-declare protobuf classes
-namespace lbann_data {
-class CallbackLTFB;
-}
-
 namespace lbann {
 namespace callback {
 
