@@ -471,7 +471,7 @@ public:
   /** @brief Write layer to proto file */
   void write_proto(lbann_data::Layer& proto);
 
-protected:
+private:
 
   /** @brief Add layer specific data to prototext */
   virtual void write_specific_proto(lbann_data::Layer& proto) const = 0;
