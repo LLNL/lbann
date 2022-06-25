@@ -205,11 +205,14 @@ std::string serialize(google::protobuf::Message const& msg);
 void serialize(std::string const& pbuf_filename,
                google::protobuf::Message const& msg);
 
+///@}
+/** @name Writing protobufs */
+///@{
+
 /** @brief Assign a range of values to a repeated protobuf field. */
 template <typename T, typename ContainerT>
 void assign_to_repeated(google::protobuf::RepeatedField<T>& field,
                         ContainerT const& values);
-
 /** @brief Concatenate a container of strings into a single string.
  *  Elements are space separated.
  */
