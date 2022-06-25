@@ -28,7 +28,6 @@
 #define LBANN_LAYER_MATH_MATMUL_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/proto/datatype_helpers.hpp"
 
 namespace lbann {
 
