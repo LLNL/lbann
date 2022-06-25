@@ -42,27 +42,6 @@
 namespace lbann {
 namespace protobuf {
 
-template <typename T, typename ContainerT>
-void assign_to_repeated(google::protobuf::RepeatedField<T>& field,
-                        ContainerT const& values)
-{
-  /** @todo Change to Assign if older versions of protobuf are no
-   *  longer supported.
-   */
-  field.Clear();
-  field.Add(begin(values), end(values));
-}
-
-template <typename ContainerT>
-std::string to_space_sep_string(ContainerT const& values)
-{
-  std::string combined;
-  for (auto const& value : values)
-    combined += (value + " ");
-
-  return combined;
-}
-
 namespace details {
 
 template <typename T>
@@ -141,6 +120,27 @@ auto get_repeated_field_ref(google::protobuf::Message const& msg,
 } // namespace details
 } // namespace protobuf
 } // namespace lbann
+
+template <typename T, typename ContainerT>
+void lbann::protobuf::assign_to_repeated(google::protobuf::RepeatedField<T>& field,
+                        ContainerT const& values)
+{
+  /** @todo Change to Assign if older versions of protobuf are no
+   *  longer supported.
+   */
+  field.Clear();
+  field.Add(begin(values), end(values));
+}
+
+template <typename ContainerT>
+std::string lbann::protobuf::to_space_sep_string(ContainerT const& values)
+{
+  std::string combined;
+  for (auto const& value : values)
+    combined += (value + " ");
+
+  return combined;
+}
 
 template <typename T>
 auto lbann::protobuf::as_vector(google::protobuf::Message const& msg,

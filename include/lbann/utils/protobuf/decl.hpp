@@ -217,7 +217,7 @@ void assign_to_repeated(google::protobuf::RepeatedField<T>& field,
  *  Elements are space separated.
  */
 template <typename ContainerT>
-std::string to_space_sep_string(ContainerT values);
+std::string to_space_sep_string(ContainerT const& values);
 
 ///@}
 
