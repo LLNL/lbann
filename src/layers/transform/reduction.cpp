@@ -60,7 +60,7 @@ void reduction_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) cons
       msg->set_mode("mean");
       break;
     default:
-      LBANN_ERROR("Invalid reduction mode requested.");
+      msg->set_mode("invalid");
   }
 }
 
