@@ -198,7 +198,7 @@ set_center_specific_spack_dependencies()
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_COMPILER="%rocmcc@4.5.2"
-                CENTER_DEPENDENCIES="^openmpi@4.1.1 ^hip@4.5.2"
+                CENTER_DEPENDENCIES="^openmpi@4.1.1 ^hip@4.5.2 ^python@3.9.10"
                 ;;
             *)
                 echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
