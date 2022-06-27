@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#include <catch2/catch.hpp>
+#include "Catch2BasicSupport.hpp"
 
 #include <lbann/base.hpp> // half stuff is here.
 #include <lbann/utils/serialize.hpp>

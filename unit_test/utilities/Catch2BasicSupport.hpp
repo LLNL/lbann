@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -23,36 +23,29 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#ifndef LBANN_UNIT_TEST_UTILITIES_CATCH2BASICSUPPORT_HPP_INCLUDED
+#define LBANN_UNIT_TEST_UTILITIES_CATCH2BASICSUPPORT_HPP_INCLUDED
 
-#include <Catch2BasicSupport.hpp>
+/** @file
+ *
+ *  This header is used to allow easy compile-time switching between
+ *  Catch2 v2.* and v3.*.
+ *
+ *  The v3 support includes the basic test macros and all of the
+ *  matchers and generators, as well as the Approx class.. Additional
+ *  components may be added piecemeal by the tests that require them
+ *  checking if the LBANN_USE_CATCH2_V3 preprocessing macro is
+ *  defined.
+ */
 
-#include <lbann/comm_impl.hpp>
-
-#include "MPITestHelpers.hpp"
-
-TEST_CASE("Example: test of Broadcast", "[mpi][example]")
-{
-  auto& world_comm = unit_test::utilities::current_world_comm();
-  int rank_in_world = world_comm.get_rank_in_world();
-
-  SECTION("Scalar broadcast")
-  {
-    int value = (rank_in_world == 0 ? 13 : -1);
-    world_comm.world_broadcast(0, value);
-
-    REQUIRE(value == 13);
-  }
-
-  SECTION("Vector broadcast")
-  {
-    std::vector<float> true_values = {1.f, 2.f, 3.f, 4.f};
-    std::vector<float> values =
-      (rank_in_world == 0
-       ? true_values
-       : std::vector<float>(4, -1.f));
-
-    world_comm.world_broadcast(0, values.data(), values.size());
-
-    REQUIRE(values == true_values);
-  }
-}
+#ifdef LBANN_USE_CATCH2_V3
+#include <catch2/catch_approx.hpp>
+#include <catch2/catch_template_test_macros.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators_all.hpp>
+#include <catch2/matchers/catch_matchers_all.hpp>
+using Catch::Approx;
+#else
+#include <catch2/catch.hpp>
+#endif // LBANN_USE_CATCH2_V3
+#endif // LBANN_UNIT_TEST_UTILITIES_CATCH2BASICSUPPORT_HPP_INCLUDED

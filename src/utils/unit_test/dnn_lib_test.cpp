@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 // MUST include this
-#include <catch2/catch.hpp>
+#include "Catch2BasicSupport.hpp"
 
 #include <lbann/utils/dnn_enums.hpp>
 #include <lbann/utils/dnn_lib/helpers.hpp>

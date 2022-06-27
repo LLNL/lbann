@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 // Be sure to include this!
-#include <catch2/catch.hpp>
+#include "Catch2BasicSupport.hpp"
 
 // The code being tested
 #include <lbann/utils/factory.hpp>
