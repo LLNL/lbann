@@ -23,9 +23,6 @@ parser.add_argument(
     '--num-classes', action='store', default=1000, type=int,
     help='number of ImageNet classes (default: 1000)', metavar='NUM')
 lbann.contrib.args.add_optimizer_arguments(parser)
-parser.add_argument(
-    '--setup_only', action='store_true',
-    help='setup LBANN experiment without running it')
 args = parser.parse_args()
 
 # Due to a data reader limitation, the actual model realization must be
@@ -76,5 +73,4 @@ trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 lbann.contrib.launcher.run(trainer, model, data_reader, opt,
                            job_name=args.job_name,
-                           setup_only=args.setup_only,
                            **kwargs)
