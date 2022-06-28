@@ -8,16 +8,7 @@ from lbann.contrib.lc.systems import system
 
 def parallel_file_system_path(system = system()):
     """Base path to parallel file system."""
-<<<<<<< HEAD
-    if system in ('lassen', 'sierra'):
-        return '/p/gpfs1/'
-    elif system == 'ray':
-        return '/p/gscratchr/'
-    else:
-        return '/p/vast1/'
-=======
     return '/p/vast1/'
->>>>>>> 13d48beab958edd67d0ed8d0084ed367e98fbbfd
 
 def mnist_dir(system = system()):
     """MNIST directory on LC system.
