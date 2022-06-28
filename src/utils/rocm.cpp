@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/gpu/helpers.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 
 #ifdef LBANN_HAS_ROCM
 

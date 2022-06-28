@@ -16,7 +16,7 @@ current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
 lbann_dir = dirname(os.path.dirname(os.path.dirname(current_file)))
-app_path = join(lbann_dir, 'applications', 'nas','nasnet')
+app_path = join(lbann_dir, 'applications', 'nas', 'nasnet')
 sys.path.append(app_path)
 import cifar_networks
 
@@ -32,7 +32,7 @@ print('Current file, expd  ', current_file, expd)
 # Training options
 proc_per_trainer=1
 proc_per_node=2
- 
+
 # Average mini-batch time (in sec) for each LC system
 # Note that run times are with LBANN_DETERMINISTIC set
 # Commented out times are prior to thread safe RNGs
@@ -78,21 +78,24 @@ def setup_experiment(lbann, weekly):
 
     """
     if tools.system(lbann) != 'lassen' and tools.system(lbann) != 'pascal' :
-      message = f'{os.path.basename(__file__)} is only supported on lassen, and pascal systems'
-      print('Skip - ' + message)
-      pytest.skip(message)
+        message = f'{os.path.basename(__file__)} is only supported on lassen, and pascal systems'
+        print('Skip - ' + message)
+        pytest.skip(message)
 
     if weekly:
         options = weekly_options_and_targets
     else:
         options = nightly_options_and_targets
-    
+
     test_fname = 'test_integration_nasnet_v1'
 
     mini_batch_size=options['mini_batch_size']
     num_epochs = options['num_epochs']
-    if tools.system(lbann) == 'lassen' :
-       proc_per_node = 4 
+    if tools.system(lbann) == 'lassen':
+        proc_per_node = 4
+    else:
+        proc_per_node = 2
+
     pop_size = int(options['num_nodes']*proc_per_node/proc_per_trainer)
     trainer, model, reader, opt =  cifar_networks.create_networks(expd,
                                                                   num_epochs,
@@ -167,7 +170,7 @@ def augment_test_func(test_func):
         #Check that all trainers complete training and evaluation
         assert (len(mini_batch_times) % num_trainers == 0), \
                 'output log is missing values and metrics from one or more trainers'
- 
+
         # Check if training accuracy is within expected range
         assert (targets['expected_train_accuracy_range'][0]
                 < train_acc

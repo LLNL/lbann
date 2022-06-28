@@ -27,7 +27,7 @@
 #!/bin/bash
 
 # Just in case
-source ${HOME}/spack_repos/spack_${SYSTEM_NAME}.git/share/spack/setup-env.sh
+source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
 
 # Load up the spack environment
 SPACK_ARCH=$(spack arch)
