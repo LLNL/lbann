@@ -16,19 +16,37 @@ val_samples = samples[int(samples.size*0.8):int(samples.size*0.9)]
 test_samples = samples[int(samples.size*0.9):]
 
 
+
 # Masking samples
-def masking(sample):
-    sample_masked = sample.copy()
-    rand = np.random.uniform(size=(1,sequence_length))
-    replace = (rand < mask_percent) * (sample != bos_index) * (sample != eos_index) * (sample != pad_index) 
-    mask_idx = np.nonzero(replace)[1]
-    for idx in mask_idx:
-        chance = np.random.uniform()
-        if(chance < 0.1): #replace with random character excluding special characters
-            sample_masked[idx] = np.random.randint(5,vocab_length) 
-        elif (0.1 < chance < 0.9): #replace with mask character
-            sample_masked[idx] = mask_index 
-    return sample_masked,mask_idx
+'''
+https://github.com/huggingface/transformers/blob/v4.20.1/src/transformers/data/data_collator.py#L805
+'''
+def masking(sample, mlm_probability = 0.15):
+
+  masked = np.copy(sample)
+  label = np.copy(sample) 
+
+  special_tokens_mask = (sample == bos_index) + (sample == eos_index) + (sample == pad_index) 
+  
+  probability_matrix = np.full(sample.shape, mlm_probability)
+
+  probability_matrix[special_tokens_mask] = 0
+
+  masked_indices = np.random.binomial(1, probability_matrix, size=probability_matrix.shape).astype(bool)
+
+  label[~masked_indices] = ignore_index
+
+  indices_replaced = np.random.binomial(1, 0.8, size=sample.shape).astype(bool) & masked_indices
+
+  masked[indices_replaced] = mask_index
+
+  indices_random = (np.random.binomial(1, 0.5, size=sample.shape).astype(bool) & masked_indices & ~indices_replaced)
+
+  random_words = np.random.randint(low=5, high=vocab_length, size=np.count_nonzero(indices_random), dtype=np.int64)
+
+  masked[indices_random] = random_words
+
+  return sample,masked,label
 
 # Train sample access functions
 def get_train_sample(index):
@@ -38,18 +56,11 @@ def get_train_sample(index):
     else:
         sample = np.resize(sample, sequence_length)
 
-    sample_mask, mask_idx = masking(sample)
-
-    idx = [i for i in range(0,sequence_length)]
-    non_mask_idx = [i for i in idx if (i not in mask_idx)]
-
-    label  = sample.copy()
-
-    label[non_mask_idx] = ignore_index
+    sample,masked,label = masking(sample)
 
     sample_all = np.full(3*sequence_length, pad_index, dtype=int)
     sample_all[0:len(sample)] = sample
-    sample_all[sequence_length:2*sequence_length] = sample_mask
+    sample_all[sequence_length:2*sequence_length] = masked
     sample_all[2*sequence_length:3*sequence_length] = label
 
     return sample_all
@@ -63,23 +74,11 @@ def get_val_sample(index):
     else:
         sample = np.resize(sample, sequence_length)
 
-    mask_idx = np.random.randint(0,sequence_length)
-    #print(mask_idx)
-
-    sample_mask = sample.copy()
-    sample_mask[mask_idx] = 14
-
-    idx = [i for i in range(0,sequence_length)]
-    non_mask_idx = [i for i in idx if (i != mask_idx)]
-    #print(non_mask_idx)
-
-    label  = sample.copy()
-
-    label[non_mask_idx] = ignore_index
+    sample,masked,label = masking(sample)
 
     sample_all = np.full(3*sequence_length, pad_index, dtype=int)
     sample_all[0:len(sample)] = sample
-    sample_all[sequence_length:2*sequence_length] = sample_mask
+    sample_all[sequence_length:2*sequence_length] = masked
     sample_all[2*sequence_length:3*sequence_length] = label
 
     return sample_all
@@ -93,21 +92,11 @@ def get_test_sample(index):
     else:
         sample = np.resize(sample, sequence_length)
 
-    mask_idx = np.random.randint(0,sequence_length)
-
-    sample_mask = sample.copy()
-    sample_mask[mask_idx] = 14
-
-    idx = [i for i in range(0,sequence_length)]
-    non_mask_idx = [i for i in idx if (i != mask_idx)]
-
-    label  = sample.copy()
-
-    label[non_mask_idx] = ignore_index
+    sample,masked,label = masking(sample)
 
     sample_all = np.full(3*sequence_length, pad_index, dtype=int)
     sample_all[0:len(sample)] = sample
-    sample_all[sequence_length:2*sequence_length] = sample_mask
+    sample_all[sequence_length:2*sequence_length] = masked
     sample_all[2*sequence_length:3*sequence_length] = label
 
     return sample_all
