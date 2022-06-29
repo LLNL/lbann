@@ -28,6 +28,8 @@
 
 #include "lbann/base.hpp"
 #include "lbann/utils/profiling.hpp"
+#include "lbann/utils/exception.hpp"
+
 #if defined(LBANN_SCOREP)
 #include <scorep/SCOREP_User.h>
 #elif defined(LBANN_NVPROF)
