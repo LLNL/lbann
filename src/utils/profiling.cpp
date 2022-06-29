@@ -39,6 +39,11 @@
 #include "lbann/utils/gpu/helpers.hpp"
 #endif
 
+#if defined(LBANN_HAS_ROCTRACER)
+#include <roctx.h>
+#include <roctracer_ext.h>
+#endif
+
 namespace {
 bool profiling_started = false;
 }
@@ -94,12 +99,36 @@ void prof_region_end(const char *, bool sync) {
   }
   nvtxRangePop();
 }
+#elif defined(LBANN_HAS_ROCTRACER)
+void prof_start() {
+  roctracer_start();
+  profiling_started = true;
+}
+void prof_stop() {
+  roctracer_stop();
+  profiling_started = false;
+}
+void prof_region_begin(const char *s, int, bool sync) {
+  if (!profiling_started) return;
+  if (sync) {
+    hydrogen::gpu::SynchronizeDevice();
+  }
+  LBANN_ASSERT(0 <= roctxRangePush(s));
+}
+void prof_region_end(const char *, bool sync) {
+  if (!profiling_started) return;
+  if (sync) {
+    hydrogen::gpu::SynchronizeDevice();
+  }
+  LBANN_ASSERT(0 <= roctxRangePop());
+}
 #else
 void prof_start() {
   profiling_started = true;
   return;
 }
 void prof_stop() {
+  profiling_started = false;
   return;
 }
 void prof_region_begin(const char *, int, bool) {
