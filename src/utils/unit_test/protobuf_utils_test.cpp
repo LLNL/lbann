@@ -133,7 +133,23 @@ another_field: false
     simple_msg.CopyFrom(lbann::protobuf::get_oneof_message(msg, "my_oneof")));
   CHECK(simple_msg.my_string() == "Hello world");
 }
+TEST_CASE("Assign container to repeated protobuf field")
+{
+  std::vector<lbann::protobuf::uint32> const values{0u,1u,2u,3u};
+  lbann_testing::HasRepeatedPODFields msg;
+  lbann::protobuf::assign_to_repeated(*msg.mutable_my_uint32s(), values);
 
+  REQUIRE(msg.my_uint32s_size() == values.size());
+  for (size_t ii = 0; ii < values.size() ; ++ii)
+    CHECK(msg.my_uint32s(ii) == values[ii]);
+}
+TEST_CASE("Convert container of streamable objects to space separated string")
+{
+  std::vector<int> values{0,1,2,3};
+  auto my_str = lbann::protobuf::to_space_sep_string(values);
+
+  CHECK(my_str == "0 1 2 3");
+}
 TEST_CASE("Repeated POD field extraction", "[protobuf][utils]")
 {
   std::string const msg_repeated_pod_field = R"ptext(
