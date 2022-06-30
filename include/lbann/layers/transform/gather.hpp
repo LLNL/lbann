@@ -40,6 +40,8 @@ class gather_distconv_adapter
   :  public data_type_distconv_adapter <TensorDataType>{
   public:
     using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+    using InputTensorDevType = typename data_type_distconv_adapter<TensorDataType>::InputTensorDevType;
+    using OutputTensorDevType = typename data_type_distconv_adapter<TensorDataType>::OutputTensorDevType;
 
     gather_distconv_adapter(Layer &layer) : data_type_distconv_adapter<TensorDataType>(layer){}
     virtual ~gather_distconv_adapter() = default;
@@ -52,6 +54,7 @@ class gather_distconv_adapter
 
     std::unique_ptr<dc::Gather<TensorDataType>> m_gather_operator;
     size_t m_workspace_buffer_size{0};
+
   };
 #endif // LBANN_HAS_DISTCONV
 
@@ -173,7 +176,7 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
   // Tensor dimensions
   const auto& input0_dims = this->get_input_dims(0);
   const auto& input1_dims = this->get_input_dims(1);
-
+  
   auto dims_to_str = [] (const std::vector<int>& dims) -> std::string {
     std::ostringstream ss;
     for (size_t i=0; i<dims.size(); ++i) {
@@ -181,6 +184,37 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
     }
     return ss.str();
   };
+
+  // Tensor dimension requirements are different 
+  // when using distconv 
+  // Distconv requires 3D inputs for both values
+  // and indices
+
+  #ifdef LBANN_HAS_DISTCONV
+
+  if (this->distconv_enabled()){
+    const auto is_values_3D = input0_dims.size() == 3;
+    const auto is_indices_3D = input1_dims.size() == 3;
+
+    //Input matrices need to be 3D
+    if(!is_values_3D || !is_indices_3D){
+
+      LBANN_ERROR(this->get_type(), " Layer \"", this->get_name(),"\" ",
+        "has values input (", dims_to_str(input0_dims),") ",
+        "has indices input (", dims_to_str(input1_dims),"). ", 
+        "Distconv Gather requires both to be 3D. ");
+    }
+    // The 0-th dimension of the values and indices must match
+    if (input0_dims[0] != input1_dims[0]){
+      
+      LBANN_ERROR(this->get_type(), " Layer \"", this->get_name(),"\" ",
+        "has values input (", dims_to_str(input0_dims),") ",
+        "has indices input (", dims_to_str(input1_dims),"). ", 
+        "Distconv requires the 0-th dimension to match. ");
+    }
+    this->set_output_dims(std::vector<int>{input1_dims[0], input0_dims[1], 1});
+  }
+  #endif // LBANN_HAS_DISTCONV
   
   // Only support 1D indices
   const auto is_indices_not_1D = input1_dims.size() != 1;
@@ -209,8 +243,6 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
       this->set_output_dims(std::vector<int>{input0_dims[0],input1_dims[0]});
     }
   }
-
-
 
   // Make sure input tensors have supported numbers of dimensions
 
@@ -308,6 +340,8 @@ gather_distconv_adapter<TensorDataType, Layout, Device>
   }
 }
 
+
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void
 gather_distconv_adapter<TensorDataType, Layout, Device>
@@ -315,20 +349,28 @@ gather_distconv_adapter<TensorDataType, Layout, Device>
   data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
   m_gather_operator = make_unique<dc::Gather<TensorDataType>>(dc::get_backend());
   // Follow the convention from MSE 
-  // MSE also has two input vectors being partitioned 
+  // MSE also has two input vectors being partitioned
+  m_gather_operator->setup(this->get_prev_activations(0),
+                           this->get_prev_activations(1),
+                           this->get_activations()); 
 }
 
-template <typename TensorDataType, data_layout Layout, EL::Device Device>
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
 dc::Shape
 gather_distconv_adapter<TensorDataType, Layout, Device>
 ::get_activations_local_shape(int index) const{
-  const auto &layer = dynamic_cast<const channelwise_fully_connected_layer
+  const auto &layer = dynamic_cast<const gather_layer
     <TensorDataType, Layout, Device>&>(this->layer());
   auto output_dims = layer.get_output_dims();
-  std::reverse(std::begin(output_dims), std::end(output_dims));
-  const auto output_shape = dc::Shape(output_dims);
+  // Get the indices layer shape
+  auto output_shape = this->get_prev_activations(1).get_local_shape();
+  // Change the column dimension to match, the rest should be the same
+  // To do: Maybe move this to distconv namespace - SZ
+  output_shape[1] = output_dims[1];
   return output_shape; 
 }
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void
 gather_distconv_adapter<TensorDataType, Layout, Device>

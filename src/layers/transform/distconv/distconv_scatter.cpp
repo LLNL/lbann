@@ -38,35 +38,48 @@ namespace distconv{
           const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices,
           tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output){
     
+    util::MPIPrintStreamInfo() << "performing forward pass";
     if(output.get_buffer() == nullptr){
-      util::MPIRootPrintStreamInfo() << "output buffer is null";
+      util::MPIPrintStreamInfo() << "output buffer is null";
+      m_dist_scatter->sync();
       return 0;
     }
       
     if(values.get_buffer() == nullptr){
-      util::MPIRootPrintStreamInfo() << "values buffer is null";
+      util::MPIPrintStreamInfo() << "values buffer is null";
+      m_dist_scatter->sync();
       return 0;
     }
 
     if(indices.get_buffer() == nullptr){
-      util::MPIRootPrintStreamInfo() << "indices buffer is null";
+      util::MPIPrintStreamInfo() << "indices buffer is null";
+      m_dist_scatter->sync();
       return 0;
     }
+
 
     const auto& values_shape = values.get_local_shape();    // Should be {1, F, N, B}
     const auto& indices_shape = indices.get_local_shape();  // Should be {1, 1, E, B}
     const auto& output_shape = output.get_local_shape();    // Should be {1, F, E, B}
 
-    // Debug prints -- delete before PR
-    #if 1
-       util::MPIRootPrintStreamInfo() << "Values Dims: " << values_shape
-      << "\tIndices Dims: " << indices_shape << "\tOutput Dims: "<< output_shape; 
-    #endif
-
     const auto& num_columns = values_shape[1];
     const auto& num_values_rows = values_shape[2];
     const auto& local_mini_batch_size = values_shape[3];
     const auto& num_output_rows = output_shape[2];
+
+        // Debug prints -- delete before PR
+    #if 1
+       util::MPIPrintStreamInfo() << "Values Dims: " << values_shape
+      << "\tIndices Dims: " << indices_shape << "\tOutput Dims: "<< output_shape;
+      // util::MPIRootPrintStreamInfo() << "NUM COLUMNS: \t" << num_columns 
+      //   << "\n NUM ROWS: \t" << num_values_rows
+      //   << "\n NUM OUTPUT ROWS \t" << num_output_rows
+      //   << "\n LOCAL MINI-BATCH SIZE \t" << local_mini_batch_size; 
+      util::MPIPrintStreamInfo() << values;
+      util::MPIPrintStreamInfo() << output;
+
+    #endif
+     
     // Attach values matrix to the NVSHMEM buffer
     // The size of the NVSHMEM_values buffer is sum of the local values matrices
     // Retreive value vectors onto the NVSHMEM workspace buffer 
@@ -80,6 +93,7 @@ namespace distconv{
                             num_values_rows,
                             num_columns,
                             num_output_rows);
+    util::MPIPrintStreamInfo() << "Finished forward pass";
     return 1;
   }
 
@@ -92,18 +106,23 @@ namespace distconv{
              tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &values_grad, 
              tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices_grad){
     
+    util::MPIPrintStreamInfo() << "performing backward pass";
+
     if(output_grad.get_buffer() == nullptr){
-      util::MPIRootPrintStreamInfo() << "output grad buffer is null";
+      util::MPIPrintStreamInfo() << "output grad buffer is null";
+      m_dist_gather->sync(); // Sync in case other PEs performing work
       return 0; 
     }
 
     if(indices.get_buffer() == nullptr){
-      util::MPIRootPrintStreamInfo() << "indices buffer is null";
+      util::MPIPrintStreamInfo() << "indices buffer is null";
+      m_dist_gather->sync();
       return 0;
     }
 
     if(values_grad.get_buffer() == nullptr){
-      util::MPIRootPrintStreamInfo() << "values grad buffer is null";
+      util::MPIPrintStreamInfo() << "values grad buffer is null";
+      m_dist_gather->sync();
       return 0;
     }    
 
@@ -125,14 +144,34 @@ namespace distconv{
                           num_output_grad_rows,
                           num_columns,
                           num_values_grad_rows); 
+
+    util::MPIPrintStreamInfo() << "Finished backward pass";
     return 1;
   }
 
   template<typename Backend, typename DataType>
+  template<typename Allocator>
   void 
   Scatter<Backend, DataType>
-  ::setup(){
-    return ;
+  ::setup(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &values, 
+          const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices,
+          const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output){
+    
+    const auto channel_splits = values.get_distribution().get_split_shape()[2];
+    const auto num_pes = m_dist_scatter->get_num_ranks();
+    const auto pid = m_dist_scatter->get_rank();
+    // Check if in hybrid data-parallel channel-parallel mode
+    if (channel_splits == num_pes){
+      // Default setup is sufficent. No further changes needed
+      return ;
+    }
+    // hybrid data-parallel channel-parallel mode. Must set scatter / gather
+    // stides and groups
+
+    m_dist_scatter->set_stride(channel_splits);
+    m_dist_gather->set_stride(channel_splits);
+    m_dist_scatter->set_group(num_pes / channel_splits);
+    m_dist_gather->set_group(num_pes / channel_splits);
   }
 
 
@@ -140,6 +179,10 @@ namespace distconv{
 
 #define ETI(T, Backend)                                                                   \
   template class Scatter<Backend, T>;                                                     \
+  template void Scatter<Backend, T>::setup<tensor::CUDAAllocator>(                        \
+    const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &values,            \
+    const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &indices,           \
+    const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &output);           \
   template int Scatter<Backend, T>::forward<tensor::CUDAAllocator>(                       \
     const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &values,            \
     const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &indices,           \

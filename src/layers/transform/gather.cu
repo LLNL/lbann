@@ -28,8 +28,12 @@
 #include "lbann/layers/transform/gather.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
-namespace lbann {
+#if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
+#include "lbann/utils/nvshmem.hpp"
+#endif 
 
+namespace lbann {
+  
 namespace {
 
 using Dim2 = gpu_lib::array<size_t, 2>;
@@ -168,6 +172,9 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void gather_layer<TensorDataType, Layout, Device>::fp_compute() {
 
 #ifdef LBANN_HAS_DISTCONV
+  // Initialize the nvshmem here. No Op if already initialized 
+  nvshmem::initialize();
+
   if (this->distconv_enabled()){
     this->get_distconv_adapter().fp_compute();
     return ;

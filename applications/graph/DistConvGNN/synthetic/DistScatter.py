@@ -99,12 +99,11 @@ def main():
 
   indices = lbann.Reshape(lbann.Identity(sliced_inputs), dims=index_dims, name='indices_array')
 
-  # This is a hack to get around copying both parent tensors to DiHydrogen tensors in the Scatter layer
-  # Currently we only support copying of only one of the parent tensors per distconv enabled layer
-
-  indices = lbann.Relu(indices, parallel_strategy=create_parallel_strategy(NUM_NODES))
+  indices = lbann.Identity(indices, parallel_strategy=create_parallel_strategy(NUM_NODES))
 
   values = lbann.Reshape(values, dims=values_dims, name='values_matrix')
+
+  values = lbann.Identity(values, parallel_strategy=create_parallel_strategy(NUM_NODES))
 
   values_x = lbann.Sum(values, lbann.WeightsLayer(weights=x_weights, dims=values_dims))
 

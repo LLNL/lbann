@@ -38,17 +38,17 @@ namespace distconv{
           tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output){
     
     if(output.get_buffer() == nullptr){
-      util::MPIRootPrintStreamInfo() << "output buffer is null";
+      // util::MPIRootPrintStreamInfo() << "output buffer is null";
       return 0;
     }
       
     if(values.get_buffer() == nullptr){
-      util::MPIRootPrintStreamInfo() << "values buffer is null";
+      // util::MPIRootPrintStreamInfo() << "values buffer is null";
       return 0;
     }
 
     if(indices.get_buffer() == nullptr){
-      util::MPIRootPrintStreamInfo() << "indices buffer is null";
+      // util::MPIRootPrintStreamInfo() << "indices buffer is null";
       return 0;
     }
 
@@ -60,9 +60,9 @@ namespace distconv{
     #if 1
        util::MPIRootPrintStreamInfo() << "Values Dims: " << values_shape
       << "\tIndices Dims: " << indices_shape << "\tOutput Dims: "<< output_shape; 
-    // util::MPIRootPrintStreamInfo() << values; 
-    // util::MPIRootPrintStreamInfo() << indices;
-    // util::MPIRootPrintStreamInfo() << output;
+    util::MPIRootPrintStreamDebug() << values; 
+    util::MPIRootPrintStreamDebug() << indices;
+    util::MPIRootPrintStreamDebug() << output;
     #endif
 
     const auto& num_columns = values_shape[1];
@@ -100,17 +100,17 @@ namespace distconv{
     const auto num_values_grad_rows = values_grad_shape[2];   // N
 
     if(output_grad.get_buffer() == nullptr){
-      util::MPIRootPrintStreamInfo() << "output grad buffer is null";
+      // util::MPIRootPrintStreamInfo() << "output grad buffer is null";
       return 0; 
     }
 
     if(indices.get_buffer() == nullptr){
-      util::MPIRootPrintStreamInfo() << "indices buffer is null";
+      // util::MPIRootPrintStreamInfo() << "indices buffer is null";
       return 0;
     }
 
     if(values_grad.get_buffer() == nullptr){
-      util::MPIRootPrintStreamInfo() << "values grad buffer is null";
+      // util::MPIRootPrintStreamInfo() << "values grad buffer is null";
       return 0;
     }
 
@@ -125,16 +125,37 @@ namespace distconv{
   }
 
   template<typename Backend, typename DataType>
+  template<typename Allocator>
   void
   Gather<Backend, DataType>
-  ::setup(){
-    return ;
+  ::setup(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &values, 
+          const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices,
+          const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output){
+    const auto channel_splits = values.get_distribution().get_split_shape()[2];
+    const auto num_pes = m_dist_gather->get_num_ranks();
+    const auto pid = m_dist_gather->get_rank();
+    // Check if in hybrid data-parallel channel-parallel mode
+    if (channel_splits == num_pes){
+      // Default setup is sufficent. No further changes needed
+      return ;
+    }
+    // hybrid data-parallel channel-parallel mode. Must set scatter / gather
+    // stides and groups
+
+    m_dist_scatter->set_stride(channel_splits);
+    m_dist_gather->set_stride(channel_splits);
+    m_dist_scatter->set_group(num_pes / channel_splits);
+    m_dist_gather->set_group(num_pes / channel_splits);
   }
 
 // Explicit template instantiation
 
 #define ETI(T, Backend)                                                                   \
   template class Gather<Backend, T>;                                                      \
+  template void Gather<Backend, T>::setup<tensor::CUDAAllocator>(                         \
+    const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &values,            \
+    const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &indices,           \
+    const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &output);           \
   template int Gather<Backend, T>::forward<tensor::CUDAAllocator>(                        \
     const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &values,            \
     const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &indices,           \

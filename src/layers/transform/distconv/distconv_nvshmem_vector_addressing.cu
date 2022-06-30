@@ -30,89 +30,51 @@
 #include "lbann/base.hpp"
 
 #if defined(LBANN_HAS_NVSHMEM) && defined(LBANN_HAS_DISTCONV)
-
+#include "nvshmem.h"
+#include "nvshmemx.h"
 #include "lbann/layers/transform/distconv/distconv_nvshmem_vector_addressing.hpp"
 
 namespace distconv{
+
   namespace{
-  
-  using Size2 = util::gpu_array<size_t, 2>;
-  using Size3 = util::gpu_array<size_t, 3>;
 
-  template <typename T> __device__ __forceinline__
-  T* memcpy_warp(T* __restrict__ dest, const T* __restrict__ src, int n) {
-    constexpr int warp_size = 32;
-    for (int i = threadIdx.x; i < n; i += warp_size) {
-      dest[i] = src[i];
-    }
-    __syncwarp();
-    return dest;
-  }
+ __device__ __forceinline__
+float atomic_add(float* __restrict__ address,
+                 const float val,
+                 const int pe){
 
-  /** Set device buffer, using all threads in a warp. */
-  template <typename T> __device__ __forceinline__
-  T* memset_warp(T* buf, T val, int n) {
-    constexpr int warp_size = 32;
-    for (int i = threadIdx.x; i < n; i += warp_size) {
-      buf[i] = val;
-    }
-    __syncwarp();
-    return buf;
-  }
+  int* address_as_int = (int*)address;
+  int assumed; 
+  int old = nvshmem_int_g(address_as_int, pe);
+  do
+  {
+    assumed = old;
+    old = nvshmem_int_atomic_compare_swap(address_as_int, assumed,
+                                          __float_as_int(val +
+                                                         __int_as_float(assumed)),
+                                          pe);
+  } while (assumed !=old);
+  return __int_as_float(old);
+}
 
-  /** See El::AbstractDistMatrix::ColOwner. */
+__device__ __forceinline__ 
+double atomic_add(double* __restrict__ address,
+                  const double val,
+                  const int pe){
 
-  __device__ __forceinline__
-  size_t distmat_index_owner(size_t global_index, size_t align, size_t stride) {
-    // Figure out which rank owns currently holds this index
-    // 
-    return (global_index + align) % stride;
-  }
-
-  /** Get the location of the index in the global workspace*/ 
-  __device__ __forceinline__
-  size_t distmat_global_index(size_t local_index, size_t shift, size_t stride){
-    // stride = len(index) 
-    // shift = rank * stride
-    return shift + (local_index * stride); 
-  }
-
-  /** Launch a collective NVSHMEM kernel.
- *
- *  Needed for device-side NVSHMEM synchronization calls like
- *  nvshmem_wait. If grid_dims is zero, then the NVSHMEM will launch
- *  with the largest available grid.
- *
- *  @todo Check that argument types match kernel signature.
- */
-  template <typename Kernel, typename... Args>
-  inline void launch_nvshmem_collective_kernel(
-    const Kernel& kernel,
-    dim3 grid_dims,
-    dim3 block_dims,
-    size_t shared_mem,
-    cudaStream_t stream,
-    Args... args) {
-    if (grid_dims.x == 0) {
-      grid_dims.y = 0;
-      grid_dims.z = 0;
-    }
-    void* arg_list[] = {
-      const_cast<void*>(reinterpret_cast<const void*>(&args))...
-    };
-    auto status = nvshmemx_collective_launch(
-      reinterpret_cast<const void*>(&kernel),
-      grid_dims,
-      block_dims,
-      arg_list,
-      shared_mem,
-      stream);
-    if (status != 0) {
-      LBANN_ERROR(
-        "Failed to launch NVSHMEM collective kernel ",
-        "(error ",status,")");
-    }
-  }
+  long long int* address_as_ll = (long long int*)address;
+  long long int assumed; 
+  long long int old = nvshmem_longlong_g(address_as_ll, pe);
+  do
+  {
+    assumed = old;
+    old = nvshmem_longlong_atomic_compare_swap(address_as_ll, assumed,
+                                               __double_as_longlong(val +
+                                                                    __longlong_as_double(assumed)),
+                                               pe);
+  }while(assumed != old);
+  return __longlong_as_double(old);
+}
 
   /**
    * @brief Copy vector from shared memory heap to output tensor
@@ -124,28 +86,29 @@ namespace distconv{
    */
 
   template <typename DataType>
-  __global__ void copy_kernel(
-    const DataType* __restrict__ src,
+  __global__ void
+  copy_kernel(
+    const DataType* __restrict__  src,
     DataType* __restrict__ dest,
     size_t local_mini_batch_size,
     size_t row_size, 
     size_t col_size ){
     
-    const size_t bidx = blockIdx.x;
-    const size_t bidy = blockIdx.y;
-    const size_t nblocksx = gridDim.x;
-    const size_t nblocksy = gridDim.y;
+    const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
+    const size_t gidz = threadIdx.z + blockIdx.z * blockDim.z;
+    const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
 
-    const size_t i_per_block = (row_size + nblocksx -1) /nblocksx;
-    const size_t i_start = bidx * i_per_block;
-    size_t i_end = (bidx+1) * i_per_block;
-    i_end = (i_end > row_size) ? i_end : row_size;
+    const size_t nthreadsx = gridDim.x * blockDim.x;
+    const size_t nthreadsy = gridDim.y * blockDim.y;
+    const size_t nthreadsz = gridDim.z * blockDim.z;
 
-    for(size_t j = bidy; j < local_mini_batch_size; j+= nblocksy){
-      for(size_t i = i_start; i < i_end; ++i){
-        const auto& output_index = 0;
-        const auto& workspace_index = 0; 
-        memcpy_warp(&dest[output_index], &src[workspace_index], col_size);
+    for (size_t mb_i = gidz; mb_i < local_mini_batch_size; mb_i += nthreadsz){
+      const auto mb_offset = mb_i * row_size * col_size; 
+      for (size_t row = gidy; row < row_size; row += nthreadsy){
+        const auto row_offset = row * col_size;
+        for (size_t col = gidx; col < col_size; col += nthreadsx){
+          dest[mb_offset + row_offset + col] = src[mb_offset + row_offset + col];
+        }
       }
     } 
   }
@@ -160,47 +123,38 @@ namespace distconv{
   template <typename DataType>
   __global__ void Gather_NVSHMEM_Kernel(
     const DataType* __restrict__ values,
-    const Size3 values_shape,
     const DataType* __restrict__ indices,
-    const Size2 indices_shape, 
     DataType* __restrict__ shared_buffer,
-    const Size3 buffer_shape){
+    const int mini_batch_size,
+    const int num_local_values_rows,
+    const int num_local_cols,
+    const int num_local_output_rows,
+    const int pe_group,
+    const int pe_stride){
 
-    const size_t bidx = blockIdx.x;
-    const size_t bidy = blockIdx.y;
-    const size_t gridDimx = gridDim.x;
-    const size_t gridDimy = gridDim.y;
-    const auto mini_batch_size = values_shape[0];
-    const auto num_local_values_rows = values_shape[1];
-    const auto num_local_values_cols = values_shape[2];
+    // Indice
+    const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
+    const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
     
-    // values_shape[0] == indices_shape[0]
-    // For an initial implementation, assume that there is no data parallel decomposition
-    // therefore, local_mini_batch_size = mini_batch_size 
-    // So. buffer_shape[0] == values_shape[0]
-    // - SZ
+    const size_t nthreadsy = gridDim.y * blockDim.y;
+    const size_t nthreadsx = gridDim.x * blockDim.x;
     
-    const size_t i_per_block = (num_local_values_rows + gridDimx -1) / gridDimx;
-    const size_t i_start = bidx * i_per_block;
-    size_t i_end = (bidx+1) * i_per_block;
-    i_end = (i_end > num_local_values_rows) ? i_end : num_local_values_rows;
+    const int n_pes = nvshmem_n_pes();
 
-    int n_pes = nvshmem_n_pes();
-    
-    for (size_t mb_i = bidy; mb_i < mini_batch_size; mb_i += gridDimy){
-      for(size_t i = i_start; i < i_end; ++i){
-        // Figure out which rank to send the vector
-        const auto mb_offset = mb_i*mini_batch_size;
-        const auto ind = static_cast<int>(std::floor(indices[mb_offset + i]));
-        if (0<=ind && ind <static_cast<int>(num_local_values_rows)){
-          
-          const int pe = (ind - (ind % n_pes)) / n_pes;
-          const int local_ind = ind % pe;
-          
-          nvshmemx_putmem_nbi_warp(&shared_buffer[mb_offset + local_ind * num_local_values_cols],
-                                   &values[mb_offset + i * num_local_values_cols],
-                                   num_local_values_cols * sizeof(DataType),
-                                   pe);
+    for (size_t mb_i = gidy; mb_i < mini_batch_size; mb_i += nthreadsy){
+      // Figure out which rank to send the vector
+      const auto mb_offset = mb_i*num_local_cols * num_local_output_rows;
+      const auto values_offest = mb_i*num_local_cols * num_local_values_rows;
+      const auto ind_offset = mb_i*num_local_output_rows;
+      for(size_t row = gidx; row < num_local_output_rows; row += nthreadsx){
+        const auto ind = static_cast<int>(std::floor(indices[ind_offset + row]));
+        if (ind > 0 ){ 
+          const int pe = (pe_group * pe_stride) + (ind / num_local_values_rows);
+          const int local_ind = ind % num_local_values_rows;
+          nvshmem_getmem_nbi(&shared_buffer[mb_offset + row * num_local_cols],
+                              &values[values_offest + local_ind * num_local_cols],
+                              num_local_cols * sizeof(DataType),
+                              pe);
         }
       }
     }
@@ -212,48 +166,44 @@ namespace distconv{
    */
   template <typename DataType>
   __global__ void Scatter_NVSHMEM_Kernel(
-    const DataType* __restrict__ values,
-    const Size3 values_shape,
-    const DataType* __restrict__ indices,
-    const Size2 indices_shape, 
-    DataType* __restrict__ shared_buffer,
-    const Size3 buffer_shape){
+      const DataType* __restrict__ values,
+      const DataType* __restrict__ indices,
+      DataType* __restrict__ outputs,
+      const int mini_batch_size,
+      const int num_local_values_rows,
+      const int num_cols,
+      const int num_local_output_rows,
+      const int pe_group,
+      const int pe_stride){
+    // Indices
+    const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
+    const size_t gidz = threadIdx.z + blockIdx.z * blockDim.z;
+    const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
 
-    const size_t bidx = blockIdx.x;
-    const size_t bidy = blockIdx.y;
-    const size_t gridDimx = gridDim.x;
-    const size_t gridDimy = gridDim.y;
-    const auto mini_batch_size = values_shape[0];
-    const auto num_local_values_rows = values_shape[1];
-    const auto num_local_values_cols = values_shape[2];
+    const size_t nthreadsx = gridDim.x * blockDim.x;
+    const size_t nthreadsy = gridDim.y * blockDim.y;
+    const size_t nthreadsz = gridDim.z * blockDim.z;
 
-    const auto num_buffer_rows = buffer_shape[1];
+    for (size_t mb_i = gidz; mb_i < mini_batch_size; mb_i += nthreadsz){
+      const auto values_offset = mb_i * num_local_values_rows * num_cols;
+      const auto output_offset = mb_i * num_local_output_rows * num_cols;
+      const auto indices_offset = mb_i * num_local_values_rows;
 
-    const size_t i_per_block = (num_local_values_rows + gridDimx -1) / gridDimx;
-    const size_t i_start = bidx * i_per_block;
-    size_t i_end = (bidx+1) * i_per_block;
-    i_end = (i_end > num_local_values_rows) ? i_end : num_local_values_rows;
-
-    int n_pes = nvshmem_n_pes();
-    
-    for (size_t mb_i = bidy; mb_i < mini_batch_size; mb_i += gridDimy){
-      for(size_t i = i_start; i < i_end; ++i){
+      for(size_t row = gidy; row < num_local_values_rows; row += nthreadsy){
         // Figure out which rank to send the vector
-        const auto mb_offset = mb_i*mini_batch_size;
-        const auto ind = static_cast<int>(std::floor(indices[mb_offset + i]));
-        if (0<=ind && ind <static_cast<int>(num_buffer_rows)){
-          
-          const int pe = (ind - (ind % n_pes)) / n_pes;
-          const int local_ind = ind % pe;
-          
-          nvshmemx_getmem_warp(&shared_buffer[mb_offset + local_ind * num_local_values_cols],
-                               &values[mb_offset + i * num_local_values_cols],
-                               num_local_values_cols * sizeof(DataType),
-                               pe);  // This is a blocking call 
+        const auto ind = static_cast<int>(std::floor(indices[indices_offset + row]));
+        if (ind > -1){
+          const int pe = (pe_group * pe_stride) + (ind / num_local_output_rows);
+          const int local_ind = ind % num_local_output_rows;
+
+          for(size_t i = gidx; i < num_cols; i+= nthreadsx){
+            const auto val = values[values_offset + row * num_cols + i];
+            atomic_add(&outputs[output_offset + local_ind * num_cols + i], val, pe);
+          }
         }
       }
     }
-  } 
+  }
   } // namespace <anon>
 
   namespace tensor{
@@ -269,35 +219,49 @@ namespace distconv{
               const size_t values_cols_size,
               const size_t output_rows_size){
                 
-      const auto buffer_size = local_mini_batch_size * values_rows_size * values_cols_size;
-      const auto output_buffer_size = local_mini_batch_size * output_rows_size * values_cols_size;
+      const auto buffer_size = local_mini_batch_size * output_rows_size * values_cols_size;
+
+      if (buffer_size == 0){ // No work to be done here
+        nvshmemx_barrier_all_on_stream(m_stream);
+        return ;
+      }
 
       // Make sure the buffers are large enough
       ensure_buffer(buffer_size);
-      ensure_output_buffer(output_buffer_size);
 
-      constexpr size_t block_size = 32;
+      // To Do: This would result in overcommitted allocation for 
+      //        single mini-batch case. Add different thread configuration to 
+      //        optimize for the case of single mini_batch - S.Z
+      constexpr size_t block_size_x = 16;  // half-warp
+      constexpr size_t block_size_y = 32;  // full-warp
       dim3 block_dims, grid_dims;
-      block_dims.x = block_size;
-      grid_dims.x = output_rows_size;
-      grid_dims.y = local_mini_batch_size;
+      block_dims.x = block_size_x;
+      block_dims.y = block_size_y;
+      block_dims.z = 1;
 
-      Size3 values_shape = {local_mini_batch_size, values_rows_size, values_cols_size};
-      Size2 indices_shape = {local_mini_batch_size, values_rows_size};
-      Size3 buffer_shape = {local_mini_batch_size, output_rows_size, values_cols_size};
+      grid_dims.z = (local_mini_batch_size + block_dims.z -1) / block_dims.z;
+      grid_dims.y = (values_rows_size + block_dims.y - 1) / block_dims.y;
+      grid_dims.x = (values_cols_size + block_dims.x - 1) / block_dims.x;
+
+      Scatter_NVSHMEM_Kernel<<<grid_dims, block_dims, 0, m_stream>>>(values,
+                                                                     indices,
+                                                                     static_cast<DataType*>(m_output_buffer.get()),
+                                                                     local_mini_batch_size,
+                                                                     values_rows_size,
+                                                                     values_cols_size,
+                                                                     output_rows_size,
+                                                                     m_group,
+                                                                     m_stride);
       
-      Scatter_NVSHMEM_Kernel<<<block_dims, grid_dims, 0, m_stream>>>(values,
-                                                                      values_shape,
-                                                                      indices,
-                                                                      indices_shape,
-                                                                      static_cast<DataType*>(m_buf.get()),
-                                                                      buffer_shape);
-      nvshmemx_quiet_on_stream(m_stream);
-      copy_kernel<<<block_dims, grid_dims, 0, m_stream>>>(static_cast<DataType*>(m_output_buf.get()),
-                                                          output,
-                                                          local_mini_batch_size,
-                                                          output_rows_size,
-                                                          values_cols_size);
+      sync();
+      util::MPIRootPrintStreamInfo() << "Assigning symmetric heap to output buffer";
+      // Copy the local workspace buffer onto the output matrix 
+      grid_dims.y = (output_rows_size + block_dims.y - 1) / block_dims.y;
+      copy_kernel<<<grid_dims, block_dims, 0, m_stream>>>(static_cast<DataType*>(m_output_buffer.get()),
+                                                        output,
+                                                        local_mini_batch_size,
+                                                        output_rows_size,
+                                                        values_cols_size);
     }
 
     template<typename DataType>
@@ -316,26 +280,44 @@ namespace distconv{
       // The size of the NVSHMEM_values buffer is for the local values matrix
       // Retreive value vectors onto the NVSHMEM workspace buffer 
       // The NVSHMEM workspace buffer is the size of the local output matrix 
-      // Copy the local workspace buffer onto the output matrix
 
       ensure_buffer(buffer_size);
-      constexpr size_t block_size = 32;
-      dim3 block_dims, grid_dims;
-      block_dims.x = block_size;
-      grid_dims.x = output_rows_size;
-      grid_dims.y = local_mini_batch_size;
 
-      Size3 values_shape = {local_mini_batch_size, values_rows_size, values_cols_size};
-      Size2 indices_shape = {local_mini_batch_size, values_rows_size};
-      Size3 buffer_shape = {local_mini_batch_size, output_rows_size, values_cols_size};
-      Scatter_NVSHMEM_Kernel<<<block_dims, grid_dims, 0, m_stream>>>(values,
-                                                                values_shape,
-                                                                indices,
-                                                                indices_shape,
-                                                                static_cast<DataType*>(m_buf.get()),
-                                                                buffer_shape);
+      // To Do: This would result in overcommitted allocation for 
+      //        single mini-batch case. Add different thread configuration to 
+      //        optimize for the case of single mini_batch - S.Z
+
+      constexpr size_t block_size_x = 32;
+      constexpr size_t block_size_y = 16;
+      dim3 block_dims, grid_dims;
+      block_dims.x = block_size_x;
+      block_dims.y = block_size_y;
+
+      grid_dims.x = (output_rows_size + block_dims.x - 1) / block_dims.x;
+      grid_dims.y = (local_mini_batch_size + block_dims.y - 1)/ block_dims.y;
+
+      Gather_NVSHMEM_Kernel<<<block_dims, grid_dims, 0, m_stream>>>(values,
+                                                                    indices,
+                                                                    static_cast<DataType*>(m_output_buffer.get()),
+                                                                    local_mini_batch_size,
+                                                                    values_rows_size,
+                                                                    values_cols_size,
+                                                                    output_rows_size,
+                                                                    m_group,
+                                                                    m_stride);
       nvshmemx_quiet_on_stream(m_stream);
-      copy_kernel<<<block_dims, grid_dims, 0, m_stream>>>(static_cast<DataType*>(m_buf.get()),
+      sync();
+      // Copy the local workspace buffer onto the output matrix 
+      // Change grid dimensions for copy kernel. Will be removed in the furure - S.Z
+      block_dims.x = block_size_x;
+      block_dims.y = block_size_y;
+      block_dims.z = 1;
+
+      grid_dims.x = (values_cols_size + block_dims.x - 1) / block_dims.x;
+      grid_dims.y = (output_rows_size + block_dims.y - 1) / block_dims.y;
+      grid_dims.z = (local_mini_batch_size + block_dims.z - 1) / block_dims.z;
+
+      copy_kernel<<<block_dims, grid_dims, 0, m_stream>>>(static_cast<DataType*>(m_output_buffer.get()),
                                                           output,
                                                           local_mini_batch_size,
                                                           output_rows_size,

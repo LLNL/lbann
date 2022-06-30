@@ -36,6 +36,10 @@ def num_samples():
 def sample_dims():
     return (input_size + output_size,)
 
+def create_parallel_strategy(num_channel_groups):
+    return {"channel_groups": num_channel_groups,
+            "filter_groups": num_channel_groups}
+
 # ==============================================
 # Setup LBANN experiment
 # ==============================================
@@ -84,11 +88,17 @@ def construct_model(lbann):
     #          3D Values , 3D Input, Axis = 0, Distconv
     #
     ######################################################################
+    num_channel_groups = tools.gpus_per_node(lbann)
 
     x0 = lbann.Reshape(x0, dims=[height, width, 1], name="values_distconv_axis_0")
     x1 = lbann.Reshape(x1, dims=[output_size, 1, 1], name="indices_distconv_axis_0")
+    x0 = lbann.Identity(x0, parallel_strategy=create_parallel_strategy(num_channel_groups))
+    x1 = lbann.Identity(x1, parallel_strategy=create_parallel_strategy(num_channel_groups))
 
-    y0 = lbann.Gather(x0, x1, dims=[output_size, width, 1], axis=0, name="Gather_distconv_axis_0") 
+    y0 = lbann.Gather(x0, x1,
+                      dims=[output_size, width, 1],
+                      axis=0, name="Gather_distconv_axis_0",
+                      parallel_strategy=create_parallel_strategy(num_channel_groups)) 
     y1 = lbann.Concatenation([
         lbann.Constant(value=i + 1, num_neurons='1')
         for i in range(output_size * width)

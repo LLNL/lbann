@@ -254,7 +254,8 @@ void scatter_layer<TensorDataType, Layout, Device>::fp_compute() {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void scatter_layer<TensorDataType, Layout, Device>::bp_compute() {
-  #ifdef LBANN_HAS_DISTCONV
+
+#ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()){
     this->get_distconv_adapter().bp_compute();
     return ;

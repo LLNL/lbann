@@ -197,17 +197,18 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
   #ifdef LBANN_HAS_DISTCONV
  
   if (this->distconv_enabled()){
-    const auto is_values_3D = input0_dims.size(); 
-    const auto is_indices_3D = input1_dims.size();
-    const auto is_output_3D = output_dims.size();
+    const auto is_values_3D = input0_dims.size() == 3; 
+    const auto is_indices_3D = input1_dims.size() == 3;
+    const auto is_output_3D = output_dims.size() == 3;
     
     // Matrices need to be 3D
-    if (!is_values_3D || !is_indices_3D){
+    if (!is_values_3D || !is_indices_3D || !is_output_3D){
        
       LBANN_ERROR(this->get_type(), " Layer \"", this->get_name(),"\" ",
-        "has values input (", dims_to_str(input0_dims),") ",
-        "has indices input (", dims_to_str(input1_dims),"). ", 
-        "Distconv requires both to be 3D. ");
+        "has values input shape (", dims_to_str(input0_dims),") ",
+        "has indices input shape (", dims_to_str(input1_dims),"). ", 
+        "has output shape (", dims_to_str(output_dims),")",
+        "Distconv Scatter requires all three to be 3D. ");
     }
     // The 0-th dimension of the values and indices must match
     if (input0_dims[0] != input1_dims[0]){
@@ -237,9 +238,9 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
     return ;
   }
   #endif // LBANN_HAS_DISTCONV
+
   // Tensor dimensions
   // Check if value matrix is 1D or 2D
-
 
   const auto is_values_1D = input0_dims.size() == 1;
   const auto is_values_2D = input0_dims.size() == 2;
@@ -380,17 +381,23 @@ scatter_distconv_adapter<TensorDataType, Layout, Device>
   // Follow the convention from MSE 
   // MSE also has two input vectors being partitioned 
 
-  m_scatter_operator->setup(); 
+  m_scatter_operator->setup(this->get_prev_activations(0),
+                            this->get_prev_activations(1),
+                            this->get_activations()); 
 }
-template <typename TensorDataType, data_layout Layout, EL::Device Device>
+template <typename TensorDataType, data_layout Layout, El::Device Device>
 dc::Shape
 scatter_distconv_adapter<TensorDataType, Layout, Device>
 ::get_activations_local_shape(int index) const{
-  const auto &layer = dynamic_cast<const channelwise_fully_connected_layer
+  const auto &layer = dynamic_cast<const scatter_layer
     <TensorDataType, Layout, Device>&>(this->layer());
+  // Get the output dims witout the mini batch size
   auto output_dims = layer.get_output_dims();
-  std::reverse(std::begin(output_dims), std::end(output_dims));
-  const auto output_shape = dc::Shape(output_dims);
+  // Get the values layer shape
+  auto output_shape = this->get_prev_activations().get_local_shape();
+  // Divide the output channel dimension by the number of channel splits
+  // To do: Maybe move this to distconv namespace - SZ
+  output_shape[2] = output_dims[0] / this->get_prev_activations().get_distribution().get_split_shape()[-2];
   return output_shape; 
 }
 

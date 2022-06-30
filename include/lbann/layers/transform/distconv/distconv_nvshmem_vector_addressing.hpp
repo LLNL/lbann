@@ -35,28 +35,8 @@
 #include "distconv/util/nvshmem.hpp"
 
 namespace distconv{
-  namespace util{
-    /**
-     * @brief Array with fixed type and size
-     * 
-     */
-    template <typename T, size_t N>
-    struct gpu_array {
-      T vals[N];
-      __host__ __device__ __forceinline__ size_t size() const {
-        return N;
-      }
-
-      __host__ __device__ __forceinline__ T& operator[](size_t i){
-        return vals[i];
-      }
-
-      __host__ __device__ __forceinline__ const T& operator[](size_t i) const{
-        return vals[i];
-      } 
-    };
-  } // namespace <distconv::util>
   namespace tensor{
+
     template <typename DataType>
     struct NVHSMEMDevice{
       int m_pid;
@@ -76,52 +56,73 @@ namespace distconv{
         cudaStream_t m_stream;
         int m_pid;
         int m_np;
-        Memory<NVSHMEMAllocator> m_buf;
-        Memory<NVSHMEMAllocator> m_output_buf;
+        int m_stride; // mini_batch stride for rank
+        int m_group;  // mini batch group for rank
+        // Additional buffers on the symmetric heap
+        // To do: Remove bufferse - SZ
+        Memory<NVSHMEMAllocator> m_output_buffer;
         util::nvshmem::SyncArray m_sync;
-        // Memory<NVSHMEMAllocator> m_native_sync;
       public:
         ScatterNVSHMEM(cudaStream_t stream):m_stream(stream),
-                                            m_pid(nvshmem_my_pe()),  // NVSHMEM function 
-                                            m_np(nvshmem_n_pes()),   // NVSHMEM function
+                                            m_pid(nvshmem_my_pe()),   
+                                            m_np(nvshmem_n_pes()),
+                                            m_stride(nvshmem_n_pes()),
+                                            m_group(0), 
                                             m_sync(0){}  
-      
-      NVHSMEMDevice<DataType> get_for_device(){
-        return NVHSMEMDevice<DataType>(m_pid,
-                                m_np,
-                                static_cast<DataType*>(m_buf.get()),
-                                m_sync.get_for_device());
-      }
 
-      void ensure_buffer(size_t count){        
-        size_t cur_size = m_buf.get_size() / sizeof(DataType);
-        if (cur_size >= count){
-          util::MPIRootPrintStreamInfo() << "Buffer large enough. Continuining";
-          return ; 
+        NVHSMEMDevice<DataType> get_for_device(){
+          return NVHSMEMDevice<DataType>(m_pid,
+                                          m_np,
+                                          static_cast<DataType*>(m_output_buffer.get()),
+                                          m_sync.get_for_device());
         }
 
-        util::MPIRootPrintStreamInfo() << "Attempting to allocate NVSHMEM buffer of size " << count * sizeof(DataType); 
-        m_buf.allocate(count * sizeof(DataType));
-        util::MPIRootPrintStreamInfo() << "Succesfully allocated NVSHMEM buffer of size " << count * sizeof(DataType);
-        m_buf.memset(0);
-        
-      }
-      void ensure_output_buffer(size_t count){
-        size_t cur_size = m_output_buf.get_size() / sizeof(DataType);
-        if (cur_size >= count){
-          return ; 
+        int get_stride() const {
+          return m_stride;
         }
-        m_output_buf.allocate(count * sizeof(DataType));
-        m_output_buf.memset(0);
-      }
 
-      void scatter(const DataType* values, 
-                   const DataType* indices,
-                   DataType* output,
-                   const size_t local_mini_batch_size,
-                   const size_t values_rows_size,
-                   const size_t values_col_size,
-                   const size_t output_rows_size);
+        int get_group() const{
+          return m_group;
+        }
+
+        void set_stride(int stride){
+          m_stride = stride;  
+        }
+
+        void set_group(int group){
+          m_group = group;
+        }
+
+        int get_num_ranks() const{
+          return m_np;
+        }
+
+        int get_rank() const{
+          return m_pid;
+        }
+
+        void ensure_buffer(size_t count){        
+          size_t cur_size = m_output_buffer.get_size() / sizeof(DataType);
+          if (cur_size >= count){
+            return ; 
+          }
+
+          m_output_buffer.allocate(count * sizeof(DataType));
+          m_output_buffer.memset(0);
+        }
+
+        void sync(){
+          // To do: Replace with non-blocking barrier - SZ
+          nvshmemx_barrier_all_on_stream(m_stream);
+        }
+
+        void scatter(const DataType* values, 
+                      const DataType* indices,
+                      DataType* output,
+                      const size_t local_mini_batch_size,
+                      const size_t values_rows_size,
+                      const size_t values_col_size,
+                      const size_t output_rows_size);
     };
 
     template <typename DataType>
@@ -130,45 +131,78 @@ namespace distconv{
         cudaStream_t m_stream;
         int m_pid;
         int m_np;
-        Memory<NVSHMEMAllocator> m_buf;
-        Memory<NVSHMEMAllocator> m_output_buf;
+        int m_stride; // mini_batch stride for rank
+        int m_group;  // mini batch group for rank
+        // Additional buffer on the symmetric heap
+        // To do: Remove bufferse - SZ
+        Memory<NVSHMEMAllocator> m_output_buffer;
         util::nvshmem::SyncArray m_sync;
-        // Memory<NVSHMEMAllocator> m_native_sync;
       
       public:
-        GatherNVSHMEM(cudaStream_t stream):m_stream(stream), 
-                                           m_pid(nvshmem_my_pe()),  // NVSHMEM function
-                                           m_np(nvshmem_n_pes()),   // NVSHMEM function
-                                           m_sync(0){}  
-        ~GatherNVSHMEM() = default;
-      NVHSMEMDevice<DataType> get_for_device(){
-        return NVHSMEMDevice<DataType>(m_pid,
-                                       m_np,
-                                       static_cast<DataType*>(m_buf.get()),
-                                       m_sync.get_for_device());
-      }
 
-      void ensure_buffer(size_t count){
-        size_t cur_size = m_buf.get_size() / sizeof(DataType);
-        if (cur_size >= count){
-          util::MPIPrintStreamInfo() << "Buffer large enough. Continuining";
-          return ; 
+        GatherNVSHMEM(cudaStream_t stream):m_stream(stream), 
+                                            m_pid(nvshmem_my_pe()),  
+                                            m_np(nvshmem_n_pes()),
+                                            m_stride(nvshmem_n_pes()),
+                                            m_group(0),   
+                                            m_sync(0){}  
+          ~GatherNVSHMEM() = default;
+        NVHSMEMDevice<DataType> get_for_device(){
+          return NVHSMEMDevice<DataType>(m_pid,
+                                        m_np,
+                                        static_cast<DataType*>(m_output_buffer.get()),
+                                        m_sync.get_for_device());
         }
 
-        util::MPIPrintStreamInfo() << "Allocating NVSHMEM buffer of size " << count; 
-        m_buf.allocate(count * sizeof(DataType));
-        m_buf.memset(0);
-      }
-      void gather(const DataType* values,
-                  const DataType* indices,
-                  DataType* output,
-                  const size_t local_mini_batch_size,
-                  const size_t values_rows_size,
-                  const size_t values_cols_size,
-                  const size_t output_rows_size);
+        int get_stride() const {
+          return m_stride;
+        }
+
+        int get_group() const{
+          return m_group;
+        }
+
+        void set_stride(int stride){
+          m_stride = stride;  
+        }
+
+        void set_group(int group){
+          m_group = group;
+        }
+
+        int get_num_ranks() const{
+          return m_np;
+        }
+
+        int get_rank() const{
+          return m_pid;
+        }
+
+        void ensure_buffer(size_t count){
+          size_t cur_size = m_output_buffer.get_size() / sizeof(DataType);
+          if (cur_size >= count){
+            return ; 
+          }
+          m_output_buffer.allocate(count * sizeof(DataType));
+          m_output_buffer.memset(0);
+        }
+
+        void sync(){
+            // To do: Replace with non-blocking barrier - SZ
+            nvshmemx_barrier_all_on_stream(m_stream);
+        }
+
+        void gather(const DataType* values,
+                    const DataType* indices,
+                    DataType* output,
+                    const size_t local_mini_batch_size,
+                    const size_t values_rows_size,
+                    const size_t values_cols_size,
+                    const size_t output_rows_size);
     };
   
   } // namespace distconv::tensor
 } // namespace distconv
+
 #endif // LBANN_HAS_NVSHMEM
 #endif //LBANN_LAYERS_TRANSFORM_DISTCONV_NVSHMEM_VECTOR_ADDRESSING

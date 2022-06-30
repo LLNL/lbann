@@ -11,7 +11,7 @@ Set the following environment flags prior to running:
 
 ```
 LBANN_KEEP_ERROR_SIGNAL=1
-LBANN_HAS_NVSHMEM=1
+LBANN_INIT_NVSHMEM=1
 ```
 
 ## Running NVSHMEM-based Distributed  Scatter/Gather

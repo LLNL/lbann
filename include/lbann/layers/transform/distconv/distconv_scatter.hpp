@@ -55,7 +55,10 @@ namespace distconv{
                  const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices,           
                  tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &values_grad,             
                  tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices_grad);
-    void setup();
+    template<typename Allocator>
+    void setup(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input,
+               const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices,
+               const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output);
   protected:
     Backend &m_backend;
     std::unique_ptr<tensor::ScatterNVSHMEM<DataType>> m_dist_scatter;  // Forward prop
