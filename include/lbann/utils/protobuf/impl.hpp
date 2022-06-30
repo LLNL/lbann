@@ -132,14 +132,21 @@ void lbann::protobuf::assign_to_repeated(google::protobuf::RepeatedField<T>& fie
   field.Add(begin(values), end(values));
 }
 
+/** @brief Stringify the container with spaces between elements.
+ *
+ *  The `value_type` of the container must support stream output
+ *  (e.g., `vector` or `set`, but not `map`).
+ */
 template <typename ContainerT>
 std::string lbann::protobuf::to_space_sep_string(ContainerT const& values)
 {
-  std::string combined;
-  for (auto const& value : values)
-    combined += (value + " ");
-
-  return combined;
+  if (values.empty())
+    return "";
+  std::ostringstream oss;
+  oss << *cbegin(values);
+  for (auto i = next(cbegin(values)); i != cend(values); ++i)
+    oss << " " << *i;
+  return oss.str();
 }
 
 template <typename T>
