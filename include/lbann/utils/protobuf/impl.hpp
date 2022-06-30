@@ -125,9 +125,7 @@ template <typename T, typename ContainerT>
 void lbann::protobuf::assign_to_repeated(google::protobuf::RepeatedField<T>& field,
                         ContainerT const& values)
 {
-  /** @todo Change to Assign if older versions of protobuf are no
-   *  longer supported.
-   */
+  /** @todo Change to Assign if Protobuf v3.16.0 and greater is required. */
   field.Clear();
   field.Add(begin(values), end(values));
 }
