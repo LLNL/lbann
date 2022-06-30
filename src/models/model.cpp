@@ -2645,18 +2645,6 @@ void model::write_proto(lbann_data::Model& proto)
     met->set_name(metric->name());
     met->set_unit(metric->get_unit());
   }
-  //FIXME(KLG): Data layout is a single string but I have to get it from the layers?
-  auto layout = this->get_layer(0).get_data_layout();
-  switch (layout) {
-  case data_layout::DATA_PARALLEL:
-    proto.set_data_layout("data_parallel");
-    break;
-  case data_layout::MODEL_PARALLEL:
-    proto.set_data_layout("model_parallel");
-    break;
-  default:
-    LBANN_ERROR("Invalid data layout");
-  }
   for (auto* layer : this->get_layers()) {
     layer->write_proto(*proto.add_layer());
   }
@@ -2671,17 +2659,16 @@ void model::write_proto(lbann_data::Model& proto)
     l->write_proto(*l_msg);
   }
 
-  //FIXME(KLG): unused proto fields?
-  //proto.set_num_epochs();
-  //proto.set_num_batches();
-  //proto.set_evaluation_frequency();
-
-  //proto.set_subgraph_communication();
-  //proto.enable_subgraph_topology();
-  //proto.subgraph_parent_grid_resources();
-
-  //proto.set_disable_cuda();
-  //proto.set_summarizer();
+  // Unused proto fields
+  // proto.set_data_layout(string_value);
+  // proto.set_num_epochs(int64_value);
+  // proto.set_num_batches(int64_value);
+  // proto.set_evaluation_frequency(int64_value);
+  // proto.set_subgraph_communication(SubGraphCommunication_value);
+  // proto.enable_subgraph_topology(bool_value);
+  // proto.subgraph_parent_grid_resources(int64_value);
+  // proto.set_disable_cuda(bool_value);
+  // proto.set_summarizer(Summarizer_value);
 
 }
 
