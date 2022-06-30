@@ -68,7 +68,7 @@ public:
   void set_fan_out(El::Int fan_out) { m_fan_out = fan_out; }
 
   /** Get probability distribution. */
-  probability_distribution get_prob_dist() const
+  probability_distribution get_prob_dist() const noexcept
   { return m_prob_dist; }
 
 private:
