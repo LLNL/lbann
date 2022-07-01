@@ -90,7 +90,7 @@ private:
   std::unique_ptr<PermuteImpl> m_impl;
 };
 
-#ifdef LBANN_HAS_CUDA
+#ifdef LBANN_HAS_CUTENSOR
 // No member of this class will actually be instantiated unless LBANN
 // is built with GPU support on a CUDA platform.
 
@@ -101,7 +101,7 @@ private:
 #undef PROTO
 #endif // LBANN_PERMUTE_LAYER_INSTANTIATE
 
-#endif // LBANN_HAS_CUDA
+#endif // LBANN_HAS_CUTENSOR
 
 } // namespace lbann
 #endif // LBANN_LAYERS_TRANSFORM_PERMUTE_HPP_INCLUDED
