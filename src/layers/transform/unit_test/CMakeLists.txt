@@ -23,41 +23,21 @@
 ## implied. See the License for the specific language governing
 ## permissions and limitations under the license.
 ################################################################################
-# Add the source files for this directory
-set_full_path(THIS_DIR_SOURCES
-  batchwise_reduce_sum.cpp
-  bernoulli.cpp
-  categorical_random.cpp
-  concatenate.cpp
-  constant.cpp
-  crop.cpp
-  discrete_random.cpp
-  dummy.cpp
-  evaluation.cpp
-  gather.cpp
-  gaussian.cpp
-  hadamard.cpp
-  in_top_k.cpp
-  pooling.cpp
-  reduction.cpp
-  reshape.cpp
-  scatter.cpp
-  slice.cpp
-  sort.cpp
-  split.cpp
-  stop_gradient.cpp
-  sum.cpp
-  tessellate.cpp
-  uniform.cpp
-  unpooling.cpp
-  weighted_sum.cpp
-  weights.cpp
-)
-
 if (LBANN_HAS_CUTENSOR)
-  list(APPEND THIS_DIR_SOURCES
-    "${CMAKE_CURRENT_SOURCE_DIR}/permute.cpp")
+  set_full_path(THIS_DIR_SEQ_CATCH2_TEST_FILES
+    cutensor_permute_test.cpp
+    tensor_dims_utils_test.cpp
+  )
+
+  set_full_path(THIS_DIR_MPI_CATCH2_TEST_FILES
+    permute_layer_test.cpp
+  )
 endif ()
 
-# Propagate the files up the tree
-set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
+set(LBANN_SEQ_CATCH2_TEST_FILES
+  "${LBANN_SEQ_CATCH2_TEST_FILES}"
+  "${THIS_DIR_SEQ_CATCH2_TEST_FILES}" PARENT_SCOPE)
+
+set(LBANN_MPI_CATCH2_TEST_FILES
+  "${LBANN_MPI_CATCH2_TEST_FILES}"
+  "${THIS_DIR_MPI_CATCH2_TEST_FILES}" PARENT_SCOPE)

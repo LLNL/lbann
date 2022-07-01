@@ -154,6 +154,7 @@ private:
     LBANN_REGISTER_BUILDER(Split, split);
     LBANN_REGISTER_BUILDER(StopGradient, stop_gradient);
     LBANN_REGISTER_BUILDER(Sum, sum);
+    LBANN_REGISTER_BUILDER(TensorPermute, permute);
     LBANN_REGISTER_BUILDER(Tessellate, tessellate);
     LBANN_REGISTER_BUILDER(Uniform, uniform);
     LBANN_REGISTER_BUILDER(Unpooling, unpooling);
