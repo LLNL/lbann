@@ -696,8 +696,15 @@ bp_setup(El::Int mini_batch_size) {
     if (i == 0) {
       if (parent_copy_required(i) &&
           get_original_error_signals().is_split_root()) {
-        assert_eq((int)get_original_error_signals().get_local_shape()[-1],
+        
+        if ((int)get_original_error_signals().get_local_shape()[-1] != 
+            l.get_error_signals().LocalWidth()){
+          dc::MPIRootPrintStreamInfo() << l.get_type(); 
+          dc::MPIRootPrintStreamInfo() << "Actual shape: " << get_original_error_signals().get_local_shape();
+          dc::MPIRootPrintStreamInfo() << "Expected shape: " << l.get_error_signals().LocalWidth();  
+          assert_eq((int)get_original_error_signals().get_local_shape()[-1],
                   l.get_error_signals().LocalWidth());
+        }
       }
     }
   }

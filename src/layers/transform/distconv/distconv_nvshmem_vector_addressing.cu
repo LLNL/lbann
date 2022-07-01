@@ -139,22 +139,22 @@ double atomic_add(double* __restrict__ address,
     const size_t nthreadsy = gridDim.y * blockDim.y;
     const size_t nthreadsx = gridDim.x * blockDim.x;
     
-    const int n_pes = nvshmem_n_pes();
-
     for (size_t mb_i = gidy; mb_i < mini_batch_size; mb_i += nthreadsy){
       // Figure out which rank to send the vector
-      const auto mb_offset = mb_i*num_local_cols * num_local_output_rows;
-      const auto values_offest = mb_i*num_local_cols * num_local_values_rows;
-      const auto ind_offset = mb_i*num_local_output_rows;
+      const auto mb_offset = mb_i * num_local_cols * num_local_output_rows;
+      const auto values_offest = mb_i * num_local_cols * num_local_values_rows;
+      const auto ind_offset = mb_i * num_local_output_rows;
+
       for(size_t row = gidx; row < num_local_output_rows; row += nthreadsx){
         const auto ind = static_cast<int>(std::floor(indices[ind_offset + row]));
-        if (ind > 0 ){ 
+        if (ind > -1 ){ 
           const int pe = (pe_group * pe_stride) + (ind / num_local_values_rows);
           const int local_ind = ind % num_local_values_rows;
+
           nvshmem_getmem_nbi(&shared_buffer[mb_offset + row * num_local_cols],
-                              &values[values_offest + local_ind * num_local_cols],
-                              num_local_cols * sizeof(DataType),
-                              pe);
+                             &values[values_offest + local_ind * num_local_cols],
+                             num_local_cols * sizeof(DataType),
+                             pe);
         }
       }
     }
@@ -254,7 +254,6 @@ double atomic_add(double* __restrict__ address,
                                                                      m_stride);
       
       sync();
-      util::MPIRootPrintStreamInfo() << "Assigning symmetric heap to output buffer";
       // Copy the local workspace buffer onto the output matrix 
       grid_dims.y = (output_rows_size + block_dims.y - 1) / block_dims.y;
       copy_kernel<<<grid_dims, block_dims, 0, m_stream>>>(static_cast<DataType*>(m_output_buffer.get()),
@@ -262,6 +261,7 @@ double atomic_add(double* __restrict__ address,
                                                         local_mini_batch_size,
                                                         output_rows_size,
                                                         values_cols_size);
+      cudaDeviceSynchronize();
     }
 
     template<typename DataType>
@@ -280,7 +280,10 @@ double atomic_add(double* __restrict__ address,
       // The size of the NVSHMEM_values buffer is for the local values matrix
       // Retreive value vectors onto the NVSHMEM workspace buffer 
       // The NVSHMEM workspace buffer is the size of the local output matrix 
-
+      if (buffer_size == 0){ // No work to be done here
+        nvshmemx_barrier_all_on_stream(m_stream);
+        return ;
+      }
       ensure_buffer(buffer_size);
 
       // To Do: This would result in overcommitted allocation for 
@@ -296,7 +299,7 @@ double atomic_add(double* __restrict__ address,
       grid_dims.x = (output_rows_size + block_dims.x - 1) / block_dims.x;
       grid_dims.y = (local_mini_batch_size + block_dims.y - 1)/ block_dims.y;
 
-      Gather_NVSHMEM_Kernel<<<block_dims, grid_dims, 0, m_stream>>>(values,
+      Gather_NVSHMEM_Kernel<<<grid_dims, block_dims, 0, m_stream>>>(values,
                                                                     indices,
                                                                     static_cast<DataType*>(m_output_buffer.get()),
                                                                     local_mini_batch_size,
@@ -322,6 +325,7 @@ double atomic_add(double* __restrict__ address,
                                                           local_mini_batch_size,
                                                           output_rows_size,
                                                           values_cols_size);
+      cudaDeviceSynchronize();
     }
 
   

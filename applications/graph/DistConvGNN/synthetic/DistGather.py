@@ -4,7 +4,7 @@ import lbann
 import os
 import lbann.contrib.launcher
 import lbann.contrib.args
-
+from functools import partial
 
 desc = ("Benchmarking code for distributed gather with NVSHMEM")
 
@@ -41,6 +41,7 @@ NUM_COLS = args.num_cols
 OUT_ROWS = args.out_rows
 NUM_NODES = args.nodes
 DISTCONV_ENABLED = args.enable_distconv
+NUM_EPOCHS = args.num_epochs
 
 #  Write to a config file so the synthetic data generator can generate appropriate data
 config = configparser.ConfigParser()
@@ -77,6 +78,16 @@ def make_data_reader():
 def main():
   matrix_size = NUM_ROWS * NUM_COLS
   indices_vector_size = OUT_ROWS
+  if DISTCONV_ENABLED:
+    values_dims = [NUM_ROWS, NUM_COLS, 1]
+    index_dims = [indices_vector_size, 1, 1]
+    lbann_identity_layer = partial(lbann.Identity, parallel_strategy=create_parallel_strategy(NUM_NODES))
+    lbann_gather_layer = partial(lbann.Gather, parallel_strateg=create_parallel_strategy(NUM_NODES))
+  else:
+    values_dims = [NUM_ROWS, NUM_COLS]
+    index_dims = [indices_vector_size]
+    lbann_identity_layer = lbann.Identity
+    lbann_gather_layer = lbann.Gather
 
   x_weights = lbann.Weights(optimizer=lbann.SGD(),
                             initializer=lbann.ConstantInitializer(value=0.0),
@@ -88,36 +99,23 @@ def main():
 
   values = lbann.Identity(sliced_inputs)
 
-  if DISTCONV_ENABLED:
-    values_dims = [NUM_ROWS, NUM_COLS, 1]
-    index_dims = [indices_vector_size, 1, 1]
-  else:
-    values_dims = [NUM_ROWS, NUM_COLS]
-    index_dims = [indices_vector_size]
 
   indices = lbann.Reshape(lbann.Identity(sliced_inputs), dims=index_dims, name='indices_array')
 
   
-  indices = lbann.Identity(indices, parallel_strategy=create_parallel_strategy(NUM_NODES))
+  indices = lbann_identity_layer(indices)
 
   values = lbann.Reshape(values, dims=values_dims, name='values_matrix')
-  values = lbann.Identity(values, parallel_strategy=create_parallel_strategy(NUM_NODES))
+  values = lbann_identity_layer(values)
 
   values_x = lbann.Sum(values, lbann.WeightsLayer(weights=x_weights, dims=values_dims))
 
-  # Only supporting fully distconv mode currently. So number of nodes == number of splits
-  if DISTCONV_ENABLED:
-    output = lbann.Gather(values_x,
-                          indices,
-                          axis=0,
-                          name='output_matrix',
-                          parallel_strategy=create_parallel_strategy(NUM_NODES))
-  else:
-   output = lbann.Gather(values_x,
-                         indices,
-                         axis=0,
-                         name='output_matrix') 
-
+  output = lbann_gather_layer(values_x,
+                              indices,
+                              axis=0,
+                              name='output_matrix',
+                              parallel_strategy=create_parallel_strategy(NUM_NODES))
+  
   y = lbann.L2Norm2(output)
 
   print_model = lbann.CallbackPrintModelDescription()  # Prints initial Model after Setup
@@ -134,7 +132,7 @@ def main():
 
   callbacks = [print_model, dump_outputs, gpu_usage, dump_inputs]
 
-  model = lbann.Model(2,
+  model = lbann.Model(NUM_EPOCHS,
                       layers=lbann.traverse_layer_graph(_inputs),
                       objective_function=[y],
                       callbacks=callbacks)

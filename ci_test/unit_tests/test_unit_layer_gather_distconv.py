@@ -17,7 +17,7 @@ import tools
 
 # Data
 width = 13
-height = 17
+height = 16
 input_size = width * height
 output_size = 23
 seed = 20210127
@@ -96,7 +96,6 @@ def construct_model(lbann):
     x1 = lbann.Identity(x1, parallel_strategy=create_parallel_strategy(num_channel_groups))
 
     y0 = lbann.Gather(x0, x1,
-                      dims=[output_size, width, 1],
                       axis=0, name="Gather_distconv_axis_0",
                       parallel_strategy=create_parallel_strategy(num_channel_groups)) 
     y1 = lbann.Concatenation([

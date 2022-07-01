@@ -90,9 +90,9 @@ namespace distconv{
              tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &values_grad, 
              tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices_grad){
     
-    const auto& output_grad_shape = output_grad.get_local_shape(); // Should be {1, F, E, B}
+    const auto& output_grad_shape = output_grad.get_local_shape(); // Should be {1, F, B, B}
     const auto& indices_shape = indices.get_local_shape();  // Should be {1, 1, E, B}
-    const auto& values_grad_shape = values_grad.get_local_shape();  // Should be {1, F, N, B}
+    const auto& values_grad_shape = values_grad.get_local_shape();  // Should be {1, F, E, B}
 
     const auto num_columns = output_grad_shape[1];            // F
     const auto num_output_grad_rows = output_grad_shape[2];   // E
@@ -121,6 +121,15 @@ namespace distconv{
                             num_output_grad_rows,
                             num_columns,
                             num_values_grad_rows);
+    
+    const auto& zero = El::TypeTraits<DataType>::Zero();
+
+    // Explicitly zero the indices grad matrix
+    El::Matrix<DataType, El::Device::GPU> ind_grad_mat(num_values_grad_rows,
+                                                       local_mini_batch_size,
+                                                       indices_grad.get_buffer(),
+                                                       num_values_grad_rows);
+    El::Fill(ind_grad_mat, zero);
     return 1;
   }
 
@@ -131,21 +140,24 @@ namespace distconv{
   ::setup(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &values, 
           const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices,
           const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output){
+
     const auto channel_splits = values.get_distribution().get_split_shape()[2];
     const auto num_pes = m_dist_gather->get_num_ranks();
     const auto pid = m_dist_gather->get_rank();
     // Check if in hybrid data-parallel channel-parallel mode
-    if (channel_splits == num_pes){
+    if ((int)channel_splits == num_pes){
       // Default setup is sufficent. No further changes needed
       return ;
     }
     // hybrid data-parallel channel-parallel mode. Must set scatter / gather
     // stides and groups
 
+    const auto num_groups = num_pes / channel_splits;
+    const auto group = pid / num_groups;
     m_dist_scatter->set_stride(channel_splits);
     m_dist_gather->set_stride(channel_splits);
-    m_dist_scatter->set_group(num_pes / channel_splits);
-    m_dist_gather->set_group(num_pes / channel_splits);
+    m_dist_scatter->set_group(group);
+    m_dist_gather->set_group(group);
   }
 
 // Explicit template instantiation

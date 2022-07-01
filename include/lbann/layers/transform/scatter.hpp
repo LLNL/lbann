@@ -416,7 +416,7 @@ void
 scatter_distconv_adapter<TensorDataType, Layout, Device>
 ::bp_compute(){
   // Compute the backward pass 
-  m_scatter_operator->backward(this->get_prev_error_signals(),  
+  m_scatter_operator->backward(this->get_prev_error_signals(0),  
                                this->get_prev_activations(1),
                                this->get_error_signals(0),   // Values gradient
                                this->get_error_signals(1));  // Indices gradient. Will be 0'ed out

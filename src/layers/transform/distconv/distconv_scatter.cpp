@@ -38,7 +38,6 @@ namespace distconv{
           const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices,
           tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output){
     
-    util::MPIPrintStreamInfo() << "performing forward pass";
     if(output.get_buffer() == nullptr){
       util::MPIPrintStreamInfo() << "output buffer is null";
       m_dist_scatter->sync();
@@ -67,18 +66,8 @@ namespace distconv{
     const auto& local_mini_batch_size = values_shape[3];
     const auto& num_output_rows = output_shape[2];
 
-        // Debug prints -- delete before PR
-    #if 1
-       util::MPIPrintStreamInfo() << "Values Dims: " << values_shape
-      << "\tIndices Dims: " << indices_shape << "\tOutput Dims: "<< output_shape;
-      // util::MPIRootPrintStreamInfo() << "NUM COLUMNS: \t" << num_columns 
-      //   << "\n NUM ROWS: \t" << num_values_rows
-      //   << "\n NUM OUTPUT ROWS \t" << num_output_rows
-      //   << "\n LOCAL MINI-BATCH SIZE \t" << local_mini_batch_size; 
-      util::MPIPrintStreamInfo() << values;
-      util::MPIPrintStreamInfo() << output;
-
-    #endif
+    // Debug prints -- delete before PR
+ 
      
     // Attach values matrix to the NVSHMEM buffer
     // The size of the NVSHMEM_values buffer is sum of the local values matrices
@@ -106,25 +95,24 @@ namespace distconv{
              tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &values_grad, 
              tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices_grad){
     
-    util::MPIPrintStreamInfo() << "performing backward pass";
-
     if(output_grad.get_buffer() == nullptr){
-      util::MPIPrintStreamInfo() << "output grad buffer is null";
+      // util::MPIPrintStreamInfo() << "output grad buffer is null";
       m_dist_gather->sync(); // Sync in case other PEs performing work
       return 0; 
     }
 
     if(indices.get_buffer() == nullptr){
-      util::MPIPrintStreamInfo() << "indices buffer is null";
+      // util::MPIPrintStreamInfo() << "indices buffer is null";
       m_dist_gather->sync();
       return 0;
     }
 
     if(values_grad.get_buffer() == nullptr){
-      util::MPIPrintStreamInfo() << "values grad buffer is null";
+      // util::MPIPrintStreamInfo() << "values grad buffer is null";
       m_dist_gather->sync();
       return 0;
-    }    
+    } 
+   
 
     const auto& output_grad_shape = output_grad.get_local_shape(); // Should be {1, F, E, B}
     const auto& indices_shape = indices.get_local_shape();  // Should be {1, 1, E, B}
@@ -144,8 +132,16 @@ namespace distconv{
                           num_output_grad_rows,
                           num_columns,
                           num_values_grad_rows); 
+    
+    const auto& zero = El::TypeTraits<DataType>::Zero();
 
-    util::MPIPrintStreamInfo() << "Finished backward pass";
+    // Explicitly zero the indices grad matrix
+    El::Matrix<DataType, El::Device::GPU> ind_grad_mat(num_output_grad_rows,
+                                                       local_mini_batch_size,
+                                                       indices_grad.get_buffer(),
+                                                       num_output_grad_rows);
+    El::Fill(ind_grad_mat, zero);
+
     return 1;
   }
 
@@ -156,22 +152,24 @@ namespace distconv{
   ::setup(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &values, 
           const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices,
           const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output){
-    
+
     const auto channel_splits = values.get_distribution().get_split_shape()[2];
     const auto num_pes = m_dist_scatter->get_num_ranks();
     const auto pid = m_dist_scatter->get_rank();
     // Check if in hybrid data-parallel channel-parallel mode
-    if (channel_splits == num_pes){
+    if ((int)channel_splits == num_pes){
       // Default setup is sufficent. No further changes needed
       return ;
     }
     // hybrid data-parallel channel-parallel mode. Must set scatter / gather
     // stides and groups
 
+    const auto num_groups = num_pes / channel_splits;
+    const auto group = pid / num_groups;
     m_dist_scatter->set_stride(channel_splits);
     m_dist_gather->set_stride(channel_splits);
-    m_dist_scatter->set_group(num_pes / channel_splits);
-    m_dist_gather->set_group(num_pes / channel_splits);
+    m_dist_scatter->set_group(group);
+    m_dist_gather->set_group(group);
   }
 
 
