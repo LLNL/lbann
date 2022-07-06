@@ -57,12 +57,9 @@ namespace distconv{
     const auto& output_shape = output.get_local_shape();    // Should be {1, F, E, B}
 
     // Debug prints -- delete before PR
-    #if 1
+    #if 0
        util::MPIRootPrintStreamInfo() << "Values Dims: " << values_shape
       << "\tIndices Dims: " << indices_shape << "\tOutput Dims: "<< output_shape; 
-    util::MPIRootPrintStreamDebug() << values; 
-    util::MPIRootPrintStreamDebug() << indices;
-    util::MPIRootPrintStreamDebug() << output;
     #endif
 
     const auto& num_columns = values_shape[1];
@@ -140,10 +137,11 @@ namespace distconv{
   ::setup(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &values, 
           const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices,
           const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output){
+    
 
     const auto channel_splits = values.get_distribution().get_split_shape()[2];
-    const auto num_pes = m_dist_gather->get_num_ranks();
-    const auto pid = m_dist_gather->get_rank();
+    const auto num_pes = m_dist_scatter->get_num_ranks();
+    const auto pid = m_dist_scatter->get_rank();
     // Check if in hybrid data-parallel channel-parallel mode
     if ((int)channel_splits == num_pes){
       // Default setup is sufficent. No further changes needed

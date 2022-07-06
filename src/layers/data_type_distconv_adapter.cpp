@@ -699,7 +699,7 @@ bp_setup(El::Int mini_batch_size) {
         
         if ((int)get_original_error_signals().get_local_shape()[-1] != 
             l.get_error_signals().LocalWidth()){
-          dc::MPIRootPrintStreamInfo() << l.get_type(); 
+          dc::MPIRootPrintStreamInfo() << l.get_name(); 
           dc::MPIRootPrintStreamInfo() << "Actual shape: " << get_original_error_signals().get_local_shape();
           dc::MPIRootPrintStreamInfo() << "Expected shape: " << l.get_error_signals().LocalWidth();  
           assert_eq((int)get_original_error_signals().get_local_shape()[-1],

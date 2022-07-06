@@ -40,7 +40,10 @@ namespace distconv{
     using LocaleMPI = tensor::LocaleMPI;
     
     public:
-      Gather(Backend &backend):m_backend(backend){};
+      Gather(Backend &backend):m_backend(backend){
+        m_dist_scatter = util::make_unique<tensor::ScatterNVSHMEM<DataType>>(m_backend.get_stream());
+        m_dist_gather = util::make_unique<tensor::GatherNVSHMEM<DataType>>(m_backend.get_stream());
+      };
 
     template<typename Allocator>
     int forward(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input,

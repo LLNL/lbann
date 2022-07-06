@@ -255,6 +255,8 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void gather_layer<TensorDataType, Layout, Device>::bp_compute() {
 
 #ifdef LBANN_HAS_DISTCONV
+  // Initialize the nvshmem here. No Op if already initialized 
+  nvshmem::initialize();
   if (this->distconv_enabled()){
     this->get_distconv_adapter().bp_compute();
     return ;

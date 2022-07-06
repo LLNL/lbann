@@ -39,23 +39,22 @@ namespace distconv{
           tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output){
     
     if(output.get_buffer() == nullptr){
-      util::MPIPrintStreamInfo() << "output buffer is null";
+      util::MPIPrintStreamDebug() << "output buffer is null";
       m_dist_scatter->sync();
       return 0;
     }
       
     if(values.get_buffer() == nullptr){
-      util::MPIPrintStreamInfo() << "values buffer is null";
+      util::MPIPrintStreamDebug() << "values buffer is null";
       m_dist_scatter->sync();
       return 0;
     }
 
     if(indices.get_buffer() == nullptr){
-      util::MPIPrintStreamInfo() << "indices buffer is null";
+      util::MPIPrintStreamDebug() << "indices buffer is null";
       m_dist_scatter->sync();
       return 0;
     }
-
 
     const auto& values_shape = values.get_local_shape();    // Should be {1, F, N, B}
     const auto& indices_shape = indices.get_local_shape();  // Should be {1, 1, E, B}
@@ -67,8 +66,7 @@ namespace distconv{
     const auto& num_output_rows = output_shape[2];
 
     // Debug prints -- delete before PR
- 
-     
+      
     // Attach values matrix to the NVSHMEM buffer
     // The size of the NVSHMEM_values buffer is sum of the local values matrices
     // Retreive value vectors onto the NVSHMEM workspace buffer 
@@ -82,7 +80,6 @@ namespace distconv{
                             num_values_rows,
                             num_columns,
                             num_output_rows);
-    util::MPIPrintStreamInfo() << "Finished forward pass";
     return 1;
   }
 
@@ -94,11 +91,16 @@ namespace distconv{
              const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices, 
              tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &values_grad, 
              tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices_grad){
-    
+
     if(output_grad.get_buffer() == nullptr){
       // util::MPIPrintStreamInfo() << "output grad buffer is null";
       m_dist_gather->sync(); // Sync in case other PEs performing work
       return 0; 
+    }
+
+    if (indices_grad.get_buffer() == nullptr){
+      m_dist_gather->sync();
+      return 0;
     }
 
     if(indices.get_buffer() == nullptr){
@@ -111,8 +113,7 @@ namespace distconv{
       // util::MPIPrintStreamInfo() << "values grad buffer is null";
       m_dist_gather->sync();
       return 0;
-    } 
-   
+    }    
 
     const auto& output_grad_shape = output_grad.get_local_shape(); // Should be {1, F, E, B}
     const auto& indices_shape = indices.get_local_shape();  // Should be {1, 1, E, B}
@@ -124,7 +125,7 @@ namespace distconv{
     const auto num_values_grad_rows = values_grad_shape[2];
 
     // Set indices_grad to 0
-    
+
     m_dist_gather->gather(output_grad.get_buffer(),
                           indices.get_buffer(),
                           values_grad.get_buffer(),
@@ -136,10 +137,10 @@ namespace distconv{
     const auto& zero = El::TypeTraits<DataType>::Zero();
 
     // Explicitly zero the indices grad matrix
-    El::Matrix<DataType, El::Device::GPU> ind_grad_mat(num_output_grad_rows,
+    El::Matrix<DataType, El::Device::GPU> ind_grad_mat(num_values_grad_rows,
                                                        local_mini_batch_size,
                                                        indices_grad.get_buffer(),
-                                                       num_output_grad_rows);
+                                                       num_values_grad_rows);
     El::Fill(ind_grad_mat, zero);
 
     return 1;

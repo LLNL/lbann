@@ -258,6 +258,8 @@ void scatter_layer<TensorDataType, Layout, Device>::bp_compute() {
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()){
     this->get_distconv_adapter().bp_compute();
+    dc::MPIRootPrintStreamInfo()<< "Scatter error signal mini_batch shapes: " <<this->get_error_signals(0).LocalWidth() << "\t" <<
+                                   this->get_error_signals(1).LocalWidth();
     return ;
   }
 #endif // LBANN_HAS_DISTCONV

@@ -40,8 +40,6 @@ class gather_distconv_adapter
   :  public data_type_distconv_adapter <TensorDataType>{
   public:
     using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
-    using InputTensorDevType = typename data_type_distconv_adapter<TensorDataType>::InputTensorDevType;
-    using OutputTensorDevType = typename data_type_distconv_adapter<TensorDataType>::OutputTensorDevType;
 
     gather_distconv_adapter(Layer &layer) : data_type_distconv_adapter<TensorDataType>(layer){}
     virtual ~gather_distconv_adapter() = default;
@@ -177,6 +175,8 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
   const auto& input0_dims = this->get_input_dims(0);
   const auto& input1_dims = this->get_input_dims(1);
   
+  const bool along_axis_0 = this->m_gather_axis == 0;
+
   auto dims_to_str = [] (const std::vector<int>& dims) -> std::string {
     std::ostringstream ss;
     for (size_t i=0; i<dims.size(); ++i) {
@@ -196,7 +196,7 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
     const auto is_values_3D = input0_dims.size() == 3;
     const auto is_indices_3D = input1_dims.size() == 3;
 
-    //Input matrices need to be 3D
+    // Input matrices need to be 3D
     if(!is_values_3D || !is_indices_3D){
 
       LBANN_ERROR(this->get_type(), " Layer \"", this->get_name(),"\" ",
@@ -204,15 +204,14 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
         "has indices input (", dims_to_str(input1_dims),"). ", 
         "Distconv Gather requires both to be 3D. ");
     }
-    // The 0-th dimension of the values and indices must match
-    if (input0_dims[0] != input1_dims[0]){
-      
-      LBANN_ERROR(this->get_type(), " Layer \"", this->get_name(),"\" ",
-        "has values input (", dims_to_str(input0_dims),") ",
-        "has indices input (", dims_to_str(input1_dims),"). ", 
-        "Distconv requires the 0-th dimension to match. ");
+    // Make sure only gathering along axis 0  
+    if (along_axis_0){
+      this->set_output_dims(std::vector<int>{input1_dims[0], input0_dims[1], 1});
+    }else{
+      LBANN_ERROR(this->get_type(), "Layer \"", this->get_name(), "\"",
+        "cannot gather along axis ", m_gather_axis, " when distconv is enabled");
     }
-    this->set_output_dims(std::vector<int>{input1_dims[0], input0_dims[1], 1});
+    return ;
   }
   #endif // LBANN_HAS_DISTCONV
   
@@ -223,7 +222,6 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
   const auto is_values_1D =  input0_dims.size() == 1;
   const auto is_values_2D = input0_dims.size() == 2;
 
-  const bool along_axis_0 = this->m_gather_axis == 0;
   if(is_values_2D){
     if(this->m_gather_axis == -1){
       LBANN_ERROR(
@@ -350,9 +348,11 @@ gather_distconv_adapter<TensorDataType, Layout, Device>
   m_gather_operator = make_unique<dc::Gather<TensorDataType>>(dc::get_backend());
   // Follow the convention from MSE 
   // MSE also has two input vectors being partitioned
+  dc::MPIPrintStreamInfo() << "Setting up gather layer";
   m_gather_operator->setup(this->get_prev_activations(0),
                            this->get_prev_activations(1),
                            this->get_activations()); 
+  dc::MPIPrintStreamInfo() << "Finished setting up the layer";
 }
 
 
@@ -365,9 +365,10 @@ gather_distconv_adapter<TensorDataType, Layout, Device>
   auto output_dims = layer.get_output_dims();
   // Get the indices layer shape
   auto output_shape = this->get_prev_activations(1).get_local_shape();
+  auto values_shape = this->get_prev_activations(0).get_local_shape();
   // Change the column dimension to match, the rest should be the same
   // To do: Maybe move this to distconv namespace - SZ
-  output_shape[1] = output_dims[1];
+  output_shape[1] = values_shape[1];
   return output_shape; 
 }
 
@@ -376,6 +377,7 @@ void
 gather_distconv_adapter<TensorDataType, Layout, Device>
 ::fp_compute(){
   // Compute the forward pass
+  dc::MPIPrintStreamInfo() << "Starting forward pass";
   m_gather_operator->forward(this->get_prev_activations(0),
                              this->get_prev_activations(1),
                              this->get_activations()); 
@@ -385,7 +387,6 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void
 gather_distconv_adapter<TensorDataType, Layout, Device>
 ::bp_compute(){
-  
   // Compute the backward pass 
   m_gather_operator->backward(this->get_prev_error_signals(),  
                               this->get_prev_activations(1),

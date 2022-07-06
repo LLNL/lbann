@@ -146,7 +146,7 @@ namespace distconv{
                                             m_stride(nvshmem_n_pes()),
                                             m_group(0),   
                                             m_sync(0){}  
-          ~GatherNVSHMEM() = default;
+
         NVHSMEMDevice<DataType> get_for_device(){
           return NVHSMEMDevice<DataType>(m_pid,
                                         m_np,

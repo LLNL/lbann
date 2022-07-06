@@ -122,9 +122,9 @@ double atomic_add(double* __restrict__ address,
 
   template <typename DataType>
   __global__ void Gather_NVSHMEM_Kernel(
-    const DataType* __restrict__ values,
+    const DataType* __restrict__ shared_buffer,
     const DataType* __restrict__ indices,
-    DataType* __restrict__ shared_buffer,
+    DataType* __restrict__ output,
     const int mini_batch_size,
     const int num_local_values_rows,
     const int num_local_cols,
@@ -151,8 +151,8 @@ double atomic_add(double* __restrict__ address,
           const int pe = (pe_group * pe_stride) + (ind / num_local_values_rows);
           const int local_ind = ind % num_local_values_rows;
 
-          nvshmem_getmem_nbi(&shared_buffer[mb_offset + row * num_local_cols],
-                             &values[values_offest + local_ind * num_local_cols],
+          nvshmem_getmem_nbi(&output[mb_offset + row * num_local_cols],
+                             &shared_buffer[values_offest + local_ind * num_local_cols],
                              num_local_cols * sizeof(DataType),
                              pe);
         }
@@ -275,10 +275,7 @@ double atomic_add(double* __restrict__ address,
              const size_t values_cols_size,
              const size_t output_rows_size){
 
-      const auto buffer_size = local_mini_batch_size * output_rows_size * values_cols_size;
-      // Attach values matrix to the NVSHMEM buffer
-      // The size of the NVSHMEM_values buffer is for the local values matrix
-      // Retreive value vectors onto the NVSHMEM workspace buffer 
+      const auto buffer_size = local_mini_batch_size * values_rows_size * values_cols_size;
       // The NVSHMEM workspace buffer is the size of the local output matrix 
       if (buffer_size == 0){ // No work to be done here
         nvshmemx_barrier_all_on_stream(m_stream);
@@ -286,22 +283,43 @@ double atomic_add(double* __restrict__ address,
       }
       ensure_buffer(buffer_size);
 
+      constexpr size_t block_size_x = 32;
+      constexpr size_t block_size_y = 16;
+
+      // Copy the local values matrix onto the workspace buffer 
+      // The values matrix must be in symmetric heap in order to be remotely accessible 
+      // Change grid dimensions for copy kernel. Will be removed in the furure - S.Z
+
+      dim3 block_dims, grid_dims;
+      block_dims.x = block_size_x;
+      block_dims.y = block_size_y;
+      block_dims.z = 1;
+
+      grid_dims.x = (values_cols_size + block_dims.x - 1) / block_dims.x;
+      grid_dims.y = (values_rows_size + block_dims.y - 1) / block_dims.y;
+      grid_dims.z = (local_mini_batch_size + block_dims.z - 1) / block_dims.z;
+
+      copy_kernel<<<block_dims, grid_dims, 0, m_stream>>>(values,
+                                                          static_cast<DataType*>(m_output_buffer.get()),
+                                                          local_mini_batch_size,
+                                                          values_rows_size,
+                                                          values_cols_size);
+      cudaDeviceSynchronize();
+      sync();  // Barrier to ensure all PEs are available
+
       // To Do: This would result in overcommitted allocation for 
       //        single mini-batch case. Add different thread configuration to 
       //        optimize for the case of single mini_batch - S.Z
 
-      constexpr size_t block_size_x = 32;
-      constexpr size_t block_size_y = 16;
-      dim3 block_dims, grid_dims;
       block_dims.x = block_size_x;
       block_dims.y = block_size_y;
 
       grid_dims.x = (output_rows_size + block_dims.x - 1) / block_dims.x;
       grid_dims.y = (local_mini_batch_size + block_dims.y - 1)/ block_dims.y;
 
-      Gather_NVSHMEM_Kernel<<<grid_dims, block_dims, 0, m_stream>>>(values,
+      Gather_NVSHMEM_Kernel<<<grid_dims, block_dims, 0, m_stream>>>(static_cast<DataType*>(m_output_buffer.get()),
                                                                     indices,
-                                                                    static_cast<DataType*>(m_output_buffer.get()),
+                                                                    output,
                                                                     local_mini_batch_size,
                                                                     values_rows_size,
                                                                     values_cols_size,
@@ -310,22 +328,6 @@ double atomic_add(double* __restrict__ address,
                                                                     m_stride);
       nvshmemx_quiet_on_stream(m_stream);
       sync();
-      // Copy the local workspace buffer onto the output matrix 
-      // Change grid dimensions for copy kernel. Will be removed in the furure - S.Z
-      block_dims.x = block_size_x;
-      block_dims.y = block_size_y;
-      block_dims.z = 1;
-
-      grid_dims.x = (values_cols_size + block_dims.x - 1) / block_dims.x;
-      grid_dims.y = (output_rows_size + block_dims.y - 1) / block_dims.y;
-      grid_dims.z = (local_mini_batch_size + block_dims.z - 1) / block_dims.z;
-
-      copy_kernel<<<block_dims, grid_dims, 0, m_stream>>>(static_cast<DataType*>(m_output_buffer.get()),
-                                                          output,
-                                                          local_mini_batch_size,
-                                                          output_rows_size,
-                                                          values_cols_size);
-      cudaDeviceSynchronize();
     }
 
   
