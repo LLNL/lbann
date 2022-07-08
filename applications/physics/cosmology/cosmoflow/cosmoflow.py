@@ -334,6 +334,12 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    if args.mini_batch_size * args.depth_groups < args.nodes * args.procs_per_node:
+        print('WARNING the number of samples per mini-batch and depth group (partitions per sample)'
+              ' is too small for the number of processes per trainer. Increasing the mini-batch size')
+        args.mini_batch_size = int((args.nodes * args.procs_per_node) / args.depth_groups)
+        print(f'Increasing mini_batch size to {args.mini_batch_size}')
+
     # Construct layer graph
     universes = lbann.Input(data_field='samples')
     secrets = lbann.Input(data_field='responses')
