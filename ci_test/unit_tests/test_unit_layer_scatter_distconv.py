@@ -21,14 +21,14 @@ width = 2
 height = 16
 input_size = width * height
 output_size = 8
-seed = 20210127
+seed = 20220708
 
 
 def get_sample(index):
     # Sample access functions
     np.random.seed(seed + index)
     values = [np.random.normal() for _ in range(input_size)]
-    indices = [np.random.uniform(0, output_size) for _ in range(height)]
+    indices = [np.random.uniform(-1, output_size) for _ in range(height)]
     return values + indices
 
 def num_samples():
@@ -103,8 +103,6 @@ def construct_model(lbann):
     x0 = lbann.Reshape(x0, dims=[height, width, 1], name="values_distconv_axis_0")
     x1 = lbann.Reshape(x1, dims=[height, 1, 1], name="indices_distconv_axis_0")
 
-    # x0 = lbann.Identity(x0, parallel_strategy=create_parallel_strategy(num_channel_groups))
-    x0 = lbann.Identity(x0, parallel_strategy=create_parallel_strategy(num_channel_groups))
     # output should be (output_size, width, 1)
     x1 = lbann.Identity(x1, parallel_strategy=create_parallel_strategy(num_channel_groups))
 
@@ -125,21 +123,20 @@ def construct_model(lbann):
     z = lbann.L2Norm2(y)
 
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='2D, axis=1'))
+    metrics.append(lbann.Metric(z, name='3D, axis=0'))
 
     vals = []
     for i in range(num_samples()):
         _x = get_sample(i)
         x0 = np.array(_x[:input_size]).reshape((height, width))
         x1 = np.array(_x[input_size:input_size + height])
-        x1[x1 < 0] = 0
         y0 = np.zeros((output_size, width))
 
         for i in range(height):
-            if x1[i] < output_size:
+            ind = x1[i]
+            if  0 <= ind < output_size:
                 for j in range(width):
-                    if x0[i][j] > 0:
-                        y0[int(x1[i])][j] += x0[i][j]
+                    y0[int(x1[i])][j] += x0[i][j]
         z = 0
         for i in range(width * output_size):
             z += ((i + 1) * y0.flatten()[i])**2
@@ -154,7 +151,7 @@ def construct_model(lbann):
         execution_modes='test'))
 
     # Gradient checking
-    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+    # callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # Construct model
     num_epochs = 0

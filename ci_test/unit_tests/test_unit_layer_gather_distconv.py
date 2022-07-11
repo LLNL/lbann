@@ -19,7 +19,7 @@ import tools
 width = 13
 height = 16
 input_size = width * height
-output_size = 23
+output_size = 24
 seed = 20210127
 
 
@@ -27,7 +27,7 @@ seed = 20210127
 def get_sample(index):
     np.random.seed(seed + index)
     values = [np.random.normal() for _ in range(input_size)]
-    indices = [np.random.uniform(-1, output_size + 1) for _ in range(output_size)]
+    indices = [np.random.uniform(-1, height) for _ in range(output_size)]
     return values + indices
 
 def num_samples():
@@ -44,7 +44,7 @@ def create_parallel_strategy(num_channel_groups):
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -56,7 +56,7 @@ def setup_experiment(lbann):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, None
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -92,14 +92,13 @@ def construct_model(lbann):
 
     x0 = lbann.Reshape(x0, dims=[height, width, 1], name="values_distconv_axis_0")
     x1 = lbann.Reshape(x1, dims=[output_size, 1, 1], name="indices_distconv_axis_0")
-    x0 = lbann.Identity(x0, parallel_strategy=create_parallel_strategy(num_channel_groups))
     x1 = lbann.Identity(x1, parallel_strategy=create_parallel_strategy(num_channel_groups))
 
     y0 = lbann.Gather(x0, x1,
                       axis=0, name="Gather_distconv_axis_0",
                       parallel_strategy=create_parallel_strategy(num_channel_groups)) 
     y1 = lbann.Concatenation([
-        lbann.Constant(value=i + 1, num_neurons='1')
+        lbann.Constant(value=i + 1, num_neurons=[1])
         for i in range(output_size * width)
     ])
 
@@ -110,22 +109,23 @@ def construct_model(lbann):
 
     z = lbann.L2Norm2(y)
     obj.append(z)
+    metrics.append(lbann.Metric(z, name='3D, axis=0'))
+    
     vals = []
-
     for i in range(num_samples()):
         _x = get_sample(i)
         values = np.array(_x[:input_size]).reshape((height, width))
-        indices = _x[:input_size]
+        indices = np.floor(_x[input_size:])
         output = np.zeros((output_size, width))
 
-        for row in range(height):
-            ind = indices[row]
-            if 0 <=  ind < output_size:
+        for row in range(output_size):
+            ind = int(indices[row])
+            if 0 <=  ind < height:
                 for cols in range(width):
-                    output[row][cols] = values[int(ind)][cols]
+                    output[row][cols] = values[ind][cols]
         z = 0
         for elem in range(width * output_size):
-            z += ((i + 1) * output.flatten()[elem])**2
+            z += ((elem + 1) * output.flatten()[elem])**2
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
@@ -135,8 +135,14 @@ def construct_model(lbann):
         upper_bound=val + tol,
         error_on_failure=True,
         execution_modes='test'))
-    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
+    dump_outputs = lbann.CallbackDumpOutputs(layers="Gather_distconv_axis_0",
+                                             batch_interval=1,
+                                             directory=os.path.dirname(os.path.realpath(__file__)), format="csv")
+
+    # Gradient checking
+    # callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+    callbacks.append(dump_outputs)
     # Construct model
     num_epochs = 0
     layers = list(lbann.traverse_layer_graph(x))
@@ -146,6 +152,7 @@ def construct_model(lbann):
                        objective_function=obj,
                        metrics=metrics,
                        callbacks=callbacks)
+
 def construct_data_reader(lbann):
     """Construct Protobuf message for Python data reader.
 

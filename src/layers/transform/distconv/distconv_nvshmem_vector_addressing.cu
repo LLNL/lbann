@@ -76,8 +76,14 @@ double atomic_add(double* __restrict__ address,
   return __longlong_as_double(old);
 }
 
+__device__ __forceinline__
+float floor(const float& x) {return floorf(x);}
+
+__device__ __forceinline__
+double floor(const double& x) {return floor(x);}
+
   /**
-   * @brief Copy vector from shared memory heap to output tensor
+   * @brief Copy tensor from shared memory heap to output tensor
    * 
    * Block dimensions: 32 x 1 x 1
    * 
@@ -146,8 +152,8 @@ double atomic_add(double* __restrict__ address,
       const auto ind_offset = mb_i * num_local_output_rows;
 
       for(size_t row = gidx; row < num_local_output_rows; row += nthreadsx){
-        const auto ind = static_cast<int>(std::floor(indices[ind_offset + row]));
-        if (ind > -1 ){ 
+        const auto ind = static_cast<El::Int>(floor(indices[ind_offset + row]));
+        if (ind >= 0 ){ 
           const int pe = (pe_group * pe_stride) + (ind / num_local_values_rows);
           const int local_ind = ind % num_local_values_rows;
 
@@ -191,8 +197,8 @@ double atomic_add(double* __restrict__ address,
 
       for(size_t row = gidy; row < num_local_values_rows; row += nthreadsy){
         // Figure out which rank to send the vector
-        const auto ind = static_cast<int>(std::floor(indices[indices_offset + row]));
-        if (ind > -1){
+        const auto ind = static_cast<El::Int>(floor(indices[indices_offset + row]));
+        if (ind >= 0){
           const int pe = (pe_group * pe_stride) + (ind / num_local_output_rows);
           const int local_ind = ind % num_local_output_rows;
 
@@ -276,12 +282,15 @@ double atomic_add(double* __restrict__ address,
              const size_t output_rows_size){
 
       const auto buffer_size = local_mini_batch_size * values_rows_size * values_cols_size;
+      const auto output_size = local_mini_batch_size * output_rows_size * values_cols_size;
       // The NVSHMEM workspace buffer is the size of the local output matrix 
       if (buffer_size == 0){ // No work to be done here
         nvshmemx_barrier_all_on_stream(m_stream);
         return ;
       }
       ensure_buffer(buffer_size);
+
+      cudaMemset(output, 0, sizeof(DataType) * output_size); // Not sure why this seems to be neccessary
 
       constexpr size_t block_size_x = 32;
       constexpr size_t block_size_y = 16;

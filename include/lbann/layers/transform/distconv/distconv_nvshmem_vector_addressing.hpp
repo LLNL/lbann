@@ -104,6 +104,7 @@ namespace distconv{
         void ensure_buffer(size_t count){        
           size_t cur_size = m_output_buffer.get_size() / sizeof(DataType);
           if (cur_size >= count){
+            m_output_buffer.memset(0);
             return ; 
           }
 
@@ -181,6 +182,7 @@ namespace distconv{
         void ensure_buffer(size_t count){
           size_t cur_size = m_output_buffer.get_size() / sizeof(DataType);
           if (cur_size >= count){
+            m_output_buffer.memset(0);  // 0 out the buffer
             return ; 
           }
           m_output_buffer.allocate(count * sizeof(DataType));
