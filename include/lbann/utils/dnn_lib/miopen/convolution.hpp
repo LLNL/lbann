@@ -29,6 +29,7 @@
 #include "lbann/utils/dnn_enums.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
+#include "lbann/utils/profiling.hpp"
 
 #include "utils.hpp"
 
@@ -48,6 +49,7 @@ get_fwd_conv_workspace_size(TensorDescriptor const& wDesc,
                             TensorDescriptor const& yDesc,
                             El::SyncInfo<El::Device::GPU> const& si)
 {
+  BASIC_PROF_REGION("miopen:get_fwd_conv_workspace_size");
   size_t size;
   auto handle_manager = internal::make_default_handle_manager(si);
   CHECK_MIOPEN(miopenConvolutionForwardGetWorkSpaceSize(handle_manager.get(),
@@ -66,6 +68,7 @@ get_bwd_data_conv_workspace_size(TensorDescriptor const& dyDesc,
                                  TensorDescriptor const& dxDesc,
                                  El::SyncInfo<El::Device::GPU> const& si)
 {
+  BASIC_PROF_REGION("miopen:get_bwd_data_conv_workspace_size");
   size_t size;
   auto handle_manager = internal::make_default_handle_manager(si);
   CHECK_MIOPEN(
@@ -85,6 +88,7 @@ get_bwd_weights_conv_workspace_size(TensorDescriptor const& dyDesc,
                                     TensorDescriptor const& dwDesc,
                                     El::SyncInfo<El::Device::GPU> const& si)
 {
+  BASIC_PROF_REGION("miopen:get_bwd_weights_conv_workspace_size");
   size_t size;
   auto handle_manager = internal::make_default_handle_manager(si);
   CHECK_MIOPEN(
@@ -112,6 +116,7 @@ void convolution_forward(
   El::AbstractMatrix<TensorDataType>& y,
   El::SyncInfo<El::Device::GPU> const& si)
 {
+  BASIC_PROF_REGION("miopen:convolution_forward");
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
@@ -168,6 +173,7 @@ void convolution_backward_data(
   El::AbstractMatrix<TensorDataType>& dx,
   El::SyncInfo<El::Device::GPU> const& si)
 {
+  BASIC_PROF_REGION("miopen:convolution_backward_data");
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
@@ -220,6 +226,7 @@ void convolution_backward_bias(
   El::AbstractMatrix<TensorDataType>& db,
   El::SyncInfo<El::Device::GPU> const& si)
 {
+  BASIC_PROF_REGION("miopen:convolution_backward_bias");
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
@@ -264,6 +271,7 @@ void convolution_backward_filter(
   El::AbstractMatrix<TensorDataType>& dw,
   El::SyncInfo<El::Device::GPU> const& si)
 {
+  BASIC_PROF_REGION("miopen:convolution_backward_filter");
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
@@ -337,6 +345,7 @@ void add_tensor(ScalarParameterType const& alpha_in,
                 El::AbstractMatrix<TensorDataType>& C,
                 El::SyncInfo<El::Device::GPU> const& si)
 {
+  BASIC_PROF_REGION("miopen:add_tensor");
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
