@@ -73,6 +73,7 @@
 #cmakedefine LBANN_HAS_CUDA
 #cmakedefine LBANN_HAS_CUDNN
 #cmakedefine LBANN_HAS_CUTENSOR
+#cmakedefine LBANN_HAS_CUTT
 #ifdef LBANN_HAS_CUDA
 #cmakedefine LBANN_HAS_NVSHMEM
 #cmakedefine LBANN_NVPROF
@@ -81,6 +82,9 @@
 #cmakedefine LBANN_HAS_ROCM
 #cmakedefine LBANN_HAS_MIOPEN
 #cmakedefine LBANN_HAS_ROCTRACER
+#cmakedefine LBANN_HAS_HIPTT
+
+#cmakedefine LBANN_HAS_TENSOR_PERMUTE
 
 #cmakedefine LBANN_HAS_ONEDNN
 #cmakedefine LBANN_HAS_ONEDNN_CPU

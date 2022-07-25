@@ -191,20 +191,21 @@ std::unique_ptr<lbann::Layer>
 lbann::build_permute_layer_from_pbuf(lbann_comm* /*comm*/,
                                      lbann_data::Layer const& proto_layer)
 {
-#ifdef LBANN_HAS_CUTENSOR
+#ifdef LBANN_HAS_TENSOR_PERMUTE
   if constexpr (L == data_layout::DATA_PARALLEL && D == El::Device::GPU) {
     return std::make_unique<PermuteLayer<T>>(
       protobuf::to_vector<int>(proto_layer.permute().axes()));
   }
   else {
-    LBANN_ERROR("PermuteLayers are only supported on (CUDA) GPUs and with "
+    LBANN_ERROR("PermuteLayers are only supported on GPUs and with "
                 "DATA_PARALLEL layout.");
     return nullptr;
   }
 #else
   LBANN_ERROR(
-    "At this time, PermuteLayers are only supported in CUDA and when cuTENSOR "
-    "support is detected. Please open an issue "
+    "At this time, PermuteLayers are only supported on CUDA platforms "
+    "with cuTENSOR or cuTT support, or on ROCm platforms with hipTT support. "
+    "Please open an issue "
     "(https://github.com/LLNL/lbann/issues/new) to request additional support. "
     "In the meantime, please use the \"Permute\" module in the LBANN "
     "Python Front-End to generate a correct implementation of this operation "

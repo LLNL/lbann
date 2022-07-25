@@ -28,7 +28,14 @@
 
 #include "lbann/layers/transform/permute.hpp"
 
+#ifdef LBANN_HAS_CUTENSOR
 #include "cutensor_permuteimpl.hpp"
+#endif
+
+#if defined(LBANN_HAS_CUTT) || defined(LBANN_HAS_HIPTT)
+#include "cutt_permuteimpl.hpp"
+#endif
+
 #include "tensor_dims_utils.hpp"
 
 #include <cereal/cereal.hpp>
@@ -39,7 +46,11 @@ template <typename T>
 class PermuteLayer<T>::PermuteImpl
 {
 public:
+#ifdef LBANN_HAS_CUTENSOR
   using DeviceImplType = cuTENSOR_PermuteImpl;
+#elif defined(LBANN_HAS_CUTT) || defined(LBANN_HAS_HIPTT)
+  using DeviceImplType = cuTT_PermuteImpl;
+#endif // LBANN_HAS_CU{TT,TENSOR}
   using MatType = El::Matrix<T, El::Device::GPU>;
   using DimsType = typename DeviceImplType::DimsType;
 

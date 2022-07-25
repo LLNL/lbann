@@ -54,7 +54,7 @@ set_full_path(THIS_DIR_SOURCES
   weights.cpp
 )
 
-if (LBANN_HAS_CUTENSOR)
+if (LBANN_HAS_TENSOR_PERMUTE)
   list(APPEND THIS_DIR_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/permute.cpp")
 endif ()

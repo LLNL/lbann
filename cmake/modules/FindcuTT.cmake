@@ -23,27 +23,41 @@
 ## implied. See the License for the specific language governing
 ## permissions and limitations under the license.
 ################################################################################
-if (LBANN_HAS_TENSOR_PERMUTE)
-  set_full_path(THIS_DIR_SEQ_CATCH2_TEST_FILES
-    tensor_dims_utils_test.cpp
-  )
-  if (LBANN_HAS_CUTENSOR)
-    list(APPEND THIS_DIR_SEQ_CATCH2_TEST_FILES
-      "${CMAKE_CURRENT_SOURCE_DIR}/cutensor_permute_test.cpp")
-  elseif (LBANN_HAS_CUTT OR LBANN_HAS_HIPTT)
-    list(APPEND THIS_DIR_SEQ_CATCH2_TEST_FILES
-      "${CMAKE_CURRENT_SOURCE_DIR}/cutt_permute_test.cpp")
-  endif ()
+# This finds either the CUDA version (cuTT) or the HIP version (hipTT)
+# of the cuTT library. The latter is just the hipified source of the
+# former, so the file names (and APIs) are the same in both
+# cases. Currently it's the user's responsibility to make sure that
+# the one they find is the one suitable to their platform.
+#
+# Sets the following variables
+#
+#   cuTT_FOUND
+#   cuTT_LIBRARIES
+#
+# Defines the following imported target:
+#
+#   cuTT::cuTT
+#
 
-  set_full_path(THIS_DIR_MPI_CATCH2_TEST_FILES
-    permute_layer_test.cpp
-  )
+find_path(cuTT_INCLUDE_PATH cutt.h
+  DOC "The cuTT include directory.")
+
+find_library(cuTT_LIBRARY cutt)
+
+# Handle the find_package arguments
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(
+  cuTT DEFAULT_MSG cuTT_LIBRARY cuTT_INCLUDE_PATH)
+
+if (cuTT_FOUND)
+  if (NOT TARGET cuTT::cuTT)
+    add_library(cuTT::cuTT INTERFACE IMPORTED)
+  endif ()
+  target_link_libraries(cuTT::cuTT INTERFACE "${cuTT_LIBRARY}")
+  target_include_directories(cuTT::cuTT INTERFACE "${cuTT_INCLUDE_PATH}")
+
+  mark_as_advanced(cuTT_LIBRARY)
+  mark_as_advanced(cuTT_INCLUDE_PATH)
 endif ()
 
-set(LBANN_SEQ_CATCH2_TEST_FILES
-  "${LBANN_SEQ_CATCH2_TEST_FILES}"
-  "${THIS_DIR_SEQ_CATCH2_TEST_FILES}" PARENT_SCOPE)
-
-set(LBANN_MPI_CATCH2_TEST_FILES
-  "${LBANN_MPI_CATCH2_TEST_FILES}"
-  "${THIS_DIR_MPI_CATCH2_TEST_FILES}" PARENT_SCOPE)
+set(cuTT_LIBRARIES cuTT::cuTT)
