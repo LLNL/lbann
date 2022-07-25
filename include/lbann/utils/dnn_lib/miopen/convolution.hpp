@@ -49,16 +49,7 @@ get_fwd_conv_workspace_size(TensorDescriptor const& wDesc,
                             TensorDescriptor const& yDesc,
                             El::SyncInfo<El::Device::GPU> const& si)
 {
-  BASIC_PROF_REGION("miopen:get_fwd_conv_workspace_size");
-  size_t size;
-  auto handle_manager = internal::make_default_handle_manager(si);
-  CHECK_MIOPEN(miopenConvolutionForwardGetWorkSpaceSize(handle_manager.get(),
-                                                        wDesc,
-                                                        xDesc,
-                                                        convDesc,
-                                                        yDesc,
-                                                        &size));
-  return size;
+  return size_t{1 << 30};
 }
 
 inline size_t
@@ -68,17 +59,7 @@ get_bwd_data_conv_workspace_size(TensorDescriptor const& dyDesc,
                                  TensorDescriptor const& dxDesc,
                                  El::SyncInfo<El::Device::GPU> const& si)
 {
-  BASIC_PROF_REGION("miopen:get_bwd_data_conv_workspace_size");
-  size_t size;
-  auto handle_manager = internal::make_default_handle_manager(si);
-  CHECK_MIOPEN(
-    miopenConvolutionBackwardDataGetWorkSpaceSize(handle_manager.get(),
-                                                  dyDesc,
-                                                  wDesc,
-                                                  convDesc,
-                                                  dxDesc,
-                                                  &size));
-  return size;
+  return size_t{1 << 30};
 }
 
 inline size_t
@@ -88,17 +69,7 @@ get_bwd_weights_conv_workspace_size(TensorDescriptor const& dyDesc,
                                     TensorDescriptor const& dwDesc,
                                     El::SyncInfo<El::Device::GPU> const& si)
 {
-  BASIC_PROF_REGION("miopen:get_bwd_weights_conv_workspace_size");
-  size_t size;
-  auto handle_manager = internal::make_default_handle_manager(si);
-  CHECK_MIOPEN(
-    miopenConvolutionBackwardWeightsGetWorkSpaceSize(handle_manager.get(),
-                                                     dyDesc,
-                                                     xDesc,
-                                                     convDesc,
-                                                     dwDesc,
-                                                     &size));
-  return size;
+  return size_t{1 << 30};
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
