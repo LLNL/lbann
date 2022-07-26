@@ -64,8 +64,8 @@ class FullyConnectedModule(Module):
             weights (`Weights` or iterator of `Weights`): Weights in
                 fully-connected layer. There are at most two: the
                 matrix and the bias. If weights are not provided, the
-                matrix will be initialized with Lecun uniform
-                initialization and the bias with Lecun uniform.
+                matrix will be initialized with He normal
+                initialization and the bias with zeros.
             name (str): Default name is in the form 'fcmodule<index>'.
             data_layout (str): Data layout.
             parallel_strategy (dict): Data partitioning scheme.
@@ -86,8 +86,8 @@ class FullyConnectedModule(Module):
 
         # Initialize weights
         # Note: If weights are not provided, matrix weights are
-        # initialized with Lecun uniform scheme and bias weights are
-        # initialized with Lecun uniform scheme.
+        # initialized with He normal scheme and bias weights are
+        # initialized with zeros.
         self.weights = list(make_iterable(weights))
         if len(self.weights) > 2:
             raise ValueError('`FullyConnectedModule` has '
@@ -95,11 +95,11 @@ class FullyConnectedModule(Module):
                              'but got {0}'.format(len(self.weights)))
         if len(self.weights) == 0:
             self.weights.append(
-                 lbann.Weights(initializer=lbann.LeCunUniformInitializer(),
+                lbann.Weights(initializer=lbann.HeNormalInitializer(),
                               name=self.name+'_matrix'))
         if self.bias and len(self.weights) == 1:
             self.weights.append(
-                lbann.Weights(initializer=lbann.LeCunUniformInitializer(),
+                lbann.Weights(initializer=lbann.ConstantInitializer(value=0.0),
                               name=self.name+'_bias'))
 
         # Initialize activation layer
@@ -158,9 +158,8 @@ class ChannelwiseFullyConnectedModule(Module):
         weights (`Weights` or iterator of `Weights`): Weights in
                 fully-connected layer. There are at most two: the
                 matrix and the bias. If weights are not provided, the
-                matrix will be initialized with Lecun uniform 
-                initialization and the bias Lecun uniform 
-                initialization.
+                matrix will be initialized with He normal
+                initialization and the bias with zeros.
         activation (type): Layer class for activation function.
         name (str): Default name is in the form 'channelwisefc<index>'.
         parallel_strategy (dict): Data partitioning scheme.
@@ -184,11 +183,11 @@ class ChannelwiseFullyConnectedModule(Module):
                          'but got {0}'.format(len(self.weights)))
     if len(self.weights) == 0:
         self.weights.append(
-             lbann.Weights(initializer=lbann.LeCunUniformInitializer(),
+            lbann.Weights(initializer=lbann.HeNormalInitializer(),
                           name=self.name+'_matrix'))
     if self.bias and len(self.weights) == 1:
         self.weights.append(
-            lbann.Weights(initializer=lbann.LeCunUniformInitializer(),
+            lbann.Weights(initializer=lbann.ConstantInitializer(value=0.0),
                           name=self.name+'_bias'))
     self.activation = None
     if activation:

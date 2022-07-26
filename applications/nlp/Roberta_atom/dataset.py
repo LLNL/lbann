@@ -1,20 +1,20 @@
 import numpy as np
 
-bos_index = 0
-eos_index = 2
-pad_index = 1
+bos_index = 12
+eos_index = 13
+pad_index = 0
 ignore_index = -100
-mask_index = 4
+mask_index = 14
 mask_percent = 0.15
 
-sequence_length = 48
-vocab_length = 767
-samples = np.load("/g/g92/tran71/tran71/lbann_new/applications/nlp/Roberta_zinc_base/zinc250k.npy", allow_pickle=True) 
+sequence_length = 57
+vocab_length = 600
+samples = np.load("/g/g92/tran71/ChemBERTa-77M-MLM_smile2M.npy", allow_pickle=True) 
+
 
 train_samples = samples[:int(samples.size*0.8)]
 val_samples = samples[int(samples.size*0.8):int(samples.size*0.9)]
 test_samples = samples[int(samples.size*0.9):]
-
 
 
 # Masking samples
@@ -83,23 +83,56 @@ def get_val_sample(index):
 
     return sample_all
 
-
-# Test sample access functions
+# Testing sample access functions
 def get_test_sample(index):
     sample = test_samples[index]
+    rand_size = np.random.randint(1, 4)
+
+    if len(sample) < sequence_length:
+        mask_idx = sorted(np.random.randint(1,len(sample)-1,size=rand_size))
+    else:
+        mask_idx = sorted(np.random.randint(1,sequence_length-1,size=rand_size))
+
+
+    sample_mask = sample.copy()
+
+    op = np.random.randint(0, 3)
+
+    if(op == 0): # Delete augmentation
+        for idx in mask_idx:
+            if(idx < len(sample_mask)-2): # Don't mask the last character for deletion.          
+                sample_mask[idx] = mask_index   
+
+        del_count = 0            
+        for idx in mask_idx:
+            if(idx < len(sample_mask)-1): # Don't delete EoS.
+                sample_mask = np.delete(sample_mask, idx+1+del_count)
+                del_count -= 1           
+    elif(op == 1): # Insert augmentation
+        for idx in mask_idx:
+            sample_mask = np.insert(sample_mask, idx, mask_index)     
+    else: # Replace augmentation
+        for idx in mask_idx:
+            sample_mask[idx] = mask_index    
+            
     if len(sample) < sequence_length:
         sample = np.concatenate((sample, np.full(sequence_length-len(sample), pad_index)))
+
     else:
         sample = np.resize(sample, sequence_length)
 
-    sample,masked,label = masking(sample)
+    if len(sample_mask) < sequence_length:
+        sample_mask = np.concatenate((sample_mask, np.full(sequence_length-len(sample_mask), pad_index)))
+
+    else:
+        sample_mask = np.resize(sample_mask, sequence_length)
 
     sample_all = np.full(3*sequence_length, pad_index, dtype=int)
     sample_all[0:len(sample)] = sample
-    sample_all[sequence_length:2*sequence_length] = masked
-    sample_all[2*sequence_length:3*sequence_length] = label
+    sample_all[sequence_length:2*sequence_length] = sample_mask
+    sample_all[2*sequence_length:3*sequence_length] = sample
 
-    return sample_all
+    return sample_all 
 
 def num_train_samples():
     return train_samples.shape[0]
@@ -114,6 +147,5 @@ def sample_dims():
     return (3*sequence_length+1,)
 
 def vocab_size():
-    return 767
-
+    return vocab_length
 
