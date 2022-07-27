@@ -132,6 +132,9 @@ option(LBANN_WITH_HWLOC
 option(LBANN_WITH_NVPROF
   "Enable NVTX-based instrumentation for nvprof" OFF)
 
+option(LBANN_WITH_ROCTRACER
+  "Enable roctx-based instrumentation for nvprof" OFF)
+
 option(LBANN_WITH_PYTHON_FRONTEND
   "Install Python frontend and enable embedded Python" ON)
 
@@ -410,6 +413,13 @@ if (LBANN_HAS_ROCM)
     list(APPEND LBANN_ROCM_LIBS roc::rocfft)
   endif ()
 
+  if (LBANN_WITH_ROCTRACER)
+    find_package(Roctracer MODULE COMPONENTS roctracer roctx)
+    if (Roctracer_FOUND)
+      set(LBANN_HAS_ROCTRACER TRUE)
+      list(APPEND LBANN_ROCM_LIBS roctracer::roctracer)
+    endif ()
+  endif ()
 endif (LBANN_HAS_ROCM)
 
 # This is used in the sample list implementation

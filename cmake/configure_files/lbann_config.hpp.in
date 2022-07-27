@@ -80,6 +80,7 @@
 
 #cmakedefine LBANN_HAS_ROCM
 #cmakedefine LBANN_HAS_MIOPEN
+#cmakedefine LBANN_HAS_ROCTRACER
 
 #cmakedefine LBANN_HAS_ONEDNN
 #cmakedefine LBANN_HAS_ONEDNN_CPU
