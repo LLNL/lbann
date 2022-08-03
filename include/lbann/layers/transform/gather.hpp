@@ -32,9 +32,16 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/proto/layers.pb.h"
 
+#if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#include "lbann/layers/transform/distconv/distconv_scatter.hpp"
+#include "lbann/utils/nvshmem.hpp"
+#endif // LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
+
 namespace lbann {
 
-#ifdef LBANN_HAS_DISTCONV
+#if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class gather_distconv_adapter
   :  public data_type_distconv_adapter <TensorDataType>{
@@ -54,7 +61,7 @@ class gather_distconv_adapter
     size_t m_workspace_buffer_size{0};
 
   };
-#endif // LBANN_HAS_DISTCONV
+#endif // LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
 
 /** @brief Gather values from specified tensor indices
  *
@@ -117,13 +124,13 @@ protected:
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void fp_compute() override;
   void bp_compute() override;
-#ifdef LBANN_HAS_DISTCONV
+#if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
   friend class gather_distconv_adapter<TensorDataType, Layout, Device>;
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
   bool is_distconv_supported() const override;
   gather_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() override;
   const gather_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() const override;
-#endif // LBANN_HAS_DISTCONV
+#endif // LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
 private:
   int m_gather_axis;
 
@@ -190,7 +197,7 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
   // Distconv requires 3D inputs for both values
   // and indices
 
-  #ifdef LBANN_HAS_DISTCONV
+  #if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
 
   if (this->distconv_enabled()){
     const auto is_values_3D = input0_dims.size() == 3;
@@ -213,7 +220,7 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
     }
     return ;
   }
-  #endif // LBANN_HAS_DISTCONV
+  #endif // LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
   
   // Only support 1D indices
   const auto is_indices_not_1D = input1_dims.size() != 1;
@@ -269,7 +276,7 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
 
 }
 
-#ifdef LBANN_HAS_DISTCONV
+#if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
 
 // =============================================================
 // DistConv-enabled Gather member functions
@@ -346,13 +353,10 @@ gather_distconv_adapter<TensorDataType, Layout, Device>
 ::setup_layer(size_t workspace_capacity){
   data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
   m_gather_operator = make_unique<dc::Gather<TensorDataType>>(dc::get_backend());
-  // Follow the convention from MSE 
-  // MSE also has two input vectors being partitioned
-  dc::MPIPrintStreamInfo() << "Setting up gather layer";
+  nvshmem::initialize();
   m_gather_operator->setup(this->get_prev_activations(0),
                            this->get_prev_activations(1),
                            this->get_activations()); 
-  dc::MPIPrintStreamInfo() << "Finished setting up the layer";
 }
 
 
@@ -377,7 +381,6 @@ void
 gather_distconv_adapter<TensorDataType, Layout, Device>
 ::fp_compute(){
   // Compute the forward pass
-  dc::MPIPrintStreamInfo() << "Starting forward pass";
   m_gather_operator->forward(this->get_prev_activations(0),
                              this->get_prev_activations(1),
                              this->get_activations()); 
@@ -394,7 +397,7 @@ gather_distconv_adapter<TensorDataType, Layout, Device>
                               this->get_error_signals(1));  // Indices gradient. Will be 0'ed out
 }
 
-#endif //  LBANN_HAS_DISTCONV
+#endif //  LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
 
 #ifndef LBANN_GATHER_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device)                                                \

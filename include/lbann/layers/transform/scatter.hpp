@@ -33,14 +33,16 @@
 #include "lbann/utils/protobuf.hpp"
 #include "lbann/proto/layers.pb.h"
 
-#ifdef LBANN_HAS_DISTCONV
+#if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
 #include "lbann/layers/data_type_distconv_adapter.hpp"
 #include "lbann/layers/transform/distconv/distconv_scatter.hpp"
-#endif // LBANN_HAS_DISTCONV
+#include "lbann/utils/nvshmem.hpp"
+#endif // LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
 
 namespace lbann {
 
-#ifdef LBANN_HAS_DISTCONV
+#if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class scatter_distconv_adapter
   :  public data_type_distconv_adapter <TensorDataType>{
@@ -59,7 +61,7 @@ class scatter_distconv_adapter
     std::unique_ptr<dc::Scatter<TensorDataType>> m_scatter_operator;
     size_t m_workspace_buffer_size{0};
   };
-#endif // LBANN_HAS_DISTCONV
+#endif // LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
 
 /** @brief Scatter values to specified tensor indices
  *
@@ -120,13 +122,13 @@ protected:
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void fp_compute() override;
   void bp_compute() override;
-#ifdef LBANN_HAS_DISTCONV
+#if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
   friend class scatter_distconv_adapter<TensorDataType, Layout, Device>;
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
   bool is_distconv_supported() const override;
   scatter_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() override;
   const scatter_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() const override;
-#endif // LBANN_HAS_DISTCONV
+#endif // LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
 private:
   int m_scatter_axis;
 };
@@ -194,7 +196,7 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
   // Distconv requires 3D inputs for both values
   // and indices
   
-  #ifdef LBANN_HAS_DISTCONV
+  #if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
  
   if (this->distconv_enabled()){
     const auto is_values_3D = input0_dims.size() == 3; 
@@ -237,7 +239,7 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
 
     return ;
   }
-  #endif // LBANN_HAS_DISTCONV
+  #endif // LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
 
   // Tensor dimensions
   // Check if value matrix is 1D or 2D
@@ -303,7 +305,7 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
     }
 }
 
-#ifdef LBANN_HAS_DISTCONV
+#if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
 
 // =============================================================
 // DistConv-enabled Scatter member functions
@@ -378,13 +380,12 @@ scatter_distconv_adapter<TensorDataType, Layout, Device>
 ::setup_layer(size_t workspace_capacity){
   data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
   m_scatter_operator = make_unique<dc::Scatter<TensorDataType>>(dc::get_backend());
-  // Follow the convention from MSE 
-  // MSE also has two input vectors being partitioned 
-
+  nvshmem::initialize();  
   m_scatter_operator->setup(this->get_prev_activations(0),
                             this->get_prev_activations(1),
-                            this->get_activations()); 
+                            this->get_activations());
 }
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 dc::Shape
 scatter_distconv_adapter<TensorDataType, Layout, Device>
@@ -401,6 +402,7 @@ scatter_distconv_adapter<TensorDataType, Layout, Device>
   return output_shape; 
 }
 
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void
 scatter_distconv_adapter<TensorDataType, Layout, Device>
@@ -410,6 +412,7 @@ scatter_distconv_adapter<TensorDataType, Layout, Device>
                               this->get_prev_activations(1),
                               this->get_activations()); 
 }
+
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void
@@ -427,7 +430,7 @@ scatter_distconv_adapter<TensorDataType, Layout, Device>
     T,data_layout::DATA_PARALLEL, Device>
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
-#endif //  LBANN_HAS_DISTCONV
+#endif //  LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
 
 
 #ifndef LBANN_SCATTER_LAYER_INSTANTIATE

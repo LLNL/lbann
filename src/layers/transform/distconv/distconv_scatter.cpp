@@ -93,7 +93,6 @@ namespace distconv{
              tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices_grad){
 
     if(output_grad.get_buffer() == nullptr){
-      // util::MPIPrintStreamInfo() << "output grad buffer is null";
       m_dist_gather->sync(); // Sync in case other PEs performing work
       return 0; 
     }
@@ -104,13 +103,11 @@ namespace distconv{
     }
 
     if(indices.get_buffer() == nullptr){
-      // util::MPIPrintStreamInfo() << "indices buffer is null";
       m_dist_gather->sync();
       return 0;
     }
 
     if(values_grad.get_buffer() == nullptr){
-      // util::MPIPrintStreamInfo() << "values grad buffer is null";
       m_dist_gather->sync();
       return 0;
     }    
@@ -136,7 +133,7 @@ namespace distconv{
     
     const auto& zero = El::TypeTraits<DataType>::Zero();
 
-    // Explicitly zero the indices grad matrix
+    // Explicitly zero the indices grad matrix. May not be needed
     El::Matrix<DataType, El::Device::GPU> ind_grad_mat(num_values_grad_rows,
                                                        local_mini_batch_size,
                                                        indices_grad.get_buffer(),
@@ -155,11 +152,36 @@ namespace distconv{
           const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output){
 
     const auto channel_splits = values.get_distribution().get_split_shape()[2];
+    const auto sample_splits = values.get_distribution().get_split_shape()[3];
+    const auto sample_size = values.get_shape()[3];
+    const auto input_channel_size = values.get_shape()[2];
+    const auto output_channel_size = output.get_shape()[2];
+    const auto feature_dim_size = values.get_shape()[0] * values.get_shape()[1];
+
+    const auto max_samples_per_rank = static_cast<int>(std::ceil(static_cast<float>(sample_size) / sample_splits));
+    const auto max_input_channels_per_rank = static_cast<int>(std::ceil(static_cast<float>(input_channel_size) / channel_splits));
+    const auto max_output_channels_per_rank = static_cast<int>(std::ceil(static_cast<float>(output_channel_size) / channel_splits));
+
+    const auto input_ws_size = max_samples_per_rank * max_input_channels_per_rank * feature_dim_size;
+    const auto output_ws_size = max_samples_per_rank * max_output_channels_per_rank * feature_dim_size;
+
+    util::MPIPrintStreamDebug() << " Sample dim size: " << sample_size
+                                << "\n Input channel size: " << input_channel_size
+                                << "\n Output channel size: " << output_channel_size
+                                << "\n Max samples / rank: " << max_samples_per_rank
+                                << "\n Max input channels / rank: " << max_input_channels_per_rank
+                                << "\n Max output channels / rank: " << max_output_channels_per_rank
+                                << "\n Input buffer size: " << input_ws_size
+                                << "\n Output buffer size: " << output_ws_size;
     const auto num_pes = m_dist_scatter->get_num_ranks();
     const auto pid = m_dist_scatter->get_rank();
+
+    m_dist_gather->ensure_buffer(input_ws_size);
+    m_dist_scatter->ensure_buffer(output_ws_size);
+
     // Check if in hybrid data-parallel channel-parallel mode
     if ((int)channel_splits == num_pes){
-      // Default setup is sufficent. No further changes needed
+      // Default setup is sufficent. No further changes needed  
       return ;
     }
     // hybrid data-parallel channel-parallel mode. Must set scatter / gather
@@ -167,8 +189,10 @@ namespace distconv{
 
     const auto num_groups = num_pes / channel_splits;
     const auto group = pid / num_groups;
+
     m_dist_scatter->set_stride(channel_splits);
     m_dist_gather->set_stride(channel_splits);
+    
     m_dist_scatter->set_group(group);
     m_dist_gather->set_group(group);
   }

@@ -137,7 +137,8 @@ double floor(const double& x) {return floor(x);}
     const int num_local_output_rows,
     const int pe_group,
     const int pe_stride){
-
+    
+    constexpr int warp_size = 32;
     // Indice
     const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
     const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -151,16 +152,16 @@ double floor(const double& x) {return floor(x);}
       const auto values_offest = mb_i * num_local_cols * num_local_values_rows;
       const auto ind_offset = mb_i * num_local_output_rows;
 
-      for(size_t row = gidx; row < num_local_output_rows; row += nthreadsx){
-        const auto ind = static_cast<El::Int>(floor(indices[ind_offset + row]));
+      for(size_t row = gidx; row < num_local_output_rows * warp_size; row += nthreadsx){
+        const auto ind = static_cast<El::Int>(floor(indices[ind_offset + row / warp_size]));
         if (ind >= 0 ){ 
           const int pe = (pe_group * pe_stride) + (ind / num_local_values_rows);
           const int local_ind = ind % num_local_values_rows;
 
-          nvshmem_getmem_nbi(&output[mb_offset + row * num_local_cols],
-                             &shared_buffer[values_offest + local_ind * num_local_cols],
-                             num_local_cols * sizeof(DataType),
-                             pe);
+          nvshmemx_getmem_nbi_warp(&output[mb_offset + (row / warp_size) * num_local_cols],
+                                  &shared_buffer[values_offest + local_ind * num_local_cols],
+                                  num_local_cols * sizeof(DataType),
+                                  pe);
         }
       }
     }
@@ -321,10 +322,12 @@ double floor(const double& x) {return floor(x);}
       //        optimize for the case of single mini_batch - S.Z
 
       block_dims.x = block_size_x;
-      block_dims.y = block_size_y;
+      block_dims.y = 1;
+      block_dims.z = 1;
 
       grid_dims.x = (output_rows_size + block_dims.x - 1) / block_dims.x;
       grid_dims.y = (local_mini_batch_size + block_dims.y - 1)/ block_dims.y;
+      grid_dims.z = 1;
 
       Gather_NVSHMEM_Kernel<<<grid_dims, block_dims, 0, m_stream>>>(static_cast<DataType*>(m_output_buffer.get()),
                                                                     indices,
