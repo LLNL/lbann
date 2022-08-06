@@ -29,7 +29,33 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#include "lbann/layers/learning/distconv/distconv_layers.hpp"
+#endif  // LBANN_HAS_DISTCONV
+
 namespace lbann {
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class matmul_distconv_adapter
+  : public data_type_distconv_adapter<TensorDataType>{
+  public:
+    using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType; 
+
+    matmul_distconv_adapter(Layer& layer)
+      : data_type_distconv_adapter<TensorDataType>(layer){}
+    
+    virtual ~matmul_distconv_adapter() = default;
+    void setup_distributions(tensor_overlap_constraints &constraints) override;
+    void setup_layer(size_t workspace_capacity) override; 
+    void fp_compute();
+    void bp_compute();
+    dc::Shape get_activations_local_shape(int index=0) const override;
+    std::unique_ptr<dc::MatMul<TensorDataType>> m_matmul_operator; 
+  }; // class definition matmul_distconv_adapter
+
+#endif  // LBANN_HAS_DISTCONV
 
 /** @brief Matrix multiplication.
  *
@@ -77,6 +103,15 @@ protected:
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void fp_compute() override;
   void bp_compute() override;
+
+#ifdef LBANN_HAS_DISTCONV
+  friend class matmul_distconv_adapter<TensorDataType, Layout, Device>;
+  protected:
+    void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
+    bool is_distconv_supported() const override;
+    matmul_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() override;
+    const matmul_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() const override;
+#endif // LBANN_HAS_DISTCONV
 
 private:
 

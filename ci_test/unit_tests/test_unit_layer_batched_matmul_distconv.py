@@ -22,7 +22,7 @@ np.random.seed(20191111)
 _m = 2
 _n = 3
 _k = 4
-_N = 32
+_N = 5
 _samples = np.random.normal(size=(32,_N*(_m*_k)+_N*(_k*_n))).astype(np.float32)
 
 # Sample access functions
@@ -33,6 +33,9 @@ def num_samples():
 def sample_dims():
     return (_samples.shape[-1],)
 
+def create_parallel_strategy(num_channel_groups):
+    return {"channel_groups": num_channel_groups,
+            "filter_groups": num_channel_groups}
 # ==============================================
 # Setup LBANN experiment
 # ==============================================
@@ -59,6 +62,8 @@ def construct_model(lbann):
 
     """
 
+    num_channel_groups = tools.gpus_per_node(lbann)
+
     # Input data
     # Note: Sum with weights layers so that gradient checking will
     # verify that error signals are correct.
@@ -69,11 +74,11 @@ def construct_model(lbann):
                                initializer=lbann.ConstantInitializer(value=0.0),
                                name='input1_weights')
     x_slice = lbann.Slice(lbann.Input(data_field='samples'),
-                          slice_points=[0, _m*_k, _m*_k+_k*_n])
+                          slice_points=[0, _N*_m*_k, _N*_m*_k+_N*_k*_n])
     x0 = lbann.Sum(x_slice,
-                   lbann.WeightsLayer(weights=x0_weights, dims=[_m*_k]))
+                   lbann.WeightsLayer(weights=x0_weights, dims=[_N*_m*_k]))
     x1 = lbann.Sum(x_slice,
-                   lbann.WeightsLayer(weights=x1_weights, dims=[_k*_n]))
+                   lbann.WeightsLayer(weights=x1_weights, dims=[_N*_k*_n]))
     x0_lbann = x0
     x1_lbann = x1
 
@@ -87,9 +92,12 @@ def construct_model(lbann):
     # ------------------------------------------
 
     # LBANN implementation
-    x0 = lbann.Reshape(x0_lbann, dims=[_m, _k])
-    x1 = lbann.Reshape(x1_lbann, dims=[_k, _n])
-    y = lbann.MatMul(x0, x1, data_layout='data_parallel')
+    x0 = lbann.Reshape(x0_lbann, dims=[_N, _m, _k])
+    x1 = lbann.Reshape(x1_lbann, dims=[_N, _k, _n])
+    x0 = lbann.Identity(x0, parallel_strategy=create_parallel_strategy(num_channel_groups))
+    x1 = lbann.Identity(x1, parallel_strategy=create_parallel_strategy(num_channel_groups))
+    y = lbann.MatMul(x0, x1, data_layout='data_parallel',
+                    parallel_strategy=create_parallel_strategy(num_channel_groups))
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='NN GEMM'))
@@ -98,8 +106,8 @@ def construct_model(lbann):
     vals = []
     for i in range(num_samples()):
         x = get_sample(i).astype(np.float64)
-        x0 = x[:_m*_k].reshape([_m,_k])
-        x1 = x[_m*_k:].reshape([_k,_n])
+        x0 = x[:_N*_m*_k].reshape([_N,_m,_k])
+        x1 = x[_N*_m*_k:].reshape([_N,_k,_n])
         y = np.matmul(x0, x1)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
@@ -117,9 +125,12 @@ def construct_model(lbann):
     # ------------------------------------------
 
     # LBANN implementation
-    x0 = lbann.Reshape(x0_lbann, dims=[_k, _m])
-    x1 = lbann.Reshape(x1_lbann, dims=[_k, _n])
-    y = lbann.MatMul(x0, x1, transpose_a=True, data_layout='data_parallel')
+    x0 = lbann.Reshape(x0_lbann, dims=[_N, _k, _m])
+    x1 = lbann.Reshape(x1_lbann, dims=[_N, _k, _n])
+    x0 = lbann.Identity(x0, parallel_strategy=create_parallel_strategy(num_channel_groups))
+    x1 = lbann.Identity(x1, parallel_strategy=create_parallel_strategy(num_channel_groups))
+    y = lbann.MatMul(x0, x1, transpose_a=True, data_layout='data_parallel',
+                    parallel_strategy=create_parallel_strategy(num_channel_groups))
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='TN GEMM'))
@@ -128,9 +139,9 @@ def construct_model(lbann):
     vals = []
     for i in range(num_samples()):
         x = get_sample(i).astype(np.float64)
-        x0 = x[:_m*_k].reshape([_k,_m])
-        x1 = x[_m*_k:].reshape([_k,_n])
-        y = np.matmul(x0.transpose(), x1)
+        x0 = x[:_N*_m*_k].reshape([_N,_k,_m])
+        x1 = x[_N*_m*_k:].reshape([_N,_k,_n])
+        y = np.matmul(x0.transpose((0,2,1)), x1)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -147,9 +158,12 @@ def construct_model(lbann):
     # ------------------------------------------
 
     # LBANN implementation
-    x0 = lbann.Reshape(x0_lbann, dims=[_m, _k])
-    x1 = lbann.Reshape(x1_lbann, dims=[_n, _k])
-    y = lbann.MatMul(x0, x1, transpose_b=True, data_layout='data_parallel')
+    x0 = lbann.Reshape(x0_lbann, dims=[_N, _m, _k])
+    x1 = lbann.Reshape(x1_lbann, dims=[_N, _n, _k])
+    x0 = lbann.Identity(x0, parallel_strategy=create_parallel_strategy(num_channel_groups))
+    x1 = lbann.Identity(x1, parallel_strategy=create_parallel_strategy(num_channel_groups))
+    y = lbann.MatMul(x0, x1, transpose_b=True, data_layout='data_parallel',
+                    parallel_strategy=create_parallel_strategy(num_channel_groups))
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='NT GEMM'))
@@ -158,9 +172,10 @@ def construct_model(lbann):
     vals = []
     for i in range(num_samples()):
         x = get_sample(i).astype(np.float64)
-        x0 = x[:_m*_k].reshape([_m,_k])
-        x1 = x[_m*_k:].reshape([_n,_k])
-        y = np.matmul(x0, x1.transpose())
+        x0 = x[:_N*_m*_k].reshape([_N, _m,_k])
+        x1 = x[_N*_m*_k:].reshape([_N, _n,_k])
+        x1 = np.transpose(x1, (0, 2, 1))
+        y = np.matmul(x0, x1)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -177,10 +192,13 @@ def construct_model(lbann):
     # ------------------------------------------
 
     # LBANN implementation
-    x0 = lbann.Reshape(x0_lbann, dims=[_k, _m])
-    x1 = lbann.Reshape(x1_lbann, dims=[_n, _k])
+    x0 = lbann.Reshape(x0_lbann, dims=[_N, _k, _m])
+    x1 = lbann.Reshape(x1_lbann, dims=[_N, _n, _k])
+    x0 = lbann.Identity(x0, parallel_strategy=create_parallel_strategy(num_channel_groups))
+    x1 = lbann.Identity(x1, parallel_strategy=create_parallel_strategy(num_channel_groups))
     y = lbann.MatMul(x0, x1, transpose_a=True, transpose_b=True,
-                     data_layout='data_parallel')
+                     data_layout='data_parallel',
+                     parallel_strategy=create_parallel_strategy(num_channel_groups))
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='TT GEMM'))
@@ -189,9 +207,9 @@ def construct_model(lbann):
     vals = []
     for i in range(num_samples()):
         x = get_sample(i).astype(np.float64)
-        x0 = x[:_m*_k].reshape([_k,_m])
-        x1 = x[_m*_k:].reshape([_n,_k])
-        y = np.matmul(x0.transpose(), x1.transpose())
+        x0 = x[:(_N*_m*_k)].reshape([_N,_k,_m])
+        x1 = x[_N*_m*_k:].reshape([_N,_n,_k])
+        y = np.matmul(x0.transpose((0,2,1)), x1.transpose((0,2,1)))
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)

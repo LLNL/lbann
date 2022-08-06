@@ -29,6 +29,10 @@ set_full_path(THIS_DIR_SOURCES
   matmul.cpp
   )
 
+if (LBANN_HAS_DISTCONV)
+  add_subdirectory(distconv)
+endif()
+
 add_subdirectory(cereal_registration)
 
 # Propagate the files up the tree

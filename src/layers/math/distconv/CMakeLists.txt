@@ -23,14 +23,9 @@
 ## implied. See the License for the specific language governing
 ## permissions and limitations under the license.
 ################################################################################
-# Add the headers for this directory
-set_full_path(THIS_DIR_HEADERS
-  matmul.hpp
+set_full_path(THIS_DIR_SOURCES
+  distconv_matmul.cpp
   )
 
-if (LBANN_HAS_DISTCONV)
-  add_subdirectory(distconv)
-endif()
-
 # Propagate the files up the tree
-set(HEADERS "${HEADERS}" "${THIS_DIR_HEADERS}" PARENT_SCOPE)
+set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
