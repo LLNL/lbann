@@ -87,6 +87,10 @@ message Transform {
     string means = 1;
     string stddevs = 2;
   }
+  // Pad an image on all sides with 0 value.
+  message Pad {
+    uint64 pad = 1;
+  }
   // Apply a random affine transform.
   message RandomAffine {
     float rotate_min = 1;
@@ -163,5 +167,6 @@ message Transform {
     AdjustSaturation adjust_saturation = 115;
     ColorJitter color_jitter = 116;
     Cutout cutout = 117;
+    Pad pad = 118;
   }
 }

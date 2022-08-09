@@ -35,6 +35,7 @@ set_full_path(THIS_DIR_HEADERS
   grayscale.hpp
   horizontal_flip.hpp
   normalize_to_lbann_layout.hpp
+  pad.hpp
   random_affine.hpp
   random_crop.hpp
   random_resized_crop.hpp

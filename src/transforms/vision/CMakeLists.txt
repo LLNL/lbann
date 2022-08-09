@@ -35,6 +35,7 @@ set_full_path(THIS_DIR_SOURCES
   grayscale.cpp
   horizontal_flip.cpp
   normalize_to_lbann_layout.cpp
+  pad.cpp
   random_affine.cpp
   random_crop.cpp
   random_resized_crop.cpp
