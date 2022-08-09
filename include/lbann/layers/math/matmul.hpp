@@ -175,7 +175,7 @@ void matmul_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
   // Input dimensions
   const auto& input0_dims = this->get_input_dims(0);
   const auto& input1_dims = this->get_input_dims(1);
-
+ 
   // Lambdas to help print error messages
   auto print_name = [this] () -> std::string {
     return this->get_type() + " layer \"" + this->get_name() + "\"";
@@ -202,11 +202,19 @@ void matmul_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
                 "have different numbers of dimensions ",
                 "(",print_inputs(),")");
   }
+
   if (input0_dims.size() != 2 && input0_dims.size() != 3) {
     LBANN_ERROR("input tensors in ",print_name()," are not 2D or 3D",
                 "(",print_inputs(),")");
   }
-
+  #ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()){
+    if(input0_dims.size() != 3){
+      LBANN_ERROR("input tensors in ",print_name()," must be 3D when distconv is enabled",
+                "(",print_inputs(),")");
+    }
+  }
+  #endif
   // Get matrix dimensions
   const auto input0_height = *(input0_dims.rbegin()+1);
   const auto input0_width = *(input0_dims.rbegin());

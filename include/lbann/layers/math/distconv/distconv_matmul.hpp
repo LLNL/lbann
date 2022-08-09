@@ -67,11 +67,16 @@ namespace distconv{
                                 const tensor::Tensor<DataType, locale, Allocator> &input_1,
                                 bool transpose_1,
                                 bool transpose_2){
-    auto output_local_shape = input_0.get_local_shape();
-    auto inp_dims = input_1.get_local_shape();
-    output_local_shape[0] = transpose_1? inp_dims[1] : inp_dims[0];
-    output_local_shape[1] = transpose_2? inp_dims[0] : inp_dims[1];
+    // Use input dims to fill channel and mini-batch dimensions
+    auto output_local_shape = input_0.get_local_shape(); 
+
+    auto inp_0_dims = input_0.get_local_shape();
+    auto inp_1_dims = input_1.get_local_shape();
     
+    // Update the matrix dimensions according to transpose and input matrix shapes
+    output_local_shape[0] = transpose_2? inp_1_dims[1] : inp_1_dims[0];
+    output_local_shape[1] = transpose_1? inp_0_dims[0] : inp_0_dims[1];
+
     return output_local_shape; 
   }
 
