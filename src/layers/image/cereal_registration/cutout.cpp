@@ -23,17 +23,23 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef LBANN_LAYERS_IMAGE_IMAGE_LAYER_BUILDERS_HPP_INCLUDED
-#define LBANN_LAYERS_IMAGE_IMAGE_LAYER_BUILDERS_HPP_INCLUDED
-
-#include "lbann/layers/layer.hpp"
+#include "lbann/utils/serialize.hpp"
+#include <lbann/layers/image/cutout.hpp>
 
 namespace lbann {
 
-LBANN_DEFINE_LAYER_BUILDER(bilinear_resize);
-LBANN_DEFINE_LAYER_BUILDER(composite_image_transformation);
-LBANN_DEFINE_LAYER_BUILDER(rotation);
-LBANN_DEFINE_LAYER_BUILDER(cutout);
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+cutout_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)));
+}
 
 } // namespace lbann
-#endif // LBANN_LAYERS_IMAGE_IMAGE_LAYER_BUILDERS_HPP_INCLUDED
+
+#define LBANN_LAYER_NAME cutout_layer
+#include <lbann/macros/register_layer_with_cereal_data_parallel_cpu_only.hpp>

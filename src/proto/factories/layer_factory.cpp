@@ -194,6 +194,7 @@ private:
     LBANN_REGISTER_BUILDER(CompositeImageTransformation,
                            composite_image_transformation);
     LBANN_REGISTER_BUILDER(Rotation, rotation);
+    LBANN_REGISTER_BUILDER(Cutout, cutout);
 
     // Miscellaneous layers
     LBANN_REGISTER_BUILDER(Argmax, argmax);

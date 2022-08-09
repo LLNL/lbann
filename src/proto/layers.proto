@@ -216,6 +216,7 @@ message Layer {
     BilinearResize bilinear_resize = 200;
     Rotation rotation = 201;
     CompositeImageTransformation composite_image_transformation = 202;
+    Cutout cutout = 203;
 
     // Miscellaneous layers
     Covariance covariance = 300;
@@ -1343,6 +1344,13 @@ message Layer {
    *  for (X,Y) translate.
    */
   message CompositeImageTransformation {}
+
+  /** @brief Cutout a random square from an image
+   *
+   *  Expects two inputs: a 3D image tensor in CHW format and a scalar
+   *  length of the cutout square.
+   */
+  message Cutout {}
 
   // ---------------------------
   // Miscellaneous layers

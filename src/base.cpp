@@ -444,6 +444,7 @@ CEREAL_FORCE_DYNAMIC_INIT(convolution_layer);
 CEREAL_FORCE_DYNAMIC_INIT(covariance_layer);
 CEREAL_FORCE_DYNAMIC_INIT(crop_layer);
 CEREAL_FORCE_DYNAMIC_INIT(cross_entropy_layer);
+CEREAL_FORCE_DYNAMIC_INIT(cutout_layer);
 CEREAL_FORCE_DYNAMIC_INIT(deconvolution_layer);
 CEREAL_FORCE_DYNAMIC_INIT(discrete_random_layer);
 CEREAL_FORCE_DYNAMIC_INIT(dropout_layer);
