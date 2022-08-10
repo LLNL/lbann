@@ -167,7 +167,7 @@ double floor(const double& x) {return floor(x);}
     }
   }
 
-  /**static_cast<DataType*>(m_buf.get())
+  /**
    * @brief NVSHMEMScatter kernel
    * 
    */
@@ -203,7 +203,7 @@ double floor(const double& x) {return floor(x);}
           const int pe = (pe_group * pe_stride) + (ind / num_local_output_rows);
           const int local_ind = ind % num_local_output_rows;
 
-          for(size_t i = gidx; i < num_cols; i+= nthreadsx){
+          for(size_t i = gidx; i < num_cols; i += nthreadsx){
             const auto val = values[values_offset + row * num_cols + i];
             atomic_add(&outputs[output_offset + local_ind * num_cols + i], val, pe);
           }
@@ -227,20 +227,26 @@ double floor(const double& x) {return floor(x);}
               const size_t output_rows_size){
                 
       const auto buffer_size = local_mini_batch_size * output_rows_size * values_cols_size;
-
+      const auto output_size = local_mini_batch_size * output_rows_size * values_cols_size;
+      
       if (buffer_size == 0){ // No work to be done here
         nvshmemx_barrier_all_on_stream(m_stream);
         return ;
       }
-
+       util::MPIRootPrintStreamInfo() << "local mini batch size: " << local_mini_batch_size
+                                      << "\n values rows size: " << values_rows_size
+                                      << "\n values cols size: " << values_cols_size
+                                      << "\n output rows size: " << output_rows_size
+                                      << "\n groups: " << m_group
+                                      << "\n strides: " << m_stride;
       // Make sure the buffers are large enough
       ensure_buffer(buffer_size);
-
+      cudaMemset(output, 0, sizeof(DataType) * output_size); // Not sure why this seems to be neccessary
       // To Do: This would result in overcommitted allocation for 
       //        single mini-batch case. Add different thread configuration to 
       //        optimize for the case of single mini_batch - S.Z
-      constexpr size_t block_size_x = 16;  // half-warp
-      constexpr size_t block_size_y = 32;  // full-warp
+      constexpr size_t block_size_x = 1; 
+      constexpr size_t block_size_y = 16;  // full-warp
       dim3 block_dims, grid_dims;
       block_dims.x = block_size_x;
       block_dims.y = block_size_y;
@@ -264,10 +270,11 @@ double floor(const double& x) {return floor(x);}
       // Copy the local workspace buffer onto the output matrix 
       grid_dims.y = (output_rows_size + block_dims.y - 1) / block_dims.y;
       copy_kernel<<<grid_dims, block_dims, 0, m_stream>>>(static_cast<DataType*>(m_output_buffer.get()),
-                                                        output,
-                                                        local_mini_batch_size,
-                                                        output_rows_size,
-                                                        values_cols_size);
+                                                          output,
+                                                          local_mini_batch_size,
+                                                          output_rows_size,
+                                                          values_cols_size);
+      cudaMemset(static_cast<DataType*>(m_output_buffer.get()), 0, sizeof(DataType) * buffer_size);
       cudaDeviceSynchronize();
     }
 

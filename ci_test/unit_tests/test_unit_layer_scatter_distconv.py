@@ -27,8 +27,8 @@ seed = 20220708
 def get_sample(index):
     # Sample access functions
     np.random.seed(seed + index)
-    values = [np.random.normal() for _ in range(input_size)]
-    indices = [np.random.uniform(-1, output_size) for _ in range(height)]
+    values = [np.random.randint(0, 10) for _ in range(input_size)]
+    indices = [np.random.randint(-1, output_size) for _ in range(height)]
     return values + indices
 
 def num_samples():
@@ -149,9 +149,21 @@ def construct_model(lbann):
         upper_bound=val + tol,
         error_on_failure=True,
         execution_modes='test'))
-
+    
+    dump_outputs = lbann.CallbackDumpOutputs(layers="Scatter_distconv_axis_0",
+                                             batch_interval=1,
+                                             directory=os.path.dirname(os.path.realpath(__file__)), format="csv")
+    dump_indices = lbann.CallbackDumpOutputs(layers="indices_distconv_axis_0",
+                                             batch_interval=1,
+                                             directory=os.path.dirname(os.path.realpath(__file__)), format="csv")
+    dump_values = lbann.CallbackDumpOutputs(layers="values_distconv_axis_0",
+                                             batch_interval=1,
+                                             directory=os.path.dirname(os.path.realpath(__file__)), format="csv")
     # Gradient checking
     # callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+    callbacks.append(dump_outputs)
+    callbacks.append(dump_indices)
+    callbacks.append(dump_values)
 
     # Construct model
     num_epochs = 0
