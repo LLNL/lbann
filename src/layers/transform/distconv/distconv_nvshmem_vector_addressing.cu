@@ -207,12 +207,10 @@ double floor(const double& x) {return floor(x);}
           for(size_t i = gidx; i < num_cols; i += nthreadsx){
             const auto val = values[values_offset + row * num_cols + i];
             atomic_add(&outputs[output_offset + (local_ind  * num_cols) + i], val, pe);
-            nvshmem_quiet();
           }
         }
       }
     }
-    nvshmem_quiet();
   }
   } // namespace <anon>
 
