@@ -141,4 +141,28 @@ void prof_region_end(const char *, bool) {
 }
 #endif
 
+static int next_color() noexcept
+{
+  static int idx = -1;
+  idx = (idx + 1) % num_prof_colors;
+  return prof_colors[idx];
+}
+
+ProfRegion::ProfRegion(char const* name, bool sync)
+  : ProfRegion{name, next_color(), sync}
+{
+}
+
+ProfRegion::ProfRegion(char const* name, int color, bool sync)
+  : m_name{name},
+    m_sync{sync}
+{
+  prof_region_begin(m_name, color, m_sync);
+}
+
+ProfRegion::~ProfRegion()
+{
+  prof_region_end(m_name, m_sync);
+}
+
 }  // namespace lbann

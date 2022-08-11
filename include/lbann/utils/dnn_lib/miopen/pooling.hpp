@@ -29,6 +29,7 @@
 #include "lbann/utils/dnn_enums.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
+#include "lbann/utils/profiling.hpp"
 
 #include "utils.hpp"
 
@@ -44,6 +45,7 @@ using namespace miopen;
 inline size_t get_pooling_ws_size(PoolingDescriptor const& poolingDesc,
                                   TensorDescriptor const& yDesc)
 {
+  BASIC_PROF_REGION("miopen:get_pooling_ws_size");
   CHECK_MIOPEN(miopenSetPoolingIndexType(poolingDesc,
                                          miopenIndexUint32));
   size_t size;
@@ -64,6 +66,7 @@ void pooling_forward(PoolingDescriptor const& poolingDesc,
                      El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
                      El::SyncInfo<El::Device::GPU> const& si)
 {
+  BASIC_PROF_REGION("miopen:pooling_forward");
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
@@ -131,6 +134,7 @@ void pooling_backward(PoolingDescriptor const& poolingDesc,
                       El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
                       El::SyncInfo<El::Device::GPU> const& si)
 {
+  BASIC_PROF_REGION("miopen:pooling_backward");
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);

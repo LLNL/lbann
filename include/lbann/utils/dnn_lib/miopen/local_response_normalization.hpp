@@ -29,6 +29,7 @@
 #include "lbann/utils/dnn_enums.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
+#include "lbann/utils/profiling.hpp"
 
 #include "utils.hpp"
 
@@ -43,6 +44,7 @@ using namespace miopen;
 
 inline size_t get_lrn_ws_size(TensorDescriptor const& yDesc)
 {
+  BASIC_PROF_REGION("miopen:get_lrn_ws_size");
   size_t size;
   CHECK_MIOPEN(miopenLRNGetWorkSpaceSize(yDesc,
                                          &size));
@@ -61,7 +63,7 @@ void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
                                El::SyncInfo<El::Device::GPU> const& si,
                                dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL)
 {
-
+  BASIC_PROF_REGION("miopen:lrn_cross_channel_forward");
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
@@ -130,7 +132,7 @@ void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
                                 El::SyncInfo<El::Device::GPU> const& si,
                                 dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL)
 {
-
+  BASIC_PROF_REGION("miopen:lrn_cross_channel_backward");
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
