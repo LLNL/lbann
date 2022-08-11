@@ -90,9 +90,9 @@ private:
   std::unique_ptr<PermuteImpl> m_impl;
 };
 
-#ifdef LBANN_HAS_CUTENSOR
+#if defined(LBANN_HAS_TENSOR_PERMUTE)
 // No member of this class will actually be instantiated unless LBANN
-// is built with GPU support on a CUDA platform.
+// is built with support for a tensor permute backend.
 
 #ifndef LBANN_PERMUTE_LAYER_INSTANTIATE
 #define PROTO(T) extern template class PermuteLayer<T>
@@ -101,7 +101,7 @@ private:
 #undef PROTO
 #endif // LBANN_PERMUTE_LAYER_INSTANTIATE
 
-#endif // LBANN_HAS_CUTENSOR
+#endif // LBANN_HAS_TENSOR_PERMUTE
 
 } // namespace lbann
 #endif // LBANN_LAYERS_TRANSFORM_PERMUTE_HPP_INCLUDED

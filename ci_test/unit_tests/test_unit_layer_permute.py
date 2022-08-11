@@ -44,8 +44,8 @@ def setup_experiment(lbann, weekly):
         lbann (module): Module for LBANN Python frontend
 
     """
-    if not lbann.has_feature('CUTENSOR'):
-        message = f'{os.path.basename(__file__)} requires cuTENSOR'
+    if not lbann.has_feature('TENSOR_PERMUTE'):
+        message = f'{os.path.basename(__file__)} requires cuTENSOR or cuTT'
         print('Skip - ' + message)
         pytest.skip(message)
 

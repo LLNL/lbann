@@ -6,7 +6,7 @@ _permute_cache = {}
 _cumsum_cache = {}
 
 
-def Permute(x, dims, axes=None, name="", return_dims=False, avoid_cutensor=False):
+def Permute(x, dims, axes=None, name="", return_dims=False, avoid_gpu_permute=False):
     # (NOTE trb): I thought about adding additional checks for
     #   CPU-ness or the like, but I don't see that for the other cases
     #   here, so this implementation should match that behavior. That
@@ -14,11 +14,11 @@ def Permute(x, dims, axes=None, name="", return_dims=False, avoid_cutensor=False
     #   explicit device allocation assigned to it. However, setting
     #   the device allocation of a TensorPermute layer to CPU will be
     #   fatal in the C++ runtime. So I've exposed a flag,
-    #   'avoid_cutensor' to generate the gather-based permutation for
+    #   'avoid_gpu_permute' to generate the gather-based permutation for
     #   this case. The user will still need to post-process the
     #   generated reshape and gather layers to set the device
     #   allocation as appropriate.
-    if not avoid_cutensor and lbann.has_feature("CUTENSOR"):
+    if not avoid_gpu_permute and lbann.has_feature("TENSOR_PERMUTE"):
         ndims = len(dims)
         if axes is None: # Apparently this means "reverse things".
             axes=[x for x in range(0, len(dims))]
