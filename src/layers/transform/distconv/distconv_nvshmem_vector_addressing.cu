@@ -236,33 +236,28 @@ double floor(const double& x) {return floor(x);}
         nvshmemx_barrier_all_on_stream(m_stream);
         return ;
       }
-       util::MPIPrintStreamInfo() << "local mini batch size: " << local_mini_batch_size
-                                      << "\n values rows size: " << values_rows_size
-                                      << "\n values cols size: " << values_cols_size
-                                      << "\n output rows size: " << output_rows_size
-                                      << "\n groups: " << m_group
-                                      << "\n strides: " << m_stride;
+
       // Make sure the buffers are large enough
       ensure_buffer(buffer_size);
       DataType* output_buffer_ptr = static_cast<DataType*>(m_output_buffer.get()); 
       cudaMemsetAsync(output, 0, sizeof(DataType) * output_size, m_stream); // Not sure why this seems to be neccessary
-      cudaMemsetAsync(output_buffer_ptr, 0, sizeof(DataType) * output_size, m_stream);
       cudaStreamSynchronize(m_stream);
       // To Do: This would result in overcommitted allocation for 
       //        single mini-batch case. Add different thread configuration to 
       //        optimize for the case of single mini_batch - S.Z
-      // constexpr size_t block_size_x = 1; 
-      // constexpr size_t block_size_y = 16;  // full-warp
+      constexpr size_t block_size_x = 1; 
+      constexpr size_t block_size_y = 16;  // full-warp
       dim3 block_dims, grid_dims;
-      block_dims.x = 1; //block_size_x;
-      block_dims.y = 4; //block_size_y;
+      block_dims.x = block_size_x;
+      block_dims.y = block_size_y;
       block_dims.z = 1;
 
-      grid_dims.z = 1; //(local_mini_batch_size + block_dims.z -1) / block_dims.z;
-      grid_dims.y = 4; //(values_rows_size + block_dims.y - 1) / block_dims.y;
-      grid_dims.x = 1; //(values_cols_size + block_dims.x - 1) / block_dims.x;
-
+      grid_dims.z = (local_mini_batch_size + block_dims.z -1) / block_dims.z;
+      grid_dims.y = (values_rows_size + block_dims.y - 1) / block_dims.y;
+      grid_dims.x = (values_cols_size + block_dims.x - 1) / block_dims.x;
+      sync();
       cudaDeviceSynchronize();
+      
       Scatter_NVSHMEM_Kernel<<<grid_dims, block_dims, 0, m_stream>>>(values,
                                                                      indices,
                                                                      output_buffer_ptr,
@@ -274,11 +269,9 @@ double floor(const double& x) {return floor(x);}
                                                                      m_stride);
       cudaDeviceSynchronize();
       nvshmemx_quiet_on_stream(m_stream);
-
       sync();
       // Copy the local workspace buffer onto the output matrix 
       grid_dims.y = (output_rows_size + block_dims.y - 1) / block_dims.y;
-      cudaDeviceSynchronize();
       copy_kernel<<<grid_dims, block_dims, 0, m_stream>>>(output_buffer_ptr,
                                                           output,
                                                           local_mini_batch_size,

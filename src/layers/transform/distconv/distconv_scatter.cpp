@@ -168,19 +168,11 @@ namespace distconv{
     const auto input_ws_size = max_samples_per_rank * max_input_channels_per_rank * feature_dim_size;
     const auto output_ws_size = max_samples_per_rank * max_output_channels_per_rank * feature_dim_size;
 
-    util::MPIPrintStreamInfo() << " Sample dim size: " << sample_size
-                                << "\n Input channel size: " << input_channel_size
-                                << "\n Output channel size: " << output_channel_size
-                                << "\n Max samples / rank: " << max_samples_per_rank
-                                << "\n Max input channels / rank: " << max_input_channels_per_rank
-                                << "\n Max output channels / rank: " << max_output_channels_per_rank
-                                << "\n Input buffer size: " << input_ws_size
-                                << "\n Output buffer size: " << output_ws_size;
     const auto num_pes = m_dist_scatter->get_num_ranks();
     const auto pid = m_dist_scatter->get_rank();
 
-    // m_dist_gather->ensure_buffer(input_ws_size);
-    // m_dist_scatter->ensure_buffer(output_ws_size);
+    m_dist_gather->ensure_buffer(input_ws_size);
+    m_dist_scatter->ensure_buffer(output_ws_size);
 
     // Check if in hybrid data-parallel channel-parallel mode
     if ((int)channel_splits == num_pes){
@@ -198,6 +190,8 @@ namespace distconv{
     
     m_dist_scatter->set_group(group);
     m_dist_gather->set_group(group);
+    util::MPIPrintStreamInfo() << "Finished set up";
+
   }
 
 

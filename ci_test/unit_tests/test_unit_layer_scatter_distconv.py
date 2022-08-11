@@ -27,8 +27,8 @@ seed = 20220911
 def get_sample(index):
     # Sample access functions
     np.random.seed(seed + index)
-    values = [1.0 for _ in range(input_size)]
-    indices = [np.random.randint(-1, output_size) for _ in range(height)]
+    values = [np.random.normal() for _ in range(input_size)]
+    indices = [np.random.uniform(-1, output_size) for _ in range(height)]
     return values + indices
 
 def num_samples():
