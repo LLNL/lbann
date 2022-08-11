@@ -64,6 +64,9 @@ namespace distconv{
     const auto& num_values_rows = values_shape[2];
     const auto& local_mini_batch_size = values_shape[3];
     const auto& num_output_rows = output_shape[2];
+    const auto rank = m_dist_scatter->get_rank();
+    dump_tensor(values, "/p/vast1/zaman2/lbann/ci_test/unit_tests/values_"+std::to_string(rank));
+    dump_tensor(indices,"/p/vast1/zaman2/lbann/ci_test/unit_tests/indices_"+std::to_string(rank));
 
     // Debug prints -- delete before PR
       
@@ -165,7 +168,7 @@ namespace distconv{
     const auto input_ws_size = max_samples_per_rank * max_input_channels_per_rank * feature_dim_size;
     const auto output_ws_size = max_samples_per_rank * max_output_channels_per_rank * feature_dim_size;
 
-    util::MPIPrintStreamDebug() << " Sample dim size: " << sample_size
+    util::MPIPrintStreamInfo() << " Sample dim size: " << sample_size
                                 << "\n Input channel size: " << input_channel_size
                                 << "\n Output channel size: " << output_channel_size
                                 << "\n Max samples / rank: " << max_samples_per_rank
@@ -176,8 +179,8 @@ namespace distconv{
     const auto num_pes = m_dist_scatter->get_num_ranks();
     const auto pid = m_dist_scatter->get_rank();
 
-    m_dist_gather->ensure_buffer(input_ws_size);
-    m_dist_scatter->ensure_buffer(output_ws_size);
+    // m_dist_gather->ensure_buffer(input_ws_size);
+    // m_dist_scatter->ensure_buffer(output_ws_size);
 
     // Check if in hybrid data-parallel channel-parallel mode
     if ((int)channel_splits == num_pes){

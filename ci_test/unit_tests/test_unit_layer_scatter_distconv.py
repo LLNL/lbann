@@ -21,13 +21,13 @@ width = 2
 height = 16
 input_size = width * height
 output_size = 8
-seed = 20220708
+seed = 20220911
 
 
 def get_sample(index):
     # Sample access functions
     np.random.seed(seed + index)
-    values = [np.random.randint(0, 10) for _ in range(input_size)]
+    values = [1.0 for _ in range(input_size)]
     indices = [np.random.randint(-1, output_size) for _ in range(height)]
     return values + indices
 
@@ -217,6 +217,6 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-for _test_func in tools.create_tests(setup_experiment, __file__,
-                                     environment=tools.get_distconv_environment()):
+for _test_func in tools.create_tests(setup_experiment, __file__):
+                                    #  environment=tools.get_distconv_environment()):
     globals()[_test_func.__name__] = _test_func
