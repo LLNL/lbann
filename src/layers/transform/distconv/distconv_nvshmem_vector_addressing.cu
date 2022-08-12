@@ -83,43 +83,6 @@ __device__ __forceinline__
 double floor(const double& x) {return floor(x);}
 
   /**
-   * @brief Copy tensor from shared memory heap to output tensor
-   * 
-   * Block dimensions: 32 x 1 x 1
-   * 
-   * Grid dimensions: input_dims[1] x input_dims[0] x 1
-   * 
-   */
-
-  template <typename DataType>
-  __global__ void
-  copy_kernel(
-    const DataType* __restrict__  src,
-    DataType* __restrict__ dest,
-    size_t local_mini_batch_size,
-    size_t row_size, 
-    size_t col_size ){
-    
-    const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
-    const size_t gidz = threadIdx.z + blockIdx.z * blockDim.z;
-    const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
-
-    const size_t nthreadsx = gridDim.x * blockDim.x;
-    const size_t nthreadsy = gridDim.y * blockDim.y;
-    const size_t nthreadsz = gridDim.z * blockDim.z;
-
-    for (size_t mb_i = gidz; mb_i < local_mini_batch_size; mb_i += nthreadsz){
-      const auto mb_offset = mb_i * row_size * col_size; 
-      for (size_t row = gidy; row < row_size; row += nthreadsy){
-        const auto row_offset = row * col_size;
-        for (size_t col = gidx; col < col_size; col += nthreadsx){
-          dest[mb_offset + row_offset + col] = src[mb_offset + row_offset + col];
-        }
-      }
-    } 
-  }
-
-  /**
    * @brief NVSHMEM Gather kernel
    * 
    * workspace(k, j, i) = values(k, indices(k, j), i)
@@ -270,13 +233,12 @@ double floor(const double& x) {return floor(x);}
       sync();
       // Copy the local workspace buffer onto the output matrix 
       grid_dims.y = (output_rows_size + block_dims.y - 1) / block_dims.y;
-      copy_kernel<<<grid_dims, block_dims, 0, m_stream>>>(output_buffer_ptr,
-                                                          output,
-                                                          local_mini_batch_size,
-                                                          output_rows_size,
-                                                          values_cols_size);
-
-      cudaDeviceSynchronize();
+      cudaMemcpyAsync(output,
+                      output_buffer_ptr,
+                      sizeof(DataType) * buffer_size,
+                      cudaMemcpyDeviceToDevice,
+                      m_stream);
+      cudaStreamSynchronize(m_stream);
     }
 
     template<typename DataType>
@@ -316,13 +278,13 @@ double floor(const double& x) {return floor(x);}
       grid_dims.x = (values_cols_size + block_dims.x - 1) / block_dims.x;
       grid_dims.y = (values_rows_size + block_dims.y - 1) / block_dims.y;
       grid_dims.z = (local_mini_batch_size + block_dims.z - 1) / block_dims.z;
-
-      copy_kernel<<<block_dims, grid_dims, 0, m_stream>>>(values,
-                                                          static_cast<DataType*>(m_output_buffer.get()),
-                                                          local_mini_batch_size,
-                                                          values_rows_size,
-                                                          values_cols_size);
-      cudaDeviceSynchronize();
+          
+      cudaMemcpyAsync(static_cast<DataType*>(m_output_buffer.get()),
+                      values,
+                      sizeof(DataType) * buffer_size,
+                      cudaMemcpyDeviceToDevice,
+                      m_stream);
+      cudaStreamSynchronize(m_stream);
       sync();  // Barrier to ensure all PEs are available
 
       // To Do: This would result in overcommitted allocation for 
