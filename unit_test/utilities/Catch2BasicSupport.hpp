@@ -47,5 +47,6 @@
 using Catch::Approx;
 #else
 #include <catch2/catch.hpp>
+using Catch::Contains;
 #endif // LBANN_USE_CATCH2_V3
 #endif // LBANN_UNIT_TEST_UTILITIES_CATCH2BASICSUPPORT_HPP_INCLUDED
