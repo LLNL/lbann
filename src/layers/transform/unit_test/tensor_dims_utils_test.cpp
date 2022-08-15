@@ -25,11 +25,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 // MUST include this
-#include <algorithm>
-#include <catch2/catch.hpp>
+#include "Catch2BasicSupport.hpp"
 
 #include "../permute/tensor_dims_utils.hpp"
 
+#include <algorithm>
 #include <sstream>
 
 template <typename T>
