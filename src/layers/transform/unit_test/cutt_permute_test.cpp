@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 // MUST include this
-#include <catch2/catch.hpp>
+#include "Catch2BasicSupport.hpp"
 
 #include "../permute/cutt_permuteimpl.hpp"
 #include "lbann/utils/dim_helpers.hpp"

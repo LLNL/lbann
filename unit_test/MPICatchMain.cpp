@@ -24,8 +24,16 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifdef LBANN_USE_CATCH2_V3
+#include <catch2/catch_session.hpp>
+#include <catch2/internal/catch_clara.hpp>
+using Catch::Clara::Opt;
+#else
+// VERSION 2 ONLY
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
+using Catch::clara::Opt;
+#endif // LBANN_USE_CATCH2_V3
 
 // Utilities
 #include "MPITestHelpers.hpp"
@@ -57,7 +65,7 @@ int main(int argc, char* argv[])
 
   int hang_rank = -1;
   auto cli =
-    session.cli() | Catch::clara::Opt(hang_rank, "Rank to hang")["--hang-rank"](
+    session.cli() | Opt(hang_rank, "Rank to hang")["--hang-rank"](
                       "Hang this rank to attach a debugger.");
   session.cli(cli);
 
@@ -90,7 +98,11 @@ int main(int argc, char* argv[])
 
   // Manipulate output file if needed.
   auto& config_data = session.configData();
+#ifdef LBANN_USE_CATCH2_V3
+  auto& output_file = config_data.defaultOutputFilename;
+#else
   auto& output_file = config_data.outputFilename;
+#endif
   if (output_file.size() > 0) {
     lbann::utils::SystemInfo sys_info;
     output_file = replace_escapes(output_file, sys_info);

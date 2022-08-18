@@ -554,12 +554,20 @@ if (LBANN_WITH_ONNX)
 endif ()
 
 if (LBANN_WITH_UNIT_TESTING)
-  find_package(Catch2 2.0.0 CONFIG REQUIRED)
+  # LBANN allows for Catch2 v2.* or v3.*
+    find_package(Catch2 3.0.0 CONFIG QUIET)
+  if (NOT Catch2_FOUND)
+    find_package(Catch2 2.0.0 CONFIG REQUIRED)
+    set(LBANN_USE_CATCH2_V3 FALSE)
+  else ()
+    set(LBANN_USE_CATCH2_V3 TRUE)
+  endif ()
+  message(STATUS "Found Catch2: Version ${Catch2_VERSION}")
 
   if (CMAKE_CXX_COMPILER_ID MATCHES "ROCMClang")
     set_target_properties(Catch2::Catch2
       PROPERTIES INTERFACE_COMPILE_FEATURES "cxx_std_17")
-  endif()
+  endif ()
 
   # Now that Catch2 has been found, start adding the unit tests
   include(CTest)

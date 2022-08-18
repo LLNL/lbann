@@ -24,7 +24,13 @@ add_subdirectory(example)
 add_executable(mpi-catch-tests
   MPICatchMain.cpp "${LBANN_MPI_CATCH2_TEST_FILES}")
 target_link_libraries(mpi-catch-tests
-  PRIVATE unit_test_utilities lbann Catch2::Catch2)
-
+  PRIVATE
+  unit_test_utilities
+  lbann
+  Catch2::Catch2)
+if (LBANN_USE_CATCH2_V3)
+  target_compile_definitions(seq-catch-tests PRIVATE LBANN_USE_CATCH2_V3)
+  target_compile_definitions(mpi-catch-tests PRIVATE LBANN_USE_CATCH2_V3)
+endif ()
 # TODO: Some "magical" way to automatically run tests if a parallel
 # environment is detected at CTest time
