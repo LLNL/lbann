@@ -133,10 +133,24 @@ class MolWAE(lbann.modules.Module):
             w.datatype = self.weights_datatype
 
         #Decoder
-        self.decoder_rnn = gru(
+        self.decoder_rnn1 = gru(
             hidden_size=512,
-            num_layers=3,
-            name=self.name+'_decoder_rnn',
+            num_layers=1,
+            name=self.name+'_decoder_rnn1',
+            datatype=self.datatype,
+            weights_datatype=self.weights_datatype,
+        )
+        self.decoder_rnn2 = gru(
+            hidden_size=512,
+            num_layers=1,
+            name=self.name+'_decoder_rnn2',
+            datatype=self.datatype,
+            weights_datatype=self.weights_datatype,
+        )
+        self.decoder_rnn3 = gru(
+            hidden_size=512,
+            num_layers=1,
+            name=self.name+'_decoder_rnn3',
             datatype=self.datatype,
             weights_datatype=self.weights_datatype,
         )
@@ -258,10 +272,12 @@ class MolWAE(lbann.modules.Module):
         h_0 = self.decoder_lat(z)
         # h_0 = h_0.unsqueeze(0).repeat(self.decoder_rnn.num_layers, 1, 1)
         h_0 = lbann.Reshape(h_0, dims=[1, 512])
-        h_0 = lbann.Tessellate(h_0, dims=[3, 512])
+        # h_0 = lbann.Tessellate(h_0, dims=[3, 512])
 
         # output, _ = self.decoder_rnn(x_input, h_0)
-        output = self.decoder_rnn(x_input, h_0)
+        x_input = self.decoder_rnn1(x_input, h_0)
+        x_input = self.decoder_rnn2(x_input, h_0)
+        output = self.decoder_rnn3(x_input, h_0)
 
         # y = self.decoder_fc(output)
         y = lbann.ChannelwiseFullyConnected(

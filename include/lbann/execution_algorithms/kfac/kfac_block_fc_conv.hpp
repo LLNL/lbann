@@ -120,6 +120,18 @@ class kfac_block_fc_conv: public kfac_block<Device> {
   kfac_block_fc_conv(const kfac_block_fc_conv&) = default;
   kfac_block_fc_conv& operator=(const kfac_block_fc_conv&) = default;
 
+  int get_local_memory_consumption(){
+    int total_size = 0;
+    total_size += m_kronecker_inverse_A.Height() * m_kronecker_inverse_A.Width();
+    total_size += m_kronecker_inverse_G.Height() * m_kronecker_inverse_G.Width();
+    total_size += m_kronecker_average_A.Height() * m_kronecker_average_A.Width();
+    total_size += m_kronecker_average_G.Height() * m_kronecker_average_G.Width();
+    total_size += m_kronecker_factor_buf_A.Height() * m_kronecker_factor_buf_A.Width();
+    total_size += m_kronecker_factor_buf_G.Height() * m_kronecker_factor_buf_G.Width();
+    total_size += m_grad_buffer_v.Height() * m_grad_buffer_v.Width();
+    return total_size;
+  }
+
   void compute_local_kronecker_factors(
       lbann_comm* comm,
       bool print_matrix,

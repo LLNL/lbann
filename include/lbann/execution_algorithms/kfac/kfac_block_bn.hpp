@@ -99,6 +99,14 @@ class kfac_block_bn: public kfac_block<Device> {
   kfac_block_bn(const kfac_block_bn&) = default;
   kfac_block_bn& operator=(const kfac_block_bn&) = default;
 
+  int get_local_memory_consumption(){
+    int total_size = 0;
+    total_size += m_fisher_buf.Height() * m_fisher_buf.Width();
+    total_size += m_fisher_average.Height() * m_fisher_average.Width();
+    total_size += m_fisher_inverse.Height() * m_fisher_inverse.Width();
+    return total_size;
+  }
+
   void compute_local_kronecker_factors(
       lbann_comm* comm,
       bool print_matrix,

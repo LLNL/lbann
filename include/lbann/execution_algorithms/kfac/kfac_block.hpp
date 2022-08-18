@@ -73,6 +73,11 @@ class kfac_block {
 
   virtual void on_forward_prop_end(lbann_comm* comm) {}
 
+  /** @brief Get local Memory Consumption. */
+  virtual int get_local_memory_consumption() {
+    LBANN_ERROR("this function should be called via a sub-class.");
+  }
+
   /** @brief Compute Kronecker factors. */
   virtual void compute_local_kronecker_factors(
       lbann_comm* comm,

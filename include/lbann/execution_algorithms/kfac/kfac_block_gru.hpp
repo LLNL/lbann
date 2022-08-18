@@ -142,6 +142,11 @@ class kfac_block_gru: public kfac_block<Device> {
   const std::vector<El::AbstractMatrix<DataType>*>
   get_local_kronecker_buffers() override;
 
+  int get_local_memory_consumption(){
+    return -1;
+    LBANN_ERROR("this function is not implemented for GRU layer.");
+  }
+
   void compute_local_kronecker_factors(
       lbann_comm* comm,
       bool print_matrix,

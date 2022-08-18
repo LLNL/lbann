@@ -246,13 +246,14 @@ void KFAC::train(
       sgd_context.inc_epoch();
 
       //profiling code
-      std::cout<<"Comm rank:"<<comm.get_rank_in_world()<<" Primary Grid:"<< (comm.get_grid_type() == GridType::PRIMARY_GRID) <<" Inverse comm:"<<m_time_span_inverse_comm \
-      <<" backward:"<<m_time_span_backward_comm<<" "<<m_time_span_backward_comm_end \
-      <<" forward:"<<m_time_span_forward_comm <<" "<<m_time_span_forward_comm_end \
-      <<" InvPre:"<<m_time_span_precond_comm
-      <<" Forward:"<<m_time_forward_pass
-      <<" backward:"<<m_time_backward_pass
-      <<" KFAC:"<<m_time_kfac<<"\n";
+      // std::cout<<"Comm rank:"<<comm.get_rank_in_world()<<" Primary Grid:"<< (comm.get_grid_type() == GridType::PRIMARY_GRID) <<" Inverse comm:"<<m_time_span_inverse_comm \
+      // <<" backward:"<<m_time_span_backward_comm<<" "<<m_time_span_backward_comm_end \
+      // <<" forward:"<<m_time_span_forward_comm <<" "<<m_time_span_forward_comm_end \
+      // <<" InvPre:"<<m_time_span_precond_comm
+      // <<" Forward:"<<m_time_forward_pass
+      // <<" backward:"<<m_time_backward_pass
+      // <<" KFAC:"<<m_time_kfac
+      // <<" Size of"<<sizeof(DataType)<<"\n";
       m_time_span_inverse_comm = 0;
       m_time_span_backward_comm = 0;
       m_time_span_backward_comm_end = 0;
@@ -305,7 +306,12 @@ void KFAC::train(
 
         // Trigger new epoch stuff next iteration (if there is one).
         is_start_of_epoch = true;
-        kfac_context.print_workspace_size(model);
+        // kfac_context.print_workspace_size(model);
+        int total_local_size = 0;
+        for(auto& block : kfac_context.m_blocks) {
+          total_local_size +=block->get_local_memory_consumption();
+        }
+        // std::cout<<"Total local size:"<<total_local_size<<"\n";
       }
     }
 
@@ -1244,7 +1250,7 @@ void KFAC::on_forward_prop_end(
       bool enable_copy_errors = this->m_enable_copy_errors;
       bool enable_copy_activations = this->m_enable_copy_activations;
 
-      std::cout<<"Enable copy errors:"<<enable_copy_errors<<" Enable copy act"<<enable_copy_activations<<"\n";
+      // std::cout<<"Enable copy errors:"<<enable_copy_errors<<" Enable copy act"<<enable_copy_activations<<"\n";
       std::shared_ptr<kfac_block<Device>> block;
       if(is_fc || is_conv) {
         block = std::make_shared<kfac_block_fc_conv<Device>>(
@@ -1595,7 +1601,7 @@ void KFAC::on_backward_prop_end(
         }
       }
     }
-    std::cout<<"Total Inverse size:"<<kfac_inverse_size<<"\n";
+    // std::cout<<"Total Inverse size:"<<kfac_inverse_size<<"\n";
   }
 
 }

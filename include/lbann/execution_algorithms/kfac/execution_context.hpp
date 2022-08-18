@@ -124,7 +124,7 @@ public:
         tot_size += pair.second.Height() * pair.second.Width();
     }
     std::cout<<"Workspace Rank:"<<comm.get_rank_in_world()
-            <<" "<<"Total size:"<<tot_size<<"\n";
+            <<" Size of:"<<" "<<"Total size:"<<tot_size<<"\n";
   }
 
 private:
