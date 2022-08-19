@@ -55,6 +55,7 @@ if [[ $? -ne 0 ]]; then
     FAILED_JOBS+=" seq"
 fi
 
+LBANN_NNODES=$(scontrol show job ${JOB_ID} | sed -n 's/.*NumNodes=\([0-9]\).*/\1/p')
 srun --jobid=${JOB_ID} \
      -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * 2)) \
      --ntasks-per-node=$TEST_TASKS_PER_NODE \
