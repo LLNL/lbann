@@ -188,7 +188,7 @@ while :; do
         -s|--stable-defaults)
             # Use the latest released version
             HYDROGEN_VER=
-            ALUMINUM_VER=
+            ALUMINUM_VER="@1.0.0-lbann"
             DIHYDROGEN_VER=
             ;;
         --test)
@@ -638,6 +638,11 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     CMD="set_center_specific_externals ${CENTER} ${SPACK_ARCH_TARGET} ${SPACK_ARCH} ${SPACK_ENV_YAML_FILE}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+    # Force the environment to concretize with the same set of GPU variants
+    CMD="spack config add packages:all:variants:'${DEPENDENT_PACKAGES_GPU_VARIANTS}'"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { `spack config add packages:all:variants:"${DEPENDENT_PACKAGES_GPU_VARIANTS}"` || exit_on_failure "${CMD}"; }
 
     CMD="spack compiler find --scope env:${LBANN_ENV}"
     echo ${CMD} | tee -a ${LOG}
