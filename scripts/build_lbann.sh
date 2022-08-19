@@ -20,6 +20,7 @@ LBANN_HOME=$(dirname ${SCRIPTS_DIR})
 SCRIPT=$(basename ${BASH_SOURCE})
 LBANN_ENV=
 INSTALL_DEPS=
+REUSE_ENV=
 DRY_RUN=
 CLEAN_BUILD=
 ALLOW_BACKEND_BUILDS=
@@ -63,7 +64,7 @@ Options:
   ${C}--clean-build${N}              Delete the local link to the build directory
   ${C}--clean-deps${N}               Forcibly uninstall Hydrogen, Aluminum, and DiHydrogen dependencies
   ${C}--configure-only${N}           Stop after adding all packages to the environment
-  ${C}-d | --define-env${N}          Define (create) a Spack environment, including the lbann dependencies, for building LBANN from local source
+  ${C}-d | --define-env${N}          Define (create) a Spack environment, including the lbann dependencies, for building LBANN from local source.  (This wil overwrite any existing environment of the same name)
   ${C}--dry-run${N}                  Dry run the commands (no effect)
   ${C}-e | --extras <PATH>${N}       Add other packages from file at PATH to the Spack environment in addition to LBANN (Flag can be repeated)
   ${C}-j | --build-jobs <N>${N}      Number of parallel processes to use for compiling, e.g. -j \$((\$(nproc)+2))
@@ -74,6 +75,7 @@ Options:
   ${C}--no-modules${N}               Don't try to load any modules (use the existing users environment)
   ${C}-p | --pkg <PACKAGE>${N}       Add package PACKAGE to the Spack environment in addition to LBANN (Flag can be repeated)
   ${C}--pip <requirements.txt>${N}   PIP install Python packages in requirements.txt with the version of Python used by LBANN (Flag can be repeated)
+  ${C}-r | --reuse-env${N}           Reuse a Spack environment, including the lbann dependencies, for building LBANN from local source.  (This will create a new one if none is found)
   ${C}--tmp-build-dir${N}            Put the build directory in tmp space
   ${C}--spec-only${N}                Stop after a spack spec command
   ${C}-s | --stable${N}              Use the latest stable defaults not the head of Hydrogen, DiHydrogen and Aluminum repos
@@ -177,6 +179,9 @@ while :; do
                 echo "\"${1}\" option requires a non-empty option argument" >&2
                 exit 1
             fi
+            ;;
+        -r|--reuse-env)
+            REUSE_ENV="TRUE"
             ;;
         --tmp-build-dir)
             CLEAN_BUILD="TRUE"
@@ -503,6 +508,20 @@ if [[ ! -n "${SKIP_MODULES:-}" ]]; then
     fi
 fi
 
+# If the user asks to resuse an environment see if it exists, if not set one up
+if [[ -n "${REUSE_ENV:-}" ]]; then
+    # Check to make sure that both the -d and -r flags are not concurrently set
+    if [[ -n "${INSTALL_DEPS:-}" ]]; then
+        [[ -z "${DRY_RUN:-}" ]] && { exit_on_failure "Invalid combination of -r and -d flags"; }
+    fi
+    # Look for existing environment with the same name
+    if [[ $(spack env list | grep -e "${LBANN_ENV}$") ]]; then
+        echo "Spack environment ${LBANN_ENV} already exists... reusing it"
+    else
+        echo "Spack environment ${LBANN_ENV} does not exists... creating it (as if -d flag was thrown)"
+        INSTALL_DEPS="TRUE"
+    fi
+fi
 
 # If the dependencies are being installed then you should clean things up
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
