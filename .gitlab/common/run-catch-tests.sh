@@ -57,7 +57,7 @@ fi
 
 LBANN_NNODES=$(scontrol show job ${JOB_ID} | sed -n 's/.*NumNodes=\([0-9]\).*/\1/p')
 srun --jobid=${JOB_ID} \
-     -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * 2)) \
+     -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * ${LBANN_NNODES})) \
      --ntasks-per-node=$TEST_TASKS_PER_NODE \
      -t 5 ${TEST_MPIBIND_FLAG} \
      ./unit_test/mpi-catch-tests \
@@ -68,7 +68,7 @@ if [[ $? -ne 0 ]]; then
 fi
 
 srun --jobid=${JOB_ID} \
-     -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * 2)) \
+     -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * ${LBANN_NNODES})) \
      --ntasks-per-node=$TEST_TASKS_PER_NODE \
      -t 5 ${TEST_MPIBIND_FLAG} \
      ./unit_test/mpi-catch-tests "[filesystem]" \
