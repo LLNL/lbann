@@ -46,8 +46,7 @@ allocate lc resources:
     GIT_STRATEGY: none
   script:
     - echo "== ACQUIRING SLURM RESOURCES =="
-    - export LBANN_NNODES=1
-    - salloc --exclusive -N ${LBANN_NNODES} -p pbatch -t 45 --no-shell -J ${JOB_NAME}
+    - salloc --exclusive -N 1 -p pbatch -t 45 --no-shell -J ${JOB_NAME}
   timeout: 6h
 
 # Build LBANN and establish the Spack environment for this pipeline.
