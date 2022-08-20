@@ -66,7 +66,6 @@ build and install:
     - export BUILD_TASKS=$(($(nproc) + 2))
     - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - printenv
     - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -r
       -l ${SPACK_ENV_NAME} --test -j ${BUILD_TASKS}
       -e ./scripts/common_spack_packages/ci_spack_packages.sh
