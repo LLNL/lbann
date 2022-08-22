@@ -78,11 +78,11 @@ remove spack environment:
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - export SPACK_ARCH_TARGET=$(spack arch -t)
     - export FULL_ENV_NAME=lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
-    - |
-      if [[ -n "$(spack env list | grep -e ${FULL_ENV_NAME})" ]] ;
-      then
-        spack env rm --yes-to-all ${FULL_ENV_NAME}
-      fi
+    # - |
+    #   if [[ -n "$(spack env list | grep -e ${FULL_ENV_NAME})" ]] ;
+    #   then
+    #     spack env rm --yes-to-all ${FULL_ENV_NAME}
+    #   fi
 
 # Variables for Lassen. Because this test uses "test_compiler.py", we
 # don't need to specify the Spack spec or the job name.
