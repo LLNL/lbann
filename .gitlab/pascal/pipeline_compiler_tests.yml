@@ -67,7 +67,7 @@ build and install:
     - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -r
-      -l ${SPACK_ENV_NAME} --tmp-build-dir --test -j ${BUILD_TASKS}
+      -l ${SPACK_ENV_NAME} --clean-build --test -j ${BUILD_TASKS}
       -e ./scripts/common_spack_packages/ci_spack_packages.sh
       ${BUILD_SCRIPT_OPTIONS} -- 
       +deterministic +vision +numpy ${SPACK_SPECS}
