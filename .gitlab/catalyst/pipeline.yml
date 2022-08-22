@@ -76,7 +76,7 @@ build and install:
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - export BUILD_TASKS=$(($(nproc) + 2))
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -d
+    - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -r
       -l ${SPACK_ENV_NAME} --test --clean-build -j ${BUILD_TASKS}
       --ci-pip --
       +deterministic +vision +numpy ${SPACK_SPECS}
