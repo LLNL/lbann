@@ -657,10 +657,12 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-    # Force the environment to concretize with the same set of GPU variants
-    CMD="spack config add packages:all:variants:'${DEPENDENT_PACKAGES_GPU_VARIANTS}'"
-    echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && { `spack config add packages:all:variants:"${DEPENDENT_PACKAGES_GPU_VARIANTS}"` || exit_on_failure "${CMD}"; }
+    if [[ -n "${DEPENDENT_PACKAGES_GPU_VARIANTS:-}" ]]; then
+        # Force the environment to concretize with the same set of GPU variants
+        CMD="spack config add packages:all:variants:'${DEPENDENT_PACKAGES_GPU_VARIANTS}'"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { `spack config add packages:all:variants:"${DEPENDENT_PACKAGES_GPU_VARIANTS}"` || exit_on_failure "${CMD}"; }
+    fi
 
     CMD="spack compiler find --scope env:${LBANN_ENV}"
     echo ${CMD} | tee -a ${LOG}
