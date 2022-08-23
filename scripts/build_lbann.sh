@@ -403,6 +403,12 @@ function exit_with_instructions()
     exit 1
 }
 
+function warn_on_failure()
+{
+    local cmd="$1"
+    echo -e "WARNING CMD FAILED: ${cmd}"
+}
+
 ##########################################################################################
 # Figure out if there are default dependencies or flags (e.g.  MPI/BLAS library) for the center
 CENTER_COMPILER=
@@ -905,5 +911,5 @@ if [[ -z "${USER_BUILD:-}" ]]; then
     # Lastly, Save the log file in the build directory
     CMD="cp ${LOG} ${LBANN_HOME}/spack-build-${LBANN_SPEC_HASH}/${LOG}"
     echo ${CMD}
-    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
 fi
