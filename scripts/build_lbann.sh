@@ -357,7 +357,6 @@ if [[ -n "${LBANN_LABEL:-}" ]]; then
 else
     AT_LBANN_LABEL=""
 fi
-CORE_BUILD_PATH="${LBANN_HOME}/build/${CLUSTER}.${LBANN_ENV}"
 
 LOG="spack-build-${LBANN_ENV}.log"
 if [[ -f ${LOG} ]]; then
@@ -770,17 +769,6 @@ LBANN_SPEC_HASH=$(spack find -cl | grep -v "\-\-\-\-\-\-" | grep lbann${AT_LBANN
 # If the user only wants to configure the environment
 [[ ${CONFIGURE_ONLY:-} ]] && exit_with_instructions
 
-# For developer builds create a user friendly link to the spack build directory
-if [[ -z "${USER_BUILD:-}" ]]; then
-    LINK_DIR="${LINK_DIR:-${CORE_BUILD_PATH}}"
-    BUILD_DIR=$(dirname ${LINK_DIR})
-    if [[ ! -d "${BUILD_DIR}" ]]; then
-        CMD="mkdir -p ${BUILD_DIR}"
-        echo ${CMD}
-        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-    fi
-fi
-
 # Check to see if the link to the build directory exists and is valid
 SPACK_BUILD_DIR="spack-build-${LBANN_SPEC_HASH}"
 if [[ -L "${SPACK_BUILD_DIR}" ]]; then
@@ -873,16 +861,6 @@ fi
 # LBANN_BUILD_DIR=$(grep "PROJECT_BINARY_DIR:" ${LBANN_HOME}/spack-build-out.txt | awk '{print $2}')
 
 if [[ -z "${USER_BUILD:-}" ]]; then
-    if [[ -L "${LINK_DIR}" ]]; then
-        CMD="rm ${LINK_DIR}"
-        echo ${CMD} | tee -a ${LOG}
-        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-    fi
-
-    CMD="ln -s ${LBANN_HOME}/spack-build-${LBANN_SPEC_HASH} ${LINK_DIR}"
-    echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-
     # Copy the compile_commands.json file to LBANN_HOME
     if [[ -e "${LBANN_HOME}/spack-build-${LBANN_SPEC_HASH}/compile_commands.json" ]]; then
         CMD="cp ${LBANN_HOME}/spack-build-${LBANN_SPEC_HASH}/compile_commands.json ${LBANN_HOME}/compile_commands.json"
