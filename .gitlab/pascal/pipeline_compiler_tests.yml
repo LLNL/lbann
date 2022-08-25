@@ -67,7 +67,7 @@ build and install:
     - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -r
-      -l ${SPACK_ENV_NAME} --test --clean-build  -j ${BUILD_TASKS}
+      -l ${SPACK_ENV_NAME} --test --clean-build -j ${BUILD_TASKS}
       -e ./scripts/common_spack_packages/ci_spack_packages.sh
       ${BUILD_SCRIPT_OPTIONS} -- 
       +deterministic +vision +numpy ${SPACK_SPECS}
@@ -89,22 +89,7 @@ check catch2 tests:
       junit: ${RESULTS_DIR}/*.xml
 
 # Cleanup the pipeline's Spack environment.
-remove spack environment:
-  extends: .pascal common
-  stage: deallocate
-  variables:
-    GIT_STRATEGY: none
-  when: always
-  script:
-    - echo "== CLEANING UP SPACK RESOURCES =="
-    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - export SPACK_ARCH_TARGET=$(spack arch -t)
-    - export FULL_ENV_NAME=lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
-    # - |
-    #   if [[ -n "$(spack env list | grep -e ${FULL_ENV_NAME})" ]] ;
-    #   then
-    #     spack env rm --yes-to-all ${FULL_ENV_NAME}
-    #   fi
+# Switching over to reusing Spack environments for each feature branch so don't remove them
 
 # Free the allocation we obtained in "allocate lc resources".
 release allocation:

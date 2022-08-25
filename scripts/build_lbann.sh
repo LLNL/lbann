@@ -27,6 +27,7 @@ ALLOW_BACKEND_BUILDS=
 # Flag for passing subcommands to spack dev-build
 DEV_BUILD_FLAGS=
 # Flag for passing subcommands to spack install
+ENABLE_SPACK_TEST=
 INSTALL_BUILD_EXTRAS=
 BUILD_JOBS="-j $(($(nproc)/2+2))"
 
@@ -197,6 +198,7 @@ while :; do
             DIHYDROGEN_VER=
             ;;
         --test)
+            ENABLE_SPACK_TEST="TRUE"
             INSTALL_BUILD_EXTRAS="--test root"
             ;;
         --hydrogen-repo)
@@ -293,7 +295,7 @@ function uninstall_specific_versions()
 # This should be a commit hash (NOT a tag) that needs to exist in the
 # spack repository that is checked out. It's a minimum version, so
 # more commits is fine.
-MIN_SPACK_COMMIT=15c35a3cff138c3777d756b61ec1940883260d20
+MIN_SPACK_COMMIT=e2468c89288f1312ae058949918f4a9c70bd5901
 
 # "spack" is just a shell function; it may not be exported to this
 # scope. Just to be sure, reload the shell integration.
@@ -668,6 +670,18 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
         CMD="spack config add packages:all:variants:'${DEPENDENT_PACKAGES_GPU_VARIANTS}'"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { `spack config add packages:all:variants:"${DEPENDENT_PACKAGES_GPU_VARIANTS}"` || exit_on_failure "${CMD}"; }
+    fi
+
+    if [[ -n "${ENABLE_SPACK_TEST:-}" ]]; then
+        # Use spack requires to ensure that test time dependencies are part
+        # of concretization
+        CMD="spack config add packages:py-numpy:require:'^py-pytest'"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { `spack config add packages:py-numpy:require:"^py-pytest"` || exit_on_failure "${CMD}"; }
+
+        CMD="spack config add packages:py-scipy:require:'^py-pytest'"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { `spack config add packages:py-scipy:require:"^py-pytest"` || exit_on_failure "${CMD}"; }
     fi
 
     CMD="spack compiler find --scope env:${LBANN_ENV}"

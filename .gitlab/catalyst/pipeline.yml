@@ -167,28 +167,8 @@ check catch2 tests:
     reports:
       junit: ${RESULTS_DIR}/*.xml
 
-# The spack environment that we use is tied to the pipeline. Thus it
-# is meaningless after the pipeline dies, but it still needs to be
-# cleaned up. It is always run. The shell script verifies the
-# environment existence before trying to delete it. An environment
-# would not exist if the pipeline failed before a certain point in the
-# build stage (namely, when the build script creates the environment).
-remove spack environment:
-  extends: .catalyst common
-  stage: deallocate
-  variables:
-    GIT_STRATEGY: none
-  when: always
-  script:
-    - echo "== CLEANING UP SPACK RESOURCES =="
-    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - export SPACK_ARCH_TARGET=$(spack arch -t)
-    - export FULL_ENV_NAME=lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
-    # - |
-    #   if [[ -n "$(spack env list | grep -e ${FULL_ENV_NAME})" ]] ;
-    #   then
-    #     spack env rm --yes-to-all ${FULL_ENV_NAME}
-    #   fi
+# Cleanup this pipeline's spack environment.
+# Switching over to reusing Spack environments for each feature branch so don't remove them
 
 # This frees the allocation we obtained in "allocate lc resources".
 release allocation:
@@ -227,7 +207,6 @@ release allocation:
     # This is based on the assumption that each runner will only ever
     # be able to run one pipeline on a given cluster at one time.
     SPACK_ENV_NAME: gitlab-${CI_COMMIT_BRANCH}-${SYSTEM_NAME}
-#    SPACK_ENV_NAME: gitlab-${CI_PIPELINE_ID}
 
     # These are system-specific specs that should be forwarded to the
     # build script

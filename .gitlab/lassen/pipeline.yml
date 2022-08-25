@@ -68,21 +68,7 @@ build and test everything:
   timeout: 6h
 
 # Cleanup this pipeline's spack environment.
-remove spack environment:
-  extends: .lassen common
-  stage: cleanup
-  variables:
-    GIT_STRATEGY: none
-  when: always
-  script:
-    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - export SPACK_ARCH_TARGET=$(spack arch -t)
-    - export FULL_ENV_NAME=lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
-    # - |
-    #   if [[ -n "$(spack env list | grep -e ${FULL_ENV_NAME})" ]] ;
-    #   then
-    #     spack env rm --yes-to-all ${FULL_ENV_NAME}
-    #   fi
+# Switching over to reusing Spack environments for each feature branch so don't remove them
 
 # Variables for Lassen. Because this test uses "test_compiler.py", we
 # don't need to specify the Spack spec or the job name.
@@ -95,7 +81,6 @@ remove spack environment:
     # This is based on the assumption that each runner will only ever
     # be able to run one pipeline on a given cluster at one time.
     SPACK_ENV_NAME: gitlab-${CI_COMMIT_BRANCH}-${SYSTEM_NAME}
-#    SPACK_ENV_NAME: gitlab-${CI_PIPELINE_ID}
 
     # This is needed to ensure that we run as lbannusr.
     LLNL_SERVICE_USER: lbannusr
