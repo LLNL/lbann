@@ -87,3 +87,88 @@ def Cumsum(x, dims, axis=0):
     if axis == 1:
         x = lbann.MatMul(x, tril_ones, transpose_b=True)
         return x
+
+
+def PeriodicPadding2D(x, height, width, padding=1):
+    """ For 2D images of the shape (B, *, height, width)
+        Args:
+            x (lbann.Layer): input tensor to padded of the shape (*, height, width)
+            height (int): 2nd dimension of the 4D tensor
+            width (int): 3rd dimension of the 4D tensor
+            padding (int): The amount to pad (default: 1)
+        returns:
+            (lbann.Layer): Returns periodically padded layer of
+                           shape (*, height + padding, width + padding)
+    """
+    horizontal_slices = lbann.Slice(x,
+                                    slice_points=[0, padding, height - padding, height],
+                                    axis=1)
+    top = lbann.Identity(horizontal_slices)
+    _ = lbann.Identity(horizontal_slices)
+    bottom = lbann.Identity(horizontal_slices)
+
+    x = lbann.Concatenation([top, x, bottom], axis=1)
+
+    vertical_slices = lbann.Slice(x,
+                                  slice_points=[0, padding, width - padding, width],
+                                  axis=2)
+    left = lbann.Identity(vertical_slices)
+    _ = lbann.Identity(vertical_slices)
+    right = lbann.Identity(vertical_slices)
+
+    x = lbann.Concatenation([left, x, right], axis=2)
+    return x
+
+
+def PeriodicPadding3D(x, depth, height, width, padding=1, name=None):
+    """ For 3D volumes of the shape (B, *, channel, depth, height, width)
+        Args:
+            x (lbann.Layer): input tensor to padded of the shape (*, channel, depth, height, width)
+            depth (int): 1st dimension of the 4D tensor
+            height (int): 2nd dimension of the 4D tensor
+            width (int): 3rd dimension of the 4D tensor
+            padding (int): The amount to pad (default: 1)
+        returns:
+            (lbann.Layer): Returns periodically padded layer of
+                           shape (*, depth + padding, height + padding, width + padding)
+    """
+    #  To do: Hack to get around slice and concatenation limitation. Remove when
+    #         support for arbitrary dimensional slice + concatenation is added
+    x = lbann.Reshape(x, dims=[-1, depth, height * width])  # Shape (C, D, H * W)
+    depth_slices = lbann.Slice(x,
+                               slice_points=[0, padding, depth - padding, depth],
+                               axis=1)
+    d1 = lbann.Identity(depth_slices)
+    _ = lbann.Identity(depth_slices)
+    d2 = lbann.Identity(depth_slices)
+
+    x = lbann.Concatenation([d1, x, d2], axis=1)
+
+    #  To do: Hack to get around slice and concatenation limitation. Remove when
+    #         support for arbitrary dimensional slice + concatenation is added
+    x = lbann.Reshape(x, dims=[-1, height, width])  # Shape (C * D, H ,  W)
+    height_slices = lbann.Slice(x,
+                                slice_points=[0, padding, height - padding, height],
+                                axis=1)
+    h1 = lbann.Identity(height_slices)
+    _ = lbann.Identity(height_slices)
+    h2 = lbann.Identity(height_slices)
+
+    x = lbann.Concatenation([h1, x, h2], axis=1)
+
+    width_slices = lbann.Slice(x,
+                               slice_points=[0, padding, width - padding, width],
+                               axis=2)
+    w1 = lbann.Identity(width_slices)
+    _ = lbann.Identity(width_slices)
+    w2 = lbann.Identity(width_slices)
+
+    x = lbann.Concatenation([w1, x, w2], axis=2)
+
+    #  To do: Hack to get around slice and concatenation limitation. Remove when
+    #         support for arbitrary dimensional slice + concatenation is added
+    x = lbann.Reshape(x, dims=[-1,
+                               depth + 2 * padding,
+                               height + 2 * padding,
+                               width + 2 * padding])
+    return x
