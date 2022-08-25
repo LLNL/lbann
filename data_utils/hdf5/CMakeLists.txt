@@ -19,14 +19,20 @@ install(TARGETS generate_schema_and_sample_list
 
 # Testing
 if (LBANN_WITH_UNIT_TESTING)
-  add_executable(helpers_tests test_main.cpp test_helpers.cpp helpers.cpp)
+  add_executable(helpers_tests
+    $<$<NOT:$<BOOL:${LBANN_USE_CATCH2_V3}>>:test_main.cpp>
+    test_helpers.cpp
+    helpers.cpp)
   set_target_properties(helpers_tests
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/unit_test)
   target_link_libraries(helpers_tests
     PRIVATE
     conduit::conduit
-    Catch2::Catch2)
+    $<IF:$<BOOL:${LBANN_USE_CATCH2_V3}>,Catch2::Catch2WithMain,Catch2::Catch2>)
+  if (LBANN_USE_CATCH2_V3)
+    target_compile_definitions(helpers_tests PRIVATE LBANN_USE_CATCH2_V3)
+  endif ()
   if ("cxx_std_17" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
     target_compile_features(helpers_tests PRIVATE cxx_std_17)
   else ()

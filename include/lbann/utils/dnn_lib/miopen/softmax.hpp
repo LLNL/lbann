@@ -29,6 +29,8 @@
 #include "lbann/utils/dnn_enums.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
+#include "lbann/utils/profiling.hpp"
+
 #include "utils.hpp"
 
 namespace lbann
@@ -56,6 +58,7 @@ void softmax_forward(
   if (x.IsEmpty())
     return;
 
+  BASIC_PROF_REGION("miopen:softmax_forward");
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
@@ -108,6 +111,7 @@ void softmax_backward(
   if (y.IsEmpty())
     return;
 
+  BASIC_PROF_REGION("miopen:softmax_backward");
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);

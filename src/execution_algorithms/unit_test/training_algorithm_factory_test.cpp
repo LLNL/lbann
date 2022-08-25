@@ -23,11 +23,12 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#include "Catch2BasicSupport.hpp"
+
 #include "lbann/execution_algorithms/sgd_training_algorithm.hpp"
 #include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/make_abstract.hpp"
-#include <catch2/catch.hpp>
 
 #include <exception>
 #include <google/protobuf/stubs/logging.h>
@@ -38,6 +39,13 @@
 #include <google/protobuf/text_format.h>
 
 namespace pb = ::google::protobuf;
+
+#ifdef LBANN_USE_CATCH2_V3
+static Catch::Matchers::StringContainsMatcher Contains(std::string const& str)
+{
+  return Catch::Matchers::ContainsSubstring(str, Catch::CaseSensitive::Yes);
+}
+#endif // LBANN_USE_CATCH2_V3
 
 TEST_CASE("Parsing training algorithm prototext", "[factory][algorithm][proto]")
 {
@@ -153,6 +161,6 @@ TEST_CASE("Building training algorithm from the factory",
 
     REQUIRE_THROWS_WITH(
       lbann::make_abstract<lbann::TrainingAlgorithm>(algo_msg),
-      Catch::Contains("Unknown id \"TerminationCriteria\" detected"));
+      Contains("Unknown id \"TerminationCriteria\" detected"));
   }
 }

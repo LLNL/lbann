@@ -312,7 +312,7 @@ void Layer::set_output_dims(std::vector<int> dims, size_t output_index) {
     m_output_dims_list.resize(El::Max(get_num_children(),
                                       output_index + 1));
   }
-  m_output_dims_list[output_index] = dims;
+  m_output_dims_list[output_index] = std::move(dims);
 }
 
 std::vector<ViewingWeightsPtr> Layer::get_weights_pointers() const {

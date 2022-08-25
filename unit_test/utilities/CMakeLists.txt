@@ -1,5 +1,8 @@
 # Add the library
 add_library(unit_test_utilities
+  # Catch2 version abstraction
+  Catch2BasicSupport.hpp
+
   # Headers
   MPITestHelpers.hpp
   ReplaceEscapes.hpp

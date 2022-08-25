@@ -34,6 +34,7 @@ Python front-end:
  - Added support for buidling and launching jobs on Fugaku
  - Added Riken as a known compute center
  - Added support for PJM as job launcher
+ - Unified convolution/deconvolution interface to better approximate PyTorch.
  - Added circular (periodic) padding transformation for 2D and 3D tensors
 
 Performance optimizations:

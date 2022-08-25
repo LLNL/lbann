@@ -25,62 +25,60 @@ def gen_layers(latent_dim, number_of_atoms):
         out_channels = latent_dim // (2 ** (3-i))
 
         x = lbann.Convolution(x,
-                  num_dims = 3,
-                  num_output_channels = out_channels,
-                  num_groups = 1,
-                  conv_dims_i = 4,
-                  conv_strides_i = 2,
-                  conv_dilations_i = 1,
-                  conv_pads_i = 1,
-                  has_bias = True,
-                  name="Conv_{0}".format(i))
+                              num_dims = 3,
+                              out_channels = out_channels,
+                              groups = 1,
+                              kernel_size = 4,
+                              stride = 2,
+                              dilation = 1,
+                              padding = 1,
+                              has_bias = True,
+                              name="Conv_{0}".format(i))
 
         x = lbann.BatchNormalization(x, name="Batch_NORM_{0}".format(i+1))
         x = lbann.LeakyRelu(x, name="Conv_{0}_Activation".format(i+1))
 
     # Shape: (latent_dim)x2x2x2
     encoded = lbann.Convolution(x,
-                   num_dims = 3,
-                   num_output_channels = latent_dim,
-                   num_groups = 1,
-                   conv_dims_i = 2,
-                   conv_strides_i = 2,
-                   conv_dilations_i = 1,
-                   conv_pads_i  = 0,
-                   has_bias = True,
-                   name ="encoded")
+                                num_dims = 3,
+                                out_channels = latent_dim,
+                                groups = 1,
+                                kernel_size = 2,
+                                stride = 2,
+                                dilation = 1,
+                                padding  = 0,
+                                has_bias = True,
+                                name ="encoded")
 
     # Shape: (latent_dim)1x1x1
 
     # Decoder
 
     x = lbann.Deconvolution(encoded,
-                num_dims = 3,
-                num_output_channels = number_of_atoms * 16,
-                num_groups = 1,
-                conv_dims_i = 4,
-                conv_pads_i = 0,
-                conv_strides_i = 2,
-                conv_dilations_i = 1,
-                has_bias = True,
-                name="Deconv_1"
-                )
+                            num_dims = 3,
+                            out_channels = number_of_atoms * 16,
+                            groups = 1,
+                            kernel_size = 4,
+                            padding = 0,
+                            stride = 2,
+                            dilation = 1,
+                            has_bias = True,
+                            name="Deconv_1")
     x = lbann.BatchNormalization(x, name="BN_D1")
     x = lbann.Tanh(x, name="Deconv_1_Activation")
 
     for i in range(3):
         out_channels = number_of_atoms * (2 ** (2-i))
         x = lbann.Deconvolution(x,
-                num_dims = 3,
-                num_output_channels = out_channels,
-                num_groups = 1,
-                conv_dims_i = 4,
-                conv_pads_i = 1,
-                conv_strides_i = 2,
-                conv_dilations_i = 1,
-                has_bias = True,
-                name="Deconv_{0}".format(i+2)
-                )
+                                num_dims = 3,
+                                out_channels = out_channels,
+                                groups = 1,
+                                kernel_size = 4,
+                                padding = 1,
+                                stride = 2,
+                                dilation = 1,
+                                has_bias = True,
+                                name="Deconv_{0}".format(i+2))
         x = lbann.BatchNormalization(x, name="BN_D{0}".format(i+2))
 
         if (i != 2): #Save the last activation layer because we want to dump the outputs

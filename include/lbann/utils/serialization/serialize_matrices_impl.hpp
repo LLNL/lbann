@@ -29,6 +29,9 @@
 
 #include "lbann/utils/serialization/serialize_matrices.hpp"
 
+#include <El/blas_like/level1/Copy/TranslateBetweenGrids.hpp>
+#include <El/blas_like/level1/Copy/Translate.hpp>
+
 // These really belong in Elemental; let's just extend that.
 namespace El
 {

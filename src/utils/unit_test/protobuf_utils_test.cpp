@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#include <catch2/catch.hpp>
+#include "Catch2BasicSupport.hpp"
 
 #include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/protobuf/decl.hpp"
@@ -59,6 +59,13 @@ static_assert(lbann::protobuf::details::PBCppType<lbann_testing::SimpleMesg> ==
 static_assert(lbann::protobuf::details::PBCppType<lbann_testing::MyEnum> ==
               google::protobuf::FieldDescriptor::CPPTYPE_ENUM);
 
+#ifdef LBANN_USE_CATCH2_V3
+static Catch::Matchers::StringContainsMatcher Contains(std::string const& str)
+{
+  return Catch::Matchers::ContainsSubstring(str, Catch::CaseSensitive::Yes);
+}
+#endif // LBANN_USE_CATCH2_V3
+
 TEST_CASE("Basic utilities", "[protobuf][utils]")
 {
   lbann_testing::SimpleMesg msg;
@@ -89,17 +96,17 @@ another_field: false
   CHECK(lbann::protobuf::which_oneof(msg, "my_oneof") == "my_uint64");
   CHECK_THROWS_WITH(
     lbann::protobuf::get_oneof_message(msg, "my_oneof"),
-    Catch::Contains("Oneof \"my_oneof\" has field \"my_uint64\" set but it is "
-                    "not of message type."));
+    Contains("Oneof \"my_oneof\" has field \"my_uint64\" set but it is "
+             "not of message type."));
 
   CHECK_NOTHROW(lbann::protobuf::text::fill(msg_NO_ONEOF_str, msg));
   CHECK_THROWS_WITH(
     lbann::protobuf::which_oneof(msg, "my_oneof"),
-    Catch::Contains("Oneof field \"my_oneof\" in message has not been set."));
+    Contains("Oneof field \"my_oneof\" in message has not been set."));
 
   CHECK_THROWS_WITH(
     lbann::protobuf::get_oneof_message(msg, "my_oneof"),
-    Catch::Contains("Oneof field \"my_oneof\" in message has not been set."));
+    Contains("Oneof field \"my_oneof\" in message has not been set."));
 }
 
 TEST_CASE("Complex oneof manipulation", "[protobuf][utils]")
@@ -161,7 +168,7 @@ my_enums: TWO
   {
     CHECK_THROWS_WITH(
       lbann::protobuf::as_vector<lbann::protobuf::uint64>(msg, "my_int64s"),
-      Catch::Contains("Field has incompatible type"));
+      Contains("Field has incompatible type"));
   }
 
   SECTION("As vector - static field")

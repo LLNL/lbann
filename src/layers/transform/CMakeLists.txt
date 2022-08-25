@@ -56,9 +56,27 @@ set_full_path(THIS_DIR_SOURCES
   weights.cpp
 
   transform_builders.cpp
-  )
+)
 
 if (LBANN_HAS_GPU)
+  if (LBANN_HAS_TENSOR_PERMUTE)
+    list(APPEND THIS_DIR_SOURCES
+      "${CMAKE_CURRENT_SOURCE_DIR}/permute/permuteimpl.hpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/permute/tensor_dims_utils.hpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/permute.cpp"
+    )
+    if (LBANN_HAS_CUTENSOR)
+      list(APPEND THIS_DIR_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/permute/cutensor_support.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/permute/cutensor_permuteimpl.hpp"
+      )
+    elseif (LBANN_HAS_CUTT OR LBANN_HAS_HIPTT)
+      list(APPEND THIS_DIR_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/permute/cutt_permuteimpl.hpp"
+      )
+    endif ()
+  endif (LBANN_HAS_TENSOR_PERMUTE)
+
   # Add the CUDA source files for this directory
   set_full_path(THIS_DIR_CU_SOURCES
     concatenate.cu

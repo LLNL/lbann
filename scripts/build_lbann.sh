@@ -27,7 +27,7 @@ ALLOW_BACKEND_BUILDS=
 DEV_BUILD_FLAGS=
 # Flag for passing subcommands to spack install
 INSTALL_BUILD_EXTRAS=
-BUILD_JOBS="-j $(($(nproc)+2))"
+BUILD_JOBS="-j $(($(nproc)/2+2))"
 
 LBANN_VARIANTS=
 CMD_LINE_VARIANTS=
@@ -188,7 +188,7 @@ while :; do
         -s|--stable-defaults)
             # Use the latest released version
             HYDROGEN_VER=
-            ALUMINUM_VER=
+            ALUMINUM_VER="@1.0.0-lbann"
             DIHYDROGEN_VER=
             ;;
         --test)
@@ -288,7 +288,7 @@ function uninstall_specific_versions()
 # This should be a commit hash (NOT a tag) that needs to exist in the
 # spack repository that is checked out. It's a minimum version, so
 # more commits is fine.
-MIN_SPACK_COMMIT=c06f69d0bffad688f668db41cb6acad894a745ac
+MIN_SPACK_COMMIT=15c35a3cff138c3777d756b61ec1940883260d20
 
 # "spack" is just a shell function; it may not be exported to this
 # scope. Just to be sure, reload the shell integration.
@@ -299,6 +299,8 @@ if [ -n "${SPACK_ROOT}" ]; then
         source ${SPACK_ROOT}/share/spack/setup-env.sh
     else
         echo "ERROR: Spack needs at least commit ${MIN_SPACK_COMMIT}."
+        HEAD_SHA=$(git rev-parse --verify HEAD)
+        echo "ERROR: It is currently at  ${HEAD_SHA}."
         echo "ERROR: Please update spack."
         exit 1
     fi
@@ -309,7 +311,7 @@ else
 fi
 
 SPACK_VERSION=$(spack --version | sed 's/-.*//g' | sed 's/[(].*[)]//g')
-MIN_SPACK_VERSION=0.17.1
+MIN_SPACK_VERSION=0.18.0
 
 compare_versions ${SPACK_VERSION} ${MIN_SPACK_VERSION}
 VALID_SPACK=$?
@@ -320,80 +322,6 @@ if [[ ${VALID_SPACK} -eq 2 ]]; then
 fi
 
 ##########################################################################################
-# Make sure that Spack is using Clingo
-function ask_permission()
-{
-    local question="$1"
-    echo "${question}"
-    read -p "Continue (y/n)? " choice
-    case "$choice" in
-        y|Y ) RESPONSE=1 ;;
-        n|N ) RESPONSE=0 ;;
-        * ) RESPONSE=0 ;;
-    esac
-    return ${RESPONSE}
-}
-
-SPACK_SITE_CONFIG="${SPACK_ROOT}/etc/spack/config.yaml"
-if [[ ! -f "${SPACK_SITE_CONFIG}" ]]; then
-    ask_permission "No site specific ${SPACK_SITE_CONFIG} file found, create one?"
-    RESPONSE=$?
-    if [[ ${RESPONSE} -eq 1 ]]; then
-        echo "Creating a new ${SPACK_SITE_CONFIG} file."
-        if [[ -z "${DRY_RUN:-}" ]]; then
-            cat <<EOF >> ${SPACK_SITE_CONFIG}
-config:
-  concretizer: clingo
-EOF
-        fi
-    else
-        echo "${SCRIPT} requires use of Spack's clingo optimizer -- please enable it"
-        echo "e.g. create a site specific config at ${SPACK_SITE_CONFIG}"
-        cat <<EOF
-config:
-  concretizer: clingo
-EOF
-        exit 1
-    fi
-else
-    SPACK_CONCRETIZER=$(grep "concretizer:" ${SPACK_SITE_CONFIG} | awk '{print $2}')
-    if [[ -z "${SPACK_CONCRETIZER}" ]]; then
-        ask_permission "Site specific ${SPACK_SITE_CONFIG} file does not have a explicit concretizer field, add one?"
-        RESPONSE=$?
-        if [[ ${RESPONSE} -eq 1 ]]; then
-            CMD="cp ${SPACK_SITE_CONFIG} ${SPACK_SITE_CONFIG}.pre_lbann"
-            echo "Appending 'concretizer: clingo' and saving old config ${CMD}"
-            if [[ -z "${DRY_RUN:-}" ]]; then
-                ${CMD}
-                cat <<EOF >> ${SPACK_SITE_CONFIG}
-  concretizer: clingo
-EOF
-            fi
-        else
-            echo "${SCRIPT} requires use of Spack's clingo optimizer -- please enable it"
-            echo "e.g. add the line to ${SPACK_SITE_CONFIG}"
-            cat <<EOF
-  concretizer: clingo
-EOF
-            exit 1
-        fi
-    else
-        if [[ ! "${SPACK_CONCRETIZER}" == "clingo" ]]; then
-            echo "${SCRIPT} requires use of Spack's clingo optimizer -- please enable it"
-            echo "e.g. edit the line in ${SPACK_SITE_CONFIG}"
-            cat <<EOF
-  concretizer: original
-EOF
-            echo "to look like"
-            cat <<EOF
-  concretizer: clingo
-EOF
-            exit 1
-        fi
-    fi
-fi
-##########################################################################################
-
 # Detect system parameters
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 
@@ -406,6 +334,7 @@ set_center_specific_fields
 SPACK_ARCH=$(spack arch)
 SPACK_ARCH_TARGET=$(spack arch -t)
 SPACK_ARCH_PLATFORM=$(spack arch -p)
+SPACK_ARCH_OS=$(spack arch -o)
 SPACK_ARCH_GENERIC_TARGET=$(spack python -c "import archspec.cpu as cpu; print(str(cpu.host().family))")
 # Create a modified spack arch with generic target architecture
 SPACK_ARCH_PLATFORM_GENERIC_TARGET="${SPACK_ARCH_PLATFORM}-${SPACK_ARCH_GENERIC_TARGET}"
@@ -589,13 +518,6 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     CMD="spack env create ${LBANN_ENV}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-
-    # Force the environment to concretize together with any additional packages
-    SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
-cat <<EOF  >> ${SPACK_ENV_YAML_FILE}
-  concretization: together
-EOF
-
 fi
 
 if [[ -z "${USER_BUILD:-}" ]]; then
@@ -623,6 +545,8 @@ if [[ -n "${CLEAN_DEPS:-}" ]]; then
     uninstall_specific_versions "dihydrogen" "${DIHYDROGEN_VER}"
 fi
 
+##########################################################################################
+# Activate the environment
 CMD="spack env activate -p ${LBANN_ENV}"
 echo ${CMD} | tee -a ${LOG}
 if [[ -z "${DRY_RUN:-}" ]]; then
@@ -634,10 +558,29 @@ if [[ -z "${DRY_RUN:-}" ]]; then
 fi
 
 ##########################################################################################
+# Force a unified environment
+if [[ -n "${INSTALL_DEPS:-}" ]]; then
+    # Force the environment to concretize together with any additional packages
+    CMD="spack config add concretizer:unify:true"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+fi
+
+##########################################################################################
 # See if the is a local spack mirror or buildcache
 if [[ -n "${USER_MIRROR:-}" ]]; then
     # Allow the user to overwrite a standard mirror
     MIRRORS="${MIRRORS:-} ${USER_MIRROR}"
+fi
+
+if [[ -n "${INSTALL_DEPS:-}" && -z "${SKIP_MIRRORS:-}" ]]; then
+    CMD="spack mirror add binary_mirror  https://binaries.spack.io/releases/v0.18"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    # Tell Spack to trust the keys in the build cache
+    CMD="spack buildcache keys --install --trust"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
 
 if [[ -n "${INSTALL_DEPS:-}" && -n "${MIRRORS:-}" ]]; then
@@ -696,16 +639,26 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
+    # Force the environment to concretize with the same set of GPU variants
+    CMD="spack config add packages:all:variants:'${DEPENDENT_PACKAGES_GPU_VARIANTS}'"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { `spack config add packages:all:variants:"${DEPENDENT_PACKAGES_GPU_VARIANTS}"` || exit_on_failure "${CMD}"; }
+
     CMD="spack compiler find --scope env:${LBANN_ENV}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
     # Limit the scope of the external search to minimize overhead time
-    CMD="spack external find --scope env:${LBANN_ENV} bzip2 cmake cuda cudnn hipblas hwloc ninja libtool nccl ncurses openssl perl pkg-config python rccl rdma-core sqlite spectrum-mpi mvapich2 openmpi"
+    # Use standard tags for common packages
+    CMD="spack external find --scope env:${LBANN_ENV} --tag core-packages --tag build-tools --tag rocm"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-    CMD="cleanup_clang_compilers ${CENTER} ${SPACK_ENV_YAML_FILE}"
+    CMD="spack external find --scope env:${LBANN_ENV} bzip2 cuda cudnn hipblas hwloc nccl ncurses perl python rccl rdma-core sqlite spectrum-mpi mvapich2 openmpi"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+    CMD="cleanup_clang_compilers ${CENTER} ${SPACK_ARCH_OS} ${SPACK_ENV_YAML_FILE}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -775,7 +728,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     fi
 fi
 
-CMD="spack solve --reuse -l ${LBANN_SPEC} ${SPACK_SOLVE_EXTRA_PACKAGES}"
+CMD="spack solve -l ${LBANN_SPEC} ${SPACK_SOLVE_EXTRA_PACKAGES}"
 if [[ "${SPEC_ONLY}" == "TRUE" ]]; then
    echo ${CMD} | tee -a ${LOG}
    if [[ -z "${DRY_RUN:-}" ]]; then
@@ -785,7 +738,7 @@ fi
 
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
   # Try to concretize the environment and catch the return code
-  CMD="spack concretize --reuse ${INSTALL_BUILD_EXTRAS}"
+  CMD="spack concretize ${INSTALL_BUILD_EXTRAS}"
   echo ${CMD} | tee -a ${LOG}
   [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
@@ -838,7 +791,7 @@ fi
 
 ##########################################################################################
 # Actually install LBANN from local source
-CMD="spack install --reuse ${BUILD_JOBS} ${INSTALL_BUILD_EXTRAS}"
+CMD="spack install ${BUILD_JOBS} ${INSTALL_BUILD_EXTRAS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 

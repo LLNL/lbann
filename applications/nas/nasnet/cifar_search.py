@@ -9,9 +9,10 @@ import lbann.contrib.launcher
 from os.path import join
 import subprocess
 
-sys.path.insert(0, os.getenv('PWD'))
+current_file = os.path.realpath(__file__)
+current_dir = os.path.dirname(current_file)
+sys.path.insert(0, current_dir)
 import cifar_networks
-
 
 # ----------------------------------
 # Command-line arguments
@@ -50,7 +51,7 @@ parser.add_argument(
 parser.add_argument(
     '--ppn', action='store', default=2, type=int,
     help='Processes per node (default: 2)')
-parser.add_argument("--ppt", type=int, default=2) 
+parser.add_argument("--ppt", type=int, default=2)
 parser.add_argument(
     '--job-name', action='store', default='denas_cifar10', type=str,
     help='scheduler job name (default: denas_cifar10)')
@@ -61,7 +62,7 @@ parser.add_argument(
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 args = parser.parse_args()
 
-    
+
 
 if __name__ == "__main__":
     tag = 'ltfb' if args.use_ltfb else 'random'
@@ -91,9 +92,6 @@ if __name__ == "__main__":
                 '--generate_multi_proto',
                 f'--prototext={proto_file}']
     script.add_parallel_command(command)
-    
+
     # Run script
     script.run(True)
-    
-    
-                     

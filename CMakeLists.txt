@@ -132,6 +132,9 @@ option(LBANN_WITH_HWLOC
 option(LBANN_WITH_NVPROF
   "Enable NVTX-based instrumentation for nvprof" OFF)
 
+option(LBANN_WITH_ROCTRACER
+  "Enable roctx-based instrumentation for nvprof" OFF)
+
 option(LBANN_WITH_PYTHON_FRONTEND
   "Install Python frontend and enable embedded Python" ON)
 
@@ -337,12 +340,25 @@ if (LBANN_HAS_CUDA)
     set(LBANN_WITH_CUDNN ON)
   endif ()
 
-  find_package(CUDAToolkit 11.0.0 REQUIRED)
   # Hydrogen will have found this, but it doesn't hurt to find it
   # again.
+  find_package(CUDAToolkit 11.0.0 REQUIRED)
+
   find_package(cuDNN REQUIRED)
   set(LBANN_HAS_CUDNN ${cuDNN_FOUND})
   set(LBANN_HAS_DNN_LIB ${cuDNN_FOUND})
+
+  find_package(cuTENSOR)
+  set(LBANN_HAS_CUTENSOR ${cuTENSOR_FOUND})
+
+  if (NOT LBANN_HAS_CUTENSOR)
+    find_package(cuTT)
+    set(LBANN_HAS_CUTT ${cuTT_FOUND})
+  endif ()
+
+  if (LBANN_HAS_CUTENSOR OR LBANN_HAS_CUTT)
+    set(LBANN_HAS_TENSOR_PERMUTE TRUE)
+  endif ()
 
   # Special stuff for the GRU layer
   if ((CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0.0")
@@ -355,6 +371,13 @@ if (LBANN_HAS_CUDA)
     CUDA::nvToolsExt
     CUDA::cufft
     cuda::cudnn)
+
+  if (LBANN_HAS_CUTENSOR)
+    list(APPEND LBANN_CUDA_LIBS cuTENSOR::cuTENSOR)
+  endif ()
+  if (LBANN_HAS_CUTT)
+    list(APPEND LBANN_CUDA_LIBS cuTT::cuTT)
+  endif ()
 
   if (LBANN_HAS_ALUMINUM AND AL_HAS_NCCL)
     set(LBANN_HAS_NCCL2 TRUE)
@@ -380,17 +403,42 @@ if (LBANN_HAS_ROCM)
   find_package(hip CONFIG REQUIRED)
   enable_language(HIP)
   find_package(MIOpen CONFIG REQUIRED)
+
+  find_library(HSA_LIBRARY hsa-runtime64
+    HINTS ${ROCM_PATH}/hsa $ENV{ROCM_PATH}/hsa
+    PATH_SUFFIXES lib lib64
+    DOC "HSA runtime library"
+    NO_DEFAULT_PATH)
+  find_library(HSA_LIBRARY hsa-runtime64)
+
   set(LBANN_HAS_MIOPEN ${MIOpen_FOUND})
   set(LBANN_HAS_DNN_LIB ${MIOpen_FOUND})
   set(LBANN_ROCM_LIBS
     hip::host
     MIOpen)
+  if (HSA_LIBRARY)
+    list(APPEND LBANN_ROCM_LIBS "${HSA_LIBRARY}")
+  endif ()
 
   if (LBANN_HAS_FFTW)
     find_package(rocfft CONFIG REQUIRED)
     list(APPEND LBANN_ROCM_LIBS roc::rocfft)
   endif ()
 
+  if (LBANN_WITH_ROCTRACER)
+    find_package(Roctracer MODULE COMPONENTS roctracer roctx)
+    if (Roctracer_FOUND)
+      set(LBANN_HAS_ROCTRACER TRUE)
+      list(APPEND LBANN_ROCM_LIBS roctracer::roctracer)
+    endif ()
+  endif ()
+
+  find_package(cuTT) # hipTT
+  set(LBANN_HAS_HIPTT ${cuTT_FOUND})
+  if (LBANN_HAS_HIPTT)
+    list(APPEND LBANN_ROCM_LIBS cuTT::cuTT)
+    set(LBANN_HAS_TENSOR_PERMUTE TRUE)
+  endif ()
 endif (LBANN_HAS_ROCM)
 
 # This is used in the sample list implementation
@@ -506,12 +554,20 @@ if (LBANN_WITH_ONNX)
 endif ()
 
 if (LBANN_WITH_UNIT_TESTING)
-  find_package(Catch2 2.0.0 CONFIG REQUIRED)
+  # LBANN allows for Catch2 v2.* or v3.*
+    find_package(Catch2 3.0.0 CONFIG QUIET)
+  if (NOT Catch2_FOUND)
+    find_package(Catch2 2.0.0 CONFIG REQUIRED)
+    set(LBANN_USE_CATCH2_V3 FALSE)
+  else ()
+    set(LBANN_USE_CATCH2_V3 TRUE)
+  endif ()
+  message(STATUS "Found Catch2: Version ${Catch2_VERSION}")
 
   if (CMAKE_CXX_COMPILER_ID MATCHES "ROCMClang")
     set_target_properties(Catch2::Catch2
       PROPERTIES INTERFACE_COMPILE_FEATURES "cxx_std_17")
-  endif()
+  endif ()
 
   # Now that Catch2 has been found, start adding the unit tests
   include(CTest)
@@ -524,6 +580,7 @@ if (LBANN_WITH_UNIT_TESTING)
   add_subdirectory(src/layers/activations/unit_test)
   add_subdirectory(src/layers/learning/unit_test)
   add_subdirectory(src/layers/regularizers/unit_test)
+  add_subdirectory(src/layers/transform/unit_test)
   add_subdirectory(src/models/unit_test)
   add_subdirectory(src/proto/unit_test)
   add_subdirectory(src/operators/math/unit_test)
@@ -914,10 +971,13 @@ append_str_tf(_str
   LBANN_HAS_CNPY
   LBANN_HAS_CUDA
   LBANN_HAS_CUDNN
+  LBANN_HAS_CUTENSOR
+  LBANN_HAS_CUTT
   LBANN_HAS_DIHYDROGEN
   LBANN_HAS_DISTCONV
   LBANN_HAS_DOXYGEN
   LBANN_HAS_FFTW
+  LBANN_HAS_HIPTT
   LBANN_HAS_HYDROGEN
   LBANN_HAS_LBANN_PROTO
   LBANN_HAS_NCCL2
@@ -930,6 +990,7 @@ append_str_tf(_str
   LBANN_HAS_PYTHON_FRONTEND
   LBANN_HAS_EMBEDDED_PYTHON
   LBANN_HAS_ROCM
+  LBANN_HAS_ROCTRACER
   LBANN_HAS_TBINF
   LBANN_HAS_VTUNE
   LBANN_HAS_BOOST

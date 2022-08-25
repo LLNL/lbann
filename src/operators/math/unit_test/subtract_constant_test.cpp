@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 // Testing framework stuff
-#include <catch2/catch.hpp>
+#include "Catch2BasicSupport.hpp"
 
 #include "MPITestHelpers.hpp"
 #include "MatrixHelpers.hpp"

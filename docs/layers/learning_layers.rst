@@ -130,77 +130,42 @@ Arguments:
        all others are treated as spatial dimensions (recall that the
        mini-batch dimension is implicit).
 
-   :num_output_channels:
+   :out_channels:
 
        (``int64``) Channel dimension of output tensor
 
-   :has_vectors:
+   :kernel_size:
 
-       (``bool``) Whether to use vector-valued options
-
-       If true, then the pooling is configured with ``conv_dims``,
-       ``conv_pads``, ``conv_strides``, ``conv_dilations``. Otherwise,
-       ``conv_dims_i``, ``conv_pads_i``, ``conv_strides_i``,
-       ``conv_dilations_i``.
-
-   :conv_dims:
-
-       (``string``) Convolution kernel dimensions (vector-valued)
+       (``list[int64]`` or ``int64``) Convolution kernel dimensions
 
        List of integers, one for each spatial
-       dimension. Used when ``has_vectors`` is enabled.
+       dimension.
 
-   :conv_pads:
+   :padding:
 
-       (``string``) Convolution padding (vector-valued)
+       (``list[int64]`` or ``int64``) Convolution padding
 
        List of integers, one for each spatial
-       dimension. Used when ``has_vectors`` is enabled.
+       dimension.
 
-   :conv_strides:
+   :stride:
 
-       (``string``) Convolution strides (vector-valued)
+       (``list[int64]`` or ``int64``) Convolution strides
 
        List of integers, one for each spatial
        dimension. Used when ``has_vectors`` is enabled.
 
    :conv_dilations:
 
-       (``string``) Convolution dilations (vector-valued)
+       (``list[int64]`` or ``int64``) Convolution dilations
 
-       List of integers, one for each spatial
-       dimension. Used when ``has_vectors`` is enabled. Defaults to
+       List of integers, one for each spatial dimension. Defaults to
        dilations of 1, i.e. undilated convolution.
 
-   :conv_dims:
-
-       (``int64``) Convolution kernel size (integer-valued)
-
-       Used when ``has_vectors`` is disabled.
-
-   :conv_pads_i:
-
-       (``int64``) Convolution padding (integer-valued)
-
-       Used when ``has_vectors`` is disabled.
-
-   :conv_strides_i:
-
-      (``int64``) Convolution stride (integer-valued)
-
-      Used when ``has_vectors`` is disabled.
-
-   :conv_dilations_i:
-
-      (``int64``, optional) Convolution dilation (integer-valued)
-
-      Default: 1
-
-      Used when ``has_vectors`` is disabled.
 
    :has_bias: (``bool``) Whether to apply per-channel bias
 
-   :num_groups:
+   :groups:
 
       (``int64``, optional) Number of channel groups for grouped
       convolution

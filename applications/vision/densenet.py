@@ -53,7 +53,7 @@ def densenet(statistics_group_size,
         )
         # num_features += num_layers * growth_rate
         for node in parent_nodes[1:]:
-            num_features += node.num_output_channels
+            num_features += node.out_channels
         parent_node = lbann.Concatenation(parent_nodes)
         cumulative_layer_num += 1
         log('densenet Concatenation. cumulative_layer_num={n}'.format(
@@ -65,7 +65,7 @@ def densenet(statistics_group_size,
                 cumulative_layer_num,
                 parent_node,
                 # In Python 3, this is integer division.
-                num_output_channels=num_features//2,
+                out_channels=num_features//2,
             )
             num_features //= 2
 
@@ -95,12 +95,12 @@ def initial_layer(statistics_group_size,
     # 7x7 conv, stride 2
     convolution_node = lbann.Convolution(
         images_node,
-        conv_dims_i=7,
-        conv_pads_i=3,
-        conv_strides_i=2,
+        kernel_size=7,
+        padding=3,
+        stride=2,
         has_bias=False,
         num_dims=2,
-        num_output_channels=num_initial_channels
+        out_channels=num_initial_channels
     )
     cumulative_layer_num += 1
     log('initial_layer Convolution. cumulative_layer_num={n}'.format(
@@ -190,9 +190,9 @@ def dense_layer(statistics_group_size,
         current_layer_num,
         cumulative_layer_num,
         concatenation_node,
-        conv_dims_i=1,
-        conv_pads_i=0,
-        num_output_channels=batch_norm_size * growth_rate
+        kernel_size=1,
+        padding=0,
+        out_channels=batch_norm_size * growth_rate
     )
     conv_block_2_node, cumulative_layer_num = conv_block(
         statistics_group_size,
@@ -200,9 +200,9 @@ def dense_layer(statistics_group_size,
         current_layer_num,
         cumulative_layer_num,
         conv_block_1_node,
-        conv_dims_i=3,
-        conv_pads_i=1,
-        num_output_channels=growth_rate
+        kernel_size=3,
+        padding=1,
+        out_channels=growth_rate
     )
     return conv_block_2_node, cumulative_layer_num
 
@@ -212,9 +212,9 @@ def conv_block(statistics_group_size,
                current_layer_num,
                cumulative_layer_num,
                parent_node,
-               conv_dims_i,
-               conv_pads_i,
-               num_output_channels
+               kernel_size,
+               padding,
+               out_channels
                ):
     batch_normalization_node = standard_batchnorm(statistics_group_size,
                                                   parent_node)
@@ -230,12 +230,12 @@ def conv_block(statistics_group_size,
 
     convolution_node = lbann.Convolution(
         relu_node,
-        conv_dims_i=conv_dims_i,
-        conv_pads_i=conv_pads_i,
-        conv_strides_i=1,
+        kernel_size=kernel_size,
+        padding=padding,
+        stride=1,
         has_bias=False,
         num_dims=2,
-        num_output_channels=num_output_channels
+        out_channels=out_channels
     )
     cumulative_layer_num += 1
     log('dense_block={b} dense_layer={l} Convolution. cumulative_layer_num={n}'.format(
@@ -248,7 +248,7 @@ def transition_layer(statistics_group_size,
                      current_block_num,
                      cumulative_layer_num,
                      parent_node,
-                     num_output_channels
+                     out_channels
                      ):
     batch_normalization_node = standard_batchnorm(statistics_group_size,
                                                   parent_node)
@@ -263,12 +263,12 @@ def transition_layer(statistics_group_size,
 
     convolution_node = lbann.Convolution(
         relu_node,
-        conv_dims_i=1,
-        conv_pads_i=0,
-        conv_strides_i=1,
+        kernel_size=1,
+        padding=0,
+        stride=1,
         has_bias=False,
         num_dims=2,
-        num_output_channels=num_output_channels
+        out_channels=out_channels
     )
     cumulative_layer_num += 1
     log('dense_block={b} > transition_layer Convolution. cumulative_layer_num={n}'.format(
