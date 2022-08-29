@@ -27,8 +27,6 @@ ALLOW_BACKEND_BUILDS=
 # Flag for passing subcommands to spack dev-build
 DEV_BUILD_FLAGS=
 # Flag for passing subcommands to spack install
-ENABLE_SPACK_TEST=
-INSTALL_BUILD_EXTRAS=
 BUILD_JOBS="-j $(($(nproc)/2+2))"
 
 LBANN_VARIANTS=
@@ -80,7 +78,6 @@ Options:
   ${C}--tmp-build-dir${N}            Put the build directory in tmp space
   ${C}--spec-only${N}                Stop after a spack spec command
   ${C}-s | --stable${N}              Use the latest stable defaults not the head of Hydrogen, DiHydrogen and Aluminum repos
-  ${C}--test${N}                     Enable local unit tests
   ${C}--hydrogen-repo <PATH>${N}     Use a local repository for the Hydrogen library
   ${C}--dihydrogen-repo <PATH>${N}   Use a local repository for the DiHydrogen library
   ${C}--aluminum-repo <PATH>${N}     Use a local repository for the Aluminum library
@@ -196,10 +193,6 @@ while :; do
             HYDROGEN_VER=
             ALUMINUM_VER="@1.0.0-lbann"
             DIHYDROGEN_VER=
-            ;;
-        --test)
-            ENABLE_SPACK_TEST="TRUE"
-            INSTALL_BUILD_EXTRAS="--test root"
             ;;
         --hydrogen-repo)
             if [ -n "${2}" ]; then
@@ -672,18 +665,6 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
         [[ -z "${DRY_RUN:-}" ]] && { `spack config add packages:all:variants:"${DEPENDENT_PACKAGES_GPU_VARIANTS}"` || exit_on_failure "${CMD}"; }
     fi
 
-    if [[ -n "${ENABLE_SPACK_TEST:-}" ]]; then
-        # Use spack requires to ensure that test time dependencies are part
-        # of concretization
-        CMD="spack config add packages:py-numpy:require:'^py-pytest'"
-        echo ${CMD} | tee -a ${LOG}
-        [[ -z "${DRY_RUN:-}" ]] && { `spack config add packages:py-numpy:require:"^py-pytest"` || exit_on_failure "${CMD}"; }
-
-        CMD="spack config add packages:py-scipy:require:'^py-pytest'"
-        echo ${CMD} | tee -a ${LOG}
-        [[ -z "${DRY_RUN:-}" ]] && { `spack config add packages:py-scipy:require:"^py-pytest"` || exit_on_failure "${CMD}"; }
-    fi
-
     CMD="spack compiler find --scope env:${LBANN_ENV}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
@@ -778,7 +759,7 @@ fi
 
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
   # Try to concretize the environment and catch the return code
-  CMD="spack concretize ${INSTALL_BUILD_EXTRAS}"
+  CMD="spack concretize"
   echo ${CMD} | tee -a ${LOG}
   [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
@@ -820,7 +801,7 @@ fi
 
 ##########################################################################################
 # Actually install LBANN from local source
-CMD="spack install ${BUILD_JOBS} ${INSTALL_BUILD_EXTRAS}"
+CMD="spack install ${BUILD_JOBS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
