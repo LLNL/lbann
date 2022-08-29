@@ -458,6 +458,12 @@ if (LBANN_EXPLICIT_LIBDL AND NOT DL_LIBRARY)
   endif (DL_LIBRARY)
 endif ()
 
+# Nothing in LBANN explicitly includes the zlib header or, as far as I
+# can tell, explicitly calls a zlib function. So some dependency isn't
+# propagating its dependencies properly (protobuf of sufficiently new
+# enough version is one such culprit). This should work around that.
+find_package(ZLIB MODULE REQUIRED)
+
 # Other optional dependencies
 # TODO: This probably shouldn't be the case and should disable specific
 # callbacks when OpenCV is not available
@@ -680,7 +686,8 @@ target_link_libraries(lbann PUBLIC
   MPI::MPI_CXX
   ${LBANN_CUDA_LIBS}
   ${LBANN_ROCM_LIBS}
-  ${LBANN_DNNL_LIBS})
+  ${LBANN_DNNL_LIBS}
+  ZLIB::ZLIB)
 
 if (LBANN_FLAG_Werror_OK)
   target_compile_options(lbann
