@@ -163,7 +163,7 @@ set_center_specific_spack_dependencies()
         case ${spack_arch_target} in
             "power9le") # Lassen
                 CENTER_COMPILER="%gcc"
-                CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp ^cuda@11.1.105 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.20.1 ^py-protobuf@3.20.1"
+                CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp ^cuda@11.1.105 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 CENTER_BLAS_LIBRARY="blas=openblas"
                 # CENTER_COMPILER="%clang"
                 # CENTER_DEPENDENCIES="^spectrum-mpi ^cuda@11.1.105 ^libtool@2.4.2 ^python@3.9.10"
@@ -172,17 +172,17 @@ set_center_specific_spack_dependencies()
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_COMPILER="%clang"
-                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.20.1 ^py-protobuf@3.20.1"
+                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_COMPILER="%gcc"
-                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.20.1 ^py-protobuf@3.20.1"
+                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_COMPILER="%rocmcc@4.5.2"
-                CENTER_DEPENDENCIES="^openmpi@4.1.1 ^hip@4.5.2 ^python@3.9.10 ^protobuf@3.20.1 ^py-protobuf@3.20.1"
+                CENTER_DEPENDENCIES="^openmpi@4.1.1 ^hip@4.5.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 ;;
             *)
                 echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
