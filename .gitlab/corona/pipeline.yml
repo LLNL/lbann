@@ -71,6 +71,7 @@ build and install:
     - flux jobs
 #    - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
+    - "export LBANN_NNODES=$(flux jobs -no {id}:{name}:{nnodes} | grep ${JOB_NAME} | awk -F: '{print $3}')"
     - printf "jobid is %s\n" ${JOB_ID}
     - export BUILD_TASKS=$(($(nproc) + 2))
     - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
