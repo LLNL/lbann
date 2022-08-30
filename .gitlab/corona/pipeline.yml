@@ -78,6 +78,9 @@ build and install:
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - flux jobs
     - flux proxy ${JOB_ID} flux mini run -N ${LBANN_NNODES} --label-io hostname
+    - flux proxy ${JOB_ID} flux mini run -N 1 -t 30m ./scripts/build_lbann.sh -r
+      -l ${SPACK_ENV_NAME} --clean-build -j ${BUILD_TASKS} --
+      +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
     # - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -r
     #   -l ${SPACK_ENV_NAME} --clean-build -j ${BUILD_TASKS} --
     #   +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
