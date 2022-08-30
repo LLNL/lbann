@@ -50,8 +50,8 @@ allocate lc resources:
     - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "120" || echo "90")
     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
     #- salloc --exclusive -N ${LBANN_NNODES} -p pbatch -t ${TEST_TIME} --no-shell -J ${JOB_NAME}
-    - jobid=$(flux mini submit \
-      -N ${LBANN_NNODES} -t ${TEST_TIME} --job-name=${JOB_NAME} \
+    - jobid=$(flux mini submit
+      -N ${LBANN_NNODES} -t ${TEST_TIME} --job-name=${JOB_NAME}
       flux start sh -c 'flux --parent job memo $FLUX_JOB_ID ready=1 && sleep inf')
     - export JOB_ID=$jobid
     - printf "Initial jobid is %s\n" ${JOB_ID}    
