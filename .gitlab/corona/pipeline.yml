@@ -47,7 +47,7 @@ allocate lc resources:
   script:
     - echo "== ACQUIRING SLURM RESOURCES =="
     - echo "${WITH_WEEKLY:+Running with --weekly}"
-    - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "120" || echo "90")
+    - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "1200" || echo "900")
     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
     #- salloc --exclusive -N ${LBANN_NNODES} -p pbatch -t ${TEST_TIME} --no-shell -J ${JOB_NAME}
     - jobid=$(flux mini submit -N ${LBANN_NNODES} -t ${TEST_TIME} --job-name=${JOB_NAME} flux start sh -c 'flux --parent job memo $FLUX_JOB_ID ready=1 && sleep inf')
@@ -70,8 +70,8 @@ build and install:
     - echo "== BUILDING LBANN =="
 #    - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
 #    - jobid=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')
-#    - export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')
-    - printf "jobid is %s\n" $jobid
+    - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
+#    - printf "jobid is %s\n" $jobid
     - printf "jobid is %s\n" ${JOB_ID}
     - export BUILD_TASKS=$(($(nproc) + 2))
     - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
@@ -157,7 +157,7 @@ release allocation:
   when: always
   script:
     - echo "== RELEASING RESOURCES =="
-#    - export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')
+    - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - ([[ -n "${JOB_ID}" ]] && flux job cancel ${JOB_ID})
 #    - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
 #    - ([[ -n "${JOB_ID}" ]] && scancel ${JOB_ID})
