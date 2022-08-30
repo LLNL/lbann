@@ -69,8 +69,8 @@ build and install:
   script:
     - echo "== BUILDING LBANN =="
 #    - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
-    - jobid=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')
-    - export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')
+#    - jobid=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')
+#    - export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')
     - printf "jobid is %s\n" $jobid
     - printf "jobid is %s\n" ${JOB_ID}
     - export BUILD_TASKS=$(($(nproc) + 2))
@@ -157,7 +157,7 @@ release allocation:
   when: always
   script:
     - echo "== RELEASING RESOURCES =="
-    - export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')
+#    - export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')
     - ([[ -n "${JOB_ID}" ]] && flux job cancel ${JOB_ID})
 #    - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
 #    - ([[ -n "${JOB_ID}" ]] && scancel ${JOB_ID})
