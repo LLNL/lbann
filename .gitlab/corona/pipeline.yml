@@ -68,10 +68,9 @@ build and install:
       - ${RESULTS_DIR}/*
   script:
     - echo "== BUILDING LBANN =="
+    - flux jobs
 #    - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
-#    - jobid=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')
     - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
-#    - printf "jobid is %s\n" $jobid
     - printf "jobid is %s\n" ${JOB_ID}
     - export BUILD_TASKS=$(($(nproc) + 2))
     - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
