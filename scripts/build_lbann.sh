@@ -20,13 +20,13 @@ LBANN_HOME=$(dirname ${SCRIPTS_DIR})
 SCRIPT=$(basename ${BASH_SOURCE})
 LBANN_ENV=
 INSTALL_DEPS=
+REUSE_ENV=
 DRY_RUN=
 CLEAN_BUILD=
 ALLOW_BACKEND_BUILDS=
 # Flag for passing subcommands to spack dev-build
 DEV_BUILD_FLAGS=
 # Flag for passing subcommands to spack install
-INSTALL_BUILD_EXTRAS=
 BUILD_JOBS="-j $(($(nproc)/2+2))"
 
 LBANN_VARIANTS=
@@ -63,7 +63,7 @@ Options:
   ${C}--clean-build${N}              Delete the local link to the build directory
   ${C}--clean-deps${N}               Forcibly uninstall Hydrogen, Aluminum, and DiHydrogen dependencies
   ${C}--configure-only${N}           Stop after adding all packages to the environment
-  ${C}-d | --define-env${N}          Define (create) a Spack environment, including the lbann dependencies, for building LBANN from local source
+  ${C}-d | --define-env${N}          Define (create) a Spack environment, including the lbann dependencies, for building LBANN from local source.  (This wil overwrite any existing environment of the same name)
   ${C}--dry-run${N}                  Dry run the commands (no effect)
   ${C}-e | --extras <PATH>${N}       Add other packages from file at PATH to the Spack environment in addition to LBANN (Flag can be repeated)
   ${C}-j | --build-jobs <N>${N}      Number of parallel processes to use for compiling, e.g. -j \$((\$(nproc)+2))
@@ -74,10 +74,10 @@ Options:
   ${C}--no-modules${N}               Don't try to load any modules (use the existing users environment)
   ${C}-p | --pkg <PACKAGE>${N}       Add package PACKAGE to the Spack environment in addition to LBANN (Flag can be repeated)
   ${C}--pip <requirements.txt>${N}   PIP install Python packages in requirements.txt with the version of Python used by LBANN (Flag can be repeated)
+  ${C}-r | --reuse-env${N}           Reuse a Spack environment, including the lbann dependencies, for building LBANN from local source.  (This will create a new one if none is found)
   ${C}--tmp-build-dir${N}            Put the build directory in tmp space
   ${C}--spec-only${N}                Stop after a spack spec command
   ${C}-s | --stable${N}              Use the latest stable defaults not the head of Hydrogen, DiHydrogen and Aluminum repos
-  ${C}--test${N}                     Enable local unit tests
   ${C}--hydrogen-repo <PATH>${N}     Use a local repository for the Hydrogen library
   ${C}--dihydrogen-repo <PATH>${N}   Use a local repository for the DiHydrogen library
   ${C}--aluminum-repo <PATH>${N}     Use a local repository for the Aluminum library
@@ -178,6 +178,9 @@ while :; do
                 exit 1
             fi
             ;;
+        -r|--reuse-env)
+            REUSE_ENV="TRUE"
+            ;;
         --tmp-build-dir)
             CLEAN_BUILD="TRUE"
             TMP_BUILD_DIR="TRUE"
@@ -190,9 +193,6 @@ while :; do
             HYDROGEN_VER=
             ALUMINUM_VER="@1.0.0-lbann"
             DIHYDROGEN_VER=
-            ;;
-        --test)
-            INSTALL_BUILD_EXTRAS="--test root"
             ;;
         --hydrogen-repo)
             if [ -n "${2}" ]; then
@@ -288,7 +288,7 @@ function uninstall_specific_versions()
 # This should be a commit hash (NOT a tag) that needs to exist in the
 # spack repository that is checked out. It's a minimum version, so
 # more commits is fine.
-MIN_SPACK_COMMIT=15c35a3cff138c3777d756b61ec1940883260d20
+MIN_SPACK_COMMIT=bd815fbadac24eba64c9ba6db102c1a0442a36d8
 
 # "spack" is just a shell function; it may not be exported to this
 # scope. Just to be sure, reload the shell integration.
@@ -352,7 +352,6 @@ if [[ -n "${LBANN_LABEL:-}" ]]; then
 else
     AT_LBANN_LABEL=""
 fi
-CORE_BUILD_PATH="${LBANN_HOME}/build/${CLUSTER}.${LBANN_ENV}"
 
 LOG="spack-build-${LBANN_ENV}.log"
 if [[ -f ${LOG} ]]; then
@@ -397,6 +396,12 @@ function exit_with_instructions()
     echo "All details of the run are logged to ${LOG}"
     echo "##########################################################################################"
     exit 1
+}
+
+function warn_on_failure()
+{
+    local cmd="$1"
+    echo -e "WARNING CMD FAILED: ${cmd}"
 }
 
 ##########################################################################################
@@ -503,6 +508,20 @@ if [[ ! -n "${SKIP_MODULES:-}" ]]; then
     fi
 fi
 
+# If the user asks to resuse an environment see if it exists, if not set one up
+if [[ -n "${REUSE_ENV:-}" ]]; then
+    # Check to make sure that both the -d and -r flags are not concurrently set
+    if [[ -n "${INSTALL_DEPS:-}" ]]; then
+        [[ -z "${DRY_RUN:-}" ]] && { exit_on_failure "Invalid combination of -r and -d flags"; }
+    fi
+    # Look for existing environment with the same name
+    if [[ $(spack env list | grep -e "${LBANN_ENV}$") ]]; then
+        echo "Spack environment ${LBANN_ENV} already exists... reusing it"
+    else
+        echo "Spack environment ${LBANN_ENV} does not exists... creating it (as if -d flag was thrown)"
+        INSTALL_DEPS="TRUE"
+    fi
+fi
 
 # If the dependencies are being installed then you should clean things up
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
@@ -639,10 +658,12 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-    # Force the environment to concretize with the same set of GPU variants
-    CMD="spack config add packages:all:variants:'${DEPENDENT_PACKAGES_GPU_VARIANTS}'"
-    echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && { `spack config add packages:all:variants:"${DEPENDENT_PACKAGES_GPU_VARIANTS}"` || exit_on_failure "${CMD}"; }
+    if [[ -n "${DEPENDENT_PACKAGES_GPU_VARIANTS:-}" ]]; then
+        # Force the environment to concretize with the same set of GPU variants
+        CMD="spack config add packages:all:variants:'${DEPENDENT_PACKAGES_GPU_VARIANTS}'"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { `spack config add packages:all:variants:"${DEPENDENT_PACKAGES_GPU_VARIANTS}"` || exit_on_failure "${CMD}"; }
+    fi
 
     CMD="spack compiler find --scope env:${LBANN_ENV}"
     echo ${CMD} | tee -a ${LOG}
@@ -738,7 +759,7 @@ fi
 
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
   # Try to concretize the environment and catch the return code
-  CMD="spack concretize ${INSTALL_BUILD_EXTRAS}"
+  CMD="spack concretize"
   echo ${CMD} | tee -a ${LOG}
   [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
@@ -750,17 +771,6 @@ LBANN_SPEC_HASH=$(spack find -cl | grep -v "\-\-\-\-\-\-" | grep lbann${AT_LBANN
 
 # If the user only wants to configure the environment
 [[ ${CONFIGURE_ONLY:-} ]] && exit_with_instructions
-
-# For developer builds create a user friendly link to the spack build directory
-if [[ -z "${USER_BUILD:-}" ]]; then
-    LINK_DIR="${LINK_DIR:-${CORE_BUILD_PATH}}"
-    BUILD_DIR=$(dirname ${LINK_DIR})
-    if [[ ! -d "${BUILD_DIR}" ]]; then
-        CMD="mkdir -p ${BUILD_DIR}"
-        echo ${CMD}
-        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-    fi
-fi
 
 # Check to see if the link to the build directory exists and is valid
 SPACK_BUILD_DIR="spack-build-${LBANN_SPEC_HASH}"
@@ -791,7 +801,7 @@ fi
 
 ##########################################################################################
 # Actually install LBANN from local source
-CMD="spack install ${BUILD_JOBS} ${INSTALL_BUILD_EXTRAS}"
+CMD="spack install ${BUILD_JOBS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -854,16 +864,6 @@ fi
 # LBANN_BUILD_DIR=$(grep "PROJECT_BINARY_DIR:" ${LBANN_HOME}/spack-build-out.txt | awk '{print $2}')
 
 if [[ -z "${USER_BUILD:-}" ]]; then
-    if [[ -L "${LINK_DIR}" ]]; then
-        CMD="rm ${LINK_DIR}"
-        echo ${CMD} | tee -a ${LOG}
-        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-    fi
-
-    CMD="ln -s ${LBANN_HOME}/spack-build-${LBANN_SPEC_HASH} ${LINK_DIR}"
-    echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-
     # Copy the compile_commands.json file to LBANN_HOME
     if [[ -e "${LBANN_HOME}/spack-build-${LBANN_SPEC_HASH}/compile_commands.json" ]]; then
         CMD="cp ${LBANN_HOME}/spack-build-${LBANN_SPEC_HASH}/compile_commands.json ${LBANN_HOME}/compile_commands.json"
@@ -906,5 +906,5 @@ if [[ -z "${USER_BUILD:-}" ]]; then
     # Lastly, Save the log file in the build directory
     CMD="cp ${LOG} ${LBANN_HOME}/spack-build-${LBANN_SPEC_HASH}/${LOG}"
     echo ${CMD}
-    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
 fi
