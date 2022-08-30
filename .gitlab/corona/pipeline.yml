@@ -161,8 +161,10 @@ release allocation:
   when: always
   script:
     - echo "== RELEASING RESOURCES =="
+    - flux jobs
     - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - ([[ -n "${JOB_ID}" ]] && flux job cancel ${JOB_ID})
+    - flux jobs
 #    - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
 #    - ([[ -n "${JOB_ID}" ]] && scancel ${JOB_ID})
 
