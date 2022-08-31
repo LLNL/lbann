@@ -108,8 +108,10 @@ def get_command(cluster,
         time_limit = MAX_TIME
 
     # Determine scheduler
-    if cluster in ['catalyst', 'corona', 'pascal']:
+    if cluster in ['catalyst', 'pascal']:
         scheduler = 'slurm'
+    elif cluster in ['flux']:
+        scheduler = 'flux'
     elif cluster in ['lassen', 'ray']:
         scheduler = 'lsf'
     else:
