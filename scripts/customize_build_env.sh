@@ -103,7 +103,7 @@ set_center_specific_modules()
                 MODULE_CMD="module --force unload StdEnv; module load gcc/10.2.1 mvapich2/2.3 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
-                MODULE_CMD="module load gcc-tce/10.2.1 rocm/4.5.2; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1"
+                MODULE_CMD="module load gcc-tce/10.3.1 rocm/5.2.0; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -181,8 +181,8 @@ set_center_specific_spack_dependencies()
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_COMPILER="%rocmcc@4.5.2"
-                CENTER_DEPENDENCIES="^openmpi@4.1.1 ^hip@4.5.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
+                CENTER_COMPILER="%rocmcc@5.2.0"
+                CENTER_DEPENDENCIES="^openmpi@4.1.1 ^hip@5.2.0 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 ;;
             *)
                 echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
@@ -284,25 +284,25 @@ cat <<EOF  >> ${yaml}
     hipcub:
       buildable: False
       version:
-      - 4.5.2
+      - 5.2.0
       externals:
-      - spec: hipcub@4.5.2 arch=${spack_arch}
-        prefix: /opt/rocm-4.5.2/hipcub
+      - spec: hipcub@5.2.0 arch=${spack_arch}
+        prefix: /opt/rocm-5.2.0/hipcub
         extra_attributes:
           compilers:
-            c: /opt/rocm-4.5.2/llvm/bin/clang
-            c++: /opt/rocm-4.5.2/llvm/bin/clang++
+            c: /opt/rocm-5.2.0/llvm/bin/clang
+            c++: /opt/rocm-5.2.0/llvm/bin/clang++
     llvm-amdgpu:
       buildable: False
       version:
-      - 4.5.2
+      - 5.2.0
       externals:
-      - spec: llvm-amdgpu@4.5.2 arch=${spack_arch}
-        prefix: /opt/rocm-4.5.2/llvm
+      - spec: llvm-amdgpu@5.2.0 arch=${spack_arch}
+        prefix: /opt/rocm-5.2.0/llvm
         extra_attributes:
           compilers:
-            c: /opt/rocm-4.5.2/llvm/bin/clang
-            c++: /opt/rocm-4.5.2/llvm/bin/clang++
+            c: /opt/rocm-5.2.0/llvm/bin/clang
+            c++: /opt/rocm-5.2.0/llvm/bin/clang++
     rdma-core:
       buildable: False
       version:
