@@ -59,7 +59,7 @@ LBANN_NNODES=$(flux jobs -no {id}:{name}:{nnodes} | grep ${JOB_NAME} | awk -F: '
 flux proxy ${JOB_ID} flux mini run \
      -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * ${LBANN_NNODES})) \
 #     --ntasks-per-node=$TEST_TASKS_PER_NODE \
-     -t 5 ${TEST_MPIBIND_FLAG} \
+     -t 5m ${TEST_MPIBIND_FLAG} \
      ./unit_test/mpi-catch-tests \
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-results-rank=%r-size=%s.xml"
@@ -70,7 +70,7 @@ fi
 flux proxy ${JOB_ID} flux mini run \
      -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * ${LBANN_NNODES})) \
 #     --ntasks-per-node=$TEST_TASKS_PER_NODE \
-     -t 5 ${TEST_MPIBIND_FLAG} \
+     -t 5m ${TEST_MPIBIND_FLAG} \
      ./unit_test/mpi-catch-tests "[filesystem]" \
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
