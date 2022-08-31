@@ -79,6 +79,11 @@ def make_batch_script(
     # present in MVAPICH2-2.3rc2.
     set_environment('MV2_USE_RDMA_CM', 0)
 
+    # Optimizations for Corona
+    if system in ('corona'):
+        set_environment('OMPI_MCA_btl', '^openib')
+        set_environment('OMPI_MCA_osc', 'ucx')
+
     # Optimizations for Sierra-like systems
     if system in ('sierra', 'lassen', 'rzansel'):
 
