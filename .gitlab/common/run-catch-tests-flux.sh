@@ -33,7 +33,7 @@ source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
 SPACK_ARCH=$(spack arch)
 SPACK_ARCH_TARGET_AGAIN=$(spack arch -t)
 spack env activate lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
-echo "I think that the architecture target is >${SPACK_ARCH_TARGET}< and ${SPACK_ARCH_TARGET_AGAIN}"
+echo "${HOSTNAME} thinks that the architecture target is >${SPACK_ARCH_TARGET}< and ${SPACK_ARCH_TARGET_AGAIN}"
 spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
 
 # Configure the output directory
