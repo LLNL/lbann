@@ -33,7 +33,7 @@ source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
 #SPACK_ARCH=$(spack arch)
 #SPACK_ARCH_TARGET_AGAIN=$(spack arch -t)
 spack env activate lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
-echo "${HOSTNAME} thinks that the architecture target is >${SPACK_ARCH_TARGET}< and ${SPACK_ARCH_TARGET_AGAIN}"
+#echo "${HOSTNAME} thinks that the architecture target is >${SPACK_ARCH_TARGET}< and ${SPACK_ARCH_TARGET_AGAIN}"
 spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
 
 # Configure the output directory
@@ -56,10 +56,10 @@ if [[ $? -ne 0 ]]; then
     FAILED_JOBS+=" seq"
 fi
 
+#     --ntasks-per-node=$TEST_TASKS_PER_NODE \
 LBANN_NNODES=$(flux jobs -no {id}:{name}:{nnodes} | grep ${JOB_NAME} | awk -F: '{print $3}')
 flux proxy ${JOB_ID} flux mini run \
      -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * ${LBANN_NNODES})) \
-#     --ntasks-per-node=$TEST_TASKS_PER_NODE \
      -t 5m ${TEST_MPIBIND_FLAG} \
      ./unit_test/mpi-catch-tests \
      -r JUnit \
@@ -68,9 +68,9 @@ if [[ $? -ne 0 ]]; then
     FAILED_JOBS+=" mpi"
 fi
 
+#     --ntasks-per-node=$TEST_TASKS_PER_NODE \
 flux proxy ${JOB_ID} flux mini run \
      -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * ${LBANN_NNODES})) \
-#     --ntasks-per-node=$TEST_TASKS_PER_NODE \
      -t 5m ${TEST_MPIBIND_FLAG} \
      ./unit_test/mpi-catch-tests "[filesystem]" \
      -r JUnit \
