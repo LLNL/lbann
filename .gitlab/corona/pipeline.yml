@@ -78,8 +78,8 @@ build and install:
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - flux jobs
     - flux proxy ${JOB_ID} flux mini run -N ${LBANN_NNODES} --label-io hostname
-    - bve_spack_arch=flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t
-    - printf "Spack arch is " ${bve_spack_arch}
+    - bve_spack_arch=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t)
+    - printf "Spack arch is %s\n" ${bve_spack_arch}
     - export SPACK_ARCH_TARGET=${bve_spack_arch}
     - flux proxy ${JOB_ID} flux mini run -N 1 -t 30m ./scripts/build_lbann.sh -r
       -l ${SPACK_ENV_NAME} --clean-build -j ${BUILD_TASKS}
