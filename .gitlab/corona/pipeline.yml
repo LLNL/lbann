@@ -78,6 +78,9 @@ build and install:
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - flux jobs
     - flux proxy ${JOB_ID} flux mini run -N ${LBANN_NNODES} --label-io hostname
+    - bve_spack_arch=flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t
+    - print "Spack arch is " ${bve_spack_arch}
+    - export SPACK_ARCH_TARGET=${bve_spack_arch}
     - flux proxy ${JOB_ID} flux mini run -N 1 -t 30m ./scripts/build_lbann.sh -r
       -l ${SPACK_ENV_NAME} --clean-build -j ${BUILD_TASKS}
       -e ./scripts/common_spack_packages/ci_spack_packages.sh --
@@ -88,7 +91,7 @@ build and install:
     - export TEST_TASKS_PER_NODE=4
     - export TEST_MPIBIND_FLAG="--mpibind=off"
     - export SPACK_ARCH=$(spack arch)
-    - export SPACK_ARCH_TARGET=$(spack arch -t)
+#    - export SPACK_ARCH_TARGET=$(spack arch -t)
 #    - export SPACK_ENV_NAME_BVE=${SPACK_ENV_NAME}
     - .gitlab/common/run-catch-tests-flux.sh
 
