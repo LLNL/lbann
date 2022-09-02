@@ -47,10 +47,11 @@ mkdir -p ${OUTPUT_DIR}
 FAILED_JOBS=""
 
 SPACK_BUILD_DIR=$(find . -iname "spack-build-*" -type d | head -n 1)
+echo "I think that the spack directory is ${SPACK_BUILD_DIR}"
 cd ${SPACK_BUILD_DIR}
+#     --setattr=system.cwd=${SPACK_BUILD_DIR} \
 flux proxy ${JOB_ID} flux mini run -N 1 -n 1 -t 5m \
-     --setattr=system.cwd=${SPACK_BUILD_DIR} \
-     ./unit_test/seq-catch-tests \
+     ${SPACK_BUILD_DIR}/unit_test/seq-catch-tests \
      -r JUnit \
      -o ${OUTPUT_DIR}/seq-catch-results.xml
 if [[ $? -ne 0 ]]; then
@@ -62,8 +63,7 @@ LBANN_NNODES=$(flux jobs -no {id}:{name}:{nnodes} | grep ${JOB_NAME} | awk -F: '
 flux proxy ${JOB_ID} flux mini run \
      -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * ${LBANN_NNODES})) \
      -t 5m ${TEST_MPIBIND_FLAG} \
-     --setattr=system.cwd=${SPACK_BUILD_DIR} \
-     ./unit_test/mpi-catch-tests \
+     ${SPACK_BUILD_DIR}/unit_test/mpi-catch-tests \
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-results-rank=%r-size=%s.xml"
 if [[ $? -ne 0 ]]; then
@@ -74,8 +74,7 @@ fi
 flux proxy ${JOB_ID} flux mini run \
      -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * ${LBANN_NNODES})) \
      -t 5m ${TEST_MPIBIND_FLAG} \
-     --setattr=system.cwd=${SPACK_BUILD_DIR} \
-     ./unit_test/mpi-catch-tests "[filesystem]" \
+     ${SPACK_BUILD_DIR}/unit_test/mpi-catch-tests "[filesystem]" \
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
 if [[ $? -ne 0 ]];
