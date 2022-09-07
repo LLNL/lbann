@@ -470,20 +470,20 @@ do
     fi
 done
 
-# Check if the user explicitly doesn't want Python support inside of LBANN
-if [[ ! "${LBANN_VARIANTS}" =~ .*"~python".* ]]; then
-    # If Python support is not disabled add NumPy as an external for sanity
-    # Specifically, for use within the data reader, NumPy has to have the same
-    # C++ std library
-    if [[ ! "${PKG_LIST}" =~ .*"py-numpy".* ]]; then
-        PKG_LIST="${PKG_LIST} py-numpy@1.16.0:"
-    fi
-    # Include PyTest as a top level dependency because of a spack bug that fails
-    # to add it for building things like NumPy
-    if [[ ! "${PKG_LIST}" =~ .*"py-pytest".* ]]; then
-        PKG_LIST="${PKG_LIST} py-pytest"
-    fi
-fi
+# # Check if the user explicitly doesn't want Python support inside of LBANN
+# if [[ ! "${LBANN_VARIANTS}" =~ .*"~python".* ]]; then
+#     # If Python support is not disabled add NumPy as an external for sanity
+#     # Specifically, for use within the data reader, NumPy has to have the same
+#     # C++ std library
+#     if [[ ! "${PKG_LIST}" =~ .*"py-numpy".* ]]; then
+#         PKG_LIST="${PKG_LIST} py-numpy@1.16.0:"
+#     fi
+#     # Include PyTest as a top level dependency because of a spack bug that fails
+#     # to add it for building things like NumPy
+#     if [[ ! "${PKG_LIST}" =~ .*"py-pytest".* ]]; then
+#         PKG_LIST="${PKG_LIST} py-pytest"
+#     fi
+# fi
 
 # Record the original command in the log file
 echo "${ORIG_CMD}" | tee -a ${LOG}
@@ -670,6 +670,10 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
     # Limit the scope of the external search to minimize overhead time
+    CMD="spack external read-cray-manifest --directory /opt/cray/pe/cpe-descriptive-manifest --fail-on-error"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
     # Use standard tags for common packages
     CMD="spack external find --scope env:${LBANN_ENV} --tag core-packages --tag build-tools --tag rocm"
     echo ${CMD} | tee -a ${LOG}
