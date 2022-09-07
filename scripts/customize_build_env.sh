@@ -67,6 +67,10 @@ set_center_specific_gpu_arch()
                 # Use a HIP Clang variant
                 GPU_ARCH_VARIANTS="amdgpu_target=gfx906"
                 ;;
+            "zen3") # Tioga
+                # Use a HIP Clang variant
+                GPU_ARCH_VARIANTS="amdgpu_target=gfx90a"
+                ;;
             *)
                 ;;
         esac
@@ -104,6 +108,10 @@ set_center_specific_modules()
                 ;;
             "zen" | "zen2") # Corona
                 MODULE_CMD="module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2"
+                # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
+                ;;
+            "zen3") # Tioga
+                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.06.0 cce/14.0.2 craype/2.7.17 cray-mpich/8.1.18 cray-libsci/22.08.1.1 PrgEnv-cray/8.3.3 StdEnv cmake/3.23.1 rocm/5.2.1"
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
             *)
@@ -184,6 +192,14 @@ set_center_specific_spack_dependencies()
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_COMPILER="%rocmcc@5.2.0"
                 CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.2.0 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
+                ;;
+            "zen3") # Tioga
+#                CENTER_COMPILER="%cce@14.0.2"
+                CENTER_COMPILER="%rocmcc@5.2.1"
+                CENTER_DEPENDENCIES="^cray-mpich@8.1.18 ^hip@5.2.1 ^python@3.9.12"
+                CENTER_BLAS_LIBRARY="blas=libsci"
+                # Override the conduit variants for the cray compilers
+                CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis~blt_find_mpi"
                 ;;
             *)
                 echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
@@ -319,6 +335,59 @@ cat <<EOF  >> ${yaml}
       - spec: openmpi@4.1.2 arch=${spack_arch}
         modules:
         - openmpi-tce/4.1.2
+EOF
+                ;;
+            "zen3")
+cat <<EOF  >> ${yaml}
+  packages:
+    all:
+      providers:
+        mpi: [cray-mpich]
+    hipcub:
+      buildable: False
+      version:
+      - 5.2.1
+      externals:
+      - spec: hipcub@5.2.1 arch=${spack_arch}
+        prefix: /opt/rocm-5.2.1/hipcub
+        extra_attributes:
+          compilers:
+            c: /opt/rocm-5.2.1/llvm/bin/clang
+            c++: /opt/rocm-5.2.1/llvm/bin/clang++
+    llvm-amdgpu:
+      buildable: False
+      version:
+      - 5.2.1
+      externals:
+      - spec: llvm-amdgpu@5.2.1 arch=${spack_arch}
+        prefix: /opt/rocm-5.2.1/llvm
+        extra_attributes:
+          compilers:
+            c: /opt/rocm-5.2.1/llvm/bin/clang
+            c++: /opt/rocm-5.2.1/llvm/bin/clang++
+    rdma-core:
+      buildable: False
+      version:
+      - 20
+      externals:
+      - spec: rdma-core@20 arch=${spack_arch}
+        prefix: /usr
+    cray-libsci:
+      buildable: False
+      version:
+      - 22.08.1.1
+      externals:
+      - spec: cray-libsci@22.08.1.1 arch=${spack_arch}
+        modules:
+        - cray-libsci/22.08.1.1
+    cray-mpich:
+      buildable: False
+      version:
+      - 8.1.18
+      externals:
+      - spec: "cray-mpich@8.1.18 arch=${spack_arch}"
+        modules:
+        - cray-mpich/8.1.18
 EOF
                 ;;
             *)
