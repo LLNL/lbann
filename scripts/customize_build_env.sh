@@ -67,7 +67,7 @@ set_center_specific_gpu_arch()
                 # Use a HIP Clang variant
                 GPU_ARCH_VARIANTS="amdgpu_target=gfx906"
                 ;;
-            "zen3") # Tioga
+            "zen3") # Tioga, RZVernal
                 # Use a HIP Clang variant
                 GPU_ARCH_VARIANTS="amdgpu_target=gfx90a"
                 ;;
@@ -110,7 +110,7 @@ set_center_specific_modules()
                 MODULE_CMD="module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2"
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
-            "zen3") # Tioga
+            "zen3") # Tioga, RZVernal
                 MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.06.0 cce/14.0.2 craype/2.7.17 cray-mpich/8.1.18 cray-libsci/22.08.1.1 PrgEnv-cray/8.3.3 StdEnv cmake/3.23.1 rocm/5.2.1"
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
@@ -193,7 +193,7 @@ set_center_specific_spack_dependencies()
                 CENTER_COMPILER="%rocmcc@5.2.0"
                 CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.2.0 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 ;;
-            "zen3") # Tioga
+            "zen3") # Tioga, RZVernal
 #                CENTER_COMPILER="%cce@14.0.2"
                 CENTER_COMPILER="%rocmcc@5.2.1"
                 CENTER_DEPENDENCIES="^cray-mpich@8.1.18 ^hip@5.2.1 ^python@3.9.12"
@@ -350,28 +350,6 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: hipcub@5.2.1 arch=${spack_arch}
         prefix: /opt/rocm-5.2.1/hipcub
-        extra_attributes:
-          compilers:
-            c: /opt/rocm-5.2.1/llvm/bin/clang
-            c++: /opt/rocm-5.2.1/llvm/bin/clang++
-    llvm-amdgpu:
-      buildable: False
-      version:
-      - 5.2.1
-      externals:
-      - spec: llvm-amdgpu@5.2.1 arch=${spack_arch}
-        prefix: /opt/rocm-5.2.1/llvm
-        extra_attributes:
-          compilers:
-            c: /opt/rocm-5.2.1/llvm/bin/clang
-            c++: /opt/rocm-5.2.1/llvm/bin/clang++
-    rdma-core:
-      buildable: False
-      version:
-      - 20
-      externals:
-      - spec: rdma-core@20 arch=${spack_arch}
-        prefix: /usr
     cray-libsci:
       buildable: False
       version:
