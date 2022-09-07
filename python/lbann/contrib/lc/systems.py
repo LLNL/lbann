@@ -25,6 +25,7 @@ _system_params = {
     'sierra':   SystemParams(44, 4, 'lsf'),
     'rzansel':  SystemParams(44, 4, 'lsf'),
     'rzhasgpu': SystemParams(16, 2, 'slurm'),
+    'tioga':    SystemParams(64, 8, 'flux'),
 }
 
 # Detect system
