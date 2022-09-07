@@ -49,10 +49,8 @@ allocate lc resources:
     - echo "${WITH_WEEKLY:+Running with --weekly}"
     - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "120m" || echo "90m")
     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
-    #- salloc --exclusive -N ${LBANN_NNODES} -p pbatch -t ${TEST_TIME} --no-shell -J ${JOB_NAME}
     - jobid=$(flux mini submit -N ${LBANN_NNODES} -t ${TEST_TIME} --job-name=${JOB_NAME} flux start sh -c 'flux --parent job memo $FLUX_JOB_ID ready=1 && sleep inf')
     - export JOB_ID=$jobid
-    - printf "Initial jobid is %s\n" ${JOB_ID}
   timeout: 6h
 
 # Build LBANN and establish the Spack environment for this pipeline.
@@ -70,31 +68,19 @@ build and install:
   script:
     - echo "== BUILDING LBANN =="
     - flux jobs
-#    - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - "export LBANN_NNODES=$(flux jobs -no {id}:{name}:{nnodes} | grep ${JOB_NAME} | awk -F: '{print $3}')"
-    - printf "jobid is %s\n" ${JOB_ID}
     - export BUILD_TASKS=$(($(nproc) + 2))
     - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - flux jobs
-    - flux proxy ${JOB_ID} flux mini run -N ${LBANN_NNODES} --label-io hostname
     - flux proxy ${JOB_ID} flux mini run -N 1 -t 30m ./scripts/build_lbann.sh -r
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS}
       -e ./scripts/common_spack_packages/ci_spack_packages.sh --
       +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
-    # - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -r
-    #   -l ${SPACK_ENV_NAME} --clean-build -j ${BUILD_TASKS} --
-    #   +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
-    - ls -lt
     - export TEST_TASKS_PER_NODE=4
     - export TEST_MPIBIND_FLAG="--mpibind=off"
     - export SPACK_ARCH=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch)
     - export SPACK_ARCH_TARGET=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t)
-#    - printf "Spack arch is %s\n" ${bve_spack_arch}
-#    - export SPACK_ARCH_TARGET=${bve_spack_arch}
-#    - export SPACK_ARCH_TARGET=$(spack arch -t)
-#    - export SPACK_ENV_NAME_BVE=${SPACK_ENV_NAME}
     - .gitlab/common/run-catch-tests-flux.sh
 
 # Run the Python-based unit tests.
@@ -109,7 +95,7 @@ unit tests:
     - echo "== RUNNING PYTHON-BASED UNIT TESTS =="
     - echo "Testing $(which lbann)"
     - export OMP_NUM_THREADS=10
-    - export SLURM_JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
+    - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - cd ci_test/unit_tests
     - python3 -m pytest -s -vv --durations=0 --junitxml=results.xml
   artifacts:
@@ -131,7 +117,7 @@ integration tests:
     - echo "== RUNNING PYTHON-BASED INTEGRATION TESTS =="
     - echo "Testing $(which lbann)"
     - export OMP_NUM_THREADS=10
-    - export SLURM_JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
+    - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - cd ci_test/integration_tests
     - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
     - echo "python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml"

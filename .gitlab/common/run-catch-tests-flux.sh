@@ -30,10 +30,7 @@
 source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
 
 # Load up the spack environment
-#SPACK_ARCH=$(spack arch)
-#SPACK_ARCH_TARGET_AGAIN=$(spack arch -t)
 spack env activate lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
-#echo "${HOSTNAME} thinks that the architecture target is >${SPACK_ARCH_TARGET}< and ${SPACK_ARCH_TARGET_AGAIN}"
 spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
 
 # Configure the output directory
@@ -47,10 +44,8 @@ mkdir -p ${OUTPUT_DIR}
 FAILED_JOBS=""
 
 SPACK_BUILD_DIR=$(find . -iname "spack-build-*" -type d | head -n 1)
-echo "I think that the spack directory is ${SPACK_BUILD_DIR}"
 cd ${SPACK_BUILD_DIR}
-#     --setattr=system.cwd=${SPACK_BUILD_DIR} \
-flux proxy ${JOB_ID} flux mini run -N 1 -n 1 -t 5m \
+flux proxy ${JOB_ID} flux mini run -N 1 -n 1 -g 1 -t 5m \
      ./unit_test/seq-catch-tests \
      -r JUnit \
      -o ${OUTPUT_DIR}/seq-catch-results.xml
@@ -58,13 +53,12 @@ if [[ $? -ne 0 ]]; then
     FAILED_JOBS+=" seq"
 fi
 
-#     --setattr=system.cwd=${SPACK_BUILD_DIR} \
 #     --ntasks-per-node=$TEST_TASKS_PER_NODE \
 # ${TEST_MPIBIND_FLAG}
 LBANN_NNODES=$(flux jobs -no {id}:{name}:{nnodes} | grep ${JOB_NAME} | awk -F: '{print $3}')
 flux proxy ${JOB_ID} flux mini run \
      -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * ${LBANN_NNODES})) \
-     -t 5m \
+     -g 1 -t 5m \
      ./unit_test/mpi-catch-tests \
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-results-rank=%r-size=%s.xml"
@@ -72,12 +66,11 @@ if [[ $? -ne 0 ]]; then
     FAILED_JOBS+=" mpi"
 fi
 
-#     --setattr=system.cwd=${SPACK_BUILD_DIR} \
 #     --ntasks-per-node=$TEST_TASKS_PER_NODE \
 # ${TEST_MPIBIND_FLAG}
 flux proxy ${JOB_ID} flux mini run \
      -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * ${LBANN_NNODES})) \
-     -t 5m \
+     -g 1 -t 5m \
      ./unit_test/mpi-catch-tests "[filesystem]" \
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
