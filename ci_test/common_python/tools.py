@@ -275,6 +275,55 @@ def get_command(cluster,
             option_num_processes, option_processes_per_node,
             option_resources_per_host, option_tasks_per_resource)
 
+    elif scheduler == 'flux':
+        # Create allocate command
+        command_allocate = ''
+        # Allocate nodes only if we don't already have an allocation.
+        if os.getenv('FLUX_JOB_ID') is None:
+            print('Allocating slurm nodes.')
+            command_allocate = 'salloc'
+            option_num_nodes = ''
+            option_partition = ''
+            option_time_limit = ''
+            if num_nodes is not None:
+                # --nodes=<minnodes[-maxnodes]> =>
+                # Request that a minimum of minnodes nodes be allocated to this
+                # job. A maximum node count may also be specified with
+                # maxnodes.
+                option_num_nodes = ' --nodes=%d' % num_nodes
+            if partition is not None:
+                # If cluster doesn't have pdebug switch to pbatch.
+                if (cluster in ['pascal']) and \
+                        (partition == 'pdebug'):
+                    partition = 'pbatch'
+                # --partition => Request a specific partition for the resource
+                # allocation.
+                option_partition = ' --partition=%s' % partition
+            if time_limit is not None:
+                # --time => Set a limit on the total run time of the job
+                # allocation.
+                # Time limit in minutes
+                option_time_limit = ' --time=%d' % time_limit
+            command_allocate = '%s%s%s%s' % (
+                command_allocate, option_num_nodes, option_partition,
+                option_time_limit)
+        else:
+            print('flux nodes already allocated.')
+
+        # Create run command
+        if command_allocate == '':
+            space = ''
+        else:
+            space = ' '
+        command_run = '{s}srun --mpibind=off --time={t}'.format(
+            s=space, t=time_limit)
+        option_num_processes = ''
+        if num_processes is not None:
+            # --ntasks => Specify  the  number of tasks to run.
+            # Number of processes to run => MPI Rank
+            option_num_processes = ' --ntasks=%d' % num_processes
+        command_run = '%s%s' % (command_run, option_num_processes)
+
     else:
         raise Exception('Unsupported Scheduler %s' % scheduler)
 
