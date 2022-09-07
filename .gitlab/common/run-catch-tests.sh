@@ -45,7 +45,11 @@ mkdir -p ${OUTPUT_DIR}
 
 FAILED_JOBS=""
 
-SPACK_BUILD_DIR=$(find . -iname "spack-build-*" -type d | head -n 1)
+LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
+echo "I think that the hash is ${LBANN_HASH}"
+SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
+
+#SPACK_BUILD_DIR=$(find . -iname "spack-build-*" -type d | head -n 1)
 cd ${SPACK_BUILD_DIR}
 srun --jobid=${JOB_ID} -N 1 -n 1 -t 5 \
      ./unit_test/seq-catch-tests \
