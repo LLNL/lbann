@@ -689,6 +689,13 @@ target_link_libraries(lbann PUBLIC
   ${LBANN_DNNL_LIBS}
   ZLIB::ZLIB)
 
+# Ensure that MPI flags are passed to the HIP compiler on Cray platforms
+get_target_property(LBANN_MPI_CXX_INCL_DIRS
+  MPI::MPI_CXX INTERFACE_INCLUDE_DIRECTORIES)
+if (NOT LBANN_MPI_CXX_INCL_DIRS)
+  target_include_directories(lbann PRIVATE $<$<COMPILE_LANGUAGE:HIP>:${MPI_CXX_COMPILER_INCLUDE_DIRS}>)
+endif ()
+
 if (LBANN_FLAG_Werror_OK)
   target_compile_options(lbann
     PRIVATE $<$<COMPILE_LANGUAGE:CXX>:$<BUILD_INTERFACE:-Werror>>)
