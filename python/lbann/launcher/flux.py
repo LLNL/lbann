@@ -66,23 +66,7 @@ class FluxBatchScript(BatchScript):
         self.launcher_args = launcher_args
 
         # Configure header with Flux job options
-        self.add_header_line(f'#SBATCH --chdir={self.work_dir}')
-        self.add_header_line(f'#SBATCH --output={self.out_log_file}')
-        self.add_header_line(f'#SBATCH --error={self.err_log_file}')
-        self.add_header_line(f'#SBATCH --nodes={self.nodes}')
-        self.add_header_line(f'#SBATCH --ntasks={self.nodes * self.procs_per_node}')
-        self.add_header_line(f'#SBATCH --ntasks-per-node={self.procs_per_node}')
-        if self.time_limit is not None:
-            self.add_header_line(f'#SBATCH --time={_time_string(self.time_limit)}')
-        if self.job_name:
-            self.add_header_line(f'#SBATCH --job-name={self.job_name}')
-        if self.partition:
-            self.add_header_line(f'#SBATCH --partition={self.partition}')
-        if self.account:
-            self.add_header_line(f'#SBATCH --account={self.account}')
-
-        for arg in self.launcher_args:
-            self.add_header_line(f'#SBATCH {arg}')
+        #self.add_header_line(f'#SBATCH --ntasks-per-node={self.procs_per_node}')
 
     def add_parallel_command(self,
                              command,
@@ -143,6 +127,15 @@ class FluxBatchScript(BatchScript):
         args.append(f'--setattr=system.cwd={work_dir}')
         args.append(f'--nodes={nodes}')
         args.append(f'--ntasks={nodes * procs_per_node}')
+        args.append(f'--exclusive')
+        args.append(f'-g 1') # --gpus-per-task
+        # Ramesh had used a -c flag but doesn't  seem to use it right now
+        # args.append(f'-c {int(self.cores_per_node / procs_per_node)}') #--cores-per-task
+        args.append(f'-o gpu-affinity=per-task')
+        args.append(f'-o cpu-affinity=per-task')
+        args.append(f'--output={self.out_log_file}')
+        args.append(f'--error={self.err_log_file}')
+
         if time_limit is not None:
             args.append(f'--time={_time_string(time_limit)}')
         if job_name:
