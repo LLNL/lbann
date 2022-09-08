@@ -70,7 +70,7 @@ build and install:
     - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -r
-      -l ${SPACK_ENV_NAME} --clean-build -j ${BUILD_TASKS}
+      -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS}
       -e ./scripts/common_spack_packages/ci_spack_packages.sh --
       +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
     - export TEST_TASKS_PER_NODE=2
@@ -169,7 +169,7 @@ release allocation:
 
     # This is based on the assumption that each runner will only ever
     # be able to run one pipeline on a given cluster at one time.
-    SPACK_ENV_NAME: gitlab-${CI_COMMIT_BRANCH}-${SYSTEM_NAME}
+    SPACK_ENV_NAME: gitlab-${CI_COMMIT_BRANCH}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}
 
     # These are system-specific specs that should be forwarded to the
     # build script
@@ -184,6 +184,9 @@ release allocation:
 
     # Catch2 output.
     RESULTS_DIR: results-${CI_PIPELINE_ID}
+
+    # Preserve any spack-build-* directories to allow for faster testing
+    GIT_CLEAN_FLAGS: -ffdx -e spack-build-*
 
   tags:
     - pascal
