@@ -350,6 +350,21 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: hipcub@5.2.1 arch=${spack_arch}
         prefix: /opt/rocm-5.2.1/hipcub
+        extra_attributes:
+          compilers:
+            c: /opt/rocm-5.2.1/llvm/bin/clang
+            c++: /opt/rocm-5.2.1/llvm/bin/clang++
+    llvm-amdgpu:
+      buildable: False
+      version:
+      - 5.2.1
+      externals:
+      - spec: llvm-amdgpu@5.2.1 arch=${spack_arch}
+        prefix: /opt/rocm-5.2.1/llvm
+        extra_attributes:
+          compilers:
+            c: /opt/rocm-5.2.1/llvm/bin/clang
+            c++: /opt/rocm-5.2.1/llvm/bin/clang++
     cray-libsci:
       buildable: False
       version:
