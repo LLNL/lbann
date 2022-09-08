@@ -59,7 +59,6 @@ build and install:
       - spack-build-*/CMakeCache.txt
       - spack-build-*/build.ninja
       - spack-build-*/spack-*.txt
-      - spack-build-*/unit_test/*
       - ${RESULTS_DIR}/*
   script:
     - echo "== BUILDING LBANN =="

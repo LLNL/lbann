@@ -61,7 +61,6 @@ build and test everything:
       - spack-build-*/CMakeCache.txt
       - spack-build-*/build.ninja
       - spack-build-*/spack-*.txt
-      - spack-build-*/unit_test/*
       - ci_test/**/*.xml
       - ci_test/compiler_tests/**/*.txt
     reports:
