@@ -127,6 +127,8 @@ class FluxBatchScript(BatchScript):
         args.append(f'--setattr=system.cwd={work_dir}')
         args.append(f'--nodes={nodes}')
         args.append(f'--ntasks={nodes * procs_per_node}')
+        args.append(f'-o per-resource.type=node')
+        args.append(f'-o per-resource.count={procs_per_node}')
         args.append(f'--exclusive')
         args.append(f'-g 1') # --gpus-per-task
         # Ramesh had used a -c flag but doesn't  seem to use it right now
