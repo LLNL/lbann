@@ -258,7 +258,7 @@ def get_command(cluster,
                 option_num_processes = ' --nrs {n}'.format(n=num_nodes)
                 option_resources_per_host = ' --rs_per_host 1'
                 option_tasks_per_resource = ' --tasks_per_rs {n}'.format(n=resources_per_node)
-                if (num_processes%num_nodes) is not 0:
+                if (num_processes%num_nodes) != 0:
                     raise Exception('num_processes %s, is not divisible by num_nodes %d'
                                     % (num_processes, num_nodes))
 
@@ -276,12 +276,13 @@ def get_command(cluster,
             option_resources_per_host, option_tasks_per_resource)
 
     elif scheduler == 'flux':
+        print('Do i even get here to engage with flux?')
         # Create allocate command
         command_allocate = ''
         # Allocate nodes only if we don't already have an allocation.
         if os.getenv('FLUX_JOB_ID') is None:
-            print('Allocating slurm nodes.')
-            command_allocate = 'salloc'
+            print('Allocating flux nodes.')
+            command_allocate = 'flux mini alloc'
             option_num_nodes = ''
             option_partition = ''
             option_time_limit = ''
@@ -292,10 +293,6 @@ def get_command(cluster,
                 # maxnodes.
                 option_num_nodes = ' --nodes=%d' % num_nodes
             if partition is not None:
-                # If cluster doesn't have pdebug switch to pbatch.
-                if (cluster in ['pascal']) and \
-                        (partition == 'pdebug'):
-                    partition = 'pbatch'
                 # --partition => Request a specific partition for the resource
                 # allocation.
                 option_partition = ' --partition=%s' % partition
@@ -303,26 +300,28 @@ def get_command(cluster,
                 # --time => Set a limit on the total run time of the job
                 # allocation.
                 # Time limit in minutes
-                option_time_limit = ' --time=%d' % time_limit
+                option_time_limit = ' --time=%dm' % time_limit
             command_allocate = '%s%s%s%s' % (
                 command_allocate, option_num_nodes, option_partition,
                 option_time_limit)
         else:
             print('flux nodes already allocated.')
 
+        print('Creaing a flux run command')
         # Create run command
         if command_allocate == '':
             space = ''
         else:
             space = ' '
-        command_run = '{s}srun --mpibind=off --time={t}'.format(
+        command_run = '{s}flux mini run --time={t}'.format(
             s=space, t=time_limit)
         option_num_processes = ''
         if num_processes is not None:
             # --ntasks => Specify  the  number of tasks to run.
             # Number of processes to run => MPI Rank
             option_num_processes = ' --ntasks=%d' % num_processes
-        command_run = '%s%s' % (command_run, option_num_processes)
+        command_options = '--exclusive -o gpu-affinity=per-task -o cpu-affinity=per-task'
+        command_run = '%s%s%s' % (command_run, option_num_processes, command_options)
 
     else:
         raise Exception('Unsupported Scheduler %s' % scheduler)
