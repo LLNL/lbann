@@ -43,7 +43,8 @@ mkdir -p ${OUTPUT_DIR}
 
 FAILED_JOBS=""
 
-SPACK_BUILD_DIR=$(find . -iname "spack-build-*" -type d | head -n 1)
+LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
+SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
 cd ${SPACK_BUILD_DIR}
 flux proxy ${JOB_ID} flux mini run -N 1 -n 1 -g 1 -t 5m \
      ./unit_test/seq-catch-tests \
