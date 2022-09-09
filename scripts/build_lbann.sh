@@ -670,9 +670,12 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
     # Limit the scope of the external search to minimize overhead time
-    CMD="spack external read-cray-manifest --directory /opt/cray/pe/cpe-descriptive-manifest --fail-on-error"
-    echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    CRAY_MANIFEST="/opt/cray/pe/cpe-descriptive-manifest"
+    if [[ -e ${CRAY_MANIFEST} ]]; then
+       CMD="spack external read-cray-manifest --directory ${CRAY_MANIFEST} --fail-on-error"
+       echo ${CMD} | tee -a ${LOG}
+       [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    fi
 
     # Use standard tags for common packages
     CMD="spack external find --scope env:${LBANN_ENV} --tag core-packages --tag build-tools --tag rocm"
@@ -858,7 +861,7 @@ fi
 if [[ -n "${PIP_EXTRAS:-}" ]]; then
     for p in ${PIP_EXTRAS}
     do
-        CMD="python -m pip install -r ${p}"
+        CMD="python3 -m pip install -r ${p}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     done
