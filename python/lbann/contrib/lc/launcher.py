@@ -80,9 +80,11 @@ def make_batch_script(
     set_environment('MV2_USE_RDMA_CM', 0)
 
     # Optimizations for Corona
-    # if system in ('corona'):
-    #     set_environment('OMPI_MCA_btl', '^openib')
-    #     set_environment('OMPI_MCA_osc', 'ucx')
+    if system in ('corona'):
+        print(f'I am on corona and I think that nuumber of GPUS per system is {gpus_per_node(system)}')
+        print(f'I am on corona and I think that nuumber of cores per system is {cores_per_node(system)}')
+        set_environment('OMPI_MCA_btl', '^openib')
+        set_environment('OMPI_MCA_osc', 'ucx')
 
     # Optimizations for Sierra-like systems
     if system in ('sierra', 'lassen', 'rzansel'):
