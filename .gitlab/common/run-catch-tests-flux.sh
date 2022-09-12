@@ -46,6 +46,8 @@ export OMPI_MCA_btl=^openib
 export OMPI_MCA_osc=ucx
 
 ml
+module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2
+ml
 
 LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
 SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
