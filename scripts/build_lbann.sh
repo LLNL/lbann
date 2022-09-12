@@ -410,6 +410,7 @@ CENTER_COMPILER=
 CENTER_DEPENDENCIES=
 CENTER_LINKER_FLAGS=
 CENTER_BLAS_LIBRARY=
+CENTER_PIP_PACKAGES=
 set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
 
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^hydrogen".* ]]; then
@@ -450,6 +451,10 @@ if [[ "${CENTER_COMPILER}" =~ .*"%gcc".* ]]; then
     CENTER_LINKER_FLAGS="+gold"
 fi
 
+if [[ -n "${CENTER_PIP_PACKAGES:-}" ]]; then
+    PIP_EXTRAS="${PIP_EXTRAS} ${CENTER_PIP_PACKAGES}"
+fi
+
 GPU_VARIANTS_ARRAY=('+cuda' '+rocm')
 DEPENDENT_PACKAGES_GPU_VARIANTS=
 for GPU_VARIANTS in ${GPU_VARIANTS_ARRAY[@]}
@@ -470,20 +475,27 @@ do
     fi
 done
 
-# # Check if the user explicitly doesn't want Python support inside of LBANN
-# if [[ ! "${LBANN_VARIANTS}" =~ .*"~python".* ]]; then
-#     # If Python support is not disabled add NumPy as an external for sanity
-#     # Specifically, for use within the data reader, NumPy has to have the same
-#     # C++ std library
-#     if [[ ! "${PKG_LIST}" =~ .*"py-numpy".* ]]; then
-#         PKG_LIST="${PKG_LIST} py-numpy@1.16.0:"
-#     fi
-#     # Include PyTest as a top level dependency because of a spack bug that fails
-#     # to add it for building things like NumPy
-#     if [[ ! "${PKG_LIST}" =~ .*"py-pytest".* ]]; then
-#         PKG_LIST="${PKG_LIST} py-pytest"
-#     fi
-# fi
+# There is a known problem on LC systems with older default compilers and their
+# associated C++ std libraries, python, and LBANN.  In these instances force
+# spack to build all of them with a consistent set of compilers
+# Check if the user explicitly doesn't want Python support inside of LBANN
+# or if the center uses standard PIP installed packages then assume that they have
+# the right C++ std libraries
+if [[ ! "${LBANN_VARIANTS}" =~ .*"~python".* ]]; then
+    if [[ -z ${CENTER_PIP_PACKAGES:-} ]]; then
+        # If Python support is not disabled add NumPy as an external for sanity
+        # Specifically, for use within the data reader, NumPy has to have the same
+        # C++ std library
+        if [[ ! "${PKG_LIST}" =~ .*"py-numpy".* ]]; then
+            PKG_LIST="${PKG_LIST} py-numpy@1.16.0:"
+        fi
+        # Include PyTest as a top level dependency because of a spack bug that fails
+        # to add it for building things like NumPy
+        if [[ ! "${PKG_LIST}" =~ .*"py-pytest".* ]]; then
+            PKG_LIST="${PKG_LIST} py-pytest"
+        fi
+    fi
+fi
 
 # Record the original command in the log file
 echo "${ORIG_CMD}" | tee -a ${LOG}
