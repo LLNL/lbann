@@ -45,6 +45,8 @@ FAILED_JOBS=""
 export OMPI_MCA_btl=^openib
 export OMPI_MCA_osc=ucx
 
+ml
+
 LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
 SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
 cd ${SPACK_BUILD_DIR}
