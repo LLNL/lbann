@@ -257,11 +257,19 @@ def set_protobuf_message(message, **kwargs):
                 field.SetInParent()
                 field.value = value
             elif field_descriptor.label == google.protobuf.descriptor.FieldDescriptor.LABEL_REPEATED:
-                iterable_value = make_iterable(value)
-                if field_descriptor.type == field_descriptor.TYPE_MESSAGE:
-                    field.extend([x.export_proto() for x in iterable_value])
-                else:
-                    field.extend(iterable_value)
+                try:
+                    iterable_value = make_iterable(value)
+                    if field_descriptor.type == field_descriptor.TYPE_MESSAGE:
+                        field.extend([x.export_proto() for x in iterable_value])
+                    else:
+                        field.extend(iterable_value)
+                except TypeError:
+                    if (type(value).__module__ == 'numpy' and type(value).__name__ == 'nditer'):
+                        value.reset()
+                        for v in value:
+                            field.append(float(v))
+                    else:
+                        raise
             elif isinstance(value, google.protobuf.message.Message):
                 getattr(message, field_name).MergeFrom(value)
             elif callable(getattr(value, "export_proto", None)):
