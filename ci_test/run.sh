@@ -60,9 +60,9 @@ echo $WEEKLY
 echo "Task: Cleaning"
 ./clean.sh
 
-echo "Task: Compiler Tests"
-cd compiler_tests
-$PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml || exit 1
+#echo "Task: Compiler Tests"
+#cd compiler_tests
+#$PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml || exit 1
 
 # Find the correct module to load
 SPACK_ARCH=$(spack arch)
