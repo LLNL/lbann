@@ -54,6 +54,8 @@ export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
 LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
 SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
 cd ${SPACK_BUILD_DIR}
+
+flux proxy ${JOB_ID} flux resource list
      # module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2; \
      # source /g/g14/lbannusr/spack_repos/spack_corona.git/share/spack/setup-env.sh; \
      # spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}; \
