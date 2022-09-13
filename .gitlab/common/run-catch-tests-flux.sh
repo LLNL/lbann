@@ -54,10 +54,10 @@ export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
 LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
 SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
 cd ${SPACK_BUILD_DIR}
+     # module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2; \
+     # source /g/g14/lbannusr/spack_repos/spack_corona.git/share/spack/setup-env.sh; \
+     # spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}; \
 flux proxy ${JOB_ID} flux mini run -N 1 -n 1 -g 1 -t 5m \
-     module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2; \
-     source /g/g14/lbannusr/spack_repos/spack_corona.git/share/spack/setup-env.sh; \
-     spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}; \
      ./unit_test/seq-catch-tests \
      -r JUnit \
      -o ${OUTPUT_DIR}/seq-catch-results.xml
@@ -71,10 +71,6 @@ LBANN_NNODES=$(flux jobs -no {id}:{name}:{nnodes} | grep ${JOB_NAME} | awk -F: '
 flux proxy ${JOB_ID} flux mini run \
      -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * ${LBANN_NNODES})) \
      -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task \
-     module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2; \
-     source /g/g14/lbannusr/spack_repos/spack_corona.git/share/spack/setup-env.sh; \
-     spack env status; \
-     spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}; \
      spack env status; \
      ./unit_test/mpi-catch-tests \
      -r JUnit \
@@ -88,10 +84,6 @@ fi
 flux proxy ${JOB_ID} flux mini run \
      -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * ${LBANN_NNODES})) \
      -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task \
-     module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2; \
-     source /g/g14/lbannusr/spack_repos/spack_corona.git/share/spack/setup-env.sh; \
-     spack env status; \
-     spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}; \
      spack env status; \
      ./unit_test/mpi-catch-tests "[filesystem]" \
      -r JUnit \
