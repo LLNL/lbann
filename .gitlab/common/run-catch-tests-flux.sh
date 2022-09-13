@@ -54,13 +54,18 @@ export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
 
 LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
 SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
+
 cd ${SPACK_BUILD_DIR}
 
 flux resource list
 #flux proxy ${JOB_ID} flux resource list
 
 flux mini run --label-io -n4 -N2 -g 1 -o cpu-affinity=per-task -o gpu-affinity=per-task sh -c 'taskset -cp $$; printenv | grep VISIBLE' | sort
+
+flux mini run --label-io -n4 -N2 -g 1 -o cpu-affinity=off -o gpu-affinity=per-task sh -c 'taskset -cp $$; printenv | grep VISIBLE' | sort
 #flux proxy ${JOB_ID} flux mini run --label-io -n4 -N2 -g 1 -o cpu-affinity=per-task -o gpu-affinity=per-task sh -c 'taskset -cp $$; printenv | grep VISIBLE' | sort
+
+flux mini run -N 1 -n 1 -g 1 -t 5m rocm-smi
 
      # module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2; \
      # source /g/g14/lbannusr/spack_repos/spack_corona.git/share/spack/setup-env.sh; \
