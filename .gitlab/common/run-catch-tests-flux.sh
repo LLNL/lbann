@@ -81,7 +81,6 @@ fi
 
 #     --ntasks-per-node=$TEST_TASKS_PER_NODE \
 # ${TEST_MPIBIND_FLAG}
-LBANN_NNODES=$(flux jobs -no {id}:{name}:{nnodes} | grep ${JOB_ID} | awk -F: '{print $3}')
     #LBANN_NNODES=1
 #TEST_TASKS_PER_NODE=4
 #flux proxy ${JOB_ID} flux mini run \
