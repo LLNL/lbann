@@ -320,7 +320,7 @@ def get_command(cluster,
             # --ntasks => Specify  the  number of tasks to run.
             # Number of processes to run => MPI Rank
             option_num_processes = ' --ntasks=%d' % num_processes
-        command_options = '--exclusive -o gpu-affinity=per-task -o cpu-affinity=per-task'
+        command_options = ' --exclusive -o gpu-affinity=per-task -o cpu-affinity=per-task'
         command_run = '%s%s%s' % (command_run, option_num_processes, command_options)
 
     else:
