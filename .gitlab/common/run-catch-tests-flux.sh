@@ -76,7 +76,7 @@ flux mini run -N 1 -n 1 -g 1 -t 5m rocm-smi
 flux mini run -N 1 -n 1 -g 1 -t 5m \
      ./unit_test/seq-catch-tests \
      -r JUnit \
-     -o ${OUTPUT_DIR}/seq-catch-results.xml
+     --output ${OUTPUT_DIR}/seq-catch-results.xml
 if [[ $? -ne 0 ]]; then
     FAILED_JOBS+=" seq"
 fi
@@ -91,7 +91,7 @@ flux mini run \
      -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task \
      ./unit_test/mpi-catch-tests \
      -r JUnit \
-     -o "${OUTPUT_DIR}/mpi-catch-results-rank=%r-size=%s.xml"
+     --output "${OUTPUT_DIR}/mpi-catch-results-rank=%r-size=%s.xml"
 if [[ $? -ne 0 ]]; then
     FAILED_JOBS+=" mpi"
 fi
@@ -104,7 +104,7 @@ flux mini run \
      -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task \
      ./unit_test/mpi-catch-tests "[filesystem]" \
      -r JUnit \
-     -o "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
+     --output "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
 if [[ $? -ne 0 ]];
 then
     FAILED_JOBS+=" mpi-filesystem"
