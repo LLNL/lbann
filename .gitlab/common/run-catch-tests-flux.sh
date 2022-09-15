@@ -43,8 +43,8 @@ fi
 mkdir -p ${OUTPUT_DIR}
 
 FAILED_JOBS=""
-export OMPI_MCA_btl=^openib
-export OMPI_MCA_osc=ucx
+#export OMPI_MCA_btl=^openib
+#export OMPI_MCA_osc=ucx
 
 ml
 module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2
@@ -76,7 +76,7 @@ flux mini run -N 1 -n 1 -g 1 -t 5m rocm-smi
 flux mini run -N 1 -n 1 -g 1 -t 5m \
      ./unit_test/seq-catch-tests \
      -r JUnit \
-     --output ${OUTPUT_DIR}/seq-catch-results.xml
+     -o ${OUTPUT_DIR}/seq-catch-results.xml
 if [[ $? -ne 0 ]]; then
     FAILED_JOBS+=" seq"
 fi
@@ -91,7 +91,7 @@ flux mini run \
      -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task \
      ./unit_test/mpi-catch-tests \
      -r JUnit \
-     --output "${OUTPUT_DIR}/mpi-catch-results-rank=%r-size=%s.xml"
+     -o "${OUTPUT_DIR}/mpi-catch-results-rank=%r-size=%s.xml"
 if [[ $? -ne 0 ]]; then
     FAILED_JOBS+=" mpi"
 fi
@@ -104,7 +104,7 @@ flux mini run \
      -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task \
      ./unit_test/mpi-catch-tests "[filesystem]" \
      -r JUnit \
-     --output "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
+     -o "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
 if [[ $? -ne 0 ]];
 then
     FAILED_JOBS+=" mpi-filesystem"
