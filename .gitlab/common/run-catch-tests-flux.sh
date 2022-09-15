@@ -90,7 +90,7 @@ fi
 flux mini run \
      -N ${LBANN_NNODES} -n $((${TEST_TASKS_PER_NODE} * ${LBANN_NNODES})) \
      -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task \
-     ./unit_test/mpi-catch-tests
+     ./unit_test/mpi-catch-tests -s
 # \
 #      -r JUnit \
 #      -o "${OUTPUT_DIR}/mpi-catch-results-rank=%r-size=%s.xml"
@@ -104,7 +104,7 @@ fi
 flux mini run \
      -N ${LBANN_NNODES} -n $((${TEST_TASKS_PER_NODE} * ${LBANN_NNODES})) \
      -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task \
-     ./unit_test/mpi-catch-tests "[filesystem]"
+     ./unit_test/mpi-catch-tests -s "[filesystem]"
 # \
 #      -r JUnit \
 #      -o "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
