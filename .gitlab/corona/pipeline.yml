@@ -49,7 +49,8 @@ allocate lc resources:
     - echo "${WITH_WEEKLY:+Running with --weekly}"
     - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "120m" || echo "90m")
     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
-    - jobid=$(flux mini submit -N ${LBANN_NNODES} -g 1 -t ${TEST_TIME} --job-name=${JOB_NAME} flux start sh -c 'flux --parent job memo $FLUX_JOB_ID ready=1 && sleep inf')
+#    - jobid=$(flux mini submit -N ${LBANN_NNODES} -g 1 -t ${TEST_TIME} --job-name=${JOB_NAME} flux start sh -c 'flux --parent job memo $FLUX_JOB_ID ready=1 && sleep inf')
+    - jobid=$(flux mini batch -N ${LBANN_NNODES} -g 1 -t ${TEST_TIME} --job-name=${JOB_NAME} --wrap sleep inf)
     - export JOB_ID=$jobid
   timeout: 6h
 
@@ -79,6 +80,7 @@ build and install:
     - export TEST_MPIBIND_FLAG="--mpibind=off"
     - export SPACK_ARCH=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch)
     - export SPACK_ARCH_TARGET=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t)
+    - flux proxy ${JOB_ID} -n1 env
     - flux proxy ${JOB_ID} .gitlab/common/run-catch-tests-flux.sh
 
 # Run the Python-based unit tests.
