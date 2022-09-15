@@ -118,7 +118,8 @@ fi
 # someone would look at it.
 if [[ -n "${FAILED_JOBS}" ]];
 then
-    echo "Some Catch2 tests failed:${FAILED_JOBS}" > ${OUTPUT_DIR}/catch-tests-failed.txt
+    echo "Some Catch2 tests failed:${FAILED_JOBS}" 
+#    echo "Some Catch2 tests failed:${FAILED_JOBS}" > ${OUTPUT_DIR}/catch-tests-failed.txt
 fi
 
 # Return "success" so that the pytest-based testing can run.
