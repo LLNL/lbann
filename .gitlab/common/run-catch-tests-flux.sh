@@ -60,7 +60,7 @@ cd ${SPACK_BUILD_DIR}
 flux resource list
 #flux proxy ${JOB_ID} flux resource list
 
-flux mini run -n1 env
+flux mini run -N1 -n1 env
 
 flux mini run --label-io -n4 -N2 -g 1 -o cpu-affinity=per-task -o gpu-affinity=per-task sh -c 'taskset -cp $$; printenv | grep VISIBLE' | sort
 
