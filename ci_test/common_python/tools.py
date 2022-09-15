@@ -110,7 +110,7 @@ def get_command(cluster,
     # Determine scheduler
     if cluster in ['catalyst', 'pascal']:
         scheduler = 'slurm'
-    elif cluster in ['flux']:
+    elif cluster in ['corona', 'tioga']:
         scheduler = 'flux'
     elif cluster in ['lassen', 'ray']:
         scheduler = 'lsf'
