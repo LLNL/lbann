@@ -14,6 +14,8 @@ def hack_find_spack_build_dir(basedir):
 def get_system_seq_launch(cluster):
     if cluster in ['lassen', 'ray']:
         return ['lrun', '-1', '--smpiargs=\"-disable_gpu_hooks\"']
+    elif cluster in ['tioga', 'corona']:
+        return ['flux mini run', '-N1', '-n1']
     return ['srun', '-N1', '-n1', '--mpibind=off']
 
 def get_system_mpi_launch(cluster):
@@ -21,7 +23,9 @@ def get_system_mpi_launch(cluster):
         return ['jsrun', '-n2', '-r1', '-a4', '-c', 'ALL_CPUS', '-g', 'ALL_GPUS', '-d', 'packed', '-b', 'packed:10']
     elif cluster == 'pascal':
         return ['srun', '-N2', '--ntasks-per-node=2', '--mpibind=off']
-    else: # Corona and Catalyst
+    elif cluster in ['tioga', 'corona']:
+        return ['flux mini run', '-N2', '-n2', '-g1', '-o gpu-affinity=per-task', '-o cpu-affinity=per-task']
+    else: # Catalyst
         return ['srun', '-N2', '--ntasks-per-node=4']
 
 # Notice that these tests will automatically skip if the executable
