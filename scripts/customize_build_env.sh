@@ -107,12 +107,13 @@ set_center_specific_modules()
                 MODULE_CMD="module --force unload StdEnv; module load gcc/10.2.1 mvapich2/2.3 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
-                MODULE_CMD="module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2"
+                MODULE_CMD="module load gcc-tce/10.3.1 rocm/5.2.0 mvapich2-tce/2.3.6"
+#                MODULE_CMD="module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2"
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
             "zen3") # Tioga, RZVernal
-                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.06.0 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-amd/8.3.3 StdEnv cmake/3.23.1 amd/5.2.3"
-#                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.06.0 cce/14.0.3 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-cray/8.3.3 StdEnv cmake/3.23.1 rocm/5.2.3"
+                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.09.0 amd/5.2.3 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-amd/8.3.3 StdEnv cmake/3.23.1"
+#                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.09.0 cce/14.0.3 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-cray/8.3.3 StdEnv cmake/3.23.1 rocm/5.2.3"
 # Possible suggestion from John, but it doesn't work                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.06.0 cce/14.0.3 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-cray/8.3.3 StdEnv cmake/3.23.1 rocmcc-tce/5.2.3-cce-14.0.3"
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
@@ -193,7 +194,8 @@ set_center_specific_spack_dependencies()
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_COMPILER="%rocmcc@5.2.0"
-                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.2.0 ^python@3.9.12"
+                CENTER_DEPENDENCIES="^mvapich2@2.3.6 ^hip@5.2.0 ^python@3.9.12"
+#                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.2.0 ^python@3.9.12"
 #                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.2.0 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
                 ;;
@@ -340,10 +342,34 @@ cat <<EOF  >> ${yaml}
       - spec: openmpi@4.1.2 arch=${spack_arch}
         modules:
         - openmpi-tce/4.1.2
+    mvapich2:
+      buildable: False
+      version:
+      - 2.3.6
+      externals:
+      - spec: mvapich2@2.3.6 arch=${spack_arch}
+        modules:
+        - mvapich2-tce/2.3.6
 EOF
                 ;;
             "zen3")
 cat <<EOF  >> ${yaml}
+  compilers:
+  - compiler:
+      spec: rocmcc@5.2.3
+      paths:
+        cc: cc
+        cxx: CC
+        f77: ftn
+        fc: ftn
+      flags: {}
+      operating_system: rhel8
+      target: any
+      modules:
+      - PrgEnv-amd
+      - amd/5.2.3
+      environment: {}
+      extra_rpaths: []
   packages:
     all:
       providers:
