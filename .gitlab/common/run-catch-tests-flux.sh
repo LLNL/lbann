@@ -43,6 +43,7 @@ fi
 mkdir -p ${OUTPUT_DIR}
 
 FAILED_JOBS=""
+export MV2_USE_RDMA_CM=0
 #export OMPI_MCA_btl=^openib
 #export OMPI_MCA_osc=ucx
 
