@@ -276,7 +276,6 @@ def get_command(cluster,
             option_resources_per_host, option_tasks_per_resource)
 
     elif scheduler == 'flux':
-        print('Do i even get here to engage with flux?')
         # Create allocate command
         command_allocate = ''
         # Allocate nodes only if we don't already have an allocation.
@@ -307,7 +306,6 @@ def get_command(cluster,
         else:
             print('flux nodes already allocated.')
 
-        print('Creaing a flux run command')
         # Create run command
         if command_allocate == '':
             space = ''
