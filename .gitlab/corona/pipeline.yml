@@ -49,7 +49,6 @@ allocate lc resources:
     - echo "${WITH_WEEKLY:+Running with --weekly}"
     - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "120m" || echo "90m")
     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
-#    - jobid=$(flux mini submit -N ${LBANN_NNODES} -g 1 -t ${TEST_TIME} --job-name=${JOB_NAME} flux start sh -c 'flux --parent job memo $FLUX_JOB_ID ready=1 && sleep inf')
     - jobid=$(flux mini batch -N ${LBANN_NNODES} -g 1 -t ${TEST_TIME} --job-name=${JOB_NAME} --wrap sleep inf)
     - export JOB_ID=$jobid
   timeout: 6h
@@ -67,7 +66,6 @@ build and install:
       - ${RESULTS_DIR}/*
   script:
     - echo "== BUILDING LBANN =="
-    - flux jobs
     - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - "export LBANN_NNODES=$(flux jobs -no {id}:{name}:{nnodes} | grep ${JOB_NAME} | awk -F: '{print $3}')"
     - export BUILD_TASKS=$(($(nproc) + 2))
@@ -80,7 +78,6 @@ build and install:
     - export TEST_MPIBIND_FLAG="--mpibind=off"
     - export SPACK_ARCH=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch)
     - export SPACK_ARCH_TARGET=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t)
-#    - flux proxy ${JOB_ID} flux mini run -N1 -n1 env
     - flux proxy ${JOB_ID} .gitlab/common/run-catch-tests-flux.sh
 
 # Run the Python-based unit tests.
@@ -97,7 +94,7 @@ unit tests:
     - export OMP_NUM_THREADS=10
     - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - cd ci_test/unit_tests
-    - python3 -m pytest -s -vv --durations=0 --junitxml=results.xml
+#    - python3 -m pytest -s -vv --durations=0 --junitxml=results.xml
 #    - flux proxy ${FLUX_JOB_ID} python3 -m pytest -s -vv --durations=0 --junitxml=results.xml
   artifacts:
     when: always
@@ -158,12 +155,8 @@ release allocation:
   when: always
   script:
     - echo "== RELEASING RESOURCES =="
-    - flux jobs
     - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - ([[ -n "${JOB_ID}" ]] && flux job cancel ${JOB_ID})
-    - flux jobs
-#    - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
-#    - ([[ -n "${JOB_ID}" ]] && scancel ${JOB_ID})
 
 # Load the spack shell integration and load the environment.
 .uses spack environment:
