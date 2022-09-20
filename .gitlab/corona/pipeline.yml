@@ -206,6 +206,5 @@ release allocation:
     GIT_CLEAN_FLAGS: -ffdx -e spack-build-*
 
   tags:
-    - corona211
     - corona212
     - shell
