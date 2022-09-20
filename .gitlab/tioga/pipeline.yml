@@ -45,7 +45,7 @@ allocate lc resources:
   variables:
     GIT_STRATEGY: none
   script:
-    - echo "== ACQUIRING SLURM RESOURCES =="
+    - echo "== ACQUIRING FLUX RESOURCES =="
     - echo "${WITH_WEEKLY:+Running with --weekly}"
     - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "120m" || echo "90m")
     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
@@ -63,6 +63,7 @@ build and install:
       - spack-build-*/CMakeCache.txt
       - spack-build-*/build.ninja
       - spack-build-*/spack-*.txt
+      - spack-ci-env-name.sh
       - ${RESULTS_DIR}/*
   script:
     - echo "== BUILDING LBANN =="
@@ -79,6 +80,7 @@ build and install:
     - export SPACK_ARCH=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch)
     - export SPACK_ARCH_TARGET=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t)
     - export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
+    - echo "export SPACK_DEP_ENV_NAME=${SPACK_ENV_NAME}" > spack-ci-env-name.sh
     - flux proxy ${JOB_ID} .gitlab/common/run-catch-tests-flux.sh
 
 # Run the Python-based unit tests.
@@ -165,8 +167,10 @@ release allocation:
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - export SPACK_ARCH=$(spack arch)
     - export SPACK_ARCH_TARGET=$(spack arch -t)
-    - spack env activate lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
-    - spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
+    - source spack-ci-env-name.sh
+    - echo "I think that new spack name is ${SPACK_DEP_ENV_NAME}"
+    - spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
+    - spack load lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
 
 # Variables for Tioga.
 .tioga common:
@@ -203,5 +207,4 @@ release allocation:
   tags:
     - tioga
     - tioga10
-#    - shell
-    - batch
+    - shell
