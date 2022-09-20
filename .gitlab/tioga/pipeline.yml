@@ -202,4 +202,6 @@ release allocation:
 
   tags:
     - tioga
-    - shell
+    - tioga10
+#    - shell
+    - batch
