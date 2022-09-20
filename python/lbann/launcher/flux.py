@@ -65,9 +65,6 @@ class FluxBatchScript(BatchScript):
         self.launcher = launcher
         self.launcher_args = launcher_args
 
-        # Configure header with Flux job options
-        #self.add_header_line(f'#SBATCH --ntasks-per-node={self.procs_per_node}')
-
     def add_parallel_command(self,
                              command,
                              work_dir=None,
