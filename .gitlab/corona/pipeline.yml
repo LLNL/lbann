@@ -72,9 +72,9 @@ build and install:
     - export BUILD_TASKS=$(($(nproc) + 2))
     - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    # - flux proxy ${JOB_ID} flux mini run -N 1 -t 30m ./scripts/build_lbann.sh -r
-    #   -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS} --
-    #   +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
+    - flux proxy ${JOB_ID} flux mini run -N 1 -t 30m ./scripts/build_lbann.sh -r
+      -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS} --
+      +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
     - export TEST_TASKS_PER_NODE=4
     - export TEST_MPIBIND_FLAG="--mpibind=off"
     - export SPACK_ARCH=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch)
@@ -166,14 +166,9 @@ release allocation:
 .uses spack environment:
   before_script:
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-#    - export SPACK_ARCH=$(spack arch)
-#    - export SPACK_ARCH_TARGET=$(spack arch -t)
     - source spack-ci-env-name.sh
-    - echo "I think that new spack name is ${SPACK_DEP_ENV_NAME}"
     - spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
     - spack load lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
-#    - spack env activate lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
-#    - spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
 
 # Variables for Corona.
 .corona common:
