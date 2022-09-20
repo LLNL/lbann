@@ -61,7 +61,7 @@ cd ${SPACK_BUILD_DIR}
 flux resource list
 #flux proxy ${JOB_ID} flux resource list
 
-flux mini run -N1 -n1 env
+#flux mini run -N1 -n1 env
 
 flux mini run --label-io -n4 -N2 -g 1 -o cpu-affinity=per-task -o gpu-affinity=per-task sh -c 'taskset -cp $$; printenv | grep VISIBLE' | sort
 
@@ -75,10 +75,9 @@ flux mini run -N 1 -n 1 -g 1 -t 5m rocm-smi
      # spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}; \
 #flux proxy ${JOB_ID} flux mini run -N 1 -n 1 -g 1 -t 5m \
 flux mini run -N 1 -n 1 -g 1 -t 5m \
-     ./unit_test/seq-catch-tests
-# \
-#      -r JUnit \
-#      -o ${OUTPUT_DIR}/seq-catch-results.xml
+     ./unit_test/seq-catch-tests \
+     -r JUnit \
+     -o ${OUTPUT_DIR}/seq-catch-results.xml
 if [[ $? -ne 0 ]]; then
     FAILED_JOBS+=" seq"
 fi
@@ -91,10 +90,9 @@ fi
 flux mini run \
      -N ${LBANN_NNODES} -n $((${TEST_TASKS_PER_NODE} * ${LBANN_NNODES})) \
      -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task \
-     ./unit_test/mpi-catch-tests
-# \
-#      -r JUnit \
-#      -o "${OUTPUT_DIR}/mpi-catch-results-rank=%r-size=%s.xml"
+     ./unit_test/mpi-catch-tests \
+     -r JUnit \
+     -o "${OUTPUT_DIR}/mpi-catch-results-rank=%r-size=%s.xml"
 if [[ $? -ne 0 ]]; then
     FAILED_JOBS+=" mpi"
 fi
@@ -105,10 +103,9 @@ fi
 flux mini run \
      -N ${LBANN_NNODES} -n $((${TEST_TASKS_PER_NODE} * ${LBANN_NNODES})) \
      -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task \
-     ./unit_test/mpi-catch-tests -s "[filesystem]"
-# \
-#      -r JUnit \
-#      -o "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
+     ./unit_test/mpi-catch-tests -s "[filesystem]" \
+     -r JUnit \
+     -o "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
 if [[ $? -ne 0 ]];
 then
     FAILED_JOBS+=" mpi-filesystem"
@@ -119,8 +116,7 @@ fi
 # someone would look at it.
 if [[ -n "${FAILED_JOBS}" ]];
 then
-    echo "Some Catch2 tests failed:${FAILED_JOBS}" 
-#    echo "Some Catch2 tests failed:${FAILED_JOBS}" > ${OUTPUT_DIR}/catch-tests-failed.txt
+    echo "Some Catch2 tests failed:${FAILED_JOBS}" > ${OUTPUT_DIR}/catch-tests-failed.txt
 fi
 
 # Return "success" so that the pytest-based testing can run.
