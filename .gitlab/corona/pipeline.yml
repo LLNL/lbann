@@ -158,9 +158,10 @@ remove spack environment:
   script:
     - echo "== REMOVING OLD BUILD RESOURCES =="
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - echo "I am looking in directory ${CI_BUILDS_DIR}"
-    - find ${CI_BUILDS_DIR} -maxdepth 1 -mtime +1 -name "spack-build-*" -type d -exec echo {} \;
-    - echo "I am looking in spack env dirctory ${SPACK_REPO}/var/spack/environments/"
+    - echo "I am looking in directory ${CI_BUILDS_DIR} or ${CI_PROJECT_DIR}"
+    - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +1 -name "spack-build-*" -type d -exec echo {} \;
+    - echo "I am looking in spack env dirctory ${HOME}/${SPACK_REPO}/var/spack/environments/"
+    - find ${HOME}/${SPACK_REPO}/var/spack/environments/ -maxdepth 1 -mtime +1 -type d -exec echo {} \;
     # - export SPACK_ARCH_TARGET=$(spack arch -t)
     # - export FULL_ENV_NAME=lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
     # - |
