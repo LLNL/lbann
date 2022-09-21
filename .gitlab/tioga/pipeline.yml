@@ -150,6 +150,25 @@ check catch2 tests:
 
 # Cleanup the pipeline's Spack environment.
 # Switching over to reusing Spack environments for each feature branch so don't remove them
+remove spack environment:
+  extends: .tioga common
+  stage: cleanup
+  variables:
+    GIT_STRATEGY: none
+  when: always
+  script:
+    - echo "== REMOVING OLD BUILD RESOURCES =="
+    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
+    - echo "I am looking in directory ${CI_BUILDS_DIR}"
+    - find ${CI_BUILDS_DIR} -maxdepth 1 -mtime +1 -name "spack-build-*" -type d -exec echo {} \;
+    - echo "I am looking in spack env dirctory ${SPACK_REPO}/var/spack/environments/"
+    # - export SPACK_ARCH_TARGET=$(spack arch -t)
+    # - export FULL_ENV_NAME=lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
+    # - |
+    #   if [[ -n "$(spack env list | grep -e ${FULL_ENV_NAME})" ]] ;
+    #   then
+    #     spack env rm --yes-to-all ${FULL_ENV_NAME}
+    #   fi
 
 # Free the allocation we obtained in "allocate lc resources".
 release allocation:

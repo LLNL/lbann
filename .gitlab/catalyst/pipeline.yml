@@ -70,6 +70,7 @@ build and install:
       - spack-build-*/CMakeCache.txt
       - spack-build-*/build.ninja
       - spack-build-*/spack-*.txt
+      - spack-ci-env-name.sh
       - ${RESULTS_DIR}/*
   script:
     - echo "== BUILDING LBANN =="
@@ -82,6 +83,9 @@ build and install:
       +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
     - export TEST_TASKS_PER_NODE=4
     - export TEST_MPIBIND_FLAG="--mpibind=off"
+    - echo "export SPACK_DEP_ENV_NAME=${SPACK_ENV_NAME}" > spack-ci-env-name.sh
+    - echo "export SPACK_ARCH=${SPACK_ARCH}" >> spack-ci-env-name.sh
+    - echo "export SPACK_ARCH_TARGET=${SPACK_ARCH_TARGET}" >> spack-ci-env-name.sh
     - .gitlab/common/run-catch-tests.sh
 
 # The next two jobs effectively replace the rest of "run.sh".
@@ -169,6 +173,25 @@ check catch2 tests:
 
 # Cleanup this pipeline's spack environment.
 # Switching over to reusing Spack environments for each feature branch so don't remove them
+remove spack environment:
+  extends: .pascal common
+  stage: cleanup
+  variables:
+    GIT_STRATEGY: none
+  when: always
+  script:
+    - echo "== REMOVING OLD BUILD RESOURCES =="
+    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
+    - echo "I am looking in directory ${CI_BUILDS_DIR}"
+    - find ${CI_BUILDS_DIR} -maxdepth 1 -mtime +1 -name "spack-build-*" -type d -exec echo {} \;
+    - echo "I am looking in spack env dirctory ${SPACK_REPO}/var/spack/environments/"
+    # - export SPACK_ARCH_TARGET=$(spack arch -t)
+    # - export FULL_ENV_NAME=lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
+    # - |
+    #   if [[ -n "$(spack env list | grep -e ${FULL_ENV_NAME})" ]] ;
+    #   then
+    #     spack env rm --yes-to-all ${FULL_ENV_NAME}
+    #   fi
 
 # This frees the allocation we obtained in "allocate lc resources".
 release allocation:
@@ -189,8 +212,7 @@ release allocation:
 .uses spack environment:
   before_script:
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - export SPACK_ARCH=$(spack arch)
-    - export SPACK_ARCH_TARGET=$(spack arch -t)
+    - source spack-ci-env-name.sh
     - spack env activate lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
     - spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
 
