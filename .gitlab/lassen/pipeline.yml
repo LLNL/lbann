@@ -80,7 +80,7 @@ remove spack environment:
     - echo "== REMOVING OLD BUILD RESOURCES =="
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +5 -name "spack-build-*" -type d -exec rm -r {} \;
-    - find ${HOME}/${SPACK_REPO}/var/spack/environments/ -maxdepth 1 -mtime +5 -type d -exec basename {} \; | xargs spack env rm --yes-to-all
+    - find ${HOME}/${SPACK_REPO}/var/spack/environments/ -maxdepth 1 -mtime +5 -type d -exec basename {} \; | xargs -r spack env rm --yes-to-all
 
 # Variables for Lassen. Because this test uses "test_compiler.py", we
 # don't need to specify the Spack spec or the job name.
