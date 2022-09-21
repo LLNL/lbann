@@ -24,7 +24,7 @@
 ## permissions and limitations under the license.
 ################################################################################
 
-# This is the testing pipeline for the Pascal cluster at LLNL. This
+# This is the testing pipeline for the Corona cluster at LLNL. This
 # cluster builds the LBANN applications and libraries using a single
 # compiler toolchain and then runs a collection of tests. Testing
 # output is in JUnit format and parsed by the pipeline for web
@@ -41,17 +41,21 @@ stages:
 # Get LC resources.
 allocate lc resources:
   stage: allocate
-  extends: .pascal common
+  extends: .tioga common
   variables:
     GIT_STRATEGY: none
   script:
-    - echo "== ACQUIRING SLURM RESOURCES =="
-    - salloc --exclusive -N 1 -p pbatch -t 45 --no-shell -J ${JOB_NAME}
+    - echo "== ACQUIRING FLUX RESOURCES =="
+    - echo "${WITH_WEEKLY:+Running with --weekly}"
+    - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "120m" || echo "90m")
+    - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
+    - jobid=$(flux mini batch -N ${LBANN_NNODES} -g 1 -t ${TEST_TIME} --job-name=${JOB_NAME} --wrap sleep inf)
+    - export JOB_ID=$jobid
   timeout: 6h
 
 # Build LBANN and establish the Spack environment for this pipeline.
 build and install:
-  extends: .pascal common
+  extends: .tioga common
   stage: build
   artifacts:
     paths:
@@ -63,33 +67,83 @@ build and install:
       - ${RESULTS_DIR}/*
   script:
     - echo "== BUILDING LBANN =="
-    - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
+    - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
+    - "export LBANN_NNODES=$(flux jobs -no {id}:{name}:{nnodes} | grep ${JOB_NAME} | awk -F: '{print $3}')"
     - export BUILD_TASKS=$(($(nproc) + 2))
     - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -r
-      -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS}
-      -e ./scripts/common_spack_packages/ci_spack_packages.sh
-      ${BUILD_SCRIPT_OPTIONS} -- 
+    - flux proxy ${JOB_ID} flux mini run -N 1 -t 30m ./scripts/build_lbann.sh -r
+      -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS} --
       +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
-    - export TEST_TASKS_PER_NODE=2
+    - export TEST_TASKS_PER_NODE=4
     - export TEST_MPIBIND_FLAG="--mpibind=off"
-    - export SPACK_ARCH=$(spack arch)
-    - export SPACK_ARCH_TARGET=$(spack arch -t)
+    - export SPACK_ARCH=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch)
+    - export SPACK_ARCH_TARGET=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t)
+    - export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
     - echo "export SPACK_DEP_ENV_NAME=${SPACK_ENV_NAME}" > spack-ci-env-name.sh
     - echo "export SPACK_ARCH=${SPACK_ARCH}" >> spack-ci-env-name.sh
     - echo "export SPACK_ARCH_TARGET=${SPACK_ARCH_TARGET}" >> spack-ci-env-name.sh
-    - .gitlab/common/run-catch-tests.sh
+    - flux proxy ${JOB_ID} .gitlab/common/run-catch-tests-flux.sh
 
-# This is a dummy job that checks the Catch2 testing.
-check catch2 tests:
+# Run the Python-based unit tests.
+unit tests:
   extends:
-    - .pascal common
+    - .tioga common
+    - .uses spack environment
   stage: test
   dependencies:
     - build and install
   script:
-    - ([[ $(find ${RESULTS_DIR} -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
+    - echo "== RUNNING PYTHON-BASED UNIT TESTS =="
+    - echo "Testing $(which lbann)"
+    - export OMP_NUM_THREADS=10
+    - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
+    - cd ci_test/unit_tests
+    - export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
+    - python3 -m pytest -s -vv --durations=0 --junitxml=results.xml
+  artifacts:
+    when: always
+    paths:
+      - ci_test/unit_tests/results.xml
+    reports:
+      junit: ci_test/unit_tests/results.xml
+
+# Run the Python-based integration tests.
+integration tests:
+  extends:
+    - .tioga common
+    - .uses spack environment
+  stage: test
+  dependencies:
+    - build and install
+  script:
+    - echo "== RUNNING PYTHON-BASED INTEGRATION TESTS =="
+    - echo "Testing $(which lbann)"
+    - export OMP_NUM_THREADS=10
+    - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
+    - cd ci_test/integration_tests
+    - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
+    - export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
+    - echo "python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml"
+    - python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml
+  artifacts:
+    when: always
+    paths:
+      - ci_test/integration_tests/results.xml
+    reports:
+      junit: ci_test/integration_tests/results.xml
+
+# This is a dummy job that checks the Catch2 testing.
+check catch2 tests:
+  variables:
+    GIT_STRATEGY: none
+  extends:
+    - .tioga common
+  stage: test
+  dependencies:
+    - build and install
+  script:
+    - ([[ $(find . -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
   artifacts:
     reports:
       junit: ${RESULTS_DIR}/*.xml
@@ -98,7 +152,7 @@ check catch2 tests:
 # Switching over to reusing Spack environments for each feature branch so don't remove them immediately
 # Cleanup any build directories and spack environments older than 5 days since last use
 remove spack environment:
-  extends: .pascal common
+  extends: .tioga common
   stage: deallocate
   variables:
     GIT_STRATEGY: none
@@ -112,41 +166,37 @@ remove spack environment:
 # Free the allocation we obtained in "allocate lc resources".
 release allocation:
   stage: deallocate
-  extends: .pascal common
+  extends: .tioga common
   variables:
     GIT_STRATEGY: none
   when: always
   script:
     - echo "== RELEASING RESOURCES =="
-    - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
-    - ([[ -n "${JOB_ID}" ]] && scancel ${JOB_ID})
+    - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
+    - ([[ -n "${JOB_ID}" ]] && flux job cancel ${JOB_ID})
 
 # Load the spack shell integration and load the environment.
 .uses spack environment:
   before_script:
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - source spack-ci-env-name.sh
-    - spack env activate lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
-    - spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
+    - spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
+    - spack load lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
 
-# Variables for Pascal.
-.pascal common:
+# Variables for Tioga.
+.tioga common:
   variables:
     # Just the obvious identifier. Which specific node doesn't matter.
-    SYSTEM_NAME: pascal
+    SYSTEM_NAME: tioga
     SPACK_REPO: spack_repos/spack_${SYSTEM_NAME}.git
 
     # This is based on the assumption that each runner will only ever
     # be able to run one pipeline on a given cluster at one time.
-    SPACK_ENV_NAME: gitlab-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-gcc-${CI_RUNNER_SHORT_TOKEN}
+    SPACK_ENV_NAME: gitlab-${CI_COMMIT_BRANCH}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}
 
     # These are system-specific specs that should be forwarded to the
     # build script
-#    BUILD_SCRIPT_OPTIONS: ""
-    
-    # These are system-specific specs that should be forwarded to the
-    # build script
-#    SPACK_SPECS: "+cuda +half +fft"
+    SPACK_SPECS: "+rocm"
 
     # This variable is the name used to identify the job in the Slurm
     # queue. We need this to be able to access the correct jobid.
@@ -158,9 +208,13 @@ release allocation:
     # Catch2 output.
     RESULTS_DIR: results-${CI_PIPELINE_ID}
 
+    # This needs to be imported here, too. Failure to do so causes
+    # problems if it's not set.
+    LBANN_CI_RUN_WEEKLY: ${LBANN_CI_RUN_WEEKLY}
+
     # Preserve any spack-build-* directories to allow for faster testing
     GIT_CLEAN_FLAGS: -ffdx -e spack-build-*
 
   tags:
-    - pascal
+    - tioga
     - shell

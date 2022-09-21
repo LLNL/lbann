@@ -410,6 +410,7 @@ CENTER_COMPILER=
 CENTER_DEPENDENCIES=
 CENTER_LINKER_FLAGS=
 CENTER_BLAS_LIBRARY=
+CENTER_PIP_PACKAGES=
 set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
 
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^hydrogen".* ]]; then
@@ -450,6 +451,10 @@ if [[ "${CENTER_COMPILER}" =~ .*"%gcc".* ]]; then
     CENTER_LINKER_FLAGS="+gold"
 fi
 
+if [[ -n "${CENTER_PIP_PACKAGES:-}" ]]; then
+    PIP_EXTRAS="${PIP_EXTRAS} ${CENTER_PIP_PACKAGES}"
+fi
+
 GPU_VARIANTS_ARRAY=('+cuda' '+rocm')
 DEPENDENT_PACKAGES_GPU_VARIANTS=
 for GPU_VARIANTS in ${GPU_VARIANTS_ARRAY[@]}
@@ -470,18 +475,25 @@ do
     fi
 done
 
+# There is a known problem on LC systems with older default compilers and their
+# associated C++ std libraries, python, and LBANN.  In these instances force
+# spack to build all of them with a consistent set of compilers
 # Check if the user explicitly doesn't want Python support inside of LBANN
+# or if the center uses standard PIP installed packages then assume that they have
+# the right C++ std libraries
 if [[ ! "${LBANN_VARIANTS}" =~ .*"~python".* ]]; then
-    # If Python support is not disabled add NumPy as an external for sanity
-    # Specifically, for use within the data reader, NumPy has to have the same
-    # C++ std library
-    if [[ ! "${PKG_LIST}" =~ .*"py-numpy".* ]]; then
-        PKG_LIST="${PKG_LIST} py-numpy@1.16.0:"
-    fi
-    # Include PyTest as a top level dependency because of a spack bug that fails
-    # to add it for building things like NumPy
-    if [[ ! "${PKG_LIST}" =~ .*"py-pytest".* ]]; then
-        PKG_LIST="${PKG_LIST} py-pytest"
+    if [[ -z ${CENTER_PIP_PACKAGES:-} ]]; then
+        # If Python support is not disabled add NumPy as an external for sanity
+        # Specifically, for use within the data reader, NumPy has to have the same
+        # C++ std library
+        if [[ ! "${PKG_LIST}" =~ .*"py-numpy".* ]]; then
+            PKG_LIST="${PKG_LIST} py-numpy@1.16.0:"
+        fi
+        # Include PyTest as a top level dependency because of a spack bug that fails
+        # to add it for building things like NumPy
+        if [[ ! "${PKG_LIST}" =~ .*"py-pytest".* ]]; then
+            PKG_LIST="${PKG_LIST} py-pytest"
+        fi
     fi
 fi
 
@@ -670,6 +682,13 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
     # Limit the scope of the external search to minimize overhead time
+    CRAY_MANIFEST="/opt/cray/pe/cpe-descriptive-manifest"
+    if [[ -e ${CRAY_MANIFEST} ]]; then
+       CMD="spack external read-cray-manifest --directory ${CRAY_MANIFEST} --fail-on-error"
+       echo ${CMD} | tee -a ${LOG}
+       [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    fi
+
     # Use standard tags for common packages
     CMD="spack external find --scope env:${LBANN_ENV} --tag core-packages --tag build-tools --tag rocm"
     echo ${CMD} | tee -a ${LOG}
@@ -854,7 +873,7 @@ fi
 if [[ -n "${PIP_EXTRAS:-}" ]]; then
     for p in ${PIP_EXTRAS}
     do
-        CMD="python -m pip install -r ${p}"
+        CMD="python3 -m pip install -r ${p}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     done
