@@ -174,8 +174,8 @@ check catch2 tests:
 # Cleanup this pipeline's spack environment.
 # Switching over to reusing Spack environments for each feature branch so don't remove them
 remove spack environment:
-  extends: .pascal common
-  stage: cleanup
+  extends: .catalyst common
+  stage: deallocate
   variables:
     GIT_STRATEGY: none
   when: always

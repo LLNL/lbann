@@ -151,7 +151,7 @@ check catch2 tests:
 # Switching over to reusing Spack environments for each feature branch so don't remove them
 remove spack environment:
   extends: .corona common
-  stage: cleanup
+  stage: deallocate
   variables:
     GIT_STRATEGY: none
   when: always
