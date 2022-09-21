@@ -149,7 +149,8 @@ check catch2 tests:
       junit: ${RESULTS_DIR}/*.xml
 
 # Cleanup the pipeline's Spack environment.
-# Switching over to reusing Spack environments for each feature branch so don't remove them
+# Switching over to reusing Spack environments for each feature branch so don't remove them immediately
+# Cleanup any build directories and spack environments older than 5 days since last use
 remove spack environment:
   extends: .tioga common
   stage: deallocate
@@ -159,17 +160,8 @@ remove spack environment:
   script:
     - echo "== REMOVING OLD BUILD RESOURCES =="
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - echo "I am looking in directory ${CI_BUILDS_DIR} or ${CI_PROJECT_DIR}"
-    - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +1 -name "spack-build-*" -type d -exec echo {} \;
-    - echo "I am looking in spack env dirctory ${HOME}/${SPACK_REPO}/var/spack/environments/"
-    - find ${HOME}/${SPACK_REPO}/var/spack/environments/ -maxdepth 1 -mtime +1 -type d -exec echo {} \;
-    # - export SPACK_ARCH_TARGET=$(spack arch -t)
-    # - export FULL_ENV_NAME=lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
-    # - |
-    #   if [[ -n "$(spack env list | grep -e ${FULL_ENV_NAME})" ]] ;
-    #   then
-    #     spack env rm --yes-to-all ${FULL_ENV_NAME}
-    #   fi
+    - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +5 -name "spack-build-*" -type d -exec rm -r {} \;
+    - find ${HOME}/${SPACK_REPO}/var/spack/environments/ -maxdepth 1 -mtime +5 -type d -exec basename {} \; | xargs spack env rm --yes-to-all
 
 # Free the allocation we obtained in "allocate lc resources".
 release allocation:
