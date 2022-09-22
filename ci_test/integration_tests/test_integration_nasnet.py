@@ -60,10 +60,12 @@ nightly_options_and_targets = {
     'num_epochs': 4,
     'mini_batch_size': 64,
     'expected_train_accuracy_range': (48, 65), # BVE relaxed lower bound from 50 9/21/22
-    'expected_test_accuracy_range': (50, 65),
+    'expected_test_accuracy_range': (59, 65), # BVE relaxed lower bound from 50 9/22/22
     'expected_mini_batch_times': {
         'lassen':   0.075,
         'pascal':   0.18, # BVE increased from 0.15, 9/21/22
+        'tioga':    0.18, # BVE dummy value from pascal
+        'corona':   0.18, # BVE dummy value from pascal
     }
 }
 

@@ -37,6 +37,7 @@ expected_mini_batch_times = {
     'lassen':   0.0022,
     'ray':      0.0029, # Changed as of 3/22/22 0.0025,
     'corona':   0.0117, # 0.0075,
+    'tioga':    0.0020, # BVE dummy value from pascal
 }
 
 # ==============================================

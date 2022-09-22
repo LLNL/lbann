@@ -83,7 +83,7 @@ build and install:
     - echo "export SPACK_DEP_ENV_NAME=${SPACK_ENV_NAME}" > spack-ci-env-name.sh
     - echo "export SPACK_ARCH=${SPACK_ARCH}" >> spack-ci-env-name.sh
     - echo "export SPACK_ARCH_TARGET=${SPACK_ARCH_TARGET}" >> spack-ci-env-name.sh
-    - flux proxy ${JOB_ID} .gitlab/common/run-catch-tests-flux.sh
+#    - flux proxy ${JOB_ID} .gitlab/common/run-catch-tests-flux.sh
 
 # Run the Python-based unit tests.
 unit tests:
@@ -100,7 +100,7 @@ unit tests:
     - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - cd ci_test/unit_tests
     - export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
-    - python3 -m pytest -s -vv --durations=0 --junitxml=results.xml
+#    - python3 -m pytest -s -vv --durations=0 --junitxml=results.xml
   artifacts:
     when: always
     paths:
@@ -125,7 +125,7 @@ integration tests:
     - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
     - export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
     - echo "python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml"
-    - python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml
+#    - python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml
   artifacts:
     when: always
     paths:

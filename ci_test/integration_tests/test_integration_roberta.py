@@ -74,6 +74,8 @@ nightly_options_and_targets = {
         "lassen": 1.0909, # BVE Changed again on 9/21/22 from 0.808 # Weird performance regression 3/21/2022 - 0.0440,
         "ray" : 0.578,
         "catalyst" : 7.45,
+        "tioga":  0.925, # BVE dummy value from pascal
+        "corona": 0.925, # BVE dummy value from pascal
     }
 }
 

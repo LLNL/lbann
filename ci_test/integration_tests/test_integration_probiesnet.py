@@ -52,6 +52,8 @@ nightly_options_and_targets = {
     'expected_mini_batch_times': {
         'lassen':   0.0069,
         'pascal':   0.0386, # BVE changed from 0.172, on 9/21/22
+        'tioga':    0.0386, # BVE dummy value from pascal
+        'corona':   0.0386, # BVE dummy value from pascal
     }
 }
 

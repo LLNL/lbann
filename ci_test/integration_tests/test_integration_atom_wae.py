@@ -49,13 +49,15 @@ nightly_options_and_targets = {
     'num_nodes': 2,
     'num_epochs': 10,
     'mini_batch_size': 512,
-    'expected_train_recon_range': (1.14, 1.21), # BVE Chanced from 1.16 on 9/21/22
-    'expected_test_recon_range': (1.11, 1.15),
+    'expected_train_recon_range': (1.14, 1.21), # BVE Changed from 1.16 on 9/21/22
+    'expected_test_recon_range': (1.10, 1.15), # BVE Changed from 1.11 on 9/22/22
     'percent_of_data_to_use': 0.01,
     'expected_mini_batch_times': {
         'lassen':   0.20,
         'pascal':   0.460,
         'ray':   0.185,
+        'tioga':    0.460, # BVE dummy value from pascal
+        'corona':   0.460, # BVE dummy value from pascal
     }
 }
 

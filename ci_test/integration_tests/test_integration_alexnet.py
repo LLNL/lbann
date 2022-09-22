@@ -58,6 +58,8 @@ nightly_options_and_targets = {
         'pascal': 0.100, # BVE tightened target test time from 1.574 on 9/21/22
         'lassen': 0.070,
         'ray':    0.075,
+        'tioga':  0.100, # BVE dummy value from pascal
+        'corona': 0.100, # BVE dummy value from pascal
     }
 }
 
