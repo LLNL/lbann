@@ -71,7 +71,7 @@ nightly_options_and_targets = {
     'percent_of_data_to_use': 0.01,
     'expected_mini_batch_times': {
         "pascal": 0.925, # Weird performance behavior 3/21/2022 - 0.1225,
-        "lassen": 0.808, # Weird performance regression 3/21/2022 - 0.0440,
+        "lassen": 1.0909, # BVE Changed again on 9/21/22 from 0.808 # Weird performance regression 3/21/2022 - 0.0440,
         "ray" : 0.578,
         "catalyst" : 7.45,
     }

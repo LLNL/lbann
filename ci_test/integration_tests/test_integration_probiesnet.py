@@ -46,12 +46,12 @@ nightly_options_and_targets = {
     'num_nodes': 1,
     'num_epochs': 10,
     'mini_batch_size': 32,
-    'expected_train_pc_range': (0.57, 0.59),
+    'expected_train_pc_range': (0.57, 0.60), # BVE change from 0.59 on 9/21/22
     'expected_test_pc_range': (0.66, 0.68),
     'percent_of_data_to_use': 0.01,
     'expected_mini_batch_times': {
         'lassen':   0.0069,
-        'pascal':   0.172,
+        'pascal':   0.0386, # BVE changed from 0.172, on 9/21/22
     }
 }
 

@@ -51,11 +51,11 @@ nightly_options_and_targets = {
     'num_nodes': 2,
     'num_epochs': 3,
     'mini_batch_size': 256,
-    'expected_train_accuracy_range': (.6, 1.1),
+    'expected_train_accuracy_range': (.5, 1.1), # Relaxed lower bound from .6 to .5 on 9/21/22 BVE
     'expected_test_accuracy_range': (0.45, 0.6),
     'percent_of_data_to_use': imagenet_fraction * 0.01,
     'expected_mini_batch_times': {
-        'pascal': 1.574,
+        'pascal': 0.100, # BVE tightened target test time from 1.574 on 9/21/22
         'lassen': 0.070,
         'ray':    0.075,
     }

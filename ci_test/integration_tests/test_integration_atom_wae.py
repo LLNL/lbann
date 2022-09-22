@@ -49,7 +49,7 @@ nightly_options_and_targets = {
     'num_nodes': 2,
     'num_epochs': 10,
     'mini_batch_size': 512,
-    'expected_train_recon_range': (1.16, 1.21),
+    'expected_train_recon_range': (1.14, 1.21), # BVE Chanced from 1.16 on 9/21/22
     'expected_test_recon_range': (1.11, 1.15),
     'percent_of_data_to_use': 0.01,
     'expected_mini_batch_times': {
