@@ -202,7 +202,7 @@ set_center_specific_spack_dependencies()
             "zen3") # Tioga, RZVernal
 #                CENTER_COMPILER="%cce@14.0.2"
                 CENTER_COMPILER="%rocmcc@5.2.3"
-                CENTER_DEPENDENCIES="^cray-mpich@8.1.19 ^hip@5.2.3 ^python@3.9.12"
+                CENTER_DEPENDENCIES="^cray-mpich@8.1.19 ^hip@5.2.3 ^python@3.9.12 ^aluminum@1.0.0-lbann +libfabric"
                 CENTER_BLAS_LIBRARY="blas=libsci"
                 # Override the conduit variants for the cray compilers
                 CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis~blt_find_mpi"
@@ -401,9 +401,17 @@ cat <<EOF  >> ${yaml}
       version:
       - 8.1.19
       externals:
-      - spec: "cray-mpich@8.1.19 arch=${spack_arch}"
+      - spec: cray-mpich@8.1.19 arch=${spack_arch}
         modules:
         - cray-mpich/8.1.19
+    libfabric:
+      buildable: false
+      version:
+      - 1.7.2-llnl
+      externals:
+      - spec: libfabric@1.7.2-llnl arch=${spack_arch}
+        modules:
+        - libfabric/1.7.2-llnl
 EOF
                 ;;
             *)

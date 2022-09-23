@@ -418,7 +418,7 @@ if [[ ! "${LBANN_VARIANTS}" =~ .*"^hydrogen".* ]]; then
     HYDROGEN="^hydrogen${HYDROGEN_VER} ${CENTER_BLAS_LIBRARY}"
 fi
 
-if [[ (! "${LBANN_VARIANTS}" =~ .*"^aluminum".*) && (! "${LBANN_VARIANTS}" =~ .*"~al".*) ]]; then
+if [[ (! "${LBANN_VARIANTS}" =~ .*"^aluminum".*) && (! "${LBANN_VARIANTS}" =~ .*"~al".*) && (! "${CENTER_DEPENDENCIES}" =~ .*"^aluminum".*) ]]; then
     # If the user didn't supply a specific version of Aluminum on the command line add one
     ALUMINUM="^aluminum${ALUMINUM_VER}"
 fi

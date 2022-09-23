@@ -79,6 +79,14 @@ def make_batch_script(
     # present in MVAPICH2-2.3rc2.
     set_environment('MV2_USE_RDMA_CM', 0)
 
+    # Optimizations for Tioga
+    if system in ('tioga'):
+        #set_environment('NCCL_SOCKET_IFNAME', 'hsi')
+        set_environment('MIOPEN_DEBUG_DISABLE_FIND_DB', '1')
+        set_environment('MIOPEN_DISABLE_CACHE', '1')
+        set_environment('NCCL_DEBUG', 'INFO')
+        set_environment('NCCL_DEBUG_SUBSYS', 'INIT')
+
     # Optimizations for Sierra-like systems
     if system in ('sierra', 'lassen', 'rzansel'):
 
@@ -96,7 +104,7 @@ def make_batch_script(
             launcher_args.append('--bind packed:{}'.format(cores_per_proc))
             launcher_args.append('--smpiargs="-gpu"')
 
-        # Hack to enable process forking
+        # Hack to enable process fork<<<ing
         # Note: InfiniBand is known to experience hangs if an MPI
         # process is forked (see
         # https://www.open-mpi.org/faq/?category=openfabrics#ofa-fork).
