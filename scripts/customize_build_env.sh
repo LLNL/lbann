@@ -252,6 +252,10 @@ set_center_specific_spack_dependencies()
                 CENTER_DEPENDENCIES="^hdf5+hl"
                 CENTER_BLAS_LIBRARY="blas=accelerate"
                 ;;
+            "m1")
+                CENTER_DEPENDENCIES="^hdf5+hl"
+                CENTER_BLAS_LIBRARY="blas=accelerate"
+                ;;
             *)
                 echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
                 ;;
@@ -534,6 +538,10 @@ cleanup_clang_compilers()
             sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/usr\/tce\/bin\/gfortran/g' ${yaml}
             echo "Updating Clang compiler's to see the gfortran compiler."
         fi
+    elif [[ ${center} = "osx" ]]; then
+        # Point compilers that don't have a fortran compiler a default one
+        sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/opt\/homebrew\/bin\/gfortran/g' ${yaml}
+        echo "Updating Clang compiler's to see the homebrew gfortran compiler."
     else
         # Point compilers that don't have a fortran compiler a default one
         sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/usr\/bin\/gfortran/g' ${yaml}

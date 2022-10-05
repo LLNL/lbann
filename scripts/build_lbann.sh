@@ -27,7 +27,11 @@ ALLOW_BACKEND_BUILDS=
 # Flag for passing subcommands to spack dev-build
 DEV_BUILD_FLAGS=
 # Flag for passing subcommands to spack install
+if [[ ${SYS} = "Darwin" ]]; then
+BUILD_JOBS="-j $(($(sysctl -n hw.physicalcpu)/2+2))"
+else
 BUILD_JOBS="-j $(($(nproc)/2+2))"
+fi
 
 LBANN_VARIANTS=
 CMD_LINE_VARIANTS=
