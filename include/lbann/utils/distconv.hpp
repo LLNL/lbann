@@ -40,6 +40,7 @@
 #endif
 
 #include "distconv/distconv.hpp"
+#include "distconv/cudnn/backend.hpp"
 #include "distconv/tensor/tensor_mpi_cuda.hpp"
 #include "distconv/tensor/shuffle_mpi.hpp"
 #include "distconv/tensor/shuffle_mpi_cuda.hpp"
@@ -54,6 +55,15 @@
 
 #include "lbann/layers/learning/distconv/distconv_layers.hpp"
 namespace lbann {
+
+inline auto default_hydrogen_stream()
+{
+#if H2_HAS_CUDA
+  return hydrogen::cuda::GetDefaultStream();
+#elif H2_HAS_ROCM
+  return hydrogen::rocm::GetDefaultStream();
+#endif
+}
 
 class Layer;
 
@@ -109,7 +119,7 @@ using MPIRootPrintStreamInfo = ::distconv::util::MPIRootPrintStreamInfo;
 using MPIRootPrintStreamWaning = ::distconv::util::MPIRootPrintStreamWarning;
 
 // Distconv layer classes
-using Backend = ::distconv::cudnn::BackendCUDNN;
+using Backend = ::distconv::BackendDNNLib;
 using ReLU = ::distconv::ReLU<Backend>;
 using LeakyReLU = ::distconv::LeakyReLU<Backend>;
 template <typename TensorDataType>
@@ -232,7 +242,7 @@ Dist get_hydrogen_data_parallel_distribution(int num_dims);
 template <typename Tensor>
 void dump_tensor(const Tensor &t, const std::string &path) {
   dc::MPIPrintStreamDebug() << "Dumping tensor to " << path;
-  cudaDeviceSynchronize();
+  h2::gpu::sync();
   distconv::dump_tensor(t, path, true);
 }
 

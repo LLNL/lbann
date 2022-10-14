@@ -48,25 +48,25 @@ namespace distconv{
             tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output);
 
     template <typename Allocator>
-    int apply_bias(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &bias, 
+    int apply_bias(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &bias,
                  tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output);
-    
+
     template <typename Allocator>
     int backward_wrt_input(
       bool transpose_A,
       const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,
       const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &linearity,
       tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input_grad);
-    
+
     template <typename Allocator>
     int backward_wrt_weight(
       bool transpose,
       DataType dst_scale,
       DataType gradient_scale,
-      const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input, 
+      const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input,
       const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,
       tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &linearity_grad);
-    
+
     template <typename Allocator>
     int backward_wrt_bias(
       DataType gradient_scale,
@@ -80,21 +80,21 @@ namespace distconv{
 
 
   template <typename DataType, typename locale, typename Allocator>
-  tensor::Shape 
+  tensor::Shape
   get_fc_output_local_tensor_shape(const tensor::Tensor<DataType, locale, Allocator> &input,
                                    const int_vector &linearity_dims,
                                    bool transpose){
 
     //https://github.com/LLNL/DiHydrogen/blob/7f86db1f9701ac3afb5e16aefdd57563d57a1698/legacy/include/distconv/distconv.hpp#L173
 
-    //Get the input layer local tensor shape 
+    //Get the input layer local tensor shape
 
     auto output_local_shape = input.get_local_shape();
     output_local_shape[0] = transpose? linearity_dims[1] : linearity_dims[0];
     return output_local_shape;
   }
-extern template class ChannelwiseFullyConnected<::distconv::cudnn::BackendCUDNN, float>;
-extern template class ChannelwiseFullyConnected<::distconv::cudnn::BackendCUDNN, double>;
+extern template class ChannelwiseFullyConnected<::distconv::BackendDNNLib, float>;
+extern template class ChannelwiseFullyConnected<::distconv::BackendDNNLib, double>;
 }  // namespace distconv
 
 #endif // LBANN_HAS_DISTCONV

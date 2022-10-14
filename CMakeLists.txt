@@ -219,9 +219,19 @@ find_package(Hydrogen 1.5.0 CONFIG REQUIRED)
 message(STATUS "Found Hydrogen@${HYDROGEN_VERSION}: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
 
+# CUDA-ness of LBANN is 1:1 with Hydrogen. Iff Hydrogen has CUDA,
+# LBANN gets CUDA.
+set(LBANN_HAS_CUDA ${_HYDROGEN_HAVE_CUDA})
+set(LBANN_WITH_CUDA ${LBANN_HAS_CUDA})
+
+set(LBANN_HAS_ROCM ${_HYDROGEN_HAVE_ROCM})
+if (LBANN_HAS_CUDA OR LBANN_HAS_ROCM)
+  set(LBANN_HAS_GPU TRUE)
+endif ()
+
 # DiHydrogen and Distconv
 if (LBANN_WITH_DISTCONV)
-  find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns DistConv)
+  find_package(DiHydrogen 0.3.0 CONFIG REQUIRED COMPONENTS Meta Patterns DistConv)
   set(LBANN_HAS_DISTCONV TRUE)
   set(LBANN_H2_LIBS
     H2::H2Meta
@@ -290,16 +300,6 @@ if (LBANN_WITH_ONEDNN)
   else ()
     set(LBANN_HAS_ONEDNN_GPU FALSE)
   endif ()
-endif ()
-
-# CUDA-ness of LBANN is 1:1 with Hydrogen. Iff Hydrogen has CUDA,
-# LBANN gets CUDA.
-set(LBANN_HAS_CUDA ${_HYDROGEN_HAVE_CUDA})
-set(LBANN_WITH_CUDA ${LBANN_HAS_CUDA})
-
-set(LBANN_HAS_ROCM ${_HYDROGEN_HAVE_ROCM})
-if (LBANN_HAS_CUDA OR LBANN_HAS_ROCM)
-  set(LBANN_HAS_GPU TRUE)
 endif ()
 
 # Only used if have GPU and have CPU half.

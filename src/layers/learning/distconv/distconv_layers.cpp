@@ -331,7 +331,7 @@ namespace distconv{
     const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &output_gradient, \
     tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &bias_gradient);
 
-ETI(float, cudnn::BackendCUDNN)
-ETI(double, cudnn::BackendCUDNN)
+ETI(float, BackendDNNLib)
+ETI(double, BackendDNNLib)
 #undef ETI
 } // namespace distconv
