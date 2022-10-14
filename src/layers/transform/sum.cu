@@ -70,7 +70,8 @@ void sum_distconv_adapter<TensorDataType, Layout, Dev>::fp_compute() {
       activations.zero(default_hydrogen_stream());
       break;
     case 1:
-      dc::tensor::Copy(activations, this->get_prev_activations(),
+      dc::tensor::Copy(activations,
+                       this->get_prev_activations(),
                        default_hydrogen_stream());
       break;
     case 2:
@@ -89,10 +90,12 @@ void sum_distconv_adapter<TensorDataType, Layout, Dev>::fp_compute() {
         auto &prev_activations = this->get_prev_activations(i);
         prev_activations.set_outermost_dimension(activations.get_shape()[-1]);
         if (i == 0) {
-          dc::tensor::Copy(activations, prev_activations,
+          dc::tensor::Copy(activations,
+                           prev_activations,
                            default_hydrogen_stream());
         } else {
-          distconv::tensor::Transform(activations, prev_activations,
+          distconv::tensor::Transform(activations,
+                                      prev_activations,
                                       accumulate_op<TensorDataType>(),
                                       default_hydrogen_stream());
         }

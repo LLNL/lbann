@@ -290,13 +290,15 @@ void initialize(MPI_Comm comm) {
 #ifdef DISTCONV_HAS_P2P
   p2p_instance = new p2p::P2P(mpi_comm);
 #endif // DISTCONV_HAS_P2P
-  hosttransfer_comm_instance = new Al::hosttransfer_backend::comm_type(
-      mpi_comm, default_hydrogen_stream());
+  hosttransfer_comm_instance =
+    new Al::hosttransfer_backend::comm_type(mpi_comm,
+                                            default_hydrogen_stream());
   ::distconv::backend::Options backend_opts;
   backend_opts.m_deterministic = opt_deterministic;
-  backend_instance = new Backend(
-      mpi_comm, lbann::dnn_lib::get_handle(),
-      default_hydrogen_stream(), backend_opts);
+  backend_instance = new Backend(mpi_comm,
+                                 lbann::dnn_lib::get_handle(),
+                                 default_hydrogen_stream(),
+                                 backend_opts);
   print_options(std::cout);
   initialized = true;
 }

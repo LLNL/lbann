@@ -133,11 +133,13 @@ struct CheckWeightsFunctor : DefaultErrorReporter
     // Get weights matrix and gradient
     const auto& weights_matrix = dtw.get_values();
     const auto& gradient = dtw.get_optimizer()->get_gradient();
-    //std::cout << "*** CHECKING WEIGHTS: NAME=" << dtw.get_name() << ", SIZE=" << weights_matrix.Height() << "x" << weights_matrix.Width() << std::endl;
+    // std::cout << "*** CHECKING WEIGHTS: NAME=" << dtw.get_name() << ", SIZE="
+    // << weights_matrix.Height() << "x" << weights_matrix.Width() << std::endl;
     // Iterate through weights matrix entries
     for (El::Int col = 0; col < weights_matrix.Width(); ++col) {
       for (El::Int row = 0; row < weights_matrix.Height(); ++row) {
-        //std::cout << "*** CHECKING WEIGHTS (name=" << dtw.get_name() << "): row=" << row << ", col=" << col << std::endl;
+        // std::cout << "*** CHECKING WEIGHTS (name=" << dtw.get_name() << "):
+        // row=" << row << ", col=" << col << std::endl;
         const bool weight_is_local = weights_matrix.IsLocal(row, col);
         const El::Int local_row = (weight_is_local
                                    ? weights_matrix.LocalRow(row)

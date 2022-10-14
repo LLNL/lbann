@@ -91,7 +91,8 @@ void split_distconv_adapter<TensorDataType, Layout, Dev>::bp_compute() {
                        default_hydrogen_stream());
       for (int i = 1; i < this->layer().get_num_children(); ++i) {
         const auto &prev_error = this->get_prev_error_signals(i);
-        dc::tensor::Transform(error_signals, prev_error,
+        dc::tensor::Transform(error_signals,
+                              prev_error,
                               accumulate_op<TensorDataType>(),
                               default_hydrogen_stream());
       }

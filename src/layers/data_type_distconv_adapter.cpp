@@ -797,9 +797,9 @@ void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::ensu
         get_original_prev_activations(),
         get_prev_activations());
     shuffler.shuffle_forward(
-        get_original_prev_activations().get_const_base_ptr(),
-        get_prev_activations().get_base_ptr(),
-        default_hydrogen_stream());
+      get_original_prev_activations().get_const_base_ptr(),
+      get_prev_activations().get_base_ptr(),
+      default_hydrogen_stream());
   }
 }
 
@@ -818,10 +818,9 @@ void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::copy
     auto &shuffler = get_activations_shuffler(
         get_activations(),
         get_original_activations());
-    shuffler.shuffle_forward(
-        get_activations().get_const_base_ptr(),
-        get_original_activations().get_base_ptr(),
-        default_hydrogen_stream());
+    shuffler.shuffle_forward(get_activations().get_const_base_ptr(),
+                             get_original_activations().get_base_ptr(),
+                             default_hydrogen_stream());
   }
 }
 
@@ -846,9 +845,9 @@ void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::ensu
         get_original_prev_error_signals(i),
         get_prev_error_signals(i));
     shuffler.shuffle_forward(
-        get_original_prev_error_signals(i).get_const_base_ptr(),
-        get_prev_error_signals(i).get_base_ptr(),
-        default_hydrogen_stream());
+      get_original_prev_error_signals(i).get_const_base_ptr(),
+      get_prev_error_signals(i).get_base_ptr(),
+      default_hydrogen_stream());
   }
 }
 
@@ -868,10 +867,9 @@ void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::copy
     auto &shuffler = get_error_signals_shuffler(
         get_error_signals(i),
         get_original_error_signals(i));
-    shuffler.shuffle_forward(
-        get_error_signals(i).get_const_base_ptr(),
-        get_original_error_signals(i).get_base_ptr(),
-        default_hydrogen_stream());
+    shuffler.shuffle_forward(get_error_signals(i).get_const_base_ptr(),
+                             get_original_error_signals(i).get_base_ptr(),
+                             default_hydrogen_stream());
   }
 }
 

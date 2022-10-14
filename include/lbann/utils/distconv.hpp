@@ -39,13 +39,13 @@
 #define DISTCONV_DEBUG
 #endif
 
-#include "distconv/distconv.hpp"
 #include "distconv/cudnn/backend.hpp"
-#include "distconv/tensor/tensor_mpi_cuda.hpp"
+#include "distconv/distconv.hpp"
+#include "distconv/tensor/algorithms.hpp"
 #include "distconv/tensor/shuffle_mpi.hpp"
 #include "distconv/tensor/shuffle_mpi_cuda.hpp"
 #include "distconv/tensor/shuffle_mpi_cuda_al.hpp"
-#include "distconv/tensor/algorithms.hpp"
+#include "distconv/tensor/tensor_mpi_cuda.hpp"
 #include "distconv/util/util.hpp"
 #ifdef DISTCONV_HAS_P2P
 #include "p2p/p2p.hpp"

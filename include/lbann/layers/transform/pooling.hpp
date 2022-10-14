@@ -70,7 +70,8 @@ class pooling_distconv_adapter : public data_type_distconv_adapter<TensorDataTyp
   void setup_distributions(tensor_overlap_constraints &constraints) override;
   dc::Shape get_activations_local_shape(int index=0) const override;
   void setup_layer(size_t workspace_capacity) override;
-  void fp_compute(bool training = true); // training=true for max back-compatibility.
+  void
+  fp_compute(bool training = true); // training=true for max back-compatibility.
   void bp_compute();
   std::unique_ptr<dc::Pooling<TensorDataType>> m_pooling;
 };
@@ -296,41 +297,15 @@ protected:
     if(this->using_gpus()) {
 #ifdef LBANN_HAS_DISTCONV
       if (this->distconv_enabled()) {
-        static size_t counter = 0;
-        ++counter;
-        const auto& mode
-          = this->m_model->get_execution_context().get_execution_mode();
-        if (counter % 10000 == 0) {
-          std::cout << "** DC POOLING: " << counter
-                    << " (this=" << this << ", mode=" << to_string(mode) << ") **"
-                    << std::endl;
-        }
+        const auto& mode =
+          this->m_model->get_execution_context().get_execution_mode();
         get_distconv_adapter().fp_compute(mode == execution_mode::training);
         return;
       }
 #endif // LBANN_HAS_DISTCONV
-      {
-        static size_t counter = 0;
-        ++counter;
-        if (counter % 10000 == 0) {
-          const auto& mode
-            = this->m_model->get_execution_context().get_execution_mode();
-          std::cout << "** POOLING: " << ++counter
-                    << " (this=" << this << ", mode=" << to_string(mode) << ") **"
-                    << std::endl;
-        }
-      }
       fp_compute_dnn();
     }
     else {
-      {
-        static size_t counter = 0;
-        const auto& mode
-          = this->m_model->get_execution_context().get_execution_mode();
-        std::cout << "** IM2COL POOLING: " << ++counter
-                  << " (this=" << this << ", mode=" << to_string(mode) << ") **"
-                  << std::endl;
-      }
       fp_compute_im2col();
     }
   }
@@ -831,10 +806,14 @@ setup_layer(size_t workspace_capacity) {
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void pooling_distconv_adapter<TensorDataType, Layout, Device>::
-fp_compute(bool const training) {
-  m_pooling->forward(El::To<TensorDataType>(1), this->get_prev_activations(),
-                     El::To<TensorDataType>(0), this->get_activations(), training);
+void pooling_distconv_adapter<TensorDataType, Layout, Device>::fp_compute(
+  bool const training)
+{
+  m_pooling->forward(El::To<TensorDataType>(1),
+                     this->get_prev_activations(),
+                     El::To<TensorDataType>(0),
+                     this->get_activations(),
+                     training);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
