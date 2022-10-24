@@ -105,7 +105,7 @@ def make_batch_script(
             launcher_args.append('--bind packed:{}'.format(cores_per_proc))
             launcher_args.append('--smpiargs="-gpu"')
 
-        # Hack to enable process fork<<<ing
+        # Hack to enable process forking
         # Note: InfiniBand is known to experience hangs if an MPI
         # process is forked (see
         # https://www.open-mpi.org/faq/?category=openfabrics#ofa-fork).
