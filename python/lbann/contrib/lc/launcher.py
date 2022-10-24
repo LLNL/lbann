@@ -86,6 +86,7 @@ def make_batch_script(
         set_environment('MIOPEN_DISABLE_CACHE', '1')
         set_environment('NCCL_DEBUG', 'INFO')
         set_environment('NCCL_DEBUG_SUBSYS', 'INIT')
+        set_environment('LD_LIBRARY_PATH', '"${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}"')
 
     # Optimizations for Sierra-like systems
     if system in ('sierra', 'lassen', 'rzansel'):

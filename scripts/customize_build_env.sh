@@ -112,10 +112,7 @@ set_center_specific_modules()
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
             "zen3") # Tioga, RZVernal
-#                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.09.0 amd/5.2.3 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-amd/8.3.3 StdEnv cmake/3.23.1"
-                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.09.0 cce/14.0.3 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-cray/8.3.3 StdEnv cmake/3.23.1 rocm/5.2.3"
-# Possible suggestion from John, but it doesn't work                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.06.0 cce/14.0.3 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-cray/8.3.3 StdEnv cmake/3.23.1 rocmcc-tce/5.2.3-cce-14.0.3"
-                # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
+                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.09.0 amd/5.3.0 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-amd/8.3.3 StdEnv cmake/3.23.1"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -200,9 +197,8 @@ set_center_specific_spack_dependencies()
                 CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
                 ;;
             "zen3") # Tioga, RZVernal
-#                CENTER_COMPILER="%cce@14.0.2"
-                CENTER_COMPILER="%rocmcc@5.2.3"
-                CENTER_DEPENDENCIES="^cray-mpich@8.1.19 ^hip@5.2.3 ^python@3.9.12 ^aluminum@1.0.0-lbann +libfabric"
+                CENTER_COMPILER="%rocmcc@5.3.0"
+                CENTER_DEPENDENCIES="^cray-mpich@8.1.19 ^hip@5.3.0 ^python@3.9.12 ^aluminum@1.0.0-lbann +ofi_libfabric_plugin"
                 CENTER_BLAS_LIBRARY="blas=libsci"
                 # Override the conduit variants for the cray compilers
                 CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis~blt_find_mpi"
@@ -356,7 +352,7 @@ EOF
 cat <<EOF  >> ${yaml}
   compilers:
   - compiler:
-      spec: rocmcc@5.2.3
+      spec: rocmcc@5.3.0
       paths:
         cc: cc
         cxx: CC
@@ -367,7 +363,7 @@ cat <<EOF  >> ${yaml}
       target: any
       modules:
       - PrgEnv-amd
-      - amd/5.2.3
+      - amd/5.3.0
       environment: {}
       extra_rpaths: []
   packages:
@@ -377,17 +373,17 @@ cat <<EOF  >> ${yaml}
     hipcub:
       buildable: False
       version:
-      - 5.2.3
+      - 5.3.0
       externals:
-      - spec: hipcub@5.2.3 arch=${spack_arch}
-        prefix: /opt/rocm-5.2.3/hipcub
+      - spec: hipcub@5.3.0 arch=${spack_arch}
+        prefix: /opt/rocm-5.3.0/hipcub
     llvm-amdgpu:
       buildable: False
       version:
-      - 5.2.3
+      - 5.3.0
       externals:
-      - spec: llvm-amdgpu@5.2.3 arch=${spack_arch}
-        prefix: /opt/rocm-5.2.3/llvm
+      - spec: llvm-amdgpu@5.3.0 arch=${spack_arch}
+        prefix: /opt/rocm-5.3.0/llvm
     cray-libsci:
       buildable: False
       version:
