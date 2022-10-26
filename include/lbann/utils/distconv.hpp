@@ -62,6 +62,7 @@
 #include "lbann/layers/transform/distconv/distconv_nvshmem_vector_addressing.hpp"
 #endif // LBANN_HAS_NVSHMEM
 
+#include "lbann/layers/misc/distconv/distconv_channelwise_softmax.hpp"
 namespace lbann {
 
 inline auto default_hydrogen_stream()
