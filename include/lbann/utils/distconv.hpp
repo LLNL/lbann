@@ -53,6 +53,16 @@
 #include "p2p/p2p.hpp"
 #endif // DISTCONV_HAS_P2P
 
+#include "lbann/layers/learning/distconv/distconv_layers.hpp"
+#include "lbann/layers/math/distconv/distconv_matmul.hpp"
+
+#ifdef LBANN_HAS_NVSHMEM
+#include "lbann/layers/transform/distconv/distconv_scatter.hpp"
+#include "lbann/layers/transform/distconv/distconv_gather.hpp"
+#include "lbann/layers/transform/distconv/distconv_nvshmem_vector_addressing.hpp"
+#endif // LBANN_HAS_NVSHMEM
+
+#include "lbann/layers/misc/distconv/distconv_channelwise_softmax.hpp"
 namespace lbann {
 
 inline auto default_hydrogen_stream()
