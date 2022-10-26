@@ -73,6 +73,7 @@
 #include "lbann/callbacks/timer.hpp"
 #include "lbann/callbacks/variable_minibatch.hpp"
 #include "lbann/callbacks/set_weights_value.hpp"
+#include "lbann/callbacks/alternate_updates.hpp"
 
 #include "lbann/proto/factories.hpp"
 #include "lbann/utils/factory.hpp"
@@ -185,6 +186,8 @@ void register_default_builders(factory_type& factory)
                            build_profiler_callback_from_pbuf);
   factory.register_builder("CallbackReplaceWeights",
                            build_replace_weights_callback_from_pbuf);
+  factory.register_builder("CallbackAlternateUpdates",
+                           build_alternate_updates_callback_from_pbuf);
   factory.register_builder("CallbackSaveImages",
                            build_save_images_callback_from_pbuf);
   factory.register_builder("CallbackSaveModel",
