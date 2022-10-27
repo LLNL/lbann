@@ -46,6 +46,12 @@ def make_batch_script(
         if key not in environment:
             environment[key] = os.getenv(key, default)
 
+    def prepend_environment_path(key, prefix):
+        if key not in environment:
+            environment[key] = prefix + ":" + os.getenv(key)
+        else:
+            environment[key] = prefix + ":" + environment[key]
+
     # Setup GPU bindings
     # Note: Each Hydrogen process is assigned to the GPU index that
     # matches its node communicator rank. This is not compatible with
@@ -84,7 +90,8 @@ def make_batch_script(
         #set_environment('NCCL_SOCKET_IFNAME', 'hsi')
         set_environment('MIOPEN_DEBUG_DISABLE_FIND_DB', '1')
         set_environment('MIOPEN_DISABLE_CACHE', '1')
-        set_environment('LD_LIBRARY_PATH', '"${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}"')
+        prepend_environment_path('LD_LIBRARY_PATH', os.getenv('CRAY_LD_LIBRARY_PATH'))
+        prepend_environment_path('LD_LIBRARY_PATH', '/opt/rocm-5.3.0/llvm/lib')
 
     # Optimizations for Sierra-like systems
     if system in ('sierra', 'lassen', 'rzansel'):
