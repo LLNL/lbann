@@ -47,7 +47,6 @@ def make_batch_script(
             environment[key] = os.getenv(key, default)
 
     def prepend_environment_path(key, prefix):
-        print(environment)
         if key not in environment:
             environment[key] = prefix + ":" + os.getenv(key)
         else:
