@@ -773,7 +773,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     # Limit the scope of the external search to minimize overhead time
     # CRAY_MANIFEST="/opt/cray/pe/cpe-descriptive-manifest"
     # if [[ -e ${CRAY_MANIFEST} ]]; then
-    #    CMD="spack external read-cray-manifest --directory ${CRAY_MANIFEST} --fail-on-error"
+    #    CMD="spack external read-cray-manifest --directory ${CRAY_MANIFEST}"
     #    echo ${CMD} | tee -a ${LOG}
     #    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     # fi
