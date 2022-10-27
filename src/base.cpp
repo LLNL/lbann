@@ -431,6 +431,7 @@ CEREAL_FORCE_DYNAMIC_INIT(batch_normalization_layer);
 CEREAL_FORCE_DYNAMIC_INIT(batchwise_reduce_sum_layer);
 CEREAL_FORCE_DYNAMIC_INIT(bernoulli_layer);
 CEREAL_FORCE_DYNAMIC_INIT(bilinear_resize_layer);
+CEREAL_FORCE_DYNAMIC_INIT(binary_switch_layer);
 CEREAL_FORCE_DYNAMIC_INIT(categorical_accuracy_layer);
 CEREAL_FORCE_DYNAMIC_INIT(categorical_random_layer);
 CEREAL_FORCE_DYNAMIC_INIT(channelwise_fully_connected_layer);

@@ -96,6 +96,7 @@
 #include "lbann/layers/transform/sort.hpp"
 #include "lbann/layers/transform/weights.hpp"
 #include "lbann/layers/transform/tessellate.hpp"
+#include "lbann/layers/transform/binary_switch.hpp"
 
 /// Regularization layers
 #include "lbann/layers/regularizers/local_response_normalization.hpp"

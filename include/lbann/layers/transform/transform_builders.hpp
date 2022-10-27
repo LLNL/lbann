@@ -32,6 +32,7 @@ namespace lbann {
 
 LBANN_DEFINE_LAYER_BUILDER(batchwise_reduce_sum);
 LBANN_DEFINE_LAYER_BUILDER(bernoulli);
+LBANN_DEFINE_LAYER_BUILDER(binary_switch);
 LBANN_DEFINE_LAYER_BUILDER(categorical_random);
 LBANN_DEFINE_LAYER_BUILDER(concatenate);
 LBANN_DEFINE_LAYER_BUILDER(constant);

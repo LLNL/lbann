@@ -27,6 +27,7 @@
 set_full_path(THIS_DIR_SOURCES
   batchwise_reduce_sum.cpp
   bernoulli.cpp
+  binary_switch.cpp
   categorical_random.cpp
   concatenate.cpp
   constant.cpp
