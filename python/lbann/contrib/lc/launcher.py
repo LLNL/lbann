@@ -90,7 +90,8 @@ def make_batch_script(
         #set_environment('NCCL_SOCKET_IFNAME', 'hsi')
         set_environment('MIOPEN_DEBUG_DISABLE_FIND_DB', '1')
         set_environment('MIOPEN_DISABLE_CACHE', '1')
-        prepend_environment_path('LD_LIBRARY_PATH', '/opt/rocm-5.3.0/llvm/lib:' + os.getenv("CRAY_LD_LIBRARY_PATH"))
+        prepend_environment_path('LD_LIBRARY_PATH', os.getenv('CRAY_LD_LIBRARY_PATH'))
+        prepend_environment_path('LD_LIBRARY_PATH', '/opt/rocm-5.3.0/llvm/lib')
 
     # Optimizations for Sierra-like systems
     if system in ('sierra', 'lassen', 'rzansel'):
