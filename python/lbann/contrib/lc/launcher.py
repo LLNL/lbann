@@ -79,6 +79,13 @@ def make_batch_script(
     # present in MVAPICH2-2.3rc2.
     set_environment('MV2_USE_RDMA_CM', 0)
 
+    # Optimizations for Tioga
+    if system in ('tioga'):
+        #set_environment('NCCL_SOCKET_IFNAME', 'hsi')
+        set_environment('MIOPEN_DEBUG_DISABLE_FIND_DB', '1')
+        set_environment('MIOPEN_DISABLE_CACHE', '1')
+        set_environment('LD_LIBRARY_PATH', '"${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}"')
+
     # Optimizations for Sierra-like systems
     if system in ('sierra', 'lassen', 'rzansel'):
 
