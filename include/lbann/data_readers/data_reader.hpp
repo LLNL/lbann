@@ -400,6 +400,9 @@ class generic_data_reader {
     else if (data_field == INPUT_DATA_TYPE_RESPONSES) {
       return get_linearized_response_size();
     }
+    else if (data_field == INPUT_DATA_TYPE_LABEL_RECONSTRUCTION) {
+      return get_linearized_data_size();
+    }
     else {
       LBANN_ERROR("Unknown data_field_type value provided: " + data_field);
     }

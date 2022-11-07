@@ -257,7 +257,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--depth-groups', action='store', type=int, default=4,
         help='the number of processes for the depth dimension (default: 4)')
-    default_lc_dataset = '/p/gpfs1/brainusr/datasets/LiTS/hdf5_dim128_float'
+    default_lc_dataset = '/p/vast1/lbann/datasets/LiTS/hdf5_dim128_float'
     default_train_dir = '{}/train'.format(default_lc_dataset)
     default_test_dir = '{}/test'.format(default_lc_dataset)
     parser.add_argument(
@@ -289,16 +289,14 @@ if __name__ == '__main__':
         depth_groups=args.depth_groups)
 
     # Construct layer graph
-    input = lbann.Input(
-        target_mode='label_reconstruction')
-    volume = lbann.Identity(input)
+    volume = lbann.Input(data_field='samples')
+    segmentation = lbann.Input(data_field='label_reconstruction')
     output = UNet3D()(volume)
-    segmentation = lbann.Identity(input)
     ce = lbann.CrossEntropy(
         [output, segmentation],
         use_labels=True)
     obj = lbann.ObjectiveFunction([ce])
-    layers = list(lbann.traverse_layer_graph(input))
+    layers = list(lbann.traverse_layer_graph([volume, segmentation]))
     for l in layers:
         l.parallel_strategy = parallel_strategy
 

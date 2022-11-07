@@ -219,6 +219,7 @@ void init_data_readers(
                                                           key_responses,
                                                           hyperslab_labels);
       reader_hdf5->set_has_data_field(INPUT_DATA_TYPE_SAMPLES, true);
+      reader_hdf5->set_has_data_field(INPUT_DATA_TYPE_LABEL_RECONSTRUCTION, true);
       reader_hdf5->set_has_labels(!readme.disable_labels());
       reader_hdf5->set_has_responses(!readme.disable_responses());
       reader_hdf5->set_num_responses(readme.num_responses());

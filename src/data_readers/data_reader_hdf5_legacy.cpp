@@ -242,6 +242,36 @@ void hdf5_reader<TensorDataType>::load() {
 }
 
 template <typename TensorDataType>
+void hdf5_reader<TensorDataType>::load_sample(conduit::Node& node,
+                                   int data_id)
+{
+  const std::string conduit_key = LBANN_DATA_ID_STR(data_id);
+  auto &conduit_obj = node[conduit_key + "/slab"];
+  conduit_obj.set(get_conduit_data_type(
+      m_num_features / dc::get_number_of_io_partitions()));
+  TensorDataType *sample_buf = conduit_obj.value();
+  if(this->has_labels()) {
+    assert_always(m_hyperslab_labels);
+    auto &conduit_labels_obj = node[conduit_key + "/labels_slab"];
+    conduit_labels_obj.set(get_conduit_data_type(
+        m_num_features / dc::get_number_of_io_partitions()));
+    TensorDataType *labels_buf = conduit_labels_obj.value();
+    read_hdf5_sample(data_id, sample_buf, labels_buf);
+  } else {
+    read_hdf5_sample(data_id, sample_buf, nullptr);
+  }
+  if(this->has_responses()) {
+    node[conduit_key + "/responses"].set(
+        &m_all_responses[0],
+        m_all_responses.size());
+  }
+  if (priming_data_store()) {
+    // Once the node has been populated save it in the data store
+    m_data_store->set_conduit_node(data_id, node);
+  }
+}
+
+template <typename TensorDataType>
 bool hdf5_reader<TensorDataType>::fetch_label(Mat& Y, int data_id, int mb_idx) {
   if(!this->has_labels()) {
     return generic_data_reader::fetch_label(Y, data_id, mb_idx);
@@ -263,6 +293,37 @@ bool hdf5_reader<TensorDataType>::fetch_label(Mat& Y, int data_id, int mb_idx) {
 }
 
 template <typename TensorDataType>
+bool hdf5_reader<TensorDataType>::fetch_data_field(data_field_type data_field, CPUMat& Y, int data_id, int mb_idx) {
+  if(data_field != INPUT_DATA_TYPE_LABEL_RECONSTRUCTION) {
+    NOT_IMPLEMENTED(data_field);
+  }
+
+  LBANN_MSG("I am going to fetch reconstruction labels for ", data_id, " with field ", data_field, " for mb_idx", mb_idx);
+  prof_region_begin("fetch_label_reconstruction", prof_colors[0], false);
+  assert_always(m_hyperslab_labels);
+  assert_always(m_use_data_store);
+  TensorDataType *buf = nullptr;
+  assert_eq(Y.Height(), m_num_features);
+  conduit::Node node;
+  if (data_store_active() || m_data_store->has_conduit_node(data_id)) {
+    prof_region_begin("get_conduit_node", prof_colors[0], false);
+    const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
+    node.set_external(ds_node);
+    prof_region_end("get_conduit_node", false);
+  } else {
+    load_sample(node, data_id);
+  }
+
+  //  const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
+  //  node.set_external(ds_node);
+  const std::string conduit_key = LBANN_DATA_ID_STR(data_id);
+  buf = node[conduit_key+"/labels_slab"].value();
+  std::memcpy(Y.Buffer(), buf, m_num_features/dc::get_number_of_io_partitions()*sizeof(TensorDataType));
+  prof_region_end("fetch_label_reconstruction", false);
+  return true;
+}
+
+template <typename TensorDataType>
 bool hdf5_reader<TensorDataType>::fetch_datum(Mat& X, int data_id, int mb_idx) {
   prof_region_begin("fetch_datum", prof_colors[0], false);
 
@@ -274,6 +335,7 @@ bool hdf5_reader<TensorDataType>::fetch_datum(Mat& X, int data_id, int mb_idx) {
             m_num_features / dc::get_number_of_io_partitions()
             / (sizeof(DataType) / sizeof(TensorDataType)));
 
+  LBANN_MSG("I am going to fetch ", data_id, " for mb_idx", mb_idx);
   if (m_use_data_store) {
     fetch_datum_conduit(X, data_id);
   } else {
@@ -288,35 +350,13 @@ void hdf5_reader<TensorDataType>::fetch_datum_conduit(Mat& X, int data_id) {
   const std::string conduit_key = LBANN_DATA_ID_STR(data_id);
   // Create a node to hold all of the data
   conduit::Node node;
-  if (data_store_active()) {
+  if (data_store_active() || m_data_store->has_conduit_node(data_id)) {
     prof_region_begin("get_conduit_node", prof_colors[0], false);
     const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
     node.set_external(ds_node);
     prof_region_end("get_conduit_node", false);
   } else {
-    auto &conduit_obj = node[conduit_key + "/slab"];
-    conduit_obj.set(get_conduit_data_type(
-        m_num_features / dc::get_number_of_io_partitions()));
-    TensorDataType *sample_buf = conduit_obj.value();
-    if(this->has_labels()) {
-      assert_always(m_hyperslab_labels);
-      auto &conduit_labels_obj = node[conduit_key + "/labels_slab"];
-      conduit_labels_obj.set(get_conduit_data_type(
-          m_num_features / dc::get_number_of_io_partitions()));
-      TensorDataType *labels_buf = conduit_labels_obj.value();
-      read_hdf5_sample(data_id, sample_buf, labels_buf);
-    } else {
-      read_hdf5_sample(data_id, sample_buf, nullptr);
-    }
-    if(this->has_responses()) {
-      node[conduit_key + "/responses"].set(
-          &m_all_responses[0],
-          m_all_responses.size());
-    }
-    if (priming_data_store()) {
-      // Once the node has been populated save it in the data store
-      m_data_store->set_conduit_node(data_id, node);
-    }
+    load_sample(node, data_id);
   }
   prof_region_begin("set_external", prof_colors[0], false);
   conduit::Node slab;
