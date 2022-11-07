@@ -53,6 +53,10 @@ def setup_experiment(lbann, weekly):
 def create_parallel_strategy(num_height_groups):
     return {"height_groups": num_height_groups}
 
+def channelwise_parallel_strategy(num_channel_groups):
+    return {"channel_groups": num_channel_groups,
+            "filter_groups": num_channel_groups}
+
 def construct_model(lbann):
     """Construct LBANN model.
 
@@ -114,7 +118,41 @@ def construct_model(lbann):
         upper_bound=val+tol,
         error_on_failure=True,
         execution_modes='test'))
+    
+    # ------------------------------------------
+    # Data-parallel layout with DC and activation
+    # ------------------------------------------
 
+    x = x_lbann
+    x = lbann.Identity(x, dims=[48, 1, 1])
+    _data = lbann.Identity(_data,
+                           name="input_data_distconv",
+                           parallel_strategy=channelwise_parallel_strategy(NUM_GROUPS))
+    _data = lbann.Relu(_data,
+                       name="distconv_activation",
+                       parallel_strategy=channelwise_parallel_strategy(NUM_GROUPS))
+    
+    _data = lbann.Reshape(_data, dims=[48])
+    z = lbann.L2Norm2(_data)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='data-parallel w activation'))
+    
+    # Numpy implementation
+    vals = []
+    for i in range(num_samples()):
+        x = get_sample(i).astype(np.float64)
+        y = x
+        z = tools.numpy_l2norm2(y)
+        vals.append(z)
+    val = np.mean(vals)
+    tol = 8 * val * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
+        lower_bound=val-tol,
+        upper_bound=val+tol,
+        error_on_failure=True,
+        execution_modes='test'))
+    
     # ------------------------------------------
     # Model-parallel layout
     # ------------------------------------------
