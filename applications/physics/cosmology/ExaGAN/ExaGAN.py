@@ -41,13 +41,13 @@ class CosmoGAN(lbann.modules.Module):
        #generator
        g_neurons = [256,128,64]
 
-       self.g_convT = [conv(g_neurons[i], 5, stride=2, padding=2, transpose=True,
+       self.g_convT = [conv(g_neurons[i], 4, stride=2, padding=1, transpose=True,
                        weights=[lbann.Weights(initializer=self.inits['convT'])])
                        for i in range(len(g_neurons))]
 
        self.g_fc1 = fc(32768,name=self.name+'_gen_fc1',
                        weights=[lbann.Weights(initializer=self.inits['dense'])])
-       self.g_convT3 = conv(1, 5, stride=2, padding=2, activation=lbann.Tanh,name='gen_img',transpose=True,
+       self.g_convT3 = conv(1, 4, stride=2, padding=1, activation=lbann.Tanh,name='gen_img',transpose=True,
                        weights=[lbann.Weights(initializer=self.inits['convT'])])
 
     def forward(self, img, z):
