@@ -177,14 +177,14 @@ def construct_model(lbann):
         metric=metrics[-1].name,
         lower_bound=val-tol,
         upper_bound=val+tol,
-        error_on_failure=False,
+        error_on_failure=True,
         execution_modes='test'))
     
     # ------------------------------------------
     # Gradient checking
     # ------------------------------------------
 
-    # callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # ------------------------------------------
     # Construct model
