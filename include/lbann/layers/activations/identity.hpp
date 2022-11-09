@@ -82,9 +82,11 @@ protected:
     #ifdef LBANN_HAS_DISTCONV
     // Copy activations when distconv is enabled
     
-    data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
+    if (this->distconv_enabled()){
+        data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
    
-    return ;
+        return ;
+    }
     #endif // LBANN_HAS_DISTCONV
     El::LockedView(this->get_activations(), this->get_prev_activations());
   }
@@ -92,11 +94,11 @@ protected:
     #ifdef LBANN_HAS_DISTCONV
     // Copy gradients wrt inputs when distconv is enabled
     
-
-    data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(mini_batch_size);
+    if (this->distconv_enabled()){
+        data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(mini_batch_size);
     
-    return ;
-    
+        return ;
+    }
     #endif // LBANN_HAS_DISTCONV
     El::LockedView(this->get_error_signals(), this->get_prev_error_signals());
   }
