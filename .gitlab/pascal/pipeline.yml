@@ -183,7 +183,7 @@ release allocation:
     # Just the obvious identifier. Which specific node doesn't matter.
     SYSTEM_NAME: pascal
     SPACK_REPO: spack_repos/spack_${SYSTEM_NAME}.git
-    CI_DEBUG_TRACE: "true"
+#    CI_DEBUG_TRACE: "true"
     FOO: `basename ${CI_BUILDS_DIR}`
     
     # This is based on the assumption that each runner will only ever
