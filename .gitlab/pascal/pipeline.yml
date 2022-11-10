@@ -186,8 +186,9 @@ release allocation:
 
     # This is based on the assumption that each runner will only ever
     # be able to run one pipeline on a given cluster at one time.
-    SPACK_ENV_NAME: gitlab-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}-${CI_NODE_INDEX}-${CI_RUNNER_ID}-${CI_RUNNER_REVISION}-${CI_RUNNER_VERSION}-${CI_RUNNER_TAGS}
+    SPACK_ENV_NAME: gitlab-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}-${CI_CONCURRENT_ID}-${CI_CONCURRENT_PROJECT_ID}
 
+#${CI_NODE_INDEX}-${CI_RUNNER_ID}-${CI_RUNNER_REVISION}-${CI_RUNNER_VERSION}-${CI_RUNNER_TAGS}
     # These are system-specific specs that should be forwarded to the
     # build script
     SPACK_SPECS: "+cuda +half +fft"
