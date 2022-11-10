@@ -51,6 +51,7 @@ set_full_path(THIS_DIR_HEADERS
   learning_rate.hpp
   ltfb.hpp
   mixup.hpp
+  mlperf_logging.hpp
   monitor_io.hpp
   perturb_adam.hpp
   perturb_dropout.hpp

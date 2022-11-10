@@ -55,6 +55,7 @@
 #include "lbann/callbacks/load_model.hpp"
 #include "lbann/callbacks/ltfb.hpp"
 #include "lbann/callbacks/mixup.hpp"
+#include "lbann/callbacks/mlperf_logging.hpp"
 #include "lbann/callbacks/monitor_io.hpp"
 #include "lbann/callbacks/perturb_adam.hpp"
 #include "lbann/callbacks/perturb_dropout.hpp"
@@ -162,6 +163,8 @@ void register_default_builders(factory_type& factory)
   factory.register_builder("CallbackMinibatchSchedule",
                            build_minibatch_schedule_callback_from_pbuf);
   factory.register_builder("CallbackMixup", build_mixup_callback_from_pbuf);
+  factory.register_builder("CallbackMlperfLogging",
+                           build_mlperf_logging_callback_from_pbuf);
   factory.register_builder(
     "CallbackOptimizerwiseAdaptiveLearningRate",
     build_optimizerwise_adaptive_learning_rate_callback_from_pbuf);
