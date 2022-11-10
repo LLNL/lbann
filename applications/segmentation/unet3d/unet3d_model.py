@@ -13,8 +13,9 @@ def construct_unet3d_model(parallel_strategy,
         use_labels=True)
     obj = lbann.ObjectiveFunction([ce])
     layers = list(lbann.traverse_layer_graph([volume, segmentation]))
-    for l in layers:
-        l.parallel_strategy = parallel_strategy
+    if parallel_strategy is not None:
+        for l in layers:
+            l.parallel_strategy = parallel_strategy
 
     # Setup model
     metrics = [lbann.Metric(ce, name='CE', unit='')]

@@ -2,10 +2,8 @@ import unet3d_model
 import argparse
 
 import lbann
-#import lbann.models
 import lbann.contrib.args
 import lbann.contrib.launcher
-#import lbann.modules as lm
 from lbann.core.util import get_parallel_strategy_args
 
 
