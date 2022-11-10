@@ -210,8 +210,8 @@ release allocation:
   before_script:
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - source spack-ci-env-name.sh
-    - spack env activate lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
-    - spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
+    - spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
+    - spack load lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
 
 # For simplicity, I have put the variables as well as the tags
 # here. The variables could just be top-level in the file (perhaps the
