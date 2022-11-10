@@ -698,7 +698,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-    CMD="spack external find --scope env:${LBANN_ENV} bzip2 cuda cudnn hipblas hwloc nccl ncurses perl python rccl rdma-core sqlite spectrum-mpi mvapich2 openmpi"
+    CMD="spack external find --scope env:${LBANN_ENV} bzip2 cuda cudnn hwloc libfabric nccl ncurses openblas perl python rccl rdma-core sqlite spectrum-mpi mvapich2 openmpi"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 

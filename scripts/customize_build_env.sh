@@ -107,7 +107,7 @@ set_center_specific_modules()
                 MODULE_CMD="module --force unload StdEnv; module load gcc/10.2.1 mvapich2/2.3 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
-                MODULE_CMD="module load gcc-tce/10.3.1 rocm/5.2.0 mvapich2-tce/2.3.6"
+                MODULE_CMD="module load StdEnv gcc-tce/10.3.1 cmake/3.23.1 openmpi-tce/4.1.2 rocm/5.3.0"
 #                MODULE_CMD="module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2"
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
@@ -190,15 +190,14 @@ set_center_specific_spack_dependencies()
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_COMPILER="%rocmcc@5.2.0"
-                CENTER_DEPENDENCIES="^mvapich2@2.3.6 ^hip@5.2.0 ^python@3.9.12"
-#                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.2.0 ^python@3.9.12"
+                CENTER_COMPILER="%rocmcc@5.3.0"
+                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.3.0 ^python@3.9.12"
 #                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.2.0 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
                 ;;
             "zen3") # Tioga, RZVernal
                 CENTER_COMPILER="%rocmcc@5.3.0"
-                CENTER_DEPENDENCIES="^cray-mpich@8.1.19 ^hip@5.3.0 ^python@3.9.12 ^aluminum@1.0.0-lbann +ofi_libfabric_plugin"
+                CENTER_DEPENDENCIES="^cray-mpich@8.1.19 ^hip@5.3.0 ^python@3.9.12"
                 CENTER_BLAS_LIBRARY="blas=libsci"
                 # Override the conduit variants for the cray compilers
                 CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis~blt_find_mpi"
@@ -308,32 +307,25 @@ cat <<EOF  >> ${yaml}
     hipcub:
       buildable: False
       version:
-      - 5.2.0
+      - 5.3.0
       externals:
-      - spec: hipcub@5.2.0 arch=${spack_arch}
-        prefix: /opt/rocm-5.2.0/hipcub
+      - spec: hipcub@5.3.0 arch=${spack_arch}
+        prefix: /opt/rocm-5.3.0/hipcub
         extra_attributes:
           compilers:
-            c: /opt/rocm-5.2.0/llvm/bin/clang
-            c++: /opt/rocm-5.2.0/llvm/bin/clang++
+            c: /opt/rocm-5.3.0/llvm/bin/clang
+            c++: /opt/rocm-5.3.0/llvm/bin/clang++
     llvm-amdgpu:
       buildable: False
       version:
-      - 5.2.0
+      - 5.3.0
       externals:
-      - spec: llvm-amdgpu@5.2.0 arch=${spack_arch}
-        prefix: /opt/rocm-5.2.0/llvm
+      - spec: llvm-amdgpu@5.3.0 arch=${spack_arch}
+        prefix: /opt/rocm-5.3.0/llvm
         extra_attributes:
           compilers:
-            c: /opt/rocm-5.2.0/llvm/bin/clang
-            c++: /opt/rocm-5.2.0/llvm/bin/clang++
-    rdma-core:
-      buildable: False
-      version:
-      - 20
-      externals:
-      - spec: rdma-core@20 arch=${spack_arch}
-        prefix: /usr
+            c: /opt/rocm-5.3.0/llvm/bin/clang
+            c++: /opt/rocm-5.3.0/llvm/bin/clang++
     openmpi:
       buildable: False
       version:
@@ -404,14 +396,6 @@ cat <<EOF  >> ${yaml}
       - spec: cray-mpich@8.1.19 arch=${spack_arch}
         modules:
         - cray-mpich/8.1.19
-    libfabric:
-      buildable: false
-      version:
-      - 1.7.2-llnl
-      externals:
-      - spec: libfabric@1.7.2-llnl arch=${spack_arch}
-        modules:
-        - libfabric/1.7.2-llnl
 EOF
                 ;;
             *)
