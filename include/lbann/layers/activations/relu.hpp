@@ -31,7 +31,7 @@
 #include "lbann/utils/distconv.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
-#include "distconv/cudnn/relu.hpp"
+#include "distconv/dnn_backend/relu.hpp"
 #endif
 
 namespace lbann {

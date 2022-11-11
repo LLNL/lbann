@@ -39,7 +39,7 @@
 #define DISTCONV_DEBUG
 #endif
 
-#include "distconv/cudnn/backend.hpp"
+#include "distconv/dnn_backend/backend.hpp"
 #include "distconv/distconv.hpp"
 #include "distconv/tensor/algorithms.hpp"
 #include "distconv/tensor/shuffle_mpi.hpp"
