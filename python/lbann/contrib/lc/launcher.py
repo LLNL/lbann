@@ -85,6 +85,11 @@ def make_batch_script(
     # present in MVAPICH2-2.3rc2.
     set_environment('MV2_USE_RDMA_CM', 0)
 
+    # Bugfix for pascal as of 9/21/22
+    # set_environment('MV2_USE_ALIGNED_ALLOC', 1) # Not necessary because we don't allocate from multiple threads
+    set_environment('MV2_HOMOGENEOUS_CLUSTER', 1)
+    set_environment('MV2_USE_THREAD_WARNING', 0)
+
     # Optimizations for Tioga
     if system in ('tioga'):
         #set_environment('NCCL_SOCKET_IFNAME', 'hsi')
