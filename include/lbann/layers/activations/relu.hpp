@@ -30,6 +30,10 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/distconv.hpp"
 
+#ifdef LBANN_HAS_DISTCONV
+#include "distconv/dnn_backend/relu.hpp"
+#endif
+
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
