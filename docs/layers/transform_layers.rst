@@ -13,6 +13,7 @@
    :widths: auto
 
    :ref:`BatchwiseReduceSum`, "Sum of tensor entries over batch dimension"
+   :ref:`BinarySwitch`, "Output zeros/ones if layer is frozen/unfrozen."
    :ref:`Bernoulli`, "Random tensor with Bernoulli distribution"
    :ref:`Concatenation`, "Concatenate tensors along specified
    dimension"
@@ -67,6 +68,30 @@ The BatchwiseReduceSum layer is the sum of tensor entries over batch
 dimension. The output tensor has same shape as input tensor.
 
 Arguments: None
+
+:ref:`Back to Top<transform-layers>`
+
+________________________________________
+
+
+.. _BinarySwitch:
+
+----------------------------------------
+BinarySwitch
+----------------------------------------
+
+The BinarySwitch layer is an output tensor filled with either zeros or
+ones depending on if the layer is frozen or not. This is useful for
+more complex training setups like GANs, where you want to reuse the
+computational graph but switch loss functions.
+
+Arguments:
+
+   :num_neurons:
+
+      (``string``) Tensor dimensions
+
+      List of integers
 
 :ref:`Back to Top<transform-layers>`
 
