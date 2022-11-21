@@ -27,7 +27,11 @@ ALLOW_BACKEND_BUILDS=
 # Flag for passing subcommands to spack dev-build
 DEV_BUILD_FLAGS=
 # Flag for passing subcommands to spack install
+if [[ ${SYS} = "Darwin" ]]; then
+BUILD_JOBS="-j $(($(sysctl -n hw.physicalcpu)/2+2))"
+else
 BUILD_JOBS="-j $(($(nproc)/2+2))"
+fi
 
 LBANN_VARIANTS=
 CMD_LINE_VARIANTS=
@@ -288,7 +292,7 @@ function uninstall_specific_versions()
 # This should be a commit hash (NOT a tag) that needs to exist in the
 # spack repository that is checked out. It's a minimum version, so
 # more commits is fine.
-MIN_SPACK_COMMIT=bd815fbadac24eba64c9ba6db102c1a0442a36d8
+MIN_SPACK_COMMIT=47bfc60845b71830ee54a04c597419c7eedd2a42
 
 # "spack" is just a shell function; it may not be exported to this
 # scope. Just to be sure, reload the shell integration.
@@ -418,7 +422,7 @@ if [[ ! "${LBANN_VARIANTS}" =~ .*"^hydrogen".* ]]; then
     HYDROGEN="^hydrogen${HYDROGEN_VER} ${CENTER_BLAS_LIBRARY}"
 fi
 
-if [[ (! "${LBANN_VARIANTS}" =~ .*"^aluminum".*) && (! "${LBANN_VARIANTS}" =~ .*"~al".*) ]]; then
+if [[ (! "${LBANN_VARIANTS}" =~ .*"^aluminum".*) && (! "${LBANN_VARIANTS}" =~ .*"~al".*) && (! "${CENTER_DEPENDENCIES}" =~ .*"^aluminum".*) ]]; then
     # If the user didn't supply a specific version of Aluminum on the command line add one
     ALUMINUM="^aluminum${ALUMINUM_VER}"
 fi
@@ -694,7 +698,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-    CMD="spack external find --scope env:${LBANN_ENV} bzip2 cuda cudnn hipblas hwloc nccl ncurses perl python rccl rdma-core sqlite spectrum-mpi mvapich2 openmpi"
+    CMD="spack external find --scope env:${LBANN_ENV} bzip2 cuda cudnn hwloc libfabric nccl ncurses openblas perl python rccl rdma-core sqlite spectrum-mpi mvapich2 openmpi"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 

@@ -107,15 +107,12 @@ set_center_specific_modules()
                 MODULE_CMD="module --force unload StdEnv; module load gcc/10.2.1 mvapich2/2.3 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
-                MODULE_CMD="module load gcc-tce/10.3.1 rocm/5.2.0 mvapich2-tce/2.3.6"
+                MODULE_CMD="module load StdEnv gcc-tce/10.3.1 cmake/3.23.1 openmpi-tce/4.1.2 rocm/5.3.0"
 #                MODULE_CMD="module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2"
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
             "zen3") # Tioga, RZVernal
-#                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.09.0 amd/5.2.3 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-amd/8.3.3 StdEnv cmake/3.23.1"
-                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.09.0 cce/14.0.3 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-cray/8.3.3 StdEnv cmake/3.23.1 rocm/5.2.3"
-# Possible suggestion from John, but it doesn't work                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.06.0 cce/14.0.3 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-cray/8.3.3 StdEnv cmake/3.23.1 rocmcc-tce/5.2.3-cce-14.0.3"
-                # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
+                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.09.0 amd/5.3.0 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-amd/8.3.3 StdEnv cmake/3.23.1"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -193,16 +190,14 @@ set_center_specific_spack_dependencies()
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_COMPILER="%rocmcc@5.2.0"
-                CENTER_DEPENDENCIES="^mvapich2@2.3.6 ^hip@5.2.0 ^python@3.9.12"
-#                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.2.0 ^python@3.9.12"
+                CENTER_COMPILER="%rocmcc@5.3.0"
+                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.3.0 ^python@3.9.12"
 #                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.2.0 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
                 ;;
             "zen3") # Tioga, RZVernal
-#                CENTER_COMPILER="%cce@14.0.2"
-                CENTER_COMPILER="%rocmcc@5.2.3"
-                CENTER_DEPENDENCIES="^cray-mpich@8.1.19 ^hip@5.2.3 ^python@3.9.12"
+                CENTER_COMPILER="%rocmcc@5.3.0"
+                CENTER_DEPENDENCIES="^cray-mpich@8.1.19 ^hip@5.3.0 ^python@3.9.12"
                 CENTER_BLAS_LIBRARY="blas=libsci"
                 # Override the conduit variants for the cray compilers
                 CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis~blt_find_mpi"
@@ -249,6 +244,10 @@ set_center_specific_spack_dependencies()
     elif [[ ${center} = "osx" ]]; then
         case ${spack_arch_target} in
             "skylake")
+                CENTER_DEPENDENCIES="^hdf5+hl"
+                CENTER_BLAS_LIBRARY="blas=accelerate"
+                ;;
+            "m1")
                 CENTER_DEPENDENCIES="^hdf5+hl"
                 CENTER_BLAS_LIBRARY="blas=accelerate"
                 ;;
@@ -308,32 +307,25 @@ cat <<EOF  >> ${yaml}
     hipcub:
       buildable: False
       version:
-      - 5.2.0
+      - 5.3.0
       externals:
-      - spec: hipcub@5.2.0 arch=${spack_arch}
-        prefix: /opt/rocm-5.2.0/hipcub
+      - spec: hipcub@5.3.0 arch=${spack_arch}
+        prefix: /opt/rocm-5.3.0/hipcub
         extra_attributes:
           compilers:
-            c: /opt/rocm-5.2.0/llvm/bin/clang
-            c++: /opt/rocm-5.2.0/llvm/bin/clang++
+            c: /opt/rocm-5.3.0/llvm/bin/clang
+            c++: /opt/rocm-5.3.0/llvm/bin/clang++
     llvm-amdgpu:
       buildable: False
       version:
-      - 5.2.0
+      - 5.3.0
       externals:
-      - spec: llvm-amdgpu@5.2.0 arch=${spack_arch}
-        prefix: /opt/rocm-5.2.0/llvm
+      - spec: llvm-amdgpu@5.3.0 arch=${spack_arch}
+        prefix: /opt/rocm-5.3.0/llvm
         extra_attributes:
           compilers:
-            c: /opt/rocm-5.2.0/llvm/bin/clang
-            c++: /opt/rocm-5.2.0/llvm/bin/clang++
-    rdma-core:
-      buildable: False
-      version:
-      - 20
-      externals:
-      - spec: rdma-core@20 arch=${spack_arch}
-        prefix: /usr
+            c: /opt/rocm-5.3.0/llvm/bin/clang
+            c++: /opt/rocm-5.3.0/llvm/bin/clang++
     openmpi:
       buildable: False
       version:
@@ -356,7 +348,7 @@ EOF
 cat <<EOF  >> ${yaml}
   compilers:
   - compiler:
-      spec: rocmcc@5.2.3
+      spec: rocmcc@5.3.0
       paths:
         cc: cc
         cxx: CC
@@ -367,7 +359,7 @@ cat <<EOF  >> ${yaml}
       target: any
       modules:
       - PrgEnv-amd
-      - amd/5.2.3
+      - amd/5.3.0
       environment: {}
       extra_rpaths: []
   packages:
@@ -377,17 +369,17 @@ cat <<EOF  >> ${yaml}
     hipcub:
       buildable: False
       version:
-      - 5.2.3
+      - 5.3.0
       externals:
-      - spec: hipcub@5.2.3 arch=${spack_arch}
-        prefix: /opt/rocm-5.2.3/hipcub
+      - spec: hipcub@5.3.0 arch=${spack_arch}
+        prefix: /opt/rocm-5.3.0/hipcub
     llvm-amdgpu:
       buildable: False
       version:
-      - 5.2.3
+      - 5.3.0
       externals:
-      - spec: llvm-amdgpu@5.2.3 arch=${spack_arch}
-        prefix: /opt/rocm-5.2.3/llvm
+      - spec: llvm-amdgpu@5.3.0 arch=${spack_arch}
+        prefix: /opt/rocm-5.3.0/llvm
     cray-libsci:
       buildable: False
       version:
@@ -401,7 +393,7 @@ cat <<EOF  >> ${yaml}
       version:
       - 8.1.19
       externals:
-      - spec: "cray-mpich@8.1.19 arch=${spack_arch}"
+      - spec: cray-mpich@8.1.19 arch=${spack_arch}
         modules:
         - cray-mpich/8.1.19
 EOF
@@ -534,6 +526,10 @@ cleanup_clang_compilers()
             sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/usr\/tce\/bin\/gfortran/g' ${yaml}
             echo "Updating Clang compiler's to see the gfortran compiler."
         fi
+    elif [[ ${center} = "osx" ]]; then
+        # Point compilers that don't have a fortran compiler a default one
+        sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/opt\/homebrew\/bin\/gfortran/g' ${yaml}
+        echo "Updating Clang compiler's to see the homebrew gfortran compiler."
     else
         # Point compilers that don't have a fortran compiler a default one
         sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/usr\/bin\/gfortran/g' ${yaml}

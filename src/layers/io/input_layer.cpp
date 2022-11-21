@@ -304,7 +304,11 @@ void input_distconv_adapter<TensorDataType, T_layout, Dev>::setup_fp_tensors() {
       // only specialized for BaseAllocator.
       size_t buf_size = m_host_tensor->get_local_real_size() * sizeof(TensorDataType);
       TensorDataType *buf = nullptr;
+#if H2_HAS_CUDA
       CHECK_CUDA(cudaMallocHost(&buf, buf_size));
+#elif H2_HAS_ROCM
+      CHECK_ROCM(hipHostMalloc(&buf, buf_size));
+#endif
       // Note buf should be deallocated.
       dc::tensor::View(*m_host_tensor, buf);
       setup_shuffler_buffers(*m_original_host_tensor,
@@ -338,7 +342,7 @@ setup_activations_i(int index) const {
     const auto local_shape = get_activations_local_shape(index);
     auto t = std::make_unique<TensorDevType>(shape, loc, dist, local_shape);
     assert0(t->allocate());
-    t->zero(hydrogen::cuda::GetDefaultStream());
+    t->zero(default_hydrogen_stream());
     return t;
   }
   else {
@@ -434,7 +438,7 @@ template <typename TensorDataType,
 void input_distconv_adapter<TensorDataType, T_layout, Dev>::fp_compute() {
   auto &l = dynamic_cast<input_layer<
     TensorDataType, T_layout, Dev>&>(this->layer());
-  auto stream = hydrogen::cuda::GetDefaultStream();
+  auto stream = default_hydrogen_stream();
   // Note that the mini-batch size of the data reader is not
   // actually the one for the current mini-batch as the mini-batch
   // index is already updated by fp_compute.

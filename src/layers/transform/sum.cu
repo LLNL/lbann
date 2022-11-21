@@ -67,11 +67,12 @@ void sum_distconv_adapter<TensorDataType, Layout, Dev>::fp_compute() {
   auto &activations = this->get_activations();
   switch (this->layer().get_num_parents()) {
     case 0:
-      activations.zero(hydrogen::cuda::GetDefaultStream());
+      activations.zero(default_hydrogen_stream());
       break;
     case 1:
-      dc::tensor::Copy(activations, this->get_prev_activations(),
-                       hydrogen::cuda::GetDefaultStream());
+      dc::tensor::Copy(activations,
+                       this->get_prev_activations(),
+                       default_hydrogen_stream());
       break;
     case 2:
       // Optimization for layers with 2 parents (e.g.,
@@ -82,19 +83,21 @@ void sum_distconv_adapter<TensorDataType, Layout, Dev>::fp_compute() {
                             this->get_prev_activations(0),
                             this->get_prev_activations(1),
                             sum_op<TensorDataType>(),
-                            hydrogen::cuda::GetDefaultStream());
+                            default_hydrogen_stream());
       break;
     default:
       for (int i = 0; i < this->layer().get_num_parents(); ++i) {
         auto &prev_activations = this->get_prev_activations(i);
         prev_activations.set_outermost_dimension(activations.get_shape()[-1]);
         if (i == 0) {
-          dc::tensor::Copy(activations, prev_activations,
-                           hydrogen::cuda::GetDefaultStream());
+          dc::tensor::Copy(activations,
+                           prev_activations,
+                           default_hydrogen_stream());
         } else {
-          distconv::tensor::Transform(activations, prev_activations,
+          distconv::tensor::Transform(activations,
+                                      prev_activations,
                                       accumulate_op<TensorDataType>(),
-                                      hydrogen::cuda::GetDefaultStream());
+                                      default_hydrogen_stream());
         }
       }
   }

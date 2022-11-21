@@ -46,6 +46,12 @@ def make_batch_script(
         if key not in environment:
             environment[key] = os.getenv(key, default)
 
+    def prepend_environment_path(key, prefix):
+        if key not in environment:
+            environment[key] = prefix + ":" + os.getenv(key)
+        else:
+            environment[key] = prefix + ":" + environment[key]
+
     # Setup GPU bindings
     # Note: Each Hydrogen process is assigned to the GPU index that
     # matches its node communicator rank. This is not compatible with
@@ -78,6 +84,19 @@ def make_batch_script(
     # processes. This bug is not present in MVAPICH2-2.2 but is
     # present in MVAPICH2-2.3rc2.
     set_environment('MV2_USE_RDMA_CM', 0)
+
+    # Bugfix for pascal as of 9/21/22
+    # set_environment('MV2_USE_ALIGNED_ALLOC', 1) # Not necessary because we don't allocate from multiple threads
+    set_environment('MV2_HOMOGENEOUS_CLUSTER', 1)
+    set_environment('MV2_USE_THREAD_WARNING', 0)
+
+    # Optimizations for Tioga
+    if system in ('tioga'):
+        #set_environment('NCCL_SOCKET_IFNAME', 'hsi')
+        set_environment('MIOPEN_DEBUG_DISABLE_FIND_DB', '1')
+        set_environment('MIOPEN_DISABLE_CACHE', '1')
+        prepend_environment_path('LD_LIBRARY_PATH', os.getenv('CRAY_LD_LIBRARY_PATH'))
+        prepend_environment_path('LD_LIBRARY_PATH', '/opt/rocm-5.3.0/llvm/lib')
 
     # Optimizations for Sierra-like systems
     if system in ('sierra', 'lassen', 'rzansel'):

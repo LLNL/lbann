@@ -29,6 +29,7 @@ Support for new layers:
 - Added distributed tensor parallelism with channelwise decomposition for channelwise fully connected layer
 - Added "binary-with-constant" operators
 - Updated deconvolution layer to match PyTorch's API
+- Updated identity layer to copy tensors to enable tensor parallelism in subsequent layers in the compute graph
 
 Python front-end:
  - Added support for buidling and launching jobs on Fugaku
