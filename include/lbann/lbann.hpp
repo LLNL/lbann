@@ -157,6 +157,7 @@
 #include "lbann/data_store/data_store_conduit.hpp"
 
 /// Callbacks
+#include "lbann/callbacks/alternate_updates.hpp"
 #include "lbann/callbacks/check_dataset.hpp"
 #include "lbann/callbacks/check_gradients.hpp"
 #include "lbann/callbacks/check_init.hpp"

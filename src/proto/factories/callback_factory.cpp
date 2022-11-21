@@ -108,6 +108,8 @@ void register_default_builders(factory_type& factory)
   using namespace ::lbann::callback;
   factory.register_builder("CallbackAdaptiveLearningRate",
                            build_adaptive_learning_rate_callback_from_pbuf);
+  factory.register_builder("CallbackAlternateUpdates",
+                           build_alternate_updates_callback_from_pbuf);
   factory.register_builder("CallbackCheckDataset",
                            build_check_dataset_callback_from_pbuf);
   factory.register_builder("CallbackCheckGradients",
@@ -186,8 +188,6 @@ void register_default_builders(factory_type& factory)
                            build_profiler_callback_from_pbuf);
   factory.register_builder("CallbackReplaceWeights",
                            build_replace_weights_callback_from_pbuf);
-  factory.register_builder("CallbackAlternateUpdates",
-                           build_alternate_updates_callback_from_pbuf);
   factory.register_builder("CallbackSaveImages",
                            build_save_images_callback_from_pbuf);
   factory.register_builder("CallbackSaveModel",
