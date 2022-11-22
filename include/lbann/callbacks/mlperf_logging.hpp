@@ -53,11 +53,28 @@ public:
   /** @brief mlperf_logging Constructor.
    *  @param output_filename Output filename (default = results.txt)
    */
-  mlperf_logging(std::string output_filename)
+  mlperf_logging(std::string output_filename, std::string sub_benchmark,
+                 std::string sub_org, std::string sub_division,
+                 std::string sub_status, std::string sub_platform)
     : callback_base(/*batch_interval=*/1),
       m_output_filename{output_filename.size() ?
                         std::move(output_filename) :
-                        std::string("results.txt")}
+                        std::string("results.txt")},
+      m_sub_benchmark{sub_benchmark.size() ?
+                      std::move(sub_benchmark) :
+                      std::string("UNKNOWN_SUBMISSION_BENCHMARK")},
+      m_sub_org{sub_org.size() ?
+                std::move(sub_org) :
+                std::string("LBANN")},
+      m_sub_division{sub_division.size() ?
+                     std::move(sub_division) :
+                     std::string("UNKNOWN_SUBMISSION_DIVISION")},
+      m_sub_status{sub_status.size() ?
+                   std::move(sub_status) :
+                   std::string("UNKNOWN_SUBMISSION_STATUS")},
+      m_sub_platform{sub_platform.size() ?
+                     std::move(sub_platform) :
+                        std::string("UNKNOWN_SUBMISSION_PLATFORM")}
   {}
 
   /** @brief Copy interface */
@@ -69,7 +86,7 @@ public:
   std::string name() const override { return "mlperf_logging"; }
 
   /** @brief Push mlperf formatted log string to stream object.
-   *  @param ostream os Stores log strings.
+   *  @param ostringstream os Stores log strings.
    *  @param event_type et Type of mlperf style event.
    *  @param string key Mlperf log key.
    *  @param T value Mlperf log value.
@@ -78,7 +95,7 @@ public:
    *  @param double epoch Current epoch number.
    */
   template <typename T>
-  void print(std::ostream& os, mlperf_logging::event_type et, std::string key,
+  void print(std::ostringstream& os, mlperf_logging::event_type et, std::string key,
              T value, char const* file, size_t line, double epoch = -1) const;
 
   void setup(model *m) override;
@@ -93,22 +110,15 @@ public:
 private:
 
   /** @brief Populate log with mlperf event type.
-   *  @param ostream os Stores log string.
+   *  @param ostringstream os Stores log string.
    *  @param event_type et Type of mlperf style event.
    */
-  void print_event_type(std::ostream& os, mlperf_logging::event_type et) const;
+  void print_event_type(std::ostringstream& os, mlperf_logging::event_type et) const;
 
   /** @brief Populate log with value.
-   *  @param ostream os Stores log string.
+   *  @param ostringstream os Stores log string.
    *  @param event_type et Mlperf log value.
    */
-  void print_value(std::ostream& os, double value) const;
-  void print_value(std::ostream& os, long value) const;
-  void print_value(std::ostream& os, size_t value) const;
-  void print_value(std::ostream& os, std::string value) const;
-  //FIXME: Always picks this function first
-  //template <typename T>
-  //void print_value(std::ostream& os, T value) const;
 
   static size_t get_ms_since_epoch();
 
@@ -117,10 +127,14 @@ private:
   //FIXME: get logger to output file
   /* @brief name of output file. Default = results.txt */
   std::string m_output_filename;
-
-  //FIXME: Add custom logging tag
   /* @brief DiHydrogen logger */
-  h2::Logger m_logger;
+  h2::Logger m_logger{":::MLLOG", m_output_filename};
+  std::string m_sub_benchmark;
+  std::string m_sub_org;
+  std::string m_sub_division;
+  std::string m_sub_status;
+  std::string m_sub_platform;
+
 
 }; // class mlperf_logging
 

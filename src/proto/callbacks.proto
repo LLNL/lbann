@@ -439,7 +439,12 @@ message Callback {
 
   /** @brief Prints mlperf compliant benchmark logs */
   message CallbackMlperfLogging {
-    string output_filename = 1;
+    string output_filename = 1; // Output filename
+    string sub_benchmark = 2; // FIXME(KLG): document these
+    string sub_org = 3;
+    string sub_division = 4;
+    string sub_status = 5;
+    string sub_platform = 6;
   }
 
   message CallbackAlternateUpdates {

@@ -42,8 +42,36 @@
 namespace lbann {
 namespace callback {
 
+// FIXME Does this need an anon namespace since it's only in the cpp file?
+void print_value(std::ostringstream& os, double value)
+{
+  os << value;
+}
+void print_value(std::ostringstream& os, long value)
+{
+  os << value;
+}
+void print_value(std::ostringstream& os, size_t value)
+{
+  os << value;
+}
+void print_value(std::ostringstream& os, std::string const& value)
+{
+  os << "\"" << value << "\"";
+}
+void print_value(std::ostringstream& os, char const* value)
+{
+  os << "\"" << value << "\"";
+}
 template <typename T>
-void mlperf_logging::print(std::ostream& os, mlperf_logging::event_type et,
+void print_value(std::ostringstream& os, T value)
+{
+  //FIXME: Should I push the value anyway?
+  os << "UNKNOWN_DATA_TYPE";
+}
+
+template <typename T>
+void mlperf_logging::print(std::ostringstream& os, mlperf_logging::event_type et,
                            std::string key, T value, char const* file,
                            size_t line, double epoch) const
 {
@@ -54,19 +82,22 @@ void mlperf_logging::print(std::ostream& os, mlperf_logging::event_type et,
   print_event_type(os, et);
 
   os << "\", "
-     << "\"key\": " << key << "\", "
+     << "\"key\": \"" << key << "\", "
      << "\"value\": ";
   print_value(os, value);
   os << ", "
      << "\"metadata\": {\"file\": \"" << file << "\", "
      << "\"lineno\": " << line;
   if(epoch < 0)
-    os << "}}\n";
+    os << "}}";
   else
-    os << ", " << "\"epoch_num\": " << epoch << "}}\n";
+    os << ", " << "\"epoch_num\": " << epoch << "}}";
+
+  H2_INFO(os.str());
+  os.flush();
 }
 
-void mlperf_logging::print_event_type(std::ostream& os, mlperf_logging::event_type et) const
+void mlperf_logging::print_event_type(std::ostringstream& os, mlperf_logging::event_type et) const
 {
   switch (et) {
   case mlperf_logging::event_type::TIME_POINT: os << "POINT_IN_TIME"; break;
@@ -75,30 +106,6 @@ void mlperf_logging::print_event_type(std::ostream& os, mlperf_logging::event_ty
   default: os << "INVALID_EVENT_TYPE"; break;
   }
 }
-
-void mlperf_logging::print_value(std::ostream& os, double value) const
-{
-  os << value;
-}
-void mlperf_logging::print_value(std::ostream& os, long value) const
-{
-  os << value;
-}
-void mlperf_logging::print_value(std::ostream& os, size_t value) const
-{
-  os << value;
-}
-void mlperf_logging::print_value(std::ostream& os, std::string value) const
-{
-  os << value;
-}
-/*template <typename T>
-void mlperf_logging::print_value(std::ostream& os, T value) const
-{
-  //FIXME: Should I push the value anyway?
-  os << "UNKNOWN_DATA_TYPE";
-}
-*/
 
 size_t mlperf_logging::get_ms_since_epoch()
 {
@@ -117,35 +124,24 @@ void mlperf_logging::setup(model *m)
   print(os, mlperf_logging::event_type::TIME_POINT, "cache_clear", value,
         __FILE__, __LINE__);
 
-  //FIXME: Make these user input vars
-  value = "oc20";
   print(os, mlperf_logging::event_type::TIME_POINT, "submission_benchmark",
-        value, __FILE__, __LINE__);
+        m_sub_benchmark, __FILE__, __LINE__);
 
-  value = "LBANN";
   print(os, mlperf_logging::event_type::TIME_POINT, "submission_org",
-        value, __FILE__, __LINE__);
+        m_sub_org, __FILE__, __LINE__);
 
-  //FIXME: value = closed?
-  value = "closed";
   print(os, mlperf_logging::event_type::TIME_POINT, "submission_division",
-        value, __FILE__, __LINE__);
+        m_sub_division, __FILE__, __LINE__);
 
-  //FIXME: value = onprem?
-  value = "onprem";
   print(os, mlperf_logging::event_type::TIME_POINT, "submission_status",
-        value, __FILE__, __LINE__);
+        m_sub_status, __FILE__, __LINE__);
 
-  //FIXME:  value = SUBMISSION_PLATFORM_PLACEHOLDER?
-  value = "?";
   print(os, mlperf_logging::event_type::TIME_POINT, "submission_platform",
-        value, __FILE__, __LINE__);
+        m_sub_platform, __FILE__, __LINE__);
 
   value = "null";
   print(os, mlperf_logging::event_type::TIME_POINT, "init_start", value,
         __FILE__, __LINE__);
-
-  H2_INFO(os.str());
 }
 void mlperf_logging::on_setup_end(model *m)
 {
@@ -227,8 +223,6 @@ void mlperf_logging::on_setup_end(model *m)
 
   print(os, mlperf_logging::event_type::TIME_POINT, "init_stop", "null",
         __FILE__, __LINE__);
-
-  H2_INFO(os.str());
 }
 
 void mlperf_logging::on_epoch_begin(model *m)
@@ -239,8 +233,6 @@ void mlperf_logging::on_epoch_begin(model *m)
 
   print(os, mlperf_logging::event_type::INT_START, "epoch_start", "null",
         __FILE__, __LINE__, epoch);
-
-  H2_INFO(os.str());
 }
 
 void mlperf_logging::on_epoch_end(model *m)
@@ -251,8 +243,6 @@ void mlperf_logging::on_epoch_end(model *m)
 
   print(os, mlperf_logging::event_type::INT_START, "epoch_stop", "null",
         __FILE__, __LINE__, epoch);
-
-  H2_INFO(os.str());
 }
 
 void mlperf_logging::on_train_begin(model *m)
@@ -264,8 +254,6 @@ void mlperf_logging::on_train_begin(model *m)
   //FIXME: run_start? Same time stamp as epoch 1 in results
   print(os, mlperf_logging::event_type::INT_START, "run_start", "null",
         __FILE__, __LINE__, epoch);
-
-  H2_INFO(os.str());
 }
 
 void mlperf_logging::on_train_end(model *m)
@@ -277,8 +265,6 @@ void mlperf_logging::on_train_end(model *m)
   //FIXME: run_stop? End of training?
   print(os, mlperf_logging::event_type::INT_START, "run_stop", "null",
         __FILE__, __LINE__, epoch);
-
-  H2_INFO(os.str());
 }
 
 void mlperf_logging::on_batch_evaluate_begin(model *m)
@@ -289,8 +275,6 @@ void mlperf_logging::on_batch_evaluate_begin(model *m)
 
   print(os, mlperf_logging::event_type::INT_START, "eval_start", "null",
         __FILE__, __LINE__, epoch);
-
-  H2_INFO(os.str());
 }
 
 void mlperf_logging::on_batch_evaluate_end(model *m)
@@ -307,8 +291,6 @@ void mlperf_logging::on_batch_evaluate_end(model *m)
   print(os, mlperf_logging::event_type::TIME_POINT, "eval_error",
         static_cast<double>(eval_error), __FILE__,
         __LINE__, epoch);
-
-  H2_INFO(os.str());
 }
 
 std::unique_ptr<callback_base>
@@ -318,7 +300,12 @@ build_mlperf_logging_callback_from_pbuf(
 {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackMlperfLogging&>(proto_msg);
-  return std::make_unique<mlperf_logging>(params.output_filename());
+  return std::make_unique<mlperf_logging>(params.sub_benchmark(),
+                                          params.sub_org(),
+                                          params.sub_division(),
+                                          params.sub_status(),
+                                          params.sub_platform(),
+                                          params.output_filename());
 }
 } // namespace callback
 } // namespace lbann
