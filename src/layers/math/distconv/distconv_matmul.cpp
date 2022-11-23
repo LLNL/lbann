@@ -282,7 +282,7 @@ namespace distconv{
     const bool transpose_0,                                                           \
     const bool transpose_1);                                                          
 
-ETI(float, cudnn::BackendCUDNN)
-ETI(double, cudnn::BackendCUDNN)
+ETI(float, BackendDNNLib)
+ETI(double, BackendDNNLib)
 #undef ETI
 }  // namespace distconv
