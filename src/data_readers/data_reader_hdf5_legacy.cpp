@@ -287,7 +287,8 @@ bool hdf5_reader<TensorDataType>::fetch_label(Mat& Y, int data_id, int mb_idx) {
   node.set_external(ds_node);
   const std::string conduit_obj = LBANN_DATA_ID_STR(data_id);
   buf = node[conduit_obj+"/labels_slab"].value();
-  std::memcpy(Y.Buffer(), buf, m_num_features/dc::get_number_of_io_partitions()*sizeof(TensorDataType));
+  auto Y_v = create_datum_view(Y, mb_idx);
+  std::memcpy(Y_v.Buffer(), buf, m_num_features/dc::get_number_of_io_partitions()*sizeof(TensorDataType));
   prof_region_end("fetch_label", false);
   return true;
 }
@@ -298,7 +299,6 @@ bool hdf5_reader<TensorDataType>::fetch_data_field(data_field_type data_field, C
     NOT_IMPLEMENTED(data_field);
   }
 
-  LBANN_MSG("I am going to fetch reconstruction labels for ", data_id, " with field ", data_field, " for mb_idx", mb_idx);
   prof_region_begin("fetch_label_reconstruction", prof_colors[0], false);
   assert_always(m_hyperslab_labels);
   assert_always(m_use_data_store);
@@ -318,7 +318,8 @@ bool hdf5_reader<TensorDataType>::fetch_data_field(data_field_type data_field, C
   //  node.set_external(ds_node);
   const std::string conduit_key = LBANN_DATA_ID_STR(data_id);
   buf = node[conduit_key+"/labels_slab"].value();
-  std::memcpy(Y.Buffer(), buf, m_num_features/dc::get_number_of_io_partitions()*sizeof(TensorDataType));
+  auto Y_v = create_datum_view(Y, mb_idx);
+  std::memcpy(Y_v.Buffer(), buf, m_num_features/dc::get_number_of_io_partitions()*sizeof(TensorDataType));
   prof_region_end("fetch_label_reconstruction", false);
   return true;
 }
@@ -327,19 +328,16 @@ template <typename TensorDataType>
 bool hdf5_reader<TensorDataType>::fetch_datum(Mat& X, int data_id, int mb_idx) {
   prof_region_begin("fetch_datum", prof_colors[0], false);
 
-  // In the Cosmoflow case, each minibatch should have only one
-  // sample per rank.
-  assert_eq(X.Width(), 1);
   assert_eq(sizeof(DataType)%sizeof(TensorDataType), 0);
   assert_eq(X.Height(),
             m_num_features / dc::get_number_of_io_partitions()
             / (sizeof(DataType) / sizeof(TensorDataType)));
 
-  LBANN_MSG("I am going to fetch ", data_id, " for mb_idx", mb_idx);
+  auto X_v = create_datum_view(X, mb_idx);
   if (m_use_data_store) {
-    fetch_datum_conduit(X, data_id);
+    fetch_datum_conduit(X_v, data_id);
   } else {
-    read_hdf5_sample(data_id, (TensorDataType*)X.Buffer(), nullptr);
+    read_hdf5_sample(data_id, (TensorDataType*)X_v.Buffer(), nullptr);
   }
   prof_region_end("fetch_datum", false);
   return true;
@@ -387,7 +385,8 @@ bool hdf5_reader<TensorDataType>::fetch_response(Mat& Y, int data_id, int mb_idx
     slab.set_external(node[conduit_key + "/responses_slab"]);
     prof_region_end("set_external", false);
     buf = slab.value();
-    std::memcpy(Y.Buffer(), buf, m_num_features*sizeof(TensorDataType));
+    auto Y_v = create_datum_view(Y, mb_idx);
+    std::memcpy(Y_v.Buffer(), buf, m_num_features*sizeof(TensorDataType));
   } else {
     assert_eq(Y.Height(), m_all_responses.size());
     if (data_store_active()) {
@@ -399,11 +398,13 @@ bool hdf5_reader<TensorDataType>::fetch_response(Mat& Y, int data_id, int mb_idx
     }else {
       buf = &m_all_responses[0];
     }
-    std::memcpy(Y.Buffer(), buf,
+    auto Y_v = create_datum_view(Y, mb_idx);
+    std::memcpy(Y_v.Buffer(), buf,
                 m_all_responses.size()*sizeof(DataType));
-    if (dc::get_rank_stride() == 1) {
-      gather_responses(Y.Buffer());
-    }
+    LBANN_MSG("I think that the rank stride is ", dc::get_rank_stride());
+    // if (dc::get_rank_stride() == 1) {
+    //   gather_responses(Y_v.Buffer());
+    // }
   }
   prof_region_end("fetch_response", false);
   return true;

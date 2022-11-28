@@ -300,7 +300,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--local-batchnorm', action='store_true',
         help='Use local batch normalization mode')
-    default_lc_dataset = '/p/gpfs1/brainusr/datasets/cosmoflow/cosmoUniverse_2019_05_4parE/hdf5_transposed_dim128_float'
+    default_lc_dataset = '/p/gpfs1/brainusr/datasets/cosmoflow/cosmoUniverse_2019_05_4parE/hdf5_transposed_dim128_float/batch8'
     for role in ['train', 'val', 'test']:
         default_dir = '{}/{}'.format(default_lc_dataset, role)
         parser.add_argument(
@@ -355,7 +355,7 @@ if __name__ == "__main__":
 
     # Set parallel_strategy
     parallel_strategy = get_parallel_strategy_args(
-        sample_groups=args.mini_batch_size,
+        sample_groups=1, #args.mini_batch_size,
         depth_groups=args.depth_groups)
     pooling_id = 0
     dropout_id = 0
@@ -423,6 +423,7 @@ if __name__ == "__main__":
         if args.random_seed is not None else {}
     trainer = lbann.Trainer(
         mini_batch_size=args.mini_batch_size,
+        serialize_io=True,
         **random_seed_arg)
 
     # Runtime parameters/arguments

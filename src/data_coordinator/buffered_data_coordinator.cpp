@@ -86,8 +86,6 @@ void buffered_data_coordinator<TensorDataType>::setup_data_fields(
 #ifdef LBANN_HAS_DISTCONV
   if (dc::is_cosmoflow_parallel_io_enabled()) {
     // Manually resize buffers for CosmoFlow data tensors
-    assert_eq(local_mini_batch_size, 1);
-    assert_eq(partial_mini_batch_size, 0);
     El::Int linearized_size = get_linearized_data_size();
     linearized_size /= dc::get_number_of_io_partitions();
     for (const auto& buf_map : m_data_buffers) {

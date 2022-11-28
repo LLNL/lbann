@@ -812,6 +812,16 @@ class generic_data_reader {
   }
 
   /**
+   * Create a matrix view of a single column selected by mini-batch index.
+   * @param X The matrix to load data into.
+   * @param mb_idx The index within the mini-batch.
+   * @return Single column view of the input matrix
+   */
+  inline CPUMat create_datum_view(CPUMat& X, const int mb_idx) {
+    return El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
+  }
+
+  /**
    * Called before fetch_datum/label/response to allow initialization.
    */
   virtual void preprocess_data_source(int tid) {};
