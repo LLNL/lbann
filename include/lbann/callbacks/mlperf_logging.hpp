@@ -51,15 +51,16 @@ public:
 public:
 
   /** @brief mlperf_logging Constructor.
-   *  @param output_filename Output filename (default = results.txt)
+   *  @param string sub_benchmark Name of benchmark.
+   *  @param string sub_org Name of submission organization (Default: LBANN)
+   *  @param string sub_division Division of benchmark suite (open or closed)
+   *  @param string sub_status Submission status (onprem, cloud, or preview)
+   *  @param string sub_platform Submission platform/hardware
    */
-  mlperf_logging(std::string output_filename, std::string sub_benchmark,
-                 std::string sub_org, std::string sub_division,
-                 std::string sub_status, std::string sub_platform)
+  mlperf_logging(std::string sub_benchmark, std::string sub_org,
+                 std::string sub_division, std::string sub_status,
+                 std::string sub_platform)
     : callback_base(/*batch_interval=*/1),
-      m_output_filename{output_filename.size() ?
-                        std::move(output_filename) :
-                        std::string("results.txt")},
       m_sub_benchmark{sub_benchmark.size() ?
                       std::move(sub_benchmark) :
                       std::string("UNKNOWN_SUBMISSION_BENCHMARK")},
@@ -74,7 +75,7 @@ public:
                    std::string("UNKNOWN_SUBMISSION_STATUS")},
       m_sub_platform{sub_platform.size() ?
                      std::move(sub_platform) :
-                        std::string("UNKNOWN_SUBMISSION_PLATFORM")}
+                     std::string("UNKNOWN_SUBMISSION_PLATFORM")}
   {}
 
   /** @brief Copy interface */
@@ -95,8 +96,9 @@ public:
    *  @param double epoch Current epoch number.
    */
   template <typename T>
-  void print(std::ostringstream& os, mlperf_logging::event_type et, std::string key,
-             T value, char const* file, size_t line, double epoch = -1) const;
+  void print(std::ostringstream& os, mlperf_logging::event_type et,
+             std::string key, T value, char const* file, size_t line,
+             double epoch = -1) const;
 
   void setup(model *m) override;
   void on_setup_end(model *m) override;
@@ -124,16 +126,16 @@ private:
 
 private:
 
-  //FIXME: get logger to output file
-  /* @brief name of output file. Default = results.txt */
-  std::string m_output_filename;
-  /* @brief DiHydrogen logger */
-  h2::Logger m_logger{":::MLLOG", m_output_filename};
   std::string m_sub_benchmark;
   std::string m_sub_org;
   std::string m_sub_division;
   std::string m_sub_status;
   std::string m_sub_platform;
+  //FIXME: Include option to create separate file with just logging data?
+  /* @brief name of output file. Default = results.txt */
+  //std::string m_output_filename;
+  /* @brief DiHydrogen logger */
+  h2::Logger m_logger{":::MLLOG"};
 
 
 }; // class mlperf_logging

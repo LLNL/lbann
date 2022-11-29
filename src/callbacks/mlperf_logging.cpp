@@ -29,6 +29,7 @@
 #include "lbann/callbacks/mlperf_logging.hpp"
 #include "lbann/metrics/metric.hpp"
 #include "lbann/weights/weights.hpp"
+#include "lbann/trainers/trainer.hpp"
 
 #include <callbacks.pb.h>
 
@@ -42,7 +43,11 @@
 namespace lbann {
 namespace callback {
 
-// FIXME Does this need an anon namespace since it's only in the cpp file?
+namespace {
+void print_value(std::ostringstream& os, int value)
+{
+  os << value;
+}
 void print_value(std::ostringstream& os, double value)
 {
   os << value;
@@ -67,8 +72,9 @@ template <typename T>
 void print_value(std::ostringstream& os, T value)
 {
   //FIXME: Should I push the value anyway?
-  os << "UNKNOWN_DATA_TYPE";
+  os << "\"UNKNOWN_DATA_TYPE\"";
 }
+}// namespace
 
 template <typename T>
 void mlperf_logging::print(std::ostringstream& os, mlperf_logging::event_type et,
@@ -114,15 +120,14 @@ size_t mlperf_logging::get_ms_since_epoch()
     system_clock::now().time_since_epoch()).count();
 }
 
-//FIXME(KLG): There is no on_setup_begin. Can I steal this as a callback hook?
 void mlperf_logging::setup(model *m)
 {
   std::ostringstream os;
 
-  //FIXME: What is this?
-  std::string value = "null";
-  print(os, mlperf_logging::event_type::TIME_POINT, "cache_clear", value,
-        __FILE__, __LINE__);
+  // Not a good/portable way to do this in C++
+  // std::string value = "null";
+  // print(os, mlperf_logging::event_type::TIME_POINT, "cache_clear", value,
+  //      __FILE__, __LINE__);
 
   print(os, mlperf_logging::event_type::TIME_POINT, "submission_benchmark",
         m_sub_benchmark, __FILE__, __LINE__);
@@ -139,89 +144,89 @@ void mlperf_logging::setup(model *m)
   print(os, mlperf_logging::event_type::TIME_POINT, "submission_platform",
         m_sub_platform, __FILE__, __LINE__);
 
-  value = "null";
-  print(os, mlperf_logging::event_type::TIME_POINT, "init_start", value,
+  //value = "null";
+  print(os, mlperf_logging::event_type::INT_START, "init_start", "null",
         __FILE__, __LINE__);
 }
 void mlperf_logging::on_setup_end(model *m)
 {
   std::ostringstream os;
   lbann_comm *comm = m->get_comm();
+  auto const& trainer = get_const_trainer();
 
-  //FIXME: num_trainers or world size?
   print(os, mlperf_logging::event_type::TIME_POINT, "number_of_ranks",
-        static_cast<double>(comm->get_num_trainers()), __FILE__, __LINE__);
+        static_cast<int>(comm->get_procs_in_world()), __FILE__, __LINE__);
 
   //FIXME
   auto nodes = -1;
   print(os, mlperf_logging::event_type::TIME_POINT, "number_of_nodes",
-        static_cast<double>(nodes), __FILE__, __LINE__);
+        static_cast<int>(nodes), __FILE__, __LINE__);
 
   //FIXME
   auto accelerators = -1;
   print(os, mlperf_logging::event_type::TIME_POINT, "accelerators_per_node",
-        static_cast<double>(accelerators), __FILE__, __LINE__);
+        static_cast<int>(accelerators), __FILE__, __LINE__);
 
-  //FIXME: From trainer.hpp?
-  auto seed = -1;
+  auto const seed = trainer.get_random_seed();
   print(os, mlperf_logging::event_type::TIME_POINT, "seed",
-        static_cast<double>(seed), __FILE__, __LINE__);
+        seed, __FILE__, __LINE__);
 
-  //FIXME: Add get_minibatch_size to model or metrics?
-  auto batch_size = -1;
+  auto const& dc = trainer.get_data_coordinator();
+  auto const batch_size = dc.get_global_mini_batch_size(
+    execution_mode::training);
   print(os, mlperf_logging::event_type::TIME_POINT, "global_batch_size",
-        static_cast<double>(batch_size), __FILE__, __LINE__);
+        batch_size, __FILE__, __LINE__);
 
-  metric_statistics metrics;
-  auto samples = metrics.get_num_samples();
+  auto samples = dc.get_total_num_samples(execution_mode::training);
   print(os, mlperf_logging::event_type::TIME_POINT, "train_samples",
-        static_cast<double>(samples), __FILE__, __LINE__);
+        samples, __FILE__, __LINE__);
 
-  //FIXME
-  auto eval_samples = -1;
+  //FIXME: Should this be execution_mode::validation? Tom thinks no
+  auto eval_samples = dc.get_total_num_samples(execution_mode::testing);
   print(os, mlperf_logging::event_type::TIME_POINT, "eval_samples",
-        static_cast<double>(eval_samples), __FILE__, __LINE__);
+        eval_samples, __FILE__, __LINE__);
 
-  //FIXME: I couldn't get this to work
-  //auto* optimizer = m->get_weights().get_optimizer();
-  std::string opt = "opt_name";
-  print(os, mlperf_logging::event_type::TIME_POINT, "opt_name",
-        opt, __FILE__, __LINE__);
+  auto const weights = m->get_weights();
+  for (auto const w : weights)
+    if( w->get_optimizer() != nullptr ){
+      std::string opt = w->get_optimizer()->get_type();
+      print(os, mlperf_logging::event_type::TIME_POINT, "opt_name",
+            opt, __FILE__, __LINE__);
 
-  //FIXME
-  auto opt_learning_rate = -1;
-  print(os, mlperf_logging::event_type::TIME_POINT, "opt_base_learning_rate",
-        static_cast<double>(opt_learning_rate), __FILE__, __LINE__);
+      auto opt_learning_rate = w->get_optimizer()->get_learning_rate();
+      print(os, mlperf_logging::event_type::TIME_POINT,
+            "opt_base_learning_rate", static_cast<double>(opt_learning_rate),
+            __FILE__, __LINE__);
+      break;
+    }
 
-  //FIXME
-  auto opt_warmup_steps = -1;
-  print(os, mlperf_logging::event_type::TIME_POINT,
-        "opt_learning_rate_warmup_steps",
-        static_cast<double>(opt_warmup_steps),
-        __FILE__, __LINE__);
+  // LBANN does not perform warmup steps.
+  //  auto opt_warmup_steps = -1;
+  //  print(os, mlperf_logging::event_type::TIME_POINT,
+  //      "opt_learning_rate_warmup_steps",
+  //      static_cast<size_t>(opt_warmup_steps),
+  //      __FILE__, __LINE__);
 
-  //FIXME
-  auto opt_warmup_factor = -1;
-  print(os, mlperf_logging::event_type::TIME_POINT,
-        "opt_learning_rate_warmup_factor",
-        static_cast<double>(opt_warmup_factor),
-        __FILE__, __LINE__);
+  // auto opt_warmup_factor = -1;
+  // print(os, mlperf_logging::event_type::TIME_POINT,
+  //      "opt_learning_rate_warmup_factor",
+  //      static_cast<double>(opt_warmup_factor),
+  //      __FILE__, __LINE__);
 
-  //FIXME
-  auto opt_decay_bound_steps = -1;
-  print(os, mlperf_logging::event_type::TIME_POINT,
-        "opt_learning_rate_decay_boundary_steps",
-        static_cast<double>(opt_decay_bound_steps),
-        __FILE__, __LINE__);
+  // FIXME (Tom's problem)
+  //auto opt_decay_bound_steps = -1;
+  //print(os, mlperf_logging::event_type::TIME_POINT,
+  //      "opt_learning_rate_decay_boundary_steps",
+  //      static_cast<size_t>(opt_decay_bound_steps),
+  //      __FILE__, __LINE__);
 
-  //FIXME
-  auto opt_decay_factor = -1;
-  print(os, mlperf_logging::event_type::TIME_POINT,
-        "opt_learning_rate_decay_factor",
-        static_cast<double>(opt_decay_factor),
-        __FILE__, __LINE__);
+  // auto opt_decay_factor = -1;
+  // print(os, mlperf_logging::event_type::TIME_POINT,
+  //      "opt_learning_rate_decay_factor",
+  //      static_cast<double>(opt_decay_factor),
+  //      __FILE__, __LINE__);
 
-  print(os, mlperf_logging::event_type::TIME_POINT, "init_stop", "null",
+  print(os, mlperf_logging::event_type::INT_END, "init_stop", "null",
         __FILE__, __LINE__);
 }
 
@@ -241,7 +246,7 @@ void mlperf_logging::on_epoch_end(model *m)
   const auto& epoch = static_cast<const SGDExecutionContext&>(
     m->get_execution_context()).get_epoch();
 
-  print(os, mlperf_logging::event_type::INT_START, "epoch_stop", "null",
+  print(os, mlperf_logging::event_type::INT_END, "epoch_stop", "null",
         __FILE__, __LINE__, epoch);
 }
 
@@ -251,7 +256,6 @@ void mlperf_logging::on_train_begin(model *m)
   const auto& epoch = static_cast<const SGDExecutionContext&>(
     m->get_execution_context()).get_epoch();
 
-  //FIXME: run_start? Same time stamp as epoch 1 in results
   print(os, mlperf_logging::event_type::INT_START, "run_start", "null",
         __FILE__, __LINE__, epoch);
 }
@@ -262,8 +266,7 @@ void mlperf_logging::on_train_end(model *m)
   const auto& epoch = static_cast<const SGDExecutionContext&>(
     m->get_execution_context()).get_epoch();
 
-  //FIXME: run_stop? End of training?
-  print(os, mlperf_logging::event_type::INT_START, "run_stop", "null",
+  print(os, mlperf_logging::event_type::INT_END, "run_stop", "null",
         __FILE__, __LINE__, epoch);
 }
 
@@ -283,10 +286,10 @@ void mlperf_logging::on_batch_evaluate_end(model *m)
   const auto& epoch = static_cast<const SGDExecutionContext&>(
     m->get_execution_context()).get_epoch();
 
-  print(os, mlperf_logging::event_type::INT_START, "eval_stop", "null",
+  print(os, mlperf_logging::event_type::INT_END, "eval_stop", "null",
         __FILE__, __LINE__, epoch);
 
-  //FIXME
+  //FIXME (Tom's problem)
   auto eval_error = -1;
   print(os, mlperf_logging::event_type::TIME_POINT, "eval_error",
         static_cast<double>(eval_error), __FILE__,
@@ -304,8 +307,7 @@ build_mlperf_logging_callback_from_pbuf(
                                           params.sub_org(),
                                           params.sub_division(),
                                           params.sub_status(),
-                                          params.sub_platform(),
-                                          params.output_filename());
+                                          params.sub_platform());
 }
 } // namespace callback
 } // namespace lbann

@@ -439,12 +439,11 @@ message Callback {
 
   /** @brief Prints mlperf compliant benchmark logs */
   message CallbackMlperfLogging {
-    string output_filename = 1; // Output filename
-    string sub_benchmark = 2; // FIXME(KLG): document these
-    string sub_org = 3;
-    string sub_division = 4;
-    string sub_status = 5;
-    string sub_platform = 6;
+    string sub_benchmark = 1; // Name of benchmark
+    string sub_org = 2; // Name of submission organization
+    string sub_division = 3; // Open or closed division
+    string sub_status = 4; // Submission status: onprem, cloud, or preview
+    string sub_platform = 5; // Submission platform/hardware
   }
 
   message CallbackAlternateUpdates {
