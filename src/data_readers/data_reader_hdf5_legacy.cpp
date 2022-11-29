@@ -146,7 +146,7 @@ void hdf5_reader<TensorDataType>::read_hdf5_sample(int data_id, TensorDataType *
   hid_t h_data = CHECK_HDF5(
       H5Dopen(h_file, m_key_data.c_str(), H5P_DEFAULT));
   hid_t filespace = CHECK_HDF5(H5Dget_space(h_data));
-  //get the number of dimesnionse from the dataset
+  //get the number of dimensions from the dataset
   int rank1 = H5Sget_simple_extent_ndims(filespace);
   hsize_t dims[rank1];
   // read in what the dimensions are
@@ -401,49 +401,9 @@ bool hdf5_reader<TensorDataType>::fetch_response(Mat& Y, int data_id, int mb_idx
     auto Y_v = create_datum_view(Y, mb_idx);
     std::memcpy(Y_v.Buffer(), buf,
                 m_all_responses.size()*sizeof(DataType));
-    LBANN_MSG("I think that the rank stride is ", dc::get_rank_stride());
-    // if (dc::get_rank_stride() == 1) {
-    //   gather_responses(Y_v.Buffer());
-    // }
   }
   prof_region_end("fetch_response", false);
   return true;
-}
-
-// Gather scattered responses to the first N ranks, where N is the
-// mini-batch size. This is not necessary when the rank reordering
-// is used.
-template <typename TensorDataType>
-void hdf5_reader<TensorDataType>::gather_responses(float *responses) {
-  float recv_buf[m_all_responses.size()];
-  const int rank = dc::get_mpi_rank();
-  const int num_part = dc::get_number_of_io_partitions();
-  const int mini_batch_size = this->get_loaded_mini_batch_size();
-  const int src_rank = rank * num_part;
-  const int dst_rank = rank / num_part;
-  const int tag = 0;
-  int req_idx = 0;
-  MPI_Request req[2];
-
-  // send
-  if (rank % num_part == 0) {
-    MPI_Isend(responses, m_all_responses.size(), MPI_FLOAT, dst_rank,
-              tag, m_response_gather_comm, &req[req_idx]);
-    ++req_idx;
-  }
-
-  // recv
-  if (rank < mini_batch_size) {
-    MPI_Irecv(recv_buf, m_all_responses.size(), MPI_FLOAT, src_rank, tag,
-              m_response_gather_comm, &req[req_idx]);
-    ++req_idx;
-  }
-
-  if (req_idx > 0) {
-    MPI_Waitall(req_idx, req, MPI_STATUS_IGNORE);
-  }
-
-  std::memcpy(responses, recv_buf, sizeof(float) * m_all_responses.size());
 }
 
 template<> hid_t hdf5_reader<float>::get_hdf5_data_type() const {
