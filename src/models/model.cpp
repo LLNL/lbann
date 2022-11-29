@@ -2661,14 +2661,16 @@ void model::setup_distconv()
     auto& layer = get_layer(i);
     if (layer.distconv_enabled()) {
       dc_enabled << " " << layer.get_name();
+      // const auto &ps = layer.get_parallel_strategy();
+      // print_parallel_strategy_header(ss, ps)
     }
     else {
       dc_disabled << " " << layer.get_name();
     }
   }
   if (m_comm->am_world_master()) {
-    std::cout << "Distconv-enabled layers: " << dc_enabled.str() << std::endl;
-    std::cout << "Distconv-disabled layers: " << dc_disabled.str() << std::endl;
+    std::cout << "Distconv-enabled layers:\n\t" << dc_enabled.str() << std::endl << std::endl;
+    std::cout << "Distconv-disabled layers:\n\t" << dc_disabled.str() << std::endl;
   }
   setup_distributions();
   print_distributions();
