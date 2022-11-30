@@ -52,6 +52,8 @@ class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
     const bool shuffle_required);
   virtual ~input_distconv_adapter() = default;
 
+  void setup_layer(size_t workspace_capacity) override;
+
   TensorHostShuffler &get_shuffler(const TensorHost &src, const TensorHost &dst);
   void setup_fp_tensors() override;
   std::unique_ptr<TensorDevType> setup_activations_i(int index) const override;
