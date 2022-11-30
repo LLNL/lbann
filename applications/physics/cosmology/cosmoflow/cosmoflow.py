@@ -311,7 +311,10 @@ if __name__ == "__main__":
     # Parallelism arguments
     parser.add_argument(
         '--depth-groups', action='store', type=int, default=4,
-        help='the number of processes for the depth dimension (default: 4)')
+        help='the k-way partitioning of the depth dimension (default: 4)')
+    parser.add_argument(
+        '--sample-groups', action='store', type=int, default=1,
+        help='the k-way partitioning of the sample dimension (default: 1)')
     parser.add_argument(
         '--depth-splits-pooling-id', action='store', type=int, default=None,
         help='the number of pooling layers from which depth_split is set (default: None)')
@@ -355,7 +358,7 @@ if __name__ == "__main__":
 
     # Set parallel_strategy
     parallel_strategy = get_parallel_strategy_args(
-        sample_groups=1, #args.mini_batch_size,
+        sample_groups=args.sample_groups,
         depth_groups=args.depth_groups)
     pooling_id = 0
     dropout_id = 0
@@ -389,6 +392,7 @@ if __name__ == "__main__":
         lbann.CallbackPrint(),
         lbann.CallbackTimer(),
         lbann.CallbackGPUMemoryUsage(),
+        lbann.CallbackPrintModelDescription(),
         lbann.CallbackDumpOutputs(
             directory='dump_acts/',
             layers=' '.join([preds.name, secrets.name]),
