@@ -74,12 +74,29 @@ void print_value(std::ostringstream& os, T value)
   //FIXME: Should I push the value anyway?
   os << "\"UNKNOWN_DATA_TYPE\"";
 }
+
+//FIXME: Tom's problem
+int get_real_num_accelerators()
+{
+  return 0;
+}
+
+int get_num_nodes()
+{
+  if (std::getenv("SLURM_NNODES"))
+    return atoi(std::getenv("SLURM_NNODES"));
+  else if (std::getenv("FLUX_JOB_NNODES"))
+    return atoi(std::getenv("FLUX_JOB_NNODES"));
+  else return -1;
+  //FIXME: count number of unique hostnames in universe?
+}
 }// namespace
 
 template <typename T>
-void mlperf_logging::print(std::ostringstream& os, mlperf_logging::event_type et,
-                           std::string key, T value, char const* file,
-                           size_t line, double epoch) const
+void mlperf_logging::print(std::ostringstream& os,
+                           mlperf_logging::event_type et, std::string key,
+                           T value, char const* file, size_t line,
+                           double epoch) const
 {
   os << "{"
      << "\"namespace\": \"\", "
@@ -144,7 +161,6 @@ void mlperf_logging::setup(model *m)
   print(os, mlperf_logging::event_type::TIME_POINT, "submission_platform",
         m_sub_platform, __FILE__, __LINE__);
 
-  //value = "null";
   print(os, mlperf_logging::event_type::INT_START, "init_start", "null",
         __FILE__, __LINE__);
 }
@@ -157,13 +173,10 @@ void mlperf_logging::on_setup_end(model *m)
   print(os, mlperf_logging::event_type::TIME_POINT, "number_of_ranks",
         static_cast<int>(comm->get_procs_in_world()), __FILE__, __LINE__);
 
-  //FIXME
-  auto nodes = -1;
   print(os, mlperf_logging::event_type::TIME_POINT, "number_of_nodes",
-        static_cast<int>(nodes), __FILE__, __LINE__);
+        static_cast<int>(get_num_nodes()), __FILE__, __LINE__);
 
-  //FIXME
-  auto accelerators = -1;
+  auto accelerators = get_real_num_accelerators();
   print(os, mlperf_logging::event_type::TIME_POINT, "accelerators_per_node",
         static_cast<int>(accelerators), __FILE__, __LINE__);
 
@@ -308,6 +321,7 @@ build_mlperf_logging_callback_from_pbuf(
                                           params.sub_division(),
                                           params.sub_status(),
                                           params.sub_platform());
+  //params.num_nodes());
 }
 } // namespace callback
 } // namespace lbann
