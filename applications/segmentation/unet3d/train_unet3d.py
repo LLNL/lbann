@@ -67,9 +67,13 @@ if __name__ == '__main__':
     parser.add_argument(
         '--partition-level', action='store', default=4, type=int,
         help='the spatial partition level (default: 4)')
+    # Parallelism arguments
     parser.add_argument(
         '--depth-groups', action='store', type=int, default=4,
-        help='the number of processes for the depth dimension (default: 4)')
+        help='the k-way partitioning of the depth dimension (default: 4)')
+    parser.add_argument(
+        '--sample-groups', action='store', type=int, default=1,
+        help='the k-way partitioning of the sample dimension (default: 1)')
     default_lc_dataset = '/p/vast1/lbann/datasets/LiTS/hdf5_dim128_float'
     default_train_dir = '{}/train'.format(default_lc_dataset)
     default_test_dir = '{}/test'.format(default_lc_dataset)
@@ -98,7 +102,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     parallel_strategy = get_parallel_strategy_args(
-        sample_groups=args.mini_batch_size,
+        sample_groups=args.sample_groups,
         depth_groups=args.depth_groups)
 
     model = unet3d_model.construct_unet3d_model(parallel_strategy=parallel_strategy,
