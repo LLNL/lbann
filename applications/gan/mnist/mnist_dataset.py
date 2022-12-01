@@ -13,6 +13,7 @@ if not os.path.exists(data_file):
     urllib.request.urlretrieve('https://ossci-datasets.s3.amazonaws.com/mnist/train-images-idx3-ubyte.gz', data_file + '.gz')
     with gzip.open(data_file + '.gz', 'rb') as in_file, open(data_file, 'wb') as out_file:
         out_file.write(in_file.read())
+    os.remove(data_file + '.gz')
 
 class MnistDataset:
     def __init__(self):
