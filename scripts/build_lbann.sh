@@ -410,7 +410,9 @@ function warn_on_failure()
 
 ##########################################################################################
 # Figure out if there are default dependencies or flags (e.g.  MPI/BLAS library) for the center
+CENTER_COMPILER_PATHS=
 CENTER_COMPILER=
+DEPENDENTS_CENTER_COMPILER=
 CENTER_DEPENDENCIES=
 CENTER_LINKER_FLAGS=
 CENTER_BLAS_LIBRARY=
@@ -681,7 +683,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
         [[ -z "${DRY_RUN:-}" ]] && { `spack config add packages:all:variants:"${DEPENDENT_PACKAGES_GPU_VARIANTS}"` || exit_on_failure "${CMD}"; }
     fi
 
-    CMD="spack compiler find --scope env:${LBANN_ENV}"
+    CMD="spack compiler find --scope env:${LBANN_ENV} ${CENTER_COMPILER_PATHS}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -762,10 +764,13 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
 
     # Add any extra packages specified on the command line that you want to build in conjuction with the LBANN package
     if [[ -n "${PKG_LIST:-}" ]]; then
+        if [[ -z ${DEPENDENTS_CENTER_COMPILER} ]]; then
+            DEPENDENTS_CENTER_COMPILER=${CENTER_COMPILER}
+        fi
         for p in ${PKG_LIST}
         do
-            CMD="spack add ${p} ${CENTER_COMPILER}"
-            SPACK_SOLVE_EXTRA_PACKAGES="${p} ${CENTER_COMPILER} ${SPACK_SOLVE_EXTRA_PACKAGES}"
+            CMD="spack add ${p} ${DEPENDENTS_CENTER_COMPILER}"
+            SPACK_SOLVE_EXTRA_PACKAGES="${p} ${DEPENDENTS_CENTER_COMPILER} ${SPACK_SOLVE_EXTRA_PACKAGES}"
             echo ${CMD} | tee -a ${LOG}
             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
         done
