@@ -108,17 +108,14 @@ def build_model(num_epochs=100):
     real_out = disc(real)
     fake_out = disc(fake)
 
-    # Setup the binary switches to alternate between generator and
-    # discriminator losses.
-    disc_switch = lbann.BinarySwitch(num_neurons=[1], name='disc_switch')
-    gen_switch = lbann.BinarySwitch(num_neurons=[1], name='gen_switch')
-
     # Compute the loss functions for the generator and discriminator (hinge loss).
     real_loss = lbann.Relu(lbann.ConstantSubtract(real_out, constant=1))
     fake_loss = lbann.Relu(lbann.AddConstant(fake_out, constant=1))
 
-    disc_loss = lbann.Multiply(lbann.Add(real_loss, fake_loss), disc_switch) # 0 if disc_switch layer is frozen.
-    gen_loss = lbann.Multiply(lbann.Negative(fake_out), gen_switch) # 0 if gen_switch layer is frozen.
+    # Setup the binary switches to alternate between generator and
+    # discriminator losses.
+    disc_loss = lbann.BinarySwitch(lbann.Add(real_loss, fake_loss), name='disc_switch') # 0 if disc_switch layer is frozen.
+    gen_loss = lbann.BinarySwitch(lbann.Negative(fake_out), name='gen_switch') # 0 if gen_switch layer is frozen.
 
     loss = lbann.Add(disc_loss, gen_loss)
 
@@ -126,8 +123,8 @@ def build_model(num_epochs=100):
 
     # Get the generator and discriminator layers for the AlternateUpdates 
     # callback.
-    disc_layers = [disc_switch.name]
-    gen_layers = [gen_switch.name]
+    disc_layers = [disc_loss.name]
+    gen_layers = [gen_loss.name]
     for l in layers:
         if l.weights and 'disc_' in l.name:
             disc_layers.append(l.name)

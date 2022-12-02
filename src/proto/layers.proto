@@ -1026,15 +1026,12 @@ message Layer {
     repeated uint32 axes = 1;
   }
 
-  /** @brief Output tensor filled with either ones or zeros
+  /** @brief Toggle identity or zero function.
    *  
-   *  Outputs zeros when the layer is frozen and ones otherwise.
+   *  Outputs zeros when the layer is frozen or acts as the identity function 
+   *  otherwise.
    */
   message BinarySwitch {
-    /** @brief Tensor dimensions
-     *  @details List of integers
-     */
-    repeated int64 num_neurons = 1;
   }
 
   /// Deprecated

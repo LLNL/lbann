@@ -38,11 +38,9 @@ template <typename TensorDataType,
 class binary_switch_layer : public data_type_layer<TensorDataType> {
 public:
 
-  binary_switch_layer(lbann_comm *comm,
-                      std::vector<int> dims)
+  binary_switch_layer(lbann_comm *comm)
     : data_type_layer<TensorDataType>(comm) {
-    this->set_output_dims(dims);
-    this->m_expected_num_parent_layers = 0;
+    this->m_expected_num_parent_layers = 1;
   }
 
   binary_switch_layer* copy() const override { return new binary_switch_layer(*this); }
@@ -63,15 +61,49 @@ protected:
 
   friend class cereal::access;
   binary_switch_layer()
-    : binary_switch_layer(nullptr, { 1 } )
+    : binary_switch_layer(nullptr)
   {}
 
+
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    this->set_output_dims(this->get_input_dims());
+
+    // Check that input dimensions match
+    const auto& output_dims = this->get_output_dims();
+    for (int i = 0; i < this->get_num_parents(); ++i) {
+      if (this->get_input_dims(i) != output_dims) {
+        const auto& parents = this->get_parent_layers();
+        std::stringstream err;
+        err << get_type() << " layer \"" << this->get_name() << "\" "
+            << "has input tensors with incompatible dimensions (";
+        for (int j = 0; j < this->get_num_parents(); ++j) {
+          const auto& dims = this->get_input_dims(j);
+          err << (j > 0 ? ", " : "")
+              << "layer \"" << parents[j]->get_name() << "\" outputs ";
+          for (size_t k = 0; k < dims.size(); ++k) {
+            err << (k > 0 ? " x " : "") << dims[k];
+          }
+        }
+        err << ")";
+        LBANN_ERROR(err.str());
+      }
+    }
+  }
 
   void fp_compute() override {
     if (this->is_frozen()) {
       El::Zero(this->get_activations());
     } else {
-      El::Fill(this->get_activations(), El::To<TensorDataType>(1));
+      El::Copy(this->get_prev_activations(), this->get_activations());
+    }
+  }
+
+  void bp_compute() override{
+    if (this->is_frozen()) {
+      El::Zero(this->get_error_signals());
+    } else {
+      El::Copy(this->get_prev_error_signals(), this->get_error_signals());
     }
   }
 

@@ -13,7 +13,7 @@
    :widths: auto
 
    :ref:`BatchwiseReduceSum`, "Sum of tensor entries over batch dimension"
-   :ref:`BinarySwitch`, "Output zeros/ones if layer is frozen/unfrozen."
+   :ref:`BinarySwitch`, "Zero/identity function if layer is frozen/unfrozen."
    :ref:`Bernoulli`, "Random tensor with Bernoulli distribution"
    :ref:`Concatenation`, "Concatenate tensors along specified
    dimension"

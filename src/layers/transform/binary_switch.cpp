@@ -41,11 +41,8 @@ build_binary_switch_layer_from_pbuf(lbann_comm* comm,
 {
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, binary_switch);
   using LayerType = binary_switch_layer<TensorDataType, Layout, Device>;
-
-  const auto& params = proto_layer.binary_switch();
-  return std::make_unique<LayerType>(
-    comm,
-    protobuf::to_vector<int>(params.num_neurons()));
+  
+  return std::make_unique<LayerType>(comm);
 }
 
 #define PROTO_DEVICE(T, Device) \
