@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LBANN_BINARY_SWITCH_LAYER_INSTANTIATE
-#include "lbann/layers/transform/binary_switch.hpp"
+#define LBANN_IDENTITY_ZERO_LAYER_INSTANTIATE
+#include "lbann/layers/transform/identity_zero.hpp"
 
 // LBANN_ASSERT_MSG_HAS_FIELD
 #include "lbann/proto/proto_common.hpp"
@@ -36,19 +36,19 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<Layer>
-build_binary_switch_layer_from_pbuf(lbann_comm* comm,
+build_identity_zero_layer_from_pbuf(lbann_comm* comm,
                                     lbann_data::Layer const& proto_layer)
 {
-  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, binary_switch);
-  using LayerType = binary_switch_layer<TensorDataType, Layout, Device>;
+  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, identity_zero);
+  using LayerType = identity_zero_layer<TensorDataType, Layout, Device>;
   
   return std::make_unique<LayerType>(comm);
 }
 
 #define PROTO_DEVICE(T, Device) \
-  template class binary_switch_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class binary_switch_layer<T, data_layout::MODEL_PARALLEL, Device>; \
-  LBANN_LAYER_BUILDER_ETI(binary_switch, T, Device)
+  template class identity_zero_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  template class identity_zero_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+  LBANN_LAYER_BUILDER_ETI(identity_zero, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
 

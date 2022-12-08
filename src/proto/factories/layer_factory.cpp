@@ -133,7 +133,6 @@ private:
     // Transform layers
     LBANN_REGISTER_BUILDER(BatchwiseReduceSum, batchwise_reduce_sum);
     LBANN_REGISTER_BUILDER(Bernoulli, bernoulli);
-    LBANN_REGISTER_BUILDER(BinarySwitch, binary_switch);
     LBANN_REGISTER_BUILDER(CategoricalRandom, categorical_random);
     LBANN_REGISTER_BUILDER(Concatenation, concatenate);
     LBANN_REGISTER_BUILDER(Constant, constant);
@@ -146,6 +145,7 @@ private:
     LBANN_REGISTER_BUILDER(Gather, gather);
     LBANN_REGISTER_BUILDER(Gaussian, gaussian);
     LBANN_REGISTER_BUILDER(Hadamard, hadamard);
+    LBANN_REGISTER_BUILDER(IdentityZero, identity_zero);
     LBANN_REGISTER_BUILDER(InTopK, in_top_k);
     LBANN_REGISTER_BUILDER(Pooling, pooling);
     LBANN_REGISTER_BUILDER(Reduction, reduction);

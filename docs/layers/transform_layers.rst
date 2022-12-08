@@ -13,7 +13,6 @@
    :widths: auto
 
    :ref:`BatchwiseReduceSum`, "Sum of tensor entries over batch dimension"
-   :ref:`BinarySwitch`, "Zero/identity function if layer is frozen/unfrozen."
    :ref:`Bernoulli`, "Random tensor with Bernoulli distribution"
    :ref:`Concatenation`, "Concatenate tensors along specified
    dimension"
@@ -27,6 +26,7 @@
    :ref:`Gather`, "Gather values from specified tensor indices"
    :ref:`Gaussian`, "Random tensor with Gaussian/normal distribution"
    :ref:`Hadamard`, "Entry-wise tensor product"
+   :ref:`IdentityZero`, "Identity/zero function if layer is unfrozen/frozen."
    :ref:`InTopK`, "One-hot vector indicating top-k entries"
    :ref:`Pooling`, "Traverses the spatial dimensions of a data tensor
    with a sliding window and applies a reduction operation"
@@ -74,13 +74,13 @@ Arguments: None
 ________________________________________
 
 
-.. _BinarySwitch:
+.. _IdentityZero:
 
 ----------------------------------------
-BinarySwitch
+IdentityZero
 ----------------------------------------
 
-The BinarySwitch layer is an output tensor filled with either zeros or
+The IdentityZero layer is an output tensor filled with either zeros or
 ones depending on if the layer is frozen or not. This is useful for
 more complex training setups like GANs, where you want to reuse the
 computational graph but switch loss functions.

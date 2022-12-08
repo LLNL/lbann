@@ -112,10 +112,10 @@ def build_model(num_epochs=100):
     real_loss = lbann.Relu(lbann.ConstantSubtract(real_out, constant=1))
     fake_loss = lbann.Relu(lbann.AddConstant(fake_out, constant=1))
 
-    # Setup the binary switches to alternate between generator and
-    # discriminator losses.
-    disc_loss = lbann.BinarySwitch(lbann.Add(real_loss, fake_loss), name='disc_switch') # 0 if disc_switch layer is frozen.
-    gen_loss = lbann.BinarySwitch(lbann.Negative(fake_out), name='gen_switch') # 0 if gen_switch layer is frozen.
+    # Setup the switches to alternate between generator and discriminator
+    # losses.
+    disc_loss = lbann.IdentityZero(lbann.Add(real_loss, fake_loss)) # 0 if layer is frozen.
+    gen_loss = lbann.IdentityZero(lbann.Negative(fake_out)) # 0 if layer is frozen.
 
     loss = lbann.Add(disc_loss, gen_loss)
 

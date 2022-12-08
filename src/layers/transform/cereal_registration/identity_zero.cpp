@@ -24,14 +24,14 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 #include "lbann/utils/serialize.hpp"
-#include <lbann/layers/transform/binary_switch.hpp>
+#include <lbann/layers/transform/identity_zero.hpp>
 
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
 void
-binary_switch_layer<TensorDataType,Layout,Device>
+identity_zero_layer<TensorDataType,Layout,Device>
 ::serialize(ArchiveT& ar)
 {
   using DataTypeLayer = data_type_layer<TensorDataType>;
@@ -41,5 +41,5 @@ binary_switch_layer<TensorDataType,Layout,Device>
 
 } // namespace lbann
 
-#define LBANN_LAYER_NAME binary_switch_layer
+#define LBANN_LAYER_NAME identity_zero_layer
 #include <lbann/macros/register_layer_with_cereal.hpp>
