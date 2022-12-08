@@ -74,7 +74,7 @@ protected:
     for (int i = 0; i < this->get_num_parents(); ++i) {
       if (this->get_input_dims(i) != output_dims) {
         const auto& parents = this->get_parent_layers();
-        std::stringstream err;
+        std::ostringstream err;
         err << get_type() << " layer \"" << this->get_name() << "\" "
             << "has input tensors with incompatible dimensions (";
         for (int j = 0; j < this->get_num_parents(); ++j) {
