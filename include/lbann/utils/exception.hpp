@@ -31,6 +31,7 @@
 
 #include <exception>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 
 // Macro to throw an LBANN exception
@@ -64,7 +65,7 @@
   do {                                                          \
     const int rank_LBANN_MSG = lbann::get_rank_in_world();      \
     if(rank_LBANN_MSG == 0) {                                   \
-      std::cout << lbann::build_string(                         \
+      std::cout << lbann::build_string( \
       "LBANN message",                                          \
       (rank_LBANN_MSG >= 0                                      \
        ? " on rank " + std::to_string(rank_LBANN_MSG)           \
@@ -135,7 +136,7 @@ using lbann_exception = exception;
 template <typename... Args>
 std::string build_string(Args&&... args) {
   std::ostringstream oss;
-  int dummy[] = { (oss << args, 0)... };
+  int dummy[] = { (oss << std::setfill('0') << std::setw(7) << args, 0)... };
   (void) dummy; // silence compiler warnings
   return oss.str();
 }
