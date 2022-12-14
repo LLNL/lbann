@@ -23,7 +23,7 @@ sys.path.append(app_path)
 # ==============================================
 
 # Training options
-procs_per_node = 2 # Only use 2 GPUs to ensure comparable testing between lassen and pascal
+procs_per_node = 1#2 # Only use 2 GPUs to ensure comparable testing between lassen and pascal
                    # this model is very sensitive to differences in how it is initialized
                    # and parallelized
 
@@ -66,19 +66,19 @@ weekly_options_and_targets = {
 nightly_options_and_targets = {
     'num_nodes': 1,
     'num_epochs': 10,
-    'mini_batch_size': 1,
+    'mini_batch_size': 2,
     'input_width': 128,
     'num_secrets': 4,
     'use_batchnorm': True,
     'local_batchnorm': True,
-    'depth_groups': 2,
+    'depth_groups': 1, #2,
     'sample_groups': 1,
     'depth_splits_pooling_id': None,
     'gather_dropout_id': 1,
     'expected_train_mse_range': (0.273, 0.290),
     'expected_test_mse_range': (0.118, 0.120),
 #    'expected_test_mse_range': (2.96, 2.97),
-    'percent_of_data_to_use': 1,
+    'percent_of_data_to_use': 1.0,
     'expected_mini_batch_times': {
         'lassen':   0.0229,
         'pascal':   0.044,
@@ -151,12 +151,21 @@ def setup_experiment(lbann, weekly):
     trainer = lbann.Trainer(mini_batch_size=options['mini_batch_size'],
                             serialize_io=True)
 
+    # Checkpoint after every epoch
+    # trainer.callbacks = [
+    #     lbann.CallbackCheckpoint(
+    #         checkpoint_dir='ckpt',
+    #         checkpoint_epochs=1,
+    #         checkpoint_steps=1
+    #     )
+    # ]
+
     # Set parallel_strategy
     parallel_strategy = get_parallel_strategy_args(
         sample_groups=options['sample_groups'],
         depth_groups=options['depth_groups'])
     import cosmoflow_model
-    model = cosmoflow_model.construct_cosmoflow_model(parallel_strategy=parallel_strategy,
+    model = cosmoflow_model.construct_cosmoflow_model(parallel_strategy=None, #parallel_strategy,
                                                       local_batchnorm=options['local_batchnorm'],
                                                       input_width=options['input_width'],
                                                       num_secrets=options['num_secrets'],
