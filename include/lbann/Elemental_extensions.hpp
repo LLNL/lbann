@@ -46,11 +46,16 @@ void RowSum(const AbstractMatrix<F>& X, AbstractMatrix<F>& sums);
 template <typename F>
 void RowSum(const AbstractDistMatrix<F>& A, AbstractDistMatrix<F>& sums);
 
+template<typename F>
+void ColumnSummaryStats(const Matrix<F>& X, F& sum, F& min, F& max, F& mean);
+
 #define LBANN_PROTO(F)                                           \
   template void ColumnSum                                        \
   ( const Matrix<F>& X, Matrix<F>& norms );                      \
   template void RowSum                                           \
   ( const Matrix<F>& X, Matrix<F>& norms );                      \
+  template void ColumnSummaryStats                               \
+  ( const Matrix<F>& X, F& sum, F& min, F& max, F& mean );       \
   template void ColumnSum                                        \
   ( const AbstractMatrix<F>& X, AbstractMatrix<F>& norms );      \
   template void RowSum                                           \
