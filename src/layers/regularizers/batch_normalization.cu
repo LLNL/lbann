@@ -29,6 +29,8 @@
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/weights/weights_helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/Elemental_extensions.hpp"
 
 namespace lbann {
 
@@ -555,6 +557,56 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
   const auto& local_var = (is_training ?
                            this->m_var_v->LockedMatrix() :
                            this->weights_values(3).LockedMatrix());
+
+  El::Matrix<float, El::Device::CPU> foo;
+  //  El::Matrix<float, El::Device::CPU> local_scale_sum, foo, local_bias_sum, local_mean_sum;
+  //CircMat<El::Device::CPU> local_scale_sum;
+  //  El::ColumnSum(this->weights_values(0).LockedMatrix(), local_scale_sum);
+  //  El::ColumnSum(foo, local_scale_sum);
+  //  El::ColumnSum(local_scale, static_cast<El::AbstractMatrix<float>>(local_scale_sum));
+  //  float local_scale_sum, local_scale_avg;// = local_scale_sum[0] / local_scale.Height();
+
+  float local_scale_sum, local_scale_min, local_scale_max, local_scale_mean;
+  El::Copy(local_scale, foo);
+  El::ColumnSummaryStats(foo, local_scale_sum, local_scale_min, local_scale_max, local_scale_mean);
+  //  LBANN_MSG("I think that the sum is ", local_scale_avg);
+
+  float local_bias_sum, local_bias_min, local_bias_max, local_bias_mean;
+  El::Copy(local_bias, foo);
+  El::ColumnSummaryStats(foo, local_bias_sum, local_bias_min, local_bias_max, local_bias_mean);
+  //  LBANN_MSG("I think that the sum is ", local_bias_avg);
+
+  float local_mean_sum, local_mean_min, local_mean_max, local_mean_mean;
+  El::Copy(local_mean, foo);
+  El::ColumnSummaryStats(foo, local_mean_sum, local_mean_min, local_mean_max, local_mean_mean);
+  //  LBANN_MSG("I think that the sum is ", local_mean_avg);
+
+  float local_var_sum, local_var_min, local_var_max, local_var_mean;
+  El::Copy(local_var, foo);
+  El::ColumnSummaryStats(foo, local_var_sum, local_var_min, local_var_max, local_var_mean);
+  //  LBANN_MSG("I think that the sum is ", local_var_avg);
+
+  LBANN_MSG(this->get_name(), " scale= ", local_scale_min, " / ", local_scale_mean, " / ", local_scale_max,
+            " || bias= ", local_bias_min, " / ", local_bias_mean, " / ", local_bias_max,
+            " || mean= ", local_mean_min, " / ", local_mean_mean, " / ", local_mean_max,
+            " || var= ", local_var_min, " / ", local_var_mean, " / ", local_var_max);
+
+
+  /* LBANN_MSG(this->get_name(), " scale= ", local_scale_min, " / ", local_scale_mean, " / ", local_scale_max, " : ", local_scale_sum, */
+  /*           " || bias= ", local_bias_min, " / ", local_bias_mean, " / ", local_bias_max, " : ", local_bias_sum, */
+  /*           " || mean= ", local_mean_min, " / ", local_mean_mean, " / ", local_mean_max, " : ", local_mean_sum, */
+  /*           " || var= ", local_var_min, " / ", local_var_mean, " / ", local_var_max, " : ", local_var_sum); */
+
+  /* LBANN_MSG(this->get_name(), " Applying batch norm with local_scale="); */
+  /* El::Print(local_scale); */
+  /* /\* LBANN_MSG("mean_and_var"); *\/ */
+  /* /\* El::Print(m_mean_and_var); *\/ */
+  /* LBANN_MSG(" local_bias="); */
+  /* El::Print(local_bias); */
+  /* LBANN_MSG(" local_mean="); */
+  /* El::Print(local_mean); */
+  /* LBANN_MSG(" local_var="); */
+  /* El::Print(local_var); */
   if (!local_input.IsEmpty()) {
     auto multisync =
       El::MakeMultiSync(gpu::get_sync_info(local_output),
