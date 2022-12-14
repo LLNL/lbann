@@ -389,15 +389,19 @@ bool hdf5_reader<TensorDataType>::fetch_response(Mat& Y, int data_id, int mb_idx
     std::memcpy(Y_v.Buffer(), buf, m_num_features*sizeof(TensorDataType));
   } else {
     assert_eq(Y.Height(), m_all_responses.size());
-    if (data_store_active()) {
-      conduit::Node node;
+    conduit::Node node;
+    if (data_store_active() || m_data_store->has_conduit_node(data_id)) {
       const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
       node.set_external(ds_node);
-      const std::string conduit_obj = LBANN_DATA_ID_STR(data_id);
-      buf = node[conduit_obj+"/responses"].value();
+      //      buf = node[conduit_obj+"/responses"].value();
     }else {
-      buf = &m_all_responses[0];
+      load_sample(node, data_id);
+      //      buf = node[conduit_obj+"/responses"].value();
+      // LBANN_WARNING("I am trying to fetch data id ", data_id, " and the data store isn't active");
+      // buf = &m_all_responses[0];
     }
+    const std::string conduit_obj = LBANN_DATA_ID_STR(data_id);
+    buf = node[conduit_obj+"/responses"].value();
     auto Y_v = create_datum_view(Y, mb_idx);
     std::memcpy(Y_v.Buffer(), buf,
                 m_all_responses.size()*sizeof(DataType));
