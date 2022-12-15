@@ -868,21 +868,22 @@ fp_setup_outputs(El::Int mini_batch_size) {
 #endif // LBANN_HAS_DISTCONV
     auto& output = get_activations(i);
     auto& arg_parser = global_argument_parser();
+    if (output.Viewing()) {
+      LBANN_ERROR(get_name(),
+                  " fp_setup_outputs should be overridden",
+                  " if it needs to handle outputs that view",
+                  " other matrices");
+    }
     if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
       output.Empty(false);
     }
     if (align_outputs) {
       output.AlignWith(alignment_dist);
     }
-    El::Int old_height = output.Height();
     output.Resize(get_output_size(i), mini_batch_size);
     if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
       El::Zero(output);
     }
-    // if (old_height != get_output_size(i)) {
-    //   LBANN_MSG("I have just resized the output from ", old_height, " to new height ", get_output_size(i));
-    //   El::Zero(output);
-    // }
   }
 
 }
@@ -1100,6 +1101,12 @@ bp_setup_gradient_wrt_inputs(
 #endif // LBANN_HAS_DISTCONV
     auto& gradient_wrt_input = get_error_signals(i);
     auto& arg_parser = global_argument_parser();
+    if (gradient_wrt_input.Viewing()) {
+      LBANN_ERROR(get_name(),
+                  " bp_setup_gradient_wrt_inputs should be overridden",
+                  " if it needs to handle error signals that view other",
+                  "  matrices");
+    }
     if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
       gradient_wrt_input.Empty(false);
     }
