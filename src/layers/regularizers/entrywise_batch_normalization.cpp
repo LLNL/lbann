@@ -28,7 +28,10 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
 
+#include "lbann/utils/argument_parser.hpp"
 #include "lbann/weights/weights_helpers.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/options.hpp"
 
 namespace lbann {
 
@@ -158,7 +161,13 @@ void fp_impl(lbann_comm& comm,
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Make sure workspace is aligned with input tensor
-  batch_statistics.Empty(false);
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+    batch_statistics.Empty(false);
+  }
+  if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+    El::Zero(batch_statistics);
+  }
   batch_statistics.AlignWith(input);
   batch_statistics.Resize(input.Height(), 2);
 
@@ -220,7 +229,13 @@ void bp_training_impl(lbann_comm& comm,
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Make sure workspace is aligned with input tensor
-  gradient_wrt_statistics.Empty(false);
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+    gradient_wrt_statistics.Empty(false);
+  }
+  if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+    El::Zero(gradient_wrt_statistics);
+  }
   gradient_wrt_statistics.AlignWith(input);
   gradient_wrt_statistics.Resize(input.Height(), 2);
 

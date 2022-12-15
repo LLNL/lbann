@@ -26,6 +26,8 @@
 
 #define LBANN_VARIANCE_LAYER_INSTANTIATE
 #include "lbann/layers/misc/variance.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/options.hpp"
 
 namespace lbann {
 
@@ -55,7 +57,13 @@ void fp_cpu(const El::AbstractDistMatrix<TensorDataType>& input,
   const auto& local_width = local_input.Width();
 
   // Compute column-wise mean
-  means.Empty(false);
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+    means.Empty(false);
+  }
+  if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+    El::Zero(means);
+  }
   means.AlignWith(input);
   means.Resize(1, width);
   LBANN_OMP_PARALLEL_FOR
@@ -69,7 +77,12 @@ void fp_cpu(const El::AbstractDistMatrix<TensorDataType>& input,
   El::AllReduce(means, means.RedundantComm());
 
   // Compute column-wise variance
-  workspace.Empty(false);
+  if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+    workspace.Empty(false);
+  }
+  if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+    El::Zero(workspace);
+  }
   workspace.AlignWith(input);
   workspace.Resize(1, width);
   LBANN_OMP_PARALLEL_FOR

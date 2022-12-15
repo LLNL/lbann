@@ -27,6 +27,8 @@
 #define LBANN_LOG_SOFTMAX_LAYER_INSTANTIATE
 #include "lbann/comm_impl.hpp"
 #include "lbann/layers/activations/log_softmax.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/options.hpp"
 
 namespace lbann {
 
@@ -39,7 +41,13 @@ void fp(lbann_comm& comm,
         El::AbstractDistMatrix<TensorDataType>& workspace) {
 
   // Setup workspace
-  workspace.Empty(false);
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+    workspace.Empty(false);
+  }
+  if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+    El::Zero(workspace);
+  }
   workspace.AlignWith(input);
   workspace.Resize(1, input.Width());
 

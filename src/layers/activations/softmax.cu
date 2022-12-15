@@ -30,6 +30,8 @@
 #ifdef LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/softmax.hpp"
 #endif // LBANN_HAS_DNN_LIB
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/options.hpp"
 
 namespace lbann {
 
@@ -343,7 +345,13 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, 
   }
 
   // Setup workspace
-  l.m_workspace->Empty(false);
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+    l.m_workspace->Empty(false);
+  }
+  /* if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) { */
+  /*   El::Zero(l.m_workspace); */
+  /* } */
   l.m_workspace->AlignWith(l.get_activations());
   l.m_workspace->Resize(1, l.get_activations().Width());
 

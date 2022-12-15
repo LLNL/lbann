@@ -30,6 +30,9 @@
 
 #include "lbann/utils/dnn_lib/softmax.hpp"
 
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/options.hpp"
+
 namespace lbann {
 
 namespace {
@@ -47,7 +50,13 @@ void fp_model_parallel(lbann_comm& comm,
   }
 
   // Setup workspace
-  workspace.Empty(false);
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+    workspace.Empty(false);
+  }
+  if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+    El::Zero(workspace);
+  }
   workspace.AlignWith(input);
   workspace.Resize(1, input.Width());
 

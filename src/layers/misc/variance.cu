@@ -27,6 +27,8 @@
 #define LBANN_VARIANCE_LAYER_INSTANTIATE
 #include "lbann/layers/misc/variance.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/options.hpp"
 
 namespace lbann {
 
@@ -125,7 +127,13 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
   const auto& local_width = local_input.Width();
 
   // Compute column-wise mean
-  means.Empty(false);
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+    means.Empty(false);
+  }
+  if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+    El::Zero(means);
+  }
   means.AlignWith(input);
   means.Resize(1, width);
   El::Matrix<TensorDataType, El::Device::GPU> ones;
@@ -141,7 +149,12 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
   El::AllReduce(means, means.RedundantComm());
 
   // Compute column-wise variance
-  workspace.Empty(false);
+  if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+    workspace.Empty(false);
+  }
+  if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+    El::Zero(workspace);
+  }
   workspace.AlignWith(input);
   El::Zeros(workspace, 1, width);
   if (!local_input.IsEmpty()) {

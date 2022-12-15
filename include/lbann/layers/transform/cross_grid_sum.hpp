@@ -29,6 +29,8 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/options.hpp"
 
 namespace lbann {
 
@@ -144,7 +146,13 @@ private:
     for (int i = 0; i < this->get_num_children(); ++i) {
 
       auto& output = this->get_activations(i);
-      output.Empty(false);
+      auto& arg_parser = global_argument_parser();
+      if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+        output.Empty(false);
+      }
+      if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+        El::Zero(output);
+      }
       output.Resize(this->get_output_size(i), mini_batch_size);
     }
   }

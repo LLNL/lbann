@@ -26,6 +26,8 @@
 
 #define LBANN_COVARIANCE_LAYER_INSTANTIATE
 #include "lbann/layers/misc/covariance.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/options.hpp"
 
 namespace lbann {
 
@@ -57,7 +59,13 @@ void fp_cpu(const El::AbstractDistMatrix<TensorDataType>& input0,
   const auto& local_width = local_input0.Width();
 
   // Compute column-wise mean
-  means.Empty(false);
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+    means.Empty(false);
+  }
+  if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+    El::Zero(means);
+  }
   means.AlignWith(input0);
   means.Resize(2, width);
   LBANN_OMP_PARALLEL_FOR
@@ -74,7 +82,12 @@ void fp_cpu(const El::AbstractDistMatrix<TensorDataType>& input0,
   El::AllReduce(means, means.RedundantComm());
 
   // Compute column-wise covariance
-  workspace.Empty(false);
+  if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+    workspace.Empty(false);
+  }
+  if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+    El::Zero(workspace);
+  }
   workspace.AlignWith(input0);
   workspace.Resize(1, width);
   LBANN_OMP_PARALLEL_FOR

@@ -28,6 +28,8 @@
 #define LBANN_LAYER_SUM_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/options.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/distconv.hpp"
 
@@ -224,7 +226,13 @@ protected:
 #endif // LBANN_HAS_DISTCONV
 
       auto& output = this->get_activations(i);
-      output.Empty(false);
+      auto& arg_parser = global_argument_parser();
+      if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+        output.Empty(false);
+      }
+      if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+        El::Zero(output);
+      }
       if (align_outputs &&  this->get_parallel_strategy().enable_subgraph==false) { output.AlignWith(alignment_dist); }
       output.Resize(this->get_output_size(i), mini_batch_size);
       }

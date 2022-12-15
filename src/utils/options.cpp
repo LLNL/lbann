@@ -251,6 +251,19 @@ void construct_std_options()
                         "sub-grids with blocked ordering",
                         0);
 
+  // Debugging flag
+  arg_parser.add_flag(
+    LBANN_OPTION_ZERO_INTERMEDIATE_STATE,
+    {"--zero_intermediate_state"},
+    utils::ENV("LBANN_ZERO_INTERMEDIATE_STATE"),
+    "[STD] Explicitly Zero out the activation and error signal matrices.");
+
+  arg_parser.add_flag(
+    LBANN_OPTION_EMPTY_INTERMEDIATE_STATE,
+    {"--empty_intermediate_state"},
+    utils::ENV("LBANN_EMPTY_INTERMEDIATE_STATE"),
+    "[STD] Explicitly El::Empty the activation and error signal matrices.");
+
 }
 
 void construct_datastore_options()

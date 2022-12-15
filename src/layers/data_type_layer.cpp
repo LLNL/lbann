@@ -824,7 +824,13 @@ fp_setup_inputs(El::Int mini_batch_size) {
     const auto& parent = get_parent_layer(i);
     const auto& parent_output = parent.get_activations(*this);
     auto& input = *m_inputs[i];
-    input.Empty(false);
+    // If the input is a view then we need to make sure that it gets
+    // an updated pointer if the previous activation was resized
+    auto& arg_parser = global_argument_parser();
+    if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+      input.Empty(false);
+    }
+    //    El::Zero(input);
     view_or_copy_tensor(parent_output, input);
 
     // Check input matrix dimensions
@@ -861,11 +867,22 @@ fp_setup_outputs(El::Int mini_batch_size) {
     if (!keep_original_outputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
     auto& output = get_activations(i);
-    output.Empty(false);
+    auto& arg_parser = global_argument_parser();
+    if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+      output.Empty(false);
+    }
     if (align_outputs) {
       output.AlignWith(alignment_dist);
     }
+    El::Int old_height = output.Height();
     output.Resize(get_output_size(i), mini_batch_size);
+    if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+      El::Zero(output);
+    }
+    // if (old_height != get_output_size(i)) {
+    //   LBANN_MSG("I have just resized the output from ", old_height, " to new height ", get_output_size(i));
+    //   El::Zero(output);
+    // }
   }
 
 }
@@ -1054,7 +1071,13 @@ allocate_new_gradients_() {
           }
     }
     auto& gradient_wrt_input = get_error_signals(i);
-    gradient_wrt_input.Empty(false);
+    auto& arg_parser = global_argument_parser();
+    if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+      gradient_wrt_input.Empty(false);
+    }
+    if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+      El::Zero(gradient_wrt_input);
+    }
     if(get_type()=="sum" && this->get_parallel_strategy().enable_subgraph==true)
     {
 
@@ -1076,7 +1099,13 @@ bp_setup_gradient_wrt_inputs(
     if (!keep_original_gradient_wrt_inputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
     auto& gradient_wrt_input = get_error_signals(i);
-    gradient_wrt_input.Empty(false);
+    auto& arg_parser = global_argument_parser();
+    if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+      gradient_wrt_input.Empty(false);
+    }
+    if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+      El::Zero(gradient_wrt_input);
+    }
     gradient_wrt_input.AlignWith(get_prev_activations(i));
     gradient_wrt_input.Resize(get_input_size(i), mini_batch_size);
   }

@@ -29,6 +29,8 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/options.hpp"
 #include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/exception.hpp"
@@ -267,7 +269,13 @@ void concatenate_layer<TensorDataType,Layout,Device>::fp_setup_outputs(El::Int m
 #endif // LBANN_HAS_DISTCONV
   const auto& input0 = this->get_prev_activations(0);
   auto& output = this->get_activations();
-  output.Empty(false);
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+    output.Empty(false);
+  }
+  if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+    El::Zero(output);
+  }
   if (this->get_num_parents() == 1) {
     El::LockedView(output, input0);
   }

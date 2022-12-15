@@ -89,6 +89,10 @@ namespace lbann {
 #define LBANN_OPTION_TRAINER_PRIMARY_GRID_SIZE "Primary Grid Size per trainer"
 #define LBANN_OPTION_NUM_SUBGRIDS_BLOCK_ORDER "Divide each trainer into equally-sized sub-grids with blocked ordering"
 
+/****** debuggin options ******/
+#define LBANN_OPTION_ZERO_INTERMEDIATE_STATE "Explicitly call El::Zero on intermediate state"
+#define LBANN_OPTION_EMPTY_INTERMEDIATE_STATE "Explicitly call El::Empty on intermediate state"
+
 /****** datastore options ******/
 // Bool flags
 #define LBANN_OPTION_DATA_STORE_CACHE "data_store_cache"

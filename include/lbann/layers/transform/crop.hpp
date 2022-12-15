@@ -28,7 +28,9 @@
 #define LBANN_LAYER_CROP_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/options.hpp"
 
 namespace lbann {
 
@@ -197,7 +199,13 @@ private:
     const auto& region_size = output_dims.back();
 
     // Get crop position
-    m_crop_pos_v->Empty(false);
+    auto& arg_parser = global_argument_parser();
+    if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+      m_crop_pos_v->Empty(false);
+    }
+    // if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+    //   El::Zero(m_crop_pos_v);
+    // }
     m_crop_pos_v->AlignWith(input);
     const auto& input1 = this->get_prev_activations(1);
     if (m_crop_pos_v->DistData() == input1.DistData()) {

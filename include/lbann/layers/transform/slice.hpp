@@ -366,10 +366,14 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void slice_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
   const auto& output0_grad = this->get_prev_error_signals(0);
   auto& input_grad = this->get_error_signals();
-  input_grad.Empty(false);
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+    input_grad.Empty(false);
+  }
   input_grad.Resize(this->get_input_size(), output0_grad.Width());
-  El::Zeros(input_grad, this->get_input_size(), output0_grad.Width());
-
+  if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+    El::Zeros(input_grad, this->get_input_size(), output0_grad.Width());
+  }
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

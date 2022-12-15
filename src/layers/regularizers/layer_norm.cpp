@@ -27,6 +27,8 @@
 #define LBANN_LAYER_NORM_LAYER_INSTANTIATE
 #include "lbann/comm_impl.hpp"
 #include "lbann/layers/regularizers/layer_norm.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/options.hpp"
 
 namespace lbann {
 
@@ -42,7 +44,13 @@ void fp_impl(lbann_comm& comm,
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Workspace buffer
-  statistics.Empty(false);
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+    statistics.Empty(false);
+  }
+  if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+    El::Zero(statistics);
+  }
   statistics.AlignWith(input);
   statistics.Resize(2, input.Width());
 
@@ -120,7 +128,13 @@ void bp_impl(lbann_comm& comm,
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Workspace buffer
-  statistics_grad.Empty(false);
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
+    statistics_grad.Empty(false);
+  }
+  if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
+    El::Zero(statistics_grad);
+  }
   statistics_grad.AlignWith(input);
   statistics_grad.Resize(2, input.Width());
 
