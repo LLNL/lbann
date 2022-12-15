@@ -129,13 +129,8 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(El::Int mini_b
     auto& output = this->get_activations(i);
     if (!output.Viewing()) {
       auto& arg_parser = global_argument_parser();
-      if (arg_parser.get<bool>(LBANN_OPTION_EMPTY_INTERMEDIATE_STATE)) {
-        output.Empty(false);
-      }
+      output.Empty(false);
       output.Resize(this->get_output_size(i), mini_batch_size);
-      if (arg_parser.get<bool>(LBANN_OPTION_ZERO_INTERMEDIATE_STATE)) {
-        El::Zero(output);
-      }
     }
   }
 }
