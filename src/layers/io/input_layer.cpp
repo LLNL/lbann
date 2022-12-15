@@ -128,7 +128,6 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(El::Int mini_b
   for (int i = 0; i < this->get_num_children(); ++i) {
     auto& output = this->get_activations(i);
     if (!output.Viewing()) {
-      auto& arg_parser = global_argument_parser();
       output.Empty(false);
       output.Resize(this->get_output_size(i), mini_batch_size);
     }
