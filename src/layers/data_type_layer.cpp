@@ -861,6 +861,12 @@ fp_setup_outputs(El::Int mini_batch_size) {
     if (!keep_original_outputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
     auto& output = get_activations(i);
+    if (output.Viewing()) {
+      LBANN_ERROR(get_name(),
+                  " fp_setup_outputs should be overridden",
+                  " if it needs to handle outputs that view",
+                  " other matrices");
+    }
     output.Empty(false);
     if (align_outputs) {
       output.AlignWith(alignment_dist);
@@ -1076,6 +1082,12 @@ bp_setup_gradient_wrt_inputs(
     if (!keep_original_gradient_wrt_inputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
     auto& gradient_wrt_input = get_error_signals(i);
+    if (gradient_wrt_input.Viewing()) {
+      LBANN_ERROR(get_name(),
+                  " bp_setup_gradient_wrt_inputs should be overridden",
+                  " if it needs to handle error signals that view other",
+                  "  matrices");
+    }
     gradient_wrt_input.Empty(false);
     gradient_wrt_input.AlignWith(get_prev_activations(i));
     gradient_wrt_input.Resize(get_input_size(i), mini_batch_size);
