@@ -118,7 +118,7 @@ def construct_model(lbann):
         upper_bound=val+tol,
         error_on_failure=True,
         execution_modes='test'))
-    
+
     # ------------------------------------------
     # Data-parallel layout with DC and activation
     # ------------------------------------------
@@ -131,17 +131,17 @@ def construct_model(lbann):
     _data = lbann.Relu(_data,
                        name="distconv_activation",
                        parallel_strategy=channelwise_parallel_strategy(num_height_groups))
-    
+
     _data = lbann.Reshape(_data, dims=[48])
     z = lbann.L2Norm2(_data)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel w activation'))
-    
+
     # Numpy implementation
     vals = []
     for i in range(num_samples()):
         x = get_sample(i).astype(np.float64)
-        y = np.maximum(x,0) 
+        y = np.maximum(x,0)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -152,11 +152,11 @@ def construct_model(lbann):
         upper_bound=val+tol,
         error_on_failure=True,
         execution_modes='test'))
-    
+
     # ------------------------------------------
     # Model-parallel layout
     # ------------------------------------------
-    
+
     # LBANN implementation
     x = x_lbann
     y = lbann.Identity(x, data_layout='model_parallel')
@@ -179,7 +179,7 @@ def construct_model(lbann):
         upper_bound=val+tol,
         error_on_failure=True,
         execution_modes='test'))
-    
+
     # ------------------------------------------
     # Gradient checking
     # ------------------------------------------
@@ -237,7 +237,11 @@ def construct_data_reader(lbann):
 # Setup PyTest
 # ==============================================
 
+# Runtime parameters/arguments
+environment = tools.get_distconv_environment()
+environment['LBANN_KEEP_ERROR_SIGNALS'] = 1
+
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment, __file__,
-                               environment=tools.get_distconv_environment()):
+                               environment=environment):
     globals()[_test_func.__name__] = _test_func
