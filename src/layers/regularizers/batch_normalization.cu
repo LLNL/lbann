@@ -134,12 +134,12 @@ __global__ void fp_statistics_kernel(
     const auto& sqmean = global_var[i] / num_per_sum_dt;
     auto var = num_per_sum_dt * (sqmean - mean * mean) / TensorDataType(num_per_sum - 1);
     var = var > epsilon ? var : epsilon;
-    global_mean[gid] = mean;
-    global_var[gid] = var;
+    global_mean[i] = mean;
+    global_var[i] = var;
 
     // Compute running statistics
-    auto& running_mean = global_running_mean[gid];
-    auto& running_var = global_running_var[gid];
+    auto& running_mean = global_running_mean[i];
+    auto& running_var = global_running_var[i];
     running_mean = decay * running_mean + (TensorDataType(1.0) - decay) * mean;
     running_var = decay * running_var + (TensorDataType(1.0) - decay) * var;
 
