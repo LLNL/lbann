@@ -30,6 +30,8 @@ Support for new layers:
 - Added "binary-with-constant" operators
 - Updated deconvolution layer to match PyTorch's API
 - Updated identity layer to copy tensors to enable tensor parallelism in subsequent layers in the compute graph
+- Added IdentityZero layer that allows alternating generator/discriminator
+  updates for training GANs.
 
 Python front-end:
  - Added support for buidling and launching jobs on Fugaku
@@ -52,9 +54,13 @@ Experiments & Applications:
  - Example for training Transformer model with D&SP and D&SP-cSub
  - PROBIESNet model for HRRL data
  - Cosmo 3D GAN
+ - MNIST GAN
+ - Image GAN
 
 Internal features:
  - Added operator class
+ - Added AlternateUpdates callback to be used with IdentityZero layers for
+   training GANs.
 
 I/O & data readers:
  - Updated SMILES data reader to use sample lists
