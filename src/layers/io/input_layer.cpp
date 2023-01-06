@@ -120,8 +120,18 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(El::Int mini_b
     c.set_effective_mini_batch_size(effective_mini_batch_size);
   }
 
-  // Initialize matrices
-  data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
+  // Activation matrices are initalized in setup_data and further
+  // managed in the distribute_from_local_matrix function of the
+  // data_coordinator.
+  // However, on the first pass through the execution algorithm it
+  // is necessary to setup the size of the matrix.
+  for (int i = 0; i < this->get_num_children(); ++i) {
+    auto& output = this->get_activations(i);
+    if (!output.Viewing()) {
+      output.Empty(false);
+      output.Resize(this->get_output_size(i), mini_batch_size);
+    }
+  }
 }
 
 template <typename TensorDataType,

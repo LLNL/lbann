@@ -92,6 +92,8 @@ Bug fixes:
  - Fixed build and runtime errors with DistConv
  - Use correct LayerNorm operaton in "Attention Is All You Need"
    Transformer
+ - Fixed a bug where the input layer performed unnecessary memory
+   allocations.
 
 Retired features:
 
