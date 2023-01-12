@@ -235,7 +235,8 @@ input_distconv_adapter(
 
   // Input data is only processed when its consumer layer is also
   // enabled for distconv
-  m_is_input_processed = layer.get_child_layer().distconv_enabled();
+  m_is_input_processed = (m_data_field == INPUT_DATA_TYPE_SAMPLES)
+      || layer.get_child_layer().distconv_enabled();
 
 }
 
@@ -328,6 +329,7 @@ void input_distconv_adapter<TensorDataType, T_layout, Dev>::setup_fp_tensors() {
   }
 
   this->setup_activations();
+  this->setup_original_activations();
 }
 
 template <typename TensorDataType,
