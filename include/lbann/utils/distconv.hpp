@@ -54,6 +54,8 @@
 #endif // DISTCONV_HAS_P2P
 
 #include "lbann/layers/learning/distconv/distconv_layers.hpp"
+#include "lbann/layers/math/distconv/distconv_matmul.hpp"
+
 namespace lbann {
 
 inline auto default_hydrogen_stream()
@@ -130,6 +132,8 @@ template <typename TensorDataType>
 using Pooling = ::distconv::Pooling<Backend, TensorDataType>;
 template <typename TensorDataType>
 using BatchNormalization = ::distconv::BatchNormalization<Backend, TensorDataType>;
+template <typename TensorDataType>
+using MatMul = ::distconv::MatMul<Backend, TensorDataType>;
 using Softmax = ::distconv::Softmax<Backend>;
 using CrossEntropy = ::distconv::CrossEntropy<Backend>;
 using MeanSquaredError = ::distconv::MeanSquaredError<Backend>;
