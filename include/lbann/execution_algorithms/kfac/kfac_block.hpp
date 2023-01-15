@@ -60,13 +60,15 @@ class kfac_block {
              size_t layer_id,
              size_t inverse_proc_rank,
              bool enable_copy_errors,
-             bool enable_copy_activations)
+             bool enable_copy_activations,
+             int feature_size)
       : m_layer(layer),
         m_layer_id(layer_id),
         m_inverse_proc_rank(inverse_proc_rank),
         m_context(context),
         m_enable_copy_errors(enable_copy_errors),
-        m_enable_copy_activations(enable_copy_activations) {
+        m_enable_copy_activations(enable_copy_activations),
+        m_feature_size(feature_size) {
     m_has_kronecker_inverse = false;
   }
   virtual ~kfac_block() = default;
@@ -183,6 +185,10 @@ class kfac_block {
       int offset,
       lbann_comm *comm) = 0;
 
+  void set_current_batch_size(El::Int batch_size){
+    m_batch_size = batch_size;
+  }
+
   /** @brief Get block's information in one line. */
   virtual std::string get_info() const {
     std::ostringstream oss;
@@ -215,6 +221,14 @@ class kfac_block {
 
   DataType* get_gradient_wrt_weight_buffer(int index){
     return m_weight_gradients[index]->Buffer();
+  }
+
+  El::Int get_current_batch_size(){
+    return m_batch_size;
+  }
+
+  El::Int get_feature_size(){
+    return m_feature_size;
   }
 
   /** @brief Return the list of internal matrices' (name, height,
@@ -265,6 +279,10 @@ class kfac_block {
   std::vector<std::unique_ptr<AbsDistMat>> m_weight_values;
 
   std::vector<ReqT> m_requests_forward_end, m_requests_backward_end;
+
+  /** @brief feature size and batch size (used in primary -> secondary grid communication) */
+  int m_feature_size, m_batch_size;
+
 
  private:
 

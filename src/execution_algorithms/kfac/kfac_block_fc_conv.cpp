@@ -508,6 +508,11 @@ void kfac_block_fc_conv<Device>::start_communication_forward_end(
       // const auto local_activations_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_activations));
       El::DistMatrixReadProxy<DataType, DataType, El::STAR, El::VC, El::ELEMENT, Device> star_vc_prox(parent_activations);
       El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device> const& star_vc_mat = star_vc_prox.GetLocked();
+
+      if (star_vc_mat.Participating())
+      {
+        std::cout<<"Send FC size:"<<star_vc_mat.Height()<<" "<<star_vc_mat.Width()<<"\n";
+      }
       
       auto local_activations0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[0]));
       auto subset0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[0]));
@@ -524,6 +529,8 @@ void kfac_block_fc_conv<Device>::start_communication_forward_end(
         El::Copy(star_vc_mat, *copied_acts);
         kfac::TranslateBetweenGridsVCAsyncDirect(*copied_acts,
                                                 *local_activations0,
+                                                this->get_feature_size(),
+                                                this->get_current_batch_size(),
                                                 this->m_requests_forward_end);
       }
       else
@@ -531,6 +538,8 @@ void kfac_block_fc_conv<Device>::start_communication_forward_end(
         //Directly transfer forward activations (must end before the begining of the next iteration)
         kfac::TranslateBetweenGridsVCAsyncDirect(star_vc_mat,
                                                 *local_activations0,
+                                                this->get_feature_size(),
+                                                this->get_current_batch_size(),
                                                 this->m_requests_forward_end);
       }
 
@@ -630,12 +639,16 @@ void kfac_block_fc_conv<Device>::start_communication_backward_end(
         El::Copy(*local_errors_vc, *copied_errors);
         kfac::TranslateBetweenGridsVCAsyncDirect(*copied_errors,
                                               *local_errors0,
+                                              this->get_feature_size(),
+                                              this->get_current_batch_size(),
                                               this->m_requests_backward_end);
       }
       else
       {
         kfac::TranslateBetweenGridsVCAsyncDirect(*local_errors_vc,
                                               *local_errors0,
+                                              this->get_feature_size(),
+                                              this->get_current_batch_size(),
                                               this->m_requests_backward_end);
       }
 
@@ -754,6 +767,8 @@ void kfac_block_fc_conv<Device>::initialize_activations_and_errors(
       //                                         Requests);
       kfac::TranslateBetweenGridsVCAsyncDirect(*local_activations_vc,
                                               *local_activations0,
+                                              this->get_feature_size(),
+                                              this->get_current_batch_size(),
                                               Requests);
       for(auto& req:Requests){
         ::Al::Wait<::Al::NCCLBackend>(req);
@@ -765,6 +780,8 @@ void kfac_block_fc_conv<Device>::initialize_activations_and_errors(
       //                                         Requests);
       kfac::TranslateBetweenGridsVCAsyncDirect(*local_errors_vc,
                                               *local_errors0,
+                                              this->get_feature_size(),
+                                              this->get_current_batch_size(),
                                               Requests);
       auto primary_grid_ranks = comm->get_primary_grid_ranks();
       auto secondary_grid_ranks = comm->get_secondary_grid_ranks();

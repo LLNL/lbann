@@ -396,7 +396,9 @@ bool KFAC::train_mini_batch(
       }
 
       if(compute_inverse)
+      {
         on_forward_prop_end(kfac_context, model);
+      }
 
       if(comm.get_grid_type()==GridType::PRIMARY_GRID
         or (comm.get_KFAC_subgrid_create_two_models() and compute_inverse)
@@ -1183,6 +1185,32 @@ void KFAC::end_send_recv_inverse_matrices(
   }
 
 }
+// Broadcast the variabes in sub-grid parallelism
+int broadcast_variable_grids(
+  int variable,
+  lbann_comm *comm){
+
+  El::Int variable_local[1], recvMetaData[1];
+  if(comm->get_grid_type()==GridType::PRIMARY_GRID)
+  {
+    variable_local[0] = variable;
+  }
+  else if (comm->get_grid_type()==GridType::SECONDARY_GRID){
+    variable_local[0] = 0;
+  }
+
+  if (comm->get_grid_type()==GridType::PRIMARY_GRID or
+    comm->get_grid_type()==GridType::SECONDARY_GRID)
+  {
+    El::SyncInfo<El::Device::CPU> syncGeneralCPU = El::SyncInfo<El::Device::CPU>();
+    El::mpi::AllReduce( variable_local, recvMetaData, 1, El::mpi::MAX, comm->get_combined_grid_comm(),syncGeneralCPU);
+    return recvMetaData[0];
+  }
+  else
+  {
+    return 0;
+  }
+}
 
 // =============================================
 // KFAC implementation
@@ -1194,6 +1222,7 @@ void KFAC::on_forward_prop_end(
 
   auto& comm = *model.get_comm();
   const auto layers = model.get_layers();
+  auto& sgd_context = context.get_sgd_execution_context();
 
   // List up layers to be updated
   if(context.m_blocks.size() == 0){
@@ -1250,20 +1279,25 @@ void KFAC::on_forward_prop_end(
       bool enable_copy_errors = this->m_enable_copy_errors;
       bool enable_copy_activations = this->m_enable_copy_activations;
 
-      // std::cout<<"Enable copy errors:"<<enable_copy_errors<<" Enable copy act"<<enable_copy_activations<<"\n";
       std::shared_ptr<kfac_block<Device>> block;
+
+      
       if(is_fc || is_conv) {
+        int feature_size = broadcast_variable_grids(l_conv->get_activations().Height(), &comm);
         block = std::make_shared<kfac_block_fc_conv<Device>>(
-            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, is_conv);
+            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, feature_size, is_conv);
       } else if(is_bn) {
+        int feature_size = broadcast_variable_grids(l_bn->get_activations().Height(), &comm);
         block = std::make_shared<kfac_block_bn<Device>>(
-            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations);
+            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, feature_size);
       } else if(is_gru) {
+        int feature_size = broadcast_variable_grids(l_gru->get_activations().Height(), &comm);
         block = std::make_shared<kfac_block_gru<Device>>(
-            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations);
+            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, feature_size);
       } else if(is_cw_fc){
+        int feature_size = broadcast_variable_grids(l_cw_fc->get_activations().Height(), &comm);
         block = std::make_shared<kfac_block_channelwise_fc<Device>>(
-            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations);
+            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, feature_size);
       }
 
 
@@ -1321,9 +1355,11 @@ void KFAC::on_forward_prop_end(
 
   CHECK_CUDA(cudaDeviceSynchronize());
   auto t_start = std::chrono::high_resolution_clock::now();
+  int current_batch_size = sgd_context.get_current_mini_batch_size();
+  current_batch_size = broadcast_variable_grids(current_batch_size, &comm);
   for(auto& block : context.m_blocks) {
     // Start forward end exchange (like activations and weights)
-
+    block->set_current_batch_size(current_batch_size);
     block->start_communication_forward_end(&comm);
   }
   auto t_stop = std::chrono::high_resolution_clock::now();

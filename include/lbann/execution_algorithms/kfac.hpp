@@ -175,6 +175,7 @@ protected:
     ExeContextType& context,
     lbann_comm *comm);
 
+
 private:
 
 #if 1

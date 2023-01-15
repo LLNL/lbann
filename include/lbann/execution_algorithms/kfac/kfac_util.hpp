@@ -224,6 +224,8 @@ template<typename T, El::Device Device>
 void TranslateBetweenGridsVCAsyncDirect
 ( const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,
   El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B,
+  El::Int featureSize,
+  El::Int currentBatchSize,
   std::vector<ReqT>& Requests);
 
 template<typename T, El::Device Device>

@@ -997,6 +997,8 @@ template<>
 void TranslateBetweenGridsVCAsyncDirect
 ( const El::DistMatrix<DataType,El::STAR,El::VC,El::ELEMENT,El::Device::CPU>& A,
   El::DistMatrix<DataType,El::STAR,El::VC,El::ELEMENT,El::Device::CPU>& B,
+  El::Int featureSize,
+  El::Int currentBatchSize,
   std::vector<ReqT>& Requests)
 {
   LBANN_ERROR("TranslateBetweenGridsVCAsyncDirect function is not implemented for CPUs");
@@ -1006,6 +1008,8 @@ template<typename T, El::Device Device>
 void TranslateBetweenGridsVCAsyncDirect
 ( const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,
   El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B,
+  El::Int featureSize,
+  El::Int currentBatchSize,
   std::vector<ReqT>& Requests)
 {
     int height = A.Height();
@@ -1022,29 +1026,13 @@ void TranslateBetweenGridsVCAsyncDirect
 
     El::SyncInfo<Device> syncGeneral = El::SyncInfo<Device>();
 
-    El::Int recvMetaData[2], metaData[2];
-
-    if(inAGrid)
-    {
-        metaData[0] = height;
-        metaData[1] = width;
-    }
-    else
-    {
-        metaData[0] = 0;
-        metaData[1] = 0;
-    }
-    
-    El::mpi::AllReduce( metaData, recvMetaData, 2, El::mpi::MAX, viewingCommB,syncGeneral);
-    El::Synchronize(syncGeneral);
-    
-    height = recvMetaData[0];
-    width = recvMetaData[1];
+    height = featureSize;
+    width = currentBatchSize;
 
     B.Resize(height, width);
 
     if(inAGrid==inBGrid){
-        LBANN_ERROR("TranslateBetweenGridsAsync: A rank cannnot be the part of both grids or it must be the part of one grid");
+        LBANN_ERROR("TranslateBetweenGridsVCAsyncDirect: A rank cannnot be the part of both grids or it must be the part of one grid");
     }
 
 
@@ -1194,11 +1182,11 @@ void TranslateBetweenGridsVCAsyncDirect
         for (int rank_to_recv_index = 0; rank_to_recv_index < int(to_recv_ranks[my_rank].size()); ++rank_to_recv_index)
         {
 
+
             ReqT recv_request;
             Requests.push_back(recv_request);
             const int recvViewingRank = A.Grid().VCToViewing(to_recv_ranks[my_rank][rank_to_recv_index]);
             const int transferSize =  B.LocalHeight()*num_cols_to_recv[my_rank][rank_to_recv_index];
-
             ::Al::NonblockingRecv<BackendT>(
                    (T*)B.Buffer(0,start_col),
                    transferSize,
@@ -1619,6 +1607,8 @@ void unpack_lower_tri(
   template void TranslateBetweenGridsVCAsyncDirect(                       \
       const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,      \
       El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B,      \
+      El::Int featureSize,                               \
+      El::Int currentBatchSize,                          \
       std::vector<ReqT>& Requests);                      \
   template void TranslateBetweenGridsKFACAsync(                     \
       const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,      \
