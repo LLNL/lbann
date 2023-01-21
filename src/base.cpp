@@ -458,6 +458,7 @@ CEREAL_FORCE_DYNAMIC_INIT(gather_layer);
 CEREAL_FORCE_DYNAMIC_INIT(gaussian_layer);
 CEREAL_FORCE_DYNAMIC_INIT(hadamard_layer);
 CEREAL_FORCE_DYNAMIC_INIT(identity_layer);
+CEREAL_FORCE_DYNAMIC_INIT(identity_zero_layer);
 CEREAL_FORCE_DYNAMIC_INIT(in_top_k_layer);
 CEREAL_FORCE_DYNAMIC_INIT(input_layer);
 CEREAL_FORCE_DYNAMIC_INIT(instance_norm_layer);

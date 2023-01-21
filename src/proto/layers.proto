@@ -169,6 +169,7 @@ message Layer {
     Gather gather = 75;
     BatchwiseReduceSum batchwise_reduce_sum = 76;
     TensorPermute permute = 77;
+    IdentityZero identity_zero = 78;
     CategoricalRandom categorical_random = 406; // Deprecated
     DiscreteRandom discrete_random = 407; // Deprecated
 
@@ -1023,6 +1024,14 @@ message Layer {
    */
   message TensorPermute {
     repeated uint32 axes = 1;
+  }
+
+  /** @brief Toggle identity or zero function.
+   *  
+   *  Outputs zeros when the layer is frozen or acts as the identity function 
+   *  otherwise.
+   */
+  message IdentityZero {
   }
 
   /// Deprecated

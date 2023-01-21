@@ -39,6 +39,7 @@ set_full_path(THIS_DIR_HEADERS
   constant.hpp
   dummy.hpp
   hadamard.hpp
+  identity_zero.hpp
   reduction.hpp
   evaluation.hpp
   gaussian.hpp

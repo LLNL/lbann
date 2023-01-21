@@ -26,6 +26,7 @@
    :ref:`Gather`, "Gather values from specified tensor indices"
    :ref:`Gaussian`, "Random tensor with Gaussian/normal distribution"
    :ref:`Hadamard`, "Entry-wise tensor product"
+   :ref:`IdentityZero`, "Identity/zero function if layer is unfrozen/frozen."
    :ref:`InTopK`, "One-hot vector indicating top-k entries"
    :ref:`Pooling`, "Traverses the spatial dimensions of a data tensor
    with a sliding window and applies a reduction operation"
@@ -67,6 +68,30 @@ The BatchwiseReduceSum layer is the sum of tensor entries over batch
 dimension. The output tensor has same shape as input tensor.
 
 Arguments: None
+
+:ref:`Back to Top<transform-layers>`
+
+________________________________________
+
+
+.. _IdentityZero:
+
+----------------------------------------
+IdentityZero
+----------------------------------------
+
+The IdentityZero layer is an output tensor filled with either zeros or
+ones depending on if the layer is frozen or not. This is useful for
+more complex training setups like GANs, where you want to reuse the
+computational graph but switch loss functions.
+
+Arguments:
+
+   :num_neurons:
+
+      (``string``) Tensor dimensions
+
+      List of integers
 
 :ref:`Back to Top<transform-layers>`
 
