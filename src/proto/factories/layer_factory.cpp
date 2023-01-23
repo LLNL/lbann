@@ -204,6 +204,7 @@ private:
     LBANN_REGISTER_BUILDER(Covariance, covariance);
     LBANN_REGISTER_BUILDER(DFTAbs, dft_abs);
     LBANN_REGISTER_BUILDER(DistEmbedding, dist_embedding);
+    LBANN_REGISTER_BUILDER(External, external);
     LBANN_REGISTER_BUILDER(MiniBatchIndex, mini_batch_index);
     LBANN_REGISTER_BUILDER(MiniBatchSize, mini_batch_size);
     LBANN_REGISTER_BUILDER(OneHot, one_hot);

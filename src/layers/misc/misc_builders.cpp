@@ -253,6 +253,22 @@ lbann::build_dft_abs_layer_from_pbuf(lbann_comm* comm, lbann_data::Layer const&)
 
 template <typename T, lbann::data_layout L, El::Device D>
 std::unique_ptr<lbann::Layer>
+lbann::build_external_layer_from_pbuf(lbann_comm* comm,
+                                      lbann_data::Layer const& proto_layer)
+{
+  if constexpr (D == El::Device::GPU) {
+    if (!proto_layer.external().has_gpu()) {
+      LBANN_ERROR("External layer \"",
+                  proto_layer.external().fprop_filename(),
+                  "\" was not built with GPU support but requested for a GPU device");
+      return nullptr;
+    }
+  }
+  return std::make_unique<external_layer<T, L, D>>(comm);
+}
+
+template <typename T, lbann::data_layout L, El::Device D>
+std::unique_ptr<lbann::Layer>
 lbann::build_mini_batch_index_layer_from_pbuf(lbann_comm* comm,
                                               lbann_data::Layer const&)
 {
@@ -312,7 +328,7 @@ namespace lbann {
   LBANN_LAYER_BUILDER_ETI(channelwise_softmax, T, Device);                     \
   LBANN_LAYER_BUILDER_ETI(covariance, T, Device);                              \
   LBANN_LAYER_BUILDER_ETI(dft_abs, T, Device);                                 \
-  LBANN_LAYER_BUILDER_ETI(external, T, Device);                                 \
+  LBANN_LAYER_BUILDER_ETI(external, T, Device);                                \
   LBANN_LAYER_BUILDER_ETI(mini_batch_index, T, Device);                        \
   LBANN_LAYER_BUILDER_ETI(mini_batch_size, T, Device);                         \
   LBANN_LAYER_BUILDER_ETI(one_hot, T, Device);                                 \

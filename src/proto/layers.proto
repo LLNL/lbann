@@ -231,7 +231,7 @@ message Layer {
     DistEmbedding dist_embedding = 311;
     UniformHash uniform_hash = 312;
     RowwiseWeightsNorms rowwise_weights_norms = 313;
-
+    External external = 314;
   }
 
   // ---------------------------
@@ -1412,6 +1412,28 @@ message Layer {
   message OneHot {
     /// Size of one-hot vector
     int64 size = 1;
+  }
+
+  /** @brief Call external function
+   *
+   *  Expects any number of input tensors. Invokes a shared object (e.g., .so file)
+   *  to call the layer.
+   */
+   message External {
+    /// Forward pass library filename
+    string fprop_filename = 1;
+
+    /// Backpropagation library filename (if not given, fprop library is used)
+    string bprop_filename = 2;
+
+    /// Optional layer name (if not given, the name "layer" is used)
+    string layer_name = 3;
+
+    /// Output shape of the layer. Leave empty to use the shape of the first input
+    repeated uint64 output_shape = 4;
+
+    /// If false, a GPU implementation is not available
+    bool has_gpu = 5;
   }
 
   /** @brief Softmax across channel dimension

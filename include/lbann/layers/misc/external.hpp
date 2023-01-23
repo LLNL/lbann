@@ -44,6 +44,7 @@ public:
   external_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm) { 
     // TODO: dlopen
   }
+  virtual ~external_layer();
   external_layer* copy() const override { return new external_layer(*this); }
 
   /** @name Serialization */
@@ -64,6 +65,10 @@ protected:
   external_layer()
     : external_layer(nullptr)
   {}
+
+  external_layer(external_layer const& other) {
+    this->comm = other.comm;
+  }
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);

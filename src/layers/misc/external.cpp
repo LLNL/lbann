@@ -44,13 +44,17 @@ void external_layer<TensorDataType, Layout, Device>::bp_compute()
     printf("BPROP %s\n", Device == El::Device::GPU ? "GPU" : "CPU");
 }
 
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+external_layer<TensorDataType, Layout, Device>::~external_layer()
+{
+  // TODO
+}
+
 
 #define PROTO_DEVICE(T, Device) \
   extern template class external_layer<T, data_layout::DATA_PARALLEL, Device>; \
   extern template class external_layer<T, data_layout::MODEL_PARALLEL, Device>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
 
