@@ -32,6 +32,7 @@
 #include "lbann/layers/misc/channelwise_softmax.hpp"
 #include "lbann/layers/misc/covariance.hpp"
 #include "lbann/layers/misc/dft_abs.hpp"
+#include "lbann/layers/misc/external.hpp"
 #include "lbann/layers/misc/mini_batch_index.hpp"
 #include "lbann/layers/misc/mini_batch_size.hpp"
 #include "lbann/layers/misc/one_hot.hpp"
@@ -311,6 +312,7 @@ namespace lbann {
   LBANN_LAYER_BUILDER_ETI(channelwise_softmax, T, Device);                     \
   LBANN_LAYER_BUILDER_ETI(covariance, T, Device);                              \
   LBANN_LAYER_BUILDER_ETI(dft_abs, T, Device);                                 \
+  LBANN_LAYER_BUILDER_ETI(external, T, Device);                                 \
   LBANN_LAYER_BUILDER_ETI(mini_batch_index, T, Device);                        \
   LBANN_LAYER_BUILDER_ETI(mini_batch_size, T, Device);                         \
   LBANN_LAYER_BUILDER_ETI(one_hot, T, Device);                                 \
