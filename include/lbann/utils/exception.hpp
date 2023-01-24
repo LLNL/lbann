@@ -136,7 +136,7 @@ using lbann_exception = exception;
 template <typename... Args>
 std::string build_string(Args&&... args) {
   std::ostringstream oss;
-  int dummy[] = { (oss << std::setfill('0') << std::setw(7) << args, 0)... };
+  int dummy[] = { (oss << args, 0)... };
   (void) dummy; // silence compiler warnings
   return oss.str();
 }

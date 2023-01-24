@@ -1,7 +1,7 @@
 import lbann
 import lbann.models
 import lbann.modules as lm
-
+import numpy as np
 
 class CosmoFlow(lm.Module):
     """The CosmoFlow neural network.

@@ -393,12 +393,8 @@ bool hdf5_reader<TensorDataType>::fetch_response(Mat& Y, int data_id, int mb_idx
     if (data_store_active() || m_data_store->has_conduit_node(data_id)) {
       const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
       node.set_external(ds_node);
-      //      buf = node[conduit_obj+"/responses"].value();
     }else {
       load_sample(node, data_id);
-      //      buf = node[conduit_obj+"/responses"].value();
-      // LBANN_WARNING("I am trying to fetch data id ", data_id, " and the data store isn't active");
-      // buf = &m_all_responses[0];
     }
     const std::string conduit_obj = LBANN_DATA_ID_STR(data_id);
     buf = node[conduit_obj+"/responses"].value();
