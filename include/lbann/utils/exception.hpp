@@ -65,7 +65,7 @@
   do {                                                          \
     const int rank_LBANN_MSG = lbann::get_rank_in_world();      \
     if(rank_LBANN_MSG == 0) {                                   \
-      std::cout << lbann::build_string( \
+      std::cout << lbann::build_string(                         \
       "LBANN message",                                          \
       (rank_LBANN_MSG >= 0                                      \
        ? " on rank " + std::to_string(rank_LBANN_MSG)           \
