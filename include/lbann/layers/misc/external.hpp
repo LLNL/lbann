@@ -32,6 +32,11 @@
 
 namespace lbann {
 
+typedef void (*fprop_t)(const std::vector<void *>& inputs, const std::vector<void *>& weights, 
+                        const std::vector<void *>& outputs);
+typedef void (*bprop_t)(const std::vector<void *>& inputs, const std::vector<void *>& prev_error_signals,
+                        const std::vector<void *>& output_error_signals, const std::vector<void *>& weight_grads);
+
 /** @brief Call external function
  *
  *  Expects any number of input tensors. Invokes a shared object (e.g., .so file)
@@ -41,9 +46,9 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 class external_layer : public data_type_layer<TensorDataType> {
 public:
 
-  external_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm) { 
-    // TODO: dlopen
-  }
+  external_layer(lbann_comm* comm, const std::string& fp_name,
+                 const std::string& bp_name,
+                 std::string layer_name);
   virtual ~external_layer();
   external_layer* copy() const override { return new external_layer(*this); }
 
@@ -63,7 +68,7 @@ protected:
 
   friend class cereal::access;
   external_layer()
-    : external_layer(nullptr)
+    : external_layer(nullptr, "", "", "")
   {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
@@ -74,6 +79,13 @@ protected:
 
   void fp_compute() override;
   void bp_compute() override;
+
+  /// Library handles
+  void *fp_handle, *bp_handle;
+
+  /// Function handles
+  fprop_t fp_compute_ptr;
+  bprop_t bp_compute_ptr;
 };
 
 

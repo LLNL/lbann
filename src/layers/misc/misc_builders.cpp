@@ -264,7 +264,10 @@ lbann::build_external_layer_from_pbuf(lbann_comm* comm,
       return nullptr;
     }
   }
-  return std::make_unique<external_layer<T, L, D>>(comm);
+  return std::make_unique<external_layer<T, L, D>>(
+    comm, proto_layer.external().fprop_filename(),
+    proto_layer.external().bprop_filename(),
+    proto_layer.external().layer_name());
 }
 
 template <typename T, lbann::data_layout L, El::Device D>
