@@ -31,7 +31,6 @@
 
 #include <exception>
 #include <iostream>
-#include <iomanip>
 #include <sstream>
 
 // Macro to throw an LBANN exception
