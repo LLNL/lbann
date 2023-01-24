@@ -174,14 +174,16 @@ void external_layer<TensorDataType, Layout, Device>::fp_compute()
     weights[i] = (void *)weight_ptrs[i].lock().get_values().Buffer();
   }*/
   int local_batch_size = 0;
+  void *stream = nullptr;
   for (auto i = 0; i < noutputs; ++i) {
     auto& local_output = dynamic_cast<MatType&>(this->get_local_activations(i));
     outputs[i] = (void *)local_output.Buffer();
     local_batch_size = local_output.Width();
+    stream = gpu::get_sync_info(local_output).Stream();
   }
 
   // Invoke computation in external library
-  this->fp_compute_ptr(this->lib_state, inputs, weights, outputs, local_batch_size, nullptr);
+  this->fp_compute_ptr(this->lib_state, inputs, weights, outputs, local_batch_size, stream);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -201,6 +203,7 @@ void external_layer<TensorDataType, Layout, Device>::bp_compute()
 
   // Set arguments
   int local_batch_size = 0;
+  void *stream = nullptr;
   for (auto i = 0; i < ninputs; ++i) {
     const auto& local_input =
       dynamic_cast<const MatType&>(this->get_local_prev_activations(i));
@@ -209,6 +212,7 @@ void external_layer<TensorDataType, Layout, Device>::bp_compute()
     inputs[i] = (void *)local_input.LockedBuffer();
     output_error_signals[i] = (void *)local_error.Buffer();
     local_batch_size = local_error.Width();
+    stream = gpu::get_sync_info(local_error).Stream();
   }
   for (auto i = 0; i < noutputs; ++i) {
     const auto& local_prev_error = dynamic_cast<const MatType&>(this->get_local_prev_error_signals(i));
@@ -217,7 +221,7 @@ void external_layer<TensorDataType, Layout, Device>::bp_compute()
   // TODO: Gradients w.r.t. weights
 
   // Invoke computation in external library
-  this->bp_compute_ptr(this->lib_state, inputs, prev_error_signals, output_error_signals, weight_grads, local_batch_size, nullptr);
+  this->bp_compute_ptr(this->lib_state, inputs, prev_error_signals, output_error_signals, weight_grads, local_batch_size, stream);
 }
 
 #define PROTO_DEVICE(T, Device)                                                \
