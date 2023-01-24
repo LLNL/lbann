@@ -80,7 +80,7 @@ external_layer<TensorDataType, Layout, Device>::external_layer(
     std::string(Device == El::Device::CPU ? "cpu_fprop_compute_"
                                           : "gpu_fprop_compute_") +
     layer_name;
-  this->fp_compute_ptr = (fprop_t)dlsym(this->fp_handle, fp_funcname.c_str());
+  this->fp_compute_ptr = (external_fprop_t)dlsym(this->fp_handle, fp_funcname.c_str());
   if (!this->fp_compute_ptr) {
     LBANN_ERROR("Malformed external library (filename: \"",
                 fp_name,
@@ -93,7 +93,7 @@ external_layer<TensorDataType, Layout, Device>::external_layer(
     std::string(Device == El::Device::CPU ? "cpu_bprop_compute_"
                                           : "gpu_bprop_compute_") +
     layer_name;
-  this->bp_compute_ptr = (bprop_t)dlsym(this->bp_handle, bp_funcname.c_str());
+  this->bp_compute_ptr = (external_bprop_t)dlsym(this->bp_handle, bp_funcname.c_str());
   if (!this->bp_compute_ptr) {
     LBANN_ERROR("Malformed external library (filename: \"",
                 bp_filename,
@@ -106,11 +106,38 @@ external_layer<TensorDataType, Layout, Device>::external_layer(
   ////////////////////////////////////////////////////
   // TODO: Setup/initalize library (comm, layout, config, accelerator library
   // handles etc.)
+  this->init_bp_ptr = this->init_ptr = nullptr;
+  this->finalize_bp_ptr = this->finalize_ptr = nullptr;
+  this->lib_state_bp = this->lib_state = nullptr;
 }
+
+/**
+ * An initializer that expects function pointers directly. Useful for unit tests.
+ **/
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+external_layer<TensorDataType, Layout, Device>::external_layer(
+  lbann_comm* comm, external_fprop_t fprop,
+  external_bprop_t bprop, external_init_t init,
+  external_finalize_t finalize) : data_type_layer<TensorDataType>(comm),
+   fp_handle(nullptr), bp_handle(nullptr),
+   init_ptr(init), finalize_ptr(finalize),
+   fp_compute_ptr(fprop), bp_compute_ptr(bprop)
+{}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 external_layer<TensorDataType, Layout, Device>::~external_layer()
 {
+  // Finalize library/libraries
+  if (this->finalize_bp_ptr && this->finalize_bp_ptr != this->finalize_ptr)
+    this->finalize_ptr(this->lib_state_bp);
+  this->lib_state_bp = nullptr;
+  this->finalize_bp_ptr = nullptr;
+
+  if (this->finalize_ptr)
+    this->finalize_ptr(this->lib_state);
+  this->lib_state = nullptr;
+  this->finalize_ptr = nullptr;
+
   // Close loaded libraries
   if (this->bp_handle && this->bp_handle != this->fp_handle)
     dlclose(this->bp_handle);
@@ -146,13 +173,15 @@ void external_layer<TensorDataType, Layout, Device>::fp_compute()
     // TODO: this can likely be cached at setup
     weights[i] = (void *)weight_ptrs[i].lock().get_values().Buffer();
   }*/
+  int local_batch_size = 0;
   for (auto i = 0; i < noutputs; ++i) {
     auto& local_output = dynamic_cast<MatType&>(this->get_local_activations(i));
     outputs[i] = (void *)local_output.Buffer();
+    local_batch_size = local_output.Width();
   }
 
   // Invoke computation in external library
-  this->fp_compute_ptr(nullptr, inputs, weights, outputs);
+  this->fp_compute_ptr(this->lib_state, inputs, weights, outputs, local_batch_size, nullptr);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -171,6 +200,7 @@ void external_layer<TensorDataType, Layout, Device>::bp_compute()
     output_error_signals(ninputs, nullptr), weight_grads(nweights, nullptr);
 
   // Set arguments
+  int local_batch_size = 0;
   for (auto i = 0; i < ninputs; ++i) {
     const auto& local_input =
       dynamic_cast<const MatType&>(this->get_local_prev_activations(i));
@@ -178,6 +208,7 @@ void external_layer<TensorDataType, Layout, Device>::bp_compute()
       dynamic_cast<MatType&>(this->get_local_error_signals(i));
     inputs[i] = (void *)local_input.LockedBuffer();
     output_error_signals[i] = (void *)local_error.Buffer();
+    local_batch_size = local_error.Width();
   }
   for (auto i = 0; i < noutputs; ++i) {
     const auto& local_prev_error = dynamic_cast<const MatType&>(this->get_local_prev_error_signals(i));
@@ -186,7 +217,7 @@ void external_layer<TensorDataType, Layout, Device>::bp_compute()
   // TODO: Gradients w.r.t. weights
 
   // Invoke computation in external library
-  this->bp_compute_ptr(nullptr, inputs, prev_error_signals, output_error_signals, weight_grads);
+  this->bp_compute_ptr(this->lib_state, inputs, prev_error_signals, output_error_signals, weight_grads, local_batch_size, nullptr);
 }
 
 #define PROTO_DEVICE(T, Device)                                                \

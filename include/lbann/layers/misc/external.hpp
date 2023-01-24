@@ -32,12 +32,20 @@
 
 namespace lbann {
 
-typedef void (*fprop_t)(void *handle,
-                        const std::vector<void *>& inputs, const std::vector<void *>& weights, 
-                        const std::vector<void *>& outputs);
-typedef void (*bprop_t)(void *handle,
-                        const std::vector<void *>& inputs, const std::vector<void *>& prev_error_signals,
-                        const std::vector<void *>& output_error_signals, const std::vector<void *>& weight_grads);
+typedef void* (*external_init_t)(int layout);
+typedef void  (*external_finalize_t)(void *state);
+typedef void  (*external_fprop_t)(void *state,
+                                  const std::vector<void *>& inputs,
+                                  const std::vector<void *>& weights,
+                                  const std::vector<void *>& outputs,
+                                  int local_batch_size,
+                                  void *stream);
+typedef void  (*external_bprop_t)(void *state,
+                                  const std::vector<void *>& inputs,
+                                  const std::vector<void *>& prev_error_signals,
+                                  const std::vector<void *>& output_error_signals,
+                                  const std::vector<void *>& weight_grads,
+                                  int local_batch_size, void *stream);
 
 /** @brief Call external function
  *
@@ -51,6 +59,9 @@ public:
   external_layer(lbann_comm* comm, const std::string& fp_name,
                  const std::string& bp_name,
                  std::string layer_name);
+  external_layer(lbann_comm* comm, external_fprop_t fprop,
+                 external_bprop_t bprop, external_init_t init = nullptr,
+                 external_finalize_t finalize = nullptr);
   virtual ~external_layer();
   external_layer* copy() const override { return new external_layer(*this); }
 
@@ -75,8 +86,8 @@ protected:
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-    // TODO
-    //this->set_output_dims({1});
+    // TODO: support custom output shapes
+    this->set_output_dims(this->get_input_dims());
   }
 
   void fp_compute() override;
@@ -84,10 +95,13 @@ protected:
 
   /// Library handles
   void *fp_handle, *bp_handle;
+  void *lib_state, *lib_state_bp;
 
   /// Function handles
-  fprop_t fp_compute_ptr;
-  bprop_t bp_compute_ptr;
+  external_init_t init_ptr, init_bp_ptr;
+  external_finalize_t finalize_ptr, finalize_bp_ptr;
+  external_fprop_t fp_compute_ptr;
+  external_bprop_t bp_compute_ptr;
 };
 
 
