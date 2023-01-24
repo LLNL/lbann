@@ -66,10 +66,6 @@ protected:
     : external_layer(nullptr)
   {}
 
-  external_layer(external_layer const& other) {
-    this->comm = other.comm;
-  }
-
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     // TODO

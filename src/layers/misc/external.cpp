@@ -52,8 +52,8 @@ external_layer<TensorDataType, Layout, Device>::~external_layer()
 
 
 #define PROTO_DEVICE(T, Device) \
-  extern template class external_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  extern template class external_layer<T, data_layout::MODEL_PARALLEL, Device>
+  template class external_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  template class external_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 
