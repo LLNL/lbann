@@ -26,12 +26,32 @@
 
 #define LBANN_EXTERNAL_LAYER_INSTANTIATE
 #include "lbann/layers/misc/external.hpp"
+#include "lbann/utils/sync_info_helpers.hpp"
 
 #include <algorithm>
 #include <cstdio>
 #include <dlfcn.h>
 
 namespace lbann {
+
+/*
+Helper functions to extract POD type streams out of CPU and GPU sync infos
+*/
+template <El::Device D>
+void* to_native_stream(VariadicMultiSync<D> const& m) noexcept;
+
+template <>
+void* to_native_stream(VariadicMultiSync<El::Device::GPU> const& m) noexcept
+{
+  El::SyncInfo<El::Device::GPU> const& si = m;
+  return si.Stream();
+}
+
+template <>
+void* to_native_stream(VariadicMultiSync<El::Device::CPU> const& m) noexcept
+{
+  return nullptr;
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 external_layer<TensorDataType, Layout, Device>::external_layer(
@@ -80,7 +100,8 @@ external_layer<TensorDataType, Layout, Device>::external_layer(
     std::string(Device == El::Device::CPU ? "cpu_fprop_compute_"
                                           : "gpu_fprop_compute_") +
     layer_name;
-  this->fp_compute_ptr = (external_fprop_t)dlsym(this->fp_handle, fp_funcname.c_str());
+  this->fp_compute_ptr =
+    (external_fprop_t)dlsym(this->fp_handle, fp_funcname.c_str());
   if (!this->fp_compute_ptr) {
     LBANN_ERROR("Malformed external library (filename: \"",
                 fp_name,
@@ -93,7 +114,8 @@ external_layer<TensorDataType, Layout, Device>::external_layer(
     std::string(Device == El::Device::CPU ? "cpu_bprop_compute_"
                                           : "gpu_bprop_compute_") +
     layer_name;
-  this->bp_compute_ptr = (external_bprop_t)dlsym(this->bp_handle, bp_funcname.c_str());
+  this->bp_compute_ptr =
+    (external_bprop_t)dlsym(this->bp_handle, bp_funcname.c_str());
   if (!this->bp_compute_ptr) {
     LBANN_ERROR("Malformed external library (filename: \"",
                 bp_filename,
@@ -112,16 +134,23 @@ external_layer<TensorDataType, Layout, Device>::external_layer(
 }
 
 /**
- * An initializer that expects function pointers directly. Useful for unit tests.
+ * An initializer that expects function pointers directly. Useful for unit
+ * tests.
  **/
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 external_layer<TensorDataType, Layout, Device>::external_layer(
-  lbann_comm* comm, external_fprop_t fprop,
-  external_bprop_t bprop, external_init_t init,
-  external_finalize_t finalize) : data_type_layer<TensorDataType>(comm),
-   fp_handle(nullptr), bp_handle(nullptr),
-   init_ptr(init), finalize_ptr(finalize),
-   fp_compute_ptr(fprop), bp_compute_ptr(bprop)
+  lbann_comm* comm,
+  external_fprop_t fprop,
+  external_bprop_t bprop,
+  external_init_t init,
+  external_finalize_t finalize)
+  : data_type_layer<TensorDataType>(comm),
+    fp_handle(nullptr),
+    bp_handle(nullptr),
+    init_ptr(init),
+    finalize_ptr(finalize),
+    fp_compute_ptr(fprop),
+    bp_compute_ptr(bprop)
 {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -162,28 +191,38 @@ void external_layer<TensorDataType, Layout, Device>::fp_compute()
   // Create vectors for call. TODO: Can be cached on object.
   std::vector<void*> inputs(ninputs, nullptr), weights(nweights, nullptr),
     outputs(noutputs, nullptr);
+  std::vector<El::SyncInfo<Device>> syncs;
+  syncs.reserve(noutputs + ninputs);
 
   // Set arguments
+  int local_batch_size = 0;
+  for (auto i = 0; i < noutputs; ++i) {
+    auto& local_output = dynamic_cast<MatType&>(this->get_local_activations(i));
+    outputs[i] = (void*)local_output.Buffer();
+    local_batch_size = local_output.Width();
+    syncs.emplace_back(El::SyncInfoFromMatrix(local_output));
+  }
   for (auto i = 0; i < ninputs; ++i) {
     const auto& local_input =
       dynamic_cast<const MatType&>(this->get_local_prev_activations(i));
-    inputs[i] = (void *)local_input.LockedBuffer();
+    inputs[i] = (void*)local_input.LockedBuffer();
+    syncs.emplace_back(El::SyncInfoFromMatrix(local_input));
   }
   /*for (auto i = 0U; i < nweights; ++i) {
     // TODO: this can likely be cached at setup
     weights[i] = (void *)weight_ptrs[i].lock().get_values().Buffer();
   }*/
-  int local_batch_size = 0;
-  void *stream = nullptr;
-  for (auto i = 0; i < noutputs; ++i) {
-    auto& local_output = dynamic_cast<MatType&>(this->get_local_activations(i));
-    outputs[i] = (void *)local_output.Buffer();
-    local_batch_size = local_output.Width();
-    stream = gpu::get_sync_info(local_output).Stream();
-  }
 
   // Invoke computation in external library
-  this->fp_compute_ptr(this->lib_state, inputs, weights, outputs, local_batch_size, stream);
+  {
+    auto multisync = MakeVariadicMultiSync(syncs);
+    this->fp_compute_ptr(this->lib_state,
+                         inputs,
+                         weights,
+                         outputs,
+                         local_batch_size,
+                         to_native_stream(multisync));
+  }
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -198,30 +237,44 @@ void external_layer<TensorDataType, Layout, Device>::bp_compute()
   auto nweights = weight_ptrs.size();
 
   // Create vectors for call. TODO: Can be cached on object.
-  std::vector<void*> inputs(ninputs, nullptr), prev_error_signals(noutputs, nullptr),
+  std::vector<void*> inputs(ninputs, nullptr),
+    prev_error_signals(noutputs, nullptr),
     output_error_signals(ninputs, nullptr), weight_grads(nweights, nullptr);
+  std::vector<El::SyncInfo<Device>> syncs;
+  syncs.reserve(ninputs + noutputs);
 
   // Set arguments
   int local_batch_size = 0;
-  void *stream = nullptr;
+
   for (auto i = 0; i < ninputs; ++i) {
     const auto& local_input =
       dynamic_cast<const MatType&>(this->get_local_prev_activations(i));
     auto& local_error =
       dynamic_cast<MatType&>(this->get_local_error_signals(i));
-    inputs[i] = (void *)local_input.LockedBuffer();
-    output_error_signals[i] = (void *)local_error.Buffer();
+    inputs[i] = (void*)local_input.LockedBuffer();
+    output_error_signals[i] = (void*)local_error.Buffer();
     local_batch_size = local_error.Width();
-    stream = gpu::get_sync_info(local_error).Stream();
+    syncs.emplace_back(El::SyncInfoFromMatrix(local_error));
   }
   for (auto i = 0; i < noutputs; ++i) {
-    const auto& local_prev_error = dynamic_cast<const MatType&>(this->get_local_prev_error_signals(i));
-    prev_error_signals[i] = (void *)local_prev_error.LockedBuffer();
+    const auto& local_prev_error =
+      dynamic_cast<const MatType&>(this->get_local_prev_error_signals(i));
+    prev_error_signals[i] = (void*)local_prev_error.LockedBuffer();
+    syncs.emplace_back(El::SyncInfoFromMatrix(local_prev_error));
   }
   // TODO: Gradients w.r.t. weights
 
   // Invoke computation in external library
-  this->bp_compute_ptr(this->lib_state, inputs, prev_error_signals, output_error_signals, weight_grads, local_batch_size, stream);
+  {
+    auto multisync = MakeVariadicMultiSync(syncs);
+    this->bp_compute_ptr(this->lib_state,
+                         inputs,
+                         prev_error_signals,
+                         output_error_signals,
+                         weight_grads,
+                         local_batch_size,
+                         to_native_stream(multisync));
+  }
 }
 
 #define PROTO_DEVICE(T, Device)                                                \

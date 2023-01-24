@@ -36,8 +36,7 @@ namespace lbann {
 
 /** @brief Get a SyncInfo from an Matrix. */
 template <typename TensorDataType, El::Device D>
-El::SyncInfo<D> get_sync_info(
-  El::Matrix<TensorDataType, D> const& m) noexcept
+El::SyncInfo<D> get_sync_info(El::Matrix<TensorDataType, D> const& m) noexcept
 {
   return El::SyncInfoFromMatrix(m);
 }
@@ -51,10 +50,8 @@ template <typename TensorDataType,
           El::Dist ColDist,
           El::Device D>
 El::SyncInfo<D> get_sync_info(
-  El::DistMatrix<TensorDataType,
-                 RowDist, ColDist,
-                 El::ELEMENT,
-                 D> const& m) noexcept
+  El::DistMatrix<TensorDataType, RowDist, ColDist, El::ELEMENT, D> const&
+    m) noexcept
 {
   return El::SyncInfoFromMatrix(m.LockedMatrix());
 }
@@ -67,10 +64,67 @@ El::SyncInfo<D> get_sync_info(
  *           deduction, for example.
  */
 template <El::Device D, El::Device... Ds>
-inline auto force(El::MultiSync<D, Ds...> const& x)
-  -> El::SyncInfo<D> const&
+inline auto force(El::MultiSync<D, Ds...> const& x) -> El::SyncInfo<D> const&
 {
   return x;
+}
+
+/** \class VariadicMultiSync
+ *  \brief RAII class to wrap an array of SyncInfo objects.
+ *
+ *  Provides basic synchronization for the common case in which an
+ *  operation may act upon objects that exist on multiple distinct
+ *  synchronous processing elements (e.g., cudaStreams) but actual
+ *  computation can only occur on one of them.
+ *
+ *  Constructing an object of this class will cause the master
+ *  processing element to wait on the others, asynchronously with
+ *  respect to the CPU, if possible. Symmetrically, destruction of
+ *  this object will cause the other processing elements to wait on
+ *  the master processing element, asynchronously with respect to the
+ *  CPU, if possible.
+ *
+ *  The master processing element is assumed to be the first SyncInfo
+ *  passed into the constructor.
+ */
+template <El::Device D>
+class VariadicMultiSync
+{
+public:
+  VariadicMultiSync(const std::vector<El::SyncInfo<D>>& syncInfos)
+    : syncInfos_(syncInfos)
+  {
+    // Master waits on all others
+    for (auto i = 1U; i < syncInfos.size(); ++i)
+      El::AddSynchronizationPoint(syncInfos[i], syncInfos[0]);
+  }
+
+  ~VariadicMultiSync()
+  {
+    // Others wait for master
+    for (auto i = 1U; i < syncInfos_.size(); ++i)
+      El::AddSynchronizationPoint(syncInfos_[0], syncInfos_[i]);
+  }
+
+  /** @brief Implicitly convert to the master.
+   *
+   *  This is to be able to pass a multisync in place of a SyncInfo
+   *  object. It is common to create a VariadicMultiSync and then
+   *  pass its master to a bunch of other calls. This simplifies
+   *  things by not needing to store an external reference to the
+   *  master SyncInfo.
+   */
+  operator El::SyncInfo<D> const&() const noexcept { return syncInfos_[0]; }
+
+protected:
+  std::vector<El::SyncInfo<D>> syncInfos_;
+}; // class VariadicMultiSync
+
+template <El::Device D>
+auto MakeVariadicMultiSync(const std::vector<El::SyncInfo<D>>& syncInfos)
+  -> VariadicMultiSync<D>
+{
+  return VariadicMultiSync<D>(syncInfos);
 }
 
 } // namespace lbann
