@@ -29,8 +29,6 @@
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/weights/weights_helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
-#include "lbann/utils/exception.hpp"
-#include "lbann/Elemental_extensions.hpp"
 
 namespace lbann {
 
@@ -557,7 +555,6 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
   const auto& local_var = (is_training ?
                            this->m_var_v->LockedMatrix() :
                            this->weights_values(3).LockedMatrix());
-
   if (!local_input.IsEmpty()) {
     auto multisync =
       El::MakeMultiSync(gpu::get_sync_info(local_output),
