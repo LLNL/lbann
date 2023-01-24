@@ -32,9 +32,11 @@
 
 namespace lbann {
 
-typedef void (*fprop_t)(const std::vector<void *>& inputs, const std::vector<void *>& weights, 
+typedef void (*fprop_t)(void *handle,
+                        const std::vector<void *>& inputs, const std::vector<void *>& weights, 
                         const std::vector<void *>& outputs);
-typedef void (*bprop_t)(const std::vector<void *>& inputs, const std::vector<void *>& prev_error_signals,
+typedef void (*bprop_t)(void *handle,
+                        const std::vector<void *>& inputs, const std::vector<void *>& prev_error_signals,
                         const std::vector<void *>& output_error_signals, const std::vector<void *>& weight_grads);
 
 /** @brief Call external function

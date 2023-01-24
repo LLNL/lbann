@@ -152,7 +152,7 @@ void external_layer<TensorDataType, Layout, Device>::fp_compute()
   }
 
   // Invoke computation in external library
-  this->fp_compute_ptr(inputs, weights, outputs);
+  this->fp_compute_ptr(nullptr, inputs, weights, outputs);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -186,7 +186,7 @@ void external_layer<TensorDataType, Layout, Device>::bp_compute()
   // TODO: Gradients w.r.t. weights
 
   // Invoke computation in external library
-  this->bp_compute_ptr(inputs, prev_error_signals, output_error_signals, weight_grads);
+  this->bp_compute_ptr(nullptr, inputs, prev_error_signals, output_error_signals, weight_grads);
 }
 
 #define PROTO_DEVICE(T, Device)                                                \
