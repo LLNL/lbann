@@ -112,7 +112,8 @@ set_center_specific_modules()
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
             "zen3") # Tioga, RZVernal
-                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.09.0 amd/5.3.0 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-amd/8.3.3 StdEnv cmake/3.23.1"
+#                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.09.0 amd/5.3.0 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-amd/8.3.3 StdEnv cmake/3.23.1"
+                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.09.0 amd/5.3.0 craype/2.7.17 cray-libsci/22.08.1.1 PrgEnv-amd/8.3.3 cray-mpich/8.1.19 StdEnv cmake/3.23.1"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -396,6 +397,8 @@ cat <<EOF  >> ${yaml}
       - spec: cray-mpich@8.1.19 arch=${spack_arch}
         modules:
         - cray-mpich/8.1.19
+#      - spec: cray-mpich@8.1.19 +wrappers arch=${spack_arch}
+#        prefix: /opt/cray/pe/mpich/8.1.19/ofi/crayclang/10.0/
 EOF
                 ;;
             *)
