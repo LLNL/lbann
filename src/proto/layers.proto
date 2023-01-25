@@ -1414,6 +1414,10 @@ message Layer {
     int64 size = 1;
   }
 
+  message ExternalShape {
+    repeated uint64 dims = 1;
+  }
+
   /** @brief Call external function
    *
    *  Expects any number of input tensors. Invokes a shared object (e.g., .so file)
@@ -1429,11 +1433,14 @@ message Layer {
     /// Optional layer name (if not given, the name "layer" is used)
     string layer_name = 3;
 
-    /// Output shape of the layer. Leave empty to use the shape of the first input
-    repeated uint64 output_shape = 4;
+    /// Output shape(s) of the layer. Leave empty to use the shape of the first input
+    repeated ExternalShape output_shapes = 4;
+
+    /// Weights of the layer and their shapes. Leave empty for no weights
+    repeated ExternalShape weights = 5;
 
     /// If false, a GPU implementation is not available
-    bool has_gpu = 5;
+    bool has_gpu = 6;
   }
 
   /** @brief Softmax across channel dimension
