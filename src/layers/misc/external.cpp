@@ -61,6 +61,8 @@ external_layer<TensorDataType, Layout, Device>::external_layer(
   std::string layer_name)
   : data_type_layer<TensorDataType>(comm)
 {
+  this->m_expected_num_parent_layers = -1;
+  this->m_expected_num_child_layers = -1;
   ////////////////////////////////////////////////////
   // Load the library handles dynamically using dlopen
   this->fp_handle = dlopen(fp_name.c_str(), RTLD_LAZY);
@@ -151,7 +153,10 @@ external_layer<TensorDataType, Layout, Device>::external_layer(
     finalize_ptr(finalize),
     fp_compute_ptr(fprop),
     bp_compute_ptr(bprop)
-{}
+{
+  this->m_expected_num_parent_layers = -1;
+  this->m_expected_num_child_layers = -1;
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 external_layer<TensorDataType, Layout, Device>::~external_layer()
@@ -208,10 +213,12 @@ void external_layer<TensorDataType, Layout, Device>::fp_compute()
     inputs[i] = (void*)local_input.LockedBuffer();
     syncs.emplace_back(El::SyncInfoFromMatrix(local_input));
   }
-  /*for (auto i = 0U; i < nweights; ++i) {
+  for (auto i = 0U; i < nweights; ++i) {
     // TODO: this can likely be cached at setup
-    weights[i] = (void *)weight_ptrs[i].lock().get_values().Buffer();
-  }*/
+    auto& local_weights =
+      dynamic_cast<MatType&>(weight_ptrs[i].lock()->get_values());
+    weights[i] = (void*)local_weights.Buffer();
+  }
 
   // Invoke computation in external library
   {
@@ -262,7 +269,17 @@ void external_layer<TensorDataType, Layout, Device>::bp_compute()
     prev_error_signals[i] = (void*)local_prev_error.LockedBuffer();
     syncs.emplace_back(El::SyncInfoFromMatrix(local_prev_error));
   }
-  // TODO: Gradients w.r.t. weights
+  // Gradients w.r.t. weights
+  for (auto i = 0U; i < nweights; ++i) {
+    // TODO: this can likely be cached at setup
+    TensorDataType buf_scale, in_scale;
+    weight_grads[i] = (void*)weight_ptrs[i]
+                        .lock()
+                        ->get_optimizer()
+                        ->get_gradient_buffer(buf_scale, in_scale, false)
+                        .Buffer();
+    // TODO: Incorporate buf/in scale to call
+  }
 
   // Invoke computation in external library
   {
