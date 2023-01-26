@@ -31,6 +31,11 @@
 #include "permute/permuteimpl.hpp"
 
 #include "lbann/utils/description.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/utils/protobuf.hpp"
+
+#include <lbann.pb.h>
+#include <layers.pb.h>
 
 #include <memory>
 #include <sstream>
@@ -213,6 +218,13 @@ void PermuteLayer<T>::bp_compute()
 
 template <typename T>
 PermuteLayer<T>::PermuteLayer() : PermuteLayer(std::vector<int>{}) {}
+
+template <typename T>
+void PermuteLayer<T>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_permute();
+  protobuf::assign_to_repeated(*msg->mutable_axes(), this->m_impl->get_perm());
+}
 
 #define PROTO(T) template class PermuteLayer<T>
 #define LBANN_INSTANTIATE_GPU_HALF

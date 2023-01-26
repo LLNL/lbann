@@ -113,6 +113,8 @@ protected:
         "but input dimensions are ",ss.str());
     }
   }
+
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 };
 
 #ifndef LBANN_CUTOUT_LAYER_INSTANTIATE

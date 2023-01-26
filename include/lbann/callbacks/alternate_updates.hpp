@@ -63,9 +63,9 @@ class alternate_updates : public callback_base {
   }
   void setup(model *m) override;
   void on_batch_begin(model *m) override;
-
   std::string name() const override { return "alternate updates"; }
  private:
+  void write_specific_proto(lbann_data::Callback& proto) const final;
   std::vector<std::string> m_layer_names_1, m_layer_names_2;
   std::vector<Layer*> freeze_layers, unfreeze_layers;
   int m_iters_1, m_iters_tot;

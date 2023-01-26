@@ -85,6 +85,8 @@ protected:
   void fp_compute() final;
   void bp_compute() final;
 
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
 private:
   class PermuteImpl;
   std::unique_ptr<PermuteImpl> m_impl;

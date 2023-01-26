@@ -27,6 +27,7 @@
 #include "lbann/callbacks/alternate_updates.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include "callback_helpers.hpp"
 
@@ -65,6 +66,14 @@ void alternate_updates::on_batch_begin(model *m) {
 
     freeze_layers.swap(unfreeze_layers);
   }
+}
+
+void alternate_updates::write_specific_proto(lbann_data::Callback& proto) const{
+  auto* msg = proto.mutable_alternate_updates();
+  msg->set_layers_1(protobuf::to_space_sep_string(m_layer_names_1));
+  msg->set_layers_2(protobuf::to_space_sep_string(m_layer_names_2));
+  msg->set_iters_1(m_iters_1);
+  msg->set_iters_2(m_iters_tot - m_iters_1);
 }
 
 std::unique_ptr<callback_base>
