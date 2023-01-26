@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <catch2/catch.hpp>
+#include "Catch2BasicSupport.hpp"
 
 #include "MPITestHelpers.hpp"
 #include "TestHelpers.hpp"

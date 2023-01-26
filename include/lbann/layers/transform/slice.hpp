@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_TRANSFORM_SLICE_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/models/model.hpp"
@@ -389,11 +390,9 @@ void slice_layer<TensorDataType,Layout,Device>::bp_compute() {
 }
 
 #ifndef LBANN_SLICE_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device)             \
-  extern template class slice_layer<        \
-    T, data_layout::DATA_PARALLEL, Device>; \
-  extern template class slice_layer<        \
-    T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class slice_layer<T, data_layout::DATA_PARALLEL, Device>;    \
+  extern template class slice_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

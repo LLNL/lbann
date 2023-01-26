@@ -12,10 +12,7 @@ import models.wae as molwae
 import lbann
 import lbann.contrib.launcher
 import lbann.modules
-from lbann.util import str_list
-
-def list2str(l):
-    return ' '.join(l)
+import atom_models
 
 def construct_lc_launcher_args():
 
@@ -66,8 +63,6 @@ def construct_lc_launcher_args():
     parser.add_argument("--dump-model-dir", type=str, default="models")
     parser.add_argument("--num-io-threads", type=int, default=11)
     parser.add_argument("--vocab", default=None)
-    parser.add_argument("--delimiter", default="c")
-    parser.add_argument("--no-header", type=bool, default=True)
     parser.add_argument(
         "--ltfb", type=bool, default=False, help="train with LTFB")
     parser.add_argument(
@@ -77,7 +72,7 @@ def construct_lc_launcher_args():
         "--ltfb-num-tournaments", type=int, default=100,
         help="number of LTFB tournaments")
     parser.add_argument("--warmup", type=bool, default=False)
-    parser.add_argument("--lamda", type=float, default=0.00157, help="weighting of adversarial loss")
+    parser.add_argument("--lambda_", type=float, default=0.00157, help="weighting of adversarial loss")
     # these are specific to the Trainer object
     parser.add_argument(
         "--procs-per-trainer",
@@ -97,116 +92,6 @@ def construct_lc_launcher_args():
 # Setup and launch experiment
 # ==============================================
 
-def construct_model(run_args):
-    """Construct LBANN model.
-
-    Initial model for ATOM molecular VAE
-
-    """
-    import lbann
-
-    pad_index = run_args.pad_index
-    assert pad_index is not None
-
-    sequence_length = run_args.sequence_length
-    assert sequence_length is not None
-
-    print("sequence length is {}".format(sequence_length))
-    data_layout = "data_parallel"
-    # Layer graph
-    input_ = lbann.Identity(lbann.Input(name='inp',data_field='samples'), name='inp1')
-    input_feature_dims = sequence_length
-
-    embedding_size = run_args.embedding_dim
-    dictionary_size = run_args.num_embeddings
-    assert embedding_size is not None
-    assert dictionary_size is not None
-
-    save_output = True if run_args.dump_outputs_dir else False
-
-    print("save output? ", save_output, "out dir ",  run_args.dump_outputs_dir)
-    z = lbann.Gaussian(mean=run_args.g_mean,stdev=run_args.g_std, neuron_dims=str(run_args.z_dim))
-    recon, d1_real, d1_fake, d_adv, arg_max  = molwae.MolWAE(
-        input_feature_dims,
-        dictionary_size,
-        embedding_size,
-        pad_index,
-        run_args.z_dim,
-        run_args.g_mean,
-        run_args.g_std,
-        save_output=save_output)(input_,z)
-
-
-    zero  = lbann.Constant(value=0.0,num_neurons='1',name='zero')
-    one  = lbann.Constant(value=1.0,num_neurons='1',name='one')
-
-    d1_real_bce = lbann.SigmoidBinaryCrossEntropy([d1_real,one],name='d1_real_bce')
-    d1_fake_bce = lbann.SigmoidBinaryCrossEntropy([d1_fake,zero],name='d1_fake_bce')
-    d_adv_bce = lbann.SigmoidBinaryCrossEntropy([d_adv,one],name='d_adv_bce')
-
-    #vae_loss.append(recon)
-
-    layers = list(lbann.traverse_layer_graph(input_))
-    # Setup objective function
-    weights = set()
-    src_layers = []
-    dst_layers = []
-    for l in layers:
-      if(l.weights and "disc0" in l.name and "instance1" in l.name):
-        src_layers.append(l.name)
-      #freeze weights in disc2
-      if(l.weights and "disc1" in l.name):
-        dst_layers.append(l.name)
-        for idx in range(len(l.weights)):
-          l.weights[idx].optimizer = lbann.NoOptimizer()
-      weights.update(l.weights)
-    l2_weights = [w for w in weights if not isinstance(w.optimizer, lbann.NoOptimizer)]
-    l2_reg = lbann.L2WeightRegularization(weights=l2_weights, scale=1e-4)
-
-    d_adv_bce = lbann.LayerTerm(d_adv_bce,scale=run_args.lamda)
-
-    obj = lbann.ObjectiveFunction([d1_real_bce,d1_fake_bce,d_adv_bce,recon,l2_reg])
-
-    # Initialize check metric callback
-    metrics = [
-               lbann.Metric(recon, name='recon')
-                ]
-
-    callbacks = [lbann.CallbackPrint(),
-                 lbann.CallbackTimer()]
-
-    if(run_args.dump_weights_interval > 0):
-      callbacks.append(lbann.CallbackDumpWeights(directory=run_args.dump_weights_dir,
-                                              epoch_interval=run_args.dump_weights_interval))
-
-    callbacks.append(lbann.CallbackReplaceWeights(source_layers=list2str(src_layers),
-                                 destination_layers=list2str(dst_layers),
-                                 batch_interval=2))
-
-    #Dump final weight for inference
-    if(run_args.dump_model_dir):
-      callbacks.append(lbann.CallbackSaveModel(dir=run_args.dump_model_dir))
-
-    #Dump output (activation) for post processing
-    if(run_args.dump_outputs_dir):
-      pred_tensor = lbann.Concatenation(arg_max, name='pred_tensor')
-      callbacks.append(lbann.CallbackDumpOutputs(batch_interval=run_args.dump_outputs_interval,
-                       execution_modes='test', directory=run_args.dump_outputs_dir,layers='inp pred_tensor'))
-
-    if(run_args.warmup):
-        callbacks.append(
-            lbann.CallbackLinearGrowthLearningRate(
-                target=run_args.lr / 512 * run_args.batch_size, num_epochs=5))
-
-    # Construct model
-    return lbann.Model(run_args.sgd_num_epochs,
-                       weights=weights,
-                       layers=layers,
-                       objective_function=obj,
-                       metrics=metrics,
-                       callbacks=callbacks)
-
-
 def construct_data_reader(run_args):
     """
     Construct Protobuf message for Python data reader.
@@ -218,6 +103,8 @@ def construct_data_reader(run_args):
 
     module_file = os.path.abspath(run_args.data_module_file)
     os.environ["DATA_CONFIG"] = os.path.abspath(run_args.data_config)
+    os.environ["MAX_SEQ_LEN"] = str(run_args.sequence_length)
+    #os.environ["DATA_PATH"] = "" #run_args.data_filename
 
     module_name = os.path.splitext(os.path.basename(module_file))[0]
     module_dir = os.path.dirname(module_file)
@@ -309,7 +196,24 @@ def main():
         os.makedirs(experiment_dir)
 
     # model and optimizer
-    model = construct_model(run_args)
+    model = atom_models.construct_atom_wae_model(pad_index=run_args.pad_index,
+                                                 sequence_length=run_args.sequence_length,
+                                                 embedding_size=run_args.embedding_dim,
+                                                 dictionary_size=run_args.num_embeddings,
+                                                 dump_outputs_dir=run_args.dump_outputs_dir,
+                                                 z_dim=run_args.z_dim,
+                                                 g_mean=run_args.g_mean,
+                                                 g_std=run_args.g_std,
+                                                 lambda_=run_args.lambda_,
+                                                 dump_weights_dir=run_args.dump_weights_dir,
+                                                 dump_weights_interval=run_args.dump_weights_interval,
+                                                 dump_model_dir=run_args.dump_model_dir,
+                                                 dump_outputs_interval=run_args.dump_outputs_interval,
+                                                 warmup=run_args.warmup,
+                                                 lr=run_args.lr,
+                                                 batch_size=run_args.batch_size,
+                                                 num_epochs=run_args.sgd_num_epochs
+                                                 )
     opt = lbann.Adam(learn_rate=run_args.lr, beta1=0.9, beta2=0.99, eps=1e-8)
 
     # dump the config to the experiment_dir so that it can be used to load the model in pytorch (moses codebase)
@@ -319,11 +223,9 @@ def main():
       import torch
       torch.save(run_args, "{}/{}_config.pt".format(experiment_dir, run_args.job_name))
 
-    m_lbann_args=f"--vocab={run_args.vocab} --data_filedir={run_args.data_filedir} --data_filename_train={run_args.data_filename} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}"
+    m_lbann_args=f"--vocab={run_args.vocab} --data_filedir={run_args.data_filedir} --data_filename_train={run_args.data_filename} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads}"
     if(run_args.data_reader_prototext):
       m_lbann_args = " ".join((m_lbann_args, " --use_data_store --preload_data_store "))
-    if(run_args.ltfb):
-      m_lbann_args = " ".join((m_lbann_args, "--ltfb"))
     if(run_args.procs_per_trainer):
       m_lbann_args = " ".join((m_lbann_args, f"--procs_per_trainer={run_args.procs_per_trainer}"))
 

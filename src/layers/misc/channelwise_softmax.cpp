@@ -24,6 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <memory>
+#include <type_traits>
 #define LBANN_CHANNELWISE_SOFTMAX_LAYER_INSTANTIATE
 #include "lbann/layers/misc/channelwise_softmax.hpp"
 #include "lbann/utils/memory.hpp"
@@ -174,65 +176,6 @@ void channelwise_softmax_layer<TensorDataType,Layout,Device>::bp_compute() {
           this->get_error_signals());
 }
 
-// =============================================
-// Builder function
-// =============================================
-
-namespace
-{
-
-template <typename T, data_layout L, El::Device D>
-struct Builder
-{
-  template <typename... Args>
-  static std::unique_ptr<Layer> Build(Args&&...)
-  {
-    LBANN_ERROR(
-      "Attempted to construct channelwise_softmax_layer ",
-      "with invalid parameters ",
-      "(TensorDataType=",TypeName<T>(),", ",
-      "Layout=",to_string(L),", ",
-      "Device=",to_string(D),")");
-    return nullptr;
-  }
-};
-
-template <El::Device Device>
-struct Builder<float,data_layout::DATA_PARALLEL,Device>
-{
-  template <typename... Args>
-  static std::unique_ptr<Layer> Build(Args&&... args)
-  {
-    using LayerType = channelwise_softmax_layer<float,
-                                                data_layout::DATA_PARALLEL,
-                                                Device>;
-    return std::make_unique<LayerType>(std::forward<Args>(args)...);
-  }
-};
-
-template <El::Device Device>
-struct Builder<double,data_layout::DATA_PARALLEL,Device>
-{
-  template <typename... Args>
-  static std::unique_ptr<Layer> Build(Args&&... args)
-  {
-    using LayerType = channelwise_softmax_layer<double,
-                                                data_layout::DATA_PARALLEL,
-                                                Device>;
-    return std::make_unique<LayerType>(std::forward<Args>(args)...);
-  }
-};
-
-} // namespace <anon>
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_channelwise_softmax_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const&)
-{
-  using BuilderType = Builder<TensorDataType, Layout, Device>;
-  return BuilderType::Build(comm);
-}
-
 // =========================================================
 // Explicit template instantiation
 // =========================================================
@@ -250,10 +193,5 @@ std::unique_ptr<Layer> build_channelwise_softmax_layer_from_pbuf(
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 #endif // LBANN_HAS_GPU
-
-#define PROTO_DEVICE(T, Device) \
-  LBANN_LAYER_BUILDER_ETI(channelwise_softmax, T, Device)
-#include "lbann/macros/instantiate_device.hpp"
-#undef PROTO_DEVICE
 
 } // namespace lbann

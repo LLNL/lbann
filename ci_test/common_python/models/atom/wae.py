@@ -3,10 +3,6 @@ import lbann
 import lbann.modules
 from lbann.util import make_iterable
 
-def str_list(l):
-    """Convert an iterable object to a space-separated string."""
-    return ' '.join(str(i) for i in make_iterable(l))
-
 class GRUModule(lbann.modules.Module):
 
     global_count = 0  # Static counter, used for default names
@@ -55,7 +51,7 @@ class GRUModule(lbann.modules.Module):
         # Default initial hidden state
         self.zeros = lbann.Constant(
             value=0,
-            num_neurons=str_list([num_layers, hidden_size]),
+            num_neurons=[num_layers, hidden_size],
             name=f'{self.name}_zeros',
             device=self.device,
             datatype=self.datatype,
@@ -175,7 +171,7 @@ class MolWAE(lbann.modules.Module):
         :return: float, recon component of loss
         """
 
-        x = lbann.Slice(x, slice_points=str_list([0, self.input_feature_dims]))
+        x = lbann.Slice(x, slice_points=[0, self.input_feature_dims])
         x = lbann.Identity(x)
         x_emb = lbann.Embedding(
             x,
@@ -198,15 +194,15 @@ class MolWAE(lbann.modules.Module):
         recon_loss = lbann.Identity(recon_loss, device='CPU')
 
         z_prior = lbann.Tessellate(
-            lbann.Reshape(z, dims=str_list([1, 128])),
-            dims=str_list([self.input_feature_dims, 128]),
+            lbann.Reshape(z, dims=[1, 128]),
+            dims=[self.input_feature_dims, 128],
         )
 
         d_real = self.discriminator0(lbann.Concatenation([x_emb,z_prior],axis=1))
 
         z_sample0 = lbann.Tessellate(
-            lbann.Reshape(z_sample, dims=str_list([1, 128])),
-            dims=str_list([self.input_feature_dims, 128]),
+            lbann.Reshape(z_sample, dims=[1, 128]),
+            dims=[self.input_feature_dims, 128],
         )
         y_z_sample = lbann.Concatenation([x_emb,z_sample0],axis=1)
 
@@ -228,8 +224,8 @@ class MolWAE(lbann.modules.Module):
 
         h = lbann.Slice(
             h,
-            slice_points=str_list([self.input_feature_dims-1,
-                                   self.input_feature_dims]),
+            slice_points=[self.input_feature_dims-1,
+                          self.input_feature_dims],
             axis=0,
         )
         h = lbann.Identity(h)
@@ -248,15 +244,15 @@ class MolWAE(lbann.modules.Module):
         # z_0 = z.unsqueeze(1).repeat(1, x_emb.size(1), 1)
         # x_input = torch.cat([x_emb, z_0], dim=-1)
         z_0 = lbann.Tessellate(
-            lbann.Reshape(z, dims=str_list([1, 128])),
-            dims=str_list([self.input_feature_dims, 128]),
+            lbann.Reshape(z, dims=[1, 128]),
+            dims=[self.input_feature_dims, 128],
         )
         x_input = lbann.Concatenation(x_emb, z_0, axis=1)
 
         h_0 = self.decoder_lat(z)
         # h_0 = h_0.unsqueeze(0).repeat(self.decoder_rnn.num_layers, 1, 1)
-        h_0 = lbann.Reshape(h_0, dims=str_list([1, 512]))
-        h_0 = lbann.Tessellate(h_0, dims=str_list((self.num_decoder_layers, 512)))
+        h_0 = lbann.Reshape(h_0, dims=[1, 512])
+        h_0 = lbann.Tessellate(h_0, dims=(self.num_decoder_layers, 512))
 
         # output, _ = self.decoder_rnn(x_input, h_0)
         output = self.decoder_rnn(x_input, h_0)
@@ -288,9 +284,9 @@ class MolWAE(lbann.modules.Module):
           y_slice = lbann.Slice(
               y,
               axis=0,
-              slice_points=str_list(range(self.input_feature_dims+1)),
+              slice_points=range(self.input_feature_dims+1),
           )
-          y_slice = [lbann.Reshape(y_slice, dims='-1') for _ in range(self.input_feature_dims)]
+          y_slice = [lbann.Reshape(y_slice, dims=[-1]) for _ in range(self.input_feature_dims)]
           arg_max = [lbann.Argmax(yi, device='CPU') for yi in y_slice]
 
           return y, arg_max
@@ -303,14 +299,14 @@ class MolWAE(lbann.modules.Module):
         y = lbann.Slice(
             y,
             axis=0,
-            slice_points=str_list([0, self.input_feature_dims-1]),
+            slice_points=[0, self.input_feature_dims-1],
         )
         y = lbann.Identity(y)
 
         # x[:, 1:]
         x = lbann.Slice(
             x,
-            slice_points=str_list([1, self.input_feature_dims]),
+            slice_points=[1, self.input_feature_dims],
         )
         x = lbann.Identity(x)
 
@@ -327,10 +323,10 @@ class MolWAE(lbann.modules.Module):
             lbann.Multiply(keep_mask, x),
             lbann.Multiply(ignore_mask, self.constant(-1, hint_layer=x)),
         )
-        x = lbann.Slice(x, slice_points=str_list(range(self.input_feature_dims)))
+        x = lbann.Slice(x, slice_points=range(self.input_feature_dims))
         x = [lbann.Identity(x) for _ in range(self.input_feature_dims-1)]
         x = [lbann.OneHot(xi, size=self.dictionary_size) for xi in x]
-        x = [lbann.Reshape(xi, dims=str_list([1, self.dictionary_size])) for xi in x]
+        x = [lbann.Reshape(xi, dims=[1, self.dictionary_size]) for xi in x]
         x = lbann.Concatenation(x, axis=0)
 
         # recon_loss = F.cross_entropy(
@@ -353,16 +349,16 @@ class MolWAE(lbann.modules.Module):
         )
         z = lbann.Log(z)
         z = lbann.MatMul(
-            lbann.Reshape(keep_mask, dims=str_list([1, -1])),
+            lbann.Reshape(keep_mask, dims=[1, -1]),
             z,
         )
         recon_loss = lbann.MatMul(
-            lbann.Reshape(y, dims=str_list([1, -1])),
-            lbann.Reshape(x, dims=str_list([1, -1])),
+            lbann.Reshape(y, dims=[1, -1]),
+            lbann.Reshape(x, dims=[1, -1]),
             transpose_b=True,
         )
         recon_loss = lbann.Subtract(z, recon_loss)
-        recon_loss = lbann.Reshape(recon_loss, dims=str_list([1]))
+        recon_loss = lbann.Reshape(recon_loss, dims=[1])
         recon_loss = lbann.Divide(recon_loss, length)
 
         return recon_loss
@@ -370,7 +366,7 @@ class MolWAE(lbann.modules.Module):
     def constant(self, value, dims=[], datatype=None, hint_layer=None):
         return lbann.Constant(
             value=value,
-            num_neurons=str_list(dims),
+            num_neurons=dims,
             datatype=datatype,
             hint_layer=hint_layer,
         )

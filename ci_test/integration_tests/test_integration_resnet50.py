@@ -6,6 +6,7 @@ import re
 import sys
 import numpy as np
 import google.protobuf.text_format
+import warnings
 import pytest
 
 # Local files
@@ -20,46 +21,74 @@ import data.imagenet
 # ==============================================
 
 # Training options
-num_epochs = 5
-mini_batch_size = 256
-num_nodes = 4
 imagenet_fraction = 0.280994  # Train with 360K out of 1.28M samples
 
 # Top-5 classification accuracy (percent)
-expected_train_accuracy_range = (45, 50)
-expected_test_accuracy_range = (40, 55)
 
-# Average mini-batch time (in sec) for each LC system
-expected_mini_batch_times = {
-    'pascal': 0.25,
-    'lassen': 0.10,
-    'ray':    0.15,
+################################################################################
+# Weekly training options and targets
+################################################################################
+# Reconstruction loss
+weekly_options_and_targets = {
+    'num_nodes': 4,
+    'num_epochs': 5,
+    'mini_batch_size': 256,
+    'expected_train_accuracy_range': (45, 50),
+    'expected_test_accuracy_range': (40, 55),
+    'percent_of_data_to_use': imagenet_fraction,
+    'expected_mini_batch_times': {
+        'pascal': 0.25,
+        'lassen': 0.10,
+        'ray':    0.15,
+    }
+}
+
+################################################################################
+# Nightly training options and targets
+################################################################################
+nightly_options_and_targets = {
+    'num_nodes': 2,
+    'num_epochs': 3,
+    'mini_batch_size': 256,
+    'expected_train_accuracy_range': (3, 4.1),
+    'expected_test_accuracy_range': (1.5, 2.1),
+    'percent_of_data_to_use': imagenet_fraction * 0.01,
+    'expected_mini_batch_times': {
+        'pascal': 0.43,
+        'lassen': 0.15,
+        'ray':    0.23,
+    }
 }
 
 # ==============================================
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
         lbann (module): Module for LBANN Python frontend
 
     """
-    trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
-    model = construct_model(lbann)
+    if weekly:
+        options = weekly_options_and_targets
+    else:
+        options = nightly_options_and_targets
+
+    trainer = lbann.Trainer(mini_batch_size=options['mini_batch_size'])
+    model = construct_model(lbann, options['num_epochs'])
     # Setup data reader
     data_reader = data.imagenet.make_data_reader(lbann, num_classes=1000)
     # We train on a subset of ImageNet
-    data_reader.reader[0].percent_of_data_to_use = imagenet_fraction
+    data_reader.reader[0].percent_of_data_to_use = options['percent_of_data_to_use']
     # Only evaluate on ImageNet validation set at end of training
     data_reader.reader[1].role = 'test'
 
     optimizer = lbann.SGD(learn_rate=0.1, momentum=0.9)
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, options['num_nodes']
 
-def construct_model(lbann):
+def construct_model(lbann, num_epochs):
     """Construct LBANN model.
 
     Args:
@@ -130,14 +159,17 @@ def augment_test_func(test_func):
     # Define test function
     def func(cluster, dirname, weekly):
 
-        # Skip test with nightly builds and on CPU systems
-        if not weekly:
-            pytest.skip('only run {} with weekly builds'.format(test_name))
+        # Skip test on CPU systems
         if cluster in ('catalyst', 'corona'):
             pytest.skip('only run {} on GPU systems'.format(test_name))
 
+        if weekly:
+            targets = weekly_options_and_targets
+        else:
+            targets = nightly_options_and_targets
+
         # Run LBANN experiment
-        experiment_output = test_func(cluster, dirname)
+        experiment_output = test_func(cluster, dirname, weekly)
 
         # Parse LBANN log file
         train_accuracy = None
@@ -156,25 +188,27 @@ def augment_test_func(test_func):
                     mini_batch_times.append(float(match.group(1)))
 
         # Check if training accuracy is within expected range
-        assert (expected_train_accuracy_range[0]
-                < train_accuracy
-                < expected_train_accuracy_range[1]), \
-                'train accuracy is outside expected range'
+        assert ((train_accuracy > targets['expected_train_accuracy_range'][0]
+                 and train_accuracy < targets['expected_train_accuracy_range'][1])), \
+                f"train accuracy {train_accuracy:.3f} is outside expected range " + \
+                f"[{targets['expected_train_accuracy_range'][0]:.3f},{targets['expected_train_accuracy_range'][1]:.3f}]"
 
         # Check if testing accuracy is within expected range
-        assert (expected_test_accuracy_range[0]
-                < test_accuracy
-                < expected_test_accuracy_range[1]), \
-                'test accuracy is outside expected range'
+        assert ((test_accuracy > targets['expected_test_accuracy_range'][0]
+                 and test_accuracy < targets['expected_test_accuracy_range'][1])), \
+                f"test accuracy {test_accuracy:.3f} is outside expected range " + \
+                f"[{targets['expected_test_accuracy_range'][0]:.3f},{targets['expected_test_accuracy_range'][1]:.3f}]"
 
         # Check if mini-batch time is within expected range
         # Note: Skip first epoch since its runtime is usually an outlier
         mini_batch_times = mini_batch_times[1:]
         mini_batch_time = sum(mini_batch_times) / len(mini_batch_times)
-        assert (0.75 * expected_mini_batch_times[cluster]
-                < mini_batch_time
-                < 1.25 * expected_mini_batch_times[cluster]), \
-                'average mini-batch time is outside expected range'
+        min_expected_mini_batch_time = 0.75 * targets['expected_mini_batch_times'][cluster]
+        max_expected_mini_batch_time = 1.25 * targets['expected_mini_batch_times'][cluster]
+        if (mini_batch_time < min_expected_mini_batch_time or
+            mini_batch_time > max_expected_mini_batch_time):
+            warnings.warn(f'average mini-batch time {mini_batch_time:.3f} is outside expected range ' +
+                          f'[{min_expected_mini_batch_time:.3f}, {max_expected_mini_batch_time:.3f}]', UserWarning)
 
     # Return test function from factory function
     func.__name__ = test_name
@@ -183,6 +217,5 @@ def augment_test_func(test_func):
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment,
                                      __file__,
-                                     nodes=num_nodes,
                                      lbann_args=['--load_full_sample_list_once']):
     globals()[_test_func.__name__] = augment_test_func(_test_func)

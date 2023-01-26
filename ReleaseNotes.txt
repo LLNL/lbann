@@ -1,39 +1,66 @@
 ============================== (Pending) Release Notes: v1.00 ==============================
 C++ API:
- - Added ability to load models and run inference from external C++ applcations
+ - Added ability to load models and run inference from external C++ applications
  - Added inference-only execution algorithm
 
 Support for new training algorithms:
- - Experimental support for 2nd-order optimization with KFAC.
+ - 2nd-order optimization with K-FAC.
    Currently supports fully-connected, convolution, and GRU layers.
  - Added Sub-graph parallelism support for multi-branch architectures
    (split, slice, sum, and concat layers)
  - Data + sub-graph parallelism for in-core models (D&SP and D&SP-cSub)
  - Initial sub-graph parallelism support for common layers in
    Transformers
- - Truncation selection exchange for LTFB/Population Based Training (PBT)
+ - Model topology mutation in LTFB/PBT
+ - Added sub-grid parallelism support for K-FAC using primary and
+   secondary grids
+ - Truncation selection exchange for LTFB/PBT
+ - Regularized evolution for LTFB/PBT
+ - Hyperparameter grid search
 
 Support for new network structures:
+ - Edge-conditioned graph neural networks
+ - RoBERTa with pretrained weights
 
 Support for new layers:
 - Added support for 2D Matrices for Scatter and Gather layers
+- Added image rotation layer and composite image transformation layer
+  (rotate, shear, translate)
 - Added distributed tensor parallelism with channelwise decomposition for channelwise fully connected layer
 - Added "binary-with-constant" operators
+- Updated deconvolution layer to match PyTorch's API
+- Updated identity layer to copy tensors to enable tensor parallelism in subsequent layers in the compute graph
+- Added IdentityZero layer that allows alternating generator/discriminator
+  updates for training GANs.
 
 Python front-end:
+ - Added support for buidling and launching jobs on Fugaku
+ - Added Riken as a known compute center
+ - Added support for PJM as job launcher
+ - Unified convolution/deconvolution interface to better approximate PyTorch.
+ - Added circular (periodic) padding transformation for 2D and 3D tensors
 
 Performance optimizations:
  - Enabled the input layers to use a view of the I/O buffers in the
- buffered data coordinator
+   buffered data coordinator
+ - Use default-allocated GPU memory for long-lived buffers
+ - Optimized GPU kernels for entry-wise operators
 
 Model portability & usability:
+ - Weight initialization from NumPy files
+ - Expanded layer documentation
 
 Experiments & Applications:
  - Example for training Transformer model with D&SP and D&SP-cSub
  - PROBIESNet model for HRRL data
+ - Cosmo 3D GAN
+ - MNIST GAN
+ - Image GAN
 
 Internal features:
  - Added operator class
+ - Added AlternateUpdates callback to be used with IdentityZero layers for
+   training GANs.
 
 I/O & data readers:
  - Updated SMILES data reader to use sample lists
@@ -53,10 +80,20 @@ I/O & data readers:
    models.
  - Added support in the generic data reader and synthetic data reader
    clases for arbitrary data fields.
+ - Added support for data readers to return full Conduit nodes to the
+   Data Coordinator.
+ - Data coordinator can now directly return packed data fields to
+   input layers.
 
 Build system:
 
 Bug fixes:
+ - Fixed GPU kernels that launched with more blocks than allowed
+ - Fixed build and runtime errors with DistConv
+ - Use correct LayerNorm operaton in "Attention Is All You Need"
+   Transformer
+ - Fixed a bug where the input layer performed unnecessary memory
+   allocations.
 
 Retired features:
 

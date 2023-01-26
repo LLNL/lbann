@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/adjust_brightness.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
@@ -42,7 +43,7 @@ void adjust_brightness::apply(utils::type_erased_matrix& data, std::vector<size_
     LBANN_ERROR("Do not support non-contiguous OpenCV matrices.");
   }
   uint8_t* __restrict__ src_buf = src.ptr();
-  const size_t size = utils::get_linearized_size(dims);
+  const size_t size = get_linear_size(dims);
   for (size_t i = 0; i < size; ++i) {
     src_buf[i] = cv::saturate_cast<uint8_t>(src_buf[i]*m_factor);
   }

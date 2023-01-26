@@ -24,8 +24,14 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifdef LBANN_USE_CATCH2_V3
+#include <catch2/catch_session.hpp>
+#else
+// VERSION 2 ONLY
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
+#endif // LBANN_USE_CATCH2_V3
+
 #include <lbann/utils/dnn_lib/helpers.hpp>
 #include <lbann/utils/options.hpp>
 #include <lbann/utils/random_number_generators.hpp>

@@ -37,6 +37,8 @@
 #include "lbann/utils/threads/thread_pool.hpp"
 #include "lbann/utils/timer.hpp"
 
+#include "conduit/conduit_node.hpp"
+
 #include <omp.h>
 #include <future>
 
@@ -89,6 +91,69 @@ void generic_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io
   shuffle_indices();
 
   m_io_thread_pool = io_thread_pool;
+}
+
+int lbann::generic_data_reader::fetch(
+  std::vector<conduit::Node>& samples,
+  El::Matrix<El::Int>& indices_fetched,
+  size_t mb_size)
+{
+  // Check to make sure that a valid map was passed
+  if (samples.empty()) {
+    LBANN_ERROR("fetch function called with no valid buffers");
+  }
+
+  if(!position_valid()) {
+    if(position_is_overrun()) {
+      return 0;
+    }else {
+      LBANN_ERROR(std::string{} + "generic data reader load error: !position_valid"
+                  + " -- current pos = " + std::to_string(m_current_pos)
+                  + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
+    }
+  }
+
+  /// Allow each thread to perform any preprocessing necessary on the
+  /// data source prior to fetching data
+  for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
+    preprocess_data_source(t);
+  }
+
+  // Fetch data is executed by the thread pool so it has to dispatch
+  // work to other threads in the thread pool and do some work locally
+  for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
+    // Queue up work into other threads and then finish off the
+    // mini-batch in the active thread
+    if (t == m_io_thread_pool->get_local_thread_id()) {
+      continue;
+    }
+    else {
+      m_io_thread_pool->submit_job_to_work_group(
+        std::bind(&generic_data_reader::fetch_data_block_conduit,
+                  this,
+                  std::ref(samples),
+                  t,
+                  m_io_thread_pool->get_num_threads(),
+                  mb_size,
+                  std::ref(indices_fetched)));
+    }
+  }
+  fetch_data_block_conduit(samples,
+                   m_io_thread_pool->get_local_thread_id(),
+                   m_io_thread_pool->get_num_threads(),
+                   mb_size,
+                   indices_fetched);
+
+  // Wait for all of the threads to finish
+  m_io_thread_pool->finish_work_group();
+
+  /// Allow each thread to perform any postprocessing necessary on the
+  /// data source prior to fetching data
+  for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
+    postprocess_data_source(t);
+  }
+
+  return mb_size;
 }
 
 int lbann::generic_data_reader::fetch(
@@ -205,6 +270,28 @@ int lbann::generic_data_reader::fetch(
   return mb_size;
 }
 
+void lbann::generic_data_reader::start_data_store_mini_batch_exchange() {
+  int loaded_batch_size = get_loaded_mini_batch_size();
+
+  // Make sure that every rank participates in the data store prior
+  // to seeing if the local rank's position is valid.  Note that
+  // every rank will hold data that may be used in the last mini-batch
+  if (data_store_active()) {
+    m_data_store->start_exchange_mini_batch_data(m_current_pos-m_base_offset-m_model_offset, loaded_batch_size);
+  }
+  return;
+}
+
+void lbann::generic_data_reader::finish_data_store_mini_batch_exchange() {
+  // Make sure that every rank participates in the data store prior
+  // to seeing if the local rank's position is valid.  Note that
+  // every rank will hold data that may be used in the last mini-batch
+  if (data_store_active()) {
+    m_data_store->finish_exchange_mini_batch_data();
+  }
+  return;
+}
+
 bool lbann::generic_data_reader::fetch_data_block(
   std::map<data_field_type, CPUMat*>& input_buffers,
   El::Int block_offset,
@@ -280,6 +367,34 @@ bool lbann::generic_data_reader::fetch_data_block(
     }
   }
 
+  return true;
+}
+
+bool lbann::generic_data_reader::fetch_data_block_conduit(
+  std::vector<conduit::Node>& samples,
+  El::Int block_offset,
+  El::Int block_stride,
+  El::Int mb_size,
+  El::Matrix<El::Int>& indices_fetched)
+{
+  locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
+
+  if (static_cast<size_t>(mb_size) > samples.size()) {
+    LBANN_ERROR("unable to fetch data to conduit nodes, vector length ", samples.size(),
+                " is smaller than mini-batch size", mb_size);
+  }
+  //  CPUMat& X
+  for (int s = block_offset; s < mb_size; s += block_stride) {
+    int n = m_current_pos + (s * m_sample_stride);
+    int index = m_shuffled_indices[n];
+    indices_fetched.Set(s, 0, index);
+
+    auto& sample = samples[s];
+    bool valid = fetch_conduit_node(sample, index);
+    if (!valid) {
+      LBANN_ERROR("invalid datum (index ", std::to_string(index), ")");
+    }
+  }
   return true;
 }
 

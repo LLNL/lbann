@@ -27,7 +27,11 @@
 #ifndef LBANN_UTILS_TENSOR_IMPL_HPP
 #define LBANN_UTILS_TENSOR_IMPL_HPP
 
+#include "lbann_config.hpp"
 #include "lbann/utils/tensor.hpp"
+
+#include <El/blas_like/level1/Copy/TranslateBetweenGrids.hpp>
+#include <El/blas_like/level1/Copy/Translate.hpp>
 
 namespace lbann {
 
@@ -49,8 +53,87 @@ void do_tensor_copy(const BaseDistMat& src,
     El::CopyAsync(src, tgt);
   }
   else {
-    El::Copy(src, tgt);
+    if (src.DistData().grid == tgt.DistData().grid) {
+      El::Copy(src, tgt);
+    }
+    else {
+      utils::details::do_tensor_copy_between_grids(src, tgt);
+    }
   }
+}
+
+template <typename TDT>
+void utils::details::do_tensor_copy_between_grids(
+  const BaseDistMat& src,
+  El::AbstractDistMatrix<TDT>& tgt) {
+
+  // Determine matrix class and forward to template function
+  // Note: We use instantiate_device.hpp to deal with the annoyances
+  // of different FP16 types on CPU and GPU.
+  /// @todo Do this more systematically and support all matrix classes
+  const auto& tgt_dist = tgt.DistData();
+  bool did_copy = false;
+#undef PROTO_DEVICE
+#undef PROTO_MATRIX_TYPE
+#define PROTO_MATRIX_TYPE(T, ColDist, RowDist, Device)                \
+  if constexpr (std::is_same<T,TDT>::value) {                         \
+    if (tgt_dist.colDist == ColDist                                   \
+        && tgt_dist.rowDist == RowDist                                \
+        && tgt_dist.device == Device) {                               \
+      using TgtMatrixType                                             \
+        = El::DistMatrix<T, ColDist, RowDist, El::ELEMENT, Device>;   \
+      utils::details::do_tensor_copy_between_grids(                   \
+        src,                                                          \
+        dynamic_cast<TgtMatrixType&>(tgt));                           \
+      did_copy = true;                                                \
+    }                                                                 \
+  }
+#define PROTO_DEVICE(T, Device)                       \
+  PROTO_MATRIX_TYPE(T, El::STAR, El::VC,   Device)    \
+  PROTO_MATRIX_TYPE(T, El::MC,   El::MR,   Device)    \
+  PROTO_MATRIX_TYPE(T, El::STAR, El::STAR, Device)
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#undef PROTO_MATRIX_TYPE
+
+  // Check if copy succeeded
+  if (!did_copy) {
+    const auto& src_dist = src.DistData();
+    LBANN_ERROR(
+      "Failed to copy between two tensors on different grids ",
+      "(src: colDist=",int(src_dist.colDist),", ",
+      "rowDist=",int(src_dist.rowDist),", ",
+      "device=",int(src_dist.device),"; "
+      "tgt: colDist=",int(tgt_dist.colDist),", ",
+      "rowDist=",int(tgt_dist.rowDist),", ",
+      "device=",int(tgt_dist.device),")");
+  }
+
+}
+
+template <typename TDT, El::Dist ColDist, El::Dist RowDist, El::DistWrap Wrap, El::Device Device>
+void utils::details::do_tensor_copy_between_grids(
+  const BaseDistMat& src,
+  El::DistMatrix<TDT,ColDist,RowDist,Wrap,Device>& tgt) {
+
+  // Make sure matrix layouts are identical
+  using TgtMatrixType = El::DistMatrix<TDT,ColDist,RowDist,Wrap,Device>;
+  auto src_dist = src.DistData();
+  TgtMatrixType temp(*src_dist.grid, src_dist.root);
+  if (temp.DistData() == src_dist) {
+    El::LockedView(temp, dynamic_cast<const TgtMatrixType&>(src));
+  }
+  else {
+    temp.Resize(src.Height(), src.Width());
+    if (temp.Participating()) {
+      El::Copy(src, temp);
+    }
+  }
+
+  // Translate matrix between grids
+  tgt.Resize(src.Height(), src.Width());
+  El::copy::Translate(temp, tgt);
+
 }
 
 template <typename TDT>

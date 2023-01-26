@@ -1,8 +1,6 @@
 import os.path
 import lbann
 
-from util import str_list
-
 def make_data_reader():
     reader = lbann.reader_pb2.DataReader()
     _reader = reader.reader.add()

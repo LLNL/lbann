@@ -33,9 +33,7 @@
 #include "lbann/base.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
-#include "lbann/models/directed_acyclic_graph.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/proto/helpers.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
@@ -235,6 +233,7 @@ void RegularizedEvolution::select_next(model& m,
     auto&& metadata = trainer.get_data_coordinator().get_dr_metadata();
     m.setup(trainer.get_max_mini_batch_size(),
             metadata,
+            trainer.get_grids(),
             /*force*/ true);
   }
 }

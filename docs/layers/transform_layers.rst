@@ -26,6 +26,7 @@
    :ref:`Gather`, "Gather values from specified tensor indices"
    :ref:`Gaussian`, "Random tensor with Gaussian/normal distribution"
    :ref:`Hadamard`, "Entry-wise tensor product"
+   :ref:`IdentityZero`, "Identity/zero function if layer is unfrozen/frozen."
    :ref:`InTopK`, "One-hot vector indicating top-k entries"
    :ref:`Pooling`, "Traverses the spatial dimensions of a data tensor
    with a sliding window and applies a reduction operation"
@@ -72,6 +73,30 @@ Arguments: None
 
 ________________________________________
 
+
+.. _IdentityZero:
+
+----------------------------------------
+IdentityZero
+----------------------------------------
+
+The IdentityZero layer is an output tensor filled with either zeros or
+ones depending on if the layer is frozen or not. This is useful for
+more complex training setups like GANs, where you want to reuse the
+computational graph but switch loss functions.
+
+Arguments:
+
+   :num_neurons:
+
+      (``string``) Tensor dimensions
+
+      List of integers
+
+:ref:`Back to Top<transform-layers>`
+
+________________________________________
+
 .. _Bernoulli:
 
 ----------------------------------------
@@ -90,7 +115,7 @@ Arguments:
 
       (``string``) Tensor dimensions
 
-      Space-separated list of integers
+      List of integers
 
 :ref:`Back to Top<transform-layers>`
 
@@ -132,7 +157,7 @@ Arguments:
 
       (``string``) Tensor dimensions
 
-      Space-separated list of integers
+      List of integers
 
 :ref:`Back to Top<transform-layers>`
 
@@ -157,7 +182,7 @@ Arguments:
  :dims:
 
     (``string``) Crop dimensions
-    Space-separated list of integers
+    List of integers
 
 :ref:`Back to Top<transform-layers>`
 
@@ -290,7 +315,7 @@ Arguments:
 
       (``string``) Tensor dimensions
 
-      Space-separated list of integers
+      List of integers
 
    :training_only:
 
@@ -376,21 +401,21 @@ Arguments:
 
       (``string``) Pooling window dimensions (vector-valued)
 
-      Space-separated list of integers, one for each spatial
+      List of integers, one for each spatial
       dimension. Used when ``has_vectors`` is enabled.
 
    :pool_pads:
 
       (``string``) Pooling padding (vector-valued)
 
-      Space-separated list of integers, one for each spatial
+      List of integers, one for each spatial
       dimension. Used when ``has_vectors`` is enabled.
 
    :pool_strides:
 
       (``string``) Pooling strides (vector-valued)
 
-      Space-separated list of integers, one for each spatial
+      List of integers, one for each spatial
       dimension. Used when ``has_vectors`` is enabled.
 
    :pool_dims_i:
@@ -455,7 +480,7 @@ Arguments:
 
       (``string``) Tensor dimensions
 
-      Space-separated list of integers. A single dimension may be
+      List of integers. A single dimension may be
       -1, in which case the dimension is inferred.
 
 Deprecated and unused arguments:
@@ -505,7 +530,7 @@ Arguments:
 
       (``string``) Output tensor dimensions
 
-      Space-separated list of integers. Number of dimensions must
+      List of integers. Number of dimensions must
       match data tensor.
 
    :axis: (``google.protobuf.UInt64Value``) Dimension to scatter along
@@ -533,7 +558,7 @@ Arguments:
 
       (``string``) Positions at which to slice tensor
 
-      Space-separated list of integers. Slice points must be in
+      List of integers. Slice points must be in
       ascending order and the number of slice points must be one
       greater than the number of child layers.
 
@@ -541,9 +566,6 @@ Deprecated arguments:
 
    :get_slice_points_from_reader: (``string``) Do not use unless using
                                   the Jag dataset.
-
-   :get_slice_points_from_reader_bool: (``bool``) Do not use unless
-                                       using the Jag dataset.
 
 :ref:`Back to Top<transform-layers>`
 
@@ -659,7 +681,7 @@ Arguments:
 
       (``string``) Output tensor dimensions
 
-      Space-separated list of integers
+      List of integers
 
 :ref:`Back to Top<transform-layers>`
 
@@ -684,7 +706,7 @@ Arguments:
 
       (``string``) Tensor dimensions
 
-      Space-separated list of integers
+      List of integers
 
    :training_only:
 
@@ -738,7 +760,7 @@ The WeightedSum layer adds tensors with scaling factors.
 
 Arguments:
 
-   :scaling_factors: (``string``) Space-separated list of
+   :scaling_factors: (``string``) List of
                      floating-point numbers, one for each input tensor.
 
 :ref:`Back to Top<transform-layers>`
@@ -761,7 +783,7 @@ Arguments:
 
       (``string``) Weights tensor dimensions
 
-      Space-separated list of integers
+      List of integers
 
 :ref:`Back to Top<transform-layers>`
 

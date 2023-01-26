@@ -83,6 +83,7 @@ message Callback {
     CallbackComputeModelSize compute_model_size = 51;
     CallbackPerturbWeights perturb_weights = 52;
     CallbackExportOnnx export_onnx = 53;
+    CallbackAlternateUpdates alternate_updates = 54;
   }
 
   message CallbackLTFB {
@@ -421,7 +422,14 @@ message Callback {
 
   /** @brief Export trained model in onnx format */
   message CallbackExportOnnx {
-    bool print_debug_string = 1; // print debug string to stdout
-    string output_file = 2; // name of onnx output file
+    string output_filename = 1; // name of onnx output file
+    string debug_string_filename = 2; // print debug string to file
+  }
+
+  message CallbackAlternateUpdates {
+    string layers_1 = 1; // first set of layers to be trained
+    string layers_2 = 2;  // second set of layers to be trained
+    int64 iters_1 = 3; // number of training iterations for first set of layers
+    int64 iters_2 = 4; // number of training iterations for second set of layers
   }
 }

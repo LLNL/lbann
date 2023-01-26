@@ -88,7 +88,6 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  void setup_matrices(const El::Grid& grid) override;
   void setup_data(size_t max_mini_batch_size) override;
 
   /** @name Serialization */
@@ -140,13 +139,6 @@ auto channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
 
 template <typename TensorDataType, data_layout Layout, El::Device Dev>
 void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
-::setup_matrices(const El::Grid& grid) {
-  data_type_layer<TensorDataType>::setup_matrices(grid);
-  m_weights_gradient.reset(new StarMatDT<TensorDataType, Dev>(grid));
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Dev>
-void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
 ::setup_data(size_t max_mini_batch_size) {
   data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
   const El::Int num_channels = this->get_output_dims()[0];
@@ -182,8 +174,10 @@ void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
   this->get_weights(0).set_matrix_distribution(dist);
 
   // Setup gradient w.r.t. weights
+  m_weights_gradient.reset(AbsDistMatrixType::Instantiate(dist));
   m_weights_gradient->AlignWith(dist);
   m_weights_gradient->Resize(num_channels, 2);
+
 }
 
 LBANN_DEFINE_LAYER_BUILDER(channelwise_scale_bias);

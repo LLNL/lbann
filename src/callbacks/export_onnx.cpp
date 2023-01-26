@@ -28,77 +28,41 @@
 
 #include "lbann/callbacks/export_onnx.hpp"
 
-#include "lbann/layers/io/input_layer.hpp"
-#include "lbann/proto/helpers.hpp"
-#include "lbann/utils/factory.hpp"
-#include "lbann/utils/summary_impl.hpp"
-
 #include <callbacks.pb.h>
 
 #include <fstream>
 #include <iostream>
 #include <string>
 
-
 namespace lbann {
 namespace callback {
 
-export_onnx::export_onnx(bool print_debug_string,
-                         std::string output_file)
-  : callback_base(/*batch_interval=*/1),
-    m_print_debug_string(print_debug_string),
-    m_output_file(output_file)
-{}
-
-void export_onnx::on_setup_end(model* m)
+void export_onnx::on_train_end(model* m)
 {
-  mp_.set_ir_version(7);
-  auto* opset = mp_.add_opset_import();
-  // The empty string ("") domain indicates the operators defined
-  // as part of the ONNX specification; other domains correspond
-  // to operator sets of other vendors (e.g., they can be used to
-  // provide vendor-specific extensions to ONNX)
-  opset->set_domain("");
-  opset->set_version(11);
+  auto const rank = m->get_comm()->get_rank_in_trainer();
 
-  mp_.set_producer_name("LBANN");
-  mp_.set_producer_version(LBANN_MAKE_STR(LBANN_VERSION));
-  mp_.set_domain("lbann/LLNL/com.github");
-  mp_.set_model_version(1);
-  mp_.set_doc_string("Livermore Big Artificial Neural Network");
-}
+  onnx::ModelProto mp;
+  m->serialize_to_onnx(mp);
 
-void export_onnx::on_train_begin(model* m)
-{
-  // graph info
-  auto* gp = mp_.mutable_graph();
-  gp->set_name(m->get_name());
+  if (rank == 0) {
+    std::ofstream onnx_out(m_output_filename);
+    mp.SerializeToOstream(&onnx_out);
 
-  auto const layers = m->get_layers();
-  for (auto const* layer : layers) {
-    layer->fill_onnx_node(*gp);
-  }
-  gp->set_doc_string(m->get_name());
-
-  auto rank = m->get_comm()->get_rank_in_trainer();
-  if( rank == 0 ) {
-    std::ofstream onnx_out(m_output_file);
-    mp_.SerializeToOstream(&onnx_out);
-
-    if(m_print_debug_string)
-      std::cout << mp_.DebugString() << std::endl;
+    if (m_debug_string_filename.length()) {
+      std::ofstream debug(m_debug_string_filename);
+      debug << mp.DebugString();
+    }
   }
 }
 
 std::unique_ptr<callback_base>
-build_export_onnx_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg,
-  const std::shared_ptr<lbann_summary>&) {
+build_export_onnx_callback_from_pbuf(const google::protobuf::Message& proto_msg,
+                                     const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackExportOnnx&>(proto_msg);
-  return std::make_unique<export_onnx>(
-    params.print_debug_string(),
-    params.output_file());
+  return std::make_unique<export_onnx>(params.output_filename(),
+                                       params.debug_string_filename());
 }
-}// namespace callback
-}// namespace lbann
+} // namespace callback
+} // namespace lbann

@@ -25,6 +25,7 @@
 ################################################################################
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
+  alternate_updates.hpp
   callback.hpp
   check_dataset.hpp
   check_gradients.hpp

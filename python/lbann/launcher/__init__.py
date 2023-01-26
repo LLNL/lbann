@@ -3,10 +3,45 @@ import os, os.path
 import subprocess
 import lbann
 import lbann.proto
+import lbann.launcher.flux
 import lbann.launcher.openmpi
 import lbann.launcher.slurm
 import lbann.launcher.lsf
+import lbann.launcher.pjm
 from lbann.util import make_iterable, nvprof_command
+
+def make_timestamped_work_dir(work_dir=None,
+                              experiment_dir=None,
+                              job_name='lbann',
+                              **kwargs,
+):
+    # Create work directory if not provided
+    if not work_dir:
+       work_dir = experiment_dir
+    if not work_dir:
+        if 'LBANN_EXPERIMENT_DIR' in os.environ:
+            work_dir = os.environ['LBANN_EXPERIMENT_DIR']
+        else:
+            work_dir = os.path.join(os.getcwd())
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        work_dir = os.path.join(work_dir,
+                                '{}_{}'.format(timestamp, job_name))
+        # Differentiate the work directory with a few key parameters
+        if kwargs['nodes']:
+            work_dir = ('{}_n{}'.format(work_dir, kwargs['nodes']))
+        if kwargs['procs_per_node']:
+            work_dir = ('{}_ppn{}'.format(work_dir, kwargs['procs_per_node']))
+
+        i = 1
+        while os.path.lexists(work_dir):
+            i += 1
+            work_dir = os.path.join(
+                os.path.dirname(work_dir),
+                '{}_{}_{}'.format(timestamp, job_name, i))
+    work_dir = os.path.realpath(work_dir)
+    os.makedirs(work_dir, exist_ok=True)
+
+    return work_dir
 
 # ==============================================
 # Run experiments
@@ -154,6 +189,8 @@ def make_batch_script(script_file=None,
                       reservation=None,
                       launcher_args=[],
                       environment={},
+                      preamble_cmds=[],
+                      cleanup_cmds=[],
                       experiment_dir=None):
     """Construct batch script manager.
 
@@ -209,27 +246,23 @@ def make_batch_script(script_file=None,
         except:
             pass
     if not scheduler:
+        try:
+            subprocess.call(['flux', '-V'],
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL)
+            scheduler = 'flux'
+            print('I have found a flux scheduler')
+        except:
+            pass
+    if not scheduler:
         scheduler = 'openmpi'
 
     # Create work directory if not provided
-    if not work_dir:
-       work_dir = experiment_dir
-    if not work_dir:
-        if 'LBANN_EXPERIMENT_DIR' in os.environ:
-            work_dir = os.environ['LBANN_EXPERIMENT_DIR']
-        else:
-            work_dir = os.path.join(os.getcwd())
-        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        work_dir = os.path.join(work_dir,
-                                '{}_{}'.format(timestamp, job_name))
-        i = 1
-        while os.path.lexists(work_dir):
-            i += 1
-            work_dir = os.path.join(
-                os.path.dirname(work_dir),
-                '{}_{}_{}'.format(timestamp, job_name, i))
-    work_dir = os.path.realpath(work_dir)
-    os.makedirs(work_dir, exist_ok=True)
+    work_dir = make_timestamped_work_dir(work_dir=work_dir,
+                                         experiment_dir=experiment_dir,
+                                         job_name=job_name,
+                                         nodes=nodes,
+                                         procs_per_node=procs_per_node)
 
     # Create batch script manager
     if not script_file:
@@ -253,6 +286,17 @@ def make_batch_script(script_file=None,
             partition=partition,
             account=account,
             launcher_args=launcher_args)
+    elif scheduler.lower() in ('flux'):
+        script = lbann.launcher.flux.FluxBatchScript(
+            script_file=script_file,
+            work_dir=work_dir,
+            nodes=nodes,
+            procs_per_node=procs_per_node,
+            time_limit=time_limit,
+            job_name=job_name,
+            partition=partition,
+            account=account,
+            launcher_args=launcher_args)
     elif scheduler.lower() in ('lsf', 'jsrun', 'bsub'):
         script = lbann.launcher.lsf.LSFBatchScript(
             script_file=script_file,
@@ -265,12 +309,30 @@ def make_batch_script(script_file=None,
             account=account,
             reservation=reservation,
             launcher_args=launcher_args)
+    elif scheduler.lower() in ('pjm', 'pjsub'):
+        script = lbann.launcher.pjm.PJMBatchScript(
+            script_file=script_file,
+            work_dir=work_dir,
+            nodes=nodes,
+            procs_per_node=procs_per_node,
+            time_limit=time_limit,
+            job_name=job_name,
+            partition=partition,
+            launcher_args=launcher_args)
     else:
         raise RuntimeError('unsupported job scheduler ({})'
                            .format(scheduler))
 
+    # Set batch script preamble commands
+    for cmd in preamble_cmds:
+        script.add_command(cmd)
+
     # Set batch script environment
     for variable, value in environment.items():
         script.add_command('export {0}={1}'.format(variable, value))
+
+    # Set batch script cleanup commmands
+    for cmd in cleanup_cmds:
+        script.add_command(cmd)
 
     return script

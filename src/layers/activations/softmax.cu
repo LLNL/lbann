@@ -342,6 +342,11 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, 
     LBANN_ERROR("Unsupported softmax mode");
   }
 
+  // Setup workspace
+  l.m_workspace->Empty(false);
+  l.m_workspace->AlignWith(l.get_activations());
+  l.m_workspace->Resize(1, l.get_activations().Width());
+
   // Local matrices
   const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
   auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
@@ -492,16 +497,6 @@ void bp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, 
       local_gradient_wrt_input.LDim());
   }
 
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void softmax_layer<TensorDataType, Layout, Device>::setup_fp_dnn_descriptors()
-{
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void softmax_layer<TensorDataType, Layout, Device>::setup_bp_dnn_descriptors()
-{
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

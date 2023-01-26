@@ -32,7 +32,11 @@ set_full_path(THIS_DIR_SOURCES
   layer_norm.cpp
   local_response_normalization.cpp
   selu_dropout.cpp
-  )
+
+  batch_normalization_builder.cpp
+  entrywise_batch_normalization_builder.cpp
+  layer_norm_builder.cpp
+)
 
 if (LBANN_HAS_GPU)
   # Add the CUDA source files for this directory

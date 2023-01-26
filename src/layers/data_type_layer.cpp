@@ -476,7 +476,8 @@ auto MakeMatBuilder(data_layout const layout, El::Device const device)
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::
-setup_matrices(const El::Grid& grid) {
+setup_matrices(
+  const std::vector<El::Grid*>& grids) {
 
   using InputMatrixBuilderType = details::MatrixBuilder<InputTensorDataType>;
   using OutputMatrixBuilderType = details::MatrixBuilder<OutputTensorDataType>;
@@ -519,6 +520,36 @@ setup_matrices(const El::Grid& grid) {
   m_gradient_wrt_inputs.resize(get_num_parents());
   m_temp_grad.resize(1);
   m_subgrid_tensors_split.resize(1);
+
+  // Choose process grid to distribute matrices over
+  int tag = this->get_grid_tag();
+  if (tag < 0) {
+    // Use tag from parent layers if they are all the same. Otherwise
+    // use tag 0.
+    for (int i=0; i<this->get_num_parents(); ++i) {
+      auto parent_tag = this->get_parent_layer(i).get_grid_tag();
+      if (i == 0) {
+        tag = parent_tag;
+      }
+      if (tag != parent_tag) {
+        tag = -1;
+        break;
+      }
+    }
+    if (tag < 0) {
+      tag = 0;
+    }
+  }
+  if (tag < 0 || tag >= static_cast<int>(grids.size())) {
+    LBANN_ERROR(
+      "attempted to initialize ",
+      this->get_type()," layer \"",this->get_name(),"\" ",
+      "on invalid grid ",
+      "(grid tag ",tag,", ",
+      grids.size()," grids available)");
+  }
+  this->set_grid_tag(tag);
+  const El::Grid& grid = *grids[tag];
 
   auto childs = get_child_layers();
   auto parents = get_parent_layers();
@@ -781,28 +812,24 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
 fp_setup_inputs(El::Int mini_batch_size) {
   if (get_num_parents() < 1) { return; }
 
-  // Determine distributed matrix alignment
-  const auto& alignment_dist = get_parent_layer().get_activations(*this).DistData();
-
   // Iterate through input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
+
 #ifdef LBANN_HAS_DISTCONV
+    // Skip if tensors are managed by Distconv
     if (!keep_original_inputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
+
     // Initialize input tensor
     const auto& parent = get_parent_layer(i);
     const auto& parent_output = parent.get_activations(*this);
     auto& input = *m_inputs[i];
     input.Empty(false);
-    if(!this->is_subgraph_parallelism_enabled()){
-      input.AlignWith(alignment_dist);
-    }
     view_or_copy_tensor(parent_output, input);
 
     // Check input matrix dimensions
     const auto& height = get_input_size(i);
     const auto& width = mini_batch_size;
-
     if ((input.Height() != height || input.Width() != width) ) {
       std::stringstream err;
       err << "layer \"" << get_name() << "\" "
@@ -834,6 +861,12 @@ fp_setup_outputs(El::Int mini_batch_size) {
     if (!keep_original_outputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
     auto& output = get_activations(i);
+    if (output.Viewing()) {
+      LBANN_ERROR(get_name(),
+                  " fp_setup_outputs should be overridden",
+                  " if it needs to handle outputs that view",
+                  " other matrices");
+    }
     output.Empty(false);
     if (align_outputs) {
       output.AlignWith(alignment_dist);
@@ -896,12 +929,9 @@ move_or_copy_prev_error_signal_(
 
   // Check the signal size
   auto& signal = *signal_in;
-  if(m_outputs[layer_idx]->Participating()==true)
-  {
-    assert_tensor_size(
-      signal, get_output_size(layer_idx), m_outputs[layer_idx]->Width(),
-      m_name, child.get_name());
-  }
+  assert_tensor_size(
+    signal, get_output_size(layer_idx), m_outputs[layer_idx]->Width(),
+    m_name, child.get_name());
 
   // If the distribution is OK, then we can just swap data
   // around. Otherwise, deep copy into correct distribution.
@@ -1052,6 +1082,12 @@ bp_setup_gradient_wrt_inputs(
     if (!keep_original_gradient_wrt_inputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
     auto& gradient_wrt_input = get_error_signals(i);
+    if (gradient_wrt_input.Viewing()) {
+      LBANN_ERROR(get_name(),
+                  " bp_setup_gradient_wrt_inputs should be overridden",
+                  " if it needs to handle error signals that view other",
+                  "  matrices");
+    }
     gradient_wrt_input.Empty(false);
     gradient_wrt_input.AlignWith(get_prev_activations(i));
     gradient_wrt_input.Resize(get_input_size(i), mini_batch_size);

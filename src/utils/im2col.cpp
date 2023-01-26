@@ -26,6 +26,7 @@
 
 #define LBANN_UTILS_IM2COL_INSTANTIATE
 #include "lbann/utils/im2col.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
@@ -375,10 +376,7 @@ void im2col_1x1(const TensorDataType * __restrict__ input_buffer,
                 const int num_channels,
                 const int num_input_dims,
                 const int * input_dims) {
-  const int spatial_size = std::accumulate(input_dims,
-                                           input_dims + num_input_dims,
-                                           1,
-                                           std::multiplies<int>());
+  const int spatial_size = get_linear_size(num_input_dims, input_dims);
   const CPUMatDT<TensorDataType> input_matrix(spatial_size, num_channels,
                                               input_buffer, spatial_size);
   CPUMatDT<TensorDataType> output_matrix(num_channels, spatial_size,
@@ -458,10 +456,7 @@ void col2im_1x1(const TensorDataType * input_buffer,
                 const int num_channels,
                 const int num_output_dims,
                 const int * output_dims) {
-  const int spatial_size = std::accumulate(output_dims,
-                                           output_dims + num_output_dims,
-                                           1,
-                                           std::multiplies<int>());
+  const int spatial_size = get_linear_size(num_output_dims, output_dims);
   const CPUMatDT<TensorDataType> input_matrix(num_channels, spatial_size,
                                               input_buffer, num_channels);
   CPUMatDT<TensorDataType> output_matrix(spatial_size, num_channels,

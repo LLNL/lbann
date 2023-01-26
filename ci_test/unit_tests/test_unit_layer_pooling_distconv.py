@@ -97,7 +97,7 @@ def pytorch_pooling(data,
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -109,7 +109,7 @@ def setup_experiment(lbann):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
 
 def create_parallel_strategy(num_height_groups):
     return {"height_groups": num_height_groups}
@@ -129,9 +129,9 @@ def construct_model(lbann):
                               initializer=lbann.ConstantInitializer(value=0.0),
                               name='input_weights')
     x = lbann.Sum(lbann.Reshape(lbann.Input(data_field='samples'),
-                                dims=tools.str_list(_sample_dims)),
+                                dims=_sample_dims),
                   lbann.WeightsLayer(weights=x_weights,
-                                     dims=tools.str_list(_sample_dims)))
+                                     dims=_sample_dims))
     x_lbann = x
 
     # Objects for LBANN model
@@ -203,14 +203,14 @@ def construct_model(lbann):
         # Apply pooling
         x = x_lbann
         if len(p["kernel_dims"]) == 3:
-            x = lbann.Reshape(x, dims=tools.str_list(_sample_dims_3d))
+            x = lbann.Reshape(x, dims=_sample_dims_3d)
 
         y = lbann.Pooling(x,
                           num_dims=len(p["kernel_dims"]),
                           has_vectors=True,
-                          pool_dims=tools.str_list(p["kernel_dims"]),
-                          pool_strides=tools.str_list(p["strides"]),
-                          pool_pads=tools.str_list(p["pads"]),
+                          pool_dims=p["kernel_dims"],
+                          pool_strides=p["strides"],
+                          pool_pads=p["pads"],
                           pool_mode=p["pool_mode"],
                           parallel_strategy=create_parallel_strategy(
                               num_height_groups))

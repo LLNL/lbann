@@ -15,10 +15,6 @@ import data.mnist
 
 from lbann.util import make_iterable
 
-def str_list(l):
-    """Convert an iterable object to a space-separated string."""
-    return ' '.join(str(i) for i in make_iterable(l))
-
 # ----------------------------------
 # Command-line arguments
 # ----------------------------------
@@ -110,8 +106,8 @@ if args.model == "mlp":
 elif args.model == "cnn":
     for i, num_channels in enumerate([20, 50]):
         x = lbann.Convolution(
-            x, num_dims=2, num_output_channels=num_channels,
-            conv_dims_i=5, conv_pads_i=0, conv_strides_i=1,
+            x, num_dims=2, out_channels=num_channels,
+            kernel_size=5, padding=0, stride=1,
             has_bias=has_bias,
             name="conv{}".format(i+1))
         x = lbann.Relu(x)
@@ -132,10 +128,10 @@ elif args.model == "cnn":
 elif args.model == "gru":
     zeros = lbann.Constant(
             value=0,
-            num_neurons=str_list([1, 28]),
+            num_neurons=[1, 28],
             name=f'_zeros'
         )
-    x = lbann.Reshape(x, dims='28 28')
+    x = lbann.Reshape(x, dims=[28, 28])
     x = lbann.GRU(x, zeros,hidden_size=28)
     x = lbann.Relu(x)
     x = lbann.FullyConnected(

@@ -43,6 +43,7 @@ set_full_path(THIS_DIR_SOURCES
   options.cpp
   output_helpers.cpp
   profiling.cpp
+  protobuf.cpp
   protobuf_utils.cpp
   python.cpp
   random.cpp

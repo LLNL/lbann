@@ -42,7 +42,7 @@ def sample_dims():
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -54,7 +54,7 @@ def setup_experiment(lbann):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -70,7 +70,7 @@ def construct_model(lbann):
     x = lbann.Input(data_field='samples')
     x_slice = lbann.Slice(
         x,
-        slice_points=tools.str_list([0,input_size,2*input_size]),
+        slice_points=[0,input_size,2*input_size],
     )
     x0_weights = lbann.Weights(
         optimizer=lbann.SGD(),
@@ -79,7 +79,7 @@ def construct_model(lbann):
     )
     x0 = lbann.Sum(
         lbann.Identity(x_slice),
-        lbann.WeightsLayer(weights=x0_weights, dims=tools.str_list(input_size)),
+        lbann.WeightsLayer(weights=x0_weights, dims=input_size),
     )
 
     x1 = lbann.Identity(x_slice)
@@ -87,9 +87,9 @@ def construct_model(lbann):
     x1_lbann = x1
 
     # Apply scatter
-    y0 = lbann.Scatter(x0, x1, dims=tools.str_list(output_size), name="Scatter_1D")
+    y0 = lbann.Scatter(x0, x1, dims=output_size, name="Scatter_1D")
     y1 = lbann.Concatenation([
-        lbann.Constant(value=i+1, num_neurons='1')
+        lbann.Constant(value=i+1, num_neurons=[1])
         for i in range(output_size)
     ])
     y = lbann.Multiply(y0, y1)
@@ -135,19 +135,19 @@ def construct_model(lbann):
     #
     ######################################################################
 
-    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([height, width]))
-    x_resliced = lbann.Slice(x1_lbann, slice_points=tools.str_list([0, height, input_size]))
+    x0 = lbann.Reshape(x0_lbann, dims=[height, width])
+    x_resliced = lbann.Slice(x1_lbann, slice_points=[0, height, input_size])
     x1 = lbann.Identity(x_resliced, name="indices_2D_axis_0")
 
-    y0 = lbann.Scatter(x0, x1, dims=tools.str_list([output_size, width]), axis=0, name="Scatter_2D_axis_0") # output should be (height, output_size)
+    y0 = lbann.Scatter(x0, x1, dims=[output_size, width], axis=0, name="Scatter_2D_axis_0") # output should be (height, output_size)
 
     y1 = lbann.Concatenation([
-        lbann.Constant(value=i+1, num_neurons='1')
+        lbann.Constant(value=i+1, num_neurons=[1])
         for i in range(output_size * width)
     ])
 
-    y1 = lbann.Reshape(y1, dims=tools.str_list([width * output_size]))
-    y0 = lbann.Reshape(y0, dims=tools.str_list([width * output_size]))
+    y1 = lbann.Reshape(y1, dims=[width * output_size])
+    y0 = lbann.Reshape(y0, dims=[width * output_size])
 
     y = lbann.Multiply(y0, y1)
 
@@ -187,19 +187,19 @@ def construct_model(lbann):
     #
     ######################################################################
 
-    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([height, width]))
-    x_resliced = lbann.Slice(x1_lbann, slice_points=tools.str_list([0, width, input_size]))
+    x0 = lbann.Reshape(x0_lbann, dims=[height, width])
+    x_resliced = lbann.Slice(x1_lbann, slice_points=[0, width, input_size])
     x1 = lbann.Identity(x_resliced, name="indices_2D_axis_1")
 
-    y0 = lbann.Scatter(x0, x1, dims=tools.str_list([height, output_size]), axis=1, name="Scatter_2D_axis_1") # output should be (height, output_size)
+    y0 = lbann.Scatter(x0, x1, dims=[height, output_size], axis=1, name="Scatter_2D_axis_1") # output should be (height, output_size)
 
     y1 = lbann.Concatenation([
-        lbann.Constant(value=i+1, num_neurons='1')
+        lbann.Constant(value=i+1, num_neurons=[1])
         for i in range(output_size * height)
     ])
 
-    y1 = lbann.Reshape(y1, dims=tools.str_list([height * output_size]))
-    y0 = lbann.Reshape(y0, dims=tools.str_list([height * output_size]))
+    y1 = lbann.Reshape(y1, dims=[height * output_size])
+    y0 = lbann.Reshape(y0, dims=[height * output_size])
 
     y = lbann.Multiply(y0, y1)
 

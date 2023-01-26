@@ -27,13 +27,18 @@
 #define LBANN_DISCRETE_RANDOM_LAYER_INSTANTIATE
 #include "lbann/layers/transform/discrete_random.hpp"
 
+#include "lbann/utils/protobuf.hpp"
+
+#include <layers.pb.h>
+
 namespace lbann {
 
-#define PROTO(T)                                    \
-  template class discrete_random_layer<             \
-    T, data_layout::DATA_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  template class discrete_random_layer<T,                                      \
+                                       data_layout::DATA_PARALLEL,             \
+                                       El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
-}// namespace lbann
+} // namespace lbann

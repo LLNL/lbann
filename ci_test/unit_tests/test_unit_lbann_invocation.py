@@ -25,7 +25,7 @@ def get_file_names(dir_name, test_name):
 
 
 # Run with python3 -m pytest -s test_unit_lbann_invocation.py -k 'test_unit_no_params_bad'
-def test_unit_no_params_bad(cluster, dirname):
+def test_unit_no_params_bad(cluster, dirname, weekly):
     print('TESTING: run lbann with no params; lbann should throw exception\n')
     (output_file_name, error_file_name) = get_file_names(dirname, 'no_params_bad')
     command = tools.get_command(
@@ -42,7 +42,7 @@ def test_unit_no_params_bad(cluster, dirname):
 
 
 # Run with python3 -m pytest -s test_unit_lbann_invocation.py -k 'test_unit_one_model_bad'
-def test_unit_one_model_bad(cluster, dirname):
+def test_unit_one_model_bad(cluster, dirname, weekly):
     print('TESTING: run lbann with no optimizer or reader; lbann should throw exception\n')
     (_, model_path, _) = get_default_parameters(dirname, two_models=False)
     (output_file_name, error_file_name) = get_file_names(dirname, 'one_model_bad')
@@ -61,7 +61,7 @@ def test_unit_one_model_bad(cluster, dirname):
 
 
 # Run with python3 -m pytest -s test_unit_lbann_invocation.py -k 'test_unit_two_models'
-def test_unit_two_models(cluster, dirname):
+def test_unit_two_models(cluster, dirname, weekly):
     print('TESTING: run lbann with two models; lbann should throw exception\n')
     (data_reader_path, model_path, optimizer_path) = get_default_parameters(dirname)
     (output_file_name, error_file_name) = get_file_names(dirname, 'two_models')
@@ -82,7 +82,7 @@ def test_unit_two_models(cluster, dirname):
 
 
 # Run with python3 -m pytest -s test_unit_lbann_invocation.py -k 'test_unit_missing_optimizer'
-def test_unit_missing_optimizer(cluster, dirname):
+def test_unit_missing_optimizer(cluster, dirname, weekly):
     print('TESTING: run lbann with model, reader, but no optimizer; lbann should throw exception\n')
     (data_reader_path, model_path, _) = get_default_parameters(dirname, two_models=False)
     (output_file_name, error_file_name) = get_file_names(dirname, 'missing_optimizer')
@@ -102,7 +102,7 @@ def test_unit_missing_optimizer(cluster, dirname):
 
 
 # Run with python3 -m pytest -s test_unit_lbann_invocation.py -k 'test_unit_missing_reader'
-def test_unit_missing_reader(cluster, dirname):
+def test_unit_missing_reader(cluster, dirname, weekly):
     print('TESTING: run lbann with model, optimizer, but no reader; lbann should throw exception\n')
     (_, model_path, optimizer_path) = get_default_parameters(dirname, two_models=False)
     (output_file_name, error_file_name) = get_file_names(dirname, 'missing_reader')
@@ -121,7 +121,7 @@ def test_unit_missing_reader(cluster, dirname):
 
 
 # Run with python3 -m pytest -s test_unit_lbann_invocation.py -k 'test_unit_bad_params'
-def test_unit_bad_params(cluster, dirname):
+def test_unit_bad_params(cluster, dirname, weekly):
     exe = shutil.which('lbann')
     print('TESTING: run lbann with ill-formed param (exit_after_setup should have `--` not `-`) lbann should throw exception\n')
     (data_reader_path, model_path, optimizer_path) = get_default_parameters(
@@ -143,7 +143,7 @@ def test_unit_bad_params(cluster, dirname):
 
 
 # Run with python3 -m pytest -s test_unit_lbann_invocation.py -k 'test_unit_should_work'
-def test_unit_should_work(cluster, dirname):
+def test_unit_should_work(cluster, dirname, weekly):
     print('TESTING: run lbann with model, reader, and optimizer; lbann should NOT throw exception\n')
     (data_reader_path, model_path, optimizer_path) = get_default_parameters(
         dirname, two_models=False)

@@ -130,77 +130,42 @@ Arguments:
        all others are treated as spatial dimensions (recall that the
        mini-batch dimension is implicit).
 
-   :num_output_channels:
+   :out_channels:
 
        (``int64``) Channel dimension of output tensor
 
-   :has_vectors:
+   :kernel_size:
 
-       (``bool``) Whether to use vector-valued options
+       (``list[int64]`` or ``int64``) Convolution kernel dimensions
 
-       If true, then the pooling is configured with ``conv_dims``,
-       ``conv_pads``, ``conv_strides``, ``conv_dilations``. Otherwise,
-       ``conv_dims_i``, ``conv_pads_i``, ``conv_strides_i``,
-       ``conv_dilations_i``.
+       List of integers, one for each spatial
+       dimension.
 
-   :conv_dims:
+   :padding:
 
-       (``string``) Convolution kernel dimensions (vector-valued)
+       (``list[int64]`` or ``int64``) Convolution padding
 
-       Space-separated list of integers, one for each spatial
-       dimension. Used when ``has_vectors`` is enabled.
+       List of integers, one for each spatial
+       dimension.
 
-   :conv_pads:
+   :stride:
 
-       (``string``) Convolution padding (vector-valued)
+       (``list[int64]`` or ``int64``) Convolution strides
 
-       Space-separated list of integers, one for each spatial
-       dimension. Used when ``has_vectors`` is enabled.
-
-   :conv_strides:
-
-       (``string``) Convolution strides (vector-valued)
-
-       Space-separated list of integers, one for each spatial
+       List of integers, one for each spatial
        dimension. Used when ``has_vectors`` is enabled.
 
    :conv_dilations:
 
-       (``string``) Convolution dilations (vector-valued)
+       (``list[int64]`` or ``int64``) Convolution dilations
 
-       Space-separated list of integers, one for each spatial
-       dimension. Used when ``has_vectors`` is enabled. Defaults to
+       List of integers, one for each spatial dimension. Defaults to
        dilations of 1, i.e. undilated convolution.
 
-   :conv_dims:
-
-       (``int64``) Convolution kernel size (integer-valued)
-
-       Used when ``has_vectors`` is disabled.
-
-   :conv_pads_i:
-
-       (``int64``) Convolution padding (integer-valued)
-
-       Used when ``has_vectors`` is disabled.
-
-   :conv_strides_i:
-
-      (``int64``) Convolution stride (integer-valued)
-
-      Used when ``has_vectors`` is disabled.
-
-   :conv_dilations_i:
-
-      (``int64``, optional) Convolution dilation (integer-valued)
-
-      Default: 1
-
-      Used when ``has_vectors`` is disabled.
 
    :has_bias: (``bool``) Whether to apply per-channel bias
 
-   :num_groups:
+   :groups:
 
       (``int64``, optional) Number of channel groups for grouped
       convolution
@@ -213,14 +178,6 @@ Arguments:
 
       Ignored for non-GPU layers.
 
-Deprecated and unused arguments:
-
-   :weight_initialization: (``string``)
-
-   :bias_initial_value: (``double``)
-
-   :l2_regularization_factor: (``double``)
-
 :ref:`Back to Top<learning-layers>`
 
 ________________________________________
@@ -232,54 +189,41 @@ ________________________________________
 Deconvolution
 ----------------------------------------
 
-Deconvolution Layer. Transpose of convolution.
+This operation is the transpose of standard deep learning convolution.
+
+Pedantic comments: this operation is commonly called "deconvolution"
+in the deep learning community, but it is not a true deconvolution.
+Also, the "convolution" operation commonly used in the deep learning
+is actually cross-correlation.
 
 Arguments:
 
-   :has_bias: (``bool``, optional) Default: ``True``
+   :num_dims: (``int``): Number of spatial dimensions
 
-   :bias_initial_value: (``double``) Default: 0
+   :out_channels: (``int``): Channel dimension of output tensor
 
-   :l2_regularization_factor: (``double``) Default: 0
+   :kernel_size: (``list[int]`` or ``int``): Convolution kernel dimensions
 
-   :conv_tensor_op_mode: (``ConvTensorOpsMode``) This field is ignored
-                         for non-GPU layers
+   :stride: (``list[int]`` or ``int``): Convolution stride
 
-   :num_dims: (``int64``)
+   :padding: (``list[int]`` or ``int``): Convolution padding
 
-   :num_output_channels: (``int64``)
+   :padding: (``list[int]`` or ``int``): Padding for output tensor.
+     The output tensor size is ambiguous when the convolution is
+     strided. If this is not set, then we will output the smallest
+     valid output tensor.
 
-   :num_groups: (``int64``)
+   :groups: (``int``): Number of convolution groups (default: 1)
 
-   :has_vectors: (``bool``)
+   :has_bias: (``bool``): Whether to apply channel-wise bias (default: True)
 
-The following are used if has_vector = true
+   :dilation: (``list[int]`` or ``int``): Convolution dilation (default: 1)
 
-   :conv_dims: (``string``) Should be space-separated list, e.g, "2 2
-               3"
+   :conv_tensor_op_mode:
 
-   :conv_pads: (``string``) Should be space-separated list, e.g, "2 2
-               3"
+      (``ConvTensorOpsMode``) Special behavior with FP16 tensor cores
 
-   :conv_strides: (``string``) Should be space-separated list, e.g, "2
-                  2 3"
-
-   :conv_dilations: (``string``) Should be space-separated list,
-                    e.g. "2 3 3"
-
-These are used if has_vector = false
-
-   :conv_dims_i: (``int64``)
-
-   :conv_pads_i: (``int64``)
-
-   :conv_strides_i: (``int64``)
-
-   :conv_dilations_i: (``int64``)
-
-Deprecated arguments:
-
-   :weight_initialization: (``string``)
+      Ignored for non-GPU layers.
 
 :ref:`Back to Top<learning-layers>`
 

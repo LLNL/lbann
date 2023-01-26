@@ -28,6 +28,7 @@
 #define LBANN_LAYER_REGULARIZER_SELU_DROPOUT_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
 
 namespace lbann {
@@ -41,7 +42,8 @@ namespace lbann {
  *  Neural Information Processing Systems, pp. 971-980. 2017.
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class selu_dropout : public data_type_layer<TensorDataType> {
+class selu_dropout final : public data_type_layer<TensorDataType>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -54,69 +56,31 @@ public:
 
   ///@}
 
- public:
+public:
   /** Keep units with probabiliy keep_prob. */
   selu_dropout(TensorDataType keep_prob = El::To<TensorDataType>(0.95),
-               TensorDataType alpha = El::To<TensorDataType>(1.6732632423543772848170429916717),
-               TensorDataType scale = El::To<TensorDataType>(1.0507009873554804934193349852946)) :
-    data_type_layer<TensorDataType>(nullptr),
-    m_keep_prob(keep_prob),
-    m_mask(nullptr) {
-#ifdef LBANN_DETERMINISTIC
-    throw lbann_exception("selu_dropout: deterministic dropout not supported");
-#endif
-    // Compute alpha' and the affine transform.
-    m_alpha_prime = -scale*alpha;
-    m_a = keep_prob +
-      m_alpha_prime*m_alpha_prime*keep_prob*(El::TypeTraits<TensorDataType>::One() - keep_prob);
-    m_a = El::TypeTraits<TensorDataType>::One() / El::Sqrt(m_a);
-    m_b = -m_a * m_alpha_prime*(El::TypeTraits<TensorDataType>::One() - keep_prob);
-  }
+               TensorDataType alpha =
+                 El::To<TensorDataType>(1.6732632423543772848170429916717),
+               TensorDataType scale =
+                 El::To<TensorDataType>(1.0507009873554804934193349852946));
 
-  selu_dropout(const selu_dropout& other) :
-    data_type_layer<TensorDataType>(other),
-    m_alpha_prime(other.m_alpha_prime),
-    m_a(other.m_a),
-    m_b(other.m_b),
-    m_keep_prob(other.m_keep_prob),
-    m_mask(other.m_mask) {
-    if (m_mask != nullptr) { m_mask = m_mask->Copy(); }
-  }
+  selu_dropout(const selu_dropout& other);
 
-  selu_dropout& operator=(const selu_dropout& other) {
-    data_type_layer<TensorDataType>::operator=(other);
-    m_alpha_prime = other.m_alpha_prime;
-    m_a = other.m_a;
-    m_b = other.m_b;
-    m_keep_prob = other.m_keep_prob;
-    if (m_mask != nullptr) { delete m_mask; }
-    m_mask = other.m_mask;
-    if (m_mask != nullptr) { m_mask = m_mask->Copy(); }
-    return *this;
-  }
+  selu_dropout& operator=(const selu_dropout& other);
 
-  ~selu_dropout() override {
-    if (m_mask != nullptr) { delete m_mask; }
-  }
+  ~selu_dropout() final;
 
-  selu_dropout* copy() const override { return new selu_dropout(*this); }
+  selu_dropout* copy() const final;
 
-  std::string get_type() const override { return "selu dropout"; }
+  std::string get_type() const final;
 
-  data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const final;
 
-  El::Device get_device_allocation() const override { return Dev; }
+  El::Device get_device_allocation() const final;
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-    this->set_output_dims(this->get_input_dims());
-  }
+  void setup_dims(DataReaderMetaData& dr_metadata) final;
 
-  void setup_matrices(const El::Grid& grid) override {
-    data_type_layer<TensorDataType>::setup_matrices(grid);
-    if (m_mask != nullptr) { delete m_mask; }
-    m_mask = this->get_activations().Copy();
-  }
+  void setup_data(size_t max_mini_batch_size) final;
 
   /** @name Serialization */
   ///@{
@@ -126,63 +90,14 @@ public:
 
   ///@}
 
- protected:
+private:
   /** Drop out units in forward propagation. */
-  void fp_compute() override {
-    if (this->m_model->get_execution_context().get_execution_mode() != execution_mode::training ||
-        m_keep_prob < 0.0f) {
-      // Do nothing if dropout is disabled
-      El::Copy(this->get_prev_activations(), this->get_activations());
-    } else {
-
-      const auto *input_acts = &this->get_prev_activations();
-      const El::Int height = input_acts->Height();
-      const El::Int width = input_acts->Width();
-      const El::Int local_height = input_acts->LocalHeight();
-      const El::Int local_width = input_acts->LocalWidth();
-
-      const auto& local_input_acts = input_acts->LockedMatrix();
-      CPUMatrixType& local_output_acts = this->get_local_activations();
-      CPUMatrixType& local_mask = m_mask->Matrix();
-
-      // Construct and apply mask and the affine transform.
-      // TODO: Optimize.
-      El::Bernoulli(*m_mask, height, width, m_keep_prob);
-      for (El::Int col = 0; col < local_width; ++col) {
-        for (El::Int row = 0; row < local_height; ++row) {
-          local_output_acts(row, col) = m_a *
-            (local_input_acts(row, col)*local_mask(row, col) +
-             m_alpha_prime*(El::TypeTraits<TensorDataType>::One() - local_mask(row, col))) + m_b;
-        }
-      }
-
-    }
-  }
+  void fp_compute() final;
 
   /** Adjust gradients for dropout in backprop. */
-  void bp_compute() override {
-    if (this->m_model->get_execution_context().get_execution_mode() != execution_mode::training
-        || m_keep_prob < 0.0f) {
-      El::Copy(this->get_prev_error_signals(), this->get_error_signals());
-    } else {
+  void bp_compute() final;
 
-      const auto& local_prev_error_signal = this->get_local_prev_error_signals();
-      CPUMatrixType& local_error_signal = this->get_local_error_signals();
-      CPUMatrixType& local_mask = m_mask->Matrix();
-      const El::Int local_height = local_prev_error_signal.Height();
-      const El::Int local_width = local_prev_error_signal.Width();
-      // Reweight with the affine scale factor and the dropout mask.
-      for (El::Int col = 0; col < local_width; ++col) {
-        for (El::Int row = 0; row < local_height; ++row) {
-          local_error_signal(row, col) =
-            m_a * local_prev_error_signal(row, col) * local_mask(row, col);
-        }
-      }
-
-    }
-  }
-
- private:
+private:
   /** Alpha prime, the low-variance saturation point. */
   TensorDataType m_alpha_prime;
   /** Affine scaling parameter to keep mean/variance at desired value. */
@@ -192,12 +107,14 @@ public:
   /** Probability of keeping each unit. */
   TensorDataType m_keep_prob;
   /** Current dropout mask (a scaled Bernoulli random matrix). */
-  AbsDistMatrixType *m_mask;
+  AbsDistMatrixType* m_mask;
 };
 
+LBANN_DEFINE_LAYER_BUILDER(selu_dropout);
+
 #ifndef LBANN_SELU_DROPOUT_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class selu_dropout<T, data_layout::DATA_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class selu_dropout<T, data_layout::DATA_PARALLEL, Device>;   \
   extern template class selu_dropout<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"

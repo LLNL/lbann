@@ -152,7 +152,8 @@ Categorical Accuracy Strategy
 
    # Set up categorical accuracy layer
    layer {
-    parents: "prob label"
+    parents: "prob"
+    parents: "label"
     name: "accuracy"
     data_layout: "data_parallel"
     categorical_accuracy {}

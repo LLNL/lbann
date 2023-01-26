@@ -80,11 +80,11 @@ def pytorch_convolution(data,
     if type(bias) is np.ndarray:
         bias = torch.from_numpy(bias)
     if data.dtype is not torch.float64:
-        data = data.astype(torch.float64)
+        data = data.to(torch.float64)
     if kernel.dtype is not torch.float64:
-        kernel = kernel.astype(torch.float64)
-    if bias.dtype is not torch.float64:
-        bias = bias.astype(torch.float64)
+        kernel = kernel.to(torch.float64)
+    if bias is not None and bias.dtype is not torch.float64:
+        bias = bias.to(torch.float64)
 
     # Perform convolution with PyTorch
     output = None
@@ -110,7 +110,7 @@ def pytorch_convolution(data,
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -122,7 +122,7 @@ def setup_experiment(lbann):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -139,9 +139,9 @@ def construct_model(lbann):
                               initializer=lbann.ConstantInitializer(value=0.0),
                               name='input_weights')
     x = lbann.Sum(lbann.Reshape(lbann.Input(data_field='samples'),
-                                dims=tools.str_list(_sample_dims)),
+                                dims=_sample_dims),
                   lbann.WeightsLayer(weights=x_weights,
-                                     dims=tools.str_list(_sample_dims)))
+                                     dims=_sample_dims))
     x_lbann = x
 
     # Objects for LBANN model
@@ -165,24 +165,23 @@ def construct_model(lbann):
     # Apply convolution
     kernel_weights = lbann.Weights(
         optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(kernel))),
+        initializer=lbann.ValueInitializer(values=np.nditer(kernel)),
         name='kernel1'
     )
     bias_weights = lbann.Weights(
         optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(bias))),
+        initializer=lbann.ValueInitializer(values=np.nditer(bias)),
         name='bias1'
     )
     x = x_lbann
     y = lbann.Convolution(x,
                           weights=(kernel_weights, bias_weights),
-                          num_dims=3,
-                          num_output_channels=kernel_dims[0],
-                          has_vectors=True,
-                          conv_dims=tools.str_list(kernel_dims[2:]),
-                          conv_strides=tools.str_list(strides),
-                          conv_pads=tools.str_list(pads),
-                          conv_dilations=tools.str_list(dilations),
+                          num_dims=2,
+                          out_channels=kernel_dims[0],
+                          kernel_size=kernel_dims[2:],
+                          stride=strides,
+                          padding=pads,
+                          dilation=dilations,
                           has_bias=True)
     z = lbann.L2Norm2(y)
     obj.append(z)
@@ -223,20 +222,19 @@ def construct_model(lbann):
     # Apply convolution
     kernel_weights = lbann.Weights(
         optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(kernel))),
+        initializer=lbann.ValueInitializer(values=np.nditer(kernel)),
         name='kernel2'
     )
     x = x_lbann
     y = lbann.Convolution(x,
                           weights=(kernel_weights),
-                          num_dims=3,
-                          num_output_channels=kernel_dims[0],
-                          has_vectors=True,
-                          conv_dims=tools.str_list(kernel_dims[2:]),
-                          conv_strides=tools.str_list(strides),
-                          conv_pads=tools.str_list(pads),
-                          conv_dilations=tools.str_list(dilations),
-                          num_groups=num_groups,
+                          num_dims=2,
+                          out_channels=kernel_dims[0],
+                          kernel_size=kernel_dims[2:],
+                          stride=strides,
+                          padding=pads,
+                          dilation=dilations,
+                          groups=num_groups,
                           has_bias=False)
     z = lbann.L2Norm2(y)
     obj.append(z)

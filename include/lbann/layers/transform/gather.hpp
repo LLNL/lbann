@@ -195,12 +195,9 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
 
 }
 
-LBANN_DEFINE_LAYER_BUILDER(gather);
-
 #ifndef LBANN_GATHER_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device)                 \
-  extern template class gather_layer<          \
-    T, data_layout::DATA_PARALLEL, Device>;
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class gather_layer<T, data_layout::DATA_PARALLEL, Device>
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
 #endif // LBANN_GATHER_LAYER_INSTANTIATE

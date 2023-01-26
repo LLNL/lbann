@@ -27,9 +27,9 @@
 #ifndef LBANN_LAYER_POOLING_HPP_INCLUDED
 #define LBANN_LAYER_POOLING_HPP_INCLUDED
 
-#include <utility>
-#include <vector>
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/dnn_enums.hpp"
 #ifdef LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/helpers.hpp"
@@ -38,6 +38,9 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/im2col.hpp"
 #include "lbann/utils/distconv.hpp"
+
+#include <utility>
+#include <vector>
 
 namespace lbann {
 
@@ -67,7 +70,8 @@ class pooling_distconv_adapter : public data_type_distconv_adapter<TensorDataTyp
   void setup_distributions(tensor_overlap_constraints &constraints) override;
   dc::Shape get_activations_local_shape(int index=0) const override;
   void setup_layer(size_t workspace_capacity) override;
-  void fp_compute();
+  void
+  fp_compute(bool training = true); // training=true for max back-compatibility.
   void bp_compute();
   std::unique_ptr<dc::Pooling<TensorDataType>> m_pooling;
 };
@@ -144,10 +148,7 @@ public:
 #endif // LBANN_HAS_DNN_LIB
   {
     // Initialize input dimensions and pooling parameters
-    m_pool_size = std::accumulate(m_pool_dims.begin(),
-                                  m_pool_dims.end(),
-                                  1,
-                                  std::multiplies<int>());
+    m_pool_size = get_linear_size(m_pool_dims);
 
   }
 
@@ -200,6 +201,10 @@ public:
   std::string get_type() const override { return "pooling"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+
+#ifdef LBANN_HAS_ONNX
+  void fill_onnx_node(onnx::GraphProto& graph) const override;
+#endif //LBANN_HAS_ONNX
 
   description get_description() const override {
     auto desc = data_type_layer<TensorDataType>::get_description();
@@ -292,12 +297,15 @@ protected:
     if(this->using_gpus()) {
 #ifdef LBANN_HAS_DISTCONV
       if (this->distconv_enabled()) {
-        get_distconv_adapter().fp_compute();
+        const auto& mode =
+          this->m_model->get_execution_context().get_execution_mode();
+        get_distconv_adapter().fp_compute(mode == execution_mode::training);
         return;
       }
 #endif // LBANN_HAS_DISTCONV
       fp_compute_dnn();
-    } else {
+    }
+    else {
       fp_compute_im2col();
     }
   }
@@ -578,6 +586,69 @@ private:
 
 };
 
+#ifdef LBANN_HAS_ONNX
+template <typename T, data_layout L, El::Device D>
+void pooling_layer<T, L, D>::fill_onnx_node(
+  onnx::GraphProto& graph) const {
+  auto* pool = graph.add_node();
+
+  // Get the attributes setup first
+  {
+    auto* kernel_shape = pool->add_attribute();
+    kernel_shape->set_name("kernel_shape");
+    kernel_shape->set_type(onnx::AttributeProto::INTS);
+    for (auto const& k : this->m_pool_dims)
+      kernel_shape->add_ints(k);
+  }
+  if (!this->m_strides.empty()) {
+    auto* strides = pool->add_attribute();
+    strides->set_name("strides");
+    strides->set_type(onnx::AttributeProto::INTS);
+    for (auto const& s : this->m_strides)
+      strides->add_ints(s);
+  }
+  if (!this->m_pads.empty()) {
+    auto* pads = pool->add_attribute();
+    pads->set_name("pads");
+    pads->set_type(onnx::AttributeProto::INTS);
+    for (auto const& p : this->m_pads) {
+      pads->add_ints(p);
+      pads->add_ints(p);
+    }
+  }
+  // FIXME: This is missing "dilations". However, they're only a valid
+  // attribute for MaxPool, not AveragePool.
+
+  for(auto const* parent : this->get_parent_layers()) {
+    size_t idx = parent->find_child_layer_index(*this);
+    pool->add_input(parent->get_name() + "_" + std::to_string(idx));
+  }
+  for(size_t ii = 0; ii < this->num_weights(); ii++)
+    pool->add_input(this->get_weights(ii).get_name());
+  for(auto const* child : this->get_child_layers()) {
+    size_t idx = this->find_child_layer_index(*child);
+    pool->add_output(this->get_name() + "_" + std::to_string(idx));
+  }
+  pool->set_name(this->get_name());
+
+  switch(m_pool_mode) {
+  case pooling_mode::MAX:
+    pool->set_op_type("MaxPool"); break;
+  case pooling_mode::MAX_DETERMINISTIC:
+    pool->set_op_type("MaxPool"); break;
+  case pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING:
+    pool->set_op_type("AveragePool"); break;
+  case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING:
+    pool->set_op_type("AveragePool"); break;
+  default:
+    LBANN_ERROR("pooling_layer: no ONNX implementation for pooling mode");
+  }
+
+  pool->set_domain("");
+  pool->set_doc_string(this->get_type());
+}
+#endif
+
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 pooling_distconv_adapter<TensorDataType, T_layout, Dev>&
@@ -735,10 +806,14 @@ setup_layer(size_t workspace_capacity) {
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void pooling_distconv_adapter<TensorDataType, Layout, Device>::
-fp_compute() {
-  m_pooling->forward(El::To<TensorDataType>(1), this->get_prev_activations(),
-                     El::To<TensorDataType>(0), this->get_activations());
+void pooling_distconv_adapter<TensorDataType, Layout, Device>::fp_compute(
+  bool const training)
+{
+  m_pooling->forward(El::To<TensorDataType>(1),
+                     this->get_prev_activations(),
+                     El::To<TensorDataType>(0),
+                     this->get_activations(),
+                     training);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -751,7 +826,6 @@ bp_compute() {
 }
 #endif // LBANN_HAS_DISTCONV
 
-LBANN_DEFINE_LAYER_BUILDER(pooling);
 
 #ifndef LBANN_POOLING_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

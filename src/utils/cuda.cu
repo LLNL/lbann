@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/gpu/helpers.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 
 #ifdef LBANN_HAS_CUDA
 
@@ -428,8 +429,7 @@ void copy_tensor(
   output_rstrides.resize(4, output_rstrides.back());
 
   // Launch CUDA kernel
-  const auto size = std::accumulate(
-    dims.begin(), dims.end(), 1, std::multiplies<int>());
+  const auto size = get_linear_size(dims);
   if (size > 0) {
     constexpr size_t block_size = 64;
     dim3 block_dims, grid_dims;

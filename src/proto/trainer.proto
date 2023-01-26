@@ -34,6 +34,8 @@ import "callbacks.proto";
 
 import "training_algorithm.proto";
 
+import "data_coordinator.proto";
+
 message Trainer {
 
   // Unique identifier
@@ -63,11 +65,6 @@ message Trainer {
   int64 hydrogen_block_size = 100;
 
   DataCoordinator data_coordinator = 200;
-
-  message DataCoordinator {
-    DataType datatype = 1;
-    string io_buffer = 2;         // Options: "partitioned" (default)
-  }
 
   TrainingAlgorithm training_algorithm = 300;
 }

@@ -27,19 +27,14 @@
 #define LBANN_EXECUTION_ALGORITHMS_FACTORY_HPP_INCLUDED
 
 #include "lbann/execution_algorithms/training_algorithm.hpp"
-#include "lbann/execution_algorithms/execution_context.hpp"
-#include "lbann/proto/helpers.hpp"
 #include "lbann/utils/factory.hpp"
 #include "lbann/utils/factory_error_policies.hpp"
 #include "lbann/utils/make_abstract.hpp"
-
-#include <h2/meta/typelist/TypeList.hpp>
 
 #include <google/protobuf/message.h>
 
 #include <memory>
 #include <string>
-#include <unordered_map>
 
 namespace lbann {
 
@@ -49,8 +44,7 @@ namespace lbann {
 using TrainingAlgorithmFactory = generic_factory<
   TrainingAlgorithm,
   std::string,
-  proto::generate_builder_type<TrainingAlgorithm,
-                               google::protobuf::Message const&>>;
+  generate_builder_type<TrainingAlgorithm, google::protobuf::Message const&>>;
 
 /** @brief The builder type used to create a new training algorithm.
  */

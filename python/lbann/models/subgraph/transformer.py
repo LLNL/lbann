@@ -13,7 +13,6 @@ import numpy as np
 
 import lbann
 import lbann.modules
-from lbann.util import str_list
 
 class TransformerEncoderLayer(lbann.modules.Module):
 	"""Building block for encoder in Transformer model.
@@ -228,14 +227,10 @@ class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
 		self.instance += 1
 		name = f'{self.name}_instance{self.instance}'
 
-
-
 		# Self-attention with residual connection
 		attentions = self.attention(x, x, x, mask=mask)
 
-
-		slice_points = str_list(self.branch_dim * i
-								for i in range(self.branches+1))
+		slice_points = [self.branch_dim * i for i in range(self.branches+1)]
 
 		x_slice = lbann.Identity(x)
 
@@ -320,7 +315,7 @@ class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
 
 			branch_outputs.append(z)
 
-			
+
 
 		if(self.Apply_Concat):
 			attentions = lbann.Concatenation(
@@ -331,7 +326,7 @@ class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
 
 
 			# Can't have subgraph enabled concat layer just before the split layer for next encoder
-			# Problem is in subgrpah parallelism code 
+			# Problem is in subgrpah parallelism code
 			attentions = lbann.Identity(attentions)
 
 		else:
@@ -435,11 +430,8 @@ class TransformerEncoderLayerAllSubgraphInputSubGrids(lbann.modules.Module):
 		# Self-attention with residual connection
 		attentions = self.attention(x, x, x, mask=mask)
 
+		slice_points = [self.branch_dim * i for i in range(self.branches+1)]
 
-		slice_points = str_list(self.branch_dim * i
-								for i in range(self.branches+1))
-
-		
 		x_list = x
 		head = 0
 		branches1 = []
@@ -523,7 +515,7 @@ class TransformerEncoderLayerAllSubgraphInputSubGrids(lbann.modules.Module):
 
 
 			# Can't have subgraph enabled concat layer just before the split layer for next encoder
-			# Problem is in subgrpah parallelism code 
+			# Problem is in subgrpah parallelism code
 			attentions = lbann.Identity(attentions)
 
 		else:
@@ -783,8 +775,7 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
 		#Slice x
 		x_slice = lbann.Identity(x)
 
-		slice_points = str_list(self.branch_dim * i
-								for i in range(self.branches+1))
+		slice_points = [self.branch_dim * i for i in range(self.branches+1)]
 
 		x_slice = lbann.Slice(
 			x_slice,
@@ -908,7 +899,7 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
 
 
 			# Can't have subgraph enabled concat layer just before the split layer for next encoder
-			# Problem is in subgrpah parallelism code 
+			# Problem is in subgrpah parallelism code
 			attentions = lbann.Identity(attentions)
 
 		else:
@@ -1025,8 +1016,7 @@ class TransformerDecoderLayerAllSubGraphInputSubGrids(lbann.modules.Module):
 
 			x_slice = lbann.Identity(x)
 
-			slice_points = str_list(self.branch_dim * i
-									for i in range(self.branches+1))
+			slice_points = [self.branch_dim * i for i in range(self.branches+1)]
 
 			x_slice = lbann.Slice(
 				x_slice,
@@ -1064,7 +1054,7 @@ class TransformerDecoderLayerAllSubGraphInputSubGrids(lbann.modules.Module):
 				)
 
 			x_sliced = lbann.Identity(x_list[count])
-		
+
 			z = lbann.Sum(x_sliced, attention, name=f'{name}_branch{count}_sum1')
 			z = lbann.InstanceNorm(z, name=f'{name}_branch{count}_norm1')
 			x = z
@@ -1147,7 +1137,7 @@ class TransformerDecoderLayerAllSubGraphInputSubGrids(lbann.modules.Module):
 
 
 			# Can't have subgraph enabled concat layer just before the split layer for next encoder
-			# Problem is in subgrpah parallelism code 
+			# Problem is in subgrpah parallelism code
 			attentions = lbann.Identity(attentions)
 
 		else:
@@ -1199,7 +1189,7 @@ class Transformer(lbann.modules.Module):
 		self.instance = 0
 		self.hidden_size = hidden_size
 
-		# Apply concat after apply every encoder 
+		# Apply concat after apply every encoder
 		# The input needs to be sliced again among sub-grids
 		self.ENABLE_Concat = ENABLE_Concat
 		# Module name
@@ -1277,8 +1267,8 @@ class Transformer(lbann.modules.Module):
 				)
 				for i in range(num_encoder_layers)]
 
-			   
-		
+
+
 		else:
 			self.encoder = [
 				TransformerEncoderLayer(
@@ -1401,12 +1391,12 @@ class Transformer(lbann.modules.Module):
 				if self.hidden_size % 2 != 0:
 					vals.pop()
 			weights = lbann.Weights(
-				initializer=lbann.ValueInitializer(values=str_list(vals)),
+				initializer=lbann.ValueInitializer(values=vals),
 				optimizer=None,
 				name=f'{self.name}_positional{sequence_length}_weights',
 			)
 			self._positional_encoding_cache[sequence_length] = lbann.WeightsLayer(
-				dims=str_list([sequence_length, self.hidden_size]),
+				dims=[sequence_length, self.hidden_size],
 				weights=weights,
 				name=f'{self.name}_positional{sequence_length}',
 			)
@@ -1426,12 +1416,12 @@ class Transformer(lbann.modules.Module):
 		if size not in self._subsequent_mask_cache:
 			vals = np.triu(np.full((size,size), -1e9), k=1)
 			weights = lbann.Weights(
-				initializer=lbann.ValueInitializer(values=str_list(np.nditer(vals))),
+				initializer=lbann.ValueInitializer(values=vals.flat),
 				optimizer=None,
 				name=f'{self.name}_mask{size}_weights',
 			)
 			self._subsequent_mask_cache[size] = lbann.WeightsLayer(
-				dims=str_list([size, size]),
+				dims=[size, size],
 				weights=weights,
 				name=f'{self.name}_mask{size}',
 			)
@@ -1487,7 +1477,7 @@ class Transformer(lbann.modules.Module):
 				subgraph_masks[i+1] = lbann.Identity(self._subsequent_mask(target_length),name="mylayer"+str(i) ,
 									parallel_strategy = {'sub_branch_tag':i+1,'enable_subgraph':True})
 				subgraph_masks[i+1] = lbann.Identity(subgraph_masks[i+1])
-			
+
 
 		if(self.branches>0):
 			for decoder_layer in self.decoder:

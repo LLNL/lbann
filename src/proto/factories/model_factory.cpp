@@ -29,18 +29,13 @@
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/metrics/layer_metric.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/models/directed_acyclic_graph.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
-#include "lbann/utils/memory.hpp"
 
 #include <model.pb.h>
 #include <objective_functions.pb.h>
 
-#include <iostream>
-#include <map>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -55,19 +50,13 @@ std::unique_ptr<model>
 instantiate_model(lbann_comm* comm,
                   std::unique_ptr<objective_function> obj,
                   const lbann_data::Optimizer& proto_opt,
-                  const lbann_data::Model& proto_model) {
-
+                  const lbann_data::Model& /*proto_model*/)
+{
   // Construct model
-  const auto& type = proto_model.type();
-  if (type.empty() || type == "directed_acyclic_graph_model") {
-    return std::make_unique<directed_acyclic_graph_model>(
-      comm, std::move(obj),
-      std::make_unique<lbann_data::Optimizer>(proto_opt));
-  }
-
-  // Throw error if model type is not supported
-  LBANN_ERROR("unknown model type (", type, ")");
-  return nullptr;
+  return std::make_unique<model>(
+    comm,
+    std::move(obj),
+    std::make_unique<lbann_data::Optimizer>(proto_opt));
 }
 
 /** Setup pointers from objective function to layers.
@@ -165,18 +154,19 @@ void assign_weights_to_layers(
   }
 
   // Find weights assigned to each layer
-  for (int i=0; i<proto_model.layer_size(); ++i) {
+  for (int i=0; i < proto_model.layer_size(); ++i) {
     const auto& proto_layer = proto_model.layer(i);
-    auto layer_weights = layer_list[i]->get_weights_pointers();
-    const bool is_frozen = layer_list[i]->is_frozen();
-    for (auto&& name : parse_list<std::string>(proto_layer.weights())) {
-      if (names_to_weights.count(name) < 1) {
-        LBANN_ERROR("could not find weights named "
-                    "\"", name, "\", "
-                    "which are expected by layer ",
-                    layer_list[i]->get_name());
+    auto& layer_obj = *layer_list[i];
+    auto layer_weights = layer_obj.get_weights_pointers();
+    const bool is_frozen = layer_obj.is_frozen();
+    for (auto const& weights_name : proto_layer.weights()) {
+      if (names_to_weights.count(weights_name) < 1) {
+        LBANN_ERROR("could not find weights named \"",
+                    weights_name,
+                    "\", which are expected by layer ",
+                    layer_obj.get_name());
       }
-      auto& ptr = names_to_weights[name];
+      auto& ptr = names_to_weights[weights_name];
       auto& w = *ptr.lock();
       if (is_frozen) {
         w.freeze();
@@ -186,7 +176,7 @@ void assign_weights_to_layers(
       }
       layer_weights.push_back(ptr);
     }
-    layer_list[i]->set_weights_pointers(layer_weights);
+    layer_obj.set_weights_pointers(layer_weights);
   }
 
 }
@@ -217,21 +207,22 @@ void assign_weights_to_objective_function(
     auto&& term = dynamic_cast<l2_weight_regularization*>(obj_terms[i]);
     if (term != nullptr) {
       ++num_l2_weight_regularization_terms;
-      const auto& params = proto_obj.l2_weight_regularization(num_l2_weight_regularization_terms-1);
+      const auto& params = proto_obj.l2_weight_regularization(
+        num_l2_weight_regularization_terms - 1);
       std::vector<ViewingWeightsPtr> term_weights;
-      for (auto&& weights_name : parse_list<std::string>(params.weights())) {
+      for (auto const& weights_name : params.weights()) {
         auto&& w = names_to_weights[weights_name];
         if (w.expired()) {
-          LBANN_ERROR("attempted to apply L2 weight regularization to "
-                      "weights \"", weights_name, "\", "
-                      "but no such weights exists");
+          LBANN_ERROR(
+            "attempted to apply L2 weight regularization to weights \"",
+            weights_name,
+            "\", but no such weights exists");
         }
         term_weights.push_back(w);
       }
       term->set_weights_pointers(term_weights);
     }
   }
-
 }
 
 } // namespace

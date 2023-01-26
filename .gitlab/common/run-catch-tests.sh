@@ -1,7 +1,33 @@
+################################################################################
+## Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+## Produced at the Lawrence Livermore National Laboratory.
+## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+##
+## LLNL-CODE-697807.
+## All rights reserved.
+##
+## This file is part of LBANN: Livermore Big Artificial Neural Network
+## Toolkit. For details, see http://software.llnl.gov/LBANN or
+## https://github.com/LLNL/LBANN.
+##
+## Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+## may not use this file except in compliance with the License.  You may
+## obtain a copy of the License at:
+##
+## http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+## implied. See the License for the specific language governing
+## permissions and limitations under the license.
+################################################################################
+
 #!/bin/bash
 
 # Just in case
-source ${HOME}/spack_repos/spack_${SYSTEM_NAME}.git/share/spack/setup-env.sh
+source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
 
 # Load up the spack environment
 SPACK_ARCH=$(spack arch)
@@ -19,7 +45,8 @@ mkdir -p ${OUTPUT_DIR}
 
 FAILED_JOBS=""
 
-SPACK_BUILD_DIR=$(find . -iname "spack-build-*" -type d | head -n 1)
+LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
+SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
 cd ${SPACK_BUILD_DIR}
 srun --jobid=${JOB_ID} -N 1 -n 1 -t 5 \
      ./unit_test/seq-catch-tests \
@@ -29,8 +56,9 @@ if [[ $? -ne 0 ]]; then
     FAILED_JOBS+=" seq"
 fi
 
+LBANN_NNODES=$(scontrol show job ${JOB_ID} | sed -n 's/.*NumNodes=\([0-9]\).*/\1/p')
 srun --jobid=${JOB_ID} \
-     -N 2 -n $(($TEST_TASKS_PER_NODE * 2)) \
+     -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * ${LBANN_NNODES})) \
      --ntasks-per-node=$TEST_TASKS_PER_NODE \
      -t 5 ${TEST_MPIBIND_FLAG} \
      ./unit_test/mpi-catch-tests \
@@ -41,7 +69,7 @@ if [[ $? -ne 0 ]]; then
 fi
 
 srun --jobid=${JOB_ID} \
-     -N 2 -n $(($TEST_TASKS_PER_NODE * 2)) \
+     -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * ${LBANN_NNODES})) \
      --ntasks-per-node=$TEST_TASKS_PER_NODE \
      -t 5 ${TEST_MPIBIND_FLAG} \
      ./unit_test/mpi-catch-tests "[filesystem]" \

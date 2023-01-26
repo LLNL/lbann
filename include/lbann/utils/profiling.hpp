@@ -44,6 +44,24 @@ void prof_stop();
 void prof_region_begin(const char *s, int c, bool sync);
 void prof_region_end(const char *s, bool sync);
 
-}  // namespace lbann
+/** @brief RAII class for a prof region. */
+class ProfRegion
+{
+public:
+  /** @brief Create a prof region using an automatic color. */
+  ProfRegion(char const* name, bool sync = false);
+  /** @brief Create a prof region with an explicit color. */
+  ProfRegion(char const* name, int color, bool sync = false);
 
+  ~ProfRegion();
+
+private:
+  char const* m_name;
+  bool m_sync;
+};// class ProfRegion
+
+// Using a macro so it's easy to remove if needed.
+#define BASIC_PROF_REGION(NAME) ProfRegion _(NAME)
+
+}  // namespace lbann
 #endif // LBANN_UTILS_PROFILING_HPP

@@ -73,12 +73,13 @@
 #include "lbann/callbacks/timer.hpp"
 #include "lbann/callbacks/variable_minibatch.hpp"
 #include "lbann/callbacks/set_weights_value.hpp"
+#include "lbann/callbacks/alternate_updates.hpp"
 
 #include "lbann/proto/factories.hpp"
-#include "lbann/proto/helpers.hpp"
 #include "lbann/utils/factory.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include <callbacks.pb.h>
 #include <model.pb.h>
@@ -94,10 +95,10 @@ namespace proto {
 namespace {
 
 // Define the factory type.
-using factory_type = lbann::generic_factory<
+using factory_type = generic_factory<
   lbann::callback_base,
   std::string,
-  generate_builder_type<lbann::callback_base,
+  generate_builder_type<callback_base,
                         google::protobuf::Message const&,
                         std::shared_ptr<lbann_summary> const&>,
   default_key_error_policy>;
@@ -107,6 +108,8 @@ void register_default_builders(factory_type& factory)
   using namespace ::lbann::callback;
   factory.register_builder("CallbackAdaptiveLearningRate",
                            build_adaptive_learning_rate_callback_from_pbuf);
+  factory.register_builder("CallbackAlternateUpdates",
+                           build_alternate_updates_callback_from_pbuf);
   factory.register_builder("CallbackCheckDataset",
                            build_check_dataset_callback_from_pbuf);
   factory.register_builder("CallbackCheckGradients",
@@ -234,8 +237,7 @@ construct_callback(
   const google::protobuf::Message& proto_msg, std::shared_ptr<lbann_summary> const& summarizer) {
 
   auto const& factory = get_callback_factory();
-  auto const& msg =
-    helpers::get_oneof_message(proto_msg, "callback_type");
+  auto const& msg = protobuf::get_oneof_message(proto_msg, "callback_type");
   return factory.create_object(msg.GetDescriptor()->name(), msg, summarizer);
 }
 
@@ -298,8 +300,7 @@ construct_callback(
   const google::protobuf::Message& proto_msg) {
 
   auto const& factory = get_callback_factory_no_summarizer();
-  auto const& msg =
-    helpers::get_oneof_message(proto_msg, "callback_type");
+  auto const& msg = protobuf::get_oneof_message(proto_msg, "callback_type");
   return factory.create_object(msg.GetDescriptor()->name(), msg);
 }
 } // namespace proto

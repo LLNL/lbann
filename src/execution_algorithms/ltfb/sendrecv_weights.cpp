@@ -27,7 +27,6 @@
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
-#include "lbann/models/directed_acyclic_graph.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/optimizers/adam.hpp"
 #include "lbann/optimizers/sgd.hpp"
@@ -78,8 +77,8 @@ SendRecvWeights::get_partner_model(model const& m,
   auto& comm = *m.get_comm();
 
   // Start by copying this model, then do the exchange.
-  auto partner_model_ptr = m.copy_model();
-  auto& partner_model = *partner_model_ptr;
+  auto partner_model_ptr = std::make_unique<model>(m);
+  model& partner_model = *partner_model_ptr;
 
   // Get partner process
   const El::Int rank_in_trainer = comm.get_rank_in_trainer();

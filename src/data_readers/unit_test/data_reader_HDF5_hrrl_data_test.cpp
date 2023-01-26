@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <catch2/catch.hpp>
+#include "Catch2BasicSupport.hpp"
 
 #include "TestHelpers.hpp"
 #include "lbann/proto/proto_common.hpp"

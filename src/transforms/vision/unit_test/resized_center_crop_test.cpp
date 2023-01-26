@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 // MUST include this
-#include <catch2/catch.hpp>
+#include "Catch2BasicSupport.hpp"
 
 // File being tested
 #include <lbann/transforms/vision/resized_center_crop.hpp>

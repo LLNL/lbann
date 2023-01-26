@@ -38,7 +38,7 @@ def sample_dims():
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -50,7 +50,7 @@ def setup_experiment(lbann):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -67,17 +67,15 @@ def construct_model(lbann):
                               initializer=lbann.ConstantInitializer(value=0.0),
                               name='input_weights')
     x0 = lbann.WeightsLayer(weights=x_weights,
-                            dims=tools.str_list(_sample_dims))
-    x1 = lbann.Reshape(lbann.Input(data_field='samples'), dims=tools.str_list(_sample_dims))
+                            dims=_sample_dims)
+    x1 = lbann.Reshape(lbann.Input(data_field='samples'), dims=_sample_dims)
     x = lbann.Sum(x0, x1)
 
     # Apply channel-wise scale/bias
-    scale_values = tools.str_list(np.nditer(_scale))
-    bias_values = tools.str_list(np.nditer(_bias))
+    scalebias_values = np.concatenate([np.nditer(_scale), np.nditer(_bias)])
     scalebias_weights = lbann.Weights(
         optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values='{} {}'.format(scale_values,
-                                                                 bias_values)),
+        initializer=lbann.ValueInitializer(values=scalebias_values),
         name='scalebias_weights'
     )
     y = lbann.ChannelwiseScaleBias(x, weights=scalebias_weights)

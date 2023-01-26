@@ -33,6 +33,7 @@ import setuptools
 version = '@LBANN_VERSION@'
 src_dir = '@_LBANN_PYTHON_DIR@'
 config_file = '@_PYTHON_CONFIG_INI@'
+features_file='@_LBANN_FEATURES_FILE@'
 
 # Get relative paths
 # Note: setuptools does not accept absolute paths
@@ -50,5 +51,5 @@ setuptools.setup(
     license='Apache 2.0',
     packages=setuptools.find_packages(src_dir),
     package_dir={'': src_dir},
-    data_files=[('lbann', [config_file])],
-    install_requires=['protobuf>=3.6.1', 'numpy>=1.16.0'])
+    data_files=[('lbann', [config_file, features_file])],
+    install_requires=['protobuf>=3.10.0'])

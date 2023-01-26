@@ -24,6 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/layers/layer.hpp"
+#include <type_traits>
 #define LBANN_INPUT_LAYER_INSTANTIATE
 #include "lbann/layers/io/input_layer.hpp"
 
@@ -31,7 +33,31 @@
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/utils/profiling.hpp"
+#include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/serialize.hpp"
+
+template <typename T, lbann::data_layout L, El::Device D>
+std::unique_ptr<lbann::Layer>
+lbann::build_input_layer_from_pbuf(lbann_comm* comm,
+                                   lbann_data::Layer const& proto_layer)
+{
+  const auto& params = proto_layer.input();
+  const auto& data_field = params.data_field();
+  if constexpr (L != data_layout::DATA_PARALLEL) {
+    LBANN_ERROR("input layer is only supported with "
+                "a data-parallel layout");
+  }
+  if constexpr (std::is_same_v<T, DataType> &&
+                (L == data_layout::DATA_PARALLEL)) {
+    return std::make_unique<
+      input_layer<DataType, data_layout::DATA_PARALLEL, D>>(comm, data_field);
+  }
+  else {
+    LBANN_ERROR("Input layers are only valid with "
+                "TensorDataType == DataType and Layout == DATA_PARALLEL");
+  }
+  return nullptr;
+}
 
 namespace lbann {
 
@@ -94,8 +120,18 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(El::Int mini_b
     c.set_effective_mini_batch_size(effective_mini_batch_size);
   }
 
-  // Initialize matrices
-  data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
+  // Activation matrices are initalized in setup_data and further
+  // managed in the distribute_from_local_matrix function of the
+  // data_coordinator.
+  // However, on the first pass through the execution algorithm it
+  // is necessary to setup the size of the matrix.
+  for (int i = 0; i < this->get_num_children(); ++i) {
+    auto& output = this->get_activations(i);
+    if (!output.Viewing()) {
+      output.Empty(false);
+      output.Resize(this->get_output_size(i), mini_batch_size);
+    }
+  }
 }
 
 template <typename TensorDataType,
@@ -164,8 +200,7 @@ void input_layer<T,L,D>::fill_onnx_node(onnx::GraphProto& graph) const
     auto* input = graph.add_input();
     input->set_name(this->get_name() + "_" + std::to_string(idx));
     auto* input_type = input->mutable_type();
-    // FIXME: enum type. 1 is float. Get TensorDataType?
-    input_type->mutable_tensor_type()->set_elem_type(1);
+    input_type->mutable_tensor_type()->set_elem_type(onnx::TensorProto::FLOAT);
 
     auto* dims = input_type->mutable_tensor_type()->mutable_shape()->add_dim();
     dims->set_dim_param("batch");
@@ -200,7 +235,8 @@ input_distconv_adapter(
 
   // Input data is only processed when its consumer layer is also
   // enabled for distconv
-  m_is_input_processed = layer.get_child_layer().distconv_enabled();
+  m_is_input_processed = (m_data_field == INPUT_DATA_TYPE_SAMPLES)
+      || layer.get_child_layer().distconv_enabled();
 
 }
 
@@ -279,7 +315,11 @@ void input_distconv_adapter<TensorDataType, T_layout, Dev>::setup_fp_tensors() {
       // only specialized for BaseAllocator.
       size_t buf_size = m_host_tensor->get_local_real_size() * sizeof(TensorDataType);
       TensorDataType *buf = nullptr;
+#if H2_HAS_CUDA
       CHECK_CUDA(cudaMallocHost(&buf, buf_size));
+#elif H2_HAS_ROCM
+      CHECK_ROCM(hipHostMalloc(&buf, buf_size));
+#endif
       // Note buf should be deallocated.
       dc::tensor::View(*m_host_tensor, buf);
       setup_shuffler_buffers(*m_original_host_tensor,
@@ -289,6 +329,7 @@ void input_distconv_adapter<TensorDataType, T_layout, Dev>::setup_fp_tensors() {
   }
 
   this->setup_activations();
+  this->setup_original_activations();
 }
 
 template <typename TensorDataType,
@@ -313,7 +354,7 @@ setup_activations_i(int index) const {
     const auto local_shape = get_activations_local_shape(index);
     auto t = std::make_unique<TensorDevType>(shape, loc, dist, local_shape);
     assert0(t->allocate());
-    t->zero(hydrogen::cuda::GetDefaultStream());
+    t->zero(default_hydrogen_stream());
     return t;
   }
   else {
@@ -409,7 +450,7 @@ template <typename TensorDataType,
 void input_distconv_adapter<TensorDataType, T_layout, Dev>::fp_compute() {
   auto &l = dynamic_cast<input_layer<
     TensorDataType, T_layout, Dev>&>(this->layer());
-  auto stream = hydrogen::cuda::GetDefaultStream();
+  auto stream = default_hydrogen_stream();
   // Note that the mini-batch size of the data reader is not
   // actually the one for the current mini-batch as the mini-batch
   // index is already updated by fp_compute.
@@ -506,7 +547,8 @@ keep_original_gradient_wrt_outputs(int index) const {
 #endif // LBANN_HAS_DISTCONV
 
 #define PROTO_DEVICE(T, Device) \
-  template class input_layer<T, data_layout::DATA_PARALLEL, Device>
+  template class input_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  LBANN_LAYER_BUILDER_ETI(input, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
 

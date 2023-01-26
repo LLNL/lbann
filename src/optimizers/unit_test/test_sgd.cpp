@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 // Must include this for all the Catch2 machinery
-#include <catch2/catch.hpp>
+#include "Catch2BasicSupport.hpp"
 
 // Some common infrastructure for testing optimizers
 #include "optimizer_common.hpp"

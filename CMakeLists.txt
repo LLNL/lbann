@@ -26,7 +26,7 @@
 cmake_minimum_required(VERSION 3.21)
 cmake_policy(VERSION 3.21)
 
-project(LBANN CXX)
+project(LBANN C CXX)
 
 # Prevent in-source builds
 if (PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
@@ -132,6 +132,9 @@ option(LBANN_WITH_HWLOC
 option(LBANN_WITH_NVPROF
   "Enable NVTX-based instrumentation for nvprof" OFF)
 
+option(LBANN_WITH_ROCTRACER
+  "Enable roctx-based instrumentation for nvprof" OFF)
+
 option(LBANN_WITH_PYTHON_FRONTEND
   "Install Python frontend and enable embedded Python" ON)
 
@@ -202,18 +205,33 @@ find_package(Threads REQUIRED)
 # Argument parsing backend
 find_package(Clara REQUIRED)
 
-find_package(CEREAL CONFIG REQUIRED)
+find_package(CEREAL CONFIG REQUIRED NAMES CEREAL cereal)
 set(LBANN_HAS_CEREAL ${CEREAL_FOUND})
 # The imported target is just called "cereal". Super.
+if (TARGET cereal)
+  set(CEREAL_LIBRARIES cereal)
+elseif (TARGET cereal::cereal)
+  set(CEREAL_LIBRARIES cereal::cereal)
+endif ()
 
 # Setup the linear algebra library
 find_package(Hydrogen 1.5.0 CONFIG REQUIRED)
 message(STATUS "Found Hydrogen@${HYDROGEN_VERSION}: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
 
+# CUDA-ness of LBANN is 1:1 with Hydrogen. Iff Hydrogen has CUDA,
+# LBANN gets CUDA.
+set(LBANN_HAS_CUDA ${_HYDROGEN_HAVE_CUDA})
+set(LBANN_WITH_CUDA ${LBANN_HAS_CUDA})
+
+set(LBANN_HAS_ROCM ${_HYDROGEN_HAVE_ROCM})
+if (LBANN_HAS_CUDA OR LBANN_HAS_ROCM)
+  set(LBANN_HAS_GPU TRUE)
+endif ()
+
 # DiHydrogen and Distconv
 if (LBANN_WITH_DISTCONV)
-  find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns DistConv)
+  find_package(DiHydrogen 0.3.0 CONFIG REQUIRED COMPONENTS Meta Patterns DistConv)
   set(LBANN_HAS_DISTCONV TRUE)
   set(LBANN_H2_LIBS
     H2::H2Meta
@@ -284,16 +302,6 @@ if (LBANN_WITH_ONEDNN)
   endif ()
 endif ()
 
-# CUDA-ness of LBANN is 1:1 with Hydrogen. Iff Hydrogen has CUDA,
-# LBANN gets CUDA.
-set(LBANN_HAS_CUDA ${_HYDROGEN_HAVE_CUDA})
-set(LBANN_WITH_CUDA ${LBANN_HAS_CUDA})
-
-set(LBANN_HAS_ROCM ${_HYDROGEN_HAVE_ROCM})
-if (LBANN_HAS_CUDA OR LBANN_HAS_ROCM)
-  set(LBANN_HAS_GPU TRUE)
-endif ()
-
 # Only used if have GPU and have CPU half.
 if (LBANN_HAS_GPU AND LBANN_HAS_HALF)
   set(LBANN_HAS_GPU_FP16 ${HYDROGEN_GPU_USE_FP16})
@@ -332,12 +340,25 @@ if (LBANN_HAS_CUDA)
     set(LBANN_WITH_CUDNN ON)
   endif ()
 
-  find_package(CUDAToolkit REQUIRED) # Hydrogen will have found this,
-                                     # but it doesn't hurt to find it
-                                     # again.
+  # Hydrogen will have found this, but it doesn't hurt to find it
+  # again.
+  find_package(CUDAToolkit 11.0.0 REQUIRED)
+
   find_package(cuDNN REQUIRED)
   set(LBANN_HAS_CUDNN ${cuDNN_FOUND})
   set(LBANN_HAS_DNN_LIB ${cuDNN_FOUND})
+
+  find_package(cuTENSOR)
+  set(LBANN_HAS_CUTENSOR ${cuTENSOR_FOUND})
+
+  if (NOT LBANN_HAS_CUTENSOR)
+    find_package(cuTT)
+    set(LBANN_HAS_CUTT ${cuTT_FOUND})
+  endif ()
+
+  if (LBANN_HAS_CUTENSOR OR LBANN_HAS_CUTT)
+    set(LBANN_HAS_TENSOR_PERMUTE TRUE)
+  endif ()
 
   # Special stuff for the GRU layer
   if ((CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0.0")
@@ -350,6 +371,13 @@ if (LBANN_HAS_CUDA)
     CUDA::nvToolsExt
     CUDA::cufft
     cuda::cudnn)
+
+  if (LBANN_HAS_CUTENSOR)
+    list(APPEND LBANN_CUDA_LIBS cuTENSOR::cuTENSOR)
+  endif ()
+  if (LBANN_HAS_CUTT)
+    list(APPEND LBANN_CUDA_LIBS cuTT::cuTT)
+  endif ()
 
   if (LBANN_HAS_ALUMINUM AND AL_HAS_NCCL)
     set(LBANN_HAS_NCCL2 TRUE)
@@ -375,17 +403,42 @@ if (LBANN_HAS_ROCM)
   find_package(hip CONFIG REQUIRED)
   enable_language(HIP)
   find_package(MIOpen CONFIG REQUIRED)
+
+  find_library(HSA_LIBRARY hsa-runtime64
+    HINTS ${ROCM_PATH}/hsa $ENV{ROCM_PATH}/hsa
+    PATH_SUFFIXES lib lib64
+    DOC "HSA runtime library"
+    NO_DEFAULT_PATH)
+  find_library(HSA_LIBRARY hsa-runtime64)
+
   set(LBANN_HAS_MIOPEN ${MIOpen_FOUND})
   set(LBANN_HAS_DNN_LIB ${MIOpen_FOUND})
   set(LBANN_ROCM_LIBS
     hip::host
     MIOpen)
+  if (HSA_LIBRARY)
+    list(APPEND LBANN_ROCM_LIBS "${HSA_LIBRARY}")
+  endif ()
 
   if (LBANN_HAS_FFTW)
     find_package(rocfft CONFIG REQUIRED)
     list(APPEND LBANN_ROCM_LIBS roc::rocfft)
   endif ()
 
+  if (LBANN_WITH_ROCTRACER)
+    find_package(Roctracer MODULE COMPONENTS roctracer roctx)
+    if (Roctracer_FOUND)
+      set(LBANN_HAS_ROCTRACER TRUE)
+      list(APPEND LBANN_ROCM_LIBS roctracer::roctracer)
+    endif ()
+  endif ()
+
+  find_package(cuTT) # hipTT
+  set(LBANN_HAS_HIPTT ${cuTT_FOUND})
+  if (LBANN_HAS_HIPTT)
+    list(APPEND LBANN_ROCM_LIBS cuTT::cuTT)
+    set(LBANN_HAS_TENSOR_PERMUTE TRUE)
+  endif ()
 endif (LBANN_HAS_ROCM)
 
 # This is used in the sample list implementation
@@ -404,6 +457,12 @@ if (LBANN_EXPLICIT_LIBDL AND NOT DL_LIBRARY)
       "Please add the path to libdl to CMAKE_LIBRARY_PATH.")
   endif (DL_LIBRARY)
 endif ()
+
+# Nothing in LBANN explicitly includes the zlib header or, as far as I
+# can tell, explicitly calls a zlib function. So some dependency isn't
+# propagating its dependencies properly (protobuf of sufficiently new
+# enough version is one such culprit). This should work around that.
+find_package(ZLIB MODULE REQUIRED)
 
 # Other optional dependencies
 # TODO: This probably shouldn't be the case and should disable specific
@@ -501,23 +560,33 @@ if (LBANN_WITH_ONNX)
 endif ()
 
 if (LBANN_WITH_UNIT_TESTING)
-  find_package(Catch2 2.0.0 CONFIG REQUIRED)
+  # LBANN allows for Catch2 v2.* or v3.*
+    find_package(Catch2 3.0.0 CONFIG QUIET)
+  if (NOT Catch2_FOUND)
+    find_package(Catch2 2.0.0 CONFIG REQUIRED)
+    set(LBANN_USE_CATCH2_V3 FALSE)
+  else ()
+    set(LBANN_USE_CATCH2_V3 TRUE)
+  endif ()
+  message(STATUS "Found Catch2: Version ${Catch2_VERSION}")
 
   if (CMAKE_CXX_COMPILER_ID MATCHES "ROCMClang")
     set_target_properties(Catch2::Catch2
       PROPERTIES INTERFACE_COMPILE_FEATURES "cxx_std_17")
-  endif()
+  endif ()
 
   # Now that Catch2 has been found, start adding the unit tests
   include(CTest)
   include(Catch)
   add_subdirectory(src/callbacks/unit_test)
   add_subdirectory(src/execution_algorithms/unit_test)
+  add_subdirectory(src/data_coordinator/unit_test)
   add_subdirectory(src/data_readers/unit_test)
   add_subdirectory(src/layers/unit_test)
   add_subdirectory(src/layers/activations/unit_test)
   add_subdirectory(src/layers/learning/unit_test)
   add_subdirectory(src/layers/regularizers/unit_test)
+  add_subdirectory(src/layers/transform/unit_test)
   add_subdirectory(src/models/unit_test)
   add_subdirectory(src/proto/unit_test)
   add_subdirectory(src/operators/math/unit_test)
@@ -588,7 +657,7 @@ target_link_libraries(lbann PUBLIC
   ${CLARA_LIBRARIES}
   ${LBANN_PYTHON_LIBS}
   protobuf::libprotobuf
-  cereal
+  ${CEREAL_LIBRARIES}
   ZSTR::ZSTR)
 
 if (LBANN_HAS_OPENCV)
@@ -617,7 +686,15 @@ target_link_libraries(lbann PUBLIC
   MPI::MPI_CXX
   ${LBANN_CUDA_LIBS}
   ${LBANN_ROCM_LIBS}
-  ${LBANN_DNNL_LIBS})
+  ${LBANN_DNNL_LIBS}
+  ZLIB::ZLIB)
+
+# Ensure that MPI flags are passed to the HIP compiler on Cray platforms
+get_target_property(LBANN_MPI_CXX_INCL_DIRS
+  MPI::MPI_CXX INTERFACE_INCLUDE_DIRECTORIES)
+if (NOT LBANN_MPI_CXX_INCL_DIRS)
+  target_include_directories(lbann PRIVATE $<$<COMPILE_LANGUAGE:HIP>:${MPI_CXX_COMPILER_INCLUDE_DIRS}>)
+endif ()
 
 if (LBANN_FLAG_Werror_OK)
   target_compile_options(lbann
@@ -631,6 +708,12 @@ if (LBANN_HAS_CUDA)
       PROPERTIES
       CUDA_SEPARABLE_COMPILATION ON)
   endif ()
+
+  # We leak some C++17 into .cu files. Oops, but also CUDA 11 has been
+  # out for a while.
+  set_target_properties(lbann
+    PROPERTIES
+    CUDA_STANDARD 17)
 
   # Enable device lambdas with nvcc
   check_compiler_flag(CUDA "--expt-extended-lambda"
@@ -789,6 +872,14 @@ install(
 # approaches, we should use them.
 if (LBANN_HAS_PYTHON_FRONTEND)
 
+  include(LBANNWritePythonFeatures)
+  get_property(LBANN_HAS_VARIABLES DIRECTORY PROPERTY VARIABLES)
+  list(FILTER LBANN_HAS_VARIABLES INCLUDE REGEX "^LBANN_HAS_.*")
+  set(_LBANN_FEATURES_FILE "${CMAKE_BINARY_DIR}/lbann_features.py")
+  write_python_features_module(
+    OUTPUT_FILE "${_LBANN_FEATURES_FILE}"
+    VARIABLES ${LBANN_HAS_VARIABLES})
+
   # Construct config file
   # NOTE (trb): python_config.ini is installed by setup.py
   set(_PYTHON_CONFIG_INI ${CMAKE_BINARY_DIR}/python_config.ini)
@@ -894,13 +985,17 @@ append_str_tf(_str
   LBANN_HAS_CNPY
   LBANN_HAS_CUDA
   LBANN_HAS_CUDNN
+  LBANN_HAS_CUTENSOR
+  LBANN_HAS_CUTT
   LBANN_HAS_DIHYDROGEN
   LBANN_HAS_DISTCONV
   LBANN_HAS_DOXYGEN
   LBANN_HAS_FFTW
+  LBANN_HAS_HIPTT
   LBANN_HAS_HYDROGEN
   LBANN_HAS_LBANN_PROTO
   LBANN_HAS_NCCL2
+  LBANN_HAS_NVSHMEM
   LBANN_HAS_ONEDNN
   LBANN_HAS_ONEDNN_CPU
   LBANN_HAS_ONEDNN_GPU
@@ -909,6 +1004,7 @@ append_str_tf(_str
   LBANN_HAS_PYTHON_FRONTEND
   LBANN_HAS_EMBEDDED_PYTHON
   LBANN_HAS_ROCM
+  LBANN_HAS_ROCTRACER
   LBANN_HAS_TBINF
   LBANN_HAS_VTUNE
   LBANN_HAS_BOOST

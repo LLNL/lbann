@@ -102,8 +102,8 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  void setup_matrices(const El::Grid& grid) override {
-    data_type_layer<TensorDataType>::setup_matrices(grid);
+  void setup_data(size_t max_mini_batch_size) override {
+    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
     const auto& input = this->get_prev_activations();
     const auto& dist = input.DistData();
     m_input_v.reset(input.Construct(input.Grid(), input.Root()));
@@ -356,8 +356,6 @@ private:
   void bp_compute_3d();
 
 };
-
-LBANN_DEFINE_LAYER_BUILDER(crop);
 
 #ifndef LBANN_CROP_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

@@ -46,6 +46,11 @@ void fp_model_parallel(lbann_comm& comm,
     LBANN_ERROR("Unsupported softmax mode");
   }
 
+  // Setup workspace
+  workspace.Empty(false);
+  workspace.AlignWith(input);
+  workspace.Resize(1, input.Width());
+
   // Local matrices
   const auto& local_input = input.LockedMatrix();
   auto& local_output = output.Matrix();
@@ -150,57 +155,6 @@ void bp_model_parallel(
 } // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void softmax_layer<TensorDataType, Layout, Device>::setup_fp_dnn_descriptors()
-{
-  if constexpr ((Layout == data_layout::DATA_PARALLEL)
-                && (Device == El::Device::CPU))
-  {
-    auto const& input = this->get_prev_activations().LockedMatrix();
-    auto const& output = this->get_activations().LockedMatrix();
-    input_descriptor_.set(dnn_backend::template data_type<TensorDataType>(),
-                          std::vector<El::Int>{
-                            input.Width(),
-                            input.Height() },
-                          std::vector<El::Int>{
-                            input.LDim(),
-                            El::To<El::Int>(1) });
-    output_descriptor_.set(dnn_backend::template data_type<TensorDataType>(),
-                           std::vector<El::Int>{
-                             output.Width(),
-                             output.Height() },
-                           std::vector<El::Int>{
-                             output.LDim(),
-                             El::To<El::Int>(1) });
-  }
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void softmax_layer<TensorDataType, Layout, Device>::setup_bp_dnn_descriptors()
-{
-  if constexpr ((Layout == data_layout::DATA_PARALLEL)
-                && (Device == El::Device::CPU))
-  {
-    auto const& grad_wrt_output = this->get_prev_error_signals().LockedMatrix();
-    auto const& grad_wrt_input = this->get_error_signals().LockedMatrix();
-    auto const data_type = dnn_backend::template data_type<TensorDataType>();
-    grad_wrt_output_descriptor_.set(data_type,
-                                    std::vector<El::Int>{
-                                      grad_wrt_output.Width(),
-                                      grad_wrt_output.Height() },
-                                    std::vector<El::Int>{
-                                      grad_wrt_output.LDim(),
-                                      El::To<El::Int>(1) });
-    grad_wrt_input_descriptor_.set(data_type,
-                                   std::vector<El::Int>{
-                                     grad_wrt_input.Width(),
-                                     grad_wrt_input.Height() },
-                                   std::vector<El::Int>{
-                                     grad_wrt_input.LDim(),
-                                     El::To<El::Int>(1) });
-  }
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
 void softmax_layer<TensorDataType, Layout, Device>::fp_compute() {
   if constexpr (Layout == data_layout::DATA_PARALLEL)
   {
@@ -210,7 +164,14 @@ void softmax_layer<TensorDataType, Layout, Device>::fp_compute() {
     auto& local_output =
       dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(
         this->get_activations().Matrix());
-
+    this->input_descriptor_.set(
+      dnn_backend::template data_type<TensorDataType>(),
+      std::vector<El::Int>{local_input.Width(), local_input.Height()},
+      std::vector<El::Int>{local_input.LDim(), El::To<El::Int>(1)});
+    this->output_descriptor_.set(
+      dnn_backend::template data_type<TensorDataType>(),
+      std::vector<El::Int>{local_output.Width(), local_output.Height()},
+      std::vector<El::Int>{local_output.LDim(), El::To<El::Int>(1)});
     dnn_lib::softmax_forward(1.f,
                              this->input_descriptor_,
                              local_input,
@@ -232,7 +193,6 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
   if constexpr (Layout == data_layout::DATA_PARALLEL)
   {
-    this->setup_bp_dnn_descriptors();
     auto const& local_output =
       dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU> const&>(
         this->get_activations().LockedMatrix());
@@ -242,7 +202,15 @@ void softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
     auto & local_grad_wrt_input =
       dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(
         this->get_error_signals().Matrix());
-
+    auto const data_type = dnn_backend::template data_type<TensorDataType>();
+    grad_wrt_output_descriptor_.set(
+      data_type,
+      std::vector<El::Int>{local_grad_wrt_output.Width(), local_grad_wrt_output.Height()},
+      std::vector<El::Int>{local_grad_wrt_output.LDim(), El::To<El::Int>(1)});
+    grad_wrt_input_descriptor_.set(
+      data_type,
+      std::vector<El::Int>{local_grad_wrt_input.Width(), local_grad_wrt_input.Height()},
+      std::vector<El::Int>{local_grad_wrt_input.LDim(), El::To<El::Int>(1)});
     dnn_lib::softmax_backward(1.f,
                               this->output_descriptor_,
                               local_output,

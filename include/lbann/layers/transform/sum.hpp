@@ -315,7 +315,6 @@ sum_distconv_adapter<TensorDataType, T_layout, Dev>::setup_error_signals_i(int i
 }
 #endif // LBANN_HAS_DISTCONV
 
-LBANN_DEFINE_LAYER_BUILDER(sum);
 
 #ifndef LBANN_SUM_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

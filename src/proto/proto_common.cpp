@@ -35,6 +35,7 @@
 #include "lbann/utils/argument_parser.hpp"
 
 #include "lbann/data_readers/data_reader_HDF5.hpp"
+#include "lbann/utils/options.hpp"
 
 #include <lbann.pb.h>
 #include <reader.pb.h>
@@ -131,9 +132,15 @@ void init_data_readers(
       reader = new data_reader_nci(shuffle);
     } else if (name == "smiles") {
       smiles_data_reader * smiles = new smiles_data_reader(shuffle);
+      if(readme.label_filename() != "") {
+        LBANN_ERROR("Unsupported data reader field label_filename = ", readme.label_filename());
+      }
+      if(readme.metadata_filename().empty()) {
+        LBANN_ERROR("Required SMILES data reader field metadata_filename is missing");
+      }
+      smiles->set_metadata_filename(readme.metadata_filename());
       reader = smiles;
       reader->set_data_sample_list(readme.sample_list());
-      reader->set_label_filename(readme.label_filename());
     } else if (name == "hdf5_data_reader") {
       hdf5_data_reader* dr = new hdf5_data_reader(shuffle);
       dr->keep_sample_order(readme.sample_list_keep_order());
@@ -880,71 +887,89 @@ void print_parameters(const lbann_comm& comm,
     return;
   }
 
-  const lbann_data::Trainer &t = p.trainer();
-  const lbann_data::Model &m = p.model();
+  lbann_data::Trainer const& t = p.trainer();
+  lbann_data::Model const& m = p.model();
 
-  bool disable_cuda = m.disable_cuda();
-#ifndef LBANN_HAS_GPU
-  disable_cuda = true;
+#ifdef LBANN_HAS_GPU
+  bool const disable_cuda = m.disable_cuda();
+#else
+  bool const disable_cuda = true;
 #endif // LBANN_HAS_GPU
-  bool disable_cudnn = disable_cuda;
-#ifndef LBANN_HAS_CUDNN
-  disable_cudnn = true;
+#ifdef LBANN_HAS_CUDNN
+  bool const disable_cudnn = disable_cuda;
+#else
+  bool const disable_cudnn = true;
 #endif // LBANN_HAS_CUDNN
-  bool enable_determinism = false;
 #ifdef LBANN_DETERMINISTIC
-  enable_determinism = true;
+  bool const enable_determinism = true;
+#else
+  bool const enable_determinism = false;
 #endif // LBANN_DETERMINISTIC
 
-  std::cout << std::endl
-            << "Running with these parameters:\n"
+  std::cout << "\nRunning with these parameters:\n"
             << " General:\n"
-            << "  datatype size:              " << sizeof(DataType) << std::endl
-            << "  mini_batch_size:            " << t.mini_batch_size() << std::endl
-            << "  num_epochs:                 " << m.num_epochs()  << std::endl
-            << "  hydrogen_block_size:        " << t.hydrogen_block_size()  << std::endl
-            << "  procs_per_trainer:          " << comm.get_procs_per_trainer()  << std::endl
-            << "  num_parallel_readers:       " << t.num_parallel_readers()  << std::endl
-            << "  serialize_io:               " << t.serialize_io()  << std::endl
-            << "  cuda:                       " << (disable_cuda ? "disabled" : "enabled") << std::endl
-            << "  cudnn:                      " << (disable_cudnn ? "disabled" : "enabled") << std::endl;
+            << "  datatype size:              " << sizeof(DataType) << '\n'
+            << "  mini_batch_size:            " << t.mini_batch_size() << '\n'
+            << "  num_epochs:                 " << m.num_epochs() << '\n'
+            << "  hydrogen_block_size:        " << t.hydrogen_block_size()
+            << '\n'
+            << "  procs_per_trainer:          " << comm.get_procs_per_trainer()
+            << '\n'
+            << "  num_parallel_readers:       " << t.num_parallel_readers()
+            << '\n'
+            << "  serialize_io:               " << t.serialize_io() << '\n'
+            << "  cuda:                       "
+            << (disable_cuda ? "disabled" : "enabled") << '\n'
+            << "  cudnn:                      "
+            << (disable_cudnn ? "disabled" : "enabled") << std::endl;
   auto& arg_parser = global_argument_parser();
-  std::stringstream root_rng, rng, data_seq_rng;
-  for(size_t i = 0; i < random_seeds.size(); i++) {
-    int trainer_rank = comm.map_world_rank_to_trainer_rank(i);
-    int rank_in_trainer = comm.map_world_rank_to_rank_in_trainer(i);
-    if(rank_in_trainer < arg_parser.get<int>(LBANN_OPTION_MAX_RNG_SEEDS_DISPLAY)) {
-      std::stringstream id;
+  bool const allow_global_statistics =
+    arg_parser.get<bool>(LBANN_OPTION_ALLOW_MULTITRAINER_GLOBAL_STATISTICS);
+  bool const multitrainer_verbose =
+    arg_parser.get<bool>(LBANN_OPTION_MULTITRAINER_VERBOSE);
+  int const max_rng_seeds =
+    arg_parser.get<int>(LBANN_OPTION_MAX_RNG_SEEDS_DISPLAY);
+  std::ostringstream root_rng, rng, data_seq_rng;
+  for (size_t i = 0; i < random_seeds.size(); i++) {
+    int const trainer_rank = comm.map_world_rank_to_trainer_rank(i);
+    int const rank_in_trainer = comm.map_world_rank_to_rank_in_trainer(i);
+    if (rank_in_trainer < max_rng_seeds) {
+      std::ostringstream id;
       id << "[" << trainer_rank << "][" << rank_in_trainer << "]";
-      root_rng << id.str() << "=" << std::setfill('0') << std::setw(10) << static_cast<unsigned int>(root_random_seeds[i]) << " " ;
-      rng << id.str() << "=" << std::setfill('0') << std::setw(10) << static_cast<unsigned int>(random_seeds[i]) << " " ;
-      data_seq_rng << id.str() << "=" << std::setfill('0') << std::setw(10) << static_cast<unsigned int>(data_seq_random_seeds[i]) << " " ;
-    }else {
+      root_rng << id.str() << "=" << std::setfill('0') << std::setw(10)
+               << static_cast<unsigned int>(root_random_seeds[i]) << " ";
+      rng << id.str() << "=" << std::setfill('0') << std::setw(10)
+          << static_cast<unsigned int>(random_seeds[i]) << " ";
+      data_seq_rng << id.str() << "=" << std::setfill('0') << std::setw(10)
+                   << static_cast<unsigned int>(data_seq_random_seeds[i])
+                   << " ";
+    }
+    else {
       root_rng << "... ";
       rng << "... ";
       data_seq_rng << "... ";
     }
   }
-  std::cout << "  root_random_seed[t][r]:     " << root_rng.str() << std::endl;
-  std::cout << "  random_seed[t][r]:          " << rng.str() << std::endl;
-  std::cout << "  data_seq_random_seed[t][r]: " << data_seq_rng.str() << std::endl;
-  std::cout << "  deterministic_exec:         " << (enable_determinism ? "enabled" : "disabled") << std::endl
-            << "  data_layout:                " << m.data_layout()  << std::endl
-            << "     (only used for metrics)\n";
-}
-
-void copy_file(std::string fn, std::ofstream &out)
-{
-  std::ifstream in(fn.c_str());
-  if (!in.is_open()) {
-    std::ostringstream err;
-    err << __FILE__ << " " << __LINE__
-        << " :: failed to open file for reading: " << fn;
-    throw std::runtime_error(err.str());
+  if (!(allow_global_statistics && multitrainer_verbose) &&
+      comm.get_num_trainers() > 1) {
+    std::ostringstream msg;
+    if (comm.get_num_trainers() == 2) {
+      msg << "trainer 1";
+    }
+    else {
+      msg << "trainers 1 to " << comm.get_num_trainers() - 1;
+    }
+    root_rng << "... (Omitting RNGs from " << msg.str() << ")";
+    rng << "... (Omitting RNGs from " << msg.str() << ")";
+    data_seq_rng << "... (Omitting RNGs from " << msg.str() << ")";
   }
-  std::ostringstream s;
-  s << in.rdbuf();
-  out << s.str();
+  std::cout << "  root_random_seed[t][r]:     " << root_rng.str() << '\n'
+            << "  random_seed[t][r]:          " << rng.str() << '\n'
+            << "  data_seq_random_seed[t][r]: " << data_seq_rng.str() << '\n'
+            << "  deterministic_exec:         "
+            << (enable_determinism ? "enabled" : "disabled") << '\n'
+            << "  data_layout:                " << m.data_layout()
+            << "     (only used for metrics)" << std::endl;
 }
 
 void save_session(const lbann_comm& comm, const int argc, char * const* argv, lbann_data::LbannPB& p)

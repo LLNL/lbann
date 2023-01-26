@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/random_crop.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
@@ -42,7 +43,7 @@ void random_crop::apply(utils::type_erased_matrix& data, std::vector<size_t>& di
     LBANN_ERROR(ss.str());
   }
   std::vector<size_t> new_dims = {dims[0], m_h, m_w};
-  auto dst_real = El::Matrix<uint8_t>(utils::get_linearized_size(new_dims), 1);
+  auto dst_real = El::Matrix<uint8_t>(get_linear_size(new_dims), 1);
   cv::Mat dst = utils::get_opencv_mat(dst_real, new_dims);
   // Select the upper-left corner of the crop.
   const size_t x = transform::get_uniform_random_int(0, dims[2] - m_w + 1);

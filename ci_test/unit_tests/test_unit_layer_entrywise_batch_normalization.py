@@ -36,7 +36,7 @@ def sample_dims():
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -48,7 +48,7 @@ def setup_experiment(lbann):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -64,14 +64,14 @@ def construct_model(lbann):
     # object, construct a zero-valued tensor, and add it to the
     # input. To make sure that batchnorm is non-trivial, we multiply
     # the zero-valued tensor by the mini-batch index.
-    x = lbann.Reshape(lbann.Input(data_field='samples'), dims=tools.str_list(_sample_dims))
+    x = lbann.Reshape(lbann.Input(data_field='samples'), dims=_sample_dims)
     x_weights = lbann.Weights(optimizer=lbann.SGD(),
                               initializer=lbann.ConstantInitializer(value=0.0),
                               name='input_weights')
     x0 = lbann.WeightsLayer(weights=x_weights,
-                            dims=tools.str_list(_sample_dims))
+                            dims=_sample_dims)
     x1 = lbann.Divide(lbann.MiniBatchIndex(), lbann.MiniBatchSize())
-    x1 = lbann.Tessellate(lbann.Reshape(x1, dims='1 1 1'), dims=tools.str_list(_sample_dims))
+    x1 = lbann.Tessellate(lbann.Reshape(x1, dims=[1, 1, 1]), dims=_sample_dims)
     x = lbann.Sum(x, lbann.Multiply(x0, x1))
     x_lbann = x
 

@@ -35,7 +35,7 @@ def sample_dims():
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -47,7 +47,7 @@ def setup_experiment(lbann):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -63,10 +63,10 @@ def construct_model(lbann):
     y_numpy[:] = 1 ### @todo Remove
     y_lbann = lbann.Weights(
         initializer=lbann.ValueInitializer(
-            values=tools.str_list(y_numpy)))
+            values=y_numpy))
     y_lbann = lbann.WeightsLayer(
         weights=y_lbann,
-        dims=tools.str_list([one_hot_size]),
+        dims=[one_hot_size],
     )
 
     # Objects for LBANN model
@@ -99,8 +99,8 @@ def construct_model(lbann):
         data_layout='data_parallel',
     )
     z = lbann.MatMul(
-        lbann.Reshape(x_onehot, dims='1 -1'),
-        lbann.Reshape(y, dims='1 -1'),
+        lbann.Reshape(x_onehot, dims=[1, -1]),
+        lbann.Reshape(y, dims=[1, -1]),
         transpose_b=True,
     )
     obj.append(z)
@@ -127,8 +127,8 @@ def construct_model(lbann):
         data_layout='model_parallel',
     )
     z = lbann.MatMul(
-        lbann.Reshape(x_onehot, dims='1 -1'),
-        lbann.Reshape(y, dims='1 -1'),
+        lbann.Reshape(x_onehot, dims=[1, -1]),
+        lbann.Reshape(y, dims=[1, -1]),
         transpose_b=True,
     )
     obj.append(z)

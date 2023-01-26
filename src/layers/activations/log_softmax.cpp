@@ -38,6 +38,11 @@ void fp(lbann_comm& comm,
         El::AbstractDistMatrix<TensorDataType>& output,
         El::AbstractDistMatrix<TensorDataType>& workspace) {
 
+  // Setup workspace
+  workspace.Empty(false);
+  workspace.AlignWith(input);
+  workspace.Resize(1, input.Width());
+
   // Local matrices
   const auto& local_input = dynamic_cast<const CPUMatDT<TensorDataType>&>(input.LockedMatrix());
   auto& local_output = dynamic_cast<CPUMatDT<TensorDataType>&>(output.Matrix());

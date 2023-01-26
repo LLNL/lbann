@@ -7,7 +7,6 @@ import os
 import configparser
 import math
 import data.LSC_PPQM4M
-from lbann.util import str_list
 from lbann.modules.graph import NNConv
 from lbann.modules import ChannelwiseFullyConnectedModule
 
@@ -123,7 +122,7 @@ if (not args.enable_distconv and args.process_groups > 0):
     raise ValueError('Cannot have non-zero process-groups with distconv disabled. Enable distconv with --distconv')
 
 NUM_PROCESS_GROUPS = args.process_groups
-    
+
 # ---------------------------------------------------
 
 # Create model, data reader, optimizer, and trainer

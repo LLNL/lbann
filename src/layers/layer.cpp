@@ -199,6 +199,9 @@ description Layer::get_description() const {
   // DataType
   desc.add("Data type", get_datatype_name());
 
+  // Sub-grid
+  desc.add("Process grid", get_grid_tag());
+
   // Freeze state
   if (is_frozen()) {
     desc.add("Frozen");
@@ -215,6 +218,14 @@ lbann_comm* Layer::get_comm() const {
       "before it was configured");
   }
   return m_model->get_comm();
+}
+
+int Layer::get_grid_tag() const noexcept {
+  return m_grid_tag;
+}
+
+void Layer::set_grid_tag(int tag) {
+  m_grid_tag = tag;
 }
 
 bool Layer::update() {
@@ -268,13 +279,7 @@ std::vector<int> Layer::get_input_dims(size_t input_index) const {
 }
 
 int Layer::get_input_size(size_t input_index) const {
-  const auto& dims = get_input_dims(input_index);
-  if (dims.empty()) {
-    return 0;
-  } else {
-    return std::accumulate(dims.begin(), dims.end(), 1,
-                           std::multiplies<int>());
-  }
+  return get_linear_size(get_input_dims(input_index));
 }
 
 std::vector<int> Layer::get_output_dims(size_t output_index) const {
@@ -297,13 +302,7 @@ std::vector<int> Layer::get_output_dims(size_t output_index) const {
 }
 
 int Layer::get_output_size(size_t output_index) const {
-  const auto& dims = get_output_dims(output_index);
-  if (dims.empty()) {
-    return 0;
-  } else {
-    return std::accumulate(dims.begin(), dims.end(), 1,
-                           std::multiplies<int>());
-  }
+  return get_linear_size(get_output_dims(output_index));
 }
 
 void Layer::set_output_dims(std::vector<int> dims, size_t output_index) {
@@ -313,7 +312,7 @@ void Layer::set_output_dims(std::vector<int> dims, size_t output_index) {
     m_output_dims_list.resize(El::Max(get_num_children(),
                                       output_index + 1));
   }
-  m_output_dims_list[output_index] = dims;
+  m_output_dims_list[output_index] = std::move(dims);
 }
 
 std::vector<ViewingWeightsPtr> Layer::get_weights_pointers() const {
@@ -386,10 +385,13 @@ bool Layer::is_frozen() const {
   return m_frozen;
 }
 
-void Layer::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata, const El::Grid& grid) {
+void Layer::setup(
+  size_t max_mini_batch_size,
+  DataReaderMetaData& dr_metadata,
+  const std::vector<El::Grid*>& grids) {
   setup_pointers();
   setup_dims(dr_metadata);
-  setup_matrices(grid);
+  setup_matrices(grids);
 
 #ifdef LBANN_HAS_DISTCONV
   prepare_distconv(dr_metadata);
@@ -516,17 +518,13 @@ void Layer::back_prop() {
 void Layer::write_proto(lbann_data::Layer* proto) const {
   proto->Clear();
   proto->set_name(get_name());
-  proto->set_type(get_type());
-  if (get_num_parents() > 0) {
-    proto->set_bottom(get_parent_layer(0).get_name());
-  }
-  proto->set_top(get_name());
   //Add weights
   for (size_t i=0; i<num_weights(); ++i) {
     auto weight_proto = proto->add_weights_data();
     get_weights(i).write_proto(weight_proto);
   }
 }
+
 #ifdef LBANN_HAS_ONNX
 void Layer::fill_onnx_node(onnx::GraphProto& graph) const {
   auto* node = graph.add_node();
@@ -534,6 +532,9 @@ void Layer::fill_onnx_node(onnx::GraphProto& graph) const {
     size_t idx = parent->find_child_layer_index(*this);
     node->add_input(parent->get_name() + "_" + std::to_string(idx));
   }
+  for(size_t ii = 0; ii < this->num_weights(); ii++)
+    node->add_input(this->get_weights(ii).get_name());
+
   for(auto const* child : this->get_child_layers()) {
     size_t idx = this->find_child_layer_index(*child);
     node->add_output(this->get_name() + "_" + std::to_string(idx));

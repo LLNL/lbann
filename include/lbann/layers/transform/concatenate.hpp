@@ -28,8 +28,10 @@
 #define LBANN_LAYERS_TRANSFORM_CONCATENATE_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/utils/exception.hpp"
+
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/distconv.hpp"
+#include "lbann/utils/exception.hpp"
 
 #include <lbann/proto/proto_common.hpp>
 #include <layers.pb.h>
@@ -246,7 +248,7 @@ void concatenate_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaD
 
   // Model-parallel implementation only supports flat data
   if (Layout == data_layout::MODEL_PARALLEL
-      && std::accumulate(&output_dims[0], &output_dims[m_concat_dim], 1, std::multiplies<int>()) > 1) {
+      && get_linear_size(m_concat_dim, output_dims.data()) > 1) {
     LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
                 "attempted to concatenate along dimension ",m_concat_dim,", ",
                 "but model-parallel concatenate layer "
@@ -466,7 +468,7 @@ fp_compute() {
   dc::tensor::Concatenate(this->get_activations(0),
                           this->get_prev_activations(0),
                           this->get_prev_activations(1),
-                          hydrogen::cuda::GetDefaultStream());
+                          default_hydrogen_stream());
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -475,11 +477,9 @@ bp_compute() {
   dc::tensor::Slice(this->get_error_signals(0),
                     this->get_error_signals(1),
                     this->get_prev_error_signals(0),
-                    hydrogen::cuda::GetDefaultStream());
+                    default_hydrogen_stream());
 }
 #endif // LBANN_HAS_DISTCONV
-
-LBANN_DEFINE_LAYER_BUILDER(concatenate);
 
 #ifndef LBANN_CONCATENATE_LAYER_INSTANTIATE
 

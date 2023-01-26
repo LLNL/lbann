@@ -35,6 +35,7 @@ if (LBANN_HAS_PROTOBUF)
     lbann.proto
     callbacks.proto
     datatype.proto
+    data_coordinator.proto
     layers.proto
     metrics.proto
     model.proto
@@ -104,7 +105,6 @@ endif (LBANN_HAS_PROTOBUF)
 set_full_path(THIS_DIR_SOURCES
   init_image_data_readers.cpp
   proto_common.cpp
-  helpers.cpp
   )
 
 # Add the subdirectories

@@ -37,7 +37,7 @@ def sample_dims():
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -49,7 +49,7 @@ def setup_experiment(lbann):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -66,9 +66,9 @@ def construct_model(lbann):
                               initializer=lbann.ConstantInitializer(value=0.0),
                               name='input_weights')
     x = lbann.Sum(lbann.Reshape(lbann.Input(data_field='samples'),
-                                dims=tools.str_list(_sample_dims)),
+                                dims=_sample_dims),
                   lbann.WeightsLayer(weights=x_weights,
-                                     dims=tools.str_list(_sample_dims)))
+                                     dims=_sample_dims))
     x_lbann = x
 
     # Objects for LBANN model
@@ -83,7 +83,7 @@ def construct_model(lbann):
     # LBANN implementation
     slice_points = (2, 3, 6, 7)
     x = x_lbann
-    x_slice = lbann.Slice(x, axis=0, slice_points=tools.str_list(slice_points))
+    x_slice = lbann.Slice(x, axis=0, slice_points=slice_points)
     y = []
     for _ in range(len(slice_points)-1):
         y.append(lbann.L2Norm2(x_slice))
@@ -117,7 +117,7 @@ def construct_model(lbann):
     # LBANN implementation
     slice_points = (0, 2, 3, 4)
     x = x_lbann
-    x_slice = lbann.Slice(x, axis=1, slice_points=tools.str_list(slice_points))
+    x_slice = lbann.Slice(x, axis=1, slice_points=slice_points)
     y = []
     for _ in range(len(slice_points)-1):
         y.append(lbann.L2Norm2(x_slice))
@@ -151,7 +151,7 @@ def construct_model(lbann):
     # LBANN implementation
     slice_points = (1, 3)
     x = x_lbann
-    x_slice = lbann.Slice(x, axis=2, slice_points=tools.str_list(slice_points))
+    x_slice = lbann.Slice(x, axis=2, slice_points=slice_points)
     y = []
     for _ in range(len(slice_points)-1):
         y.append(lbann.L2Norm2(x_slice))
@@ -184,8 +184,8 @@ def construct_model(lbann):
 
     # LBANN implementation
     slice_points = (31, 54, 56, 57)
-    x = lbann.Reshape(x_lbann, dims=tools.str_list([105]))
-    x_slice = lbann.Slice(x, slice_points=tools.str_list(slice_points),
+    x = lbann.Reshape(x_lbann, dims=[105])
+    x_slice = lbann.Slice(x, slice_points=slice_points,
                           data_layout='model_parallel')
     y = []
     for _ in range(len(slice_points)-1):

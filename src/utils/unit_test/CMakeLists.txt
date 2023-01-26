@@ -23,6 +23,7 @@
 ## implied. See the License for the specific language governing
 ## permissions and limitations under the license.
 ################################################################################
+
 set_full_path(THIS_DIR_SEQ_CATCH2_TEST_FILES
   argument_parser_test.cpp
   beta_distribution_test.cpp
@@ -34,6 +35,7 @@ set_full_path(THIS_DIR_SEQ_CATCH2_TEST_FILES
   from_string_test.cpp
   hash_test.cpp
   output_helpers_test.cpp
+  protobuf_utils_test.cpp
   python_test.cpp
   random_test.cpp
   serialize_matrix_test.cpp
@@ -52,6 +54,34 @@ set_full_path(THIS_DIR_MPI_CATCH2_TEST_FILES
   serialize_enum_test.cpp
   )
 
+if (LBANN_HAS_PROTOBUF)
+  add_custom_command(
+    COMMAND protobuf::protoc
+    "--cpp_out=${CMAKE_CURRENT_BINARY_DIR}"
+    "-I" "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/protobuf_utils_test_messages.proto"
+    OUTPUT
+    "${CMAKE_CURRENT_BINARY_DIR}/protobuf_utils_test_messages.pb.cc"
+    "${CMAKE_CURRENT_BINARY_DIR}/protobuf_utils_test_messages.pb.h"
+    DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/protobuf_utils_test_messages.proto"
+    protobuf::protoc
+    COMMENT "Running protoc on LBANN testing protobuf sources."
+    COMMAND_EXPAND_LISTS
+    VERBATIM)
+
+  # We make this is real library to propagate the include directories.
+  add_library(LBANNTestProto OBJECT
+    "${CMAKE_CURRENT_BINARY_DIR}/protobuf_utils_test_messages.pb.cc"
+    "${CMAKE_CURRENT_BINARY_DIR}/protobuf_utils_test_messages.pb.h")
+  target_link_libraries(LBANNTestProto PUBLIC protobuf::libprotobuf)
+  target_include_directories(LBANNTestProto PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+
+  list(APPEND THIS_DIR_SEQ_CATCH2_TEST_FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/protobuf_utils_test.cpp"
+    )
+endif ()
+
 if (LBANN_HAS_HALF)
   list(APPEND THIS_DIR_SEQ_CATCH2_TEST_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/serialize_half_test.cpp)
@@ -61,6 +91,11 @@ if (LBANN_HAS_FFTW)
   list(APPEND THIS_DIR_SEQ_CATCH2_TEST_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/fftw_test.cpp)
 endif (LBANN_HAS_FFTW)
+
+if (LBANN_HAS_ONNX)
+  list(APPEND THIS_DIR_MPI_CATCH2_TEST_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/onnx_utils_test.cpp)
+endif ()
 
 if (LBANN_HAS_OPENCV)
   list(APPEND THIS_DIR_SEQ_CATCH2_TEST_FILES

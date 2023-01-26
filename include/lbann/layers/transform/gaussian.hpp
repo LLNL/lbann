@@ -101,8 +101,8 @@ protected:
       gaussian_fill(output, output.Height(), output.Width(), m_mean, m_stdev);
     }
   }
-
 };
+
 
 #ifndef LBANN_GAUSSIAN_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

@@ -1,5 +1,5 @@
 ################################################################################
-## Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 ## Produced at the Lawrence Livermore National Laboratory.
 ## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 ## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -46,7 +46,10 @@ allocate lc resources:
     GIT_STRATEGY: none
   script:
     - echo "== ACQUIRING SLURM RESOURCES =="
-    - salloc --exclusive -N 2 -p pbatch -t 120 --no-shell -J ${JOB_NAME}
+    - echo "${WITH_WEEKLY:+Running with --weekly}"
+    - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "120" || echo "90")
+    - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
+    - salloc --exclusive -N ${LBANN_NNODES} -p pbatch -t ${TEST_TIME} --no-shell -J ${JOB_NAME}
   timeout: 6h
 
 # Build LBANN and establish the Spack environment for this pipeline.
@@ -59,18 +62,27 @@ build and install:
       - spack-build-*/CMakeCache.txt
       - spack-build-*/build.ninja
       - spack-build-*/spack-*.txt
+      - spack-ci-env-name.sh
       - ${RESULTS_DIR}/*
   script:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - export BUILD_TASKS=$(($(nproc) + 2))
+    - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
+    - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
+    - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -d
-      -l ${SPACK_ENV_NAME} --test --clean-build -j ${BUILD_TASKS}
+    - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -r
+      -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS}
       -e ./scripts/common_spack_packages/ci_spack_packages.sh --
-      +deterministic +vision +numpy ${SPACK_SPECS}
+      +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
     - export TEST_TASKS_PER_NODE=2
     - export TEST_MPIBIND_FLAG="--mpibind=off"
+    - export SPACK_ARCH=$(spack arch)
+    - export SPACK_ARCH_TARGET=$(spack arch -t)
+    - echo "export SPACK_DEP_ENV_NAME=${SPACK_ENV_NAME}" > spack-ci-env-name.sh
+    - echo "export SPACK_ARCH=${SPACK_ARCH}" >> spack-ci-env-name.sh
+    - echo "export SPACK_ARCH_TARGET=${SPACK_ARCH_TARGET}" >> spack-ci-env-name.sh
     - .gitlab/common/run-catch-tests.sh
 
 # Run the Python-based unit tests.
@@ -109,7 +121,9 @@ integration tests:
     - export OMP_NUM_THREADS=10
     - export SLURM_JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - cd ci_test/integration_tests
-    - python3 -m pytest -s -vv --durations=0 --junitxml=results.xml
+    - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
+    - echo "python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml"
+    - python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml
   artifacts:
     when: always
     paths:
@@ -131,6 +145,8 @@ check catch2 tests:
       junit: ${RESULTS_DIR}/*.xml
 
 # Cleanup the pipeline's Spack environment.
+# Switching over to reusing Spack environments for each feature branch so don't remove them immediately
+# Cleanup any build directories and spack environments older than 5 days since last use
 remove spack environment:
   extends: .pascal common
   stage: deallocate
@@ -138,15 +154,10 @@ remove spack environment:
     GIT_STRATEGY: none
   when: always
   script:
-    - echo "== CLEANING UP SPACK RESOURCES =="
+    - echo "== REMOVING OLD BUILD RESOURCES =="
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - export SPACK_ARCH_TARGET=$(spack arch -t)
-    - export FULL_ENV_NAME=lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
-    - |
-      if [[ -n "$(spack env list | grep -e ${FULL_ENV_NAME})" ]] ;
-      then
-        spack env rm --yes-to-all ${FULL_ENV_NAME}
-      fi
+    - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +5 -name "spack-build-*" -type d -exec rm -r {} \;
+    - find ${HOME}/${SPACK_REPO}/var/spack/environments/ -maxdepth 1 -mtime +5 -type d -exec basename {} \; | xargs -r spack env rm --yes-to-all
 
 # Free the allocation we obtained in "allocate lc resources".
 release allocation:
@@ -164,10 +175,9 @@ release allocation:
 .uses spack environment:
   before_script:
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - export SPACK_ARCH=$(spack arch)
-    - export SPACK_ARCH_TARGET=$(spack arch -t)
-    - spack env activate lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
-    - spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
+    - source spack-ci-env-name.sh
+    - spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
+    - spack load lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
 
 # Variables for Pascal.
 .pascal common:
@@ -178,7 +188,7 @@ release allocation:
 
     # This is based on the assumption that each runner will only ever
     # be able to run one pipeline on a given cluster at one time.
-    SPACK_ENV_NAME: gitlab-${CI_PIPELINE_ID}
+    SPACK_ENV_BASE_NAME: gitlab-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}
 
     # These are system-specific specs that should be forwarded to the
     # build script
@@ -193,6 +203,9 @@ release allocation:
 
     # Catch2 output.
     RESULTS_DIR: results-${CI_PIPELINE_ID}
+
+    # Preserve any spack-build-* directories to allow for faster testing
+    GIT_CLEAN_FLAGS: -ffdx -e spack-build-*
 
   tags:
     - pascal

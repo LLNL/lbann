@@ -1,0 +1,34 @@
+#You must edit this file prior to use as follows.
+#
+#  Uncomment the 'pack' entries for whichever data fields you wish to use.
+#  pack's value should be one of the following: datum, label, response.
+#  If you do not wish to use a data field, simply leave 'pack' commented out
+#
+#  For normalization, uncomment and add appropriate values to the 'scale'
+#  and 'bias' entries.  For images, the 'scale' and 'bias' entries should be
+#  lists with one entry per channel. You should also add the following
+#  entries for images: dims, channels. Here is an example of the metadata
+#  entries for images:
+#    dims: [300,300]
+#    channels: 2
+#    scale: [1.23, 4.56]
+#    bias:  [1.0, 2.0]
+#
+#  The 'ordering' entries determine how data is packed into a vector
+#  e.g, when you have multiple 'pack: response' entries. The values in the
+#  ordering entries need not be unique and are relative
+#
+img:
+  metadata:
+    ordering: 10
+    pack: samples
+    dims: [128,128,128]
+    channels: 1
+    #scale:
+    #bias:
+sigma:
+  metadata:
+    ordering: 20
+    pack: responses
+    #scale:
+    #bias:

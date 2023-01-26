@@ -60,9 +60,11 @@ set_full_path(THIS_DIR_HEADERS
   nvshmem.hpp
   omp_diagnostics.hpp
   omp_pragma.hpp
+  onnx_utils.hpp
   options.hpp
   peek_map.hpp
   profiling.hpp
+  protobuf.hpp
   protobuf_serializable.hpp
   protobuf_utils.hpp
   python.hpp
@@ -84,7 +86,6 @@ set_full_path(THIS_DIR_HEADERS
   typename.hpp
   vector_dynamic_cast.hpp
   vectorwrapbuf.hpp
-  vision.hpp
   visitor_hooks.hpp
 )
 if (LBANN_HAS_FFTW)

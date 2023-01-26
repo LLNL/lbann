@@ -59,7 +59,7 @@ the :ref:`CMake install <build-with-cmake>`.
 
         git clone https://github.com/llnl/lbann
         cd ./lbann
-        ./scripts/install_lbann.sh -e lbann
+        ./scripts/build_lbann.sh -d -- +cuda +half
 
     View other options available by passing the :code:`-h` option to the
     script.
@@ -79,11 +79,24 @@ the :ref:`CMake install <build-with-cmake>`.
           <https://spack.readthedocs.io/en/latest/configuration.html>`_.
 
 
+.. _test-lbann-install:
+
 --------------------
 Test LBANN Install
 --------------------
 
-1. If you used the :code:`install_lbann.sh` script for installation or
+0. [HPC Center Option] If you are on typical HPC system you may want
+   to get an allocation on a compute node to compile your code and run
+   your tests.  See your compute center's policy and documentation for
+   where you should build and run code.  Note that the LBANN Python
+   Front End (PFE) launcher can run from an allocated compute node or
+   dispatch to a set of known job launchers:
+
+    .. code-block:: bash
+
+        <get some sort of compute node>
+
+1. If you used the :code:`build_lbann.sh` script for installation or
    installed in a Spack environment, you will need to activate the Spack LBANN
    environment:
 
@@ -279,9 +292,9 @@ Using LBANN, that same neural network can be built with:
         images = lbann.Identity(input_)
         labels = lbann.Identity(input_)
 
-        x = lbann.Convolution(images, num_dims=2, num_output_channels=20,
-                              num_groups=1, conv_dims_i=5, conv_strides_i=1,
-                              conv_dilations_i=1, has_bias=True)
+        x = lbann.Convolution(images, num_dims=2, out_channels=20,
+                              num_groups=1, kernel_size=5, stride=1,
+                              dilation=1, has_bias=True)
         x = lbann.Relu(x)
         x = lbann.Pooling(x, num_dims=2, pool_dims_i=2,
                           pool_strides_i=2, pool_mode='max')

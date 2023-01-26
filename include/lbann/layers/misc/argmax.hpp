@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_MISC_ARGMAX_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
@@ -82,8 +83,8 @@ protected:
   }
 
   void fp_compute() override;
-
 };
+
 
 #ifndef LBANN_ARGMAX_LAYER_INSTANTIATE
 #define PROTO(T) \

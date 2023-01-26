@@ -49,6 +49,11 @@
 #include <unistd.h>
 #include <unordered_set>
 
+// Forward-declare Conduit nodes.
+namespace conduit {
+  class Node;
+}
+
 #define NOT_IMPLEMENTED(n) { \
   std::stringstream s; \
   s << "the method " << n << " has not been implemented"; \
@@ -129,6 +134,8 @@ class generic_data_reader {
   lbann_comm * get_comm() const {
     return m_comm;
   }
+
+  virtual bool has_conduit_output() { return false; }
 
   // These non-virtual methods are used to specify where data is, how much to
   // load, etc.
@@ -300,6 +307,9 @@ class generic_data_reader {
   int fetch(std::map<data_field_type, CPUMat*>& input_buffers,
             El::Matrix<El::Int>& indices_fetched, size_t mb_size);
 
+  int fetch(std::vector<conduit::Node>& samples,
+            El::Matrix<El::Int>& indices_fetched, size_t mb_size);
+
   /** @brief Check to see if the data reader supports this specific data field
    */
   virtual bool has_data_field(data_field_type data_field) const
@@ -338,6 +348,9 @@ class generic_data_reader {
   {
     m_supported_input_types[INPUT_DATA_TYPE_RESPONSES] = b;
   }
+
+  void start_data_store_mini_batch_exchange();
+  void finish_data_store_mini_batch_exchange();
 
   /**
    * During the network's update phase, the data reader will
@@ -731,6 +744,13 @@ class generic_data_reader {
                    El::Int mb_size,
                    El::Matrix<El::Int>& indices_fetched);
 
+  bool
+  fetch_data_block_conduit(std::vector<conduit::Node>& samples,
+                   El::Int block_offset,
+                   El::Int block_stride,
+                   El::Int mb_size,
+                   El::Matrix<El::Int>& indices_fetched);
+
   /** @brief Called by fetch_data, fetch_label, fetch_response
    *
    * Fetch data from a single data field into a matrix.
@@ -746,6 +766,12 @@ class generic_data_reader {
   virtual bool fetch_data_field(data_field_type data_field, CPUMat& Y, int data_id, int mb_idx)
   {
     NOT_IMPLEMENTED("fetch_data_field");
+    return false;
+  }
+
+  virtual bool fetch_conduit_node(conduit::Node& sample, int data_id)
+  {
+    NOT_IMPLEMENTED("fetch_conduit_node");
     return false;
   }
 

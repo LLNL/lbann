@@ -36,7 +36,8 @@ deconvolution_layer<TensorDataType,Layout,Device>
 {
   using BaseConvolutionLayer = base_convolution_layer<TensorDataType, Device>;
   ar(::cereal::make_nvp("BaseConvolutionLayer",
-                        ::cereal::base_class<BaseConvolutionLayer>(this)));
+                        ::cereal::base_class<BaseConvolutionLayer>(this)),
+     CEREAL_NVP(m_output_pads));
 }
 
 } // namespace lbann

@@ -36,7 +36,7 @@ def sample_dims():
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -48,7 +48,7 @@ def setup_experiment(lbann):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -66,7 +66,7 @@ def construct_model(lbann):
                               name='input_weights')
     x = lbann.Sum(lbann.Input(data_field='samples'),
                   lbann.WeightsLayer(weights=x_weights,
-                                     dims=tools.str_list(_sample_size)))
+                                     dims=_sample_size))
     x_lbann = x
 
     # Objects for LBANN model
@@ -80,8 +80,8 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    x = lbann.Reshape(x, dims=tools.str_list([5,3,4]))
-    x_slice = lbann.Slice(x, axis=0, slice_points=tools.str_list([0,1,3,5]))
+    x = lbann.Reshape(x, dims=[5,3,4])
+    x_slice = lbann.Slice(x, axis=0, slice_points=[0,1,3,5])
     x1 = lbann.Identity(x_slice)
     x2 = lbann.Identity(x_slice)
     x3 = lbann.Identity(x_slice)
@@ -115,8 +115,8 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    x = lbann.Reshape(x, dims=tools.str_list([3,4,5]))
-    x_slice = lbann.Slice(x, axis=1, slice_points=tools.str_list([0,1,3,4]))
+    x = lbann.Reshape(x, dims=[3,4,5])
+    x_slice = lbann.Slice(x, axis=1, slice_points=[0,1,3,4])
     x1 = lbann.Identity(x_slice)
     x2 = lbann.Identity(x_slice)
     x3 = lbann.Identity(x_slice)
@@ -150,8 +150,8 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    x = lbann.Reshape(x, dims=tools.str_list([3,4,5]))
-    x_slice = lbann.Slice(x, axis=2, slice_points=tools.str_list([0,1,2,3,5]))
+    x = lbann.Reshape(x, dims=[3,4,5])
+    x_slice = lbann.Slice(x, axis=2, slice_points=[0,1,2,3,5])
     x1 = lbann.Identity(x_slice)
     x2 = lbann.Identity(x_slice)
     x3 = lbann.Identity(x_slice)
@@ -187,8 +187,8 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    x = lbann.Reshape(x, dims=tools.str_list([60]))
-    x_slice = lbann.Slice(x, slice_points=tools.str_list([0,22,23,60]))
+    x = lbann.Reshape(x, dims=[60])
+    x_slice = lbann.Slice(x, slice_points=[0,22,23,60])
     x1 = lbann.Identity(x_slice)
     x2 = lbann.Identity(x_slice)
     x3 = lbann.Identity(x_slice)

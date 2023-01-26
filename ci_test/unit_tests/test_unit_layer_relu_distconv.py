@@ -40,7 +40,7 @@ def sample_dims():
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -52,7 +52,7 @@ def setup_experiment(lbann):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
 
 def create_parallel_strategy(num_height_groups):
     return {"height_groups": num_height_groups}
@@ -72,9 +72,9 @@ def construct_model(lbann):
                               initializer=lbann.ConstantInitializer(value=0.0),
                               name='input_weights')
     x = lbann.Sum(lbann.Reshape(lbann.Input(data_field='samples'),
-                                dims=tools.str_list(_sample_size)),
+                                dims=_sample_size),
                   lbann.WeightsLayer(weights=x_weights,
-                                     dims=tools.str_list(_sample_size)))
+                                     dims=_sample_size))
     x_lbann = x
 
     # Objects for LBANN model
@@ -94,11 +94,11 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    x = lbann.Reshape(x, dims="4 2 6")
+    x = lbann.Reshape(x, dims=[4, 2, 6])
     y = lbann.Relu(x, data_layout='data_parallel',
                    parallel_strategy=create_parallel_strategy(
                        num_height_groups))
-    y = lbann.Reshape(y, dims=str(sample_dims()))
+    y = lbann.Reshape(y, dims=sample_dims())
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
@@ -125,11 +125,11 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    x = lbann.Reshape(x, dims="4 2 6")
+    x = lbann.Reshape(x, dims=[4, 2, 6])
     y = lbann.Relu(x, data_layout='model_parallel',
                    parallel_strategy=create_parallel_strategy(
                        num_height_groups))
-    y = lbann.Reshape(y, dims=str(sample_dims()))
+    y = lbann.Reshape(y, dims=sample_dims())
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='model-parallel layout'))

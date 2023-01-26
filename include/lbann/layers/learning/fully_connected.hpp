@@ -92,6 +92,10 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+#ifdef LBANN_HAS_ONNX
+  void fill_onnx_node(onnx::GraphProto& graph) const override;
+#endif //LBANN_HAS_ONNX
+
   description get_description() const override;
 
   /** @name Serialization */
@@ -107,7 +111,6 @@ protected:
   friend class cereal::access;
   fully_connected_layer();
 
-  void setup_matrices(const El::Grid& grid) override;
   void setup_data(size_t max_mini_batch_size) override;
 
   void fp_compute() override;

@@ -28,6 +28,7 @@ set_full_path(THIS_DIR_SOURCES
   buffered_data_coordinator.cpp
   data_coordinator.cpp
   data_coordinator_metadata.cpp
+  data_packer.cpp
   )
 
 # Propagate the files up the tree

@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_REGULARIZERS_LAYER_NORM_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 
 #include <memory>
 
@@ -84,9 +85,7 @@ public:
 protected:
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
-  void setup_matrices(const El::Grid& grid) override;
-  void fp_setup_outputs(El::Int mini_batch_size) override;
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
+  void setup_data(size_t max_mini_batch_size) override;
 
   void fp_compute() override;
   void bp_compute() override;
@@ -182,31 +181,15 @@ void layer_norm_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaDa
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void layer_norm_layer<TensorDataType,Layout,Device>::setup_matrices(const El::Grid& grid) {
-  data_type_layer<TensorDataType>::setup_matrices(grid);
+void layer_norm_layer<TensorDataType,Layout,Device>::setup_data(size_t max_mini_batch_size) {
+  data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
   auto dist = this->get_prev_activations().DistData();
   dist.colDist = El::STAR;
   m_statistics.reset(AbsDistMatrixType::Instantiate(dist));
   m_statistics_gradient.reset(AbsDistMatrixType::Instantiate(dist));
 }
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void layer_norm_layer<TensorDataType,Layout,Device>::fp_setup_outputs(El::Int mini_batch_size) {
-  data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
-  const auto& input = this->get_prev_activations();
-  m_statistics->Empty(false);
-  m_statistics->AlignWith(input);
-  m_statistics->Resize(2, input.Width());
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void layer_norm_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
-  data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(mini_batch_size);
-  const auto& input = this->get_prev_activations();
-  m_statistics_gradient->Empty(false);
-  m_statistics_gradient->AlignWith(input);
-  m_statistics_gradient->Resize(2, input.Width());
-}
+LBANN_DEFINE_LAYER_BUILDER(layer_norm);
 
 // =========================================================
 // Explicit template instantiation

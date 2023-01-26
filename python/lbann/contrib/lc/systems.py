@@ -16,7 +16,7 @@ class SystemParams:
 # Supported LC systems
 _system_params = {
     'catalyst': SystemParams(24, 0, 'slurm'),
-    'corona':   SystemParams(24, 4, 'slurm'),
+    'corona':   SystemParams(24, 4, 'flux'),
     'pascal':   SystemParams(36, 2, 'slurm'),
     'quartz':   SystemParams(36, 0, 'slurm'),
     'surface':  SystemParams(16, 2, 'slurm'),
@@ -25,6 +25,7 @@ _system_params = {
     'sierra':   SystemParams(44, 4, 'lsf'),
     'rzansel':  SystemParams(44, 4, 'lsf'),
     'rzhasgpu': SystemParams(16, 2, 'slurm'),
+    'tioga':    SystemParams(64, 8, 'flux'),
 }
 
 # Detect system

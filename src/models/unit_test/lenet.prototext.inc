@@ -61,12 +61,16 @@ model {
     children: "layer5"
     convolution {
       num_dims: 2
-      num_output_channels: 6
-      num_groups: 1
-      conv_dims_i: 5
-      conv_strides_i: 1
-      conv_dilations_i: 1
-      has_bias: true
+      out_channels: 6
+      kernel_size: 5
+      stride: 1
+      dilation: 1
+      groups {
+        value: 1
+      }
+      has_bias {
+        value: true
+      }
     }
   }
   layer {
@@ -93,12 +97,16 @@ model {
     children: "layer8"
     convolution {
       num_dims: 2
-      num_output_channels: 16
-      num_groups: 1
-      conv_dims_i: 5
-      conv_strides_i: 1
-      conv_dilations_i: 1
-      has_bias: true
+      out_channels: 16
+      kernel_size: 5
+      stride: 1
+      dilation: 1
+      groups {
+        value: 1
+      }
+      has_bias {
+        value: true
+      }
     }
   }
   layer {
@@ -163,19 +171,22 @@ model {
   layer {
     name: "layer15"
     parents: "layer14"
-    children: "layer16 layer17"
+    children: "layer16"
+    children: "layer17"
     softmax {
     }
   }
   layer {
     name: "layer17"
-    parents: "layer15 label"
+    parents: "layer15"
+    parents: "label"
     categorical_accuracy {
     }
   }
   layer {
     name: "layer16"
-    parents: "layer15 label"
+    parents: "layer15"
+    parents: "label"
     cross_entropy {
     }
   }

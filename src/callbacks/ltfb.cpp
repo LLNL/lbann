@@ -27,7 +27,7 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/ltfb.hpp"
 #include "lbann/utils/random_number_generators.hpp"
-#include "lbann/models/directed_acyclic_graph.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/optimizers/sgd.hpp"
 #include "lbann/optimizers/adam.hpp"
 #include "lbann/proto/proto_common.hpp"
@@ -196,19 +196,31 @@ El::Int get_partner_trainer(lbann_comm& comm,
   std::shuffle(trainers.begin(), trainers.end(), get_ltfb_generator());
 
   if (comm.am_world_master()) { // Root process
+    auto const& arg_parser = global_argument_parser();
+    bool const ltfb_verbose = arg_parser.get<bool>(LBANN_OPTION_LTFB_VERBOSE);
+    bool skipped_reporting_trainers = false;
     // Print partner assignments to standard output
-    std::stringstream msg;
+    std::ostringstream msg;
     msg << message_prefix << "tournament partners -";
     for (El::Int i = 0; i < num_trainers; i += 2) {
-      msg << (i > 0 ? "," : "")
-          << " {" << trainers[i];
-      if (i+1 < num_trainers) {
-        msg << "," << trainers[i+1];
+      // By default only print out 3 pairs of trainer mappings unless
+      // LTFB has verbose reporting
+      if (i < 3 || i == (num_trainers - 2) || i == (num_trainers - 1) ||
+          ltfb_verbose) {
+        msg << (i > 0 && !skipped_reporting_trainers ? "," : "") << " {"
+            << trainers[i];
+        if (i + 1 < num_trainers) {
+          msg << "," << trainers[i + 1];
+        }
+        msg << "}";
       }
-      msg << "}";
+      else if (!skipped_reporting_trainers) {
+        msg << " ...";
+        skipped_reporting_trainers = true;
+      }
     }
     msg << "\n";
-    std::cout << msg.str() << std::endl << std::flush;
+    std::cout << msg.str() << std::endl;
   }
 
   // Setup partner assignments for all processes
@@ -244,6 +256,12 @@ void restore_model_weights(
 std::string sendrecv_string(lbann_comm const& c, std::string const& src,
                             El::Int partner_trainer)
 {
+#ifdef LBANN_HAS_ALUMINUM
+  El::mpi::EnsureComm<size_t, El::Collective::SENDRECV>(
+    c.get_world_comm(),
+    El::SyncInfo<El::Device::CPU>{});
+#endif
+
   if (!c.am_trainer_master())
     return "";
 
@@ -719,8 +737,8 @@ void ltfb::on_batch_begin(model* m)
   if (comm.am_world_master()) {
     std::cout << message_prefix + "exchanging model data...\n";
   }
-  using ModelType = directed_acyclic_graph_model;
-  ModelType partner_model(dynamic_cast<ModelType&>(local_model));
+
+  model partner_model(local_model);
   if (comm_algo_)
     comm_algo_->exchange_models(partner_model, partner_trainer, step);
   else
@@ -751,6 +769,7 @@ void ltfb::on_batch_begin(model* m)
     local_model.setup(
       trainer_.get_max_mini_batch_size(),
       metadata,
+      trainer_.get_grids(),
       true);
   }
 

@@ -134,23 +134,22 @@ protected:
 template <typename T, data_layout L, El::Device D>
 void evaluation_layer<T, L, D>::fill_onnx_node(onnx::GraphProto& graph) const
 {
-  auto* node = graph.add_node();
+  auto* eval = graph.add_node();
   for (auto const* parent : this->get_parent_layers()) {
     size_t idx = parent->find_child_layer_index(*this);
-    node->add_input(parent->get_name() + "_" + std::to_string(idx));
+    eval->add_input(parent->get_name() + "_" + std::to_string(idx));
   }
-  node->add_output(this->get_name());
-  node->set_name(this->get_name());
-  node->set_op_type("Identity");
-  node->set_domain("");
-  node->set_doc_string(this->get_type());
+  eval->add_output(this->get_name());
+  eval->set_name(this->get_name());
+  eval->set_op_type("Identity");
+  eval->set_domain("");
+  eval->set_doc_string(this->get_type());
 
   // Add graph output
   auto graph_output = graph.add_output();
-  graph_output->set_name(this->get_name());
+  graph_output->set_name(eval->output(0));
   auto* graph_output_type = graph_output->mutable_type();
-  // FIXME: enum type. 1 is float
-  graph_output_type->mutable_tensor_type()->set_elem_type(1);
+  graph_output_type->mutable_tensor_type()->set_elem_type(onnx::AttributeProto::FLOAT);
 
   auto* dims =
     graph_output_type->mutable_tensor_type()->mutable_shape()->add_dim();
@@ -160,7 +159,6 @@ void evaluation_layer<T, L, D>::fill_onnx_node(onnx::GraphProto& graph) const
 }
 #endif // LBANN_HAS_ONNX
 
-LBANN_DEFINE_LAYER_BUILDER(evaluation);
 
 #ifndef LBANN_EVALUATION_LAYER_INSTANTIATE
 #define PROTO(T)                           \

@@ -237,7 +237,7 @@ void distconv_adapter::adjust_parallel_strategy() {
     }
   }
 
-  else if (layer_type == "channel-wise fully-connected"){
+  else if (layer_type == "channel-wise fully-connected" || layer_type == "matmul"){
     if (c != f){
       if (layer().get_comm()->am_trainer_master()) {
         LBANN_WARNING("The number of channel and filter decomposition should be the same. Setting",
@@ -248,7 +248,7 @@ void distconv_adapter::adjust_parallel_strategy() {
     }
 
     if (spatial_prod != 1){
-      LBANN_ERROR("Distributed channel-wise fully-connected layer does not support spatial (column-wise) ",
+      LBANN_ERROR("Distributed channel-wise fully-connected or 3D matmul does not support spatial (column-wise) ",
         "parallelization: ", get_name(), ", parallel strategy: ", ps);
     } 
   }

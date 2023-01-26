@@ -89,7 +89,6 @@ private:
 
 };
 
-LBANN_DEFINE_LAYER_BUILDER(constant);
 
 #ifndef LBANN_CONSTANT_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

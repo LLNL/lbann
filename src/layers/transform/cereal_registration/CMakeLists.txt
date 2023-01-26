@@ -37,6 +37,7 @@ set_full_path(THIS_DIR_SOURCES
   gather.cpp
   gaussian.cpp
   hadamard.cpp
+  identity_zero.cpp
   in_top_k.cpp
   pooling.cpp
   reduction.cpp
@@ -52,7 +53,12 @@ set_full_path(THIS_DIR_SOURCES
   unpooling.cpp
   weighted_sum.cpp
   weights.cpp
-  )
+)
+
+if (LBANN_HAS_TENSOR_PERMUTE)
+  list(APPEND THIS_DIR_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/permute.cpp")
+endif ()
 
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)

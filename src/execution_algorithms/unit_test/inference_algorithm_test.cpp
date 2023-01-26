@@ -24,14 +24,13 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <catch2/catch.hpp>
+#include "Catch2BasicSupport.hpp"
 
 #include "TestHelpers.hpp"
 #include "MPITestHelpers.hpp"
 
 #include <lbann/base.hpp>
 #include <lbann/execution_algorithms/batch_functional_inference_algorithm.hpp>
-#include <lbann/models/directed_acyclic_graph.hpp>
 #include <lbann/models/model.hpp>
 #include <lbann/utils/lbann_library.hpp>
 
@@ -84,8 +83,8 @@ auto make_model(lbann::lbann_comm& comm, int class_n)
                                                 -1,
                                                 my_proto.optimizer(),
                                                 my_proto.trainer(),
-                                                my_proto.model()) ;
-  my_model->setup(1UL, metadata);
+                                                my_proto.model());
+  my_model->setup(1UL, metadata, {&comm.get_trainer_grid()});
   return my_model;
 }
 

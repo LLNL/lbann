@@ -108,8 +108,10 @@ def get_command(cluster,
         time_limit = MAX_TIME
 
     # Determine scheduler
-    if cluster in ['catalyst', 'corona', 'pascal']:
+    if cluster in ['catalyst', 'pascal']:
         scheduler = 'slurm'
+    elif cluster in ['corona', 'tioga']:
+        scheduler = 'flux'
     elif cluster in ['lassen', 'ray']:
         scheduler = 'lsf'
     else:
@@ -256,7 +258,7 @@ def get_command(cluster,
                 option_num_processes = ' --nrs {n}'.format(n=num_nodes)
                 option_resources_per_host = ' --rs_per_host 1'
                 option_tasks_per_resource = ' --tasks_per_rs {n}'.format(n=resources_per_node)
-                if (num_processes%num_nodes) is not 0:
+                if (num_processes%num_nodes) != 0:
                     raise Exception('num_processes %s, is not divisible by num_nodes %d'
                                     % (num_processes, num_nodes))
 
@@ -272,6 +274,52 @@ def get_command(cluster,
             option_gpu_per_resource, option_launch_distribution,
             option_num_processes, option_processes_per_node,
             option_resources_per_host, option_tasks_per_resource)
+
+    elif scheduler == 'flux':
+        # Create allocate command
+        command_allocate = ''
+        # Allocate nodes only if we don't already have an allocation.
+        if os.getenv('FLUX_JOB_ID') is None:
+            print('Allocating flux nodes.')
+            command_allocate = 'flux mini alloc'
+            option_num_nodes = ''
+            option_partition = ''
+            option_time_limit = ''
+            if num_nodes is not None:
+                # --nodes=<minnodes[-maxnodes]> =>
+                # Request that a minimum of minnodes nodes be allocated to this
+                # job. A maximum node count may also be specified with
+                # maxnodes.
+                option_num_nodes = ' --nodes=%d' % num_nodes
+            if partition is not None:
+                # --partition => Request a specific partition for the resource
+                # allocation.
+                option_partition = ' --partition=%s' % partition
+            if time_limit is not None:
+                # --time => Set a limit on the total run time of the job
+                # allocation.
+                # Time limit in minutes
+                option_time_limit = ' --time=%dm' % time_limit
+            command_allocate = '%s%s%s%s' % (
+                command_allocate, option_num_nodes, option_partition,
+                option_time_limit)
+        else:
+            print('flux nodes already allocated.')
+
+        # Create run command
+        if command_allocate == '':
+            space = ''
+        else:
+            space = ' '
+        command_run = '{s}flux mini run --time={t}'.format(
+            s=space, t=time_limit)
+        option_num_processes = ''
+        if num_processes is not None:
+            # --ntasks => Specify  the  number of tasks to run.
+            # Number of processes to run => MPI Rank
+            option_num_processes = ' --ntasks=%d' % num_processes
+        command_options = ' --exclusive -o gpu-affinity=per-task -o cpu-affinity=per-task'
+        command_run = '%s%s%s' % (command_run, option_num_processes, command_options)
 
     else:
         raise Exception('Unsupported Scheduler %s' % scheduler)
@@ -679,7 +727,7 @@ def create_tests(setup_func,
         # Make sure test name is prefixed with 'test_'
         test_name_base = 'test_' + test_name_base
 
-    def test_func(cluster, dirname):
+    def test_func(cluster, dirname, weekly):
         """Function that can interact with PyTest.
 
         Returns a dict containing log files and other output data.
@@ -696,8 +744,11 @@ def create_tests(setup_func,
         import lbann.contrib.launcher
 
         # Setup LBANN experiment
-        trainer, model, data_reader, optimizer = setup_func(lbann)
+        trainer, model, data_reader, optimizer, req_num_nodes = setup_func(lbann, weekly)
 
+        if req_num_nodes:
+            kwargs['nodes'] = req_num_nodes
+        
         # Configure kwargs to LBANN launcher
         _kwargs = copy.deepcopy(kwargs)
         if 'work_dir' not in _kwargs:
@@ -711,8 +762,8 @@ def create_tests(setup_func,
             del _kwargs['work_subdir']
 
         # Delete the work directory
-        if os.path.isdir(_kwargs['work_dir']):
-            shutil.rmtree(_kwargs['work_dir'])
+        #if os.path.isdir(_kwargs['work_dir']):
+        #    shutil.rmtree(_kwargs['work_dir'])
 
         if 'job_name' not in _kwargs:
             _kwargs['job_name'] = f'lbann_{test_name}'
@@ -816,11 +867,6 @@ def make_iterable(obj):
         return obj
     else:
         return (obj,)
-
-
-def str_list(it):
-    """Convert an iterable object to a space-separated string"""
-    return ' '.join([str(i) for i in make_iterable(it)])
 
 # Define evaluation function
 def collect_metrics_from_log_func(log_file, key):

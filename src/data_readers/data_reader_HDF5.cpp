@@ -909,60 +909,12 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables(conduit::Node& no
   }
 }
 
-bool hdf5_data_reader::fetch_data_field(data_field_type data_field,
-                             CPUMat& Y,
-                             int data_id,
-                             int mb_idx)
+bool hdf5_data_reader::fetch_conduit_node(conduit::Node& sample,
+                             int data_id)
 {
-  size_t n_elts = 0;
-  std::string dtype;
-  const void* d = get_data(data_id, data_field, n_elts, dtype);
-
-  if ((El::Int)n_elts != Y.Height()) {
-    LBANN_ERROR("data field ", data_field, " has ", n_elts,
-                " elements, but the matrix only has a linearized size (height) of ",
-                Y.Height());
-  }
-  if (dtype == "float64") {
-    const conduit::float64* data = reinterpret_cast<const conduit::float64*>(d);
-    for (size_t j = 0; j < n_elts; ++j) {
-      Y(j, mb_idx) = data[j];
-    }
-  }
-  else if (dtype == "float32") {
-    const conduit::float32* data = reinterpret_cast<const conduit::float32*>(d);
-    for (size_t j = 0; j < n_elts; ++j) {
-      Y(j, mb_idx) = data[j];
-    }
-  }
-  else if (dtype == "int64") {
-    const conduit::int64* data = reinterpret_cast<const conduit::int64*>(d);
-    for (size_t j = 0; j < n_elts; ++j) {
-      Y(j, mb_idx) = data[j];
-    }
-  }
-  else if (dtype == "int32") {
-    const conduit::int32* data = reinterpret_cast<const conduit::int32*>(d);
-    for (size_t j = 0; j < n_elts; ++j) {
-      Y(j, mb_idx) = data[j];
-    }
-  }
-  else if (dtype == "uint64") {
-    const conduit::uint64* data = reinterpret_cast<const conduit::uint64*>(d);
-    for (size_t j = 0; j < n_elts; ++j) {
-      Y(j, mb_idx) = data[j];
-    }
-  }
-  else if (dtype == "uint32") {
-    const conduit::uint32* data = reinterpret_cast<const conduit::uint32*>(d);
-    for (size_t j = 0; j < n_elts; ++j) {
-      Y(j, mb_idx) = data[j];
-    }
-  }
-  else {
-    LBANN_ERROR("unknown dtype: ", dtype);
-  }
-
+  // get the pathname to the data, and verify it exists in the conduit::Node
+  const conduit::Node& node = get_data_store().get_conduit_node(data_id);
+  sample = node;
   return true;
 }
 
@@ -1040,52 +992,6 @@ void hdf5_data_reader::set_experiment_schema(const conduit::Node& s)
 {
   m_experiment_schema = s;
   parse_schemas();
-}
-
-// Note to developers and reviewer: this is very conduit-ishy; I keep thinking
-// there's a simpler, more elegant way to do this, but I'm not seeing it.
-const void* hdf5_data_reader::get_data(const size_t sample_id_in,
-                                       data_field_type data_field,
-                                       size_t& num_elts_out,
-                                       std::string& dtype_out) const
-{
-
-  // get the pathname to the data, and verify it exists in the conduit::Node
-  const conduit::Node& node = get_data_store().get_conduit_node(sample_id_in);
-  std::ostringstream ss;
-  ss << node.child(0).name() + "/" << data_field;
-  if (!node.has_path(ss.str())) {
-    LBANN_ERROR("no path: ", ss.str());
-  }
-
-  num_elts_out = node[ss.str()].dtype().number_of_elements();
-
-  const void* r;
-  dtype_out = node[ss.str()].dtype().name();
-  if (dtype_out == "float64") {
-    r = reinterpret_cast<const void*>(node[ss.str()].as_float64_ptr());
-  }
-  else if (dtype_out == "float32") {
-    r = reinterpret_cast<const void*>(node[ss.str()].as_float32_ptr());
-  }
-  else if (dtype_out == "int64") {
-    r = reinterpret_cast<const void*>(node[ss.str()].as_int64_ptr());
-  }
-  else if (dtype_out == "int32") {
-    r = reinterpret_cast<const void*>(node[ss.str()].as_int32_ptr());
-  }
-  else if (dtype_out == "uint64") {
-    r = reinterpret_cast<const void*>(node[ss.str()].as_uint64_ptr());
-  }
-  else if (dtype_out == "uint32") {
-    r = reinterpret_cast<const void*>(node[ss.str()].as_uint32_ptr());
-  }
-  else {
-    LBANN_ERROR("unknown dtype; not float32/64, int32/64, or uint32/64; dtype "
-                "is reported to be: ",
-                dtype_out);
-  }
-  return r;
 }
 
 } // namespace lbann

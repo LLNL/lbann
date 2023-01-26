@@ -1,0 +1,44 @@
+data_reader {
+  reader {
+    name: "cifar10"
+    role: "train"
+    shuffle: true
+    data_filedir: "path/to/cifar10/data"
+    validation_percent: 0.1
+    tournament_percent: 0.1
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+
+    transforms {
+      horizontal_flip {
+        p: 0.5
+      }
+    }
+    transforms {
+      normalize_to_lbann_layout {
+        means: "0.44653 0.48216 0.4914"
+        stddevs: "0.26159 0.24349 0.24703"
+      }
+    }
+  }
+  reader {
+    name: "cifar10"
+    role: "test"
+    shuffle: true
+    data_filedir: "path/to/cifar10/data"
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+
+    transforms {
+      horizontal_flip {
+        p: 0.5
+      }
+    }
+    transforms {
+      normalize_to_lbann_layout {
+        means: "0.44653 0.48216 0.4914"
+        stddevs: "0.26159 0.24349 0.24703"
+      }
+    }
+  }
+}

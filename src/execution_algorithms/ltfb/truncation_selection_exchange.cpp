@@ -31,9 +31,7 @@
 #include "lbann/base.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
-#include "lbann/models/directed_acyclic_graph.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/proto/helpers.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
@@ -225,13 +223,12 @@ void TruncationSelectionExchange::select_next(model& m,
                 << score_list[src] << std::endl;
     }
 
-    auto partner_model_ptr = m.copy_model();
-    auto& partner_model = *partner_model_ptr;
-    unpack(partner_model, rcv_str);
+    unpack(m, rcv_str);
     auto& trainer = get_trainer();
     auto&& metadata = dc.get_dr_metadata();
     m.setup(trainer.get_max_mini_batch_size(),
             metadata,
+            trainer.get_grids(),
             /*force*/ true);
   }
 }

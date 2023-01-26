@@ -29,10 +29,12 @@
 
 namespace lbann {
 
-#define PROTO(T)                                      \
-  template class unpooling_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  template class unpooling_layer<T,                                            \
+                                 data_layout::DATA_PARALLEL,                   \
+                                 El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
-}// namespace lbann
+} // namespace lbann

@@ -28,6 +28,7 @@
 #define LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/distconv.hpp"
 
@@ -239,18 +240,6 @@ public:
 
 protected:
 
-  void setup_matrices(const El::Grid& grid) override {
-    data_type_layer<TensorDataType>::setup_matrices(grid);
-    m_mean_and_var.reset(new StarMatDT<TensorDataType, Dev>(grid));
-    m_mean_v.reset(new StarMatDT<TensorDataType, Dev>(grid));
-    m_var_v.reset(new StarMatDT<TensorDataType, Dev>(grid));
-    m_mean_and_var_gradient.reset(new StarMatDT<TensorDataType, Dev>(grid));
-    m_mean_gradient_v.reset(new StarMatDT<TensorDataType, Dev>(grid));
-    m_var_gradient_v.reset(new StarMatDT<TensorDataType, Dev>(grid));
-    m_scale_gradient.reset(new StarMatDT<TensorDataType, Dev>(grid));
-    m_bias_gradient.reset(new StarMatDT<TensorDataType, Dev>(grid));
-  }
-
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
@@ -349,6 +338,14 @@ protected:
     }
 
     // Initialize matrices
+    m_mean_and_var.reset(new StarMatDT<TensorDataType, Dev>(*dist.grid));
+    m_mean_v.reset(new StarMatDT<TensorDataType, Dev>(*dist.grid));
+    m_var_v.reset(new StarMatDT<TensorDataType, Dev>(*dist.grid));
+    m_mean_and_var_gradient.reset(new StarMatDT<TensorDataType, Dev>(*dist.grid));
+    m_mean_gradient_v.reset(new StarMatDT<TensorDataType, Dev>(*dist.grid));
+    m_var_gradient_v.reset(new StarMatDT<TensorDataType, Dev>(*dist.grid));
+    m_scale_gradient.reset(new StarMatDT<TensorDataType, Dev>(*dist.grid));
+    m_bias_gradient.reset(new StarMatDT<TensorDataType, Dev>(*dist.grid));
     El::Zeros(*m_mean_and_var,   num_channels, 2);
     El::Zeros(*m_mean_and_var_gradient, num_channels, 2);
     El::Zeros(*m_scale_gradient, num_channels, 1);
@@ -531,6 +528,8 @@ void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::setup_
       l.m_decay, l.m_epsilon, global_stats);
 }
 #endif // LBANN_HAS_DISTCONV
+
+LBANN_DEFINE_LAYER_BUILDER(batch_normalization);
 
 #ifndef LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

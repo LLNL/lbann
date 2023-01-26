@@ -38,7 +38,7 @@
 #include "lbann/execution_algorithms/batch_functional_inference_algorithm.hpp"
 
 /// Models
-#include "lbann/models/directed_acyclic_graph.hpp"
+#include "lbann/models/model.hpp"
 
 /// Activation layers
 #include "lbann/layers/activations/elu.hpp"
@@ -96,6 +96,7 @@
 #include "lbann/layers/transform/sort.hpp"
 #include "lbann/layers/transform/weights.hpp"
 #include "lbann/layers/transform/tessellate.hpp"
+#include "lbann/layers/transform/identity_zero.hpp"
 
 /// Regularization layers
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -156,6 +157,7 @@
 #include "lbann/data_store/data_store_conduit.hpp"
 
 /// Callbacks
+#include "lbann/callbacks/alternate_updates.hpp"
 #include "lbann/callbacks/check_dataset.hpp"
 #include "lbann/callbacks/check_gradients.hpp"
 #include "lbann/callbacks/check_init.hpp"

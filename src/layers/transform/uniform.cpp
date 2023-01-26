@@ -24,15 +24,15 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/layers/layer.hpp"
 #define LBANN_UNIFORM_LAYER_INSTANTIATE
 #include "lbann/layers/transform/uniform.hpp"
 
 namespace lbann {
 
-#define PROTO_DEVICE(T, Device) \
-  template class uniform_layer<T, data_layout::DATA_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  template class uniform_layer<T, data_layout::DATA_PARALLEL, Device>;         \
   template class uniform_layer<T, data_layout::MODEL_PARALLEL, Device>
-
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

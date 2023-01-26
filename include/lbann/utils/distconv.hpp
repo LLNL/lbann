@@ -39,12 +39,13 @@
 #define DISTCONV_DEBUG
 #endif
 
+#include "distconv/dnn_backend/backend.hpp"
 #include "distconv/distconv.hpp"
-#include "distconv/tensor/tensor_mpi_cuda.hpp"
+#include "distconv/tensor/algorithms.hpp"
 #include "distconv/tensor/shuffle_mpi.hpp"
 #include "distconv/tensor/shuffle_mpi_cuda.hpp"
 #include "distconv/tensor/shuffle_mpi_cuda_al.hpp"
-#include "distconv/tensor/algorithms.hpp"
+#include "distconv/tensor/tensor_mpi_cuda.hpp"
 #include "distconv/util/util.hpp"
 #ifdef DISTCONV_HAS_P2P
 #include "p2p/p2p.hpp"
@@ -53,7 +54,18 @@
 #endif // DISTCONV_HAS_P2P
 
 #include "lbann/layers/learning/distconv/distconv_layers.hpp"
+#include "lbann/layers/math/distconv/distconv_matmul.hpp"
+
 namespace lbann {
+
+inline auto default_hydrogen_stream()
+{
+#if H2_HAS_CUDA
+  return hydrogen::cuda::GetDefaultStream();
+#elif H2_HAS_ROCM
+  return hydrogen::rocm::GetDefaultStream();
+#endif
+}
 
 class Layer;
 
@@ -109,7 +121,7 @@ using MPIRootPrintStreamInfo = ::distconv::util::MPIRootPrintStreamInfo;
 using MPIRootPrintStreamWaning = ::distconv::util::MPIRootPrintStreamWarning;
 
 // Distconv layer classes
-using Backend = ::distconv::cudnn::BackendCUDNN;
+using Backend = ::distconv::BackendDNNLib;
 using ReLU = ::distconv::ReLU<Backend>;
 using LeakyReLU = ::distconv::LeakyReLU<Backend>;
 template <typename TensorDataType>
@@ -120,6 +132,8 @@ template <typename TensorDataType>
 using Pooling = ::distconv::Pooling<Backend, TensorDataType>;
 template <typename TensorDataType>
 using BatchNormalization = ::distconv::BatchNormalization<Backend, TensorDataType>;
+template <typename TensorDataType>
+using MatMul = ::distconv::MatMul<Backend, TensorDataType>;
 using Softmax = ::distconv::Softmax<Backend>;
 using CrossEntropy = ::distconv::CrossEntropy<Backend>;
 using MeanSquaredError = ::distconv::MeanSquaredError<Backend>;
@@ -232,7 +246,7 @@ Dist get_hydrogen_data_parallel_distribution(int num_dims);
 template <typename Tensor>
 void dump_tensor(const Tensor &t, const std::string &path) {
   dc::MPIPrintStreamDebug() << "Dumping tensor to " << path;
-  cudaDeviceSynchronize();
+  h2::gpu::sync();
   distconv::dump_tensor(t, path, true);
 }
 

@@ -82,8 +82,8 @@ protected:
   }
 
   void fp_compute() override;
-
 };
+
 
 #ifndef LBANN_ARGMIN_LAYER_INSTANTIATE
 #define PROTO(T) \

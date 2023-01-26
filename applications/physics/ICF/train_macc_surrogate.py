@@ -4,7 +4,6 @@ from os.path import abspath, dirname, join
 import google.protobuf.text_format as txtf
 import lbann.contrib.launcher
 import lbann.contrib.args
-from lbann.util import str_list
 
 # ==============================================
 # Setup and launch experiment
@@ -89,10 +88,6 @@ args = parser.parse_args()
 
 if not(args.pretrained_dir):
   print("WARNING pretrained dir ", args.pretrained_dir, " is empty, default option assumes pretrained autoencoder")
-
-def list2str(l):
-    return ' '.join(l)
-
 
 if __name__ == '__main__':
     import lbann

@@ -36,7 +36,7 @@ def sample_dims():
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -48,7 +48,7 @@ def setup_experiment(lbann):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -79,7 +79,7 @@ def construct_model(lbann):
     # LBANN implementation
     embedding_weights = lbann.Weights(
         optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(embeddings)))
+        initializer=lbann.ValueInitializer(values=np.nditer(embeddings))
     )
     x = x_lbann
     y = lbann.DistEmbedding(x,
@@ -121,7 +121,7 @@ def construct_model(lbann):
     # LBANN implementation
     embedding_weights = lbann.Weights(
         optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(embeddings)))
+        initializer=lbann.ValueInitializer(values=np.nditer(embeddings))
     )
     x = x_lbann
     y = lbann.DistEmbedding(x,

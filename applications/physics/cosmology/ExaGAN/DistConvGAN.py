@@ -5,9 +5,6 @@ import lbann.modules as lm
 from lbann.core.util import get_parallel_strategy_args
 import numpy as np
 
-def list2str(l):
-    return ' '.join([str(i) for i in l])
-
 class ConvBNRelu(lbann.modules.Module):
     """Convolution -> Batch normalization -> ReLU
 
@@ -225,7 +222,7 @@ class Exa3DGAN(lbann.modules.Module):
 
     def forward_generator(self,z,ps=None):
         x = lbann.FullyConnected(z, num_neurons = np.prod(self.outc_dims), has_bias = True, device=self.g_device)
-        x = lbann.Reshape(x, dims=list2str(self.outc_dims),name='gen_zin_reshape',device=self.g_device)
+        x = lbann.Reshape(x, dims=[self.outc_dims],name='gen_zin_reshape',device=self.g_device)
         x = lbann.Relu(self.g_convT[0](x), name='g_relu0',parallel_strategy=ps,device=self.g_device)
         x = lbann.Relu(self.g_convT[1](x), name='g_relu1',parallel_strategy=ps,device=self.g_device)
         x = lbann.Relu(self.g_convT[2](x), name='g_relu2',parallel_strategy=ps,device=self.g_device)

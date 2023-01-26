@@ -36,7 +36,7 @@ def sample_dims():
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -48,10 +48,14 @@ def setup_experiment(lbann):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
 
 def create_parallel_strategy(num_height_groups):
     return {"height_groups": num_height_groups}
+
+def channelwise_parallel_strategy(num_channel_groups):
+    return {"channel_groups": num_channel_groups,
+            "filter_groups": num_channel_groups}
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -68,9 +72,9 @@ def construct_model(lbann):
                               initializer=lbann.ConstantInitializer(value=0.0),
                               name='input_weights')
     x = lbann.Sum(lbann.Reshape(lbann.Input(data_field='samples'),
-                                dims=tools.str_list(_sample_size)),
+                                dims=_sample_size),
                   lbann.WeightsLayer(weights=x_weights,
-                                     dims=tools.str_list(_sample_size)))
+                                     dims=_sample_size))
     x_lbann = x
 
     # Objects for LBANN model
@@ -90,11 +94,11 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    x = lbann.Reshape(x, dims="4 4 3")
+    x = lbann.Reshape(x, dims=[4, 4, 3])
     y = lbann.Identity(x, data_layout='data_parallel',
                        parallel_strategy=create_parallel_strategy(
                            num_height_groups))
-    x = lbann.Reshape(x, dims="48")
+    x = lbann.Reshape(x, dims=[48])
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
@@ -104,6 +108,40 @@ def construct_model(lbann):
     for i in range(num_samples()):
         x = get_sample(i).astype(np.float64)
         y = x
+        z = tools.numpy_l2norm2(y)
+        vals.append(z)
+    val = np.mean(vals)
+    tol = 8 * val * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
+        lower_bound=val-tol,
+        upper_bound=val+tol,
+        error_on_failure=True,
+        execution_modes='test'))
+
+    # ------------------------------------------
+    # Data-parallel layout with DC and activation
+    # ------------------------------------------
+
+    x = x_lbann
+    x = lbann.Reshape(x, dims=[48, 1, 1])
+    _data = lbann.Identity(x,
+                           name="input_data_distconv",
+                           parallel_strategy=channelwise_parallel_strategy(num_height_groups))
+    _data = lbann.Relu(_data,
+                       name="distconv_activation",
+                       parallel_strategy=channelwise_parallel_strategy(num_height_groups))
+
+    _data = lbann.Reshape(_data, dims=[48])
+    z = lbann.L2Norm2(_data)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='data-parallel w activation'))
+
+    # Numpy implementation
+    vals = []
+    for i in range(num_samples()):
+        x = get_sample(i).astype(np.float64)
+        y = np.maximum(x,0)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -199,7 +237,11 @@ def construct_data_reader(lbann):
 # Setup PyTest
 # ==============================================
 
+# Runtime parameters/arguments
+environment = tools.get_distconv_environment()
+environment['LBANN_KEEP_ERROR_SIGNALS'] = 1
+
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment, __file__,
-                               environment=tools.get_distconv_environment()):
+                               environment=environment):
     globals()[_test_func.__name__] = _test_func

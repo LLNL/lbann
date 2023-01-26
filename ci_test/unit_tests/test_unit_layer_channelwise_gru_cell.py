@@ -66,7 +66,7 @@ def numpy_gru_cell(x, h, w):
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -87,7 +87,7 @@ def setup_experiment(lbann):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.SGD()
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -108,13 +108,13 @@ def construct_model(lbann):
     input_ = lbann.Input(data_field='samples')
     input_slice = lbann.Slice(
         input_,
-        slice_points=tools.str_list([0, _num_channels*_input_size, _sample_size]),
+        slice_points=[0, _num_channels*_input_size, _sample_size],
     )
-    x = lbann.Reshape(input_slice, dims=tools.str_list([_num_channels,_input_size]), name="input_reshape")
-    x = lbann.Sum(x, lbann.WeightsLayer(weights=x_weights, dims=tools.str_list([_num_channels,_input_size])), name="input_sum")
+    x = lbann.Reshape(input_slice, dims=[_num_channels,_input_size], name="input_reshape")
+    x = lbann.Sum(x, lbann.WeightsLayer(weights=x_weights, dims=[_num_channels,_input_size]), name="input_sum")
 
-    h = lbann.Reshape(input_slice, dims=tools.str_list([_num_channels,_hidden_size]),name="hidden_reshape")
-    h = lbann.Sum(h, lbann.WeightsLayer(weights=h_weights, dims=tools.str_list([_num_channels,_hidden_size])), name="input_hidden_sum")
+    h = lbann.Reshape(input_slice, dims=[_num_channels,_hidden_size],name="hidden_reshape")
+    h = lbann.Sum(h, lbann.WeightsLayer(weights=h_weights, dims=[_num_channels,_hidden_size]), name="input_hidden_sum")
 
     x_lbann = x
     h_lbann = h
@@ -144,7 +144,7 @@ def construct_model(lbann):
     rnn_weights_lbann = [
         lbann.Weights(
             initializer=lbann.ValueInitializer(
-                values=tools.str_list(np.nditer(w, order='F'))))
+                values=np.nditer(w, order='F')))
         for w in rnn_weights_numpy
     ]
 

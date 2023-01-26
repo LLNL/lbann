@@ -57,14 +57,26 @@ void construct_std_options()
     LBANN_OPTION_LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE,
     {"--load_model_weights_dir_is_complete"},
     "[STD] Use load_model_weights_dir as given, ignoring checkpoint hierarchy");
-  arg_parser.add_flag(LBANN_OPTION_LTFB_ALLOW_GLOBAL_STATISTICS,
-                      {"--ltfb_allow_global_statistics"},
-                      utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
+  arg_parser.add_flag(
+    LBANN_OPTION_LTFB_ALLOW_GLOBAL_STATISTICS,
+    {"--ltfb_allow_global_statistics"},
+    utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
+    "[STD, deprecated] Allow the print_statistics callback to report "
+    "global (inter-trainer) summary statistics.");
+  arg_parser.add_flag(LBANN_OPTION_LTFB_VERBOSE,
+                      {"--ltfb_verbose"},
+                      utils::ENV("LBANN_LTFB_VERBOSE"),
+                      "[STD, deprecated] Increases number of per-trainer "
+                      "messages that are reported");
+  arg_parser.add_flag(LBANN_OPTION_ALLOW_MULTITRAINER_GLOBAL_STATISTICS,
+                      {"--ltfb_global_multitrainer_statistics"},
+                      utils::ENV("LBANN_ALLOW_MULTITRAINER_GLOBAL_STATISTICS"),
                       "[STD] Allow the print_statistics callback to report "
                       "global (inter-trainer) summary statistics.");
   arg_parser.add_flag(
-    LBANN_OPTION_LTFB_VERBOSE,
-    {"--ltfb_verbose"},
+    LBANN_OPTION_MULTITRAINER_VERBOSE,
+    {"--multitrainer_verbose"},
+    utils::ENV("LBANN_MULTITRAINER_VERBOSE"),
     "[STD] Increases number of per-trainer messages that are reported");
   arg_parser.add_flag(
     LBANN_OPTION_NO_IM_COMM,
@@ -178,21 +190,6 @@ void construct_std_options()
                         {"--num_parallel_readers"},
                         "[STD] The number of parallel data readers",
                         1);
-  arg_parser.add_option(LBANN_OPTION_NUM_TEST_SAMPLES,
-                        {"--num_test_samples"},
-                        utils::ENV("LBANN_NUM_TEST_SAMPLES"),
-                        "[STD] Set the number of testing samples to ingest.",
-                        -1);
-  arg_parser.add_option(LBANN_OPTION_NUM_TRAIN_SAMPLES,
-                        {"--num_train_samples"},
-                        utils::ENV("LBANN_NUM_TRAIN_SAMPLES"),
-                        "[STD] Set the number of training samples to ingest.",
-                        -1);
-  arg_parser.add_option(LBANN_OPTION_NUM_VALIDATE_SAMPLES,
-                        {"--num_validate_samples"},
-                        utils::ENV("LBANN_NUM_VALIDATE_SAMPLES"),
-                        "[STD] Set the number of validate samples to ingest.",
-                        -1);
   arg_parser.add_option(LBANN_OPTION_OPTIMIZER,
                         {"--optimizer"},
                         "[STD] Optimizer input file",
@@ -247,6 +244,13 @@ void construct_std_options()
                         "[STD] Primary grid size per trainer. "
                         "Disables Sub-grid parallelism, when it is 0",
                         0);
+  arg_parser.add_option(LBANN_OPTION_NUM_SUBGRIDS_BLOCK_ORDER,
+                        {"--num-subgrids", "--num-subgrids-block-order"},
+                        utils::ENV("LBANN_NUM_SUBGRIDS"),
+                        "[STD] Divide each trainer into equally-sized "
+                        "sub-grids with blocked ordering",
+                        0);
+
 }
 
 void construct_datastore_options()

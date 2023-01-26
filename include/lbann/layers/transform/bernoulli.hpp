@@ -97,7 +97,6 @@ private:
 
 };
 
-LBANN_DEFINE_LAYER_BUILDER(bernoulli);
 
 #ifndef LBANN_BERNOULLI_LAYER_INSTANTIATE
 

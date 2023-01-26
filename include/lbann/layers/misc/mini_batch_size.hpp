@@ -39,14 +39,11 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class mini_batch_size_layer : public data_type_layer<TensorDataType> {
+class mini_batch_size_layer : public data_type_layer<TensorDataType>
+{
 public:
-
-  mini_batch_size_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm) {
-    this->m_expected_num_parent_layers = 0;
-  }
-
-  mini_batch_size_layer* copy() const override { return new mini_batch_size_layer(*this); }
+  mini_batch_size_layer(lbann_comm* comm);
+  mini_batch_size_layer* copy() const override;
 
   /** @name Serialization */
   ///@{
@@ -56,42 +53,31 @@ public:
 
   ///@}
 
-  std::string get_type() const override { return "mini-batch size"; }
-  data_layout get_data_layout() const override { return Layout; }
-  El::Device get_device_allocation() const override { return Device; }
+  std::string get_type() const override;
+  data_layout get_data_layout() const override;
+  El::Device get_device_allocation() const override;
 
 protected:
-
   friend class cereal::access;
-  mini_batch_size_layer()
-    : mini_batch_size_layer(nullptr)
-  {}
+  mini_batch_size_layer() : mini_batch_size_layer(nullptr) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-    this->set_output_dims({1});
-  }
-
-  void fp_setup_outputs(El::Int mini_batch_size) override {
-    data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
-    m_mini_batch_size = mini_batch_size;
-  }
-
-  void fp_compute() override {
-    El::Fill(this->get_activations(), El::To<TensorDataType>(m_mini_batch_size));
-  }
+  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void fp_setup_outputs(El::Int mini_batch_size) override;
+  void fp_compute() override;
 
 private:
-
   /** Mini-batch size. */
   El::Int m_mini_batch_size = 0;
-
 };
 
 #ifndef LBANN_MINI_BATCH_SIZE_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class mini_batch_size_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  extern template class mini_batch_size_layer<T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class mini_batch_size_layer<T,                               \
+                                              data_layout::DATA_PARALLEL,      \
+                                              Device>;                         \
+  extern template class mini_batch_size_layer<T,                               \
+                                              data_layout::MODEL_PARALLEL,     \
+                                              Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

@@ -412,7 +412,6 @@ extern template class dist_embedding_layer<
 namespace lbann
 {
 
-LBANN_DEFINE_LAYER_BUILDER(dist_embedding);
 
 } // namespace lbann
 

@@ -6,7 +6,6 @@ import os.path
 import sys
 import numpy as np
 import pytest
-from lbann.util import str_list
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -39,7 +38,7 @@ def sample_dims():
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -50,7 +49,7 @@ def setup_experiment(lbann):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
 
 def construct_trainer(lbann, ):
     """Construct LBANN trainer and training algorithm.
@@ -104,9 +103,9 @@ def construct_model(lbann):
 
     # Inputs and error signals are from data reader
     input_ = lbann.Input(data_field='samples')
-    input_slice = lbann.Slice(input_, slice_points=str_list([0,_in_size,_in_size+_out_size]))
-    x = lbann.Reshape(input_slice, dims=str_list([-1,1,1]))
-    dy = lbann.Reshape(input_slice, dims=str_list([-1,1,1]))
+    input_slice = lbann.Slice(input_, slice_points=[0,_in_size,_in_size+_out_size])
+    x = lbann.Reshape(input_slice, dims=[-1,1,1])
+    dy = lbann.Reshape(input_slice, dims=[-1,1,1])
 
     # Convolution layer
     w = lbann.Weights(
@@ -117,13 +116,12 @@ def construct_model(lbann):
         x,
         weights=w,
         num_dims=2,
-        num_output_channels=_out_size,
-        num_groups=1,
-        has_vectors=False,
-        conv_dims_i=1,
-        conv_pads_i=0,
-        conv_strides_i=1,
-        conv_dilations_i=1,
+        out_channels=_out_size,
+        groups=1,
+        kernel_size=1,
+        padding=0,
+        stride=1,
+        dilation=1,
         has_bias=False,
     )
     obj = lbann.Reduction(lbann.Multiply(y, dy))
@@ -135,11 +133,11 @@ def construct_model(lbann):
     # Extract weights entries
     w = lbann.WeightsLayer(
         weights=w,
-        dims=str_list([_out_size,_in_size,1,1]),
+        dims=[_out_size,_in_size,1,1],
     )
     w = lbann.Slice(
-        lbann.Reshape(w, dims=str_list([-1])),
-        slice_points=str_list(range(_out_size*_in_size+1)),
+        lbann.Reshape(w, dims=[-1]),
+        slice_points=range(_out_size*_in_size+1),
     )
     w = [lbann.Identity(w) for _ in range(_out_size*_in_size)]
 

@@ -1,9 +1,6 @@
 import lbann
 import lbann.modules.base
 
-def list2str(l):
-    return ' '.join(str(l))
-
 #FC, Activation, Dropout for each track in Combo network
 class TrackModule(lbann.modules.Module):
 
@@ -14,8 +11,8 @@ class TrackModule(lbann.modules.Module):
        self.instance = 0
        self.name = (name if name
                      else 'combo{0}'.format(TrackModule.global_count))
-      
-       self.kp = keep_prob 
+
+       self.kp = keep_prob
        fc = lbann.modules.FullyConnectedModule
        if(weights):
          self.track_fc = [fc(neuron_dims[i],activation=activation,weights=[weights[2*i],weights[2*i+1]], name=self.name+'fc'+str(i))
@@ -23,12 +20,12 @@ class TrackModule(lbann.modules.Module):
        else:
          self.track_fc = [fc(neuron_dims[i],activation=activation, name=self.name+'fc'+str(i))
                       for i in range(len(neuron_dims))]
-      
+
     def forward(self,x):
         return lbann.Dropout(self.track_fc[2](
                      lbann.Dropout(self.track_fc[1](
                      lbann.Dropout(self.track_fc[0](x),keep_prob=self.kp)),keep_prob=self.kp)),keep_prob=self.kp)
- 
+
 
 class Combo(lbann.modules.Module):
 
@@ -40,7 +37,7 @@ class Combo(lbann.modules.Module):
                      else 'combo{0}'.format(Combo.global_count))
 
 
-       #shared weights for drug 1 and 2 tracks 
+       #shared weights for drug 1 and 2 tracks
        shared_w=[]
        for i in range(len(neuron_dims)):
          shared_w.append(lbann.Weights(initializer=lbann.HeNormalInitializer(),
@@ -53,13 +50,12 @@ class Combo(lbann.modules.Module):
        self.drug1T = TrackModule(neuron_dims,activation, keep_prob, shared_w, name=self.name+'drug1_track')
        self.drug2T = TrackModule(neuron_dims, activation, keep_prob,shared_w, name = self.name+'drug2_track')
        self.concatT = TrackModule(neuron_dims, activation, keep_prob, name=self.name+'concat_track')
-      
+
     def forward(self,x):
-         x_slice = lbann.Slice(x, axis=0, slice_points="0 921 4750 8579",name='inp_slice')
+         x_slice = lbann.Slice(x, axis=0, slice_points=[0, 921, 4750, 8579],name='inp_slice')
          gene = self.geneT(lbann.Identity(x_slice))
          drug1 = self.drug1T(lbann.Identity(x_slice))
          drug2 = self.drug2T(lbann.Identity(x_slice))
          concat = self.concatT(lbann.Concatenation([gene, drug1, drug2], name=self.name+'concat'))
-         response_fc = lbann.FullyConnected(concat,num_neurons = 1, has_bias = True) 
+         response_fc = lbann.FullyConnected(concat,num_neurons = 1, has_bias = True)
          return response_fc
-         

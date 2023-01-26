@@ -26,29 +26,25 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
   batchwise_reduce_sum.cpp
-  batchwise_reduce_sum_builder.cpp
   bernoulli.cpp
   categorical_random.cpp
   concatenate.cpp
-  concatenate_builder.cpp
   constant.cpp
   crop.cpp
-  crop_builder.cpp
   cross_grid_sum_slice.cpp
   cross_grid_sum.cpp
   discrete_random.cpp
   dummy.cpp
   evaluation.cpp
   gather.cpp
-  gather_builder.cpp
   gaussian.cpp
   hadamard.cpp
+  identity_zero.cpp
   in_top_k.cpp
   pooling.cpp
   reduction.cpp
   reshape.cpp
   scatter.cpp
-  scatter_builder.cpp
   slice.cpp
   sort.cpp
   split.cpp
@@ -59,9 +55,29 @@ set_full_path(THIS_DIR_SOURCES
   unpooling.cpp
   weighted_sum.cpp
   weights.cpp
-  )
+
+  transform_builders.cpp
+)
 
 if (LBANN_HAS_GPU)
+  if (LBANN_HAS_TENSOR_PERMUTE)
+    list(APPEND THIS_DIR_SOURCES
+      "${CMAKE_CURRENT_SOURCE_DIR}/permute/permuteimpl.hpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/permute/tensor_dims_utils.hpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/permute.cpp"
+    )
+    if (LBANN_HAS_CUTENSOR)
+      list(APPEND THIS_DIR_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/permute/cutensor_support.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/permute/cutensor_permuteimpl.hpp"
+      )
+    elseif (LBANN_HAS_CUTT OR LBANN_HAS_HIPTT)
+      list(APPEND THIS_DIR_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/permute/cutt_permuteimpl.hpp"
+      )
+    endif ()
+  endif (LBANN_HAS_TENSOR_PERMUTE)
+
   # Add the CUDA source files for this directory
   set_full_path(THIS_DIR_CU_SOURCES
     concatenate.cu

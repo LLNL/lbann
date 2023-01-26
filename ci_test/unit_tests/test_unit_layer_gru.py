@@ -76,7 +76,7 @@ def numpy_gru(x, h, w):
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -97,7 +97,7 @@ def setup_experiment(lbann):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.SGD()
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -117,11 +117,11 @@ def construct_model(lbann):
     input_ = lbann.Input(data_field='samples')
     input_slice = lbann.Slice(
         input_,
-        slice_points=tools.str_list([0, _sequence_length*_input_size, _sample_size]),
+        slice_points=[0, _sequence_length*_input_size, _sample_size],
     )
-    x = lbann.Reshape(input_slice, dims=tools.str_list([_sequence_length,_input_size]))
+    x = lbann.Reshape(input_slice, dims=[_sequence_length,_input_size])
     x = lbann.Sum(x, lbann.WeightsLayer(weights=x_weights, hint_layer=x))
-    h = lbann.Reshape(input_slice, dims=tools.str_list([_num_layers,_input_size]),)
+    h = lbann.Reshape(input_slice, dims=[_num_layers,_input_size],)
     h = lbann.Sum(h, lbann.WeightsLayer(weights=h_weights, hint_layer=h))
     x_lbann = x
     h_lbann = h
@@ -156,7 +156,7 @@ def construct_model(lbann):
     rnn_weights_lbann = [
         lbann.Weights(
             initializer=lbann.ValueInitializer(
-                values=tools.str_list(np.nditer(w, order='F'))))
+                values=np.nditer(w, order='F')))
         for w in rnn_weights_numpy
     ]
 
@@ -216,7 +216,7 @@ def construct_model(lbann):
     rnn_weights_lbann = [
         lbann.Weights(
             initializer=lbann.ValueInitializer(
-                values=tools.str_list(np.nditer(w, order='F'))))
+                values=np.nditer(w, order='F')))
         for w in rnn_weights_numpy
     ]
 
@@ -225,10 +225,10 @@ def construct_model(lbann):
     h = h_lbann
     h = lbann.Reshape(
         lbann.Slice(
-            lbann.Reshape(h, dims='-1'),
-            slice_points=tools.str_list([0, hidden_size]),
+            lbann.Reshape(h, dims=[-1]),
+            slice_points=[0, hidden_size],
         ),
-        dims='1 -1',
+        dims=[1, -1],
     )
     y = lbann.GRU(
         x,

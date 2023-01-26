@@ -35,7 +35,7 @@ def sample_dims():
 # Setup LBANN experiment
 # ==============================================
 
-def setup_experiment(lbann):
+def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
 
     Args:
@@ -47,7 +47,7 @@ def setup_experiment(lbann):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
-    return trainer, model, data_reader, optimizer
+    return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -62,7 +62,7 @@ def construct_model(lbann):
     # with a weights layer so that gradient checking will verify that
     # error signals are correct.
     x = lbann.Input(data_field='samples')
-    x = lbann.Slice(x, slice_points=tools.str_list([0,_sample_size-1,_sample_size]))
+    x = lbann.Slice(x, slice_points=[0,_sample_size-1,_sample_size])
     x1 = lbann.Identity(x)
     x2 = lbann.Identity(x)
     x1_weights = lbann.Weights(
