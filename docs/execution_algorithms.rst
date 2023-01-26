@@ -67,9 +67,9 @@ Python Front-end API Documentation
 
 .. _TrainingAlgorithm:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-lbann.TrainingAlgorithm module
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+lbann.TrainingAlgorithm interface
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. py:class:: TrainingAlgorithm()
 
