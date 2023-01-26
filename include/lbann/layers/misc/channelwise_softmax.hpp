@@ -41,7 +41,7 @@
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
-template <typename TensorDataDtype, data_layout Layout, El::Device Device>
+template <typename TensorDataType, data_layout Layout, El::Device Device>
 class channelwise_softmax_distconv_adapter
   : public data_type_distconv_adapter<TensorDataType>{
   public:
@@ -55,7 +55,6 @@ class channelwise_softmax_distconv_adapter
     void setup_layer(size_t workspace_capacity) override; 
     void fp_compute();
     void bp_compute();
-    dc::Shape get_activations_local_shape(int index=0) const override;
     std::unique_ptr<dc::ChannelwiseSoftmax<TensorDataType>> m_channelwise_softmax_operator; 
   }; // class definition channelwise_softmax_distconv_adapter 
 
@@ -230,7 +229,7 @@ channelwise_softmax_distconv_adapter<TensorDataType, Layout, Device>
 ::setup_layer(size_t workspace_capacity){
   data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
 
-  m_channelwise_softmax_operator = std::make_unique<dc::MatMul<TensorDataType>>(dc::get_backend());
+  m_channelwise_softmax_operator = std::make_unique<dc::ChannelwiseSoftmax<TensorDataType>>(dc::get_backend());
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -239,6 +238,8 @@ channelwise_softmax_distconv_adapter<TensorDataType, Layout, Device>
 ::fp_compute(){
   auto &layer = dynamic_cast<
     channelwise_softmax_layer<TensorDataType, Layout, Device>&>(this->layer());
+  m_channelwise_softmax_operator->forward(this->get_prev_activations(0),
+                                          this->get_activations(0));
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -247,6 +248,7 @@ channelwise_softmax_distconv_adapter<TensorDataType, Layout, Device>
 ::bp_compute(){
   auto &layer = dynamic_cast<
     channelwise_softmax_layer<TensorDataType, Layout, Device>&>(this->layer());
+    m_channelwise_softmax_operator->backward();
 }
 // =============================================================
 // DistConv-enabled Channelwise-Softmax member functions

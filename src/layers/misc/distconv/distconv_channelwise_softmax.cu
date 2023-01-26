@@ -107,6 +107,50 @@ __global__ void fp_max_kernel(
 
 }
 
+/** Compute softmax.
+ *
+ *  y_i = exp(x_i-shift) / denom
+ *
+ *  Block dimensions: bdimx x bdimy x bdimz
+ *
+ *  Grid dimensions: (input_dims[2] / bdimx) x (input_dims[1] / bdimy) x (input_dims[0] / bdimz)
+ *
+ *  shifts and denoms are fully-packed 2D tensors with dimensions of
+ *  input_dims[0] x input_dims[1].
+ */
+template <typename TensorDataType>
+__global__ void fp_output_kernel(
+  Size3 input_dims,
+  const TensorDataType* __restrict__ input_buffer,
+  Size3 input_strides,
+  TensorDataType* __restrict__ output_buffer,
+  Size3 output_strides,
+  const TensorDataType* __restrict__ shifts,
+  const TensorDataType* __restrict__ denoms) {
+
+  const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
+  const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
+  const size_t gidz = threadIdx.z + blockIdx.z * blockDim.z;
+  const size_t nthreadsx = blockDim.x * gridDim.x;
+  const size_t nthreadsy = blockDim.y * gridDim.y;
+  const size_t nthreadsz = blockDim.z * gridDim.z;
+  for (size_t k = gidz; k < input_dims[0]; k += nthreadsz) {
+    for (size_t j = gidy; j < input_dims[1]; j += nthreadsy) {
+      const auto& shift = shifts[j + k*input_dims[1]];
+      const auto& denom = denoms[j + k*input_dims[1]];
+      for (size_t i = gidx; i < input_dims[2]; i += nthreadsx) {
+        const auto& x = input_buffer[k * input_strides[0]
+                                     + j * input_strides[1]
+                                     + i * input_strides[2]];
+        auto& y = output_buffer[k * output_strides[0]
+                                + j * output_strides[1]
+                                + i * output_strides[2]];
+        y = gpu_lib::exp(x-shift) / denom;
+      }
+    }
+  }
+}
+
 } // Namespace <anon>
 
 
@@ -229,7 +273,115 @@ __global__ void bp_input_grad_kernel(
   ::forward(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input_0,
             tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output){
 
+    if (input_0.get_local_size() == 0 || output.get_local_size()){
+      return 1; // no op for empty inputs
+    }
 
+    const auto& input_0_dims = input_0.get_local_shape();
+    
+    const auto num_channels = input_0_dims[2];
+    const auto local_mini_batch_size = input_0_dims[3];
+    const auto mat_channel_size = input_0_dims[0] * input_0_dims[1];
+    const auto mat_stride = num_channels * mat_channel_size;
+
+    // Convert to Hydrogen matrices for kernel launch
+
+    using LocalMat = El::Matrix<DataType, El::Device::GPU>;
+
+    LocalMat local_input(mat_stride,
+                        local_mini_batch_size,
+                        input_0.get_buffer(),
+                        mat_stride);
+
+    LocalMat local_output(mat_stride,
+                          local_mini_batch_size,
+                          output.get_buffer(),
+                          mat_stride);
+    {
+      using namespace hydrogen;
+      using Size3 = gpu_lib::array<size_t,3>;
+
+      auto  multisync = MakeMultiSync(El::SyncInfoFromMatrix(local_input),
+                                      El::SyncInfoFromMatrix(local_output));
+
+      LocalMat local_shifts;
+      if (!local_input.IsEmpty()) {
+        constexpr size_t block_size = 256;
+        dim3 block_dims, grid_dims;
+        block_dims.x = block_size;
+        grid_dims.x = (channel_size + block_size - 1) / block_size;
+        grid_dims.y = num_channels;
+        grid_dims.z = local_mini_batch_size;
+        gpu_lib::clip_grid_dims(grid_dims);
+        LocalMat maxvals(grid_dims.x * num_channels, local_mini_batch_size);
+        hydrogen::gpu::LaunchKernel(
+          fp_max_kernel<TensorDataType, block_size>,
+          grid_dims, block_dims, 0, multisync,
+          Size3{local_mini_batch_size, num_channels, channel_size},
+          local_input.LockedBuffer(),
+          Size3{static_cast<size_t>(local_input.LDim()), channel_size, 1},
+          maxvals.Buffer(),
+          Size3{static_cast<size_t>(maxvals.LDim()), grid_dims.x, 1});
+        while (grid_dims.x > 1) {
+          const size_t prev_dim = grid_dims.x;
+          grid_dims.x = (prev_dim + block_size - 1) / block_size;
+          const LocalMat prev_maxvals(std::move(maxvals));
+          maxvals.Resize(grid_dims.x * num_channels, local_mini_batch_size);
+          hydrogen::gpu::LaunchKernel(
+            fp_max_kernel<TensorDataType, block_size>,
+            grid_dims, block_dims, 0, multisync,
+            Size3{local_mini_batch_size, num_channels, prev_dim},
+            prev_maxvals.LockedBuffer(),
+            Size3{static_cast<size_t>(prev_maxvals.LDim()), prev_dim, 1},
+            maxvals.Buffer(),
+            Size3{static_cast<size_t>(maxvals.LDim()), grid_dims.x, 1});
+        }
+        local_shifts = std::move(maxvals);
+      }
+
+      // Compute softmax denominators
+      LocalMat local_denoms(num_channels, local_mini_batch_size);
+      El::Zero(local_denoms);
+      if (!local_input.IsEmpty()) {
+        constexpr size_t block_size = 256;
+        dim3 block_dims, grid_dims;
+        block_dims.x = block_size;
+        grid_dims.x = (channel_size + block_size - 1) / block_size;
+        grid_dims.y = num_channels;
+        grid_dims.z = local_mini_batch_size;
+        gpu_lib::clip_grid_dims(grid_dims);
+        hydrogen::gpu::LaunchKernel(
+          fp_denom_kernel<TensorDataType, block_size>,
+          grid_dims, block_dims, 0, multisync,
+          Size3{local_mini_batch_size, num_channels, channel_size},
+          local_input.LockedBuffer(),
+          Size3{static_cast<size_t>(local_input.LDim()), channel_size, 1},
+          local_shifts.LockedBuffer(),
+          local_denoms.Buffer());
+      }
+
+      // Compute softmax
+      if (!local_input.IsEmpty()) {
+        constexpr size_t block_size = 256;
+        dim3 block_dims, grid_dims;
+        block_dims.x = block_size;
+        grid_dims.x = (channel_size + block_size - 1) / block_size;
+        grid_dims.y = num_channels;
+        grid_dims.z = local_mini_batch_size;
+        gpu_lib::clip_grid_dims(grid_dims);
+        hydrogen::gpu::LaunchKernel(
+          fp_output_kernel<TensorDataType>,
+          grid_dims, block_dims, 0, multisync,
+          Size3{local_mini_batch_size, num_channels, channel_size},
+          local_input.LockedBuffer(),
+          Size3{static_cast<size_t>(local_input.LDim()), channel_size, 1},
+          local_output.Buffer(),
+          Size3{static_cast<size_t>(local_output.LDim()), channel_size, 1},
+          local_shifts.LockedBuffer(),
+          local_denoms.LockedBuffer());
+      }
+ 
+    }  // namespace hydrogen
     return 1;        
   }
 

@@ -149,7 +149,7 @@ template <typename TensorDataType>
 using BatchNormalization = ::distconv::BatchNormalization<Backend, TensorDataType>;
 template <typename TensorDataType>
 using MatMul = ::distconv::MatMul<Backend, TensorDataType>;
-template <typename TensorDataTyoe>
+template <typename TensorDataType>
 using ChannelwiseSoftmax = ::distconv::ChannelwiseSoftmax<Backend, TensorDataType>;
 using Softmax = ::distconv::Softmax<Backend>;
 using CrossEntropy = ::distconv::CrossEntropy<Backend>;

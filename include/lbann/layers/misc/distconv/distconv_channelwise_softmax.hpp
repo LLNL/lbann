@@ -39,15 +39,13 @@ namespace distconv{
     template <typename Allocator>
     int forward(
       const tensor::Tensor<DataType, LocaleMPI, Allocator> &input_0,
-      tensor::Tensor<DataType, LocaleMPI, Allocator> &output;
-    );
+      tensor::Tensor<DataType, LocaleMPI, Allocator> &output);
 
     template <typename Allocator>
     int backward(
       const tensor::Tensor<DataType, LocaleMPI, Allocator> &input_0,
       const tensor::Tensor<DataType, LocaleMPI, Allocator> &output_grad,
-      tensor::Tensor<DataType, LocaleMPI, Allocator> &input_grad_0,
-    );
+      tensor::Tensor<DataType, LocaleMPI, Allocator> &input_grad_0);
 
     protected:
       Backend &m_be;
