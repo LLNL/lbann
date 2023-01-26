@@ -28,6 +28,7 @@ set_full_path(THIS_DIR_HEADERS
   bilinear_resize.hpp
   rotation.hpp
   composite_image_transformation.hpp
+  cutout.hpp
   )
 
 # Propagate the files up the tree
