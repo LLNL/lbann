@@ -129,8 +129,18 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(El::Int mini_b
     c.set_effective_mini_batch_size(effective_mini_batch_size);
   }
 
-  // Initialize matrices
-  data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
+  // Activation matrices are initalized in setup_data and further
+  // managed in the distribute_from_local_matrix function of the
+  // data_coordinator.
+  // However, on the first pass through the execution algorithm it
+  // is necessary to setup the size of the matrix.
+  for (int i = 0; i < this->get_num_children(); ++i) {
+    auto& output = this->get_activations(i);
+    if (!output.Viewing()) {
+      output.Empty(false);
+      output.Resize(this->get_output_size(i), mini_batch_size);
+    }
+  }
 }
 
 template <typename TensorDataType,
@@ -234,7 +244,9 @@ input_distconv_adapter(
 
   // Input data is only processed when its consumer layer is also
   // enabled for distconv
-  m_is_input_processed = layer.get_child_layer().distconv_enabled();
+  m_is_input_processed = (m_data_field == INPUT_DATA_TYPE_SAMPLES)
+      || layer.get_child_layer().distconv_enabled();
+
 }
 
 template <typename TensorDataType,
@@ -312,7 +324,11 @@ void input_distconv_adapter<TensorDataType, T_layout, Dev>::setup_fp_tensors() {
       // only specialized for BaseAllocator.
       size_t buf_size = m_host_tensor->get_local_real_size() * sizeof(TensorDataType);
       TensorDataType *buf = nullptr;
+#if H2_HAS_CUDA
       CHECK_CUDA(cudaMallocHost(&buf, buf_size));
+#elif H2_HAS_ROCM
+      CHECK_ROCM(hipHostMalloc(&buf, buf_size));
+#endif
       // Note buf should be deallocated.
       dc::tensor::View(*m_host_tensor, buf);
       setup_shuffler_buffers(*m_original_host_tensor,
@@ -322,6 +338,7 @@ void input_distconv_adapter<TensorDataType, T_layout, Dev>::setup_fp_tensors() {
   }
 
   this->setup_activations();
+  this->setup_original_activations();
 }
 
 template <typename TensorDataType,
@@ -346,7 +363,7 @@ setup_activations_i(int index) const {
     const auto local_shape = get_activations_local_shape(index);
     auto t = std::make_unique<TensorDevType>(shape, loc, dist, local_shape);
     assert0(t->allocate());
-    t->zero(hydrogen::cuda::GetDefaultStream());
+    t->zero(default_hydrogen_stream());
     return t;
   }
   else {
@@ -442,7 +459,7 @@ template <typename TensorDataType,
 void input_distconv_adapter<TensorDataType, T_layout, Dev>::fp_compute() {
   auto &l = dynamic_cast<input_layer<
     TensorDataType, T_layout, Dev>&>(this->layer());
-  auto stream = hydrogen::cuda::GetDefaultStream();
+  auto stream = default_hydrogen_stream();
   // Note that the mini-batch size of the data reader is not
   // actually the one for the current mini-batch as the mini-batch
   // index is already updated by fp_compute.

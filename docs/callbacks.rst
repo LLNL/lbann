@@ -86,6 +86,7 @@ Available Callbacks
    Summarize images <callbacks/summarize_images>
 
 ..
+   Alternate updates <callbacks/alternate_updates>
    Check dataset <callbacks/check_dataset>
    Check gradients <callbacks/check_gradients>
    Check init <callbacks/check_init>

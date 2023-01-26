@@ -32,7 +32,129 @@
 #endif // LBANN_HAS_GPU
 #include <layers.pb.h>
 #include<iostream>
-namespace lbann {
+namespace lbann 
+{
+
+#ifdef LBANN_HAS_DISTCONV
+
+// =========================================================
+// DistConv-Adapter member functions
+// =========================================================
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+matmul_distconv_adapter<TensorDataType, Layout, Device>
+::setup_distributions(tensor_overlap_constraints &constraints){
+
+  data_type_distconv_adapter<TensorDataType>::setup_distributions(constraints);
+
+  for (auto &d: this->m_prev_activations_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_activations_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_prev_error_signals_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_error_signals_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+matmul_distconv_adapter<TensorDataType, Layout, Device>
+::setup_layer(size_t workspace_capacity){
+  data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
+
+  m_matmul_operator = std::make_unique<dc::MatMul<TensorDataType>>(dc::get_backend());
+}
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+matmul_distconv_adapter<TensorDataType, Layout, Device>
+::fp_compute(){
+  auto &layer = dynamic_cast<
+    matmul_layer<TensorDataType, Layout, Device>&>(this->layer());
+  m_matmul_operator->forward(this->get_prev_activations(0),
+                             this->get_prev_activations(1),
+                             this->get_activations(0),
+                             layer.m_transpose_a,
+                             layer.m_transpose_b);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+matmul_distconv_adapter<TensorDataType, Layout, Device>
+::bp_compute(){
+  auto &layer = dynamic_cast<
+    matmul_layer<TensorDataType, Layout, Device>&>(this->layer());
+  m_matmul_operator->backward(this->get_prev_activations(0),
+                              this->get_prev_activations(1),
+                              this->get_prev_error_signals(),
+                              this->get_error_signals(0),
+                              this->get_error_signals(1),
+                              layer.m_transpose_a,
+                              layer.m_transpose_b);
+}
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+dc::Shape
+matmul_distconv_adapter<TensorDataType, Layout, Device>
+::get_activations_local_shape(int index) const{
+  const auto &layer = dynamic_cast<
+    const matmul_layer<TensorDataType, Layout, Device>&>(this->layer());
+  const auto output_shape = 
+  ::distconv::get_matmul_local_tensor_shape(
+    this->get_prev_activations(0),
+    this->get_prev_activations(1),
+    layer.m_transpose_a,
+    layer.m_transpose_b);
+  return output_shape; 
+}
+// =============================================================
+// DistConv-enabled MatMul member functions
+// =============================================================
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+bool
+matmul_layer<TensorDataType, Layout, Device>
+::is_distconv_supported() const {
+  return Device==El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+matmul_layer<TensorDataType, Layout, Device>
+::setup_distconv_adapter(const DataReaderMetaData& dr_metadata){
+  this->get_distconv_adapter_ptr() = std::make_unique<matmul_distconv_adapter<
+    TensorDataType, Layout, Device>>(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+const matmul_distconv_adapter<TensorDataType, Layout, Device>&
+matmul_layer<TensorDataType, Layout, Device>
+::get_distconv_adapter() const{
+  return dynamic_cast<const matmul_distconv_adapter< 
+    TensorDataType, Layout, Device>&>(data_type_layer<TensorDataType>::get_distconv_adapter());
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+matmul_distconv_adapter<TensorDataType, Layout, Device>&
+matmul_layer<TensorDataType, Layout, Device>
+::get_distconv_adapter(){
+  return const_cast<matmul_distconv_adapter<TensorDataType, Layout, Device>&>(
+    static_cast<const matmul_layer<TensorDataType, Layout, Device>&>(*this).get_distconv_adapter());
+}
+
+#endif //  LBANN_HAS_DISTCONV
 
 template <typename TensorDataType>
 void fp_compute_impl(matmul_layer<TensorDataType,data_layout::DATA_PARALLEL,El::Device::CPU>& l,
@@ -377,10 +499,29 @@ void matmul_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void matmul_layer<TensorDataType, Layout, Device>::fp_compute() {
+
+  #ifdef LBANN_HAS_DISTCONV
+  // We are guaranteed to have
+  if(this->distconv_enabled()){
+    this->get_distconv_adapter().fp_compute();
+    return ;
+  }
+  #endif // LBANN_HAS_DISTCONV
+
   fp_compute_impl(*this, m_transpose_a, m_transpose_b);
 }
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void matmul_layer<TensorDataType, Layout, Device>::bp_compute() {
+  
+  #ifdef LBANN_HAS_DISTCONV
+  // We are guaranteed to have
+  if(this->distconv_enabled()){
+    this->get_distconv_adapter().bp_compute();
+    return ;
+  }
+
+  #endif // LBANN_HAS_DISTCONV
+
   bp_compute_impl(*this, m_transpose_a, m_transpose_b);
 }
 

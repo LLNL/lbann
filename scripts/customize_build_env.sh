@@ -49,10 +49,6 @@ set_center_specific_gpu_arch()
                 GPU_ARCH_VARIANTS="cuda_arch=70"
                 CMAKE_GPU_ARCH="70"
                 ;;
-            "power8le") # Ray
-                GPU_ARCH_VARIANTS="cuda_arch=60"
-                CMAKE_GPU_ARCH="60"
-                ;;
             "broadwell") # Pascal
                 GPU_ARCH_VARIANTS="cuda_arch=60"
                 CMAKE_GPU_ARCH="60"
@@ -70,6 +66,10 @@ set_center_specific_gpu_arch()
             "zen" | "zen2") # Corona
                 # Use a HIP Clang variant
                 GPU_ARCH_VARIANTS="amdgpu_target=gfx906"
+                ;;
+            "zen3") # Tioga, RZVernal
+                # Use a HIP Clang variant
+                GPU_ARCH_VARIANTS="amdgpu_target=gfx90a"
                 ;;
             *)
                 ;;
@@ -96,22 +96,23 @@ set_center_specific_modules()
         # Disable the StdEnv for systems in LC
         case ${spack_arch_target} in
             "power9le") # Lassen
-                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2"
-                # MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2 essl/6.2.1"
-                ;;
-            "power8le") # Ray
-                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2"
+                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.6.1 spectrum-mpi/rolling-release python/3.7.2"
                 # MODULE_CMD="module --force unload StdEnv; module load clang/12.0.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2 essl/6.2.1"
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
-                MODULE_CMD_GCC="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.4.1 mvapich2/2.3 python/3.7.2"
-                MODULE_CMD_CLANG="module --force unload StdEnv; module load clang/12.0.1 cuda/11.4.1 mvapich2/2.3.6 python/3.7.2"
+                MODULE_CMD_GCC="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.6.1 mvapich2/2.3 python/3.7.2"
+                MODULE_CMD_CLANG="module --force unload StdEnv; module load clang/12.0.1 cuda/11.6.1 mvapich2/2.3.6 python/3.7.2"
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
                 MODULE_CMD="module --force unload StdEnv; module load gcc/10.2.1 mvapich2/2.3 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
-                MODULE_CMD="module load gcc-tce/10.2.1 rocm/4.5.2; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1"
+                MODULE_CMD="module load StdEnv gcc-tce/10.3.1 cmake/3.23.1 openmpi-tce/4.1.2 rocm/5.3.0"
+#                MODULE_CMD="module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2"
+                # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
+                ;;
+            "zen3") # Tioga, RZVernal
+                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.09.0 amd/5.3.0 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-amd/8.3.3 StdEnv cmake/3.23.1"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -171,34 +172,36 @@ set_center_specific_spack_dependencies()
         case ${spack_arch_target} in
             "power9le") # Lassen
                 CENTER_COMPILER="%gcc"
-                CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp ^cuda@11.1.105 ^libtool@2.4.2 ^python@3.9.10"
+                CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp ^cuda@11.6.112 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 CENTER_BLAS_LIBRARY="blas=openblas"
                 # CENTER_COMPILER="%clang"
                 # CENTER_DEPENDENCIES="^spectrum-mpi ^cuda@11.1.105 ^libtool@2.4.2 ^python@3.9.10"
                 # CENTER_BLAS_LIBRARY="blas=essl"
                 ;;
-            "power8le") # Ray
-                CENTER_COMPILER="%gcc"
-                CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp ^cuda@11.1.105 ^libtool@2.4.2 ^python@3.9.10"
-                CENTER_BLAS_LIBRARY="blas=openblas"
-                # CENTER_COMPILER="%clang"
-                # CENTER_DEPENDENCIES="%clang ^spectrum-mpi ^cuda@11.1.105 ^libtool@2.4.2 ^py-packaging@17.1 ^python@3.9.10 ^py-scipy@1.6.3"
-                # CENTER_BLAS_LIBRARY="blas=essl"
-                ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_COMPILER="%clang"
-                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10"
+                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_COMPILER="%gcc"
-                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10"
+                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_COMPILER="%rocmcc@4.5.2"
-                CENTER_DEPENDENCIES="^openmpi@4.1.1 ^hip@4.5.2 ^python@3.9.10"
+                CENTER_COMPILER="%rocmcc@5.3.0"
+                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.3.0 ^python@3.9.12"
+#                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.2.0 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
+                CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
+                ;;
+            "zen3") # Tioga, RZVernal
+                CENTER_COMPILER="%rocmcc@5.3.0"
+                CENTER_DEPENDENCIES="^cray-mpich@8.1.19 ^hip@5.3.0 ^python@3.9.12"
+                CENTER_BLAS_LIBRARY="blas=libsci"
+                # Override the conduit variants for the cray compilers
+                CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis~blt_find_mpi"
+                CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
                 ;;
             *)
                 echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
@@ -241,6 +244,10 @@ set_center_specific_spack_dependencies()
     elif [[ ${center} = "osx" ]]; then
         case ${spack_arch_target} in
             "skylake")
+                CENTER_DEPENDENCIES="^hdf5+hl"
+                CENTER_BLAS_LIBRARY="blas=accelerate"
+                ;;
+            "m1")
                 CENTER_DEPENDENCIES="^hdf5+hl"
                 CENTER_BLAS_LIBRARY="blas=accelerate"
                 ;;
@@ -300,39 +307,95 @@ cat <<EOF  >> ${yaml}
     hipcub:
       buildable: False
       version:
-      - 4.5.2
+      - 5.3.0
       externals:
-      - spec: hipcub@4.5.2 arch=${spack_arch}
-        prefix: /opt/rocm-4.5.2/hipcub
+      - spec: hipcub@5.3.0 arch=${spack_arch}
+        prefix: /opt/rocm-5.3.0/hipcub
         extra_attributes:
           compilers:
-            c: /opt/rocm-4.5.2/llvm/bin/clang
-            c++: /opt/rocm-4.5.2/llvm/bin/clang++
+            c: /opt/rocm-5.3.0/llvm/bin/clang
+            c++: /opt/rocm-5.3.0/llvm/bin/clang++
     llvm-amdgpu:
       buildable: False
       version:
-      - 4.5.2
+      - 5.3.0
       externals:
-      - spec: llvm-amdgpu@4.5.2 arch=${spack_arch}
-        prefix: /opt/rocm-4.5.2/llvm
+      - spec: llvm-amdgpu@5.3.0 arch=${spack_arch}
+        prefix: /opt/rocm-5.3.0/llvm
         extra_attributes:
           compilers:
-            c: /opt/rocm-4.5.2/llvm/bin/clang
-            c++: /opt/rocm-4.5.2/llvm/bin/clang++
-    rdma-core:
-      buildable: False
-      version:
-      - 20
-      externals:
-      - spec: rdma-core@20 arch=${spack_arch}
-        prefix: /usr
+            c: /opt/rocm-5.3.0/llvm/bin/clang
+            c++: /opt/rocm-5.3.0/llvm/bin/clang++
     openmpi:
       buildable: False
       version:
-      - 4.1.1
+      - 4.1.2
       externals:
-      - spec: openmpi@4.1.1 arch=${spack_arch}
-        prefix: /opt/toss/openmpi/4.1/gnu
+      - spec: openmpi@4.1.2 arch=${spack_arch}
+        modules:
+        - openmpi-tce/4.1.2
+    mvapich2:
+      buildable: False
+      version:
+      - 2.3.6
+      externals:
+      - spec: mvapich2@2.3.6 arch=${spack_arch}
+        modules:
+        - mvapich2-tce/2.3.6
+EOF
+                ;;
+            "zen3")
+cat <<EOF  >> ${yaml}
+  compilers:
+  - compiler:
+      spec: rocmcc@5.3.0
+      paths:
+        cc: cc
+        cxx: CC
+        f77: ftn
+        fc: ftn
+      flags: {}
+      operating_system: rhel8
+      target: any
+      modules:
+      - PrgEnv-amd
+      - amd/5.3.0
+      environment: {}
+      extra_rpaths: []
+  packages:
+    all:
+      providers:
+        mpi: [cray-mpich]
+    hipcub:
+      buildable: False
+      version:
+      - 5.3.0
+      externals:
+      - spec: hipcub@5.3.0 arch=${spack_arch}
+        prefix: /opt/rocm-5.3.0/hipcub
+    llvm-amdgpu:
+      buildable: False
+      version:
+      - 5.3.0
+      externals:
+      - spec: llvm-amdgpu@5.3.0 arch=${spack_arch}
+        prefix: /opt/rocm-5.3.0/llvm
+    cray-libsci:
+      buildable: False
+      version:
+      - 22.08.1.1
+      externals:
+      - spec: cray-libsci@22.08.1.1 arch=${spack_arch}
+        modules:
+        - cray-libsci/22.08.1.1
+    cray-mpich:
+      buildable: False
+      version:
+      - 8.1.19
+      externals:
+      - spec: cray-mpich@8.1.19 arch=${spack_arch}
+        modules:
+        - cray-mpich/8.1.19
 EOF
                 ;;
             *)
@@ -463,6 +526,10 @@ cleanup_clang_compilers()
             sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/usr\/tce\/bin\/gfortran/g' ${yaml}
             echo "Updating Clang compiler's to see the gfortran compiler."
         fi
+    elif [[ ${center} = "osx" ]]; then
+        # Point compilers that don't have a fortran compiler a default one
+        sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/opt\/homebrew\/bin\/gfortran/g' ${yaml}
+        echo "Updating Clang compiler's to see the homebrew gfortran compiler."
     else
         # Point compilers that don't have a fortran compiler a default one
         sed -i.sed_bak -e 's/\([[:space:]]*f[c7]7*:[[:space:]]*\)null$/\1\/usr\/bin\/gfortran/g' ${yaml}
@@ -478,7 +545,7 @@ set_center_specific_variants()
     STD_USER_VARIANTS="+vision +numpy"
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
-            "power9le" | "power8le" | "broadwell" | "haswell" | "sandybridge") # Lassen, Ray, Pascal, RZHasGPU, Surface
+            "power9le" | "broadwell" | "haswell" | "sandybridge") # Lassen, Pascal, RZHasGPU, Surface
                 CENTER_USER_VARIANTS="+cuda"
                 ;;
             "ivybridge") # Catalyst

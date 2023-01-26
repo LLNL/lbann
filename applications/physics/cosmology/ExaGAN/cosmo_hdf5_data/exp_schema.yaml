@@ -1,0 +1,8 @@
+#Note: valid 'pack' names are datum, label, response
+img:
+  metadata:
+    pack: "samples"
+    coerce: "float"
+sigma:
+  metadata:
+    pack: "responses"

@@ -71,29 +71,30 @@ void split_distconv_adapter<TensorDataType, Layout, Dev>::bp_compute() {
   auto &error_signals = this->get_error_signals(0);
   switch (this->layer().get_num_children()) {
     case 0:
-      error_signals.zero(hydrogen::cuda::GetDefaultStream());
+      error_signals.zero(default_hydrogen_stream());
       break;
     case 1:
       dc::tensor::Copy(error_signals,
                        this->get_prev_error_signals(0),
-                       hydrogen::cuda::GetDefaultStream());
+                       default_hydrogen_stream());
       break;
     case 2:
       dc::tensor::Transform(error_signals,
                             this->get_prev_error_signals(0),
                             this->get_prev_error_signals(1),
                             sum_op<TensorDataType>(),
-                            hydrogen::cuda::GetDefaultStream());
+                            default_hydrogen_stream());
       break;
     default:
       dc::tensor::Copy(error_signals,
                        this->get_prev_error_signals(1),
-                       hydrogen::cuda::GetDefaultStream());
+                       default_hydrogen_stream());
       for (int i = 1; i < this->layer().get_num_children(); ++i) {
         const auto &prev_error = this->get_prev_error_signals(i);
-        dc::tensor::Transform(error_signals, prev_error,
+        dc::tensor::Transform(error_signals,
+                              prev_error,
                               accumulate_op<TensorDataType>(),
-                              hydrogen::cuda::GetDefaultStream());
+                              default_hydrogen_stream());
       }
   }
   return;

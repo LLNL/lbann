@@ -145,6 +145,7 @@ private:
     LBANN_REGISTER_BUILDER(Gather, gather);
     LBANN_REGISTER_BUILDER(Gaussian, gaussian);
     LBANN_REGISTER_BUILDER(Hadamard, hadamard);
+    LBANN_REGISTER_BUILDER(IdentityZero, identity_zero);
     LBANN_REGISTER_BUILDER(InTopK, in_top_k);
     LBANN_REGISTER_BUILDER(Pooling, pooling);
     LBANN_REGISTER_BUILDER(Reduction, reduction);
@@ -194,6 +195,7 @@ private:
     LBANN_REGISTER_BUILDER(CompositeImageTransformation,
                            composite_image_transformation);
     LBANN_REGISTER_BUILDER(Rotation, rotation);
+    LBANN_REGISTER_BUILDER(Cutout, cutout);
 
     // Miscellaneous layers
     LBANN_REGISTER_BUILDER(Argmax, argmax);

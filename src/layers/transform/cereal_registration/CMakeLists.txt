@@ -37,6 +37,7 @@ set_full_path(THIS_DIR_SOURCES
   gather.cpp
   gaussian.cpp
   hadamard.cpp
+  identity_zero.cpp
   in_top_k.cpp
   pooling.cpp
   reduction.cpp

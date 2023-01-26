@@ -45,7 +45,8 @@ mkdir -p ${OUTPUT_DIR}
 
 FAILED_JOBS=""
 
-SPACK_BUILD_DIR=$(find . -iname "spack-build-*" -type d | head -n 1)
+LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
+SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
 cd ${SPACK_BUILD_DIR}
 srun --jobid=${JOB_ID} -N 1 -n 1 -t 5 \
      ./unit_test/seq-catch-tests \
@@ -55,8 +56,9 @@ if [[ $? -ne 0 ]]; then
     FAILED_JOBS+=" seq"
 fi
 
+LBANN_NNODES=$(scontrol show job ${JOB_ID} | sed -n 's/.*NumNodes=\([0-9]\).*/\1/p')
 srun --jobid=${JOB_ID} \
-     -N 2 -n $(($TEST_TASKS_PER_NODE * 2)) \
+     -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * ${LBANN_NNODES})) \
      --ntasks-per-node=$TEST_TASKS_PER_NODE \
      -t 5 ${TEST_MPIBIND_FLAG} \
      ./unit_test/mpi-catch-tests \
@@ -67,7 +69,7 @@ if [[ $? -ne 0 ]]; then
 fi
 
 srun --jobid=${JOB_ID} \
-     -N 2 -n $(($TEST_TASKS_PER_NODE * 2)) \
+     -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * ${LBANN_NNODES})) \
      --ntasks-per-node=$TEST_TASKS_PER_NODE \
      -t 5 ${TEST_MPIBIND_FLAG} \
      ./unit_test/mpi-catch-tests "[filesystem]" \

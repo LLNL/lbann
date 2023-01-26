@@ -133,7 +133,6 @@ struct CheckWeightsFunctor : DefaultErrorReporter
     // Get weights matrix and gradient
     const auto& weights_matrix = dtw.get_values();
     const auto& gradient = dtw.get_optimizer()->get_gradient();
-
     // Iterate through weights matrix entries
     for (El::Int col = 0; col < weights_matrix.Width(); ++col) {
       for (El::Int row = 0; row < weights_matrix.Height(); ++row) {

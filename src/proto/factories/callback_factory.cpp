@@ -73,6 +73,7 @@
 #include "lbann/callbacks/timer.hpp"
 #include "lbann/callbacks/variable_minibatch.hpp"
 #include "lbann/callbacks/set_weights_value.hpp"
+#include "lbann/callbacks/alternate_updates.hpp"
 
 #include "lbann/proto/factories.hpp"
 #include "lbann/utils/factory.hpp"
@@ -107,6 +108,8 @@ void register_default_builders(factory_type& factory)
   using namespace ::lbann::callback;
   factory.register_builder("CallbackAdaptiveLearningRate",
                            build_adaptive_learning_rate_callback_from_pbuf);
+  factory.register_builder("CallbackAlternateUpdates",
+                           build_alternate_updates_callback_from_pbuf);
   factory.register_builder("CallbackCheckDataset",
                            build_check_dataset_callback_from_pbuf);
   factory.register_builder("CallbackCheckGradients",

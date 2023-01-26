@@ -219,9 +219,19 @@ find_package(Hydrogen 1.5.0 CONFIG REQUIRED)
 message(STATUS "Found Hydrogen@${HYDROGEN_VERSION}: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
 
+# CUDA-ness of LBANN is 1:1 with Hydrogen. Iff Hydrogen has CUDA,
+# LBANN gets CUDA.
+set(LBANN_HAS_CUDA ${_HYDROGEN_HAVE_CUDA})
+set(LBANN_WITH_CUDA ${LBANN_HAS_CUDA})
+
+set(LBANN_HAS_ROCM ${_HYDROGEN_HAVE_ROCM})
+if (LBANN_HAS_CUDA OR LBANN_HAS_ROCM)
+  set(LBANN_HAS_GPU TRUE)
+endif ()
+
 # DiHydrogen and Distconv
 if (LBANN_WITH_DISTCONV)
-  find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns DistConv)
+  find_package(DiHydrogen 0.3.0 CONFIG REQUIRED COMPONENTS Meta Patterns DistConv)
   set(LBANN_HAS_DISTCONV TRUE)
   set(LBANN_H2_LIBS
     H2::H2Meta
@@ -290,16 +300,6 @@ if (LBANN_WITH_ONEDNN)
   else ()
     set(LBANN_HAS_ONEDNN_GPU FALSE)
   endif ()
-endif ()
-
-# CUDA-ness of LBANN is 1:1 with Hydrogen. Iff Hydrogen has CUDA,
-# LBANN gets CUDA.
-set(LBANN_HAS_CUDA ${_HYDROGEN_HAVE_CUDA})
-set(LBANN_WITH_CUDA ${LBANN_HAS_CUDA})
-
-set(LBANN_HAS_ROCM ${_HYDROGEN_HAVE_ROCM})
-if (LBANN_HAS_CUDA OR LBANN_HAS_ROCM)
-  set(LBANN_HAS_GPU TRUE)
 endif ()
 
 # Only used if have GPU and have CPU half.
@@ -457,6 +457,12 @@ if (LBANN_EXPLICIT_LIBDL AND NOT DL_LIBRARY)
       "Please add the path to libdl to CMAKE_LIBRARY_PATH.")
   endif (DL_LIBRARY)
 endif ()
+
+# Nothing in LBANN explicitly includes the zlib header or, as far as I
+# can tell, explicitly calls a zlib function. So some dependency isn't
+# propagating its dependencies properly (protobuf of sufficiently new
+# enough version is one such culprit). This should work around that.
+find_package(ZLIB MODULE REQUIRED)
 
 # Other optional dependencies
 # TODO: This probably shouldn't be the case and should disable specific
@@ -680,7 +686,15 @@ target_link_libraries(lbann PUBLIC
   MPI::MPI_CXX
   ${LBANN_CUDA_LIBS}
   ${LBANN_ROCM_LIBS}
-  ${LBANN_DNNL_LIBS})
+  ${LBANN_DNNL_LIBS}
+  ZLIB::ZLIB)
+
+# Ensure that MPI flags are passed to the HIP compiler on Cray platforms
+get_target_property(LBANN_MPI_CXX_INCL_DIRS
+  MPI::MPI_CXX INTERFACE_INCLUDE_DIRECTORIES)
+if (NOT LBANN_MPI_CXX_INCL_DIRS)
+  target_include_directories(lbann PRIVATE $<$<COMPILE_LANGUAGE:HIP>:${MPI_CXX_COMPILER_INCLUDE_DIRS}>)
+endif ()
 
 if (LBANN_FLAG_Werror_OK)
   target_compile_options(lbann

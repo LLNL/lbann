@@ -32,6 +32,10 @@
 #include "lbann/utils/distconv.hpp"
 #include <layers.pb.h>
 
+#ifdef LBANN_HAS_DISTCONV
+#include "distconv/dnn_backend/relu.hpp"
+#endif
+
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV

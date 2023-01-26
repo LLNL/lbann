@@ -3,6 +3,7 @@ import os, os.path
 import subprocess
 import lbann
 import lbann.proto
+import lbann.launcher.flux
 import lbann.launcher.openmpi
 import lbann.launcher.slurm
 import lbann.launcher.lsf
@@ -245,6 +246,15 @@ def make_batch_script(script_file=None,
         except:
             pass
     if not scheduler:
+        try:
+            subprocess.call(['flux', '-V'],
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL)
+            scheduler = 'flux'
+            print('I have found a flux scheduler')
+        except:
+            pass
+    if not scheduler:
         scheduler = 'openmpi'
 
     # Create work directory if not provided
@@ -267,6 +277,17 @@ def make_batch_script(script_file=None,
             launcher_args=launcher_args)
     elif scheduler.lower() in ('slurm', 'srun', 'sbatch'):
         script = lbann.launcher.slurm.SlurmBatchScript(
+            script_file=script_file,
+            work_dir=work_dir,
+            nodes=nodes,
+            procs_per_node=procs_per_node,
+            time_limit=time_limit,
+            job_name=job_name,
+            partition=partition,
+            account=account,
+            launcher_args=launcher_args)
+    elif scheduler.lower() in ('flux'):
+        script = lbann.launcher.flux.FluxBatchScript(
             script_file=script_file,
             work_dir=work_dir,
             nodes=nodes,

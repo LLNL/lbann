@@ -25,6 +25,7 @@
 ################################################################################
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
+  alternate_updates.cpp
   callback.cpp
   check_dataset.cpp
   check_gradients.cpp

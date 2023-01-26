@@ -209,7 +209,7 @@ TensorDataType *get_shuffler_src_buf(const TensorDev<TensorDataType> &tensor) {
     shuffler_src_buf_size = TensorShuffler<TensorDataType>::get_buf_size(tensor);
     MPIPrintStreamDebug() << "Allocating shared shuffler buffer of size "
                           << shuffler_src_buf_size;
-    DISTCONV_CUDA_MALLOC(&shuffler_src_buf, shuffler_src_buf_size);
+    DISTCONV_GPU_MALLOC(&shuffler_src_buf, shuffler_src_buf_size);
   }
   // Returns the pre-allocated memory if it's large enough
   size_t required_size = TensorShuffler<TensorDataType>::get_buf_size(tensor);
@@ -228,7 +228,7 @@ TensorDataType *get_shuffler_dst_buf(const TensorDev<TensorDataType> &tensor) {
     shuffler_dst_buf_size = TensorShuffler<TensorDataType>::get_buf_size(tensor);
     MPIPrintStreamDebug() << "Allocating shared shuffler buffer of size "
                           << shuffler_src_buf_size;
-    DISTCONV_CUDA_MALLOC(&shuffler_dst_buf, shuffler_dst_buf_size);
+    DISTCONV_GPU_MALLOC(&shuffler_dst_buf, shuffler_dst_buf_size);
   }
   size_t required_size = TensorShuffler<TensorDataType>::get_buf_size(tensor);
   // Returns the pre-allocated memory if it's large enough
@@ -241,11 +241,11 @@ TensorDataType *get_shuffler_dst_buf(const TensorDev<TensorDataType> &tensor) {
 }
 void delete_shuffler_buffers() {
   if (shuffler_src_buf) {
-    CHECK_CUDA(cudaFree(shuffler_src_buf));
+    DISTCONV_CHECK_GPU(GPU_FREE(shuffler_src_buf));
     shuffler_src_buf = nullptr;
   }
   if (shuffler_dst_buf) {
-    CHECK_CUDA(cudaFree(shuffler_dst_buf));
+    DISTCONV_CHECK_GPU(GPU_FREE(shuffler_dst_buf));
     shuffler_dst_buf = nullptr;
   }
 }
@@ -290,13 +290,15 @@ void initialize(MPI_Comm comm) {
 #ifdef DISTCONV_HAS_P2P
   p2p_instance = new p2p::P2P(mpi_comm);
 #endif // DISTCONV_HAS_P2P
-  hosttransfer_comm_instance = new Al::hosttransfer_backend::comm_type(
-      mpi_comm, hydrogen::cuda::GetDefaultStream());
-  ::distconv::cudnn::Options backend_opts;
+  hosttransfer_comm_instance =
+    new Al::hosttransfer_backend::comm_type(mpi_comm,
+                                            default_hydrogen_stream());
+  ::distconv::backend::Options backend_opts;
   backend_opts.m_deterministic = opt_deterministic;
-  backend_instance = new Backend(
-      mpi_comm, lbann::dnn_lib::get_handle(),
-      hydrogen::cuda::GetDefaultStream(), backend_opts);
+  backend_instance = new Backend(mpi_comm,
+                                 lbann::dnn_lib::get_handle(),
+                                 default_hydrogen_stream(),
+                                 backend_opts);
   print_options(std::cout);
   initialized = true;
 }
@@ -454,7 +456,11 @@ Dist get_hydrogen_data_parallel_distribution(int num_dims) {
 
 size_t get_workspace_capacity() {
   size_t available, total;
+#if H2_HAS_CUDA
   FORCE_CHECK_CUDA(cudaMemGetInfo(&available, &total));
+#elif H2_HAS_ROCM
+  FORCE_CHECK_ROCM(hipMemGetInfo(&available, &total));
+#endif
   size_t workspace_capacity = available;
   // set aside some space for shuffling, halo exchange, etc.
   workspace_capacity -= 1 << 28;

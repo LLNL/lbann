@@ -169,6 +169,7 @@ message Layer {
     Gather gather = 75;
     BatchwiseReduceSum batchwise_reduce_sum = 76;
     TensorPermute permute = 77;
+    IdentityZero identity_zero = 78;
     CategoricalRandom categorical_random = 406; // Deprecated
     DiscreteRandom discrete_random = 407; // Deprecated
 
@@ -216,6 +217,7 @@ message Layer {
     BilinearResize bilinear_resize = 200;
     Rotation rotation = 201;
     CompositeImageTransformation composite_image_transformation = 202;
+    Cutout cutout = 203;
 
     // Miscellaneous layers
     Covariance covariance = 300;
@@ -1025,6 +1027,14 @@ message Layer {
     repeated uint32 axes = 1;
   }
 
+  /** @brief Toggle identity or zero function.
+   *  
+   *  Outputs zeros when the layer is frozen or acts as the identity function 
+   *  otherwise.
+   */
+  message IdentityZero {
+  }
+
   /// Deprecated
   message CategoricalRandom {
   }
@@ -1343,6 +1353,13 @@ message Layer {
    *  for (X,Y) translate.
    */
   message CompositeImageTransformation {}
+
+  /** @brief Cutout a random square from an image
+   *
+   *  Expects two inputs: a 3D image tensor in CHW format and a scalar
+   *  length of the cutout square.
+   */
+  message Cutout {}
 
   // ---------------------------
   // Miscellaneous layers

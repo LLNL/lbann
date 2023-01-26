@@ -480,7 +480,7 @@ fp_compute() {
   dc::tensor::Concatenate(this->get_activations(0),
                           this->get_prev_activations(0),
                           this->get_prev_activations(1),
-                          hydrogen::cuda::GetDefaultStream());
+                          default_hydrogen_stream());
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -489,7 +489,7 @@ bp_compute() {
   dc::tensor::Slice(this->get_error_signals(0),
                     this->get_error_signals(1),
                     this->get_prev_error_signals(0),
-                    hydrogen::cuda::GetDefaultStream());
+                    default_hydrogen_stream());
 }
 #endif // LBANN_HAS_DISTCONV
 

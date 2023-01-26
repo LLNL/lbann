@@ -29,6 +29,7 @@
 #include "lbann/layers/image/bilinear_resize.hpp"
 #include "lbann/layers/image/composite_image_transformation.hpp"
 #include "lbann/layers/image/rotation.hpp"
+#include "lbann/layers/image/cutout.hpp"
 
 #include <layers.pb.h>
 
@@ -101,12 +102,37 @@ lbann::build_rotation_layer_from_pbuf(lbann_comm* comm,
   }
 }
 
+template <typename T, lbann::data_layout L, El::Device D>
+std::unique_ptr<lbann::Layer>
+lbann::build_cutout_layer_from_pbuf(lbann_comm* comm,
+                                      lbann_data::Layer const&)
+{
+  if constexpr (L == data_layout::DATA_PARALLEL && D == El::Device::CPU)
+    if constexpr (std::is_same_v<T, float>)
+      return std::make_unique<
+        cutout_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>>(
+        comm);
+    else if constexpr (std::is_same_v<T, double>)
+      return std::make_unique<
+        cutout_layer<double, data_layout::DATA_PARALLEL, El::Device::CPU>>(
+        comm);
+    else
+      LBANN_ERROR(
+        "cutout_layer is only supported for \"float\" and \"double\".");
+  else {
+    LBANN_ERROR("cutout layer is only supported with a data-parallel layout "
+                "and on CPU");
+    return nullptr;
+  }
+}
+
 namespace lbann {
 
 #define PROTO_DEVICE(T, Device)                                                \
   LBANN_LAYER_BUILDER_ETI(bilinear_resize, T, Device);                         \
   LBANN_LAYER_BUILDER_ETI(composite_image_transformation, T, Device);          \
-  LBANN_LAYER_BUILDER_ETI(rotation, T, Device)
+  LBANN_LAYER_BUILDER_ETI(rotation, T, Device);                                \
+  LBANN_LAYER_BUILDER_ETI(cutout, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
 
