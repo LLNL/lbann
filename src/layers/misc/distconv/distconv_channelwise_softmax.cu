@@ -80,7 +80,42 @@ namespace distconv{
   ::backward(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input_0,
              const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,
              tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input_grad_0){
+    if (input_0.get_local_size() == 0 ||
+        output_grad.get_local_size() == 0 ||
+        input_grad_0.get_local_size() == 0){
+      return 1; // no op for empty inputs
+    }
 
+    const auto& input_0_dims = input_0.get_local_shape();
+    const auto num_channels = input_0_dims[2];
+    const auto local_mini_batch_size = input_0_dims[3];
+    const auto mat_channel_size = input_0_dims[0] * input_0_dims[1];
+    const auto mat_stride = num_channels * mat_channel_size;
+
+    // Convert to Hydrogen matrices for kernel launch
+
+    using LocalMat = El::Matrix<DataType, El::Device::GPU>;
+
+    LocalMat local_input(mat_stride,
+                        local_mini_batch_size,
+                        input_0.get_buffer(),
+                        mat_stride);
+
+    LocalMat local_output_grad(mat_stride,
+                               local_mini_batch_size,
+                               output_grad.get_buffer(),
+                               mat_stride);
+    
+    LocalMat local_input_grad(mat_stride,
+                              local_mini_batch_size,
+                              input_grad_0.get_buffer(),
+                              mat_stride);
+
+    ::lbann::channelwise_softmax_bp_impl(num_channels,
+                                         mat_channel_size,
+                                         local_input,
+                                         local_output_grad,
+                                         local_input_grad);
     return 1;        
   }
 

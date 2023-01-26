@@ -37,6 +37,10 @@ struct max_op {
   }
 };
 
+// =========================================================
+// Forward prop
+// =========================================================
+
 /** @brief Max reduction over last dimension of 3D tensor.
  *
  *  Each CUDA block computes the max over a subset of tensor entries
@@ -287,6 +291,177 @@ void channelwise_softmax_fp_impl(size_t num_channels,
       Size3{static_cast<size_t>(local_output.LDim()), channel_size, 1},
       local_shifts.LockedBuffer(),
       local_denoms.LockedBuffer());
+  }
+
+}
+
+// =========================================================
+// Backprop
+// =========================================================
+
+/** Compute dot product between output and gradient w.r.t. output.
+ *
+ *  Block dimensions: bdimx x 1 x 1
+ *
+ *  Grid dimensions: (output_dims[2] / bdimx) x output_dims[1] x output_dims[0]
+ *
+ *  y_dot_dy is a fully-packed 2D tensor with dimensions of
+ *  output_dims[0] x output_dims[1].
+ */
+template <typename TensorDataType, size_t bdimx>
+__global__ void channelwise_softmax_bp_y_dot_dy_kernel(
+  Size3 output_dims,
+  const TensorDataType* __restrict__ output_buffer,
+  Size3 output_strides,
+  const TensorDataType* __restrict__ output_grad_buffer,
+  Size3 output_grad_strides,
+  TensorDataType* __restrict__ y_dot_dy) {
+
+  // Indices and dimensions
+  constexpr size_t bdimy = 1;
+  constexpr size_t bdimz = 1;
+  const size_t tid = threadIdx.x;
+  const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
+  const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
+  const size_t gidz = threadIdx.z + blockIdx.z * blockDim.z;
+  const size_t nthreadsx = blockDim.x * gridDim.x;
+  const size_t nthreadsy = blockDim.y * gridDim.y;
+  const size_t nthreadsz = blockDim.z * gridDim.z;
+
+  for (size_t k = gidz; k < output_dims[0]; k += nthreadsz) {
+    for (size_t j = gidy; j < output_dims[1]; j += nthreadsy) {
+
+      // Compute contribution from each thread
+      TensorDataType _y_dot_dy{0.};
+      for (size_t i = gidx; i < output_dims[2]; i += nthreadsx) {
+        const auto& y = output_buffer[k * output_strides[0]
+                                      + j * output_strides[1]
+                                      + i * output_strides[2]];
+        const auto& dy = output_grad_buffer[k * output_grad_strides[0]
+                                            + j * output_grad_strides[1]
+                                            + i * output_grad_strides[2]];
+        _y_dot_dy += y * dy;
+      }
+
+      // Compute contribution from each block
+      _y_dot_dy = gpu_lib::block_reduce<bdimx,bdimy,bdimz>(_y_dot_dy);
+      if (tid == 0) {
+        gpu_lib::atomic_add(&y_dot_dy[j+k*output_dims[1]], _y_dot_dy);
+      }
+
+    }
+  }
+
+}
+
+/** Compute gradient w.r.t. input.
+ *
+ *  dL/dx_i = y_i * ( dL/dy_i - dot(y,dL/dy) )
+ *
+ *  Block dimensions: bdimx x bdimy x bdimz
+ *
+ *  Grid dimensions: (output_dims[2] / bdimx) x (output_dims[1] / bdimy) x (output_dims[0] / bdimz)
+ *
+ *  y_dot_dy is a fully-packed 2D tensor with dimensions of
+ *  output_dims[0] x output_dims[1].
+ */
+template <typename TensorDataType>
+__global__ void channelwise_softmax_bp_input_grad_kernel(
+  Size3 output_dims,
+  const TensorDataType* __restrict__ output_buffer,
+  Size3 output_strides,
+  const TensorDataType* __restrict__ output_grad_buffer,
+  Size3 output_grad_strides,
+  TensorDataType* __restrict__ input_grad_buffer,
+  Size3 input_grad_strides,
+  const TensorDataType* __restrict__ y_dot_dy) {
+
+  const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
+  const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
+  const size_t gidz = threadIdx.z + blockIdx.z * blockDim.z;
+  const size_t nthreadsx = blockDim.x * gridDim.x;
+  const size_t nthreadsy = blockDim.y * gridDim.y;
+  const size_t nthreadsz = blockDim.z * gridDim.z;
+  for (size_t k = gidz; k < output_dims[0]; k += nthreadsz) {
+    for (size_t j = gidy; j < output_dims[1]; j += nthreadsy) {
+      const auto& _y_dot_dy = y_dot_dy[j + k*output_dims[1]];
+      for (size_t i = gidx; i < output_dims[2]; i += nthreadsx) {
+        const auto& y = output_buffer[k * output_strides[0]
+                                      + j * output_strides[1]
+                                      + i * output_strides[2]];
+        const auto& dy = output_grad_buffer[k * output_grad_strides[0]
+                                            + j * output_grad_strides[1]
+                                            + i * output_grad_strides[2]];
+        auto& dx = input_grad_buffer[k * input_grad_strides[0]
+                                     + j * input_grad_strides[1]
+                                     + i * input_grad_strides[2]];
+        dx = y * (dy - _y_dot_dy);
+      }
+    }
+  }
+
+}
+
+
+/** @brief Backprop */
+template <typename TensorDataType>
+void channelwise_softmax_bp_impl(size_t num_channels,
+                                 size_t channel_size,
+                                 const El::Matrix<TensorDataType, El::Device::GPU>& local_output,
+                                 const El::Matrix<TensorDataType, El::Device::GPU>& local_output_grad,
+                                 El::Matrix<TensorDataType, El::Device::GPU>& local_input_grad) {
+
+  // Dimensions
+  const size_t local_mini_batch_size = local_output.Width();
+  using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
+  // dot(y,dL/dy)
+  LocalMat local_y_dot_dy(num_channels, local_mini_batch_size);
+  El::Zero(local_y_dot_dy);
+
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_y_dot_dy),
+                                     gpu::get_sync_info(local_output_grad),
+                                     gpu::get_sync_info(local_output),
+                                     gpu::get_sync_info(local_input_grad));
+
+  if (!local_output.IsEmpty()) {
+    constexpr size_t block_size = 256;
+    dim3 block_dims, grid_dims;
+    block_dims.x = block_size;
+    grid_dims.x = (channel_size + block_size - 1) / block_size;
+    grid_dims.y = num_channels;
+    grid_dims.z = local_mini_batch_size;
+    gpu_lib::clip_grid_dims(grid_dims);
+    hydrogen::gpu::LaunchKernel(
+      channelwise_softmax_bp_y_dot_dy_kernel<TensorDataType, block_size>,
+      grid_dims, block_dims, 0, multisync,
+      Size3{local_mini_batch_size, num_channels, channel_size},
+      local_output.LockedBuffer(),
+      Size3{static_cast<size_t>(local_output.LDim()), channel_size, 1},
+      local_output_grad.LockedBuffer(),
+      Size3{static_cast<size_t>(local_output_grad.LDim()), channel_size, 1},
+      local_y_dot_dy.Buffer());
+  }
+
+  // Compute gradient w.r.t. input
+  if (!local_output.IsEmpty()) {
+    constexpr size_t block_size = 256;
+    dim3 block_dims, grid_dims;
+    block_dims.x = block_size;
+    grid_dims.x = (channel_size + block_size - 1) / block_size;
+    grid_dims.y = num_channels;
+    grid_dims.z = local_mini_batch_size;
+    gpu_lib::clip_grid_dims(grid_dims);
+    hydrogen::gpu::LaunchKernel(
+      channelwise_softmax_bp_input_grad_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      Size3{local_mini_batch_size, num_channels, channel_size},
+      local_output.LockedBuffer(),
+      Size3{static_cast<size_t>(local_output.LDim()), channel_size, 1},
+      local_output_grad.LockedBuffer(),
+      Size3{static_cast<size_t>(local_output_grad.LDim()), channel_size, 1},
+      local_input_grad.Buffer(),
+      Size3{static_cast<size_t>(local_input_grad.LDim()), channel_size, 1},
+      local_y_dot_dy.LockedBuffer());
   }
 
 }
