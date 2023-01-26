@@ -104,14 +104,15 @@ def construct_model(lbann):
     # LBANN implementation
     decay = 0.9
     epsilon = 1e-5
-    x = x_lbann
+    x = lbann.Identity(x_lbann, name='input_layer')
     y = lbann.BatchNormalization(x,
                                  decay=decay,
                                  epsilon=epsilon,
                                  scale_init=0.8,
                                  bias_init=-0.25,
                                  statistics_group_size=-1,
-                                 data_layout='data_parallel')
+                                 data_layout='data_parallel',
+                                 name="global_bn_layer")
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='global statistics'))
@@ -146,6 +147,12 @@ def construct_model(lbann):
     val = np.mean(z)
 
     tol = 8 * val * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackDumpOutputs(
+        layers="input_layer"
+    ))
+    callbacks.append(lbann.CallbackDumpOutputs(
+        layers="global_bn_layer"
+    ))
     callbacks.append(lbann.CallbackCheckMetric(
         metric=metrics[-1].name,
         lower_bound=val-tol,
