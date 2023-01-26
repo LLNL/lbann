@@ -58,8 +58,12 @@ external_layer<TensorDataType, Layout, Device>::external_layer(
   lbann_comm* comm,
   const std::string& fp_name,
   const std::string& bp_name,
-  std::string layer_name)
-  : data_type_layer<TensorDataType>(comm)
+  std::string layer_name,
+  const std::vector<std::vector<int>>& weight_shapes,
+  const std::vector<std::vector<int>>& output_shapes)
+  : data_type_layer<TensorDataType>(comm),
+    weight_shapes_(weight_shapes),
+    output_shapes_(output_shapes)
 {
   this->m_expected_num_parent_layers = -1;
   this->m_expected_num_child_layers = -1;
@@ -145,14 +149,18 @@ external_layer<TensorDataType, Layout, Device>::external_layer(
   external_fprop_t fprop,
   external_bprop_t bprop,
   external_init_t init,
-  external_finalize_t finalize)
+  external_finalize_t finalize,
+  const std::vector<std::vector<int>>& weight_shapes,
+  const std::vector<std::vector<int>>& output_shapes)
   : data_type_layer<TensorDataType>(comm),
     fp_handle(nullptr),
     bp_handle(nullptr),
     init_ptr(init),
     finalize_ptr(finalize),
     fp_compute_ptr(fprop),
-    bp_compute_ptr(bprop)
+    bp_compute_ptr(bprop),
+    weight_shapes_(weight_shapes),
+    output_shapes_(output_shapes)
 {
   this->m_expected_num_parent_layers = -1;
   this->m_expected_num_child_layers = -1;

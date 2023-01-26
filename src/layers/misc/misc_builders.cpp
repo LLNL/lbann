@@ -251,6 +251,15 @@ lbann::build_dft_abs_layer_from_pbuf(lbann_comm* comm, lbann_data::Layer const&)
   }
 }
 
+inline std::vector<std::vector<int>> multiple_shapes_from_pbuf(const auto& shapes)
+{
+  std::vector<std::vector<int>> result;
+  for (const auto& shape : shapes)
+    result.emplace_back(lbann::protobuf::to_vector<int>(shape.dims()));
+
+  return result;
+}
+
 template <typename T, lbann::data_layout L, El::Device D>
 std::unique_ptr<lbann::Layer>
 lbann::build_external_layer_from_pbuf(lbann_comm* comm,
@@ -264,10 +273,13 @@ lbann::build_external_layer_from_pbuf(lbann_comm* comm,
       return nullptr;
     }
   }
+
   return std::make_unique<external_layer<T, L, D>>(
     comm, proto_layer.external().fprop_filename(),
     proto_layer.external().bprop_filename(),
-    proto_layer.external().layer_name());
+    proto_layer.external().layer_name(),
+    multiple_shapes_from_pbuf(proto_layer.external().weight_shapes()),
+    multiple_shapes_from_pbuf(proto_layer.external().output_shapes()));
 }
 
 template <typename T, lbann::data_layout L, El::Device D>
