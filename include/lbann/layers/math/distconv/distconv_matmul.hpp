@@ -80,8 +80,8 @@ namespace distconv{
     return output_local_shape; 
   }
 
-extern template class MatMul<::distconv::cudnn::BackendCUDNN, float>;
-extern template class MatMul<::distconv::cudnn::BackendCUDNN, double>;
+extern template class MatMul<::distconv::BackendDNNLib, float>;
+extern template class MatMul<::distconv::BackendDNNLib, double>;
 }  // namespace distconv
 
 #endif // LBANN_HAS_DISTCONV
