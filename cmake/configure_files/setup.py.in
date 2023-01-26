@@ -47,7 +47,7 @@ setuptools.setup(
     description='LBANN: Livermore Big Artificial Neural Network',
     version=version,
     url='https://github.com/LLNL/lbann',
-    author='Lawrence Livermore National Security, LLC.',
+    author='Lawrence Livermore National Security, LLC',
     license='Apache 2.0',
     packages=setuptools.find_packages(src_dir),
     package_dir={'': src_dir},
