@@ -113,7 +113,7 @@ set_center_specific_modules()
                 ;;
             "zen3") # Tioga, RZVernal
 #                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.09.0 amd/5.4.2 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-amd/8.3.3 StdEnv cmake/3.23.1"
-                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.09.0 amd/5.4.2 craype/2.7.17 cray-libsci/22.08.1.1 PrgEnv-amd/8.3.3 cray-mpich/8.1.19 StdEnv cmake/3.23.1"
+                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.09.0 amd/5.4.2 craype/2.7.17 cray-libsci/22.08.1.1 PrgEnv-amd/8.3.3 cray-mpich/8.1.21 StdEnv cmake/3.23.1"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -198,7 +198,7 @@ set_center_specific_spack_dependencies()
                 ;;
             "zen3") # Tioga, RZVernal
                 CENTER_COMPILER="%rocmcc@5.4.2"
-                CENTER_DEPENDENCIES="^cray-mpich@8.1.19 ^hip@5.4.2 ^python@3.9.12"
+                CENTER_DEPENDENCIES="^cray-mpich@8.1.21 ^hip@5.4.2 ^python@3.9.12"
                 CENTER_BLAS_LIBRARY="blas=libsci"
                 # Override the conduit variants for the cray compilers
                 CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis~blt_find_mpi"
@@ -392,13 +392,13 @@ cat <<EOF  >> ${yaml}
     cray-mpich:
       buildable: False
       version:
-      - 8.1.19
+      - 8.1.21
       externals:
-      - spec: cray-mpich@8.1.19 arch=${spack_arch}
+      - spec: cray-mpich@8.1.21 arch=${spack_arch}
         modules:
-        - cray-mpich/8.1.19
-#      - spec: cray-mpich@8.1.19 +wrappers arch=${spack_arch}
-#        prefix: /opt/cray/pe/mpich/8.1.19/ofi/crayclang/10.0/
+        - cray-mpich/8.1.21
+#      - spec: cray-mpich@8.1.21 +wrappers arch=${spack_arch}
+#        prefix: /opt/cray/pe/mpich/8.1.21/ofi/crayclang/10.0/
 EOF
                 ;;
             *)
