@@ -63,6 +63,7 @@
 #endif // LBANN_HAS_NVSHMEM
 
 #include "lbann/layers/misc/distconv/distconv_channelwise_softmax.hpp"
+
 namespace lbann {
 
 inline auto default_hydrogen_stream()
@@ -136,8 +137,23 @@ using MPIRootPrintStreamWaning = ::distconv::util::MPIRootPrintStreamWarning;
 
 // Distconv layer classes
 using Backend = ::distconv::BackendDNNLib;
-using AlCommType = typename decltype(std::declval<Backend>()
-                                       .get_al_mpi_cuda_comm())::element_type;
+using ReLU = ::distconv::ReLU<Backend>;
+using LeakyReLU = ::distconv::LeakyReLU<Backend>;
+template <typename TensorDataType>
+using Convolution = ::distconv::Convolution<Backend, TensorDataType>;
+template <typename TensorDataType>
+using ChannelwiseFullyConnected = ::distconv::ChannelwiseFullyConnected<Backend, TensorDataType>;
+template <typename TensorDataType>
+using Pooling = ::distconv::Pooling<Backend, TensorDataType>;
+template <typename TensorDataType>
+using BatchNormalization = ::distconv::BatchNormalization<Backend, TensorDataType>;
+template <typename TensorDataType>
+using MatMul = ::distconv::MatMul<Backend, TensorDataType>;
+template <typename TensorDataTyoe>
+using ChannelwiseSoftmax = ::distconv::ChannelwiseSoftmax<Backend, TensorDataType>;
+using Softmax = ::distconv::Softmax<Backend>;
+using CrossEntropy = ::distconv::CrossEntropy<Backend>;
+using MeanSquaredError = ::distconv::MeanSquaredError<Backend>;
 
 using ::distconv::get_channel_dim;
 using ::distconv::get_sample_dim;

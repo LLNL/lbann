@@ -23,9 +23,9 @@
 ## implied. See the License for the specific language governing
 ## permissions and limitations under the license.
 ################################################################################
-set_full_path(THIS_DIR_HEADERS
-    distconv_channelwise_softmax.hpp
+set_full_path(THIS_DIR_CU_SOURCES
+    distconv_channelwise_softmax.cu
     )
 
 # Propagate the files up the tree
-set(HEADERS "${HEADERS}" "${THIS_DIR_HEADERS}" PARENT_SCOPE)
+set(GPU_SOURCES "${GPU_SOURCES}" "${THIS_DIR_CU_SOURCES}" PARENT_SCOPE)
