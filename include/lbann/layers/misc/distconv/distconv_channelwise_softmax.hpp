@@ -26,6 +26,7 @@
 
 #ifndef LBANN_LAYERS_MISC_DISTCONV_CHANNELWISE_SOFTMAX
 #define LBANN_LAYERS_MISC_DISTCONV_CHANNELWISE_SOFTMAX
+#include "lbann/utils/distconv.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
 namespace distconv{
@@ -51,6 +52,9 @@ namespace distconv{
       Backend &m_be;
 
   };
+
+  extern template class ChannelwiseSoftmax<::distconv::BackendDNNLib, float>;
+  extern template class ChannelwiseSoftmax<::distconv::BackendDNNLib, double>;
 }
 
 #endif // LBANN_HAS_DISTCONV
