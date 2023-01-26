@@ -61,6 +61,11 @@ void check_init::serialize(Archive & ar) {
        ::cereal::base_class<callback_base>(this)));
 }
 
+void check_init::write_specific_proto(lbann_data::Callback& proto) const
+{
+  proto.mutable_init();
+}
+
 void check_init::on_train_begin(model *m) {
   const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   // Skip after the first epoch.

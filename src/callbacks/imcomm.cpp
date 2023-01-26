@@ -128,6 +128,14 @@ void imcomm::on_backward_prop_end(model *m) {
   }
 }
 
+void imcomm::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_imcomm();
+  msg->set_intertrainer_comm_method(get_comm_type_name(m_default_ct));
+  // Unused
+  //msg->set_all_optimizers(bool_value);
+}
+
 template <typename TensorDataType>
 void imcomm::do_summary(model const& m,
                         data_type_weights<TensorDataType>& w,

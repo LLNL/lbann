@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_ACTIVATIONS_SOFTMAX_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/dnn_enums.hpp"
 #if defined LBANN_HAS_DNN_LIB
@@ -35,6 +36,7 @@
 #include "lbann/utils/dnn_lib/softmax.hpp"
 #endif // defined LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/softmax.hpp"
+#include <layers.pb.h>
 
 // Threshold outputs to a minimum value.
 
@@ -155,6 +157,11 @@ public:
 
   ///@}
 
+protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
 private:
   /** @name DNN library stuff */
   ///@{
@@ -213,6 +220,7 @@ private:
 #ifdef LBANN_HAS_DISTCONV
   friend class softmax_distconv_adapter<TensorDataType, Layout, Device>;
  protected:
+
   bool is_distconv_supported() const final {
     return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
   }
@@ -224,6 +232,23 @@ private:
   const softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() const final;
 #endif // LBANN_HAS_DISTCONV
 };
+
+template <typename T, data_layout L, El::Device D>
+void softmax_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_softmax();
+  switch (m_mode)
+  {
+    case softmax_mode::INSTANCE:
+      msg->set_softmax_mode("instance");
+      break;
+    case softmax_mode::CHANNEL:
+      msg->set_softmax_mode("channel");
+      break;
+    default:
+      msg->set_softmax_mode("invalid");
+  }
+}
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

@@ -73,6 +73,9 @@ class hang : public callback_base {
   ///@}
 
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /// The rank that will hang; -1 for every rank.
   int m_rank_to_hang;
 };

@@ -26,10 +26,18 @@
 
 #define LBANN_ARGMIN_LAYER_INSTANTIATE
 #include "lbann/layers/misc/argmin.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 #include <algorithm>
 
 namespace lbann {
+
+template <typename T, data_layout L, El::Device D>
+void argmin_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_argmin();
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void argmin_layer<TensorDataType, Layout, Device>::fp_compute() {

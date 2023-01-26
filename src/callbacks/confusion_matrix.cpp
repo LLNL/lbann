@@ -251,6 +251,18 @@ void confusion_matrix::save_confusion_matrix(const model& m) {
 
 }
 
+// ---------------------------------------------------------
+// Protobuf Serialization
+// ---------------------------------------------------------
+
+void confusion_matrix::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_confusion_matrix();
+  msg->set_prediction(m_prediction_layer);
+  msg->set_label(m_label_layer);
+  msg->set_prefix(m_prefix);
+}
+
 std::unique_ptr<callback_base>
 build_confusion_matrix_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,

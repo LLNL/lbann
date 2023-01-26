@@ -169,6 +169,11 @@ class input_layer : public data_type_layer<TensorDataType> {
 
   ///@}
 
+protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
  private:
   friend cereal::access;
   input_layer() : input_layer(nullptr) {}

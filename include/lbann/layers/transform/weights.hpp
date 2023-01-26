@@ -73,6 +73,9 @@ public:
 
  protected:
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   void setup_data(size_t max_mini_batch_size) override;
 
   void fp_compute() override;

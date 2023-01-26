@@ -29,6 +29,8 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -73,6 +75,10 @@ public:
   ///@}
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
@@ -85,6 +91,13 @@ private:
   TensorDataType m_alpha;
 
 };
+
+template <typename T, data_layout L, El::Device D>
+void elu_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_elu();
+  msg->set_alpha(m_alpha);
+}
 
 #ifndef LBANN_ELU_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

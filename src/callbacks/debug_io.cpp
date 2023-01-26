@@ -48,6 +48,13 @@ void debug_io::serialize(Archive & ar) {
      CEREAL_NVP(m_debug_lvl));
 }
 
+void debug_io::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_debug_io();
+  msg->set_phase(to_string(m_debug_phase));
+  msg->set_lvl(m_debug_lvl);
+}
+
 /// BVE FIXME @todo The use of execution_mode invalid needs to be reconsidered
 void debug_io::on_epoch_begin(model *m) {
   if(m_debug_phase == execution_mode::invalid || m_debug_phase == execution_mode::training) {

@@ -61,6 +61,7 @@ Internal features:
  - Added operator class
  - Added AlternateUpdates callback to be used with IdentityZero layers for
    training GANs.
+ - Added support for serializing network architectures to protobuf format.
 
 I/O & data readers:
  - Updated SMILES data reader to use sample lists

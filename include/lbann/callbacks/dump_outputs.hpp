@@ -98,6 +98,8 @@ public:
   ///@}
 
 private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
 
   friend class cereal::access;
   dump_outputs();

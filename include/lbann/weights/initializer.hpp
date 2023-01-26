@@ -33,6 +33,10 @@
 
 #include <google/protobuf/message.h>
 
+// Forward declarations
+namespace lbann_data {
+class Initializer;
+}
 namespace lbann {
 
 /** @brief Scheme for initializing weight values. */
@@ -75,6 +79,9 @@ public:
   /** Initialize entries in a weights matrix. */
   virtual void fill(AbsDistMatrixType& matrix) = 0;
 
+  /** @brief Add initializer to prototext */
+  virtual void write_proto(lbann_data::Initializer& proto) const = 0;
+
 };
 
 /** @brief Fill weights with a single constant value. */
@@ -98,6 +105,9 @@ public:
   std::string get_type() const override { return "constant"; }
   description get_description() const override;
   void fill(AbsDistMatrixType& matrix) override;
+
+  /** @brief Add initializer data to prototext */
+  void write_proto(lbann_data::Initializer& init) const final;
 
 private:
 
@@ -134,6 +144,9 @@ public:
   std::string get_type() const override { return "value"; }
   void fill(AbsDistMatrixType& matrix) override;
 
+  /** @brief Add initializer data to prototext */
+  void write_proto(lbann_data::Initializer& init) const final;
+
 private:
 
   /** List of weights values. */
@@ -166,6 +179,9 @@ public:
   std::string get_type() const override { return "NumPy"; }
   void fill(AbsDistMatrixType& matrix) override;
 
+  /** @brief Add initializer data to prototext */
+  void write_proto(lbann_data::Initializer& init) const final;
+
 private:
 
   /** NumPy file */
@@ -195,6 +211,9 @@ public:
   std::string get_type() const override{ return "uniform"; }
   description get_description() const override;
   void fill(AbsDistMatrixType& matrix) override;
+
+  /** @brief Add initializer data to prototext */
+  void write_proto(lbann_data::Initializer& init) const final;
 
 private:
 
@@ -229,6 +248,9 @@ public:
   std::string get_type() const override { return "normal"; }
   description get_description() const override;
   void fill(AbsDistMatrixType& matrix) override;
+
+  /** @brief Add initializer data to prototext */
+  void write_proto(lbann_data::Initializer& init) const final;
 
 private:
 

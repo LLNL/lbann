@@ -87,6 +87,7 @@ template <typename TensorDataType,
 class pooling_layer : public data_type_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "pooling only supports DATA_PARALLEL");
+
 private:
 
   /** Pooling mode. */
@@ -257,6 +258,9 @@ public:
   }
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
   pooling_layer()

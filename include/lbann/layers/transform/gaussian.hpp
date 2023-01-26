@@ -85,6 +85,9 @@ public:
 
 protected:
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   friend class cereal::access;
   gaussian_layer()
     : gaussian_layer(nullptr, { 1 } )

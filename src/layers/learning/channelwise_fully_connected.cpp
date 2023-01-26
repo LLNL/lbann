@@ -29,10 +29,23 @@
 #include "lbann/models/model.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/variance_scaling_initializers.hpp"
+
+#include "lbann/proto/datatype_helpers.hpp"
 #include <layers.pb.h>
 
 namespace lbann
 {
+
+template <typename T, data_layout L, El::Device D>
+void channelwise_fully_connected_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_channelwise_fully_connected();
+  auto const& dims = this->get_output_dims();
+  for (size_t ii = 1; ii < dims.size(); ii++)
+    msg->add_output_channel_dims(dims[ii]);
+  msg->mutable_bias()->set_value(m_has_bias);
+  msg->mutable_transpose()->set_value(m_transpose);
+}
 
 // =========================================================
 // DistConv-Adapter member functions

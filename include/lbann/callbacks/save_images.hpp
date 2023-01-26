@@ -73,6 +73,8 @@ private:
   save_images() = default;
 
 private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
 
   /** List of layer names to save as images. */
   std::vector<std::string> m_layer_names;

@@ -48,6 +48,11 @@ check_dataset::serialize(Archive & ar) {
      CEREAL_NVP(testing_set));
 }
 
+void check_dataset::write_specific_proto(lbann_data::Callback& proto) const
+{
+  proto.mutable_check_dataset();
+}
+
 void check_dataset::add_to_set(model *m, Layer *l, int64_t step, std::set<long>& set) {
   if (!dynamic_cast<input_layer<DataType>*>(l)) {
     return;

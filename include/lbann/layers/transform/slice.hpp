@@ -29,10 +29,13 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/trainers/trainer.hpp"
+#include "lbann/utils/protobuf.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -82,6 +85,9 @@ public:
   }
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   El::SyncInfo<Device> syncSubGridCommunication = El::SyncInfo<Device>();
 
@@ -137,6 +143,14 @@ private:
 // =========================================================
 // Implementation
 // =========================================================
+
+template <typename T, data_layout L, El::Device D>
+void slice_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_slice();
+  msg->set_axis(m_slice_dim);
+  protobuf::assign_to_repeated(*msg->mutable_slice_points(), m_slice_points);
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 slice_layer<TensorDataType,Layout,Device>::slice_layer(lbann_comm *comm)

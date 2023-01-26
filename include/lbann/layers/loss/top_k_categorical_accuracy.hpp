@@ -29,6 +29,8 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -75,6 +77,9 @@ public:
 
 protected:
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   friend class cereal::access;
   top_k_categorical_accuracy_layer()
     : top_k_categorical_accuracy_layer(nullptr, 1)
@@ -111,6 +116,14 @@ private:
   /** Parameter for top-k search. */
   /*const*/ El::Int m_k;
 };
+
+template <typename T, data_layout L, El::Device D>
+void top_k_categorical_accuracy_layer<T,L,D>::write_specific_proto(
+  lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_top_k_categorical_accuracy();
+  msg->set_k(m_k);
+}
 
 #ifndef LBANN_TOP_K_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
 

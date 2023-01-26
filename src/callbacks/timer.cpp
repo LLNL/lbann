@@ -246,6 +246,11 @@ void timer::timing_end(model& m) {
 
 }
 
+void timer::write_specific_proto(lbann_data::Callback& proto) const
+{
+  proto.mutable_timer();
+}
+
 std::unique_ptr<callback_base>
 build_timer_callback_from_pbuf(
   const google::protobuf::Message&, std::shared_ptr<lbann_summary> const& summarizer) {

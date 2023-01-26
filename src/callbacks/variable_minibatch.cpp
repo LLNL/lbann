@@ -172,6 +172,14 @@ bool step_minibatch::schedule(
   }
 }
 
+void step_minibatch::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_step_minibatch();
+  msg->set_starting_mbsize(m_starting_mbsize);
+  msg->set_step(m_step);
+  msg->set_ramp_time(m_ramp_time);
+}
+
 minibatch_schedule::minibatch_schedule(
   size_t starting_mbsize, std::vector<minibatch_step> steps) :
   variable_minibatch(starting_mbsize), m_steps(std::move(steps)) {
@@ -192,6 +200,19 @@ bool minibatch_schedule::schedule(
     return true;
   }
   return false;
+}
+
+void minibatch_schedule::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_minibatch_schedule();
+  msg->set_starting_mbsize(m_starting_mbsize);
+  for (auto const& step : m_steps) {
+    auto* sched_step = msg->add_step();
+    sched_step->set_epoch(step.epoch);
+    sched_step->set_mbsize(step.mbsize);
+    sched_step->set_lr(step.lr);
+    sched_step->set_ramp_time(step.ramp_time);
+  }
 }
 
 std::unique_ptr<callback_base>

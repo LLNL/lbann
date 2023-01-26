@@ -120,6 +120,9 @@ public:
 
   ///@}
 
+  /** Add optimizer data to prototext */
+  void write_proto(lbann_data::Optimizer& opt) const final;
+
 protected:
 
   /** @brief Default constructor.

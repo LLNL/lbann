@@ -122,7 +122,8 @@ public:
    *  This should be able to be passed back to LBANN to exactly recreate this
    *  operator from protobuf.
    */
-  void write_proto(google::protobuf::Message& msg) const final;
+  void write_proto(google::protobuf::Message& msg) const;
+
   /** @name Serialization */
   ///@{
 

@@ -81,6 +81,9 @@ class profiler : public callback_base {
   ///@}
 
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /** Get a color to use in the profiler for a layer. */
   int get_color(Layer *l);
   /** Whether to synchronize the when setting up profile regions. */

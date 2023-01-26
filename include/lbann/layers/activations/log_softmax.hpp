@@ -28,9 +28,11 @@
 #define LBANN_LAYERS_ACTIVATIONS_LOG_SOFTMAX_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #if defined LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #endif // LBANN_HAS_DNN_LIB
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -122,6 +124,11 @@ public:
 
   ///@}
 
+protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
 private:
 
   /** Workspace for column-wise reductions. */
@@ -133,6 +140,12 @@ private:
 #endif // LBANN_HAS_DNN_LIB
 
 };
+
+template <typename T, data_layout L, El::Device D>
+void log_softmax_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_log_softmax();
+}
 
 #ifndef LBANN_LOG_SOFTMAX_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

@@ -27,8 +27,11 @@
 #define LBANN_CROSS_GRID_SUM_SLICE_LAYER_INSTANTIATE
 #include "lbann/layers/transform/cross_grid_sum_slice.hpp"
 
-#include <lbann.pb.h>
 #include <lbann/proto/proto_common.hpp>
+#include "lbann/proto/datatype_helpers.hpp"
+
+#include <lbann.pb.h>
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -45,6 +48,12 @@ build_cross_grid_sum_slice_layer_from_pbuf(lbann_comm* comm,
 
   using LayerType = cross_grid_sum_slice_layer<TensorDataType, Device>;
   return std::make_unique<LayerType>(comm);
+}
+
+template <typename T, El::Device D>
+void cross_grid_sum_slice_layer<T,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_cross_grid_sum_slice();
 }
 
 #define PROTO_DEVICE(T, D)                                                     \

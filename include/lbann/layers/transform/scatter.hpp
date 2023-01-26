@@ -28,7 +28,10 @@
 #define LBANN_LAYERS_TRANSFORM_SCATTER_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/protobuf.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -80,6 +83,10 @@ public:
   El::Device get_device_allocation() const override;
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   friend class cereal::access;
   scatter_layer()
     : scatter_layer({1},-1)
@@ -95,6 +102,14 @@ private:
 // =========================================================
 // Implementation
 // =========================================================
+
+template <typename T, data_layout L, El::Device D>
+void scatter_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_scatter();
+  protobuf::assign_to_repeated(*msg->mutable_dims(), this->get_output_dims());
+  msg->mutable_axis()->set_value(m_scatter_axis);
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 scatter_layer<TensorDataType,Layout,Device>::scatter_layer(

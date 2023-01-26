@@ -30,7 +30,9 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/memory.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -120,6 +122,9 @@ public:
 
 protected:
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   void setup_data(size_t max_mini_batch_size) override {
     data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
@@ -193,6 +198,14 @@ private:
    */
   std::unique_ptr<AbsDistMatrixType> m_batch_statistics_gradient;
 };
+
+template <typename T, data_layout L, El::Device D>
+void entrywise_batch_normalization_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_entrywise_batch_normalization();
+  msg->set_decay(m_decay);
+  msg->set_epsilon(m_epsilon);
+}
 
 LBANN_DEFINE_LAYER_BUILDER(entrywise_batch_normalization);
 

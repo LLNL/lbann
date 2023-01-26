@@ -28,6 +28,9 @@
 #define LBANN_LAYERS_REGULARIZERS_CHANNELWISE_SOFTMAX_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -72,6 +75,9 @@ public:
 
 protected:
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   friend class cereal::access;
   channelwise_softmax_layer()
     : channelwise_softmax_layer(nullptr)
@@ -89,6 +95,12 @@ protected:
 // =========================================================
 // Implementation
 // =========================================================
+
+template <typename T, data_layout L, El::Device D>
+void channelwise_softmax_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_channelwise_softmax();
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 channelwise_softmax_layer<TensorDataType,Layout,Device>::channelwise_softmax_layer(

@@ -29,6 +29,7 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/random_number_generators.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include <callbacks.pb.h>
 
@@ -52,6 +53,13 @@ void perturb_dropout::serialize(Archive & ar) {
        ::cereal::base_class<callback_base>(this)),
      CEREAL_NVP(m_keep_prob_factor),
      CEREAL_NVP(m_layer_names));
+}
+
+void perturb_dropout::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_perturb_dropout();
+  msg->set_keep_dropout_factor(m_keep_prob_factor);
+  msg->set_layers(protobuf::to_space_sep_string(m_layer_names));
 }
 
 void perturb_dropout::setup(model* m) {

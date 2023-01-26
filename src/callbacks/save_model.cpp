@@ -71,6 +71,14 @@ void save_model::write_proto_text(const lbann_data::Model& proto,
   close(fd);
 }
 
+void save_model::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_save_model();
+  msg->set_dir(m_dir);
+  msg->set_extension(m_extension);
+  msg->set_disable_save_after_training(m_disable_save_after_training);
+}
+
 bool save_model::do_save_model(model *m) {
   lbann_data::Model model_param;
 

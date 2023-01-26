@@ -90,6 +90,9 @@ class debug_io : public callback_base {
   ///@}
 
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /** The phase to debug. */
   execution_mode m_debug_phase;
   int m_debug_lvl; /** Debugging level: 0 - epoch begin, 1 - fwd prop */

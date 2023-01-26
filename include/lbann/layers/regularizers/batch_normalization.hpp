@@ -30,7 +30,9 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/distconv.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -240,6 +242,9 @@ public:
 
 protected:
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
@@ -398,6 +403,15 @@ protected:
 #endif // LBANN_HAS_DISTCONV
 
 };
+
+template <typename T, data_layout L, El::Device D>
+void batch_normalization_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_batch_normalization();
+  msg->set_decay(m_decay);
+  msg->set_epsilon(m_epsilon);
+  msg->set_statistics_group_size(m_statistics_group_size);
+}
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

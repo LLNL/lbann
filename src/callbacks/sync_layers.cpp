@@ -48,6 +48,14 @@ void sync_layers::serialize(Archive & ar) {
      CEREAL_NVP(m_only_input));
 }
 
+void sync_layers::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_sync_layers();
+  msg->set_sync_gpus(m_sync_gpus);
+  msg->set_sync_mpi(m_sync_mpi);
+  msg->set_only_input(m_only_input);
+}
+
 void sync_layers::on_forward_prop_end(model *m, Layer *l) {
   if (m_only_input && dynamic_cast<input_layer<DataType>*>(l) == nullptr) {
     return;  // Skip non-input layers.

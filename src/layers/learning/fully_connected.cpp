@@ -30,6 +30,8 @@
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/variance_scaling_initializers.hpp"
 
+#include "lbann/proto/datatype_helpers.hpp"
+
 #include <layers.pb.h>
 
 #include <string>
@@ -641,6 +643,16 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
 }
 
 #endif // LBANN_HAS_GPU
+
+template <typename T, data_layout L, El::Device D>
+void fully_connected_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_fully_connected();
+  msg->set_num_neurons(get_linear_size(this->get_output_dims()));
+  auto const has_bias = (this->num_weights() > 1UL);
+  msg->set_has_bias(has_bias);
+  msg->set_transpose(m_transpose);
+}
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void fully_connected_layer<TensorDataType, T_layout, Dev>::fp_compute() {

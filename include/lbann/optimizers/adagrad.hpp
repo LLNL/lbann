@@ -79,6 +79,9 @@ public:
   using OptimizerType::setup;
   void setup(WeightsType* w = nullptr) override;
 
+   /** Add optimizer data to prototext */
+  void write_proto(lbann_data::Optimizer& opt) const final;
+
 protected:
 
   friend cereal::access;

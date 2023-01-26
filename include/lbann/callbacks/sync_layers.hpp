@@ -74,6 +74,9 @@ class sync_layers : public callback_base {
   ///@}
 
  protected:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /** Whether to synchronize GPUs. */
   bool m_sync_gpus;
   /** Whether to do a global synchronization. */

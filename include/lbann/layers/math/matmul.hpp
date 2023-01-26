@@ -94,6 +94,10 @@ public:
   void serialize(ArchiveT& ar);
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   friend class cereal::access;
   matmul_layer()
     : matmul_layer(nullptr, false, false)

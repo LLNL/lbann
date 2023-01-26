@@ -27,12 +27,21 @@
 #define LBANN_HADAMARD_LAYER_INSTANTIATE
 #include "lbann/layers/transform/hadamard.hpp"
 
+#include "lbann/proto/datatype_helpers.hpp"
 #include <lbann/proto/proto_common.hpp>
+
 #include <lbann.pb.h>
+#include <layers.pb.h>
 
 namespace lbann {
 
 LBANN_LAYER_DEFAULT_BUILDER(hadamard)
+
+template <typename T, data_layout L, El::Device D>
+void hadamard_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_hadamard();
+}
 
 #define PROTO_DEVICE(T, Device)                                         \
   template class hadamard_layer<T, data_layout::DATA_PARALLEL, Device>; \

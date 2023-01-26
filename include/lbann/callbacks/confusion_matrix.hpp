@@ -68,6 +68,8 @@ public:
   void on_batch_evaluate_end(model *m) override { update_counts(*m); }
 
 private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
 
   /** Name of prediction layer.
    *  This layer is assumed to output one-hot vectors.

@@ -198,7 +198,11 @@ public:
   bool reload_trainer(trainer *t);
   bool restart(model *m);
   std::string name() const override { return "checkpoint"; }
+
 private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   bool do_checkpoint(model *m, visitor_hook hook);
   void do_distributed_checkpoint(
     lbann_comm& comm,

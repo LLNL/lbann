@@ -28,8 +28,10 @@
 #define LBANN_LAYERS_LEARNING_EMBEDDING_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/memory.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -101,6 +103,9 @@ public:
 
 protected:
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   friend class cereal::access;
   embedding_layer();
 
@@ -130,6 +135,15 @@ private:
 // =========================================================
 // Implementation
 // =========================================================
+
+template <typename T, data_layout L, El::Device D>
+void embedding_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_embedding();
+  msg->set_num_embeddings(m_num_embeddings);
+  msg->set_embedding_dim(m_embedding_dim);
+  msg->mutable_padding_idx()->set_value(m_padding_idx);
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 embedding_layer<TensorDataType,Layout,Device>::embedding_layer(

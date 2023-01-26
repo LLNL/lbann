@@ -49,6 +49,13 @@ void dump_gradients::serialize(Archive & ar) {
      CEREAL_NVP(m_basename));
 }
 
+void dump_gradients::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_dump_gradients();
+  msg->set_basename(m_basename);
+  msg->set_interval(m_batch_interval);
+}
+
 void dump_gradients::on_backward_prop_end(model *m) {
   const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
   for (weights *w : m->get_weights()) {

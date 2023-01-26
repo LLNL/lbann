@@ -39,6 +39,12 @@ void print_model_description::serialize(Archive & ar) {
        ::cereal::base_class<callback_base>(this)));
 }
 
+void print_model_description::write_specific_proto(
+  lbann_data::Callback& proto) const
+{
+  proto.mutable_print_model_description();
+}
+
 void print_model_description::on_setup_end(model *m) {
   if (m->get_comm()->am_world_master()) {
     std::cout << "\n"

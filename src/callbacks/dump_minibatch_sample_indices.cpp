@@ -52,6 +52,13 @@ void dump_minibatch_sample_indices::serialize(Archive & ar) {
      CEREAL_NVP(m_basename));
 }
 
+void dump_minibatch_sample_indices::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_dump_mb_indices();
+  msg->set_basename(m_basename);
+  msg->set_interval(m_batch_interval);
+}
+
 void dump_minibatch_sample_indices::dump_to_file(model *m, Layer *l, int64_t step) {
   const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
   // Print minibatch sample indices of the data coordinator

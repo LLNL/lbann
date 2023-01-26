@@ -43,16 +43,16 @@ void gather_layer<TensorDataType, Layout, Device>::fp_compute() {
   const auto& output_dims_ = this->get_output_dims();
   std::vector<size_t> input_dims(input_dims_.begin(), input_dims_.end());
   std::vector<size_t> output_dims(output_dims_.begin(), output_dims_.end());
-  
+
   const bool is_2D = input_dims.size()>1;
-  const bool is_axis_0 = (is_2D && this->m_gather_axis == 0);  
+  const bool is_axis_0 = (is_2D && this->m_gather_axis == 0);
   //Set value size, output size and set number of rows appropriately if 2D
   const El::Int num_values_cols = is_2D ? input_dims[1] : this->get_input_size(0);
   const El::Int num_values_rows = is_2D ? input_dims[0] : 1;
-  
+
   const size_t num_output_cols = is_2D ? output_dims[1] : this->get_output_size();
   const size_t num_output_rows = is_2D ? output_dims[0] : 1;
-  
+
   const El::Int bounds = is_axis_0 ? num_values_rows: num_values_cols;
 
   // Gather into output tensor
@@ -60,7 +60,7 @@ void gather_layer<TensorDataType, Layout, Device>::fp_compute() {
   for (size_t j=0; j<local_mini_batch_size; ++j) {
     for (size_t k = 0; k < num_output_rows; ++k){
       for (size_t i=0; i<num_output_cols; ++i) {
-        const auto& index_val = is_axis_0 ? k : i; 
+        const auto& index_val = is_axis_0 ? k : i;
         const auto ind = static_cast<El::Int>(std::floor(local_indices(index_val,j)));
 
         if (0<=ind && ind<bounds) {
@@ -88,13 +88,13 @@ void gather_layer<TensorDataType, Layout, Device>::bp_compute() {
   auto& local_values_grad = this->get_local_error_signals(0);
   auto& local_indices_grad = this->get_local_error_signals(1);
 
-  //Get the dimensions  to check if values is 2D 
+  //Get the dimensions  to check if values is 2D
   const auto& input_dims_ = this->get_input_dims();
   const auto& output_dims_ = this->get_output_dims();
   std::vector<size_t> input_dims(input_dims_.begin(), input_dims_.end());
   std::vector<size_t> output_dims(output_dims_.begin(), output_dims_.end());
   const size_t local_mini_batch_size = local_indices.Width();
-  
+
   const bool is_2D = input_dims.size()>1;
   const bool is_axis_0 = (is_2D && this->m_gather_axis == 0);
 
@@ -116,7 +116,7 @@ void gather_layer<TensorDataType, Layout, Device>::bp_compute() {
   for (size_t j=0; j<local_mini_batch_size; ++j) {
     for (size_t k = 0; k < num_output_rows; ++k){
       for (size_t i=0; i < num_output_cols; ++i) {
-        const auto& index_val = is_axis_0 ? k : i; 
+        const auto& index_val = is_axis_0 ? k : i;
         const auto ind = static_cast<El::Int>(std::floor(local_indices(index_val,j)));
         if (0<=ind && ind<bounds) {
           if(is_axis_0){

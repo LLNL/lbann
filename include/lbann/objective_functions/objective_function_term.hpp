@@ -31,6 +31,11 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/weights/weights.hpp"
 
+// Forward-declare protobuf classes
+namespace lbann_data {
+class ObjectiveFunction;
+}
+
 namespace lbann {
 
 /** Abstract class for objective function terms. */
@@ -86,6 +91,9 @@ class objective_function_term {
   std::vector<ViewingWeightsPtr> get_weights_pointers() const;
   /** Set list of pointers to weights. */
   void set_weights_pointers(std::vector<ViewingWeightsPtr> w);
+
+  /** Add Objective function data to prototext */
+  virtual void write_specific_proto(lbann_data::ObjectiveFunction& proto) const = 0;
 
  protected:
 

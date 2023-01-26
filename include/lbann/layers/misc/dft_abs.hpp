@@ -29,6 +29,8 @@
 
 #include "lbann_config.hpp"
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 // This layer is only supported if LBANN has FFTW support.
 #ifdef LBANN_HAS_FFTW
@@ -86,11 +88,15 @@ public:
     return Layout;
   }
   El::Device get_device_allocation() const override { return Device; }
+
   description get_description() const override {
     return data_type_layer<TensorDataType>::get_description();
   }
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
   dft_abs_layer()
@@ -107,6 +113,11 @@ private:
   std::unique_ptr<impl_type> pimpl_;
 };// class dft_abs_layer
 
+template <typename T, data_layout L, El::Device D>
+void dft_abs_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_dft_abs();
+}
 
 #ifndef LBANN_DFT_ABS_LAYER_INSTANTIATE
 

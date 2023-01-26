@@ -28,8 +28,10 @@
 #define LBANN_LAYER_SUM_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/distconv.hpp"
+#include <lbann.pb.h>
 
 namespace lbann {
 
@@ -71,9 +73,11 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-
-
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   El::SyncInfo<Dev> syncSubGridCommunication = El::SyncInfo<Dev>();
 
 
@@ -292,6 +296,12 @@ protected:
   const sum_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() const override;
 #endif // LBANN_HAS_DISTCONV
 };
+
+template <typename T, data_layout L, El::Device D>
+void sum_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_sum();
+}
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

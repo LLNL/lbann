@@ -26,11 +26,21 @@
 
 #define LBANN_CUTOUT_LAYER_INSTANTIATE
 #include "lbann/layers/image/cutout.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+
+#include <lbann.pb.h>
+#include <layers.pb.h>
 
 #include <math.h>
 #include <algorithm>
 
 namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void cutout_layer<TensorDataType, Layout, Device>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<TensorDataType>);
+  proto.mutable_cutout();
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void cutout_layer<TensorDataType, Layout, Device>::fp_compute() {
@@ -54,7 +64,7 @@ void cutout_layer<TensorDataType, Layout, Device>::fp_compute() {
   const auto& cutouts = this->get_local_prev_activations(1);
 
   // RNG
-  std::random_device rd;  
+  std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_real_distribution<DataType> uni(zero,one);
 
@@ -87,7 +97,7 @@ void cutout_layer<TensorDataType, Layout, Device>::fp_compute() {
                                                 sample);
 
 	  if((input_col >= col_start && input_col < col_end) && (input_row >= row_start && input_row < row_end)){
-          	pixel_output = zero; 
+          	pixel_output = zero;
 	  }
 	  else{
           	pixel_output = local_input(channel * input_height * input_width

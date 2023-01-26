@@ -28,7 +28,6 @@
 #include "lbann/layers/transform/sum.hpp"
 
 #include <lbann/proto/proto_common.hpp>
-#include <lbann.pb.h>
 
 namespace lbann {
 

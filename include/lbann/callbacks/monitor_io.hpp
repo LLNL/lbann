@@ -69,6 +69,9 @@ class monitor_io : public callback_base {
   ///@}
 
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /** Indicies of layers to monitor. */
   std::unordered_set<std::string> m_layers;
 };

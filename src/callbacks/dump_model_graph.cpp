@@ -149,6 +149,13 @@ void dump_model_graph::on_setup_end(model *m) {
 #endif // LBANN_HAS_BOOST
 }
 
+void dump_model_graph::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_dump_model_graph();
+  msg->set_basename(m_basename);
+  msg->set_print(m_print);
+}
+
 std::unique_ptr<callback_base>
 build_dump_model_graph_callback_from_pbuf(
     const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {

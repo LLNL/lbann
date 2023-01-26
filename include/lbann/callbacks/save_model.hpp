@@ -78,6 +78,9 @@ class save_model : public callback_base {
   bool do_save_model_weights(model *m);
 
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   std::string m_dir; //directory to save file
   /// Disables the normal behavior of saving when training is complete
   bool m_disable_save_after_training;

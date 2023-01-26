@@ -29,7 +29,10 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/exception.hpp"
+
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -75,6 +78,9 @@ class in_top_k_layer : public data_type_layer<TensorDataType> {
 
  protected:
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   friend class cereal::access;
   in_top_k_layer()
     : in_top_k_layer(nullptr, 1)
@@ -92,6 +98,13 @@ class in_top_k_layer : public data_type_layer<TensorDataType> {
   /** Parameter for top-k search. */
   El::Int m_k;
 };
+
+template <typename T, data_layout L, El::Device D>
+void in_top_k_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_in_top_k();
+  msg->set_k(m_k);
+}
 
 #ifndef LBANN_IN_TOP_K_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

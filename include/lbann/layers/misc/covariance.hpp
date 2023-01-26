@@ -29,6 +29,8 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -98,6 +100,9 @@ public:
 
 protected:
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   friend class cereal::access;
   covariance_layer()
     : covariance_layer(nullptr, false)
@@ -146,6 +151,12 @@ private:
   std::unique_ptr<AbsDistMatrixType> m_workspace;
 };
 
+template <typename T, data_layout L, El::Device D>
+void covariance_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_covariance();
+  msg->set_biased(m_biased);
+}
 
 #ifndef LBANN_COVARIANCE_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

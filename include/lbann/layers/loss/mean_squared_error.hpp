@@ -28,7 +28,9 @@
 #define LBANN_LAYERS_LOSS_MEAN_SQUARED_ERROR_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/distconv.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -214,6 +216,9 @@ public:
 
 protected:
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   friend class cereal::access;
   mean_squared_error_layer()
     : mean_squared_error_layer(nullptr)
@@ -261,6 +266,12 @@ private:
   }
 #endif // LBANN_HAS_DISTCONV
 };
+
+template <typename T, data_layout L, El::Device D>
+void mean_squared_error_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_mean_squared_error();
+}
 
 #ifdef LBANN_HAS_ONNX
 template <typename T, data_layout L, El::Device D>

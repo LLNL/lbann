@@ -28,7 +28,9 @@
 #define LBANN_LAYER_ACTIVATION_RELU_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/distconv.hpp"
+#include <layers.pb.h>
 
 #ifdef LBANN_HAS_DISTCONV
 #include "distconv/dnn_backend/relu.hpp"
@@ -76,6 +78,10 @@ public:
   ///@}
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   void fp_compute() override;
   void bp_compute() override;
 #ifdef LBANN_HAS_DISTCONV
@@ -90,6 +96,12 @@ protected:
   const relu_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() const override;
 #endif // LBANN_HAS_DISTCONV
 };
+
+template <typename T, data_layout L, El::Device D>
+void relu_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_relu();
+}
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

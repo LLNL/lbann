@@ -55,6 +55,13 @@ void export_onnx::on_train_end(model* m)
   }
 }
 
+void export_onnx::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_export_onnx();
+  msg->set_output_filename(m_output_filename);
+  msg->set_debug_string_filename(m_debug_string_filename);
+}
+
 std::unique_ptr<callback_base>
 build_export_onnx_callback_from_pbuf(const google::protobuf::Message& proto_msg,
                                      const std::shared_ptr<lbann_summary>&)

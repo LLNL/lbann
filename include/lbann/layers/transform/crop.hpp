@@ -28,7 +28,10 @@
 #define LBANN_LAYER_CROP_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/protobuf.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -154,6 +157,9 @@ public:
   }
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
   crop_layer()
@@ -356,6 +362,13 @@ private:
   void bp_compute_3d();
 
 };
+
+template <typename T, data_layout L, El::Device D>
+void crop_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_crop();
+  protobuf::assign_to_repeated(*msg->mutable_dims(), this->get_output_dims());
+}
 
 #ifndef LBANN_CROP_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

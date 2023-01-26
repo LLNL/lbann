@@ -26,6 +26,7 @@
 
 #define LBANN_INSTANTIATE_OPERATOR_LAYER
 #include "lbann/layers/operator_layer_impl.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 
 namespace lbann {
 
@@ -42,5 +43,16 @@ namespace lbann {
     lbann_data::Layer const&)
 
 #include "lbann/macros/instantiate_device.hpp"
+
+template <typename T, typename O, data_layout L, El::Device D>
+void OperatorLayer<T, O, L, D>::write_specific_proto(lbann_data::Layer& proto) const {
+
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_operator_layer();
+  auto* op = msg->add_ops();
+  op->set_input_datatype(proto::ProtoDataType<T>);
+  op->set_output_datatype(proto::ProtoDataType<O>);
+  op->set_device_allocation(proto::ProtoDevice<D>);
+}
 
 } // namespace lbann

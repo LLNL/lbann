@@ -40,6 +40,11 @@ description callback_base::get_description() const {
   return name();
 }
 
+void callback_base::write_proto(lbann_data::Callback& proto) const
+{
+  this->write_specific_proto(proto);
+}
+
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback_base
