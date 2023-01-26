@@ -63,6 +63,7 @@
 #endif // LBANN_HAS_NVSHMEM
 
 #include "lbann/layers/misc/distconv/distconv_channelwise_softmax.hpp"
+
 namespace lbann {
 
 inline auto default_hydrogen_stream()
@@ -141,6 +142,8 @@ template <typename TensorDataType>
 using BatchNormalization = ::distconv::BatchNormalization<Backend, TensorDataType>;
 template <typename TensorDataType>
 using MatMul = ::distconv::MatMul<Backend, TensorDataType>;
+template <typename TensorDataTyoe>
+using ChannelwiseSoftmax = ::distconv::ChannelwiseSoftmax<Backend, TensorDataType>;
 using Softmax = ::distconv::Softmax<Backend>;
 using CrossEntropy = ::distconv::CrossEntropy<Backend>;
 using MeanSquaredError = ::distconv::MeanSquaredError<Backend>;

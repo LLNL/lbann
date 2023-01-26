@@ -311,6 +311,14 @@ void fp_impl(size_t num_channels,
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void channelwise_softmax_layer<TensorDataType,Layout,Device>::fp_compute() {
+  
+  #ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()){
+    this->get_distconv_adapter().fp_compute();
+    return ;
+  }
+  #endif // LBANN_HAS_DISTCONV
+
   const size_t num_channels = this->get_output_dims().front();
   const size_t channel_size = this->get_output_size() / num_channels;
   fp_impl(num_channels,
@@ -501,6 +509,14 @@ void bp_impl(size_t num_channels,
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void channelwise_softmax_layer<TensorDataType,Layout,Device>::bp_compute() {
+
+  #ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()){
+    this->get_distconv_adapter().bp_compute();
+    return ;
+  }
+  #endif // LBANN_HAS_DISTCONV
+
   const size_t num_channels = this->get_output_dims().front();
   const size_t channel_size = this->get_output_size() / num_channels;
   bp_impl(num_channels,

@@ -32,7 +32,35 @@
 
 #include "lbann/proto/layers.pb.h"
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#include "lbann/layers/misc/distconv/distconv_channelwise_softmax.hpp"
+#endif
+
+
 namespace lbann {
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataDtype, data_layout Layout, El::Device Device>
+class channelwise_softmax_distconv_adapter
+  : public data_type_distconv_adapter<TensorDataType>{
+  public:
+    using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType; 
+
+    channelwise_softmax_distconv_adapter(Layer& layer)
+      : data_type_distconv_adapter<TensorDataType>(layer){}
+    
+    virtual ~channelwise_softmax_distconv_adapter() = default;
+    void setup_distributions(tensor_overlap_constraints &constraints) override;
+    void setup_layer(size_t workspace_capacity) override; 
+    void fp_compute();
+    void bp_compute();
+    dc::Shape get_activations_local_shape(int index=0) const override;
+    std::unique_ptr<dc::ChannelwiseSoftmax<TensorDataType>> m_channelwise_softmax_operator; 
+  }; // class definition channelwise_softmax_distconv_adapter 
+
+#endif  // LBANN_HAS_DISTCONV
+
 
 /** @brief Apply softmax to tensor channels.
  *
@@ -88,6 +116,15 @@ protected:
   void fp_compute() override;
   void bp_compute() override;
 
+#ifdef LBANN_HAS_DISTCONV
+  friend class channelwise_softmax_distconv_adapter<TensorDataType, Layout, Device>;
+  protected:
+    void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
+    bool is_distconv_supported() const override;
+    channelwise_softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() override;
+    const channelwise_softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() const override;
+#endif // LBANN_HAS_DISTCONV
+
 };
 
 // Builder function
@@ -134,9 +171,100 @@ void channelwise_softmax_layer<TensorDataType,Layout,Device>::setup_dims(DataRea
   this->set_output_dims(this->get_input_dims());
 }
 
+#ifdef LBANN_HAS_DISTCONV
+
 // =========================================================
-// Explicit template instantiation
+// DistConv-Adapter member functions
 // =========================================================
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+channelwise_softmax_distconv_adapter<TensorDataType, Layout, Device>
+::setup_distributions(tensor_overlap_constraints &constraints){
+  data_type_distconv_adapter<TensorDataType>::setup_distributions(constraints);
+
+  for (auto &d: this->m_prev_activations_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_activations_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_prev_error_signals_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_error_signals_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+channelwise_softmax_distconv_adapter<TensorDataType, Layout, Device>
+::setup_layer(size_t workspace_capacity){
+  data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
+
+  m_channelwise_softmax_operator = std::make_unique<dc::MatMul<TensorDataType>>(dc::get_backend());
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+channelwise_softmax_distconv_adapter<TensorDataType, Layout, Device>
+::fp_compute(){
+  auto &layer = dynamic_cast<
+    channelwise_softmax_layer<TensorDataType, Layout, Device>&>(this->layer());
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+channelwise_softmax_distconv_adapter<TensorDataType, Layout, Device>
+::bp_compute(){
+  auto &layer = dynamic_cast<
+    channelwise_softmax_layer<TensorDataType, Layout, Device>&>(this->layer());
+}
+// =============================================================
+// DistConv-enabled Channelwise-Softmax member functions
+// =============================================================
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+bool
+channelwise_softmax_layer<TensorDataType, Layout, Device>
+::is_distconv_supported() const {
+  return Device==El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+channelwise_softmax_layer<TensorDataType, Layout, Device>
+::setup_distconv_adapter(const DataReaderMetaData& dr_metadata){
+  this->get_distconv_adapter_ptr() = std::make_unique<channelwise_softmax_distconv_adapter<
+    TensorDataType, Layout, Device>>(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+const channelwise_softmax_distconv_adapter<TensorDataType, Layout, Device>&
+channelwise_softmax_layer<TensorDataType, Layout, Device>
+::get_distconv_adapter() const{
+  return dynamic_cast<const channelwise_softmax_distconv_adapter< 
+    TensorDataType, Layout, Device>&>(data_type_layer<TensorDataType>::get_distconv_adapter());
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+channelwise_softmax_distconv_adapter<TensorDataType, Layout, Device>&
+channelwise_softmax_layer<TensorDataType, Layout, Device>
+::get_distconv_adapter(){
+  return const_cast<channelwise_softmax_distconv_adapter<TensorDataType, Layout, Device>&>(
+    static_cast<const channelwise_softmax_layer<TensorDataType, Layout, Device>&>(*this).get_distconv_adapter());
+}
+
+
+#endif //  LBANN_HAS_DISTCONV
 
 #ifndef LBANN_CHANNELWISE_SOFTMAX_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device)                         \

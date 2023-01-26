@@ -24,7 +24,7 @@
 ## permissions and limitations under the license.
 ################################################################################
 set_full_path(THIS_DIR_HEADERS
-    distconv_channelwise_matmul.hpp
+    distconv_channelwise_softmax.hpp
     )
 
 # Propagate the files up the tree
