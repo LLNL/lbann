@@ -27,6 +27,7 @@
 #define LBANN_BILINEAR_RESIZE_LAYER_INSTANTIATE
 #include "lbann/layers/image/bilinear_resize.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
+#include "lbann/models/model.hpp"
 
 namespace lbann {
 
@@ -122,6 +123,11 @@ void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
   const auto& local_input = this->get_local_prev_activations();
   auto& local_output = this->get_local_activations();
 
+  const auto& mode = this->m_model->get_execution_context().get_execution_mode();
+  if (mode != execution_mode::training) {
+    El::Copy(local_input, local_output);
+    return;
+  }
   // Dimensions
   const auto& input_dims = this->get_input_dims();
   const auto& num_dims = input_dims.size();
