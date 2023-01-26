@@ -1468,6 +1468,11 @@ int convert_to_dnn_math_type(ProtoTensorOpEnumType mt)
   return 0;
 }
 
+ProtoTensorOpEnumType convert_to_proto_math_type(dnnMathType_t mt)
+{
+    return lbann_data::DEFAULT_TENSOR_OPS;
+}
+
 #define PROTO(T)                                        \
   template class layer_tensor_manager<T>;               \
   template class data_parallel_layer_tensor_manager<T>; \
