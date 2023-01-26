@@ -248,7 +248,9 @@ channelwise_softmax_distconv_adapter<TensorDataType, Layout, Device>
 ::bp_compute(){
   auto &layer = dynamic_cast<
     channelwise_softmax_layer<TensorDataType, Layout, Device>&>(this->layer());
-    m_channelwise_softmax_operator->backward();
+    m_channelwise_softmax_operator->backward(this->get_prev_activations(0),
+                                             this->get_prev_error_signals(),
+                                             this->get_error_signals(0));
 }
 // =============================================================
 // DistConv-enabled Channelwise-Softmax member functions

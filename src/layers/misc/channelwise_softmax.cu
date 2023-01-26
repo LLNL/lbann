@@ -27,7 +27,9 @@
 #define LBANN_CHANNELWISE_SOFTMAX_LAYER_INSTANTIATE
 #include "lbann/layers/misc/channelwise_softmax_impl.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
+#include "channelwise_softmax_kernels.cuh"
 
+<<<<<<< HEAD
 namespace lbann {
 
 namespace {
@@ -333,6 +335,11 @@ void fp_impl(size_t num_channels,
 }
 
 } // namespace
+=======
+
+namespace lbann {
+
+>>>>>>> 46c2c7a51 (Moved shareed kernels to channelwise_softmax_kernels.cuh)
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void channelwise_softmax_layer<TensorDataType,Layout,Device>::fp_compute() {
@@ -344,13 +351,25 @@ void channelwise_softmax_layer<TensorDataType,Layout,Device>::fp_compute() {
   }
   #endif // LBANN_HAS_DISTCONV
 
+  // Local matrices
   const size_t num_channels = this->get_output_dims().front();
   const size_t channel_size = this->get_output_size() / num_channels;
+<<<<<<< HEAD
   fp_impl(num_channels,
           channel_size,
           channel_stride,
           this->get_prev_activations(),
           this->get_activations());
+=======
+  using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
+  const auto& local_input = dynamic_cast<const LocalMat&>(this->get_prev_activations().LockedMatrix());
+  auto& local_output = dynamic_cast<LocalMat&>(this->get_activations().Matrix());
+
+  channelwise_softmax_fp_impl(num_channels,
+                              channel_size,
+                              local_input,
+                              local_output);
+>>>>>>> 46c2c7a51 (Moved shareed kernels to channelwise_softmax_kernels.cuh)
 }
 
 // =========================================================

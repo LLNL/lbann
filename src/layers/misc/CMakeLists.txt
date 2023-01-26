@@ -57,6 +57,7 @@ if (LBANN_HAS_GPU)
     rowwise_weights_norms.cu
     uniform_hash.cu
     variance.cu
+    channelwise_softmax_kernels.cuh
     )
   if (LBANN_HAS_FFTW)
     list(APPEND THIS_DIR_CU_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/dft_abs.cu")
