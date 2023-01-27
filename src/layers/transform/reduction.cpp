@@ -27,6 +27,7 @@
 #define LBANN_REDUCTION_LAYER_INSTANTIATE
 #include "lbann/layers/transform/reduction.hpp"
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 
 #include <layers.pb.h>
 
@@ -44,6 +45,23 @@ std::unique_ptr<Layer> build_reduction_layer_from_pbuf(
   if (mode_str == "sum" || mode_str.empty()) { mode = reduction_mode::SUM; }
   if (mode_str == "mean" || mode_str == "average") { mode = reduction_mode::AVERAGE; }
   return std::make_unique<LayerType>(mode);
+}
+
+template <typename T, data_layout L, El::Device D>
+void reduction_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_reduction();
+  switch (m_mode)
+  {
+    case reduction_mode::SUM:
+      msg->set_mode("sum");
+      break;
+    case reduction_mode::AVERAGE:
+      msg->set_mode("mean");
+      break;
+    default:
+      msg->set_mode("invalid");
+  }
 }
 
 #define PROTO_DEVICE(T, Device)                 \

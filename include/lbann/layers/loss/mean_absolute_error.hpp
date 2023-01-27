@@ -28,6 +28,8 @@
 #define LBANN_LAYERS_LOSS_MEAN_ABSOLUTE_ERROR_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -165,6 +167,9 @@ public:
 
 protected:
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   friend class cereal::access;
   mean_absolute_error_layer()
     : mean_absolute_error_layer(nullptr)
@@ -181,6 +186,12 @@ private:
   std::unique_ptr<AbsDistMatrixType> m_workspace;
 
 };
+
+template <typename T, data_layout L, El::Device D>
+void mean_absolute_error_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_mean_absolute_error();
+}
 
 #ifndef LBANN_MEAN_ABSOLUTE_ERROR_LAYER_INSTANTIATE
 

@@ -105,6 +105,9 @@ class step_minibatch : public variable_minibatch {
   bool schedule(model *m, size_t& new_mbsize, float& new_lr, size_t& ramp_time) override;
 
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /// Number of epochs between mini-batch size increases.
   size_t m_step;
   /// Number of steps to ramp the learning rate over.
@@ -142,9 +145,14 @@ class minibatch_schedule : public variable_minibatch {
     return new minibatch_schedule(*this);
   }
   std::string name() const override { return "minibatch schedule"; }
+
  protected:
   bool schedule(model *m, size_t& new_mbsize, float& new_lr, size_t& ramp_time) override;
+
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /// Steps in the mini-batch schedule, stored in reverse sorted order.
   std::vector<minibatch_step> m_steps;
 };

@@ -75,6 +75,8 @@ public:
   void on_train_end(model* m) override;
 
 private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
 
   /* @brief name of output file. Default = lbann.onnx */
   std::string m_output_filename;

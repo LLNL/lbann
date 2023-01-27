@@ -57,6 +57,14 @@ void set_weights_value::serialize(Archive & ar) {
      CEREAL_NVP(m_step));
 }
 
+void set_weights_value::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_set_weights_value();
+  msg->set_weights(m_weights_name);
+  msg->set_value(m_value);
+  msg->set_step(m_step);
+}
+
 set_weights_value* set_weights_value::copy() const {
   return new set_weights_value(*this);
 }

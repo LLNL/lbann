@@ -41,6 +41,12 @@ void dump_error_signals::serialize(Archive & ar) {
      CEREAL_NVP(m_basename));
 }
 
+void dump_error_signals::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_dump_error_signals();
+  msg->set_basename(m_basename);
+}
+
 void dump_error_signals::on_backward_prop_end(model *m, Layer *l) {
   const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
 

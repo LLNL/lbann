@@ -28,7 +28,9 @@
 #define LBANN_LAYERS_TRANSFORM_GATHER_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/exception.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -82,6 +84,10 @@ public:
   El::Device get_device_allocation() const override;
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   friend class cereal::access;
   gather_layer()
     : gather_layer(-1)
@@ -97,6 +103,13 @@ private:
 // =========================================================
 // Implementation
 // =========================================================
+
+template <typename T, data_layout L, El::Device D>
+void gather_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_gather();
+  msg->mutable_axis()->set_value(m_gather_axis);
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 gather_layer<TensorDataType,Layout,Device>::gather_layer(const int axis)

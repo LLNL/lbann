@@ -469,7 +469,14 @@ public:
   virtual El::Matrix<El::Int>* get_sample_indices_per_mb() { return nullptr; };
 
   /** @brief Write layer to proto file */
-  virtual void write_proto(lbann_data::Layer* proto) const;
+  void write_proto(lbann_data::Layer& proto);
+
+private:
+
+  /** @brief Add layer specific data to prototext */
+  virtual void write_specific_proto(lbann_data::Layer& proto) const = 0;
+
+public:
 
 #ifdef LBANN_HAS_ONNX
   /** @brief Add layer specific data to onnx graph

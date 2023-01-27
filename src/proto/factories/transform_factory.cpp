@@ -37,6 +37,7 @@
 #include "lbann/transforms/vision/grayscale.hpp"
 #include "lbann/transforms/vision/horizontal_flip.hpp"
 #include "lbann/transforms/vision/normalize_to_lbann_layout.hpp"
+#include "lbann/transforms/vision/pad.hpp"
 #include "lbann/transforms/vision/random_affine.hpp"
 #include "lbann/transforms/vision/random_crop.hpp"
 #include "lbann/transforms/vision/random_resized_crop.hpp"
@@ -80,6 +81,7 @@ void register_default_builders(factory_type& factory) {
   factory.register_builder("Grayscale", build_grayscale_transform_from_pbuf);
   factory.register_builder("HorizontalFlip", build_horizontal_flip_transform_from_pbuf);
   factory.register_builder("NormalizeToLBANNLayout", build_normalize_to_lbann_layout_transform_from_pbuf);
+  factory.register_builder("Pad", build_pad_transform_from_pbuf);
   factory.register_builder("RandomAffine", build_random_affine_transform_from_pbuf);
   factory.register_builder("RandomCrop", build_random_crop_transform_from_pbuf);
   factory.register_builder("RandomResizedCrop", build_random_resized_crop_transform_from_pbuf);

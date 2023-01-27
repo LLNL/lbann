@@ -26,10 +26,18 @@
 
 #define LBANN_COMPOSITE_IMAGE_TRANSFORMATION_LAYER_INSTANTIATE
 #include "lbann/layers/image/composite_image_transformation.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 
+#include <layers.pb.h>
 #include <math.h>
 
 namespace lbann {
+
+template <typename T, data_layout L, El::Device D>
+void composite_image_transformation_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_composite_image_transformation();
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void composite_image_transformation_layer<TensorDataType, Layout, Device>::fp_compute() {

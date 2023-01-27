@@ -29,6 +29,8 @@
 #define LBANN_CONVOLUTION_LAYER_INSTANTIATE
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/layers/learning/deconvolution.hpp"
+
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/protobuf.hpp"
@@ -431,6 +433,28 @@ build_deconvolution_layer_from_pbuf(lbann_comm* comm,
                             ensure_dims(params.dilation(), /*default=*/1),
                             groups,
                             bias);
+}
+
+template <typename T, data_layout L, El::Device D>
+void deconvolution_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_deconvolution();
+  msg->set_num_dims(this->get_conv_dims().size());
+  msg->set_out_channels(this->m_output_channels);
+  protobuf::assign_to_repeated(*msg->mutable_kernel_size(),
+                               this->get_conv_dims());
+  protobuf::assign_to_repeated(*msg->mutable_stride(), this->get_strides());
+  protobuf::assign_to_repeated(*msg->mutable_padding(), this->get_pads());
+  protobuf::assign_to_repeated(*msg->mutable_output_padding(),
+                               this->m_output_pads);
+  msg->mutable_groups()->set_value(this->m_groups);
+  auto const has_bias = (this->num_weights() > 1UL);
+  msg->mutable_has_bias()->set_value(has_bias);
+  protobuf::assign_to_repeated(*msg->mutable_dilation(), this->get_dilations());
+#ifdef LBANN_HAS_DNN_LIB
+  msg->set_conv_tensor_op_mode(dnn_lib::convert_to_proto_math_type(
+                                 this->m_convolution_math_type));
+#endif //LBANN_HAS_DNN_LIB
 }
 
 // =========================================================

@@ -28,6 +28,8 @@
 #define LBANN_LAYERS_LOSS_CATEGORICAL_ACCURACY_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -98,12 +100,21 @@ public:
 
 protected:
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   friend class cereal::access;
   categorical_accuracy_layer()
     : categorical_accuracy_layer(nullptr)
   {}
 
 };
+
+template <typename T, data_layout L, El::Device D>
+void categorical_accuracy_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_categorical_accuracy();
+}
 
 #ifdef LBANN_HAS_ONNX
 template <typename T, data_layout L, El::Device D>

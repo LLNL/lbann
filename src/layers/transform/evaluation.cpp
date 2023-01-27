@@ -29,11 +29,13 @@
 #include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/hydrogen_utils.hpp"
 #ifdef LBANN_HAS_GPU
 #include "lbann/utils/gpu/helpers.hpp"
 #endif // LBANN_HAS_GPU
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -182,6 +184,12 @@ void fp_gpu(lbann_comm& comm,
 #endif // LBANN_HAS_GPU
 
 } // namespace
+
+template <typename T, data_layout L, El::Device D>
+void evaluation_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_evaluation();
+}
 
 template <typename TensorDataType>
 EvalType abstract_evaluation_layer<TensorDataType>::get_value(bool scaled) {

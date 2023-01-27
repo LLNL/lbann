@@ -86,6 +86,8 @@ public:
   void compute_weight_regularization() override;
 
 private:
+  /** @brief Add objective function data to prototext */
+  void write_specific_proto(lbann_data::ObjectiveFunction& proto) const final;
 
   /** Contributions to evaluated value. */
   std::map<El::Device, CPUMatType> m_contributions;

@@ -42,6 +42,11 @@
 #include <algorithm>
 #include <string>
 
+// Forward-declare protobuf classes
+namespace lbann_data {
+class Callback;
+}
+
 /** @brief A utility macro for easily adding default-constructed sub-class
  *  builders.*/
 #define LBANN_ADD_DEFAULT_CALLBACK_BUILDER(Class, FunctionName)  \
@@ -196,6 +201,13 @@ public:
 
   /** @brief Store state to archive for checkpoint and restart */
   template <class Archive> void serialize(Archive & ar);
+
+  /** @brief Write a protobuf description of the callback. */
+  void write_proto(lbann_data::Callback& proto) const;
+
+protected:
+  /** @brief Add callback specific data to prototext */
+  virtual void write_specific_proto(lbann_data::Callback& proto) const = 0;
 
   ///@}
 

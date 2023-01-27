@@ -26,6 +26,7 @@
 
 #define LBANN_SELU_DROPOUT_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/selu_dropout.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 
 #include <layers.pb.h>
 
@@ -126,6 +127,15 @@ template <typename T, data_layout L, El::Device D>
 El::Device selu_dropout<T, L, D>::get_device_allocation() const
 {
   return D;
+}
+
+template <typename T, data_layout L, El::Device D>
+void selu_dropout<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_selu_dropout();
+  msg->set_keep_prob(m_keep_prob);
+  msg->set_alpha(-m_alpha_prime);
+  msg->set_scale(El::To<T>(1));
 }
 
 template <typename T, data_layout L, El::Device D>

@@ -1,6 +1,2 @@
-lbann_pb2.py
-onnx_model_zoo/*.tar.gz
-onnx_model_zoo/*/*
-dumped_models/*
 *.egg-info/*
 .eggs/*

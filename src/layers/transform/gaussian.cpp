@@ -26,8 +26,22 @@
 
 #define LBANN_GAUSSIAN_LAYER_INSTANTIATE
 #include "lbann/layers/transform/gaussian.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/utils/protobuf.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
+
+template <typename T, data_layout L, El::Device D>
+void gaussian_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_gaussian();
+  msg->set_mean(m_mean);
+  msg->set_stdev(m_stdev);
+  protobuf::assign_to_repeated(*msg->mutable_neuron_dims(),
+                               this->get_output_dims());
+  msg->set_training_only(m_training_only);
+}
 
 #define PROTO_DEVICE(T, Device)                                         \
   template class gaussian_layer<T, data_layout::DATA_PARALLEL, Device>; \

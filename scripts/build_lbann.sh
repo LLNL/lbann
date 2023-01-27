@@ -74,6 +74,7 @@ Options:
   ${C}-l | --label <LABEL>${N}       LBANN version label prefix: (default label is local-<SPACK_ARCH_TARGET>,
                              and is built and installed in the spack environment lbann-<label>-<SPACK_ARCH_TARGET>
   ${C}-m | --mirror <PATH>${N}       Specify a Spack mirror (and buildcache)
+  ${C}--center-mirrors <PATH>${N}    Use Center-specify mirrors (and buildcache)
   ${C}--no-default-mirrors>${N}      Disable the default set of mirrors
   ${C}--no-modules${N}               Don't try to load any modules (use the existing users environment)
   ${C}-p | --pkg <PACKAGE>${N}       Add package PACKAGE to the Spack environment in addition to LBANN (Flag can be repeated)
@@ -157,6 +158,9 @@ while :; do
                 echo "\"${1}\" option requires a non-empty option argument" >&2
                 exit 1
             fi
+            ;;
+        --center-mirrors)
+            USE_CENTER_MIRRORS="TRUE"
             ;;
         --no-default-mirrors)
             SKIP_MIRRORS="TRUE"
@@ -292,7 +296,7 @@ function uninstall_specific_versions()
 # This should be a commit hash (NOT a tag) that needs to exist in the
 # spack repository that is checked out. It's a minimum version, so
 # more commits is fine.
-MIN_SPACK_COMMIT=47bfc60845b71830ee54a04c597419c7eedd2a42
+MIN_SPACK_COMMIT=939b74972669babcfa0ec0ada8b73a88d38536fd
 
 # "spack" is just a shell function; it may not be exported to this
 # scope. Just to be sure, reload the shell integration.
@@ -613,7 +617,7 @@ if [[ -n "${INSTALL_DEPS:-}" && -z "${SKIP_MIRRORS:-}" ]]; then
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     # Tell Spack to trust the keys in the build cache
-    CMD="spack buildcache keys --install --trust"
+    CMD="spack -d buildcache keys --install --trust"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi

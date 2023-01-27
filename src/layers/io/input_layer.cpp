@@ -35,6 +35,8 @@
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 template <typename T, lbann::data_layout L, El::Device D>
 std::unique_ptr<lbann::Layer>
@@ -60,6 +62,13 @@ lbann::build_input_layer_from_pbuf(lbann_comm* comm,
 }
 
 namespace lbann {
+
+template <typename T, data_layout L, El::Device D>
+void input_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_input();
+  msg->set_data_field(m_data_field);
+}
 
 template <typename TensorDataType,
           data_layout T_layout,

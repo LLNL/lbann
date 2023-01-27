@@ -38,22 +38,22 @@ void scatter_layer<TensorDataType, Layout, Device>::fp_compute() {
   auto& local_output = this->get_local_activations();
 
 
-  const size_t local_mini_batch_size = local_values.Width(); 
+  const size_t local_mini_batch_size = local_values.Width();
 
   const auto& input_dims_ = this->get_input_dims();
   const auto& output_dims_ = this->get_output_dims();
   std::vector<size_t> input_dims(input_dims_.begin(), input_dims_.end());
   std::vector<size_t> output_dims(output_dims_.begin(), output_dims_.end());
 
-  const bool is_axis_0 = (input_dims.size()>1 && this->m_scatter_axis == 0); 
+  const bool is_axis_0 = (input_dims.size()>1 && this->m_scatter_axis == 0);
 
   const size_t num_values_cols = (input_dims.size()>1) ? input_dims[1] : this->get_input_size(0);
   const size_t num_values_rows = (input_dims.size()>1) ? input_dims[0] : 1;
-  
+
   const El::Int num_output_cols = (input_dims.size()>1) ?  this->get_output_dims()[1] : this->get_output_size();
   const El::Int num_output_rows = (input_dims.size()>1) ? this->get_output_dims()[0] : 1;
 
-  const El::Int bounds = is_axis_0 ? num_output_rows : num_output_cols;  
+  const El::Int bounds = is_axis_0 ? num_output_rows : num_output_cols;
 
 
 
@@ -63,10 +63,10 @@ void scatter_layer<TensorDataType, Layout, Device>::fp_compute() {
   for (size_t j=0; j<local_mini_batch_size; ++j) {
     for (size_t k=0; k < num_values_rows; ++k) {
       for (size_t i=0; i< num_values_cols; ++i) {
-        
-        const auto& index_val = is_axis_0 ? k : i; 
+
+        const auto& index_val = is_axis_0 ? k : i;
         const auto ind = static_cast<El::Int>(std::floor(local_indices(index_val,j)));
-        
+
         if (0<=ind && ind<bounds) {
           if(is_axis_0){
             local_output(i + ind*num_output_cols, j) += local_values(i + k*num_values_cols, j);
@@ -87,7 +87,7 @@ void scatter_layer<TensorDataType, Layout, Device>::bp_compute() {
   const auto& local_output_grad = this->get_local_prev_error_signals();
   auto& local_values_grad = this->get_local_error_signals(0);
   auto& local_indices_grad = this->get_local_error_signals(1);
-  
+
   const size_t local_mini_batch_size = local_indices.Width();
 
   const auto& input_dims_ = this->get_input_dims();
@@ -100,7 +100,7 @@ void scatter_layer<TensorDataType, Layout, Device>::bp_compute() {
 
   const size_t num_values_cols = is_2D ? input_dims[1] : this->get_input_size(0);
   const size_t num_values_rows = is_2D ? input_dims[0] : 1;
-  
+
   const El::Int num_output_cols = is_2D ?  this->get_output_dims()[1] : this->get_output_size();
   const El::Int num_output_rows = is_2D ? this->get_output_dims()[0] : 1;
 
@@ -115,7 +115,7 @@ void scatter_layer<TensorDataType, Layout, Device>::bp_compute() {
   for (size_t j=0; j<local_mini_batch_size; ++j) {
     for (size_t k = 0; k < num_values_rows; ++k) {
       for (size_t i=0; i<num_values_cols; ++i) {
-        const auto& index_val = is_axis_0 ? k : i; 
+        const auto& index_val = is_axis_0 ? k : i;
         const auto ind = static_cast<El::Int>(std::floor(local_indices(index_val,j)));
 
         if (0<=ind && ind<bounds) {

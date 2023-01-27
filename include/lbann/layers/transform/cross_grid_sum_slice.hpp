@@ -55,6 +55,10 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   El::SyncInfo<Dev> syncSubGridCommunication = El::SyncInfo<Dev>();
 
   void setup_pointers() override

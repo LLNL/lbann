@@ -102,6 +102,8 @@ class debug : public callback_base {
   ///@}
 
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
 
   /** @brief Execution modes for which status updates will be printed.
    *

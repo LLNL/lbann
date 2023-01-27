@@ -33,6 +33,7 @@
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/utils/serialize.hpp"
 #include <h2/patterns/multimethods/SwitchDispatcher.hpp>
+#include <objective_functions.pb.h>
 
 namespace lbann {
 
@@ -225,6 +226,15 @@ void l2_weight_regularization::compute_weight_regularization() {
       DispatcherType::Exec(AddToGrad(*opt, m_scale_factor), w.get_values());
     }
   }
+}
+
+void l2_weight_regularization::write_specific_proto(lbann_data::ObjectiveFunction& proto) const {
+  auto* term_msg = proto.add_l2_weight_regularization();
+  term_msg->set_scale_factor(this->m_scale_factor);
+  for (auto const& w : this->get_weights_pointers())
+    if (!w.expired()) {
+      term_msg->add_weights(w.lock()->get_name());
+    }
 }
 
 } // namespace lbann

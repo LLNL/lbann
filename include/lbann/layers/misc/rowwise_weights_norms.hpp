@@ -29,7 +29,9 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/weights/weights_helpers.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/exception.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -74,6 +76,9 @@ public:
 
 protected:
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 
   void fp_compute() override;
@@ -95,6 +100,12 @@ private:
     LocalMat& y_mat);
 
 };
+
+template <typename T, data_layout L, El::Device D>
+void rowwise_weights_norms_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_rowwise_weights_norms();
+}
 
 #ifndef LBANN_ROWWISE_WEIGHTS_NORMS_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device)                             \

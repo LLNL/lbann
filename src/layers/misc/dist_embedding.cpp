@@ -28,6 +28,7 @@
 
 #include "lbann/weights/weights_helpers.hpp"
 #include "lbann/proto/proto_common.hpp"
+
 #include <layers.pb.h>
 
 // =========================================================

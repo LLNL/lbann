@@ -64,6 +64,8 @@ class set_weights_value : public callback_base {
   ///@}
 
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
 
   friend class cereal::access;
   set_weights_value();

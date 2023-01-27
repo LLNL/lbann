@@ -29,8 +29,10 @@
 
 #include <vector>
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/distconv.hpp"
+#include <lbann.pb.h>
 
 namespace lbann {
 
@@ -88,6 +90,9 @@ public:
 #endif // LBANN_HAS_ONNX
 
 protected:
+
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   El::SyncInfo<Dev> syncSubGridCommunication = El::SyncInfo<Dev>();
 
@@ -251,6 +256,12 @@ protected:
   const split_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() const override;
 #endif // LBANN_HAS_DISTCONV
 };
+
+template <typename T, data_layout L, El::Device D>
+void split_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_split();
+}
 
 #ifdef LBANN_HAS_ONNX
 template <typename T, data_layout L, El::Device D>

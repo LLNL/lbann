@@ -59,6 +59,8 @@ public:
   void serialize(ArchiveT& ar);
 
 private:
+  /** @brief Add objective function data to prototext */
+  void write_specific_proto(lbann_data::ObjectiveFunction& proto) const final;
 
   /** Get corresponding evaluation layer. */
   /*abstract_evaluation_*/Layer& get_evaluation_layer();

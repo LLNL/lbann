@@ -29,7 +29,10 @@
 
 // LBANN_ASSERT_MSG_HAS_FIELD
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/protobuf.hpp"
+
+#include <layers.pb.h>
 #include <lbann.pb.h>
 
 namespace lbann {
@@ -47,6 +50,15 @@ build_constant_layer_from_pbuf(lbann_comm* comm,
     comm,
     El::To<TensorDataType>(params.value()),
     protobuf::to_vector<int>(params.num_neurons()));
+}
+
+template <typename T, data_layout L, El::Device D>
+void constant_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_constant();
+  msg->set_value(m_value);
+  protobuf::assign_to_repeated(*msg->mutable_num_neurons(),
+                               this->get_output_dims());
 }
 
 #define PROTO_DEVICE(T, Device) \

@@ -33,6 +33,7 @@ namespace lbann {
 LBANN_DEFINE_LAYER_BUILDER(bilinear_resize);
 LBANN_DEFINE_LAYER_BUILDER(composite_image_transformation);
 LBANN_DEFINE_LAYER_BUILDER(rotation);
+LBANN_DEFINE_LAYER_BUILDER(cutout);
 
 } // namespace lbann
 #endif // LBANN_LAYERS_IMAGE_IMAGE_LAYER_BUILDERS_HPP_INCLUDED

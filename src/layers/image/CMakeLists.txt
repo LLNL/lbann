@@ -28,6 +28,7 @@ set_full_path(THIS_DIR_SOURCES
   bilinear_resize.cpp
   rotation.cpp
   composite_image_transformation.cpp
+  cutout.cpp
 
   image_layer_builders.cpp
 )

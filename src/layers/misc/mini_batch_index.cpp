@@ -26,6 +26,8 @@
 
 #define LBANN_MINI_BATCH_INDEX_LAYER_INSTANTIATE
 #include "lbann/layers/misc/mini_batch_index.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -58,6 +60,12 @@ template <typename T, data_layout L, El::Device D>
 El::Device mini_batch_index_layer<T, L, D>::get_device_allocation() const
 {
   return D;
+}
+
+template <typename T, data_layout L, El::Device D>
+void mini_batch_index_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_mini_batch_index();
 }
 
 template <typename T, data_layout L, El::Device D>

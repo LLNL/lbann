@@ -33,6 +33,8 @@
 #include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/hash.hpp"
 #include "lbann/utils/sync_info_helpers.hpp"
+
+#include "lbann/proto/datatype_helpers.hpp"
 #include <layers.pb.h>
 
 namespace lbann {
@@ -113,6 +115,14 @@ gru_layer<TensorDataType,Layout,Device>
 ::get_device_allocation() const
 {
   return Device;
+}
+
+template <typename T, data_layout L, El::Device D>
+void gru_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_gru();
+  msg->set_hidden_size(m_hidden_size);
+  msg->mutable_num_layers()->set_value(m_num_layers);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

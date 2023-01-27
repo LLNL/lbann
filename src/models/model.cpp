@@ -2632,11 +2632,44 @@ bool model::load_from_checkpoint_distributed(persist& p)
   return true;
 }
 
-void model::write_proto(lbann_data::Model* proto)
+void model::write_proto(lbann_data::Model& proto)
 {
-  proto->Clear();
-  // if (m_comm->am_world_master())
-  //   proto->set_mini_batch_size(m_max_mini_batch_size);
+  if (!get_comm()->am_trainer_master())
+    return;
+
+  proto.Clear();
+  proto.set_name(this->get_name());
+  this->get_objective_function()->write_proto(*proto.mutable_objective_function());
+  for (auto const* metric : this->get_metrics()){
+    auto* met = proto.add_metric()->mutable_layer_metric();
+    met->set_name(metric->name());
+    met->set_unit(metric->get_unit());
+  }
+  for (auto* layer : this->get_layers()) {
+    layer->write_proto(*proto.add_layer());
+  }
+  for (auto* weights : this->get_weights()) {
+    weights->write_proto(*proto.add_weights());
+  }
+  for (auto* callback : this->get_callbacks()) {
+    callback->write_proto(*proto.add_callback());
+  }
+  for (auto const& l : m_layers) {
+    auto* l_msg = proto.add_layer();
+    l->write_proto(*l_msg);
+  }
+
+  // Unused proto fields
+  // proto.set_data_layout(string_value);
+  // proto.set_num_epochs(int64_value);
+  // proto.set_num_batches(int64_value);
+  // proto.set_evaluation_frequency(int64_value);
+  // proto.set_subgraph_communication(SubGraphCommunication_value);
+  // proto.enable_subgraph_topology(bool_value);
+  // proto.subgraph_parent_grid_resources(int64_value);
+  // proto.set_disable_cuda(bool_value);
+  // proto.set_summarizer(Summarizer_value);
+
 }
 
 void model::save_model()

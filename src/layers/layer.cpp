@@ -515,14 +515,26 @@ void Layer::back_prop() {
 
 }
 
-void Layer::write_proto(lbann_data::Layer* proto) const {
-  proto->Clear();
-  proto->set_name(get_name());
-  //Add weights
-  for (size_t i=0; i<num_weights(); ++i) {
-    auto weight_proto = proto->add_weights_data();
-    get_weights(i).write_proto(weight_proto);
+void Layer::write_proto(lbann_data::Layer& proto) {
+  proto.Clear();
+  proto.set_name(get_name());
+  for (auto const* parent : this->get_parent_layers()) {
+    proto.add_parents(parent->get_name());
   }
+  for (auto const* child : this->get_child_layers()) {
+    proto.add_children(child->get_name());
+  }
+  for (size_t ii = 0; ii <  this->num_weights(); ii++)
+    proto.add_weights(this->get_weights(ii).get_name());
+
+  proto.set_device_allocation(to_string(this->get_device_allocation()));
+  proto.set_data_layout(to_string(this->get_data_layout()));
+  if(this->get_hint_layer())
+    proto.set_hint_layer(this->get_hint_layer()->get_name());
+  //FIXME(KLG): Ignore for now. (Tom's problem)
+  //proto.set_parallel_strategy();
+
+  this->write_specific_proto(proto);
 }
 
 #ifdef LBANN_HAS_ONNX

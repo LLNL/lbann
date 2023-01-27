@@ -76,6 +76,9 @@ public:
 
 protected:
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   friend class cereal::access;
   bernoulli_layer()
     : bernoulli_layer(nullptr, { 1 }, 0.5 )

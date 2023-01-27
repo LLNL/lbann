@@ -136,6 +136,30 @@ categorical_accuracy_strategy::get_image_indices(model const& m) const {
   return img_indices;
 }
 
+void categorical_accuracy_strategy::write_strategy_proto(
+    lbann_data::Callback_CallbackSummarizeImages& msg) const
+{
+  using ProtoMatchType = lbann_data::Callback::CallbackSummarizeImages::SelectionStrategy::CategoricalAccuracyStrategy;
+
+  auto* strategy = msg.mutable_selection_strategy()->mutable_categorical_accuracy();
+  strategy->set_accuracy_layer_name(m_cat_accuracy_layer_name);
+  switch(m_match_type)
+  {
+  case MatchType::MATCH:
+    strategy->set_match_type(ProtoMatchType::MATCH);
+    break;
+  case MatchType::NOMATCH:
+    strategy->set_match_type(ProtoMatchType::NOMATCH);
+    break;
+  case MatchType::ALL:
+    strategy->set_match_type(ProtoMatchType::ALL);
+    break;
+  default:
+    LBANN_ERROR("Invalid MatchType");
+  }
+  strategy->set_num_images_per_epoch(m_num_images);
+}
+
 bool categorical_accuracy_strategy::meets_criteria(
   const DataType& match) const noexcept {
   switch (m_match_type)
@@ -246,7 +270,15 @@ std::string autoencoder_strategy::get_tag(std::string const& layer_name,
   return build_string("image id ", index, "/layer: ", layer_name,
                       "/epoch ", epoch);
 
-}// End autoencoder strategy
+}
+
+void autoencoder_strategy::write_strategy_proto(
+    lbann_data::Callback_CallbackSummarizeImages& msg) const
+{
+  auto* strategy = msg.mutable_selection_strategy()->mutable_track_sample_ids();
+  strategy->set_input_layer_name(m_input_layer_name);
+  strategy->set_num_tracked_images(m_num_images);
+}
 
 // Builder function
 std::unique_ptr<image_output_strategy>
@@ -259,6 +291,7 @@ build_track_sample_ids_strategy_from_pbuf(google::protobuf::Message const& msg) 
     strategy_msg.input_layer_name(),
     strategy_msg.num_tracked_images());
 }
+// End autoencoder strategy
 
 summarize_images::summarize_images(std::shared_ptr<lbann_summary> const& summarizer,
                                    std::unique_ptr<image_output_strategy> strategy,
@@ -285,6 +318,14 @@ void summarize_images::on_batch_evaluate_end(model* m) {
 
   if (m->get_execution_context().get_execution_mode() == execution_mode::validation)
     dump_images_to_summary(*m);
+}
+
+void summarize_images::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_summarize_images();
+  m_strategy->write_strategy_proto(*msg);
+  msg->set_image_source_layer_name(m_img_source_layer_name);
+  msg->set_epoch_interval(m_epoch_interval);
 }
 
 void summarize_images::dump_images_to_summary(model const& m) const {

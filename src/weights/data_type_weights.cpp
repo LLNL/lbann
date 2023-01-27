@@ -30,12 +30,14 @@
 #include "lbann/weights/data_type_weights_impl.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/io/file_io.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/onnx_utils.hpp"
 
 #include <layers.pb.h>
+#include <weights.pb.h>
 
 #include <algorithm>
 #include <sstream>
@@ -379,38 +381,17 @@ void data_type_weights<TensorDataType>::reconcile_values(Al::request& req) {
 }
 
 template <typename TensorDataType>
-void data_type_weights<TensorDataType>::write_proto(lbann_data::WeightsData* proto) const {
+void data_type_weights<TensorDataType>::write_proto(lbann_data::Weights& proto) const {
+  proto.Clear();
+  proto.set_name(this->get_name());
+  if (this->has_optimizer() == false)
+    proto.mutable_optimizer()->mutable_no_optimizer();
+  else
+    this->get_optimizer()->write_proto(*proto.mutable_optimizer());
 
-  // Set proto properties
-  proto->Clear();
-  proto->set_name(this->get_name());
-  for (const auto& d : this->get_dims()) {
-    proto->mutable_shape()->add_dim(d);
-  }
-  proto->set_height(this->get_matrix_height());
-  proto->set_width(this->get_matrix_width());
+  this->get_initializer()->write_proto(*proto.mutable_initializer());
 
-  // Write weight values to prototext on world master process
-  CircMatDT<TensorDataType, El::Device::CPU> values = *m_values; /// @todo What if weights are on GPU?
-  values.SetRoot(0); /// @todo What if world master is not process 0?
-  if (this->get_comm().am_world_master()) {
-    const auto& local_values = values.LockedMatrix();
-    const El::Int height = local_values.Height();
-    const El::Int width = local_values.Width();
-    /// @todo OpenMP parallelization
-    /** @todo Our matrices are column-major while Numpy expects
-     *  row-major matrices. This row-wise iteration is fine for
-     *  matrices and column vectors, but it can mess up the order of
-     *  the weights if a high-dimensional tensor is represented as a
-     *  matrix. This is what we need for quantization on convolution
-     *  kernel weights.
-     */
-    for (El::Int i = 0; i < height; ++i) {
-      for (El::Int j = 0; j < width; ++j) {
-        proto->add_data(local_values(i,j));
-      }
-    }
-  }
+  proto.set_datatype(proto::TypeToProtoDataType<TensorDataType>::value);
 }
 
 #ifdef LBANN_HAS_ONNX

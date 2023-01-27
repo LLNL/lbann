@@ -30,6 +30,7 @@
 #include "lbann/utils/trainer_file_utils.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include <callbacks.pb.h>
 
@@ -193,6 +194,19 @@ void dump_outputs::do_dump_outputs(const model& m, const Layer& l) {
     }
   }
 
+}
+
+void dump_outputs::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_dump_outputs();
+  msg->set_layers(protobuf::to_space_sep_string(m_layer_names));
+  std::string modes;
+  for (auto const& mode : m_modes)
+    modes += (to_string(mode) + " ");
+  msg->set_execution_modes(modes);
+  msg->set_batch_interval(m_batch_interval);
+  msg->set_directory(m_directory);
+  msg->set_format(m_file_format);
 }
 
 std::unique_ptr<callback_base>

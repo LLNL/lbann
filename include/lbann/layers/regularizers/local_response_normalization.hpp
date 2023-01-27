@@ -130,6 +130,9 @@ public:
 
 protected:
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   friend class cereal::access;
   local_response_normalization_layer()
     : local_response_normalization_layer(

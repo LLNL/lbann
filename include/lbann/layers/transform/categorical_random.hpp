@@ -70,6 +70,9 @@ class categorical_random_layer : public data_type_layer<TensorDataType> {
 
  protected:
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   friend class cereal::access;
   categorical_random_layer()
     : categorical_random_layer(nullptr)

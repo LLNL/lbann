@@ -119,6 +119,9 @@ class objective_function {
     m_differentiation_time = 0.0;
   }
 
+  /** Add Objection Function data to prototext */
+  void write_proto(lbann_data::ObjectiveFunction& proto) const;
+
  private:
 
   /** List of objective function terms. */

@@ -43,6 +43,10 @@
 #include <string>
 #include <unordered_set>
 
+namespace lbann_data {
+class Optimizer;
+}
+
 namespace lbann {
 
 /** @brief Status of values in objective function gradient. */
@@ -216,7 +220,9 @@ public:
 
   ///@}
 
-protected:
+  /** @brief Add optimizer data to prototext */
+  virtual void write_proto(lbann_data::Optimizer& proto) const = 0;
+
   /** @brief Manage gradient information. */
   class GradientHelper {
   public:

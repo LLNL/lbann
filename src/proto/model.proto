@@ -39,7 +39,7 @@ enum SubGraphCommunication {
   PT2PT = 0;
   // Use collective operations
   COLL = 1;
-  // Use optimized collective opeations 
+  // Use optimized collective opeations
   COLL_OPT = 2;
 }
 
@@ -47,8 +47,6 @@ message Model {
   message Summarizer {
     string dir = 1;
   }
-
-  string type = 1;
   string name = 3;
   ObjectiveFunction objective_function = 2;
   repeated Metric metric = 5;
@@ -59,11 +57,11 @@ message Model {
   int64 num_batches = 122; //multiple batches/sub epoch
   int64 evaluation_frequency = 54;
 
-  
+
   SubGraphCommunication subgraph_communication = 13;  //Subgrid communication flag
   bool enable_subgraph_topology = 27;
-  int64 subgraph_parent_grid_resources = 29; //Num resources for parent grid (0: use all resources) 
-  
+  int64 subgraph_parent_grid_resources = 29; //Num resources for parent grid (0: use all resources)
+
 
 
   bool disable_cuda = 8;

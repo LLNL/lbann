@@ -65,6 +65,9 @@ protected:
   void save_histograms(model *m);
 
 private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /** @brief lbann_summary */
   std::shared_ptr<lbann_summary> m_summarizer = nullptr;
 

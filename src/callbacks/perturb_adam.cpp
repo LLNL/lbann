@@ -29,6 +29,7 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/random_number_generators.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include <callbacks.pb.h>
 
@@ -73,6 +74,18 @@ void perturb_adam::serialize(Archive & ar) {
      CEREAL_NVP(m_eps_factor),
      CEREAL_NVP(m_perturb_during_training),
      CEREAL_NVP(m_weights_names));
+}
+
+void perturb_adam::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_perturb_adam();
+  msg->set_learning_rate_factor(m_learning_rate_factor);
+  msg->set_beta1_factor(m_beta1_factor);
+  msg->set_beta2_factor(m_beta2_factor);
+  msg->set_eps_factor(m_eps_factor);
+  msg->set_perturb_during_training(m_perturb_during_training);
+  msg->set_batch_interval(m_batch_interval);
+  msg->set_weights(protobuf::to_space_sep_string(m_weights_names));
 }
 
 void perturb_adam::setup(model* m) {

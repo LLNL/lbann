@@ -245,7 +245,7 @@ public:
   bool load_from_checkpoint_distributed(persist& p);
 
   /** @brief Write model to proto file */
-  void write_proto(lbann_data::Model* proto);
+  void write_proto(lbann_data::Model& proto);
 
   /** @brief Saves the model explicitly if the save_model callback is present.
    *

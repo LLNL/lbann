@@ -27,10 +27,12 @@
 #define LBANN_WEIGHTED_SUM_LAYER_INSTANTIATE
 #include "lbann/layers/transform/weighted_sum.hpp"
 
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf.hpp"
 
 #include <lbann.pb.h>
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -45,6 +47,14 @@ build_weighted_sum_layer_from_pbuf(lbann_comm* comm,
   const auto& scaling_factors =
     protobuf::to_vector<DataType>(params.scaling_factors());
   return std::make_unique<LayerType>(comm, scaling_factors);
+}
+
+template <typename T, data_layout L, El::Device D>
+void weighted_sum_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_weighted_sum();
+  protobuf::assign_to_repeated(*msg->mutable_scaling_factors(),
+                               m_scaling_factors);
 }
 
 #define PROTO_DEVICE(T, Device) \

@@ -65,7 +65,11 @@ class replace_weights : public callback_base {
   void on_batch_end(model *m) override;
 
   std::string name() const override { return "replace weights"; }
+
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   std::vector<std::string> m_src_layer_names, m_dst_layer_names;
   std::vector<Layer*> m_src_layers, m_dst_layers;
 };

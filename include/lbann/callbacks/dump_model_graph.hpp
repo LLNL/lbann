@@ -53,6 +53,9 @@ class dump_model_graph : public callback_base {
   void on_setup_end(model *m) override;
 
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /** Filename to output graphviz graph. */
   std::string m_basename;
   /** Whether to print the model architecture to stdout. */

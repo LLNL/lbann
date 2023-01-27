@@ -28,11 +28,20 @@
 #include "lbann/layers/transform/identity_zero.hpp"
 
 // LBANN_ASSERT_MSG_HAS_FIELD
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf.hpp"
 #include <lbann.pb.h>
 
 namespace lbann {
+
+template <typename T, data_layout L, El::Device D>
+void identity_zero_layer<T, L, D>::write_specific_proto(
+    lbann_data::Layer& proto) const
+{
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_identity_zero();
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<Layer>
@@ -41,7 +50,7 @@ build_identity_zero_layer_from_pbuf(lbann_comm* comm,
 {
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, identity_zero);
   using LayerType = identity_zero_layer<TensorDataType, Layout, Device>;
-  
+
   return std::make_unique<LayerType>(comm);
 }
 

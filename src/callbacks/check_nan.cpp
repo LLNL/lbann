@@ -194,6 +194,11 @@ void check_nan::serialize(Archive & ar) {
        ::cereal::base_class<callback_base>(this)));
 }
 
+void check_nan::write_specific_proto(lbann_data::Callback& proto) const
+{
+  proto.mutable_check_nan();
+}
+
 void check_nan::on_forward_prop_end(model *m, Layer *l) {
   using proxy_type =
     El::AbstractDistMatrixReadDeviceProxy<DataType, El::Device::CPU>;

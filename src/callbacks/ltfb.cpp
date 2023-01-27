@@ -37,6 +37,7 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include <callbacks.pb.h>
 
@@ -81,6 +82,10 @@ public:
   LTFBCommunicationAlgorithm(std::set<std::string>&& weights_names)
     : weights_names_{std::move(weights_names)}
   {}
+
+  /** @brief Add communication algorithm data to prototext */
+  virtual void write_comm_algo_proto(
+    lbann_data::Callback_CallbackLTFB& msg) const = 0;
 
   virtual ~LTFBCommunicationAlgorithm() noexcept = default;
 
@@ -365,6 +370,17 @@ public:
   SendRecvWeights(SendRecvWeights const&) = default;
   SendRecvWeights(SendRecvWeights&&) = default;
 
+  virtual void write_comm_algo_proto(
+    lbann_data::Callback_CallbackLTFB& msg) const
+  {
+    msg.set_weights(protobuf::to_space_sep_string(this->weights_names()));
+    msg.set_communication_algorithm("sendrecv_weights");
+    msg.set_exchange_hyperparameters(exchange_hyperparams_);
+
+    // Not used for sendrecv_weights
+    // msg.set_checkpoint_basedir("");
+  }
+
   /** @todo This function is way too long. */
   void exchange_models(model& m,
                        El::Int partner_trainer,
@@ -508,6 +524,17 @@ public:
       ckpt_basedir_{ckpt_basedir}
   {}
 
+  virtual void write_comm_algo_proto(
+    lbann_data::Callback_CallbackLTFB& msg) const
+  {
+    msg.set_weights(protobuf::to_space_sep_string(this->weights_names()));
+    msg.set_communication_algorithm("checkpoint_file");
+    msg.set_checkpoint_basedir(ckpt_basedir_);
+
+    // Not used in checkpoint_file
+    // msg.set_exchange_hyperparameters(bool_value);
+  }
+
   void exchange_models(model& m,
                        El::Int partner_trainer,
                        El::Int step) const final
@@ -613,6 +640,18 @@ public:
     exchange(comm, m, partner_trainer);
     restore_model_weights(m, restore_weights);
   }
+
+  virtual void write_comm_algo_proto(
+    lbann_data::Callback_CallbackLTFB& msg) const
+  {
+    msg.set_weights(protobuf::to_space_sep_string(this->weights_names()));
+    msg.set_communication_algorithm("checkpoint_binary");
+
+    // Not used in checkpoint_binary
+    // msg.set_exchange_hyperparameters(bool_value);
+    // msg.set_checkpoint_basedir("");
+  }
+
 };// class CheckpointBinary
 
 /** Get mean metric value with validation set. */
@@ -787,6 +826,14 @@ void ltfb::on_batch_begin(model* m)
   }
 }
 
+void ltfb::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_ltfb();
+  msg->set_batch_interval(m_batch_interval);
+  msg->set_metric(m_metric_name);
+  msg->set_low_score_wins(m_low_score_wins);
+  comm_algo_->write_comm_algo_proto(*msg);
+}
 std::unique_ptr<callback_base>
 build_ltfb_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,

@@ -28,6 +28,8 @@
 #define LBANN_LAYERS_MISC_UNIFORM_HASH_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -69,6 +71,9 @@ public:
 
 protected:
 
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
   friend class cereal::access;
   uniform_hash_layer()
     : uniform_hash_layer(nullptr)
@@ -79,6 +84,12 @@ protected:
   void fp_compute() override;
 
 };
+
+template <typename T, data_layout L, El::Device D>
+void uniform_hash_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_uniform_hash();
+}
 
 #ifdef LBANN_HAS_GPU
 #ifndef LBANN_UNIFORM_HASH_LAYER_INSTANTIATE

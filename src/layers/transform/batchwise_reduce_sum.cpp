@@ -26,6 +26,8 @@
 
 #define LBANN_BATCHWISE_REDUCE_SUM_LAYER_INSTANTIATE
 #include "lbann/layers/transform/batchwise_reduce_sum.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
 
@@ -52,6 +54,12 @@ data_layout batchwise_reduce_sum_layer<TensorDataType,Layout,Device>::get_data_l
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 El::Device batchwise_reduce_sum_layer<TensorDataType,Layout,Device>::get_device_allocation() const {
   return Device;
+}
+
+template <typename T, data_layout L, El::Device D>
+void batchwise_reduce_sum_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_batchwise_reduce_sum();
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

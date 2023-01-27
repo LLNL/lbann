@@ -770,9 +770,10 @@ dnnMathType_t get_default_convolution_math_type() noexcept;
 using ProtoTensorOpEnumType = decltype(lbann_data::DEFAULT_TENSOR_OPS);
 /** @brief Converts from lbann_data to DNN library math type. */
 dnnMathType_t convert_to_dnn_math_type(ProtoTensorOpEnumType mt);
+/** @brief Converts from DNN library math type to lbann_data. */
+ProtoTensorOpEnumType convert_to_proto_math_type(dnnMathType_t mt);
 
 } // namespace dnn_lib
 } // namespace lbann
 #endif // LBANN_HAS_DNN_LIB
 #endif // LBANN_UTILS_DNN_LIB_DNN_LIB_HPP
-

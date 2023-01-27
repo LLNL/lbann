@@ -28,8 +28,10 @@
 #include "lbann/layers/transform/pooling.hpp"
 
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/protobuf.hpp"
 
+#include <layers.pb.h>
 #include <lbann.pb.h>
 
 namespace lbann {
@@ -61,6 +63,34 @@ struct Builder<TensorDataType, data_layout::DATA_PARALLEL, Device>
   }
 };
 }// namespace
+
+template <typename T, data_layout L, El::Device D>
+void pooling_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_pooling();
+  switch (m_pool_mode)
+  {
+    case pooling_mode::MAX_DETERMINISTIC:
+      msg->set_pool_mode("max");
+      break;
+    case pooling_mode::MAX:
+      msg->set_pool_mode("max");
+      break;
+    case pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING:
+      msg->set_pool_mode("average");
+      break;
+    case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING:
+      msg->set_pool_mode("average_no_pad");
+      break;
+    default:
+      LBANN_ERROR("Invalid pooling mode requested.");
+  }
+  msg->set_num_dims(m_pool_dims.size());
+  msg->set_has_vectors(true);
+  protobuf::assign_to_repeated(*msg->mutable_pool_dims(), m_pool_dims);
+  protobuf::assign_to_repeated(*msg->mutable_pool_pads(), m_pads);
+  protobuf::assign_to_repeated(*msg->mutable_pool_strides(), m_strides);
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<Layer> build_pooling_layer_from_pbuf(

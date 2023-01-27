@@ -96,6 +96,16 @@ void sgd<TensorDataType>::setup(WeightsType* w) {
 }
 
 template <typename TensorDataType>
+void sgd<TensorDataType>::write_proto(
+  lbann_data::Optimizer& proto) const
+{
+  auto* opt = proto.mutable_sgd();
+  opt->set_learn_rate(this->get_learning_rate());
+  opt->set_momentum(m_momentum);
+  opt->set_nesterov(m_nesterov);
+}
+
+template <typename TensorDataType>
 void sgd<TensorDataType>::step_compute(AbsDistMatrixType& values, const AbsDistMatrixType& gradient) {
   if (m_momentum == TensorDataType(0.)) {
     // Vanilla SGD

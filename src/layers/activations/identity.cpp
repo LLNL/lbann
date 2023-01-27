@@ -26,8 +26,16 @@
 
 #define LBANN_IDENTITY_LAYER_INSTANTIATE
 #include "lbann/layers/activations/identity.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 namespace lbann {
+
+template <typename T, data_layout L, El::Device D>
+void identity_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_identity();
+}
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Device>

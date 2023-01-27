@@ -168,6 +168,13 @@ void summary::save_histograms(model *m) {
   }
 }
 
+void summary::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_summary();
+  msg->set_batch_interval(m_batch_interval);
+  msg->set_mat_interval(m_mat_interval);
+}
+
 std::unique_ptr<callback_base>
 build_summary_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,

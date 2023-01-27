@@ -41,6 +41,7 @@
 // Template definitions
 namespace lbann {
 namespace protobuf {
+
 namespace details {
 
 template <typename T>
@@ -119,6 +120,32 @@ auto get_repeated_field_ref(google::protobuf::Message const& msg,
 } // namespace details
 } // namespace protobuf
 } // namespace lbann
+
+template <typename T, typename ContainerT>
+void lbann::protobuf::assign_to_repeated(google::protobuf::RepeatedField<T>& field,
+                        ContainerT const& values)
+{
+  /** @todo Change to Assign if Protobuf v3.16.0 and greater is required. */
+  field.Clear();
+  field.Add(begin(values), end(values));
+}
+
+/** @brief Stringify the container with spaces between elements.
+ *
+ *  The `value_type` of the container must support stream output
+ *  (e.g., `vector` or `set`, but not `map`).
+ */
+template <typename ContainerT>
+std::string lbann::protobuf::to_space_sep_string(ContainerT const& values)
+{
+  if (values.empty())
+    return "";
+  std::ostringstream oss;
+  oss << *cbegin(values);
+  for (auto i = next(cbegin(values)); i != cend(values); ++i)
+    oss << " " << *i;
+  return oss.str();
+}
 
 template <typename T>
 auto lbann::protobuf::as_vector(google::protobuf::Message const& msg,

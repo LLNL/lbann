@@ -29,6 +29,7 @@
 
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/utils/protobuf.hpp"
 #include <cereal/types/polymorphic.hpp>
 
 #include <callbacks.pb.h>
@@ -154,6 +155,14 @@ void save_images::serialize(Archive & ar) {
      CEREAL_NVP(m_layer_names),
      CEREAL_NVP(m_image_format),
      CEREAL_NVP(m_image_prefix));
+}
+
+void save_images::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_save_images();
+  msg->set_layers(protobuf::to_space_sep_string(m_layer_names));
+  msg->set_image_format(m_image_format);
+  msg->set_image_prefix(m_image_prefix);
 }
 
 void save_images::on_epoch_end(model *m) {

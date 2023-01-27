@@ -27,12 +27,21 @@
 #define LBANN_STOP_GRADIENT_LAYER_INSTANTIATE
 #include "lbann/layers/transform/stop_gradient.hpp"
 
+#include "lbann/proto/datatype_helpers.hpp"
 #include <lbann/proto/proto_common.hpp>
+
 #include <lbann.pb.h>
+#include <layers.pb.h>
 
 namespace lbann {
 
 LBANN_LAYER_DEFAULT_BUILDER(stop_gradient)
+
+template <typename T, data_layout L, El::Device D>
+void stop_gradient_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_stop_gradient();
+}
 
 #define PROTO_DEVICE(T, Device) \
   template class stop_gradient_layer<T, data_layout::DATA_PARALLEL, Device>; \

@@ -26,10 +26,18 @@
 
 #define LBANN_ARGMAX_LAYER_INSTANTIATE
 #include "lbann/layers/misc/argmax.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include <layers.pb.h>
 
 #include <algorithm>
 
 namespace lbann {
+
+template <typename T, data_layout L, El::Device D>
+void argmax_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_argmax();
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void argmax_layer<TensorDataType, Layout, Device>::fp_compute()
