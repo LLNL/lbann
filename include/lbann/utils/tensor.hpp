@@ -32,7 +32,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/typename.hpp"
 
-#include <core/DistMatrix/AbstractDistMatrix.hpp>
+#include <El/core/DistMatrix/AbstractDistMatrix.hpp>
 #include <iterator>
 #include <type_traits>
 
