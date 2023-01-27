@@ -32,7 +32,7 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
-#include <transforms.pb.h>
+#include "lbann/proto/transforms.pb.h"
 
 #include <algorithm>
 

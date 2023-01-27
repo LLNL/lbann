@@ -48,7 +48,7 @@
 #include <matrices.hpp>
 #include <memory>
 #include <numeric>
-#include <operators.pb.h>
+#include "lbann/proto/operators.pb.h"
 
 #include <math.h>
 #if defined M_PI

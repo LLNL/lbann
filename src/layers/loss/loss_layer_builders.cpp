@@ -34,7 +34,7 @@
 #include "lbann/layers/loss/mean_squared_error.hpp"
 #include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
 
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 template <typename T, lbann::data_layout L, El::Device D>
 std::unique_ptr<lbann::Layer>

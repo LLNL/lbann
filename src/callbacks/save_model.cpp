@@ -31,8 +31,8 @@
 #include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 
-#include <callbacks.pb.h>
-#include <model.pb.h>
+#include "lbann/proto/callbacks.pb.h"
+#include "lbann/proto/model.pb.h"
 
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/io/coded_stream.h>

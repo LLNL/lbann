@@ -32,7 +32,7 @@
 #include "lbann/utils/protobuf.hpp"
 #include <cereal/types/polymorphic.hpp>
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #ifdef LBANN_HAS_OPENCV
 #include <opencv2/imgcodecs.hpp>

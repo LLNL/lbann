@@ -35,7 +35,7 @@
 #include "lbann/utils/exception.hpp"
 
 #include <cereal/types/base_class.hpp>
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 #include <memory>
 
 namespace lbann {

@@ -32,7 +32,7 @@
 #include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/data_readers/sample_list_open_files_impl.hpp"
 #include <google/protobuf/text_format.h>
-#include <lbann.pb.h>
+#include "lbann/proto/lbann.pb.h"
 #include <lbann/base.hpp>
 
 namespace {

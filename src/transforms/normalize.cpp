@@ -28,7 +28,7 @@
 
 #include "lbann/proto/proto_common.hpp"
 
-#include <transforms.pb.h>
+#include "lbann/proto/transforms.pb.h"
 
 namespace lbann {
 namespace transform {

@@ -30,7 +30,7 @@
 #include "lbann/operators/operator.hpp"
 #include "lbann/utils/cloneable.hpp"
 
-#include <operators.pb.h>
+#include "lbann/proto/operators.pb.h"
 
 // These are all single-type operators.
 

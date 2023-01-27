@@ -30,7 +30,7 @@
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/serialize.hpp"
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #ifdef LBANN_NVPROF
 #include "nvToolsExt.h"

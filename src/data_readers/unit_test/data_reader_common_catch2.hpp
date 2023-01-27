@@ -35,7 +35,7 @@
 #include <lbann/base.hpp>
 
 #include <google/protobuf/text_format.h>
-#include <lbann.pb.h>
+#include "lbann/proto/lbann.pb.h"
 namespace pb = ::google::protobuf;
 
 /** create a directory in /tmp; returns the pathname to the directory */

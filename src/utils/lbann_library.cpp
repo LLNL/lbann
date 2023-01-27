@@ -42,9 +42,9 @@
 #include "lbann/utils/argument_parser.hpp"
 
 #include <cstdlib>
-#include <lbann.pb.h>
+#include "lbann/proto/lbann.pb.h"
 #include <memory>
-#include <model.pb.h>
+#include "lbann/proto/model.pb.h"
 
 namespace lbann {
 

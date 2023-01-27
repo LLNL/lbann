@@ -31,7 +31,7 @@
 #include "lbann/utils/protobuf.hpp"
 
 #include <google/protobuf/message.h>
-#include <training_algorithm.pb.h>
+#include "lbann/proto/training_algorithm.pb.h"
 
 namespace {
 

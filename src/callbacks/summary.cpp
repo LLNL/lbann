@@ -35,7 +35,7 @@
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/summary_impl.hpp"
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #include <algorithm>
 #include <string>

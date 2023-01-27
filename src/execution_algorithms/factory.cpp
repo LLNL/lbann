@@ -32,7 +32,7 @@
 
 #include <google/protobuf/message.h>
 #include <memory>
-#include <training_algorithm.pb.h>
+#include "lbann/proto/training_algorithm.pb.h"
 
 namespace {
 

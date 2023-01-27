@@ -37,7 +37,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/file_utils.hpp"
 
-#include <lbann.pb.h>
+#include "lbann/proto/lbann.pb.h"
 
 #include <google/protobuf/text_format.h>
 

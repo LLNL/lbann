@@ -30,7 +30,7 @@
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include <sys/stat.h>
 #include "lbann/io/persist.hpp"
-#include <optimizers.pb.h>
+#include "lbann/proto/optimizers.pb.h"
 
 namespace lbann {
 

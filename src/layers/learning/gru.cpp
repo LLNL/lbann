@@ -35,7 +35,7 @@
 #include "lbann/utils/sync_info_helpers.hpp"
 
 #include "lbann/proto/datatype_helpers.hpp"
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 namespace lbann {
 

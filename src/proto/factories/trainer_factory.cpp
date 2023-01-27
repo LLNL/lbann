@@ -31,7 +31,7 @@
 #include "lbann/data_coordinator/buffered_data_coordinator.hpp"
 #include "lbann/execution_algorithms/factory.hpp"
 
-#include <trainer.pb.h>
+#include "lbann/proto/trainer.pb.h"
 
 namespace lbann {
 namespace proto {

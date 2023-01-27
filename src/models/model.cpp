@@ -48,8 +48,8 @@
 #include "lbann/utils/summary_impl.hpp"
 #include "lbann/utils/onnx_utils.hpp"
 
-#include <model.pb.h>
-#include <optimizers.pb.h>
+#include "lbann/proto/model.pb.h"
+#include "lbann/proto/optimizers.pb.h"
 
 #include <algorithm>
 #include <fstream>

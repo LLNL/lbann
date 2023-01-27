@@ -37,8 +37,8 @@
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 #include "lbann/utils/options.hpp"
 
-#include <lbann.pb.h>
-#include <reader.pb.h>
+#include "lbann/proto/lbann.pb.h"
+#include "lbann/proto/reader.pb.h"
 
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>

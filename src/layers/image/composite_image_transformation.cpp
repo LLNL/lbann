@@ -28,7 +28,7 @@
 #include "lbann/layers/image/composite_image_transformation.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 #include <math.h>
 
 namespace lbann {

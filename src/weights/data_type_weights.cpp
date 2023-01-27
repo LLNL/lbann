@@ -36,8 +36,8 @@
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/onnx_utils.hpp"
 
-#include <layers.pb.h>
-#include <weights.pb.h>
+#include "lbann/proto/layers.pb.h"
+#include "lbann/proto/weights.pb.h"
 
 #include <algorithm>
 #include <sstream>

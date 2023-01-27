@@ -53,8 +53,8 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/protobuf.hpp"
 
-#include <reader.pb.h>
-#include <transforms.pb.h>
+#include "lbann/proto/reader.pb.h"
+#include "lbann/proto/transforms.pb.h"
 
 namespace {
 

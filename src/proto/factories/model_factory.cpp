@@ -32,8 +32,8 @@
 #include "lbann/objective_functions/layer_term.hpp"
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
 
-#include <model.pb.h>
-#include <objective_functions.pb.h>
+#include "lbann/proto/model.pb.h"
+#include "lbann/proto/objective_functions.pb.h"
 
 #include <memory>
 #include <string>

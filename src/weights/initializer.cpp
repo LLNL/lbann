@@ -33,7 +33,7 @@
 #include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/random.hpp"
 
-#include <weights.pb.h>
+#include "lbann/proto/weights.pb.h"
 #ifdef LBANN_HAS_CNPY
 #include <cnpy.h>
 #endif // LBANN_HAS_CNPY

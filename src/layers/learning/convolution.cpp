@@ -33,7 +33,7 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf.hpp"
 
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 #ifdef LBANN_HAS_ONNX
 #include <onnx/onnx_pb.h>

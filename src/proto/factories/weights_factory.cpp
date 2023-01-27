@@ -34,7 +34,7 @@
 #include "lbann/utils/factory.hpp"
 #include "lbann/utils/protobuf.hpp"
 
-#include <weights.pb.h>
+#include "lbann/proto/weights.pb.h"
 
 namespace {
 

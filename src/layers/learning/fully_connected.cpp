@@ -32,7 +32,7 @@
 
 #include "lbann/proto/datatype_helpers.hpp"
 
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 #include <string>
 #include <sstream>

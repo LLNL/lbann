@@ -37,7 +37,7 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/weights/data_type_weights_impl.hpp"
 
-#include <training_algorithm.pb.h>
+#include "lbann/proto/training_algorithm.pb.h"
 
 #include <algorithm>
 #include <iterator>

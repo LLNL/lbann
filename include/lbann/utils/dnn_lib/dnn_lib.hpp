@@ -34,7 +34,7 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include <vector>
 
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 #ifdef LBANN_HAS_DNN_LIB
 

@@ -36,7 +36,7 @@
 #include <lbann/utils/lbann_library.hpp>
 
 #include <google/protobuf/text_format.h>
-#include <lbann.pb.h>
+#include "lbann/proto/lbann.pb.h"
 
 using namespace lbann;
 

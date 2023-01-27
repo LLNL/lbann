@@ -30,7 +30,7 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 namespace lbann {
 

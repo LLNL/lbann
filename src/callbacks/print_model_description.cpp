@@ -27,7 +27,7 @@
 #include "lbann/callbacks/print_model_description.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/serialize.hpp"
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 namespace lbann {
 namespace callback {
