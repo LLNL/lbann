@@ -40,6 +40,8 @@
 #include "lbann/layers/misc/uniform_hash.hpp"
 #include "lbann/layers/misc/variance.hpp"
 
+#include "lbann/proto/datatype_helpers.hpp"
+
 #include "lbann/utils/protobuf.hpp"
 
 #ifdef LBANN_HAS_FFTW
@@ -251,7 +253,9 @@ lbann::build_dft_abs_layer_from_pbuf(lbann_comm* comm, lbann_data::Layer const&)
   }
 }
 
-inline std::vector<std::vector<int>> multiple_shapes_from_pbuf(const auto& shapes)
+template <typename T>
+inline std::vector<std::vector<int>>
+multiple_shapes_from_pbuf(const T& shapes)
 {
   std::vector<std::vector<int>> result;
   for (const auto& shape : shapes)
@@ -267,19 +271,20 @@ lbann::build_external_layer_from_pbuf(lbann_comm* comm,
 {
   if constexpr (D == El::Device::GPU) {
     if (!proto_layer.external().has_gpu()) {
-      LBANN_ERROR("External layer \"",
-                  proto_layer.external().fprop_filename(),
-                  "\" was not built with GPU support but requested for a GPU device");
+      LBANN_ERROR(
+        "External layer \"",
+        proto_layer.external().fprop_filename(),
+        "\" was not built with GPU support but requested for a GPU device");
       return nullptr;
     }
   }
 
-  return std::make_unique<external_layer<T, L, D>>(
-    comm, proto_layer.external().fprop_filename(),
-    proto_layer.external().bprop_filename(),
-    proto_layer.external().layer_name(),
-    multiple_shapes_from_pbuf(proto_layer.external().weight_shapes()),
-    multiple_shapes_from_pbuf(proto_layer.external().output_shapes()));
+  lbann::external_layer_setup_t setupfunc =
+    load_external_library(proto_layer.external().fprop_filename(),
+                          proto_layer.external().layer_name());
+
+  return std::unique_ptr<lbann::Layer>(
+    setupfunc(lbann::proto::TypeToProtoDataType<T>::value, L, D, comm));
 }
 
 template <typename T, lbann::data_layout L, El::Device D>

@@ -31,7 +31,6 @@ set_full_path(THIS_DIR_SOURCES
   channelwise_softmax.cpp
   covariance.cpp
   dist_embedding.cpp
-  external.cpp
   mini_batch_index.cpp
   mini_batch_size.cpp
   one_hot.cpp

@@ -453,7 +453,6 @@ CEREAL_FORCE_DYNAMIC_INIT(embedding_layer);
 CEREAL_FORCE_DYNAMIC_INIT(entrywise_batch_normalization_layer);
 CEREAL_FORCE_DYNAMIC_INIT(entrywise_scale_bias_layer);
 CEREAL_FORCE_DYNAMIC_INIT(evaluation_layer);
-CEREAL_FORCE_DYNAMIC_INIT(external_layer);
 CEREAL_FORCE_DYNAMIC_INIT(fully_connected_layer);
 CEREAL_FORCE_DYNAMIC_INIT(gather_layer);
 CEREAL_FORCE_DYNAMIC_INIT(gaussian_layer);
