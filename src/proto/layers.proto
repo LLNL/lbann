@@ -1420,23 +1420,11 @@ message Layer {
    *  to call the layer.
    */
    message External {
-    /// Forward pass library filename
-    string fprop_filename = 1;
+    /// Library filename or path
+    string filename = 1;
 
-    /// Backpropagation library filename (if not given, fprop library is used)
-    string bprop_filename = 2;
-
-    /// Optional layer name (if not given, the name "layer" is used)
-    string layer_name = 3;
-
-    /// Output shape(s) of the layer. Leave empty to use the shape of the first input
-    repeated Shape output_shapes = 4;
-
-    /// Weights of the layer and their shapes. Leave empty for no weights
-    repeated Shape weight_shapes = 5;
-
-    /// If false, a GPU implementation is not available
-    bool has_gpu = 6;
+    /// Optional layer name for setup function (if not given, the name "layer" is used)
+    string layer_name = 2;
   }
 
   /** @brief Softmax across channel dimension

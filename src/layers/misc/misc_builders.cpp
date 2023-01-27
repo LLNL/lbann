@@ -254,8 +254,7 @@ lbann::build_dft_abs_layer_from_pbuf(lbann_comm* comm, lbann_data::Layer const&)
 }
 
 template <typename T>
-inline std::vector<std::vector<int>>
-multiple_shapes_from_pbuf(const T& shapes)
+inline std::vector<std::vector<int>> multiple_shapes_from_pbuf(const T& shapes)
 {
   std::vector<std::vector<int>> result;
   for (const auto& shape : shapes)
@@ -269,22 +268,20 @@ std::unique_ptr<lbann::Layer>
 lbann::build_external_layer_from_pbuf(lbann_comm* comm,
                                       lbann_data::Layer const& proto_layer)
 {
-  if constexpr (D == El::Device::GPU) {
-    if (!proto_layer.external().has_gpu()) {
-      LBANN_ERROR(
-        "External layer \"",
-        proto_layer.external().fprop_filename(),
-        "\" was not built with GPU support but requested for a GPU device");
-      return nullptr;
-    }
-  }
-
   lbann::external_layer_setup_t setupfunc =
-    load_external_library(proto_layer.external().fprop_filename(),
+    load_external_library(proto_layer.external().filename(),
                           proto_layer.external().layer_name());
 
-  return std::unique_ptr<lbann::Layer>(
-    setupfunc(lbann::proto::TypeToProtoDataType<T>::value, L, D, comm));
+  lbann::Layer* layer =
+    setupfunc(lbann::proto::TypeToProtoDataType<T>::value, L, D, comm);
+  if (!layer) {
+    LBANN_ERROR("External layer \"",
+                proto_layer.external().filename(),
+                "\" could not be initialized with the chosen configuration.");
+    return nullptr;
+  }
+
+  return std::unique_ptr<lbann::Layer>(layer);
 }
 
 template <typename T, lbann::data_layout L, El::Device D>

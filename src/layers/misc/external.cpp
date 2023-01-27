@@ -24,7 +24,6 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LBANN_EXTERNAL_LAYER_INSTANTIATE
 #include "lbann/layers/misc/external.hpp"
 #include "lbann/utils/sync_info_helpers.hpp"
 
