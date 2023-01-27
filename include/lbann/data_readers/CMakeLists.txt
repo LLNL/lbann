@@ -28,6 +28,7 @@ set_full_path(THIS_DIR_HEADERS
   compound_data_reader.hpp
   data_reader.hpp
   data_reader_cifar10.hpp
+  data_reader_conduit.hpp
   data_reader_csv.hpp
   data_reader_image.hpp
   data_reader_HDF5.hpp

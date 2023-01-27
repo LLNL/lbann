@@ -26,22 +26,23 @@
 
 #include "Catch2BasicSupport.hpp"
 
-#include "TestHelpers.hpp"
 #include "MPITestHelpers.hpp"
+#include "TestHelpers.hpp"
 
 #include <lbann/base.hpp>
 #include <lbann/execution_algorithms/batch_functional_inference_algorithm.hpp>
 #include <lbann/models/model.hpp>
 #include <lbann/utils/lbann_library.hpp>
 
-#include <lbann.pb.h>
 #include <google/protobuf/text_format.h>
+#include <lbann.pb.h>
 
 namespace pb = ::google::protobuf;
 
 namespace {
-// This model is just an input layer into a softmax layer, so we can verify the
-// output is correct for a simple input (e.g., a matrix filled with 1.0)
+// This model is just an input layer into a softmax layer, so we can
+// verify the output is correct for a simple input (e.g., a matrix
+// filled with 1.0)
 std::string const model_prototext = R"ptext(
 model {
   layer {
@@ -60,24 +61,25 @@ model {
 }
 )ptext";
 
-auto mock_datareader_metadata(int class_n)
+auto mock_datareader_metadata(int const class_n)
 {
   lbann::DataReaderMetaData md;
   auto& md_dims = md.data_dims;
   // This is all that should be needed for this test.
   md_dims[lbann::data_reader_target_mode::CLASSIFICATION] = {class_n};
-  md_dims[lbann::data_reader_target_mode::INPUT] = {1,1,class_n};
+  md_dims[lbann::data_reader_target_mode::INPUT] = {1, 1, class_n};
   return md;
 }
 
-template <typename T>
-auto make_model(lbann::lbann_comm& comm, int class_n)
+lbann_data::LbannPB get_model_protobuf()
 {
   lbann_data::LbannPB my_proto;
   if (!pb::TextFormat::ParseFromString(model_prototext, &my_proto))
     throw "Parsing protobuf failed.";
-  // Construct a trainer so that the model can register the input layer
-  lbann::construct_trainer(&comm, my_proto.mutable_trainer(), my_proto);
+  return my_proto;
+}
+auto make_model(lbann::lbann_comm& comm, lbann_data::LbannPB& my_proto, int class_n)
+{
   auto metadata = mock_datareader_metadata(class_n);
   auto my_model = lbann::proto::construct_model(&comm,
                                                 -1,
@@ -88,46 +90,69 @@ auto make_model(lbann::lbann_comm& comm, int class_n)
   return my_model;
 }
 
-} // namespace <anon>
+} // namespace
+
+namespace lbann {
+void setup_inference_env(lbann_comm* lc,
+                         int mbs,
+                         std::vector<int> input_dims,
+                         std::vector<int> output_dims);
+}
 
 TEST_CASE("Test batch_function_inference_algorithm", "[inference]")
 {
   using DataType = float;
-  DataType one = 1.;
-  DataType zero = 0.;
-  int mbs_class_n = 4;
+  using DMat =
+    El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU>;
+  DataType constexpr one = 1.;
+  DataType constexpr zero = 0.;
+  int const mbs_class_n = 4;
 
   auto& comm = unit_test::utilities::current_world_comm();
-  std::unique_ptr<lbann::model> model = make_model<DataType>(comm, mbs_class_n);
   auto const& g = comm.get_trainer_grid();
-  El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU>
-    data(mbs_class_n, mbs_class_n, g);
-  auto inf_alg = lbann::batch_functional_inference_algorithm();
 
+  auto my_proto = get_model_protobuf(); // the pbuf msg is a global string
+
+  // Construct a trainer so that the model can register the input layer
+  lbann::construct_trainer(&comm, my_proto.mutable_trainer(), my_proto);
+
+  lbann::setup_inference_env(&comm, mbs_class_n, {mbs_class_n}, {mbs_class_n});
+  auto model = make_model(comm, my_proto, mbs_class_n);
+  auto inf_alg = lbann::batch_functional_inference_algorithm();
   SECTION("Model data insert and forward prop")
   {
+    DMat data(mbs_class_n, mbs_class_n, g);
     El::Fill(data, one);
+    std::map<std::string, DMat> samples;
+    samples["data/samples"] = std::move(data);
 
-    inf_alg.infer(model.get(), data, mbs_class_n);
-    const auto* l = model->get_layers()[1];
-    auto const& dtl = dynamic_cast<lbann::data_type_layer<float> const&>(*l);
-    const auto& output = dtl.get_activations();
+    lbann::set_inference_samples(samples);
+    inf_alg.infer(model.get());
 
-    for (int i=0; i<output.Height(); i++) {
-      for (int j=0; j<output.Width(); j++) {
-        REQUIRE(output.Get(i,j) == Approx( 1.0/mbs_class_n ) );
+    auto const& l = model->get_layer(1);
+    auto const& dtl = dynamic_cast<lbann::data_type_layer<float> const&>(l);
+    auto const& output = dtl.get_activations();
+
+    for (El::Int i = 0; i < output.Height(); i++) {
+      for (El::Int j = 0; j < output.Width(); j++) {
+        REQUIRE(output.Get(i, j) == Approx(1.0 / mbs_class_n));
       }
     }
   }
 
   SECTION("Verify inference label correctness")
   {
+    DMat data(mbs_class_n, mbs_class_n, g);
     El::Fill(data, zero);
     El::FillDiagonal(data, one);
 
-    auto labels = inf_alg.infer(model.get(), data, mbs_class_n);
+    std::map<std::string, DMat> samples;
+    samples["data/samples"] = std::move(data);
+    lbann::set_inference_samples(samples);
 
-    for (int i=0; i<labels.Height(); i++) {
+    auto labels = inf_alg.infer(model.get());
+
+    for (int i = 0; i < labels.Height(); i++) {
       REQUIRE(labels(i) == i);
     }
   }

@@ -108,7 +108,7 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(El::Int mini_b
     auto& c = dynamic_cast<SGDExecutionContext&>(this->m_model->get_execution_context());
     auto mode = c.get_execution_mode();
     auto effective_mini_batch_size = mini_batch_size;
-    if (!(mode==execution_mode::inference)) {
+    //if (!(mode==execution_mode::inference)) {
       data_coordinator& dc = get_trainer().get_data_coordinator();
       // Determine model mini-batch size and effective mini-batch size
       // Note: If inter-model communication is activated, the effective
@@ -123,7 +123,7 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(El::Int mini_b
           break;
         }
       }
-    }
+    //}
     // Set mini-batch size in model
     c.set_current_mini_batch_size(mini_batch_size);
     c.set_effective_mini_batch_size(effective_mini_batch_size);
@@ -148,32 +148,21 @@ template <typename TensorDataType,
           El::Device Dev>
 void input_layer<TensorDataType, T_layout, Dev>::fp_compute()
 {
-  if (!this->m_samples_loaded) {
-    execution_mode const mode =
-      this->m_model->get_execution_context().get_execution_mode();
-    buffered_data_coordinator<TensorDataType>& dc =
-      static_cast<buffered_data_coordinator<TensorDataType>&>(
-        get_trainer().get_data_coordinator());
+  execution_mode const mode =
+    this->m_model->get_execution_context().get_execution_mode();
+  buffered_data_coordinator<TensorDataType>& dc =
+    static_cast<buffered_data_coordinator<TensorDataType>&>(
+      get_trainer().get_data_coordinator());
 
-    dc.distribute_from_local_matrix(mode,
-                                    m_data_field,
-                                    this->get_activations(0));
+  dc.distribute_from_local_matrix(mode,
+                                  m_data_field,
+                                  this->get_activations(0));
 
 #ifdef LBANN_HAS_DISTCONV
-    if (this->distconv_enabled()) {
-      get_distconv_adapter().fp_compute();
-    }
-#endif // LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()) {
+    get_distconv_adapter().fp_compute();
   }
-}
-
-template <typename TensorDataType,
-          data_layout T_layout,
-          El::Device Dev>
-void input_layer<TensorDataType, T_layout, Dev>::
-set_samples(const El::AbstractDistMatrix<TensorDataType>& samples) {
-  El::Copy(samples, this->get_activations(0));
-  this->m_samples_loaded = true;
+#endif // LBANN_HAS_DISTCONV
 }
 
 template <typename TensorDataType,

@@ -115,9 +115,9 @@ void trainer::setup(std::unique_ptr<thread_pool> io_thread_pool,
   // layer depends on having a properly initialized thread pool)
   m_io_thread_pool = std::move(io_thread_pool);
 
-  m_data_coordinator.get()->setup(*m_io_thread_pool.get(),
-                                  get_max_mini_batch_size(),
-                                  data_readers);
+  m_data_coordinator->setup(*m_io_thread_pool.get(),
+                            get_max_mini_batch_size(),
+                            data_readers);
 
   // Set up callbacks first - allow checkpoint / restart to reload state
   for (auto& cb : m_callbacks) {
