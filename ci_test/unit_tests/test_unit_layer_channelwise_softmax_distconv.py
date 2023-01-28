@@ -20,7 +20,7 @@ import tools
 # Data
 np.random.seed(20200115)
 _num_samples = 15
-_sample_dims = (5,2,7)
+_sample_dims = (15,7,1)
 _sample_size = functools.reduce(operator.mul, _sample_dims)
 _samples = np.random.normal(loc=0.5, size=(_num_samples,_sample_size)).astype(np.float32)
 
@@ -62,6 +62,10 @@ def setup_experiment(lbann, weekly):
     optimizer = lbann.NoOptimizer()
     return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
 
+def create_parallel_strategy(num_channel_groups):
+    return {"channel_groups": num_channel_groups,
+            "filter_groups": num_channel_groups}
+
 def construct_model(lbann):
     """Construct LBANN model.
 
@@ -87,13 +91,20 @@ def construct_model(lbann):
     metrics = []
     callbacks = []
 
+    num_channel_groups = tools.gpus_per_node(lbann)
+    if num_channel_groups == 0:
+        e = 'this test requires GPUs.'
+        print('Skip - ' + e)
+        pytest.skip(e)
+
     # ------------------------------------------
     # Data-parallel layout
     # ------------------------------------------
 
     # LBANN implementation
     x = x_lbann
-    y = lbann.ChannelwiseSoftmax(x, data_layout='data_parallel')
+    y = lbann.ChannelwiseSoftmax(x,
+                                 parallel_strategy=create_parallel_strategy(num_channel_groups),)
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
