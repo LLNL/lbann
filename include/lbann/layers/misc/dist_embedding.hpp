@@ -216,7 +216,7 @@ private:
 // ---------------------------------------------
 
 template <typename T, data_layout L, El::Device D>
-void dist_embeding_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void dist_embedding_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_dist_embedding();
   msg->set_num_embeddings(m_num_embeddings);
