@@ -38,7 +38,7 @@ typedef Layer* (*external_layer_setup_t)(lbann_data::DataType datatype,
                                         El::Device device,
                                         lbann_comm* comm);
 
-/** @brief Call external function
+/** @brief Create layer from an external library
  *
  *  Expects any number of input tensors. Invokes a shared object (e.g., .so
  *  file) to call the layer.

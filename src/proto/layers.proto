@@ -1422,7 +1422,7 @@ message Layer {
     int64 size = 1;
   }
 
-  /** @brief Call external function
+  /** @brief Create layer from an external library
    *
    *  Expects any number of input tensors. Invokes a shared object (e.g., .so file)
    *  to call the layer.
