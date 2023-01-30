@@ -78,17 +78,17 @@ namespace distconv{
   template<typename Allocator>
   int
   ChannelwiseSoftmax<Backend, DataType>
-  ::backward(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input_0,
+  ::backward(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output,
              const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,
              tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input_grad_0){
-    if (input_0.get_local_size() == 0 ||
+    if (output.get_local_size() == 0 ||
         output_grad.get_local_size() == 0 ||
         input_grad_0.get_local_size() == 0){
       util::MPIRootPrintStreamInfo() << "WARNING: EMPTY INPUT FOUND \n";
       return 1; // no op for empty inputs
     }
 
-    const auto& input_0_dims = input_0.get_local_shape();
+    const auto& input_0_dims = output.get_local_shape();
     const auto num_channels = input_0_dims[2];
     const auto local_mini_batch_size = input_0_dims[3];
     const auto mat_channel_size = input_0_dims[0] * input_0_dims[1];
@@ -98,9 +98,9 @@ namespace distconv{
 
     using LocalMat = El::Matrix<DataType, El::Device::GPU>;
 
-    LocalMat local_input(mat_stride,
+    LocalMat local_output(mat_stride,
                          local_mini_batch_size,
-                         input_0.get_buffer(),
+                         output.get_buffer(),
                          mat_stride);
 
     LocalMat local_output_grad(mat_stride,
@@ -115,7 +115,7 @@ namespace distconv{
 
     ::lbann::channelwise_softmax_bp_impl(num_channels,
                                          mat_channel_size,
-                                         local_input,
+                                         local_output,
                                          local_output_grad,
                                          local_input_grad);
     return 1;        

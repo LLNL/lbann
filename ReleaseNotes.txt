@@ -23,7 +23,7 @@ Support for new network structures:
  - RoBERTa with pretrained weights
 
 Support for new layers:
-- - Added distributed tensor parallelism with channelwise decomposition for channelwise softmax layer
+- Added distributed tensor parallelism with channelwise decomposition for channelwise softmax layer
 - Added support for 2D Matrices for Scatter and Gather layers
 - Added image rotation layer and composite image transformation layer
   (rotate, shear, translate)
