@@ -188,6 +188,24 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void channelwise_softmax_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& dr_metadata) {
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
   this->set_output_dims(this->get_input_dims());
+
+  #ifdef LBANN_HAS_DISTCONV
+  
+  if (this->distconv_enabled()){
+    // Additional checks when distconv mode is enabled
+    const auto& input_dims = this->get_input_dims();
+    const auto& output_dims = this->get_output_dims();
+
+    if (input_dims.size() != 3 || output_dims.size() != 3){
+      LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
+                  "expects an input and output tensor with 3 dimensions (channel, *, *), "
+                  "but it has been configured as a ",
+                  input_dims.size(), "-D input tensor and ",
+                  output_dims.size(),"-D output tensor");
+    }
+  }
+  
+  #endif  
 }
 
 #ifdef LBANN_HAS_DISTCONV
