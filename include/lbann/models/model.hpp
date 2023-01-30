@@ -51,7 +51,7 @@
 // complete type. Sigh. (The greater implication of this is that you
 // cannot have `unique_ptr<IncompleteType>` as a drop-in for
 // `IncompleteType*`, which is annoying.)
-#include <optimizers.pb.h>
+#include "lbann/proto/optimizers.pb.h"
 
 #include <string>
 #include <unordered_map>

@@ -34,7 +34,7 @@
 #include <google/protobuf/stubs/logging.h>
 #include <lbann/execution_algorithms/factory.hpp>
 
-#include <training_algorithm.pb.h>
+#include "lbann/proto/training_algorithm.pb.h"
 
 #include <google/protobuf/text_format.h>
 

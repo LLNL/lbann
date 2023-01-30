@@ -34,8 +34,8 @@
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/protobuf.hpp"
 
-#include <lbann.pb.h>
-#include <layers.pb.h>
+#include "lbann/proto/lbann.pb.h"
+#include "lbann/proto/layers.pb.h"
 
 #include <memory>
 #include <sstream>

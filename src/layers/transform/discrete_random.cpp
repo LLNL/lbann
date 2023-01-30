@@ -29,7 +29,7 @@
 
 #include "lbann/utils/protobuf.hpp"
 
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 #include "lbann/proto/datatype_helpers.hpp"
 

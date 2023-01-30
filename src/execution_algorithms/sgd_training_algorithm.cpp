@@ -34,7 +34,7 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/timer_map.hpp"
 
-#include <training_algorithm.pb.h>
+#include "lbann/proto/training_algorithm.pb.h"
 
 #include <iostream>
 #include <memory>

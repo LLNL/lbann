@@ -31,7 +31,7 @@
 #include "lbann/weights/variance_scaling_initializers.hpp"
 
 #include "lbann/proto/datatype_helpers.hpp"
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 namespace lbann
 {

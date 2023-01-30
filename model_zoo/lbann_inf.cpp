@@ -31,8 +31,8 @@
 #include "lbann/utils/protobuf_utils.hpp"
 #include "lbann/utils/argument_parser.hpp"
 
-#include <lbann.pb.h>
-#include <model.pb.h>
+#include "lbann/proto/lbann.pb.h"
+#include "lbann/proto/model.pb.h"
 
 #include <dirent.h>
 

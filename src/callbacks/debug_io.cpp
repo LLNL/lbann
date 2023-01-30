@@ -32,7 +32,7 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/serialize.hpp"
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 #include <iostream>
 #include <memory>
 

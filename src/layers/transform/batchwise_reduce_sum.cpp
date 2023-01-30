@@ -27,7 +27,7 @@
 #define LBANN_BATCHWISE_REDUCE_SUM_LAYER_INSTANTIATE
 #include "lbann/layers/transform/batchwise_reduce_sum.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 namespace lbann {
 

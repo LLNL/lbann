@@ -33,7 +33,7 @@
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/cloneable.hpp"
 
-#include <operators.pb.h>
+#include "lbann/proto/operators.pb.h"
 
 #include <h2/meta/Core.hpp>
 

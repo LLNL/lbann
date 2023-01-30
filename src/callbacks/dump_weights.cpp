@@ -33,7 +33,7 @@
 #include "lbann/utils/trainer_file_utils.hpp"
 #include "lbann/utils/serialize.hpp"
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #include <string>
 

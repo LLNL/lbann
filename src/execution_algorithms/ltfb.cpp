@@ -32,7 +32,7 @@
 #include "lbann/utils/output_helpers.hpp"
 #include "lbann/utils/timer_map.hpp"
 
-#include "training_algorithm.pb.h"
+#include "lbann/proto/training_algorithm.pb.h"
 
 // FIXME (trb 04/14/21): This code is copied with only minimal
 // modification from the LTFB callback implementation. It should be

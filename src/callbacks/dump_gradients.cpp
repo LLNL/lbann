@@ -30,7 +30,7 @@
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/utils/serialize.hpp"
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #include <vector>
 

@@ -34,7 +34,7 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #include <typeinfo>
 #include <typeindex>

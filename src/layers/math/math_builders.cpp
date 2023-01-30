@@ -28,7 +28,7 @@
 #include <lbann/layers/math/matmul.hpp>
 
 #include <lbann/proto/proto_common.hpp>
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 namespace lbann
 {

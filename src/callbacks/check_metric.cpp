@@ -32,7 +32,7 @@
 #include "lbann/utils/serialize.hpp"
 #include <cereal/types/set.hpp>
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #include <set>
 #include <string>

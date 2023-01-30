@@ -37,7 +37,7 @@
 #include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/factory.hpp"
 
-#include <optimizers.pb.h>
+#include "lbann/proto/optimizers.pb.h"
 
 namespace {
 

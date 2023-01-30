@@ -35,7 +35,7 @@
 #include "lbann/operators/math/unary.hpp"
 
 #include "lbann/proto/datatype_helpers.hpp"
-#include <operators.pb.h>
+#include "lbann/proto/operators.pb.h"
 
 template <typename DataT, El::Device D>
 std::unique_ptr<lbann::Operator<DataT, DataT, D>>

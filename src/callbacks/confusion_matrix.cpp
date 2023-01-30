@@ -28,7 +28,7 @@
 #include "lbann/callbacks/confusion_matrix.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #include <fstream>
 #include <memory>

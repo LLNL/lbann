@@ -29,8 +29,8 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 
-#include <lbann.pb.h>
-#include <reader.pb.h>
+#include "lbann/proto/lbann.pb.h"
+#include "lbann/proto/reader.pb.h"
 
 #include <string>
 

@@ -31,7 +31,7 @@
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf.hpp"
-#include <lbann.pb.h>
+#include "lbann/proto/lbann.pb.h"
 
 namespace lbann {
 

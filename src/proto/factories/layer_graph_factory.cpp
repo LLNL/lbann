@@ -30,8 +30,8 @@
 
 #include "lbann/layers/learning/fully_connected.hpp"
 
-#include <model.pb.h>
-#include <trainer.pb.h>
+#include "lbann/proto/model.pb.h"
+#include "lbann/proto/trainer.pb.h"
 
 #include <string>
 #include <unordered_map>

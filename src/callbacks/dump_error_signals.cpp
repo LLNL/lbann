@@ -28,7 +28,7 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/serialize.hpp"
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 namespace lbann {
 namespace callback {

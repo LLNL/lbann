@@ -28,7 +28,7 @@
 
 #include "lbann/callbacks/export_onnx.hpp"
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #include <fstream>
 #include <iostream>

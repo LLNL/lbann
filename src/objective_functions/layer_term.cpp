@@ -26,7 +26,7 @@
 
 #include "lbann/objective_functions/layer_term.hpp"
 #include "lbann/utils/serialize.hpp"
-#include <objective_functions.pb.h>
+#include "lbann/proto/objective_functions.pb.h"
 
 namespace lbann {
 

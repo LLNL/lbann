@@ -27,7 +27,7 @@
 #include "lbann/layers/learning/embedding.hpp"
 
 #include <lbann/proto/proto_common.hpp>
-#include <lbann.pb.h>
+#include "lbann/proto/lbann.pb.h"
 
 namespace lbann {
 

@@ -31,7 +31,7 @@
 #include "lbann/layers/image/rotation.hpp"
 #include "lbann/layers/image/cutout.hpp"
 
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 template <typename T, lbann::data_layout L, El::Device D>
 std::unique_ptr<lbann::Layer> lbann::build_bilinear_resize_layer_from_pbuf(

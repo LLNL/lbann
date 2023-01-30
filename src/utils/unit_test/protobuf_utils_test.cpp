@@ -30,7 +30,7 @@
 #include "lbann/utils/protobuf/impl.hpp"
 
 #include <google/protobuf/descriptor.h>
-#include <protobuf_utils_test_messages.pb.h>
+#include "protobuf_utils_test_messages.pb.h"
 
 #include <string>
 

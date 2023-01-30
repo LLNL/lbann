@@ -26,7 +26,7 @@
 
 #include "lbann/transforms/scale.hpp"
 #include "lbann/utils/memory.hpp"
-#include <transforms.pb.h>
+#include "lbann/proto/transforms.pb.h"
 
 namespace lbann {
 namespace transform {

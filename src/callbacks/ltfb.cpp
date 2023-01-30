@@ -39,7 +39,7 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/protobuf.hpp"
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #include <algorithm>
 #include <numeric>
