@@ -29,6 +29,8 @@
 #include <sstream>
 #include "lbann/utils/exception.hpp"
 
+#include <Python.h>
+
 namespace lbann {
 namespace python {
 
@@ -153,7 +155,7 @@ global_interpreter_lock::global_interpreter_lock() {
 
 global_interpreter_lock::~global_interpreter_lock() {
   if (is_active()) {
-    PyGILState_Release(m_gil_state);
+    PyGILState_Release(static_cast<PyGILState_STATE>(m_gil_state));
   }
 }
 

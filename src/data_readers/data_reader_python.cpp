@@ -30,6 +30,9 @@
 #include <cstdio>
 #include <algorithm>
 #include <regex>
+
+#include <Python.h>
+
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/python.hpp"
 
