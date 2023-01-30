@@ -26,6 +26,8 @@
 // MUST include this
 #include "Catch2BasicSupport.hpp"
 
+#include <Python.h>
+
 // File being tested
 #include <lbann/utils/python.hpp>
 
