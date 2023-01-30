@@ -41,7 +41,8 @@ namespace distconv{
   ::forward(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input_0,
             tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output){
 
-    if (input_0.get_local_size() == 0 || output.get_local_size()){
+    if (input_0.get_local_size() == 0 || output.get_local_size() == 0){
+      util::MPIRootPrintStreamInfo() << "WARNING: EMPTY INPUT FOUND \n";
       return 1; // no op for empty inputs
     }
 
@@ -52,7 +53,6 @@ namespace distconv{
     const auto mat_channel_size = input_0_dims[0] * input_0_dims[1];
     const auto mat_stride = num_channels * mat_channel_size;
 
-     util::MPIRootPrintStreamInfo()<< "Num channels: \t" << num_channels << "\t MB size: \t" << local_mini_batch_size;
     // Convert to Hydrogen matrices for kernel launch
 
     using LocalMat = El::Matrix<DataType, El::Device::GPU>;
