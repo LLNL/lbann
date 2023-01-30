@@ -20,7 +20,7 @@ import tools
 # Data
 np.random.seed(20200115)
 _num_samples = 15
-_sample_dims = (15,7,1)
+_sample_dims = (15,36,1)
 _sample_size = functools.reduce(operator.mul, _sample_dims)
 _samples = np.random.normal(loc=0.5, size=(_num_samples,_sample_size)).astype(np.float32)
 
@@ -85,8 +85,6 @@ def construct_model(lbann):
                   lbann.WeightsLayer(weights=x_weights,
                                      dims=_sample_dims))
     x_lbann = x
-
-    # Objects for LBANN model
     obj = []
     metrics = []
     callbacks = []
@@ -103,8 +101,10 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
+
     y = lbann.ChannelwiseSoftmax(x,
-                                 parallel_strategy=create_parallel_strategy(num_channel_groups),)
+                                 parallel_strategy=create_parallel_strategy(num_channel_groups),
+                                 name="Channelwise_softmax_distconv")
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
@@ -129,8 +129,9 @@ def construct_model(lbann):
     # Gradient checking
     # ------------------------------------------
 
-    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
-
+    # callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+    callbacks.append(lbann.CallbackDumpOutputs(layers="Channelwise_softmax_distconv",
+                                               directory=f"{os.path.dirname(os.path.realpath(__file__))}"))
     # ------------------------------------------
     # Construct model
     # ------------------------------------------

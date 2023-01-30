@@ -38,7 +38,6 @@ set_full_path(THIS_DIR_SOURCES
   rowwise_weights_norms.cpp
   uniform_hash.cpp
   variance.cpp
-
   misc_builders.cpp
   )
 
@@ -64,12 +63,13 @@ if (LBANN_HAS_GPU)
   endif ()
 endif ()
 
-# Add the subdirectories
-add_subdirectory(cereal_registration)
-
 if (LBANN_HAS_DISTCONV)
     add_subdirectory(distconv)
 endif()
+
+# Add the subdirectories
+add_subdirectory(cereal_registration)
+
 
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
