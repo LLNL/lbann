@@ -204,8 +204,7 @@ void channelwise_softmax_layer<TensorDataType,Layout,Device>::setup_dims(DataRea
                   output_dims.size(),"-D output tensor");
     }
   }
-  
-  #endif  
+  #endif  // LBANN_HAS_DISTCONV
 }
 
 #ifdef LBANN_HAS_DISTCONV

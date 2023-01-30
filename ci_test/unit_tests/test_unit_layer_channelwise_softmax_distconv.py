@@ -20,7 +20,7 @@ import tools
 # Data
 np.random.seed(20200115)
 _num_samples = 15
-_sample_dims = (15,36,1)
+_sample_dims = (15,5,1)
 _sample_size = functools.reduce(operator.mul, _sample_dims)
 _samples = np.random.normal(loc=0.5, size=(_num_samples,_sample_size)).astype(np.float32)
 
@@ -103,11 +103,12 @@ def construct_model(lbann):
     x = x_lbann
 
     y = lbann.ChannelwiseSoftmax(x,
+                                 data_layout='data_parallel',
                                  parallel_strategy=create_parallel_strategy(num_channel_groups),
                                  name="Channelwise_softmax_distconv")
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel layout'))
+    metrics.append(lbann.Metric(z, name='channelwise split distconv'))
 
     # NumPy implementation
     vals = []
