@@ -84,6 +84,7 @@ namespace distconv{
     if (input_0.get_local_size() == 0 ||
         output_grad.get_local_size() == 0 ||
         input_grad_0.get_local_size() == 0){
+      util::MPIRootPrintStreamInfo() << "WARNING: EMPTY INPUT FOUND \n";
       return 1; // no op for empty inputs
     }
 
@@ -98,9 +99,9 @@ namespace distconv{
     using LocalMat = El::Matrix<DataType, El::Device::GPU>;
 
     LocalMat local_input(mat_stride,
-                        local_mini_batch_size,
-                        input_0.get_buffer(),
-                        mat_stride);
+                         local_mini_batch_size,
+                         input_0.get_buffer(),
+                         mat_stride);
 
     LocalMat local_output_grad(mat_stride,
                                local_mini_batch_size,
