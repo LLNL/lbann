@@ -32,7 +32,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/memory.hpp"
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 namespace lbann {
 

@@ -48,7 +48,7 @@
 #include "lbann/layers/misc/dft_abs.hpp"
 #endif // LBANN_HAS_FFTW
 
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 #include <memory>
 #include <type_traits>

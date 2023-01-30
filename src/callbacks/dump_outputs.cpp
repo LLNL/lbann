@@ -32,7 +32,7 @@
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/protobuf.hpp"
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #ifdef LBANN_HAS_CNPY
 #include <cnpy.h>

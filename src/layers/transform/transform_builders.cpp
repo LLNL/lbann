@@ -43,7 +43,7 @@
 
 #include "lbann/utils/protobuf.hpp"
 
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 template <typename T, lbann::data_layout L, El::Device D>
 std::unique_ptr<lbann::Layer> lbann::build_batchwise_reduce_sum_layer_from_pbuf(

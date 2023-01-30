@@ -29,7 +29,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 
-#include <optimizers.pb.h>
+#include "lbann/proto/optimizers.pb.h"
 
 namespace lbann {
 

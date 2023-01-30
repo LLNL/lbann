@@ -30,7 +30,7 @@
 #ifdef LBANN_HAS_GPU
 #include "lbann/utils/gpu/helpers.hpp"
 #endif // LBANN_HAS_GPU
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 #include<iostream>
 namespace lbann 
 {

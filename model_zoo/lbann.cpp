@@ -35,8 +35,8 @@
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #endif // LBANN_DNN_LIB
 
-#include <lbann.pb.h>
-#include <model.pb.h>
+#include "lbann/proto/lbann.pb.h"
+#include "lbann/proto/model.pb.h"
 
 #include <cstdlib>
 

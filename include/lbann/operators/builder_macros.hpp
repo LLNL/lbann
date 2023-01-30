@@ -29,7 +29,7 @@
 #include "lbann/operators/operator.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 
-#include <operators.pb.h>
+#include "lbann/proto/operators.pb.h"
 
 #include <memory>
 

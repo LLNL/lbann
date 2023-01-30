@@ -34,7 +34,7 @@
 #include <lbann/models/model.hpp>
 #include <lbann/utils/lbann_library.hpp>
 
-#include <lbann.pb.h>
+#include "lbann/proto/lbann.pb.h"
 #include <google/protobuf/text_format.h>
 
 namespace pb = ::google::protobuf;

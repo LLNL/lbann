@@ -30,7 +30,7 @@
 #include "lbann_config.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 // This layer is only supported if LBANN has FFTW support.
 #ifdef LBANN_HAS_FFTW

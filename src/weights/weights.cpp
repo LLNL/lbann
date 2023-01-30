@@ -30,7 +30,7 @@
 #include "lbann/utils/serialize.hpp"
 #include "lbann/io/file_io.hpp"
 
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 #include <algorithm>
 #include <sstream>

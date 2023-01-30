@@ -31,7 +31,7 @@
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/protobuf.hpp"
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 namespace lbann {
 

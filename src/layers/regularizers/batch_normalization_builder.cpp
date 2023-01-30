@@ -26,7 +26,7 @@
 
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 #include <type_traits>
 
 template <typename T, lbann::data_layout L, El::Device D>

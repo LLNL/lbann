@@ -36,7 +36,7 @@
 #include "lbann/utils/tensor.hpp"
 #include "lbann/utils/typename.hpp"
 
-#include <operators.pb.h>
+#include "lbann/proto/operators.pb.h"
 
 #include <h2/meta/Core.hpp>
 #include <h2/meta/TypeList.hpp>

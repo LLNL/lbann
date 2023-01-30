@@ -34,7 +34,7 @@
 #include "lbann/utils/threads/thread_pool.hpp"
 #include "lbann/utils/threads/thread_utils.hpp"
 #include <google/protobuf/text_format.h>
-#include <lbann.pb.h>
+#include "lbann/proto/lbann.pb.h"
 
 #include <conduit/conduit.hpp>
 #include <cstdlib>

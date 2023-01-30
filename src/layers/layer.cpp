@@ -32,7 +32,7 @@
 #include "lbann/utils/summary_impl.hpp"
 #include "lbann/utils/timer.hpp"
 
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 #include <algorithm>
 #include <functional>

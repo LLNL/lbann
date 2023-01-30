@@ -43,7 +43,7 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/profiling.hpp"
 
-#include <training_algorithm.pb.h>
+#include "lbann/proto/training_algorithm.pb.h"
 
 #include <cstddef>
 #include <limits>

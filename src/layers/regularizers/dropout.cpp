@@ -27,7 +27,7 @@
 #define LBANN_DROPOUT_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 namespace lbann {
 

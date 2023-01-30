@@ -30,7 +30,7 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/distconv.hpp"
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 #ifdef LBANN_HAS_DISTCONV
 #include "distconv/dnn_backend/relu.hpp"

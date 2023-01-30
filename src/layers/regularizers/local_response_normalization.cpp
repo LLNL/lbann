@@ -27,7 +27,7 @@
 #define LBANN_LOCAL_RESPONSE_NORMALIZATION_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 namespace lbann {
 namespace {

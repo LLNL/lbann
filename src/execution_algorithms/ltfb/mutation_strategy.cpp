@@ -33,7 +33,7 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/protobuf.hpp"
 
-#include <training_algorithm.pb.h>
+#include "lbann/proto/training_algorithm.pb.h"
 
 #include "lbann/layers/activations/elu.hpp"
 #include "lbann/layers/activations/leaky_relu.hpp"

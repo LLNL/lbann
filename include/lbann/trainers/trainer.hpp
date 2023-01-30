@@ -37,7 +37,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/utils/hash.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
-#include <lbann.pb.h>
+#include "lbann/proto/lbann.pb.h"
 #include <memory>
 #include <string>
 #include <unordered_map>

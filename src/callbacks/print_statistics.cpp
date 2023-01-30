@@ -35,7 +35,7 @@
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/serialize.hpp"
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #include <algorithm>
 #include <iomanip>

@@ -31,7 +31,7 @@
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/utils/serialize.hpp"
 
-#include "callbacks.pb.h"
+#include "lbann/proto/callbacks.pb.h"
 
 namespace lbann {
 namespace callback {

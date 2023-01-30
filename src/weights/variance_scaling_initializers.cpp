@@ -30,7 +30,7 @@
 #include "lbann/utils/memory.hpp"
 #include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
-#include <weights.pb.h>
+#include "lbann/proto/weights.pb.h"
 
 namespace lbann {
 namespace {

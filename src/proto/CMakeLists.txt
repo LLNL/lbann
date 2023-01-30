@@ -51,15 +51,15 @@ if (LBANN_HAS_PROTOBUF)
 
   foreach (proto IN LISTS PROTO_INPUTS)
     get_filename_component(name "${proto}" NAME_WE)
-    list(APPEND PROTO_SRCS "${CMAKE_CURRENT_BINARY_DIR}/${name}.pb.cc")
-    list(APPEND PROTO_HDRS "${CMAKE_CURRENT_BINARY_DIR}/${name}.pb.h")
+    list(APPEND PROTO_SRCS "${CMAKE_CURRENT_BINARY_DIR}/lbann/proto/${name}.pb.cc")
+    list(APPEND PROTO_HDRS "${CMAKE_CURRENT_BINARY_DIR}/lbann/proto/${name}.pb.h")
 if (LBANN_HAS_PYTHON_FRONTEND)
     list(APPEND PROTO_PY "${CMAKE_CURRENT_BINARY_DIR}/${name}_pb2.py")
 endif (LBANN_HAS_PYTHON_FRONTEND)
   endforeach ()
   add_custom_command(
     COMMAND protobuf::protoc
-    "--cpp_out=${CMAKE_CURRENT_BINARY_DIR}"
+    "--cpp_out=${CMAKE_CURRENT_BINARY_DIR}/lbann/proto"
     $<$<BOOL:${LBANN_HAS_PYTHON_FRONTEND}>:--python_out=${CMAKE_CURRENT_BINARY_DIR}>
     "-I" "${CMAKE_CURRENT_SOURCE_DIR}"
     "${PROTO_INPUTS}"
@@ -76,6 +76,8 @@ endif (LBANN_HAS_PYTHON_FRONTEND)
   target_link_libraries(LbannProto PUBLIC protobuf::libprotobuf)
   target_include_directories(LbannProto SYSTEM PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
+  target_include_directories(LbannProto PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/lbann/proto>)
   target_include_directories(LbannProto PUBLIC
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
@@ -91,7 +93,7 @@ endif (LBANN_HAS_PYTHON_FRONTEND)
     )
 
   # Install the newly built headers
-  install(FILES ${PROTO_HDRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  install(FILES ${PROTO_HDRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/lbann/proto)
 
 if (LBANN_HAS_PYTHON_FRONTEND)
   # Install the Python module into the site-packages directory

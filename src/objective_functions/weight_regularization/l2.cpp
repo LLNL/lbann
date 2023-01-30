@@ -33,7 +33,7 @@
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/utils/serialize.hpp"
 #include <h2/patterns/multimethods/SwitchDispatcher.hpp>
-#include <objective_functions.pb.h>
+#include "lbann/proto/objective_functions.pb.h"
 
 namespace lbann {
 

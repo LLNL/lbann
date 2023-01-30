@@ -40,7 +40,7 @@
 #include "lbann/utils/serialize.hpp"
 
 // LBANN proto
-#include <lbann.pb.h>
+#include "lbann/proto/lbann.pb.h"
 
 // STL
 #include <functional>

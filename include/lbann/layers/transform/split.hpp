@@ -32,7 +32,7 @@
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/distconv.hpp"
-#include <lbann.pb.h>
+#include "lbann/proto/lbann.pb.h"
 
 namespace lbann {
 

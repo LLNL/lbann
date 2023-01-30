@@ -29,7 +29,7 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/save_topk_models.hpp"
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #include <algorithm>
 #include <functional>

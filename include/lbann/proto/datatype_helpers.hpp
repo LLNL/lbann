@@ -29,7 +29,7 @@
 
 #include "lbann/base.hpp"
 
-#include <datatype.pb.h>
+#include "lbann/proto/datatype.pb.h"
 
 namespace lbann {
 namespace proto {

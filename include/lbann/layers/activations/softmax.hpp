@@ -36,7 +36,7 @@
 #include "lbann/utils/dnn_lib/softmax.hpp"
 #endif // defined LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/softmax.hpp"
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 // Threshold outputs to a minimum value.
 

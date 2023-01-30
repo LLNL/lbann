@@ -34,7 +34,7 @@
 #include "lbann/utils/serialize.hpp"
 #include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #include <cmath>
 #include <iostream>

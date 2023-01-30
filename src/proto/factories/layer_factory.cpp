@@ -43,7 +43,7 @@
 
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 
-#include <layers.pb.h>
+#include "lbann/proto/layers.pb.h"
 
 namespace lbann {
 

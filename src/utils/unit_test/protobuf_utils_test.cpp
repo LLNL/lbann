@@ -30,7 +30,7 @@
 #include "lbann/utils/protobuf/impl.hpp"
 
 #include <google/protobuf/descriptor.h>
-#include <protobuf_utils_test_messages.pb.h>
+#include "protobuf_utils_test_messages.pb.h"
 
 #include <string>
 
@@ -139,7 +139,7 @@ TEST_CASE("Assign container to repeated protobuf field")
   lbann_testing::HasRepeatedPODFields msg;
   lbann::protobuf::assign_to_repeated(*msg.mutable_my_uint32s(), values);
 
-  REQUIRE(msg.my_uint32s_size() == values.size());
+  REQUIRE((size_t) msg.my_uint32s_size() == values.size());
   for (size_t ii = 0; ii < values.size() ; ++ii)
     CHECK(msg.my_uint32s(ii) == values[ii]);
 }

@@ -36,7 +36,7 @@
 #endif // LBANN_HAS_OPENCV
 #include "lbann/data_readers/data_reader_mnist.hpp"
 
-#include <reader.pb.h>
+#include "lbann/proto/reader.pb.h"
 
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>

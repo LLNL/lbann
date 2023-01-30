@@ -30,7 +30,7 @@
 #include "lbann/utils/serialize.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #include <algorithm>
 
