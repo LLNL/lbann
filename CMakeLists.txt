@@ -237,12 +237,14 @@ if (LBANN_WITH_DISTCONV)
   find_package(DiHydrogen 0.3.0 CONFIG REQUIRED COMPONENTS Meta Patterns DistConv)
   set(LBANN_HAS_DISTCONV TRUE)
   set(LBANN_H2_LIBS
+    H2::H2Core
     H2::H2Meta
     H2::H2Patterns
     H2::H2DistConv)
 else ()
   find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns)
   set(LBANN_H2_LIBS
+    H2::H2Core
     H2::H2Meta
     H2::H2Patterns)
 endif ()
@@ -660,6 +662,7 @@ target_link_libraries(lbann PUBLIC
   ${CLARA_LIBRARIES}
   ${LBANN_PYTHON_LIBS}
   protobuf::libprotobuf
+  spdlog::spdlog
   ${CEREAL_LIBRARIES}
   ZSTR::ZSTR)
 
