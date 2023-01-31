@@ -225,7 +225,7 @@ void distconv_adapter::adjust_parallel_strategy() {
     n = c = f = h = w = d = 1;
   }
 
-  
+
   if (layer_type == "convolution" || layer_type == "deconvolution"){
     if (c != f) {
       LBANN_ERROR("The numbers of channel and filter decomposition should be the same.");
@@ -250,7 +250,7 @@ void distconv_adapter::adjust_parallel_strategy() {
     if (spatial_prod != 1){
       LBANN_ERROR("Distributed channel-wise fully-connected or 3D matmul does not support spatial (column-wise) ",
         "parallelization: ", get_name(), ", parallel strategy: ", ps);
-    } 
+    }
   }
 
   if (n * c * spatial_prod > np) {
@@ -269,6 +269,9 @@ void distconv_adapter::adjust_parallel_strategy() {
   assert_always(spatial_prod * n * c == np);
   assert_always(spatial_prod * n * f == np);
 
+  if(n != ps.sample_groups) {
+    LBANN_MSG("[", layer().get_name(), "]: Adjusting the parallel strategy to partition across the sample dimension to maximize parallelism: original sample groups = ", ps.sample_groups, " adjusted sample groups = ", n);
+  }
   ps.sample_groups = n;
   ps.channel_groups = c;
   ps.filter_groups = f;
