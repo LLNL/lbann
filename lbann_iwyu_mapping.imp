@@ -3,22 +3,115 @@
  { include: ["@<h2/.*>", "private", "\"lbann/utils/h2_tmp.hpp\"", "public"] },
  { include: ["@<cereal/types/.*>", "private", "\"lbann/utils/serialization/cereal_utils.hpp\"", "public"] },
  { include: ["@<cereal/details/.*>", "private", "<cereal/cereal.hpp>", "public"] },
+# { include: ["@<conduit/relay/.*>", "private", "<conduit/conduit.hpp>", "public"] },
+ { include: ["@<conduit/.*>", "private", "<conduit/conduit.hpp>", "public"] },
  { include: ["@<El/.*>", "private", "<El.hpp>", "public"] },
  { include: ["@<lbann/.*>", "private", "\"lbann/base.hpp\"", "public"] },
+ { include: ["\"lbann_config.hpp\"", "private", "\"lbann/base.hpp\"", "public"] },
+# Vector
  { symbol: ["std::vector", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::swap", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["size_t", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+# String
  { symbol: ["std::string", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
  { symbol: ["std::basic_string", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
- { symbol: ["std::unique_ptr", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
- { symbol: ["std::make_unique", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
- { symbol: ["size_t", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
  { symbol: ["std::allocator", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
  { symbol: ["std::__1::operator==", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
  { symbol: ["std::char_traits", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
  { symbol: ["std::operator+", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::to_string", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::operator<", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+# Memory
+ { symbol: ["std::unique_ptr", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::make_unique", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::shared_ptr", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+# Misc
  { symbol: ["std::max", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
  { symbol: ["std::min", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
  { symbol: ["std::move", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
- { symbol: ["std::shared_ptr", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["int64_t", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+# iostream
+ { symbol: ["std::__1::operator<<", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::basic_ostream", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::cout", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::ostream", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::endl", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::__1::operator>>", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::cerr", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+# unordered_map
  { symbol: ["std::unordered_map", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::copy", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::pair", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::cbegin", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::cend", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::next", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["__hash_map_iterator", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["__hash_map_const_iterator", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+# Set
+ { symbol: ["std::__tree_const_iterator", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::__1::operator!=", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::set", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::unordered_set", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+# Tuple
+ { symbol: ["std::tuple", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::get", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+# Map
+ { symbol: ["std::map", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::__map_iterator", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+# Fstream #include <fstream>
+ { symbol: ["std::streampos", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::ifstream", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::getline", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::basic_istream", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::basic_ifstream", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::ios", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::stringstream", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::basic_ios", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::streamsize", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+
+ { symbol: ["std::function", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+
+#include <ios>
+ { symbol: ["std::ofstream", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::stringstream", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::basic_ios", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+# Misc
+ { symbol: ["std::__bind", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::reference_wrapper", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::bind", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::ref", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::sort", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { symbol: ["std::shuffle", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+
+# { symbol: ["", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
 
 ]
+
+
+#/Users/vanessen1/Research/DeepLearning/lbann.git/src/data_readers/data_reader_csv.cpp:59:3: warning: std::streampos is defined in <fstream>, which isn't directly #included.
+
+#arning/lbann.git/src/data_readers/data_reader_csv.cpp:41:3: warning: std::map is defined in <map>, which isn't directly #included.
+
+#/Users/vanessen1/Research/DeepLearning/lbann.git/src/callbacks/check_dataset.cpp:69:10: warning: std::__tree_const_iterator is defined in <__tree>, which isn't directly #included.
+#/Users/vanessen1/Research/DeepLearning/lbann.git/src/callbacks/check_dataset.cpp:69:13: warning: std::__1::operator!= is defined in <__tree>, which isn't directly #included.
+#/Users/vanessen1/Research/DeepLearning/lbann.git/src/callbacks/check_dataset.cpp:69:20: warning: std::set is defined in <set>, which isn't directly #included.
+
+#/Users/vanessen1/Research/DeepLearning/lbann.git/src/callbacks/alternate_updates.cpp:85:5: warning: std::__1::operator>> is defined in <istream>, which isn't directly #included.
+
+# std::__1::operator!= is defined in <__tree>, which isn't directly #included.
+# std::__tree_const_iterator is defined in <__tree>, which isn't directly #included.
+# std::set is defined in <set>, which isn't directly #included.
+# std::set is defined in <set>, which isn't directly #included.
+#/Users/vanessen1/Research/DeepLearning/lbann.git/src/callbacks/timeline.cpp:104:40: warning: std::pair is defined in <__utility/pair.h>, which isn't directly #included.
+
+#/Users/vanessen1/Research/DeepLearning/lbann.git/src/callbacks/alternate_updates.cpp:73:21: warning: std::cbegin is defined in <__iterator/access.h>, which isn't directly #included.
+#/Users/vanessen1/Research/DeepLearning/lbann.git/src/callbacks/alternate_updates.cpp:73:21: warning: std::cend is defined in <__iterator/access.h>, which isn't directly #included.
+#/Users/vanessen1/Research/DeepLearning/lbann.git/src/callbacks/alternate_updates.cpp:73:21: warning: std::next is defined in <__iterator/next.h>, which isn't directly #included.
+
+
+#include <__algorithm/shuffle.h>                                 // for shuffle
+#include <__algorithm/sort.h>                                    // for sort
+#include <__functional/bind.h>                                   // for __bind, bind
+#include <__functional/reference_wrapper.h>                      // for reference_wrapper, ref
+#include <map>                                                   // for __map_iterator
+#include <string>                                                // for char_traits, allocator, operator<
