@@ -27,22 +27,36 @@
 #ifndef LBANN_LBANN_STL_HPP_INCLUDED
 #define LBANN_LBANN_STL_HPP_INCLUDED
 
-#ifdef __cpp_modules && __cpp_modules
+#if defined(__cpp_modules) && __cpp_modules
 import std;
 #else
+// IWYU pragma: begin_exports
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdio>
 #include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <deque>
 #include <fstream>
+#include <functional>
 #include <iostream>
+#include <iterator>
+#include <map>
 #include <memory>
+#include <mutex>
+#include <numeric>
+#include <random>
 #include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
+// IWYU pragma: end_exports
 #endif
 
 #endif // LBANN_LBANN_STL_HPP_INCLUDED
