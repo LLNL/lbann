@@ -27,6 +27,8 @@
 #ifndef LBANN_BASE_HPP_INCLUDED
 #define LBANN_BASE_HPP_INCLUDED
 
+#include "lbann/lbann_stl.hpp"
+
 #include <El.hpp>
 
 // Defines, among other things, DataType.

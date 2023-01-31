@@ -15,7 +15,25 @@
 
  # Grab all of the C++ implementation details and tie them into a common header
  { include: ["@<__.*>", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
+ { include: ["@<_.*>", "private", "\"lbann/lbann_stl.hpp\"", "public"] },
 
  { symbol: ["hid_t", "private", "\"hdf5.h\"", "public"] },
+
+ # Handle obnoxious Python.h symbols
+ { symbol: ["PyObject_CallMethod", "private", "<Python.h>", "public"] },
+ { symbol: ["PyIter_Next", "private", "<Python.h>", "public"] },
+ { symbol: ["PyObject_CallObject", "private", "<Python.h>", "public"] },
+ { symbol: ["PyObject_GetIter", "private", "<Python.h>", "public"] },
+ { symbol: ["PyObject_Length", "private", "<Python.h>", "public"] },
+ { symbol: ["PyImport_ImportModule", "private", "<Python.h>", "public"] },
+ { symbol: ["PyList_Append", "private", "<Python.h>", "public"] },
+ { symbol: ["PyList_New", "private", "<Python.h>", "public"] },
+ { symbol: ["PyLong_AsLong", "private", "<Python.h>", "public"] },
+ { symbol: ["Py_BuildValue", "private", "<Python.h>", "public"] },
+ { symbol: ["PyObject_GetAttrString", "private", "<Python.h>", "public"] },
+ { symbol: ["PyObject_SetAttrString", "private", "<Python.h>", "public"] },
+ { symbol: ["Py_DECREF", "private", "<Python.h>", "public"] },
+ { symbol: ["PySys_GetObject", "private", "<Python.h>", "public"] },
+ { symbol: ["PyRun_SimpleString", "private", "<Python.h>", "public"] },
 
 ]
