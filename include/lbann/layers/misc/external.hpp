@@ -29,14 +29,15 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
-#include <datatype.pb.h>
+#include "lbann/proto/datatype.pb.h"
 
-namespace lbann {
+namespace lbann
+{
 
 typedef Layer* (*external_layer_setup_t)(lbann_data::DataType datatype,
-                                        data_layout layout,
-                                        El::Device device,
-                                        lbann_comm* comm);
+                                         data_layout layout,
+                                         El::Device device,
+                                         lbann_comm* comm);
 
 /** @brief Create layer from an external library
  *
