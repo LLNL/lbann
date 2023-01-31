@@ -251,16 +251,16 @@ static std::ostream &print_parallel_strategy_header(std::ostream &os) {
 
 
   os << "Reporting order for the parallel strategy" << std::endl;
-  os << "{"  << "N: " << "G" << "/" << "S"
-     << ", " << "C: " << "G" << "/" << "S"
-     << ", " << "D: " << "G" << "/" << "S"
-     << ", " << "H: " << "G" << "/" << "S"
-     << ", " << "W: " << "G" << "/" << "S"
-     << ", " << "F: " << "G" << "/" << "S"
-     << ", " << "R:"
-     << ", " << "T:"
-     << ", " << "%:"
-     << ", " << "e:"
+  os << "{N: G/S"
+     << ", C: G/S"
+     << ", D: G/S"
+     << ", H: G/S"
+     << ", W: G/S"
+     << ", F: G/S"
+     << ", R:"
+     << ", T:"
+     << ", %:"
+     << ", e:"
      << "}";
   return os;
 }
