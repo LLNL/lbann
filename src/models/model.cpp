@@ -2667,11 +2667,11 @@ void model::setup_distconv()
     }
   }
   if (m_comm->am_world_master()) {
-    std::cout << "\nDistconv-enabled layers:\n\t" << dc_enabled.str() << std::endl << std::endl;
-    std::cout << "Distconv-disabled layers:\n\t" << dc_disabled.str() << std::endl;
-    std::stringstream ss;
-    print_parallel_strategy_header(ss);
-    std::cout << "\nParallel Strategy description - " << ss.str() << std::endl;
+    std::cout << "\nDistconv-enabled layers:\n\t" << dc_enabled.str() << "\n\n"
+              << "Distconv-disabled layers:\n\t" << dc_disabled.str() << "\n\n"
+              << "Parallel Strategy description - ";
+    print_parallel_strategy_header(std::cout);
+    endl(std::cout);
   }
   setup_distributions();
   print_distributions();
