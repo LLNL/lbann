@@ -30,8 +30,11 @@
 #define LBANN_DATA_READER_MESH_HPP
 
 #include "data_reader.hpp"
+#include "lbann/base.hpp"
+#include "lbann/lbann_stl.hpp"
 
 namespace lbann {
+class thread_pool;
 
 /**
  * Data reader for reading dumped mesh images.

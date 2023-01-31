@@ -30,6 +30,9 @@
 #define LBANN_DATA_READER_MERGE_SAMPLES_HPP
 
 #include "compound_data_reader.hpp"
+#include "lbann/base.hpp"
+#include "lbann/data_readers/data_reader.hpp"
+#include "lbann/lbann_stl.hpp"
 
 namespace lbann {
 

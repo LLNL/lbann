@@ -27,7 +27,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_merge_samples.hpp"
-#include "lbann/utils/options.hpp"
+
+#include "lbann/data_readers/compound_data_reader.hpp"
+#include "lbann/data_readers/utils/input_data_type.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 

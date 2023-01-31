@@ -27,7 +27,16 @@
 #ifndef LBANN_DATA_READERS_PYTHON_HPP_INCLUDED
 #define LBANN_DATA_READERS_PYTHON_HPP_INCLUDED
 
+#include <El.hpp>
+
 #include "data_reader.hpp"
+#include "lbann/base.hpp"
+#include "lbann/data_readers/utils/input_data_type.hpp"
+#include "lbann/lbann_stl.hpp"
+
+namespace lbann {
+class thread_pool;
+}  // namespace lbann
 #ifdef LBANN_HAS_EMBEDDED_PYTHON
 #include "lbann/utils/python.hpp"
 

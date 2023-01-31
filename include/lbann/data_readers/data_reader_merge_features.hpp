@@ -30,8 +30,12 @@
 #define LBANN_DATA_READER_MERGE_FEATURES_HPP
 
 #include "compound_data_reader.hpp"
+#include "lbann/base.hpp"
+#include "lbann/data_readers/data_reader.hpp"
+#include "lbann/lbann_stl.hpp"
 
 namespace lbann {
+class thread_pool;
 
 /**
  * Data reader for merging multiple data readers.

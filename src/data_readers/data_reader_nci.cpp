@@ -27,9 +27,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_nci.hpp"
-#include <cstdio>
-#include <string>
-#include <omp.h>
+
+#include "lbann/data_readers/data_reader_csv.hpp"
 
 namespace lbann {
 
