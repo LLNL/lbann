@@ -65,10 +65,6 @@ namespace distconv{
     const auto& local_mini_batch_size = values_shape[3];
     const auto& num_output_rows = output_shape[2];
     const auto rank = m_dist_scatter->get_rank();
-    dump_tensor(values, "/p/vast1/zaman2/lbann/ci_test/unit_tests/values_"+std::to_string(rank));
-    dump_tensor(indices,"/p/vast1/zaman2/lbann/ci_test/unit_tests/indices_"+std::to_string(rank));
-
-    // Debug prints -- delete before PR
       
     // Attach values matrix to the NVSHMEM buffer
     // The size of the NVSHMEM_values buffer is sum of the local values matrices
@@ -171,6 +167,15 @@ namespace distconv{
     const auto num_pes = m_dist_scatter->get_num_ranks();
     const auto pid = m_dist_scatter->get_rank();
 
+    util::MPIPrintStreamDebug() << " Sample dim size: " << sample_size
+                                << "\n Input channel size: " << input_channel_size
+                                << "\n Output channel size: " << output_channel_size
+                                << "\n Max samples / rank: " << max_samples_per_rank
+                                << "\n Max input channels / rank: " << max_input_channels_per_rank
+                                << "\n Max output channels / rank: " << max_output_channels_per_rank 
+                                << "\n Input buffer size: " << input_ws_size
+                                << "\n Output buffer size: " << output_ws_size;
+                                
     m_dist_gather->ensure_buffer(input_ws_size);
     m_dist_scatter->ensure_buffer(output_ws_size);
 

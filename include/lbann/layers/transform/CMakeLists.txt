@@ -57,7 +57,7 @@ set_full_path(THIS_DIR_HEADERS
   gather.hpp
   )
 
-if (LBANN_HAS_DISTCONV)
+if (LBANN_HAS_DISTCONV AND LBANN_HAS_NVSHMEM)
   add_subdirectory(distconv)
 endif()
 

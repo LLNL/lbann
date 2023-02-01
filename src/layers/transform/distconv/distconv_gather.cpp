@@ -38,17 +38,17 @@ namespace distconv{
           tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output){
     
     if(output.get_buffer() == nullptr){
-      // util::MPIRootPrintStreamInfo() << "output buffer is null";
+      util::MPIPrintStreamDebug() << "output buffer is null in distconv Gather layer";
       return 0;
     }
       
     if(values.get_buffer() == nullptr){
-      // util::MPIRootPrintStreamInfo() << "values buffer is null";
+      util::MPIPrintStreamDebug() << "values buffer is null in distconv Gather layer";
       return 0;
     }
 
     if(indices.get_buffer() == nullptr){
-      // util::MPIRootPrintStreamInfo() << "indices buffer is null";
+      util::MPIPrintStreamDebug() << "indices buffer is null in distconv Gather layer";
       return 0;
     }
 
@@ -91,17 +91,17 @@ namespace distconv{
     const auto num_values_grad_rows = values_grad_shape[2];   // N
 
     if(output_grad.get_buffer() == nullptr){
-      // util::MPIRootPrintStreamInfo() << "output grad buffer is null";
+      util::MPIPrintStreamDebug() << "output grad buffer is null in distconv Gather layer";
       return 0; 
     }
 
     if(indices.get_buffer() == nullptr){
-      // util::MPIRootPrintStreamInfo() << "indices buffer is null";
+      util::MPIPrintStreamDebug() << "indices buffer is null in distconv Gather layer";
       return 0;
     }
 
     if(values_grad.get_buffer() == nullptr){
-      // util::MPIRootPrintStreamInfo() << "values grad buffer is null";
+      util::MPIPrintStreamDebug() << "values grad buffer is null in distconv Gather layer";
       return 0;
     }
 
@@ -132,7 +132,6 @@ namespace distconv{
           const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices,
           const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output){
     
-
     const auto channel_splits = values.get_distribution().get_split_shape()[2];
     const auto sample_splits = values.get_distribution().get_split_shape()[3];
     const auto sample_size = values.get_shape()[3];
@@ -155,6 +154,7 @@ namespace distconv{
                                 << "\n Max output channels / rank: " << max_output_channels_per_rank 
                                 << "\n Input buffer size: " << input_ws_size
                                 << "\n Output buffer size: " << output_ws_size;
+
     const auto num_pes = m_dist_scatter->get_num_ranks();
     const auto pid = m_dist_scatter->get_rank();
 
@@ -198,4 +198,3 @@ ETI(float, cudnn::BackendCUDNN)
 ETI(double, cudnn::BackendCUDNN)
 #undef ETI
 } // namespace distconv
-

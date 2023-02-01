@@ -103,8 +103,7 @@ namespace distconv{
 
         void ensure_buffer(size_t count){        
           size_t cur_size = m_output_buffer.get_size() / sizeof(DataType);
-          util::MPIPrintStreamInfo() << "Current buffer size: " << cur_size
-                                     << " New Buffer size: " << count;
+
           if (cur_size >= count){
             m_output_buffer.memset(0);
             return ; 
