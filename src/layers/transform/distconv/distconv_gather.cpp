@@ -56,12 +56,6 @@ namespace distconv{
     const auto& indices_shape = indices.get_local_shape();  // Should be {1, 1, E, B}
     const auto& output_shape = output.get_local_shape();    // Should be {1, F, E, B}
 
-    // Debug prints -- delete before PR
-    #if 0
-       util::MPIRootPrintStreamInfo() << "Values Dims: " << values_shape
-      << "\tIndices Dims: " << indices_shape << "\tOutput Dims: "<< output_shape; 
-    #endif
-
     const auto& num_columns = values_shape[1];
     const auto& num_values_rows = values_shape[2];
     const auto& local_mini_batch_size = values_shape[3];
@@ -204,3 +198,4 @@ ETI(float, cudnn::BackendCUDNN)
 ETI(double, cudnn::BackendCUDNN)
 #undef ETI
 } // namespace distconv
+

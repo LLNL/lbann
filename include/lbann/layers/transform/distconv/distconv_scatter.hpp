@@ -32,7 +32,7 @@
 #include "distconv/tensor/tensor_mpi.hpp"
 #include "lbann/layers/transform/distconv/distconv_nvshmem_vector_addressing.hpp"
 
-#ifdef LBANN_HAS_DISTCONV
+#if defined(LBANN_HAS_NVSHMEM) && defined(LBANN_HAS_DISTCONV)
 
 namespace distconv{
   template <typename Backend, typename DataType>
@@ -65,5 +65,5 @@ namespace distconv{
     std::unique_ptr<tensor::GatherNVSHMEM<DataType>> m_dist_gather; // Backwad prop
   };  // class definition Scatter
 } // namespace distconv
-#endif // LBANN_HAS_DISTCONV
+#endif // defined(LBANN_HAS_NVSHMEM) && defined(LBANN_HAS_DISTCONV)
 #endif // LBANN_LAYERS_TRANSFORM_DISTCONV_SCATTER
