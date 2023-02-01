@@ -10,7 +10,8 @@
 
  { include: ["@<El/.*>", "private", "<El.hpp>", "public"] },
 
- { include: ["@<lbann/.*>", "private", "\"lbann/base.hpp\"", "public"] },
+ { include: ["@\"lbann/utils/serialization/.*\"", "public", "\"lbann/utils/serialize.hpp\"", "public"] },
+# { include: ["@<lbann/.*>", "private", "\"lbann/base.hpp\"", "public"] },
  { include: ["\"lbann_config.hpp\"", "private", "\"lbann/base.hpp\"", "public"] },
 
  # Grab all of the C++ implementation details and tie them into a common header
