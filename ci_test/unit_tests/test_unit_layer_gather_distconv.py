@@ -136,13 +136,9 @@ def construct_model(lbann):
         error_on_failure=True,
         execution_modes='test'))
 
-    dump_outputs = lbann.CallbackDumpOutputs(layers="Gather_distconv_axis_0",
-                                             batch_interval=1,
-                                             directory=os.path.dirname(os.path.realpath(__file__)), format="csv")
-
     # Gradient checking
-    # callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
-    callbacks.append(dump_outputs)
+
+    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
     # Construct model
     num_epochs = 0
     layers = list(lbann.traverse_layer_graph(x))
