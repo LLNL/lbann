@@ -23,10 +23,15 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#include "lbann/utils/serialize.hpp"
 #include <lbann/layers/activations/elu.hpp>
+#include <El.hpp>
+#include <cereal/cereal.hpp>
+
+#include "lbann/utils/serialize.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
+enum class data_layout;
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
