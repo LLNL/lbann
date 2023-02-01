@@ -96,7 +96,7 @@ endif ()
 # Add the subdirectories
 add_subdirectory(cereal_registration)
 
-if (LBANN_HAS_DISTCONV)
+if (LBANN_HAS_DISTCONV AND LBANN_HAS_NVSHMEM)
   # ADD the Distconv layer  subdirectory sources
   add_subdirectory(distconv)
 endif()
