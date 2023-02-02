@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -34,25 +34,47 @@
 #include <vector>
 
 namespace lbann {
+namespace logging {
 
-static h2::Logger logger("test_logger");
-static std::vector<h2::Logger*> logger_vec;
-
-static inline void setup_loggers()
+// Better than using raw strings
+enum LBANN_Logger_ID
 {
-  //putenv("TEST_LOG_MASK=trace|debug|info|warn|error|critical, io=debug|info|warn, training=critical|error, test_logger=debug|info|warn");
-  //putenv("TEST_LOG_LEVEL=critical, io=debug");
-  logger_vec.push_back(&logger);
-  h2::setup_levels(logger_vec, "TEST_LOG_LEVEL");
-  h2::setup_masks(logger_vec, "TEST_LOG_MASK");
-}
-}
+  LOG_RT,
+  LOG_IO,
+  LOG_TRAIN,
+};
+
+void setup_loggers();
+
+// Raw string may be useful for debugging
+char const* logger_id_str(LBANN_Logger_ID id);
+
+// Access the actual logger object
+h2::Logger& get(LBANN_Logger_ID id);
+
+}// namespace logging
+}// namespace lbann
+
+// #defines can go here. Make sure they can go anywhere:
+#define LBANN_LOG(logger_id, level, ...) \
+  do { \
+    auto& lbann_log_logger = ::lbann::logging::get(logger_id); \
+    if (lbann_log_logger.should_log(level)) { \
+      lbann_log_logger.get().log(::spdlog::source_loc{__FILE__, __LINE__, SPDLOG_FUNCTION}, ::h2::to_spdlog_level(level), __VA_ARGS__); \
+    } \
+  } while (0)
+
+#define LBANN_TRACE(logger_id, ...) LBANN_LOG(logger_id, ::h2::Logger::LogLevelType::TRACE, __VA_ARGS__)
+#define LBANN_DEBUG(logger_id, ...) LBANN_LOG(logger_id, ::h2::Logger::LogLevelType::DEBUG, __VA_ARGS__)
+#define LBANN_INFO(logger_id, ...) LBANN_LOG(logger_id, ::h2::Logger::LogLevelType::INFO, __VA_ARGS__)
+#define LBANN_WARN(logger_id, ...) LBANN_LOG(logger_id, ::h2::Logger::LogLevelType::WARN, __VA_ARGS__)
+#define LBANN_ERR(logger_id, ...) LBANN_LOG(logger_id, ::h2::Logger::LogLevelType::ERR, __VA_ARGS__)
+#define LBANN_CRIT(logger_id, ...) LBANN_LOG(logger_id, ::h2::Logger::LogLevelType::CRIT, __VA_ARGS__)
+
+#define LBANN_RT_TRACE(...) LBANN_TRACE(::lbann::logging::LBANN_Logger_ID::LOG_RT, __VA_ARGS__)
+
 
 /*
-#define LBANN_RT_TRACE(...)                                                \
-  if (logger.should_log(h2::Logger::LogLevelType::TRACE))                  \
-    logger.get().trace(__VA_ARGS__);                                       \
-
 #define LBANN_RT_DEBUG(...)                                                \
   if (logger.should_log(h2::Logger::LogLevelType::DEBUG))                  \
     logger.get().debug(__VA_ARGS__);                                       \

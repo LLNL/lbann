@@ -1,0 +1,72 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+
+#include <lbann/utils/logging.hpp>
+#include "lbann/utils/exception.hpp"
+#include <h2/utils/Logger.hpp>
+
+#include <iostream>
+#include <cstdlib>
+#include <vector>
+
+namespace lbann {
+namespace logging {
+
+static h2::Logger logger("test_logger");
+static std::vector<h2::Logger*> logger_vec;
+
+void setup_loggers()
+{
+  //putenv("TEST_LOG_MASK=trace|debug|info|warn|error|critical, io=debug|info|warn, training=critical|error, test_logger=debug|info|warn");
+  //putenv("TEST_LOG_LEVEL=critical, io=debug");
+  logger_vec.push_back(&logger);
+  h2::setup_levels(logger_vec, "TEST_LOG_LEVEL");
+  h2::setup_masks(logger_vec, "TEST_LOG_MASK");
+}
+
+// Raw string may be useful for debugging
+char const* logger_id_str(LBANN_Logger_ID id)
+{
+  switch (id) {
+  case LBANN_Logger_ID::LOG_RT:
+    return "LOG_RT";
+  case LBANN_Logger_ID::LOG_IO:
+    return "LOG_IO";
+  case LBANN_Logger_ID::LOG_TRAIN:
+    return "LOG_TRAIN";
+  default:
+    throw lbann_exception("Unknown LBANN_Logger_ID");
+  }
+}
+
+// Access the actual logger object
+h2::Logger& get(LBANN_Logger_ID id)
+{
+  return logger;
+}
+
+}// namespace logging
+}// namespace lbann
