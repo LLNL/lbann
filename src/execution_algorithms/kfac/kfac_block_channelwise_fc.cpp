@@ -328,11 +328,6 @@ void kfac_block_channelwise_fc<Device>::compute_preconditioned_gradients(
   
 
   // Compute preconditioned gradients
-
-  // std::cout<<"Ginv:"<<Ginv.Height()<<" "<<Ginv.Width()
-  //     <<" W_grads:"<<w_gradients.Height()<<" "<<w_gradients.Width()
-  //     <<" Ainv:"<<Ainv.Height()<<" "<<Ainv.Width()
-  //     <<" layer id"<<this->m_layer->get_name()<<"\n";
       
   auto& Gg = this->get_workspace_matrix(
       "Gg",
@@ -475,20 +470,6 @@ void kfac_block_channelwise_fc<Device>::start_communication_forward_end(
       auto local_activations0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[0]));
       auto subset0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[0]));
 
-      // kfac::TranslateBetweenGridsVCAsync(star_vc_mat,
-      //                                         *local_activations0,
-      //                                         *subset0,
-      //                                         this->m_requests_forward_end);
-
-      // if (star_vc_mat.Participating())
-      // {
-      //   std::cout<<"Send size"<<star_vc_mat.Height()<<" "<<star_vc_mat.Width()<<"\n";
-      // }
-      // else
-      // {
-      //   std::cout<<"New Recv size"<<star_vc_mat.Height()<<" "<<star_vc_mat.Width()<<"\n";
-      // }
-
       if(this->m_enable_copy_activations)
       {
         //create a copy of forward activations
@@ -598,15 +579,6 @@ void kfac_block_channelwise_fc<Device>::start_communication_backward_end(
     else{
       const auto local_errors_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_errors));
       auto local_errors0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_child_local_errors[0]));
-      // auto subset1 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[1]));
-      // if (local_errors_vc->Participating())
-      // {
-      //   std::cout<<"Local Error Send size"<<local_errors_vc->Height()<<" "<<local_errors_vc->Width()<<"\n";
-      // }
-      // else
-      // {
-      //   std::cout<<"Local Error Recv size"<<local_errors_vc->Height()<<" "<<local_errors_vc->Width()<<"\n";
-      // }
 
       if(this->m_enable_copy_errors)
       {
@@ -627,14 +599,6 @@ void kfac_block_channelwise_fc<Device>::start_communication_backward_end(
                                               this->m_requests_backward_end);
       }
 
-
-      // kfac::TranslateBetweenGridsVCAsync(*local_errors_vc,
-      //                                         *local_errors0,
-      //                                         *subset1,
-      //                                         this->m_requests_backward_end);
-      // kfac::TranslateBetweenGridsVCAsyncDirect(*local_errors_vc,
-      //                                         *local_errors0,
-      //                                         this->m_requests_backward_end);
     }//Async progress
   }
 

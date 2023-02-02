@@ -497,30 +497,17 @@ void kfac_block_fc_conv<Device>::start_communication_forward_end(
 
     std::vector<El::mpi::Request<DataType>> requests;
 
-    // if(typeid(parent_activations.LockedBuffer()) != typeid(this->m_parent_local_activations[0]->Buffer()))
-    //   std::cout<<"You are dead:"<<dtl_parent.get_name()<<" "<<typeid(parent_activations.LockedBuffer()).name()<< " "<<typeid(this->m_parent_local_activations[0]->Buffer()).name()<<" "<<typeid(DataType).name()<<"\n";
-
     if(comm->enable_subgrid_async_communication()==false)
     {
       El::Copy(parent_activations,*this->m_parent_local_activations[0]);
     }
     else{
-      // const auto local_activations_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_activations));
       El::DistMatrixReadProxy<DataType, DataType, El::STAR, El::VC, El::ELEMENT, Device> star_vc_prox(parent_activations);
       El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device> const& star_vc_mat = star_vc_prox.GetLocked();
 
-      if (star_vc_mat.Participating())
-      {
-        std::cout<<"Send FC size:"<<star_vc_mat.Height()<<" "<<star_vc_mat.Width()<<"\n";
-      }
       
       auto local_activations0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[0]));
       auto subset0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[0]));
-
-      // kfac::TranslateBetweenGridsVCAsync(star_vc_mat,
-      //                                         *local_activations0,
-      //                                         *subset0,
-      //                                         this->m_requests_forward_end);
 
       if(this->m_enable_copy_activations)
       {

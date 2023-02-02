@@ -14,7 +14,7 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 root_dir = os.path.dirname(current_dir)
 sys.path.append(root_dir)
 import train
-# import evaluate
+import evaluate
 import utils.paths
 
 # ----------------------------------------------
@@ -43,6 +43,10 @@ parser.add_argument(
 parser.add_argument(
     '--embed-dim', action='store', default=512, type=int,
     help='embedding space dimensions (default: 512)', metavar='NUM')
+
+parser.add_argument(
+    '--num-layers', action='store', default=6, type=int,
+    help='Number of encoder and decoder layers (default: 6)', metavar='NUM')
 
 # KFAC configs
 parser.add_argument("--kfac", dest="kfac", action="store_const",
@@ -141,28 +145,28 @@ model_params = {
     'embed_dim': args.embed_dim,
     'num_heads': args.num_attention_heads,
     'label_smoothing': label_smoothing,
+    'num_layers' : args.num_layers,
 }
 script_params = lbann.contrib.args.get_scheduler_kwargs(args)
 script_params['work_dir'] = work_dir
 script_params['job_name'] = args.job_name
-# train_script = 
-train.make_batch_script(
+train_script = train.make_batch_script(
     trainer_params=trainer_params,
     model_params=model_params,
     script_params=script_params,
     args=args
 )
-# weights_prefix = os.path.join(
-#     work_dir,
-#     'weights',
-#     f'model0-epoch{args.num_epochs-1}',
-# )
-# train_script.add_command(
-#     f'# python3 {utils.paths.root_dir()}/transformer/evaluate.py {weights_prefix}'
-# )
-# train_script.run(overwrite=True)
+weights_prefix = os.path.join(
+    work_dir,
+    'weights',
+    f'model0-epoch{args.num_epochs-1}',
+)
+train_script.add_command(
+    f'# python3 {utils.paths.root_dir()}/transformer/evaluate.py {weights_prefix}'
+)
+train_script.run(overwrite=True)
 
 # ----------------------------------------------
 # Evaluate
 # ----------------------------------------------
-# evaluate.evaluate_transformer(weights_prefix)
+evaluate.evaluate_transformer(weights_prefix)

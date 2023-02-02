@@ -276,15 +276,16 @@ private:
 
   int m_global_inverse_buffer_size=0, m_weight_matrices_buffer_size=0;
 
-  // std::vector<El::mpi::Request<DataType>> m_inverse_matrix_communication_reqs, m_weights_communication_reqs;
+  /** @brief vector for async communication reqs. */
   std::vector<ReqT>m_inverse_matrix_communication_reqs, m_weights_communication_reqs;
 
+  /** @brief Profiling variables. */
   int m_time_span_inverse_comm=0,
-      m_time_span_inverse_send_recv=0, 
-      m_time_span_forward_comm=0, 
-      m_time_span_forward_comm_end=0, 
-      m_time_span_backward_comm=0, 
-      m_time_span_backward_comm_end=0, 
+      m_time_span_inverse_send_recv=0,
+      m_time_span_forward_comm=0,
+      m_time_span_forward_comm_end=0,
+      m_time_span_backward_comm=0,
+      m_time_span_backward_comm_end=0,
       m_time_span_precond_comm=0,
       m_time_forward_pass=0,
       m_time_backward_pass=0,

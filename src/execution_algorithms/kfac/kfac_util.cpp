@@ -298,19 +298,9 @@ void get_matrix_inverse_eigen(
   identity<Device>(diag, sync_info);
   Zeros(Q, Ainv.Height(), Ainv.Width());
 
-  // std::cout<<"Using Eigen\n";
-
-  // El::Matrix<DataType, El::Device::CPU> Q_cpu, w_cpu, Ainv_cpu;
   const auto uplo = El::UpperOrLowerNS::LOWER;
 
   El::HermitianEig( uplo, (El::Matrix<DataType, Device> &) Ainv, w, Q, ctrl );
-
-  // El::Copy(Ainv, Ainv_cpu);
-  // El::HermitianEig( uplo, (El::Matrix<DataType, El::Device::CPU> &) Ainv_cpu, w_cpu, Q_cpu, ctrl );
-  // El::Copy(w_cpu,w);
-  // El::Copy(Q_cpu, Q);
-
-  // Diagonal(diag,w);
 
   const double t_start = get_time();
 
@@ -327,13 +317,6 @@ void get_matrix_inverse_eigen(
         damping, damping_bn_err,
         is_bn,
         sync_info);
-
-
-  // get_matrix_entrywise_inverse<Device>(
-  //                               (El::AbstractMatrix<DataType> &)diag,
-  //                               (El::AbstractMatrix<DataType> &)diag_out,
-  //                               sync_info);
-
 
 
   El::Gemm(

@@ -306,12 +306,14 @@ void KFAC::train(
 
         // Trigger new epoch stuff next iteration (if there is one).
         is_start_of_epoch = true;
+
+        // Prints workspace tenosr size on each rank (To be used in debugging)
+
         // kfac_context.print_workspace_size(model);
-        int total_local_size = 0;
-        for(auto& block : kfac_context.m_blocks) {
-          total_local_size +=block->get_local_memory_consumption();
-        }
-        // std::cout<<"Total local size:"<<total_local_size<<"\n";
+        // int total_local_size = 0;
+        // for(auto& block : kfac_context.m_blocks) {
+        //   total_local_size +=block->get_local_memory_consumption();
+        // }
       }
     }
 
@@ -366,7 +368,8 @@ bool KFAC::train_mini_batch(
         or (comm.get_KFAC_subgrid_create_two_models() and compute_inverse)
         or comm.get_grid_type() == GridType::NO_GRID){
 
-        //Send weights from primary grid to secondary grid in sub-grid parallelism
+        // When two models are created, we perform forward on both models; therefore
+        // we need to synchronize weights only
         if(comm.get_KFAC_subgrid_create_two_models()
             and comm.get_grid_type()!=GridType::NO_GRID
             and compute_inverse
@@ -377,7 +380,10 @@ bool KFAC::train_mini_batch(
         }
 
         //sync model when async communication is disbaled and two models are created
-        if(comm.get_KFAC_subgrid_create_two_models() and comm.enable_subgrid_async_communication()==false and compute_inverse)
+
+        if(comm.get_KFAC_subgrid_create_two_models() and
+            comm.enable_subgrid_async_communication()==false and
+            compute_inverse)
           sync_weights_model(model, model.get_comm());
 
         // Forward prop step
@@ -397,6 +403,7 @@ bool KFAC::train_mini_batch(
 
       if(compute_inverse)
       {
+        // Transfer activations from primary to secondary grid and setup
         on_forward_prop_end(kfac_context, model);
       }
 
@@ -431,6 +438,7 @@ bool KFAC::train_mini_batch(
         finished = dc.epoch_complete(execution_mode::training);
       }
 
+      // Overlapping async communication in two models approach for weight synchronization
       if(comm.get_KFAC_subgrid_create_two_models()
           and comm.get_grid_type()==GridType::PRIMARY_GRID
           and compute_inverse
@@ -442,6 +450,7 @@ bool KFAC::train_mini_batch(
           cudaDeviceSynchronize();
         }
         auto t_start = std::chrono::high_resolution_clock::now();
+        // Kfac computation
         on_backward_prop_end(kfac_context, model);
         if(profile){
           cudaDeviceSynchronize();
@@ -973,6 +982,10 @@ void send_recv_precomputed_gradients(
     lbann_comm *comm,
     const kfac::kfac_allgather_mode& mode) {
 
+  // Transfer precomputed gradients when distributed
+  // 2nd order gradient conditioning is enabled
+
+  const int comm_size = El::mpi::Size(comm->get_KFAC_comm());
   const int comm_rank = El::mpi::Rank(comm->get_KFAC_comm());
   const int combined_rank = El::mpi::Rank(comm->get_combined_grid_comm());
 
@@ -1281,9 +1294,13 @@ void KFAC::on_forward_prop_end(
 
       std::shared_ptr<kfac_block<Device>> block;
 
-      
+
       if(is_fc || is_conv) {
-        int feature_size = broadcast_variable_grids(l_conv->get_activations().Height(), &comm);
+        int feature_size = 0;
+        if(is_fc)
+          feature_size = broadcast_variable_grids(l_fc->get_activations().Height(), &comm);
+        else
+          feature_size = broadcast_variable_grids(l_conv->get_activations().Height(), &comm);
         block = std::make_shared<kfac_block_fc_conv<Device>>(
             l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, feature_size, is_conv);
       } else if(is_bn) {
@@ -1343,7 +1360,6 @@ void KFAC::on_forward_prop_end(
   }
   auto t_start_b = std::chrono::high_resolution_clock::now();
   for(auto& block : context.m_blocks) {
-    // Start forward end exchange (like activations and weights)
     if(m_has_kronecker_inverse and this->m_enable_copy_errors)
     {
       block->end_communication_backward_end(&comm);
@@ -1637,7 +1653,6 @@ void KFAC::on_backward_prop_end(
         }
       }
     }
-    // std::cout<<"Total Inverse size:"<<kfac_inverse_size<<"\n";
   }
 
 }
@@ -1645,6 +1660,10 @@ void KFAC::on_backward_prop_end(
 } // namespace lbann
 
 std::vector<bool> parse_sgd_kfac_combination_interval(std::string const& str){
+  //Iterations, e.g. "12 50 70"
+  //0- 11: use SGD
+  //12-49: use KFAC
+  //50-70: use SGD
 
   std::string del = " ";
   std::vector <int>  tokens;

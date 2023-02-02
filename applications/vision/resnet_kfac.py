@@ -181,7 +181,6 @@ if(len(args.lr_list) > 0 and len(args.kfac_sgd_mix)==0):
 
 
 # Construct layer graph
-# input_ = lbann.Input(data_field='samples')
 images = lbann.Input(data_field='samples')
 labels = lbann.Input(data_field='labels')
 
