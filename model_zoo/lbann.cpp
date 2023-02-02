@@ -40,6 +40,12 @@
 
 #include <cstdlib>
 
+#if __has_include(<unistd.h>) && __has_include(<sys/types.h>)
+#define LBANN_HAS_UNISTD_H
+#include <sys/types.h>
+#include <unistd.h>
+#endif
+
 using namespace lbann;
 
 namespace {
@@ -69,6 +75,11 @@ int main(int argc, char* argv[])
 {
   auto& arg_parser = global_argument_parser();
   construct_all_options();
+  arg_parser.add_option("hang on start",
+                        {"--hang"},
+                        "[STD] Hang given MPI rank",
+                        -1);
+
   try {
     arg_parser.parse(argc, argv);
   }
@@ -100,6 +111,24 @@ int main(int argc, char* argv[])
       if (master)
         std::cout << arg_parser << std::endl;
       return EXIT_SUCCESS;
+    }
+
+    auto const hang_rank = arg_parser.get<int>("hang on start");
+    if (hang_rank >= 0)
+    {
+      auto const my_rank = comm->get_rank_in_world();
+      if (hang_rank == my_rank) {
+#ifdef LBANN_HAS_UNISTD_H
+        char hostname[1024];
+        gethostname(hostname, 1024);
+        std::cout << "LBANN [hang]: (hostname: " << hostname << ", pid: " << getpid()
+                  << ")" << std::endl;
+#endif
+        int volatile wait = 1;
+        while (wait) {
+        }
+      }
+      comm->global_barrier();
     }
 
     // Setup cuDNN and cuBLAS defaults
