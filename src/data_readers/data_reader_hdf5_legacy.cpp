@@ -281,7 +281,7 @@ bool hdf5_reader<TensorDataType>::fetch_label(Mat& Y, int data_id, int mb_idx) {
   assert_always(m_hyperslab_labels);
   assert_always(m_use_data_store);
   TensorDataType *buf = nullptr;
-  assert_eq(Y.Height(), m_num_features);
+  assert_eq((unsigned long) Y.Height(), m_num_features);
   conduit::Node node;
   const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
   node.set_external(ds_node);
@@ -303,7 +303,7 @@ bool hdf5_reader<TensorDataType>::fetch_data_field(data_field_type data_field, C
   assert_always(m_hyperslab_labels);
   assert_always(m_use_data_store);
   TensorDataType *buf = nullptr;
-  assert_eq(Y.Height(), m_num_features);
+  assert_eq((unsigned long) Y.Height(), m_num_features);
   conduit::Node node;
   if (data_store_active() || m_data_store->has_conduit_node(data_id)) {
     prof_region_begin("get_conduit_node", prof_colors[0], false);
@@ -328,10 +328,13 @@ template <typename TensorDataType>
 bool hdf5_reader<TensorDataType>::fetch_datum(Mat& X, int data_id, int mb_idx) {
   prof_region_begin("fetch_datum", prof_colors[0], false);
 
-  assert_eq(sizeof(DataType)%sizeof(TensorDataType), 0);
-  assert_eq(X.Height(),
-            m_num_features / dc::get_number_of_io_partitions()
-            / (sizeof(DataType) / sizeof(TensorDataType)));
+  assert_eq(sizeof(DataType) % sizeof(TensorDataType), 0ul);
+  assert_eq((unsigned long) X.Height(),
+            m_num_features / dc::get_number_of_io_partitions());
+  //        / (sizeof(DataType) / sizeof(TensorDataType)));
+  // FIXME (trb 02/03/2023) -- when DataType is 'float' and
+  // TensorDataType is 'double', this last operand will be 0, which is
+  // invalid.
 
   auto X_v = create_datum_view(X, mb_idx);
   if (m_use_data_store) {
@@ -376,7 +379,7 @@ bool hdf5_reader<TensorDataType>::fetch_response(Mat& Y, int data_id, int mb_idx
   prof_region_begin("fetch_response", prof_colors[0], false);
   float *buf = nullptr;
   if(m_hyperslab_labels) {
-    assert_eq(Y.Height(), m_num_features);
+    assert_eq((unsigned long) Y.Height(), m_num_features);
     const std::string conduit_key = LBANN_DATA_ID_STR(data_id);
     conduit::Node node;
     const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
@@ -388,7 +391,7 @@ bool hdf5_reader<TensorDataType>::fetch_response(Mat& Y, int data_id, int mb_idx
     auto Y_v = create_datum_view(Y, mb_idx);
     std::memcpy(Y_v.Buffer(), buf, m_num_features*sizeof(TensorDataType));
   } else {
-    assert_eq(Y.Height(), m_all_responses.size());
+    assert_eq((unsigned long) Y.Height(), m_all_responses.size());
     conduit::Node node;
     if (data_store_active() || m_data_store->has_conduit_node(data_id)) {
       const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);

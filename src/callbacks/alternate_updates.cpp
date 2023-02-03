@@ -49,7 +49,7 @@ void alternate_updates::on_batch_begin(model *m) {
   const auto& c = m->get_execution_context();
   const auto& step = c.get_step();
 
-  if(step % m_iters_tot == 0 || step % m_iters_tot == m_iters_1) {
+  if(step % m_iters_tot == 0ul || step % m_iters_tot == (unsigned long) m_iters_1) {
     for(size_t i = 0; i < freeze_layers.size(); i++){
       if(!freeze_layers[i])
         LBANN_ERROR("Layer pointer is null.");
