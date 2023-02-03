@@ -304,19 +304,27 @@ bool ras_lipid_conduit_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx)
     X(j, mb_idx) = data[j];
   }
 
-#if 0
-Notes from Adam:
-The keras model that I gave you only looks at the density_sig1 data as input data and it uses the states data as labels.  We'll want to also extract bbs to merge that with density_sig1 in various ways as input data in future models that we're putting together.
+/*
+  Notes from Adam:
 
- The probs field can be useful as an alternate label if building a regression model instead of a classification model.  I've also been using the probs field as a filter on the training data to only consider those input data whose state probability exceeds some threshold.
+  The keras model that I gave you only looks at the density_sig1 data
+  as input data and it uses the states data as labels.  We'll want to
+  also extract bbs to merge that with density_sig1 in various ways as
+  input data in future models that we're putting together.
+
+  The probs field can be useful as an alternate label if building a
+  regression model instead of a classification model.  I've also been
+  using the probs field as a filter on the training data to only
+  consider those input data whose state probability exceeds some
+  threshold.
 
   So that works out to:
 
    bb, density_sig1 - datum
    states           - label
    probs            - used as a filter to include/exclude certain samples
+*/
 
-#endif
   return true;
 }
 
