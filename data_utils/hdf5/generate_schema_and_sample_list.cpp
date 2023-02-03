@@ -33,8 +33,8 @@
 
 #include <conduit/conduit.hpp>
 #include <conduit/conduit_relay.hpp>
-#include <conduit/conduit_relay_hdf5.hpp>
 #include <conduit/conduit_relay_io.hpp>
+#include <conduit/conduit_relay_io_hdf5.hpp>
 #include <conduit/conduit_relay_io_identify_protocol_api.hpp>
 #include <conduit/conduit_schema.hpp>
 #include <conduit/conduit_utils.hpp>

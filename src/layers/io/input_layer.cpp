@@ -46,6 +46,7 @@ lbann::build_input_layer_from_pbuf(lbann_comm* comm,
   const auto& params = proto_layer.input();
   const auto& data_field = params.data_field();
   if constexpr (L != data_layout::DATA_PARALLEL) {
+    (void) comm;
     LBANN_ERROR("input layer is only supported with "
                 "a data-parallel layout");
   }
@@ -55,6 +56,7 @@ lbann::build_input_layer_from_pbuf(lbann_comm* comm,
       input_layer<DataType, data_layout::DATA_PARALLEL, D>>(comm, data_field);
   }
   else {
+    (void) comm;
     LBANN_ERROR("Input layers are only valid with "
                 "TensorDataType == DataType and Layout == DATA_PARALLEL");
   }
