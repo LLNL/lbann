@@ -50,10 +50,10 @@ namespace lbann {
 #endif
 
 /** Grid types in sub-grid parallelism (2nd order) */
-enum class GridType 
-{   
-  NO_GRID = 0, 
-  PRIMARY_GRID = 1, 
+enum class GridType
+{
+  NO_GRID = 0,
+  PRIMARY_GRID = 1,
   SECONDARY_GRID = 2
 };
 
@@ -85,25 +85,20 @@ using nccl_backend = lbann::Al::dummy_backend;
 #endif // defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_NCCL)
 using nccl_req_type = nccl_backend::req_type;
 static const nccl_req_type nccl_null_req = nccl_backend::null_req;
-#if defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_MPI_CUDA)
-using mpicuda_backend = ::Al::MPICUDABackend;
-#else
-using mpicuda_backend = lbann::Al::dummy_backend;
-#endif // defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_MPI_CUDA)
 #if defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_HOST_TRANSFER)
 using hosttransfer_backend = ::Al::HostTransferBackend;
 #else
 using hosttransfer_backend = lbann::Al::dummy_backend;
 #endif // defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_HOST_TRANSFER)
-using mpicuda_req_type = mpicuda_backend::req_type;
-static const mpicuda_req_type mpicuda_null_req = mpicuda_backend::null_req;
+using hosttransfer_req_type = hosttransfer_backend::req_type;
+static const hosttransfer_req_type hosttransfer_null_req = hosttransfer_backend::null_req;
 
 /** Wrapper for Aluminum non-blocking routine requests. */
 struct request
 {
   mpi_req_type mpi_req = mpi_null_req;
   nccl_req_type nccl_req = nccl_null_req;
-  mpicuda_req_type mpicuda_req = mpicuda_null_req;
+  hosttransfer_req_type hosttransfer_req = hosttransfer_null_req;
   MPI_Request raw_mpi_req = MPI_REQUEST_NULL;
 };
 } // namespace Al
@@ -989,7 +984,7 @@ private:
   Ranks in primary and secondary grids
   */
   std::vector<int> m_primary_grid_ranks;
-  std::vector<int> m_secondary_grid_ranks; 
+  std::vector<int> m_secondary_grid_ranks;
 
   // Various statistics counters.
   mutable size_t m_num_trainer_barriers;

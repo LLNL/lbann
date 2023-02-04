@@ -170,6 +170,49 @@ void RowSum(const AbstractDistMatrix<F>& A, AbstractDistMatrix<F>& sums) {
 
 }
 
+template<typename F>
+void ColumnSummaryStats( const Matrix<F>& X, F& sum, F& min, F& max, F& mean) {
+//    DEBUG_ONLY(CSE cse("ColumnSum"))
+
+    // Input matrix parameters
+    const Int m = X.Height();
+    const Int n = X.Width();
+    const F *XBuf = X.LockedBuffer();
+    const Int XLDim = X.LDim();
+
+    //    if (X.Width() != 1) {
+    // Initialize output
+    // Zeros( sums, 1, n );
+    // F *sumsBuf = sums.Buffer();
+    // const Int sumsLDim = sums.LDim();
+
+    sum = 0.;
+    min = std::numeric_limits<F>::max();
+    max = std::numeric_limits<F>::min();
+    mean = 0.;
+
+    F value;
+    // Compute sum over each column
+    EL_PARALLEL_FOR
+    for( Int j=0; j<n; ++j )
+    {
+        for( Int i=0; i<m; ++i )
+        {
+            value = XBuf[i+j*XLDim];
+            sum += value;
+            if( value < min ) {
+              min = value;
+            }
+            if( value > max ) {
+              max = value;
+            }
+        }
+    }
+
+    mean = sum / m;
+
+}
+
 LBANN_PROTO_FLOAT
 LBANN_PROTO_DOUBLE
 

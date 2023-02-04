@@ -207,6 +207,16 @@ description Layer::get_description() const {
     desc.add("Frozen");
   }
 
+#ifdef LBANN_HAS_DISTCONV
+  if (distconv_enabled()) {
+    const auto &ps = get_parallel_strategy();
+    ss.str(std::string{});
+    ss.clear();
+    ss << ps;
+    desc.add("Parallel Strategy", ss.str());
+  }
+#endif // LBANN_HAS_DISTCONV
+
   return desc;
 }
 

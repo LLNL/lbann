@@ -400,6 +400,9 @@ class generic_data_reader {
     else if (data_field == INPUT_DATA_TYPE_RESPONSES) {
       return get_linearized_response_size();
     }
+    else if (data_field == INPUT_DATA_TYPE_LABEL_RECONSTRUCTION) {
+      return get_linearized_data_size();
+    }
     else {
       LBANN_ERROR("Unknown data_field_type value provided: " + data_field);
     }
@@ -806,6 +809,16 @@ class generic_data_reader {
   virtual bool fetch_response(CPUMat& Y, int data_id, int mb_idx) {
     NOT_IMPLEMENTED("fetch_response");
     return false;
+  }
+
+  /**
+   * Create a matrix view of a single column selected by mini-batch index.
+   * @param X The matrix to load data into.
+   * @param mb_idx The index within the mini-batch.
+   * @return Single column view of the input matrix
+   */
+  inline CPUMat create_datum_view(CPUMat& X, const int mb_idx) {
+    return El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
   }
 
   /**

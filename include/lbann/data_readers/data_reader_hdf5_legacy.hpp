@@ -131,11 +131,12 @@ class hdf5_reader : public generic_data_reader {
                            TensorDataType *sample);
   void read_hdf5_sample(int data_id, TensorDataType *sample, TensorDataType *labels);
   //void set_defaults() override;
+  void load_sample(conduit::Node& node, int data_id);
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   void fetch_datum_conduit(Mat& X, int data_id);
+  bool fetch_data_field(data_field_type data_field, CPUMat& Y, int data_id, int mb_idx) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
-  void gather_responses(float *responses);
   hid_t get_hdf5_data_type() const;
   conduit::DataType get_conduit_data_type(conduit::index_t num_elements) const;
 

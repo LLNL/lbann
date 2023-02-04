@@ -292,19 +292,19 @@ void UpdateRequest(typename ::Al::NCCLBackend::req_type& req,
 }
 #endif // AL_HAS_NCCL
 
-#ifdef AL_HAS_MPI_CUDA
-auto GetRequest(Al::request& r, BackendTag<::Al::MPICUDABackend>) noexcept ->
-  typename ::Al::MPICUDABackend::req_type&
+#ifdef AL_HAS_HOST_TRANSFER
+auto GetRequest(Al::request& r, BackendTag<::Al::HostTransferBackend>) noexcept ->
+  typename ::Al::HostTransferBackend::req_type&
 {
-  return r.mpicuda_req;
+  return r.hosttransfer_req;
 }
-void UpdateRequest(typename ::Al::MPICUDABackend::req_type& req,
+void UpdateRequest(typename ::Al::HostTransferBackend::req_type& req,
                    El::SyncInfo<El::Device::GPU> const& si) noexcept
 {
   if (req)
     req->orig_stream = si.Stream();
 }
-#endif // AL_HAS_MPI_CUDA
+#endif // AL_HAS_HOST_TRANSFER
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_HAS_ALUMINUM)
 
 // The best we can do on CPU is exactly the Elemental implementation:
@@ -456,14 +456,14 @@ void nb_allreduce_impl(El::Matrix<T, El::Device::GPU>& m,
 
 #if defined(AL_HAS_NCCL)
   return nb_allreduce_aluminum(m, c, req, op, BackendTag<::Al::NCCLBackend>{});
-#elif defined(AL_HAS_MPI_CUDA)
+#elif defined(AL_HAS_HOST_TRANSFER)
   return nb_allreduce_aluminum(
     m,
     c,
     req,
     op,
-    BackendTag<::Al::MPICUDABackend>{},
-    ::Al::MPICUDABackend::allreduce_algo_type::host_transfer);
+    BackendTag<::Al::HostTransfer>{},
+    ::Al::HostTransferBackend::allreduce_algo_type::host_transfer);
 #else
   // At this point just call Elemental again
   return El::AllReduce(m, c, op);
@@ -563,12 +563,12 @@ void lbann_comm::wait(Al::request& req) const
     ::Al::Wait<::Al::NCCLBackend>(req.nccl_req);
   }
 #endif // AL_HAS_NCCL
-#ifdef AL_HAS_MPI_CUDA
-  if (req.mpicuda_req != Al::mpicuda_null_req) {
+#ifdef AL_HAS_HOST_TRANSFER
+  if (req.hosttransfer_req != Al::hosttransfer_null_req) {
     // Note this does not block the host.
-    ::Al::Wait<::Al::MPICUDABackend>(req.mpicuda_req);
+    ::Al::Wait<::Al::HostTransferBackend>(req.hosttransfer_req);
   }
-#endif // AL_HAS_MPI_CUDA
+#endif // AL_HAS_HOST_TRANSFER
 #endif // LBANN_HAS_ALUMINUM
   if (req.raw_mpi_req != MPI_REQUEST_NULL) {
     MPI_Wait(&(req.raw_mpi_req), MPI_STATUS_IGNORE);;
@@ -587,11 +587,11 @@ bool lbann_comm::test(Al::request& req) const
     req_test = req_test && ::Al::Test<::Al::NCCLBackend>(req.nccl_req);
   }
 #endif // AL_HAS_NCCL
-#ifdef AL_HAS_MPI_CUDA
-  if (req.mpicuda_req != Al::mpicuda_null_req) {
-    req_test = req_test && ::Al::Test<::Al::MPICUDABackend>(req.mpicuda_req);
+#ifdef AL_HAS_HOST_TRANSFER
+  if (req.hosttransfer_req != Al::hosttransfer_null_req) {
+    req_test = req_test && ::Al::Test<::Al::HostTransferBackend>(req.hosttransfer_req);
   }
-#endif // AL_HAS_MPI_CUDA
+#endif // AL_HAS_HOST_TRANSFER
 #endif // LBANN_HAS_ALUMINUM
   if (req.raw_mpi_req != MPI_REQUEST_NULL) {
     int flag = 0;

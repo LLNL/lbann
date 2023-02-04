@@ -28,6 +28,10 @@
 #include "lbann/layers/transform/gather.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
+#if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
+#include "lbann/utils/nvshmem.hpp"
+#endif
+
 namespace lbann {
 
 namespace {
@@ -161,8 +165,21 @@ __global__ void gather3d_kernel(
 
 } // namespace <anon>
 
+// =============================================================
+// Gather member functions
+// =============================================================
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void gather_layer<TensorDataType, Layout, Device>::fp_compute() {
+
+#if defined LBANN_HAS_DISTCONV && defined LBANN_HAS_NVSHMEM
+  // Initialize the nvshmem here. No Op if already initialized
+  nvshmem::initialize();
+
+  if (this->distconv_enabled()){
+    this->get_distconv_adapter().fp_compute();
+    return ;
+  }
+#endif // LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
 
   // Local matrices
   const auto& local_values = this->get_local_prev_activations(0);
@@ -236,6 +253,15 @@ void gather_layer<TensorDataType, Layout, Device>::fp_compute() {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void gather_layer<TensorDataType, Layout, Device>::bp_compute() {
+
+#if defined LBANN_HAS_DISTCONV && defined LBANN_HAS_NVSHMEM
+  // Initialize the nvshmem here. No Op if already initialized
+  nvshmem::initialize();
+  if (this->distconv_enabled()){
+    this->get_distconv_adapter().bp_compute();
+    return ;
+  }
+#endif // LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
 
   // Local matrices
   const auto& local_indices = this->get_local_prev_activations(1);

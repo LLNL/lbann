@@ -32,7 +32,36 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/proto/layers.pb.h"
 
+#if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#include "lbann/layers/transform/distconv/distconv_scatter.hpp"
+#include "lbann/utils/nvshmem.hpp"
+#endif // LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
+
 namespace lbann {
+
+#if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class gather_distconv_adapter
+  :  public data_type_distconv_adapter <TensorDataType>{
+  public:
+    using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+
+    gather_distconv_adapter(Layer &layer) : data_type_distconv_adapter<TensorDataType>(layer){}
+    virtual ~gather_distconv_adapter() = default;
+
+    void setup_distributions(tensor_overlap_constraints &constraints) override;
+    void setup_layer(size_t workspace_capacity) override;
+    void fp_compute();
+    void bp_compute();
+    dc::Shape get_activations_local_shape(int index=0) const override;
+
+    std::unique_ptr<dc::Gather<TensorDataType>> m_gather_operator;
+    size_t m_workspace_buffer_size{0};
+
+  };
+#endif // LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
 
 /** @brief Gather values from specified tensor indices
  *
@@ -95,6 +124,13 @@ protected:
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void fp_compute() override;
   void bp_compute() override;
+#if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
+  friend class gather_distconv_adapter<TensorDataType, Layout, Device>;
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
+  bool is_distconv_supported() const override;
+  gather_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() override;
+  const gather_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() const override;
+#endif // LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
 private:
   int m_gather_axis;
 
@@ -145,6 +181,47 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
   // Tensor dimensions
   const auto& input0_dims = this->get_input_dims(0);
   const auto& input1_dims = this->get_input_dims(1);
+  
+  const bool along_axis_0 = this->m_gather_axis == 0;
+
+  auto dims_to_str = [] (const std::vector<int>& dims) -> std::string {
+    std::ostringstream ss;
+    for (size_t i=0; i<dims.size(); ++i) {
+      ss << (i>0 ? "x" : "") << dims[i];
+    }
+    return ss.str();
+  };
+
+  // Tensor dimension requirements are different 
+  // when using distconv 
+  // Distconv requires 3D inputs for both values
+  // and indices
+
+  #if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
+
+  if (this->distconv_enabled()){
+    const auto is_values_3D = input0_dims.size() == 3;
+    const auto is_indices_3D = input1_dims.size() == 3;
+
+    // Input matrices need to be 3D
+    if(!is_values_3D || !is_indices_3D){
+
+      LBANN_ERROR(this->get_type(), " Layer \"", this->get_name(),"\" ",
+        "has values input (", dims_to_str(input0_dims),") ",
+        "has indices input (", dims_to_str(input1_dims),"). ", 
+        "Distconv Gather requires both to be 3D. ");
+    }
+    // Make sure only gathering along axis 0  
+    if (along_axis_0){
+      this->set_output_dims(std::vector<int>{input1_dims[0], input0_dims[1], 1});
+    }else{
+      LBANN_ERROR(this->get_type(), "Layer \"", this->get_name(), "\"",
+        "cannot gather along axis ", m_gather_axis, " when distconv is enabled");
+    }
+    return ;
+  }
+  #endif // LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
+  
   // Only support 1D indices
   const auto is_indices_not_1D = input1_dims.size() != 1;
 
@@ -152,7 +229,6 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
   const auto is_values_1D =  input0_dims.size() == 1;
   const auto is_values_2D = input0_dims.size() == 2;
 
-  const bool along_axis_0 = this->m_gather_axis == 0;
   if(is_values_2D){
     if(this->m_gather_axis == -1){
       LBANN_ERROR(
@@ -172,14 +248,6 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
       this->set_output_dims(std::vector<int>{input0_dims[0],input1_dims[0]});
     }
   }
-
-  auto dims_to_str = [] (const std::vector<int>& dims) -> std::string {
-    std::ostringstream ss;
-    for (size_t i=0; i<dims.size(); ++i) {
-      ss << (i>0 ? "x" : "") << dims[i];
-    }
-    return ss.str();
-  };
 
   // Make sure input tensors have supported numbers of dimensions
 
@@ -207,6 +275,129 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
   }
 
 }
+
+#if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
+
+// =============================================================
+// DistConv-enabled Gather member functions
+// =============================================================
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+bool
+gather_layer<TensorDataType, Layout, Device>
+::is_distconv_supported() const {
+  return Device==El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+gather_layer<TensorDataType,Layout,Device>
+::setup_distconv_adapter(const DataReaderMetaData& dr_metadata){
+  this->get_distconv_adapter_ptr() = std::make_unique<gather_distconv_adapter<
+    TensorDataType, Layout, Device>>(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+const gather_distconv_adapter <TensorDataType, Layout, Device>&
+gather_layer<TensorDataType, Layout, Device>
+::get_distconv_adapter() const{
+  return dynamic_cast<const gather_distconv_adapter<
+  TensorDataType, Layout, Device>&>(data_type_layer<TensorDataType>::get_distconv_adapter());
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+gather_distconv_adapter <TensorDataType, Layout, Device>&
+gather_layer<TensorDataType, Layout, Device>
+::get_distconv_adapter(){
+  return const_cast<gather_distconv_adapter<TensorDataType, Layout, Device>&>(
+    static_cast<const gather_layer<TensorDataType, Layout, Device>&>(*this).get_distconv_adapter());
+}
+
+// =============================================================
+// Gather DistConv Adapter implementation
+// =============================================================
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+gather_distconv_adapter<TensorDataType, Layout, Device>
+::setup_distributions(tensor_overlap_constraints &constraints){
+  data_type_distconv_adapter<TensorDataType>::setup_distributions(constraints);
+  // no overlap needed
+  for (auto &d: this->m_prev_activations_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_activations_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_prev_error_signals_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_error_signals_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+}
+
+
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+gather_distconv_adapter<TensorDataType, Layout, Device>
+::setup_layer(size_t workspace_capacity){
+  data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
+  m_gather_operator = make_unique<dc::Gather<TensorDataType>>(dc::get_backend());
+  nvshmem::initialize();
+  m_gather_operator->setup(this->get_prev_activations(0),
+                           this->get_prev_activations(1),
+                           this->get_activations()); 
+}
+
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+dc::Shape
+gather_distconv_adapter<TensorDataType, Layout, Device>
+::get_activations_local_shape(int index) const{
+  const auto &layer = dynamic_cast<const gather_layer
+    <TensorDataType, Layout, Device>&>(this->layer());
+  auto output_dims = layer.get_output_dims();
+  // Get the indices layer shape
+  auto output_shape = this->get_prev_activations(1).get_local_shape();
+  auto values_shape = this->get_prev_activations(0).get_local_shape();
+  // Change the column dimension to match, the rest should be the same
+  // To do: Maybe move this to distconv namespace - SZ
+  output_shape[1] = values_shape[1];
+  return output_shape; 
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+gather_distconv_adapter<TensorDataType, Layout, Device>
+::fp_compute(){
+  // Compute the forward pass
+  m_gather_operator->forward(this->get_prev_activations(0),
+                             this->get_prev_activations(1),
+                             this->get_activations()); 
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void
+gather_distconv_adapter<TensorDataType, Layout, Device>
+::bp_compute(){
+  // Compute the backward pass 
+  m_gather_operator->backward(this->get_prev_error_signals(),  
+                              this->get_prev_activations(1),
+                              this->get_error_signals(0),   // Values gradient
+                              this->get_error_signals(1));  // Indices gradient. Will be 0'ed out
+}
+
+#endif //  LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
 
 #ifndef LBANN_GATHER_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device)                                                \

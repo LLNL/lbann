@@ -193,6 +193,9 @@ get_data_dims(DataReaderMetaData& dr_metadata, int child_index) const {
   else if (m_data_field == INPUT_DATA_TYPE_RESPONSES) {
     return dr_metadata.data_dims[data_reader_target_mode::REGRESSION];
   }
+  else if (m_data_field == INPUT_DATA_TYPE_LABEL_RECONSTRUCTION) {
+    return dr_metadata.data_dims[data_reader_target_mode::LABEL_RECONSTRUCTION];
+  }
   else {
     LBANN_ERROR("Unknown data_field_type value provided: " + m_data_field);
   }
@@ -236,7 +239,8 @@ input_distconv_adapter(
 
   // Distconv currently only supports CosmoFlow data
   if (m_data_field != INPUT_DATA_TYPE_SAMPLES
-      && m_data_field != INPUT_DATA_TYPE_RESPONSES) {
+      && m_data_field != INPUT_DATA_TYPE_RESPONSES
+      && m_data_field != INPUT_DATA_TYPE_LABEL_RECONSTRUCTION) {
     LBANN_ERROR(
       "attempted to create distconv adapter for ",
       "input layer with unsupported data field (",m_data_field,")");
@@ -274,6 +278,20 @@ input_distconv_adapter<TensorDataType, T_layout, Dev>::get_shuffler(
         src, dst, src_buf, dst_buf);
   }
   return *shfl;
+}
+
+template <typename TensorDataType,
+          data_layout T_layout, El::Device Dev>
+void input_distconv_adapter<TensorDataType, T_layout, Dev>::
+setup_layer(size_t workspace_capacity) {
+  data_type_distconv_adapter<TensorDataType>::setup_layer(
+      workspace_capacity);
+  auto &l = this->layer();
+  const int mini_batch_size = get_trainer().get_max_mini_batch_size();
+  const auto &ps = l.get_parallel_strategy();
+  if (mini_batch_size % ps.sample_groups != 0) {
+    LBANN_ERROR("Insuffucient number of samples in the mini-batch size ", mini_batch_size, " for the parallel strategy sample groups ", ps.sample_groups);
+  }
 }
 
 template <typename TensorDataType,
@@ -347,7 +365,8 @@ std::unique_ptr<typename input_distconv_adapter<TensorDataType, T_layout, Dev>::
 input_distconv_adapter<TensorDataType, T_layout, Dev>::
 setup_activations_i(int index) const {
   if (!m_is_input_processed) return nullptr;
-  if (m_data_field == INPUT_DATA_TYPE_SAMPLES) {
+  if (m_data_field == INPUT_DATA_TYPE_SAMPLES ||
+      m_data_field == INPUT_DATA_TYPE_LABEL_RECONSTRUCTION) {
     return data_type_distconv_adapter<TensorDataType>::
         setup_activations_i(index);
   }
@@ -384,7 +403,8 @@ template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
 dc::Shape input_distconv_adapter<TensorDataType, T_layout, Dev>::
 get_activations_shape(int index) const {
-  if (m_data_field == INPUT_DATA_TYPE_SAMPLES) {
+  if (m_data_field == INPUT_DATA_TYPE_SAMPLES ||
+      m_data_field == INPUT_DATA_TYPE_LABEL_RECONSTRUCTION) {
     return data_type_distconv_adapter<TensorDataType>::
         get_activations_shape(index);
   }

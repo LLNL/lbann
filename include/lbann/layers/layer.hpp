@@ -157,7 +157,7 @@ struct ParallelStrategy {
   int filter_splits = 0;
   /** Number of times the layer is replicated (for FC layers right now). */
   int replications = 0;
-      /** Enable subgraph for the layer. */
+  /** Enable subgraph for the layer. */
   bool enable_subgraph = false;
   /** Branch number in the sub graph. */
   int sub_branch_tag = 0;
@@ -188,22 +188,79 @@ struct ParallelStrategy {
 
 inline std::ostream &operator<<(std::ostream &os,
                                 const ParallelStrategy &ps) {
-  os << "{" << ps.sample_groups
+  os << "{"
+     << "N: " << ps.sample_groups
      << "/" << ps.sample_splits
-     << ", " << ps.depth_groups
-     << "/" << ps.depth_splits
-     << ", " << ps.height_groups
-     << "/" << ps.height_splits
-     << ", " << ps.width_groups
-     << "/" << ps.width_splits
-     << ", " << ps.channel_groups
+     << ", "
+     << "C: " << ps.channel_groups
      << "/" << ps.channel_splits
-     << ", " << ps.filter_groups
+     << ", "
+     << "D: " << ps.depth_groups
+     << "/" << ps.depth_splits
+     << ", "
+     << "H: " << ps.height_groups
+     << "/" << ps.height_splits
+     << ", "
+     << "W: " << ps.width_groups
+     << "/" << ps.width_splits
+     << ", "
+     << "F: " << ps.filter_groups
      << "/" << ps.filter_splits
-     << ", " << ps.replications
-     << "/" << ps.sub_branch_tag
-     << "," << ps.sub_branch_resource_percentage
-     << "/" << ps.enable_subgraph
+     << ", "
+     << "R: " << ps.replications
+     << ", "
+     << "T: " << ps.sub_branch_tag
+     << ", "
+     << "%: " << ps.sub_branch_resource_percentage
+     << ", "
+     << "e: " << ps.enable_subgraph
+     << "}";
+  return os;
+}
+
+static std::ostream &print_parallel_strategy_header(std::ostream &os) {
+  os << "Axis over which DistConv can parallelize:\n"
+     << "\tSamples in the mini-batch (N)\n"
+     << "\tDepth, Height, and Width (D x H x W)\n"
+     << "\tChannel (C)\n"
+     << "\tFilters (F)\n"
+     << "\tReplications (R): Number of times the layer is replicated (for FC layers right now)\n"
+     << "\tBranch number in the subgraph (T)\n"
+     << "\tPercentage of parent resources to be allocated to this branch (%)\n"
+     << "\tEnable subgraph for the layer (e)\n"
+     << "\nFor each of the above dimensions there are two fields:\n"
+     <<"\t# Groups (G): refers to how many reduced-order tensors exist with respect to that dimension" << std::endl
+     << "\t             e.g. For a kD tensor you would have a stack of G (k-1)D tensors" << std::endl
+     << "\t\t[N, C, D, H, W]" << std::endl
+     << "\t\t[2, 1, 4, 1, 1] ---" << std::endl
+     << "\t\t                  |" << std::endl
+     << "\t\t                  V" << std::endl
+     << "\t\t  4 Depth groups: [N, C, H, W]" << std::endl
+     << "\t\t                  [2, 1, 1, 1]" << std::endl
+     << "\t\t                  [2, 1, 1, 1]" << std::endl
+     << "\t\t                  [2, 1, 1, 1]" << std::endl
+     << "\t\t                  [2, 1, 1, 1]" << std::endl
+     << "\t\t[1, 1, 4, 1, 2] ---" << std::endl
+     << "\t\t                  |" << std::endl
+     << "\t\t                  V" << std::endl
+     << "\t\t 2 Sample groups: [C, D, H, W]" << std::endl
+     << "\t\t                  [1, 4, 1, 1]" << std::endl
+     << "\t\t                  [1, 4, 1, 1]" << std::endl
+     << "\n\tSplit per Dimension (S): Number of groups the dimension is split over (i.e. split K times) (aka H2 split shape) (must divide groups evenly).\n"
+     << std::endl;
+
+
+  os << "Reporting order for the parallel strategy" << std::endl;
+  os << "{N: G/S"
+     << ", C: G/S"
+     << ", D: G/S"
+     << ", H: G/S"
+     << ", W: G/S"
+     << ", F: G/S"
+     << ", R:"
+     << ", T:"
+     << ", %:"
+     << ", e:"
      << "}";
   return os;
 }

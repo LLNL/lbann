@@ -14,5 +14,5 @@ Each HDF5 file represents a single data sample, and contains two different HDF5 
 Run `python3 applications/utils/verify_hdf5_dataset.py /path/to/hdf5/files --key-data volume --key-labels segmentation` to check whether the dataset format is appropriate for LBANN.
 
 ## How to Train
-Run `python3 ./unet3d.py`.
-See `python3 ./unet3d.py --help` for more options.
+Run `python3 ./train_unet3d.py`.
+See `python3 ./train_unet3d.py --help` for more options.
