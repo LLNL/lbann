@@ -83,7 +83,6 @@ from lbann.core.objective_function import *
 import lbann.core.operators as ops
 from lbann.core.operator_layers import *
 from lbann.core.optimizer import *
-from lbann.core.shape import *
 from lbann.core.trainer import *
 from lbann.core.training_algorithm import *
 from lbann.core.weights import *

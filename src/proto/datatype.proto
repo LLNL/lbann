@@ -41,7 +41,3 @@ enum DeviceAllocation {
   CPU = 1;
   GPU = 2;
 }
-
-message Shape {
-  repeated uint64 dims = 1;
-}
