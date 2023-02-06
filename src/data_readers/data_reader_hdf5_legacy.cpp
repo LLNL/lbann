@@ -328,13 +328,19 @@ template <typename TensorDataType>
 bool hdf5_reader<TensorDataType>::fetch_datum(Mat& X, int data_id, int mb_idx) {
   prof_region_begin("fetch_datum", prof_colors[0], false);
 
-  assert_eq(sizeof(DataType) % sizeof(TensorDataType), 0ul);
+  // Note (trb 02/06/2023): By making this a constexpr check, the
+  // compiler can deduce that the following "assert_eq" will not
+  // divide by zero in any surviving case. A necessary condition for
+  // sizeof(DataType) % sizeof(TensorDataType) == 0ul is that
+  // sizeof(DataType) >= sizeof(TensorDataType), so (sizeof(DataType)
+  // / sizeof(TensorDataType)) >= 1 in all surviving cases.
+  if constexpr (sizeof(DataType) % sizeof(TensorDataType) > 0ul) {
+    LBANN_ERROR("Invalid configuration.");
+    return false;
+  }
   assert_eq((unsigned long) X.Height(),
-            m_num_features / dc::get_number_of_io_partitions());
-  //        / (sizeof(DataType) / sizeof(TensorDataType)));
-  // FIXME (trb 02/03/2023) -- when DataType is 'float' and
-  // TensorDataType is 'double', this last operand will be 0, which is
-  // invalid.
+            m_num_features / dc::get_number_of_io_partitions()
+            / (sizeof(DataType) / sizeof(TensorDataType)));
 
   auto X_v = create_datum_view(X, mb_idx);
   if (m_use_data_store) {
