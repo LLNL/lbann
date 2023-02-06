@@ -164,6 +164,8 @@ class set_learning_rate : public learning_rate {
  protected:
   float global_schedule(model *m) override;
  private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
   /** Number of epochs between each learning rate decrease. */
   size_t m_step;
   /** Amount to decrease the learning rate by. */
