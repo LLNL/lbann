@@ -43,6 +43,7 @@ import std;
 #include <deque>
 #include <fstream>
 #include <functional>
+#include <iosfwd>
 #include <iostream>
 #include <iterator>
 #include <limits>
