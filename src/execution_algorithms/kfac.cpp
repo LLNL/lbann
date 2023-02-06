@@ -84,7 +84,6 @@ KFAC::KFAC(
     m_damping_bn_act_params{std::move(damping_bn_act_params)},
     m_damping_bn_err_params{std::move(damping_bn_err_params)},
     m_damping_warmup_steps{std::move(damping_warmup_steps)},
-    m_use_KFAC_epoch{std::move(kfac_use_interval)},
     m_kronecker_decay{kronecker_decay},
     m_print_time{print_time},
     m_print_matrix{print_matrix},
@@ -98,64 +97,65 @@ KFAC::KFAC(
     m_learning_rate_factor_gru{learning_rate_factor_gru},
     m_compute_interval{compute_interval},
     m_distribute_precondition_compute{distribute_precondition_compute},
-    m_use_eigen_decomposition{use_eigen_decomposition},
     m_enable_copy_errors{enable_copy_errors},
-    m_enable_copy_activations{enable_copy_activations}
+    m_enable_copy_activations{enable_copy_activations},
+    m_use_eigen_decomposition{use_eigen_decomposition},
+    m_use_KFAC_epoch{std::move(kfac_use_interval)}
 {}
 
-KFAC::KFAC(KFAC const& other)
-  : TrainingAlgorithm(other.get_name()),
-    m_stopping_criteria{other.m_stopping_criteria->clone()},
-    m_damping_act_params{other.m_damping_act_params},
-    m_damping_err_params{other.m_damping_err_params},
-    m_damping_bn_act_params{other.m_damping_bn_act_params},
-    m_damping_bn_err_params{other.m_damping_bn_err_params},
-    m_damping_warmup_steps{other.m_damping_warmup_steps},
-    m_use_KFAC_epoch{other.m_use_KFAC_epoch},
-    m_kronecker_decay{other.m_kronecker_decay},
-    m_print_time{other.m_print_time},
-    m_print_matrix{other.m_print_matrix},
-    m_print_matrix_summary{other.m_print_matrix_summary},
-    m_use_pi{other.m_use_pi},
-    m_update_intervals{other.m_update_intervals},
-    m_update_interval_steps{other.m_update_interval_steps},
-    m_inverse_strategy{other.m_inverse_strategy},
-    m_disable_layers{other.m_disable_layers},
-    m_learning_rate_factor{other.m_learning_rate_factor},
-    m_compute_interval{other.m_compute_interval},
-    m_distribute_precondition_compute{other.m_distribute_precondition_compute},
-    m_use_eigen_decomposition{other.m_use_eigen_decomposition},
-    m_enable_copy_errors{other.m_enable_copy_errors},
-    m_enable_copy_activations{other.m_enable_copy_activations}
-{}
+// KFAC::KFAC(KFAC const& other)
+//   : TrainingAlgorithm(other.get_name()),
+//     m_stopping_criteria{other.m_stopping_criteria->clone()},
+//     m_damping_act_params{other.m_damping_act_params},
+//     m_damping_err_params{other.m_damping_err_params},
+//     m_damping_bn_act_params{other.m_damping_bn_act_params},
+//     m_damping_bn_err_params{other.m_damping_bn_err_params},
+//     m_damping_warmup_steps{other.m_damping_warmup_steps},
+//     m_use_KFAC_epoch{other.m_use_KFAC_epoch},
+//     m_kronecker_decay{other.m_kronecker_decay},
+//     m_print_time{other.m_print_time},
+//     m_print_matrix{other.m_print_matrix},
+//     m_print_matrix_summary{other.m_print_matrix_summary},
+//     m_use_pi{other.m_use_pi},
+//     m_update_intervals{other.m_update_intervals},
+//     m_update_interval_steps{other.m_update_interval_steps},
+//     m_inverse_strategy{other.m_inverse_strategy},
+//     m_disable_layers{other.m_disable_layers},
+//     m_learning_rate_factor{other.m_learning_rate_factor},
+//     m_compute_interval{other.m_compute_interval},
+//     m_distribute_precondition_compute{other.m_distribute_precondition_compute},
+//     m_use_eigen_decomposition{other.m_use_eigen_decomposition},
+//     m_enable_copy_errors{other.m_enable_copy_errors},
+//     m_enable_copy_activations{other.m_enable_copy_activations}
+// {}
 
-KFAC& KFAC::operator=(KFAC const& other) {
-  TrainingAlgorithm::operator=(other);
-  m_stopping_criteria = other.m_stopping_criteria->clone();
-  m_damping_act_params = other.m_damping_act_params;
-  m_damping_err_params = other.m_damping_err_params;
-  m_damping_bn_act_params = other.m_damping_bn_act_params;
-  m_damping_bn_err_params = other.m_damping_bn_err_params;
-  m_damping_warmup_steps = other.m_damping_warmup_steps;
-  m_use_KFAC_epoch = other.m_use_KFAC_epoch,
-  m_kronecker_decay = other.m_kronecker_decay;
-  m_print_time = other.m_print_time;
-  m_print_matrix = other.m_print_matrix;
-  m_print_matrix_summary = other.m_print_matrix_summary;
-  m_use_pi = other.m_use_pi;
-  m_update_intervals = other.m_update_intervals;
-  m_update_interval_steps = other.m_update_interval_steps;
-  m_inverse_strategy = other.m_inverse_strategy;
-  m_disable_layers = other.m_disable_layers;
-  m_learning_rate_factor = other.m_learning_rate_factor;
-  m_compute_interval = other.m_compute_interval;
-  m_distribute_precondition_compute = other.m_distribute_precondition_compute;
-  m_use_eigen_decomposition = other.m_use_eigen_decomposition;
-  m_enable_copy_errors = m_enable_copy_errors;
-  m_enable_copy_activations = m_enable_copy_activations;
+// KFAC& KFAC::operator=(KFAC const& other) {
+//   TrainingAlgorithm::operator=(other);
+//   m_stopping_criteria = other.m_stopping_criteria->clone();
+//   m_damping_act_params = other.m_damping_act_params;
+//   m_damping_err_params = other.m_damping_err_params;
+//   m_damping_bn_act_params = other.m_damping_bn_act_params;
+//   m_damping_bn_err_params = other.m_damping_bn_err_params;
+//   m_damping_warmup_steps = other.m_damping_warmup_steps;
+//   m_use_KFAC_epoch = other.m_use_KFAC_epoch,
+//   m_kronecker_decay = other.m_kronecker_decay;
+//   m_print_time = other.m_print_time;
+//   m_print_matrix = other.m_print_matrix;
+//   m_print_matrix_summary = other.m_print_matrix_summary;
+//   m_use_pi = other.m_use_pi;
+//   m_update_intervals = other.m_update_intervals;
+//   m_update_interval_steps = other.m_update_interval_steps;
+//   m_inverse_strategy = other.m_inverse_strategy;
+//   m_disable_layers = other.m_disable_layers;
+//   m_learning_rate_factor = other.m_learning_rate_factor;
+//   m_compute_interval = other.m_compute_interval;
+//   m_distribute_precondition_compute = other.m_distribute_precondition_compute;
+//   m_use_eigen_decomposition = other.m_use_eigen_decomposition;
+//   m_enable_copy_errors = m_enable_copy_errors;
+//   m_enable_copy_activations = m_enable_copy_activations;
 
-  return *this;
-}
+//   return *this;
+// }
 
 std::string KFAC::get_type() const { return "KFAC"; }
 
@@ -985,7 +985,7 @@ void send_recv_precomputed_gradients(
   // Transfer precomputed gradients when distributed
   // 2nd order gradient conditioning is enabled
 
-  const int comm_size = El::mpi::Size(comm->get_KFAC_comm());
+  //  const int comm_size = El::mpi::Size(comm->get_KFAC_comm());
   const int comm_rank = El::mpi::Rank(comm->get_KFAC_comm());
   const int combined_rank = El::mpi::Rank(comm->get_combined_grid_comm());
 

@@ -56,7 +56,7 @@ class kfac_block_channelwise_fc: public kfac_block<Device> {
   kfac_block_channelwise_fc(const kfac_block_channelwise_fc&) = default;
   kfac_block_channelwise_fc& operator=(const kfac_block_channelwise_fc&) = default;
 
-  int get_local_memory_consumption(){
+  int get_local_memory_consumption() override {
     int total_size = 0;
     total_size += m_kronecker_inverse_A.Height() * m_kronecker_inverse_A.Width();
     total_size += m_kronecker_inverse_G.Height() * m_kronecker_inverse_G.Width();

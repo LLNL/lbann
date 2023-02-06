@@ -64,11 +64,11 @@ class kfac_block {
              int feature_size)
       : m_layer(layer),
         m_layer_id(layer_id),
-        m_inverse_proc_rank(inverse_proc_rank),
-        m_context(context),
         m_enable_copy_errors(enable_copy_errors),
         m_enable_copy_activations(enable_copy_activations),
-        m_feature_size(feature_size) {
+        m_inverse_proc_rank(inverse_proc_rank),
+        m_feature_size(feature_size),
+        m_context(context) {
     m_has_kronecker_inverse = false;
   }
   virtual ~kfac_block() = default;
@@ -252,15 +252,15 @@ class kfac_block {
   /** @brief The target layer. */
   Layer *m_layer;
 
+  /** @brief The layer ID in the model.
+      TODO: Remove this. */
+  const size_t m_layer_id;
+
   /** @brief Enable copying of errors to enhance async communication. */
   bool m_enable_copy_errors;
 
   /** @brief Enable copying of activations to enhance async communication. */
   bool m_enable_copy_activations;
-
-  /** @brief The layer ID in the model.
-      TODO: Remove this. */
-  const size_t m_layer_id;
 
   /** @brief The process ID which perform inverse on Kronecker. */
   const int m_inverse_proc_rank;

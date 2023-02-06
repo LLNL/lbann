@@ -119,7 +119,7 @@ public:
     int tot_size = 0;
     for (auto const &pair: m_workspace) {
         std::cout<<"Workspace Rank:"<<comm.get_rank_in_world()
-            <<" "<<"Name:"<<pair.first<<
+            <<" "<<"Name:"<<pair.first
             <<" "<<"size:"<<pair.second.Height()<<" "<<pair.second.Width()<<"\n";
         tot_size += pair.second.Height() * pair.second.Width();
     }

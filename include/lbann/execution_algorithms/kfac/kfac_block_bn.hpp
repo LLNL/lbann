@@ -100,7 +100,7 @@ class kfac_block_bn: public kfac_block<Device> {
   kfac_block_bn(const kfac_block_bn&) = default;
   kfac_block_bn& operator=(const kfac_block_bn&) = default;
 
-  int get_local_memory_consumption(){
+  int get_local_memory_consumption() override {
     int total_size = 0;
     total_size += m_fisher_buf.Height() * m_fisher_buf.Width();
     total_size += m_fisher_average.Height() * m_fisher_average.Width();
@@ -134,7 +134,7 @@ class kfac_block_bn: public kfac_block<Device> {
       bool print_matrix,
       bool print_matrix_summary,
       bool print_time) override;
-  
+
   void compute_preconditioned_gradients(
       lbann_comm* comm,
       DataType learning_rate_factor,

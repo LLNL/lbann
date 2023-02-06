@@ -143,7 +143,7 @@ class kfac_block_gru: public kfac_block<Device> {
   const std::vector<El::AbstractMatrix<DataType>*>
   get_local_kronecker_buffers() override;
 
-  int get_local_memory_consumption(){
+  int get_local_memory_consumption() override {
     return -1;
     LBANN_ERROR("this function is not implemented for GRU layer.");
   }
@@ -197,7 +197,7 @@ class kfac_block_gru: public kfac_block<Device> {
       lbann_comm *comm) override;
 
   // void send_recv_weights(lbann_comm *comm);
-  
+
   void start_communication_forward_end(
       lbann_comm* comm) override;
   void end_communication_forward_end(
