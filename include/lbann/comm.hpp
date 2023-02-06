@@ -50,10 +50,10 @@ namespace lbann {
 #endif
 
 /** Grid types in sub-grid parallelism (2nd order) */
-enum class GridType 
-{   
-  NO_GRID = 0, 
-  PRIMARY_GRID = 1, 
+enum class GridType
+{
+  NO_GRID = 0,
+  PRIMARY_GRID = 1,
   SECONDARY_GRID = 2
 };
 
@@ -179,7 +179,7 @@ public:
   void split_trainers(int procs_per_trainer=-1, int trainer_grid_height=-1);
 
   /** Split the commicator for the given trainer into primary and seconday*/
-  void split_trainer_grid(int num_process_primary_grid=0, 
+  void split_trainer_grid(int num_process_primary_grid=0,
                           bool create_two_models=false,
                           bool enable_async_comm=false,
                           bool enable_topo_aware=false);
@@ -994,7 +994,7 @@ private:
    */
   int m_threads_per_proc;
 
-  /** Grid typer for current process when sub-grid parallelism is enabled */
+  /** Grid type for current process when sub-grid parallelism is enabled */
   GridType m_grid_type = GridType::NO_GRID;
 
   bool m_create_two_models=false, m_subgrid_async_progress=false;
@@ -1005,7 +1005,7 @@ private:
   Ranks in primary and secondary grids
   */
   std::vector<int> m_primary_grid_ranks;
-  std::vector<int> m_secondary_grid_ranks; 
+  std::vector<int> m_secondary_grid_ranks;
 
   // Various statistics counters.
   mutable size_t m_num_trainer_barriers;

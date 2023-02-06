@@ -37,6 +37,7 @@ namespace kfac {
 class KFACExecutionContext;
 }
 
+namespace kfac {
 #if defined AL_HAS_NCCL
 using BackendT = ::Al::NCCLBackend;
 #elif defined AL_HAS_HOST_TRANSFER
@@ -46,6 +47,7 @@ using BackendT = ::Al::MPIBackend;
 #endif
 
 using ReqT = typename BackendT::req_type;
+} // namespace kfac
 
 /** A building block for K-FAC.
  */
@@ -275,10 +277,9 @@ class kfac_block {
 
   /** @brief Translatebetweengrid  funciton has a basic implementation for STAR,STAR
    * distributed matrices. Therefore, using local matrices for weights  */
-  // std::vector<std::unique_ptr<El::Matrix<DataType, Device>>> m_weight_values;
   std::vector<std::unique_ptr<AbsDistMat>> m_weight_values;
 
-  std::vector<ReqT> m_requests_forward_end, m_requests_backward_end;
+  std::vector<kfac::ReqT> m_requests_forward_end, m_requests_backward_end;
 
   /** @brief feature size and batch size (used in primary -> secondary grid communication) */
   int m_feature_size, m_batch_size;

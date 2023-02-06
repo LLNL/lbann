@@ -204,8 +204,8 @@ private:
     model& model);
 #endif // 0
 
+  /** @brief Data exchange functions to synchronize model and weights */
   void sync_weights_model(model& model, lbann_comm *comm);
-
   void start_sync_weights_async(model& model, lbann_comm *comm);
   void end_sync_weights_async(model& model, lbann_comm *comm);
 
