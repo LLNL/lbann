@@ -1149,13 +1149,13 @@ void kfac_block_gru<Device>::start_communication_forward_end(
       for (auto& input : this->m_parent_local_activations) {
         if(dtl_parent.get_data_layout() == data_layout::DATA_PARALLEL){
           // Data Parallel Layout
-          input = std::make_unqiue<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          input = std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
           if(comm->enable_subgrid_async_communication())
             this->m_subset_matrix.push_back(
-                std::make_unqiue<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_subset_grid(), 0));
+                std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_subset_grid(), 0));
         }
         else{//Model-Parallel Layout
-          input = std::make_unqiue<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          input = std::make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
           if(comm->enable_subgrid_async_communication())
             LBANN_ERROR("Async prgoress is not supported for model-parallel layer layout in sub-grid parallelism");
         }
@@ -1230,13 +1230,13 @@ void kfac_block_gru<Device>::start_communication_forward_end(
 
     for (auto& input : this->m_parent_local_activations) {
       if(dtl_parent.get_data_layout() == data_layout::DATA_PARALLEL)
-        input = std::make_unqiue<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+        input = std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
       else
-        input = std::make_unqiue<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+        input = std::make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
     }
 
     for (auto& weight : this->m_weight_values) {
-        weight = std::make_unqiue<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+        weight = std::make_unique<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
       }
 
 
@@ -1311,13 +1311,13 @@ void kfac_block_gru<Device>::start_communication_backward_end(
       for (auto& error : this->m_child_local_errors) {
 
         if(dtl_child.get_data_layout() == data_layout::DATA_PARALLEL){
-          error = std::make_unqiue<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          error = std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
           if(comm->enable_subgrid_async_communication())
             this->m_subset_matrix.push_back(
-                    std::make_unqiue<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_subset_grid(), 0));
+                    std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_subset_grid(), 0));
         }
         else{
-          error = std::make_unqiue<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          error = std::make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
           if(comm->enable_subgrid_async_communication())
             LBANN_ERROR("Async prgoress is not supported for model-parallel layer layout in sub-grid parallelism");
         }
@@ -1343,9 +1343,9 @@ void kfac_block_gru<Device>::start_communication_backward_end(
   if(comm->get_grid_type() == GridType::NO_GRID or comm->get_KFAC_subgrid_create_two_models()){
     for (auto& error : this->m_child_local_errors) {
       if(dtl_child.get_data_layout() == data_layout::DATA_PARALLEL)
-        error = std::make_unqiue<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+        error = std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
       else
-        error = std::make_unqiue<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+        error = std::make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
     }
     El::LockedView( *(this->m_child_local_errors[0]),local_errors );
   }
@@ -1431,7 +1431,7 @@ void kfac_block_gru<Device>::initialize_activations_and_errors(
 
       int iter = 0;
       for (auto& weight : this->m_weight_values) {
-        weight = std::make_unqiue<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+        weight = std::make_unique<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
         iter++;
       }
     }
@@ -1460,7 +1460,7 @@ void kfac_block_gru<Device>::initialize_activations_and_errors(
         error = std::make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
     }
     for (auto& weight : this->m_weight_values) {
-        weight = std::make_unqiue<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+        weight = std::make_unique<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
       }
 
 

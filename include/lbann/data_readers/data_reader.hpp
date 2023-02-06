@@ -636,9 +636,9 @@ class generic_data_reader {
    */
   virtual void use_unused_index_set(execution_mode m);
 
-  /// Does the data reader have a unqiue sample list per model
+  /// Does the data reader have a unique sample list per model
   virtual bool has_list_per_model() const { return false; }
-  /// Does the data reader have a unqiue sample list per trainer
+  /// Does the data reader have a unique sample list per trainer
   virtual bool has_list_per_trainer() const { return false; }
 
 
