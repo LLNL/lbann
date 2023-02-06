@@ -29,7 +29,7 @@
 
 #include "lbann/lbann_stl.hpp"
 
-#include <El.hpp>
+#include <El.hpp> // IWYU pragma: export
 
 // Defines, among other things, DataType.
 #include "lbann_config.hpp"
