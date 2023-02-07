@@ -360,8 +360,8 @@ void kfac_block_channelwise_fc<Device>::compute_preconditioned_gradients(
     if(m_has_bias) {
       auto& biases = this->m_layer->get_weights(1);
       optimizer *b_optimizer = biases.get_optimizer();
-      auto* b_dto = dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer);
       // BVE FIXME unused variable
+      // auto* b_dto = dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer);
       // const auto& b_grads_orig = b_dto->get_gradient().LockedMatrix();
 
 
