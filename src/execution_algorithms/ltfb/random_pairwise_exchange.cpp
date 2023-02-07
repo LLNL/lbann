@@ -228,7 +228,7 @@ int RandomPairwiseExchange::get_partner_trainer(
   // can all communicate the same pairs without communication
   std::shuffle(trainers.begin(), trainers.end(), get_ltfb_generator());
 
-  if (comm.am_world_master() or true) { // Root process
+  if (comm.am_world_master()) { // Root process
     auto const& arg_parser = global_argument_parser();
     bool const multitrainer_verbose =
       arg_parser.get<bool>(LBANN_OPTION_MULTITRAINER_VERBOSE);
