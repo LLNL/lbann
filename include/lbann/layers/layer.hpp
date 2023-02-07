@@ -218,7 +218,7 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-static std::ostream &print_parallel_strategy_header(std::ostream &os) {
+inline std::ostream &print_parallel_strategy_header(std::ostream &os) {
   os << "Axis over which DistConv can parallelize:\n"
      << "\tSamples in the mini-batch (N)\n"
      << "\tDepth, Height, and Width (D x H x W)\n"
