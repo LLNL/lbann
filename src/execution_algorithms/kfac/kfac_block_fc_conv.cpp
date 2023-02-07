@@ -378,8 +378,8 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
     if(m_has_bias) {
       auto& biases = this->m_layer->get_weights(1);
       optimizer *b_optimizer = biases.get_optimizer();
-      auto* b_dto = dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer);
       // BVE FIXME unused variable
+      // auto* b_dto = dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer);
       // const auto& b_grads_orig = b_dto->get_gradient().LockedMatrix();
 
 
@@ -561,7 +561,7 @@ void kfac_block_fc_conv<Device>::end_communication_forward_end(
     auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
 
     for(auto& req:this->m_requests_forward_end){
-      ::Al::Wait<::Al::NCCLBackend>(req);
+      ::Al::Wait<BackendT>(req);
     }
 
     if(primary_grid_ranks.size() < secondary_grid_ranks.size() and false){
@@ -675,7 +675,7 @@ void kfac_block_fc_conv<Device>::end_communication_backward_end(
     auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
 
     for(auto& req:this->m_requests_backward_end){
-      ::Al::Wait<::Al::NCCLBackend>(req);
+      ::Al::Wait<BackendT>(req);
     }
 
     if(primary_grid_ranks.size() < secondary_grid_ranks.size() and false){
@@ -737,7 +737,7 @@ void kfac_block_fc_conv<Device>::initialize_activations_and_errors(
 
     int async_progress = true;
 
-    std::vector<::Al::NCCLBackend::req_type> Requests, requests_subset;
+    std::vector<BackendT::req_type> Requests, requests_subset;
 
     if(async_progress==false)
     {
@@ -762,7 +762,7 @@ void kfac_block_fc_conv<Device>::initialize_activations_and_errors(
                                               this->get_current_batch_size(),
                                               Requests);
       for(auto& req:Requests){
-        ::Al::Wait<::Al::NCCLBackend>(req);
+        ::Al::Wait<BackendT>(req);
       }
       Requests.clear();
       // kfac::TranslateBetweenGridsVCAsync(*local_errors_vc,
@@ -778,7 +778,7 @@ void kfac_block_fc_conv<Device>::initialize_activations_and_errors(
       auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
 
       for(auto& req:Requests){
-        ::Al::Wait<::Al::NCCLBackend>(req);
+        ::Al::Wait<BackendT>(req);
       }
 
       if(async_progress and primary_grid_ranks.size() < secondary_grid_ranks.size()){
@@ -918,10 +918,10 @@ int kfac_block_fc_conv<Device>::get_inverse_matrices_size(lbann_comm *comm)
   const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
   const auto& dtl_child = dynamic_cast<const data_type_layer<DataType>&>(*child);
 
-  const El::Matrix<DataType,Device>& local_activations = comm->get_grid_type()==GridType::PRIMARY_GRID ? \
+  const auto& local_activations = comm->get_grid_type()==GridType::PRIMARY_GRID ? \
     dtl_parent.get_local_activations() : this->m_parent_local_activations[0]->Matrix();
 
-  const El::Matrix<DataType,Device>& local_errors = comm->get_grid_type()==GridType::PRIMARY_GRID ? \
+  const auto& local_errors = comm->get_grid_type()==GridType::PRIMARY_GRID ? \
     dtl_child.get_local_error_signals() : this->m_child_local_errors[0]->Matrix();
 
 
