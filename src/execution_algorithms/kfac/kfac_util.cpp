@@ -313,7 +313,7 @@ void get_matrix_inverse_eigen(
   El::Zeros(diag, Ainv.Height(), Ainv.Width());
 
   make_diagonal<Device>(
-        diag, w, 
+        diag, w,
         damping, damping_bn_err,
         is_bn,
         sync_info);
@@ -569,7 +569,7 @@ void allgather_inverse_matrices_sizes(
   global_buffer.Resize(num_blocks, 4);
   El::Zeros(global_buffer, global_buffer.Height(), global_buffer.Width());
 
-  int iter=0; 
+  int iter=0;
   for(auto& block : blocks) {
     const bool is_my_block = (block->get_inverse_proc_rank() == (size_t) comm->get_rank_in_trainer());
     if(is_my_block) {
@@ -636,7 +636,7 @@ void TranslateBetweenGridsVC
     const int nLocA = A.LocalWidth();
     El::mpi::Comm const& viewingCommB = B.Grid().ViewingComm();
     El::mpi::Group owningGroupA = A.Grid().OwningGroup();
-    
+
     // Compute the number of process rows and columns that each process
     // needs to send to.
     int colStrideA = A.ColStride();
@@ -794,7 +794,7 @@ void TranslateBetweenGridsVC
                     const int sendWidth = ((recvRankItr->second*rowStrideB + numInB)>= El::Mod(n,rowLCM)) ?
                                             floor(n/rowLCM) : floor(n/rowLCM)+1;
 
-                    El::mpi::Recv(recvBuf, m*sendWidth, recvRankItr->first, 
+                    El::mpi::Recv(recvBuf, m*sendWidth, recvRankItr->first,
                                   viewingCommB, syncInfoB);
 
                     // Unpack the data
@@ -898,10 +898,10 @@ void TranslateBetweenGridsVCAsync
         metaData[0] = 0;
         metaData[1] = 0;
     }
-    
+
     El::mpi::AllReduce( metaData, recvMetaData, 2, El::mpi::MAX, viewingCommB,syncGeneral);
     El::Synchronize(syncGeneral);
-    
+
     height = recvMetaData[0];
     width = recvMetaData[1];
 
@@ -931,13 +931,13 @@ void TranslateBetweenGridsVCAsync
     {
     const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& send_mat = commSizeA > commSizeB ? subset : A;
     bool in_send_grid = send_mat.Participating();
-    
 
-    const int transferSize =  commSizeA > commSizeB ? 
+
+    const int transferSize =  commSizeA > commSizeB ?
       subset.LocalHeight()*subset.LocalWidth() : A.LocalHeight()*A.LocalWidth();
 
     if(in_send_grid){
-      ReqT sendRequest;
+      kfac::ReqT sendRequest;
       Requests.push_back(sendRequest);
       int to_send_index = send_mat.Grid().VCRank();
       const int sendViewingRank = B.Grid().VCToViewing(to_send_index);
@@ -952,16 +952,16 @@ void TranslateBetweenGridsVCAsync
 
     if(inBGrid)
     {
-    ReqT recv_request;
+    kfac::ReqT recv_request;
     El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& recv_mat = commSizeA < commSizeB ? subset : B;
-    
+
 
     int comm_size_recv_mat = recv_mat.Grid().VCSize();
     int recv_index = rankB % comm_size_recv_mat;
     const int recvViewingRank = A.Grid().VCToViewing(recv_index);
         bool in_recv_grid = recv_mat.Participating();
 
-    const int transferSize =  commSizeA < commSizeB ? 
+    const int transferSize =  commSizeA < commSizeB ?
       subset.LocalHeight()*subset.LocalWidth() : B.LocalHeight()*B.LocalWidth();
         if(in_recv_grid)
         {
@@ -1025,7 +1025,8 @@ void TranslateBetweenGridsVCAsyncDirect
     if(!El::mpi::Congruent(viewingCommA, viewingCommB))
             LBANN_ERROR("communicators were not congruent");
 
-    const int rankB = B.Grid().VCRank();
+    // BVE FIXME unused variable
+    // const int rankB = B.Grid().VCRank();
 
     std::vector<int> columns_per_rankA, columns_per_rankB;
     std::vector<std::vector<int>> to_send_ranks, to_recv_ranks, num_cols_to_send, num_cols_to_recv;
@@ -1061,9 +1062,9 @@ void TranslateBetweenGridsVCAsyncDirect
 
     if(commSizeA!=commSizeB)
     {
-        
 
-        std::vector<int> columns_left_per_rankA(columns_per_rankA), 
+
+        std::vector<int> columns_left_per_rankA(columns_per_rankA),
                         columns_left_per_rankB(columns_per_rankB);
 
         for (int i=0; i< std::max(commSizeA, commSizeB); ++i)
@@ -1096,18 +1097,18 @@ void TranslateBetweenGridsVCAsyncDirect
                     int min_transfer = std::min(columns_left_per_rankA[i], columns_left_per_rankB[j]);
                     if(min_transfer>0)
                     {
-        
+
                         columns_left_per_rankA[i] = columns_left_per_rankA[i] - min_transfer;
                         columns_left_per_rankB[j] = columns_left_per_rankB[j] - min_transfer;
                         to_send_ranks[i].push_back(j);
                         to_recv_ranks[j].push_back(i);
-            
+
                         num_cols_to_send[i].push_back(min_transfer);
                         num_cols_to_recv[j].push_back(min_transfer);
                     }
-                    
+
                 }
-                
+
             }
         }
     }
@@ -1123,7 +1124,7 @@ void TranslateBetweenGridsVCAsyncDirect
         }
     }
 
-        
+
 
     BackendT::comm_type& backend_commB = activeCommB.template GetComm<BackendT>(syncInfoB);
     BackendT::comm_type& backend_commA = activeCommB.template GetComm<BackendT>(syncInfoA);
@@ -1138,7 +1139,7 @@ void TranslateBetweenGridsVCAsyncDirect
 
         for (int rank_to_send_index = 0; rank_to_send_index < int(to_send_ranks[my_rank].size()); ++rank_to_send_index)
         {
-            ReqT sendRequest;
+            kfac::ReqT sendRequest;
             Requests.push_back(sendRequest);
             const int transferSize =  A.LocalHeight()*num_cols_to_send[my_rank][rank_to_send_index];
             const int sendViewingRank = B.Grid().VCToViewing(to_send_ranks[my_rank][rank_to_send_index]);
@@ -1151,7 +1152,7 @@ void TranslateBetweenGridsVCAsyncDirect
 
             start_col += num_cols_to_send[my_rank][rank_to_send_index];
         }
-    
+
     }
 
     if(inBGrid)
@@ -1166,7 +1167,7 @@ void TranslateBetweenGridsVCAsyncDirect
         {
 
 
-            ReqT recv_request;
+            kfac::ReqT recv_request;
             Requests.push_back(recv_request);
             const int recvViewingRank = A.Grid().VCToViewing(to_recv_ranks[my_rank][rank_to_recv_index]);
             const int transferSize =  B.LocalHeight()*num_cols_to_recv[my_rank][rank_to_recv_index];
@@ -1263,7 +1264,7 @@ void TranslateBetweenGridsSTARAsync
          transferSize,
          recvViewingRank,
          backend_commA,
-         Requests.back());      
+         Requests.back());
     }
 }
 
@@ -1283,9 +1284,9 @@ void TranslateBetweenGridsKFACAsync
   El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B,
   std::vector<ReqT>& Requests)
 {
-    //Transfers matrix A to B without keeping the order of columns 
+    //Transfers matrix A to B without keeping the order of columns
     //It should be used when column order does not matter
-    // like each column corresponds to different samples in DNN training  
+    // like each column corresponds to different samples in DNN training
     const int height = A.Height();
     const int width = A.Width();
     B.Resize(height, width);
@@ -1318,7 +1319,7 @@ void TranslateBetweenGridsKFACAsync
 
     std::vector<int>  ranksFromRecvData, ranksToSendData,dataToRecvRanks, dataToSendRanks;
 
-    //Determine ranks to send/recv  data 
+    //Determine ranks to send/recv  data
 
     if(inAGrid){
         //myEndingindex is the index of last data to send
@@ -1345,7 +1346,7 @@ void TranslateBetweenGridsKFACAsync
             {
                 updated_flag = true;
                 dataToSendRanks.push_back(endingIndexB- myStartingIndex +1);
-                ranksToSendData.push_back(i);             
+                ranksToSendData.push_back(i);
             }
             if(startingIndexB<myStartingIndex and  endingIndexB>myEndingIndex){
                 updated_flag = true;
@@ -1403,7 +1404,7 @@ void TranslateBetweenGridsKFACAsync
     int initialIndex=0;
     if(inAGrid)
     {
-        for(int num_send = 0; num_send<(int)ranksToSendData.size(); num_send++){ 
+        for(int num_send = 0; num_send<(int)ranksToSendData.size(); num_send++){
             ReqT sendRequest;
             Requests.push_back(sendRequest);
             const int sendViewingRank = B.Grid().VCToViewing(ranksToSendData[num_send]);
@@ -1413,17 +1414,17 @@ void TranslateBetweenGridsKFACAsync
                transferSize,
                sendViewingRank,
                activeCommB.template GetComm<BackendT>(syncInfoA),
-               Requests.back()); 
-            initialIndex +=dataToSendRanks[num_send];      
+               Requests.back());
+            initialIndex +=dataToSendRanks[num_send];
       }
     }
 
     if(inBGrid)
     {
-        for(int num_recv = 0; num_recv<(int)ranksFromRecvData.size(); num_recv++){ 
+        for(int num_recv = 0; num_recv<(int)ranksFromRecvData.size(); num_recv++){
             ReqT recvRequest;
             Requests.push_back(recvRequest);
-            
+
             const int recvViewingRank = A.Grid().VCToViewing(ranksFromRecvData[num_recv]);
             transferSize = height*dataToRecvRanks[num_recv];
 
@@ -1432,11 +1433,11 @@ void TranslateBetweenGridsKFACAsync
                transferSize,
                recvViewingRank,
                activeCommB.template GetComm<BackendT>(syncInfoB),
-               Requests.back()); 
+               Requests.back());
 
-            initialIndex +=dataToRecvRanks[num_recv]; 
+            initialIndex +=dataToRecvRanks[num_recv];
         }
-          
+
     }
 }
 
@@ -1580,7 +1581,7 @@ void unpack_lower_tri(
       <kfac_block<Device>>>& blocks,            \
       El::Matrix<T, Device>&                    \
       global_buffer,                            \
-      lbann_comm *comm);                        
+      lbann_comm *comm);
 #define PROTO_DEVICECOMM(T, Device)                 \
   template void TranslateBetweenGridsVCAsync(                       \
       const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,      \
@@ -1603,7 +1604,7 @@ void unpack_lower_tri(
       std::vector<ReqT>& Requests);                  \
   template void TranslateBetweenGridsVC(                         \
       const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,    \
-      El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B); 
+      El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B);
 
 
 

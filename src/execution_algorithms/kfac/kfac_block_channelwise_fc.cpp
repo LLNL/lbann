@@ -97,7 +97,7 @@ void kfac_block_channelwise_fc<Device>::compute_local_kronecker_factors(
   m_height_G = local_errors_reshaped.Height();
   auto& A = this->get_workspace_matrix("A", m_height_A, m_height_A);
   auto& G = this->get_workspace_matrix("G", m_height_G, m_height_G);
-   
+
   if(m_has_bias) {
     auto& local_activations_with_ones = this->get_workspace_matrix(
         "local_activations_with_ones",
@@ -120,7 +120,7 @@ void kfac_block_channelwise_fc<Device>::compute_local_kronecker_factors(
 
 
 
-  
+
 
   m_kronecker_factor_buf_A.Resize(A.Height()*(A.Height()+1)/2, 1);
   m_kronecker_factor_buf_G.Resize(G.Height()*(G.Height()+1)/2, 1);
@@ -213,11 +213,12 @@ void kfac_block_channelwise_fc<Device>::update_kronecker_inverse(
   const auto &Gave = m_kronecker_average_G;
   // Compute the pi constant
   DataType pi = 1.0;
-  if(use_pi) {
-    auto& ws = this->get_workspace_matrix(
-        "pi_ws", std::max(Aave.Height(), Gave.Height())*2+1, 1);
-    // pi = compute_pi(Aave, Gave, ws, sync_info);
-  }
+  // BVE FIXME unused variable
+  // if(use_pi) {
+  //   auto& ws = this->get_workspace_matrix(
+  //       "pi_ws", std::max(Aave.Height(), Gave.Height())*2+1, 1);
+  //   // pi = compute_pi(Aave, Gave, ws, sync_info);
+  // }
   // Compute the inverse of the factors
   // Since setting different damping constants for A and G is an
   // alternative heuristics to pi, they should be the same if pi is used.
@@ -290,14 +291,15 @@ void kfac_block_channelwise_fc<Device>::compute_preconditioned_gradients(
   const auto& w_grads_orig = w_dto->get_gradient().LockedMatrix();
   El::Matrix<DataType, Device> w_gradients;
 
-  auto& w_grads_scaling = this->get_workspace_matrix(
-          "w_grads_scaling", 1, 1);
-  auto& b_grads_scaling = this->get_workspace_matrix(
-          "b_grads_scaling", 1, 1);
+  // BVE FIXME These variable seem to be unused
+  // auto& w_grads_scaling = this->get_workspace_matrix(
+  //         "w_grads_scaling", 1, 1);
+  // auto& b_grads_scaling = this->get_workspace_matrix(
+  //         "b_grads_scaling", 1, 1);
 
-  auto& w_grads_scaling_mat = this->get_workspace_matrix(
-          "w_grads_scaling_mat", w_grads_orig.Height(), w_grads_orig.Width());
-  
+  // auto& w_grads_scaling_mat = this->get_workspace_matrix(
+  //         "w_grads_scaling_mat", w_grads_orig.Height(), w_grads_orig.Width());
+
   // w_gradients is already synchronized among processes.
 
   if(m_has_bias) {
@@ -325,10 +327,10 @@ void kfac_block_channelwise_fc<Device>::compute_preconditioned_gradients(
                              w_grads_orig.LockedBuffer(),
                              w_grads_orig.Height());
   }
-  
+
 
   // Compute preconditioned gradients
-      
+
   auto& Gg = this->get_workspace_matrix(
       "Gg",
       Ginv.Height(),
@@ -359,7 +361,8 @@ void kfac_block_channelwise_fc<Device>::compute_preconditioned_gradients(
       auto& biases = this->m_layer->get_weights(1);
       optimizer *b_optimizer = biases.get_optimizer();
       auto* b_dto = dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer);
-      const auto& b_grads_orig = b_dto->get_gradient().LockedMatrix();
+      // BVE FIXME unused variable
+      // const auto& b_grads_orig = b_dto->get_gradient().LockedMatrix();
 
 
       auto& grad_buffer_biases = b_optimizer->get_gradient_buffer(
@@ -369,13 +372,14 @@ void kfac_block_channelwise_fc<Device>::compute_preconditioned_gradients(
       auto Fgrad_biases = El::View(
           Fgrad, El::ALL, El::IR(grad_buffer.Width(), grad_buffer.Width()+1));
 
-      auto& b_grads_scaled = this->get_workspace_matrix(
-          "b_grads_scaling_mat", b_grads_orig.Height(), b_grads_orig.Width());
+      // BVE FIXME unused variable
+      // auto& b_grads_scaled = this->get_workspace_matrix(
+      //     "b_grads_scaling_mat", b_grads_orig.Height(), b_grads_orig.Width());
 
       El::Matrix<DataType> XCPU(Fgrad_weights);
       El::Matrix<DataType> BCPU(Fgrad_biases);
       auto w_grads_scaling = El::Dot(XCPU, XCPU);
-      auto b_grads_scaling = El::Dot(BCPU, BCPU); 
+      auto b_grads_scaling = El::Dot(BCPU, BCPU);
 
       auto w_grads_scaling_factor = std::min(1.0, std::sqrt (0.001 / (w_grads_scaling * learning_rate * learning_rate)));
       auto w_bias_scaling_factor = std::min(1.0, std::sqrt (0.001 / (b_grads_scaling * learning_rate * learning_rate)));
@@ -466,9 +470,10 @@ void kfac_block_channelwise_fc<Device>::start_communication_forward_end(
       // const auto local_activations_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_activations));
       El::DistMatrixReadProxy<DataType, DataType, El::STAR, El::VC, El::ELEMENT, Device> star_vc_prox(parent_activations);
       El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device> const& star_vc_mat = star_vc_prox.GetLocked();
-      
+
       auto local_activations0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[0]));
-      auto subset0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[0]));
+      // BVE FIXME this looks to be unused
+      // auto subset0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[0]));
 
       if(this->m_enable_copy_activations)
       {
@@ -782,7 +787,7 @@ kfac_block_channelwise_fc<Device>::get_preconditioned_grad_buffers() {
     std::vector<El::AbstractMatrix<DataType>*>
         ret = {&m_grad_buffer_v};
     return ret;
-  
+
 }
 
 //////////////////////////////////////////////////////////////

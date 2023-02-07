@@ -282,14 +282,15 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
   const auto& w_grads_orig = w_dto->get_gradient().LockedMatrix();
   El::Matrix<DataType, Device> w_gradients;
 
-  auto& w_grads_scaling = this->get_workspace_matrix(
-          "w_grads_scaling", 1, 1);
-  auto& b_grads_scaling = this->get_workspace_matrix(
-          "b_grads_scaling", 1, 1);
+  // BVE FIXME unused variables
+  // auto& w_grads_scaling = this->get_workspace_matrix(
+  //         "w_grads_scaling", 1, 1);
+  // auto& b_grads_scaling = this->get_workspace_matrix(
+  //         "b_grads_scaling", 1, 1);
 
-  auto& w_grads_scaling_mat = this->get_workspace_matrix(
-          "w_grads_scaling_mat", w_grads_orig.Height(), w_grads_orig.Width());
-  
+  // auto& w_grads_scaling_mat = this->get_workspace_matrix(
+  //         "w_grads_scaling_mat", w_grads_orig.Height(), w_grads_orig.Width());
+
   // w_gradients is already synchronized among processes.
   if(m_is_conv) {
     const auto num_output_channels = this->m_layer->get_output_dims()[0];
@@ -356,11 +357,11 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
                          grad_buffer.Buffer(),
                          Fgrad.Width());
 
-    //Cliping 
+    //Cliping
     // El::Gemm(
-    //   El::NORMAL, El::NORMAL, El::TypeTraits<DataType>::One(), 
-    //   El::Reshape(1, Fgrad.Height()*Fgrad.Width(), Fgrad), 
-    //   El::Reshape(w_grads_orig.Height()*w_grads_orig.Width(), 1, w_grads_orig), 
+    //   El::NORMAL, El::NORMAL, El::TypeTraits<DataType>::One(),
+    //   El::Reshape(1, Fgrad.Height()*Fgrad.Width(), Fgrad),
+    //   El::Reshape(w_grads_orig.Height()*w_grads_orig.Width(), 1, w_grads_orig),
     //   El::TypeTraits<DataType>::Zero(), w_grads_scaling
     // );
 
@@ -368,7 +369,7 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
     auto w_grads_scaling = El::Dot(XCPU, XCPU);
     auto w_grads_scaling_factor = std::min(1.0, std::sqrt (0.001 / (w_grads_scaling * learning_rate * learning_rate)));
     El::Scale(w_grads_scaling_factor, Fgrad);
-      
+
     El::Transpose(Fgrad, grad_buffer_v);
   } else {
     assert(Fgrad.Height() == w_gradients.Height());
@@ -378,7 +379,8 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
       auto& biases = this->m_layer->get_weights(1);
       optimizer *b_optimizer = biases.get_optimizer();
       auto* b_dto = dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer);
-      const auto& b_grads_orig = b_dto->get_gradient().LockedMatrix();
+      // BVE FIXME unused variable
+      // const auto& b_grads_orig = b_dto->get_gradient().LockedMatrix();
 
 
       auto& grad_buffer_biases = b_optimizer->get_gradient_buffer(
@@ -388,26 +390,27 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
       auto Fgrad_biases = El::View(
           Fgrad, El::ALL, El::IR(grad_buffer.Width(), grad_buffer.Width()+1));
 
-      auto& b_grads_scaled = this->get_workspace_matrix(
-          "b_grads_scaling_mat", b_grads_orig.Height(), b_grads_orig.Width());
+      // BVE FIXME
+      // auto& b_grads_scaled = this->get_workspace_matrix(
+      //     "b_grads_scaling_mat", b_grads_orig.Height(), b_grads_orig.Width());
 
-      //Cliping 
+      //Cliping
       // El::Gemm(
-      //   El::NORMAL, El::NORMAL, El::TypeTraits<DataType>::One(), 
-      //   El::Reshape(1, Fgrad_weights.Height()*Fgrad_weights.Width(), Fgrad_weights), 
-      //   El::Reshape(w_grads_orig.Height()*w_grads_orig.Width(), 1, w_grads_orig), 
+      //   El::NORMAL, El::NORMAL, El::TypeTraits<DataType>::One(),
+      //   El::Reshape(1, Fgrad_weights.Height()*Fgrad_weights.Width(), Fgrad_weights),
+      //   El::Reshape(w_grads_orig.Height()*w_grads_orig.Width(), 1, w_grads_orig),
       //   El::TypeTraits<DataType>::Zero(), w_grads_scaling
       // );
       // El::Gemm(
-      //   El::NORMAL, El::NORMAL, El::TypeTraits<DataType>::One(), 
-      //   El::Reshape(1, Fgrad_biases.Height()*Fgrad_biases.Width(), Fgrad_biases), 
-      //   El::Reshape(b_grads_orig.Height()*b_grads_orig.Width(), 1, b_grads_orig), 
+      //   El::NORMAL, El::NORMAL, El::TypeTraits<DataType>::One(),
+      //   El::Reshape(1, Fgrad_biases.Height()*Fgrad_biases.Width(), Fgrad_biases),
+      //   El::Reshape(b_grads_orig.Height()*b_grads_orig.Width(), 1, b_grads_orig),
       //   El::TypeTraits<DataType>::Zero(), b_grads_scaling
       // );
       El::Matrix<DataType> XCPU(Fgrad_weights);
       El::Matrix<DataType> BCPU(Fgrad_biases);
       auto w_grads_scaling = El::Dot(XCPU, XCPU);
-      auto b_grads_scaling = El::Dot(BCPU, BCPU); 
+      auto b_grads_scaling = El::Dot(BCPU, BCPU);
 
       auto w_grads_scaling_factor = std::min(1.0, std::sqrt (0.001 / (w_grads_scaling * learning_rate * learning_rate)));
       auto w_bias_scaling_factor = std::min(1.0, std::sqrt (0.001 / (b_grads_scaling * learning_rate * learning_rate)));
@@ -419,11 +422,11 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
       El::Copy(Fgrad_biases, grad_buffer_biases.Matrix());
 
     } else {
-      //Cliping 
+      //Cliping
       // El::Gemm(
-      //   El::NORMAL, El::NORMAL, El::TypeTraits<DataType>::One(), 
-      //   El::Reshape(1, Fgrad.Height()*Fgrad.Width(), Fgrad), 
-      //   El::Reshape(w_grads_orig.Height()*w_grads_orig.Width(), 1, w_grads_orig), 
+      //   El::NORMAL, El::NORMAL, El::TypeTraits<DataType>::One(),
+      //   El::Reshape(1, Fgrad.Height()*Fgrad.Width(), Fgrad),
+      //   El::Reshape(w_grads_orig.Height()*w_grads_orig.Width(), 1, w_grads_orig),
       //   El::TypeTraits<DataType>::Zero(), w_grads_scaling
       // );
       El::Matrix<DataType> XCPU(Fgrad);
@@ -505,9 +508,10 @@ void kfac_block_fc_conv<Device>::start_communication_forward_end(
       El::DistMatrixReadProxy<DataType, DataType, El::STAR, El::VC, El::ELEMENT, Device> star_vc_prox(parent_activations);
       El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device> const& star_vc_mat = star_vc_prox.GetLocked();
 
-      
+
       auto local_activations0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[0]));
-      auto subset0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[0]));
+      // BVE FIXME unused variable
+      // auto subset0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[0]));
 
       if(this->m_enable_copy_activations)
       {
