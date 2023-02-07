@@ -197,6 +197,7 @@ bool is_p2p_shuffle_feasible(const Tensor &tensor) {
   return true;
 }
 
+#ifdef DISTCONV_HAS_P2P
 void *shuffler_src_buf = nullptr;
 size_t shuffler_src_buf_size = 0;
 void *shuffler_dst_buf = nullptr;
@@ -249,6 +250,7 @@ void delete_shuffler_buffers() {
     shuffler_dst_buf = nullptr;
   }
 }
+#endif
 } // namespace
 
 int get_strided_mpi_rank(MPI_Comm comm) {
@@ -312,7 +314,9 @@ void finalize() {
     delete backend_instance;
     backend_instance = nullptr;
     initialized = false;
+#ifdef DISTCONV_HAS_P2P
     delete_shuffler_buffers();
+#endif
   }
 }
 
