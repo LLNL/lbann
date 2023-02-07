@@ -59,7 +59,7 @@ inline TensorDataType tanh_inv(const TensorDataType& x) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////
-////  Sub-Grid Parallelism Communicatton Functions
+////  Sub-Grid Parallelism Communication Functions
 //////////////////////////////////////////////////////////////////////////////////
 
 template <>
@@ -912,9 +912,6 @@ void kfac_block_gru<Device>::get_weight_matrix(
     El::Matrix<DataType, Device>& view) {
   const size_t hidden_size = get_hidden_size();
   const auto ids = kfac_gru_util::get_gru_weight_offset(matrix_type);
-  // const auto& weights_mat = El::LockedView(
-  //     *this->m_weight_values[ids.first],
-  //     El::IR(hidden_size*ids.second, hidden_size*(ids.second+1)), El::ALL);
   auto weight_ptr = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&(*this->m_weight_values[ids.first]));
   const auto& weights_mat = El::LockedView(
       weight_ptr->LockedMatrix(),
