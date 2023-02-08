@@ -28,8 +28,6 @@ syntax = "proto3";
 
 package lbann_data;
 
-import "datatype.proto";
-
 import "callbacks.proto";
 
 import "training_algorithm.proto";

@@ -45,6 +45,7 @@ std::unique_ptr<lbann::Layer> lbann::build_bilinear_resize_layer_from_pbuf(
                                                                params.height(),
                                                                params.width());
   }
+  (void) comm;
   LBANN_ERROR(
     "bilinear resize layer is only supported with a data-parallel layout");
   return nullptr;
@@ -72,6 +73,7 @@ lbann::build_composite_image_transformation_layer_from_pbuf(
                   "\"float\" and \"double\".");
   }
   else {
+    (void) comm;
     LBANN_ERROR("composite image transformation layer is only supported with "
                 "a data-parallel layout and on CPU");
     return nullptr;
@@ -92,10 +94,13 @@ lbann::build_rotation_layer_from_pbuf(lbann_comm* comm,
       return std::make_unique<
         rotation_layer<double, data_layout::DATA_PARALLEL, El::Device::CPU>>(
         comm);
-    else
+    else {
+      (void) comm;
       LBANN_ERROR(
         "rotation_layer is only supported for \"float\" and \"double\".");
+    }
   else {
+    (void) comm;
     LBANN_ERROR("rotation layer is only supported with a data-parallel layout "
                 "and on CPU");
     return nullptr;
@@ -105,7 +110,7 @@ lbann::build_rotation_layer_from_pbuf(lbann_comm* comm,
 template <typename T, lbann::data_layout L, El::Device D>
 std::unique_ptr<lbann::Layer>
 lbann::build_cutout_layer_from_pbuf(lbann_comm* comm,
-                                      lbann_data::Layer const&)
+                                    lbann_data::Layer const&)
 {
   if constexpr (L == data_layout::DATA_PARALLEL && D == El::Device::CPU)
     if constexpr (std::is_same_v<T, float>)
@@ -116,10 +121,13 @@ lbann::build_cutout_layer_from_pbuf(lbann_comm* comm,
       return std::make_unique<
         cutout_layer<double, data_layout::DATA_PARALLEL, El::Device::CPU>>(
         comm);
-    else
+    else {
+      (void) comm;
       LBANN_ERROR(
         "cutout_layer is only supported for \"float\" and \"double\".");
+    }
   else {
+    (void) comm;
     LBANN_ERROR("cutout layer is only supported with a data-parallel layout "
                 "and on CPU");
     return nullptr;

@@ -1155,7 +1155,7 @@ void base_convolution_adapter<TensorDataType, Device>::setup_fp_tensors() {
   dc::util::print_vector(ss, kernel_dims.begin(), kernel_dims.end());
 
   // assumes no partitioning on channel/filter dimensions
-  assert_eq(input_dist.get_split_shape()[-2], 1);
+  assert_eq(input_dist.get_split_shape()[-2], 1ul);
   auto shared_dist = dc::Dist::make_shared_distribution(
     input_dist.get_locale_shape());
 

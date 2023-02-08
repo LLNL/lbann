@@ -41,11 +41,11 @@ void do_abs_bp(El::Matrix<RealT, El::Device::CPU> const& x,
   internal::EntrywiseZipInto(x,
                              gradient_wrt_output,
                              gradient_wrt_input,
-                             [](RealT const& x, RealT const& dy) {
-                               return (x > El::TypeTraits<RealT>::Zero()
-                                         ? dy
-                                         : (x < El::TypeTraits<RealT>::Zero()
-                                              ? -dy
+                             [](RealT const& x_, RealT const& dy_) {
+                               return (x_ > El::TypeTraits<RealT>::Zero()
+                                         ? dy_
+                                         : (x_ < El::TypeTraits<RealT>::Zero()
+                                              ? -dy_
                                               : El::TypeTraits<RealT>::Zero()));
                              });
 }

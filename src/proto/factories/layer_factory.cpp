@@ -279,6 +279,8 @@ std::unique_ptr<Layer> construct_layer(lbann_comm* comm,
         num_parallel_readers,
         proto_layer);
     else {
+      (void) training_dr_linearized_data_size;
+      (void) num_parallel_readers;
       LBANN_ERROR("Currently, layers of type \"",
                   msg.GetDescriptor()->name(),
                   "\" are not constructible with any type other than the "
