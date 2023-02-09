@@ -53,7 +53,7 @@ def construct_model(lbann):
     """
 
     # Layer graph
-    x = lbann.Input()
+    x = lbann.Input(data_field='samples')
     x = lbann.FullyConnected(x, num_neurons=1)
 
     # Model objects
