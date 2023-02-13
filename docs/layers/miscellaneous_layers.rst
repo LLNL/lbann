@@ -18,6 +18,7 @@ Miscellaneous Layers
    :ref:`ChannelwiseSoftmax`, "Softmax across channel dimension"
    :ref:`Covariance`, "Covariance between entries of two tensors"
    :ref:`DistEmbedding`, "Embedding layer with distributed weights"
+   :ref:`External`, "Create layer from an external library"
    :ref:`MiniBatchIndex`, "Position of data sample within mini-batch"
    :ref:`MiniBatchSize`, "Size of current mini-batch"
    :ref:`OneHot`, "Convert index to a one-hot vector"
@@ -180,6 +181,44 @@ Arguments:
       .. todo:: Think of a way to avoid this synchronization.
 
 :ref:`Back to Top<miscellaneous-layers>`
+
+
+.. _External:
+
+----------------------------------------
+External
+----------------------------------------
+
+Create layer from an external library
+
+An external layer can be created by compiling an LBANN layer object in
+a separate shared library (such as an .so file), along with a setup
+function that creates it. This layer accepts a file path and a
+layer name (so more than one can exist in a library), and
+will invoke the library dynamically to create the layer. The layer
+in the external library can be set with an arbitrary number of inputs,
+outputs, and weights.
+
+Compiling a layer only needs to include the LBANN headers and link against
+``liblbann.so``. An ``extern "C"`` function named ``setup_<LAYER NAME>`` 
+must exist for LBANN to be able to create the layer.
+
+.. warning::
+   Make sure you link the library with the version of LBANN you plan to
+   run it with.
+
+
+.. note:: An example layer can be found in ``src/layers/unit_test/example_layer.cpp``.
+
+Arguments:
+
+   :filename: (``string``) Library file name or path.
+
+   :layer_name: (``string``) Layer name for setup function.
+
+
+:ref:`Back to Top<miscellaneous-layers>`
+
 
 ________________________________________
 

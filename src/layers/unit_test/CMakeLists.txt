@@ -1,5 +1,5 @@
 ################################################################################
-## Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 ## Produced at the Lawrence Livermore National Laboratory.
 ## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 ## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,9 +24,17 @@
 ## permissions and limitations under the license.
 ################################################################################
 set_full_path(THIS_DIR_MPI_CATCH2_TEST_FILES
+  external_layer_test.cpp
   operator_layer_test.cpp
-  )
+)
 
 set(LBANN_MPI_CATCH2_TEST_FILES
   "${LBANN_MPI_CATCH2_TEST_FILES}"
   "${THIS_DIR_MPI_CATCH2_TEST_FILES}" PARENT_SCOPE)
+
+add_library(example_layer SHARED example_layer.cpp)
+target_include_directories(example_layer PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
+  $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/src/proto>
+)

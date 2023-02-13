@@ -32,12 +32,15 @@
 #include "lbann/layers/misc/channelwise_softmax.hpp"
 #include "lbann/layers/misc/covariance.hpp"
 #include "lbann/layers/misc/dft_abs.hpp"
+#include "lbann/layers/misc/external.hpp"
 #include "lbann/layers/misc/mini_batch_index.hpp"
 #include "lbann/layers/misc/mini_batch_size.hpp"
 #include "lbann/layers/misc/one_hot.hpp"
 #include "lbann/layers/misc/rowwise_weights_norms.hpp"
 #include "lbann/layers/misc/uniform_hash.hpp"
 #include "lbann/layers/misc/variance.hpp"
+
+#include "lbann/proto/datatype_helpers.hpp"
 
 #include "lbann/utils/protobuf.hpp"
 
@@ -257,6 +260,27 @@ lbann::build_dft_abs_layer_from_pbuf(lbann_comm* comm, lbann_data::Layer const&)
 
 template <typename T, lbann::data_layout L, El::Device D>
 std::unique_ptr<lbann::Layer>
+lbann::build_external_layer_from_pbuf(lbann_comm* comm,
+                                      lbann_data::Layer const& proto_layer)
+{
+  lbann::external_layer_setup_t setupfunc =
+    load_external_library(proto_layer.external().filename(),
+                          proto_layer.external().layer_name());
+
+  lbann::Layer* layer =
+    setupfunc(lbann::proto::TypeToProtoDataType<T>::value, L, D, comm);
+  if (!layer) {
+    LBANN_ERROR("External layer \"",
+                proto_layer.external().filename(),
+                "\" could not be initialized with the chosen configuration.");
+    return nullptr;
+  }
+
+  return std::unique_ptr<lbann::Layer>(layer);
+}
+
+template <typename T, lbann::data_layout L, El::Device D>
+std::unique_ptr<lbann::Layer>
 lbann::build_mini_batch_index_layer_from_pbuf(lbann_comm* comm,
                                               lbann_data::Layer const&)
 {
@@ -316,6 +340,7 @@ namespace lbann {
   LBANN_LAYER_BUILDER_ETI(channelwise_softmax, T, Device);                     \
   LBANN_LAYER_BUILDER_ETI(covariance, T, Device);                              \
   LBANN_LAYER_BUILDER_ETI(dft_abs, T, Device);                                 \
+  LBANN_LAYER_BUILDER_ETI(external, T, Device);                                \
   LBANN_LAYER_BUILDER_ETI(mini_batch_index, T, Device);                        \
   LBANN_LAYER_BUILDER_ETI(mini_batch_size, T, Device);                         \
   LBANN_LAYER_BUILDER_ETI(one_hot, T, Device);                                 \

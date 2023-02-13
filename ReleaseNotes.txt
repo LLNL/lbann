@@ -32,6 +32,7 @@ Support for new layers:
 - Updated identity layer to copy tensors to enable tensor parallelism in subsequent layers in the compute graph
 - Added IdentityZero layer that allows alternating generator/discriminator
   updates for training GANs.
+- Added an External layer that enables separately-compiled library to be loaded dynamically
 
 Python front-end:
  - Added support for buidling and launching jobs on Fugaku

@@ -232,7 +232,7 @@ message Layer {
     DistEmbedding dist_embedding = 311;
     UniformHash uniform_hash = 312;
     RowwiseWeightsNorms rowwise_weights_norms = 313;
-
+    External external = 314;
   }
 
   // ---------------------------
@@ -1420,6 +1420,19 @@ message Layer {
   message OneHot {
     /// Size of one-hot vector
     int64 size = 1;
+  }
+
+  /** @brief Create layer from an external library
+   *
+   *  Expects any number of input tensors. Invokes a shared object (e.g., .so file)
+   *  to call the layer.
+   */
+   message External {
+    /// Library filename or path
+    string filename = 1;
+
+    /// Layer name for setup function (called "setup_<layer name>")
+    string layer_name = 2;
   }
 
   /** @brief Softmax across channel dimension

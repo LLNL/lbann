@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -23,27 +23,30 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef LBANN_LAYERS_MISC_MISC_BUILDERS_HPP_INCLUDED
-#define LBANN_LAYERS_MISC_MISC_BUILDERS_HPP_INCLUDED
 
+#ifndef LBANN_LAYERS_MISC_EXTERNAL_HPP_INCLUDED
+#define LBANN_LAYERS_MISC_EXTERNAL_HPP_INCLUDED
+
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/proto/datatype.pb.h"
 
-namespace lbann {
+namespace lbann
+{
 
-LBANN_DEFINE_LAYER_BUILDER(argmax);
-LBANN_DEFINE_LAYER_BUILDER(argmin);
-LBANN_DEFINE_LAYER_BUILDER(channelwise_mean);
-LBANN_DEFINE_LAYER_BUILDER(channelwise_softmax);
-LBANN_DEFINE_LAYER_BUILDER(covariance);
-LBANN_DEFINE_LAYER_BUILDER(dft_abs);
-LBANN_DEFINE_LAYER_BUILDER(dist_embedding);
-LBANN_DEFINE_LAYER_BUILDER(external);
-LBANN_DEFINE_LAYER_BUILDER(mini_batch_index);
-LBANN_DEFINE_LAYER_BUILDER(mini_batch_size);
-LBANN_DEFINE_LAYER_BUILDER(one_hot);
-LBANN_DEFINE_LAYER_BUILDER(rowwise_weights_norms);
-LBANN_DEFINE_LAYER_BUILDER(uniform_hash);
-LBANN_DEFINE_LAYER_BUILDER(variance);
+typedef Layer* (*external_layer_setup_t)(lbann_data::DataType datatype,
+                                         data_layout layout,
+                                         El::Device device,
+                                         lbann_comm* comm);
+
+/** @brief Create layer from an external library
+ *
+ *  Expects any number of input tensors. Invokes a shared object (e.g., .so
+ *  file) to call the layer.
+ */
+external_layer_setup_t load_external_library(const std::string& filename,
+                                             const std::string& layer_name);
 
 } // namespace lbann
-#endif // LBANN_LAYERS_MISC_MISC_BUILDERS_HPP_INCLUDED
+
+#endif // LBANN_LAYERS_MISC_EXTERNAL_HPP_INCLUDED
