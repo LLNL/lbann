@@ -45,7 +45,7 @@ typedef Layer* (*external_layer_setup_t)(lbann_data::DataType datatype,
  *  file) to call the layer.
  */
 external_layer_setup_t load_external_library(const std::string& filename,
-                                             std::string layer_name);
+                                             std::string const& layer_name);
 
 } // namespace lbann
 

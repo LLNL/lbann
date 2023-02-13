@@ -34,7 +34,7 @@
 namespace lbann {
 
 external_layer_setup_t load_external_library(const std::string& filename,
-                                             std::string layer_name)
+                                             std::string const& layer_name)
 {
   ////////////////////////////////////////////////////
   // Load the library handles dynamically using dlopen
@@ -53,7 +53,7 @@ external_layer_setup_t load_external_library(const std::string& filename,
   if (layer_name.length() == 0)
     layer_name = "layer";
 
-  std::string setup_funcname = std::string("setup_") + layer_name;
+  std::string const setup_funcname = std::string("setup_") + layer_name;
   external_layer_setup_t setup_funcptr =
     (external_layer_setup_t)dlsym(handle, setup_funcname.c_str());
   if (!setup_funcptr) {
