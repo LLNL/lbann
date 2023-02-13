@@ -1431,7 +1431,7 @@ message Layer {
     /// Library filename or path
     string filename = 1;
 
-    /// Optional layer name for setup function (if not given, the name "layer" is used)
+    /// Layer name for setup function (called "setup_<layer name>")
     string layer_name = 2;
   }
 

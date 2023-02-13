@@ -34,11 +34,11 @@
 namespace lbann {
 
 external_layer_setup_t load_external_library(const std::string& filename,
-                                             std::string const& layer_name)
+                                             const std::string& layer_name)
 {
   ////////////////////////////////////////////////////
   // Load the library handles dynamically using dlopen
-  void *handle = dlopen(filename.c_str(), RTLD_LAZY);
+  void* handle = dlopen(filename.c_str(), RTLD_LAZY);
   if (!handle) {
     LBANN_ERROR(
       "Cannot load library for external layer forward pass (filename: \"",
@@ -50,8 +50,12 @@ external_layer_setup_t load_external_library(const std::string& filename,
 
   ////////////////////////////////////////////////////
   // Collect functions from libraries based on device
-  if (layer_name.length() == 0)
-    layer_name = "layer";
+  if (layer_name.length() == 0) {
+    LBANN_ERROR("External layer (filename: \"",
+                filename,
+                "\") did not define a layer name.");
+    return nullptr;
+  }
 
   std::string const setup_funcname = std::string("setup_") + layer_name;
   external_layer_setup_t setup_funcptr =

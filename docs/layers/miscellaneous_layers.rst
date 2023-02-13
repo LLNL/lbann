@@ -193,8 +193,8 @@ Create layer from an external library
 
 An external layer can be created by compiling an LBANN layer object in
 a separate shared library (such as an .so file), along with a setup
-function that creates it. This layer accepts a file path and an
-optional layer name (if more than one exist in the library), and
+function that creates it. This layer accepts a file path and a
+layer name (so more than one can exist in a library), and
 will invoke the library dynamically to create the layer. The layer
 in the external library can be set with an arbitrary number of inputs,
 outputs, and weights.
