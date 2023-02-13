@@ -50,8 +50,13 @@ parser.add_argument(
 parser.add_argument(
     '--random-seed', action='store', default=0, type=int,
     help='random seed for LBANN RNGs', metavar='NUM')
+parser.add_argument(
+    '--data-path', action='store', default=None, type=str,
+    help='Path to imagenet directory. default: None')
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 args = parser.parse_args()
+
+#d = __import__(args.datapath)
 
 # Due to a data reader limitation, the actual model realization must be
 # hardcoded to 1000 labels for ImageNet.
@@ -145,7 +150,8 @@ model = lbann.Model(args.num_epochs,
 opt = lbann.contrib.args.create_optimizer(args)
 
 # Setup data reader
-data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes)
+data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes,
+                                             data_path=args.data_path)
 
 # Setup trainer
 trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size, random_seed=args.random_seed)
