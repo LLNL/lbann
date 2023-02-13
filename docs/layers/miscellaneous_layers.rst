@@ -214,8 +214,7 @@ Arguments:
 
    :filename: (``string``) Library file name or path.
 
-   :layer_name: (``string``) Optional layer name for setup function 
-   (if not given, the name "layer" is used).
+   :layer_name: (``string``) Layer name for setup function.
 
 
 :ref:`Back to Top<miscellaneous-layers>`
