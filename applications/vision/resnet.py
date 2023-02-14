@@ -56,8 +56,6 @@ parser.add_argument(
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 args = parser.parse_args()
 
-#d = __import__(args.datapath)
-
 # Due to a data reader limitation, the actual model realization must be
 # hardcoded to 1000 labels for ImageNet.
 imagenet_labels = 1000
