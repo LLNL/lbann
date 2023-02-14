@@ -19,7 +19,7 @@ def make_data_reader(num_classes=1000, small_testing=False, data_path=None):
     message = message.data_reader
 
 
-    if data_path != None:
+    if data_path is not None:
         print("Setting up data reader")
         train_data_dir = os.path.join(data_path, 'train')
         test_data_dir = os.path.join(data_path, "val")
