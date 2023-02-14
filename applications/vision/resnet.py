@@ -52,7 +52,7 @@ parser.add_argument(
     help='random seed for LBANN RNGs', metavar='NUM')
 parser.add_argument(
     '--data-path', action='store', default=None, type=str,
-    help='Path to imagenet directory. default: None')
+    help='Path to top-level imagenet directory. default: None')
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 args = parser.parse_args()
 
