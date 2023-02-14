@@ -22,7 +22,7 @@ def make_data_reader(num_classes=1000, small_testing=False, data_path=None):
     if data_path is not None:
         print("Setting up data reader")
         train_data_dir = os.path.join(data_path, 'train')
-        test_data_dir = os.path.join(data_path, "val")
+        test_data_dir = os.path.join(data_path, 'val')
         #FIXME: This might not match the directory structure of the user's
         # dataset. We could infer the labels from the directory structure,
         # but the data reader is expecting a file.
