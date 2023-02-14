@@ -68,7 +68,7 @@ gpuStream_t to_native_stream(El::MultiSync<D, args...> const& m) noexcept
  * Sample external layer that performs the identity function with (gpu)memcpy.
  **/
 template <typename TensorDataType, lbann::data_layout Layout, El::Device Device>
-class my_identity_layer : public lbann::data_type_layer<TensorDataType>
+class my_identity_layer final : public lbann::data_type_layer<TensorDataType>
 {
   using MatType = El::Matrix<TensorDataType, Device>;
 
@@ -76,31 +76,31 @@ public:
   my_identity_layer(lbann::lbann_comm* comm)
     : lbann::data_type_layer<TensorDataType>(comm)
   {}
-  my_identity_layer* copy() const override
+  my_identity_layer* copy() const final
   {
     return new my_identity_layer(*this);
   }
 
-  std::string get_type() const override { return "my_identity"; }
-  lbann::data_layout get_data_layout() const override { return Layout; }
-  El::Device get_device_allocation() const override { return Device; }
-  void write_specific_proto(lbann_data::Layer& proto) const
+  std::string get_type() const final { return "my_identity"; }
+  lbann::data_layout get_data_layout() const final { return Layout; }
+  El::Device get_device_allocation() const final { return Device; }
+  void write_specific_proto(lbann_data::Layer& proto) const final
   {
     proto.set_datatype(lbann::proto::ProtoDataType<TensorDataType>);
     proto.mutable_external();
   }
 
-protected:
+private:
   friend class cereal::access;
   my_identity_layer() : my_identity_layer(nullptr) {}
 
-  void setup_dims(lbann::DataReaderMetaData& dr_metadata) override
+  void setup_dims(lbann::DataReaderMetaData& dr_metadata) final
   {
     lbann::data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 
-  void fp_compute() override
+  void fp_compute() final
   {
     auto& local_input =
       dynamic_cast<const MatType&>(this->get_local_prev_activations());
@@ -125,7 +125,7 @@ protected:
 #endif // LBANN_HAS_GPU
   }
 
-  void bp_compute() override
+  void bp_compute() final
   {
     auto& local_input =
       dynamic_cast<const MatType&>(this->get_local_prev_error_signals());
