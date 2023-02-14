@@ -43,11 +43,6 @@ def make_data_reader(num_classes=1000, small_testing=False, data_path=None):
                                          num_classes=num_classes)
             test_label_file = imagenet_labels(data_set='val',
                                               num_classes=num_classes)
-            print("Data paths")
-            print(train_data_dir)
-            print(train_label_file)
-            print(test_data_dir)
-            print(test_label_file)
         elif compute_center == 'nersc':
             from lbann.contrib.nersc.paths import imagenet_dir, imagenet_labels
             train_data_dir = imagenet_dir(data_set='train')
