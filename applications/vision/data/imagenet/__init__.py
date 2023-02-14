@@ -26,8 +26,8 @@ def make_data_reader(num_classes=1000, small_testing=False, data_path=None):
         #FIXME: This might not match the directory structure of the user's
         # dataset. We could infer the labels from the directory structure,
         # but the data reader is expecting a file.
-        train_label_file = os.path.join(data_path, "labels/train.txt")
-        test_label_file = os.path.join(data_path, "labels/val.txt")
+        train_label_file = os.path.join(data_path, 'labels/train.txt')
+        test_label_file = os.path.join(data_path, 'labels/val.txt')
 
     elif lbann.contrib.launcher.compute_center() in ['lc', 'nersc']:
         # Paths to ImageNet data
