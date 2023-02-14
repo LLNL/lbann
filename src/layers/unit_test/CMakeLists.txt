@@ -38,3 +38,4 @@ target_include_directories(example_layer PRIVATE
   $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
   $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/src/proto>
 )
+target_link_libraries(example_layer PRIVATE lbann)
