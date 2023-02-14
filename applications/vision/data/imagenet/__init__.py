@@ -50,7 +50,7 @@ def make_data_reader(num_classes=1000, small_testing=False, data_path=None):
             test_data_dir = imagenet_dir(data_set='val')
             test_label_file = imagenet_labels(data_set='val')
     else:
-        raise RuntimeError(f'ImageNet data paths are unknown for current compute center ({compute_center}). Set the "data-path" argument to the location of your dataset.')
+        raise RuntimeError(f'ImageNet data paths are unknown for current compute center ({compute_center}). Set "--data-path" to the location of your dataset.')
 
     # Check that data paths are accessible
     if not os.path.isdir(train_data_dir):
