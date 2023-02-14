@@ -106,6 +106,10 @@ def construct_lc_launcher_args():
         '--use-hdf5-reader', action='store_true',
         help='Use scalable IO HDF5 reader (default (for now) is Python reader')
 
+    parser.add_argument(
+        '--alternate-updates', action='store_true',
+        help='Alternate generator/discriminator updates to reduce memory footprint.')
+
     return parser.parse_args()
 
 
@@ -155,7 +159,8 @@ def construct_model(args):
 
     losses = model.Exa3DMultiGAN(args.input_width,args.input_channel,
                              g_device,ps,use_bn=args.use_bn,num_discblocks=args.num_discblocks,
-                             enable_subgraph=args.enable_subgraph)(x1,z,labels)
+                             enable_subgraph=args.enable_subgraph,
+                             alternate_updates=args.alternate_updates)(x1,z,labels)
     print("LEN losses ", len(losses))
  
     layers=list(lbann.traverse_layer_graph([input,z,zero,one]))
@@ -163,6 +168,8 @@ def construct_model(args):
     weights = set()
     src_layers = []
     dst_layers = []
+    disc_layers = []
+    gen_layers = []
     for l in layers:
       if(l.weights and "disc1" in l.name and "instance1" in l.name):
         src_layers.append(l.name)
@@ -171,13 +178,27 @@ def construct_model(args):
         dst_layers.append(l.name)
         for idx in range(len(l.weights)):
           l.weights[idx].optimizer = lbann.NoOptimizer()
+      if 'disc' in l.name:
+        disc_layers.append(l.name)
+      if 'gen' in l.name:
+        gen_layers.append(l.name)
       weights.update(l.weights)
 
-    block_ids = list(range(0, len(losses)-1, 3))
-    for l, i in enumerate(block_ids):
-      obj.append(lbann.SigmoidBinaryCrossEntropy([losses[i],one],name='d1_real_bce'+str(i)))
-      obj.append(lbann.SigmoidBinaryCrossEntropy([losses[i+1],zero],name='d1_fake_bce'+str(i+1)))
-      obj.append(lbann.SigmoidBinaryCrossEntropy([losses[i+2],one],name='d_adv_bce'+str(i+2)))
+    if args.alternate_updates:
+        block_ids = list(range(0, len(losses)-1, 2))
+        for l, i in enumerate(block_ids):
+            obj.append(lbann.IdentityZero(lbann.SigmoidBinaryCrossEntropy([losses[i],one],name='d1_real_bce'+str(l))))
+            obj.append(lbann.IdentityZero(lbann.SigmoidBinaryCrossEntropy([losses[i+1],zero],name='d1_fake_bce'+str(l))))
+            obj.append(lbann.IdentityZero(lbann.SigmoidBinaryCrossEntropy([losses[i+1],one],name='d_adv_bce'+str(l))))
+            disc_layers.append('d1_real_bce'+str(l))
+            disc_layers.append('d1_fake_bce'+str(l))
+            gen_layers.append('d_adv_bce'+str(l))
+    else:
+        block_ids = list(range(0, len(losses)-1, 3))
+        for l, i in enumerate(block_ids):
+            obj.append(lbann.SigmoidBinaryCrossEntropy([losses[i],one],name='d1_real_bce'+str(l)))
+            obj.append(lbann.SigmoidBinaryCrossEntropy([losses[i+1],zero],name='d1_fake_bce'+str(l)))
+            obj.append(lbann.SigmoidBinaryCrossEntropy([losses[i+2],one],name='d_adv_bce'+str(l)))
     
     gen_img = losses[-1] 
     mse = lbann.MeanSquaredError([gen_img, x2], name='MSE') if args.compute_mse else None
@@ -205,17 +226,28 @@ def construct_model(args):
 
     callbacks.append(lbann.CallbackPrint())
     callbacks.append(lbann.CallbackTimer())
-    callbacks.append(lbann.CallbackStepLearningRate(step=10, amt=0.5))
     callbacks.append(lbann.CallbackGPUMemoryUsage())
-    callbacks.append(lbann.CallbackReplaceWeights(source_layers=list2str(src_layers),
-                                 destination_layers=list2str(dst_layers),
-                                 batch_interval=2))
     if args.dump_outputs:
       callbacks.append(lbann.CallbackDumpOutputs(batch_interval=600,
                        execution_modes='validation',
                        directory='outputs',
                        format='npy',
                        layers=f'{x1.name} {gen_img.name}'))
+    
+    if args.alternate_updates:
+        callbacks.append(lbann.CallbackAlternateUpdates(
+            layers_1=' '.join(disc_layers),
+            layers_2=' '.join(gen_layers),
+            iters_1=1,
+            iters_2=1
+        ))
+    else:
+        callbacks.append(lbann.CallbackStepLearningRate(step=10, amt=0.5))
+        callbacks.append(lbann.CallbackReplaceWeights(
+            source_layers=list2str(src_layers),
+            destination_layers=list2str(dst_layers),
+            batch_interval=2
+        ))
 
     # ------------------------------------------
     # Construct model

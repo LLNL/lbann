@@ -102,7 +102,7 @@ class Exa3DMultiGAN(lbann.modules.Module):
 
     def __init__(self, input_width=64, input_channel=1,gen_device='GPU',
                  disc_ps=None, gen_ps=None,use_bn=False,num_discblocks=1,
-                 enable_subgraph=False,name=None):
+                 enable_subgraph=False,name=None, alternate_updates=False):
 
        self.instance = 0
        self.name = (name if name
@@ -120,6 +120,8 @@ class Exa3DMultiGAN(lbann.modules.Module):
        self.g_ps = gen_ps 
        self.use_bn = use_bn
        self.enable_subgraph = enable_subgraph
+
+       self.alternate_updates = alternate_updates
 
        assert self.input_width in [64,128, 256, 512]
 
@@ -151,18 +153,19 @@ class Exa3DMultiGAN(lbann.modules.Module):
                        weights=[lbann.Weights(initializer=self.inits['dense'], name=self.name+'_d1_fcw_b'+str(b))])
                      for b in range(self.num_blocks)]
 
-       #stacked_discriminator, this will be frozen, no optimizer, 
-       #layer has to be named for callback
-       self.d2_conv = [[convbnrelu(d_channels[i], kernel_size, stride, padding, self.use_bn, bn_stats_grp_sz, False,
-                                  name=self.name+'_disc2_conv'+str(i)+'b'+str(b), 
-                                  activation=lbann.Relu,
-                                  parallel_strategy=self.d_ps,
-                                  conv_weights=[lbann.Weights(initializer=self.inits['conv'],name=self.name+'_d2_convw'+str(i)+'b'+str(b))])
-                   for i in range(len(d_channels))] for b in range(self.num_blocks)] 
+       if not self.alternate_updates:
+            #stacked_discriminator, this will be frozen, no optimizer, 
+            #layer has to be named for callback
+            self.d2_conv = [[convbnrelu(d_channels[i], kernel_size, stride, padding, self.use_bn, bn_stats_grp_sz, False,
+                                        name=self.name+'_disc2_conv'+str(i)+'b'+str(b), 
+                                        activation=lbann.Relu,
+                                        parallel_strategy=self.d_ps,
+                                        conv_weights=[lbann.Weights(initializer=self.inits['conv'],name=self.name+'_d2_convw'+str(i)+'b'+str(b))])
+                        for i in range(len(d_channels))] for b in range(self.num_blocks)] 
 
-       self.d2_fc = [fc(1,name=self.name+'_disc2_fc_b'+str(b),
-                       weights=[lbann.Weights(initializer=self.inits['dense'], name=self.name+'_d2_fcw_b'+str(b))])
-                     for b in range(self.num_blocks)]
+            self.d2_fc = [fc(1,name=self.name+'_disc2_fc_b'+str(b),
+                            weights=[lbann.Weights(initializer=self.inits['dense'], name=self.name+'_d2_fcw_b'+str(b))])
+                            for b in range(self.num_blocks)]
         
 
        g_channels = [256,128,64]
@@ -191,11 +194,13 @@ class Exa3DMultiGAN(lbann.modules.Module):
             if label:
                 out.append(self.forward_discriminator1(b1, bId,lbann.Identity(label)))
                 out.append(self.forward_discriminator1(b2,bId,lbann.Identity(label)))
-                out.append(self.forward_discriminator2(b3,bId,lbann.Identity(label)))
+                if not self.alternate_updates:
+                    out.append(self.forward_discriminator2(b3,bId,lbann.Identity(label)))
             else:
                 out.append(self.forward_discriminator1(b1, bId))
                 out.append(self.forward_discriminator1(b2,bId))
-                out.append(self.forward_discriminator2(b3,bId))
+                if not self.alternate_updates:
+                    out.append(self.forward_discriminator2(b3,bId))
         out.append(gen_img)   
         return out
 
