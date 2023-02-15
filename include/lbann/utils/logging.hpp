@@ -44,6 +44,7 @@ enum LBANN_Logger_ID
   LOG_TRAIN,
 };
 
+//
 void setup_loggers();
 
 // Raw string may be useful for debugging
@@ -71,76 +72,44 @@ h2::Logger& get(LBANN_Logger_ID id);
 #define LBANN_ERR(logger_id, ...) LBANN_LOG(logger_id, ::h2::Logger::LogLevelType::ERR, __VA_ARGS__)
 #define LBANN_CRIT(logger_id, ...) LBANN_LOG(logger_id, ::h2::Logger::LogLevelType::CRIT, __VA_ARGS__)
 
+// Run time
 #define LBANN_RT_TRACE(...) LBANN_TRACE(::lbann::logging::LBANN_Logger_ID::LOG_RT, __VA_ARGS__)
 
+#define LBANN_RT_DEBUG(...) LBANN_DEBUG(::lbann::logging::LBANN_Logger_ID::LOG_RT, __VA_ARGS__)
 
-/*
-#define LBANN_RT_DEBUG(...)                                                \
-  if (logger.should_log(h2::Logger::LogLevelType::DEBUG))                  \
-    logger.get().debug(__VA_ARGS__);                                       \
+#define LBANN_RT_INFO(...) LBANN_INFO(::lbann::logging::LBANN_Logger_ID::LOG_RT, __VA_ARGS__)
 
-#define LBANN_RT_INFO(...)                                                 \
-  if (logger.should_log(h2::Logger::LogLevelType::INFO))                   \
-    logger.get().info(__VA_ARGS__);                                        \
+#define LBANN_RT_WARN(...) LBANN_WARN(::lbann::logging::LBANN_Logger_ID::LOG_RT, __VA_ARGS__)
 
-#define LBANN_RT_WARN(...)                                                 \
-  if (logger.should_log(h2::Logger::LogLevelType::WARN))                   \
-    logger.get().warn(__VA_ARGS__);                                        \
+#define LBANN_RT_ERR(...) LBANN_ERR(::lbann::logging::LBANN_Logger_ID::LOG_RT, __VA_ARGS__)
 
-#define LBANN_RT_ERROR(...)                                                \
-  if (logger.should_log(h2::Logger::LogLevelType::ERROR))                  \
-    logger.get().error(__VA_ARGS__);                                       \
+#define LBANN_RT_CRIT(...) LBANN_CRIT(::lbann::logging::LBANN_Logger_ID::LOG_RT, __VA_ARGS__)
 
-#define LBANN_RT_CRITICAL(...)                                             \
-  if (logger.should_log(h2::Logger::LogLevelType::CRITICAL))               \
-    logger.get().critical(__VA_ARGS__);                                    \
+// IO
+#define LBANN_IO_TRACE(...) LBANN_TRACE(::lbann::logging::LBANN_Logger_ID::LOG_IO, __VA_ARGS__)
 
-#define LBANN_IO_TRACE(...)                                                \
-  if (logger.should_log(h2::Logger::LogLevelType::TRACE))                  \
-    logger.get().trace(__VA_ARGS__);                                       \
+#define LBANN_IO_DEBUG(...) LBANN_DEBUG(::lbann::logging::LBANN_Logger_ID::LOG_IO, __VA_ARGS__)
 
-#define LBANN_IO_DEBUG(...)                                                \
-  if (logger.should_log(h2::Logger::LogLevelType::DEBUG))                  \
-    logger.get().debug(__VA_ARGS__);                                       \
+#define LBANN_IO_INFO(...) LBANN_INFO(::lbann::logging::LBANN_Logger_ID::LOG_IO, __VA_ARGS__)
 
-#define LBANN_IO_INFO(...)                                                 \
-  if (logger.should_log(h2::Logger::LogLevelType::INFO))                   \
-    logger.get().info(__VA_ARGS__);                                        \
+#define LBANN_IO_WARN(...) LBANN_WARN(::lbann::logging::LBANN_Logger_ID::LOG_IO, __VA_ARGS__)
 
-#define LBANN_IO_WARN(...)                                                 \
-  if (logger.should_log(h2::Logger::LogLevelType::WARN))                   \
-    logger.get().warn(__VA_ARGS__);                                        \
+#define LBANN_IO_ERR(...) LBANN_ERR(::lbann::logging::LBANN_Logger_ID::LOG_IO, __VA_ARGS__)
 
-#define LBANN_IO_ERROR(...)                                                \
-  if (logger.should_log(h2::Logger::LogLevelType::ERROR))                  \
-    logger.get().error(__VA_ARGS__);                                       \
+#define LBANN_IO_CRIT(...) LBANN_CRIT(::lbann::logging::LBANN_Logger_ID::LOG_IO, __VA_ARGS__)
 
-#define LBANN_IO_CRITICAL(...)                                             \
-  if (logger.should_log(h2::Logger::LogLevelType::CRITICAL))               \
-    logger.get().critical(__VA_ARGS__);                                    \
+// Training
+#define LBANN_TRAIN_TRACE(...) LBANN_TRACE(::lbann::logging::LBANN_Logger_ID::LOG_TRAIN, __VA_ARGS__)
 
-#define LBANN_TRAINING_TRACE(...)                                          \
-  if (logger.should_log(h2::Logger::LogLevelType::TRACE))                  \
-    logger.get().trace(__VA_ARGS__);                                       \
+#define LBANN_TRAIN_DEBUG(...) LBANN_DEBUG(::lbann::logging::LBANN_Logger_ID::LOG_TRAIN, __VA_ARGS__)
 
-#define LBANN_TRAINING_DEBUG(...)                                          \
-  if (logger.should_log(h2::Logger::LogLevelType::DEBUG))                  \
-    logger.get().debug(__VA_ARGS__);                                       \
+#define LBANN_TRAIN_INFO(...) LBANN_INFO(::lbann::logging::LBANN_Logger_ID::LOG_TRAIN, __VA_ARGS__)
 
-#define LBANN_TRAINING_INFO(...)                                           \
-  if (logger.should_log(h2::Logger::LogLevelType::INFO))                   \
-    logger.get().info(__VA_ARGS__);                                        \
+#define LBANN_TRAIN_WARN(...) LBANN_WARN(::lbann::logging::LBANN_Logger_ID::LOG_TRAIN, __VA_ARGS__)
 
-#define LBANN_TRAINING_WARN(...)                                           \
-  if (logger.should_log(h2::Logger::LogLevelType::WARN))                   \
-    logger.get().warn(__VA_ARGS__);                                        \
+#define LBANN_TRAIN_ERR(...) LBANN_ERR(::lbann::logging::LBANN_Logger_ID::LOG_TRAIN, __VA_ARGS__)
 
-#define LBANN_TRAINING_ERROR(...)                                          \
-  if (logger.should_log(h2::Logger::LogLevelType::ERROR))                  \
-    logger.get().error(__VA_ARGS__);                                       \
+#define LBANN_TRAIN_CRIT(...) LBANN_CRIT(::lbann::logging::LBANN_Logger_ID::LOG_TRAIN, __VA_ARGS__)
 
-#define LBANN_TRAINING_CRITICAL(...)                                       \
-  if (logger.should_log(h2::Logger::LogLevelType::CRITICAL))               \
-    logger.get().critical(__VA_ARGS__);                                    \
-*/
+
 #endif // LBANN_LOGGING_HPP_INCLUDED
