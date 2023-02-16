@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_HADAMARD_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/transform/hadamard.hpp"
 
 #include "lbann/proto/datatype_helpers.hpp"

@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_WEIGHTED_SUM_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/transform/weighted_sum.hpp"
 
 #include "lbann/proto/datatype_helpers.hpp"

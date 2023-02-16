@@ -26,6 +26,7 @@
 
 #define LBANN_EVALUATION_LAYER_INSTANTIATE
 #include "lbann/comm_impl.hpp"
+#include "lbann/comm.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"

@@ -26,6 +26,7 @@
 
 #include "lbann/layers/layer.hpp"
 #define LBANN_UNIFORM_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/transform/uniform.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/protobuf.hpp"

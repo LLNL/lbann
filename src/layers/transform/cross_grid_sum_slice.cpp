@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_CROSS_GRID_SUM_SLICE_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/transform/cross_grid_sum_slice.hpp"
 
 #include <lbann/proto/proto_common.hpp>

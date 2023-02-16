@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_REDUCTION_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/transform/reduction.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/proto/datatype_helpers.hpp"

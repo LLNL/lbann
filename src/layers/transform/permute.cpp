@@ -26,6 +26,7 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #define LBANN_PERMUTE_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/transform/permute.hpp"
 
 #include "permute/permuteimpl.hpp"

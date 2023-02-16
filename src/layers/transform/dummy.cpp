@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_DUMMY_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include <lbann/utils/memory.hpp>

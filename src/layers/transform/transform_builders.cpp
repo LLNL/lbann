@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm.hpp"
 #include "lbann/layers/transform/transform_builders.hpp"
 
 #include "lbann/layers/transform/batchwise_reduce_sum.hpp"

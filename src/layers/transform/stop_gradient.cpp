@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_STOP_GRADIENT_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/transform/stop_gradient.hpp"
 
 #include "lbann/proto/datatype_helpers.hpp"
