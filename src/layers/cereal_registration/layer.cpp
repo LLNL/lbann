@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "lbann/utils/serialize.hpp"
 #include <lbann/layers/layer.hpp>
+#include "lbann/weights/weights.hpp"
 
 namespace lbann {
 

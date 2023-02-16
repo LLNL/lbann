@@ -30,8 +30,8 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
-#include "lbann/io/persist.hpp"
-#include "lbann/optimizers/optimizer.hpp"
+//#include "lbann/io/persist.hpp"
+//#include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/exception.hpp"
@@ -39,7 +39,7 @@
 #include "lbann/utils/summary.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/typename.hpp"
-#include "lbann/weights/weights.hpp"
+//#include "lbann/weights/weights.hpp"
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/layers/distconv_adapter.hpp"
 #endif // LBANN_HAS_DISTCONV
@@ -89,6 +89,11 @@ namespace lbann {
 // Forward declarations
 class Layer;
 class model;
+class weights;
+using ViewingWeightsPtr = std::weak_ptr<weights>;
+#ifdef LBANN_WEIGHTS_HPP
+#error
+#endif
 namespace callback {
 class sync_layers;
 } // namespace callback
@@ -721,45 +726,13 @@ protected:
   void set_weights(size_t idx, ViewingWeightsPtr w) {
     m_weights.at(idx) = std::move(w);
   }
-  weights const& get_weights(size_t idx) const {
-    if (idx >= m_weights.size()) {
-      LBANN_ERROR(
-        "attempted to access invalid weights object of ",
-        get_type()," layer \"",get_name(),"\" ",
-        "(requested index ",idx,", but there are ",
-        num_weights()," weights objects)");
-    }
-    const auto w = m_weights[idx].lock().get();
-    if (w == nullptr) {
-      LBANN_ERROR(
-        get_type()," layer \"",get_name(),"\"",
-        "has an invalid reference to weights ",idx);
-    }
-    return *w;
-  }
+  weights const& get_weights(size_t idx) const;
 
-  weights& get_weights(size_t idx) {
-    return const_cast<weights&>(
-      static_cast<Layer const&>(*this).get_weights(idx));
-  }
+  weights& get_weights(size_t idx);
 
-  void add_as_gradient_source()
-  {
-    for (size_t i=0; i<num_weights(); ++i) {
-      auto& w = get_weights(i);
-      auto* opt = w.get_optimizer();
-      if (opt != nullptr) { opt->add_gradient_source(this); }
-    }
-  }
+  void add_as_gradient_source();
 
-  void remove_as_gradient_source()
-  {
-    for (size_t i=0; i<num_weights(); ++i) {
-      auto& w = get_weights(i);
-      auto* opt = w.get_optimizer();
-      if (opt != nullptr) { opt->remove_gradient_source(this); }
-    }
-  }
+  void remove_as_gradient_source();
   ///@}
 
   // ===========================================================

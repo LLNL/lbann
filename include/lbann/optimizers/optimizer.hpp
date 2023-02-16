@@ -37,7 +37,7 @@
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
-#include "lbann/weights/weights.hpp"
+//#include "lbann/weights/weights.hpp"
 
 #include <memory>
 #include <string>
@@ -71,6 +71,7 @@ std::string to_string(optimizer_gradient_status status);
 
 // Forward declarations
 class persist;
+class weights;
 
 /** @brief Abstract base class for gradient-based optimization algorithms.
  *

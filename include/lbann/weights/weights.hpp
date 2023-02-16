@@ -24,6 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+//#error
+
 #ifndef LBANN_WEIGHTS_HPP
 #define LBANN_WEIGHTS_HPP
 

@@ -29,7 +29,7 @@
 
 #include "lbann/base.hpp"
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/utils/exception.hpp"
+//#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
