@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_ENTRYWISE_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/loss/entrywise.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 

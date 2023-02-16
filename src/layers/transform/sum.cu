@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_SUM_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/transform/sum.hpp"
 #include "lbann/utils/exception.hpp"
 

@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_CONCATENATE_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/transform/concatenate.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 

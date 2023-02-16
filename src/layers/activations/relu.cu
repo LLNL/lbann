@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_RELU_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/activations/relu.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 

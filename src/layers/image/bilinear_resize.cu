@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_BILINEAR_RESIZE_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/image/bilinear_resize.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 

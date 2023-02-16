@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_SOFTMAX_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/activations/softmax.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 #ifdef LBANN_HAS_DNN_LIB

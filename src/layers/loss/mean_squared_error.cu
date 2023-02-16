@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_MEAN_SQUARED_ERROR_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/loss/mean_squared_error.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
