@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_LEAKY_RELU_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/activations/leaky_relu.hpp"
 
 namespace lbann {

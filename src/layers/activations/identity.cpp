@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_IDENTITY_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/activations/identity.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/layers.pb.h"
