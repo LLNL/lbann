@@ -80,9 +80,10 @@ class kfac_block_fc_conv: public kfac_block<Device> {
                      const size_t inverse_proc_rank,
                      const bool enable_copy_errors,
                      const bool enable_copy_activations,
-                     const int feature_size,
+                     const int input_size,
+                     const int output_size,
                      const bool is_conv)
-      : kfac_block<Device>(layer, context, layer_id, inverse_proc_rank, enable_copy_errors, enable_copy_activations, feature_size),
+      : kfac_block<Device>(layer, context, layer_id, inverse_proc_rank, enable_copy_errors, enable_copy_activations, input_size, output_size),
         m_is_conv(is_conv), m_has_bias(layer->num_weights() > 1) {
     if(m_is_conv) {
       m_conv_input_spatial_prod = 1;

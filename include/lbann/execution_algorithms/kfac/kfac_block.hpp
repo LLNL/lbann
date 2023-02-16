@@ -63,13 +63,15 @@ class kfac_block {
              size_t inverse_proc_rank,
              bool enable_copy_errors,
              bool enable_copy_activations,
-             int feature_size)
+             int input_size,
+             int output_size)
       : m_layer(layer),
         m_layer_id(layer_id),
         m_enable_copy_errors(enable_copy_errors),
         m_enable_copy_activations(enable_copy_activations),
         m_inverse_proc_rank(inverse_proc_rank),
-        m_feature_size(feature_size),
+        m_input_size(input_size),
+        m_output_size(output_size),
         m_context(context) {
     m_has_kronecker_inverse = false;
   }
@@ -229,8 +231,12 @@ class kfac_block {
     return m_batch_size;
   }
 
-  El::Int get_feature_size(){
-    return m_feature_size;
+  El::Int get_input_size(){
+    return m_input_size;
+  }
+
+  El::Int get_output_size(){
+    return m_output_size;
   }
 
   /** @brief Return the list of internal matrices' (name, height,
@@ -282,7 +288,7 @@ class kfac_block {
   std::vector<kfac::ReqT> m_requests_forward_end, m_requests_backward_end;
 
   /** @brief feature size and batch size (used in primary -> secondary grid communication) */
-  int m_feature_size, m_batch_size;
+  int m_input_size, m_output_size, m_batch_size;
 
 
  private:

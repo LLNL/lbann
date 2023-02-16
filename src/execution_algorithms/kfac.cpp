@@ -1294,27 +1294,34 @@ void KFAC::on_forward_prop_end(
 
       std::shared_ptr<kfac_block<Device>> block;
 
+      const auto parent = l->get_parent_layers()[0];
+      const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
+      const int parent_activations_size = dtl_parent.get_activations().Height();
+
+      int input_size, output_size;
+      input_size = broadcast_variable_grids(parent_activations_size, 
+                                            &comm);
+
 
       if(is_fc || is_conv) {
-        int feature_size = 0;
         if(is_fc)
-          feature_size = broadcast_variable_grids(l_fc->get_activations().Height(), &comm);
+          output_size = broadcast_variable_grids(l_fc->get_activations().Height(), &comm);
         else
-          feature_size = broadcast_variable_grids(l_conv->get_activations().Height(), &comm);
+          output_size = broadcast_variable_grids(l_conv->get_activations().Height(), &comm);
         block = std::make_shared<kfac_block_fc_conv<Device>>(
-            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, feature_size, is_conv);
+            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, input_size, output_size, is_conv);
       } else if(is_bn) {
-        int feature_size = broadcast_variable_grids(l_bn->get_activations().Height(), &comm);
+        output_size = broadcast_variable_grids(l_bn->get_activations().Height(), &comm);
         block = std::make_shared<kfac_block_bn<Device>>(
-            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, feature_size);
+            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, input_size, output_size);
       } else if(is_gru) {
-        int feature_size = broadcast_variable_grids(l_gru->get_activations().Height(), &comm);
+        output_size = broadcast_variable_grids(l_gru->get_activations().Height(), &comm);
         block = std::make_shared<kfac_block_gru<Device>>(
-            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, feature_size);
+            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, input_size, output_size);
       } else if(is_cw_fc){
-        int feature_size = broadcast_variable_grids(l_cw_fc->get_activations().Height(), &comm);
+        output_size = broadcast_variable_grids(l_cw_fc->get_activations().Height(), &comm);
         block = std::make_shared<kfac_block_channelwise_fc<Device>>(
-            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, feature_size);
+            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, input_size, output_size);
       }
 
 

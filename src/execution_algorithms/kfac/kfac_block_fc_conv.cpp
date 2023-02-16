@@ -520,7 +520,7 @@ void kfac_block_fc_conv<Device>::start_communication_forward_end(
         El::Copy(star_vc_mat, *copied_acts);
         kfac::TranslateBetweenGridsVCAsyncDirect(*copied_acts,
                                                 *local_activations0,
-                                                this->get_feature_size(),
+                                                this->get_input_size(),
                                                 this->get_current_batch_size(),
                                                 this->m_requests_forward_end);
       }
@@ -529,7 +529,7 @@ void kfac_block_fc_conv<Device>::start_communication_forward_end(
         //Directly transfer forward activations (must end before the begining of the next iteration)
         kfac::TranslateBetweenGridsVCAsyncDirect(star_vc_mat,
                                                 *local_activations0,
-                                                this->get_feature_size(),
+                                                this->get_input_size(),
                                                 this->get_current_batch_size(),
                                                 this->m_requests_forward_end);
       }
@@ -630,7 +630,7 @@ void kfac_block_fc_conv<Device>::start_communication_backward_end(
         El::Copy(*local_errors_vc, *copied_errors);
         kfac::TranslateBetweenGridsVCAsyncDirect(*copied_errors,
                                               *local_errors0,
-                                              this->get_feature_size(),
+                                              this->get_output_size(),
                                               this->get_current_batch_size(),
                                               this->m_requests_backward_end);
       }
@@ -638,7 +638,7 @@ void kfac_block_fc_conv<Device>::start_communication_backward_end(
       {
         kfac::TranslateBetweenGridsVCAsyncDirect(*local_errors_vc,
                                               *local_errors0,
-                                              this->get_feature_size(),
+                                              this->get_output_size(),
                                               this->get_current_batch_size(),
                                               this->m_requests_backward_end);
       }
@@ -758,7 +758,7 @@ void kfac_block_fc_conv<Device>::initialize_activations_and_errors(
       //                                         Requests);
       kfac::TranslateBetweenGridsVCAsyncDirect(*local_activations_vc,
                                               *local_activations0,
-                                              this->get_feature_size(),
+                                              this->get_input_size(),
                                               this->get_current_batch_size(),
                                               Requests);
       for(auto& req:Requests){
@@ -771,7 +771,7 @@ void kfac_block_fc_conv<Device>::initialize_activations_and_errors(
       //                                         Requests);
       kfac::TranslateBetweenGridsVCAsyncDirect(*local_errors_vc,
                                               *local_errors0,
-                                              this->get_feature_size(),
+                                              this->get_output_size(),
                                               this->get_current_batch_size(),
                                               Requests);
       auto primary_grid_ranks = comm->get_primary_grid_ranks();

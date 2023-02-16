@@ -65,8 +65,9 @@ class kfac_block_bn: public kfac_block<Device> {
                 size_t inverse_proc_rank,
                 bool enable_copy_errors,
                 bool enable_copy_activations,
-                int feature_size)
-      : kfac_block<Device>(layer, context, layer_id, inverse_proc_rank, enable_copy_errors, enable_copy_activations, feature_size) {
+                int input_size,
+                int output_size)
+      : kfac_block<Device>(layer, context, layer_id, inverse_proc_rank, enable_copy_errors, enable_copy_activations, input_size, output_size) {
     const auto parent = layer->get_parent_layers()[0];
     const bool is_after_fc =
         (dynamic_cast<const fully_connected_layer<DataType,
