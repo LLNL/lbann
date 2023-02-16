@@ -40,9 +40,9 @@
 //#include "lbann/utils/timer.hpp"
 #include "lbann/utils/typename.hpp"
 //#include "lbann/weights/weights.hpp"
-#ifdef LBANN_HAS_DISTCONV
-#include "lbann/layers/distconv_adapter.hpp"
-#endif // LBANN_HAS_DISTCONV
+// #ifdef LBANN_HAS_DISTCONV
+// #include "lbann/layers/distconv_adapter.hpp"
+// #endif // LBANN_HAS_DISTCONV
 #include <string>
 #include <vector>
 #ifdef LBANN_HAS_ONNX
@@ -95,6 +95,9 @@ class model;
 class lbann_summary;
 class weights;
 using ViewingWeightsPtr = std::weak_ptr<weights>;
+#ifdef LBANN_HAS_DISTCONV
+class distconv_adapter;
+#endif // LBANN_HAS_DISTCONV
 #ifdef LBANN_WEIGHTS_HPP
 #error "weights.hpp is still defined"
 #endif

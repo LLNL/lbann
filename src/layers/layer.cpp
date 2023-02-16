@@ -31,6 +31,9 @@
 #include "lbann/models/model.hpp"
 #include "lbann/utils/summary_impl.hpp"
 #include "lbann/utils/timer.hpp"
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/distconv_adapter.hpp"
+#endif // LBANN_HAS_DISTCONV
 
 #include "lbann/proto/layers.pb.h"
 
