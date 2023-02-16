@@ -26,6 +26,8 @@
 // lbann_file_io .hpp .cpp - Input / output utilities
 ////////////////////////////////////////////////////////////////////////////////
 
+//#error
+
 #ifndef LBANN_PERSIST_H
 #define LBANN_PERSIST_H
 

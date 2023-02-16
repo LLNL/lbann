@@ -28,16 +28,16 @@
 #define LBANN_LAYERS_LAYER_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-#include "lbann/comm.hpp"
-#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
+//#include "lbann/comm.hpp"
+//#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 //#include "lbann/io/persist.hpp"
 //#include "lbann/optimizers/optimizer.hpp"
-#include "lbann/utils/description.hpp"
+//#include "lbann/utils/description.hpp"
 #include "lbann/utils/distconv.hpp"
-#include "lbann/utils/exception.hpp"
-#include "lbann/utils/memory.hpp"
-#include "lbann/utils/summary.hpp"
-#include "lbann/utils/timer.hpp"
+//#include "lbann/utils/exception.hpp"
+//#include "lbann/utils/memory.hpp"
+//#include "lbann/utils/summary.hpp"
+//#include "lbann/utils/timer.hpp"
 #include "lbann/utils/typename.hpp"
 //#include "lbann/weights/weights.hpp"
 #ifdef LBANN_HAS_DISTCONV
@@ -87,13 +87,26 @@ class Layer;
 namespace lbann {
 
 // Forward declarations
+struct DataReaderMetaData;
+class lbann_comm;
+class description;
 class Layer;
 class model;
+class lbann_summary;
 class weights;
 using ViewingWeightsPtr = std::weak_ptr<weights>;
 #ifdef LBANN_WEIGHTS_HPP
-#error
+#error "weights.hpp is still defined"
 #endif
+#ifdef LBANN_OPTIMIZERS_OPTIMIZER_HPP_INCLUDED
+#error "optimizer.hpp is still defined"
+#endif
+// #ifdef LBANN_PERSIST_H
+// #error "persist.hpp is still defined"
+// #endif
+// #ifdef LBANN_DATA_COORDINATOR_METADATA_HPP
+// #error "data_coordinator_metadata.hpp is still defined"
+// #endif
 namespace callback {
 class sync_layers;
 } // namespace callback
