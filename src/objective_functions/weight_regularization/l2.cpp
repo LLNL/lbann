@@ -24,11 +24,9 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm.hpp"
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
 #include "lbann/models/model.hpp"
-#ifdef LBANN_HAS_GPU
-#include "lbann/utils/gpu/helpers.hpp"
-#endif // LBANN_HAS_GPU
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/utils/serialize.hpp"

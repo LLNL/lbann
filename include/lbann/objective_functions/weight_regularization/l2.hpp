@@ -28,6 +28,9 @@
 #define LBANN_OBJECTIVE_FUNCTIONS_WEIGHT_REGULARIZATION_L2_WEIGHT_REGULARIZATION_HPP_INCLUDED
 
 #include "lbann/objective_functions/objective_function_term.hpp"
+#ifdef LBANN_HAS_GPU
+#include "lbann/utils/gpu/helpers.hpp"
+#endif // LBANN_HAS_GPU
 
 namespace lbann {
 
