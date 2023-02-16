@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_ARGMAX_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/misc/argmax.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/layers.pb.h"

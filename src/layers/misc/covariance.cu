@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_COVARIANCE_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/misc/covariance.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 

@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_ONE_HOT_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/misc/one_hot.hpp"
 
 namespace lbann {

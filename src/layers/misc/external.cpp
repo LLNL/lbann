@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm.hpp"
 #include "lbann/layers/misc/external.hpp"
 #include "lbann/utils/sync_info_helpers.hpp"
 

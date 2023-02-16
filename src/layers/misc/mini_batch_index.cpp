@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_MINI_BATCH_INDEX_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/misc/mini_batch_index.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/layers.pb.h"

@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm.hpp"
 #include "lbann/layers/misc/dist_embedding.hpp"
 
 #include "lbann/weights/weights_helpers.hpp"

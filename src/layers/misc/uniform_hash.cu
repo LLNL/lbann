@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_UNIFORM_HASH_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/misc/uniform_hash.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
