@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_TESSELLATE_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/transform/tessellate.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 

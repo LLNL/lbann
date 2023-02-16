@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_L2_NORM2_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/loss/l2_norm2.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 

@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_SORT_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/transform/sort.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 #include "lbann/utils/exception.hpp"
