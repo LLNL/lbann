@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_MATMUL_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/math/matmul.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #ifdef LBANN_HAS_GPU

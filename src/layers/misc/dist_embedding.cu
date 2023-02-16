@@ -24,7 +24,6 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/comm.hpp"
 #include "lbann/layers/misc/dist_embedding.hpp"
 #ifdef LBANN_HAS_NVSHMEM
 

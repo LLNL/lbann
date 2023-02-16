@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_CHANNELWISE_MEAN_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/misc/channelwise_mean.hpp"
 
 namespace lbann {

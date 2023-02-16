@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_VARIANCE_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/misc/variance.hpp"
 
 namespace lbann {

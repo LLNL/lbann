@@ -24,7 +24,6 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/comm.hpp"
 #include "lbann/layers/misc/misc_builders.hpp"
 
 #include "lbann/layers/misc/argmax.hpp"
