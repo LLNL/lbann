@@ -26,7 +26,6 @@
 
 #include "lbann/layers/image/image_layer_builders.hpp"
 
-#include "lbann/comm.hpp"
 #include "lbann/layers/image/bilinear_resize.hpp"
 #include "lbann/layers/image/composite_image_transformation.hpp"
 #include "lbann/layers/image/rotation.hpp"

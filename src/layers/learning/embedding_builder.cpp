@@ -24,7 +24,6 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/comm.hpp"
 #include "lbann/layers/learning/embedding.hpp"
 
 #include <lbann/proto/proto_common.hpp>

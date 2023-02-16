@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_ENTRYWISE_SCALE_BIAS_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/learning/entrywise_scale_bias.hpp"
 
 namespace lbann {

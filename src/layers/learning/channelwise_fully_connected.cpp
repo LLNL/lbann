@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_CHANNELWISE_FULLY_CONNECTED_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/learning/channelwise_fully_connected.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/weights/initializer.hpp"

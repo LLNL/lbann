@@ -27,7 +27,6 @@
 #include "lbann/utils/protobuf/decl.hpp"
 #include <google/protobuf/repeated_field.h>
 #define LBANN_CONVOLUTION_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/layers/learning/deconvolution.hpp"
 

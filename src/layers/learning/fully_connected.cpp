@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/learning/fully_connected.hpp"
 
 #include "lbann/weights/initializer.hpp"

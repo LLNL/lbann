@@ -26,7 +26,6 @@
 
 #include <google/protobuf/stubs/port.h>
 #define LBANN_CONVOLUTION_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/layers/learning/convolution.hpp"
 

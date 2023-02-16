@@ -24,7 +24,6 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/comm.hpp"
 #include "lbann/layers/layer.hpp"
 #include <type_traits>
 #define LBANN_INPUT_LAYER_INSTANTIATE
