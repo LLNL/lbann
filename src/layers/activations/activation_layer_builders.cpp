@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm.hpp"
 #include "lbann/layers/activations/activation_layer_builders.hpp"
 
 #include "lbann/layers/activations/elu.hpp"
