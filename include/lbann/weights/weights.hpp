@@ -46,12 +46,12 @@ namespace lbann_data {
 class Weights;
 }
 
+namespace lbann {
+
 namespace Al {
 // Forward declaration
 struct request;
-} // namespace Al
-
-namespace lbann {
+} // namespace lbann::Al
 
 // Forward declaration
 class lbann_comm;
