@@ -32,7 +32,7 @@
 #define LBANN_PERSIST_H
 
 #include "lbann/base.hpp"
-#include "lbann/utils/exception.hpp"
+//#include "lbann/utils/exception.hpp"
 #include "lbann/utils/enum_iterator.hpp"
 #include "El.hpp"
 #include <sstream>
@@ -55,54 +55,9 @@ enum class persist_type {
 
 using persist_type_iterator = enum_iterator<persist_type, persist_type::train, persist_type::validation_context>;
 
-inline persist_type execution_mode_to_persist_type(execution_mode m) {
-  switch(m) {
-  case execution_mode::training:
-    return persist_type::training_context;
-  case execution_mode::validation:
-    return persist_type::validation_context;
-  case execution_mode::testing:
-    return persist_type::testing_context;
-  case execution_mode::prediction:
-    return persist_type::prediction_context;
-  case execution_mode::tournament:
-    return persist_type::tournament_context;
-  case execution_mode::inference:
-    return persist_type::inference_context;
-  case execution_mode::invalid:
-  default:
-    LBANN_ERROR("Invalid execution mode specified");
-  }
-}
+inline persist_type execution_mode_to_persist_type(execution_mode m);
 
-inline std::string to_string(persist_type pt) {
-  switch(pt) {
-  case persist_type::model:
-    return "model";
-  case persist_type::metrics:
-    return "metrics";
-  case persist_type::train:
-    return "train";
-  case persist_type::validate:
-    return "validate";
-  case persist_type::testing:
-    return "test";
-  case persist_type::prediction_context:
-    return "prediction";
-  case persist_type::training_context:
-    return "training";
-  case persist_type::validation_context:
-    return "validation";
-  case persist_type::tournament_context:
-    return "tournament";
-  case persist_type::testing_context:
-    return "testing";
-  case persist_type::inference_context:
-    return "inference";
-  default:
-      LBANN_ERROR("Invalid persist type specified");
-  }
-}
+inline std::string to_string(persist_type pt);
 
 /// @todo Fix the callback types to properly track execution phases
 enum class callback_type {
