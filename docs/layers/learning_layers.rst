@@ -155,7 +155,7 @@ Arguments:
        List of integers, one for each spatial
        dimension. Used when ``has_vectors`` is enabled.
 
-   :conv_dilations:
+   :dilation:
 
        (``list[int64]`` or ``int64``) Convolution dilations
 
