@@ -26,6 +26,7 @@
 
 #include <hydrogen/utils/SimpleBuffer.hpp>
 #define LBANN_GRU_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/learning/gru.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/weights/initializer.hpp"

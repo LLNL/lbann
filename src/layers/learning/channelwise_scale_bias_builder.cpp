@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm.hpp"
 #include "lbann/layers/learning/channelwise_scale_bias.hpp"
 
 namespace lbann {
