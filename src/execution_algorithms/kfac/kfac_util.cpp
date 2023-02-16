@@ -25,6 +25,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_util.hpp"
 #include "lbann/base.hpp"
 #include "lbann/utils/timer.hpp"
