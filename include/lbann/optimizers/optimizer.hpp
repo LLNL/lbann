@@ -28,7 +28,7 @@
 #define LBANN_OPTIMIZERS_OPTIMIZER_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-#include "lbann/comm.hpp"
+//#include "lbann/comm.hpp"
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/compiler_control.hpp"
 #ifdef LBANN_HAS_GPU
@@ -70,6 +70,7 @@ enum class optimizer_gradient_status {
 std::string to_string(optimizer_gradient_status status);
 
 // Forward declarations
+class lbann_comm;
 class persist;
 class weights;
 
