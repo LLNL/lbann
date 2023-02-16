@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_SELU_DROPOUT_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/regularizers/selu_dropout.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 

@@ -26,6 +26,7 @@
 
 #include "lbann/layers/loss/loss_layer_builders.hpp"
 
+#include "lbann/comm.hpp"
 #include "lbann/layers/loss/categorical_accuracy.hpp"
 #include "lbann/layers/loss/cross_entropy.hpp"
 #include "lbann/layers/loss/l1_norm.hpp"

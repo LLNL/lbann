@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm.hpp"
 #include <lbann/layers/math/math_builders.hpp>
 #include <lbann/layers/math/matmul.hpp>
 

@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_CUTOUT_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/image/cutout.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 

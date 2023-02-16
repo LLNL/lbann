@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_COMPOSITE_IMAGE_TRANSFORMATION_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/image/composite_image_transformation.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 

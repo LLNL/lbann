@@ -24,9 +24,9 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
-#include "lbann/comm.hpp"
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/dim_helpers.hpp"

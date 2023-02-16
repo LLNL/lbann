@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_ELU_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/activations/elu.hpp"
 
 namespace lbann {

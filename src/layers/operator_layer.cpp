@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_INSTANTIATE_OPERATOR_LAYER
+#include "lbann/comm.hpp"
 #include "lbann/layers/operator_layer_impl.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 

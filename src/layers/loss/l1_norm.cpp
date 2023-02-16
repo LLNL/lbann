@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_L1_NORM_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/loss/l1_norm.hpp"
 
 namespace lbann {

@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm.hpp"
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
 
 #include "lbann/proto/layers.pb.h"
