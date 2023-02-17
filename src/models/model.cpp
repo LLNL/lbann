@@ -41,6 +41,7 @@
 #include "lbann/layers/transform/split.hpp"
 //#include "lbann/metrics/metric.hpp"
 #include "lbann/metrics/layer_metric.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/description.hpp"
