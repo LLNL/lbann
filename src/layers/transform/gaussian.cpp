@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_GAUSSIAN_LAYER_INSTANTIATE
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/layers/transform/gaussian.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/protobuf.hpp"
