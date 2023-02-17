@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "Catch2BasicSupport.hpp"
 
-#include "lbann/comm.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/misc/external.hpp"
 #include "lbann/proto/datatype_helpers.hpp"

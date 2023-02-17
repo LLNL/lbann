@@ -26,7 +26,6 @@
 #include "Catch2BasicSupport.hpp"
 
 #include "lbann/base.hpp"
-#include "lbann/comm.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/operator_layer.hpp"
 #include "lbann/operators/math/clamp.hpp"
