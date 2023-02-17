@@ -24,10 +24,10 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/layers/misc/dist_embedding.hpp"
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/layers/distconv_adapter.hpp"
 #endif // LBANN_HAS_DISTCONV
-#include "lbann/layers/misc/dist_embedding.hpp"
 
 #include "lbann/weights/weights_helpers.hpp"
 #include "lbann/proto/proto_common.hpp"
