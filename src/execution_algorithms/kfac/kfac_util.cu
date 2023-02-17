@@ -25,7 +25,6 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/comm.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_util.hpp"
 
 namespace lbann {

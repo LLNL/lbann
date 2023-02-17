@@ -23,7 +23,6 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#include "lbann/comm.hpp"
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/utils/serialize.hpp"
 
