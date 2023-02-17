@@ -28,12 +28,12 @@
 #define LBANN_MODELS_MODEL_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-#include "lbann/comm.hpp"
-#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
+//#include "lbann/comm.hpp"
+//#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/io/file_io.hpp"
-#include "lbann/io/persist.hpp"
-#include "lbann/layers/layer.hpp"
+//#include "lbann/io/persist.hpp"
+//#include "lbann/layers/layer.hpp"
 #include "lbann/metrics/metric.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/optimizers/optimizer.hpp"
@@ -65,7 +65,9 @@ class Model;
 namespace lbann {
 
 // Forward declarations
+struct DataReaderMetaData;
 class lbann_callback;
+class Layer;
 class TrainingAlgorithm;
 class callback_base;
 
