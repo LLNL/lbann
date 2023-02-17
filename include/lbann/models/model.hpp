@@ -28,19 +28,20 @@
 #define LBANN_MODELS_MODEL_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-//#include "lbann/comm.hpp"
-//#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
+// #include "lbann/comm.hpp"
+// #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/io/file_io.hpp"
-//#include "lbann/io/persist.hpp"
-//#include "lbann/layers/layer.hpp"
-#include "lbann/metrics/metric.hpp"
+// #include "lbann/io/persist.hpp"
+// #include "lbann/layers/layer.hpp"
+//#include "lbann/metrics/metric.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/proto/factories.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
-#include "lbann/weights/weights.hpp"
+//#include "lbann/weights/weights.hpp"
+// #include "lbann/utils/memory.hpp"
 
 #ifdef LBANN_HAS_ONNX
 #include <onnx/onnx_pb.h>
@@ -53,6 +54,8 @@
 // `IncompleteType*`, which is annoying.)
 #include "lbann/proto/optimizers.pb.h"
 
+// #include <map>
+// #include <typeindex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -66,10 +69,19 @@ namespace lbann {
 
 // Forward declarations
 struct DataReaderMetaData;
+class lbann_comm;
+class description;
+class Layer;
 class lbann_callback;
 class Layer;
 class TrainingAlgorithm;
 class callback_base;
+class metric;
+class weights;
+using OwningWeightsPtr = std::shared_ptr<weights>;
+using ViewingWeightsPtr = std::weak_ptr<weights>;
+using OwningLayerPtr = std::shared_ptr<Layer>;
+using ViewingLayerPtr = std::weak_ptr<Layer>;
 
 /** @brief Abstract base class for neural network models. */
 class model

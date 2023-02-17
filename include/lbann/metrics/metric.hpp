@@ -28,15 +28,24 @@
 #define LBANN_METRIC_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-#include "lbann/comm.hpp"
-#include "lbann/layers/layer.hpp"
-#include "lbann/utils/exception.hpp"
-#include "lbann/io/persist.hpp"
+// #include "lbann/comm.hpp"
+// #include "lbann/layers/layer.hpp"
+// #include "lbann/utils/exception.hpp"
+//#include "lbann/io/persist.hpp"
+
+//#include "lbann/utils/memory.hpp"
+#include <map>
+#include <typeindex>
+#include <vector>
 
 namespace lbann {
 
 // Forward declarations
 class model;
+class Layer;
+class lbann_comm;
+using ViewingLayerPtr = std::weak_ptr<Layer>;
+class persist;
 
 /** Metric statistics. */
 struct metric_statistics {
