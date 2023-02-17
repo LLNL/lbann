@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_GATHER_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/transform/gather.hpp"
 
 namespace lbann {

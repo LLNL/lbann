@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_SLICE_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/transform/slice.hpp"
 
 namespace lbann {

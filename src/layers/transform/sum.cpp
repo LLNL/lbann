@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_SUM_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/transform/sum.hpp"
 
 #include <lbann/proto/proto_common.hpp>

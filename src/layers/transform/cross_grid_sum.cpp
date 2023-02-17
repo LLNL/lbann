@@ -26,7 +26,6 @@
 
 #include "lbann/base.hpp"
 #define LBANN_CROSS_GRID_SUM_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/transform/cross_grid_sum.hpp"
 
 #include <lbann/proto/proto_common.hpp>

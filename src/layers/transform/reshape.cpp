@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_RESHAPE_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/transform/reshape.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/protobuf.hpp"

@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_IDENTITY_ZERO_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/transform/identity_zero.hpp"
 
 // LBANN_ASSERT_MSG_HAS_FIELD

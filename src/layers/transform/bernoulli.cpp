@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_BERNOULLI_LAYER_INSTANTIATE
-#include "lbann/comm.hpp"
 #include "lbann/layers/transform/bernoulli.hpp"
 
 #include "lbann/proto/proto_common.hpp"
