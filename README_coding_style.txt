@@ -1,4 +1,4 @@
-For LBANN coding style we are going to use one that is based on the standard C++ libraries and Boost projects.
+For LBANN coding style we use one that is based on the standard C++ libraries and Boost projects.
 
 * overriding style is lowercase separated with underbar
 * member fields: m_*
@@ -8,8 +8,8 @@ For LBANN coding style we are going to use one that is based on the standard C++
 * header preprocessor guard: <NAMESPACE_PATH_NAME>_HPP_INCLUDED (e.g. LBANN_LAYERS_FULLYCONNECTED_HPP_INCLUDED)
 * 2 space, no tabs
 * comments:
-  * doxygen:  
-    * /// single line comment 
+  * doxygen:
+    * /// single line comment
     * /** multi-line comment */
     * @todo  - TODO note
   * inside of a function use //
