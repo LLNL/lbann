@@ -32,7 +32,7 @@
 // #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 // BVE FIXME - At the moment, it will cause a lot of churn to remove
 // this because many headers rely on the function pattern m_model->get_execution_context()
-#include "lbann/execution_algorithms/execution_context.hpp"
+//#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/io/file_io.hpp"
 // #include "lbann/io/persist.hpp"
 // #include "lbann/layers/layer.hpp"

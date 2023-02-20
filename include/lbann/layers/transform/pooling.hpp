@@ -331,250 +331,250 @@ protected:
 private:
 
   /// Pooling forward propagation with DNN library
-  void fp_compute_dnn() {
-#ifndef LBANN_HAS_DNN_LIB
-    LBANN_ERROR("DNN library not detected");
-#else
-    // Initialize GPU workspace
-    El::Matrix<TensorDataType, El::Device::GPU> workspace;
-    size_t workspace_size = dnn_lib::get_pooling_ws_size(m_pooling_dnn_desc,
-                                                         m_tensors_dnn_desc.get_activations());
-    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+  void fp_compute_dnn(); // {
+// #ifndef LBANN_HAS_DNN_LIB
+//     LBANN_ERROR("DNN library not detected");
+// #else
+//     // Initialize GPU workspace
+//     El::Matrix<TensorDataType, El::Device::GPU> workspace;
+//     size_t workspace_size = dnn_lib::get_pooling_ws_size(m_pooling_dnn_desc,
+//                                                          m_tensors_dnn_desc.get_activations());
+//     workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
 
-    using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
-    const auto& local_input = this->get_local_prev_activations();
-    auto& local_output = this->get_local_activations();
-    if (local_input.Height() > 0 && local_input.Width() > 0) {
-      const auto zero = El::TypeTraits<ScalingType>::Zero();
-      const auto one = El::TypeTraits<ScalingType>::One();
-      dnn_lib::pooling_forward(m_pooling_dnn_desc,
-                               one,
-                               m_tensors_dnn_desc.get_prev_activations(),
-                               local_input,
-                               zero,
-                               m_tensors_dnn_desc.get_activations(),
-                               local_output,
-                               workspace);
-    }
-#endif // #ifndef LBANN_HAS_DNN_LIB
-  }
+//     using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
+//     const auto& local_input = this->get_local_prev_activations();
+//     auto& local_output = this->get_local_activations();
+//     if (local_input.Height() > 0 && local_input.Width() > 0) {
+//       const auto zero = El::TypeTraits<ScalingType>::Zero();
+//       const auto one = El::TypeTraits<ScalingType>::One();
+//       dnn_lib::pooling_forward(m_pooling_dnn_desc,
+//                                one,
+//                                m_tensors_dnn_desc.get_prev_activations(),
+//                                local_input,
+//                                zero,
+//                                m_tensors_dnn_desc.get_activations(),
+//                                local_output,
+//                                workspace);
+//     }
+// #endif // #ifndef LBANN_HAS_DNN_LIB
+//   }
 
   /// Pooling backward propagation with DNN library
-  void bp_compute_dnn() {
-#ifndef LBANN_HAS_DNN_LIB
-    LBANN_ERROR("DNN library not detected");
-#else
-    // Initialize GPU workspace
-    El::Matrix<TensorDataType, El::Device::GPU> workspace;
-    size_t workspace_size = dnn_lib::get_pooling_ws_size(m_pooling_dnn_desc,
-                                                         m_tensors_dnn_desc.get_activations());
-    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+  void bp_compute_dnn(); // {
+// #ifndef LBANN_HAS_DNN_LIB
+//     LBANN_ERROR("DNN library not detected");
+// #else
+//     // Initialize GPU workspace
+//     El::Matrix<TensorDataType, El::Device::GPU> workspace;
+//     size_t workspace_size = dnn_lib::get_pooling_ws_size(m_pooling_dnn_desc,
+//                                                          m_tensors_dnn_desc.get_activations());
+//     workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
 
-    using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
-    const auto& local_input = this->get_local_prev_activations();
-    const auto& local_output = this->get_local_activations();
-    const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
-    auto& local_gradient_wrt_input = this->get_local_error_signals();
-    if (local_input.Height() > 0 && local_input.Width() > 0) {
+//     using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
+//     const auto& local_input = this->get_local_prev_activations();
+//     const auto& local_output = this->get_local_activations();
+//     const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
+//     auto& local_gradient_wrt_input = this->get_local_error_signals();
+//     if (local_input.Height() > 0 && local_input.Width() > 0) {
 
-      // Useful constants
-      const auto one = El::TypeTraits<ScalingType>::One();
-      const auto zero = El::TypeTraits<ScalingType>::Zero();
+//       // Useful constants
+//       const auto one = El::TypeTraits<ScalingType>::One();
+//       const auto zero = El::TypeTraits<ScalingType>::Zero();
 
-      // Perform backprop on GPU
-      dnn_lib::pooling_backward(m_pooling_dnn_desc,
-                                one,
-                                m_tensors_dnn_desc.get_activations(),
-                                local_output,
-                                m_tensors_dnn_desc.get_prev_error_signals(),
-                                local_gradient_wrt_output,
-                                m_tensors_dnn_desc.get_prev_activations(),
-                                local_input,
-                                zero,
-                                m_tensors_dnn_desc.get_error_signals(),
-                                local_gradient_wrt_input,
-                                workspace);
-    }
-#endif // #ifndef LBANN_HAS_DNN_LIB
-  }
-
-  /// Pooling forward propagation with im2col
-  void fp_compute_im2col() {
-    if(m_pool_mode != pooling_mode::MAX &&
-       m_pool_mode != pooling_mode::MAX_DETERMINISTIC &&
-       m_pool_mode != pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING) {
-      LBANN_ERROR("CPU pooling layer only supports max and average pooling");
-    }
-
-    // Local matrices
-    const auto& local_input = this->get_local_prev_activations();
-    auto& local_output = this->get_local_activations();
-
-    // Pool parameters
-    const int local_width = local_input.Width();
-    const auto& input_dims = this->get_input_dims();
-    const int num_channels = input_dims[0];
-    const int num_per_output_channel = this->get_output_size() / num_channels;
-
-    // Initialize max pool indices if needed
-    if(m_pool_mode == pooling_mode::MAX ||
-       m_pool_mode == pooling_mode::MAX_DETERMINISTIC) {
-      m_max_pool_indices.assign(this->get_output_size() * local_width, 0);
-    }
-
-    // Initialize matrices
-    El::Matrix<TensorDataType, Dev> im2col_mat(m_pool_size * num_channels, num_per_output_channel);
-    El::Matrix<TensorDataType, Dev> input_mat;
-
-    // Iterate through data samples
-    for(int sample = 0; sample < local_width; ++sample) {
-
-      // Construct im2col matrix from input
-      El::LockedView(input_mat, local_input,
-                     El::ALL, El::IR(sample));
-      im2col<TensorDataType>(input_mat,
-             im2col_mat,
-             num_channels,
-             input_dims.size() - 1,
-             &input_dims[1],
-             m_pads.data(),
-             m_pool_dims.data(),
-             m_strides.data());
-
-      if(m_pool_mode == pooling_mode::MAX ||
-         m_pool_mode == pooling_mode::MAX_DETERMINISTIC) {
-        // Apply max pooling
-        TensorDataType *output_buffer = local_output.Buffer(0, sample);
-        int *indices_buffer = &m_max_pool_indices[sample * this->get_output_size()];
-        LBANN_OMP_PARALLEL_FOR
-        for(int channel = 0; channel < num_channels; ++channel) {
-          for(int j = 0; j < num_per_output_channel; ++j) {
-            TensorDataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
-            TensorDataType max_entry = im2col_buffer[0];
-            int max_index = 0;
-            for(int i = 1; i < m_pool_size; ++i) {
-              const TensorDataType current_entry = im2col_buffer[i];
-              if(current_entry > max_entry) {
-                max_entry = current_entry;
-                max_index = i;
-              }
-            }
-            const int output_index = j + channel * num_per_output_channel;
-            output_buffer[output_index] = max_entry;
-            indices_buffer[output_index] = max_index;
-          }
-        }
-      }
-
-      if(m_pool_mode == pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING) {
-        // Apply average pooling
-        TensorDataType *output_buffer = local_output.Buffer(0, sample);
-        LBANN_OMP_PARALLEL_FOR
-        for(int channel = 0; channel < num_channels; ++channel) {
-          for(int j = 0; j < num_per_output_channel; ++j) {
-            const TensorDataType *im2col_buffer
-              = im2col_mat.LockedBuffer(channel*m_pool_size, j);
-            TensorDataType output_entry = El::TypeTraits<TensorDataType>::Zero();
-            for(int i = 0; i < m_pool_size; ++i) {
-              output_entry += im2col_buffer[i];
-            }
-            output_entry /= m_pool_size;
-            const int output_index = j + channel * num_per_output_channel;
-            output_buffer[output_index] = output_entry;
-          }
-        }
-      }
-
-    }
-
-  }
+//       // Perform backprop on GPU
+//       dnn_lib::pooling_backward(m_pooling_dnn_desc,
+//                                 one,
+//                                 m_tensors_dnn_desc.get_activations(),
+//                                 local_output,
+//                                 m_tensors_dnn_desc.get_prev_error_signals(),
+//                                 local_gradient_wrt_output,
+//                                 m_tensors_dnn_desc.get_prev_activations(),
+//                                 local_input,
+//                                 zero,
+//                                 m_tensors_dnn_desc.get_error_signals(),
+//                                 local_gradient_wrt_input,
+//                                 workspace);
+//     }
+// #endif // #ifndef LBANN_HAS_DNN_LIB
+//   }
 
   /// Pooling forward propagation with im2col
-  void bp_compute_im2col() {
-    using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
-    if(m_pool_mode != pooling_mode::MAX &&
-       m_pool_mode != pooling_mode::MAX_DETERMINISTIC &&
-       m_pool_mode != pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING) {
-      LBANN_ERROR("CPU pooling layer only supports max and average pooling");
-    }
+  void fp_compute_im2col(); // {
+  //   if(m_pool_mode != pooling_mode::MAX &&
+  //      m_pool_mode != pooling_mode::MAX_DETERMINISTIC &&
+  //      m_pool_mode != pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING) {
+  //     LBANN_ERROR("CPU pooling layer only supports max and average pooling");
+  //   }
 
-    // Local matrices
-    const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
-    auto& local_gradient_wrt_input = this->get_local_error_signals();
+  //   // Local matrices
+  //   const auto& local_input = this->get_local_prev_activations();
+  //   auto& local_output = this->get_local_activations();
 
-    // Pool parameters
-    const int local_width = local_gradient_wrt_output.Width();
-    const auto& input_dims = this->get_input_dims();
-    const int num_channels = input_dims[0];
-    const int num_per_input_channel = this->get_output_size() / num_channels;
+  //   // Pool parameters
+  //   const int local_width = local_input.Width();
+  //   const auto& input_dims = this->get_input_dims();
+  //   const int num_channels = input_dims[0];
+  //   const int num_per_output_channel = this->get_output_size() / num_channels;
 
-    // Initialize matrices
-    CPUMatType im2col_mat(m_pool_size * num_channels, num_per_input_channel);
-    CPUMatType gradient_wrt_input_col;
+  //   // Initialize max pool indices if needed
+  //   if(m_pool_mode == pooling_mode::MAX ||
+  //      m_pool_mode == pooling_mode::MAX_DETERMINISTIC) {
+  //     m_max_pool_indices.assign(this->get_output_size() * local_width, 0);
+  //   }
 
-    // Iterate through data samples
-    for(int sample = 0; sample < local_width; ++sample) {
+  //   // Initialize matrices
+  //   El::Matrix<TensorDataType, Dev> im2col_mat(m_pool_size * num_channels, num_per_output_channel);
+  //   El::Matrix<TensorDataType, Dev> input_mat;
 
-      // Compute gradient w.r.t. im2col matrix for max pooling
-      if(m_pool_mode == pooling_mode::MAX ||
-         m_pool_mode == pooling_mode::MAX_DETERMINISTIC) {
+  //   // Iterate through data samples
+  //   for(int sample = 0; sample < local_width; ++sample) {
 
-        // Clear im2col matrix
-        El::Zero(im2col_mat);
+  //     // Construct im2col matrix from input
+  //     El::LockedView(input_mat, local_input,
+  //                    El::ALL, El::IR(sample));
+  //     im2col<TensorDataType>(input_mat,
+  //            im2col_mat,
+  //            num_channels,
+  //            input_dims.size() - 1,
+  //            &input_dims[1],
+  //            m_pads.data(),
+  //            m_pool_dims.data(),
+  //            m_strides.data());
 
-        // Copy previous error signal to im2col matrix entries
-        // corresponding to max
-        const TensorDataType *gradient_wrt_output_buffer
-          = local_gradient_wrt_output.LockedBuffer(0, sample);
-        const int *indices_buffer
-          = &m_max_pool_indices[sample * this->get_output_size()];
-        LBANN_OMP_PARALLEL_FOR
-        for(int channel = 0; channel < num_channels; ++channel) {
-          for(int j = 0; j < num_per_input_channel; ++j) {
-            const int input_index = j + channel * num_per_input_channel;
-            const int max_index = indices_buffer[input_index];
-            TensorDataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
-            im2col_buffer[max_index]
-              = gradient_wrt_output_buffer[input_index];
-          }
-        }
+  //     if(m_pool_mode == pooling_mode::MAX ||
+  //        m_pool_mode == pooling_mode::MAX_DETERMINISTIC) {
+  //       // Apply max pooling
+  //       TensorDataType *output_buffer = local_output.Buffer(0, sample);
+  //       int *indices_buffer = &m_max_pool_indices[sample * this->get_output_size()];
+  //       LBANN_OMP_PARALLEL_FOR
+  //       for(int channel = 0; channel < num_channels; ++channel) {
+  //         for(int j = 0; j < num_per_output_channel; ++j) {
+  //           TensorDataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
+  //           TensorDataType max_entry = im2col_buffer[0];
+  //           int max_index = 0;
+  //           for(int i = 1; i < m_pool_size; ++i) {
+  //             const TensorDataType current_entry = im2col_buffer[i];
+  //             if(current_entry > max_entry) {
+  //               max_entry = current_entry;
+  //               max_index = i;
+  //             }
+  //           }
+  //           const int output_index = j + channel * num_per_output_channel;
+  //           output_buffer[output_index] = max_entry;
+  //           indices_buffer[output_index] = max_index;
+  //         }
+  //       }
+  //     }
 
-      }
+  //     if(m_pool_mode == pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING) {
+  //       // Apply average pooling
+  //       TensorDataType *output_buffer = local_output.Buffer(0, sample);
+  //       LBANN_OMP_PARALLEL_FOR
+  //       for(int channel = 0; channel < num_channels; ++channel) {
+  //         for(int j = 0; j < num_per_output_channel; ++j) {
+  //           const TensorDataType *im2col_buffer
+  //             = im2col_mat.LockedBuffer(channel*m_pool_size, j);
+  //           TensorDataType output_entry = El::TypeTraits<TensorDataType>::Zero();
+  //           for(int i = 0; i < m_pool_size; ++i) {
+  //             output_entry += im2col_buffer[i];
+  //           }
+  //           output_entry /= m_pool_size;
+  //           const int output_index = j + channel * num_per_output_channel;
+  //           output_buffer[output_index] = output_entry;
+  //         }
+  //       }
+  //     }
 
-      // Compute gradient w.r.t. im2col matrix for average pooling
-      if(m_pool_mode == pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING) {
-        const TensorDataType *gradient_wrt_output_buffer
-          = local_gradient_wrt_output.LockedBuffer(0, sample);
-        LBANN_OMP_PARALLEL_FOR
-        for(int channel = 0; channel < num_channels; ++channel) {
-          for(int j = 0; j < num_per_input_channel; ++j) {
-            TensorDataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
-            const int input_index = j + channel * num_per_input_channel;
-            const TensorDataType output_entry
-              = gradient_wrt_output_buffer[input_index] / El::To<TensorDataType>(m_pool_size);
-            for(int i = 0; i < m_pool_size; ++i) {
-              im2col_buffer[i] = output_entry;
-            }
-          }
-        }
+  //   }
 
-      }
+  // }
 
-      // Compute error signal (i.e. gradient w.r.t. input)
-      El::View(gradient_wrt_input_col, local_gradient_wrt_input,
-               El::ALL, El::IR(sample));
-      col2im<TensorDataType>(im2col_mat,
-             gradient_wrt_input_col,
-             num_channels,
-             input_dims.size() - 1,
-             &input_dims[1],
-             m_pads.data(),
-             m_pool_dims.data(),
-             m_strides.data());
+  /// Pooling forward propagation with im2col
+  void bp_compute_im2col(); // {
+  //   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
+  //   if(m_pool_mode != pooling_mode::MAX &&
+  //      m_pool_mode != pooling_mode::MAX_DETERMINISTIC &&
+  //      m_pool_mode != pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING) {
+  //     LBANN_ERROR("CPU pooling layer only supports max and average pooling");
+  //   }
 
-    }
+  //   // Local matrices
+  //   const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
+  //   auto& local_gradient_wrt_input = this->get_local_error_signals();
 
-  }
+  //   // Pool parameters
+  //   const int local_width = local_gradient_wrt_output.Width();
+  //   const auto& input_dims = this->get_input_dims();
+  //   const int num_channels = input_dims[0];
+  //   const int num_per_input_channel = this->get_output_size() / num_channels;
+
+  //   // Initialize matrices
+  //   CPUMatType im2col_mat(m_pool_size * num_channels, num_per_input_channel);
+  //   CPUMatType gradient_wrt_input_col;
+
+  //   // Iterate through data samples
+  //   for(int sample = 0; sample < local_width; ++sample) {
+
+  //     // Compute gradient w.r.t. im2col matrix for max pooling
+  //     if(m_pool_mode == pooling_mode::MAX ||
+  //        m_pool_mode == pooling_mode::MAX_DETERMINISTIC) {
+
+  //       // Clear im2col matrix
+  //       El::Zero(im2col_mat);
+
+  //       // Copy previous error signal to im2col matrix entries
+  //       // corresponding to max
+  //       const TensorDataType *gradient_wrt_output_buffer
+  //         = local_gradient_wrt_output.LockedBuffer(0, sample);
+  //       const int *indices_buffer
+  //         = &m_max_pool_indices[sample * this->get_output_size()];
+  //       LBANN_OMP_PARALLEL_FOR
+  //       for(int channel = 0; channel < num_channels; ++channel) {
+  //         for(int j = 0; j < num_per_input_channel; ++j) {
+  //           const int input_index = j + channel * num_per_input_channel;
+  //           const int max_index = indices_buffer[input_index];
+  //           TensorDataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
+  //           im2col_buffer[max_index]
+  //             = gradient_wrt_output_buffer[input_index];
+  //         }
+  //       }
+
+  //     }
+
+  //     // Compute gradient w.r.t. im2col matrix for average pooling
+  //     if(m_pool_mode == pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING) {
+  //       const TensorDataType *gradient_wrt_output_buffer
+  //         = local_gradient_wrt_output.LockedBuffer(0, sample);
+  //       LBANN_OMP_PARALLEL_FOR
+  //       for(int channel = 0; channel < num_channels; ++channel) {
+  //         for(int j = 0; j < num_per_input_channel; ++j) {
+  //           TensorDataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
+  //           const int input_index = j + channel * num_per_input_channel;
+  //           const TensorDataType output_entry
+  //             = gradient_wrt_output_buffer[input_index] / El::To<TensorDataType>(m_pool_size);
+  //           for(int i = 0; i < m_pool_size; ++i) {
+  //             im2col_buffer[i] = output_entry;
+  //           }
+  //         }
+  //       }
+
+  //     }
+
+  //     // Compute error signal (i.e. gradient w.r.t. input)
+  //     El::View(gradient_wrt_input_col, local_gradient_wrt_input,
+  //              El::ALL, El::IR(sample));
+  //     col2im<TensorDataType>(im2col_mat,
+  //            gradient_wrt_input_col,
+  //            num_channels,
+  //            input_dims.size() - 1,
+  //            &input_dims[1],
+  //            m_pads.data(),
+  //            m_pool_dims.data(),
+  //            m_strides.data());
+
+  //   }
+
+  // }
 
 #ifdef LBANN_HAS_DISTCONV
   friend class pooling_distconv_adapter<TensorDataType, T_layout, Dev>;

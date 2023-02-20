@@ -26,6 +26,7 @@
 
 #define LBANN_CATEGORICAL_RANDOM_LAYER_INSTANTIATE
 #include "lbann/layers/transform/categorical_random.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/layers.pb.h"
 

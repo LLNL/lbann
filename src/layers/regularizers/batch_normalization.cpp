@@ -28,6 +28,7 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/weights/weights_helpers.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 
 namespace lbann {
 

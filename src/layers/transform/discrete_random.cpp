@@ -26,6 +26,7 @@
 
 #define LBANN_DISCRETE_RANDOM_LAYER_INSTANTIATE
 #include "lbann/layers/transform/discrete_random.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 
 #include "lbann/utils/protobuf.hpp"
 

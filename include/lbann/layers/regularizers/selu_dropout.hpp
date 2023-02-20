@@ -29,7 +29,7 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
-#include "lbann/models/model.hpp"
+//#include "lbann/models/model.hpp"
 
 namespace lbann {
 
