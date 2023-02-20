@@ -36,6 +36,7 @@
 #include <lbann/utils/serialize.hpp>
 #include <lbann/utils/lbann_library.hpp>
 #include <lbann/proto/factories.hpp>
+#include "lbann/objective_functions/objective_function.hpp"
 
 #include "lbann/proto/lbann.pb.h"
 #include <google/protobuf/text_format.h>

@@ -42,7 +42,6 @@ if (LBANN_HAS_GPU)
   # Add the CUDA source files for this directory
   set_full_path(THIS_DIR_CU_SOURCES
     batch_normalization.cu
-    dropout.cu
     entrywise_batch_normalization.cu
     instance_norm.cu
     layer_norm.cu

@@ -85,6 +85,73 @@ void dropout<TensorDataType, layout, device>::bp_compute_cpu() {
 }
 
 template <typename TensorDataType, data_layout layout, El::Device device>
+void dropout<TensorDataType, layout, device>::fp_compute_gpu() {
+#ifndef LBANN_HAS_DNN_LIB
+  LBANN_ERROR("DNN library not detected");
+#else
+
+  // Matrices
+  const auto& input = this->get_prev_activations();
+  const auto& local_input = input.LockedMatrix();
+  auto& output = this->get_activations();
+  auto& local_output = output.Matrix();
+
+  // Do nothing if dropout is disabled or there is no local data
+  const auto& mode = this->m_model->get_execution_context().get_execution_mode();
+  if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
+    El::Copy(input, output);
+    return;
+  }
+  if (local_input.Height() < 1 || local_input.Width() < 1) { return; }
+
+  // Initialize DNN library objects
+  auto&& input_desc = m_tensors_dnn_desc.get_prev_activations();
+  auto&& output_desc = m_tensors_dnn_desc.get_activations();
+  size_t size = dnn_lib::get_dropout_reserve_space_size(input_desc);
+  m_reserve_space.Resize((size + sizeof(TensorDataType) - 1) / sizeof(TensorDataType), 1);
+
+  // Apply dropout on the GPU
+  dnn_lib::dropout_forward(m_dropout_dnn_desc,
+                           input_desc,
+                           local_input,
+                           output_desc,
+                           local_output,
+                           m_reserve_space);
+
+#endif // LBANN_HAS_DNN_LIB
+}
+
+template <typename TensorDataType, data_layout layout, El::Device device>
+void dropout<TensorDataType, layout, device>::bp_compute_gpu() {
+#ifndef LBANN_HAS_DNN_LIB
+  LBANN_ERROR("DNN library not detected");
+#else
+
+  // Matrices
+  const auto& gradient_wrt_output = this->get_prev_error_signals();
+  const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
+  auto& gradient_wrt_input = this->get_error_signals();
+  auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
+
+  // Copy error signal if dropout is disabled
+  const auto& mode = this->m_model->get_execution_context().get_execution_mode();
+  if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
+    El::Copy(gradient_wrt_output, gradient_wrt_input);
+  } else {
+    if (local_gradient_wrt_input.Height() > 0
+        && local_gradient_wrt_input.Width() > 0) {
+      dnn_lib::dropout_backward(m_dropout_dnn_desc,
+                                m_tensors_dnn_desc.get_prev_error_signals(),
+                                local_gradient_wrt_output,
+                                m_tensors_dnn_desc.get_error_signals(),
+                                local_gradient_wrt_input,
+                                m_reserve_space);
+    }
+  }
+#endif // LBANN_HAS_DNN_LIB
+}
+
+template <typename TensorDataType, data_layout layout, El::Device device>
 std::unique_ptr<Layer> build_dropout_layer_from_pbuf(
   lbann_comm* comm, lbann_data::Layer const& layer_msg)
 {
@@ -100,16 +167,16 @@ void dropout<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   msg->set_keep_prob(m_keep_prob);
 }
 
-#define PROTO(T)                                         \
-  template std::unique_ptr<Layer>                                       \
-  build_dropout_layer_from_pbuf<T, data_layout::DATA_PARALLEL, El::Device::CPU>( \
-    lbann_comm*, lbann_data::Layer const&);                             \
-  template std::unique_ptr<Layer>                                       \
-  build_dropout_layer_from_pbuf<T, data_layout::MODEL_PARALLEL, El::Device::CPU>( \
-    lbann_comm*, lbann_data::Layer const&);                             \
-  template class dropout<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
-  template class dropout<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+#define PROTO_DEVICE(T, DEVICE)                                          \
+  template std::unique_ptr<Layer>                                        \
+  build_dropout_layer_from_pbuf<T, data_layout::DATA_PARALLEL, DEVICE>(  \
+    lbann_comm*, lbann_data::Layer const&);                              \
+  template std::unique_ptr<Layer>                                        \
+  build_dropout_layer_from_pbuf<T, data_layout::MODEL_PARALLEL, DEVICE>( \
+    lbann_comm*, lbann_data::Layer const&);                              \
+  template class dropout<T, data_layout::DATA_PARALLEL, DEVICE>;         \
+  template class dropout<T, data_layout::MODEL_PARALLEL, DEVICE>
 
-#include "lbann/macros/instantiate.hpp"
+#include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann
