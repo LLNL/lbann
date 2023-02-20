@@ -31,6 +31,7 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/weights/weights.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
 

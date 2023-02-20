@@ -40,6 +40,7 @@
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/load_model.hpp"
 #include "lbann/utils/argument_parser.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
 
 #include <cstdlib>
 #include "lbann/proto/lbann.pb.h"

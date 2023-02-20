@@ -32,6 +32,8 @@
 #include "lbann/optimizers/sgd.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/weights/data_type_weights_impl.hpp"
+#include "lbann/metrics/metric.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
 
 #include "checkpoint_common.hpp"
 

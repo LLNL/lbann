@@ -31,6 +31,7 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/serialize.hpp"
 #include <cereal/types/set.hpp>
+#include "lbann/metrics/metric.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
 

@@ -28,6 +28,7 @@
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/save_topk_models.hpp"
+#include "lbann/metrics/metric.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
 

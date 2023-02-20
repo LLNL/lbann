@@ -30,6 +30,7 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
+#include "lbann/metrics/metric.hpp"
 
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/profiling.hpp"

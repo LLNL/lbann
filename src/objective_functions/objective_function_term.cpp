@@ -25,6 +25,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/objective_functions/objective_function_term.hpp"
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/distconv_adapter.hpp"
+#endif // LBANN_HAS_DISTCONV
 #include "lbann/models/model.hpp"
 #include "lbann/utils/serialize.hpp"
 

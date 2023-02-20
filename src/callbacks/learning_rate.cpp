@@ -31,6 +31,7 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/utils/protobuf.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
 
 #include "callback_helpers.hpp"
 

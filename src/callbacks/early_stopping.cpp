@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/early_stopping.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
 

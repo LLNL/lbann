@@ -29,6 +29,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/utils/serialization/rooted_archive_adaptor.hpp"
 #include "lbann/weights/data_type_weights.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
 
 #include "checkpoint_common.hpp"
 

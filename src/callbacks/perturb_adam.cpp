@@ -30,6 +30,7 @@
 #include "lbann/utils/random_number_generators.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/protobuf.hpp"
+#include "lbann/weights/weights.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
 

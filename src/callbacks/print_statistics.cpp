@@ -34,6 +34,7 @@
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
 
