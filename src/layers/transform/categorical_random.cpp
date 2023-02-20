@@ -70,6 +70,57 @@ struct Builder<El::gpu_half_type, data_layout::DATA_PARALLEL, El::Device::CPU>
 #endif // LBANN_HAS_GPU_FP16
 }// namespace
 
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void categorical_random_layer<TensorDataType,Layout,Device>::fp_compute() {
+
+  // Input and output matrices
+  const auto& input = this->get_prev_activations();
+  const auto& local_input = input.LockedMatrix();
+  auto& local_output = this->get_local_activations();
+  const auto& width = input.Width();
+  const auto& local_height = local_input.Height();
+  const auto& local_width = local_input.Width();
+
+  // Initialize output and random numbers
+  const auto& mode =
+    this->m_model->get_execution_context().get_execution_mode();
+  El::Zero(local_output);
+  StarVCMatDT<TensorDataType, El::Device::CPU> rand_mat(input.Grid(),
+                                                        input.Root());
+  if (mode == execution_mode::training) {
+    uniform_fill(rand_mat, 1, width, TensorDataType(0.5), TensorDataType(0.5));
+  }
+
+  // Process each mini-batch sample
+  LBANN_OMP_PARALLEL_FOR
+  for (El::Int col = 0; col < local_width; ++col) {
+
+    // Determine index of output
+    El::Int index = local_height - 1;
+    if (mode == execution_mode::training) {
+      // Choose first output with CDF above random number in (0,1)
+      const auto& rand = rand_mat.GetLocal(0, col);
+      TensorDataType cdf = El::TypeTraits<TensorDataType>::Zero();
+      for (El::Int row = 0; row < local_height; ++row) {
+        cdf += local_input(row, col);
+        if (rand < cdf) {
+          index = row;
+          break;
+        }
+      }
+    }
+    else {
+      // Choose mode of probability distribution
+      const auto& input_ptr = local_input.LockedBuffer(0, col);
+      index =
+        (std::max_element(input_ptr, input_ptr + local_height) - input_ptr);
+    }
+
+    // Output a one-hot vector
+    local_output(index, col) = El::TypeTraits<TensorDataType>::One();
+  }
+}
+
 template <typename T, data_layout L, El::Device D>
 void categorical_random_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);

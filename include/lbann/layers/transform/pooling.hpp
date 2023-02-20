@@ -297,36 +297,36 @@ protected:
 #endif // #ifndef LBANN_HAS_DNN_LIB
   }
 
-  void fp_compute() override {
-    if(this->using_gpus()) {
-#ifdef LBANN_HAS_DISTCONV
-      if (this->distconv_enabled()) {
-        const auto& mode =
-          this->m_model->get_execution_context().get_execution_mode();
-        get_distconv_adapter().fp_compute(mode == execution_mode::training);
-        return;
-      }
-#endif // LBANN_HAS_DISTCONV
-      fp_compute_dnn();
-    }
-    else {
-      fp_compute_im2col();
-    }
-  }
+  void fp_compute() override;//  {
+//     if(this->using_gpus()) {
+// #ifdef LBANN_HAS_DISTCONV
+//       if (this->distconv_enabled()) {
+//         const auto& mode =
+//           this->m_model->get_execution_context().get_execution_mode();
+//         get_distconv_adapter().fp_compute(mode == execution_mode::training);
+//         return;
+//       }
+// #endif // LBANN_HAS_DISTCONV
+//       fp_compute_dnn();
+//     }
+//     else {
+//       fp_compute_im2col();
+//     }
+//   }
 
-  void bp_compute() override {
-    if(this->using_gpus()) {
-#ifdef LBANN_HAS_DISTCONV
-      if (this->distconv_enabled()) {
-        get_distconv_adapter().bp_compute();
-        return;
-      }
-#endif // LBANN_HAS_DISTCONV
-      bp_compute_dnn();
-    } else {
-      bp_compute_im2col();
-    }
-  }
+  void bp_compute() override;//  {
+//     if(this->using_gpus()) {
+// #ifdef LBANN_HAS_DISTCONV
+//       if (this->distconv_enabled()) {
+//         get_distconv_adapter().bp_compute();
+//         return;
+//       }
+// #endif // LBANN_HAS_DISTCONV
+//       bp_compute_dnn();
+//     } else {
+//       bp_compute_im2col();
+//     }
+//   }
 
 private:
 

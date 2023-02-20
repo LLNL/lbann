@@ -188,118 +188,119 @@ protected:
 
  private:
 
-  void fp_compute_cpu() {
+  void fp_compute_cpu();//  {
 
-    // Matrices
-    const auto& input = this->get_prev_activations();
-    auto& output = this->get_activations();
+//     // Matrices
+//     const auto& input = this->get_prev_activations();
+//     auto& output = this->get_activations();
 
-    // Do nothing if dropout is disabled
-    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
-    if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
-      El::Copy(input, output);
-      return;
-    }
+//     // Do nothing if dropout is disabled
+//     const auto& mode = this->m_model->get_execution_context().get_execution_mode();
+//     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
+//       El::Copy(input, output);
+//       return;
+//     }
 
-    // Construct mask matrix
-    const TensorDataType scale = static_cast<TensorDataType>(1 / m_keep_prob);
-    const auto& height = input.Height();
-    const auto& width = input.Width();
-    m_mask->Resize(height, width);
-#ifdef LBANN_DETERMINISTIC
-    bernoulli_fill_procdet(*m_mask, height, width, TensorDataType(m_keep_prob));
-    El::Scale(scale, *m_mask);
-#else
-    El::EntrywiseMap(*m_mask,
-                     (std::function<TensorDataType(const TensorDataType&)>)
-                     ([this,scale](const TensorDataType& z)->TensorDataType {
-                       auto& gen = get_fast_generator();
-                       std::bernoulli_distribution dist(m_keep_prob);
-                       return dist(gen) ? scale : El::TypeTraits<TensorDataType>::Zero();
-                     }));
-#endif // LBANN_DETERMINISTIC
+//     // Construct mask matrix
+//     const TensorDataType scale = static_cast<TensorDataType>(1 / m_keep_prob);
+//     const auto& height = input.Height();
+//     const auto& width = input.Width();
+//     m_mask->Resize(height, width);
+// #ifdef LBANN_DETERMINISTIC
+//     bernoulli_fill_procdet(*m_mask, height, width, TensorDataType(m_keep_prob));
+//     El::Scale(scale, *m_mask);
+// #else
+//     El::EntrywiseMap(*m_mask,
+//                      (std::function<TensorDataType(const TensorDataType&)>)
+//                      ([this,scale](const TensorDataType& z)->TensorDataType {
+//                        auto& gen = get_fast_generator();
+//                        std::bernoulli_distribution dist(m_keep_prob);
+//                        return dist(gen) ? scale : El::TypeTraits<TensorDataType>::Zero();
+//                      }));
+// #endif // LBANN_DETERMINISTIC
 
-    // Apply mask matrix to get activations
-    El::Hadamard(input, *m_mask, output);
+//     // Apply mask matrix to get activations
+//     El::Hadamard(input, *m_mask, output);
 
-  }
+//   }
 
   /** Adjust gradients for dropout in backprop. */
-  void bp_compute_cpu() {
-    const auto& gradient_wrt_output = this->get_prev_error_signals();
-    auto& gradient_wrt_input = this->get_error_signals();
-    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
-    if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
-      El::Copy(gradient_wrt_output, gradient_wrt_input);
-    } else {
-      El::Hadamard(gradient_wrt_output, *m_mask, gradient_wrt_input);
-    }
-  }
+  void bp_compute_cpu();
+  // {
+  //   const auto& gradient_wrt_output = this->get_prev_error_signals();
+  //   auto& gradient_wrt_input = this->get_error_signals();
+  //   const auto& mode = this->m_model->get_execution_context().get_execution_mode();
+  //   if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
+  //     El::Copy(gradient_wrt_output, gradient_wrt_input);
+  //   } else {
+  //     El::Hadamard(gradient_wrt_output, *m_mask, gradient_wrt_input);
+  //   }
+  // }
 
-  void fp_compute_gpu() {
-#ifndef LBANN_HAS_DNN_LIB
-    LBANN_ERROR("DNN library not detected");
-#else
+  void fp_compute_gpu(); // {
+// #ifndef LBANN_HAS_DNN_LIB
+//     LBANN_ERROR("DNN library not detected");
+// #else
 
-    // Matrices
-    const auto& input = this->get_prev_activations();
-    const auto& local_input = input.LockedMatrix();
-    auto& output = this->get_activations();
-    auto& local_output = output.Matrix();
+//     // Matrices
+//     const auto& input = this->get_prev_activations();
+//     const auto& local_input = input.LockedMatrix();
+//     auto& output = this->get_activations();
+//     auto& local_output = output.Matrix();
 
-    // Do nothing if dropout is disabled or there is no local data
-    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
-    if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
-      El::Copy(input, output);
-      return;
-    }
-    if (local_input.Height() < 1 || local_input.Width() < 1) { return; }
+//     // Do nothing if dropout is disabled or there is no local data
+//     const auto& mode = this->m_model->get_execution_context().get_execution_mode();
+//     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
+//       El::Copy(input, output);
+//       return;
+//     }
+//     if (local_input.Height() < 1 || local_input.Width() < 1) { return; }
 
-    // Initialize DNN library objects
-    auto&& input_desc = m_tensors_dnn_desc.get_prev_activations();
-    auto&& output_desc = m_tensors_dnn_desc.get_activations();
-    size_t size = dnn_lib::get_dropout_reserve_space_size(input_desc);
-    m_reserve_space.Resize((size + sizeof(TensorDataType) - 1) / sizeof(TensorDataType), 1);
+//     // Initialize DNN library objects
+//     auto&& input_desc = m_tensors_dnn_desc.get_prev_activations();
+//     auto&& output_desc = m_tensors_dnn_desc.get_activations();
+//     size_t size = dnn_lib::get_dropout_reserve_space_size(input_desc);
+//     m_reserve_space.Resize((size + sizeof(TensorDataType) - 1) / sizeof(TensorDataType), 1);
 
-    // Apply dropout on the GPU
-    dnn_lib::dropout_forward(m_dropout_dnn_desc,
-                             input_desc,
-                             local_input,
-                             output_desc,
-                             local_output,
-                             m_reserve_space);
+//     // Apply dropout on the GPU
+//     dnn_lib::dropout_forward(m_dropout_dnn_desc,
+//                              input_desc,
+//                              local_input,
+//                              output_desc,
+//                              local_output,
+//                              m_reserve_space);
 
-#endif // LBANN_HAS_DNN_LIB
-  }
+// #endif // LBANN_HAS_DNN_LIB
+//   }
 
-  void bp_compute_gpu() {
-#ifndef LBANN_HAS_DNN_LIB
-    LBANN_ERROR("DNN library not detected");
-#else
+  void bp_compute_gpu(); // {
+// #ifndef LBANN_HAS_DNN_LIB
+//     LBANN_ERROR("DNN library not detected");
+// #else
 
-    // Matrices
-    const auto& gradient_wrt_output = this->get_prev_error_signals();
-    const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
-    auto& gradient_wrt_input = this->get_error_signals();
-    auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
+//     // Matrices
+//     const auto& gradient_wrt_output = this->get_prev_error_signals();
+//     const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
+//     auto& gradient_wrt_input = this->get_error_signals();
+//     auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
 
-    // Copy error signal if dropout is disabled
-    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
-    if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
-      El::Copy(gradient_wrt_output, gradient_wrt_input);
-    } else {
-      if (local_gradient_wrt_input.Height() > 0
-          && local_gradient_wrt_input.Width() > 0) {
-        dnn_lib::dropout_backward(m_dropout_dnn_desc,
-                                  m_tensors_dnn_desc.get_prev_error_signals(),
-                                  local_gradient_wrt_output,
-                                  m_tensors_dnn_desc.get_error_signals(),
-                                  local_gradient_wrt_input,
-                                  m_reserve_space);
-      }
-    }
-#endif // LBANN_HAS_DNN_LIB
-  }
+//     // Copy error signal if dropout is disabled
+//     const auto& mode = this->m_model->get_execution_context().get_execution_mode();
+//     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
+//       El::Copy(gradient_wrt_output, gradient_wrt_input);
+//     } else {
+//       if (local_gradient_wrt_input.Height() > 0
+//           && local_gradient_wrt_input.Width() > 0) {
+//         dnn_lib::dropout_backward(m_dropout_dnn_desc,
+//                                   m_tensors_dnn_desc.get_prev_error_signals(),
+//                                   local_gradient_wrt_output,
+//                                   m_tensors_dnn_desc.get_error_signals(),
+//                                   local_gradient_wrt_input,
+//                                   m_reserve_space);
+//       }
+//     }
+// #endif // LBANN_HAS_DNN_LIB
+//   }
 
 #ifdef LBANN_HAS_DNN_LIB
   /** Setup DNN library dropout descriptor and RNG state.

@@ -64,6 +64,40 @@ struct Builder<TensorDataType, data_layout::DATA_PARALLEL, Device>
 };
 }// namespace
 
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void pooling_layer<TensorDataType,Layout,Device>::fp_compute() {
+  if (this->using_gpus()) {
+#ifdef LBANN_HAS_DISTCONV
+    if (this->distconv_enabled()) {
+      const auto& mode =
+        this->m_model->get_execution_context().get_execution_mode();
+      get_distconv_adapter().fp_compute(mode == execution_mode::training);
+      return;
+    }
+#endif // LBANN_HAS_DISTCONV
+    fp_compute_dnn();
+  }
+  else {
+    fp_compute_im2col();
+  }
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void pooling_layer<TensorDataType,Layout,Device>::bp_compute() {
+  if (this->using_gpus()) {
+#ifdef LBANN_HAS_DISTCONV
+    if (this->distconv_enabled()) {
+      get_distconv_adapter().bp_compute();
+      return;
+    }
+#endif // LBANN_HAS_DISTCONV
+    bp_compute_dnn();
+  }
+  else {
+    bp_compute_im2col();
+  }
+}
+
 template <typename T, data_layout L, El::Device D>
 void pooling_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);

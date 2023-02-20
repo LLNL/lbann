@@ -33,6 +33,19 @@
 
 namespace lbann {
 
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void gaussian_layer<TensorDataType,Layout,Device>::fp_compute() {
+  auto& output = this->get_activations();
+  const auto& mode =
+    this->m_model->get_execution_context().get_execution_mode();
+  if (m_training_only && (mode != execution_mode::training)) {
+    El::Fill(output, m_mean);
+  }
+  else {
+    gaussian_fill(output, output.Height(), output.Width(), m_mean, m_stdev);
+  }
+}
+
 template <typename T, data_layout L, El::Device D>
 void gaussian_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);
