@@ -30,10 +30,21 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/protobuf.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 
 #include "lbann/proto/layers.pb.h"
 
 namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void bernoulli_layer<TensorDataType, Layout, Device>::fp_compute() {
+  auto& output = this->get_activations();
+  if (this->m_model->get_execution_context().get_execution_mode() == execution_mode::training) {
+    bernoulli_fill(output, output.Height(), output.Width(), m_prob);
+  } else {
+    El::Zero(output);
+  }
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<Layer>

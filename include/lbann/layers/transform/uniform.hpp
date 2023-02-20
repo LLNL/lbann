@@ -95,18 +95,18 @@ protected:
     : uniform_layer(nullptr, { 1 } )
   {}
 
-  void fp_compute() override {
-    const auto& mean = (m_max + m_min) / El::To<TensorDataType>(2);
-    const auto& radius = (m_max - m_min) / El::To<TensorDataType>(2);
-    auto& output = this->get_activations();
-    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
-    if (m_training_only && (mode != execution_mode::training)) {
-      El::Fill(output, mean);
-    }
-    else {
-      uniform_fill(output, output.Height(), output.Width(), mean, radius);
-    }
-  }
+  void fp_compute() override;
+  //   const auto& mean = (m_max + m_min) / El::To<TensorDataType>(2);
+  //   const auto& radius = (m_max - m_min) / El::To<TensorDataType>(2);
+  //   auto& output = this->get_activations();
+  //   const auto& mode = this->m_model->get_execution_context().get_execution_mode();
+  //   if (m_training_only && (mode != execution_mode::training)) {
+  //     El::Fill(output, mean);
+  //   }
+  //   else {
+  //     uniform_fill(output, output.Height(), output.Width(), mean, radius);
+  //   }
+  // }
 
 };
 
