@@ -5,5 +5,5 @@
 # script when the lbann+python variant is enabled
 spack add python ${CENTER_COMPILER}
 spack add py-pytest ${CENTER_COMPILER}
-spack add py-scipy ${CENTER_COMPILER}
+spack add py-scipy@1.8.1 ${CENTER_COMPILER}
 spack add py-tqdm ${CENTER_COMPILER}
