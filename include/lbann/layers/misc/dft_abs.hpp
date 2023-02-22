@@ -113,8 +113,8 @@ private:
   std::unique_ptr<impl_type> pimpl_;
 };// class dft_abs_layer
 
-template <typename T, data_layout L, El::Device D>
-void dft_abs_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+template <typename T, El::Device D>
+void dft_abs_layer<T,D>::write_specific_proto(lbann_data::Layer& proto) const {
   proto.set_datatype(proto::ProtoDataType<T>);
   proto.mutable_dft_abs();
 }
