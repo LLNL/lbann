@@ -31,10 +31,12 @@
 #include <hip/hip_runtime.h>
 typedef hipStream_t gpuStream_t;
 #define gpuMemcpyAsync hipMemcpyAsync
+#define gpuMemcpyDeviceToDevice hipMemcpyDeviceToDevice
 #else
 #include <cuda_runtime.h>
 typedef cudaStream_t gpuStream_t;
 #define gpuMemcpyAsync cudaMemcpyAsync
+#define gpuMemcpyDeviceToDevice cudaMemcpyDeviceToDevice
 #endif
 
 /*
@@ -120,7 +122,7 @@ private:
                      local_input.LockedBuffer(),
                      sizeof(TensorDataType) * local_input.Width() *
                        local_input.Height(),
-                     cudaMemcpyDeviceToDevice,
+                     gpuMemcpyDeviceToDevice,
                      to_native_stream(multisync));
 #endif // LBANN_HAS_GPU
   }
@@ -146,7 +148,7 @@ private:
                      local_input.LockedBuffer(),
                      sizeof(TensorDataType) * local_input.Width() *
                        local_input.Height(),
-                     cudaMemcpyDeviceToDevice,
+                     gpuMemcpyDeviceToDevice,
                      to_native_stream(multisync));
 #endif // LBANN_HAS_GPU
   }
