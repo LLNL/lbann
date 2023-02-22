@@ -209,7 +209,7 @@ void ColumnSummaryStats( const Matrix<F>& X, F& sum, F& min, F& max, F& mean) {
         }
     }
 
-    mean = sum / m;
+    mean = sum / El::To<F>(m);
 
 }
 
