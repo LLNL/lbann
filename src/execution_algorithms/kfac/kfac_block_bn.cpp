@@ -187,7 +187,7 @@ void kfac_block_bn<Device>::update_kronecker_inverse(
       DataType(damping_act), DataType(damping_err),
       true, sync_info);
   }
-  
+
 
   // dump L2 norm of matrices
   if(comm->am_trainer_master() && print_matrix_summary) {
@@ -410,7 +410,7 @@ void kfac_block_bn<Device>::start_communication_forward_end(
         El::Copy(dtw->get_values(),*weight);
         iter++;
       }
-          
+
     }
   }
 
@@ -442,7 +442,7 @@ void kfac_block_bn<Device>::start_communication_forward_end(
 template <El::Device Device>
 void kfac_block_bn<Device>::end_communication_forward_end(
     lbann_comm* comm) {
-  if((comm->get_grid_type() == GridType::SECONDARY_GRID or comm->get_grid_type() == GridType::PRIMARY_GRID) 
+  if((comm->get_grid_type() == GridType::SECONDARY_GRID or comm->get_grid_type() == GridType::PRIMARY_GRID)
       and comm->enable_subgrid_async_communication()
       and comm->get_KFAC_subgrid_create_two_models()==false){
     int num_local_activations = 1;
@@ -450,7 +450,7 @@ void kfac_block_bn<Device>::end_communication_forward_end(
     auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
 
     for(auto& req:this->m_requests_forward_end){
-      ::Al::Wait<BackendT>(req);
+      ::Al::Wait<kfac::BackendT>(req);
     }
 
     if(primary_grid_ranks.size() < secondary_grid_ranks.size()){
@@ -463,7 +463,7 @@ void kfac_block_bn<Device>::end_communication_forward_end(
                                       *local_activations0);
 
       }
-      
+
     }
     this->m_requests_forward_end.clear();
   }
@@ -490,7 +490,7 @@ void kfac_block_bn<Device>::start_communication_backward_end(
 
       //Initialize Dist Matrices
       for (auto& error : this->m_child_local_errors) {
-        
+
         if(dtl_child.get_data_layout() == data_layout::DATA_PARALLEL){
           error = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
           if(comm->enable_subgrid_async_communication())
@@ -503,7 +503,7 @@ void kfac_block_bn<Device>::start_communication_backward_end(
             LBANN_ERROR("Async prgoress is not supported for model-parallel layer layout in sub-grid parallelism");
         }
       }
-      //Initialize gradients 
+      //Initialize gradients
       int iter = 0;
       for (auto& gradient : this->m_weight_gradients) {
         gradient = make_unique<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
@@ -548,7 +548,7 @@ void kfac_block_bn<Device>::start_communication_backward_end(
                                             this->m_requests_backward_end);
         iter++;
       }
-    }//Async progress   
+    }//Async progress
   }
 
   if(comm->get_grid_type() == GridType::NO_GRID or comm->get_KFAC_subgrid_create_two_models()){
@@ -558,7 +558,7 @@ void kfac_block_bn<Device>::start_communication_backward_end(
       else
         error = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
     }
-    //Initialize gradients 
+    //Initialize gradients
     for (auto& gradient : this->m_weight_gradients) {
       gradient = make_unique<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
     }
@@ -578,14 +578,14 @@ void kfac_block_bn<Device>::start_communication_backward_end(
 template <El::Device Device>
 void kfac_block_bn<Device>::end_communication_backward_end(
     lbann_comm* comm) {
-  if((comm->get_grid_type() == GridType::SECONDARY_GRID or comm->get_grid_type() == GridType::PRIMARY_GRID) 
+  if((comm->get_grid_type() == GridType::SECONDARY_GRID or comm->get_grid_type() == GridType::PRIMARY_GRID)
       and comm->enable_subgrid_async_communication()
       and comm->get_KFAC_subgrid_create_two_models()==false){
     auto primary_grid_ranks = comm->get_primary_grid_ranks();
     auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
 
     for(auto& req:this->m_requests_backward_end){
-      ::Al::Wait<BackendT>(req);
+      ::Al::Wait<kfac::BackendT>(req);
     }
 
     if(primary_grid_ranks.size() < secondary_grid_ranks.size()){
@@ -601,7 +601,7 @@ void kfac_block_bn<Device>::end_communication_backward_end(
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Helper functions to communicate inverse matrices 
+// Helper functions to communicate inverse matrices
 ////////////////////////////////////////////////////////////////////////////////
 template <El::Device Device>
 int kfac_block_bn<Device>::get_inverse_matrices(El::Matrix<DataType, Device>& output, int offset)
@@ -613,18 +613,18 @@ int kfac_block_bn<Device>::get_inverse_matrices(El::Matrix<DataType, Device>& ou
 
   El::copy::util::InterleaveMatrix(
                               size_inv, 1,
-                              m_fisher_inverse.LockedBuffer(), 1, size_inv,                                
+                              m_fisher_inverse.LockedBuffer(), 1, size_inv,
                               output.Buffer(offset,0),
                               1, size_inv,
                               sync_info);
   offset+=size_inv;
-  
+
   return offset;
 }
 
 
 template <El::Device Device>
-int kfac_block_bn<Device>::set_inverse_matrices(El::Matrix<DataType, Device>& workspace, 
+int kfac_block_bn<Device>::set_inverse_matrices(El::Matrix<DataType, Device>& workspace,
                           int offset,
                           lbann_comm *comm)
 {

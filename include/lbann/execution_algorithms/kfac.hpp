@@ -277,7 +277,7 @@ private:
   int m_global_inverse_buffer_size=0, m_weight_matrices_buffer_size=0;
 
   /** @brief vector for async communication reqs. */
-  std::vector<ReqT>m_inverse_matrix_communication_reqs, m_weights_communication_reqs;
+  std::vector<kfac::ReqT>m_inverse_matrix_communication_reqs, m_weights_communication_reqs;
 
   /** @brief Profiling variables. */
   int m_time_span_inverse_comm=0,

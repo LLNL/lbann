@@ -103,60 +103,6 @@ KFAC::KFAC(
     m_use_KFAC_epoch{std::move(kfac_use_interval)}
 {}
 
-// KFAC::KFAC(KFAC const& other)
-//   : TrainingAlgorithm(other.get_name()),
-//     m_stopping_criteria{other.m_stopping_criteria->clone()},
-//     m_damping_act_params{other.m_damping_act_params},
-//     m_damping_err_params{other.m_damping_err_params},
-//     m_damping_bn_act_params{other.m_damping_bn_act_params},
-//     m_damping_bn_err_params{other.m_damping_bn_err_params},
-//     m_damping_warmup_steps{other.m_damping_warmup_steps},
-//     m_use_KFAC_epoch{other.m_use_KFAC_epoch},
-//     m_kronecker_decay{other.m_kronecker_decay},
-//     m_print_time{other.m_print_time},
-//     m_print_matrix{other.m_print_matrix},
-//     m_print_matrix_summary{other.m_print_matrix_summary},
-//     m_use_pi{other.m_use_pi},
-//     m_update_intervals{other.m_update_intervals},
-//     m_update_interval_steps{other.m_update_interval_steps},
-//     m_inverse_strategy{other.m_inverse_strategy},
-//     m_disable_layers{other.m_disable_layers},
-//     m_learning_rate_factor{other.m_learning_rate_factor},
-//     m_compute_interval{other.m_compute_interval},
-//     m_distribute_precondition_compute{other.m_distribute_precondition_compute},
-//     m_use_eigen_decomposition{other.m_use_eigen_decomposition},
-//     m_enable_copy_errors{other.m_enable_copy_errors},
-//     m_enable_copy_activations{other.m_enable_copy_activations}
-// {}
-
-// KFAC& KFAC::operator=(KFAC const& other) {
-//   TrainingAlgorithm::operator=(other);
-//   m_stopping_criteria = other.m_stopping_criteria->clone();
-//   m_damping_act_params = other.m_damping_act_params;
-//   m_damping_err_params = other.m_damping_err_params;
-//   m_damping_bn_act_params = other.m_damping_bn_act_params;
-//   m_damping_bn_err_params = other.m_damping_bn_err_params;
-//   m_damping_warmup_steps = other.m_damping_warmup_steps;
-//   m_use_KFAC_epoch = other.m_use_KFAC_epoch,
-//   m_kronecker_decay = other.m_kronecker_decay;
-//   m_print_time = other.m_print_time;
-//   m_print_matrix = other.m_print_matrix;
-//   m_print_matrix_summary = other.m_print_matrix_summary;
-//   m_use_pi = other.m_use_pi;
-//   m_update_intervals = other.m_update_intervals;
-//   m_update_interval_steps = other.m_update_interval_steps;
-//   m_inverse_strategy = other.m_inverse_strategy;
-//   m_disable_layers = other.m_disable_layers;
-//   m_learning_rate_factor = other.m_learning_rate_factor;
-//   m_compute_interval = other.m_compute_interval;
-//   m_distribute_precondition_compute = other.m_distribute_precondition_compute;
-//   m_use_eigen_decomposition = other.m_use_eigen_decomposition;
-//   m_enable_copy_errors = m_enable_copy_errors;
-//   m_enable_copy_activations = m_enable_copy_activations;
-
-//   return *this;
-// }
-
 std::string KFAC::get_type() const { return "KFAC"; }
 
 kfac::KFACExecutionContext* KFAC::do_get_new_execution_context() const
@@ -233,10 +179,6 @@ void KFAC::train(
       dc.reset_mode(sgd_context);
       do_epoch_begin_cbs(model);
       is_start_of_epoch = false;
-      // std::cout<<"Transfer Size:"<<m_global_inverse_buffer_size<<" Inverse time:" << m_time_span_inverse_comm<<" Inverse comm time:"<<m_time_span_inverse_send_recv<<"\n";
-      //sync weights if we have a separate model for primary and secondary grid
-      // if(comm.get_KFAC_subgrid_create_two_models() and comm.get_grid_type()!=GridType::NO_GRID)
-      // start_sync_weights_async(model, model.get_comm());
     }
 
     // Train a mini batch. Returns "true" if the data_coordinator
@@ -245,15 +187,6 @@ void KFAC::train(
       // Finalize epoch
       sgd_context.inc_epoch();
 
-      //profiling code
-      // std::cout<<"Comm rank:"<<comm.get_rank_in_world()<<" Primary Grid:"<< (comm.get_grid_type() == GridType::PRIMARY_GRID) <<" Inverse comm:"<<m_time_span_inverse_comm \
-      // <<" backward:"<<m_time_span_backward_comm<<" "<<m_time_span_backward_comm_end \
-      // <<" forward:"<<m_time_span_forward_comm <<" "<<m_time_span_forward_comm_end \
-      // <<" InvPre:"<<m_time_span_precond_comm
-      // <<" Forward:"<<m_time_forward_pass
-      // <<" backward:"<<m_time_backward_pass
-      // <<" KFAC:"<<m_time_kfac
-      // <<" Size of"<<sizeof(DataType)<<"\n";
       m_time_span_inverse_comm = 0;
       m_time_span_backward_comm = 0;
       m_time_span_backward_comm_end = 0;
@@ -679,7 +612,7 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
     }
   }
 
-  BackendT::comm_type& backend_comm = combined_comm.template GetComm<BackendT>(sync_info);
+  kfac::BackendT::comm_type& backend_comm = combined_comm.template GetComm<kfac::BackendT>(sync_info);
 
   if(comm->get_grid_type() == GridType::PRIMARY_GRID)
   {
@@ -689,7 +622,7 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
 
       if(comm_rank + num_send*num_process_primary_grid < num_process_secondary_grid){
         int to_send_index = comm_rank + num_send*num_process_primary_grid;
-        ::Al::Send<BackendT>(
+        ::Al::Send<kfac::BackendT>(
            (DataType*)global_buffer.Buffer(),
            global_buffer_size,
            secondary_grid_ranks[to_send_index],
@@ -700,7 +633,7 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
   if(comm->get_grid_type() == GridType::SECONDARY_GRID)
   {
     int recv_index = comm_rank % num_process_primary_grid;
-    ::Al::Recv<BackendT>(
+    ::Al::Recv<kfac::BackendT>(
        (DataType*)global_buffer.Buffer(),
        global_buffer_size,
        primary_grid_ranks[recv_index],
@@ -813,7 +746,7 @@ void KFAC::start_old_async_weights_model(model& model, lbann_comm *comm,ExeConte
     }
   }
 
-  BackendT::comm_type& backend_comm = combined_comm.template GetComm<BackendT>(sync_info);
+  kfac::BackendT::comm_type& backend_comm = combined_comm.template GetComm<kfac::BackendT>(sync_info);
 
   if(comm->get_grid_type() == GridType::PRIMARY_GRID)
   {
@@ -823,9 +756,9 @@ void KFAC::start_old_async_weights_model(model& model, lbann_comm *comm,ExeConte
 
       if(comm_rank + num_send*num_process_primary_grid < num_process_secondary_grid){
         int to_send_index = comm_rank + num_send*num_process_primary_grid;
-        BackendT::req_type send_req;
+        kfac::BackendT::req_type send_req;
         m_weights_communication_reqs.push_back(send_req);
-        ::Al::NonblockingSend<BackendT>(
+        ::Al::NonblockingSend<kfac::BackendT>(
            (DataType*)global_buffer.Buffer(),
            global_buffer_size,
            secondary_grid_ranks[to_send_index],
@@ -836,10 +769,10 @@ void KFAC::start_old_async_weights_model(model& model, lbann_comm *comm,ExeConte
   }
   if(comm->get_grid_type() == GridType::SECONDARY_GRID)
   {
-    BackendT::req_type send_req;
+    kfac::BackendT::req_type send_req;
     m_weights_communication_reqs.push_back(send_req);
     int recv_index = comm_rank % num_process_primary_grid;
-    ::Al::NonblockingRecv<BackendT>(
+    ::Al::NonblockingRecv<kfac::BackendT>(
        (DataType*)global_buffer.Buffer(),
        global_buffer_size,
        primary_grid_ranks[recv_index],
@@ -850,7 +783,7 @@ void KFAC::start_old_async_weights_model(model& model, lbann_comm *comm,ExeConte
 
 void KFAC::end_old_async_weights_model(model& model, lbann_comm *comm,ExeContextType& context){
   for(auto& req:m_weights_communication_reqs){
-    ::Al::Wait<BackendT>(req);
+    ::Al::Wait<kfac::BackendT>(req);
   }
 
   m_weights_communication_reqs.clear();
@@ -922,15 +855,15 @@ void KFAC::start_sync_weights_async(model& model, lbann_comm *comm){
       auto& weight_values = dtw->get_values().Matrix();
       El::Matrix<DataType,Device>* weight_values_ = dynamic_cast<El::Matrix<DataType,Device>*>(&weight_values);
       El::SyncInfo<Device> sync_info = El::SyncInfoFromMatrix(*weight_values_);
-      BackendT::comm_type& backend_comm = combined_comm.template GetComm<BackendT>(sync_info);
+      kfac::BackendT::comm_type& backend_comm = combined_comm.template GetComm<kfac::BackendT>(sync_info);
 
       for(int num_send = 0; num_send<num_sends; num_send++){
 
         if(comm_rank + num_send*num_process_primary_grid < num_process_secondary_grid){
-          BackendT::req_type send_req;
+          kfac::BackendT::req_type send_req;
           m_weights_communication_reqs.push_back(send_req);
           int to_send_index = comm_rank + num_send*num_process_primary_grid;
-          ::Al::NonblockingSend<BackendT>(
+          ::Al::NonblockingSend<kfac::BackendT>(
              weight_values_->Buffer(),
              height*width,
              secondary_grid_ranks[to_send_index],
@@ -951,11 +884,11 @@ void KFAC::start_sync_weights_async(model& model, lbann_comm *comm){
       auto& weight_values = dtw->get_values().Matrix();
       El::Matrix<DataType,Device>* weight_values_ = dynamic_cast<El::Matrix<DataType,Device>*>(&weight_values);
       El::SyncInfo<Device> sync_info = El::SyncInfoFromMatrix(*weight_values_);
-      BackendT::comm_type& backend_comm = combined_comm.template GetComm<BackendT>(sync_info);
-      BackendT::req_type recv_req;
+      kfac::BackendT::comm_type& backend_comm = combined_comm.template GetComm<kfac::BackendT>(sync_info);
+      kfac::BackendT::req_type recv_req;
       m_weights_communication_reqs.push_back(recv_req);
 
-      ::Al::NonblockingRecv<BackendT>(
+      ::Al::NonblockingRecv<kfac::BackendT>(
          (DataType*)weight_values_->Buffer(),
          height*width,
          primary_grid_ranks[recv_index],
@@ -969,7 +902,7 @@ void KFAC::start_sync_weights_async(model& model, lbann_comm *comm){
 }
 void KFAC::end_sync_weights_async(model& model, lbann_comm *comm){
   for(auto& req:m_weights_communication_reqs){
-    ::Al::Wait<BackendT>(req);
+    ::Al::Wait<kfac::BackendT>(req);
   }
   m_weights_communication_reqs.clear();
 }
@@ -1107,7 +1040,7 @@ void KFAC::start_send_recv_inverse_matrices(
 
   const El::mpi::Comm & combined_comm = comm->get_combined_grid_comm();
   El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer_inverse);
-  BackendT::comm_type& backend_comm = combined_comm.template GetComm<BackendT>(sync_info);
+  kfac::BackendT::comm_type& backend_comm = combined_comm.template GetComm<kfac::BackendT>(sync_info);
 
   if(comm->get_grid_type() == GridType::SECONDARY_GRID)
   {
@@ -1121,9 +1054,9 @@ void KFAC::start_send_recv_inverse_matrices(
         auto t_start = std::chrono::high_resolution_clock::now();
         if(comm->enable_subgrid_async_communication()){
 
-          BackendT::req_type send_request;
+          kfac::BackendT::req_type send_request;
           m_inverse_matrix_communication_reqs.push_back(send_request);
-          ::Al::NonblockingSend<BackendT>(
+          ::Al::NonblockingSend<kfac::BackendT>(
            (DataType*)global_buffer_inverse.Buffer(),
            global_buffer_inverses_size,
            primary_grid_ranks[to_send_index],
@@ -1132,7 +1065,7 @@ void KFAC::start_send_recv_inverse_matrices(
         }
         else{
           El::Synchronize(sync_info);
-          ::Al::Send<BackendT>(
+          ::Al::Send<kfac::BackendT>(
            (DataType*)global_buffer_inverse.Buffer(),
            global_buffer_inverses_size,
            primary_grid_ranks[to_send_index],
@@ -1152,9 +1085,9 @@ void KFAC::start_send_recv_inverse_matrices(
 
     if(comm->enable_subgrid_async_communication()){
 
-      BackendT::req_type recv_request;
+      kfac::BackendT::req_type recv_request;
       m_inverse_matrix_communication_reqs.push_back(recv_request);
-      ::Al::NonblockingRecv<BackendT>(
+      ::Al::NonblockingRecv<kfac::BackendT>(
          (DataType*)global_buffer_inverse.Buffer(),
          global_buffer_inverses_size,
          secondary_grid_ranks[recv_index],
@@ -1163,7 +1096,7 @@ void KFAC::start_send_recv_inverse_matrices(
     }
     else{
 
-      ::Al::Recv<BackendT>(
+      ::Al::Recv<kfac::BackendT>(
          (DataType*)global_buffer_inverse.Buffer(),
          global_buffer_inverses_size,
          secondary_grid_ranks[recv_index],
@@ -1179,7 +1112,7 @@ void KFAC::end_send_recv_inverse_matrices(
   lbann_comm *comm) {
   if(comm->enable_subgrid_async_communication()){
     for(auto& req: m_inverse_matrix_communication_reqs){
-      ::Al::Wait<BackendT>(req);
+      ::Al::Wait<kfac::BackendT>(req);
     }
   }
   El::Matrix<DataType, Device>& global_buffer_inverse =
@@ -1299,7 +1232,7 @@ void KFAC::on_forward_prop_end(
       const int parent_activations_size = dtl_parent.get_activations().Height();
 
       int input_size, output_size;
-      input_size = broadcast_variable_grids(parent_activations_size, 
+      input_size = broadcast_variable_grids(parent_activations_size,
                                             &comm);
 
 

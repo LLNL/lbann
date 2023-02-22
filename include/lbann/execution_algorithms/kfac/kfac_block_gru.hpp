@@ -316,7 +316,7 @@ class kfac_block_gru: public kfac_block<Device> {
 
   size_t m_reserve_space_fwd_size=0;
 
-  std::vector<ReqT> m_requests_workspace;
+  std::vector<kfac::ReqT> m_requests_workspace;
 
 };
 

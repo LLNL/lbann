@@ -41,6 +41,10 @@ template <El::Device Device>
 class kfac_block;
 }
 
+namespace lbann {
+
+namespace kfac {
+
 #if defined AL_HAS_NCCL
 using BackendT = ::Al::NCCLBackend;
 #elif defined AL_HAS_HOST_TRANSFER
@@ -50,9 +54,6 @@ using BackendT = ::Al::MPIBackend;
 #endif
 
 using ReqT = typename BackendT::req_type;
-
-namespace lbann {
-namespace kfac {
 
 enum class kfac_inverse_strategy {
   ALL,  // Apply round-robin assingment to all of the layers. may cause load imbalance.

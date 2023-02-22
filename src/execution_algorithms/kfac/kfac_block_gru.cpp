@@ -139,21 +139,21 @@ void kfac_block_gru<El::Device::GPU>::send_recv_reserve_space(lbann_comm *comm){
       if(comm_rank + num_send*num_process_primary_grid < num_process_secondary_grid){
         int to_send_index = comm_rank + num_send*num_process_primary_grid;
         if(comm->enable_subgrid_async_communication()==true){
-          ReqT send_request;
+          kfac::ReqT send_request;
           m_requests_workspace.push_back(send_request);
-          ::Al::NonblockingSend<BackendT>(
+          ::Al::NonblockingSend<kfac::BackendT>(
              (El::byte*)reserve_space.data(),
              m_reserve_space_fwd_size,
              secondary_grid_ranks[to_send_index],
-             combined_comm.template GetComm<BackendT>(sync_info),
+             combined_comm.template GetComm<kfac::BackendT>(sync_info),
              m_requests_workspace.back());
         }
         else
-          ::Al::Send<BackendT>(
+          ::Al::Send<kfac::BackendT>(
              (El::byte*)reserve_space.data(),
              m_reserve_space_fwd_size,
              secondary_grid_ranks[to_send_index],
-             combined_comm.template GetComm<BackendT>(sync_info));
+             combined_comm.template GetComm<kfac::BackendT>(sync_info));
       }
     }
 
@@ -164,21 +164,21 @@ void kfac_block_gru<El::Device::GPU>::send_recv_reserve_space(lbann_comm *comm){
     int recv_index = comm_rank % num_process_primary_grid;
     if(comm->enable_subgrid_async_communication()==true){
       El::Synchronize(sync_info);
-      ReqT recv_request;
+      kfac::ReqT recv_request;
       m_requests_workspace.push_back(recv_request);
-      ::Al::NonblockingRecv<BackendT>(
+      ::Al::NonblockingRecv<kfac::BackendT>(
          (El::byte*)m_reserve_space_fwd.data(),
          m_reserve_space_fwd_size,
          primary_grid_ranks[recv_index],
-         combined_comm.template GetComm<BackendT>(sync_info),
+         combined_comm.template GetComm<kfac::BackendT>(sync_info),
          m_requests_workspace.back());
     }
     else{
-      ::Al::Recv<BackendT>(
+      ::Al::Recv<kfac::BackendT>(
          (El::byte*)m_reserve_space_fwd.data(),
          m_reserve_space_fwd_size,
          primary_grid_ranks[recv_index],
-         combined_comm.template GetComm<BackendT>(sync_info));
+         combined_comm.template GetComm<kfac::BackendT>(sync_info));
     }
   }
 #endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
@@ -1264,10 +1264,10 @@ void kfac_block_gru<Device>::end_communication_forward_end(
     auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
 
     for(auto& req:this->m_requests_forward_end){
-      ::Al::Wait<BackendT>(req);
+      ::Al::Wait<kfac::BackendT>(req);
     }
     for(auto& req:m_requests_workspace){
-      ::Al::Wait<BackendT>(req);
+      ::Al::Wait<kfac::BackendT>(req);
     }
 
     if(primary_grid_ranks.size() < secondary_grid_ranks.size()){
@@ -1358,7 +1358,7 @@ void kfac_block_gru<Device>::end_communication_backward_end(
     auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
 
     for(auto& req:this->m_requests_backward_end){
-      ::Al::Wait<BackendT>(req);
+      ::Al::Wait<kfac::BackendT>(req);
     }
 
     if(primary_grid_ranks.size() < secondary_grid_ranks.size()){
