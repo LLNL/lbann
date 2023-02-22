@@ -187,15 +187,6 @@ void KFAC::train(
       // Finalize epoch
       sgd_context.inc_epoch();
 
-      //profiling code
-      // std::cout<<"Comm rank:"<<comm.get_rank_in_world()<<" Primary Grid:"<< (comm.get_grid_type() == GridType::PRIMARY_GRID) <<" Inverse comm:"<<m_time_span_inverse_comm \
-      // <<" backward:"<<m_time_span_backward_comm<<" "<<m_time_span_backward_comm_end \
-      // <<" forward:"<<m_time_span_forward_comm <<" "<<m_time_span_forward_comm_end \
-      // <<" InvPre:"<<m_time_span_precond_comm
-      // <<" Forward:"<<m_time_forward_pass
-      // <<" backward:"<<m_time_backward_pass
-      // <<" KFAC:"<<m_time_kfac
-      // <<" Size of"<<sizeof(DataType)<<"\n";
       m_time_span_inverse_comm = 0;
       m_time_span_backward_comm = 0;
       m_time_span_backward_comm_end = 0;

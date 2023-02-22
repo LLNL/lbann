@@ -178,7 +178,19 @@ public:
    */
   void split_trainers(int procs_per_trainer=-1, int trainer_grid_height=-1);
 
-  /** Split the commicator for the given trainer into primary and seconday*/
+  /** Split the commicator for the given trainer into primary and secondary
+   *
+   *  @param num_process_primar_grid Absolute number of MPI ranks
+   *  assigned to the primary grid
+   *  @param create_two_models Create a secondary copy of the model on
+   *  the secondary grid to perform redundant computation and minimize
+   *  communication.
+   *  @param enable_async_comm Use non-blocking sends and receivces
+   *  @param enable_topo_aware Assign primary and secondary grid
+   *  resources so that they are interleaved and thus should be
+   *  allocated to the same compute node assuming that there are
+   *  always an even number of accelerators per node.
+   */
   void split_trainer_grid(int num_process_primary_grid=0,
                           bool create_two_models=false,
                           bool enable_async_comm=false,
