@@ -57,7 +57,6 @@ void LTFB::apply(ExecutionContext& context,
   // Sync trainers (Assumption: all trainers in this lbann_comm are
   // participating in this training algorithm)
   int rank = El::mpi::Rank(m.get_comm()->get_combined_grid_comm());
-  std::cout<<"Rank:"<<rank<<" intertrainer_barrier\n"<< std::flush;
   m.get_comm()->intertrainer_barrier();
 
   // LTFB likely has different stopping criteria than SGD (e.g., K
@@ -66,7 +65,6 @@ void LTFB::apply(ExecutionContext& context,
   // criteria might be defined in terms of the SGD stopping criteria
   // (e.g., N total sgd batches). That complexity lives in the
   // ltfb::TerminationCriteria class.
-  std::cout<<"Rank:"<<rank<<" Before all\n"<< std::flush;
   while (!ltfb_term(ltfb_ctxt)) {
     {
       ScopeTimer _(ltfb_timer, "local apply");
@@ -81,9 +79,7 @@ void LTFB::apply(ExecutionContext& context,
       }
     }
 
-    std::cout<<"Rank:"<<rank<<" apply complete\n"<< std::flush;
     ltfb_ctxt.inc_step();
-    std::cout<<"Rank:"<<rank<<" inc complete\n"<< std::flush;
   }
 
   // Final sweep of local training. The timer is looped into the inner

@@ -36,7 +36,7 @@ namespace lbann {
  * TODO: Split into kfac_block_fc and kfac_block_conv.
  */
 template <El::Device Device>
-class kfac_block_channelwise_fc: public kfac_block<Device> {
+class kfac_block_channelwise_fc final : public kfac_block<Device> {
  public:
 
   /** Constructor.
@@ -57,7 +57,7 @@ class kfac_block_channelwise_fc: public kfac_block<Device> {
   kfac_block_channelwise_fc(const kfac_block_channelwise_fc&) = default;
   kfac_block_channelwise_fc& operator=(const kfac_block_channelwise_fc&) = default;
 
-  int get_local_memory_consumption() override {
+  int get_local_memory_consumption() final {
     int total_size = 0;
     total_size += m_kronecker_inverse_A.Height() * m_kronecker_inverse_A.Width();
     total_size += m_kronecker_inverse_G.Height() * m_kronecker_inverse_G.Width();
@@ -72,10 +72,10 @@ class kfac_block_channelwise_fc: public kfac_block<Device> {
   void compute_local_kronecker_factors(
       lbann_comm* comm,
       bool print_matrix,
-      bool print_matrix_summary) override;
+      bool print_matrix_summary) final;
 
   const std::vector<El::AbstractMatrix<DataType>*>
-  get_local_kronecker_buffers() override {
+  get_local_kronecker_buffers() final {
     std::vector<El::AbstractMatrix<DataType>*> ret =
         {&m_kronecker_factor_buf_A, &m_kronecker_factor_buf_G};
     return ret;
@@ -85,7 +85,7 @@ class kfac_block_channelwise_fc: public kfac_block<Device> {
       lbann_comm* comm,
       DataType kronecker_decay,
       bool print_matrix,
-      bool print_matrix_summary) override;
+      bool print_matrix_summary) final;
 
   void update_kronecker_inverse(
       lbann_comm* comm,
@@ -95,50 +95,46 @@ class kfac_block_channelwise_fc: public kfac_block<Device> {
       bool use_eigen_decomposition,
       bool print_matrix,
       bool print_matrix_summary,
-      bool print_time) override;
+      bool print_time) final;
 
   void compute_preconditioned_gradients(
       lbann_comm* comm,
       DataType learning_rate_factor,
       bool print_matrix,
       bool print_matrix_summary,
-      bool print_time) override;
+      bool print_time) final;
 
   void initialize_activations_and_errors(
       lbann_comm* comm,
       int num_local_activations,
       int num_local_errors,
-      int num_weights) override;
+      int num_weights) final;
 
-  void start_communication_forward_end(
-      lbann_comm* comm) override;
-  void end_communication_forward_end(
-      lbann_comm* comm) override;
-  void start_communication_backward_end(
-      lbann_comm* comm) override;
-  void end_communication_backward_end(
-      lbann_comm* comm) override;
+  void start_communication_forward_end(lbann_comm* comm) final;
+  void end_communication_forward_end(lbann_comm* comm) final;
+  void start_communication_backward_end(lbann_comm* comm) final;
+  void end_communication_backward_end(lbann_comm* comm) final;
 
   const std::vector<El::AbstractMatrix<DataType>*>
-  get_preconditioned_grad_buffers() override;
+  get_preconditioned_grad_buffers() final;
 
   int get_inverse_matrices(
       El::Matrix<DataType, Device>& output,
-      int offset) override;
+      int offset) final;
 
-  int get_inverse_matrices_size(lbann_comm *comm) override;
+  int get_inverse_matrices_size(lbann_comm *comm) final;
 
-  std::vector<int> get_inverse_matrices_size_vector(lbann_comm *comm) override;
+  std::vector<int> get_inverse_matrices_size_vector(lbann_comm *comm) final;
 
-  void resize_inverse_matrices_size(El::Matrix<double, El::Device::CPU>& inverse_matrices_size, int block_number) override;
+  void resize_inverse_matrices_size(El::Matrix<double, El::Device::CPU>& inverse_matrices_size, int block_number) final;
 
 
   int set_inverse_matrices(
       El::Matrix<DataType, Device>& workspace,
       int offset,
-      lbann_comm *comm) override;
+      lbann_comm *comm) final;
 
-  std::string get_info() const override {
+  std::string get_info() const final {
     std::ostringstream oss;
     oss << kfac_block<Device>::get_info();
     return oss.str();

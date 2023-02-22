@@ -80,9 +80,7 @@ class kfac_block {
   virtual void on_forward_prop_end(lbann_comm* comm) {}
 
   /** @brief Get local Memory Consumption. */
-  virtual int get_local_memory_consumption() {
-    LBANN_ERROR("this function should be called via a sub-class.");
-  }
+  virtual int get_local_memory_consumption() = 0;
 
   /** @brief Compute Kronecker factors. */
   virtual void compute_local_kronecker_factors(
@@ -140,22 +138,10 @@ class kfac_block {
     LBANN_ERROR("this function should be called via a sub-class.");
   }
 
-  virtual void start_communication_forward_end(
-      lbann_comm* comm){
-    LBANN_ERROR("this function should be called via a sub-class.");
-  }
-  virtual void end_communication_forward_end(
-      lbann_comm* comm){
-    LBANN_ERROR("this function should be called via a sub-class.");
-  }
-  virtual void start_communication_backward_end(
-      lbann_comm* comm){
-    LBANN_ERROR("this function should be called via a sub-class.");
-  }
-  virtual void end_communication_backward_end(
-      lbann_comm* comm){
-    LBANN_ERROR("this function should be called via a sub-class.");
-  }
+  virtual void start_communication_forward_end(lbann_comm* comm) = 0;
+  virtual void end_communication_forward_end(lbann_comm* comm) = 0;
+  virtual void start_communication_backward_end(lbann_comm* comm) = 0;
+  virtual void end_communication_backward_end(lbann_comm* comm) = 0;
 
 
   /** @brief Get buffers of preconditioned parameter gradients. */

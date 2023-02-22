@@ -361,7 +361,6 @@ void SGDTrainingAlgorithm::do_evaluate_end_cbs(model& model,
                                                ScopeTimer timer)
 {
   for (const auto& cb : model.get_callbacks()) {
-    cudaDeviceSynchronize();
     switch (mode) {
     case execution_mode::validation:
       cb->on_validation_end(&model);
