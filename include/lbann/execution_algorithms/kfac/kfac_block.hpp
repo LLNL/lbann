@@ -67,11 +67,11 @@ class kfac_block {
              int output_size)
       : m_layer(layer),
         m_layer_id(layer_id),
-        m_enable_copy_errors(enable_copy_errors),
-        m_enable_copy_activations(enable_copy_activations),
         m_inverse_proc_rank(inverse_proc_rank),
         m_input_size(input_size),
         m_output_size(output_size),
+        m_enable_copy_errors(enable_copy_errors),
+        m_enable_copy_activations(enable_copy_activations),
         m_context(context) {
     m_has_kronecker_inverse = false;
   }
@@ -250,17 +250,8 @@ class kfac_block {
       TODO: Remove this. */
   const size_t m_layer_id;
 
-  /** @brief Enable copying of errors to enhance async communication. */
-  bool m_enable_copy_errors;
-
-  /** @brief Enable copying of activations to enhance async communication. */
-  bool m_enable_copy_activations;
-
   /** @brief The process ID which perform inverse on Kronecker. */
   const int m_inverse_proc_rank;
-
-  /** @brief Whether this block already has an inverse history. */
-  bool m_has_kronecker_inverse;
 
   /** @brief distributed martices for activations and gradients. */
   std::vector<std::unique_ptr<AbsDistMat>> m_parent_local_activations,
@@ -276,6 +267,14 @@ class kfac_block {
   /** @brief feature size and batch size (used in primary -> secondary grid communication) */
   int m_input_size, m_output_size, m_batch_size;
 
+  /** @brief Enable copying of errors to enhance async communication. */
+  bool m_enable_copy_errors;
+
+  /** @brief Enable copying of activations to enhance async communication. */
+  bool m_enable_copy_activations;
+
+  /** @brief Whether this block already has an inverse history. */
+  bool m_has_kronecker_inverse;
 
  private:
 
