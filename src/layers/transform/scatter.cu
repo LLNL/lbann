@@ -30,7 +30,7 @@
 
 #if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
 #include "lbann/utils/nvshmem.hpp"
-#endif 
+#endif
 namespace lbann {
 
 namespace {
@@ -171,14 +171,14 @@ __global__ void gather3d_kernel(
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void scatter_layer<TensorDataType, Layout, Device>::fp_compute() {
 
-#ifdef LBANN_HAS_DISTCONV
-  // Initialize the nvshmem here. No Op if already initialized 
+#if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
+  // Initialize the nvshmem here. No Op if already initialized
   nvshmem::initialize();
   if (this->distconv_enabled()){
     this->get_distconv_adapter().fp_compute();
     return ;
   }
-#endif // LBANN_HAS_DISTCONV
+#endif // LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
   // Local matrices
   const auto& local_values = this->get_local_prev_activations(0);
   const auto& local_indices = this->get_local_prev_activations(1);
@@ -255,14 +255,14 @@ void scatter_layer<TensorDataType, Layout, Device>::fp_compute() {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void scatter_layer<TensorDataType, Layout, Device>::bp_compute() {
 
-#ifdef LBANN_HAS_DISTCONV
-  // Initialize the nvshmem here. No Op if already initialized 
+#if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
+  // Initialize the nvshmem here. No Op if already initialized
   nvshmem::initialize();
   if (this->distconv_enabled()){
     this->get_distconv_adapter().bp_compute();
     return ;
   }
-#endif // LBANN_HAS_DISTCONV
+#endif // LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
   // Local matrices
   const auto& local_indices = this->get_local_prev_activations(1);
   const auto& local_output_grad = this->get_local_prev_error_signals();

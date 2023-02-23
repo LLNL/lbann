@@ -315,12 +315,12 @@ bool KFAC::train_mini_batch(
         model.clear_gradients();
 
         if(profile){
-          cudaDeviceSynchronize();
+          hydrogen::gpu::SynchronizeDevice();
         }
         auto t_start = std::chrono::high_resolution_clock::now();
         model.forward_prop(execution_mode::training);
         if(profile){
-          cudaDeviceSynchronize();
+          hydrogen::gpu::SynchronizeDevice();
         }
         auto t_stop = std::chrono::high_resolution_clock::now();
         m_time_forward_pass += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
@@ -346,7 +346,7 @@ bool KFAC::train_mini_batch(
 
         // Backward prop step
         if(profile){
-          cudaDeviceSynchronize();
+          hydrogen::gpu::SynchronizeDevice();
         }
         auto t_start = std::chrono::high_resolution_clock::now();
 
@@ -354,7 +354,7 @@ bool KFAC::train_mini_batch(
         model.backward_prop();
 
         if(profile){
-          cudaDeviceSynchronize();
+          hydrogen::gpu::SynchronizeDevice();
         }
         auto t_stop = std::chrono::high_resolution_clock::now();
         m_time_backward_pass += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
@@ -372,13 +372,13 @@ bool KFAC::train_mini_batch(
 
       if(compute_inverse){
         if(profile){
-          cudaDeviceSynchronize();
+          hydrogen::gpu::SynchronizeDevice();
         }
         auto t_start = std::chrono::high_resolution_clock::now();
         // Kfac computation
         on_backward_prop_end(kfac_context, model);
         if(profile){
-          cudaDeviceSynchronize();
+          hydrogen::gpu::SynchronizeDevice();
         }
         auto t_stop = std::chrono::high_resolution_clock::now();
         m_time_kfac += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
@@ -1301,7 +1301,7 @@ void KFAC::on_forward_prop_end(
   m_time_span_backward_comm_end += std::chrono::duration_cast<std::chrono::microseconds>(t_stop_b - t_start_b).count();
 
 
-  CHECK_CUDA(cudaDeviceSynchronize());
+  hydrogen::gpu::SynchronizeDevice();
   auto t_start = std::chrono::high_resolution_clock::now();
   int current_batch_size = sgd_context.get_current_mini_batch_size();
   current_batch_size = broadcast_variable_grids(current_batch_size, &comm);
@@ -1380,7 +1380,7 @@ void KFAC::on_backward_prop_end(
   auto t_stop_f = std::chrono::high_resolution_clock::now();
   m_time_span_forward_comm_end += std::chrono::duration_cast<std::chrono::microseconds>(t_stop_f - t_start_f).count();
 
-  CHECK_CUDA(cudaDeviceSynchronize());
+  hydrogen::gpu::SynchronizeDevice();
   auto t_start = std::chrono::high_resolution_clock::now();
   for(auto& block : context.m_blocks) {
     // Exchange activations and errors
@@ -1417,7 +1417,7 @@ void KFAC::on_backward_prop_end(
 
 #ifdef LBANN_NVPROF
     prof_region_begin("kfac-update/local-barrier", prof_color, prof_sync);
-    CHECK_CUDA(cudaDeviceSynchronize());
+    hydrogen::gpu::SynchronizeDevice();
     comm.trainer_barrier();
     prof_region_end("kfac-update/local-barrier", prof_sync);
 #endif // LBANN_NVPROF
@@ -1447,7 +1447,7 @@ void KFAC::on_backward_prop_end(
 
 #ifdef LBANN_NVPROF
     prof_region_begin("kfac-update/reduce-scatter-barrier", prof_color, prof_sync);
-    CHECK_CUDA(cudaDeviceSynchronize());
+    hydrogen::gpu::SynchronizeDevice();
     comm.trainer_barrier();
     prof_region_end("kfac-update/reduce-scatter-barrier", prof_sync);
 #endif // LBANN_NVPROF
@@ -1518,7 +1518,7 @@ void KFAC::on_backward_prop_end(
 
 #ifdef LBANN_NVPROF
   prof_region_begin("kfac-inverse-barrier", prof_color, prof_sync);
-  CHECK_CUDA(cudaDeviceSynchronize());
+  hydrogen::gpu::SynchronizeDevice();
   comm.trainer_barrier();
   prof_region_end("kfac-inverse-barrier", prof_sync);
 #endif // LBANN_NVPROF
