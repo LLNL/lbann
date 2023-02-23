@@ -171,7 +171,7 @@ __global__ void gather3d_kernel(
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void gather_layer<TensorDataType, Layout, Device>::fp_compute() {
 
-#if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
+#if defined LBANN_HAS_DISTCONV && defined LBANN_HAS_NVSHMEM
   // Initialize the nvshmem here. No Op if already initialized
   nvshmem::initialize();
   if (this->distconv_enabled()){
@@ -253,7 +253,7 @@ void gather_layer<TensorDataType, Layout, Device>::fp_compute() {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void gather_layer<TensorDataType, Layout, Device>::bp_compute() {
 
-#if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
+#if defined LBANN_HAS_DISTCONV && defined LBANN_HAS_NVSHMEM
   // Initialize the nvshmem here. No Op if already initialized
   nvshmem::initialize();
   if (this->distconv_enabled()){
