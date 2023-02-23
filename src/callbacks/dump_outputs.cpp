@@ -24,11 +24,14 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/callbacks/callback_impl.hpp"
 #include "lbann/callbacks/dump_outputs.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/trainer_file_utils.hpp"
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/protobuf.hpp"
 
@@ -194,6 +197,13 @@ void dump_outputs::do_dump_outputs(const model& m, const Layer& l) {
     }
   }
 
+}
+
+  void dump_outputs::on_evaluate_forward_prop_end(model* m, Layer* l) {
+  const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
+  if(c.get_step() % m_batch_interval == 0) {
+    do_dump_outputs(*m, *l);
+  }
 }
 
 void dump_outputs::write_specific_proto(lbann_data::Callback& proto) const

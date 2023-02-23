@@ -26,7 +26,10 @@
 
 #include "lbann/callbacks/debug.hpp"
 #include "lbann/comm_impl.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/layers/layer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/utils/serialize.hpp"

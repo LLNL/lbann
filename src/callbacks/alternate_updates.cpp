@@ -25,8 +25,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/alternate_updates.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/protobuf.hpp"
 
 #include "callback_helpers.hpp"

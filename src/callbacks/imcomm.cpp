@@ -29,6 +29,8 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/imcomm.hpp"
 
+#include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/summary_impl.hpp"
 #include "lbann/utils/timer.hpp"

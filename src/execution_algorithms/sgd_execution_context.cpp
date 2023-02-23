@@ -26,6 +26,7 @@
 
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/base.hpp"
+#include "lbann/callbacks/checkpoint_impl.hpp"
 #include "lbann/io/persist_impl.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/serialize.hpp"

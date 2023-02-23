@@ -27,10 +27,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/summary.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/metrics/metric.hpp"
+#include "lbann/models/model.hpp"
 
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/profiling.hpp"

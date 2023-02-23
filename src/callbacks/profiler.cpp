@@ -27,6 +27,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/profiler.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/weights/weights.hpp"

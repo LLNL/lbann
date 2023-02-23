@@ -30,6 +30,7 @@
 #include "lbann/callbacks/print_statistics.hpp"
 
 #include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/lbann_library.hpp"

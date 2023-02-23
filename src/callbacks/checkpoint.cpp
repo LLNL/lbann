@@ -28,8 +28,9 @@
 
 
 #include "lbann/comm_impl.hpp"
-#include "lbann/callbacks/checkpoint.hpp"
+#include "lbann/callbacks/checkpoint_impl.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
+#include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/serialize.hpp"
 

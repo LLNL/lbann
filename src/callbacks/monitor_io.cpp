@@ -30,7 +30,10 @@
 
 #include "lbann/callbacks/monitor_io.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/protobuf.hpp"
 

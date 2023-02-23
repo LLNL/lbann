@@ -28,9 +28,11 @@
 
 #include "lbann/callbacks/load_model.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/protobuf.hpp"

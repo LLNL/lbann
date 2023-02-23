@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/callback.hpp"
+#include "lbann/callbacks/callback_impl.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/trainers/trainer.hpp"
 

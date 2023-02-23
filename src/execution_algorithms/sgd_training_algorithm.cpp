@@ -35,6 +35,7 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/timer_map.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/trainers/trainer.hpp"
 
 #include "lbann/proto/training_algorithm.pb.h"
 

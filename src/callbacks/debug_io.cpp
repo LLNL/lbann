@@ -29,6 +29,8 @@
 #include "lbann/callbacks/debug_io.hpp"
 
 #include "lbann/base.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/serialize.hpp"
 

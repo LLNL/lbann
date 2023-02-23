@@ -26,12 +26,14 @@
 
 #include "lbann/callbacks/check_metric.hpp"
 
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/serialize.hpp"
 #include <cereal/types/set.hpp>
 #include "lbann/metrics/metric.hpp"
+#include "lbann/models/model.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
 

@@ -29,6 +29,7 @@
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/layers/io/input_layer.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/trainers/trainer.hpp"
 
 #include <iomanip>
 #include <vector>

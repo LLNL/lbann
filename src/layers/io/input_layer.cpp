@@ -37,6 +37,7 @@
 #include "lbann/utils/serialize.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/layers.pb.h"
+#include "lbann/trainers/trainer.hpp"
 
 template <typename T, lbann::data_layout L, El::Device D>
 std::unique_ptr<lbann::Layer>

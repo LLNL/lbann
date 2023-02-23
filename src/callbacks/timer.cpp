@@ -32,6 +32,8 @@
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/summary_impl.hpp"
 
+#include "lbann/proto/callbacks.pb.h"
+
 #include <algorithm>
 
 namespace lbann {

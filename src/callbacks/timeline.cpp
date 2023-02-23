@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/timeline.hpp"
 
+#include "lbann/models/model.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/serialize.hpp"

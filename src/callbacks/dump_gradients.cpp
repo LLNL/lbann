@@ -27,7 +27,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/dump_gradients.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/weights/weights.hpp"
 

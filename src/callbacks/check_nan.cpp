@@ -25,10 +25,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/check_nan.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/models/model.hpp"
 
 #include "lbann/utils/serialize.hpp"
+
+#include "lbann/proto/callbacks.pb.h"
+
 #include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 namespace lbann {

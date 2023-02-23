@@ -32,6 +32,8 @@
 #include <utility>
 
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/io/persist.hpp"
 
 #include <google/protobuf/message.h>
 

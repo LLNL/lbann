@@ -28,7 +28,9 @@
 
 #include "lbann/callbacks/variable_minibatch.hpp"
 
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/layers/io/input_layer.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/exception.hpp"
 
 #include "lbann/proto/callbacks.pb.h"

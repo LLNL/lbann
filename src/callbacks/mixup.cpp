@@ -27,6 +27,8 @@
 #include <algorithm>
 #include "lbann/callbacks/mixup.hpp"
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/beta.hpp"
 #include "lbann/utils/exception.hpp"
@@ -39,6 +41,13 @@
 
 namespace lbann {
 namespace callback {
+
+mixup::mixup(std::unordered_set<std::string> layers, float alpha) :
+  callback_base(), m_layers(layers), m_alpha(alpha) {
+  if (alpha < 0.0f) {
+    LBANN_ERROR("Mixup alpha must be non-negative.");
+  }
+}
 
 mixup::mixup()
   : mixup({}, 0)

@@ -25,7 +25,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/dump_model_graph.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann_config.hpp"
+
+#include "lbann/proto/callbacks.pb.h"
 
 #ifdef LBANN_HAS_BOOST
 #include <boost/graph/graphviz.hpp>

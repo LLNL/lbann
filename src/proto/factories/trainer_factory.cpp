@@ -27,6 +27,7 @@
 #include "lbann/proto/factories.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/data_coordinator/buffered_data_coordinator.hpp"
 #include "lbann/execution_algorithms/factory.hpp"

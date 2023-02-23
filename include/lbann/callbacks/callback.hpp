@@ -29,13 +29,13 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
 
-#include "lbann/trainers/trainer.hpp"
-#include "lbann/layers/layer.hpp"
-#include "lbann/models/model.hpp"
+//#include "lbann/trainers/trainer.hpp"
+//#include "lbann/layers/layer.hpp"
+//#include "lbann/models/model.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/summary.hpp"
-#include "lbann/execution_algorithms/sgd_execution_context.hpp"
+//#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 
 #include <google/protobuf/message.h>
 
@@ -61,6 +61,12 @@ namespace cereal
 }// namespace cereal
 
 namespace lbann {
+
+// Forward-declarations
+class Layer;
+class model;
+class trainer;
+class weights;
 
 /** @class callback_base
  *  @brief Base class for callbacks during training/testing.
@@ -214,36 +220,36 @@ protected:
   /** @brief Build a standard directory hierarchy including trainer ID.
    */
   inline std::string get_multi_trainer_path(const model& m,
-                                            const std::string& root_dir) {
-    std::string dir = root_dir;
-    if (dir.empty()) { dir = "./"; }
-    if (dir.back() != '/') { dir += "/"; }
+                                            const std::string& root_dir);//  {
+  //   std::string dir = root_dir;
+  //   if (dir.empty()) { dir = "./"; }
+  //   if (dir.back() != '/') { dir += "/"; }
 
-    return build_string(dir,
-                        get_const_trainer().get_name(), '/');
-  }
+  //   return build_string(dir,
+  //                       get_const_trainer().get_name(), '/');
+  // }
 
   /** @brief Build a standard directory hierachy including trainer,
    * execution context, and model information (in that order).
    */
   inline std::string get_multi_trainer_ec_model_path(const model& m,
-                                                     const std::string& root_dir) {
-    std::string dir = get_multi_trainer_path(m, root_dir);
-    const auto& c = static_cast<const SGDExecutionContext&>(m.get_execution_context());
-    return build_string(dir,
-                        c.get_state_string(), '/',
-                        m.get_name(), '/');
-  }
+                                                     const std::string& root_dir);//  {
+  //   std::string dir = get_multi_trainer_path(m, root_dir);
+  //   const auto& c = static_cast<const SGDExecutionContext&>(m.get_execution_context());
+  //   return build_string(dir,
+  //                       c.get_state_string(), '/',
+  //                       m.get_name(), '/');
+  // }
 
   /** @brief Build a standard directory hierachy including trainer,
    * model information in that order.
    */
   inline std::string get_multi_trainer_model_path(const model& m,
-                                                  const std::string& root_dir) {
-    std::string dir = get_multi_trainer_path(m, root_dir);
-    return build_string(dir,
-                        m.get_name(), '/');
-  }
+                                                  const std::string& root_dir);//  {
+  //   std::string dir = get_multi_trainer_path(m, root_dir);
+  //   return build_string(dir,
+  //                       m.get_name(), '/');
+  // }
 
 protected:
 

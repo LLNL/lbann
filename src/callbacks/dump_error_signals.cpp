@@ -25,7 +25,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/dump_error_signals.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/serialize.hpp"
 
 #include "lbann/proto/callbacks.pb.h"

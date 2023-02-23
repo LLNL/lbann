@@ -37,6 +37,7 @@
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/io/persist_impl.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/serialize.hpp"

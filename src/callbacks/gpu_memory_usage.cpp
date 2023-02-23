@@ -32,6 +32,8 @@
 #include <iomanip>
 #include <sstream>
 
+#include "lbann/proto/callbacks.pb.h"
+
 namespace {
 template <typename T>
 T get_mean(const std::vector<T> &v) {

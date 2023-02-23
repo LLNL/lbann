@@ -26,9 +26,11 @@
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/perturb_weights.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/weights/data_type_weights.hpp"
+#include "lbann/models/model.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
 
