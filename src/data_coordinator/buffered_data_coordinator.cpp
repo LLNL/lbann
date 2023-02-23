@@ -31,6 +31,7 @@
 #include "lbann/data_coordinator/data_packer.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/profiling.hpp"

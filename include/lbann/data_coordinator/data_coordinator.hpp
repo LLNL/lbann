@@ -29,7 +29,7 @@
 
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/utils/dataset.hpp"
-#include "lbann/execution_algorithms/execution_context.hpp"
+//#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
@@ -55,6 +55,9 @@
  * there should be one input layer for each type of data to read.
  */
 namespace lbann {
+
+// Forward declaration
+class ExecutionContext;
 
 class data_coordinator {
  public:

@@ -28,9 +28,9 @@
 #define LBANN_EXECUTION_ALGORITHMS_TRAINING_ALGORITHM_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-#include "lbann/data_coordinator/data_coordinator.hpp"
-#include "lbann/execution_algorithms/execution_context.hpp"
-#include "lbann/models/model.hpp"
+//#include "lbann/data_coordinator/data_coordinator.hpp"
+//#include "lbann/execution_algorithms/execution_context.hpp"
+//#include "lbann/models/model.hpp"
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/make_abstract.hpp"
 #include "lbann/utils/memory.hpp"
@@ -38,6 +38,14 @@
 #include <memory>
 
 namespace lbann {
+
+// Forward-declarations
+struct DataReaderMetaData;
+class data_coordinator;
+  //class lbann_callback;
+  //class lbann_comm;
+class ExecutionContext;
+class model;
 
 /** @class TrainingAlgorithm
  *  @brief Base class for LBANN training_algorithms.

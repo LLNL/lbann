@@ -41,6 +41,8 @@
 #include "lbann/layers/transform/uniform.hpp"
 #include "lbann/layers/transform/unpooling.hpp"
 
+#include "lbann/execution_algorithms/execution_context.hpp"
+
 #include "lbann/utils/protobuf.hpp"
 
 #include "lbann/proto/layers.pb.h"

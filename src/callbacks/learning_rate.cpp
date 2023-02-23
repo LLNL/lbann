@@ -32,6 +32,7 @@
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/utils/protobuf.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
 
 #include "callback_helpers.hpp"
 

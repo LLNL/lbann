@@ -29,6 +29,7 @@
 #include <lbann/trainers/trainer.hpp>
 #include <lbann/utils/distconv.hpp>
 #include <lbann/utils/serialize.hpp>
+#include "lbann/execution_algorithms/execution_context.hpp"
 
 namespace lbann {
 

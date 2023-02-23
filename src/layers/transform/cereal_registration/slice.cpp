@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "lbann/utils/serialize.hpp"
 #include <lbann/layers/transform/slice.hpp>
+#include "lbann/execution_algorithms/execution_context.hpp"
 
 namespace lbann {
 
