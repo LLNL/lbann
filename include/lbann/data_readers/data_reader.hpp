@@ -30,15 +30,15 @@
 #define LBANN_DATA_READER_HPP
 
 #include "lbann/base.hpp"
-#include "lbann/comm.hpp"
+//#include "lbann/comm.hpp"
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/io/file_io.hpp"
-#include "lbann/io/persist.hpp"
+//#include "lbann/io/persist.hpp"
 #include "lbann/transforms/transform_pipeline.hpp"
 #include "lbann/utils/argument_parser.hpp"
-#include "lbann/utils/distconv.hpp"
-#include "lbann/utils/exception.hpp"
+//#include "lbann/utils/distconv.hpp"
+//#include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/random_number_generators.hpp"
 
@@ -61,9 +61,13 @@ namespace conduit {
 
 namespace lbann {
 
+// Forward declarations
+//struct DataReaderMetaData;
+class Layer;
 class data_store_conduit;
 class thread_pool;
 class trainer;
+class persist;
 
 /**
  * A data reader manages reading in data in a particular format.
@@ -389,25 +393,25 @@ class generic_data_reader {
     return 1;
   }
   /// get the linearized size of what is identified by desc.
-  virtual int get_linearized_size(data_field_type const& data_field) const
-  {
-    if (data_field == INPUT_DATA_TYPE_SAMPLES) {
-      return get_linearized_data_size();
-    }
-    else if (data_field == INPUT_DATA_TYPE_LABELS) {
-      return get_linearized_label_size();
-    }
-    else if (data_field == INPUT_DATA_TYPE_RESPONSES) {
-      return get_linearized_response_size();
-    }
-    else if (data_field == INPUT_DATA_TYPE_LABEL_RECONSTRUCTION) {
-      return get_linearized_data_size();
-    }
-    else {
-      LBANN_ERROR("Unknown data_field_type value provided: " + data_field);
-    }
-    return 0;
-  }
+  virtual int get_linearized_size(data_field_type const& data_field) const;
+  // {
+  //   if (data_field == INPUT_DATA_TYPE_SAMPLES) {
+  //     return get_linearized_data_size();
+  //   }
+  //   else if (data_field == INPUT_DATA_TYPE_LABELS) {
+  //     return get_linearized_label_size();
+  //   }
+  //   else if (data_field == INPUT_DATA_TYPE_RESPONSES) {
+  //     return get_linearized_response_size();
+  //   }
+  //   else if (data_field == INPUT_DATA_TYPE_LABEL_RECONSTRUCTION) {
+  //     return get_linearized_data_size();
+  //   }
+  //   else {
+  //     LBANN_ERROR("Unknown data_field_type value provided: " + data_field);
+  //   }
+  //   return 0;
+  // }
   /// Get the dimensions of the data.
   virtual const std::vector<int> get_data_dims() const {
     return std::vector<int>(0);
@@ -579,28 +583,28 @@ class generic_data_reader {
     return (int)m_shuffled_indices.size();
   }
   /// Get the number of unused samples in this dataset.
-  int get_num_unused_data(execution_mode m) const {
-    if(m_unused_indices.count(m)) {
-      return (int)m_unused_indices.at(m).size();
-    }else {
-      LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
-    }
-  }
+  int get_num_unused_data(execution_mode m) const; // {
+  //   if(m_unused_indices.count(m)) {
+  //     return (int)m_unused_indices.at(m).size();
+  //   }else {
+  //     LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
+  //   }
+  // }
   /// Get a pointer to the start of the unused sample indices.
-  int *get_unused_data(execution_mode m) {
-    if(m_unused_indices.count(m)) {
-      return &(m_unused_indices[m][0]);
-    }else {
-      LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
-    }
-  }
-  const std::vector<int>& get_unused_indices(execution_mode m) {
-    if(m_unused_indices.count(m)) {
-      return m_unused_indices.at(m);
-    }else {
-      LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
-    }
-  }
+  int *get_unused_data(execution_mode m); // {
+  //   if(m_unused_indices.count(m)) {
+  //     return &(m_unused_indices[m][0]);
+  //   }else {
+  //     LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
+  //   }
+  // }
+  const std::vector<int>& get_unused_indices(execution_mode m); // {
+  //   if(m_unused_indices.count(m)) {
+  //     return m_unused_indices.at(m);
+  //   }else {
+  //     LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
+  //   }
+  // }
   /// Set the number of iterations in each epoch.
   void set_num_iterations_per_epoch(int num_iterations_per_epoch) {
     m_num_iterations_per_epoch = num_iterations_per_epoch;  /// @todo BVE FIXME merge this with alternate approach
@@ -654,18 +658,18 @@ class generic_data_reader {
   bool load_from_checkpoint_distributed(persist& p, execution_mode mode);
 
   /// returns a const ref to the data store
-  const data_store_conduit& get_data_store() const {
-    if (m_data_store == nullptr) {
-      LBANN_ERROR("m_data_store is nullptr");
-    }
-    return *m_data_store;
-  }
+  const data_store_conduit& get_data_store() const; // {
+  //   if (m_data_store == nullptr) {
+  //     LBANN_ERROR("m_data_store is nullptr");
+  //   }
+  //   return *m_data_store;
+  // }
 
   /// returns a non-const ref to the data store
-  data_store_conduit& get_data_store() {
-    return const_cast<data_store_conduit&>(
-      static_cast<const generic_data_reader&>(*this).get_data_store());
-  }
+  data_store_conduit& get_data_store(); // {
+  //   return const_cast<data_store_conduit&>(
+  //     static_cast<const generic_data_reader&>(*this).get_data_store());
+  // }
 
   data_store_conduit* get_data_store_ptr() const {
     return m_data_store;
@@ -907,9 +911,9 @@ public:
 
 private:
 
-  virtual void do_preload_data_store() {
-    LBANN_ERROR("Not implemented.");
-  }
+  virtual void do_preload_data_store();//  {
+  //   LBANN_ERROR("Not implemented.");
+  // }
 
  protected :
 

@@ -441,6 +441,26 @@ bool generic_data_reader::update(bool is_active_reader) {
   return reader_not_done;
 }
 
+int generic_data_reader::get_linearized_size(data_field_type const& data_field) const
+{
+  if (data_field == INPUT_DATA_TYPE_SAMPLES) {
+    return get_linearized_data_size();
+  }
+  else if (data_field == INPUT_DATA_TYPE_LABELS) {
+    return get_linearized_label_size();
+  }
+  else if (data_field == INPUT_DATA_TYPE_RESPONSES) {
+    return get_linearized_response_size();
+  }
+  else if (data_field == INPUT_DATA_TYPE_LABEL_RECONSTRUCTION) {
+    return get_linearized_data_size();
+  }
+  else {
+    LBANN_ERROR("Unknown data_field_type value provided: " + data_field);
+  }
+  return 0;
+}
+
 int generic_data_reader::get_loaded_mini_batch_size() const {
   if (m_loaded_mini_batch_idx >= (m_num_iterations_per_epoch-1)) {
     return m_last_mini_batch_size;
@@ -485,6 +505,29 @@ int generic_data_reader::get_next_position() const {
     return m_current_pos + m_stride_to_last_mini_batch;
   } else {
     return m_current_pos + m_stride_to_next_mini_batch;
+  }
+}
+
+int generic_data_reader::get_num_unused_data(execution_mode m) const {
+  if(m_unused_indices.count(m)) {
+    return (int)m_unused_indices.at(m).size();
+  }else {
+    LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
+  }
+}
+/// Get a pointer to the start of the unused sample indices.
+int *generic_data_reader::get_unused_data(execution_mode m) {
+  if(m_unused_indices.count(m)) {
+    return &(m_unused_indices[m][0]);
+  }else {
+    LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
+  }
+}
+const std::vector<int>& generic_data_reader::get_unused_indices(execution_mode m) {
+  if(m_unused_indices.count(m)) {
+    return m_unused_indices.at(m);
+  }else {
+    LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
   }
 }
 
@@ -656,6 +699,24 @@ bool lbann::generic_data_reader::load_from_checkpoint_distributed(persist& p, ex
     );
   return true;
 }
+
+const data_store_conduit& generic_data_reader::get_data_store() const {
+  if (m_data_store == nullptr) {
+    LBANN_ERROR("m_data_store is nullptr");
+  }
+  return *m_data_store;
+}
+
+/// returns a non-const ref to the data store
+data_store_conduit& generic_data_reader::get_data_store() {
+  return const_cast<data_store_conduit&>(
+    static_cast<const generic_data_reader&>(*this).get_data_store());
+}
+
+void generic_data_reader::do_preload_data_store() {
+  LBANN_ERROR("Not implemented.");
+}
+
 
 void generic_data_reader::set_file_dir(std::string s) {
   if(endsWith(s, "/")) {
