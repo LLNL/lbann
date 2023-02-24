@@ -25,8 +25,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_DATA_TYPE_OPTIMIZER_INSTANTIATE
-#include "lbann/optimizers/data_type_optimizer.hpp"
+//#include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/optimizers/data_type_optimizer_impl.hpp"
+#include "lbann/optimizers/optimizer_impl.hpp"
 
 #undef PROTO
 #define PROTO(T) template class lbann::data_type_optimizer<T>

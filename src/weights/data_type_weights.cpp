@@ -28,7 +28,7 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/weights/data_type_weights_impl.hpp"
-#include "lbann/optimizers/optimizer.hpp"
+#include "lbann/optimizers/optimizer_impl.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/argument_parser.hpp"

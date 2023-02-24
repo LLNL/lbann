@@ -27,6 +27,7 @@
 #include "lbann/comm.hpp"
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/optimizers/optimizer_impl.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/utils/serialize.hpp"

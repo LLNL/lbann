@@ -28,6 +28,7 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/optimizers/optimizer_impl.hpp"
 #include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/exception.hpp"
