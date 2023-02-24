@@ -30,10 +30,10 @@
 //#include "lbann/data_coordinator/buffered_data_coordinator.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/layers/layer.hpp"
+//#include "lbann/layers/layer.hpp"
 //#include "lbann/models/model.hpp"
-#include "lbann/utils/distconv.hpp"
-#include "lbann/utils/exception.hpp"
+//#include "lbann/utils/distconv.hpp"
+//#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
