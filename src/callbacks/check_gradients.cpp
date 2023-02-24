@@ -26,11 +26,14 @@
 
 #include "lbann/callbacks/check_gradients.hpp"
 #include "lbann/data_readers/data_reader.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/layers/io/input_layer.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
 //#include "lbann/optimizers/optimizer.hpp"
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/memory.hpp"
 

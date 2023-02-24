@@ -28,8 +28,10 @@
 
 #include "lbann/callbacks/variable_minibatch.hpp"
 
+#include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/layers/io/input_layer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/exception.hpp"
 
