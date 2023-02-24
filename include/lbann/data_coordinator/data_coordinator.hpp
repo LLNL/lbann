@@ -29,6 +29,7 @@
 
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/utils/dataset.hpp"
+#include "lbann/data_readers/utils/input_data_type.hpp"
 //#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 
@@ -58,6 +59,9 @@ namespace lbann {
 
 // Forward declaration
 class ExecutionContext;
+class generic_data_reader;
+class persist;
+class trainer;
 
 class data_coordinator {
  public:
@@ -73,39 +77,39 @@ class data_coordinator {
     m_execution_context(nullptr),
     m_io_thread_pool(nullptr) {}
 
-  virtual ~data_coordinator() {
-    // Synchronize the I/O thread pool
-    // Note: The thread pool may still be running asynchronously if the
-    // trainer is destroyed in the middle of an epoch. The thread pool
-    // needs to interact with data readers, etc., so it needs to be
-    // synchronized before any of them are destroyed.
-    if (m_io_thread_pool != nullptr) {
-      m_io_thread_pool->reap_threads();
-    }
-    // Data coordinator always frees data readers.
-    for (auto& dr : m_data_readers) {
-      delete dr.second;
-    }
-  }
+  virtual ~data_coordinator(); // {
+  //   // Synchronize the I/O thread pool
+  //   // Note: The thread pool may still be running asynchronously if the
+  //   // trainer is destroyed in the middle of an epoch. The thread pool
+  //   // needs to interact with data readers, etc., so it needs to be
+  //   // synchronized before any of them are destroyed.
+  //   if (m_io_thread_pool != nullptr) {
+  //     m_io_thread_pool->reap_threads();
+  //   }
+  //   // Data coordinator always frees data readers.
+  //   for (auto& dr : m_data_readers) {
+  //     delete dr.second;
+  //   }
+  // }
 
   // Data Coordinators copy their data readers.
-  data_coordinator(const data_coordinator& other)
-    : m_comm(other.m_comm),
-      m_datasets(other.m_datasets),
-      m_data_readers(other.m_data_readers),
-      m_data_set_processed(other.m_data_set_processed),
-      m_execution_context(other.m_execution_context) {
-    for (auto& dr : m_data_readers) {
-      dr.second = dr.second ? dr.second->copy() : nullptr;
-    }
-  }
+  data_coordinator(const data_coordinator& other);
+  //   : m_comm(other.m_comm),
+  //     m_datasets(other.m_datasets),
+  //     m_data_readers(other.m_data_readers),
+  //     m_data_set_processed(other.m_data_set_processed),
+  //     m_execution_context(other.m_execution_context) {
+  //   for (auto& dr : m_data_readers) {
+  //     dr.second = dr.second ? dr.second->copy() : nullptr;
+  //   }
+  // }
 
-  data_coordinator& operator=(const data_coordinator& other) {
-    for (auto& dr : m_data_readers) {
-      dr.second = dr.second ? dr.second->copy() : nullptr;
-    }
-    return *this;
-  }
+  data_coordinator& operator=(const data_coordinator& other);//  {
+  //   for (auto& dr : m_data_readers) {
+  //     dr.second = dr.second ? dr.second->copy() : nullptr;
+  //   }
+  //   return *this;
+  // }
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar );
@@ -189,267 +193,268 @@ class data_coordinator {
   // Helper functions to access the data readers
   //************************************************************************
 
-  generic_data_reader *get_data_reader(const execution_mode mode) const {
-    generic_data_reader *data_reader = nullptr;
-    auto it = m_data_readers.find(mode);
-    if (it != m_data_readers.end()) data_reader = it->second;
-    return data_reader;
-  }
+  generic_data_reader *get_data_reader(const execution_mode mode) const;//  {
+  //   generic_data_reader *data_reader = nullptr;
+  //   auto it = m_data_readers.find(mode);
+  //   if (it != m_data_readers.end()) data_reader = it->second;
+  //   return data_reader;
+  // }
 
   /**
    * Get the dimensions of the underlying data.
    */
-  TargetModeDimMap get_data_dims() {
-    TargetModeDimMap map;
-    generic_data_reader *dr;
-    for(execution_mode mode : execution_mode_iterator()) {
-      dr = get_data_reader(mode);
-      if (dr != nullptr) {
-        map[data_reader_target_mode::INPUT] = dr->get_data_dims();
-        if(dr->has_labels()) {
-          map[data_reader_target_mode::CLASSIFICATION] = std::vector<int>(1, dr->get_num_labels());
-        }else {
-          map[data_reader_target_mode::CLASSIFICATION] = std::vector<int>(1, 0);
-        }
-        if(dr->has_responses()) {
-          map[data_reader_target_mode::REGRESSION] = std::vector<int>(1, dr->get_num_responses());
-        }else {
-          map[data_reader_target_mode::REGRESSION] = std::vector<int>(1, 0);
-        }
-        map[data_reader_target_mode::RECONSTRUCTION] = dr->get_data_dims();
-        map[data_reader_target_mode::LABEL_RECONSTRUCTION] = dr->get_data_dims();
-        map[data_reader_target_mode::NA] = std::vector<int>(1, 0);
-        return map;
-      }
-    }
-    LBANN_ERROR("get_data_dims: no available data readers");
-    return {};
-  }
+  TargetModeDimMap get_data_dims();//  {
+  //   TargetModeDimMap map;
+  //   generic_data_reader *dr;
+  //   for(execution_mode mode : execution_mode_iterator()) {
+  //     dr = get_data_reader(mode);
+  //     if (dr != nullptr) {
+  //       map[data_reader_target_mode::INPUT] = dr->get_data_dims();
+  //       if(dr->has_labels()) {
+  //         map[data_reader_target_mode::CLASSIFICATION] = std::vector<int>(1, dr->get_num_labels());
+  //       }else {
+  //         map[data_reader_target_mode::CLASSIFICATION] = std::vector<int>(1, 0);
+  //       }
+  //       if(dr->has_responses()) {
+  //         map[data_reader_target_mode::REGRESSION] = std::vector<int>(1, dr->get_num_responses());
+  //       }else {
+  //         map[data_reader_target_mode::REGRESSION] = std::vector<int>(1, 0);
+  //       }
+  //       map[data_reader_target_mode::RECONSTRUCTION] = dr->get_data_dims();
+  //       map[data_reader_target_mode::LABEL_RECONSTRUCTION] = dr->get_data_dims();
+  //       map[data_reader_target_mode::NA] = std::vector<int>(1, 0);
+  //       return map;
+  //     }
+  //   }
+  //   LBANN_ERROR("get_data_dims: no available data readers");
+  //   return {};
+  // }
 
   /**
    * Get the dimensions of the underlying data.
    */
-  SPModeSlicePoints get_slice_points() {
-    SPModeSlicePoints map;
-    generic_data_reader *dr;
-    for(execution_mode mode : execution_mode_iterator()) {
-      dr = get_data_reader(mode);
-      if (dr != nullptr) {
-        for(slice_points_mode sp_mode : slice_points_mode_iterator()) {
-          bool is_supported;
-          std::vector<El::Int> tmp = dr->get_slice_points(sp_mode, is_supported);
-          if(is_supported) {
-            map[sp_mode] = tmp;
-          }
-        }
-        return map;
-      }
-    }
-    LBANN_ERROR("get_data_dims: no available data readers");
-    return {};
-  }
+  SPModeSlicePoints get_slice_points();//  {
+  //   SPModeSlicePoints map;
+  //   generic_data_reader *dr;
+  //   for(execution_mode mode : execution_mode_iterator()) {
+  //     dr = get_data_reader(mode);
+  //     if (dr != nullptr) {
+  //       for(slice_points_mode sp_mode : slice_points_mode_iterator()) {
+  //         bool is_supported;
+  //         std::vector<El::Int> tmp = dr->get_slice_points(sp_mode, is_supported);
+  //         if(is_supported) {
+  //           map[sp_mode] = tmp;
+  //         }
+  //       }
+  //       return map;
+  //     }
+  //   }
+  //   LBANN_ERROR("get_data_dims: no available data readers");
+  //   return {};
+  // }
 
-  DataReaderMetaData get_dr_metadata() {
-    DataReaderMetaData drm;
-    drm.data_dims = get_data_dims();
-    drm.slice_points = get_slice_points();
-#ifdef LBANN_HAS_DISTCONV
-    const auto training_dr = m_data_readers[execution_mode::training];
-    drm.shuffle_required = training_dr->is_tensor_shuffle_required();
-#endif // LBANN_HAS_DISTCONV
-    return drm;
-  }
+  DataReaderMetaData get_dr_metadata();//  {
+//     DataReaderMetaData drm;
+//     drm.data_dims = get_data_dims();
+//     drm.slice_points = get_slice_points();
+// #ifdef LBANN_HAS_DISTCONV
+//     const auto training_dr = m_data_readers[execution_mode::training];
+//     drm.shuffle_required = training_dr->is_tensor_shuffle_required();
+// #endif // LBANN_HAS_DISTCONV
+//     return drm;
+//   }
 
   /**
    * Check to see if the data readers have labels
    */
-  bool has_labels() {
-    bool flag = false;
-    generic_data_reader *dr;
-    for(auto mode : execution_mode_iterator()) {
-      dr = get_data_reader(mode);
-      if (dr != nullptr) {
-        flag = dr->has_labels();
-        if(flag) { return flag; }
-      }
-    }
-    return flag;
-  }
+  bool has_labels();//  {
+  //   bool flag = false;
+  //   generic_data_reader *dr;
+  //   for(auto mode : execution_mode_iterator()) {
+  //     dr = get_data_reader(mode);
+  //     if (dr != nullptr) {
+  //       flag = dr->has_labels();
+  //       if(flag) { return flag; }
+  //     }
+  //   }
+  //   return flag;
+  // }
 
   /**
    * Check to see if the data readers have responses
    */
-  bool has_responses() {
-    bool flag = false;
-    generic_data_reader *dr;
-    for(auto mode : execution_mode_iterator()) {
-      dr = get_data_reader(mode);
-      if (dr != nullptr) {
-        flag = dr->has_responses();
-        if(flag) { return flag; }
-      }
-    }
-    return flag;
-  }
+  bool has_responses();//  {
+  //   bool flag = false;
+  //   generic_data_reader *dr;
+  //   for(auto mode : execution_mode_iterator()) {
+  //     dr = get_data_reader(mode);
+  //     if (dr != nullptr) {
+  //       flag = dr->has_responses();
+  //       if(flag) { return flag; }
+  //     }
+  //   }
+  //   return flag;
+  // }
 
   /**
    * Get the linearized size of the underlying data.
    */
-  long get_linearized_size(data_field_type const& data_field) const
-  {
-    long linearized_size = -1;
-    for (auto mode : execution_mode_iterator()) {
-      if (generic_data_reader const* const dr = get_data_reader(mode)) {
-        long tmp_size = dr->get_linearized_size(data_field);
-        if (linearized_size != -1 && linearized_size != tmp_size) {
-          LBANN_ERROR(
-            "data_coordinator: ",
-            to_string(mode),
-            " data set size (",
-            std::to_string(tmp_size),
-            ") does not match the currently established data set size (",
-            std::to_string(linearized_size),
-            ")");
-        }
-        linearized_size = tmp_size;
-      }
-    }
-    return linearized_size;
-  }
+  long get_linearized_size(data_field_type const& data_field) const;
+  // {
+  //   long linearized_size = -1;
+  //   for (auto mode : execution_mode_iterator()) {
+  //     if (generic_data_reader const* const dr = get_data_reader(mode)) {
+  //       long tmp_size = dr->get_linearized_size(data_field);
+  //       if (linearized_size != -1 && linearized_size != tmp_size) {
+  //         LBANN_ERROR(
+  //           "data_coordinator: ",
+  //           to_string(mode),
+  //           " data set size (",
+  //           std::to_string(tmp_size),
+  //           ") does not match the currently established data set size (",
+  //           std::to_string(linearized_size),
+  //           ")");
+  //       }
+  //       linearized_size = tmp_size;
+  //     }
+  //   }
+  //   return linearized_size;
+  // }
 
   /**
    * Get the linearized size of the underlying data.
    */
-  long get_linearized_data_size() const {
-    long linearized_data_size = -1;
-    generic_data_reader *dr;
-    for(auto mode : execution_mode_iterator()) {
-      dr = get_data_reader(mode);
-      if (dr != nullptr) {
-        long tmp_data_size = dr->get_linearized_data_size();
-        if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
-          LBANN_ERROR("data_coordinator: ", to_string(mode),
-                      " data set size (", std::to_string(tmp_data_size),
-                      ") does not match the currently established data set size (",
-                      std::to_string(linearized_data_size), ")");
-        }
-        linearized_data_size = tmp_data_size;
-      }
-    }
-    return linearized_data_size;
-  }
+  long get_linearized_data_size() const;//  {
+  //   long linearized_data_size = -1;
+  //   generic_data_reader *dr;
+  //   for(auto mode : execution_mode_iterator()) {
+  //     dr = get_data_reader(mode);
+  //     if (dr != nullptr) {
+  //       long tmp_data_size = dr->get_linearized_data_size();
+  //       if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
+  //         LBANN_ERROR("data_coordinator: ", to_string(mode),
+  //                     " data set size (", std::to_string(tmp_data_size),
+  //                     ") does not match the currently established data set size (",
+  //                     std::to_string(linearized_data_size), ")");
+  //       }
+  //       linearized_data_size = tmp_data_size;
+  //     }
+  //   }
+  //   return linearized_data_size;
+  // }
 
   /**
    * Get the linearized size of the labels for the underlying data.
    */
-  long get_linearized_label_size() const {
-    long linearized_label_size = -1;
-    generic_data_reader *dr;
-    for(auto mode : execution_mode_iterator()) {
-      dr = get_data_reader(mode);
-      if (dr != nullptr) {
-        long tmp_label_size = dr->get_linearized_label_size();
-        if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
-          LBANN_ERROR("data_coordinator: ", to_string(mode),
-                      " label set size (", std::to_string(tmp_label_size),
-                      ") does not match the currently established data set size (",
-                      std::to_string(linearized_label_size), ")");
-        }
-        linearized_label_size = tmp_label_size;
-      }
-    }
-    return linearized_label_size;
-  }
+  long get_linearized_label_size() const;//  {
+  //   long linearized_label_size = -1;
+  //   generic_data_reader *dr;
+  //   for(auto mode : execution_mode_iterator()) {
+  //     dr = get_data_reader(mode);
+  //     if (dr != nullptr) {
+  //       long tmp_label_size = dr->get_linearized_label_size();
+  //       if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
+  //         LBANN_ERROR("data_coordinator: ", to_string(mode),
+  //                     " label set size (", std::to_string(tmp_label_size),
+  //                     ") does not match the currently established data set size (",
+  //                     std::to_string(linearized_label_size), ")");
+  //       }
+  //       linearized_label_size = tmp_label_size;
+  //     }
+  //   }
+  //   return linearized_label_size;
+  // }
 
   /**
    * Get the linearized size of the responses for the underlying data.
    */
-  long get_linearized_response_size() const {
-    long linearized_response_size = -1;
-    generic_data_reader *dr;
-    for(auto mode : execution_mode_iterator()) {
-      dr = get_data_reader(mode);
-      if (dr != nullptr) {
-        long tmp_response_size = dr->get_linearized_response_size();
-        if (linearized_response_size != -1 && linearized_response_size != tmp_response_size) {
-          LBANN_ERROR("data_coordinator: ", to_string(mode),
-                      " response set size (", std::to_string(tmp_response_size),
-                      ") does not match the currently established data set size (",
-                      std::to_string(linearized_response_size), ")");
-        }
-        linearized_response_size = tmp_response_size;
-      }
-    }
-    return linearized_response_size;
-  }
+  long get_linearized_response_size() const;//  {
+  //   long linearized_response_size = -1;
+  //   generic_data_reader *dr;
+  //   for(auto mode : execution_mode_iterator()) {
+  //     dr = get_data_reader(mode);
+  //     if (dr != nullptr) {
+  //       long tmp_response_size = dr->get_linearized_response_size();
+  //       if (linearized_response_size != -1 && linearized_response_size != tmp_response_size) {
+  //         LBANN_ERROR("data_coordinator: ", to_string(mode),
+  //                     " response set size (", std::to_string(tmp_response_size),
+  //                     ") does not match the currently established data set size (",
+  //                     std::to_string(linearized_response_size), ")");
+  //       }
+  //       linearized_response_size = tmp_response_size;
+  //     }
+  //   }
+  //   return linearized_response_size;
+  // }
 
   // At the start of the epoch, set the execution mode and make sure
   // that each layer points to this model
-  void reset_mode(ExecutionContext& context) {
-    m_execution_context = static_cast<observer_ptr<ExecutionContext>>(&context);
-  }
+  void reset_mode(ExecutionContext& context);//  {
+  //   m_execution_context = static_cast<observer_ptr<ExecutionContext>>(&context);
+  // }
 
   /** @name Helper functions to access the dataset statistics */
 ///@{
    /** @brief Return the dataset for the given execution mode. */
-  dataset& get_dataset(execution_mode m) {
-    if(m_datasets.count(m)) {
-      return m_datasets.at(m);
-    }else {
-      LBANN_ERROR("get_dataset: invalid execution mode");
-    }
-  }
+  dataset& get_dataset(execution_mode m);//  {
+  //   if(m_datasets.count(m)) {
+  //     return m_datasets.at(m);
+  //   }else {
+  //     LBANN_ERROR("get_dataset: invalid execution mode");
+  //   }
+  // }
 
-  const dataset& get_dataset(execution_mode m) const {
-    if(m_datasets.count(m)) {
-      return m_datasets.at(m);
-    }else {
-      LBANN_ERROR("get_dataset: invalid execution mode");
-    }
-  }
+  const dataset& get_dataset(execution_mode m) const; // {
+  //   if(m_datasets.count(m)) {
+  //     return m_datasets.at(m);
+  //   }else {
+  //     LBANN_ERROR("get_dataset: invalid execution mode");
+  //   }
+  // }
 
   /**
    * Return the first dataset with a valid (non-null) datareader.
    * Returns null if none are valid.
    */
-  dataset* select_first_valid_dataset() {
-    for(auto m : execution_mode_iterator()) {
-      if(m_datasets.count(m)) {
-        return &m_datasets.at(m);
-      }
-    }
-    return nullptr;
-  }
+  dataset* select_first_valid_dataset(); // {
+  //   for(auto m : execution_mode_iterator()) {
+  //     if(m_datasets.count(m)) {
+  //       return &m_datasets.at(m);
+  //     }
+  //   }
+  //   return nullptr;
+  // }
 
 
-  long get_num_samples(execution_mode m) const {
-    if(m_datasets.count(m)) {
-      return m_datasets.at(m).get_num_samples_processed();
-    }else {
-      return 0;
-    }
-  }
-  long get_total_num_samples(execution_mode m) const {
-    if(m_datasets.count(m)) {
-      return m_datasets.at(m).get_total_samples();
-    }else {
-      return 0;
-    }
-  }
+  long get_num_samples(execution_mode m) const;//  {
+  //   if(m_datasets.count(m)) {
+  //     return m_datasets.at(m).get_num_samples_processed();
+  //   }else {
+  //     return 0;
+  //   }
+  // }
+
+  long get_total_num_samples(execution_mode m) const; // {
+  //   if(m_datasets.count(m)) {
+  //     return m_datasets.at(m).get_total_samples();
+  //   }else {
+  //     return 0;
+  //   }
+  // }
 
   /**
    * Update the number of samples processed for the current execution mode.
    */
-  long update_num_samples_processed(execution_mode mode, long num_samples) {
-    dataset& ds = get_dataset(mode);
-    ds.num_samples_processed() += num_samples;
-    return ds.get_num_samples_processed();
-  }
+  long update_num_samples_processed(execution_mode mode, long num_samples);//  {
+  //   dataset& ds = get_dataset(mode);
+  //   ds.num_samples_processed() += num_samples;
+  //   return ds.get_num_samples_processed();
+  // }
 
   /** @brief Check if the execution mode is valid (i.e. has data). */
-  bool is_execution_mode_valid(execution_mode mode) const {
-    return (get_total_num_samples(mode) != static_cast<long>(0));
-  }
+  bool is_execution_mode_valid(execution_mode mode) const; // {
+  //   return (get_total_num_samples(mode) != static_cast<long>(0));
+  // }
 ///@}
 
   //************************************************************************
@@ -462,24 +467,24 @@ class data_coordinator {
   int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const;
   static int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers, const lbann_comm* comm);
 
-  virtual int get_num_parallel_readers(execution_mode mode) const {
-    const generic_data_reader *data_reader = get_data_reader(mode);
-    return (data_reader != nullptr) ? data_reader->get_num_parallel_readers() : 0;
-  }
+  virtual int get_num_parallel_readers(execution_mode mode) const;//  {
+  //   const generic_data_reader *data_reader = get_data_reader(mode);
+  //   return (data_reader != nullptr) ? data_reader->get_num_parallel_readers() : 0;
+  // }
 
-  bool at_new_epoch(execution_mode mode) const {
-    const generic_data_reader *dr = get_data_reader(mode);
-    return (dr != nullptr && dr->at_new_epoch());
-  }
+  bool at_new_epoch(execution_mode mode) const;//  {
+  //   const generic_data_reader *dr = get_data_reader(mode);
+  //   return (dr != nullptr && dr->at_new_epoch());
+  // }
 
-  bool at_new_epoch() const {
-    return at_new_epoch(execution_mode::training);
-  }
+  bool at_new_epoch() const;//  {
+  //   return at_new_epoch(execution_mode::training);
+  // }
 
-  virtual void register_active_data_field(data_field_type const data_field)
-  {
-    m_active_data_fields.insert(data_field);
-  }
+  virtual void register_active_data_field(data_field_type const data_field);
+  // {
+  //   m_active_data_fields.insert(data_field);
+  // }
 
   //************************************************************************
   //
