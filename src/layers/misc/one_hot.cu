@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_ONE_HOT_LAYER_INSTANTIATE
-#include "lbann/layers/misc/one_hot.hpp"
+#include "lbann/layers/misc/one_hot_impl.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {

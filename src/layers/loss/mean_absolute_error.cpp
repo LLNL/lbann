@@ -25,8 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_MEAN_ABSOLUTE_ERROR_LAYER_INSTANTIATE
-#include "lbann/layers/loss/mean_absolute_error.hpp"
-#include "lbann/utils/exception.hpp"
+#include "lbann/layers/loss/mean_absolute_error_impl.hpp"
 
 namespace lbann {
 
@@ -93,85 +92,6 @@ void local_bp_cpu(El::Int height,
 }
 
 } // namespace
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void mean_absolute_error_layer<TensorDataType, Layout, Device>::setup_dims(DataReaderMetaData& dr_metadata) {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-  this->set_output_dims({1});
-
-  // Check that input dimensions match
-  if (this->get_input_dims(0) != this->get_input_dims(1)) {
-    const auto& parents = this->get_parent_layers();
-    std::stringstream err;
-    err << get_type() << " layer \"" << this->get_name() << "\" "
-        << "has input tensors with different dimensions (";
-    for (int i = 0; i < this->get_num_parents(); ++i) {
-      const auto& dims = this->get_input_dims(i);
-      err << (i > 0 ? ", " : "")
-          << "layer \"" << parents[i]->get_name() << "\" outputs ";
-      for (size_t j = 0; j < dims.size(); ++j) {
-        err << (j > 0 ? " x " : "") << dims[j];
-      }
-    }
-    err << ")";
-    LBANN_ERROR(err.str());
-  }
-
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void mean_absolute_error_layer<TensorDataType, Layout, Device>::setup_data(size_t max_mini_batch_size) {
-  data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
-
-  // Initialize workspace
-  const auto& input_dist = this->get_prev_activations(0).DistData();
-  m_workspace.reset(AbsDistMatrixType::Instantiate(
-    *input_dist.grid,
-    input_dist.root,
-    El::STAR,
-    input_dist.rowDist,
-    (input_dist.blockHeight == 1 && input_dist.blockWidth == 1 ? El::ELEMENT
-                                                               : El::BLOCK),
-    input_dist.device));
-#ifdef HYDROGEN_HAVE_CUB
-  if (m_workspace->GetLocalDevice() == El::Device::GPU) {
-    m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
-  }
-#endif // HYDROGEN_HAVE_CUB
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void mean_absolute_error_layer<TensorDataType, Layout, Device>::fp_compute() {
-
-  // Initialize workspace
-  m_workspace->Empty();
-  m_workspace->AlignWith(this->get_prev_activations());
-  m_workspace->Resize(1, this->get_prev_activations().Width());
-
-  // Compute local contributions and accumulate
-  /// @todo Consider reduce rather than allreduce
-  local_fp_compute();
-  this->get_comm()->allreduce(*m_workspace, m_workspace->RedundantComm());
-  El::Copy(*m_workspace, this->get_activations());
-
-  // Clean up
-  m_workspace->Empty();
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void mean_absolute_error_layer<TensorDataType, Layout, Device>::bp_compute() {
-
-  // Initialize workspace
-  m_workspace->Empty();
-  m_workspace->AlignWith(this->get_prev_activations());
-  El::Copy(this->get_prev_error_signals(), *m_workspace);
-
-  // Compute local gradients
-  local_bp_compute();
-
-  // Clean up
-  m_workspace->Empty();
-}
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void mean_absolute_error_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {

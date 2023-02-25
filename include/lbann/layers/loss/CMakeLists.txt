@@ -25,11 +25,16 @@
 ################################################################################
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
+  categorical_accuracy.hpp
+  categorical_accuracy_impl.hpp
   cross_entropy.hpp
+  cross_entropy_impl.hpp
   l1_norm.hpp
   l2_norm2.hpp
   mean_absolute_error.hpp
+  mean_absolute_error_impl.hpp
   mean_squared_error.hpp
+  mean_squared_error_impl.hpp
   top_k_categorical_accuracy.hpp
   )
 

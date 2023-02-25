@@ -25,10 +25,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_SORT_LAYER_INSTANTIATE
-#include "lbann/layers/transform/sort.hpp"
+#include "lbann/layers/transform/sort_impl.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
-#include "lbann/utils/exception.hpp"
-#include "lbann/utils/gpu/helpers.hpp"
+/* #include "lbann/utils/exception.hpp" */
+/* #include "lbann/utils/gpu/helpers.hpp" */
 
 #if defined LBANN_HAS_CUDA
 #include <thrust/system/cuda/execution_policy.h>

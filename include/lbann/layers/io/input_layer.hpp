@@ -32,8 +32,11 @@
 #include "lbann/layers/data_type_layer.hpp"
 //#include "lbann/layers/layer.hpp"
 //#include "lbann/models/model.hpp"
-//#include "lbann/utils/distconv.hpp"
+#include "lbann/utils/distconv.hpp"
 //#include "lbann/utils/exception.hpp"
+
+//#include "lbann/layers/data_type_distconv_adapter.hpp"
+#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 
 namespace lbann {
 

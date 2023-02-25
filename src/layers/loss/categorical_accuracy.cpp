@@ -26,8 +26,7 @@
 
 #define LBANN_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
 #include "lbann/comm_impl.hpp"
-#include "lbann/utils/exception.hpp"
-#include "lbann/layers/loss/categorical_accuracy.hpp"
+#include "lbann/layers/loss/categorical_accuracy_impl.hpp"
 #include <limits>
 
 
@@ -199,31 +198,6 @@ void fp_cpu(lbann_comm& comm,
 }
 
 } // namespace
-
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void categorical_accuracy_layer<TensorDataType, T_layout, Dev>::setup_dims(DataReaderMetaData& dr_metadata) {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-  this->set_output_dims({1});
-
-  // Check that input dimensions match
-  if (this->get_input_dims(0) != this->get_input_dims(1)) {
-    const auto& parents = this->get_parent_layers();
-    std::stringstream err;
-    err << get_type() << " layer \"" << this->get_name() << "\" "
-        << "has input tensors with different dimensions (";
-    for (int i = 0; i < this->get_num_parents(); ++i) {
-      const auto& dims = this->get_input_dims(i);
-      err << (i > 0 ? ", " : "")
-          << "layer \"" << parents[i]->get_name() << "\" outputs ";
-      for (size_t j = 0; j < dims.size(); ++j) {
-        err << (j > 0 ? " x " : "") << dims[j];
-      }
-    }
-    err << ")";
-    LBANN_ERROR(err.str());
-  }
-
-}
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void categorical_accuracy_layer<TensorDataType, T_layout, Dev>::fp_compute() {

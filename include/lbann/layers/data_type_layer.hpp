@@ -34,7 +34,7 @@
 #include <h2/meta/TypeList.hpp>
 
 #ifdef LBANN_HAS_DISTCONV
-//#include "lbann/layers/data_type_distconv_adapter.hpp"
+#include "lbann/layers/data_type_distconv_adapter.hpp"
 #include <set>
 #include <map>
 #include <array>
@@ -54,9 +54,13 @@ class data_parallel_layer_tensor_manager;
 template <typename U>
 class entrywise_layer_tensor_manager;
 } // dnn_lib
-#ifdef LBANN_HAS_DISTCONV
-class data_type_distconv_adapter;
-#endif // LBANN_HAS_DISTCONV
+// #ifdef LBANN_HAS_DISTCONV
+// template <typename InputTensorDataType,
+//           //          typename OutputTensorDataType>
+//                     typename OutputTensorDataType = InputTensorDataType>
+// class data_type_distconv_adapter;
+// class distconv_adaptor;
+// #endif // LBANN_HAS_DISTCONV
 
 using supported_layer_data_type = h2::meta::TL<
 #ifdef LBANN_HAS_GPU_FP16

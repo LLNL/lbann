@@ -29,9 +29,12 @@
 
 // BVE FIXME
 #include "lbann/layers/distconv_adapter.hpp"
-#include "lbann/layers/layer.hpp"
+//#include "lbann/layers/layer.hpp"
 
 namespace lbann {
+
+// Forward Declarations
+class Layer;
 
 template <typename InputTensorDataType,
           typename OutputTensorDataType = InputTensorDataType>
