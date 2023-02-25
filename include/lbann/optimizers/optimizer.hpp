@@ -29,7 +29,8 @@
 
 #include "lbann/base.hpp"
 // BVE FIXME
-#include "lbann/comm.hpp"
+#include "lbann/comm_nb_request.hpp"
+//#include "lbann/comm.hpp"
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/compiler_control.hpp"
 #ifdef LBANN_HAS_GPU

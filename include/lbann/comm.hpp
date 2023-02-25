@@ -36,6 +36,8 @@
 #include <Al.hpp>
 #endif // LBANN_HAS_ALUMINUM
 
+#include "lbann/comm_nb_request.hpp"
+
 #include "detect_El_mpi.hpp"
 
 #include <map>
@@ -57,7 +59,7 @@ enum class GridType
   SECONDARY_GRID = 2
 };
 
-
+#if 0
 namespace Al {
 
 /** Dummy Aluminum backend. */
@@ -102,7 +104,7 @@ struct request
   MPI_Request raw_mpi_req = MPI_REQUEST_NULL;
 };
 } // namespace Al
-
+#endif
 /* Notes on Synchronization
  *
  * The updated interface exposes a synchronization handle/device
