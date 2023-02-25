@@ -50,10 +50,6 @@ namespace lbann_data {
 class Optimizer;
 }
 
-// namespace Al {
-//   struct request;
-// } // namespace Al
-
 namespace lbann {
 
 /** @brief Status of values in objective function gradient. */

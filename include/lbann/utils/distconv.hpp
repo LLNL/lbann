@@ -32,7 +32,8 @@
 #ifdef LBANN_HAS_DISTCONV
 
 #include "El.hpp"
-#include "lbann/comm.hpp"
+#include "lbann/comm_nb_request.hpp"
+//#include "lbann/comm.hpp"
 #include <vector>
 
 #ifdef LBANN_DEBUG
@@ -73,6 +74,8 @@ inline auto default_hydrogen_stream()
 #endif
 }
 
+// Forward Declarations
+class lbann_comm;
 class Layer;
 
 namespace dc {
