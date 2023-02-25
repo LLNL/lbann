@@ -28,6 +28,7 @@
 #define LBANN_OPTIMIZERS_DATA_TYPE_OPTIMIZER_HPP_INCLUDED
 
 #include "lbann/optimizers/optimizer.hpp"
+#include "lbann/utils/describable.hpp"
 
 // Forward declarations
 namespace cereal {

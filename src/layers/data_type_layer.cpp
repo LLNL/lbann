@@ -755,6 +755,18 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::bp_compute() {
 }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
+El::AbstractDistMatrix<InputTensorDataType> const& data_type_layer<InputTensorDataType, OutputTensorDataType>::weights_values(size_t idx) const {
+    if (idx >= m_weights_proxy.size())
+    {
+      LBANN_ERROR(
+        this->get_type()," layer \"",this->get_name(),"\" ",
+        "attempted to access weights ",idx,", ",
+        "but there are only ",m_weights_proxy.size()," weights");
+    }
+    return m_weights_proxy[idx].values();
+  }
+
+template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::check_setup() {
   Layer::check_setup();
   std::stringstream err;

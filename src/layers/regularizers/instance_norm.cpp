@@ -26,6 +26,7 @@
 
 #define LBANN_INSTANCE_NORM_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/instance_norm.hpp"
+#include "lbann/utils/exception.hpp"
 #include <h2/meta/Core.hpp>
 #include <h2/meta/TypeList.hpp>
 #include <h2/patterns/multimethods/SwitchDispatcher.hpp>

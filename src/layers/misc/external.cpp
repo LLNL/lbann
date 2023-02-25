@@ -26,6 +26,7 @@
 
 #include "lbann/layers/misc/external.hpp"
 #include "lbann/utils/sync_info_helpers.hpp"
+#include "lbann/utils/exception.hpp"
 
 #include <algorithm>
 #include <cstdio>

@@ -65,47 +65,47 @@ protected:
   {}
 
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-    this->set_output_dims(this->get_input_dims());
+  void setup_dims(DataReaderMetaData& dr_metadata) override; // {
+  //   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  //   this->set_output_dims(this->get_input_dims());
 
-    // Check that input dimensions match
-    const auto& output_dims = this->get_output_dims();
-    for (int i = 0; i < this->get_num_parents(); ++i) {
-      if (this->get_input_dims(i) != output_dims) {
-        const auto& parents = this->get_parent_layers();
-        std::ostringstream err;
-        err << get_type() << " layer \"" << this->get_name() << "\" "
-            << "has input tensors with incompatible dimensions (";
-        for (int j = 0; j < this->get_num_parents(); ++j) {
-          const auto& dims = this->get_input_dims(j);
-          err << (j > 0 ? ", " : "")
-              << "layer \"" << parents[j]->get_name() << "\" outputs ";
-          for (size_t k = 0; k < dims.size(); ++k) {
-            err << (k > 0 ? " x " : "") << dims[k];
-          }
-        }
-        err << ")";
-        LBANN_ERROR(err.str());
-      }
-    }
-  }
+  //   // Check that input dimensions match
+  //   const auto& output_dims = this->get_output_dims();
+  //   for (int i = 0; i < this->get_num_parents(); ++i) {
+  //     if (this->get_input_dims(i) != output_dims) {
+  //       const auto& parents = this->get_parent_layers();
+  //       std::ostringstream err;
+  //       err << get_type() << " layer \"" << this->get_name() << "\" "
+  //           << "has input tensors with incompatible dimensions (";
+  //       for (int j = 0; j < this->get_num_parents(); ++j) {
+  //         const auto& dims = this->get_input_dims(j);
+  //         err << (j > 0 ? ", " : "")
+  //             << "layer \"" << parents[j]->get_name() << "\" outputs ";
+  //         for (size_t k = 0; k < dims.size(); ++k) {
+  //           err << (k > 0 ? " x " : "") << dims[k];
+  //         }
+  //       }
+  //       err << ")";
+  //       LBANN_ERROR(err.str());
+  //     }
+  //   }
+  // }
 
-  void fp_compute() override {
-    if (this->is_frozen()) {
-      El::Zero(this->get_activations());
-    } else {
-      El::Copy(this->get_prev_activations(), this->get_activations());
-    }
-  }
+  void fp_compute() override;//  {
+  //   if (this->is_frozen()) {
+  //     El::Zero(this->get_activations());
+  //   } else {
+  //     El::Copy(this->get_prev_activations(), this->get_activations());
+  //   }
+  // }
 
-  void bp_compute() override{
-    if (this->is_frozen()) {
-      El::Zero(this->get_error_signals());
-    } else {
-      El::Copy(this->get_prev_error_signals(), this->get_error_signals());
-    }
-  }
+  void bp_compute() override;// {
+  //   if (this->is_frozen()) {
+  //     El::Zero(this->get_error_signals());
+  //   } else {
+  //     El::Copy(this->get_prev_error_signals(), this->get_error_signals());
+  //   }
+  // }
 
   void write_specific_proto(lbann_data::Layer& proto) const final;
 

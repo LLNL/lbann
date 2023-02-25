@@ -101,6 +101,12 @@ EvalType layer_metric::evaluate(execution_mode mode,
   return value;
 }
 
+EvalType layer_metric::evaluate_compute(const AbsDistMat& prediction,
+                          const AbsDistMat& ground_truth) {
+  LBANN_ERROR("This function should not be called");
+  return EvalType(0);
+}
+
 /*abstract_evaluation_*/Layer& layer_metric::get_evaluation_layer() {
   auto& l = get_layer();
   auto* eval = dynamic_cast<abstract_evaluation_layer<DataType>*>(&l);

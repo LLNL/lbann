@@ -26,8 +26,33 @@
 
 #define LBANN_ONE_HOT_LAYER_INSTANTIATE
 #include "lbann/layers/misc/one_hot.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void one_hot_layer<TensorDataType, Layout, Device>::setup_dims(
+  DataReaderMetaData& dr_metadata)
+{
+  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+
+  // Make sure input tensor is scalar
+  if (this->get_input_size() != 1) {
+    const auto input_dims = this->get_input_dims();
+    std::ostringstream dim_ss;
+    for (size_t i = 0; i < input_dims.size(); ++i) {
+      dim_ss << (i > 0 ? "x" : "") << input_dims[i];
+    }
+    LBANN_ERROR(get_type(),
+                " layer \"",
+                this->get_name(),
+                "\" ",
+                "received an input tensor with invalid dimensions ",
+                "(expected 1, got ",
+                dim_ss.str(),
+                ")");
+  }
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {

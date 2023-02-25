@@ -113,124 +113,124 @@ public:
   void fill_onnx_node(onnx::GraphProto& graph) const override;
 #endif // LBANN_HAS_ONNX
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-    this->set_output_dims({1});
+  void setup_dims(DataReaderMetaData& dr_metadata) override;//  {
+//     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+//     this->set_output_dims({1});
 
-#ifdef LBANN_HAS_DISTCONV
-    // In the current implementation of cross entropy in Distconv, we
-    // do not use the reshape layer and just assumes both inputs have
-    // the matching shape. Therefore, the following check on the input
-    // dimensions would fail. We could address this by either 1)
-    // implementing the reshape layer, or 2) giving a proper shape to
-    // the ground-truth data.
-    //
-    if (this->distconv_enabled()) {
-      return;
-    }
-#endif
+// #ifdef LBANN_HAS_DISTCONV
+//     // In the current implementation of cross entropy in Distconv, we
+//     // do not use the reshape layer and just assumes both inputs have
+//     // the matching shape. Therefore, the following check on the input
+//     // dimensions would fail. We could address this by either 1)
+//     // implementing the reshape layer, or 2) giving a proper shape to
+//     // the ground-truth data.
+//     //
+//     if (this->distconv_enabled()) {
+//       return;
+//     }
+// #endif
 
-    // Check that input dimensions match
-    if (this->get_input_dims(0) != this->get_input_dims(1)) {
-      const auto& parents = this->get_parent_layers();
-      std::stringstream err;
-      err << get_type() << " layer \"" << this->get_name() << "\" "
-          << "has input tensors with different dimensions (";
-      for (int i = 0; i < this->get_num_parents(); ++i) {
-        const auto& dims = this->get_input_dims(i);
-        err << (i > 0 ? ", " : "")
-            << "layer \"" << parents[i]->get_name() << "\" outputs ";
-        for (size_t j = 0; j < dims.size(); ++j) {
-          err << (j > 0 ? " x " : "") << dims[j];
-        }
-      }
-      err << ")";
-      LBANN_ERROR(err.str());
-    }
+//     // Check that input dimensions match
+//     if (this->get_input_dims(0) != this->get_input_dims(1)) {
+//       const auto& parents = this->get_parent_layers();
+//       std::stringstream err;
+//       err << get_type() << " layer \"" << this->get_name() << "\" "
+//           << "has input tensors with different dimensions (";
+//       for (int i = 0; i < this->get_num_parents(); ++i) {
+//         const auto& dims = this->get_input_dims(i);
+//         err << (i > 0 ? ", " : "")
+//             << "layer \"" << parents[i]->get_name() << "\" outputs ";
+//         for (size_t j = 0; j < dims.size(); ++j) {
+//           err << (j > 0 ? " x " : "") << dims[j];
+//         }
+//       }
+//       err << ")";
+//       LBANN_ERROR(err.str());
+//     }
 
-  }
+//   }
 
-  void setup_data(size_t max_mini_batch_size) override {
-    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
+  void setup_data(size_t max_mini_batch_size) override;//  {
+//     data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
-    // Initialize workspace
-    const auto& prediction = this->get_prev_activations(0);
-    switch (this->get_data_layout()) {
-    case data_layout::DATA_PARALLEL:
-      m_workspace.reset(new StarVCMatDT<TensorDataType, Dev>(
-                          prediction.Grid(),
-                          prediction.Root()));
-      break;
-    case data_layout::MODEL_PARALLEL:
-      m_workspace.reset(new StarMRMatDT<TensorDataType, Dev>(
-                          prediction.Grid(),
-                          prediction.Root()));
-      break;
-    default: LBANN_ERROR("invalid data layout");
-    }
-#ifdef HYDROGEN_HAVE_CUB
-    if (m_workspace->GetLocalDevice() == El::Device::GPU) {
-      m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
-    }
-#endif // HYDROGEN_HAVE_CUB
+//     // Initialize workspace
+//     const auto& prediction = this->get_prev_activations(0);
+//     switch (this->get_data_layout()) {
+//     case data_layout::DATA_PARALLEL:
+//       m_workspace.reset(new StarVCMatDT<TensorDataType, Dev>(
+//                           prediction.Grid(),
+//                           prediction.Root()));
+//       break;
+//     case data_layout::MODEL_PARALLEL:
+//       m_workspace.reset(new StarMRMatDT<TensorDataType, Dev>(
+//                           prediction.Grid(),
+//                           prediction.Root()));
+//       break;
+//     default: LBANN_ERROR("invalid data layout");
+//     }
+// #ifdef HYDROGEN_HAVE_CUB
+//     if (m_workspace->GetLocalDevice() == El::Device::GPU) {
+//       m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
+//     }
+// #endif // HYDROGEN_HAVE_CUB
 
-  }
+//   }
 
-  void fp_compute() override {
+  void fp_compute() override;//  {
 
-#ifdef LBANN_HAS_DISTCONV
-    if (this->distconv_enabled()) {
-      fp_compute_distconv();
-      return;
-    } else {
-      if(m_use_labels) {
-        LBANN_ERROR("Cross-entropy layers without Distconv don't support use_labels.");
-      }
-    }
-#else // LBANN_HAS_DISTCONV
-    if(m_use_labels) {
-      LBANN_ERROR("Cross-entropy layers without Distconv don't support use_labels.");
-    }
-#endif // LBANN_HAS_DISTCONV
+// #ifdef LBANN_HAS_DISTCONV
+//     if (this->distconv_enabled()) {
+//       fp_compute_distconv();
+//       return;
+//     } else {
+//       if(m_use_labels) {
+//         LBANN_ERROR("Cross-entropy layers without Distconv don't support use_labels.");
+//       }
+//     }
+// #else // LBANN_HAS_DISTCONV
+//     if(m_use_labels) {
+//       LBANN_ERROR("Cross-entropy layers without Distconv don't support use_labels.");
+//     }
+// #endif // LBANN_HAS_DISTCONV
 
-    // Initialize workspace
-    const auto& prediction = this->get_prev_activations(0);
-    m_workspace->AlignWith(prediction.DistData());
-    m_workspace->Resize(1, prediction.Width());
+//     // Initialize workspace
+//     const auto& prediction = this->get_prev_activations(0);
+//     m_workspace->AlignWith(prediction.DistData());
+//     m_workspace->Resize(1, prediction.Width());
 
-    // Compute local contributions and accumulate
-    /// @todo Consider reduce rather than allreduce
-    local_fp_compute();
-    this->get_comm()->allreduce(*m_workspace, m_workspace->RedundantComm());
-    El::Copy(*m_workspace, this->get_activations());
+//     // Compute local contributions and accumulate
+//     /// @todo Consider reduce rather than allreduce
+//     local_fp_compute();
+//     this->get_comm()->allreduce(*m_workspace, m_workspace->RedundantComm());
+//     El::Copy(*m_workspace, this->get_activations());
 
-  }
+//   }
 
-  void bp_compute() override {
+  void bp_compute() override;//  {
 
-#ifdef LBANN_HAS_DISTCONV
-    if (this->distconv_enabled()) {
-      bp_compute_distconv();
-      return;
-    } else {
-      if(m_use_labels) {
-        LBANN_ERROR("Cross-entropy layers without Distconv don't support use_labels.");
-      }
-    }
-#else // LBANN_HAS_DISTCONV
-    if(m_use_labels) {
-      LBANN_ERROR("Cross-entropy layers without Distconv don't support use_labels.");
-    }
-#endif // LBANN_HAS_DISTCONV
+// #ifdef LBANN_HAS_DISTCONV
+//     if (this->distconv_enabled()) {
+//       bp_compute_distconv();
+//       return;
+//     } else {
+//       if(m_use_labels) {
+//         LBANN_ERROR("Cross-entropy layers without Distconv don't support use_labels.");
+//       }
+//     }
+// #else // LBANN_HAS_DISTCONV
+//     if(m_use_labels) {
+//       LBANN_ERROR("Cross-entropy layers without Distconv don't support use_labels.");
+//     }
+// #endif // LBANN_HAS_DISTCONV
 
-    // Initialize workspace
-    const auto& prediction = this->get_prev_activations(0);
-    m_workspace->AlignWith(prediction.DistData());
-    El::Copy(this->get_prev_error_signals(), *m_workspace);
+//     // Initialize workspace
+//     const auto& prediction = this->get_prev_activations(0);
+//     m_workspace->AlignWith(prediction.DistData());
+//     El::Copy(this->get_prev_error_signals(), *m_workspace);
 
-    // Compute local gradients
-    local_bp_compute();
-  }
+//     // Compute local gradients
+//     local_bp_compute();
+//   }
 
 protected:
 

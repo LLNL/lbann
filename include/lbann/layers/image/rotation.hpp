@@ -28,7 +28,7 @@
 #define LBANN_LAYERS_IMAGE_ROTATION_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/layers/layer.hpp"
+//#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
@@ -88,34 +88,34 @@ protected:
     : rotation_layer(nullptr)
   {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  void setup_dims(DataReaderMetaData& dr_metadata) override; // {
+  //   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
-    // Get input dimensions
-    auto dims = this->get_input_dims(0);
-    const auto& angle_dims = this->get_input_dims(1);
+  //   // Get input dimensions
+  //   auto dims = this->get_input_dims(0);
+  //   const auto& angle_dims = this->get_input_dims(1);
 
-    // Check that dimensions are valid
-    if (dims.size() != 3) {
-      std::ostringstream ss;
-      for (size_t i = 0; i < dims.size(); ++i) {
-        ss << (i > 0 ? " x " : "") << dims[i];
-      }
-      LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
-        "expects a 3D input in CHW format, ",
-        "but input dimensions are ",ss.str());
-    }
-    if (angle_dims.size() > 1 || angle_dims[0] != 1) {
-      std::ostringstream ss;
-      for (size_t i = 0; i < angle_dims.size(); ++i) {
-        ss << (i > 0 ? " x " : "") << angle_dims[i];
-      }
-      LBANN_ERROR(
-        this->get_type()," layer \"",this->get_name(),"\" ",
-        "expects a scalar input for the angle, ",
-        "but input dimensions are ",ss.str());
-    }
-  }
+  //   // Check that dimensions are valid
+  //   if (dims.size() != 3) {
+  //     std::ostringstream ss;
+  //     for (size_t i = 0; i < dims.size(); ++i) {
+  //       ss << (i > 0 ? " x " : "") << dims[i];
+  //     }
+  //     LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
+  //       "expects a 3D input in CHW format, ",
+  //       "but input dimensions are ",ss.str());
+  //   }
+  //   if (angle_dims.size() > 1 || angle_dims[0] != 1) {
+  //     std::ostringstream ss;
+  //     for (size_t i = 0; i < angle_dims.size(); ++i) {
+  //       ss << (i > 0 ? " x " : "") << angle_dims[i];
+  //     }
+  //     LBANN_ERROR(
+  //       this->get_type()," layer \"",this->get_name(),"\" ",
+  //       "expects a scalar input for the angle, ",
+  //       "but input dimensions are ",ss.str());
+  //   }
+  // }
 };
 
 #ifndef LBANN_ROTATION_LAYER_INSTANTIATE

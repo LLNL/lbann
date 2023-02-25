@@ -77,41 +77,41 @@ protected:
     : bilinear_resize_layer(nullptr, 1, 1)
   {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  void setup_dims(DataReaderMetaData& dr_metadata) override; // {
+  //   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
-    // Get input dimensions
-    auto dims = this->get_input_dims();
-    const auto& num_dims = dims.size();
+  //   // Get input dimensions
+  //   auto dims = this->get_input_dims();
+  //   const auto& num_dims = dims.size();
 
-    // Check that dimensions are valid
-    std::stringstream err;
-    if (num_dims < 2) {
-      err << get_type() << " layer \"" << this->get_name() << "\" "
-          << "expects input with at least two dimensions, "
-          << "but input dimensions are ";
-      for (size_t i = 0; i < num_dims; ++i) {
-        err << (i > 0 ? " x " : "") << dims[i];
-      }
-      LBANN_ERROR(err.str());
-    } else if (m_height <= 0) {
-      err << get_type() << " layer \"" << this->get_name() << "\" "
-          << "attempted to resize with "
-          << "negative height (" << m_height << ")";
-      LBANN_ERROR(err.str());
-    } else if (m_width <= 0) {
-      err << get_type() << " layer \"" << this->get_name() << "\" "
-          << "attempted to resize with "
-          << "negative width (" << m_width << ")";
-      LBANN_ERROR(err.str());
-    }
+  //   // Check that dimensions are valid
+  //   std::stringstream err;
+  //   if (num_dims < 2) {
+  //     err << get_type() << " layer \"" << this->get_name() << "\" "
+  //         << "expects input with at least two dimensions, "
+  //         << "but input dimensions are ";
+  //     for (size_t i = 0; i < num_dims; ++i) {
+  //       err << (i > 0 ? " x " : "") << dims[i];
+  //     }
+  //     LBANN_ERROR(err.str());
+  //   } else if (m_height <= 0) {
+  //     err << get_type() << " layer \"" << this->get_name() << "\" "
+  //         << "attempted to resize with "
+  //         << "negative height (" << m_height << ")";
+  //     LBANN_ERROR(err.str());
+  //   } else if (m_width <= 0) {
+  //     err << get_type() << " layer \"" << this->get_name() << "\" "
+  //         << "attempted to resize with "
+  //         << "negative width (" << m_width << ")";
+  //     LBANN_ERROR(err.str());
+  //   }
 
-    // Resize output tensor
-    dims[num_dims-2] = m_height;
-    dims[num_dims-1] = m_width;
-    this->set_output_dims(dims);
+  //   // Resize output tensor
+  //   dims[num_dims-2] = m_height;
+  //   dims[num_dims-1] = m_width;
+  //   this->set_output_dims(dims);
 
-  }
+  // }
 
 private:
 
