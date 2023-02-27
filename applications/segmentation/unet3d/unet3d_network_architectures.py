@@ -122,7 +122,7 @@ class UNet3DConvBlock(lm.Module):
                 3,
                 stride=1,
                 padding=1,
-                activation=lbann.Relu,
+                activation=lbann.LeakyRelu,
                 bias=False,
                 name="{}_conv_block_{}".format(self.name, i+1)))
 
@@ -173,7 +173,7 @@ class Convolution3dBNModule(lm.Module):
                 self.name,
                 self.instance))
         if self.activation is not None:
-            x = self.activation(x)
+            x = self.activation(x, negative_slope=0.0)
 
         return x
 
