@@ -131,11 +131,10 @@ private:
   std::string m_sub_division;
   std::string m_sub_status;
   std::string m_sub_platform;
-  //FIXME: Include option to create separate file with just logging data?
   /* @brief name of output file. Default = results.txt */
   //std::string m_output_filename;
   /* @brief DiHydrogen logger */
-  h2::Logger m_logger{":::MLLOG"};
+  h2::Logger m_logger{"mlperf_logger", "stdout", ":::MLLOG"};
 
 
 }; // class mlperf_logging

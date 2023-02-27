@@ -44,6 +44,7 @@ namespace lbann {
 namespace callback {
 
 namespace {
+
 void print_value(std::ostringstream& os, int value)
 {
   os << value;
@@ -116,7 +117,7 @@ void mlperf_logging::print(std::ostringstream& os,
   else
     os << ", " << "\"epoch_num\": " << epoch << "}}";
 
-  H2_INFO(os.str());
+  m_logger.get()->info(os.str());
   os.flush();
 }
 
