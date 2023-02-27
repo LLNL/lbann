@@ -54,15 +54,13 @@ TEST_CASE("External Layer test", "[layer][externallayer]")
                                       &world_comm));
     CHECK(IsValidPtr(layer));
 
-#ifdef LBANN_HAS_GPU
     // Configuration that does not exist
     lbann::Layer* nonexistent = nullptr;
     REQUIRE_NOTHROW(nonexistent = setupfunc(lbann_data::COMPLEX_DOUBLE,
                                             lbann::data_layout::DATA_PARALLEL,
-                                            El::Device::GPU,
+                                            El::Device::CPU,
                                             &world_comm));
     CHECK(!IsValidPtr(nonexistent));
-#endif // LBANN_HAS_GPU
   }
   SECTION("Construct a nonexistent layer")
   {
