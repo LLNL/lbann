@@ -42,14 +42,11 @@ static std::vector<h2::Logger*> logger_vec;
 
 void setup_loggers()
 {
-  //putenv("TEST_LOG_MASK=trace|debug|info|warn|error|critical, io=debug|info|warn, training=critical|error, test_logger=debug|info|warn");
-  putenv("TEST_LOG_LEVEL=critical, RT=trace");
-  logger_vec.insert(logger_vec.end(), { &io_logger, &rt_logger, &train_logger });
+  logger_vec.insert(logger_vec.end(), {
+      &io_logger, &rt_logger, &train_logger });
   h2::setup_levels(logger_vec, "TEST_LOG_LEVEL");
-  //h2::setup_masks(logger_vec, "TEST_LOG_MASK");
 }
 
-// Raw string may be useful for debugging
 char const* logger_id_str(LBANN_Logger_ID id)
 {
   switch (id) {
@@ -64,7 +61,6 @@ char const* logger_id_str(LBANN_Logger_ID id)
   }
 }
 
-// Access the actual logger object
 h2::Logger& get(LBANN_Logger_ID id)
 {
   switch (id) {
