@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/misc/dist_embedding.hpp"
+#include "lbann/optimizers/optimizer_impl.hpp"
 #ifdef LBANN_HAS_NVSHMEM
 
 #include "lbann/utils/gpu/helpers.hpp"
