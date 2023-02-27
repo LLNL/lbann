@@ -100,15 +100,14 @@ set_center_specific_modules()
                 MODULE_CMD_CLANG="module --force unload StdEnv; module load clang/10.0.1-gcc-8.3.1 cuda/11.6.1 spectrum-mpi/rolling-release python/3.7.2 essl/6.3.0.1"
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
-                MODULE_CMD_GCC="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.6.1 mvapich2/2.3 python/3.7.2"
+                MODULE_CMD_GCC="module load gcc/10.3.1-magic cuda/11.8.0 openmpi/4.1.2 python/3.9.12"
                 MODULE_CMD_CLANG="module --force unload StdEnv; module load clang/12.0.1 cuda/11.6.1 mvapich2/2.3.6 python/3.7.2"
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
                 MODULE_CMD="module --force unload StdEnv; module load gcc/10.2.1 mvapich2/2.3 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
-                MODULE_CMD="module load StdEnv gcc-tce/10.3.1 cmake/3.23.1 openmpi-tce/4.1.2 rocm/5.4.3"
-#                MODULE_CMD="module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2"
+                MODULE_CMD="module load StdEnv gcc-tce/10.3.1 cmake/3.23.1 openmpi-tce/4.1.2 rocm/5.4.1"
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
             "zen3") # Tioga, RZVernal
@@ -180,8 +179,10 @@ set_center_specific_spack_dependencies()
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_COMPILER="%clang"
-                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
+                CENTER_COMPILER="%gcc"
+#                CENTER_COMPILER="%clang"
+                CENTER_DEPENDENCIES="^openmpi@4.1.2"
+#                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
                 # On LC the mvapich2 being used is built against HWLOC v1
@@ -190,9 +191,8 @@ set_center_specific_spack_dependencies()
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_COMPILER="%rocmcc@5.4.3"
-                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.4.3 ^python@3.9.12"
-#                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.2.0 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
+                CENTER_COMPILER="%rocmcc@5.4.1"
+                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.4.1 ^python@3.9.12"
                 CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
                 ;;
             "zen3") # Tioga, RZVernal
