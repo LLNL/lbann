@@ -1596,6 +1596,12 @@ ProtoTensorOpEnumType convert_to_proto_math_type(cudnnMathType_t mt)
   }
 }
 
+#ifdef LBANN_HAS_HALF
+// Explicitly force gcc 10.3.1 to add a global symbol definition
+// rather than optimizing it to a local symbol definition.
+template cudnnDataType_t get_data_type<half_float::half>();
+#endif
+
 #define PROTO(T)                                        \
   template class layer_tensor_manager<T>;               \
   template class data_parallel_layer_tensor_manager<T>; \

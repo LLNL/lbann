@@ -1725,7 +1725,7 @@ std::unique_ptr<Layer> build_gru_layer_from_pbuf(
 #define PROTO(T)                                                        \
   template class gru_layer<                                             \
     T, data_layout::DATA_PARALLEL, El::Device::GPU>;
-#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 #endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
