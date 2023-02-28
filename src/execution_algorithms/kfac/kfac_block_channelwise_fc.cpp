@@ -523,7 +523,7 @@ void kfac_block_channelwise_fc<Device>::end_communication_forward_end(
     auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
 
     for(auto& req:this->m_requests_forward_end){
-      ::Al::Wait<::Al::NCCLBackend>(req);
+      ::Al::Wait<kfac::BackendT>(req);
     }
 
     if(primary_grid_ranks.size() < secondary_grid_ranks.size() and false){
@@ -628,7 +628,7 @@ void kfac_block_channelwise_fc<Device>::end_communication_backward_end(
     auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
 
     for(auto& req:this->m_requests_backward_end){
-      ::Al::Wait<::Al::NCCLBackend>(req);
+      ::Al::Wait<kfac::BackendT>(req);
     }
 
     if(primary_grid_ranks.size() < secondary_grid_ranks.size() and false){
@@ -689,7 +689,7 @@ void kfac_block_channelwise_fc<Device>::initialize_activations_and_errors(
 
     int async_progress = true;
 
-    std::vector<::Al::NCCLBackend::req_type> Requests, requests_subset;
+    std::vector<kfac::BackendT::req_type> Requests, requests_subset;
 
     if(async_progress==false)
     {
@@ -714,7 +714,7 @@ void kfac_block_channelwise_fc<Device>::initialize_activations_and_errors(
                                               this->get_current_batch_size(),
                                               Requests);
       for(auto& req:Requests){
-        ::Al::Wait<::Al::NCCLBackend>(req);
+        ::Al::Wait<kfac::BackendT>(req);
       }
       Requests.clear();
       // kfac::TranslateBetweenGridsVCAsync(*local_errors_vc,
@@ -730,7 +730,7 @@ void kfac_block_channelwise_fc<Device>::initialize_activations_and_errors(
       auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
 
       for(auto& req:Requests){
-        ::Al::Wait<::Al::NCCLBackend>(req);
+        ::Al::Wait<kfac::BackendT>(req);
       }
 
       if(async_progress and primary_grid_ranks.size() < secondary_grid_ranks.size()){
