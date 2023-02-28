@@ -29,6 +29,10 @@
 
 // BVE FIXME
 #include "lbann/layers/distconv_adapter.hpp"
+#include "distconv/tensor/shuffle_mpi.hpp"
+#include "distconv/tensor/shuffle_mpi_cuda.hpp"
+// #include "distconv/tensor/shuffle_mpi_cuda_al.hpp"
+// #include "distconv/tensor/tensor_mpi_cuda.hpp"
 //#include "lbann/layers/layer.hpp"
 
 namespace lbann {
@@ -36,8 +40,23 @@ namespace lbann {
 // Forward Declarations
 class Layer;
 
+namespace dc {
+using Shape = ::distconv::tensor::Shape;
+
+using LocaleMPI = ::distconv::tensor::LocaleMPI;
+
+template <typename TensorDataType>
+using TensorDev = ::distconv::tensor::Tensor<
+  TensorDataType, LocaleMPI, ::distconv::tensor::CUDAAllocator>;
+
+template <typename TensorDataType>
+using TensorShuffler = ::distconv::tensor::TensorMPICUDAShuffler<TensorDataType>;
+
+} // namespace dc
+
 template <typename InputTensorDataType,
           typename OutputTensorDataType = InputTensorDataType>
+//          typename OutputTensorDataType/* = InputTensorDataType*/>
 class data_type_distconv_adapter: public distconv_adapter {
 public:
   // Keep the older TensorDevType around for downstream layers

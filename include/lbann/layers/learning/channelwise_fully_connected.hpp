@@ -35,6 +35,12 @@
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
+namespace dc {
+  //using Backend = ::distconv::BackendDNNLib;
+template <typename TensorDataType>
+using ChannelwiseFullyConnected = ::distconv::ChannelwiseFullyConnected<Backend, TensorDataType>;
+} // namespace dc
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class channelwise_fully_connected_distconv_adapter
   : public data_type_distconv_adapter<TensorDataType> {

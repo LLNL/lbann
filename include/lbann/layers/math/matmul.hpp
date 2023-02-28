@@ -31,12 +31,19 @@
 
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/layers/data_type_distconv_adapter.hpp"
-#include "lbann/layers/learning/distconv/distconv_layers.hpp"
+//#include "lbann/layers/learning/distconv/distconv_layers.hpp"
+#include "lbann/layers/math/distconv/distconv_matmul.hpp"
 #endif  // LBANN_HAS_DISTCONV
 
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
+namespace dc {
+  //using Backend = ::distconv::BackendDNNLib;
+template <typename TensorDataType>
+using MatMul = ::distconv::MatMul<Backend, TensorDataType>;
+} // namespace dc
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class matmul_distconv_adapter
   : public data_type_distconv_adapter<TensorDataType>{

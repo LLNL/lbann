@@ -37,9 +37,20 @@
 
 #include <vector>
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/utils/distconv.hpp"
+#include "distconv/dnn_backend/convolution.hpp"
+#endif
+
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
+namespace dc {
+using Backend = ::distconv::BackendDNNLib;
+template <typename TensorDataType>
+using Convolution = ::distconv::Convolution<Backend, TensorDataType>;
+} // namespace dc
+
 template <typename TensorDataType, El::Device Device>
 class base_convolution_adapter: public data_type_distconv_adapter<TensorDataType> {
  public:

@@ -39,6 +39,10 @@
 #include <onnx/onnx_pb.h>
 #endif // LBANN_HAS_ONNX
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#endif // LBANN_HAS_DISTCONV
+
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

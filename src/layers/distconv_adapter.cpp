@@ -27,6 +27,7 @@
 #include "lbann/layers/distconv_adapter.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/distconv.hpp"
 
 namespace lbann {
 

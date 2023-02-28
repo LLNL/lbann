@@ -31,6 +31,10 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 
+// #ifdef LBANN_HAS_DISTCONV
+// #include "lbann/layers/data_type_distconv_adapter.hpp"
+// #endif // LBANN_HAS_DISTCONV
+
 #include "lbann/proto/layers.pb.h"
 #include <memory>
 

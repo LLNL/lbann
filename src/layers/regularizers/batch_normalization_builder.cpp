@@ -26,6 +26,10 @@
 
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#endif // LBANN_HAS_DISTCONV
+
 #include "lbann/proto/layers.pb.h"
 #include <type_traits>
 

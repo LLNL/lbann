@@ -60,6 +60,8 @@ class entrywise_layer_tensor_manager;
 //                     typename OutputTensorDataType = InputTensorDataType>
 // class data_type_distconv_adapter;
 // class distconv_adaptor;
+// class tensor_overlap_constraints;
+//   //class dc::Shape;
 // #endif // LBANN_HAS_DISTCONV
 
 using supported_layer_data_type = h2::meta::TL<
@@ -447,7 +449,7 @@ private:
 #endif // LBANN_HAS_GPU
 };
 
-
+#if 1
 #ifndef LBANN_DATA_TYPE_LAYER_INSTANTIATE
 #define PROTO(T)                                \
   extern template class data_type_layer<T>
@@ -460,7 +462,7 @@ private:
 #undef LBANN_INSTANTIATE_GPU_HALF
 
 #endif // LBANN_DATA_TYPE_LAYER_INSTANTIATE
-
+#endif
 } // namespace lbann
 
 #endif // LBANN_LAYERS_DATA_TYPE_LAYER_HPP_INCLUDED

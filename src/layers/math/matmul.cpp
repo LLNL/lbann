@@ -34,6 +34,12 @@
 #endif // LBANN_HAS_GPU
 #include "lbann/proto/layers.pb.h"
 #include<iostream>
+
+
+// #ifdef LBANN_HAS_DISTCONV
+// #include "lbann/layers/math/distconv/distconv_matmul.hpp"
+// #endif // LBANN_HAS_DISTCONV
+
 namespace lbann
 {
 

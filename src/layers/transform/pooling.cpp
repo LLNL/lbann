@@ -32,6 +32,10 @@
 #include "lbann/utils/protobuf.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#endif // LBANN_HAS_DISTCONV
+
 #include "lbann/proto/layers.pb.h"
 #include "lbann/proto/lbann.pb.h"
 
@@ -382,6 +386,183 @@ void pooling_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const 
   protobuf::assign_to_repeated(*msg->mutable_pool_pads(), m_pads);
   protobuf::assign_to_repeated(*msg->mutable_pool_strides(), m_strides);
 }
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+pooling_distconv_adapter<TensorDataType, T_layout, Dev>&
+pooling_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() {
+  return const_cast<pooling_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+      static_cast<const pooling_layer<TensorDataType, T_layout, Dev>&>(*this).get_distconv_adapter());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+const pooling_distconv_adapter<TensorDataType, T_layout, Dev>&
+pooling_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const {
+  return dynamic_cast<const pooling_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+      data_type_layer<TensorDataType>::get_distconv_adapter());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+bool pooling_layer<TensorDataType, T_layout, Dev>::is_distconv_supported() const {
+  if (Dev != El::Device::GPU || T_layout != data_layout::DATA_PARALLEL) {
+    return false;
+  }
+
+  bool cond = true;
+  for(int i = 0; i < dc::get_num_spatial_dims(*this); i++) {
+    cond &= (m_pool_dims[i] % 2 != 0) ||
+        (m_pool_dims[i] == m_strides[i]);
+  }
+  if (!cond) {
+    dc::MPIPrintStreamDebug() << "pooling: unsupported due to window shape: "
+                              << dc::util::join_xd_array(m_pool_dims);
+    return false;
+  }
+
+  for (int i = 0; i < dc::get_num_spatial_dims(*this); i++) {
+    bool odd = m_pool_dims[i] % 2;
+    if (odd) {
+      int stencil = (m_pool_dims[i] - 1) / 2;
+      if (!(m_pads[i] == 0 || m_pads[i] == stencil)) {
+        dc::MPIPrintStreamDebug() << "pooling: unsupported due to padding: "
+                                  << m_pads[i];
+        return false;
+      }
+      if (!(m_strides[i] == 1 || m_strides[i] == stencil + 1)) {
+        dc::MPIPrintStreamDebug() << "pooling: unsupported due to strides";
+        return false;
+      }
+    } else {
+      if (m_pads[i] != 0) return false;
+      if (m_pool_dims[i] != m_strides[i]) return false;
+    }
+  }
+
+  return true;
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void pooling_distconv_adapter<TensorDataType, T_layout, Dev>::
+setup_distributions(tensor_overlap_constraints &constraints) {
+  data_type_distconv_adapter<TensorDataType>::setup_distributions(
+      constraints);
+  const auto &l = dynamic_cast<const pooling_layer<TensorDataType, T_layout, Dev>&>(
+      this->layer());
+  dc::IntVector overlap(dc::get_num_dims(l), 0);
+  const auto &ps = l.get_parallel_strategy();
+  auto pool_dims = l.m_pool_dims;
+  std::reverse(pool_dims.begin(), pool_dims.end());
+  for(int i = 0; i < dc::get_num_spatial_dims(l); i++) {
+    int splits = 0;
+    switch (i) {
+      case 0: splits = ps.width_splits; break;
+      case 1: splits = ps.height_splits; break;
+      case 2: splits = ps.depth_splits; break;
+    }
+    if(splits == 1) continue;
+    int ov = 0;
+    if (pool_dims[i] % 2) {
+      ov = (pool_dims[i] - 1) / 2;
+    } else {
+      // no halo dependency is assumed for now
+      ov = 0;
+    }
+    overlap[i] = ov;
+  }
+  auto &prev_activations_dist = this->get_prev_activations_dist();
+  auto &activations_dist = this->get_activations_dist();
+  auto &error_signals_dist = this->get_error_signals_dist();
+  auto &prev_error_signals_dist = this->get_prev_error_signals_dist();
+  prev_activations_dist.set_overlap(overlap);
+  constraints.mark_updated(prev_activations_dist);
+  constraints.mark_invariant(prev_activations_dist);
+  // cudnnPoolingBackward requires activations and
+  // prev_error_signals must have the same stride
+  constraints.mark_equivalent(activations_dist, prev_error_signals_dist);
+  // cudnnPoolingBackward requires prev_activations and
+  // error_signals must have the same stride
+  constraints.mark_equivalent(error_signals_dist, prev_activations_dist);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+dc::Shape pooling_distconv_adapter<TensorDataType, Layout, Device>::
+get_activations_local_shape(int index) const {
+  assert_eq(index, 0);
+  const auto &layer = dynamic_cast<const pooling_layer<
+    TensorDataType, Layout, Device>&>(this->layer());
+  auto filter_dims = layer.m_pool_dims;
+  std::reverse(std::begin(filter_dims), std::end(filter_dims));
+  auto strides = layer.m_strides;
+  std::reverse(std::begin(strides), std::end(strides));
+  const std::vector<int> dilations(
+      dc::get_num_spatial_dims(layer), 1);
+  bool use_padding = layer.m_pads[0] != 0;
+  auto output_spatial_local_shape =
+      ::distconv::get_pooling_output_local_tensor_shape(
+          this->get_prev_activations(), filter_dims, strides, use_padding, dilations);
+  return output_spatial_local_shape;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void pooling_distconv_adapter<TensorDataType, Layout, Device>::
+setup_layer(size_t workspace_capacity) {
+  auto &l = dynamic_cast<pooling_layer<TensorDataType, Layout, Device>&>(
+      this->layer());
+
+  // Init the dc::Pooling layer
+  m_pooling = std::make_unique<dc::Pooling<TensorDataType>>(
+      dc::get_backend(), dc::get_num_dims(l),
+      dc::get_halo_exchange_method());
+
+  std::string mode;
+  switch(l.m_pool_mode) {
+    case pooling_mode::MAX:
+      mode = "MAX"; break;
+    case pooling_mode::MAX_DETERMINISTIC:
+      mode = "MAX"; break;
+    case pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING:
+      mode = "AVERAGE"; break;
+    case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING:
+      mode = "AVERAGE_NO_PAD"; break;
+    default:
+      LBANN_ERROR("pooling_layer: no DISTCONV implementation for pooling mode");
+  }
+
+  std::vector<int> pool_dims = l.m_pool_dims;
+  std::reverse(pool_dims.begin(), pool_dims.end());
+  std::vector<int> pads = l.m_pads;
+  std::reverse(pads.begin(), pads.end());
+  std::vector<int> strides = l.m_strides;
+  std::reverse(strides.begin(), strides.end());
+
+  m_pooling->setup(this->get_prev_activations(),
+                   this->get_activations(),
+                   this->get_error_signals(),
+                   this->get_prev_error_signals(),
+                   pool_dims, pads, strides,
+                   mode);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void pooling_distconv_adapter<TensorDataType, Layout, Device>::fp_compute(
+  bool const training)
+{
+  m_pooling->forward(El::To<TensorDataType>(1),
+                     this->get_prev_activations(),
+                     El::To<TensorDataType>(0),
+                     this->get_activations(),
+                     training);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void pooling_distconv_adapter<TensorDataType, Layout, Device>::
+bp_compute() {
+  m_pooling->backward(El::To<TensorDataType>(1), this->get_activations(),
+                      this->get_prev_error_signals(),
+                      this->get_prev_activations(), El::To<TensorDataType>(0),
+                      this->get_error_signals());
+}
+#endif // LBANN_HAS_DISTCONV
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<Layer> build_pooling_layer_from_pbuf(

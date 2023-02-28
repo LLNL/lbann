@@ -31,6 +31,10 @@
 #include <h2/meta/TypeList.hpp>
 #include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#endif // LBANN_HAS_DISTCONV
+
 namespace lbann
 {
 

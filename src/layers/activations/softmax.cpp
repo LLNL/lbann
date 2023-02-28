@@ -26,7 +26,7 @@
 
 #define LBANN_SOFTMAX_LAYER_INSTANTIATE
 #include "lbann/comm_impl.hpp"
-#include "lbann/layers/activations/softmax.hpp"
+#include "lbann/layers/activations/softmax_impl.hpp"
 
 #include "lbann/utils/dnn_lib/softmax.hpp"
 
