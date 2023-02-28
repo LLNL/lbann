@@ -46,6 +46,9 @@ parser.add_argument("--kfac-update-interval-steps", type=int, default=1,
                     help="the number of steps to interpolate -init and -target intervals")
 parser.add_argument("--kfac-compute-interval-steps", type=int, default=1,
                     help="the number of steps after inverse matrices are calculated")
+parser.add_argument("--use-eigen", dest="use_eigen",
+                    action="store_const",
+                    const=True, default=False)
 
 # Job configs.
 parser.add_argument("--job-name", action="store", default="lbann_lenet_kfac", type=str,
@@ -184,12 +187,13 @@ if args.kfac:
     if args.kfac_update_interval_steps != 1:
         kfac_args["update_interval_steps"] = args.kfac_update_interval_steps
     kfac_args["compute_interval"] = args.kfac_compute_interval_steps
+    kfac_args["use_eigen_decomposition"] = args.use_eigen
     algo = lbann.KFAC("kfac", algo, **kfac_args)
 
 # Setup model
 model = lbann.Model(
     args.num_epochs,
-    layers=lbann.traverse_layer_graph(input_),
+    layers=lbann.traverse_layer_graph([images,labels]),
     objective_function=obj,
     metrics=metrics,
     callbacks=callbacks)

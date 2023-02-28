@@ -174,7 +174,6 @@ void gather_layer<TensorDataType, Layout, Device>::fp_compute() {
 #if defined LBANN_HAS_DISTCONV && defined LBANN_HAS_NVSHMEM
   // Initialize the nvshmem here. No Op if already initialized
   nvshmem::initialize();
-
   if (this->distconv_enabled()){
     this->get_distconv_adapter().fp_compute();
     return ;

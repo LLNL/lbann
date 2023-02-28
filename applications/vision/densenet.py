@@ -6,6 +6,11 @@ import data.imagenet
 
 LOG = True
 
+DAMPING_PARAM_NAMES = ["act", "err", "bn_act", "bn_err"]
+def list2str(l):
+    return ' '.join(l)
+
+
 
 def log(string):
     if LOG:
@@ -25,6 +30,14 @@ def densenet(statistics_group_size,
     if version == 121:
         growth_rate = 32  # k in the paper
         layers_per_block = (6, 12, 24, 16)
+        num_initial_features = 64
+    elif version == 169:
+        growth_rate = 32  # k in the paper
+        layers_per_block = (6, 12, 32, 16)
+        num_initial_features = 64
+    elif version == 201:
+        growth_rate = 32  # k in the paper
+        layers_per_block = (6, 12, 48, 32)
         num_initial_features = 64
     elif version == 161:
         growth_rate = 48  # k in the paper
@@ -344,6 +357,77 @@ def get_args():
     parser.add_argument(
         '--setup_only', action='store_true',
         help='do not run experiment (e.g. if only the prototext is desired)')
+
+    # KFAC configs
+    parser.add_argument("--kfac", dest="kfac", action="store_const",
+                    const=True, default=False,
+                    help="use the K-FAC optimizer (default: false)")
+    parser.add_argument("--disable-BN", dest="disBN", action="store_const",
+                    const=True, default=False,
+                    help="Disable KFAC for BN")
+
+    parser.add_argument("--poly-lr", dest="polyLR", action="store_const",
+                    const=True, default=False,
+                    help="Enable KFAC for BN")
+
+    parser.add_argument("--model", type=int, default=169,
+                        help="DenseNet model (default: 169)")
+
+    parser.add_argument("--poly-decay", type=int, default=11,
+                        help="decay in poly LR scheduler (default: 11)")
+
+    parser.add_argument("--dropout", dest="add_dropout", action="store_const",
+                    const=True, default=False,
+                    help="Add dropout after input")
+
+    parser.add_argument("--dropout-keep-val", type=float, default=0.8,
+                    help="Keep value of dropout layer after input (default: 0.8)")
+
+    parser.add_argument("--label-smoothing", type=float, default=0,
+                    help="label smoothing (default: 0)")
+
+    parser.add_argument("--mixup", type=float, default=0,
+                        help="Data mixup (default: disabled)")
+
+    parser.add_argument("--momentum", type=float, default=2,
+                        help="momentum in SGD overides optimizer  (default: 2(false))")
+
+    parser.add_argument("--enable-distribute-compute", dest="enable_distribute_compute", action="store_const",
+                    const=True, default=False,
+                    help="Enable distributed compute of precondition gradients")
+    parser.add_argument("--kfac-damping-warmup-steps", type=int, default=0,
+                        help="the number of damping warmup steps")
+    parser.add_argument("--kfac-use-pi", dest="kfac_use_pi",
+                        action="store_const",
+                        const=True, default=False,
+                        help="use the pi constant")
+
+    parser.add_argument("--kfac-sgd-mix", type=str, default="",
+                            help="alogrithm will be switched to KFAC at first given epoch then alternate  (default: use KFAC for all epochs)")
+
+    parser.add_argument("--lr-list", type=str, default="",
+                            help="change lr accroding to interval in --kfac-sgd-mix")
+    for n in DAMPING_PARAM_NAMES:
+        parser.add_argument("--kfac-damping-{}".format(n), type=str, default="",
+                            help="damping parameters for {}".format(n))
+    parser.add_argument("--kfac-update-interval-init", type=int, default=1,
+                        help="the initial update interval of Kronecker factors")
+    parser.add_argument("--kfac-update-interval-target", type=int, default=1,
+                        help="the target update interval of Kronecker factors")
+    parser.add_argument("--kfac-update-interval-steps", type=int, default=1,
+                        help="the number of steps to interpolate -init and -target intervals")
+    parser.add_argument("--kfac-compute-interval-steps", type=int, default=1,
+                        help="the number of steps after inverse matrices are calculated")
+    parser.add_argument("--use-eigen", dest="use_eigen",
+                        action="store_const",
+                        const=True, default=False)
+    # Debugging configs.
+    parser.add_argument("--print-matrix", dest="print_matrix",
+                        action="store_const",
+                        const=True, default=False)
+    parser.add_argument("--print-matrix-summary", dest="print_matrix_summary",
+                        action="store_const",
+                        const=True, default=False)
     args = parser.parse_args()
     return args
 
@@ -352,13 +436,22 @@ def set_up_experiment(args,
                       input_,
                       probs,
                       labels):
+    algo = lbann.BatchedIterativeOptimizer("sgd", epoch_count=args.num_epochs)
+
+    
     # Set up objective function
     cross_entropy = lbann.CrossEntropy([probs, labels])
     layers = list(lbann.traverse_layer_graph(input_))
     l2_reg_weights = set()
+
+    bn_layers = ""
     for l in layers:
         if type(l) == lbann.Convolution or type(l) == lbann.FullyConnected:
             l2_reg_weights.update(l.weights)
+        if type(l) == lbann.BatchNormalization:
+            bn_layers += " " + l.name
+
+
     # scale = weight decay
     l2_reg = lbann.L2WeightRegularization(weights=l2_reg_weights, scale=1e-4)
     objective_function = lbann.ObjectiveFunction([cross_entropy, l2_reg])
@@ -379,12 +472,19 @@ def set_up_experiment(args,
                         callbacks=callbacks)
 
     # Set up data reader
-    data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes)
+    data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes, small_testing=True)
+
+    percentage = 0.001 * 2 * (args.mini_batch_size / 16) * 2
+
+    if (percentage > 1):
+        data_reader.reader[0].percent_of_data_to_use = 1.0
+    else:
+        data_reader.reader[0].percent_of_data_to_use = percentage
 
     # Set up optimizer
     if args.optimizer == 'sgd':
         print('Creating sgd optimizer')
-        optimizer = lbann.optimizer.SGD(
+        optimizer = lbann.core.optimizer.SGD(
             learn_rate=args.optimizer_learning_rate,
             momentum=0.9,
             nesterov=True
@@ -392,8 +492,41 @@ def set_up_experiment(args,
     else:
         optimizer = lbann.contrib.args.create_optimizer(args)
 
+    if args.kfac:
+        kfac_args = {}
+        if args.kfac_use_pi:
+            kfac_args["use_pi"] = 1
+        if args.print_matrix:
+            kfac_args["print_matrix"] = 1
+        if args.print_matrix_summary:
+            kfac_args["print_matrix_summary"] = 1
+        for n in DAMPING_PARAM_NAMES:
+            kfac_args["damping_{}".format(n)] = getattr(
+                args, "kfac_damping_{}".format(n)).replace(",", " ")
+        if args.kfac_damping_warmup_steps > 0:
+            kfac_args["damping_warmup_steps"] = args.kfac_damping_warmup_steps
+        if args.kfac_update_interval_init != 1 or args.kfac_update_interval_target != 1:
+            kfac_args["update_intervals"] = "{} {}".format(
+                args.kfac_update_interval_init,
+                args.kfac_update_interval_target,
+            )
+        if args.kfac_update_interval_steps != 1:
+            kfac_args["update_interval_steps"] = args.kfac_update_interval_steps
+        kfac_args["kronecker_decay"] = 0.95
+        kfac_args["compute_interval"] = args.kfac_compute_interval_steps
+        kfac_args["distribute_precondition_compute"] = args.enable_distribute_compute
+        kfac_args["disable_layers"]="molvae_module1_disc0_fc0_instance1_fc molvae_module1_disc0_fc0_instance2_fc"
+        kfac_args["use_eigen_decomposition"] = args.use_eigen
+        kfac_args["kfac_use_interval"] = args.kfac_sgd_mix
+
+        print(args.kfac_sgd_mix)
+
+        if args.disBN:
+            kfac_args["disable_layers"]=bn_layers
+        algo = lbann.KFAC("kfac", algo, **kfac_args)
+
     # Setup trainer
-    trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
+    trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size, training_algo=algo)
 
     return trainer, model, data_reader, optimizer
 
@@ -407,6 +540,12 @@ def run_experiment(args,
     kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
     lbann.contrib.launcher.run(trainer, model, data_reader, optimizer,
                                job_name=args.job_name,
+                               environment = {
+                              'LBANN_USE_CUBLAS_TENSOR_OPS' : 0,
+                              'LBANN_USE_CUDNN_TENSOR_OPS' : 0,
+                              "LBANN_KEEP_ERROR_SIGNALS": 1
+                                },
+                              lbann_args=" --use_data_store --preload_data_store --node_sizes_vary",
                                **kwargs)
 
 
@@ -430,8 +569,10 @@ def main():
     cumulative_layer_num += 1
     log('Input(labels). cumulative_layer_num={n}'.format(n=cumulative_layer_num))
 
-    probs = densenet(args.procs_per_node,
-        121, cumulative_layer_num, images)
+    probs = densenet(1,
+        args.model, cumulative_layer_num, images)
+
+
 
     # ----------------------------------
     # Setup experiment

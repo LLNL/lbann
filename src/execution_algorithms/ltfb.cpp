@@ -56,6 +56,7 @@ void LTFB::apply(ExecutionContext& context,
 
   // Sync trainers (Assumption: all trainers in this lbann_comm are
   // participating in this training algorithm)
+  int rank = El::mpi::Rank(m.get_comm()->get_combined_grid_comm());
   m.get_comm()->intertrainer_barrier();
 
   // LTFB likely has different stopping criteria than SGD (e.g., K
@@ -71,7 +72,11 @@ void LTFB::apply(ExecutionContext& context,
     }
     {
       ScopeTimer _(ltfb_timer, "metalearning strategy");
-      m_meta_learning_strategy->select_next(m, ltfb_ctxt, dc);
+      if( m.get_comm()->get_grid_type() == GridType::NO_GRID or
+          m.get_comm()->get_grid_type() == GridType::PRIMARY_GRID or
+          m.get_comm()->get_KFAC_subgrid_create_two_models()){
+        m_meta_learning_strategy->select_next(m, ltfb_ctxt, dc);
+      }
     }
 
     ltfb_ctxt.inc_step();

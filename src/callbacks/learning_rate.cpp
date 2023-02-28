@@ -141,6 +141,33 @@ void step_learning_rate::write_specific_proto(
   msg->set_amt(m_amt);
 }
 
+set_learning_rate::set_learning_rate(
+  size_t step, float val) :
+  learning_rate(), m_step(step), m_val(val) {}
+
+set_learning_rate::set_learning_rate(
+  size_t step, float val, std::vector<std::string> weights_names) :
+  learning_rate(std::move(weights_names)),
+  m_step(step), m_val(val) {}
+
+float set_learning_rate::global_schedule(model *m) {
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
+  if (c.get_epoch() == m_step ) {
+    return m_val;
+  } else {
+    return set_learning_rate::get_current_global_learning_rate();
+  }
+}
+
+void set_learning_rate::write_specific_proto(
+  lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_set_learning_rate();
+  msg->set_weights(protobuf::to_space_sep_string(this->get_weights_names()));
+  msg->set_step(m_step);
+  msg->set_val(m_val);
+}
+
 adaptive_learning_rate::adaptive_learning_rate(
   size_t patience, float amt) :
   adaptive_learning_rate(patience, amt,
@@ -387,6 +414,17 @@ build_step_learning_rate_callback_from_pbuf(
   return std::make_unique<step_learning_rate>(
     params.step(),
     params.amt(),
+    parse_list<std::string>(params.weights()));
+}
+
+std::unique_ptr<callback_base>
+build_set_learning_rate_callback_from_pbuf(
+  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackSetLearningRate&>(proto_msg);
+  return std::make_unique<set_learning_rate>(
+    params.step(),
+    params.val(),
     parse_list<std::string>(params.weights()));
 }
 

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,17 +25,15 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/execution_algorithms/kfac/kfac_block_fc_conv.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_block_channelwise_fc.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_util.hpp"
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/utils/dim_helpers.hpp"
-#include "lbann/utils/im2col.hpp"
 
 
 namespace lbann {
 
 template <El::Device Device>
-void kfac_block_fc_conv<Device>::compute_local_kronecker_factors(
+void kfac_block_channelwise_fc<Device>::compute_local_kronecker_factors(
     lbann_comm* comm,
     const bool print_matrix,
     const bool print_matrix_summary) {
@@ -50,70 +48,79 @@ void kfac_block_fc_conv<Device>::compute_local_kronecker_factors(
   const auto mini_batch_size = dtl_parent.get_activations().Width();
   const auto local_batch_size = local_activations.Width();
 
-  // Compute Kronecker factors, assuming that local_errors are
-  // already multiplied by 1/N in the loss layer.
+
   const auto input_dims = this->m_layer->get_input_dims(); // CHW
-  const auto output_dims = this->m_layer->get_output_dims(); // KH'W'
+  const auto output_dims = this->m_layer->get_output_dims(); // CH'W'
   const size_t num_input_channels = input_dims[0];
-  const size_t num_output_channels = output_dims[0];
-  m_height_A = local_activations.Height();
-  if(m_is_conv) {
-    const auto conv_dims = get_conv_layer()->get_conv_dims();
-    m_height_A = num_input_channels * get_linear_size(conv_dims);
+
+  const auto& input_channel_size = std::accumulate(
+    input_dims.begin()+1, input_dims.end(),
+    1, std::multiplies<size_t>());
+  const auto& output_channel_size = std::accumulate(
+    output_dims.begin()+1, output_dims.end(),
+    1, std::multiplies<size_t>());
+
+  El::Matrix<DataType,Device> local_activations_reshaped, local_errors_reshaped;
+
+  if (local_activations.Contiguous() and false) {
+    local_activations_reshaped.LockedAttach(
+      input_channel_size,
+      local_batch_size * num_input_channels,
+      local_activations.LockedBuffer(),
+      input_channel_size);
   }
+  else {
+    El::Copy(local_activations, local_activations_reshaped);
+    local_activations_reshaped.Resize(
+      input_channel_size,
+      local_batch_size * num_input_channels);
+  }
+
+  if (local_errors.Contiguous() and false) {
+    local_errors_reshaped.LockedAttach(
+      output_channel_size,
+      local_batch_size * num_input_channels,
+      local_errors.LockedBuffer(),
+      output_channel_size);
+  }
+  else {
+    El::Copy(local_errors, local_errors_reshaped);
+    local_errors_reshaped.Resize(
+      output_channel_size,
+      local_batch_size * num_input_channels);
+  }
+
+  m_height_A = local_activations_reshaped.Height();
   if(m_has_bias)
     m_height_A++;
 
-  m_height_G = !m_is_conv ? local_errors.Height() : num_output_channels;
+  m_height_G = local_errors_reshaped.Height();
   auto& A = this->get_workspace_matrix("A", m_height_A, m_height_A);
   auto& G = this->get_workspace_matrix("G", m_height_G, m_height_G);
-  if(!m_is_conv) {
-    if(m_has_bias) {
-      auto& local_activations_with_ones = this->get_workspace_matrix(
-          "local_activations_with_ones",
-          local_activations.Height()+1, local_activations.Width());
-      auto local_activations_dst = El::View(
-          local_activations_with_ones,
-          El::IR(0, local_activations.Height()),
-          El::ALL);
-      El::Copy(local_activations, local_activations_dst);
-      auto local_activations_ones = El::View(
-          local_activations_with_ones,
-          El::IR(local_activations.Height(), local_activations.Height()+1),
-          El::ALL);
-      El::Ones(local_activations_ones, 1, local_activations.Width());
-      get_kronecker_factor_fc(A, local_activations_with_ones, 1.0/mini_batch_size);
-    } else {
-      get_kronecker_factor_fc(A, local_activations, 1.0/mini_batch_size);
-    }
-    get_kronecker_factor_fc(G, local_errors, mini_batch_size);
 
+  if(m_has_bias) {
+    auto& local_activations_with_ones = this->get_workspace_matrix(
+        "local_activations_with_ones",
+        local_activations_reshaped.Height()+1, local_activations_reshaped.Width());
+    auto local_activations_dst = El::View(
+        local_activations_with_ones,
+        El::IR(0, local_activations_reshaped.Height()),
+        El::ALL);
+    El::Copy(local_activations_reshaped, local_activations_dst);
+    auto local_activations_ones = El::View(
+        local_activations_with_ones,
+        El::IR(local_activations_reshaped.Height(), local_activations_reshaped.Height()+1),
+        El::ALL);
+    El::Ones(local_activations_ones, 1, local_activations_reshaped.Width());
+    get_kronecker_factor_fc(A, local_activations_with_ones, 1.0/mini_batch_size);
   } else {
-    assert((size_t) local_activations.Height() == num_input_channels*m_conv_input_spatial_prod);
-    assert((size_t) local_errors.Height() == num_output_channels*m_conv_output_spatial_prod);
-
-    const auto Acol_size = get_im2col_output_size(
-        local_batch_size,
-        num_input_channels, m_conv_input_spatial_dims.size(),
-        &(m_conv_input_spatial_dims[0]),
-        &(get_conv_layer()->get_pads()[0]),
-        &(get_conv_layer()->get_conv_dims()[0]),
-        &(get_conv_layer()->get_strides()[0]));
-    auto& Acol = this->get_workspace_matrix(
-        "Acol", Acol_size.first, Acol_size.second);
-    auto& Gcol = this->get_workspace_matrix(
-        "Gcol", num_output_channels, local_batch_size*m_conv_output_spatial_prod);
-    get_kronecker_factor_conv(
-        A, Acol,
-        local_activations, 1.0/mini_batch_size,
-        local_batch_size, num_input_channels, m_conv_input_spatial_dims,
-        get_conv_layer(), true, sync_info);
-    get_kronecker_factor_conv(
-        G, Gcol,
-        local_errors, DataType(mini_batch_size)/m_conv_output_spatial_prod,
-        local_batch_size, num_output_channels, m_conv_output_spatial_dims,
-        get_conv_layer(), false, sync_info);
+    get_kronecker_factor_fc(A, local_activations_reshaped, 1.0/mini_batch_size);
   }
+  get_kronecker_factor_fc(G, local_errors_reshaped, mini_batch_size);
+
+
+
+
 
   m_kronecker_factor_buf_A.Resize(A.Height()*(A.Height()+1)/2, 1);
   m_kronecker_factor_buf_G.Resize(G.Height()*(G.Height()+1)/2, 1);
@@ -138,7 +145,7 @@ void kfac_block_fc_conv<Device>::compute_local_kronecker_factors(
 }
 
 template <El::Device Device>
-void kfac_block_fc_conv<Device>::update_kronecker_average(
+void kfac_block_channelwise_fc<Device>::update_kronecker_average(
     lbann_comm* comm,
     const DataType kronecker_decay,
     const bool print_matrix,
@@ -189,7 +196,7 @@ void kfac_block_fc_conv<Device>::update_kronecker_average(
 }
 
 template <El::Device Device>
-void kfac_block_fc_conv<Device>::update_kronecker_inverse(
+void kfac_block_channelwise_fc<Device>::update_kronecker_inverse(
     lbann_comm* comm,
     const bool use_pi,
     const DataType damping_act, const DataType damping_err,
@@ -206,11 +213,12 @@ void kfac_block_fc_conv<Device>::update_kronecker_inverse(
   const auto &Gave = m_kronecker_average_G;
   // Compute the pi constant
   DataType pi = 1.0;
-  if(use_pi) {
-    auto& ws = this->get_workspace_matrix(
-        "pi_ws", std::max(Aave.Height(), Gave.Height())*2+1, 1);
-    pi = compute_pi(Aave, Gave, ws, sync_info);
-  }
+  // BVE FIXME unused variable
+  // if(use_pi) {
+  //   auto& ws = this->get_workspace_matrix(
+  //       "pi_ws", std::max(Aave.Height(), Gave.Height())*2+1, 1);
+  //   // pi = compute_pi(Aave, Gave, ws, sync_info);
+  // }
   // Compute the inverse of the factors
   // Since setting different damping constants for A and G is an
   // alternative heuristics to pi, they should be the same if pi is used.
@@ -264,8 +272,9 @@ void kfac_block_fc_conv<Device>::update_kronecker_inverse(
   }
 }
 
+
 template <El::Device Device>
-void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
+void kfac_block_channelwise_fc<Device>::compute_preconditioned_gradients(
     lbann_comm* comm,
     const DataType learning_rate_factor,
     const bool print_matrix,
@@ -282,7 +291,7 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
   const auto& w_grads_orig = w_dto->get_gradient().LockedMatrix();
   El::Matrix<DataType, Device> w_gradients;
 
-  // BVE FIXME unused variables
+  // BVE FIXME These variable seem to be unused
   // auto& w_grads_scaling = this->get_workspace_matrix(
   //         "w_grads_scaling", 1, 1);
   // auto& b_grads_scaling = this->get_workspace_matrix(
@@ -292,49 +301,42 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
   //         "w_grads_scaling_mat", w_grads_orig.Height(), w_grads_orig.Width());
 
   // w_gradients is already synchronized among processes.
-  if(m_is_conv) {
-    const auto num_output_channels = this->m_layer->get_output_dims()[0];
-    assert((w_grads_orig.Height()%num_output_channels) == 0);
-    const auto height = w_grads_orig.Height()/num_output_channels;
-    w_gradients.LockedAttach(height, num_output_channels,
-                             w_grads_orig.LockedBuffer(),
-                             height);
+
+  if(m_has_bias) {
+    auto& w_grads_concat = this->get_workspace_matrix(
+        "A", w_grads_orig.Height(), w_grads_orig.Width()+1);
+
+    auto w_grads_concat_weights = El::View(
+        w_grads_concat, El::ALL, El::IR(0, w_grads_orig.Width()));
+    auto w_grads_concat_biases = El::View(
+        w_grads_concat, El::ALL, El::IR(w_grads_orig.Width(), w_grads_orig.Width()+1));
+
+    auto& biases = this->m_layer->get_weights(1);
+    optimizer *b_optimizer = biases.get_optimizer();
+    auto* b_dto = dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer);
+    const auto& b_grads_orig = b_dto->get_gradient().LockedMatrix();
+
+    El::Copy(w_grads_orig, w_grads_concat_weights);
+    El::Copy(b_grads_orig, w_grads_concat_biases);
+
+    w_gradients.LockedAttach(w_grads_concat.Height(), w_grads_concat.Width(),
+                             w_grads_concat.LockedBuffer(),
+                             w_grads_concat.Height());
   } else {
-    if(m_has_bias) {
-      auto& w_grads_concat = this->get_workspace_matrix(
-          "A", w_grads_orig.Height(), w_grads_orig.Width()+1);
-
-      auto w_grads_concat_weights = El::View(
-          w_grads_concat, El::ALL, El::IR(0, w_grads_orig.Width()));
-      auto w_grads_concat_biases = El::View(
-          w_grads_concat, El::ALL, El::IR(w_grads_orig.Width(), w_grads_orig.Width()+1));
-
-      auto& biases = this->m_layer->get_weights(1);
-      optimizer *b_optimizer = biases.get_optimizer();
-      auto* b_dto = dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer);
-      const auto& b_grads_orig = b_dto->get_gradient().LockedMatrix();
-
-      El::Copy(w_grads_orig, w_grads_concat_weights);
-      El::Copy(b_grads_orig, w_grads_concat_biases);
-
-      w_gradients.LockedAttach(w_grads_concat.Height(), w_grads_concat.Width(),
-                               w_grads_concat.LockedBuffer(),
-                               w_grads_concat.Height());
-    } else {
-      w_gradients.LockedAttach(w_grads_orig.Height(), w_grads_orig.Width(),
-                               w_grads_orig.LockedBuffer(),
-                               w_grads_orig.Height());
-    }
+    w_gradients.LockedAttach(w_grads_orig.Height(), w_grads_orig.Width(),
+                             w_grads_orig.LockedBuffer(),
+                             w_grads_orig.Height());
   }
 
+
   // Compute preconditioned gradients
+
   auto& Gg = this->get_workspace_matrix(
       "Gg",
       Ginv.Height(),
-      m_is_conv ? w_gradients.Height() : w_gradients.Width());
-
+       w_gradients.Width());
   El::Gemm(
-      El::NORMAL, m_is_conv ? El::TRANSPOSE : El::NORMAL,
+      El::NORMAL,  El::NORMAL,
       El::TypeTraits<DataType>::One(), Ginv, w_gradients,
       El::TypeTraits<DataType>::Zero(), Gg);
   auto& Fgrad = this->get_workspace_matrix(
@@ -351,27 +353,7 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
   // and won't be all-reduced later.
   auto& grad_buffer = w_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, false);
-  if(m_is_conv) {
-    El::Matrix<DataType, Device> grad_buffer_v;
-    grad_buffer_v.Attach(Fgrad.Width(), Fgrad.Height(),
-                         grad_buffer.Buffer(),
-                         Fgrad.Width());
-
-    //Cliping
-    // El::Gemm(
-    //   El::NORMAL, El::NORMAL, El::TypeTraits<DataType>::One(),
-    //   El::Reshape(1, Fgrad.Height()*Fgrad.Width(), Fgrad),
-    //   El::Reshape(w_grads_orig.Height()*w_grads_orig.Width(), 1, w_grads_orig),
-    //   El::TypeTraits<DataType>::Zero(), w_grads_scaling
-    // );
-
-    El::Matrix<DataType> XCPU(Fgrad);
-    auto w_grads_scaling = El::Dot(XCPU, XCPU);
-    auto w_grads_scaling_factor = std::min(1.0, std::sqrt (0.001 / (w_grads_scaling * learning_rate * learning_rate)));
-    El::Scale(w_grads_scaling_factor, Fgrad);
-
-    El::Transpose(Fgrad, grad_buffer_v);
-  } else {
+  {
     assert(Fgrad.Height() == w_gradients.Height());
     assert(Fgrad.Width() == w_gradients.Width());
 
@@ -390,23 +372,10 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
       auto Fgrad_biases = El::View(
           Fgrad, El::ALL, El::IR(grad_buffer.Width(), grad_buffer.Width()+1));
 
-      // BVE FIXME
+      // BVE FIXME unused variable
       // auto& b_grads_scaled = this->get_workspace_matrix(
       //     "b_grads_scaling_mat", b_grads_orig.Height(), b_grads_orig.Width());
 
-      //Cliping
-      // El::Gemm(
-      //   El::NORMAL, El::NORMAL, El::TypeTraits<DataType>::One(),
-      //   El::Reshape(1, Fgrad_weights.Height()*Fgrad_weights.Width(), Fgrad_weights),
-      //   El::Reshape(w_grads_orig.Height()*w_grads_orig.Width(), 1, w_grads_orig),
-      //   El::TypeTraits<DataType>::Zero(), w_grads_scaling
-      // );
-      // El::Gemm(
-      //   El::NORMAL, El::NORMAL, El::TypeTraits<DataType>::One(),
-      //   El::Reshape(1, Fgrad_biases.Height()*Fgrad_biases.Width(), Fgrad_biases),
-      //   El::Reshape(b_grads_orig.Height()*b_grads_orig.Width(), 1, b_grads_orig),
-      //   El::TypeTraits<DataType>::Zero(), b_grads_scaling
-      // );
       El::Matrix<DataType> XCPU(Fgrad_weights);
       El::Matrix<DataType> BCPU(Fgrad_biases);
       auto w_grads_scaling = El::Dot(XCPU, XCPU);
@@ -422,13 +391,6 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
       El::Copy(Fgrad_biases, grad_buffer_biases.Matrix());
 
     } else {
-      //Cliping
-      // El::Gemm(
-      //   El::NORMAL, El::NORMAL, El::TypeTraits<DataType>::One(),
-      //   El::Reshape(1, Fgrad.Height()*Fgrad.Width(), Fgrad),
-      //   El::Reshape(w_grads_orig.Height()*w_grads_orig.Width(), 1, w_grads_orig),
-      //   El::TypeTraits<DataType>::Zero(), w_grads_scaling
-      // );
       El::Matrix<DataType> XCPU(Fgrad);
       auto w_grads_scaling = El::Dot(XCPU, XCPU);
       auto w_grads_scaling_factor = std::min(1.0, std::sqrt (0.001 / (w_grads_scaling * learning_rate * learning_rate)));
@@ -464,7 +426,7 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
 }
 
 template <El::Device Device>
-void kfac_block_fc_conv<Device>::start_communication_forward_end(
+void kfac_block_channelwise_fc<Device>::start_communication_forward_end(
     lbann_comm* comm) {
   int num_local_activations = 1;
   const auto parent = this->m_layer->get_parent_layers()[0];
@@ -505,12 +467,12 @@ void kfac_block_fc_conv<Device>::start_communication_forward_end(
       El::Copy(parent_activations,*this->m_parent_local_activations[0]);
     }
     else{
+      // const auto local_activations_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_activations));
       El::DistMatrixReadProxy<DataType, DataType, El::STAR, El::VC, El::ELEMENT, Device> star_vc_prox(parent_activations);
       El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device> const& star_vc_mat = star_vc_prox.GetLocked();
 
-
       auto local_activations0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[0]));
-      // BVE FIXME unused variable
+      // BVE FIXME this looks to be unused
       // auto subset0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[0]));
 
       if(this->m_enable_copy_activations)
@@ -552,7 +514,7 @@ void kfac_block_fc_conv<Device>::start_communication_forward_end(
 }
 
 template <El::Device Device>
-void kfac_block_fc_conv<Device>::end_communication_forward_end(
+void kfac_block_channelwise_fc<Device>::end_communication_forward_end(
     lbann_comm* comm) {
   if((comm->get_grid_type() == GridType::SECONDARY_GRID or comm->get_grid_type() == GridType::PRIMARY_GRID)
       and comm->enable_subgrid_async_communication()
@@ -577,7 +539,7 @@ void kfac_block_fc_conv<Device>::end_communication_forward_end(
 }
 
 template <El::Device Device>
-void kfac_block_fc_conv<Device>::start_communication_backward_end(
+void kfac_block_channelwise_fc<Device>::start_communication_backward_end(
     lbann_comm* comm) {
   int num_local_errors = 1;
   const auto child = this->m_layer->get_child_layers()[0];
@@ -622,7 +584,6 @@ void kfac_block_fc_conv<Device>::start_communication_backward_end(
     else{
       const auto local_errors_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_errors));
       auto local_errors0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_child_local_errors[0]));
-      // auto subset1 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[1]));
 
       if(this->m_enable_copy_errors)
       {
@@ -643,14 +604,6 @@ void kfac_block_fc_conv<Device>::start_communication_backward_end(
                                               this->m_requests_backward_end);
       }
 
-
-      // kfac::TranslateBetweenGridsVCAsync(*local_errors_vc,
-      //                                         *local_errors0,
-      //                                         *subset1,
-      //                                         this->m_requests_backward_end);
-      // kfac::TranslateBetweenGridsVCAsyncDirect(*local_errors_vc,
-      //                                         *local_errors0,
-      //                                         this->m_requests_backward_end);
     }//Async progress
   }
 
@@ -666,7 +619,7 @@ void kfac_block_fc_conv<Device>::start_communication_backward_end(
 }
 
 template <El::Device Device>
-void kfac_block_fc_conv<Device>::end_communication_backward_end(
+void kfac_block_channelwise_fc<Device>::end_communication_backward_end(
     lbann_comm* comm) {
   if((comm->get_grid_type() == GridType::SECONDARY_GRID or comm->get_grid_type() == GridType::PRIMARY_GRID)
       and comm->enable_subgrid_async_communication()
@@ -691,7 +644,7 @@ void kfac_block_fc_conv<Device>::end_communication_backward_end(
 }
 
 template <El::Device Device>
-void kfac_block_fc_conv<Device>::initialize_activations_and_errors(
+void kfac_block_channelwise_fc<Device>::initialize_activations_and_errors(
     lbann_comm* comm,
     int num_local_activations,
     int num_local_errors,
@@ -717,21 +670,20 @@ void kfac_block_fc_conv<Device>::initialize_activations_and_errors(
       //Initialize Dist Matrices
       for (auto& input : this->m_parent_local_activations) {
         if(dtl_parent.get_data_layout() == data_layout::DATA_PARALLEL){
-          input = std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
-          this->m_subset_matrix.push_back(std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_subset_grid(), 0));
+          input = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          this->m_subset_matrix.push_back(make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_subset_grid(), 0));
         }
         else
-          input = std::make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          input = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
       }
 
       for (auto& error : this->m_child_local_errors) {
-
         if(dtl_child.get_data_layout() == data_layout::DATA_PARALLEL){
-          error = std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
-          this->m_subset_matrix.push_back(std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_subset_grid(), 0));
+          error = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          this->m_subset_matrix.push_back(make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_subset_grid(), 0));
         }
         else
-          error = std::make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          error = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
       }
     }
 
@@ -790,20 +742,21 @@ void kfac_block_fc_conv<Device>::initialize_activations_and_errors(
     }//Async progress
   }
 
+
   if(comm->get_grid_type() == GridType::NO_GRID ){
 
     for (auto& input : this->m_parent_local_activations) {
       if(dtl_parent.get_data_layout() == data_layout::DATA_PARALLEL)
-        input = std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+        input = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
       else
-        input = std::make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+        input = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
     }
 
     for (auto& error : this->m_child_local_errors) {
       if(dtl_child.get_data_layout() == data_layout::DATA_PARALLEL)
-        error = std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+        error = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
       else
-        error = std::make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+        error = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
     }
 
     El::LockedView( *(this->m_parent_local_activations[0]), local_activations );
@@ -814,7 +767,7 @@ void kfac_block_fc_conv<Device>::initialize_activations_and_errors(
 
 template <El::Device Device>
 const std::vector<El::AbstractMatrix<DataType>*>
-kfac_block_fc_conv<Device>::get_preconditioned_grad_buffers() {
+kfac_block_channelwise_fc<Device>::get_preconditioned_grad_buffers() {
   auto& weights = this->m_layer->get_weights(0);
   optimizer *w_optimizer = weights.get_optimizer();
   DataType dst_scale = El::TypeTraits<DataType>::Zero(),
@@ -823,11 +776,7 @@ kfac_block_fc_conv<Device>::get_preconditioned_grad_buffers() {
   // and won't be all-reduced later.
   auto& grad_buffer = w_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, false);
-  if(m_is_conv) {
-    std::vector<El::AbstractMatrix<DataType>*>
-        ret = {&grad_buffer.Matrix()};
-    return ret;
-  } else {
+
     // Returns the vectorized version of the matrix.
     auto& mat = grad_buffer.Matrix();
     if(mat.Buffer() != m_grad_buffer_v.Buffer())
@@ -838,7 +787,7 @@ kfac_block_fc_conv<Device>::get_preconditioned_grad_buffers() {
     std::vector<El::AbstractMatrix<DataType>*>
         ret = {&m_grad_buffer_v};
     return ret;
-  }
+
 }
 
 //////////////////////////////////////////////////////////////
@@ -846,11 +795,10 @@ kfac_block_fc_conv<Device>::get_preconditioned_grad_buffers() {
 //////////////////////////////////////////////////////////////
 
 template <El::Device Device>
-int kfac_block_fc_conv<Device>::get_inverse_matrices(El::Matrix<DataType, Device>& output, int offset)
+int kfac_block_channelwise_fc<Device>::get_inverse_matrices(El::Matrix<DataType, Device>& output, int offset)
 {
   const int size_Ainv = m_kronecker_inverse_A.Height() * m_kronecker_inverse_A.Width();
   const int size_Ginv = m_kronecker_inverse_G.Height() * m_kronecker_inverse_G.Width();
-
 
   El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(output);
 
@@ -881,7 +829,7 @@ int kfac_block_fc_conv<Device>::get_inverse_matrices(El::Matrix<DataType, Device
 }
 
 template <El::Device Device>
-std::vector<int>  kfac_block_fc_conv<Device>::get_inverse_matrices_size_vector(lbann_comm *comm)
+std::vector<int>  kfac_block_channelwise_fc<Device>::get_inverse_matrices_size_vector(lbann_comm *comm)
 {
   std::vector<int> inverse_matrices_sizes;
   inverse_matrices_sizes.push_back(m_kronecker_inverse_A.Height());
@@ -892,7 +840,7 @@ std::vector<int>  kfac_block_fc_conv<Device>::get_inverse_matrices_size_vector(l
 }
 
 template <El::Device Device>
-void kfac_block_fc_conv<Device>::resize_inverse_matrices_size(El::Matrix<double,El::Device::CPU>& inverse_matrices_size,
+void kfac_block_channelwise_fc<Device>::resize_inverse_matrices_size(El::Matrix<double,El::Device::CPU>& inverse_matrices_size,
   int block_number)
 {
   m_kronecker_inverse_A.Resize(inverse_matrices_size(block_number,0), inverse_matrices_size(block_number,1));
@@ -905,39 +853,26 @@ void kfac_block_fc_conv<Device>::resize_inverse_matrices_size(El::Matrix<double,
 }
 
 template <El::Device Device>
-int kfac_block_fc_conv<Device>::get_inverse_matrices_size(lbann_comm *comm)
+int kfac_block_channelwise_fc<Device>::get_inverse_matrices_size(lbann_comm *comm)
 {
   if(this->m_Ainv_height > 0){
     return m_Ainv_height*m_Ainv_width + m_Ginv_height*m_Ginv_width;
   }
   const auto input_dims = this->m_layer->get_input_dims(); // CHW
-  const size_t num_input_channels = input_dims[0];
+  const auto output_dims = this->m_layer->get_output_dims(); // CH'W'
 
-  const auto parent = this->m_layer->get_parent_layers()[0];
-  const auto child = this->m_layer->get_child_layers()[0];
-  const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
-  const auto& dtl_child = dynamic_cast<const data_type_layer<DataType>&>(*child);
+  const auto& input_channel_size = std::accumulate(
+    input_dims.begin()+1, input_dims.end(),
+    1, std::multiplies<size_t>());
+  const auto& output_channel_size = std::accumulate(
+    output_dims.begin()+1, output_dims.end(),
+    1, std::multiplies<size_t>());
 
-  const auto& local_activations = comm->get_grid_type()==GridType::PRIMARY_GRID ? \
-    dtl_parent.get_local_activations() : this->m_parent_local_activations[0]->Matrix();
+  int my_height_A = input_channel_size;
+  int my_height_G = output_channel_size;
 
-  const auto& local_errors = comm->get_grid_type()==GridType::PRIMARY_GRID ? \
-    dtl_child.get_local_error_signals() : this->m_child_local_errors[0]->Matrix();
-
-
-  int my_height_A = local_activations.Height();
-  const auto output_dims = this->m_layer->get_output_dims(); // KH'W'
-  const size_t num_output_channels = output_dims[0];
-
-  if(m_is_conv) {
-    const auto conv_dims = get_conv_layer()->get_conv_dims();
-    my_height_A = num_input_channels * get_linear_size(conv_dims);
-  }
   if(m_has_bias)
     my_height_A++;
-
-
-  int my_height_G = !m_is_conv ? local_errors.Height() : num_output_channels;
 
   this->m_Ainv_height = my_height_A;
   this->m_Ainv_width = my_height_A;
@@ -948,7 +883,7 @@ int kfac_block_fc_conv<Device>::get_inverse_matrices_size(lbann_comm *comm)
 }
 
 template <El::Device Device>
-int kfac_block_fc_conv<Device>::set_inverse_matrices(El::Matrix<DataType, Device>& workspace,
+int kfac_block_channelwise_fc<Device>::set_inverse_matrices(El::Matrix<DataType, Device>& workspace,
                           int offset,
                           lbann_comm *comm)
 {
@@ -998,7 +933,7 @@ int kfac_block_fc_conv<Device>::set_inverse_matrices(El::Matrix<DataType, Device
 //////////////////////////////////////////////////////////////
 
 template <El::Device Device>
-void kfac_block_fc_conv<Device>::get_kronecker_factor_fc(
+void kfac_block_channelwise_fc<Device>::get_kronecker_factor_fc(
     El::AbstractMatrix<DataType>& factor,
     const El::AbstractMatrix<DataType>& activations,
     const DataType alpha) {
@@ -1012,88 +947,38 @@ void kfac_block_fc_conv<Device>::get_kronecker_factor_fc(
       factor);
 }
 
-template <El::Device Device>
-void kfac_block_fc_conv<Device>::get_kronecker_factor_conv(
-    El::Matrix<DataType, Device>& factor,
-    El::Matrix<DataType, Device>& Acol,
-    const El::Matrix<DataType, Device>& activations,
-    const DataType alpha,
-    const size_t local_batch_size, const size_t num_channels,
-    const std::vector<int>& spatial_dims,
-    const convolution_layer<DataType, data_layout::DATA_PARALLEL, Device> *l_conv,
-    const bool use_im2col,
-    const El::SyncInfo<Device>& sync_info) {
-  const auto dilations = l_conv->get_dilations();
-  for(auto i = dilations.begin(); i != dilations.end(); i++)
-    if(*i != 1) {
-      std::stringstream err;
-      err << "K-FAC only supports dilation width of 1."
-          << " layer: " << l_conv->get_name();
-      LBANN_ERROR(err.str());
-    }
-
-  if(use_im2col) {
-    kfac_fc_conv_util::im2col(
-        activations, Acol,
-        num_channels, spatial_dims.size(),
-        &(spatial_dims[0]),
-        &(l_conv->get_pads()[0]),
-        &(l_conv->get_conv_dims()[0]),
-        &(l_conv->get_strides()[0]),
-        local_batch_size,
-        sync_info);
-  } else {
-    size_t spatial_prod = 1;
-    for(auto i = spatial_dims.begin(); i != spatial_dims.end(); i++)
-      spatial_prod *= *i;
-    assert((size_t) Acol.Height() == num_channels);
-    assert((size_t) Acol.Width() == local_batch_size*spatial_prod);
-    kfac_fc_conv_util::conv_transpose(
-        activations, Acol,
-        local_batch_size, num_channels, spatial_prod,
-        sync_info);
-  }
-
-  assert(factor.Height() == Acol.Height());
-  assert(factor.Width() == Acol.Height());
-  El::Gemm(
-      El::NORMAL, El::TRANSPOSE,
-      alpha, Acol, Acol,
-      El::TypeTraits<DataType>::Zero(), factor);
-}
-
-template <El::Device Device>
-double kfac_block_fc_conv<Device>::compute_pi(
-    const El::Matrix<DataType, Device>& A,
-    const El::Matrix<DataType, Device>& G,
-    El::Matrix<DataType, Device>& ws,
-    const El::SyncInfo<Device>& sync_info) {
-  assert(ws.Height() >= A.Height()*2+1);
-  assert(ws.Height() >= G.Height()*2+1);
-  // TODO: Replace with El::Trace once GPU matrices get supported.
-  const auto get_trace =
-      [](const El::Matrix<DataType, Device>& X,
-         El::Matrix<DataType, Device>& w,
-         const El::SyncInfo<Device>& s) {
-        auto diag = El::View(w, El::IR(0, X.Height()), El::ALL);
-        auto ones = El::View(w, El::IR(X.Height(), X.Height()*2), El::ALL);
-        auto ret = El::View(w, El::IR(X.Height()*2, X.Height()*2+1), El::ALL);
-        kfac_fc_conv_util::get_diagonal(diag, X, s);
-        El::Ones(ones, ones.Height(), ones.Width());
-        El::Gemm(
-            El::TRANSPOSE, El::NORMAL,
-            El::TypeTraits<DataType>::One(), diag, ones,
-            El::TypeTraits<DataType>::Zero(), ret);
-        El::Matrix<DataType> pi;
-        El::Copy(ret, pi);
-        return pi(0, 0);
-      };
-  return sqrt((get_trace(A, ws, sync_info)/A.Height())/(get_trace(G, ws, sync_info)/G.Height()));
-}
+// template <El::Device Device>
+// double kfac_block_channelwise_fc<Device>::compute_pi(
+//     const El::Matrix<DataType, Device>& A,
+//     const El::Matrix<DataType, Device>& G,
+//     El::Matrix<DataType, Device>& ws,
+//     const El::SyncInfo<Device>& sync_info) {
+//   assert(ws.Height() >= A.Height()*2+1);
+//   assert(ws.Height() >= G.Height()*2+1);
+//   // TODO: Replace with El::Trace once GPU matrices get supported.
+//   const auto get_trace =
+//       [](const El::Matrix<DataType, Device>& X,
+//          El::Matrix<DataType, Device>& w,
+//          const El::SyncInfo<Device>& s) {
+//         auto diag = El::View(w, El::IR(0, X.Height()), El::ALL);
+//         auto ones = El::View(w, El::IR(X.Height(), X.Height()*2), El::ALL);
+//         auto ret = El::View(w, El::IR(X.Height()*2, X.Height()*2+1), El::ALL);
+//         kfac_fc_conv_util::get_diagonal(diag, X, s);
+//         El::Ones(ones, ones.Height(), ones.Width());
+//         El::Gemm(
+//             El::TRANSPOSE, El::NORMAL,
+//             El::TypeTraits<DataType>::One(), diag, ones,
+//             El::TypeTraits<DataType>::Zero(), ret);
+//         El::Matrix<DataType> pi;
+//         El::Copy(ret, pi);
+//         return pi(0, 0);
+//       };
+//   return sqrt((get_trace(A, ws, sync_info)/A.Height())/(get_trace(G, ws, sync_info)/G.Height()));
+// }
 
 template <El::Device Device>
 std::vector<std::tuple<std::string, size_t, size_t>>
-kfac_block_fc_conv<Device>::get_internal_matrix_info() const {
+kfac_block_channelwise_fc<Device>::get_internal_matrix_info() const {
   std::vector<std::tuple<std::string, size_t, size_t>> list;
   const auto emplace =
       [&list](const std::string name,
@@ -1110,95 +995,9 @@ kfac_block_fc_conv<Device>::get_internal_matrix_info() const {
   return list;
 }
 
-namespace kfac_fc_conv_util {
-
-template <>
-void get_diagonal(
-    El::Matrix<DataType, El::Device::CPU>& diag,
-    const El::Matrix<DataType, El::Device::CPU>& A,
-    const El::SyncInfo<El::Device::CPU>& sync_info) {
-  const size_t height = A.Height();
-#pragma omp parallel for
-  for(size_t gid = 0; gid < height; gid++)
-    diag.Buffer()[gid] = A.LockedBuffer()[gid+gid*height];
-}
-
-template <>
-void conv_transpose(
-    const El::Matrix<DataType, El::Device::CPU>& activations,
-    El::Matrix<DataType, El::Device::CPU>& act_columns,
-    size_t mini_batch_size, size_t num_channels,
-    size_t spatial_prod,
-    const El::SyncInfo<El::Device::CPU>& sync_info) {
-  const size_t num_elems = mini_batch_size*num_channels*spatial_prod;
-#pragma omp parallel for
-  for(size_t gid = 0; gid < num_elems; gid++) {
-    const auto i_spatial = gid%spatial_prod;
-    const auto i_c = (gid/spatial_prod)%num_channels;
-    const auto i_n = (gid/spatial_prod/num_channels);
-    act_columns.Buffer()[i_c+i_spatial*num_channels+i_n*num_channels*spatial_prod]
-        = activations.LockedBuffer()[gid];
-  }
-}
-
-template <>
-void im2col(const El::Matrix<DataType, El::Device::CPU>& im,
-            El::Matrix<DataType, El::Device::CPU>& col,
-            const int num_channels,
-            const int im_num_dims,
-            const int * im_dims,
-            const int * im_pads,
-            const int * window_dims,
-            const int * window_strides,
-            const int batch_size,
-            const El::SyncInfo<El::Device::CPU>& sync_info) {
-  // Since CPU im2col does not support batched im2col explicitly,
-  // treat multiple samples as different channels of a single sample.
-  El::Matrix<DataType, El::Device::CPU> im_flatten;
-  im_flatten.LockedAttach(
-      im.Height()*im.Width(), 1,
-      im.LockedBuffer(),
-      im.Height()*im.Width());
-  El::Matrix<DataType, El::Device::CPU> col_flatten;
-  col_flatten.Attach(
-      col.Height()*batch_size, col.Width()/batch_size,
-      col.Buffer(),
-      col.Height()*batch_size);
-  lbann::im2col(
-      im_flatten, col_flatten,
-      num_channels*batch_size,
-      im_num_dims,
-      im_dims, im_pads,
-      window_dims, window_strides);
-}
-
+template class kfac_block_channelwise_fc<El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
-template <>
-void im2col(const El::Matrix<DataType, El::Device::GPU>& im,
-            El::Matrix<DataType, El::Device::GPU>& col,
-            const int num_channels,
-            const int im_num_dims,
-            const int * im_dims,
-            const int * im_pads,
-            const int * window_dims,
-            const int * window_strides,
-            const int batch_size,
-            const El::SyncInfo<El::Device::GPU>& sync_info) {
-  // Since GPU im2col supports batched im2col, the batch_size argument is ignored.
-  lbann::im2col(
-      im, col,
-      num_channels, im_num_dims,
-      im_dims, im_pads,
-      window_dims, window_strides,
-      sync_info);
-}
-#endif // LBANN_HAS_GPU
-
-} // namespace kfac_fc_conv_util
-
-template class kfac_block_fc_conv<El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-template class kfac_block_fc_conv<El::Device::GPU>;
+template class kfac_block_channelwise_fc<El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 
 } // namespace lbann

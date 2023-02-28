@@ -45,6 +45,7 @@ message Callback {
     CallbackDebug debug = 11;
     CallbackAdaptiveLearningRate adaptive_learning_rate = 12;
     CallbackStepLearningRate step_learning_rate = 13;
+    CallbackSetLearningRate set_learning_rate = 55;
     CallbackCustomLearningRate custom_learning_rate = 14;
     CallbackCheckSmall check_small = 15;
     CallbackCheckNaN check_nan = 16;
@@ -100,6 +101,12 @@ message Callback {
     string weights = 1; //default: all weights
     int64 step = 2;
     double amt = 3;
+  }
+
+  message CallbackSetLearningRate {
+    string weights = 1; //default: all weights
+    int64 step = 2;
+    double val = 3;
   }
 
   message CallbackCustomLearningRate {

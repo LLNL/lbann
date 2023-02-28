@@ -154,4 +154,5 @@ trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size, random_seed=args.r
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 lbann.contrib.launcher.run(trainer, model, data_reader, opt,
                            job_name=args.job_name,
+                           lbann_args=" --use_data_store --preload_data_store --node_sizes_vary",
                            **kwargs)

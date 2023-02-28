@@ -42,7 +42,18 @@ class kfac_block;
 }
 
 namespace lbann {
+
 namespace kfac {
+
+#if defined AL_HAS_NCCL
+using BackendT = ::Al::NCCLBackend;
+#elif defined AL_HAS_HOST_TRANSFER
+using BackendT = ::Al::HostTransferBackend;
+#else
+using BackendT = ::Al::MPIBackend;
+#endif
+
+using ReqT = typename BackendT::req_type;
 
 enum class kfac_inverse_strategy {
   ALL,  // Apply round-robin assingment to all of the layers. may cause load imbalance.
@@ -66,6 +77,18 @@ enum class kfac_allgather_mode {
 /** @brief Gets the inverse matrix of A. **/
 template <El::Device Device>
 void get_matrix_inverse(
+    El::AbstractMatrix<DataType>& Ainv,
+    El::AbstractMatrix<DataType>& Linv,
+    const El::AbstractMatrix<DataType>& A,
+    bool report_time,
+    DataType damping,
+    DataType damping_bn_err,
+    bool is_bn,
+    const El::SyncInfo<Device>& sync_info);
+
+/** @brief Gets the inverse matrix of A using Eigen Value Decomposition. **/
+template <El::Device Device>
+void get_matrix_inverse_eigen(
     El::AbstractMatrix<DataType>& Ainv,
     El::AbstractMatrix<DataType>& Linv,
     const El::AbstractMatrix<DataType>& A,
@@ -135,6 +158,23 @@ void add_to_diagonal(
     bool is_bn,
     const El::SyncInfo<Device>& sync_info);
 
+/** @brief Add the damping value to the diagonal elements of A from B. **/
+template <El::Device Device>
+void make_diagonal(
+    El::Matrix<DataType, Device>& A,
+    El::Matrix<DataType, Device>& B,
+    DataType value,
+    DataType value_bn_err,
+    bool is_bn,
+    const El::SyncInfo<Device>& sync_info);
+
+/** @brief Add the damping value to the diagonal elements of A. **/
+template <El::Device Device>
+void get_matrix_entrywise_inverse(
+    El::Matrix<DataType, Device>& input,
+    El::Matrix<DataType, Device>& output,
+    const El::SyncInfo<Device>& sync_info);
+
 /** @brief Fill the upper trianglar with the lower trianglar. **/
 template <El::Device Device>
 void fill_upper_tri(
@@ -173,6 +213,39 @@ void unpack_lower_tri(
     El::Matrix<DataType, Device>& A,
     const El::Matrix<DataType, Device>& L,
     const El::SyncInfo<Device>& sync_info);
+
+template<typename T, El::Device Device>
+void TranslateBetweenGridsVCAsync
+( const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,
+  El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B,
+  El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& subset,
+  std::vector<ReqT>& Requests);
+
+template<typename T, El::Device Device>
+void TranslateBetweenGridsVCAsyncDirect
+( const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,
+  El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B,
+  El::Int featureSize,
+  El::Int currentBatchSize,
+  std::vector<ReqT>& Requests);
+
+template<typename T, El::Device Device>
+void TranslateBetweenGridsSTARAsync
+(const El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& A,
+  El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& B,
+  std::vector<ReqT>& Requests);
+
+template<typename T, El::Device Device>
+void TranslateBetweenGridsKFACAsync
+(const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,
+  El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B,
+  std::vector<ReqT>& Requests);
+
+template<typename T, El::Device Device>
+void TranslateBetweenGridsVC
+(El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device> const& A,
+  El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B);
+
 
 } // namespace kfac
 } // namespace lbann

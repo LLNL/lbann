@@ -198,6 +198,8 @@ void register_default_builders(factory_type& factory)
                            build_save_topk_models_callback_from_pbuf);
   factory.register_builder("CallbackStepLearningRate",
                            build_step_learning_rate_callback_from_pbuf);
+  factory.register_builder("CallbackSetLearningRate",
+                           build_set_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackStepMinibatch",
                            build_step_minibatch_callback_from_pbuf);
   factory.register_builder("CallbackSummarizeImages",

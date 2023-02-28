@@ -62,8 +62,12 @@ class kfac_block_bn: public kfac_block<Device> {
   kfac_block_bn(Layer* layer,
                 kfac::KFACExecutionContext* context,
                 size_t layer_id,
-                size_t inverse_proc_rank)
-      : kfac_block<Device>(layer, context, layer_id, inverse_proc_rank) {
+                size_t inverse_proc_rank,
+                bool enable_copy_errors,
+                bool enable_copy_activations,
+                int input_size,
+                int output_size)
+      : kfac_block<Device>(layer, context, layer_id, inverse_proc_rank, enable_copy_errors, enable_copy_activations, input_size, output_size) {
     const auto parent = layer->get_parent_layers()[0];
     const bool is_after_fc =
         (dynamic_cast<const fully_connected_layer<DataType,
@@ -97,6 +101,14 @@ class kfac_block_bn: public kfac_block<Device> {
   kfac_block_bn(const kfac_block_bn&) = default;
   kfac_block_bn& operator=(const kfac_block_bn&) = default;
 
+  int get_local_memory_consumption() override {
+    int total_size = 0;
+    total_size += m_fisher_buf.Height() * m_fisher_buf.Width();
+    total_size += m_fisher_average.Height() * m_fisher_average.Width();
+    total_size += m_fisher_inverse.Height() * m_fisher_inverse.Width();
+    return total_size;
+  }
+
   void compute_local_kronecker_factors(
       lbann_comm* comm,
       bool print_matrix,
@@ -119,9 +131,27 @@ class kfac_block_bn: public kfac_block<Device> {
       bool use_pi,
       DataType damping_act, DataType damping_err,
       DataType learning_rate_factor,
+      bool use_eigen_decomposition,
       bool print_matrix,
       bool print_matrix_summary,
       bool print_time) override;
+
+  void compute_preconditioned_gradients(
+      lbann_comm* comm,
+      DataType learning_rate_factor,
+      bool print_matrix,
+      bool print_matrix_summary,
+      bool print_time) override;
+
+  void start_communication_forward_end(
+      lbann_comm* comm) override;
+  void end_communication_forward_end(
+      lbann_comm* comm) override;
+  void start_communication_backward_end(
+      lbann_comm* comm) override;
+  void end_communication_backward_end(
+      lbann_comm* comm) override;
+
 
   const std::vector<El::AbstractMatrix<DataType>*>
   get_preconditioned_grad_buffers() override;
@@ -139,17 +169,11 @@ class kfac_block_bn: public kfac_block<Device> {
   int
   get_inverse_matrices(
       El::Matrix<DataType, Device>& output,
-      int offset) override
-  {
-    LBANN_ERROR("Sub-grid parallelism  is not implemented for BN layer");
-  }
+      int offset) override;
 
   /** @brief Get inverse matrices size (offset). */
   int
-  get_inverse_matrices_size(lbann_comm *comm) override
-  {
-    LBANN_ERROR("Sub-grid parallelism  is not implemented for BN layer");
-  }
+  get_inverse_matrices_size(lbann_comm *comm) override;
 
   /** @brief Get inverse matrices size vector */
   std::vector<int>
@@ -170,10 +194,7 @@ class kfac_block_bn: public kfac_block<Device> {
   set_inverse_matrices(
       El::Matrix<DataType, Device>& workspace,
       int offset,
-      lbann_comm *comm) override
-  {
-    LBANN_ERROR("Sub-grid parallelism  is not implemented for BN layer");
-  }
+      lbann_comm *comm) override;
 
  private:
 

@@ -116,8 +116,12 @@ class kfac_block_gru: public kfac_block<Device> {
   kfac_block_gru(Layer* layer,
                  kfac::KFACExecutionContext* context,
                  size_t layer_id,
-                 size_t inverse_proc_rank)
-      : kfac_block<Device>(layer, context, layer_id, inverse_proc_rank) {
+                 size_t inverse_proc_rank,
+                 bool enable_copy_errors,
+                 bool enable_copy_activations,
+                 int input_size,
+                 int output_size)
+      : kfac_block<Device>(layer, context, layer_id, inverse_proc_rank, enable_copy_errors, enable_copy_activations, input_size, output_size) {
 
     check_dnn_lib_spec();
 
@@ -140,6 +144,11 @@ class kfac_block_gru: public kfac_block<Device> {
   const std::vector<El::AbstractMatrix<DataType>*>
   get_local_kronecker_buffers() override;
 
+  int get_local_memory_consumption() override {
+    return -1;
+    LBANN_ERROR("this function is not implemented for GRU layer.");
+  }
+
   void compute_local_kronecker_factors(
       lbann_comm* comm,
       bool print_matrix,
@@ -156,6 +165,7 @@ class kfac_block_gru: public kfac_block<Device> {
       bool use_pi,
       DataType damping_act, DataType damping_err,
       DataType learning_rate_factor,
+      bool use_eigen_decomposition,
       bool print_matrix,
       bool print_matrix_summary,
       bool print_time) override;
@@ -187,7 +197,16 @@ class kfac_block_gru: public kfac_block<Device> {
       int offset,
       lbann_comm *comm) override;
 
-  void send_recv_weights(lbann_comm *comm);
+  // void send_recv_weights(lbann_comm *comm);
+
+  void start_communication_forward_end(
+      lbann_comm* comm) override;
+  void end_communication_forward_end(
+      lbann_comm* comm) override;
+  void start_communication_backward_end(
+      lbann_comm* comm) override;
+  void end_communication_backward_end(
+      lbann_comm* comm) override;
 
   /** @brief Get inverse matrices size vector */
   std::vector<int>
@@ -296,6 +315,8 @@ class kfac_block_gru: public kfac_block<Device> {
   m_grad_buffer_G;
 
   size_t m_reserve_space_fwd_size=0;
+
+  std::vector<kfac::ReqT> m_requests_workspace;
 
 };
 

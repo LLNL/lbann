@@ -37,6 +37,18 @@ namespace kfac {
 class KFACExecutionContext;
 }
 
+namespace kfac {
+#if defined AL_HAS_NCCL
+using BackendT = ::Al::NCCLBackend;
+#elif defined AL_HAS_HOST_TRANSFER
+using BackendT = ::Al::HostTransferBackend;
+#else
+using BackendT = ::Al::MPIBackend;
+#endif
+
+using ReqT = typename BackendT::req_type;
+} // namespace kfac
+
 /** A building block for K-FAC.
  */
 template <El::Device Device>
@@ -48,16 +60,27 @@ class kfac_block {
   kfac_block(Layer* layer,
              kfac::KFACExecutionContext* context,
              size_t layer_id,
-             size_t inverse_proc_rank)
+             size_t inverse_proc_rank,
+             bool enable_copy_errors,
+             bool enable_copy_activations,
+             int input_size,
+             int output_size)
       : m_layer(layer),
         m_layer_id(layer_id),
         m_inverse_proc_rank(inverse_proc_rank),
+        m_input_size(input_size),
+        m_output_size(output_size),
+        m_enable_copy_errors(enable_copy_errors),
+        m_enable_copy_activations(enable_copy_activations),
         m_context(context) {
     m_has_kronecker_inverse = false;
   }
   virtual ~kfac_block() = default;
 
   virtual void on_forward_prop_end(lbann_comm* comm) {}
+
+  /** @brief Get local Memory Consumption. */
+  virtual int get_local_memory_consumption() = 0;
 
   /** @brief Compute Kronecker factors. */
   virtual void compute_local_kronecker_factors(
@@ -88,6 +111,7 @@ class kfac_block {
       bool use_pi,
       DataType damping_act, DataType damping_err,
       DataType learning_rate_factor,
+      bool use_eigen_decomposition,
       bool print_matrix,
       bool print_matrix_summary,
       bool print_time) {
@@ -113,6 +137,12 @@ class kfac_block {
       int num_weights){
     LBANN_ERROR("this function should be called via a sub-class.");
   }
+
+  virtual void start_communication_forward_end(lbann_comm* comm) = 0;
+  virtual void end_communication_forward_end(lbann_comm* comm) = 0;
+  virtual void start_communication_backward_end(lbann_comm* comm) = 0;
+  virtual void end_communication_backward_end(lbann_comm* comm) = 0;
+
 
   /** @brief Get buffers of preconditioned parameter gradients. */
   virtual const std::vector<El::AbstractMatrix<DataType>*>
@@ -144,6 +174,10 @@ class kfac_block {
       El::Matrix<DataType, Device>& workspace,
       int offset,
       lbann_comm *comm) = 0;
+
+  void set_current_batch_size(El::Int batch_size){
+    m_batch_size = batch_size;
+  }
 
   /** @brief Get block's information in one line. */
   virtual std::string get_info() const {
@@ -179,6 +213,18 @@ class kfac_block {
     return m_weight_gradients[index]->Buffer();
   }
 
+  El::Int get_current_batch_size(){
+    return m_batch_size;
+  }
+
+  El::Int get_input_size(){
+    return m_input_size;
+  }
+
+  El::Int get_output_size(){
+    return m_output_size;
+  }
+
   /** @brief Return the list of internal matrices' (name, height,
    * width) for debugging. All internal matrices should be ready when
    * this function is called. */
@@ -207,17 +253,28 @@ class kfac_block {
   /** @brief The process ID which perform inverse on Kronecker. */
   const int m_inverse_proc_rank;
 
-  /** @brief Whether this block already has an inverse history. */
-  bool m_has_kronecker_inverse;
-
   /** @brief distributed martices for activations and gradients. */
   std::vector<std::unique_ptr<AbsDistMat>> m_parent_local_activations,
-    m_child_local_errors, m_weight_gradients;
+    m_child_local_errors, m_weight_gradients, m_subset_matrix, m_errors_copy,
+    m_activations_copy;
 
   /** @brief Translatebetweengrid  funciton has a basic implementation for STAR,STAR
    * distributed matrices. Therefore, using local matrices for weights  */
-  std::vector<std::unique_ptr<El::Matrix<DataType, Device>>> m_weight_values;
+  std::vector<std::unique_ptr<AbsDistMat>> m_weight_values;
 
+  std::vector<kfac::ReqT> m_requests_forward_end, m_requests_backward_end;
+
+  /** @brief feature size and batch size (used in primary -> secondary grid communication) */
+  int m_input_size, m_output_size, m_batch_size;
+
+  /** @brief Enable copying of errors to enhance async communication. */
+  bool m_enable_copy_errors;
+
+  /** @brief Enable copying of activations to enhance async communication. */
+  bool m_enable_copy_activations;
+
+  /** @brief Whether this block already has an inverse history. */
+  bool m_has_kronecker_inverse;
 
  private:
 

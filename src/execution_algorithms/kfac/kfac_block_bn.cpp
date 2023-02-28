@@ -157,6 +157,7 @@ void kfac_block_bn<Device>::update_kronecker_inverse(
     const bool use_pi,
     const DataType damping_act, const DataType damping_err,
     const DataType learning_rate_factor,
+    const bool use_eigen_decomposition,
     const bool print_matrix,
     const bool print_matrix_summary,
     const bool print_time) {
@@ -173,10 +174,20 @@ void kfac_block_bn<Device>::update_kronecker_inverse(
   auto& FLinv = this->get_workspace_matrix(
       "bn_FLinv",
       Fave.Height(), Fave.Height());
-  kfac::get_matrix_inverse(
+
+  if(use_eigen_decomposition){
+    kfac::get_matrix_inverse_eigen(
       Finv, FLinv, Fave, comm->am_trainer_master() && print_time,
       DataType(damping_act), DataType(damping_err),
       true, sync_info);
+  }
+  else{
+    kfac::get_matrix_inverse(
+      Finv, FLinv, Fave, comm->am_trainer_master() && print_time,
+      DataType(damping_act), DataType(damping_err),
+      true, sync_info);
+  }
+
 
   // dump L2 norm of matrices
   if(comm->am_trainer_master() && print_matrix_summary) {
@@ -186,7 +197,17 @@ void kfac_block_bn<Device>::update_kronecker_inverse(
         << std::endl;
     std::cout << oss.str();
   }
+}
 
+template <El::Device Device>
+void kfac_block_bn<Device>::compute_preconditioned_gradients(
+    lbann_comm* comm,
+    const DataType learning_rate_factor,
+    const bool print_matrix,
+    const bool print_matrix_summary,
+    const bool print_time) {
+
+  auto& Finv = m_fisher_inverse;
   auto& scales = this->m_layer->get_weights(0);
   auto& biases = this->m_layer->get_weights(1);
   optimizer *s_optimizer = scales.get_optimizer();
@@ -237,6 +258,7 @@ void kfac_block_bn<Device>::update_kronecker_inverse(
     std::cout << oss.str();
   }
 }
+
 
 template <El::Device Device>
 const std::vector<El::AbstractMatrix<DataType>*>
@@ -297,6 +319,339 @@ void kfac_bn_util::compute_bn_factor_data2col(
     cols.Buffer()[i_out] = error*act;
     cols.Buffer()[i_out+num_channels] = error;
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Sub-grid Communication functions
+////////////////////////////////////////////////////////////////////////////////
+
+template <El::Device Device>
+void kfac_block_bn<Device>::start_communication_forward_end(
+    lbann_comm* comm) {
+
+  int num_local_activations=1, num_weights=2;
+
+
+  const auto parent = this->m_layer->get_parent_layers()[0];
+  const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
+  const auto& local_inputs = dtl_parent.get_activations();
+
+
+  if(comm->get_KFAC_subgrid_create_two_models() or comm->get_grid_type() == GridType::NO_GRID ){
+    this->m_parent_local_activations.resize(num_local_activations);
+    this->m_weight_values.resize(num_weights);
+  }
+  else{
+    if(this->m_parent_local_activations.size()==0 ){
+      //Resize vectors
+      this->m_parent_local_activations.resize(num_local_activations);
+      this->m_weight_values.resize(num_weights);
+
+      //Initialize Dist Matrices
+      for (auto& input : this->m_parent_local_activations) {
+        if(dtl_parent.get_data_layout() == data_layout::DATA_PARALLEL){
+          // Data Parallel Layout
+          input = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          if(comm->enable_subgrid_async_communication())
+            this->m_subset_matrix.push_back(
+                make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_subset_grid(), 0));
+        }
+        else{//Model-Parallel Layout
+          input = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          if(comm->enable_subgrid_async_communication())
+            LBANN_ERROR("Async prgoress is not supported for model-parallel layer layout in sub-grid parallelism");
+        }
+      }
+
+
+      int iter = 0;
+      for (auto& weight : this->m_weight_values) {
+        weight = make_unique<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+        iter++;
+      }
+    }
+
+    if(comm->enable_subgrid_async_communication()==true){
+      const auto local_inputs_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_inputs));
+      auto local_activations0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[0]));
+      auto subset0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[0]));
+
+
+      kfac::TranslateBetweenGridsVCAsync( *local_inputs_vc,
+                                          *local_activations0,
+                                          *subset0,
+                                          this->m_requests_forward_end);
+
+
+      int iter = 0;
+      for (auto& weight : this->m_weight_values) {
+        auto& weights = this->m_layer->get_weights(iter);
+        const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
+        auto& weight_values = dtw->get_values();
+        const auto weight_ptr = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&weight_values);
+        auto weight_input_ptr = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&(*weight));
+        El::Copy(dtw->get_values(),*weight);
+        kfac::TranslateBetweenGridsSTARAsync( *weight_ptr,
+                                            *weight_input_ptr,
+                                            this->m_requests_forward_end);
+        iter++;
+      }
+
+
+    }
+    else{
+      El::Copy(local_inputs,*this->m_parent_local_activations[0]);
+
+      int iter = 0;
+      for (auto& weight : this->m_weight_values) {
+        auto& weights = this->m_layer->get_weights(iter);
+        const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
+        El::Copy(dtw->get_values(),*weight);
+        iter++;
+      }
+
+    }
+  }
+
+  if(comm->get_grid_type() == GridType::NO_GRID or comm->get_KFAC_subgrid_create_two_models()){
+
+    for (auto& input : this->m_parent_local_activations) {
+      if(dtl_parent.get_data_layout() == data_layout::DATA_PARALLEL)
+        input = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+      else
+        input = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+    }
+
+    for (auto& weight : this->m_weight_values) {
+        weight = make_unique<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+      }
+
+    El::LockedView( *(this->m_parent_local_activations[0]), local_inputs);
+
+    for(int i = 0; i<num_weights; ++i){
+      const auto& weights = this->m_layer->get_weights(i);
+      const auto& dtw = dynamic_cast<const data_type_weights<DataType>*>(&weights);
+      auto& weight_values = dtw->get_values();
+      const auto weight_ptr = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&weight_values);
+      El::LockedView(*(this->m_weight_values[i]), *weight_ptr);
+    }
+  }
+}
+
+template <El::Device Device>
+void kfac_block_bn<Device>::end_communication_forward_end(
+    lbann_comm* comm) {
+  if((comm->get_grid_type() == GridType::SECONDARY_GRID or comm->get_grid_type() == GridType::PRIMARY_GRID)
+      and comm->enable_subgrid_async_communication()
+      and comm->get_KFAC_subgrid_create_two_models()==false){
+    int num_local_activations = 1;
+    auto primary_grid_ranks = comm->get_primary_grid_ranks();
+    auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
+
+    for(auto& req:this->m_requests_forward_end){
+      ::Al::Wait<kfac::BackendT>(req);
+    }
+
+    if(primary_grid_ranks.size() < secondary_grid_ranks.size()){
+      for(int i=0; i<num_local_activations;++i){
+        auto local_activations0 = dynamic_cast<
+            El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[i]));
+        auto subset0 = dynamic_cast<
+            El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[i]));
+        kfac::TranslateBetweenGridsVC(*subset0,
+                                      *local_activations0);
+
+      }
+
+    }
+    this->m_requests_forward_end.clear();
+  }
+}
+
+
+template <El::Device Device>
+void kfac_block_bn<Device>::start_communication_backward_end(
+    lbann_comm* comm) {
+  int num_local_errors = 1, num_gradients = 2;
+  const auto child = this->m_layer->get_child_layers()[0];
+  const auto& dtl_child = dynamic_cast<const data_type_layer<DataType>&>(*child);
+  const auto& local_errors = dtl_child.get_error_signals();
+
+  if(comm->get_KFAC_subgrid_create_two_models() or comm->get_grid_type() == GridType::NO_GRID ){
+    this->m_child_local_errors.resize(num_local_errors);
+    this->m_weight_gradients.resize(num_gradients);
+  }
+  else{
+    if(this->m_child_local_errors.size()==0){
+      //Resize vectors
+      this->m_child_local_errors.resize(num_local_errors);
+      this->m_weight_gradients.resize(num_gradients);
+
+      //Initialize Dist Matrices
+      for (auto& error : this->m_child_local_errors) {
+
+        if(dtl_child.get_data_layout() == data_layout::DATA_PARALLEL){
+          error = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          if(comm->enable_subgrid_async_communication())
+            this->m_subset_matrix.push_back(
+                    make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_subset_grid(), 0));
+        }
+        else{
+          error = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          if(comm->enable_subgrid_async_communication())
+            LBANN_ERROR("Async prgoress is not supported for model-parallel layer layout in sub-grid parallelism");
+        }
+      }
+      //Initialize gradients
+      int iter = 0;
+      for (auto& gradient : this->m_weight_gradients) {
+        gradient = make_unique<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+        iter++;
+      }
+
+    }
+
+    if(comm->enable_subgrid_async_communication()==false)
+    {
+      El::Copy(local_errors,*this->m_child_local_errors[0]);
+
+      int iter = 0;
+      for (auto& gradient : this->m_weight_gradients) {
+        auto& weights = this->m_layer->get_weights(iter);
+        optimizer *optimizer = weights.get_optimizer();
+        auto* dto = dynamic_cast<data_type_optimizer<DataType>*>(optimizer);
+
+        El::Copy(dto->get_gradient(),*gradient);
+        iter++;
+      }
+    }
+    else{
+      const auto local_errors_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_errors));
+      auto local_errors0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_child_local_errors[0]));
+      auto subset1 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[1]));
+
+      kfac::TranslateBetweenGridsVCAsync(*local_errors_vc,
+                                              *local_errors0,
+                                              *subset1,
+                                              this->m_requests_backward_end);
+      int iter = 0;
+      for (auto& gradient : this->m_weight_gradients) {
+        auto& weights = this->m_layer->get_weights(iter);
+        optimizer *optimizer = weights.get_optimizer();
+        auto* dto = dynamic_cast<data_type_optimizer<DataType>*>(optimizer);
+        auto& gradient_values = dto->get_gradient();
+        const auto gradient_ptr = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&gradient_values);
+        auto gradient_input_ptr = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&(*gradient));
+        kfac::TranslateBetweenGridsSTARAsync( *gradient_ptr,
+                                            *gradient_input_ptr,
+                                            this->m_requests_backward_end);
+        iter++;
+      }
+    }//Async progress
+  }
+
+  if(comm->get_grid_type() == GridType::NO_GRID or comm->get_KFAC_subgrid_create_two_models()){
+    for (auto& error : this->m_child_local_errors) {
+      if(dtl_child.get_data_layout() == data_layout::DATA_PARALLEL)
+        error = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+      else
+        error = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+    }
+    //Initialize gradients
+    for (auto& gradient : this->m_weight_gradients) {
+      gradient = make_unique<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+    }
+    El::LockedView( *(this->m_child_local_errors[0]),local_errors );
+
+    for(int i = 0; i<num_gradients; ++i){
+      auto& weights = this->m_layer->get_weights(i);
+      optimizer *optimizer = weights.get_optimizer();
+      auto* dto = dynamic_cast<data_type_optimizer<DataType>*>(optimizer);
+      auto& gradient_values = dto->get_gradient();
+      const auto gradient_ptr = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&gradient_values);
+      El::LockedView(*(this->m_weight_gradients[i]), *gradient_ptr);
+    }
+  }
+}
+
+template <El::Device Device>
+void kfac_block_bn<Device>::end_communication_backward_end(
+    lbann_comm* comm) {
+  if((comm->get_grid_type() == GridType::SECONDARY_GRID or comm->get_grid_type() == GridType::PRIMARY_GRID)
+      and comm->enable_subgrid_async_communication()
+      and comm->get_KFAC_subgrid_create_two_models()==false){
+    auto primary_grid_ranks = comm->get_primary_grid_ranks();
+    auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
+
+    for(auto& req:this->m_requests_backward_end){
+      ::Al::Wait<kfac::BackendT>(req);
+    }
+
+    if(primary_grid_ranks.size() < secondary_grid_ranks.size()){
+      auto local_errors0 = dynamic_cast<
+          El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_child_local_errors[0]));
+      auto subset1 = dynamic_cast<
+          El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[1]));
+      kfac::TranslateBetweenGridsVC(*subset1,
+                                    *local_errors0);
+    }
+    this->m_requests_backward_end.clear();
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Helper functions to communicate inverse matrices
+////////////////////////////////////////////////////////////////////////////////
+template <El::Device Device>
+int kfac_block_bn<Device>::get_inverse_matrices(El::Matrix<DataType, Device>& output, int offset)
+{
+
+  El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(m_fisher_inverse);
+  const size_t height = m_num_channels*2;
+  const size_t size_inv = height*height;
+
+  El::copy::util::InterleaveMatrix(
+                              size_inv, 1,
+                              m_fisher_inverse.LockedBuffer(), 1, size_inv,
+                              output.Buffer(offset,0),
+                              1, size_inv,
+                              sync_info);
+  offset+=size_inv;
+
+  return offset;
+}
+
+
+template <El::Device Device>
+int kfac_block_bn<Device>::set_inverse_matrices(El::Matrix<DataType, Device>& workspace,
+                          int offset,
+                          lbann_comm *comm)
+{
+  El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(m_fisher_inverse);
+
+  const size_t height = m_num_channels*2;
+  const size_t size_inv = height*height;
+
+  if(m_fisher_inverse.Height()==0)
+    m_fisher_inverse.Resize(height, height);
+
+  El::copy::util::InterleaveMatrix(
+                              size_inv, 1,
+                              workspace.LockedBuffer(offset,0), 1, size_inv,
+                              m_fisher_inverse.Buffer(),
+                              1, size_inv,
+                              sync_info);
+  offset+=size_inv;
+  return offset;
+}
+
+template <El::Device Device>
+int kfac_block_bn<Device>::get_inverse_matrices_size(lbann_comm *comm)
+{
+  const size_t height = m_num_channels*2;
+  const size_t inverse_size = height*height;
+  return inverse_size;
 }
 
 template class kfac_block_bn<El::Device::CPU>;

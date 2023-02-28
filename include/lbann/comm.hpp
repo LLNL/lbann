@@ -173,8 +173,23 @@ public:
    */
   void split_trainers(int procs_per_trainer=-1, int trainer_grid_height=-1);
 
-  /** Split the commicator for the given trainer into primary and seconday*/
-  void split_trainer_grid(int num_process_primary_grid=0, bool create_two_models=false);
+  /** Split the commicator for the given trainer into primary and secondary
+   *
+   *  @param num_process_primar_grid Absolute number of MPI ranks
+   *  assigned to the primary grid
+   *  @param create_two_models Create a secondary copy of the model on
+   *  the secondary grid to perform redundant computation and minimize
+   *  communication.
+   *  @param enable_async_comm Use non-blocking sends and receivces
+   *  @param enable_topo_aware Assign primary and secondary grid
+   *  resources so that they are interleaved and thus should be
+   *  allocated to the same compute node assuming that there are
+   *  always an even number of accelerators per node.
+   */
+  void split_trainer_grid(int num_process_primary_grid=0,
+                          bool create_two_models=false,
+                          bool enable_async_comm=false,
+                          bool enable_topo_aware=false);
 
   /** Get trainer grid number (0: no primary/secondary grid, 1: part of primary grid, 2: part of secondary grid). */
   inline GridType get_grid_type() const noexcept { return m_grid_type; }
@@ -191,7 +206,13 @@ public:
   /** Return the COMM_WORLD rank of the rank'th processor in trainer. */
   inline int get_world_rank(int trainer, int rank) const noexcept
   {
-    return m_procs_per_trainer * trainer + rank;
+    if(m_secondary_grid_ranks.size() == 0){
+      return m_procs_per_trainer * trainer + rank;
+    }
+    else{
+      return (m_secondary_grid_ranks.size() + m_primary_grid_ranks.size()) * trainer + rank;
+    }
+
   }
   /** Return the "rank" of the trainer that this rank is in */
   inline int map_world_rank_to_trainer_rank(int world_rank) const noexcept
@@ -223,10 +244,14 @@ public:
   inline El::Grid& get_trainer_grid() { return *m_grid; }
   /** Return a read-only grid to use for this trainer. */
   inline const El::Grid& get_trainer_grid() const { return *m_grid; }
-  /** Return secondary grid to use for this trainer. */
+  /** Return secondary grid to use for this trainer when sub-grid parallelism is enabled. */
   inline El::Grid& get_secondary_grid() { return *m_secondary_grid; }
   /** Return read-only secondary grid to use for this trainer. */
   inline const El::Grid& get_secondary_grid() const { return *m_secondary_grid; }
+  /** Return subset grid to use for this trainer when sub-grid parallelism is enabled. */
+  inline El::Grid& get_subset_grid() { return *m_subset_grid; }
+  /** Return read-only subset grid to use for this trainer when sub-grid parallelism is enabled. */
+  inline const El::Grid& get_subset_grid() const { return *m_subset_grid; }
   /** Return the total number of trainers. */
   inline int get_num_trainers() const noexcept { return m_num_trainers; }
   /* Return the number of processes in a trainer. */
@@ -912,6 +937,9 @@ public:
 
   bool get_KFAC_subgrid_create_two_models(){ return m_create_two_models; }
 
+  /** Return asynchronous flag for sub-grid parallelism */
+  bool enable_subgrid_async_communication(){ return m_subgrid_async_progress; }
+
   /**
    * Return a communicator containing num_per_group processors.
    *
@@ -973,12 +1001,12 @@ private:
    */
   int m_threads_per_proc;
 
-  /** Grid typer for current process when sub-grid parallelism is enabled */
+  /** Grid type for current process when sub-grid parallelism is enabled */
   GridType m_grid_type = GridType::NO_GRID;
 
-  bool m_create_two_models=false;
+  bool m_create_two_models=false, m_subgrid_async_progress=false;
 
-  std::unique_ptr<El::Grid> m_secondary_grid;
+  std::unique_ptr<El::Grid> m_secondary_grid, m_subset_grid;
 
   /**
   Ranks in primary and secondary grids

@@ -75,6 +75,7 @@ public:
     std::vector<double> damping_err_params,
     std::vector<double> damping_bn_act_params,
     std::vector<double> damping_bn_err_params,
+    std::vector<bool> kfac_use_interval,
     size_t damping_warmup_steps,
     double kronecker_decay,
     bool print_time,  bool print_matrix, bool print_matrix_summary,
@@ -85,7 +86,11 @@ public:
     std::vector<std::string> disable_layers,
     double learning_rate_factor,
     double learning_rate_factor_gru,
-    size_t compute_interval);
+    size_t compute_interval,
+    bool distribute_precondition_compute,
+    bool use_eigen_decomposition,
+    bool enable_copy_errors,
+    bool enable_copy_activations);
 
   ~KFAC() noexcept = default;
   KFAC(KFAC const& other) = delete;
@@ -163,9 +168,13 @@ protected:
    */
   kfac::KFACExecutionContext* do_get_new_execution_context() const final;
 
-  void send_recv_inverse_matrices(
+  void start_send_recv_inverse_matrices(
     ExeContextType& context,
     lbann_comm *comm);
+  void end_send_recv_inverse_matrices(
+    ExeContextType& context,
+    lbann_comm *comm);
+
 
 private:
 
@@ -195,7 +204,15 @@ private:
     model& model);
 #endif // 0
 
+  /** @brief Data exchange functions to synchronize model and weights */
   void sync_weights_model(model& model, lbann_comm *comm);
+  void start_sync_weights_async(model& model, lbann_comm *comm);
+  void end_sync_weights_async(model& model, lbann_comm *comm);
+
+  void start_old_async_weights_model(model& model, lbann_comm *comm,ExeContextType& context);
+  void end_old_async_weights_model(model& model, lbann_comm *comm,ExeContextType& context);
+  void allgather_precondition_gradient(lbann_comm& comm,ExeContextType& context);
+
 
   /** @brief The KFAC stopping criteria. */
   std::unique_ptr<TermCriteriaType> m_stopping_criteria;
@@ -239,9 +256,42 @@ private:
 
   /** @brief Whether inverse of Kronecker factors are available. */
   bool m_has_kronecker_inverse=false;
+
+  /** @brief KFAC Compute interval. */
   size_t m_compute_interval;
 
+  /** @brief distribute precondition gradient compute. */
+  bool m_distribute_precondition_compute;
+
+  /** @brief copy errors to a temporary matrix to increase overlap of compute and communication. */
+  bool m_enable_copy_errors;
+
+  /** @brief copy activations to a temporary matrix to increase overlap of compute and communication. */
+  bool m_enable_copy_activations;
+
+  /** @brief use eigen value decomposition for inversing the matrix. */
+  bool m_use_eigen_decomposition;
+
   El::Matrix<double, El::Device::CPU> m_inverse_matrices_size;
+
+  int m_global_inverse_buffer_size=0, m_weight_matrices_buffer_size=0;
+
+  /** @brief vector for async communication reqs. */
+  std::vector<kfac::ReqT>m_inverse_matrix_communication_reqs, m_weights_communication_reqs;
+
+  /** @brief Profiling variables. */
+  int m_time_span_inverse_comm=0,
+      m_time_span_inverse_send_recv=0,
+      m_time_span_forward_comm=0,
+      m_time_span_forward_comm_end=0,
+      m_time_span_backward_comm=0,
+      m_time_span_backward_comm_end=0,
+      m_time_span_precond_comm=0,
+      m_time_forward_pass=0,
+      m_time_backward_pass=0,
+      m_time_kfac=0;
+
+  std::vector<bool> m_use_KFAC_epoch;
 
 }; // class KFAC
 

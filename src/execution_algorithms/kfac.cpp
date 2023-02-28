@@ -33,10 +33,12 @@
 #include "lbann/execution_algorithms/kfac/kfac_block.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_block_bn.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_block_fc_conv.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_block_channelwise_fc.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_block_gru.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_util.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/learning/fully_connected.hpp"
+#include "lbann/layers/learning/channelwise_fully_connected.hpp"
 #include "lbann/layers/learning/convolution.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/models/model.hpp"
@@ -58,6 +60,7 @@ KFAC::KFAC(
   std::vector<double> damping_err_params,
   std::vector<double> damping_bn_act_params,
   std::vector<double> damping_bn_err_params,
+  std::vector<bool> kfac_use_interval,
   size_t damping_warmup_steps,
   double kronecker_decay,
   bool print_time,  bool print_matrix, bool print_matrix_summary,
@@ -68,7 +71,12 @@ KFAC::KFAC(
   std::vector<std::string> disable_layers,
   double learning_rate_factor,
   double learning_rate_factor_gru,
-  size_t compute_interval)
+  size_t compute_interval,
+  bool distribute_precondition_compute,
+  bool use_eigen_decomposition,
+  bool enable_copy_errors,
+  bool enable_copy_activations)
+
   : TrainingAlgorithm{std::move(name)},
     m_stopping_criteria{std::move(stop)},
     m_damping_act_params{std::move(damping_act_params)},
@@ -87,7 +95,12 @@ KFAC::KFAC(
     m_disable_layers{std::move(disable_layers)},
     m_learning_rate_factor{learning_rate_factor},
     m_learning_rate_factor_gru{learning_rate_factor_gru},
-    m_compute_interval{compute_interval}
+    m_compute_interval{compute_interval},
+    m_distribute_precondition_compute{distribute_precondition_compute},
+    m_enable_copy_errors{enable_copy_errors},
+    m_enable_copy_activations{enable_copy_activations},
+    m_use_eigen_decomposition{use_eigen_decomposition},
+    m_use_KFAC_epoch{std::move(kfac_use_interval)}
 {}
 
 std::string KFAC::get_type() const { return "KFAC"; }
@@ -150,6 +163,10 @@ void KFAC::train(
   // Run callbacks.
   do_train_begin_cbs(model);
 
+  if(sgd_context.get_epoch() == 0){
+    m_has_kronecker_inverse = false;
+  }
+
   // Start iterating
   bool is_start_of_epoch = true;
   sgd_context.start_timer();
@@ -162,9 +179,6 @@ void KFAC::train(
       dc.reset_mode(sgd_context);
       do_epoch_begin_cbs(model);
       is_start_of_epoch = false;
-      //sync weights if we have a separate model for primary and secondary grid
-      if(comm.get_KFAC_subgrid_create_two_models() and comm.get_grid_type()!=GridType::NO_GRID)
-        sync_weights_model(model, model.get_comm());
     }
 
     // Train a mini batch. Returns "true" if the data_coordinator
@@ -172,6 +186,16 @@ void KFAC::train(
     if (train_mini_batch(kfac_context, model, dc)) {
       // Finalize epoch
       sgd_context.inc_epoch();
+
+      m_time_span_inverse_comm = 0;
+      m_time_span_backward_comm = 0;
+      m_time_span_backward_comm_end = 0;
+      m_time_span_forward_comm = 0;
+      m_time_span_forward_comm_end = 0;
+      m_time_span_precond_comm = 0;
+      m_time_forward_pass = 0;
+      m_time_backward_pass =0;
+      m_time_kfac = 0;
 
       if(comm.get_KFAC_subgrid_create_two_models()
         or comm.get_grid_type()==GridType::NO_GRID
@@ -217,6 +241,7 @@ void KFAC::train(
         is_start_of_epoch = true;
       }
     }
+
   }
 
   sgd_context.stop_timer();
@@ -229,6 +254,8 @@ void KFAC::train(
         or comm.get_grid_type()==GridType::NO_GRID
         or comm.get_grid_type()==GridType::PRIMARY_GRID)
     do_train_end_cbs(model);
+
+
 }
 
 // =============================================
@@ -241,7 +268,9 @@ bool KFAC::train_mini_batch(
   model& model,
   data_coordinator& dc)
 {
+  bool profile=true;
   auto& sgd_context = kfac_context.get_sgd_execution_context();
+  auto current_epoch = sgd_context.get_epoch();
 
   model.reset_mode(sgd_context, execution_mode::training);
   dc.reset_mode(sgd_context);
@@ -261,18 +290,54 @@ bool KFAC::train_mini_batch(
     {
 #endif
       if(comm.get_grid_type()==GridType::PRIMARY_GRID
-        or comm.get_KFAC_subgrid_create_two_models()
+        or (comm.get_KFAC_subgrid_create_two_models() and compute_inverse)
         or comm.get_grid_type() == GridType::NO_GRID){
+
+        // When two models are created, we perform forward on both models; therefore
+        // we need to synchronize weights only
+        if(comm.get_KFAC_subgrid_create_two_models()
+            and comm.get_grid_type()!=GridType::NO_GRID
+            and compute_inverse
+            and comm.enable_subgrid_async_communication()){
+          start_old_async_weights_model(model, model.get_comm(),kfac_context);
+          if(comm.get_grid_type()==GridType::SECONDARY_GRID)
+            end_old_async_weights_model(model, model.get_comm(),kfac_context);
+        }
+
+        //sync model when async communication is disbaled and two models are created
+
+        if(comm.get_KFAC_subgrid_create_two_models() and
+            comm.enable_subgrid_async_communication()==false and
+            compute_inverse)
+          sync_weights_model(model, model.get_comm());
+
         // Forward prop step
         model.clear_gradients();
-        // sync_weights_model(model, model.get_comm());
+
+#ifdef LBANN_HAS_GPU
+        if(profile){
+          hydrogen::gpu::SynchronizeDevice();
+        }
+#endif // LBANN_HAS_GPU
+        auto t_start = std::chrono::high_resolution_clock::now();
         model.forward_prop(execution_mode::training);
+#ifdef LBANN_HAS_GPU
+        if(profile){
+          hydrogen::gpu::SynchronizeDevice();
+        }
+#endif // LBANN_HAS_GPU
+        auto t_stop = std::chrono::high_resolution_clock::now();
+        m_time_forward_pass += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
       }
+
       if(compute_inverse)
+      {
+        // Transfer activations from primary to secondary grid and setup
         on_forward_prop_end(kfac_context, model);
+      }
 
       if(comm.get_grid_type()==GridType::PRIMARY_GRID
-        or comm.get_KFAC_subgrid_create_two_models()
+        or (comm.get_KFAC_subgrid_create_two_models() and compute_inverse)
         or comm.get_grid_type() == GridType::NO_GRID){
         // check if the data coordinator has finished the epoch and kickoff
         // background I/O
@@ -284,32 +349,89 @@ bool KFAC::train_mini_batch(
           sgd_context.get_current_mini_batch_size());
 
         // Backward prop step
+#ifdef LBANN_HAS_GPU
+        if(profile){
+          hydrogen::gpu::SynchronizeDevice();
+        }
+#endif // LBANN_HAS_GPU
+        auto t_start = std::chrono::high_resolution_clock::now();
+
         model.get_objective_function()->differentiate();
         model.backward_prop();
+
+#ifdef LBANN_HAS_GPU
+        if(profile){
+          hydrogen::gpu::SynchronizeDevice();
+        }
+#endif // LBANN_HAS_GPU
+        auto t_stop = std::chrono::high_resolution_clock::now();
+        m_time_backward_pass += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
       }
       else{
         finished = dc.epoch_complete(execution_mode::training);
       }
 
-      if(compute_inverse)
+      // Overlapping async communication in two models approach for weight synchronization
+      if(comm.get_KFAC_subgrid_create_two_models()
+          and comm.get_grid_type()==GridType::PRIMARY_GRID
+          and compute_inverse
+          and comm.enable_subgrid_async_communication())
+          end_old_async_weights_model(model, model.get_comm(),kfac_context);
+
+      if(compute_inverse){
+#ifdef LBANN_HAS_GPU
+        if(profile){
+          hydrogen::gpu::SynchronizeDevice();
+        }
+#endif // LBANN_HAS_GPU
+        auto t_start = std::chrono::high_resolution_clock::now();
+        // Kfac computation
         on_backward_prop_end(kfac_context, model);
+#ifdef LBANN_HAS_GPU
+        if(profile){
+          hydrogen::gpu::SynchronizeDevice();
+        }
+#endif // LBANN_HAS_GPU
+        auto t_stop = std::chrono::high_resolution_clock::now();
+        m_time_kfac += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
+      }
+
+
       else if(comm.get_grid_type()==GridType::NO_GRID or m_has_kronecker_inverse==true)
       {
+        auto t_start = std::chrono::high_resolution_clock::now();
+
+
         if(comm.get_KFAC_subgrid_create_two_models() or comm.get_grid_type() == GridType::PRIMARY_GRID or comm.get_grid_type() == GridType::NO_GRID){
           for(auto& block : kfac_context.m_blocks){
+              if((size_t) comm.get_rank_in_trainer() != block->get_inverse_proc_rank() and m_distribute_precondition_compute)
+                continue;
               const bool is_gru = dynamic_cast<kfac_block_gru<Device>*>(block.get()) != nullptr;
-              block->compute_preconditioned_gradients(
-                  &comm,
-                  is_gru ? m_learning_rate_factor_gru : m_learning_rate_factor,
-                  m_print_matrix, m_print_matrix_summary,
-                  m_print_time);
+
+              bool apply_precondition = false;
+
+              if(m_use_KFAC_epoch.size() <= current_epoch)
+                apply_precondition = true;
+              else
+                apply_precondition = m_use_KFAC_epoch[current_epoch];
+              if(apply_precondition){
+                block->compute_preconditioned_gradients(
+                    &comm,
+                    is_gru ? m_learning_rate_factor_gru : m_learning_rate_factor,
+                    m_print_matrix, m_print_matrix_summary,
+                    m_print_time);
+              }
           }
+          if(m_distribute_precondition_compute)
+            allgather_precondition_gradient(comm, kfac_context);
         }
+        auto t_stop = std::chrono::high_resolution_clock::now();
+        m_time_span_precond_comm += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
       }
 
 
       if(comm.get_grid_type()==GridType::PRIMARY_GRID
-        or comm.get_KFAC_subgrid_create_two_models()
+        or (comm.get_KFAC_subgrid_create_two_models() and compute_inverse)
         or comm.get_grid_type() == GridType::NO_GRID){
         model.get_objective_function()->compute_weight_regularization();
 
@@ -400,13 +522,43 @@ void KFAC::do_batch_end_cbs(model& model)
 // Sub-grid implementation
 // =============================================
 
+
+
+void KFAC::allgather_precondition_gradient(lbann_comm& comm, ExeContextType& context){
+  // List-up buffers to synchronize.
+  std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> buffers;
+  int local_buffer_size = 0, global_buffer_size = 0;
+  for(auto& block : context.m_blocks)
+    for(auto L : block->get_preconditioned_grad_buffers()) {
+      const size_t rank = block->get_inverse_proc_rank();
+      buffers.emplace_back(rank, L);
+      assert(L->Width() == 1);
+      if(rank == (size_t) comm.get_rank_in_trainer())
+        local_buffer_size += L->Height();
+      global_buffer_size += L->Height();
+    }
+
+  // Perform allgather.
+  const auto allgather_mode = kfac::kfac_allgather_mode::ALLREDUCE;
+  const auto is_buffer_needed = kfac::is_allgather_buffer_required(allgather_mode);
+  El::Matrix<DataType, Device>& local_buffer =
+    context.get_workspace_matrix(
+      "allgather_send_buffer",
+      is_buffer_needed.first ? local_buffer_size : 0,
+      1);
+  El::Matrix<DataType, Device>& global_buffer =
+    context.get_workspace_matrix(
+      "allgather_recv_buffer",
+      is_buffer_needed.second ? global_buffer_size : 0,
+      1);
+  kfac::allgather_blocks(
+    buffers, local_buffer, global_buffer, &comm, allgather_mode);
+}
+
 void KFAC::sync_weights_model(model& model, lbann_comm *comm){
   //Does not support Model parallel only Data Parallel
-
   const auto layers = model.get_layers();
   const El::mpi::Comm & combined_comm = comm->get_combined_grid_comm();
-  // const El::mpi::Comm & trainer_comm = comm->get_KFAC_comm();
-  // const int comm_size = El::mpi::Size(comm->get_KFAC_comm());
   const int comm_rank = El::mpi::Rank(comm->get_KFAC_comm());
 
   std::vector<int> primary_grid_ranks = comm->get_primary_grid_ranks();
@@ -425,11 +577,6 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
     {
       auto& weights = layer->get_weights(idx_weight);
 
-      //Ignore weights without optimizer
-      // const optimizer *w_optimizer = weights.get_optimizer();
-      // if(w_optimizer == nullptr)
-      //   continue;
-
       int height = weights.get_matrix_height();
       int width = weights.get_matrix_width();
       global_buffer_size += height*width;
@@ -438,9 +585,6 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
 
   El::Matrix<DataType, Device> global_buffer(global_buffer_size, 1);
   El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer);
-
-
-
 
   size_t offset = 0;
   //copy weights to global buffers
@@ -452,11 +596,6 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
     {
       auto& weights = layer->get_weights(idx_weight);
 
-      //Ignore weights without optimizer
-      // const optimizer *w_optimizer = weights.get_optimizer();
-      // if(w_optimizer == nullptr)
-      //   continue;
-
       data_type_weights<DataType>* weights_dt = dynamic_cast<data_type_weights<DataType>*>(&weights);
 
       int height = weights.get_matrix_height();
@@ -468,7 +607,6 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
       auto view = El::View(global_buffer, El::IR(offset, offset+height*width), El::ALL);
       offset += height*width;
 
-      // El::Copy(weight_values.LockedMatrix(), view);
       El::copy::util::InterleaveMatrix(
                                 height, width,
                                 weight_values_->LockedBuffer(), 1, height,
@@ -478,6 +616,7 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
     }
   }
 
+  kfac::BackendT::comm_type& backend_comm = combined_comm.template GetComm<kfac::BackendT>(sync_info);
 
   if(comm->get_grid_type() == GridType::PRIMARY_GRID)
   {
@@ -487,33 +626,102 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
 
       if(comm_rank + num_send*num_process_primary_grid < num_process_secondary_grid){
         int to_send_index = comm_rank + num_send*num_process_primary_grid;
-        ::El::mpi::Send(
+        ::Al::Send<kfac::BackendT>(
            (DataType*)global_buffer.Buffer(),
            global_buffer_size,
            secondary_grid_ranks[to_send_index],
-           combined_comm,
-           sync_info);
+           backend_comm);
       }
     }
-
   }
   if(comm->get_grid_type() == GridType::SECONDARY_GRID)
   {
     int recv_index = comm_rank % num_process_primary_grid;
-    // std::cout<<"My CommRank:"<<comm_rank<<" Recv:"<<primary_grid_ranks[recv_index]<<"\n";
-    ::El::mpi::Recv(
+    ::Al::Recv<kfac::BackendT>(
        (DataType*)global_buffer.Buffer(),
        global_buffer_size,
        primary_grid_ranks[recv_index],
-       combined_comm,
-       sync_info);
+       backend_comm);
+  }
+
+  if(comm->get_grid_type() == GridType::SECONDARY_GRID){
+    //copy weights from global buffers
+    offset = 0;
+    for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++)
+    {
+      const auto &layer = *i_layer;
+      const size_t num_weights = layer->num_weights();
+      for (size_t idx_weight = 0; idx_weight < num_weights; ++idx_weight)
+      {
+        auto& weights = layer->get_weights(idx_weight);
+
+        data_type_weights<DataType>* weights_dt = dynamic_cast<data_type_weights<DataType>*>(&weights);
+
+        int height = weights.get_matrix_height();
+        int width = weights.get_matrix_width();
+
+        El::Matrix<DataType, Device> weight_buffer(height, width);
+
+        El::AbstractDistMatrix<DataType>& weight_values = weights_dt->get_values();
+        El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,Device>* weight_values_ = dynamic_cast<El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,Device>*>(&weight_values);
+
+        auto view = El::View(global_buffer, El::IR(offset, offset+height*width), El::ALL);
+        offset += height*width;
+
+        El::copy::util::InterleaveMatrix(
+                                  height, width,
+                                  view.Buffer(), 1, height,
+                                  weight_values_->Buffer(),
+                                  1, height,
+                                  sync_info);
+      }
+    }
+  }
+}
+
+void KFAC::start_old_async_weights_model(model& model, lbann_comm *comm,ExeContextType& context){
+  //Does not support Model parallel only Data Parallel
+  const auto layers = model.get_layers();
+  const El::mpi::Comm & combined_comm = comm->get_combined_grid_comm();
+  const int comm_rank = El::mpi::Rank(comm->get_KFAC_comm());
+
+  std::vector<int> primary_grid_ranks = comm->get_primary_grid_ranks();
+  std::vector<int> secondary_grid_ranks = comm->get_secondary_grid_ranks();
+
+  int num_process_primary_grid = (int)primary_grid_ranks.size();
+  int num_process_secondary_grid = (int)secondary_grid_ranks.size();
+
+  //Computing size of global buffer
+  int global_buffer_size = 0;
+  if(m_weight_matrices_buffer_size==0){
+
+    for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++)
+    {
+      const auto &layer = *i_layer;
+      const size_t num_weights = layer->num_weights();
+      for (size_t idx_weight = 0; idx_weight < num_weights; ++idx_weight)
+      {
+        auto& weights = layer->get_weights(idx_weight);
+
+        int height = weights.get_matrix_height();
+        int width = weights.get_matrix_width();
+        global_buffer_size += height*width;
+      }
+    }
+    m_weight_matrices_buffer_size = global_buffer_size;
   }
 
 
 
+  El::Matrix<DataType, Device>& global_buffer =
+      context.get_workspace_matrix(
+        "model_weights_buffer",
+        m_weight_matrices_buffer_size,
+        1);
+  El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer);
 
-  //copy weights from global buffers
-  offset = 0;
+  size_t offset = 0;
+  //copy weights to global buffers
   for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++)
   {
     const auto &layer = *i_layer;
@@ -522,17 +730,10 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
     {
       auto& weights = layer->get_weights(idx_weight);
 
-      //Ignore weights without optimizer
-      // const optimizer *w_optimizer = weights.get_optimizer();
-      // if(w_optimizer == nullptr)
-      //   continue;
-
       data_type_weights<DataType>* weights_dt = dynamic_cast<data_type_weights<DataType>*>(&weights);
 
       int height = weights.get_matrix_height();
       int width = weights.get_matrix_width();
-
-      El::Matrix<DataType, Device> weight_buffer(height, width);
 
       El::AbstractDistMatrix<DataType>& weight_values = weights_dt->get_values();
       El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,Device>* weight_values_ = dynamic_cast<El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,Device>*>(&weight_values);
@@ -542,15 +743,172 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
 
       El::copy::util::InterleaveMatrix(
                                 height, width,
-                                view.Buffer(), 1, height,
-                                weight_values_->Buffer(),
+                                weight_values_->LockedBuffer(), 1, height,
+                                view.Buffer(),
                                 1, height,
                                 sync_info);
-      // weights.set_values(weight_buffer);
     }
   }
 
+  kfac::BackendT::comm_type& backend_comm = combined_comm.template GetComm<kfac::BackendT>(sync_info);
 
+  if(comm->get_grid_type() == GridType::PRIMARY_GRID)
+  {
+    int num_sends = (int)std::ceil((float)num_process_secondary_grid/(float)num_process_primary_grid);
+    for(int num_send = 0; num_send<num_sends; num_send++){
+
+
+      if(comm_rank + num_send*num_process_primary_grid < num_process_secondary_grid){
+        int to_send_index = comm_rank + num_send*num_process_primary_grid;
+        kfac::BackendT::req_type send_req;
+        m_weights_communication_reqs.push_back(send_req);
+        ::Al::NonblockingSend<kfac::BackendT>(
+           (DataType*)global_buffer.Buffer(),
+           global_buffer_size,
+           secondary_grid_ranks[to_send_index],
+           backend_comm,
+           m_weights_communication_reqs.back());
+      }
+    }
+  }
+  if(comm->get_grid_type() == GridType::SECONDARY_GRID)
+  {
+    kfac::BackendT::req_type send_req;
+    m_weights_communication_reqs.push_back(send_req);
+    int recv_index = comm_rank % num_process_primary_grid;
+    ::Al::NonblockingRecv<kfac::BackendT>(
+       (DataType*)global_buffer.Buffer(),
+       global_buffer_size,
+       primary_grid_ranks[recv_index],
+       backend_comm,
+       m_weights_communication_reqs.back());
+  }
+}
+
+void KFAC::end_old_async_weights_model(model& model, lbann_comm *comm,ExeContextType& context){
+  for(auto& req:m_weights_communication_reqs){
+    ::Al::Wait<kfac::BackendT>(req);
+  }
+
+  m_weights_communication_reqs.clear();
+  if(comm->get_grid_type() == GridType::SECONDARY_GRID){
+    El::Matrix<DataType, Device>& global_buffer =
+      context.get_workspace_matrix(
+        "model_weights_buffer",
+        m_weight_matrices_buffer_size,
+        1);
+
+    //copy weights from global buffers
+    int offset = 0;
+    const auto layers = model.get_layers();
+    El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer);
+
+    for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++)
+    {
+      const auto &layer = *i_layer;
+      const size_t num_weights = layer->num_weights();
+      for (size_t idx_weight = 0; idx_weight < num_weights; ++idx_weight)
+      {
+        auto& weights = layer->get_weights(idx_weight);
+
+        data_type_weights<DataType>* weights_dt = dynamic_cast<data_type_weights<DataType>*>(&weights);
+
+        int height = weights.get_matrix_height();
+        int width = weights.get_matrix_width();
+
+        El::Matrix<DataType, Device> weight_buffer(height, width);
+
+        El::AbstractDistMatrix<DataType>& weight_values = weights_dt->get_values();
+        El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,Device>* weight_values_ = dynamic_cast<El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,Device>*>(&weight_values);
+
+        auto view = El::View(global_buffer, El::IR(offset, offset+height*width), El::ALL);
+        offset += height*width;
+
+        El::copy::util::InterleaveMatrix(
+                                  height, width,
+                                  view.Buffer(), 1, height,
+                                  weight_values_->Buffer(),
+                                  1, height,
+                                  sync_info);
+      }
+    }
+  }
+
+}
+void KFAC::start_sync_weights_async(model& model, lbann_comm *comm){
+  //Does not support Model parallel only Data Parallel
+  const auto layers = model.get_layers();
+  const El::mpi::Comm & combined_comm = comm->get_combined_grid_comm();
+  const int comm_rank = El::mpi::Rank(comm->get_KFAC_comm());
+
+  std::vector<int> primary_grid_ranks = comm->get_primary_grid_ranks();
+  std::vector<int> secondary_grid_ranks = comm->get_secondary_grid_ranks();
+
+  int num_process_primary_grid = (int)primary_grid_ranks.size();
+  int num_process_secondary_grid = (int)secondary_grid_ranks.size();
+
+
+
+  if(comm->get_grid_type() == GridType::PRIMARY_GRID)
+  {
+    int num_sends = (int)std::ceil((float)num_process_secondary_grid/(float)num_process_primary_grid);
+    for(weights* weight:model.get_weights()){
+      int height = weight->get_matrix_height();
+      int width = weight->get_matrix_width();
+      auto dtw = dynamic_cast<data_type_weights<DataType>*>(&(*weight));
+      auto& weight_values = dtw->get_values().Matrix();
+      El::Matrix<DataType,Device>* weight_values_ = dynamic_cast<El::Matrix<DataType,Device>*>(&weight_values);
+      El::SyncInfo<Device> sync_info = El::SyncInfoFromMatrix(*weight_values_);
+      kfac::BackendT::comm_type& backend_comm = combined_comm.template GetComm<kfac::BackendT>(sync_info);
+
+      for(int num_send = 0; num_send<num_sends; num_send++){
+
+        if(comm_rank + num_send*num_process_primary_grid < num_process_secondary_grid){
+          kfac::BackendT::req_type send_req;
+          m_weights_communication_reqs.push_back(send_req);
+          int to_send_index = comm_rank + num_send*num_process_primary_grid;
+          ::Al::NonblockingSend<kfac::BackendT>(
+             weight_values_->Buffer(),
+             height*width,
+             secondary_grid_ranks[to_send_index],
+             backend_comm,
+             m_weights_communication_reqs.back());
+        }
+      }
+
+    }
+  }
+  if(comm->get_grid_type() == GridType::SECONDARY_GRID)
+  {
+    int recv_index = comm_rank % num_process_primary_grid;
+    for(weights* weight:model.get_weights()){
+      int height = weight->get_matrix_height();
+      int width = weight->get_matrix_width();
+      auto dtw = dynamic_cast<data_type_weights<DataType>*>(&(*weight));
+      auto& weight_values = dtw->get_values().Matrix();
+      El::Matrix<DataType,Device>* weight_values_ = dynamic_cast<El::Matrix<DataType,Device>*>(&weight_values);
+      El::SyncInfo<Device> sync_info = El::SyncInfoFromMatrix(*weight_values_);
+      kfac::BackendT::comm_type& backend_comm = combined_comm.template GetComm<kfac::BackendT>(sync_info);
+      kfac::BackendT::req_type recv_req;
+      m_weights_communication_reqs.push_back(recv_req);
+
+      ::Al::NonblockingRecv<kfac::BackendT>(
+         (DataType*)weight_values_->Buffer(),
+         height*width,
+         primary_grid_ranks[recv_index],
+         backend_comm,
+         m_weights_communication_reqs.back());
+    }
+
+  }
+
+
+}
+void KFAC::end_sync_weights_async(model& model, lbann_comm *comm){
+  for(auto& req:m_weights_communication_reqs){
+    ::Al::Wait<kfac::BackendT>(req);
+  }
+  m_weights_communication_reqs.clear();
 }
 
 template <typename DataType, El::Device Device>
@@ -561,6 +919,10 @@ void send_recv_precomputed_gradients(
     lbann_comm *comm,
     const kfac::kfac_allgather_mode& mode) {
 
+  // Transfer precomputed gradients when distributed
+  // 2nd order gradient conditioning is enabled
+
+  //  const int comm_size = El::mpi::Size(comm->get_KFAC_comm());
   const int comm_rank = El::mpi::Rank(comm->get_KFAC_comm());
   const int combined_rank = El::mpi::Rank(comm->get_combined_grid_comm());
 
@@ -642,16 +1004,21 @@ void send_recv_precomputed_gradients(
 }
 
 
-void KFAC::send_recv_inverse_matrices(
+void KFAC::start_send_recv_inverse_matrices(
   ExeContextType& context,
   lbann_comm *comm) {
 
-  int global_buffer_inverses_size = 0;
+  int global_buffer_inverses_size = m_global_inverse_buffer_size;
+  m_inverse_matrix_communication_reqs.clear();
 
   //calculate the size of the buffer
-  for(auto& block : context.m_blocks){
+  if(global_buffer_inverses_size == 0 ){
+    for(auto& block : context.m_blocks){
       global_buffer_inverses_size += block->get_inverse_matrices_size(comm);
     }
+    m_global_inverse_buffer_size = global_buffer_inverses_size;
+  }
+
 
   El::Matrix<DataType, Device>& global_buffer_inverse =
       context.get_workspace_matrix(
@@ -669,16 +1036,15 @@ void KFAC::send_recv_inverse_matrices(
   }
 
   const int comm_rank = comm->get_rank_in_trainer();
-  const int combined_rank = El::mpi::Rank(comm->get_combined_grid_comm());
 
   std::vector<int> primary_grid_ranks = comm->get_primary_grid_ranks();
   std::vector<int> secondary_grid_ranks = comm->get_secondary_grid_ranks();
-
   int num_process_primary_grid = (int)primary_grid_ranks.size();
   int num_process_secondary_grid = (int)secondary_grid_ranks.size();
 
   const El::mpi::Comm & combined_comm = comm->get_combined_grid_comm();
-
+  El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer_inverse);
+  kfac::BackendT::comm_type& backend_comm = combined_comm.template GetComm<kfac::BackendT>(sync_info);
 
   if(comm->get_grid_type() == GridType::SECONDARY_GRID)
   {
@@ -687,43 +1053,113 @@ void KFAC::send_recv_inverse_matrices(
     for(int num_send = 0; num_send<num_sends; num_send++){
 
       if(comm_rank + num_send*num_process_secondary_grid < num_process_primary_grid){
-
-        El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer_inverse);
-
+        El::Synchronize(sync_info);
         int to_send_index = comm_rank + num_send*num_process_secondary_grid;
-        ::El::mpi::TaggedSend(
+        auto t_start = std::chrono::high_resolution_clock::now();
+        if(comm->enable_subgrid_async_communication()){
+
+          kfac::BackendT::req_type send_request;
+          m_inverse_matrix_communication_reqs.push_back(send_request);
+          ::Al::NonblockingSend<kfac::BackendT>(
            (DataType*)global_buffer_inverse.Buffer(),
            global_buffer_inverses_size,
            primary_grid_ranks[to_send_index],
+           backend_comm,
+           m_inverse_matrix_communication_reqs.back());
+        }
+        else{
+          El::Synchronize(sync_info);
+          ::Al::Send<kfac::BackendT>(
+           (DataType*)global_buffer_inverse.Buffer(),
+           global_buffer_inverses_size,
            primary_grid_ranks[to_send_index],
-           combined_comm,
-           sync_info);
+           backend_comm);
+        }
+        auto t_stop = std::chrono::high_resolution_clock::now();
+        m_time_span_inverse_send_recv += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
       }
     }
-
-
   }
   if(comm->get_grid_type() == GridType::PRIMARY_GRID)
   {
-    El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer_inverse);
-    int recv_index = comm_rank % num_process_secondary_grid;
-    ::El::mpi::TaggedRecv(
-       (DataType*)global_buffer_inverse.Buffer(),
-       global_buffer_inverses_size,
-       secondary_grid_ranks[recv_index],
-       combined_rank,
-       combined_comm,
-       sync_info);
 
-    // Copy blocks from the buffer.
-    {
-      offset = 0;
-      for(auto& block : context.m_blocks) {
-        offset = block->set_inverse_matrices(global_buffer_inverse, offset,comm);
-      }
+    int recv_index = comm_rank % num_process_secondary_grid;
+
+    auto t_start = std::chrono::high_resolution_clock::now();
+
+    if(comm->enable_subgrid_async_communication()){
+
+      kfac::BackendT::req_type recv_request;
+      m_inverse_matrix_communication_reqs.push_back(recv_request);
+      ::Al::NonblockingRecv<kfac::BackendT>(
+         (DataType*)global_buffer_inverse.Buffer(),
+         global_buffer_inverses_size,
+         secondary_grid_ranks[recv_index],
+         backend_comm,
+         m_inverse_matrix_communication_reqs.back());
+    }
+    else{
+
+      ::Al::Recv<kfac::BackendT>(
+         (DataType*)global_buffer_inverse.Buffer(),
+         global_buffer_inverses_size,
+         secondary_grid_ranks[recv_index],
+         backend_comm);
+    }
+    auto t_stop = std::chrono::high_resolution_clock::now();
+    m_time_span_inverse_send_recv += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
+  }
+}
+
+void KFAC::end_send_recv_inverse_matrices(
+  ExeContextType& context,
+  lbann_comm *comm) {
+  if(comm->enable_subgrid_async_communication()){
+    for(auto& req: m_inverse_matrix_communication_reqs){
+      ::Al::Wait<kfac::BackendT>(req);
+    }
+  }
+  El::Matrix<DataType, Device>& global_buffer_inverse =
+      context.get_workspace_matrix(
+        "allgather_inverse_recv_buffer",
+        m_global_inverse_buffer_size,
+        1);
+
+  // Copy blocks from the buffer.
+  if(comm->get_grid_type() == GridType::PRIMARY_GRID)
+  {
+    int offset = 0;
+    for(auto& block : context.m_blocks) {
+      offset = block->set_inverse_matrices(global_buffer_inverse, offset,comm);
     }
   }
 
+}
+// Broadcast the variabes in sub-grid parallelism
+int broadcast_variable_grids(
+  int variable,
+  lbann_comm *comm){
+
+  El::Int variable_local[1], recvMetaData[1];
+  if(comm->get_grid_type()==GridType::PRIMARY_GRID)
+  {
+    variable_local[0] = variable;
+  }
+  else if (comm->get_grid_type()==GridType::SECONDARY_GRID){
+    variable_local[0] = 0;
+  }
+
+  if (comm->get_grid_type()==GridType::PRIMARY_GRID or
+    comm->get_grid_type()==GridType::SECONDARY_GRID)
+  {
+    El::SyncInfo<El::Device::CPU> syncGeneralCPU = El::SyncInfo<El::Device::CPU>();
+    El::mpi::AllReduce( variable_local, recvMetaData, 1, El::mpi::MAX, comm->get_combined_grid_comm(),syncGeneralCPU);
+    return recvMetaData[0];
+  }
+  else
+  {
+    return 0;
+  }
 }
 
 // =============================================
@@ -736,6 +1172,7 @@ void KFAC::on_forward_prop_end(
 
   auto& comm = *model.get_comm();
   const auto layers = model.get_layers();
+  auto& sgd_context = context.get_sgd_execution_context();
 
   // List up layers to be updated
   if(context.m_blocks.size() == 0){
@@ -749,11 +1186,13 @@ void KFAC::on_forward_prop_end(
       const auto l_conv = dynamic_cast<convolution_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
       const auto l_bn = dynamic_cast<batch_normalization_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
       const auto l_gru = dynamic_cast<gru_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
+      const auto l_cw_fc = dynamic_cast<channelwise_fully_connected_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
       const bool is_fc = (l_fc != nullptr);
       const bool is_conv = (l_conv != nullptr);
       const bool is_bn = (l_bn != nullptr);
       const bool is_gru = (l_gru != nullptr);
-      if(!(is_fc || is_conv || is_bn || is_gru))
+      const bool is_cw_fc = (l_cw_fc != nullptr);
+      if(!(is_fc || is_conv || is_bn || is_gru || is_cw_fc))
         continue;
 
       if(std::find(m_disable_layers.begin(), m_disable_layers.end(), l->get_name()) != m_disable_layers.end()) {
@@ -787,17 +1226,41 @@ void KFAC::on_forward_prop_end(
         LBANN_ERROR(err.str());
       }
 
+      bool enable_copy_errors = this->m_enable_copy_errors;
+      bool enable_copy_activations = this->m_enable_copy_activations;
+
       std::shared_ptr<kfac_block<Device>> block;
+
+      const auto parent = l->get_parent_layers()[0];
+      const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
+      const int parent_activations_size = dtl_parent.get_activations().Height();
+
+      int input_size, output_size;
+      input_size = broadcast_variable_grids(parent_activations_size,
+                                            &comm);
+
+
       if(is_fc || is_conv) {
+        if(is_fc)
+          output_size = broadcast_variable_grids(l_fc->get_activations().Height(), &comm);
+        else
+          output_size = broadcast_variable_grids(l_conv->get_activations().Height(), &comm);
         block = std::make_shared<kfac_block_fc_conv<Device>>(
-            l, &context, layer_id, proc_rank, is_conv);
+            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, input_size, output_size, is_conv);
       } else if(is_bn) {
+        output_size = broadcast_variable_grids(l_bn->get_activations().Height(), &comm);
         block = std::make_shared<kfac_block_bn<Device>>(
-            l, &context, layer_id, proc_rank);
+            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, input_size, output_size);
       } else if(is_gru) {
+        output_size = broadcast_variable_grids(l_gru->get_activations().Height(), &comm);
         block = std::make_shared<kfac_block_gru<Device>>(
-            l, &context, layer_id, proc_rank);
+            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, input_size, output_size);
+      } else if(is_cw_fc){
+        output_size = broadcast_variable_grids(l_cw_fc->get_activations().Height(), &comm);
+        block = std::make_shared<kfac_block_channelwise_fc<Device>>(
+            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, input_size, output_size);
       }
+
 
       context.m_blocks.push_back(std::move(block));
       if(m_inverse_strategy != kfac::kfac_inverse_strategy::ROOT)
@@ -815,14 +1278,55 @@ void KFAC::on_forward_prop_end(
     prof_region_end("kfac-setup", prof_sync);
   }
 
+  auto t_start_f = std::chrono::high_resolution_clock::now();
+  for(auto& block : context.m_blocks) {
+    // Start forward end exchange (like activations and weights)
+    if(m_has_kronecker_inverse and this->m_enable_copy_activations)
+    {
+      block->end_communication_forward_end(&comm);
+    }
+  }
+  auto t_stop_f = std::chrono::high_resolution_clock::now();
+  m_time_span_forward_comm_end += std::chrono::duration_cast<std::chrono::microseconds>(t_stop_f - t_start_f).count();
+
   for(auto& block : context.m_blocks)
     block->on_forward_prop_end(&comm);
 
   if(context.get_step()>1 and
     (comm.get_grid_type()==GridType::PRIMARY_GRID or comm.get_grid_type()==GridType::SECONDARY_GRID)){
-    send_recv_inverse_matrices(context, &comm);
+    auto t_start = std::chrono::high_resolution_clock::now();
+    start_send_recv_inverse_matrices(context, &comm);
+    auto t_stop = std::chrono::high_resolution_clock::now();
+    m_time_span_inverse_comm += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
+
+
     m_has_kronecker_inverse = true;
   }
+  auto t_start_b = std::chrono::high_resolution_clock::now();
+  for(auto& block : context.m_blocks) {
+    if(m_has_kronecker_inverse and this->m_enable_copy_errors)
+    {
+      block->end_communication_backward_end(&comm);
+    }
+  }
+  auto t_stop_b = std::chrono::high_resolution_clock::now();
+  m_time_span_backward_comm_end += std::chrono::duration_cast<std::chrono::microseconds>(t_stop_b - t_start_b).count();
+
+
+#ifdef LBANN_HAS_GPU
+  hydrogen::gpu::SynchronizeDevice();
+#endif // LBANN_HAS_GPU
+  auto t_start = std::chrono::high_resolution_clock::now();
+  int current_batch_size = sgd_context.get_current_mini_batch_size();
+  current_batch_size = broadcast_variable_grids(current_batch_size, &comm);
+  for(auto& block : context.m_blocks) {
+    // Start forward end exchange (like activations and weights)
+    block->set_current_batch_size(current_batch_size);
+    block->start_communication_forward_end(&comm);
+  }
+  auto t_stop = std::chrono::high_resolution_clock::now();
+  m_time_span_forward_comm += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
+
 
 }
 
@@ -833,6 +1337,7 @@ void KFAC::on_backward_prop_end(
   // Get some configs
   auto& comm = *model.get_comm();
   const auto& sgd_context = context.get_sgd_execution_context();
+  auto current_epoch = sgd_context.get_epoch();
   const size_t num_steps = sgd_context.get_step();
   const auto layers = model.get_layers();
   const bool is_first_step = (!m_has_kronecker_inverse);
@@ -867,14 +1372,41 @@ void KFAC::on_backward_prop_end(
         * std::min((double) num_steps/ m_update_interval_steps, 1.0);
   }
 
+  if(context.get_step()>1 and
+    (comm.get_grid_type()==GridType::PRIMARY_GRID or comm.get_grid_type()==GridType::SECONDARY_GRID)){
+      auto t_start = std::chrono::high_resolution_clock::now();
+
+      end_send_recv_inverse_matrices(context, &comm);
+      auto t_stop = std::chrono::high_resolution_clock::now();
+      m_time_span_inverse_comm += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
+    }
+
   // List up layers to be updated
   if(context.m_blocks.size() == 0){
     LBANN_ERROR("K-FAC blocks have not been setup");
   }
+
+  auto t_start_f = std::chrono::high_resolution_clock::now();
+  for(auto& block : context.m_blocks) {
+    if(comm.get_grid_type() == GridType::SECONDARY_GRID or m_enable_copy_activations == false)
+      block->end_communication_forward_end(&comm);
+  }
+  auto t_stop_f = std::chrono::high_resolution_clock::now();
+  m_time_span_forward_comm_end += std::chrono::duration_cast<std::chrono::microseconds>(t_stop_f - t_start_f).count();
+
+#ifdef LBANN_HAS_GPU
+  hydrogen::gpu::SynchronizeDevice();
+#endif // LBANN_HAS_GPU
+  auto t_start = std::chrono::high_resolution_clock::now();
   for(auto& block : context.m_blocks) {
     // Exchange activations and errors
-    block->initialize_activations_and_errors(&comm, 1, 1, 0);
+    // block->end_communication_forward_end(&comm);
+    block->start_communication_backward_end(&comm);
+    if(comm.get_grid_type() == GridType::SECONDARY_GRID)
+      block->end_communication_backward_end(&comm);
   }
+  auto t_stop = std::chrono::high_resolution_clock::now();
+  m_time_span_backward_comm += std::chrono::duration_cast<std::chrono::microseconds>(t_stop - t_start).count();
 
 
   if(comm.get_grid_type() == GridType::SECONDARY_GRID or comm.get_grid_type() == GridType::NO_GRID)
@@ -901,7 +1433,9 @@ void KFAC::on_backward_prop_end(
 
 #ifdef LBANN_NVPROF
     prof_region_begin("kfac-update/local-barrier", prof_color, prof_sync);
-    CHECK_CUDA(cudaDeviceSynchronize());
+#ifdef LBANN_HAS_GPU
+    hydrogen::gpu::SynchronizeDevice();
+#endif // LBANN_HAS_GPU
     comm.trainer_barrier();
     prof_region_end("kfac-update/local-barrier", prof_sync);
 #endif // LBANN_NVPROF
@@ -931,7 +1465,9 @@ void KFAC::on_backward_prop_end(
 
 #ifdef LBANN_NVPROF
     prof_region_begin("kfac-update/reduce-scatter-barrier", prof_color, prof_sync);
-    CHECK_CUDA(cudaDeviceSynchronize());
+#ifdef LBANN_HAS_GPU
+    hydrogen::gpu::SynchronizeDevice();
+#endif // LBANN_HAS_GPU
     comm.trainer_barrier();
     prof_region_end("kfac-update/reduce-scatter-barrier", prof_sync);
 #endif // LBANN_NVPROF
@@ -965,6 +1501,7 @@ void KFAC::on_backward_prop_end(
         is_bn ? context.m_damping_bn_act : context.m_damping_act,
         is_bn ? context.m_damping_bn_err : context.m_damping_err,
         is_gru ? m_learning_rate_factor_gru : m_learning_rate_factor,
+        m_use_eigen_decomposition,
         m_print_matrix, m_print_matrix_summary,
         m_print_time);
     prof_region_end(("kfac-inverse/" + block->get_name()).c_str(), prof_sync);
@@ -1001,40 +1538,57 @@ void KFAC::on_backward_prop_end(
 
 #ifdef LBANN_NVPROF
   prof_region_begin("kfac-inverse-barrier", prof_color, prof_sync);
-  CHECK_CUDA(cudaDeviceSynchronize());
+#ifdef LBANN_HAS_GPU
+  hydrogen::gpu::SynchronizeDevice();
+#endif // LBANN_HAS_GPU
   comm.trainer_barrier();
   prof_region_end("kfac-inverse-barrier", prof_sync);
 #endif // LBANN_NVPROF
   }
   else{
     // Primary grid does nothing
-    // m_has_kronecker_inverse = true;
   }
 
-  if(comm.get_grid_type() == GridType::SECONDARY_GRID or comm.get_grid_type() == GridType::PRIMARY_GRID)
-  {
-    // send_recv_inverse_matrices(
-    //     context,
-    //     model.get_comm());
-  }
 
   if(comm.get_KFAC_subgrid_create_two_models() or comm.get_grid_type() == GridType::PRIMARY_GRID or comm.get_grid_type() == GridType::NO_GRID){
     if(m_has_kronecker_inverse==true)
     {
       for(auto& block : context.m_blocks)
       {
-        // std::cout<<"Rank:"<<El::mpi::Rank(comm.get_combined_grid_comm())<<"KInside  for\n";
+        if((size_t) comm.get_rank_in_trainer() != block->get_inverse_proc_rank() and m_distribute_precondition_compute)
+          continue;
         const bool is_gru = dynamic_cast<kfac_block_gru<Device>*>(block.get()) != nullptr;
-        block->compute_preconditioned_gradients(
-            &comm,
-            is_gru ? m_learning_rate_factor_gru : m_learning_rate_factor,
-            m_print_matrix, m_print_matrix_summary,
-            m_print_time);
+
+        bool apply_precondition = false;
+
+
+        if(m_use_KFAC_epoch.size() <= current_epoch)
+          apply_precondition = true;
+        else
+          apply_precondition = m_use_KFAC_epoch[current_epoch];
+        if(apply_precondition){
+          block->compute_preconditioned_gradients(
+              &comm,
+              is_gru ? m_learning_rate_factor_gru : m_learning_rate_factor,
+              m_print_matrix, m_print_matrix_summary,
+              m_print_time);
+        }
     	}
+      if(m_distribute_precondition_compute)
+        allgather_precondition_gradient(comm, context);
+
+    }
+    if(comm.get_grid_type() == GridType::PRIMARY_GRID and this->m_enable_copy_errors==false)
+    {
+      for(auto& block : context.m_blocks) {
+        // Exchange activations and errors
+          block->end_communication_backward_end(&comm);
+      }
     }
   }
 
   if(is_first_step) {
+    int kfac_inverse_size = 0;
     for(auto& block : context.m_blocks) {
       for(auto& info : block->get_internal_matrix_info()) {
         std::ostringstream oss;
@@ -1046,6 +1600,11 @@ void KFAC::on_backward_prop_end(
             << "x" << std::get<2>(info)
             << ")" << std::endl;
         std::cout << oss.str();
+        if(std::get<0>(info).find("inverse_A")!=std::string::npos
+          or std::get<0>(info).find("inverse_A")!=std::string::npos or true)
+        {
+          kfac_inverse_size += (int)std::get<1>(info) *(int)std::get<2>(info);
+        }
       }
     }
   }
@@ -1053,6 +1612,40 @@ void KFAC::on_backward_prop_end(
 }
 
 } // namespace lbann
+
+std::vector<bool> parse_sgd_kfac_combination_interval(std::string const& str){
+  //Iterations, e.g. "12 50 70"
+  //0- 11: use SGD
+  //12-49: use KFAC
+  //50-70: use SGD
+
+  std::string del = " ";
+  std::vector <int>  tokens;
+  std::vector<bool> use_KFAC_epoch;
+  int start = 0;
+  int end = str.find(del);
+  while (end != -1) {
+      tokens.push_back( std::stoi(str.substr(start, end - start)));
+      start = end + del.size();
+      end = str.find(del, start);
+  }
+
+  //use SGD until the first specified epoch
+  int count = 0;
+  bool use_kfac = false;
+  if((int)tokens.size() > 0){
+
+    for(int epoch=0; epoch<tokens.back(); ++epoch){
+      if(epoch == tokens[count]){
+        use_kfac = !use_kfac;
+        count += 1;
+      }
+
+      use_KFAC_epoch.push_back(use_kfac);
+    }
+  }
+  return use_KFAC_epoch;
+}
 
 template <>
 std::unique_ptr<lbann::KFAC> lbann::make<lbann::KFAC>(
@@ -1115,6 +1708,7 @@ std::unique_ptr<lbann::KFAC> lbann::make<lbann::KFAC>(
   const std::vector<double> damping_err_params = parse_damping_params(kfac_params.damping_err());
   const std::vector<double> damping_bn_act_params = parse_damping_params(kfac_params.damping_bn_act());
   const std::vector<double> damping_bn_err_params = parse_damping_params(kfac_params.damping_bn_err());
+  const std::vector<bool> kfac_use_interval = parse_sgd_kfac_combination_interval(kfac_params.kfac_use_interval());
   size_t damping_warmup_steps = kfac_params.damping_warmup_steps();
   if(damping_warmup_steps == 0) damping_warmup_steps = AlgoType::damping_warmup_steps_default;
   double kronecker_decay = kfac_params.kronecker_decay();
@@ -1127,6 +1721,10 @@ std::unique_ptr<lbann::KFAC> lbann::make<lbann::KFAC>(
   const std::vector<size_t> update_intervals = parse_update_intervals(kfac_params.update_intervals());
   const size_t update_interval_steps = kfac_params.update_interval_steps();
   const size_t compute_interval = El::Max(kfac_params.compute_interval(), 1);
+  const bool distribute_precondition_compute = kfac_params.distribute_precondition_compute();
+  const bool enable_copy_errors = kfac_params.enable_copy_errors();
+  const bool enable_copy_activations = kfac_params.enable_copy_activations();
+  const bool use_eigen_decomposition = kfac_params.use_eigen_decomposition();
 
   const std::string inverse_strategy_str = kfac_params.inverse_strategy();
   kfac::kfac_inverse_strategy inverse_strategy;
@@ -1160,6 +1758,7 @@ std::unique_ptr<lbann::KFAC> lbann::make<lbann::KFAC>(
     std::move(damping_err_params),
     std::move(damping_bn_act_params),
     std::move(damping_bn_err_params),
+    std::move(kfac_use_interval),
     damping_warmup_steps,
     kronecker_decay,
     print_time,
@@ -1172,6 +1771,9 @@ std::unique_ptr<lbann::KFAC> lbann::make<lbann::KFAC>(
     std::move(disable_layers),
     learning_rate_factor,
     learning_rate_factor_gru,
-    compute_interval);
-
+    compute_interval,
+    distribute_precondition_compute,
+    use_eigen_decomposition,
+    enable_copy_errors,
+    enable_copy_activations);
 }

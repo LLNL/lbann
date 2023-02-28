@@ -83,8 +83,12 @@ SendRecvWeights::get_partner_model(model const& m,
   // Get partner process
   const El::Int rank_in_trainer = comm.get_rank_in_trainer();
   const El::Int procs_per_trainer = comm.get_procs_per_trainer();
+
+  const bool subgrid = m.get_comm()->get_grid_type() != GridType::NO_GRID;
   const El::Int partner_rank_in_world =
-    (partner_trainer * procs_per_trainer + rank_in_trainer);
+    (partner_trainer * procs_per_trainer * (subgrid ? 2 : 1) + rank_in_trainer);
+  auto& w = comm.get_world_comm();
+  comm.intertrainer_barrier();
 
   // Exchange weights with partner
   for (auto&& w_ptr : partner_model.get_weights()) {
@@ -105,6 +109,7 @@ SendRecvWeights::get_partner_model(model const& m,
                  comm.get_world_comm(),
                  partner_rank_in_world,
                  partner_rank_in_world);
+
 
     // If the two weights objects use different optimizers across
     // the set of trainers, we need to be careful about how we
