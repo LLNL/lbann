@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_L1_NORM_LAYER_INSTANTIATE
+#include "lbann/comm.hpp"
 #include "lbann/layers/loss/l1_norm.hpp"
 
 namespace lbann {
@@ -80,6 +81,39 @@ void l1_norm_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
   local_bp_cpu(this->get_local_prev_activations(),
                this->m_workspace->LockedMatrix(),
                this->get_local_error_signals());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void l1_norm_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+
+  // Initialize workspace
+  m_workspace->Empty();
+  m_workspace->AlignWith(this->get_prev_activations());
+  m_workspace->Resize(1, this->get_prev_activations().Width());
+
+  // Compute local contributions and accumulate
+  /// @todo Consider reduce rather than allreduce
+  local_fp_compute();
+  this->get_comm()->allreduce(*m_workspace, m_workspace->RedundantComm());
+  El::Copy(*m_workspace, this->get_activations());
+
+  // Clean up
+  m_workspace->Empty();
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void l1_norm_layer<TensorDataType, T_layout, Dev>::bp_compute() {
+
+  // Initialize workspace
+  m_workspace->Empty();
+  m_workspace->AlignWith(this->get_prev_activations());
+  El::Copy(this->get_prev_error_signals(), *m_workspace);
+
+  // Compute local gradients
+  local_bp_compute();
+
+  // Clean up
+  m_workspace->Empty();
 }
 
 #define PROTO(T)                                      \

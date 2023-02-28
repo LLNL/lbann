@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_MISC_ONE_HOT_IMPL_HPP_INCLUDED
 
 #include "lbann/layers/misc/one_hot.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
