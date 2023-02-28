@@ -30,7 +30,9 @@ set_full_path(THIS_DIR_HEADERS
   cross_entropy.hpp
   cross_entropy_impl.hpp
   l1_norm.hpp
+  l1_norm_impl.hpp
   l2_norm2.hpp
+  l2_norm2_impl.hpp
   mean_absolute_error.hpp
   mean_absolute_error_impl.hpp
   mean_squared_error.hpp

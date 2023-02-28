@@ -30,8 +30,6 @@
 #define LBANN_WEIGHTS_HPP
 
 #include "lbann/base.hpp"
-//#include "lbann/comm.hpp"
-//#include "lbann/io/persist.hpp"
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/description.hpp"
 

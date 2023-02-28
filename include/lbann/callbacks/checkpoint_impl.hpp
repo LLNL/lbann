@@ -29,7 +29,6 @@
 #define LBANN_CALLBACKS_CALLBACK_CHECKPOINT_IMPL_HPP_INCLUDED
 
 #include "lbann/callbacks/checkpoint.hpp"
-//#include "lbann/utils/exception.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/io/file_io.hpp"
 

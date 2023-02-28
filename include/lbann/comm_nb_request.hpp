@@ -27,17 +27,11 @@
 #ifndef LBANN_COMM_NB_REQUEST_HPP_INCLUDED
 #define LBANN_COMM_NB_REQUEST_HPP_INCLUDED
 
-//#include "base.hpp"
 #include "lbann_config.hpp"
 
-// #ifdef LBANN_HAS_CUDA
-// #include <cuda_runtime.h>
-// #endif // LBANN_HAS_CUDA
 #ifdef LBANN_HAS_ALUMINUM
 #include <Al.hpp>
 #endif // LBANN_HAS_ALUMINUM
-
-//#include "detect_El_mpi.hpp"
 
 #include <map>
 #include <typeindex>

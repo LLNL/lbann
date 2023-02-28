@@ -29,9 +29,12 @@ set_full_path(THIS_DIR_HEADERS
   elu.hpp
   identity.hpp
   relu.hpp
+  relu_impl.hpp
   leaky_relu.hpp
+  leaky_relu_impl.hpp
   log_softmax.hpp
   softmax.hpp
+  softmax_impl.hpp
   )
 
 # Propagate the files up the tree

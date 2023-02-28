@@ -30,7 +30,6 @@
 
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/io/persist.hpp"
-//#include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/utils/visitor_hooks.hpp"
 
 namespace lbann {
@@ -123,23 +122,13 @@ public:
     m_active_trainer = t;
   }
 
-  inline trainer& get_active_trainer();// {
-  //   if(m_active_trainer == nullptr) {
-  //     LBANN_ERROR("No active trainer for the checkpoint callback");
-  //   }
-  //   return *m_active_trainer;
-  // }
+  inline trainer& get_active_trainer();
 
   inline void set_active_training_algorithm(TrainingAlgorithm* t){
     m_active_training_algorithm = t;
   }
 
-  inline TrainingAlgorithm& get_active_training_algorithm();// {
-  //   if(m_active_training_algorithm == nullptr) {
-  //     LBANN_ERROR("No active training algorithm for the checkpoint callback");
-  //   }
-  //   return *m_active_training_algorithm;
-  // }
+  inline TrainingAlgorithm& get_active_training_algorithm();
 
   inline void set_checkpoint_epochs(int epochs){
     m_checkpoint_epochs= epochs;

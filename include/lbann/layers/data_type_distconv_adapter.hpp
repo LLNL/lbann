@@ -27,13 +27,9 @@
 #ifndef LBANN_LAYERS_DATA_TYPE_DISTCONV_ADAPTER_HPP_INCLUDED
 #define LBANN_LAYERS_DATA_TYPE_DISTCONV_ADAPTER_HPP_INCLUDED
 
-// BVE FIXME
 #include "lbann/layers/distconv_adapter.hpp"
 #include "distconv/tensor/shuffle_mpi.hpp"
 #include "distconv/tensor/shuffle_mpi_cuda.hpp"
-// #include "distconv/tensor/shuffle_mpi_cuda_al.hpp"
-// #include "distconv/tensor/tensor_mpi_cuda.hpp"
-//#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 

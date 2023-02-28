@@ -28,19 +28,14 @@
 #define LBANN_OPTIMIZERS_OPTIMIZER_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-// BVE FIXME
 #include "lbann/comm_nb_request.hpp"
-//#include "lbann/comm.hpp"
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/compiler_control.hpp"
 #ifdef LBANN_HAS_GPU
 #include "lbann/utils/gpu/helpers.hpp"
 #endif // LBANN_HAS_GPU
 #include "lbann/utils/description.hpp"
-// BVE FIXME
-//#include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
-//#include "lbann/weights/weights.hpp"
 
 #include <memory>
 #include <string>

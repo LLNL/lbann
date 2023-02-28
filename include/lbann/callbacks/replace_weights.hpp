@@ -47,12 +47,6 @@ class replace_weights : public callback_base {
     std::vector<std::string> src,
     std::vector<std::string> dst,
     int batch_interval=1);
-    // : callback_base(batch_interval),
-    //   m_src_layer_names(std::move(src)),
-    //   m_dst_layer_names(std::move(dst));//  {
-  //   if(m_src_layer_names.size() != m_dst_layer_names.size())
-  //     LBANN_ERROR("In replace weights callback: number of src and dest layers does not match.");
-  // }
 
   replace_weights(
     const replace_weights&) = default;

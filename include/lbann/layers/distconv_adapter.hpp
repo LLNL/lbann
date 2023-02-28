@@ -27,15 +27,13 @@
 #ifndef LBANN_LAYERS_DISTCONV_ADAPTER_HPP_INCLUDED
 #define LBANN_LAYERS_DISTCONV_ADAPTER_HPP_INCLUDED
 
-//#include "lbann/utils/distconv.hpp"
-
 #include <unordered_map>
 #include <unordered_set>
 
 #include "distconv/tensor/distribution.hpp"
 #include "distconv/tensor/tensor.hpp"
 
-// BVE FIXME
+// Provide access to El::Int
 #include "El.hpp"
 
 namespace lbann {

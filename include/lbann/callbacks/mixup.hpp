@@ -58,12 +58,7 @@ namespace callback {
 class mixup : public callback_base {
 public:
   /** Apply mixup to layers named in layers with mixup parameter alpha. */
-  mixup(std::unordered_set<std::string> layers, float alpha); // :
-  //   callback_base(), m_layers(layers), m_alpha(alpha) {
-  //   if (alpha < 0.0f) {
-  //     LBANN_ERROR("Mixup alpha must be non-negative.");
-  //   }
-  // }
+  mixup(std::unordered_set<std::string> layers, float alpha);
 
   mixup* copy() const override { return new mixup(*this); }
   std::string name() const override { return "mixup"; }
