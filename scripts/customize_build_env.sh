@@ -307,25 +307,25 @@ cat <<EOF  >> ${yaml}
     hipcub:
       buildable: False
       version:
-      - 5.4.3
+      - 5.4.1
       externals:
-      - spec: hipcub@5.4.3 arch=${spack_arch}
-        prefix: /opt/rocm-5.4.3/hipcub
+      - spec: hipcub@5.4.1 arch=${spack_arch}
+        prefix: /opt/rocm-5.4.1/hipcub
         extra_attributes:
           compilers:
-            c: /opt/rocm-5.4.3/llvm/bin/clang
-            c++: /opt/rocm-5.4.3/llvm/bin/clang++
+            c: /opt/rocm-5.4.1/llvm/bin/clang
+            c++: /opt/rocm-5.4.1/llvm/bin/clang++
     llvm-amdgpu:
       buildable: False
       version:
-      - 5.4.3
+      - 5.4.1
       externals:
-      - spec: llvm-amdgpu@5.4.3 arch=${spack_arch}
-        prefix: /opt/rocm-5.4.3/llvm
+      - spec: llvm-amdgpu@5.4.1 arch=${spack_arch}
+        prefix: /opt/rocm-5.4.1/llvm
         extra_attributes:
           compilers:
-            c: /opt/rocm-5.4.3/llvm/bin/clang
-            c++: /opt/rocm-5.4.3/llvm/bin/clang++
+            c: /opt/rocm-5.4.1/llvm/bin/clang
+            c++: /opt/rocm-5.4.1/llvm/bin/clang++
     openmpi:
       buildable: False
       version:
