@@ -152,12 +152,6 @@ private:
 
 };
 
-template <typename T, data_layout L, El::Device D>
-void l2_norm2_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
-  proto.set_datatype(proto::ProtoDataType<T>);
-  proto.mutable_l2_norm2();
-}
-
 #ifndef LBANN_L2_NORM2_LAYER_INSTANTIATE
 
 #define PROTO_DEVICE(T, Device)                     \
