@@ -28,8 +28,6 @@
 #define LBANN_OBJECTIVE_FUNCTION_TERM_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-//#include "lbann/layers/layer.hpp"
-//#include "lbann/weights/weights.hpp"
 
 // Forward-declare protobuf classes
 namespace lbann_data {

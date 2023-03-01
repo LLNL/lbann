@@ -263,16 +263,7 @@ protected:
   // ===========================================================
 
   /** @brief Get the values matrix for a specific weights object */
-  InputAbsDistMatrixType const& weights_values(size_t idx) const; // {
-  //   if (idx >= m_weights_proxy.size())
-  //   {
-  //     LBANN_ERROR(
-  //       this->get_type()," layer \"",this->get_name(),"\" ",
-  //       "attempted to access weights ",idx,", ",
-  //       "but there are only ",m_weights_proxy.size()," weights");
-  //   }
-  //   return m_weights_proxy[idx].values();
-  // }
+  InputAbsDistMatrixType const& weights_values(size_t idx) const;
 
   /** @brief Get a specific master weights object.
    *
@@ -440,7 +431,6 @@ private:
 #endif // LBANN_HAS_GPU
 };
 
-#if 1
 #ifndef LBANN_DATA_TYPE_LAYER_INSTANTIATE
 #define PROTO(T)                                \
   extern template class data_type_layer<T>
@@ -453,7 +443,7 @@ private:
 #undef LBANN_INSTANTIATE_GPU_HALF
 
 #endif // LBANN_DATA_TYPE_LAYER_INSTANTIATE
-#endif
+
 } // namespace lbann
 
 #endif // LBANN_LAYERS_DATA_TYPE_LAYER_HPP_INCLUDED

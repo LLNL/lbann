@@ -69,20 +69,7 @@ protected:
     : argmin_layer(nullptr)
   {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override; // {
-  //   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-  //   this->set_output_dims({1});
-
-  //   // Make sure input tensor is 1-D
-  //   const auto input_dims = this->get_input_dims();
-  //   if (input_dims.size() != 1) {
-  //     LBANN_ERROR(get_type()," layer \"",this->get_name(),"\" ",
-  //                 "expects a 1-D input tensor, ",
-  //                 "but parent layer \"",this->get_parent_layer().get_name(),"\" ",
-  //                 "outputs a ",input_dims.size(),"-D tensor");
-  //   }
-
-  // }
+  void setup_dims(DataReaderMetaData& dr_metadata) override;
 
   void fp_compute() override;
 };

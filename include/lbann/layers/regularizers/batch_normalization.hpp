@@ -28,10 +28,8 @@
 #define LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
-//#include "lbann/utils/distconv.hpp"
 #include "lbann/proto/layers.pb.h"
 
 #ifdef LBANN_HAS_DISTCONV

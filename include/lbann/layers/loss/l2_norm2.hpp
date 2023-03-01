@@ -97,38 +97,9 @@ public:
 
   }
 
-  void fp_compute() override; // {
+  void fp_compute() override;
 
-  //   // Initialize workspace
-  //   m_workspace->Empty();
-  //   m_workspace->AlignWith(this->get_prev_activations());
-  //   m_workspace->Resize(1, this->get_prev_activations().Width());
-
-  //   // Compute local contributions and accumulate
-  //   /// @todo Consider reduce rather than allreduce
-  //   local_fp_compute();
-  //   this->get_comm()->allreduce(*m_workspace, m_workspace->RedundantComm());
-  //   El::Copy(*m_workspace, this->get_activations());
-
-  //   // Clean up
-  //   m_workspace->Empty();
-
-  // }
-
-  void bp_compute() override; // {
-
-  //   // Initialize workspace
-  //   m_workspace->Empty();
-  //   m_workspace->AlignWith(this->get_prev_activations());
-  //   El::Copy(this->get_prev_error_signals(), *m_workspace);
-
-  //   // Compute local gradients
-  //   local_bp_compute();
-
-  //   // Clean up
-  //   m_workspace->Empty();
-
-  // }
+  void bp_compute() override;
 
 protected:
 

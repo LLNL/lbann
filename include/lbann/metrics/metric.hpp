@@ -28,12 +28,7 @@
 #define LBANN_METRIC_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-// #include "lbann/comm.hpp"
-// #include "lbann/layers/layer.hpp"
-// #include "lbann/utils/exception.hpp"
-//#include "lbann/io/persist.hpp"
 
-//#include "lbann/utils/memory.hpp"
 #include <map>
 #include <typeindex>
 #include <vector>
