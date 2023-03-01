@@ -29,7 +29,6 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
-//#include "lbann/utils/distconv.hpp"
 #include "lbann/proto/layers.pb.h"
 
 #ifdef LBANN_HAS_DISTCONV

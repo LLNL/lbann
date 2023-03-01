@@ -35,11 +35,6 @@
 #include "lbann/proto/layers.pb.h"
 #include<iostream>
 
-
-// #ifdef LBANN_HAS_DISTCONV
-// #include "lbann/layers/math/distconv/distconv_matmul.hpp"
-// #endif // LBANN_HAS_DISTCONV
-
 namespace lbann
 {
 
@@ -589,7 +584,6 @@ void matmul_layer<TensorDataType, Layout, Device>::fp_compute() {
 }
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void matmul_layer<TensorDataType, Layout, Device>::bp_compute() {
-
   #ifdef LBANN_HAS_DISTCONV
   // We are guaranteed to have
   if(this->distconv_enabled()){

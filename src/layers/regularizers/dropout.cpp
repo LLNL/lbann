@@ -172,15 +172,15 @@ void dropout<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
   msg->set_keep_prob(m_keep_prob);
 }
 
-#define PROTO_DEVICE(T, DEVICE)                                          \
+#define PROTO_DEVICE(T, Device)                                          \
   template std::unique_ptr<Layer>                                        \
-  build_dropout_layer_from_pbuf<T, data_layout::DATA_PARALLEL, DEVICE>(  \
+  build_dropout_layer_from_pbuf<T, data_layout::DATA_PARALLEL, Device>(  \
     lbann_comm*, lbann_data::Layer const&);                              \
   template std::unique_ptr<Layer>                                        \
-  build_dropout_layer_from_pbuf<T, data_layout::MODEL_PARALLEL, DEVICE>( \
+  build_dropout_layer_from_pbuf<T, data_layout::MODEL_PARALLEL, Device>( \
     lbann_comm*, lbann_data::Layer const&);                              \
-  template class dropout<T, data_layout::DATA_PARALLEL, DEVICE>;         \
-  template class dropout<T, data_layout::MODEL_PARALLEL, DEVICE>
+  template class dropout<T, data_layout::DATA_PARALLEL, Device>;         \
+  template class dropout<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 
