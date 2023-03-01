@@ -26,7 +26,6 @@
 
 #define LBANN_CROSS_ENTROPY_LAYER_INSTANTIATE
 #include "lbann/layers/loss/cross_entropy_impl.hpp"
-//#include "lbann/utils/exception.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
