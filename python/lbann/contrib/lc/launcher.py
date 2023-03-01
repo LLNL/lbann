@@ -60,8 +60,6 @@ def make_batch_script(
     # touch the wrong GPU while figuring out ownership.
     if scheduler == 'slurm' and has_gpu(system):
         launcher_args.extend(['--mpibind=off'])
-        if system != 'corona':
-            launcher_args.extend(['--nvidia_compute_mode=default'])
 
     # Optimized thread affinity for Pascal
     # Note: Both GPUs are on socket 0, so we only use cores on that
