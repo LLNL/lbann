@@ -24,9 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-//#include "lbann/utils/exception.hpp"
 #include "lbann/models/model.hpp"
-
 
 #include "lbann/base.hpp"
 #include "lbann/callbacks/callback.hpp"
@@ -41,7 +39,6 @@
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/layers/transform/split.hpp"
-//#include "lbann/metrics/metric.hpp"
 #include "lbann/metrics/layer_metric.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
@@ -53,8 +50,6 @@
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/summary_impl.hpp"
 #include "lbann/utils/onnx_utils.hpp"
-
-//#include "lbann/weights/weights.hpp"
 
 #include "lbann/proto/model.pb.h"
 #include "lbann/proto/optimizers.pb.h"

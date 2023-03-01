@@ -28,7 +28,6 @@
 #define LBANN_OPTIMIZERS_OPTIMIZER_IMPL_HPP_INCLUDED
 
 #include "lbann/optimizers/optimizer.hpp"
-// BVE FIXME
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
@@ -42,17 +41,6 @@ void optimizer::add_to_gradient(El::AbstractDistMatrix<TensorDataType> const& co
   El::Scale(buf_scale, grad);
   El::Axpy(in_scale*scale, contrib, grad);
 }
-
-// void optimizer::clear_gradient() {
-//   for (auto& g : gradients_) {
-//     if (g.second->get_status() ==
-//         optimizer_gradient_status::allreduce_started) {
-//       g.second->complete_allreduce(*m_comm);
-//     }
-//     g.second->clear();
-//   }
-//   this->get_gradient_sources().clear();
-// }
 
 template <typename TensorDataType>
 El::AbstractDistMatrix<TensorDataType>& optimizer::get_gradient_buffer(
