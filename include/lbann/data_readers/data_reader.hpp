@@ -58,7 +58,6 @@ namespace conduit {
 namespace lbann {
 
 // Forward declarations
-//struct DataReaderMetaData;
 class Layer;
 class data_store_conduit;
 class thread_pool;

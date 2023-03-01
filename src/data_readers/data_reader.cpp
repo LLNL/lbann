@@ -75,7 +75,6 @@ void generic_data_reader::shuffle_indices(rng_gen& gen) {
   }
 }
 
-  /// @todo BVE FIXME
 void generic_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
   m_base_offset = 0;
   m_sample_stride = 1;
@@ -637,7 +636,6 @@ void generic_data_reader::use_unused_index_set(execution_mode m) {
   std::vector<int>().swap(m_unused_indices[m]); // Trick to force memory reallocation
 }
 
-/** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
 bool generic_data_reader::save_to_checkpoint_shared(persist& p, execution_mode mode) {
   if (get_comm()->am_trainer_master()) {
     write_cereal_archive<generic_data_reader>(
@@ -654,7 +652,6 @@ bool generic_data_reader::save_to_checkpoint_shared(persist& p, execution_mode m
   return true;
 }
 
-/** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
 bool lbann::generic_data_reader::load_from_checkpoint_shared(persist& p, execution_mode mode) {
   load_from_shared_cereal_archive<generic_data_reader>(
     *this,
@@ -708,7 +705,6 @@ const data_store_conduit& generic_data_reader::get_data_store() const {
   return *m_data_store;
 }
 
-/// returns a non-const ref to the data store
 data_store_conduit& generic_data_reader::get_data_store() {
   return const_cast<data_store_conduit&>(
     static_cast<const generic_data_reader&>(*this).get_data_store());

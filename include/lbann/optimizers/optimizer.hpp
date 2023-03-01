@@ -40,6 +40,7 @@
 #include <memory>
 #include <string>
 #include <unordered_set>
+#include <typeindex>
 
 namespace lbann_data {
 class Optimizer;
