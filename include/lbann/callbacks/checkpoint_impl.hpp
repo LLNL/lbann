@@ -132,11 +132,6 @@ inline bool read_latest(std::string filename, visitor_hook *hook, execution_mode
   return false;
 }
 
-// Builder function
-std::unique_ptr<callback_base>
-build_checkpoint_callback_from_pbuf(
-  const google::protobuf::Message&);
-
 } // namespace callback
 } // namespace lbann
 

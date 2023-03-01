@@ -33,10 +33,6 @@
 #include <Al.hpp>
 #endif // LBANN_HAS_ALUMINUM
 
-#include <map>
-#include <typeindex>
-#include <vector>
-
 namespace lbann {
 
 namespace Al {
