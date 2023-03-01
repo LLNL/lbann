@@ -27,7 +27,6 @@
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/layers/distconv_adapter.hpp"
 #endif // LBANN_HAS_DISTCONV
-//#include "lbann/utils/memory.hpp"
 #include "lbann/utils/serialize.hpp"
 #include <lbann/layers/layer.hpp>
 #include "lbann/weights/weights.hpp"
