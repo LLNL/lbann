@@ -36,7 +36,6 @@ namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
 namespace dc {
-  //using Backend = ::distconv::BackendDNNLib;
 template <typename TensorDataType>
 using ChannelwiseFullyConnected = ::distconv::ChannelwiseFullyConnected<Backend, TensorDataType>;
 } // namespace dc

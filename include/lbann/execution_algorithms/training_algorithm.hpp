@@ -39,8 +39,6 @@ namespace lbann {
 // Forward-declarations
 struct DataReaderMetaData;
 class data_coordinator;
-  //class lbann_callback;
-  //class lbann_comm;
 class ExecutionContext;
 class model;
 

@@ -52,7 +52,6 @@ using TensorShuffler = ::distconv::tensor::TensorMPICUDAShuffler<TensorDataType>
 
 template <typename InputTensorDataType,
           typename OutputTensorDataType = InputTensorDataType>
-//          typename OutputTensorDataType/* = InputTensorDataType*/>
 class data_type_distconv_adapter: public distconv_adapter {
 public:
   // Keep the older TensorDevType around for downstream layers
