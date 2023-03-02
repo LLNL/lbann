@@ -32,7 +32,6 @@
 #include <vector>
 #include <functional>
 
-//#include "lbann/comm.hpp"
 
 #include "lbann/utils/file_utils.hpp"
 

@@ -31,7 +31,6 @@
 
 #include "lbann/utils/enum_iterator.hpp"
 #include "lbann_config.hpp"
-//#include "lbann/utils/distconv.hpp"
 
 #include <string>
 #include <unordered_map>

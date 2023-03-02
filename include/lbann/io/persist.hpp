@@ -26,13 +26,10 @@
 // lbann_file_io .hpp .cpp - Input / output utilities
 ////////////////////////////////////////////////////////////////////////////////
 
-//#error
-
 #ifndef LBANN_PERSIST_H
 #define LBANN_PERSIST_H
 
 #include "lbann/base.hpp"
-//#include "lbann/utils/exception.hpp"
 #include "lbann/utils/enum_iterator.hpp"
 #include "El.hpp"
 #include <sstream>

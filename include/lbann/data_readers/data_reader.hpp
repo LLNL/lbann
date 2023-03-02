@@ -866,9 +866,7 @@ public:
 
 private:
 
-  virtual void do_preload_data_store();//  {
-  //   LBANN_ERROR("Not implemented.");
-  // }
+  virtual void do_preload_data_store(); // Throws: "Not implemented."
 
  protected :
 
