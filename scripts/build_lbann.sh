@@ -38,7 +38,8 @@ CMD_LINE_VARIANTS=
 
 # Default versions of Hydrogen, DiHydrogen, and Aluminum - use head of repo
 HYDROGEN_VER="@develop"
-ALUMINUM_VER="@1.0.0-lbann"
+ALUMINUM_VER="@master"
+#ALUMINUM_VER="@1.0.0-lbann"
 DIHYDROGEN_VER="@develop"
 # Default variants for Conduit to minimize dependencies
 CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis"
@@ -296,7 +297,7 @@ function uninstall_specific_versions()
 # This should be a commit hash (NOT a tag) that needs to exist in the
 # spack repository that is checked out. It's a minimum version, so
 # more commits is fine.
-MIN_SPACK_COMMIT=939b74972669babcfa0ec0ada8b73a88d38536fd
+MIN_SPACK_COMMIT=eb29889f6eae9c415895f34023b84f1d72d01ef4
 
 # "spack" is just a shell function; it may not be exported to this
 # scope. Just to be sure, reload the shell integration.
