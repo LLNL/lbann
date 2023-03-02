@@ -181,7 +181,7 @@ set_center_specific_spack_dependencies()
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_COMPILER="%gcc"
 #                CENTER_COMPILER="%clang"
-                CENTER_DEPENDENCIES="^mvapich2@2.3.6"
+                CENTER_DEPENDENCIES="^mvapich2@2.3.6 ^aluminum@1.0.0-lbann ~ofi_libfabric_plugin"
 #                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
@@ -192,7 +192,7 @@ set_center_specific_spack_dependencies()
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_COMPILER="%rocmcc@5.4.1"
-                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.4.1 ^python@3.9.12"
+                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.4.1 ^python@3.9.12 ^aluminum@1.0.0-lbann ~ofi_libfabric_plugin"
                 CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
                 ;;
             "zen3") # Tioga, RZVernal
