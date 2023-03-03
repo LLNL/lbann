@@ -128,6 +128,7 @@ using MPIRootPrintStreamWaning = ::distconv::util::MPIRootPrintStreamWarning;
 
 // Distconv layer classes
 using Backend = ::distconv::BackendDNNLib;
+using AlCommType = typename decltype(std::declval<Backend>().get_al_mpi_cuda_comm())::element_type;
 using ReLU = ::distconv::ReLU<Backend>;
 using LeakyReLU = ::distconv::LeakyReLU<Backend>;
 template <typename TensorDataType>
@@ -232,7 +233,7 @@ p2p::P2P &get_p2p();
 
 /** Get Aluminum host-transfer backend
  */
-Al::hosttransfer_backend::comm_type &get_hosttransfer();
+AlCommType &get_hosttransfer();
 
 /** Get Distconv backend handle.
  */
