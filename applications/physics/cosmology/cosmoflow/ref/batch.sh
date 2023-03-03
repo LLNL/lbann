@@ -13,5 +13,5 @@ export MASTER_ADDR=$firsthost
 export MASTER_PORT=23456
 
 echo "Started at $(date)"
-jsrun -r 4 --bind none -c 10 python main.py --preload --enable-amp --use-batchnorm
+jsrun -r 4 --bind none -c 10 --smpiargs="off" python main.py --preload --enable-amp --use-batchnorm
 echo "Finished at $(date)"
