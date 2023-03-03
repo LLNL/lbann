@@ -44,7 +44,7 @@ MPI_Comm mpi_comm = MPI_COMM_NULL;
 #ifdef DISTCONV_HAS_P2P
 p2p::P2P *p2p_instance = nullptr;
 #endif // DISTCONV_HAS_P2P
-Al::hosttransfer_backend::comm_type *hosttransfer_comm_instance = nullptr;
+AlCommType *hosttransfer_comm_instance = nullptr;
 Backend *backend_instance = nullptr;
 
 bool options_set = false;
@@ -293,8 +293,7 @@ void initialize(MPI_Comm comm) {
   p2p_instance = new p2p::P2P(mpi_comm);
 #endif // DISTCONV_HAS_P2P
   hosttransfer_comm_instance =
-    new Al::hosttransfer_backend::comm_type(mpi_comm,
-                                            default_hydrogen_stream());
+    new AlCommType(mpi_comm, default_hydrogen_stream());
   ::distconv::backend::Options backend_opts;
   backend_opts.m_deterministic = opt_deterministic;
   backend_instance = new Backend(mpi_comm,
@@ -380,7 +379,7 @@ bool is_cosmoflow_parallel_io_enabled() {
   return opt_cosmoflow_parallel_io;
 }
 
-Al::hosttransfer_backend::comm_type &get_hosttransfer() {
+AlCommType &get_hosttransfer() {
   return *hosttransfer_comm_instance;
 }
 
