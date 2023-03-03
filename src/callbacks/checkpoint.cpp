@@ -28,10 +28,11 @@
 
 
 #include "lbann/comm_impl.hpp"
-#include "lbann/callbacks/checkpoint_impl.hpp"
+#include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/serialize.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
@@ -650,6 +651,103 @@ void checkpoint::do_shared_checkpoint(
       dir);
     write_latest(latest_file, hook, mode, epoch, step);
   }
+}
+
+trainer& checkpoint::get_active_trainer(){
+  if(m_active_trainer == nullptr) {
+    LBANN_ERROR("No active trainer for the checkpoint callback");
+  }
+  return *m_active_trainer;
+}
+
+TrainingAlgorithm& checkpoint::get_active_training_algorithm()
+{
+  if (m_active_training_algorithm == nullptr) {
+    LBANN_ERROR("No active training algorithm for the checkpoint callback");
+  }
+  return *m_active_training_algorithm;
+}
+
+std::string get_trainer_checkpoint_dirname(const std::string& trainer_name, const std::string& dir) {
+  return build_string(dir, '/', trainer_name, '/');
+}
+
+std::string get_last_shared_checkpoint_filename(const std::string& alg_name, const std::string& dir) {
+  return build_string(dir, '/', alg_name, ".last.shared.checkpoint");
+}
+
+std::string get_last_shared_checkpoint_filename(const std::string& trainer_name, const std::string& alg_name, const std::string& dir) {
+  return get_last_shared_checkpoint_filename(alg_name, get_trainer_checkpoint_dirname(trainer_name, dir));
+}
+
+std::string get_shared_checkpoint_dirname(const std::string& alg_name, const std::string& dir, visitor_hook hook, execution_mode mode, size_t epoch, size_t step) {
+  return build_string(dir, '/', alg_name, ".shared.", (is_execution_mode_hook(hook) ? to_string(hook, mode) : to_string(hook)), ".epoch.", epoch, ".step.", step, '/');
+}
+
+std::string get_shared_checkpoint_dirname(const std::string& trainer_name, const std::string& alg_name, const std::string& dir, visitor_hook hook, execution_mode mode, size_t epoch, size_t step) {
+  return get_shared_checkpoint_dirname(alg_name, get_trainer_checkpoint_dirname(trainer_name, dir), hook, mode, epoch, step);
+}
+
+std::string get_last_distributed_checkpoint_filename(const std::string& alg_name, const std::string& dir) {
+  return build_string(dir, '/', alg_name, ".last.distributed.checkpoint");
+}
+
+std::string get_last_distributed_checkpoint_filename(const std::string& trainer_name, const std::string& alg_name, const std::string& dir) {
+  return get_last_distributed_checkpoint_filename(alg_name, get_trainer_checkpoint_dirname(trainer_name, dir));
+}
+
+std::string get_distributed_checkpoint_dirname(const std::string& alg_name, const int rank_in_trainer, const std::string& dir, visitor_hook hook, execution_mode mode, size_t epoch, size_t step) {
+  return build_string(dir, '/',
+     alg_name,
+    ".rank.", rank_in_trainer,
+    ".distributed.", (is_execution_mode_hook(hook) ? to_string(hook, mode) : to_string(hook)),
+    ".epoch.", epoch,
+    ".step.", step, '/');
+}
+
+std::string get_distributed_checkpoint_dirname(const std::string& trainer_name, const std::string& alg_name, const int rank_in_trainer, const std::string& dir, visitor_hook hook, execution_mode mode, size_t epoch, size_t step) {
+  return get_distributed_checkpoint_dirname(alg_name, rank_in_trainer, get_trainer_checkpoint_dirname(trainer_name, dir), hook, mode, epoch, step);
+}
+
+// Print last checkpoint to file, used to determine which checkpoint to load from.
+bool write_latest(std::string filename, visitor_hook hook, execution_mode mode, size_t epoch, size_t train) {
+  // open the file for writing
+  int fd = openwrite(filename.c_str());
+  if (fd != -1) {
+    char field[256];
+    std::string hookStr = is_execution_mode_hook(hook) ? to_string(hook, mode) : to_string(hook);
+    sprintf(field, "hook=%s epoch=%ld step=%ld\n", hookStr.c_str(), epoch, train);
+    write_string(fd, filename.c_str(), field, strlen(field));
+    // close our file
+    closewrite(fd, filename.c_str());
+  }
+  return true;
+}
+
+/** \brief Reads the "latest" file and returns the epoch number and
+ *        sample offset for most recent checkpoint
+ */
+bool read_latest(std::string filename, visitor_hook *hook, execution_mode *mode, size_t *epochLast, size_t *trainLast) {
+  // assume we don't have a file, we'll return -1 in that case
+  *epochLast = -1;
+  *trainLast = -1;
+  *mode = execution_mode::invalid;
+  *hook = visitor_hook::invalid;
+  // open the file for reading
+  int fd = openread(filename.c_str());
+  if (fd != -1) {
+    // read epoch from file
+    char field[256];
+    read_string(fd, filename.c_str(), field, sizeof(field));
+    char hookStr[64];
+    int ret = sscanf(field, "hook=%s epoch=%ld step=%ld\n", hookStr, epochLast, trainLast);
+    visitor_hook_from_string(hookStr, *hook, *mode);
+    // close our file
+    closeread(fd, filename.c_str());
+    if(ret != 3) { return false; }
+    return true;
+  }
+  return false;
 }
 
 std::unique_ptr<callback_base>

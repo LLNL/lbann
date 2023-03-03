@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/dump_weights.hpp"
-#include "lbann/callbacks/checkpoint_impl.hpp" // Reuse the checkpoint naming scheme
+#include "lbann/callbacks/checkpoint.hpp" // Reuse the checkpoint naming scheme
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/memory.hpp"

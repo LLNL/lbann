@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/callback_impl.hpp"
+#include "lbann/callbacks/callback.hpp"
 #include "lbann/callbacks/dump_outputs.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/proto/proto_common.hpp"

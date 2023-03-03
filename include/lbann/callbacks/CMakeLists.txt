@@ -27,7 +27,6 @@
 set_full_path(THIS_DIR_HEADERS
   alternate_updates.hpp
   callback.hpp
-  callback_impl.hpp
   check_dataset.hpp
   check_gradients.hpp
   check_init.hpp
@@ -35,7 +34,6 @@ set_full_path(THIS_DIR_HEADERS
   check_nan.hpp
   check_small.hpp
   checkpoint.hpp
-  checkpoint_impl.hpp
   confusion_matrix.hpp
   compute_model_size.hpp
   debug.hpp

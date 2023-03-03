@@ -28,7 +28,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
-#include "lbann/callbacks/callback_impl.hpp"
+#include "lbann/callbacks/callback.hpp"
 #include "lbann/callbacks/dump_minibatch_sample_indices.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"

@@ -35,7 +35,7 @@
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/threads/thread_utils.hpp"
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/callbacks/checkpoint_impl.hpp"
+#include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/callbacks/dump_weights.hpp"
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/load_model.hpp"

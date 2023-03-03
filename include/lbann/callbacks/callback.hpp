@@ -215,19 +215,19 @@ protected:
 
   /** @brief Build a standard directory hierarchy including trainer ID.
    */
-  inline std::string get_multi_trainer_path(const model& m,
+  std::string get_multi_trainer_path(const model& m,
                                             const std::string& root_dir);
 
   /** @brief Build a standard directory hierachy including trainer,
    * execution context, and model information (in that order).
    */
-  inline std::string get_multi_trainer_ec_model_path(const model& m,
+  std::string get_multi_trainer_ec_model_path(const model& m,
                                                      const std::string& root_dir);
 
   /** @brief Build a standard directory hierachy including trainer,
    * model information in that order.
    */
-  inline std::string get_multi_trainer_model_path(const model& m,
+  std::string get_multi_trainer_model_path(const model& m,
                                                   const std::string& root_dir);
 
 protected:
