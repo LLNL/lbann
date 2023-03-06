@@ -25,6 +25,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <conduit/conduit.hpp>
+
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader_sample_list_impl.hpp"
 #include "lbann/data_readers/data_reader_smiles.hpp"
@@ -35,12 +37,13 @@
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/commify.hpp"
-#include "lbann/utils/lbann_library.hpp"
-#include "lbann/utils/vectorwrapbuf.hpp"
-#include <algorithm>
-#include <mutex>
-#include <cctype>
-#include <random>
+#include "lbann/base.hpp"
+#include "lbann/comm.hpp"
+#include "lbann/data_readers/data_reader_sample_list.hpp"
+#include "lbann/data_readers/sample_list_ifstream.hpp"
+#include "lbann/lbann_stl.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/options.hpp"
 
 namespace lbann {
 

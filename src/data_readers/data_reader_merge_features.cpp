@@ -27,10 +27,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_merge_features.hpp"
-#include "lbann/utils/options.hpp"
+
+#include <El.hpp>
+
 #include "lbann/utils/timer.hpp"
+#include "lbann/comm.hpp"
+#include "lbann/data_readers/compound_data_reader.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
+class thread_pool;
 
 data_reader_merge_features::data_reader_merge_features(
   std::vector<generic_data_reader*> data_readers,

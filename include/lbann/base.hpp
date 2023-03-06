@@ -27,7 +27,9 @@
 #ifndef LBANN_BASE_HPP_INCLUDED
 #define LBANN_BASE_HPP_INCLUDED
 
-#include <El.hpp>
+#include "lbann/lbann_stl.hpp"
+
+#include <El.hpp> // IWYU pragma: export
 
 // Defines, among other things, DataType.
 #include "lbann_config.hpp"

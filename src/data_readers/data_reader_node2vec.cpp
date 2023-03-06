@@ -24,17 +24,15 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/comm_impl.hpp"
-#include "lbann/data_readers/data_reader_node2vec.hpp"
 #ifdef LBANN_HAS_LARGESCALE_NODE2VEC
-#include "lbann/utils/memory.hpp"
-#include "lbann/utils/random.hpp"
 #include <dist/node2vec_rw/node2vec_rw.hpp>
 #include <havoqgt/distributed_db.hpp>
 #include <havoqgt/delegate_partitioned_graph.hpp>
-
 #include <algorithm>
 #include <numeric>
+
+#include "lbann/utils/memory.hpp"
+#include "lbann/utils/random.hpp"
 
 namespace lbann {
 

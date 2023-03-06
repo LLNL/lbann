@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -23,29 +23,44 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#include <lbann/layers/activations/elu.hpp>
-#include <El.hpp>
-#include <cereal/cereal.hpp>
 
-#include "lbann/utils/serialize.hpp"
-#include "lbann/layers/data_type_layer.hpp"
+#ifndef LBANN_LBANN_STL_HPP_INCLUDED
+#define LBANN_LBANN_STL_HPP_INCLUDED
 
-namespace lbann {
-enum class data_layout;
+#if defined(__cpp_modules) && __cpp_modules
+import std;
+#else
+// IWYU pragma: begin_exports
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstdio>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <cctype>
+#include <deque>
+#include <fstream>
+#include <functional>
+#include <iosfwd>
+#include <iostream>
+#include <iterator>
+#include <limits>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <numeric>
+#include <random>
+#include <regex>
+#include <set>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+// IWYU pragma: end_exports
+#endif
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-template <typename ArchiveT>
-void
-elu_layer<TensorDataType,Layout,Device>
-::serialize(ArchiveT& ar)
-{
-  using DataTypeLayer = data_type_layer<TensorDataType>;
-  ar(::cereal::make_nvp("DataTypeLayer",
-                        ::cereal::base_class<DataTypeLayer>(this)),
-     CEREAL_NVP(m_alpha));
-}
-
-} // namespace lbann
-
-#define LBANN_LAYER_NAME elu_layer
-#include "lbann/macros/register_layer_with_cereal.hpp"
+#endif // LBANN_LBANN_STL_HPP_INCLUDED

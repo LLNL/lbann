@@ -30,6 +30,7 @@
 #define LBANN_DATA_READER_NCI_HPP
 
 #include "data_reader_csv.hpp"
+#include "lbann/lbann_stl.hpp"
 
 #define NCI_HAS_HEADER
 

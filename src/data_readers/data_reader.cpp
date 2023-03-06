@@ -26,23 +26,30 @@
 // lbann_data_reader .hpp .cpp - Input data base class for training, testing
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/comm_impl.hpp"
+#include <El.hpp>
+#include <cereal/cereal.hpp>
+#include <conduit/conduit.hpp>
+
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
-#include "lbann/io/persist.hpp"
 #include "lbann/io/persist_impl.hpp"
 #include "lbann/trainers/trainer.hpp"
-#include "lbann/utils/serialize.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 #include "lbann/utils/timer.hpp"
-
-#include "conduit/conduit_node.hpp"
-
-#include <omp.h>
-#include <future>
+#include "lbann/base.hpp"
+#include "lbann/comm.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/data_readers/utils/input_data_type.hpp"
+#include "lbann/lbann_stl.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/enum_iterator.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/options.hpp"
+#include "lbann/utils/random_number_generators.hpp"
 
 namespace lbann {
+class persist;
 
 #undef DEBUG
 //#define DEBUG

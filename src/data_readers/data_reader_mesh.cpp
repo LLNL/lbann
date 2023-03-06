@@ -27,8 +27,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_mesh.hpp"
+
+#include <El.hpp>
+
 #include "lbann/utils/glob.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
+#include "lbann/data_readers/data_reader.hpp"
+#include "lbann/data_readers/utils/input_data_type.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/random_number_generators.hpp"
 
 namespace lbann {
 

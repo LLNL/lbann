@@ -30,6 +30,10 @@
 
 #include "data_reader.hpp"
 #include "lbann/utils/dim_helpers.hpp"
+#include "lbann/base.hpp"
+#include "lbann/data_readers/utils/input_data_type.hpp"
+#include "lbann/lbann_stl.hpp"
+#include "lbann/utils/exception.hpp"
 
 // Forward declaration
 class DataReaderSyntheticWhiteboxTester;

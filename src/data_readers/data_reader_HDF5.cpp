@@ -24,13 +24,27 @@
 // permissions and limitations under the license.
 //
 /////////////////////////////////////////////////////////////////////////////////
-#include "conduit/conduit_relay_mpi.hpp"
+#include <El.hpp>
+#include <conduit/conduit.hpp>
+#include <conduit/conduit_relay_io.hpp>
+#include <conduit/conduit_relay_io_hdf5.hpp>
 
+#include "conduit/conduit_relay_mpi.hpp"
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 #include "lbann/data_readers/data_reader_sample_list_impl.hpp"
 #include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/data_readers/sample_list_open_files_impl.hpp"
 #include "lbann/utils/timer.hpp"
+#include "hdf5.h"
+#include "lbann/comm.hpp"
+#include "lbann/data_readers/data_reader_sample_list.hpp"
+#include "lbann/data_readers/sample_list_hdf5.hpp"
+#include "lbann/data_readers/utils/input_data_type.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/lbann_stl.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/options.hpp"
 
 namespace lbann {
 namespace {

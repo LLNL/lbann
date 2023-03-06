@@ -26,12 +26,17 @@
 // lbann_data_reader_csv .hpp .cpp - generic_data_reader class for CSV files
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <El.hpp>
+
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader_csv.hpp"
-#include "lbann/utils/options.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
-
-#include <unordered_set>
+#include "lbann/base.hpp"
+#include "lbann/comm.hpp"
+#include "lbann/data_readers/data_reader.hpp"
+#include "lbann/data_readers/utils/input_data_type.hpp"
+#include "lbann/lbann_stl.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 

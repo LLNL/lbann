@@ -26,17 +26,28 @@
 // data_reader_image .hpp .cpp - generic data reader class for image dataset
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <cereal/archives/binary.hpp>
+#include <cereal/cereal.hpp>
+#include <conduit/conduit.hpp>
+
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader_image.hpp"
 #include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/lbann_library.hpp"
-#include "lbann/utils/threads/thread_utils.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/vectorwrapbuf.hpp"
-
-#include <fstream>
+#include "lbann/base.hpp"
+#include "lbann/comm.hpp"
+#include "lbann/data_readers/data_reader.hpp"
+#include "lbann/data_readers/sample_list.hpp"
+#include "lbann/lbann_stl.hpp"
+#include "lbann/transforms/transform_pipeline.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/options.hpp"
+#include "lbann/utils/threads/thread_pool.hpp"
 
 namespace lbann {
 

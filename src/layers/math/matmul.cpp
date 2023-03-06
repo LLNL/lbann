@@ -31,8 +31,8 @@
 #include "lbann/utils/gpu/helpers.hpp"
 #endif // LBANN_HAS_GPU
 #include "lbann/proto/layers.pb.h"
-#include<iostream>
-namespace lbann 
+#include <iostream>
+namespace lbann
 {
 
 #ifdef LBANN_HAS_DISTCONV
@@ -111,13 +111,13 @@ matmul_distconv_adapter<TensorDataType, Layout, Device>
 ::get_activations_local_shape(int index) const{
   const auto &layer = dynamic_cast<
     const matmul_layer<TensorDataType, Layout, Device>&>(this->layer());
-  const auto output_shape = 
+  const auto output_shape =
   ::distconv::get_matmul_local_tensor_shape(
     this->get_prev_activations(0),
     this->get_prev_activations(1),
     layer.m_transpose_a,
     layer.m_transpose_b);
-  return output_shape; 
+  return output_shape;
 }
 // =============================================================
 // DistConv-enabled MatMul member functions
@@ -142,7 +142,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 const matmul_distconv_adapter<TensorDataType, Layout, Device>&
 matmul_layer<TensorDataType, Layout, Device>
 ::get_distconv_adapter() const{
-  return dynamic_cast<const matmul_distconv_adapter< 
+  return dynamic_cast<const matmul_distconv_adapter<
     TensorDataType, Layout, Device>&>(data_type_layer<TensorDataType>::get_distconv_adapter());
 }
 
@@ -512,7 +512,7 @@ void matmul_layer<TensorDataType, Layout, Device>::fp_compute() {
 }
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void matmul_layer<TensorDataType, Layout, Device>::bp_compute() {
-  
+
   #ifdef LBANN_HAS_DISTCONV
   // We are guaranteed to have
   if(this->distconv_enabled()){

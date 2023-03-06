@@ -28,9 +28,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_synthetic.hpp"
+
+#include <El.hpp>
+
 #include "lbann/utils/random_number_generators.hpp"
-#include <cstdio>
-#include <string>
+#include "lbann/data_readers/data_reader.hpp"
+#include "lbann/utils/random.hpp"
 
 namespace lbann {
 

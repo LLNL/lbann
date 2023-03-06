@@ -27,9 +27,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_mnist.hpp"
-#include "lbann/data_readers/sample_list_impl.hpp"
-#include "lbann/utils/file_utils.hpp"
+
+#include <El.hpp>
 #include <cstdio>
+
+#include "lbann/utils/file_utils.hpp"
+#include "lbann/comm.hpp"
+#include "lbann/data_readers/data_reader_image.hpp"
+#include "lbann/data_readers/utils/input_data_type.hpp"
+#include "lbann/transforms/transform_pipeline.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 

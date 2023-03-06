@@ -25,15 +25,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_python.hpp"
-#include "lbann/trainers/trainer.hpp"
-#ifdef LBANN_HAS_EMBEDDED_PYTHON
-#include <cstdio>
-#include <algorithm>
-#include <regex>
 
+#include "lbann/trainers/trainer.hpp"
+#include "lbann/data_readers/data_reader.hpp"
+#include "lbann/utils/dim_helpers.hpp"
+#include "lbann/utils/exception.hpp"
+
+namespace lbann {
+class thread_pool;
+}  // namespace lbann
+#ifdef LBANN_HAS_EMBEDDED_PYTHON
 #include <Python.h>
 
-#include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/python.hpp"
 
 namespace lbann {

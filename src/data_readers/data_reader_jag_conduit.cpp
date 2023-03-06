@@ -25,38 +25,41 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <El.hpp>
+#include <cereal/archives/binary.hpp>
+#include <cereal/cereal.hpp>
+#include <conduit/conduit.hpp>
+#include <conduit/conduit_relay.hpp>
+#include <conduit/conduit_relay_io_hdf5.hpp>
+
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/utils/dim_helpers.hpp"
-#include "lbann/utils/lbann_library.hpp"
-#include "lbann/utils/serialize.hpp"
 #include "lbann/transforms/repack_HWC_to_CHW_layout.hpp"
 #include "lbann/transforms/scale_and_translate.hpp"
-
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
 #include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/data_readers/sample_list_open_files_impl.hpp"
 #include "lbann/utils/vectorwrapbuf.hpp"
-
-#include <limits>     // numeric_limits
-#include <algorithm>  // max_element
-#include <numeric>    // accumulate
-#include <functional> // multiplies
-#include <type_traits>// is_same
-#include <set>
-#include <map>
-#include <omp.h>
 #include "lbann/utils/timer.hpp"
-#include "lbann/utils/glob.hpp"
-#include "lbann/utils/peek_map.hpp"
-#include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_io_hdf5.hpp"
-
-#include <sstream>
-#include <fstream>
+#include "hdf5.h"
+#include "lbann/base.hpp"
+#include "lbann/comm.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
+#include "lbann/data_readers/data_reader.hpp"
+#include "lbann/data_readers/sample_list.hpp"
+#include "lbann/data_readers/utils/input_data_type.hpp"
+#include "lbann/lbann_stl.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/options.hpp"
+#include "lbann/utils/random_number_generators.hpp"
+#include "lbann/utils/threads/thread_pool.hpp"
+#include "lbann/utils/type_erased_matrix.hpp"
 
 // This comes after all the headers, and is only visible within the current implementation file.
 // To make sure, we put '#undef _CN_' at the end of this file
