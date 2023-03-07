@@ -23,54 +23,9 @@
 ## implied. See the License for the specific language governing
 ## permissions and limitations under the license.
 ################################################################################
-# Add the source files for this directory
-set_full_path(THIS_DIR_SOURCES
-  argmax.cpp
-  argmin.cpp
-  channelwise_mean.cpp
-  channelwise_softmax.cpp
-  covariance.cpp
-  dist_embedding.cpp
-  external.cpp
-  mini_batch_index.cpp
-  mini_batch_size.cpp
-  one_hot.cpp
-  rowwise_weights_norms.cpp
-  uniform_hash.cpp
-  variance.cpp
-  misc_builders.cpp
-  )
-
-if (LBANN_HAS_FFTW)
-  list(APPEND THIS_DIR_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/dft_abs.cpp")
-endif ()
-
-if (LBANN_HAS_GPU)
-  # Add the CUDA source files for this directory
-  set_full_path(THIS_DIR_CU_SOURCES
-    channelwise_mean.cu
-    channelwise_softmax.cu
-    covariance.cu
-    dist_embedding.cu
-    one_hot.cu
-    rowwise_weights_norms.cu
-    uniform_hash.cu
-    variance.cu
-    channelwise_softmax_kernels.cuh
+set_full_path(THIS_DIR_CU_SOURCES
+    distconv_channelwise_softmax.cu
     )
-  if (LBANN_HAS_FFTW)
-    list(APPEND THIS_DIR_CU_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/dft_abs.cu")
-  endif ()
-endif ()
-
-if (LBANN_HAS_DISTCONV)
-    add_subdirectory(distconv)
-endif()
-
-# Add the subdirectories
-add_subdirectory(cereal_registration)
-
 
 # Propagate the files up the tree
-set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
 set(GPU_SOURCES "${GPU_SOURCES}" "${THIS_DIR_CU_SOURCES}" PARENT_SCOPE)
