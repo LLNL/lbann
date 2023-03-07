@@ -133,7 +133,7 @@ Scale each input value by a constant.
 
 .. math::
 
-   x = c * x
+   y = c * x
 
 
 .. _sin:
