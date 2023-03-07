@@ -169,4 +169,4 @@ Subtract a constant from each input value.
 
 .. math::
 
-   x = (x - c)
+   y = (x - c)
