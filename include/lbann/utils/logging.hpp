@@ -69,8 +69,8 @@ h2::Logger& get(LBANN_Logger_ID id);
 #define LBANN_DEBUG(logger_id, ...) LBANN_LOG(logger_id, ::h2::Logger::LogLevelType::DEBUG, __VA_ARGS__)
 #define LBANN_INFO(logger_id, ...) LBANN_LOG(logger_id, ::h2::Logger::LogLevelType::INFO, __VA_ARGS__)
 #define LBANN_WARN(logger_id, ...) LBANN_LOG(logger_id, ::h2::Logger::LogLevelType::WARN, __VA_ARGS__)
-#define LBANN_ERR(logger_id, ...) LBANN_LOG(logger_id, ::h2::Logger::LogLevelType::ERR, __VA_ARGS__)
-#define LBANN_CRIT(logger_id, ...) LBANN_LOG(logger_id, ::h2::Logger::LogLevelType::CRIT, __VA_ARGS__)
+#define LBANN_ERR(logger_id, ...) LBANN_LOG(logger_id, ::h2::Logger::LogLevelType::ERROR, __VA_ARGS__)
+#define LBANN_CRIT(logger_id, ...) LBANN_LOG(logger_id, ::h2::Logger::LogLevelType::CRITICAL, __VA_ARGS__)
 
 // Run time
 #define LBANN_RT_TRACE(...) LBANN_TRACE(::lbann::logging::LBANN_Logger_ID::LOG_RT, __VA_ARGS__)

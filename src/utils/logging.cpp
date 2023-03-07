@@ -44,7 +44,7 @@ void setup_loggers()
 {
   logger_vec.insert(logger_vec.end(), {
       &io_logger, &rt_logger, &train_logger });
-  h2::setup_levels(logger_vec, "TEST_LOG_LEVEL");
+  h2::setup_levels(logger_vec, "LBANN_LOG_LEVEL");
 }
 
 char const* logger_id_str(LBANN_Logger_ID id)
