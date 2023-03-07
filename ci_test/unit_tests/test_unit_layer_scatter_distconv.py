@@ -3,6 +3,7 @@ import os.path
 import sys
 from unittest.mock import call
 import numpy as np
+import pytest
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -53,6 +54,11 @@ def setup_experiment(lbann, weekly):
         lbann (module): Module for LBANN Python frontend
 
     """
+    if not lbann.has_feature('NVSHMEM'):
+        message = f'{os.path.basename(__file__)} requires NVSHMEM'
+        print('Skip - ' + message)
+        pytest.skip(message)
+
     mini_batch_size = num_samples() // 2
     trainer = lbann.Trainer(mini_batch_size)
     model = construct_model(lbann)

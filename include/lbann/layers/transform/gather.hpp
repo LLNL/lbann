@@ -256,7 +256,7 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
     const auto& parent1 = this->get_parent_layer(1);
     LBANN_ERROR(
       this->get_type()," layer \"",this->get_name(),"\" ",
-      "has input tensors with different numbers of dimensions ",
+      "has input tensors with incorrect numbers of dimensions. Expected 2D or 1D values tensor and 1D indices tensor. Expected 3D-only tensorsfor distconv-enabled Gather. ",
       "(",parent0.get_type()," layer \"",parent0.get_name(),"\" ",
       "outputs ",dims_to_str(input0_dims),", ",
       parent1.get_type()," layer \"",parent1.get_name(),"\" ",
