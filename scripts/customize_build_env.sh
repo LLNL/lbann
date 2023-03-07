@@ -181,7 +181,7 @@ set_center_specific_spack_dependencies()
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_COMPILER="%gcc"
 #                CENTER_COMPILER="%clang"
-                CENTER_DEPENDENCIES="^mvapich2@2.3.6"
+                CENTER_DEPENDENCIES="^mvapich2@2.3.6 ^hwloc@1.11.13"
 #                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
