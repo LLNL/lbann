@@ -84,7 +84,7 @@ Subtract each input value from a constant.
 
 .. math::
 
-   x = (c - x)
+   y = (c - x)
 
 
 .. _cosine:
