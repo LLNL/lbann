@@ -54,8 +54,8 @@ def setup_experiment(lbann, weekly):
         lbann (module): Module for LBANN Python frontend
 
     """
-    if not lbann.has_feature('NVSHMEM'):
-        message = f'{os.path.basename(__file__)} requires NVSHMEM'
+   if not (lbann.has_feature('DISTCONV') and lbann.has_feature('NVSHMEM')) :
+        message = f'{os.path.basename(__file__)} requires DISTCONV and NVSHMEM'
         print('Skip - ' + message)
         pytest.skip(message)
 
