@@ -86,6 +86,7 @@ class EdgeProcessor(Module):
                norm_type=lbann.LayerNorm,
                name=None):
     super().__init__()
+    EdgeProcessor.global_count += 1
     self.instance = 0
     self.name = (name if name
                  else f'EdgeProcessor_{EdgeProcessor.global_count}')
@@ -139,6 +140,7 @@ class NodeProcessor(Module):
                norm_type=lbann.LayerNorm,
                name=None):
     super().__init__()
+    NodeProcessor.global_count += 1
     self.instance = 0
     self.name = (name if name
                  else f'NodeProcessor_{NodeProcessor.global_count}')
@@ -166,7 +168,7 @@ class NodeProcessor(Module):
     self.instance += 1
   
     edge_feature_sum = lbann.Scatter(edge_features, target_edge_indices,
-                                     name="f{self.name}_{self.instance}_scatter",
+                                     name=f"{self.name}_{self.instance}_scatter",
                                      dims=[self.num_nodes, self.in_dim_edge],
                                      axis=0)
 
@@ -175,7 +177,7 @@ class NodeProcessor(Module):
                              name=f"{self.name}_{self.instance}_concat_features")
     x = self.node_mlp(x)
 
-    return lbann.Sum(edge_features, x,
+    return lbann.Sum(node_features, x,
                      name=f"{self.name}_{self.instance}_residual_sum")
 
 

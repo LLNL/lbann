@@ -2,9 +2,9 @@ import lbann
 import lbann.contrib.launcher
 import lbann.contrib.args
 import argparse
-
+import configparser
 import os.path as osp
-from .GNN import LBANN_GNN_Model
+from GNN import LBANN_GNN_Model
 
 data_dir = osp.dirname(osp.realpath(__file__))
 
@@ -21,8 +21,8 @@ parser.add_argument(
     help='number of epochs (deafult: 3)', metavar='NUM')
 
 parser.add_argument(
-    '--mini-batch-size', action='store', default=256, type=int,
-    help="mini-batch size (default: 256)", metavar='NUM')
+    '--mini-batch-size', action='store', default=4, type=int,
+    help="mini-batch size (default: 4)", metavar='NUM')
 
 parser.add_argument(
     '--job-name', action='store', default="MGN", type=str,
@@ -38,12 +38,14 @@ NUM_EPOCHS = args.num_epochs
 JOB_NAME = args.job_name
 
 # Some synthetic attributes to get the model running
+DATA_CONFIG = configparser.ConfigParser()
+DATA_CONFIG.read("data_config.ini")
 
-NUM_NODES = 100
-NUM_EDGES = 1000
-NODE_FEATS = 5
-EDGE_FEATS = 3
-OUT_FEATS = 3
+NUM_NODES = int(DATA_CONFIG['DEFAULT']['NUM_NODES'])
+NUM_EDGES = int(DATA_CONFIG['DEFAULT']['NUM_EDGES'])
+NODE_FEATS = int(DATA_CONFIG['DEFAULT']['NODE_FEATURES'])
+EDGE_FEATS = int(DATA_CONFIG['DEFAULT']['EDGE_FEATURES'])
+OUT_FEATS = int(DATA_CONFIG['DEFAULT']['OUT_FEATURES'])
 
 def make_data_reader(classname,
                      sample='get_sample_func',

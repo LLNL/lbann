@@ -1,5 +1,5 @@
 import lbann
-from .GNNComponents import MLP, GraphProcessor
+from GNNComponents import MLP, GraphProcessor
 
 
 def input_data_splitter(input_layer,
@@ -96,7 +96,7 @@ def LBANN_GNN_Model(num_nodes, num_edges,
 
   calculated_features = node_decoder(node_features)
 
-  loss = loss.MeanSquaredError(calculated_features, out_features)
+  loss = lbann.MeanSquaredError(calculated_features, out_features)
 
   # Define some of the usual callbacks
 
