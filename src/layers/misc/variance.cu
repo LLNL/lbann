@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_VARIANCE_LAYER_INSTANTIATE
-#include "lbann/layers/misc/variance.hpp"
+#include "lbann/layers/misc/variance_impl.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {

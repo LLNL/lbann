@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_SORT_LAYER_INSTANTIATE
-#include "lbann/layers/transform/sort.hpp"
+#include "lbann/layers/transform/sort_impl.hpp"
 
 namespace lbann {
 

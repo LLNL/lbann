@@ -44,6 +44,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/profiling.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
 
 #include "lbann/proto/training_algorithm.pb.h"
 

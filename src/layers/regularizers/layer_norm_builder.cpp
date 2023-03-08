@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/regularizers/layer_norm.hpp"
+#include "lbann/utils/exception.hpp"
 
 #include "lbann/proto/layers.pb.h"
 

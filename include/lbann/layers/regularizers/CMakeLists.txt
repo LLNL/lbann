@@ -26,6 +26,7 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
   batch_normalization.hpp
+  batch_normalization_impl.hpp
   dropout.hpp
   entrywise_batch_normalization.hpp
   layer_norm.hpp

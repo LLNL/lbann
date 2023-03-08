@@ -28,8 +28,6 @@
 #define LBANN_OBJECTIVE_FUNCTION_TERM_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-#include "lbann/layers/layer.hpp"
-#include "lbann/weights/weights.hpp"
 
 // Forward-declare protobuf classes
 namespace lbann_data {
@@ -37,6 +35,14 @@ class ObjectiveFunction;
 }
 
 namespace lbann {
+
+// Forward declarations
+class Layer;
+using ViewingLayerPtr = std::weak_ptr<Layer>;
+class model;
+class weights;
+using ViewingWeightsPtr = std::weak_ptr<weights>;
+
 
 /** Abstract class for objective function terms. */
 class objective_function_term {

@@ -31,6 +31,11 @@
 #include "lbann/models/model.hpp"
 #include "lbann/utils/summary_impl.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/weights/weights.hpp"
+#include "lbann/optimizers/optimizer.hpp"
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/distconv_adapter.hpp"
+#endif // LBANN_HAS_DISTCONV
 
 #include "lbann/proto/layers.pb.h"
 
@@ -514,6 +519,46 @@ void Layer::check_setup() {
       err << " at index " << i << ")";
       LBANN_ERROR(err.str());
     }
+  }
+}
+
+weights const& Layer::get_weights(size_t idx) const {
+  if (idx >= m_weights.size()) {
+    LBANN_ERROR(
+      "attempted to access invalid weights object of ",
+      get_type()," layer \"",get_name(),"\" ",
+      "(requested index ",idx,", but there are ",
+      num_weights()," weights objects)");
+  }
+  const auto w = m_weights[idx].lock().get();
+  if (w == nullptr) {
+    LBANN_ERROR(
+      get_type()," layer \"",get_name(),"\"",
+      "has an invalid reference to weights ",idx);
+  }
+  return *w;
+}
+
+weights& Layer::get_weights(size_t idx) {
+  return const_cast<weights&>(
+    static_cast<Layer const&>(*this).get_weights(idx));
+}
+
+void Layer::add_as_gradient_source()
+{
+  for (size_t i=0; i<num_weights(); ++i) {
+    auto& w = get_weights(i);
+    auto* opt = w.get_optimizer();
+    if (opt != nullptr) { opt->add_gradient_source(this); }
+  }
+}
+
+void Layer::remove_as_gradient_source()
+{
+  for (size_t i=0; i<num_weights(); ++i) {
+    auto& w = get_weights(i);
+    auto* opt = w.get_optimizer();
+    if (opt != nullptr) { opt->remove_gradient_source(this); }
   }
 }
 

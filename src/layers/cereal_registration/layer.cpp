@@ -23,8 +23,13 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#include "lbann/comm.hpp"
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/distconv_adapter.hpp"
+#endif // LBANN_HAS_DISTCONV
 #include "lbann/utils/serialize.hpp"
 #include <lbann/layers/layer.hpp>
+#include "lbann/weights/weights.hpp"
 
 namespace lbann {
 

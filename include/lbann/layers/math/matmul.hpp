@@ -31,28 +31,34 @@
 
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/layers/data_type_distconv_adapter.hpp"
-#include "lbann/layers/learning/distconv/distconv_layers.hpp"
+#include "lbann/layers/math/distconv/distconv_matmul.hpp"
 #endif  // LBANN_HAS_DISTCONV
 
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
+namespace dc {
+using Backend = ::distconv::BackendDNNLib;
+template <typename TensorDataType>
+using MatMul = ::distconv::MatMul<Backend, TensorDataType>;
+} // namespace dc
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class matmul_distconv_adapter
   : public data_type_distconv_adapter<TensorDataType>{
   public:
-    using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType; 
+    using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
 
     matmul_distconv_adapter(Layer& layer)
       : data_type_distconv_adapter<TensorDataType>(layer){}
-    
+
     virtual ~matmul_distconv_adapter() = default;
     void setup_distributions(tensor_overlap_constraints &constraints) override;
-    void setup_layer(size_t workspace_capacity) override; 
+    void setup_layer(size_t workspace_capacity) override;
     void fp_compute();
     void bp_compute();
     dc::Shape get_activations_local_shape(int index=0) const override;
-    std::unique_ptr<dc::MatMul<TensorDataType>> m_matmul_operator; 
+    std::unique_ptr<dc::MatMul<TensorDataType>> m_matmul_operator;
   }; // class definition matmul_distconv_adapter
 
 #endif  // LBANN_HAS_DISTCONV
@@ -170,75 +176,6 @@ description matmul_layer<TensorDataType,Layout,Device>::get_description() const 
   desc.add("Transpose A", m_transpose_a);
   desc.add("Transpose B", m_transpose_b);
   return desc;
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void matmul_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& dr_metadata) {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-
-  // Input dimensions
-  const auto& input0_dims = this->get_input_dims(0);
-  const auto& input1_dims = this->get_input_dims(1);
- 
-  // Lambdas to help print error messages
-  auto print_name = [this] () -> std::string {
-    return this->get_type() + " layer \"" + this->get_name() + "\"";
-  };
-  auto print_inputs = [this, &input0_dims, &input1_dims] () -> std::string {
-    auto print_dims = [] (const decltype(input0_dims)& dims) -> std::string {
-      std::ostringstream ss;
-      for (size_t i = 0; i < dims.size(); ++i) {
-        ss << (i > 0 ? "x" : "") << dims[i];
-      }
-      return ss.str();
-    };
-    const auto& parents = this->get_parent_layers();
-    return lbann::build_string(
-      parents[0]->get_type()," layer \"",parents[0]->get_name(),"\" ",
-      "outputs ",print_dims(input0_dims),", ",
-      parents[1]->get_type()," layer \"",parents[1]->get_name(),"\" ",
-      "outputs ",print_dims(input1_dims));
-  };
-
-  // Check input dimensions
-  if (input0_dims.size() != input1_dims.size()) {
-    LBANN_ERROR("input tensors in ",print_name()," "
-                "have different numbers of dimensions ",
-                "(",print_inputs(),")");
-  }
-
-  if (input0_dims.size() != 2 && input0_dims.size() != 3) {
-    LBANN_ERROR("input tensors in ",print_name()," are not 2D or 3D",
-                "(",print_inputs(),")");
-  }
-  #ifdef LBANN_HAS_DISTCONV
-  if (this->distconv_enabled()){
-    if(input0_dims.size() != 3){
-      LBANN_ERROR("input tensors in ",print_name()," must be 3D when distconv is enabled",
-                "(",print_inputs(),")");
-    }
-  }
-  #endif
-  // Get matrix dimensions
-  const auto input0_height = *(input0_dims.rbegin()+1);
-  const auto input0_width = *(input0_dims.rbegin());
-  const auto input1_height = *(input1_dims.rbegin()+1);
-  const auto input1_width = *(input1_dims.rbegin());
-  if ((m_transpose_a ? input0_height : input0_width)
-      != (m_transpose_b ? input1_width : input1_height)) {
-    LBANN_ERROR("input tensors in ",print_name()," ",
-                "are not compatible with ",
-                (m_transpose_a ? "T" : "N"), (m_transpose_b ? "T" : "N"),
-                " matrix multiplication ",
-                "(",print_inputs(),")");
-  }
-
-  // Set output dimensions
-  std::vector<int> output_dims(input0_dims);
-  *(output_dims.rbegin()+1) = (m_transpose_a ? input0_width : input0_height);
-  *(output_dims.rbegin()) = (m_transpose_b ? input1_height : input1_width);
-  this->set_output_dims(output_dims);
-
 }
 
 // =========================================================

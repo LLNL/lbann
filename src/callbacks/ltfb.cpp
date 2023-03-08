@@ -26,6 +26,7 @@
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/ltfb.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/utils/random_number_generators.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/optimizers/sgd.hpp"
@@ -38,6 +39,9 @@
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/protobuf.hpp"
+#include "lbann/metrics/metric.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/trainers/trainer.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
 

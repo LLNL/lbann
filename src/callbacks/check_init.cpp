@@ -28,9 +28,13 @@
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/check_init.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/weights/data_type_weights.hpp"
+
+#include "lbann/proto/callbacks.pb.h"
 
 namespace lbann {
 namespace callback {

@@ -26,6 +26,7 @@
 
 #include "lbann/callbacks/hang.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/models/model.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
 
@@ -56,6 +57,15 @@ void hang::setup(model* m)
       std::cout << "*** HANGING RANK " << m_rank_to_hang
                 << " IN HANG CALLBACK ***" << std::endl;
     }
+  }
+}
+
+void hang::on_train_begin(model* m) {
+  if (m_rank_to_hang == -1 ||
+      m_rank_to_hang == m->get_comm()->get_rank_in_world()) {
+    // Set this flag to false with your debugger to resume execution.
+    volatile bool lbann_hang = true;
+    while (lbann_hang) {}
   }
 }
 

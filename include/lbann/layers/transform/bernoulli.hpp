@@ -84,14 +84,7 @@ protected:
     : bernoulli_layer(nullptr, { 1 }, 0.5 )
   {}
 
-  void fp_compute() override {
-    auto& output = this->get_activations();
-    if (this->m_model->get_execution_context().get_execution_mode() == execution_mode::training) {
-      bernoulli_fill(output, output.Height(), output.Width(), m_prob);
-    } else {
-      El::Zero(output);
-    }
-  }
+  void fp_compute() override;
 
 private:
 

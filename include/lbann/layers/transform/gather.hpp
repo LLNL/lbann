@@ -41,6 +41,11 @@
 namespace lbann {
 
 #if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
+namespace dc {
+  //using Backend = ::distconv::BackendDNNLib;
+template <typename TensorDataType>
+using Gather = ::distconv::Gather<Backend, TensorDataType>;
+} // namespace dc
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class gather_distconv_adapter
@@ -181,7 +186,7 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
   // Tensor dimensions
   const auto& input0_dims = this->get_input_dims(0);
   const auto& input1_dims = this->get_input_dims(1);
-  
+
   const bool along_axis_0 = this->m_gather_axis == 0;
 
   auto dims_to_str = [] (const std::vector<int>& dims) -> std::string {
@@ -192,8 +197,8 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
     return ss.str();
   };
 
-  // Tensor dimension requirements are different 
-  // when using distconv 
+  // Tensor dimension requirements are different
+  // when using distconv
   // Distconv requires 3D inputs for both values
   // and indices
 
@@ -208,10 +213,10 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
 
       LBANN_ERROR(this->get_type(), " Layer \"", this->get_name(),"\" ",
         "has values input (", dims_to_str(input0_dims),") ",
-        "has indices input (", dims_to_str(input1_dims),"). ", 
+        "has indices input (", dims_to_str(input1_dims),"). ",
         "Distconv Gather requires both to be 3D. ");
     }
-    // Make sure only gathering along axis 0  
+    // Make sure only gathering along axis 0
     if (along_axis_0){
       this->set_output_dims(std::vector<int>{input1_dims[0], input0_dims[1], 1});
     }else{
@@ -221,7 +226,7 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
     return ;
   }
   #endif // LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
-  
+
   // Only support 1D indices
   const auto is_indices_not_1D = input1_dims.size() != 1;
 
@@ -357,7 +362,7 @@ gather_distconv_adapter<TensorDataType, Layout, Device>
   nvshmem::initialize();
   m_gather_operator->setup(this->get_prev_activations(0),
                            this->get_prev_activations(1),
-                           this->get_activations()); 
+                           this->get_activations());
 }
 
 
@@ -374,7 +379,7 @@ gather_distconv_adapter<TensorDataType, Layout, Device>
   // Change the column dimension to match, the rest should be the same
   // To do: Maybe move this to distconv namespace - SZ
   output_shape[1] = values_shape[1];
-  return output_shape; 
+  return output_shape;
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -384,15 +389,15 @@ gather_distconv_adapter<TensorDataType, Layout, Device>
   // Compute the forward pass
   m_gather_operator->forward(this->get_prev_activations(0),
                              this->get_prev_activations(1),
-                             this->get_activations()); 
+                             this->get_activations());
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void
 gather_distconv_adapter<TensorDataType, Layout, Device>
 ::bp_compute(){
-  // Compute the backward pass 
-  m_gather_operator->backward(this->get_prev_error_signals(),  
+  // Compute the backward pass
+  m_gather_operator->backward(this->get_prev_error_signals(),
                               this->get_prev_activations(1),
                               this->get_error_signals(0),   // Values gradient
                               this->get_error_signals(1));  // Indices gradient. Will be 0'ed out

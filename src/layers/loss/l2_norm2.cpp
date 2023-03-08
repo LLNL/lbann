@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_L2_NORM2_LAYER_INSTANTIATE
-#include "lbann/layers/loss/l2_norm2.hpp"
+#include "lbann/layers/loss/l2_norm2_impl.hpp"
 
 namespace lbann {
 

@@ -29,6 +29,10 @@
 #include "lbann/layers/regularizers/layer_norm.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#endif // LBANN_HAS_DISTCONV
+
 #include <thrust/pair.h>
 
 namespace lbann {

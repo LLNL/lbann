@@ -25,11 +25,35 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/comm_impl.hpp"
-#include "lbann/optimizers/optimizer.hpp"
+#include "lbann/optimizers/optimizer_impl.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/timer.hpp"
 
 namespace lbann {
+
+void optimizer::clear_gradient() {
+  for (auto& g : gradients_) {
+    if (g.second->get_status() ==
+        optimizer_gradient_status::allreduce_started) {
+      g.second->complete_allreduce(*m_comm);
+    }
+    g.second->clear();
+  }
+  this->get_gradient_sources().clear();
+}
+
+void optimizer::start_gradient_allreduce() {
+  for (auto& grad_mgr : gradients_) {
+    grad_mgr.second->start_allreduce(*m_comm);
+  }
+}
+
+void optimizer::finish_gradient_allreduce() {
+  for (auto& grad_mgr : gradients_) {
+    grad_mgr.second->complete_allreduce(*m_comm);
+  }
+}
+
 
 std::string to_string(optimizer_gradient_status status) {
   switch (status) {

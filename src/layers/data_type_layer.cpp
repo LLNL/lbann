@@ -31,6 +31,9 @@
 
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/layers/data_type_layer.hpp"
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#endif // LBANN_HAS_DISTCONV
 #include "lbann/models/model.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/argument_parser.hpp"
@@ -750,6 +753,18 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::bp_compute() {
     El::Zero(get_error_signals(i));
   }
 }
+
+template <typename InputTensorDataType, typename OutputTensorDataType>
+El::AbstractDistMatrix<InputTensorDataType> const& data_type_layer<InputTensorDataType, OutputTensorDataType>::weights_values(size_t idx) const {
+    if (idx >= m_weights_proxy.size())
+    {
+      LBANN_ERROR(
+        this->get_type()," layer \"",this->get_name(),"\" ",
+        "attempted to access weights ",idx,", ",
+        "but there are only ",m_weights_proxy.size()," weights");
+    }
+    return m_weights_proxy[idx].values();
+  }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::check_setup() {

@@ -25,9 +25,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/check_small.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/serialize.hpp"
+
+#include "lbann/proto/callbacks.pb.h"
 
 namespace lbann {
 namespace callback {

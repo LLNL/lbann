@@ -26,6 +26,10 @@
 
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#endif // LBANN_HAS_DISTCONV
+
 #include "lbann/proto/layers.pb.h"
 
 template <typename T, lbann::data_layout L, El::Device D>

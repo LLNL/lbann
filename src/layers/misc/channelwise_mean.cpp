@@ -27,6 +27,10 @@
 #define LBANN_CHANNELWISE_MEAN_LAYER_INSTANTIATE
 #include "lbann/layers/misc/channelwise_mean.hpp"
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#endif // LBANN_HAS_DISTCONV
+
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

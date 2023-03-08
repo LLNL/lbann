@@ -32,11 +32,13 @@
 #include <vector>
 #include <functional>
 
-#include "lbann/comm.hpp"
 
 #include "lbann/utils/file_utils.hpp"
 
 namespace lbann {
+
+// Forward Declarations
+class lbann_comm;
 
 static const std::string multi_sample_exclusion = "MULTI-SAMPLE_EXCLUSION";
 static const std::string multi_sample_inclusion = "MULTI-SAMPLE_INCLUSION";

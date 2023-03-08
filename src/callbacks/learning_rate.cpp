@@ -27,10 +27,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/learning_rate.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/utils/protobuf.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/trainers/trainer.hpp"
 
 #include "callback_helpers.hpp"
 

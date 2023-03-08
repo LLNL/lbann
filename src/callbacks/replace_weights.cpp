@@ -25,8 +25,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/replace_weights.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/protobuf.hpp"
 
 #include "callback_helpers.hpp"
@@ -38,6 +41,17 @@
 
 namespace lbann {
 namespace callback {
+
+replace_weights::replace_weights(
+  std::vector<std::string> src,
+  std::vector<std::string> dst,
+  int batch_interval)
+  : callback_base(batch_interval),
+    m_src_layer_names(std::move(src)),
+    m_dst_layer_names(std::move(dst)) {
+  if(m_src_layer_names.size() != m_dst_layer_names.size())
+    LBANN_ERROR("In replace weights callback: number of src and dest layers does not match.");
+}
 
 void replace_weights::setup(model *m) {
   auto const layers = m->get_layers();

@@ -27,8 +27,6 @@
 #ifndef LBANN_DATASET_HPP_INCLUDED
 #define LBANN_DATASET_HPP_INCLUDED
 
-#include "lbann/data_readers/data_reader.hpp"
-
 namespace lbann {
 
 class dataset {

@@ -25,7 +25,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_python.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/trainers/trainer.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #ifdef LBANN_HAS_EMBEDDED_PYTHON
 #include <cstdio>
 #include <algorithm>

@@ -25,11 +25,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_SOFTMAX_LAYER_INSTANTIATE
-#include "lbann/layers/activations/softmax.hpp"
+#include "lbann/layers/activations/softmax_impl.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 #ifdef LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/softmax.hpp"
 #endif // LBANN_HAS_DNN_LIB
+
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#endif // LBANN_HAS_DISTCONV
 
 namespace lbann {
 

@@ -28,6 +28,7 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/optimizers/optimizer_impl.hpp"
 #include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/exception.hpp"
@@ -40,6 +41,10 @@
 #endif // LBANN_HAS_DNN_LIB
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/variance_scaling_initializers.hpp"
+
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#endif // LBANN_HAS_DISTCONV
 
 #include <omp.h>
 

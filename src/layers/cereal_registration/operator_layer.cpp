@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 #include "lbann/layers/operator_layer_impl.hpp"
+#include "lbann/weights/weights.hpp"
 
 #include "lbann/utils/serialize.hpp"
 #include "lbann/macros/common_cereal_registration.hpp"

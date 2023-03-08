@@ -32,7 +32,7 @@
 #ifdef LBANN_HAS_DISTCONV
 
 #include "El.hpp"
-#include "lbann/comm.hpp"
+#include "lbann/comm_nb_request.hpp"
 #include <vector>
 
 #ifdef LBANN_DEBUG
@@ -53,15 +53,6 @@
 #include "distconv/tensor/shuffle_mpi_cuda_hybrid.hpp"
 #endif // DISTCONV_HAS_P2P
 
-#include "lbann/layers/learning/distconv/distconv_layers.hpp"
-#include "lbann/layers/math/distconv/distconv_matmul.hpp"
-
-#ifdef LBANN_HAS_NVSHMEM
-#include "lbann/layers/transform/distconv/distconv_scatter.hpp"
-#include "lbann/layers/transform/distconv/distconv_gather.hpp"
-#include "lbann/layers/transform/distconv/distconv_nvshmem_vector_addressing.hpp"
-#endif // LBANN_HAS_NVSHMEM
-
 namespace lbann {
 
 inline auto default_hydrogen_stream()
@@ -73,6 +64,8 @@ inline auto default_hydrogen_stream()
 #endif
 }
 
+// Forward Declarations
+class lbann_comm;
 class Layer;
 
 namespace dc {
@@ -129,28 +122,6 @@ using MPIRootPrintStreamWaning = ::distconv::util::MPIRootPrintStreamWarning;
 // Distconv layer classes
 using Backend = ::distconv::BackendDNNLib;
 using AlCommType = typename decltype(std::declval<Backend>().get_al_mpi_cuda_comm())::element_type;
-using ReLU = ::distconv::ReLU<Backend>;
-using LeakyReLU = ::distconv::LeakyReLU<Backend>;
-template <typename TensorDataType>
-using Convolution = ::distconv::Convolution<Backend, TensorDataType>;
-template <typename TensorDataType>
-using ChannelwiseFullyConnected = ::distconv::ChannelwiseFullyConnected<Backend, TensorDataType>;
-template <typename TensorDataType>
-using Pooling = ::distconv::Pooling<Backend, TensorDataType>;
-template <typename TensorDataType>
-using BatchNormalization = ::distconv::BatchNormalization<Backend, TensorDataType>;
-template <typename TensorDataType>
-using MatMul = ::distconv::MatMul<Backend, TensorDataType>;
-using Softmax = ::distconv::Softmax<Backend>;
-using CrossEntropy = ::distconv::CrossEntropy<Backend>;
-using MeanSquaredError = ::distconv::MeanSquaredError<Backend>;
-
-#ifdef LBANN_HAS_NVSHMEM
-template <typename TensorDataType>
-using Scatter = ::distconv::Scatter<Backend, TensorDataType>;
-template <typename TensorDataType>
-using Gather = ::distconv::Gather<Backend, TensorDataType>;
-#endif // LBANN_HAS_NVSHMEM
 
 using ::distconv::get_sample_dim;
 using ::distconv::get_channel_dim;

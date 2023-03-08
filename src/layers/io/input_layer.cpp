@@ -30,13 +30,16 @@
 #include "lbann/layers/io/input_layer.hpp"
 
 #include "lbann/callbacks/imcomm.hpp"
+#include "lbann/data_coordinator/buffered_data_coordinator.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/layers.pb.h"
+#include "lbann/trainers/trainer.hpp"
 
 template <typename T, lbann::data_layout L, El::Device D>
 std::unique_ptr<lbann::Layer>

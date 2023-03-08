@@ -25,6 +25,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/set_weights_value.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/utils/serialize.hpp"
 

@@ -34,6 +34,7 @@
 #include <lbann/base.hpp>
 #include <lbann/models/model.hpp>
 #include <lbann/utils/lbann_library.hpp>
+#include "lbann/objective_functions/objective_function.hpp"
 
 #include <google/protobuf/text_format.h>
 #include "lbann/proto/lbann.pb.h"

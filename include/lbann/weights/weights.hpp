@@ -28,8 +28,6 @@
 #define LBANN_WEIGHTS_HPP
 
 #include "lbann/base.hpp"
-#include "lbann/comm.hpp"
-#include "lbann/io/persist.hpp"
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/description.hpp"
 
@@ -46,7 +44,13 @@ class Weights;
 
 namespace lbann {
 
+namespace Al {
 // Forward declaration
+struct request;
+} // namespace lbann::Al
+
+// Forward declaration
+class lbann_comm;
 class weights;
 class weights_initializer;
 class optimizer;

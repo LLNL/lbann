@@ -94,16 +94,7 @@ protected:
   {}
 
 
-  void fp_compute() override {
-    auto& output = this->get_activations();
-    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
-    if (m_training_only && (mode != execution_mode::training)) {
-      El::Fill(output, m_mean);
-    }
-    else {
-      gaussian_fill(output, output.Height(), output.Width(), m_mean, m_stdev);
-    }
-  }
+  void fp_compute() override;
 };
 
 

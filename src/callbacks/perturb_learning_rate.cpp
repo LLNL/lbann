@@ -26,10 +26,13 @@
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/perturb_learning_rate.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/random_number_generators.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/protobuf.hpp"
+#include "lbann/weights/weights.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
 

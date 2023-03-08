@@ -31,10 +31,42 @@
 #include "lbann/proto/lbann.pb.h"
 #include "lbann/proto/layers.pb.h"
 
+#include "lbann/utils/exception.hpp"
+
 #include <math.h>
 #include <algorithm>
 
 namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void cutout_layer<TensorDataType, Layout, Device>::setup_dims(DataReaderMetaData& dr_metadata) {
+  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+
+  // Get input dimensions
+  auto dims = this->get_input_dims(0);
+  const auto& cutout_length = this->get_input_dims(1);
+
+  // Check that dimensions are valid
+  if (dims.size() != 3) {
+    std::ostringstream ss;
+    for (size_t i = 0; i < dims.size(); ++i) {
+      ss << (i > 0 ? " x " : "") << dims[i];
+    }
+    LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
+      "expects a 3D input in CHW format, ",
+      "but input dimensions are ",ss.str());
+  }
+  if (cutout_length.size() > 1 || cutout_length[0] != 1) {
+    std::ostringstream ss;
+    for (size_t i = 0; i < cutout_length.size(); ++i) {
+      ss << (i > 0 ? " x " : "") << cutout_length[i];
+    }
+    LBANN_ERROR(
+      this->get_type()," layer \"",this->get_name(),"\" ",
+      "expects a scalar input for the cutout length, ",
+      "but input dimensions are ",ss.str());
+  }
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void cutout_layer<TensorDataType, Layout, Device>::write_specific_proto(lbann_data::Layer& proto) const {

@@ -54,14 +54,7 @@ class hang : public callback_base {
   void setup(model* m) override;
 
   /// Hang on train begin.
-  void on_train_begin(model* m) override {
-    if (m_rank_to_hang == -1 ||
-        m_rank_to_hang == m->get_comm()->get_rank_in_world()) {
-      // Set this flag to false with your debugger to resume execution.
-      volatile bool lbann_hang = true;
-      while (lbann_hang) {}
-    }
-  }
+  void on_train_begin(model* m) override;
   std::string name() const override { return "hang"; }
 
   /** @name Serialization */

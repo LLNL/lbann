@@ -36,6 +36,8 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/protobuf.hpp"
+#include "lbann/metrics/metric.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
 
 #include "lbann/proto/training_algorithm.pb.h"
 

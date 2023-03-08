@@ -105,31 +105,9 @@ protected:
     : variance_layer(nullptr, false)
   {}
 
-  void setup_data(size_t max_mini_batch_size) override {
-    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
-    auto dist_data = this->get_prev_activations().DistData();
-    dist_data.colDist = El::STAR;
-    m_means.reset(AbsDistMatrixType::Instantiate(dist_data));
-    m_workspace.reset(AbsDistMatrixType::Instantiate(dist_data));
-  }
+  void setup_data(size_t max_mini_batch_size) override;
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-    this->set_output_dims({1});
-    if (this->get_input_size() <= 1) {
-      std::stringstream err;
-      const auto& parents = this->get_parent_layers();
-      const auto& dims = this->get_input_dims();
-      err << get_type() << " layer \"" << this->get_name() << "\" "
-          << "expects an input tensor with at least two entries, "
-          << "but parent layer \"" << parents[0]->get_name() << "\" "
-          << "outputs a tensor with dimensions ";
-      for (size_t i = 0; i < dims.size(); ++i) {
-        err << (i > 0 ? " x " : "") << dims[i];
-      }
-      LBANN_ERROR(err.str());
-    }
-  }
+  void setup_dims(DataReaderMetaData& dr_metadata) override;
 
   void fp_compute() override;
   void bp_compute() override;

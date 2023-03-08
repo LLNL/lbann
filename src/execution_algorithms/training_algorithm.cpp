@@ -29,6 +29,7 @@
 #include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/callbacks/load_model.hpp"
 #include "lbann/callbacks/save_model.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/models/model.hpp"
 #include <string>
 

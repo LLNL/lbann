@@ -38,6 +38,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/weights/data_type_weights_impl.hpp"
+#include "lbann/metrics/metric.hpp"
 
 #include "lbann/proto/training_algorithm.pb.h"
 

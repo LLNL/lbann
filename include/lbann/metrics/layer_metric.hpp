@@ -80,10 +80,7 @@ class layer_metric : public metric {
    *  overridden.
    */
   EvalType evaluate_compute(const AbsDistMat& prediction,
-                            const AbsDistMat& ground_truth) override {
-    LBANN_ERROR("This function should not be called");
-    return EvalType(0);
-  }
+                            const AbsDistMat& ground_truth) override;
 
  private:
 

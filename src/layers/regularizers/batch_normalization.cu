@@ -26,7 +26,9 @@
 
 #define LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 #include "lbann/comm_impl.hpp"
-#include "lbann/layers/regularizers/batch_normalization.hpp"
+#include "lbann/layers/regularizers/batch_normalization_impl.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/optimizers/optimizer_impl.hpp"
 #include "lbann/weights/weights_helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 

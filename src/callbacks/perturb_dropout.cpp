@@ -26,6 +26,7 @@
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/perturb_dropout.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/random_number_generators.hpp"
 #include "lbann/utils/serialize.hpp"

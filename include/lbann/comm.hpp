@@ -36,6 +36,8 @@
 #include <Al.hpp>
 #endif // LBANN_HAS_ALUMINUM
 
+#include "lbann/comm_nb_request.hpp"
+
 #include "detect_El_mpi.hpp"
 
 #include <map>
@@ -56,52 +58,6 @@ enum class GridType
   PRIMARY_GRID = 1,
   SECONDARY_GRID = 2
 };
-
-
-namespace Al {
-
-/** Dummy Aluminum backend. */
-class dummy_backend
-{
-public:
-  using req_type = int;
-  static constexpr req_type null_req = 0;
-};
-
-// Define aliases for Aluminum backends
-#ifdef LBANN_HAS_ALUMINUM
-using mpi_backend = ::Al::MPIBackend;
-#else
-using mpi_backend = lbann::Al::dummy_backend;
-#endif // LBANN_HAS_ALUMINUM
-using mpi_req_type = mpi_backend::req_type;
-static const mpi_req_type mpi_null_req = mpi_backend::null_req;
-/// @todo MPI-CUDA backend
-#if defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_NCCL)
-using nccl_backend = ::Al::NCCLBackend;
-// LBANN does its own synchronization on this.
-#else
-using nccl_backend = lbann::Al::dummy_backend;
-#endif // defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_NCCL)
-using nccl_req_type = nccl_backend::req_type;
-static const nccl_req_type nccl_null_req = nccl_backend::null_req;
-#if defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_HOST_TRANSFER)
-using hosttransfer_backend = ::Al::HostTransferBackend;
-#else
-using hosttransfer_backend = lbann::Al::dummy_backend;
-#endif // defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_HOST_TRANSFER)
-using hosttransfer_req_type = hosttransfer_backend::req_type;
-static const hosttransfer_req_type hosttransfer_null_req = hosttransfer_backend::null_req;
-
-/** Wrapper for Aluminum non-blocking routine requests. */
-struct request
-{
-  mpi_req_type mpi_req = mpi_null_req;
-  nccl_req_type nccl_req = nccl_null_req;
-  hosttransfer_req_type hosttransfer_req = hosttransfer_null_req;
-  MPI_Request raw_mpi_req = MPI_REQUEST_NULL;
-};
-} // namespace Al
 
 /* Notes on Synchronization
  *

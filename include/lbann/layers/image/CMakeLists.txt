@@ -26,6 +26,7 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
   bilinear_resize.hpp
+  bilinear_resize_impl.hpp
   rotation.hpp
   composite_image_transformation.hpp
   cutout.hpp

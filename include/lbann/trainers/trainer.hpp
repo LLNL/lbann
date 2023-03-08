@@ -28,13 +28,8 @@
 #define LBANN_TRAINER_HPP
 
 #include "lbann/base.hpp"
-#include "lbann/comm.hpp"
-#include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/detect_El_mpi.hpp"
-#include "lbann/execution_algorithms/training_algorithm.hpp"
-#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/models/model.hpp"
 #include "lbann/utils/hash.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 #include "lbann/proto/lbann.pb.h"
@@ -45,10 +40,18 @@
 
 namespace lbann {
 
-// Forward-declare this.
-class lbann_callback;
+// Forward-declarations
+struct DataReaderMetaData;
+class data_coordinator;
+class description;
+class lbann_comm;
+class callback_base;
+class ExecutionContext;
+class generic_data_reader;
 class TrainingAlgorithm;
 class TerminationCriteria;
+class model;
+
 
 /** @brief User-facing class that represents a set of compute resources.
  *

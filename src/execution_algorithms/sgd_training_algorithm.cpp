@@ -28,11 +28,14 @@
 
 #include "lbann/base.hpp"
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/timer_map.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/trainers/trainer.hpp"
 
 #include "lbann/proto/training_algorithm.pb.h"
 

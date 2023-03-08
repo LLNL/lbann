@@ -53,7 +53,7 @@ template <typename U>
 class data_parallel_layer_tensor_manager;
 template <typename U>
 class entrywise_layer_tensor_manager;
-}
+} // dnn_lib
 
 using supported_layer_data_type = h2::meta::TL<
 #ifdef LBANN_HAS_GPU_FP16
@@ -263,16 +263,7 @@ protected:
   // ===========================================================
 
   /** @brief Get the values matrix for a specific weights object */
-  InputAbsDistMatrixType const& weights_values(size_t idx) const {
-    if (idx >= m_weights_proxy.size())
-    {
-      LBANN_ERROR(
-        this->get_type()," layer \"",this->get_name(),"\" ",
-        "attempted to access weights ",idx,", ",
-        "but there are only ",m_weights_proxy.size()," weights");
-    }
-    return m_weights_proxy[idx].values();
-  }
+  InputAbsDistMatrixType const& weights_values(size_t idx) const;
 
   /** @brief Get a specific master weights object.
    *
@@ -439,7 +430,6 @@ private:
   friend class dnn_lib::entrywise_layer_tensor_manager;
 #endif // LBANN_HAS_GPU
 };
-
 
 #ifndef LBANN_DATA_TYPE_LAYER_INSTANTIATE
 #define PROTO(T)                                \

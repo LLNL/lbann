@@ -28,6 +28,10 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/layers/regularizers/layer_norm.hpp"
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#endif // LBANN_HAS_DISTCONV
+
 namespace lbann {
 
 namespace {

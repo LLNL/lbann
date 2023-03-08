@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_MEAN_ABSOLUTE_ERROR_LAYER_INSTANTIATE
-#include "lbann/layers/loss/mean_absolute_error.hpp"
+#include "lbann/layers/loss/mean_absolute_error_impl.hpp"
 
 namespace lbann {
 

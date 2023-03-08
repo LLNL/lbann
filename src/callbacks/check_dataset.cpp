@@ -26,9 +26,12 @@
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/check_dataset.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/layers/io/input_layer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/trainers/trainer.hpp"
 
 #include <iomanip>
 #include <vector>

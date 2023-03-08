@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_COVARIANCE_LAYER_INSTANTIATE
-#include "lbann/layers/misc/covariance.hpp"
+#include "lbann/layers/misc/covariance_impl.hpp"
 
 namespace lbann {
 

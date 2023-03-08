@@ -28,9 +28,27 @@
 #define LBANN_LAYERS_DATA_TYPE_DISTCONV_ADAPTER_HPP_INCLUDED
 
 #include "lbann/layers/distconv_adapter.hpp"
-#include "lbann/layers/layer.hpp"
+#include "distconv/tensor/shuffle_mpi.hpp"
+#include "distconv/tensor/shuffle_mpi_cuda.hpp"
 
 namespace lbann {
+
+// Forward Declarations
+class Layer;
+
+namespace dc {
+using Shape = ::distconv::tensor::Shape;
+
+using LocaleMPI = ::distconv::tensor::LocaleMPI;
+
+template <typename TensorDataType>
+using TensorDev = ::distconv::tensor::Tensor<
+  TensorDataType, LocaleMPI, ::distconv::tensor::CUDAAllocator>;
+
+template <typename TensorDataType>
+using TensorShuffler = ::distconv::tensor::TensorMPICUDAShuffler<TensorDataType>;
+
+} // namespace dc
 
 template <typename InputTensorDataType,
           typename OutputTensorDataType = InputTensorDataType>

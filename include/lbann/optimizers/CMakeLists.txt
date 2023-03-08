@@ -34,6 +34,7 @@ set_full_path(THIS_DIR_HEADERS
   hypergradient_adam.hpp
   hypergradient_adam_impl.hpp
   optimizer.hpp
+  optimizer_impl.hpp
   rmsprop.hpp
   rmsprop_impl.hpp
   sgd.hpp

@@ -34,6 +34,10 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+
+// Forward declarations
+class optimizer;
+
 namespace callback {
 
 // Different schedules should inherit from learning_rate.

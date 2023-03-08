@@ -26,7 +26,9 @@
 
 #include "lbann/callbacks/save_images.hpp"
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 
+#include "lbann/models/model.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/protobuf.hpp"

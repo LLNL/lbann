@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_RELU_LAYER_INSTANTIATE
-#include "lbann/layers/activations/relu.hpp"
+#include "lbann/layers/activations/relu_impl.hpp"
 #include "lbann/utils/entrywise_operator.hpp"
 
 namespace lbann {

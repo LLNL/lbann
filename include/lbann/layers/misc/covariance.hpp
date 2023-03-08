@@ -108,34 +108,9 @@ protected:
     : covariance_layer(nullptr, false)
   {}
 
-  void setup_data(size_t max_mini_batch_size) override {
-    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
-    auto dist_data = this->get_prev_activations().DistData();
-    dist_data.colDist = El::STAR;
-    m_means.reset(AbsDistMatrixType::Instantiate(dist_data));
-    m_workspace.reset(AbsDistMatrixType::Instantiate(dist_data));
-  }
+  void setup_data(size_t max_mini_batch_size) override;
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-    this->set_output_dims({1});
-    if (this->get_input_dims(0) != this->get_input_dims(1)) {
-      const auto& parents = this->get_parent_layers();
-      std::stringstream err;
-      err << get_type() << " layer \"" << this->get_name() << "\" "
-          << "has input tensors with different dimensions (";
-      for (int i = 0; i < this->get_num_parents(); ++i) {
-        const auto& dims = this->get_input_dims(i);
-        err << (i > 0 ? ", " : "")
-            << "layer \"" << parents[i]->get_name() << "\" outputs ";
-        for (size_t j = 0; j < dims.size(); ++j) {
-          err << (j > 0 ? " x " : "") << dims[j];
-        }
-      }
-      err << ")";
-      LBANN_ERROR(err.str());
-    }
-  }
+  void setup_dims(DataReaderMetaData& dr_metadata) override;
 
   void fp_compute() override;
   void bp_compute() override;

@@ -27,9 +27,13 @@
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/gpu_memory_usage.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 #include <iomanip>
 #include <sstream>
+
+#include "lbann/proto/callbacks.pb.h"
 
 namespace {
 template <typename T>

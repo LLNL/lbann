@@ -29,6 +29,7 @@
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/metrics/layer_metric.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
 

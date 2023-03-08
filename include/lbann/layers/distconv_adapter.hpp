@@ -27,14 +27,23 @@
 #ifndef LBANN_LAYERS_DISTCONV_ADAPTER_HPP_INCLUDED
 #define LBANN_LAYERS_DISTCONV_ADAPTER_HPP_INCLUDED
 
-#include "lbann/utils/distconv.hpp"
-
 #include <unordered_map>
 #include <unordered_set>
+
+#include "distconv/tensor/distribution.hpp"
+#include "distconv/tensor/tensor.hpp"
+
+// Provide access to El::Int
+#include "El.hpp"
 
 namespace lbann {
 
 class Layer;
+
+namespace dc {
+using Dist = ::distconv::tensor::Distribution;
+using AbsTensor = ::distconv::tensor::AbstractTensor;
+} // namespace dc
 
 class tensor_overlap_constraints {
  public:

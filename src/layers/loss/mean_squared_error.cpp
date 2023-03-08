@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_MEAN_SQUARED_ERROR_LAYER_INSTANTIATE
-#include "lbann/layers/loss/mean_squared_error.hpp"
+#include "lbann/layers/loss/mean_squared_error_impl.hpp"
 
 namespace lbann {
 

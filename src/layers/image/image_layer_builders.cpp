@@ -30,6 +30,7 @@
 #include "lbann/layers/image/composite_image_transformation.hpp"
 #include "lbann/layers/image/rotation.hpp"
 #include "lbann/layers/image/cutout.hpp"
+#include "lbann/utils/exception.hpp"
 
 #include "lbann/proto/layers.pb.h"
 

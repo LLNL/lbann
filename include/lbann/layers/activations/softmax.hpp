@@ -29,7 +29,6 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
-#include "lbann/utils/distconv.hpp"
 #include "lbann/utils/dnn_enums.hpp"
 #if defined LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/helpers.hpp"
@@ -37,6 +36,11 @@
 #endif // defined LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/softmax.hpp"
 #include "lbann/proto/layers.pb.h"
+
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/utils/distconv.hpp"
+#include "distconv/dnn_backend/softmax.hpp"
+#endif
 
 // Threshold outputs to a minimum value.
 
@@ -50,6 +54,11 @@
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
+namespace dc {
+using Backend = ::distconv::BackendDNNLib;
+using Softmax = ::distconv::Softmax<Backend>;
+} // namespace dc
+
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class softmax_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
  public:
@@ -232,79 +241,6 @@ private:
   const softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() const final;
 #endif // LBANN_HAS_DISTCONV
 };
-
-template <typename T, data_layout L, El::Device D>
-void softmax_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
-  proto.set_datatype(proto::ProtoDataType<T>);
-  auto* msg = proto.mutable_softmax();
-  switch (m_mode)
-  {
-    case softmax_mode::INSTANCE:
-      msg->set_softmax_mode("instance");
-      break;
-    case softmax_mode::CHANNEL:
-      msg->set_softmax_mode("channel");
-      break;
-    default:
-      msg->set_softmax_mode("invalid");
-  }
-}
-
-#ifdef LBANN_HAS_DISTCONV
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-softmax_distconv_adapter<TensorDataType, T_layout, Dev>&
-softmax_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() {
-  return const_cast<softmax_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      static_cast<const softmax_layer<TensorDataType, T_layout, Dev>&>(*this).get_distconv_adapter());
-}
-
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-const softmax_distconv_adapter<TensorDataType, T_layout, Dev>&
-softmax_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const {
-  return dynamic_cast<const softmax_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      data_type_layer<TensorDataType>::get_distconv_adapter());
-}
-
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void softmax_distconv_adapter<TensorDataType, T_layout, Dev>::
-setup_distributions(tensor_overlap_constraints &constraints) {
-  data_type_distconv_adapter<TensorDataType>::setup_distributions(
-      constraints);
-  // No overlap supported yet
-  for (auto &d: this->m_prev_activations_dists) {
-    d.clear_overlap();
-    constraints.mark_updated(d);
-    constraints.mark_invariant(d);
-  }
-  for (auto &d: this->m_activations_dists) {
-    d.clear_overlap();
-    constraints.mark_updated(d);
-    constraints.mark_invariant(d);
-  }
-  for (auto &d: this->m_prev_error_signals_dists) {
-    d.clear_overlap();
-    constraints.mark_updated(d);
-    constraints.mark_invariant(d);
-  }
-  for (auto &d: this->m_error_signals_dists) {
-    d.clear_overlap();
-    constraints.mark_updated(d);
-    constraints.mark_invariant(d);
-  }
-}
-
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void softmax_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
-    size_t workspace_capacity) {
-  auto &l = dynamic_cast<softmax_layer<TensorDataType, T_layout, Dev>&>(
-      this->layer());
-  m_softmax = std::make_unique<dc::Softmax>(dc::get_backend());
-  auto mode = l.m_mode == softmax_mode::INSTANCE ?
-                          ::distconv::SoftmaxMode::INSTANCE :
-      ::distconv::SoftmaxMode::CHANNEL;
-  m_softmax->setup(this->get_prev_activations(), mode);
-}
-#endif // LBANN_HAS_DISTCONV
 
 #ifndef LBANN_SOFTMAX_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \
