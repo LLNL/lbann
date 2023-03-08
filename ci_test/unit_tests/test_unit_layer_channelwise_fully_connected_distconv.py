@@ -50,7 +50,7 @@ def setup_experiment(lbann, weekly):
         lbann (module): Module for LBANN Python frontend
 
     """
-    if (not lbann.has_feature('DISTCONV'):
+    if not lbann.has_feature('DISTCONV'):
         message = f'{os.path.basename(__file__)} requires DISTCONV'
         print('Skip - ' + message)
         pytest.skip(message)   
