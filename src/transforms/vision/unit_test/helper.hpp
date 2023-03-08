@@ -26,6 +26,8 @@
 #ifndef LBANN_TRANSFORMS_VISION_UNIT_TEST_HELPER
 #define LBANN_TRANSFORMS_VISION_UNIT_TEST_HELPER
 
+#include <El.hpp>
+
 inline void
 apply_elementwise(El::Matrix<uint8_t>& mat,
                   El::Int height,

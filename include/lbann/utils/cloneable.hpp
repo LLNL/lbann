@@ -29,6 +29,7 @@
 #include <h2/meta/core/SFINAE.hpp>
 #include <memory>
 #include <type_traits>
+#include <vector>
 
 /** @file
  *
