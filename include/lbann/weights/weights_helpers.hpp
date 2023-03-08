@@ -58,13 +58,15 @@ struct SafeWeightsAccessor
   {
     auto* dtw = dynamic_cast<DataTypeWeights*>(&w);
     if (!dtw)
-      LBANN_ERROR("Weights object named \"", w.get_name(),
+      LBANN_ERROR("Weights object named \"",
+                  w.get_name(),
                   "\" does not have weights of dynamic type \"",
-                  TypeName<TensorDataType>(), "\".");
+                  TypeName<TensorDataType>(),
+                  "\".");
     return dtw->get_values();
   }
-};// class SafeWeightsAccessor
+}; // class SafeWeightsAccessor
 
-}// namespace weights_details
-}// namespace lbann
+} // namespace weights_details
+} // namespace lbann
 #endif // LBANN_WEIGHTS_WEIGHTS_HELPERS_HPP_INCLUDED

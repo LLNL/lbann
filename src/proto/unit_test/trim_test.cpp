@@ -92,8 +92,5 @@ TEST_CASE("Testing string trimming", "[proto][utilities]")
     CHECK(lbann::trim(" \n\t") == "");
     CHECK(lbann::trim("     \t\n\t") == "");
   }
-  SECTION("Empty string")
-  {
-    CHECK(lbann::trim("") == "");
-  }
+  SECTION("Empty string") { CHECK(lbann::trim("") == ""); }
 }

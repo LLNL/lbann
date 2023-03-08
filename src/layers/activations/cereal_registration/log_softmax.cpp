@@ -30,9 +30,7 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
-void
-log_softmax_layer<TensorDataType,Layout,Device>
-::serialize(ArchiveT& ar)
+void log_softmax_layer<TensorDataType, Layout, Device>::serialize(ArchiveT& ar)
 {
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",

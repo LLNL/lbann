@@ -32,14 +32,18 @@
 namespace lbann {
 namespace transform {
 
-void to_lbann_layout::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+void to_lbann_layout::apply(utils::type_erased_matrix& data,
+                            std::vector<size_t>& dims)
+{
   auto dst = CPUMat(get_linear_size(dims), 1);
   apply(data, dst, dims);
   data.emplace<DataType>(std::move(dst));
 }
 
-void to_lbann_layout::apply(utils::type_erased_matrix& data, CPUMat& out,
-                            std::vector<size_t>& dims) {
+void to_lbann_layout::apply(utils::type_erased_matrix& data,
+                            CPUMat& out,
+                            std::vector<size_t>& dims)
+{
   cv::Mat src = utils::get_opencv_mat(data, dims);
   if (!src.isContinuous()) {
     // This should not occur, but just in case.
@@ -59,29 +63,31 @@ void to_lbann_layout::apply(utils::type_erased_matrix& data, CPUMat& out,
     // Greyscale.
     for (size_t row = 0; row < dims[1]; ++row) {
       for (size_t col = 0; col < dims[2]; ++col) {
-        dst_buf[row + col*dims[1]] = src_buf[row*dims[2] + col] * scale;
+        dst_buf[row + col * dims[1]] = src_buf[row * dims[2] + col] * scale;
       }
     }
-  } else {
+  }
+  else {
     // RGB/three-channel.
     const size_t size = dims[1] * dims[2];
     for (size_t row = 0; row < dims[1]; ++row) {
       for (size_t col = 0; col < dims[2]; ++col) {
         // Multiply by 3 because there are three channels.
-        const size_t src_base = 3*(row*dims[2] + col);
-        const size_t dst_base = row + col*dims[1];
+        const size_t src_base = 3 * (row * dims[2] + col);
+        const size_t dst_base = row + col * dims[1];
         dst_buf[dst_base] = src_buf[src_base] * scale;
         dst_buf[dst_base + size] = src_buf[src_base + 1] * scale;
-        dst_buf[dst_base + 2*size] = src_buf[src_base + 2] * scale;
+        dst_buf[dst_base + 2 * size] = src_buf[src_base + 2] * scale;
       }
     }
   }
 }
 
 std::unique_ptr<transform>
-build_to_lbann_layout_transform_from_pbuf(google::protobuf::Message const&) {
+build_to_lbann_layout_transform_from_pbuf(google::protobuf::Message const&)
+{
   return std::make_unique<to_lbann_layout>();
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

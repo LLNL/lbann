@@ -36,28 +36,29 @@
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
-template <typename TensorDataType,
-          data_layout T_layout, El::Device Dev>
-class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
- public:
-  using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class input_distconv_adapter : public data_type_distconv_adapter<TensorDataType>
+{
+public:
+  using TensorDevType =
+    typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
   using TensorHost = dc::TensorHost<TensorDataType>;
   using TensorHostShuffler = dc::TensorHostShuffler<TensorDataType>;
 
-  input_distconv_adapter(
-    Layer& layer,
-    data_field_type data_field,
-    const bool shuffle_required);
+  input_distconv_adapter(Layer& layer,
+                         data_field_type data_field,
+                         const bool shuffle_required);
   virtual ~input_distconv_adapter() = default;
 
   void setup_layer(size_t workspace_capacity) override;
 
-  TensorHostShuffler &get_shuffler(const TensorHost &src, const TensorHost &dst);
+  TensorHostShuffler& get_shuffler(const TensorHost& src,
+                                   const TensorHost& dst);
   void setup_fp_tensors() override;
   std::unique_ptr<TensorDevType> setup_activations_i(int index) const override;
   dc::Shape get_activations_local_shape(int index) const override;
   dc::Shape get_activations_shape(int index) const override;
-  void setup_shuffler_buffers(const TensorHost &src, const TensorHost &dst);
+  void setup_shuffler_buffers(const TensorHost& src, const TensorHost& dst);
 
   // No bp tensors needed for this layer.
   void setup_prev_error_signals() override {}
@@ -73,8 +74,7 @@ class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
   void fp_setup(El::Int mini_batch_size) override {}
   void fp_compute();
 
- private:
-
+private:
   /// @brief Data field accessed by corresponding input layer
   data_field_type m_data_field;
 
@@ -90,7 +90,7 @@ class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
   size_t m_shuffler_dst_buf_size = 0;
 
   // TODO: Use pinned memory pool
-  TensorDataType *m_copy_pinned_buffer = nullptr;
+  TensorDataType* m_copy_pinned_buffer = nullptr;
 };
 #endif // LBANN_HAS_DISTCONV
 
@@ -98,10 +98,12 @@ class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class input_layer : public data_type_layer<TensorDataType> {
+class input_layer : public data_type_layer<TensorDataType>
+{
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "input layer only supports DATA_PARALLEL data layout");
- public:
+
+public:
   /** @name Public Types */
   ///@{
 
@@ -109,23 +111,20 @@ class input_layer : public data_type_layer<TensorDataType> {
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
   ///@}
- public:
-
+public:
   /// @todo make the map and vector references
-   input_layer(lbann_comm* comm, std::string const data_field = "")
-     : data_type_layer<TensorDataType>(comm), m_data_field(data_field)
-   {
+  input_layer(lbann_comm* comm, std::string const data_field = "")
+    : data_type_layer<TensorDataType>(comm), m_data_field(data_field)
+  {
 
-     // Input layers have no parents
-     this->m_expected_num_parent_layers = 0;
-     this->m_expected_num_child_layers = 1;
-   }
+    // Input layers have no parents
+    this->m_expected_num_parent_layers = 0;
+    this->m_expected_num_child_layers = 1;
+  }
 
   input_layer(const input_layer&) = default;
   input_layer& operator=(const input_layer&) = default;
-  input_layer* copy() const override {
-    return new input_layer(*this);
-  }
+  input_layer* copy() const override { return new input_layer(*this); }
 
   std::string get_type() const override { return "input"; }
 
@@ -159,7 +158,8 @@ class input_layer : public data_type_layer<TensorDataType> {
   /**
    * Get the dimensions of the underlying data.
    */
-  std::vector<int> get_data_dims(DataReaderMetaData& dr_metadata, int child_index = 0) const;
+  std::vector<int> get_data_dims(DataReaderMetaData& dr_metadata,
+                                 int child_index = 0) const;
 
   /** @name Serialization */
   ///@{
@@ -170,11 +170,10 @@ class input_layer : public data_type_layer<TensorDataType> {
   ///@}
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
- private:
+private:
   friend cereal::access;
   input_layer() : input_layer(nullptr) {}
 
@@ -185,18 +184,24 @@ protected:
   data_field_type m_data_field;
 
 #ifdef LBANN_HAS_DISTCONV
- public:
+public:
   /** @brief Extensions for distributed convolutions */
-///{@
-  using distconv_adapter_type = input_distconv_adapter<TensorDataType, T_layout, Dev>;
+  ///{@
+  using distconv_adapter_type =
+    input_distconv_adapter<TensorDataType, T_layout, Dev>;
   friend distconv_adapter_type;
- protected:
-  bool is_distconv_supported() const override {
+
+protected:
+  bool is_distconv_supported() const override
+  {
     return Dev == El::Device::CPU && T_layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
-    this->get_distconv_adapter_ptr() = std::make_unique<distconv_adapter_type>(
-      *this, m_data_field, dr_metadata.shuffle_required);
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override
+  {
+    this->get_distconv_adapter_ptr() =
+      std::make_unique<distconv_adapter_type>(*this,
+                                              m_data_field,
+                                              dr_metadata.shuffle_required);
   }
   distconv_adapter_type& get_distconv_adapter() override;
   const distconv_adapter_type& get_distconv_adapter() const override;
@@ -210,9 +215,8 @@ LBANN_DEFINE_LAYER_BUILDER(input);
 
 #ifndef LBANN_INPUT_LAYER_INSTANTIATE
 
-#define PROTO_DEVICE(T, Device)         \
-  extern template class input_layer<    \
-    T, data_layout::DATA_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class input_layer<T, data_layout::DATA_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
@@ -221,4 +225,4 @@ LBANN_DEFINE_LAYER_BUILDER(input);
 
 } // namespace lbann
 
-#endif  // LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
+#endif // LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED

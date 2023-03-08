@@ -36,13 +36,15 @@ template <typename TensorDataType, data_layout layout, El::Device device>
 struct lrn_builder;
 
 template <typename TensorDataType, El::Device device>
-struct lrn_builder<TensorDataType, data_layout::DATA_PARALLEL, device> {
+struct lrn_builder<TensorDataType, data_layout::DATA_PARALLEL, device>
+{
   using LayerType =
     local_response_normalization_layer<TensorDataType,
                                        data_layout::DATA_PARALLEL,
                                        device>;
   static std::unique_ptr<LayerType> Get(lbann_comm* comm,
-                                        lbann_data::Layer const& layer_msg) {
+                                        lbann_data::Layer const& layer_msg)
+  {
     const auto& params = layer_msg.local_response_normalization();
     return std::make_unique<LayerType>(
       params.window_width(),
@@ -53,18 +55,22 @@ struct lrn_builder<TensorDataType, data_layout::DATA_PARALLEL, device> {
 };
 
 template <typename TensorDataType, El::Device device>
-struct lrn_builder<TensorDataType, data_layout::MODEL_PARALLEL, device> {
+struct lrn_builder<TensorDataType, data_layout::MODEL_PARALLEL, device>
+{
   static std::unique_ptr<Layer> Get(lbann_comm* comm,
-                                    lbann_data::Layer const& layer_msg) {
+                                    lbann_data::Layer const& layer_msg)
+  {
     LBANN_ERROR("local response normalization layer is only supported "
                 "with a data-parallel layout");
     return nullptr;
   }
 };
-}// namespace
+} // namespace
 
 template <typename T, data_layout L, El::Device D>
-void local_response_normalization_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void local_response_normalization_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_local_response_normalization();
   msg->set_window_width(m_window_width);
@@ -75,24 +81,29 @@ void local_response_normalization_layer<T,L,D>::write_specific_proto(lbann_data:
 
 template <typename TensorDataType, data_layout layout, El::Device device>
 std::unique_ptr<Layer> build_local_response_normalization_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const& layer_msg)
+  lbann_comm* comm,
+  lbann_data::Layer const& layer_msg)
 {
-  using Builder = lrn_builder<TensorDataType,layout,device>;
+  using Builder = lrn_builder<TensorDataType, layout, device>;
   return Builder::Get(comm, layer_msg);
 }
 
-#define PROTO_DEVICE(T, Device)                                         \
-  template std::unique_ptr<Layer>                                       \
-  build_local_response_normalization_layer_from_pbuf<                   \
-      T, data_layout::DATA_PARALLEL, Device>(                           \
-    lbann_comm*, lbann_data::Layer const&);                             \
-  template std::unique_ptr<Layer>                                       \
-  build_local_response_normalization_layer_from_pbuf<                   \
-      T, data_layout::MODEL_PARALLEL, Device>(                          \
-    lbann_comm*, lbann_data::Layer const&);                             \
-  template class local_response_normalization_layer<                    \
-    T, data_layout::DATA_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  template std::unique_ptr<Layer>                                              \
+  build_local_response_normalization_layer_from_pbuf<                          \
+    T,                                                                         \
+    data_layout::DATA_PARALLEL,                                                \
+    Device>(lbann_comm*, lbann_data::Layer const&);                            \
+  template std::unique_ptr<Layer>                                              \
+  build_local_response_normalization_layer_from_pbuf<                          \
+    T,                                                                         \
+    data_layout::MODEL_PARALLEL,                                               \
+    Device>(lbann_comm*, lbann_data::Layer const&);                            \
+  template class local_response_normalization_layer<                           \
+    T,                                                                         \
+    data_layout::DATA_PARALLEL,                                                \
+    Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

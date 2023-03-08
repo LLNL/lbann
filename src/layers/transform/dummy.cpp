@@ -27,24 +27,25 @@
 #define LBANN_DUMMY_LAYER_INSTANTIATE
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
-#include <lbann/utils/memory.hpp>
 #include "lbann/proto/layers.pb.h"
+#include <lbann/utils/memory.hpp>
 
 namespace lbann {
 
 LBANN_LAYER_DEFAULT_BUILDER(dummy)
 
 template <typename T, data_layout L, El::Device D>
-void dummy_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void dummy_layer<T, L, D>::write_specific_proto(lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   proto.mutable_dummy();
 }
 
-#define PROTO_DEVICE(T, Device) \
-  template class dummy_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class dummy_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  template class dummy_layer<T, data_layout::DATA_PARALLEL, Device>;           \
+  template class dummy_layer<T, data_layout::MODEL_PARALLEL, Device>;          \
   LBANN_LAYER_BUILDER_ETI(dummy, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

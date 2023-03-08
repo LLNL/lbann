@@ -1,4 +1,4 @@
- ////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
@@ -39,7 +39,7 @@ namespace meta {
 // Quick, forced if-then-else
 template <bool B, typename T, typename F>
 using IfThenElse = typename std::conditional<B, T, F>::type;
-}// namespace meta
+} // namespace meta
 
 template <typename T>
 class MatrixBuilder
@@ -53,11 +53,12 @@ public:
 public:
   virtual ~MatrixBuilder() = default;
   virtual matrix_ptr_type MakeEmpty(El::Grid const& g, El::Int root) const = 0;
-  virtual matrix_ptr_type MakeWithSize(
-    El::Grid const& g, El::Int root,
-    size_type height, size_type width) const = 0;
+  virtual matrix_ptr_type MakeWithSize(El::Grid const& g,
+                                       El::Int root,
+                                       size_type height,
+                                       size_type width) const = 0;
 
-};// class MatrixBuilder
+}; // class MatrixBuilder
 
 // Uses memory mode = 1 for CPU (pinned memory) and for GPU (CUB memory).
 template <typename T, data_layout L, El::Device D>
@@ -67,7 +68,7 @@ class DefaultMemoryMatrixBuilder : public MatrixBuilder<T>
   using concrete_matrix_type =
     meta::IfThenElse<L == data_layout::DATA_PARALLEL,
                      El::DistMatrix<T, El::STAR, El::VC, El::ELEMENT, D>,
-                     El::DistMatrix<T, El::MC  , El::MR, El::ELEMENT, D>>;
+                     El::DistMatrix<T, El::MC, El::MR, El::ELEMENT, D>>;
 
 #if defined(HYDROGEN_HAVE_GPU) && defined(HYDROGEN_HAVE_CUB)
   // Pinned host memory; memory-pooled device memory
@@ -93,16 +94,18 @@ public:
     return ret;
   }
 
-  matrix_ptr_type MakeWithSize(El::Grid const& g, El::Int root,
-                               size_type height, size_type width) const final
+  matrix_ptr_type MakeWithSize(El::Grid const& g,
+                               El::Int root,
+                               size_type height,
+                               size_type width) const final
   {
     auto ret = this->MakeEmpty(g, root);
     ret->Resize(height, width);
     return ret;
   }
 
-};// class DefaultMemoryMatrixBuilder
+}; // class DefaultMemoryMatrixBuilder
 
-}// namespace details
-}// namespace lbann
+} // namespace details
+} // namespace lbann
 #endif // NON_PUBLIC_LBANN_SRC_LAYERS_MATRIX_BUILDER_INCLUDED

@@ -68,7 +68,7 @@
 namespace {
 lbann::lbann_comm* world_comm_ = nullptr;
 MPI_Errhandler err_handle;
-}// namespace <anon>
+} // namespace
 
 namespace lbann {
 // Declare the trainer finalization. It's declared here because it is
@@ -80,15 +80,15 @@ namespace utils {
 // This function def is very out-of-place... It's declared in
 // "serialize_matrices.hpp"...
 lbann_comm& get_current_comm() noexcept { return *world_comm_; }
-}// namespace utils
-}// namespace lbann
+} // namespace utils
+} // namespace lbann
 
 auto lbann::initialize_lbann(El::mpi::Comm&& c) -> std::unique_ptr<lbann_comm>
 {
 
   // Parse command-line arguments and environment variables
   auto& arg_parser = global_argument_parser();
-  (void) arg_parser;
+  (void)arg_parser;
 
   // to ensure that all the necessary infrastructure in Hydrogen and
   // Aluminum has been setup.
@@ -99,8 +99,8 @@ auto lbann::initialize_lbann(El::mpi::Comm&& c) -> std::unique_ptr<lbann_comm>
   world_comm_ = comm.get();
 
   // Install MPI error handler
-  //MPI_Comm_create_errhandler(lbann_mpi_err_handler, &err_handle);
-  //MPI_Comm_set_errhandler(MPI_COMM_WORLD, err_handle);
+  // MPI_Comm_create_errhandler(lbann_mpi_err_handler, &err_handle);
+  // MPI_Comm_set_errhandler(MPI_COMM_WORLD, err_handle);
 
 #if defined(LBANN_TOPO_AWARE)
   // Determine the number of NUMA nodes present.
@@ -109,8 +109,8 @@ auto lbann::initialize_lbann(El::mpi::Comm&& c) -> std::unique_ptr<lbann_comm>
   hwloc_topology_load(topo);
   int numa_depth = hwloc_get_type_depth(topo, HWLOC_OBJ_NUMANODE);
   if (numa_depth == HWLOC_TYPE_DEPTH_UNKNOWN) {
-    std::cout << comm->get_rank_in_world() <<
-              ": cannot determine hwloc NUMA-node depth" << std::endl;
+    std::cout << comm->get_rank_in_world()
+              << ": cannot determine hwloc NUMA-node depth" << std::endl;
   }
   int num_numa_nodes = hwloc_get_nbobjs_by_depth(topo, numa_depth);
   // Warn if there are more NUMA nodes than processes per node.
@@ -119,10 +119,9 @@ auto lbann::initialize_lbann(El::mpi::Comm&& c) -> std::unique_ptr<lbann_comm>
   int ppn = comm->get_procs_per_node();
   if (num_numa_nodes > ppn) {
     if (comm->get_rank_in_world() == 0) {
-      std::cout << comm->get_rank_in_world() <<
-                ": WARNING: node has " << num_numa_nodes <<
-                " NUMA nodes but you have " << ppn << " processes per node" <<
-                std::endl;
+      std::cout << comm->get_rank_in_world() << ": WARNING: node has "
+                << num_numa_nodes << " NUMA nodes but you have " << ppn
+                << " processes per node" << std::endl;
     }
   }
   hwloc_topology_destroy(topo);
@@ -156,17 +155,19 @@ auto lbann::initialize_lbann(MPI_Comm c) -> std::unique_ptr<lbann_comm>
   return initialize_lbann(El::mpi::Comm{c});
 }
 
-auto lbann::initialize_lbann(int argc, char** argv) -> std::unique_ptr<lbann_comm>
+auto lbann::initialize_lbann(int argc, char** argv)
+  -> std::unique_ptr<lbann_comm>
 {
   El::Initialize(argc, argv);
   return initialize_lbann(MPI_COMM_WORLD);
 }
 
-void lbann::finalize_lbann(lbann_comm* comm) {
+void lbann::finalize_lbann(lbann_comm* comm)
+{
 #ifdef LBANN_HAS_NVSHMEM
   nvshmem::finalize();
 #endif // LBANN_HAS_NVSHMEM
-  //MPI_Errhandler_free( &err_handle );
+  // MPI_Errhandler_free( &err_handle );
 #ifdef LBANN_HAS_DISTCONV
   dc::finalize();
 #endif
@@ -192,14 +193,14 @@ auto lbann::initialize(int& argc, char**& argv) -> world_comm_ptr
 {
   // Parse command-line arguments and environment variables
   auto& arg_parser = global_argument_parser();
-  (void) arg_parser;
+  (void)arg_parser;
 
   // Initialize Elemental.
   El::Initialize(argc, argv);
 
   // Create a new comm object.
   // Initial creation with every process in one model.
-  auto comm = world_comm_ptr{new lbann_comm(0), &lbann::finalize };
+  auto comm = world_comm_ptr{new lbann_comm(0), &lbann::finalize};
   world_comm_ = comm.get();
 
   // Install MPI error handler
@@ -213,8 +214,8 @@ auto lbann::initialize(int& argc, char**& argv) -> world_comm_ptr
   hwloc_topology_load(topo);
   int numa_depth = hwloc_get_type_depth(topo, HWLOC_OBJ_NUMANODE);
   if (numa_depth == HWLOC_TYPE_DEPTH_UNKNOWN) {
-    std::cout << comm->get_rank_in_world() <<
-              ": cannot determine hwloc NUMA-node depth" << std::endl;
+    std::cout << comm->get_rank_in_world()
+              << ": cannot determine hwloc NUMA-node depth" << std::endl;
   }
   int num_numa_nodes = hwloc_get_nbobjs_by_depth(topo, numa_depth);
   // Warn if there are more NUMA nodes than processes per node.
@@ -223,10 +224,9 @@ auto lbann::initialize(int& argc, char**& argv) -> world_comm_ptr
   int ppn = comm->get_procs_per_node();
   if (num_numa_nodes > ppn) {
     if (comm->get_rank_in_world() == 0) {
-      std::cout << comm->get_rank_in_world() <<
-                ": WARNING: node has " << num_numa_nodes <<
-                " NUMA nodes but you have " << ppn << " processes per node" <<
-                std::endl;
+      std::cout << comm->get_rank_in_world() << ": WARNING: node has "
+                << num_numa_nodes << " NUMA nodes but you have " << ppn
+                << " processes per node" << std::endl;
     }
   }
   hwloc_topology_destroy(topo);
@@ -255,12 +255,13 @@ auto lbann::initialize(int& argc, char**& argv) -> world_comm_ptr
   return comm;
 }
 
-void lbann::finalize(lbann_comm* comm) {
+void lbann::finalize(lbann_comm* comm)
+{
   finalize_trainer();
 #ifdef LBANN_HAS_NVSHMEM
   nvshmem::finalize();
 #endif // LBANN_HAS_NVSHMEM
-  MPI_Errhandler_free( &err_handle );
+  MPI_Errhandler_free(&err_handle);
 #ifdef LBANN_HAS_DISTCONV
   dc::finalize();
 #endif
@@ -285,7 +286,7 @@ void lbann::finalize(lbann_comm* comm) {
 auto lbann::data_layout_to_matrix_format(data_layout layout) -> matrix_format
 {
   matrix_format format;
-  switch(layout) {
+  switch (layout) {
   case data_layout::MODEL_PARALLEL:
     format = matrix_format::MC_MR;
     break;
@@ -349,7 +350,7 @@ auto lbann::device_from_string(std::string const& str) -> El::Device
 
 auto lbann::to_string(execution_mode m) -> std::string
 {
-  switch(m) {
+  switch (m) {
   case execution_mode::training:
     return "training";
   case execution_mode::validation:
@@ -365,7 +366,7 @@ auto lbann::to_string(execution_mode m) -> std::string
   case execution_mode::invalid:
     return "invalid";
   default:
-      LBANN_ERROR("Invalid execution mode specified");
+    LBANN_ERROR("Invalid execution mode specified");
   }
 }
 
@@ -374,7 +375,7 @@ auto lbann::exec_mode_from_string(std::string const& str) -> execution_mode
   if (str == "training" || str == "train")
     return execution_mode::training;
   else if (str == "validation" || str == "validate")
-      return execution_mode::validation;
+    return execution_mode::validation;
   else if (str == "testing" || str == "test")
     return execution_mode::testing;
   else if (str == "prediction" || str == "predict")
@@ -387,33 +388,39 @@ auto lbann::exec_mode_from_string(std::string const& str) -> execution_mode
     LBANN_ERROR("\"" + str + "\" is not a valid execution mode.");
 }
 
-std::istream& operator>>(std::istream& is, lbann::execution_mode& m) {
+std::istream& operator>>(std::istream& is, lbann::execution_mode& m)
+{
   std::string tmp;
   is >> tmp;
   m = lbann::exec_mode_from_string(tmp);
   return is;
 }
 
-bool lbann::endsWith(const std::string mainStr, const std::string &toMatch)
+bool lbann::endsWith(const std::string mainStr, const std::string& toMatch)
 {
-  if(mainStr.size() >= toMatch.size() &&
-     mainStr.compare(mainStr.size() - toMatch.size(), toMatch.size(), toMatch) == 0)
+  if (mainStr.size() >= toMatch.size() &&
+      mainStr.compare(mainStr.size() - toMatch.size(),
+                      toMatch.size(),
+                      toMatch) == 0)
     return true;
   else
     return false;
 }
 
-void lbann::print_matrix_dims(AbsDistMat *m, const char *name) {
-  std::cout << "DISPLAY MATRIX: " << name << " = "
-            << m->Height() << " x " << m->Width() << std::endl;
+void lbann::print_matrix_dims(AbsDistMat* m, const char* name)
+{
+  std::cout << "DISPLAY MATRIX: " << name << " = " << m->Height() << " x "
+            << m->Width() << std::endl;
 }
 
-void lbann::print_local_matrix_dims(AbsMat *m, const char *name) {
-  std::cout << "DISPLAY MATRIX: " << name << " = "
-            << m->Height() << " x " << m->Width() << std::endl;
+void lbann::print_local_matrix_dims(AbsMat* m, const char* name)
+{
+  std::cout << "DISPLAY MATRIX: " << name << " = " << m->Height() << " x "
+            << m->Width() << std::endl;
 }
 
-void lbann::lbann_mpi_err_handler(MPI_Comm *comm, int *err_code, ... ) {
+void lbann::lbann_mpi_err_handler(MPI_Comm* comm, int* err_code, ...)
+{
   char err_string[MPI_MAX_ERROR_STRING];
   int err_string_length;
   MPI_Error_string(*err_code, &err_string[0], &err_string_length);
@@ -510,7 +517,8 @@ CEREAL_FORCE_DYNAMIC_INIT(dist_embedding_layer);
 CEREAL_FORCE_DYNAMIC_INIT(uniform_hash_layer);
 #endif
 
-#if defined LBANN_GRU_LAYER_CUDNN_SUPPORTED || defined LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
+#if defined LBANN_GRU_LAYER_CUDNN_SUPPORTED ||                                 \
+  defined LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
 CEREAL_FORCE_DYNAMIC_INIT(gru_layer);
 #endif
 

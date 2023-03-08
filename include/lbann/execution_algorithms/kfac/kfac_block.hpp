@@ -52,9 +52,9 @@ using ReqT = typename BackendT::req_type;
 /** A building block for K-FAC.
  */
 template <El::Device Device>
-class kfac_block {
- public:
-
+class kfac_block
+{
+public:
   /** Constructor.
    */
   kfac_block(Layer* layer,
@@ -65,14 +65,15 @@ class kfac_block {
              bool enable_copy_activations,
              int input_size,
              int output_size)
-      : m_layer(layer),
-        m_layer_id(layer_id),
-        m_inverse_proc_rank(inverse_proc_rank),
-        m_input_size(input_size),
-        m_output_size(output_size),
-        m_enable_copy_errors(enable_copy_errors),
-        m_enable_copy_activations(enable_copy_activations),
-        m_context(context) {
+    : m_layer(layer),
+      m_layer_id(layer_id),
+      m_inverse_proc_rank(inverse_proc_rank),
+      m_input_size(input_size),
+      m_output_size(output_size),
+      m_enable_copy_errors(enable_copy_errors),
+      m_enable_copy_activations(enable_copy_activations),
+      m_context(context)
+  {
     m_has_kronecker_inverse = false;
   }
   virtual ~kfac_block() = default;
@@ -83,168 +84,134 @@ class kfac_block {
   virtual int get_local_memory_consumption() = 0;
 
   /** @brief Compute Kronecker factors. */
-  virtual void compute_local_kronecker_factors(
-      lbann_comm* comm,
-      bool print_matrix,
-      bool print_matrix_summary) {
-    LBANN_ERROR("this function should be called via a sub-class.");
-  }
+  virtual void compute_local_kronecker_factors(lbann_comm* comm,
+                                               bool print_matrix,
+                                               bool print_matrix_summary);
 
   /** @brief Get buffers of Kronecker factors for reduce-scatter. */
   virtual const std::vector<El::AbstractMatrix<DataType>*>
-  get_local_kronecker_buffers() {
-    LBANN_ERROR("this function should be called via a sub-class.");
-  }
+  get_local_kronecker_buffers();
 
   /** @brief Update the average Kronecker factors. */
-  virtual void update_kronecker_average(
-      lbann_comm* comm,
-      DataType kronecker_decay,
-      bool print_matrix,
-      bool print_matrix_summary) {
-    LBANN_ERROR("this function should be called via a sub-class.");
-  }
+  virtual void update_kronecker_average(lbann_comm* comm,
+                                        DataType kronecker_decay,
+                                        bool print_matrix,
+                                        bool print_matrix_summary);
 
   /** @brief Compute the inverse of the average Kronecker factors. */
-  virtual void update_kronecker_inverse(
-      lbann_comm* comm,
-      bool use_pi,
-      DataType damping_act, DataType damping_err,
-      DataType learning_rate_factor,
-      bool use_eigen_decomposition,
-      bool print_matrix,
-      bool print_matrix_summary,
-      bool print_time) {
-    LBANN_ERROR("this function should be called via a sub-class.");
-  }
+  virtual void update_kronecker_inverse(lbann_comm* comm,
+                                        bool use_pi,
+                                        DataType damping_act,
+                                        DataType damping_err,
+                                        DataType learning_rate_factor,
+                                        bool use_eigen_decomposition,
+                                        bool print_matrix,
+                                        bool print_matrix_summary,
+                                        bool print_time);
 
   /** @brief Compute the inverse of the average Kronecker factors. */
-  virtual void compute_preconditioned_gradients(
-      lbann_comm* comm,
-      DataType learning_rate_factor,
-      bool print_matrix,
-      bool print_matrix_summary,
-      bool print_time) {
-    LBANN_ERROR("this function should be called via a sub-class.");
-  }
+  virtual void compute_preconditioned_gradients(lbann_comm* comm,
+                                                DataType learning_rate_factor,
+                                                bool print_matrix,
+                                                bool print_matrix_summary,
+                                                bool print_time);
 
   /** @brief Copies activations, errors, and weights from model class to
   private variables to be used in KFAC computation. */
-  virtual void initialize_activations_and_errors(
-      lbann_comm* comm,
-      int num_local_activations,
-      int num_local_errors,
-      int num_weights){
-    LBANN_ERROR("this function should be called via a sub-class.");
-  }
+  virtual void initialize_activations_and_errors(lbann_comm* comm,
+                                                 int num_local_activations,
+                                                 int num_local_errors,
+                                                 int num_weights);
 
   virtual void start_communication_forward_end(lbann_comm* comm) = 0;
   virtual void end_communication_forward_end(lbann_comm* comm) = 0;
   virtual void start_communication_backward_end(lbann_comm* comm) = 0;
   virtual void end_communication_backward_end(lbann_comm* comm) = 0;
 
-
   /** @brief Get buffers of preconditioned parameter gradients. */
   virtual const std::vector<El::AbstractMatrix<DataType>*>
-  get_preconditioned_grad_buffers() {
-    LBANN_ERROR("this function should be called via a sub-class.");
-  }
+  get_preconditioned_grad_buffers();
 
   /** @brief Copy inverse matrices to output buffer. */
-  virtual int
-  get_inverse_matrices(
-      El::Matrix<DataType, Device>& output,
-      int offset) = 0;
+  virtual int get_inverse_matrices(El::Matrix<DataType, Device>& output,
+                                   int offset) = 0;
 
   /** @brief Get inverse matrices size (offset). */
-  virtual int
-  get_inverse_matrices_size(lbann_comm *comm) = 0;
+  virtual int get_inverse_matrices_size(lbann_comm* comm) = 0;
 
   /** @brief Get inverse matrices size vector */
   virtual std::vector<int>
-  get_inverse_matrices_size_vector(lbann_comm *comm) = 0;
+  get_inverse_matrices_size_vector(lbann_comm* comm) = 0;
 
   /** @brief Get inverse matrices size vector */
-  virtual void
-  resize_inverse_matrices_size(El::Matrix<double, El::Device::CPU>& inverse_matrices_size, int block_number) = 0;
+  virtual void resize_inverse_matrices_size(
+    El::Matrix<double, El::Device::CPU>& inverse_matrices_size,
+    int block_number) = 0;
 
   /** @brief Copy inverse matrices from output buffer. */
-  virtual int
-  set_inverse_matrices(
-      El::Matrix<DataType, Device>& workspace,
-      int offset,
-      lbann_comm *comm) = 0;
+  virtual int set_inverse_matrices(El::Matrix<DataType, Device>& workspace,
+                                   int offset,
+                                   lbann_comm* comm) = 0;
 
-  void set_current_batch_size(El::Int batch_size){
-    m_batch_size = batch_size;
-  }
+  void set_current_batch_size(El::Int batch_size) { m_batch_size = batch_size; }
 
   /** @brief Get block's information in one line. */
-  virtual std::string get_info() const {
+  virtual std::string get_info() const
+  {
     std::ostringstream oss;
-    oss << "name=" << m_layer->get_name()
-        << ", id=" << m_layer_id
+    oss << "name=" << m_layer->get_name() << ", id=" << m_layer_id
         << ", type=" << m_layer->get_type()
         << ", inverse_proc_rank=" << m_inverse_proc_rank;
     return oss.str();
   }
 
-  std::string get_name() const {
-    return m_layer->get_name();
-  }
+  std::string get_name() const { return m_layer->get_name(); }
 
-  size_t get_inverse_proc_rank() const {
-    return m_inverse_proc_rank;
-  }
+  size_t get_inverse_proc_rank() const { return m_inverse_proc_rank; }
 
-  DataType* get_local_activation_buffer(int index){
+  DataType* get_local_activation_buffer(int index)
+  {
     return m_parent_local_activations[index]->Buffer();
   }
 
-  DataType* get_local_error_buffer(int index){
+  DataType* get_local_error_buffer(int index)
+  {
     return m_child_local_errors[index]->Buffer();
   }
 
-  DataType* get_weight_buffer(int index){
+  DataType* get_weight_buffer(int index)
+  {
     return m_weight_values[index]->Buffer();
   }
 
-  DataType* get_gradient_wrt_weight_buffer(int index){
+  DataType* get_gradient_wrt_weight_buffer(int index)
+  {
     return m_weight_gradients[index]->Buffer();
   }
 
-  El::Int get_current_batch_size(){
-    return m_batch_size;
-  }
+  El::Int get_current_batch_size() { return m_batch_size; }
 
-  El::Int get_input_size(){
-    return m_input_size;
-  }
+  El::Int get_input_size() { return m_input_size; }
 
-  El::Int get_output_size(){
-    return m_output_size;
-  }
+  El::Int get_output_size() { return m_output_size; }
 
   /** @brief Return the list of internal matrices' (name, height,
    * width) for debugging. All internal matrices should be ready when
    * this function is called. */
   virtual std::vector<std::tuple<std::string, size_t, size_t>>
-  get_internal_matrix_info() const {
-    LBANN_ERROR("this function should be called via a sub-class.");
-  }
+  get_internal_matrix_info() const;
 
- protected:
-
+protected:
   /** @brief Gets the Kronecker factor matrix of a FC layer.
    *  The same key is tied with the same matrix instance. */
-  El::Matrix<DataType, Device>& get_workspace_matrix(
-      const std::string& key, size_t height, size_t width);
+  El::Matrix<DataType, Device>&
+  get_workspace_matrix(const std::string& key, size_t height, size_t width);
 
   /** @brief Return the default sync info that may used in update functions. */
   El::SyncInfo<Device> get_sync_info();
 
   /** @brief The target layer. */
-  Layer *m_layer;
+  Layer* m_layer;
 
   /** @brief The layer ID in the model.
       TODO: Remove this. */
@@ -258,13 +225,15 @@ class kfac_block {
     m_child_local_errors, m_weight_gradients, m_subset_matrix, m_errors_copy,
     m_activations_copy;
 
-  /** @brief Translatebetweengrid  funciton has a basic implementation for STAR,STAR
-   * distributed matrices. Therefore, using local matrices for weights  */
+  /** @brief Translatebetweengrid  funciton has a basic implementation for
+   * STAR,STAR distributed matrices. Therefore, using local matrices for weights
+   */
   std::vector<std::unique_ptr<AbsDistMat>> m_weight_values;
 
   std::vector<kfac::ReqT> m_requests_forward_end, m_requests_backward_end;
 
-  /** @brief feature size and batch size (used in primary -> secondary grid communication) */
+  /** @brief feature size and batch size (used in primary -> secondary grid
+   * communication) */
   int m_input_size, m_output_size, m_batch_size;
 
   /** @brief Enable copying of errors to enhance async communication. */
@@ -276,14 +245,12 @@ class kfac_block {
   /** @brief Whether this block already has an inverse history. */
   bool m_has_kronecker_inverse;
 
- private:
-
+private:
   /** @brief The execution context that created this block.
    *  TODO: Use its own workspace and remove this pointer. */
   kfac::KFACExecutionContext* m_context;
-
 };
 
 } // namespace lbann
 
-#endif  // LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_BLOCK_HPP_INCLUDED
+#endif // LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_BLOCK_HPP_INCLUDED

@@ -34,18 +34,22 @@ namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class identity_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
- public:
-  using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
-  identity_distconv_adapter(Layer &layer):
-      data_type_distconv_adapter<TensorDataType>(layer) {}
+class identity_distconv_adapter
+  : public data_type_distconv_adapter<TensorDataType>
+{
+public:
+  using TensorDevType =
+    typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+  identity_distconv_adapter(Layer& layer)
+    : data_type_distconv_adapter<TensorDataType>(layer)
+  {}
   virtual ~identity_distconv_adapter() = default;
-  void setup_distributions(tensor_overlap_constraints &constraints) override;
+  void setup_distributions(tensor_overlap_constraints& constraints) override;
   std::unique_ptr<TensorDevType> setup_activations_i(int index) const override;
-  std::unique_ptr<TensorDevType> setup_error_signals_i(int index) const override;
+  std::unique_ptr<TensorDevType>
+  setup_error_signals_i(int index) const override;
 };
 #endif // LBANN_HAS_DISTCONV
-
 
 /** @brief Output the input tensor
  *
@@ -53,7 +57,8 @@ class identity_distconv_adapter: public data_type_distconv_adapter<TensorDataTyp
  *  views.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class identity_layer : public data_type_layer<TensorDataType> {
+class identity_layer : public data_type_layer<TensorDataType>
+{
 public:
   identity_layer() : data_type_layer<TensorDataType>(nullptr) {}
   identity_layer* copy() const override { return new identity_layer(*this); }
@@ -74,15 +79,16 @@ public:
   ///@}
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
-  void fp_setup_outputs(El::Int mini_batch_size) override {
+  void fp_setup_outputs(El::Int mini_batch_size) override
+  {
 #ifdef LBANN_HAS_DISTCONV
     // Copy activations when distconv is enabled
 
@@ -94,7 +100,8 @@ protected:
 #endif // LBANN_HAS_DISTCONV
     El::LockedView(this->get_activations(), this->get_prev_activations());
   }
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
+  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override
+  {
 #ifdef LBANN_HAS_DISTCONV
     // Copy gradients wrt inputs when distconv is enabled
 
@@ -110,19 +117,21 @@ protected:
   void fp_compute() override {}
   void bp_compute() override {}
 #ifdef LBANN_HAS_DISTCONV
- protected:
-  bool is_distconv_supported() const override {
+protected:
+  bool is_distconv_supported() const override
+  {
     return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
-    this->get_distconv_adapter_ptr() = std::make_unique<identity_distconv_adapter<
-      TensorDataType, Layout, Device>>(*this);
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override
+  {
+    this->get_distconv_adapter_ptr() = std::make_unique<
+      identity_distconv_adapter<TensorDataType, Layout, Device>>(*this);
   }
 #endif // LBANN_HAS_DISTCONV
 };
 
 #ifndef LBANN_IDENTITY_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
+#define PROTO_DEVICE(T, Device)                                                \
   extern template class identity_layer<T, data_layout::DATA_PARALLEL, Device>; \
   extern template class identity_layer<T, data_layout::MODEL_PARALLEL, Device>
 

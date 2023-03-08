@@ -27,13 +27,12 @@
 #ifndef LBANN_NUMERICAL_TRAITS_HPP
 #define LBANN_NUMERICAL_TRAITS_HPP
 
-namespace lbann
-{
+namespace lbann {
 template <typename T>
 struct NumericalTraits
 {
-    static constexpr T zero() { return T(0); }
-    static constexpr T one() { return T(1); }
+  static constexpr T zero() { return T(0); }
+  static constexpr T one() { return T(1); }
 };
-}// namespace lbann
+} // namespace lbann
 #endif // LBANN_NUMERICAL_TRAITS_HPP

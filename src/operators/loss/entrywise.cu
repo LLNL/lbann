@@ -45,14 +45,17 @@ namespace {
 template <typename DataT>
 struct BinaryCrossEntropyOpImpl
 {
-  inline __device__ DataT operator()(DataT const& x1,
-                                     DataT const& x2) const
+  inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     DataT const zero = 0.;
     DataT const one = 1.;
     DataT y = zero;
-    if (x2 > zero) { y += -x2 * gpu_lib::log(x1); }
-    if (x2 < one)  { y += -(one-x2) * gpu_lib::log(one-x1); }
+    if (x2 > zero) {
+      y += -x2 * gpu_lib::log(x1);
+    }
+    if (x2 < one) {
+      y += -(one - x2) * gpu_lib::log(one - x1);
+    }
     return y;
   }
   inline __device__ void operator()(DataT const& x1,
@@ -65,14 +68,16 @@ struct BinaryCrossEntropyOpImpl
     DataT const one = 1.;
     dx1 = zero;
     dx2 = zero;
-    if (dy == zero) { return; }
+    if (dy == zero) {
+      return;
+    }
     if (x2 > zero) {
       dx1 += -x2 / x1 * dy;
       dx2 += -gpu_lib::log(x1) * dy;
     }
-    if (x2 < one)  {
-      dx1 += (one-x2) / (one-x1) * dy;
-      dx2 += gpu_lib::log(one-x1) * dy;
+    if (x2 < one) {
+      dx1 += (one - x2) / (one - x1) * dy;
+      dx2 += gpu_lib::log(one - x1) * dy;
     }
   }
 };
@@ -86,16 +91,16 @@ struct BinaryCrossEntropyOpImpl
 template <typename DataT>
 struct SigmoidBinaryCrossEntropyOpImpl
 {
-  inline __device__ DataT operator()(DataT const& x1,
-                                     DataT const& x2) const
+  inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     DataT const zero = 0.;
     DataT const one = 1.;
     auto const& z = gpu_lib::max(zero, gpu_lib::min(x2, one));
     if (x1 > zero) {
       return (one - z) * x1 + gpu_lib::log1p(gpu_lib::exp(-x1));
-    } else {
-      return - x1 * z + gpu_lib::log1p(gpu_lib::exp(x1));
+    }
+    else {
+      return -x1 * z + gpu_lib::log1p(gpu_lib::exp(x1));
     }
   }
   inline __device__ void operator()(DataT const& x1,
@@ -109,7 +114,8 @@ struct SigmoidBinaryCrossEntropyOpImpl
     auto const& z = gpu_lib::max(zero, gpu_lib::min(x2, one));
     if (x1 > zero) {
       dx1 = -z + one / (one + gpu_lib::exp(-x1));
-    } else {
+    }
+    else {
       dx1 = one - z - one / (one + gpu_lib::exp(x1));
     }
     dx1 *= dy;
@@ -121,8 +127,7 @@ struct SigmoidBinaryCrossEntropyOpImpl
 template <typename DataT>
 struct BooleanAccuracyOpImpl
 {
-  inline __device__ DataT operator()(DataT const& x1,
-                                     DataT const& x2) const
+  inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     auto const& b1 = x1 >= DataT(0.5);
     auto const& b2 = x2 >= DataT(0.5);
@@ -143,8 +148,7 @@ struct BooleanAccuracyOpImpl
 template <typename DataT>
 struct BooleanFalseNegativeOpImpl
 {
-  inline __device__ DataT operator()(DataT const& x1,
-                                     DataT const& x2) const
+  inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     auto const& b1 = x1 >= DataT(0.5);
     auto const& b2 = x2 >= DataT(0.5);
@@ -165,8 +169,7 @@ struct BooleanFalseNegativeOpImpl
 template <typename DataT>
 struct BooleanFalsePositiveOpImpl
 {
-  inline __device__ DataT operator()(DataT const& x1,
-                                     DataT const& x2) const
+  inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     auto const& b1 = x1 >= DataT(0.5);
     auto const& b2 = x2 >= DataT(0.5);
@@ -186,42 +189,42 @@ struct BooleanFalsePositiveOpImpl
 } // namespace
 
 // Template instantiation
-#define DEFINE_COMPUTE_OPS(OP_NAME)                                     \
-  template <typename DataT, El::Device Device>                          \
-  void OP_NAME##Operator<DataT, Device>::fp_compute_local(              \
-    std::vector<ConstLocalInputTensorType> inputs,                      \
-    std::vector<LocalOutputTensorType> outputs) const                   \
-  {                                                                     \
-    LBANN_ASSERT_DEBUG(inputs.size() == 2);                             \
-    LBANN_ASSERT_DEBUG(outputs.size() == 1);                            \
-    auto const& input0 = inputs[0].data();                              \
-    auto const& input1 = inputs[1].data();                              \
-    auto& output = outputs.front().data();                              \
-    internal::EntrywiseZipInto(input0,                                  \
-                               input1,                                  \
-                               output,                                  \
-                               OP_NAME##OpImpl<DataT>{});               \
-  }                                                                     \
-  template <typename DataT, El::Device Device>                          \
-  void OP_NAME##Operator<DataT, Device>::bp_compute_local(              \
-    std::vector<ConstLocalInputTensorType> inputs,                      \
-    std::vector<ConstLocalOutputTensorType> grads_wrt_outputs,          \
-    std::vector<LocalInputTensorType> grads_wrt_inputs) const           \
-  {                                                                     \
-    LBANN_ASSERT_DEBUG(inputs.size() == 2);                             \
-    LBANN_ASSERT_DEBUG(grads_wrt_outputs.size() == 1);                  \
-    LBANN_ASSERT_DEBUG(grads_wrt_inputs.size() == 2);                   \
-    auto const& input0 = inputs[0].data();                              \
-    auto const& input1 = inputs[1].data();                              \
-    auto const& grad_wrt_output = grads_wrt_outputs.front().data();     \
-    auto& grad_wrt_input0 = grads_wrt_inputs[0].data();                 \
-    auto& grad_wrt_input1 = grads_wrt_inputs[1].data();                 \
-    internal::apply_binary_backprop_operator(input0,                    \
-                                             input1,                    \
-                                             grad_wrt_output,           \
-                                             grad_wrt_input0,           \
-                                             grad_wrt_input1,           \
-                                             OP_NAME##OpImpl<DataT>{}); \
+#define DEFINE_COMPUTE_OPS(OP_NAME)                                            \
+  template <typename DataT, El::Device Device>                                 \
+  void OP_NAME##Operator<DataT, Device>::fp_compute_local(                     \
+    std::vector<ConstLocalInputTensorType> inputs,                             \
+    std::vector<LocalOutputTensorType> outputs) const                          \
+  {                                                                            \
+    LBANN_ASSERT_DEBUG(inputs.size() == 2);                                    \
+    LBANN_ASSERT_DEBUG(outputs.size() == 1);                                   \
+    auto const& input0 = inputs[0].data();                                     \
+    auto const& input1 = inputs[1].data();                                     \
+    auto& output = outputs.front().data();                                     \
+    internal::EntrywiseZipInto(input0,                                         \
+                               input1,                                         \
+                               output,                                         \
+                               OP_NAME##OpImpl<DataT>{});                      \
+  }                                                                            \
+  template <typename DataT, El::Device Device>                                 \
+  void OP_NAME##Operator<DataT, Device>::bp_compute_local(                     \
+    std::vector<ConstLocalInputTensorType> inputs,                             \
+    std::vector<ConstLocalOutputTensorType> grads_wrt_outputs,                 \
+    std::vector<LocalInputTensorType> grads_wrt_inputs) const                  \
+  {                                                                            \
+    LBANN_ASSERT_DEBUG(inputs.size() == 2);                                    \
+    LBANN_ASSERT_DEBUG(grads_wrt_outputs.size() == 1);                         \
+    LBANN_ASSERT_DEBUG(grads_wrt_inputs.size() == 2);                          \
+    auto const& input0 = inputs[0].data();                                     \
+    auto const& input1 = inputs[1].data();                                     \
+    auto const& grad_wrt_output = grads_wrt_outputs.front().data();            \
+    auto& grad_wrt_input0 = grads_wrt_inputs[0].data();                        \
+    auto& grad_wrt_input1 = grads_wrt_inputs[1].data();                        \
+    internal::apply_binary_backprop_operator(input0,                           \
+                                             input1,                           \
+                                             grad_wrt_output,                  \
+                                             grad_wrt_input0,                  \
+                                             grad_wrt_input1,                  \
+                                             OP_NAME##OpImpl<DataT>{});        \
   }
 
 DEFINE_COMPUTE_OPS(BinaryCrossEntropy)
@@ -230,11 +233,11 @@ DEFINE_COMPUTE_OPS(BooleanAccuracy)
 DEFINE_COMPUTE_OPS(BooleanFalseNegative)
 DEFINE_COMPUTE_OPS(BooleanFalsePositive)
 
-#define PROTO(T)                                                        \
-  template class BinaryCrossEntropyOperator<T, El::Device::GPU>;        \
-  template class SigmoidBinaryCrossEntropyOperator<T, El::Device::GPU>; \
-  template class BooleanAccuracyOperator<T, El::Device::GPU>;           \
-  template class BooleanFalseNegativeOperator<T, El::Device::GPU>;      \
+#define PROTO(T)                                                               \
+  template class BinaryCrossEntropyOperator<T, El::Device::GPU>;               \
+  template class SigmoidBinaryCrossEntropyOperator<T, El::Device::GPU>;        \
+  template class BooleanAccuracyOperator<T, El::Device::GPU>;                  \
+  template class BooleanFalseNegativeOperator<T, El::Device::GPU>;             \
   template class BooleanFalsePositiveOperator<T, El::Device::GPU>
 
 #define LBANN_INSTANTIATE_GPU_HALF

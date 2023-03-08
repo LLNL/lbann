@@ -30,7 +30,9 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
-void batchwise_reduce_sum_layer<TensorDataType,Layout,Device>::serialize(ArchiveT& ar) {
+void batchwise_reduce_sum_layer<TensorDataType, Layout, Device>::serialize(
+  ArchiveT& ar)
+{
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",
                         ::cereal::base_class<DataTypeLayer>(this)));

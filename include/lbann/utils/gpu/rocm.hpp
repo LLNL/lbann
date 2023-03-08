@@ -27,65 +27,61 @@
 #ifndef LBANN_UTILS_ROCM_HPP
 #define LBANN_UTILS_ROCM_HPP
 
-#include "lbann_config.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann_config.hpp"
 
 #ifdef LBANN_HAS_ROCM
 
 #include <hip/hip_runtime.h>
-#include <thrust/memory.h>
-#include <thrust/version.h>
 #include <thrust/detail/allocator/tagged_allocator.h>
-#include <thrust/system/hip/detail/par.h>
 #include <thrust/device_vector.h>
+#include <thrust/memory.h>
+#include <thrust/system/hip/detail/par.h>
+#include <thrust/version.h>
 
 // -------------------------------------------------------------
 // Error utility macros
 // -------------------------------------------------------------
-#define LBANN_ROCM_SYNC(async)                                  \
-  do {                                                          \
-    /* Synchronize GPU and check for errors. */                 \
-    hipError_t status_ROCM_SYNC = hipDeviceSynchronize();       \
-    if (status_ROCM_SYNC == hipSuccess)                         \
-      status_ROCM_SYNC = hipGetLastError();                     \
-    if (status_ROCM_SYNC != hipSuccess) {                       \
-      LBANN_ERROR((async ? "Asynchronous " : ""),               \
-                  "ROCm error (",                               \
-                  hipGetErrorString(status_ROCM_SYNC),          \
-                  ")");                                         \
-    }                                                           \
+#define LBANN_ROCM_SYNC(async)                                                 \
+  do {                                                                         \
+    /* Synchronize GPU and check for errors. */                                \
+    hipError_t status_ROCM_SYNC = hipDeviceSynchronize();                      \
+    if (status_ROCM_SYNC == hipSuccess)                                        \
+      status_ROCM_SYNC = hipGetLastError();                                    \
+    if (status_ROCM_SYNC != hipSuccess) {                                      \
+      LBANN_ERROR((async ? "Asynchronous " : ""),                              \
+                  "ROCm error (",                                              \
+                  hipGetErrorString(status_ROCM_SYNC),                         \
+                  ")");                                                        \
+    }                                                                          \
   } while (0)
-#define LBANN_ROCM_CHECK_LAST_ERROR(async)                      \
-  do {                                                          \
-    hipError_t status = hipGetLastError();                      \
-    if (status != hipSuccess) {                                 \
-      LBANN_ERROR((async ? "Asynchronous " : ""),               \
-                  "ROCm error (",                               \
-                  hipGetErrorString(status),                    \
-                  ")");                                         \
-    }                                                           \
+#define LBANN_ROCM_CHECK_LAST_ERROR(async)                                     \
+  do {                                                                         \
+    hipError_t status = hipGetLastError();                                     \
+    if (status != hipSuccess) {                                                \
+      LBANN_ERROR((async ? "Asynchronous " : ""),                              \
+                  "ROCm error (",                                              \
+                  hipGetErrorString(status),                                   \
+                  ")");                                                        \
+    }                                                                          \
   } while (0)
-#define FORCE_CHECK_ROCM(rocm_call)                             \
-  do {                                                          \
-    /* Call ROCM API routine, synchronizing before and */       \
-    /* after to check for errors. */                            \
-    LBANN_ROCM_SYNC(true);                                      \
-    hipError_t status_CHECK_ROCM = (rocm_call);                 \
-    if (status_CHECK_ROCM != hipSuccess) {                      \
-      LBANN_ERROR("ROCm error (",                               \
-                  hipGetErrorString(status_CHECK_ROCM),         \
-                  ")");                                         \
-    }                                                           \
-    LBANN_ROCM_SYNC(false);                                     \
+#define FORCE_CHECK_ROCM(rocm_call)                                            \
+  do {                                                                         \
+    /* Call ROCM API routine, synchronizing before and */                      \
+    /* after to check for errors. */                                           \
+    LBANN_ROCM_SYNC(true);                                                     \
+    hipError_t status_CHECK_ROCM = (rocm_call);                                \
+    if (status_CHECK_ROCM != hipSuccess) {                                     \
+      LBANN_ERROR("ROCm error (", hipGetErrorString(status_CHECK_ROCM), ")");  \
+    }                                                                          \
+    LBANN_ROCM_SYNC(false);                                                    \
   } while (0)
-#define FORCE_CHECK_ROCM_NOSYNC(rocm_call)                      \
-  do {                                                          \
-    hipError_t status_CHECK_ROCM = (rocm_call);                 \
-    if (status_CHECK_ROCM != hipSuccess) {                      \
-      LBANN_ERROR("ROCm error (",                               \
-                  hipGetErrorString(status_CHECK_ROCM),         \
-                  ")");                                         \
-    }                                                           \
+#define FORCE_CHECK_ROCM_NOSYNC(rocm_call)                                     \
+  do {                                                                         \
+    hipError_t status_CHECK_ROCM = (rocm_call);                                \
+    if (status_CHECK_ROCM != hipSuccess) {                                     \
+      LBANN_ERROR("ROCm error (", hipGetErrorString(status_CHECK_ROCM), ")");  \
+    }                                                                          \
   } while (0)
 #ifdef LBANN_DEBUG
 #define CHECK_ROCM(rocm_call) FORCE_CHECK_ROCM(rocm_call);
@@ -103,7 +99,8 @@ constexpr hipMemcpyKind GPU_MEMCPY_DEVICE_TO_DEVICE = hipMemcpyDeviceToDevice;
 // -------------------------------------------------------------
 
 /** Wrapper class for a HIP event. */
-class event_wrapper {
+class event_wrapper
+{
 public:
   event_wrapper();
   event_wrapper(const event_wrapper& other);
@@ -117,6 +114,7 @@ public:
   void synchronize();
   /** Get HIP event object. */
   hipEvent_t& get_event();
+
 private:
   /** HIP event object.
    *  The event object lifetime is managed internally.
@@ -134,20 +132,18 @@ private:
 
 /** Copy entries between GPU tensors. */
 template <typename TensorDataType>
-void copy_tensor(
-  hipStream_t stream,
-  const std::vector<size_t>& dims,
-  const TensorDataType* input,
-  const std::vector<size_t>& input_strides,
-  TensorDataType* output,
-  const std::vector<size_t>& output_strides);
+void copy_tensor(hipStream_t stream,
+                 const std::vector<size_t>& dims,
+                 const TensorDataType* input,
+                 const std::vector<size_t>& input_strides,
+                 TensorDataType* output,
+                 const std::vector<size_t>& output_strides);
 
-void mem_copy_async(
-  void* output,
-  const void* input,
-  const size_t count,
-  hipMemcpyKind kind,
-  hipStream_t stream);
+void mem_copy_async(void* output,
+                    const void* input,
+                    const size_t count,
+                    hipMemcpyKind kind,
+                    hipStream_t stream);
 
 // -------------------------------------------------------------
 // Utilities for Thrust
@@ -162,18 +158,21 @@ using execute_on_stream = ::thrust::hip_rocprim::execute_on_stream;
  *  Hydrogen's CUB memory pool if available.
  */
 template <typename T = El::byte>
-class allocator
-  : public ::thrust::detail::tagged_allocator<
-               T, execute_on_stream,
-               ::thrust::pointer<T, execute_on_stream>> {
+class allocator : public ::thrust::detail::tagged_allocator<
+                    T,
+                    execute_on_stream,
+                    ::thrust::pointer<T, execute_on_stream>>
+{
 public:
   // Convenient typedefs
   typedef ::thrust::detail::tagged_allocator<
-              T, execute_on_stream,
-              ::thrust::pointer<T, execute_on_stream>> parent_class;
-  typedef typename parent_class::value_type  value_type;
-  typedef typename parent_class::pointer     pointer;
-  typedef typename parent_class::size_type   size_type;
+    T,
+    execute_on_stream,
+    ::thrust::pointer<T, execute_on_stream>>
+    parent_class;
+  typedef typename parent_class::value_type value_type;
+  typedef typename parent_class::pointer pointer;
+  typedef typename parent_class::size_type size_type;
   typedef typename parent_class::system_type system_type;
 
   /** Default constructor. */
@@ -192,7 +191,6 @@ private:
   hipStream_t m_stream;
   /** Thrust execution policy. */
   system_type m_system;
-
 };
 
 /** Thrust device vector. */

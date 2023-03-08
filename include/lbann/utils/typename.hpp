@@ -46,8 +46,12 @@ std::string TypeName()
   return details::get_type_name(typeid(T));
 }
 
-#define ADD_TYPENAME_INST(Type)                                     \
-  template <> inline std::string TypeName<Type>() { return #Type; }
+#define ADD_TYPENAME_INST(Type)                                                \
+  template <>                                                                  \
+  inline std::string TypeName<Type>()                                          \
+  {                                                                            \
+    return #Type;                                                              \
+  }
 
 ADD_TYPENAME_INST(float)
 ADD_TYPENAME_INST(double)

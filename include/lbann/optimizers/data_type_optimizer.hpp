@@ -118,7 +118,6 @@ public:
   ///@}
 
 protected:
-
   data_type_optimizer(const data_type_optimizer& other);
   data_type_optimizer& operator=(const data_type_optimizer& other);
 

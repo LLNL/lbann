@@ -50,6 +50,6 @@ std::vector<int> prime_factors(int n);
 std::vector<int> balanced_factors(int n, int num_factors);
 
 } // namespace number_theory
-} // lbann
+} // namespace lbann
 
 #endif // LBANN_UTILS_NUMBER_THEORY_HPP

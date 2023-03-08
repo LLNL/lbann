@@ -44,29 +44,30 @@ namespace callback {
  * vectors during each mini-batch. This will be slow and produce a lot
  * of output.
  */
-class dump_minibatch_sample_indices : public callback_base {
- public:
-  using callback_base::on_forward_prop_end;
+class dump_minibatch_sample_indices : public callback_base
+{
+public:
   using callback_base::on_evaluate_forward_prop_end;
+  using callback_base::on_forward_prop_end;
 
   /**
    * @param basename The basename for writing files.
    * @param batch_interval The frequency at which to dump sample indices
    */
-  dump_minibatch_sample_indices(std::string basename,
-                                               int batch_interval = 1) :
-    callback_base(batch_interval), m_basename(std::move(basename)) {}
-  dump_minibatch_sample_indices(
-    const dump_minibatch_sample_indices&) = default;
-  dump_minibatch_sample_indices& operator=(
-    const dump_minibatch_sample_indices&) = default;
-  dump_minibatch_sample_indices* copy() const override {
+  dump_minibatch_sample_indices(std::string basename, int batch_interval = 1)
+    : callback_base(batch_interval), m_basename(std::move(basename))
+  {}
+  dump_minibatch_sample_indices(const dump_minibatch_sample_indices&) = default;
+  dump_minibatch_sample_indices&
+  operator=(const dump_minibatch_sample_indices&) = default;
+  dump_minibatch_sample_indices* copy() const override
+  {
     return new dump_minibatch_sample_indices(*this);
   }
-  void on_forward_prop_end(model *m, Layer *l) override;
-  void on_evaluate_forward_prop_end(model *m, Layer *l) override;
+  void on_forward_prop_end(model* m, Layer* l) override;
+  void on_evaluate_forward_prop_end(model* m, Layer* l) override;
 
-  void dump_to_file(model *m, Layer *l, int64_t step);
+  void dump_to_file(model* m, Layer* l, int64_t step);
 
   std::string name() const override { return "dump minibatch sample indices"; }
 
@@ -74,11 +75,12 @@ class dump_minibatch_sample_indices : public callback_base {
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
- private:
+private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
@@ -91,10 +93,10 @@ class dump_minibatch_sample_indices : public callback_base {
 
 // Builder function
 std::unique_ptr<callback_base>
-build_dump_mb_indices_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_dump_mb_indices_callback_from_pbuf(const google::protobuf::Message&,
+                                         std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_DUMP_MINIBATCH_SAMPLE_INDICES_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_DUMP_MINIBATCH_SAMPLE_INDICES_HPP_INCLUDED

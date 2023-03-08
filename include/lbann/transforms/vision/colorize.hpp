@@ -35,19 +35,21 @@ namespace lbann {
 namespace transform {
 
 /** Convert an image from grayscale to color. */
-class colorize : public transform {
+class colorize : public transform
+{
 public:
   transform* copy() const override { return new colorize(*this); }
 
   std::string get_type() const override { return "colorize"; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data,
+             std::vector<size_t>& dims) override;
 };
 
 std::unique_ptr<transform>
 build_colorize_transform_from_pbuf(google::protobuf::Message const&);
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_COLORIZE_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_COLORIZE_HPP_INCLUDED

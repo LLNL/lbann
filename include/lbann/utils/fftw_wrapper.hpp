@@ -33,21 +33,33 @@
 
 #include <fftw3.h>
 
-namespace lbann
-{
+namespace lbann {
 
-namespace fftw
-{
+namespace fftw {
 
 template <typename T>
 struct FFTWTypeT;
 
-template <> struct FFTWTypeT<float> { using type = float; };
-template <> struct FFTWTypeT<double> { using type = double; };
 template <>
-struct FFTWTypeT<El::Complex<float>> { using type = fftwf_complex; };
+struct FFTWTypeT<float>
+{
+  using type = float;
+};
 template <>
-struct FFTWTypeT<El::Complex<double>> { using type = fftw_complex; };
+struct FFTWTypeT<double>
+{
+  using type = double;
+};
+template <>
+struct FFTWTypeT<El::Complex<float>>
+{
+  using type = fftwf_complex;
+};
+template <>
+struct FFTWTypeT<El::Complex<double>>
+{
+  using type = fftw_complex;
+};
 
 template <typename T>
 using FFTWType = typename FFTWTypeT<T>::type;
@@ -61,68 +73,120 @@ auto AsFFTWType(T* buffer)
 template <typename InputT, typename OutputT>
 struct FFTWTraits;
 
-#define BUILD_FFTW_R2C_TRAITS(INTYPE, FFTW_PREFIX)                      \
-  template <>                                                           \
-  struct FFTWTraits<INTYPE, El::Complex<INTYPE>>                        \
-  {                                                                     \
-    using plan_type = FFTW_PREFIX ## _plan;                             \
-    using iodim_type = FFTW_PREFIX ## _iodim;                           \
-    static constexpr auto plan_many_fwd = &FFTW_PREFIX ## _plan_many_dft_r2c; \
-    static constexpr auto plan_many_bwd = &FFTW_PREFIX ## _plan_many_dft_c2r; \
-    static constexpr auto plan_guru_fwd = &FFTW_PREFIX ## _plan_guru_dft_r2c; \
-    static constexpr auto plan_guru_bwd = &FFTW_PREFIX ## _plan_guru_dft_c2r; \
-    static constexpr auto execute_plan_fwd = &FFTW_PREFIX ## _execute_dft_r2c; \
-    static constexpr auto execute_plan_bwd = &FFTW_PREFIX ## _execute_dft_c2r; \
-    static constexpr auto destroy_plan = &FFTW_PREFIX ## _destroy_plan; \
-    static constexpr auto plain_execute = &FFTW_PREFIX ## _execute; \
+#define BUILD_FFTW_R2C_TRAITS(INTYPE, FFTW_PREFIX)                             \
+  template <>                                                                  \
+  struct FFTWTraits<INTYPE, El::Complex<INTYPE>>                               \
+  {                                                                            \
+    using plan_type = FFTW_PREFIX##_plan;                                      \
+    using iodim_type = FFTW_PREFIX##_iodim;                                    \
+    static constexpr auto plan_many_fwd = &FFTW_PREFIX##_plan_many_dft_r2c;    \
+    static constexpr auto plan_many_bwd = &FFTW_PREFIX##_plan_many_dft_c2r;    \
+    static constexpr auto plan_guru_fwd = &FFTW_PREFIX##_plan_guru_dft_r2c;    \
+    static constexpr auto plan_guru_bwd = &FFTW_PREFIX##_plan_guru_dft_c2r;    \
+    static constexpr auto execute_plan_fwd = &FFTW_PREFIX##_execute_dft_r2c;   \
+    static constexpr auto execute_plan_bwd = &FFTW_PREFIX##_execute_dft_c2r;   \
+    static constexpr auto destroy_plan = &FFTW_PREFIX##_destroy_plan;          \
+    static constexpr auto plain_execute = &FFTW_PREFIX##_execute;              \
   }
 
-#define BUILD_FFTW_C2C_TRAITS(INTYPE, FFTW_PREFIX)                      \
-  template <>                                                           \
-  struct FFTWTraits<El::Complex<INTYPE>, El::Complex<INTYPE>>           \
-  {                                                                     \
-    using plan_type = FFTW_PREFIX ## _plan;                             \
-    using iodim_type = FFTW_PREFIX ## _iodim;                           \
-    static constexpr auto execute_plan_fwd = &FFTW_PREFIX ## _execute_dft; \
-    static constexpr auto execute_plan_bwd = &FFTW_PREFIX ## _execute_dft; \
-    static constexpr auto destroy_plan = &FFTW_PREFIX ## _destroy_plan; \
-    static constexpr auto plain_execute = &FFTW_PREFIX ## _execute;     \
-    static plan_type plan_many_fwd(                                     \
-      int rank, const int *n, int howmany,                              \
-      FFTW_PREFIX ## _complex *in, const int *inembed, int istride, int idist, \
-      FFTW_PREFIX ## _complex *out, const int *onembed, int ostride, int odist, \
-      unsigned flags) {                                                 \
-      return FFTW_PREFIX ## _plan_many_dft(                             \
-        rank, n, howmany, in, inembed, istride, idist,                   \
-        out, onembed, ostride, odist, FFTW_FORWARD, flags);             \
-    }                                                                   \
-    static plan_type plan_many_bwd(                                     \
-      int rank, const int *n, int howmany,                              \
-      FFTW_PREFIX ## _complex *in, const int *inembed, int istride, int idist, \
-      FFTW_PREFIX ## _complex *out, const int *onembed, int ostride, int odist, \
-      unsigned flags) {                                                 \
-      return FFTW_PREFIX ## _plan_many_dft(                             \
-        rank, n, howmany, in, inembed, istride, idist,                  \
-        out, onembed, ostride, odist, FFTW_BACKWARD, flags);            \
-    }                                                                   \
-    static plan_type plan_guru_fwd(                                     \
-      int rank, const FFTW_PREFIX ## _iodim *dims,                      \
-      int howmany_rank, const FFTW_PREFIX ## _iodim *howmany_dims,      \
-      FFTW_PREFIX ## _complex *in, FFTW_PREFIX ## _complex *out,        \
-      unsigned flags) {                                                 \
-      return FFTW_PREFIX ## _plan_guru_dft(                             \
-        rank, dims, howmany_rank, howmany_dims,                         \
-        in, out, FFTW_FORWARD, flags);                                  \
-    }                                                                   \
-    static plan_type plan_guru_bwd(                                     \
-      int rank, const FFTW_PREFIX ## _iodim *dims,                      \
-      int howmany_rank, const FFTW_PREFIX ## _iodim *howmany_dims,      \
-      FFTW_PREFIX ## _complex *in, FFTW_PREFIX ## _complex *out,        \
-      unsigned flags) {                                                 \
-      return FFTW_PREFIX ## _plan_guru_dft(                             \
-        rank, dims, howmany_rank, howmany_dims,                         \
-        in, out, FFTW_BACKWARD, flags);                                 \
-    }                                                                   \
+#define BUILD_FFTW_C2C_TRAITS(INTYPE, FFTW_PREFIX)                             \
+  template <>                                                                  \
+  struct FFTWTraits<El::Complex<INTYPE>, El::Complex<INTYPE>>                  \
+  {                                                                            \
+    using plan_type = FFTW_PREFIX##_plan;                                      \
+    using iodim_type = FFTW_PREFIX##_iodim;                                    \
+    static constexpr auto execute_plan_fwd = &FFTW_PREFIX##_execute_dft;       \
+    static constexpr auto execute_plan_bwd = &FFTW_PREFIX##_execute_dft;       \
+    static constexpr auto destroy_plan = &FFTW_PREFIX##_destroy_plan;          \
+    static constexpr auto plain_execute = &FFTW_PREFIX##_execute;              \
+    static plan_type plan_many_fwd(int rank,                                   \
+                                   const int* n,                               \
+                                   int howmany,                                \
+                                   FFTW_PREFIX##_complex* in,                  \
+                                   const int* inembed,                         \
+                                   int istride,                                \
+                                   int idist,                                  \
+                                   FFTW_PREFIX##_complex* out,                 \
+                                   const int* onembed,                         \
+                                   int ostride,                                \
+                                   int odist,                                  \
+                                   unsigned flags)                             \
+    {                                                                          \
+      return FFTW_PREFIX##_plan_many_dft(rank,                                 \
+                                         n,                                    \
+                                         howmany,                              \
+                                         in,                                   \
+                                         inembed,                              \
+                                         istride,                              \
+                                         idist,                                \
+                                         out,                                  \
+                                         onembed,                              \
+                                         ostride,                              \
+                                         odist,                                \
+                                         FFTW_FORWARD,                         \
+                                         flags);                               \
+    }                                                                          \
+    static plan_type plan_many_bwd(int rank,                                   \
+                                   const int* n,                               \
+                                   int howmany,                                \
+                                   FFTW_PREFIX##_complex* in,                  \
+                                   const int* inembed,                         \
+                                   int istride,                                \
+                                   int idist,                                  \
+                                   FFTW_PREFIX##_complex* out,                 \
+                                   const int* onembed,                         \
+                                   int ostride,                                \
+                                   int odist,                                  \
+                                   unsigned flags)                             \
+    {                                                                          \
+      return FFTW_PREFIX##_plan_many_dft(rank,                                 \
+                                         n,                                    \
+                                         howmany,                              \
+                                         in,                                   \
+                                         inembed,                              \
+                                         istride,                              \
+                                         idist,                                \
+                                         out,                                  \
+                                         onembed,                              \
+                                         ostride,                              \
+                                         odist,                                \
+                                         FFTW_BACKWARD,                        \
+                                         flags);                               \
+    }                                                                          \
+    static plan_type plan_guru_fwd(int rank,                                   \
+                                   const FFTW_PREFIX##_iodim* dims,            \
+                                   int howmany_rank,                           \
+                                   const FFTW_PREFIX##_iodim* howmany_dims,    \
+                                   FFTW_PREFIX##_complex* in,                  \
+                                   FFTW_PREFIX##_complex* out,                 \
+                                   unsigned flags)                             \
+    {                                                                          \
+      return FFTW_PREFIX##_plan_guru_dft(rank,                                 \
+                                         dims,                                 \
+                                         howmany_rank,                         \
+                                         howmany_dims,                         \
+                                         in,                                   \
+                                         out,                                  \
+                                         FFTW_FORWARD,                         \
+                                         flags);                               \
+    }                                                                          \
+    static plan_type plan_guru_bwd(int rank,                                   \
+                                   const FFTW_PREFIX##_iodim* dims,            \
+                                   int howmany_rank,                           \
+                                   const FFTW_PREFIX##_iodim* howmany_dims,    \
+                                   FFTW_PREFIX##_complex* in,                  \
+                                   FFTW_PREFIX##_complex* out,                 \
+                                   unsigned flags)                             \
+    {                                                                          \
+      return FFTW_PREFIX##_plan_guru_dft(rank,                                 \
+                                         dims,                                 \
+                                         howmany_rank,                         \
+                                         howmany_dims,                         \
+                                         in,                                   \
+                                         out,                                  \
+                                         FFTW_BACKWARD,                        \
+                                         flags);                               \
+    }                                                                          \
   }
 
 BUILD_FFTW_R2C_TRAITS(float, fftwf);
@@ -164,26 +228,21 @@ private:
   {
     PlanType plan_ = nullptr;
     int num_samples_ = -1; // It's just an int in fftw
-    InternalPlanType(PlanType plan, int n)
-      : plan_{plan},
-        num_samples_{n}
-    {}
+    InternalPlanType(PlanType plan, int n) : plan_{plan}, num_samples_{n} {}
     ~InternalPlanType()
     {
-      if (plan_ != nullptr)
-      {
+      if (plan_ != nullptr) {
         TraitsType::destroy_plan(plan_);
         plan_ = nullptr;
       }
     }
     InternalPlanType(InternalPlanType&& other) noexcept
-      : plan_{other.plan_},
-        num_samples_{other.num_samples_}
+      : plan_{other.plan_}, num_samples_{other.num_samples_}
     {
       other.plan_ = nullptr;
       other.num_samples_ = -1;
     }
-  };// struct InternalPlanType
+  }; // struct InternalPlanType
 
 public:
   FFTWWrapper() = default;
@@ -202,7 +261,10 @@ public:
                      OutputMatType& out,
                      std::vector<int> const& full_dims)
   {
-    setup_common(in, out, full_dims, fwd_plans_,
+    setup_common(in,
+                 out,
+                 full_dims,
+                 fwd_plans_,
                  TraitsType::plan_many_fwd,
                  TraitsType::plan_guru_fwd);
   }
@@ -212,8 +274,7 @@ public:
    *                   in/out. The format is expected to be
    *                   [num_feature_maps, feature_map_dims].
    */
-  void setup_forward(InputMatType& in,
-                     std::vector<int> const& full_dims)
+  void setup_forward(InputMatType& in, std::vector<int> const& full_dims)
   {
     /// @todo Assert this is ok for R2C cases!!!
     setup_forward(in, in, full_dims);
@@ -230,7 +291,10 @@ public:
                       InputMatType& out,
                       std::vector<int> const& full_dims)
   {
-    setup_common(in, out, full_dims, bwd_plans_,
+    setup_common(in,
+                 out,
+                 full_dims,
+                 bwd_plans_,
                  TraitsType::plan_many_bwd,
                  TraitsType::plan_guru_bwd);
   }
@@ -241,8 +305,7 @@ public:
    *                   in/out. The format is expected to be
    *                   [num_feature_maps, feature_map_dims].
    */
-  void setup_backward(OutputMatType& in,
-                      std::vector<int> const& full_dims)
+  void setup_backward(OutputMatType& in, std::vector<int> const& full_dims)
   {
     setup_backward(in, in, full_dims);
   }
@@ -251,7 +314,8 @@ public:
   {
     auto const num_samples = in.Width();
     auto const good_plan =
-      std::find_if(cbegin(fwd_plans_), cend(fwd_plans_),
+      std::find_if(cbegin(fwd_plans_),
+                   cend(fwd_plans_),
                    [num_samples](InternalPlanType const& a) {
                      return a.num_samples_ == num_samples;
                    });
@@ -260,10 +324,9 @@ public:
 
     // Initial tests suggest there's no performance reason to *not*
     // use the "new-array" interface.
-    TraitsType::execute_plan_fwd(
-      good_plan->plan_,
-      AsFFTWType(in.Buffer()),
-      AsFFTWType(out.Buffer()));
+    TraitsType::execute_plan_fwd(good_plan->plan_,
+                                 AsFFTWType(in.Buffer()),
+                                 AsFFTWType(out.Buffer()));
   }
 
   void compute_forward(InputMatType& in) const
@@ -275,7 +338,8 @@ public:
   {
     auto const num_samples = in.Width();
     auto const good_plan =
-      std::find_if(cbegin(bwd_plans_), cend(bwd_plans_),
+      std::find_if(cbegin(bwd_plans_),
+                   cend(bwd_plans_),
                    [num_samples](InternalPlanType const& a) {
                      return a.num_samples_ == num_samples;
                    });
@@ -284,10 +348,9 @@ public:
 
     // Initial tests suggest there's no performance reason to *not*
     // use the "new-array" interface.
-    TraitsType::execute_plan_bwd(
-      good_plan->plan_,
-      AsFFTWType(in.Buffer()),
-      AsFFTWType(out.Buffer()));
+    TraitsType::execute_plan_bwd(good_plan->plan_,
+                                 AsFFTWType(in.Buffer()),
+                                 AsFFTWType(out.Buffer()));
   }
 
   void compute_backward(OutputMatType& in) const
@@ -296,9 +359,10 @@ public:
   }
 
 private:
-
-  template <typename InMatT, typename OutMatT,
-            typename SetupManyFunctorT, typename SetupGuruFunctorT>
+  template <typename InMatT,
+            typename OutMatT,
+            typename SetupManyFunctorT,
+            typename SetupGuruFunctorT>
   void setup_common(InMatT& in,
                     OutMatT& out,
                     std::vector<int> const& full_dims,
@@ -313,39 +377,43 @@ private:
     // Look for an acceptable plan
     int const num_samples = in.Width();
     auto const good_plan =
-      std::find_if(cbegin(plans), cend(plans),
+      std::find_if(cbegin(plans),
+                   cend(plans),
                    [num_samples](InternalPlanType const& a) {
                      return a.num_samples_ == num_samples;
                    });
 
     // We don't have a plan for this yet; let's create one!
-    if (good_plan == cend(plans))
-    {
+    if (good_plan == cend(plans)) {
       PlanType plan;
 
       auto const& input_dims = Dims::input_dims(full_dims);
       auto const& output_dims = Dims::output_dims(full_dims);
       int const num_feature_maps = full_dims.front();
-      int const feature_map_ndims = full_dims.size()-1;
-      bool const contiguous_samples =
-        (in.Contiguous()) && (out.Contiguous());
+      int const feature_map_ndims = full_dims.size() - 1;
+      bool const contiguous_samples = (in.Contiguous()) && (out.Contiguous());
 
       // Handle the easy case
-      if (contiguous_samples)
-      {
-        int const num_transforms = num_samples*num_feature_maps;
-        int const input_feature_map_size
-          = get_linear_size(feature_map_ndims, input_dims.data() + 1);
-        int const output_feature_map_size
-          = get_linear_size(feature_map_ndims, output_dims.data() + 1);
-        plan = many_functor(
-          feature_map_ndims, full_dims.data()+1, num_transforms,
-          AsFFTWType(in.Buffer()), nullptr, 1, input_feature_map_size,
-          AsFFTWType(out.Buffer()), nullptr, 1, output_feature_map_size,
-          /*flags=*/0);//FFTW_PRESERVE_INPUT);
+      if (contiguous_samples) {
+        int const num_transforms = num_samples * num_feature_maps;
+        int const input_feature_map_size =
+          get_linear_size(feature_map_ndims, input_dims.data() + 1);
+        int const output_feature_map_size =
+          get_linear_size(feature_map_ndims, output_dims.data() + 1);
+        plan = many_functor(feature_map_ndims,
+                            full_dims.data() + 1,
+                            num_transforms,
+                            AsFFTWType(in.Buffer()),
+                            nullptr,
+                            1,
+                            input_feature_map_size,
+                            AsFFTWType(out.Buffer()),
+                            nullptr,
+                            1,
+                            output_feature_map_size,
+                            /*flags=*/0); // FFTW_PRESERVE_INPUT);
       }
-      else
-      {
+      else {
         using IODimType = typename TraitsType::iodim_type;
 
         std::vector<IODimType> dims(feature_map_ndims), how_many(2);
@@ -354,11 +422,10 @@ private:
         auto output_strides = get_packed_strides(output_dims);
 
         // Setup the "dims"
-        for (int d = 0; d < feature_map_ndims; ++d)
-        {
-          dims[d].n = full_dims[d+1];
-          dims[d].is = input_strides[d+1];
-          dims[d].os = output_strides[d+1];
+        for (int d = 0; d < feature_map_ndims; ++d) {
+          dims[d].n = full_dims[d + 1];
+          dims[d].is = input_strides[d + 1];
+          dims[d].os = output_strides[d + 1];
         }
 
         // Setup the "howmany"
@@ -370,17 +437,20 @@ private:
         how_many[1].is = in.LDim();
         how_many[1].os = out.LDim();
 
-        plan = guru_functor(
-          dims.size(), dims.data(),
-          how_many.size(), how_many.data(),
-          AsFFTWType(in.Buffer()), AsFFTWType(out.Buffer()),
-          /*flags=*/0);//FFTW_PRESERVE_INPUT);
+        plan = guru_functor(dims.size(),
+                            dims.data(),
+                            how_many.size(),
+                            how_many.data(),
+                            AsFFTWType(in.Buffer()),
+                            AsFFTWType(out.Buffer()),
+                            /*flags=*/0); // FFTW_PRESERVE_INPUT);
       }
 
       if (plan == nullptr)
         LBANN_ERROR(__PRETTY_FUNCTION__,
                     ": FFTW plan construction failed.\n"
-                    "  contiguous: ", contiguous_samples);
+                    "  contiguous: ",
+                    contiguous_samples);
 
       plans.emplace_back(plan, num_samples);
     }
@@ -392,9 +462,9 @@ private:
   std::vector<InternalPlanType> fwd_plans_;
   std::vector<InternalPlanType> bwd_plans_;
 
-};// class FFTWWrapper
+}; // class FFTWWrapper
 
-}// namespace fftw
+} // namespace fftw
 
-}// namespace lbann
+} // namespace lbann
 #endif // LBANN_UTILS_FFTW_WRAPPER_HPP_

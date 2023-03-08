@@ -98,14 +98,17 @@ public:
 
 protected:
   /** Train model on one step / mini-batch of an SGD forward pass */
-  bool
-  train_mini_batch(SGDExecutionContext& c, model& model, data_coordinator& dc, ScopeTimer timer);
+  bool train_mini_batch(SGDExecutionContext& c,
+                        model& model,
+                        data_coordinator& dc,
+                        ScopeTimer timer);
 
   /** Evaluate model on one step / mini-batch of an SGD forward pass */
   bool evaluate_mini_batch(SGDExecutionContext& c,
                            model& model,
                            data_coordinator& dc,
-                           execution_mode mode, ScopeTimer timer);
+                           execution_mode mode,
+                           ScopeTimer timer);
 
   ////////////////////////////////////////////////////////////
   // Callbacks
@@ -116,7 +119,8 @@ protected:
   /** Execute callbacks at end of training. */
   void do_train_end_cbs(model& model, ScopeTimer timer);
   /** Execute callbacks at start of evaluation. */
-  void do_evaluate_begin_cbs(model& model, execution_mode mode, ScopeTimer timer);
+  void
+  do_evaluate_begin_cbs(model& model, execution_mode mode, ScopeTimer timer);
   /** Execute callbacks at end of evaluation. */
   void do_evaluate_end_cbs(model& model, execution_mode mode, ScopeTimer timer);
   /** Execute callbacks at start of epoch. */
@@ -147,7 +151,6 @@ private:
    *              future.
    */
   bool m_suppress_timer = false;
-
 };
 
 template <>

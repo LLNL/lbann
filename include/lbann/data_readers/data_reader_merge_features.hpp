@@ -23,7 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// data_reader_merge_features .hpp .cpp - Merge features from multiple data readers
+// data_reader_merge_features .hpp .cpp - Merge features from multiple data
+// readers
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_MERGE_FEATURES_HPP
@@ -41,48 +42,54 @@ namespace lbann {
  * subsidiary data readers to fetch all data, including the labels.
  * label data reader is optional
  */
-class data_reader_merge_features : public generic_compound_data_reader {
- public:
+class data_reader_merge_features : public generic_compound_data_reader
+{
+public:
   data_reader_merge_features(std::vector<generic_data_reader*> data_readers,
-                             generic_data_reader *label_reader = nullptr,
+                             generic_data_reader* label_reader = nullptr,
                              bool shuffle = true);
   data_reader_merge_features(const data_reader_merge_features&);
   data_reader_merge_features& operator=(const data_reader_merge_features&);
   ~data_reader_merge_features() override;
-  data_reader_merge_features* copy() const override {
+  data_reader_merge_features* copy() const override
+  {
     return new data_reader_merge_features(*this);
   }
 
-  std::string get_type() const override {
-    return "data_reader_merge_features";
-  }
+  std::string get_type() const override { return "data_reader_merge_features"; }
 
   /// Call load on the subsidiary data readers.
   void load() override;
 
-  void setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) override;
+  void setup(int num_io_threads,
+             observer_ptr<thread_pool> io_thread_pool) override;
 
-  int get_num_labels() const override { return m_label_reader->get_num_labels(); }
+  int get_num_labels() const override
+  {
+    return m_label_reader->get_num_labels();
+  }
   int get_linearized_data_size() const override { return m_data_size; }
-  int get_linearized_label_size() const override {
+  int get_linearized_label_size() const override
+  {
     return m_label_reader->get_linearized_label_size();
   }
-  const std::vector<int> get_data_dims() const override {
+  const std::vector<int> get_data_dims() const override
+  {
     // Todo: Can we merge the dimensions of each reader sensibly?
     return {get_linearized_data_size()};
   }
 
- protected:
+protected:
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
 
   /// Reader providing label data.
-  generic_data_reader *m_label_reader;
+  generic_data_reader* m_label_reader;
   /// Sum of the size of data from all the data readers.
   int m_data_size = 0;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_DATA_READER_MERGE_FEATURES_HPP
+#endif // LBANN_DATA_READER_MERGE_FEATURES_HPP

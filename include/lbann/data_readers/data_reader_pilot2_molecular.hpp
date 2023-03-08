@@ -23,7 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// data_reader_pilot2_molecular .hpp .cpp - data reader for Pilot 2 molecular data
+// data_reader_pilot2_molecular .hpp .cpp - data reader for Pilot 2 molecular
+// data
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_PILOT2_MOLECULAR_HPP
@@ -37,30 +38,32 @@ namespace lbann {
 /**
  * Data reader for loading Pilot 2 molecular data.
  */
-class pilot2_molecular_reader : public generic_data_reader {
- public:
+class pilot2_molecular_reader : public generic_data_reader
+{
+public:
   pilot2_molecular_reader(int num_neighbors,
                           int max_neighborhood,
                           bool shuffle = true);
   pilot2_molecular_reader(const pilot2_molecular_reader&) = default;
   pilot2_molecular_reader& operator=(const pilot2_molecular_reader&) = default;
   ~pilot2_molecular_reader() override {}
-  pilot2_molecular_reader* copy() const override {
+  pilot2_molecular_reader* copy() const override
+  {
     return new pilot2_molecular_reader(*this);
   }
-  std::string get_type() const override {
-    return "pilot2_molecular_reader";
-  }
+  std::string get_type() const override { return "pilot2_molecular_reader"; }
 
   void load() override;
 
-  int get_linearized_data_size() const override {
+  int get_linearized_data_size() const override
+  {
     return m_num_features * (m_num_neighbors + 1);
   }
-  const std::vector<int> get_data_dims() const override {
+  const std::vector<int> get_data_dims() const override
+  {
     return m_shape;
-    //return {m_num_neighbors + 1, (int) m_features.shape[2],
-    //    (int) m_features.shape[3]};
+    // return {m_num_neighbors + 1, (int) m_features.shape[2],
+    //     (int) m_features.shape[3]};
   }
 
   /// Data format is:
@@ -69,70 +72,48 @@ class pilot2_molecular_reader : public generic_data_reader {
   /// 'BL4', 'BL5', 'BL6', 'BL7', 'BL8', 'BL9', 'BL10', 'BL11',
   /// 'BL12'] (20)]
   template <class T>
-  T scale_data(int idx, T datum) {
+  T scale_data(int idx, T datum)
+  {
     idx = idx % 20;
     T scaled_datum = datum;
-    if(idx >= 0 && idx <= 2) { /// x,y,z
+    if (idx >= 0 && idx <= 2) { /// x,y,z
       scaled_datum /= position_scale_factor;
     }
-    if(idx >= 8 && idx <= 19) {
+    if (idx >= 8 && idx <= 19) {
       scaled_datum /= bond_len_scale_factor;
     }
     return scaled_datum;
   }
 
   /// support for data_store_pilot2_molecular
-  float * get_features_4() {
-    return m_features.data<float>();
-  }
-  double * get_features_8() {
-    return m_features.data<double>();
-  }
-  float * get_neighbors_4() {
-    return m_neighbors.data<float>();
-  }
-  double * get_neighbors_8() {
-    return m_neighbors.data<double>();
-  }
-
+  float* get_features_4() { return m_features.data<float>(); }
+  double* get_features_8() { return m_features.data<double>(); }
+  float* get_neighbors_4() { return m_neighbors.data<float>(); }
+  double* get_neighbors_8() { return m_neighbors.data<double>(); }
 
   /// support for data_store_pilot2_molecular
-  int get_word_size() const {
-    return m_word_size;
-  }
+  int get_word_size() const { return m_word_size; }
 
   /// support for data_store_pilot2_molecular
-  int get_num_neighbors() const {
-    return m_num_neighbors;
-  }
+  int get_num_neighbors() const { return m_num_neighbors; }
 
   /// Return the frame data_id is in.
   /// (made public to support data_store_pilot2_molecular)
-  int get_frame(int data_id) const {
-    return data_id / m_num_samples_per_frame;
-  }
+  int get_frame(int data_id) const { return data_id / m_num_samples_per_frame; }
 
   /// support for data_store_pilot2_molecular
-  int get_num_samples_per_frame() const {
-    return m_num_samples_per_frame;
-  }
+  int get_num_samples_per_frame() const { return m_num_samples_per_frame; }
 
   /// support for data_store_pilot2_molecular
-  int get_max_neighborhood() const {
-    return m_max_neighborhood;
-  }
+  int get_max_neighborhood() const { return m_max_neighborhood; }
 
   /// support for data_store_pilot2_molecular
-  int get_num_features() const {
-    return m_num_features;
-  }
+  int get_num_features() const { return m_num_features; }
 
   /// support for data_store_pilot2_molecular
-  int get_neighbors_data_size() {
-    return m_neighbors_data_size;
-  }
+  int get_neighbors_data_size() { return m_neighbors_data_size; }
 
- protected:
+protected:
   /// Fetch a molecule and its neighbors.
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   /// Fetch molecule data_id into X at molecule offset idx.
@@ -167,6 +148,6 @@ class pilot2_molecular_reader : public generic_data_reader {
   int m_neighbors_data_size;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_DATA_READER_PILOT2_MOLECULAR_HPP
+#endif // LBANN_DATA_READER_PILOT2_MOLECULAR_HPP

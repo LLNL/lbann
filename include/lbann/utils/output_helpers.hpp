@@ -67,7 +67,7 @@ std::string truncate_to_width(std::string const& str, size_t max_len);
  *  sequences will appear in the stream output. That is, these should
  *  not be used to write to files, and they should not be used for
  *  terminal outputs if the terminal does not support color.
-*/
+ */
 /// @{
 
 /** @brief Remove ANSI CSIs from the string. */

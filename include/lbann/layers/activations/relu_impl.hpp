@@ -36,7 +36,8 @@
 namespace lbann {
 
 template <typename T, data_layout L, El::Device D>
-void relu_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void relu_layer<T, L, D>::write_specific_proto(lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   proto.mutable_relu();
 }
@@ -44,28 +45,32 @@ void relu_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 relu_distconv_adapter<TensorDataType, T_layout, Dev>&
-relu_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() {
+relu_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter()
+{
   return const_cast<relu_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      static_cast<const relu_layer<TensorDataType, T_layout, Dev>&>(*this).get_distconv_adapter());
+    static_cast<const relu_layer<TensorDataType, T_layout, Dev>&>(*this)
+      .get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 const relu_distconv_adapter<TensorDataType, T_layout, Dev>&
-relu_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const {
-  return dynamic_cast<const relu_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      data_type_layer<TensorDataType>::get_distconv_adapter());
+relu_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const
+{
+  return dynamic_cast<
+    const relu_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+    data_type_layer<TensorDataType>::get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void relu_distconv_adapter<TensorDataType, T_layout, Dev>::
-setup_distributions(tensor_overlap_constraints &constraints) {
-  data_type_distconv_adapter<TensorDataType>::setup_distributions(
-      constraints);
+void relu_distconv_adapter<TensorDataType, T_layout, Dev>::setup_distributions(
+  tensor_overlap_constraints& constraints)
+{
+  data_type_distconv_adapter<TensorDataType>::setup_distributions(constraints);
 
-  auto &x = this->get_prev_activations_dist();
-  auto &y = this->get_activations_dist();
-  auto &dx = this->get_error_signals_dist();
-  auto &dy = this->get_prev_error_signals_dist();
+  auto& x = this->get_prev_activations_dist();
+  auto& y = this->get_activations_dist();
+  auto& dx = this->get_error_signals_dist();
+  auto& dy = this->get_prev_error_signals_dist();
 
   // x == dx
   constraints.mark_equivalent(x, dx);
@@ -75,7 +80,8 @@ setup_distributions(tensor_overlap_constraints &constraints) {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void relu_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
-    size_t workspace_capacity) {
+  size_t workspace_capacity)
+{
   m_relu = std::make_unique<dc::ReLU>(dc::get_backend());
   m_relu->setup(this->get_prev_activations(),
                 this->get_activations(),

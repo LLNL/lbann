@@ -36,7 +36,9 @@
 namespace lbann {
 namespace transform {
 
-void adjust_saturation::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+void adjust_saturation::apply(utils::type_erased_matrix& data,
+                              std::vector<size_t>& dims)
+{
   // To adjust contrast, we essentially blend between the grayscale and
   // original image based on the given factor.
   cv::Mat src = utils::get_opencv_mat(data, dims);
@@ -46,7 +48,8 @@ void adjust_saturation::apply(utils::type_erased_matrix& data, std::vector<size_
   }
   if (dims[0] == 1) {
     // Already grayscale, nothing to do.
-  } else {
+  }
+  else {
     // Handle RGB.
     // Get the grayscaled image.
     // If need be, we could do this computation in-place by manually computing
@@ -62,22 +65,24 @@ void adjust_saturation::apply(utils::type_erased_matrix& data, std::vector<size_
     const float one_minus_factor = 1.0f - m_factor;
     for (size_t i = 0; i < gray_size; ++i) {
       // Handle the three channels, in OpenCV format.
-      const size_t src_base = 3*i;
+      const size_t src_base = 3 * i;
       src_buf[src_base] = cv::saturate_cast<uint8_t>(
-        src_buf[src_base]*m_factor + gray_buf[i]*one_minus_factor);
-      src_buf[src_base+1] = cv::saturate_cast<uint8_t>(
-        src_buf[src_base+1]*m_factor + gray_buf[i]*one_minus_factor);
-      src_buf[src_base+2] = cv::saturate_cast<uint8_t>(
-        src_buf[src_base+2]*m_factor + gray_buf[i]*one_minus_factor);
+        src_buf[src_base] * m_factor + gray_buf[i] * one_minus_factor);
+      src_buf[src_base + 1] = cv::saturate_cast<uint8_t>(
+        src_buf[src_base + 1] * m_factor + gray_buf[i] * one_minus_factor);
+      src_buf[src_base + 2] = cv::saturate_cast<uint8_t>(
+        src_buf[src_base + 2] * m_factor + gray_buf[i] * one_minus_factor);
     }
   }
 }
 
-std::unique_ptr<transform>
-build_adjust_saturation_transform_from_pbuf(google::protobuf::Message const& msg) {
-  auto const& params = dynamic_cast<lbann_data::Transform::AdjustSaturation const&>(msg);
+std::unique_ptr<transform> build_adjust_saturation_transform_from_pbuf(
+  google::protobuf::Message const& msg)
+{
+  auto const& params =
+    dynamic_cast<lbann_data::Transform::AdjustSaturation const&>(msg);
   return std::make_unique<adjust_saturation>(params.factor());
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

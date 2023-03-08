@@ -96,12 +96,9 @@ int try_env_variable_size()
 
   return -1;
 }
-}// namespace <anon>
+} // namespace
 
-std::string SystemInfo::pid() const
-{
-  return std::to_string(getpid());
-}
+std::string SystemInfo::pid() const { return std::to_string(getpid()); }
 
 std::string SystemInfo::host_name() const
 {
@@ -156,11 +153,10 @@ int SystemInfo::mpi_size() const
   return size;
 }
 
-std::string
-SystemInfo::env_variable_value(std::string const& var_name) const
+std::string SystemInfo::env_variable_value(std::string const& var_name) const
 {
   return ENV(var_name).raw_value();
 }
 
-}// namespace utils
-}// namespace lbann
+} // namespace utils
+} // namespace lbann

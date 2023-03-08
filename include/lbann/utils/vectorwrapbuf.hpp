@@ -30,14 +30,16 @@
 namespace lbann {
 
 /// Allow streams to be constructed on an existing data buffer without copying
-template<typename CharT, typename Traits = std::char_traits<CharT> >
-class vectorwrapbuf : public std::basic_streambuf<CharT, Traits> {
+template <typename CharT, typename Traits = std::char_traits<CharT>>
+class vectorwrapbuf : public std::basic_streambuf<CharT, Traits>
+{
 public:
-    vectorwrapbuf(std::vector<CharT> &vec) {
-        this->setg(vec.data(), vec.data(), vec.data() + vec.size());
-    }
+  vectorwrapbuf(std::vector<CharT>& vec)
+  {
+    this->setg(vec.data(), vec.data(), vec.data() + vec.size());
+  }
 };
 
-}
+} // namespace lbann
 
 #endif // LBANN_VECTORWRAPBUF_HPP_INCLUDED

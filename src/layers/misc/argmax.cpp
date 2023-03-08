@@ -35,23 +35,32 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void argmax_layer<TensorDataType, Layout, Device>::setup_dims(DataReaderMetaData& dr_metadata) {
+void argmax_layer<TensorDataType, Layout, Device>::setup_dims(
+  DataReaderMetaData& dr_metadata)
+{
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
   this->set_output_dims({1});
 
   // Make sure input tensor is 1-D
   const auto input_dims = this->get_input_dims();
   if (input_dims.size() != 1) {
-    LBANN_ERROR(get_type()," layer \"",this->get_name(),"\" ",
+    LBANN_ERROR(get_type(),
+                " layer \"",
+                this->get_name(),
+                "\" ",
                 "expects a 1-D input tensor, ",
-                "but parent layer \"",this->get_parent_layer().get_name(),"\" ",
-                "outputs a ",input_dims.size(),"-D tensor");
+                "but parent layer \"",
+                this->get_parent_layer().get_name(),
+                "\" ",
+                "outputs a ",
+                input_dims.size(),
+                "-D tensor");
   }
-
 }
 
 template <typename T, data_layout L, El::Device D>
-void argmax_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void argmax_layer<T, L, D>::write_specific_proto(lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   proto.mutable_argmax();
 }

@@ -30,7 +30,7 @@
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(binary_cross_entropy, T, D);          \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(boolean_accuracy, T, D);              \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(boolean_false_negative, T, D);        \
-  LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(boolean_false_positive, T, D); \
+  LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(boolean_false_positive, T, D);        \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(sigmoid_binary_cross_entropy, T, D)
 
 #include <lbann/macros/instantiate_device.hpp>

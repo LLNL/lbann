@@ -28,18 +28,20 @@
 #include "lbann/layers/image/cutout.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 
-#include "lbann/proto/lbann.pb.h"
 #include "lbann/proto/layers.pb.h"
+#include "lbann/proto/lbann.pb.h"
 
 #include "lbann/utils/exception.hpp"
 
-#include <math.h>
 #include <algorithm>
+#include <math.h>
 
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void cutout_layer<TensorDataType, Layout, Device>::setup_dims(DataReaderMetaData& dr_metadata) {
+void cutout_layer<TensorDataType, Layout, Device>::setup_dims(
+  DataReaderMetaData& dr_metadata)
+{
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
   // Get input dimensions
@@ -52,30 +54,40 @@ void cutout_layer<TensorDataType, Layout, Device>::setup_dims(DataReaderMetaData
     for (size_t i = 0; i < dims.size(); ++i) {
       ss << (i > 0 ? " x " : "") << dims[i];
     }
-    LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
-      "expects a 3D input in CHW format, ",
-      "but input dimensions are ",ss.str());
+    LBANN_ERROR(this->get_type(),
+                " layer \"",
+                this->get_name(),
+                "\" ",
+                "expects a 3D input in CHW format, ",
+                "but input dimensions are ",
+                ss.str());
   }
   if (cutout_length.size() > 1 || cutout_length[0] != 1) {
     std::ostringstream ss;
     for (size_t i = 0; i < cutout_length.size(); ++i) {
       ss << (i > 0 ? " x " : "") << cutout_length[i];
     }
-    LBANN_ERROR(
-      this->get_type()," layer \"",this->get_name(),"\" ",
-      "expects a scalar input for the cutout length, ",
-      "but input dimensions are ",ss.str());
+    LBANN_ERROR(this->get_type(),
+                " layer \"",
+                this->get_name(),
+                "\" ",
+                "expects a scalar input for the cutout length, ",
+                "but input dimensions are ",
+                ss.str());
   }
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void cutout_layer<TensorDataType, Layout, Device>::write_specific_proto(lbann_data::Layer& proto) const {
+void cutout_layer<TensorDataType, Layout, Device>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<TensorDataType>);
   proto.mutable_cutout();
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void cutout_layer<TensorDataType, Layout, Device>::fp_compute() {
+void cutout_layer<TensorDataType, Layout, Device>::fp_compute()
+{
 
   // Useful constants
   constexpr DataType zero = 0;
@@ -98,10 +110,10 @@ void cutout_layer<TensorDataType, Layout, Device>::fp_compute() {
   // RNG
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::uniform_real_distribution<DataType> uni(zero,one);
+  std::uniform_real_distribution<DataType> uni(zero, one);
 
-  const El::Int col_center = uni(gen)*input_width;
-  const El::Int row_center = uni(gen)*input_height;
+  const El::Int col_center = uni(gen) * input_width;
+  const El::Int row_center = uni(gen) * input_height;
 
   // Perform cutout
   LBANN_OMP_PARALLEL_FOR_COLLAPSE4
@@ -110,40 +122,45 @@ void cutout_layer<TensorDataType, Layout, Device>::fp_compute() {
       for (El::Int output_row = 0; output_row < input_height; ++output_row) {
         for (El::Int output_col = 0; output_col < input_width; ++output_col) {
 
-          const auto& cutout = cutouts.Get(0,sample);
+          const auto& cutout = cutouts.Get(0, sample);
 
-          const El::Int col_start = std::max(static_cast<El::Int>(col_center - cutout / 2), El::Int(0));
-          const El::Int col_end = std::min(static_cast<El::Int>(col_start + cutout), input_width-1);
+          const El::Int col_start =
+            std::max(static_cast<El::Int>(col_center - cutout / 2), El::Int(0));
+          const El::Int col_end =
+            std::min(static_cast<El::Int>(col_start + cutout), input_width - 1);
 
-          const El::Int row_start = std::max(static_cast<El::Int>(row_center - cutout / 2), El::Int(0));
-          const El::Int row_end = std::min(static_cast<El::Int>(row_start + cutout), input_height-1);
+          const El::Int row_start =
+            std::max(static_cast<El::Int>(row_center - cutout / 2), El::Int(0));
+          const El::Int row_end =
+            std::min(static_cast<El::Int>(row_start + cutout),
+                     input_height - 1);
 
           // Find input pixels
           const auto input_col = output_col;
           const auto input_row = output_row;
 
           // Input and output pixels
-          auto& pixel_output = local_output(channel * input_height * input_width
-                                                + input_row * input_width
-                                                + input_col,
-                                                sample);
+          auto& pixel_output =
+            local_output(channel * input_height * input_width +
+                           input_row * input_width + input_col,
+                         sample);
 
-	  if((input_col >= col_start && input_col < col_end) && (input_row >= row_start && input_row < row_end)){
-          	pixel_output = zero;
-	  }
-	  else{
-          	pixel_output = local_input(channel * input_height * input_width
-                                                + input_row * input_width
-                                                + input_col,
-                                                sample);
-	  }
+          if ((input_col >= col_start && input_col < col_end) &&
+              (input_row >= row_start && input_row < row_end)) {
+            pixel_output = zero;
+          }
+          else {
+            pixel_output = local_input(channel * input_height * input_width +
+                                         input_row * input_width + input_col,
+                                       sample);
+          }
         }
       }
     }
   }
 }
 
-#define PROTO(T) \
+#define PROTO(T)                                                               \
   template class cutout_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
 
 #include "lbann/macros/instantiate.hpp"

@@ -33,8 +33,8 @@
 
 #include <google/protobuf/message.h>
 
-#include <string>
 #include <set>
+#include <string>
 #include <vector>
 
 namespace lbann {
@@ -43,32 +43,33 @@ namespace callback {
 /**
  * Print information on the amount of IO that layers do.
  */
-class monitor_io : public callback_base {
- public:
+class monitor_io : public callback_base
+{
+public:
   monitor_io() = default;
   /** Only apply to specific layers. */
   monitor_io(std::vector<std::string> const& layers)
-    : m_layers(layers.begin(), layers.end()) {}
+    : m_layers(layers.begin(), layers.end())
+  {}
 
   monitor_io(const monitor_io&) = default;
   monitor_io& operator=(const monitor_io&) = default;
-  monitor_io* copy() const override {
-    return new monitor_io(*this);
-  }
+  monitor_io* copy() const override { return new monitor_io(*this); }
   /** Report how much I/O has occured per data reader */
-  void on_epoch_end(model *m) override;
-  void on_test_end(model *m) override;
+  void on_epoch_end(model* m) override;
+  void on_test_end(model* m) override;
   std::string name() const override { return "monitor_io"; }
 
   /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
- private:
+private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
@@ -78,10 +79,10 @@ class monitor_io : public callback_base {
 
 // Builder function
 std::unique_ptr<callback_base>
-build_monitor_io_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_monitor_io_callback_from_pbuf(const google::protobuf::Message&,
+                                    std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_IO_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_IO_HPP_INCLUDED

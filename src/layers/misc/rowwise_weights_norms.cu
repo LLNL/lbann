@@ -38,12 +38,12 @@ namespace {
  *  Grid dimensions: (height/bdimx) x (width/bdimy) x 1
  */
 template <typename T>
-__global__ void row_sqsums_kernel(
-  size_t height,
-  size_t width,
-  const T* __restrict__ mat,
-  size_t mat_ldim,
-  T* __restrict__ row_sqsums) {
+__global__ void row_sqsums_kernel(size_t height,
+                                  size_t width,
+                                  const T* __restrict__ mat,
+                                  size_t mat_ldim,
+                                  T* __restrict__ row_sqsums)
+{
 
   // Indices
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -52,23 +52,23 @@ __global__ void row_sqsums_kernel(
   const size_t nthreadsy = blockDim.y * gridDim.y;
 
   // Accumulate sum of squares for each matrix row
-  for (size_t row=gidx; row<height; row+=nthreadsx) {
+  for (size_t row = gidx; row < height; row += nthreadsx) {
     T sqsum{0};
-    for (size_t col=gidy; col<width; col+=nthreadsy) {
-      const auto& x = mat[row+col*mat_ldim];
-      sqsum += x*x;
+    for (size_t col = gidy; col < width; col += nthreadsy) {
+      const auto& x = mat[row + col * mat_ldim];
+      sqsum += x * x;
     }
     gpu_lib::atomic_add(&row_sqsums[row], sqsum);
   }
-
 }
 
-} // namespace <anon>
+} // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::row_sqsums(
   const El::Matrix<TensorDataType, Device>& mat,
-  El::Matrix<TensorDataType, Device>& row_sqsums) {
+  El::Matrix<TensorDataType, Device>& row_sqsums)
+{
 
   // Launch kernel
   El::Zero(row_sqsums);
@@ -80,18 +80,19 @@ void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::row_sqsums(
     block_dims.x = block_size;
     block_dims.y = 1;
     grid_dims.x = (mat.Height() + block_dims.x - 1) / block_dims.x;
-    grid_dims.y = (mat.Width()/64 + block_dims.y - 1) / block_dims.y;
+    grid_dims.y = (mat.Width() / 64 + block_dims.y - 1) / block_dims.y;
     grid_dims.y = El::Min(El::Max(grid_dims.y, 1), 65536);
-    hydrogen::gpu::LaunchKernel(
-      row_sqsums_kernel<TensorDataType>,
-      grid_dims, block_dims, 0, multisync,
-      static_cast<size_t>(mat.Height()),
-      static_cast<size_t>(mat.Width()),
-      mat.LockedBuffer(),
-      static_cast<size_t>(mat.LDim()),
-      row_sqsums.Buffer());
+    hydrogen::gpu::LaunchKernel(row_sqsums_kernel<TensorDataType>,
+                                grid_dims,
+                                block_dims,
+                                0,
+                                multisync,
+                                static_cast<size_t>(mat.Height()),
+                                static_cast<size_t>(mat.Width()),
+                                mat.LockedBuffer(),
+                                static_cast<size_t>(mat.LDim()),
+                                row_sqsums.Buffer());
   }
-
 }
 
 namespace {
@@ -102,22 +103,22 @@ namespace {
  *  Grid dimensions: (size/bdim) x 1 x 1
  */
 template <typename T>
-__global__ void sqrt_kernel(
-  size_t size,
-  T* __restrict__ buf) {
+__global__ void sqrt_kernel(size_t size, T* __restrict__ buf)
+{
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t nthreads = blockDim.x * gridDim.x;
-  for (size_t i=gid; i<size; i+=nthreads) {
+  for (size_t i = gid; i < size; i += nthreads) {
     auto& x = buf[i];
     x = gpu_lib::sqrt(x);
   }
 }
 
-} // namespace <anon>
+} // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::sqrt(
-  El::Matrix<TensorDataType, Device>& mat) {
+  El::Matrix<TensorDataType, Device>& mat)
+{
 
   // Check that matrix is valid
   if (!mat.Contiguous()) {
@@ -129,14 +130,15 @@ void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::sqrt(
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
-    grid_dims.x = (mat.Height()*mat.Width() + block_size - 1) / block_size;
-    hydrogen::gpu::LaunchKernel(
-      sqrt_kernel<TensorDataType>,
-      grid_dims, block_dims, 0, gpu::get_sync_info(mat),
-      static_cast<size_t>(mat.Height()*mat.Width()),
-      mat.Buffer());
+    grid_dims.x = (mat.Height() * mat.Width() + block_size - 1) / block_size;
+    hydrogen::gpu::LaunchKernel(sqrt_kernel<TensorDataType>,
+                                grid_dims,
+                                block_dims,
+                                0,
+                                gpu::get_sync_info(mat),
+                                static_cast<size_t>(mat.Height() * mat.Width()),
+                                mat.Buffer());
   }
-
 }
 
 namespace {
@@ -147,13 +149,12 @@ namespace {
  *  Grid dimensions: (size/bdim) x 1 x 1
  */
 template <typename T>
-__global__ void divide_kernel(
-  size_t size,
-  T* __restrict__ numer,
-  const T* __restrict__ denom) {
+__global__ void
+divide_kernel(size_t size, T* __restrict__ numer, const T* __restrict__ denom)
+{
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t nthreads = blockDim.x * gridDim.x;
-  for (size_t i=gid; i<size; i+=nthreads) {
+  for (size_t i = gid; i < size; i += nthreads) {
     auto& x = numer[i];
     const auto& y = denom[i];
     const auto& z = x / y;
@@ -161,16 +162,16 @@ __global__ void divide_kernel(
   }
 }
 
-} // namespace <anon>
+} // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::divide(
   El::Matrix<TensorDataType, Device>& numer,
-  const El::Matrix<TensorDataType, Device>& denom) {
+  const El::Matrix<TensorDataType, Device>& denom)
+{
 
   // Check that matrices are valid
-  if (numer.Height() != denom.Height()
-      || numer.Width() != denom.Width()) {
+  if (numer.Height() != denom.Height() || numer.Width() != denom.Width()) {
     LBANN_ERROR("numerator and denominator do not have same dims");
   }
   if (!numer.Contiguous() || !denom.Contiguous()) {
@@ -179,35 +180,37 @@ void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::divide(
 
   // Launch kernel
   if (!numer.IsEmpty()) {
-    auto multisync = El::MakeMultiSync(gpu::get_sync_info(numer),
-                                       gpu::get_sync_info(denom));
+    auto multisync =
+      El::MakeMultiSync(gpu::get_sync_info(numer), gpu::get_sync_info(denom));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
-    grid_dims.x = (numer.Height()*numer.Width() + block_size - 1) / block_size;
-    hydrogen::gpu::LaunchKernel(
-      divide_kernel<TensorDataType>,
-      grid_dims, block_dims, 0, multisync,
-      numer.Height()*numer.Width(),
-      numer.Buffer(),
-      denom.LockedBuffer());
+    grid_dims.x =
+      (numer.Height() * numer.Width() + block_size - 1) / block_size;
+    hydrogen::gpu::LaunchKernel(divide_kernel<TensorDataType>,
+                                grid_dims,
+                                block_dims,
+                                0,
+                                multisync,
+                                numer.Height() * numer.Width(),
+                                numer.Buffer(),
+                                denom.LockedBuffer());
   }
-
 }
 
 namespace {
 
 template <typename T>
-__global__ void row_axpy_kernel(
-  size_t height,
-  size_t width,
-  T alpha,
-  const T* __restrict__ a_vec,
-  const T* __restrict__ x_mat,
-  size_t x_ldim,
-  T beta,
-  T* __restrict__ y_mat,
-  size_t y_ldim) {
+__global__ void row_axpy_kernel(size_t height,
+                                size_t width,
+                                T alpha,
+                                const T* __restrict__ a_vec,
+                                const T* __restrict__ x_mat,
+                                size_t x_ldim,
+                                T beta,
+                                T* __restrict__ y_mat,
+                                size_t y_ldim)
+{
 
   // Indices
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -216,18 +219,17 @@ __global__ void row_axpy_kernel(
   const size_t nthreadsy = blockDim.y * gridDim.y;
 
   // Accumulate sum of squares for each matrix row
-  for (size_t row=gidx; row<height; row+=nthreadsx) {
+  for (size_t row = gidx; row < height; row += nthreadsx) {
     const auto& alpha_a = alpha * a_vec[row];
-    for (size_t col=gidy; col<width; col+=nthreadsy) {
-      const auto& x = x_mat[row+col*x_ldim];
-      auto& y = y_mat[row+col*y_ldim];
+    for (size_t col = gidy; col < width; col += nthreadsy) {
+      const auto& x = x_mat[row + col * x_ldim];
+      auto& y = y_mat[row + col * y_ldim];
       y = alpha_a * x + beta * y;
     }
   }
-
 }
 
-} // namespace <anon>
+} // namespace
 
 /**
  *  Block dimensions: bdimx x bdimy x 1
@@ -240,13 +242,12 @@ void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::row_axpy(
   const El::Matrix<TensorDataType, Device>& a_vec,
   const El::Matrix<TensorDataType, Device>& x_mat,
   TensorDataType beta,
-  El::Matrix<TensorDataType, Device>& y_mat) {
+  El::Matrix<TensorDataType, Device>& y_mat)
+{
 
   // Check that matrices are valid
-  if (x_mat.Height() != y_mat.Height()
-      || x_mat.Width() != y_mat.Width()
-      || a_vec.Height() != y_mat.Height()
-      || a_vec.Width() != 1) {
+  if (x_mat.Height() != y_mat.Height() || x_mat.Width() != y_mat.Width() ||
+      a_vec.Height() != y_mat.Height() || a_vec.Width() != 1) {
     LBANN_ERROR("matrix dims do not match");
   }
 
@@ -262,27 +263,30 @@ void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::row_axpy(
     grid_dims.x = (y_mat.Height() + block_dims.x - 1) / block_dims.x;
     grid_dims.y = (y_mat.Width() + block_dims.y - 1) / block_dims.y;
     grid_dims.y = El::Min(grid_dims.y, 65536);
-    hydrogen::gpu::LaunchKernel(
-      row_axpy_kernel<TensorDataType>,
-      grid_dims, block_dims, 0, multisync,
-      static_cast<size_t>(y_mat.Height()),
-      static_cast<size_t>(y_mat.Width()),
-      alpha,
-      a_vec.LockedBuffer(),
-      x_mat.LockedBuffer(),
-      static_cast<size_t>(x_mat.LDim()),
-      beta,
-      y_mat.Buffer(),
-      static_cast<size_t>(y_mat.LDim()));
+    hydrogen::gpu::LaunchKernel(row_axpy_kernel<TensorDataType>,
+                                grid_dims,
+                                block_dims,
+                                0,
+                                multisync,
+                                static_cast<size_t>(y_mat.Height()),
+                                static_cast<size_t>(y_mat.Width()),
+                                alpha,
+                                a_vec.LockedBuffer(),
+                                x_mat.LockedBuffer(),
+                                static_cast<size_t>(x_mat.LDim()),
+                                beta,
+                                y_mat.Buffer(),
+                                static_cast<size_t>(y_mat.LDim()));
   }
-
 }
 
-#define PROTO(T)                                            \
-  template class rowwise_weights_norms_layer<               \
-    T, data_layout::DATA_PARALLEL, El::Device::GPU>;        \
-  template class rowwise_weights_norms_layer<               \
-    T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+#define PROTO(T)                                                               \
+  template class rowwise_weights_norms_layer<T,                                \
+                                             data_layout::DATA_PARALLEL,       \
+                                             El::Device::GPU>;                 \
+  template class rowwise_weights_norms_layer<T,                                \
+                                             data_layout::MODEL_PARALLEL,      \
+                                             El::Device::GPU>
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 

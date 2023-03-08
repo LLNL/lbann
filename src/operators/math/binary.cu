@@ -43,7 +43,8 @@ namespace {
 
 /** Add operator. */
 template <typename DataT>
-struct AddOpImpl {
+struct AddOpImpl
+{
   inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     return x1 + x2;
@@ -61,7 +62,8 @@ struct AddOpImpl {
 
 /** Subtract operator. */
 template <typename DataT>
-struct SubtractOpImpl {
+struct SubtractOpImpl
+{
   inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     return x1 - x2;
@@ -79,7 +81,8 @@ struct SubtractOpImpl {
 
 /** Multiply operator. */
 template <typename DataT>
-struct MultiplyOpImpl {
+struct MultiplyOpImpl
+{
   inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     return x1 * x2;
@@ -97,7 +100,8 @@ struct MultiplyOpImpl {
 
 /** Divide operator. */
 template <typename DataT>
-struct DivideOpImpl {
+struct DivideOpImpl
+{
   inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     return x1 / x2;
@@ -109,13 +113,14 @@ struct DivideOpImpl {
                                     DataT& dx2) const
   {
     dx1 = dy / x2;
-    dx2 = -dy * x1 / (x2*x2);
+    dx2 = -dy * x1 / (x2 * x2);
   }
 };
 
 /** Modulo operator. */
 template <typename DataT>
-struct ModOpImpl {
+struct ModOpImpl
+{
   inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     return gpu_lib::mod(x1, x2);
@@ -133,7 +138,8 @@ struct ModOpImpl {
 
 /** Power operator. */
 template <typename DataT>
-struct PowOpImpl {
+struct PowOpImpl
+{
   inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     return gpu_lib::pow(x1, x2);
@@ -154,12 +160,17 @@ struct PowOpImpl {
  *  instead.
  */
 template <typename DataT>
-struct SafeDivideOpImpl {
+struct SafeDivideOpImpl
+{
   inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     auto const& y = x1 / x2;
-    if (gpu_lib::isfinite(y)) { return y; }
-    else             { return DataT(0.0); }
+    if (gpu_lib::isfinite(y)) {
+      return y;
+    }
+    else {
+      return DataT(0.0);
+    }
   }
   inline __device__ void operator()(DataT const& x1,
                                     DataT const& x2,
@@ -170,7 +181,7 @@ struct SafeDivideOpImpl {
     auto const& y = x1 / x2;
     if (gpu_lib::isfinite(y)) {
       dx1 = dy / x2;
-      dx2 = -dy * x1 / (x2*x2);
+      dx2 = -dy * x1 / (x2 * x2);
     }
     else {
       dx1 = DataT(0.0);
@@ -181,7 +192,8 @@ struct SafeDivideOpImpl {
 
 /** Squared difference operator. */
 template <typename DataT>
-struct SquaredDifferenceOpImpl {
+struct SquaredDifferenceOpImpl
+{
   inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     auto const& diff = x1 - x2;
@@ -193,14 +205,15 @@ struct SquaredDifferenceOpImpl {
                                     DataT& dx1,
                                     DataT& dx2) const
   {
-    dx1 = dy * DataT(2.) * (x1-x2);
-    dx2 = dy * DataT(2.) * (x2-x1);
+    dx1 = dy * DataT(2.) * (x1 - x2);
+    dx2 = dy * DataT(2.) * (x2 - x1);
   }
 };
 
 /** Maximum operator. */
 template <typename DataT>
-struct MaxOpImpl {
+struct MaxOpImpl
+{
   inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     return gpu_lib::max(x1, x2);
@@ -228,7 +241,8 @@ struct MaxOpImpl {
 
 /** Minimum operator. */
 template <typename DataT>
-struct MinOpImpl {
+struct MinOpImpl
+{
   inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     return gpu_lib::min(x1, x2);
@@ -256,7 +270,8 @@ struct MinOpImpl {
 
 /** Equal operator. */
 template <typename DataT>
-struct EqualOpImpl {
+struct EqualOpImpl
+{
   inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     return x1 == x2 ? DataT(1.0) : DataT(0.0);
@@ -274,7 +289,8 @@ struct EqualOpImpl {
 
 /** Not equal operator. */
 template <typename DataT>
-struct NotEqualOpImpl {
+struct NotEqualOpImpl
+{
   inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     return x1 == x2 ? DataT(0.0) : DataT(1.0);
@@ -292,7 +308,8 @@ struct NotEqualOpImpl {
 
 /** Less than operator. */
 template <typename DataT>
-struct LessOpImpl {
+struct LessOpImpl
+{
   inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     return x1 < x2 ? DataT(1.0) : DataT(0.0);
@@ -310,7 +327,8 @@ struct LessOpImpl {
 
 /** Less than or equal operator. */
 template <typename DataT>
-struct LessEqualOpImpl {
+struct LessEqualOpImpl
+{
   inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     return x1 <= x2 ? DataT(1.0) : DataT(0.0);
@@ -328,7 +346,8 @@ struct LessEqualOpImpl {
 
 /** Greater than operator. */
 template <typename DataT>
-struct GreaterOpImpl {
+struct GreaterOpImpl
+{
   inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     return x1 > x2 ? DataT(1.0) : DataT(0.0);
@@ -346,7 +365,8 @@ struct GreaterOpImpl {
 
 /** Greater than or equal operator. */
 template <typename DataT>
-struct GreaterEqualOpImpl {
+struct GreaterEqualOpImpl
+{
   inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     return x1 >= x2 ? DataT(1.0) : DataT(0.0);
@@ -364,7 +384,8 @@ struct GreaterEqualOpImpl {
 
 /** Logical and operator. */
 template <typename DataT>
-struct LogicalAndOpImpl {
+struct LogicalAndOpImpl
+{
   inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     auto const& b1 = x1 != DataT(0.0) && !gpu_lib::isnan(x1);
@@ -384,7 +405,8 @@ struct LogicalAndOpImpl {
 
 /** Logical or operator. */
 template <typename DataT>
-struct LogicalOrOpImpl {
+struct LogicalOrOpImpl
+{
   inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     auto const& b1 = x1 != DataT(0.0) && !gpu_lib::isnan(x1);
@@ -404,7 +426,8 @@ struct LogicalOrOpImpl {
 
 /** Logical xor operator. */
 template <typename DataT>
-struct LogicalXorOpImpl {
+struct LogicalXorOpImpl
+{
   inline __device__ DataT operator()(DataT const& x1, DataT const& x2) const
   {
     auto const& b1 = x1 != DataT(0.0) && !gpu_lib::isnan(x1);
@@ -424,47 +447,47 @@ struct LogicalXorOpImpl {
 
 } // namespace
 
-  // Template instantiation
-#define DEFINE_COMPUTE_OPS(OP_NAME)                                     \
-  template <typename DataT, El::Device Device>                          \
-  void OP_NAME##Operator<DataT, Device>::fp_compute_local(              \
-    std::vector<ConstLocalInputTensorType> inputs,                      \
-    std::vector<LocalOutputTensorType> outputs) const                   \
-  {                                                                     \
-    LBANN_ASSERT_DEBUG(inputs.size() == 2);                             \
-    LBANN_ASSERT_DEBUG(outputs.size() == 1);                            \
-    auto const& input0 = inputs[0].data();                              \
-    auto const& input1 = inputs[1].data();                              \
-    auto& output = outputs.front().data();                              \
-    LBANN_ASSERT(input0.Height() == input1.Height());                   \
-    LBANN_ASSERT(input0.Width() == input1.Width());                     \
-    internal::EntrywiseZipInto(input0,                                  \
-                               input1,                                  \
-                               output,                                  \
-                               OP_NAME##OpImpl<DataT>{});               \
-  }                                                                     \
-  template <typename DataT, El::Device Device>                          \
-  void OP_NAME##Operator<DataT, Device>::bp_compute_local(              \
-    std::vector<ConstLocalInputTensorType> inputs,                      \
-    std::vector<ConstLocalOutputTensorType> grads_wrt_outputs,          \
-    std::vector<LocalInputTensorType> grads_wrt_inputs) const           \
-  {                                                                     \
-    LBANN_ASSERT_DEBUG(inputs.size() == 2);                             \
-    LBANN_ASSERT_DEBUG(grads_wrt_outputs.size() == 1);                  \
-    LBANN_ASSERT_DEBUG(grads_wrt_inputs.size() == 2);                   \
-    auto const& input0 = inputs[0].data();                              \
-    auto const& input1 = inputs[1].data();                              \
-    auto const& grad_wrt_output = grads_wrt_outputs.front().data();     \
-    auto& grad_wrt_input0 = grads_wrt_inputs[0].data();                 \
-    auto& grad_wrt_input1 = grads_wrt_inputs[1].data();                 \
-    LBANN_ASSERT(grad_wrt_input0.Height() == grad_wrt_input1.Height()); \
-    LBANN_ASSERT(grad_wrt_input0.Width() == grad_wrt_input1.Width());   \
-    internal::apply_binary_backprop_operator(input0,                    \
-                                             input1,                    \
-                                             grad_wrt_output,           \
-                                             grad_wrt_input0,           \
-                                             grad_wrt_input1,           \
-                                             OP_NAME##OpImpl<DataT>{}); \
+// Template instantiation
+#define DEFINE_COMPUTE_OPS(OP_NAME)                                            \
+  template <typename DataT, El::Device Device>                                 \
+  void OP_NAME##Operator<DataT, Device>::fp_compute_local(                     \
+    std::vector<ConstLocalInputTensorType> inputs,                             \
+    std::vector<LocalOutputTensorType> outputs) const                          \
+  {                                                                            \
+    LBANN_ASSERT_DEBUG(inputs.size() == 2);                                    \
+    LBANN_ASSERT_DEBUG(outputs.size() == 1);                                   \
+    auto const& input0 = inputs[0].data();                                     \
+    auto const& input1 = inputs[1].data();                                     \
+    auto& output = outputs.front().data();                                     \
+    LBANN_ASSERT(input0.Height() == input1.Height());                          \
+    LBANN_ASSERT(input0.Width() == input1.Width());                            \
+    internal::EntrywiseZipInto(input0,                                         \
+                               input1,                                         \
+                               output,                                         \
+                               OP_NAME##OpImpl<DataT>{});                      \
+  }                                                                            \
+  template <typename DataT, El::Device Device>                                 \
+  void OP_NAME##Operator<DataT, Device>::bp_compute_local(                     \
+    std::vector<ConstLocalInputTensorType> inputs,                             \
+    std::vector<ConstLocalOutputTensorType> grads_wrt_outputs,                 \
+    std::vector<LocalInputTensorType> grads_wrt_inputs) const                  \
+  {                                                                            \
+    LBANN_ASSERT_DEBUG(inputs.size() == 2);                                    \
+    LBANN_ASSERT_DEBUG(grads_wrt_outputs.size() == 1);                         \
+    LBANN_ASSERT_DEBUG(grads_wrt_inputs.size() == 2);                          \
+    auto const& input0 = inputs[0].data();                                     \
+    auto const& input1 = inputs[1].data();                                     \
+    auto const& grad_wrt_output = grads_wrt_outputs.front().data();            \
+    auto& grad_wrt_input0 = grads_wrt_inputs[0].data();                        \
+    auto& grad_wrt_input1 = grads_wrt_inputs[1].data();                        \
+    LBANN_ASSERT(grad_wrt_input0.Height() == grad_wrt_input1.Height());        \
+    LBANN_ASSERT(grad_wrt_input0.Width() == grad_wrt_input1.Width());          \
+    internal::apply_binary_backprop_operator(input0,                           \
+                                             input1,                           \
+                                             grad_wrt_output,                  \
+                                             grad_wrt_input0,                  \
+                                             grad_wrt_input1,                  \
+                                             OP_NAME##OpImpl<DataT>{});        \
   }
 
 DEFINE_COMPUTE_OPS(Add)
@@ -487,25 +510,25 @@ DEFINE_COMPUTE_OPS(SafeDivide)
 DEFINE_COMPUTE_OPS(SquaredDifference)
 DEFINE_COMPUTE_OPS(Subtract)
 
-#define PROTO(T)                                                     \
-  template class AddOperator<T, El::Device::GPU>;                    \
-  template class DivideOperator<T, El::Device::GPU>;                 \
-  template class EqualOperator<T, El::Device::GPU>;                  \
-  template class GreaterEqualOperator<T, El::Device::GPU>;           \
-  template class GreaterOperator<T, El::Device::GPU>;                \
-  template class LessEqualOperator<T, El::Device::GPU>;              \
-  template class LessOperator<T, El::Device::GPU>;                   \
-  template class LogicalAndOperator<T, El::Device::GPU>;             \
-  template class LogicalOrOperator<T, El::Device::GPU>;              \
-  template class LogicalXorOperator<T, El::Device::GPU>;             \
-  template class MaxOperator<T, El::Device::GPU>;                    \
-  template class MinOperator<T, El::Device::GPU>;                    \
-  template class ModOperator<T, El::Device::GPU>;                    \
-  template class MultiplyOperator<T, El::Device::GPU>;               \
-  template class NotEqualOperator<T, El::Device::GPU>;               \
-  template class PowOperator<T, El::Device::GPU>;                    \
-  template class SafeDivideOperator<T, El::Device::GPU>;             \
-  template class SquaredDifferenceOperator<T, El::Device::GPU>;      \
+#define PROTO(T)                                                               \
+  template class AddOperator<T, El::Device::GPU>;                              \
+  template class DivideOperator<T, El::Device::GPU>;                           \
+  template class EqualOperator<T, El::Device::GPU>;                            \
+  template class GreaterEqualOperator<T, El::Device::GPU>;                     \
+  template class GreaterOperator<T, El::Device::GPU>;                          \
+  template class LessEqualOperator<T, El::Device::GPU>;                        \
+  template class LessOperator<T, El::Device::GPU>;                             \
+  template class LogicalAndOperator<T, El::Device::GPU>;                       \
+  template class LogicalOrOperator<T, El::Device::GPU>;                        \
+  template class LogicalXorOperator<T, El::Device::GPU>;                       \
+  template class MaxOperator<T, El::Device::GPU>;                              \
+  template class MinOperator<T, El::Device::GPU>;                              \
+  template class ModOperator<T, El::Device::GPU>;                              \
+  template class MultiplyOperator<T, El::Device::GPU>;                         \
+  template class NotEqualOperator<T, El::Device::GPU>;                         \
+  template class PowOperator<T, El::Device::GPU>;                              \
+  template class SafeDivideOperator<T, El::Device::GPU>;                       \
+  template class SquaredDifferenceOperator<T, El::Device::GPU>;                \
   template class SubtractOperator<T, El::Device::GPU>
 
 #define LBANN_INSTANTIATE_GPU_HALF

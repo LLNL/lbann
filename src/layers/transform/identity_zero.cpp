@@ -30,14 +30,15 @@
 
 // LBANN_ASSERT_MSG_HAS_FIELD
 #include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/proto/lbann.pb.h"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf.hpp"
-#include "lbann/proto/lbann.pb.h"
 
 namespace lbann {
 
 template <typename T, data_layout L, El::Device D>
-void identity_zero_layer<T, L, D>::setup_dims(DataReaderMetaData& dr_metadata) {
+void identity_zero_layer<T, L, D>::setup_dims(DataReaderMetaData& dr_metadata)
+{
   data_type_layer<T>::setup_dims(dr_metadata);
   this->set_output_dims(this->get_input_dims());
 
@@ -51,8 +52,8 @@ void identity_zero_layer<T, L, D>::setup_dims(DataReaderMetaData& dr_metadata) {
           << "has input tensors with incompatible dimensions (";
       for (int j = 0; j < this->get_num_parents(); ++j) {
         const auto& dims = this->get_input_dims(j);
-        err << (j > 0 ? ", " : "")
-            << "layer \"" << parents[j]->get_name() << "\" outputs ";
+        err << (j > 0 ? ", " : "") << "layer \"" << parents[j]->get_name()
+            << "\" outputs ";
         for (size_t k = 0; k < dims.size(); ++k) {
           err << (k > 0 ? " x " : "") << dims[k];
         }
@@ -64,26 +65,30 @@ void identity_zero_layer<T, L, D>::setup_dims(DataReaderMetaData& dr_metadata) {
 }
 
 template <typename T, data_layout L, El::Device D>
-void identity_zero_layer<T, L, D>::fp_compute() {
+void identity_zero_layer<T, L, D>::fp_compute()
+{
   if (this->is_frozen()) {
     El::Zero(this->get_activations());
-  } else {
+  }
+  else {
     El::Copy(this->get_prev_activations(), this->get_activations());
   }
 }
 
 template <typename T, data_layout L, El::Device D>
-void identity_zero_layer<T, L, D>::bp_compute(){
+void identity_zero_layer<T, L, D>::bp_compute()
+{
   if (this->is_frozen()) {
     El::Zero(this->get_error_signals());
-  } else {
+  }
+  else {
     El::Copy(this->get_prev_error_signals(), this->get_error_signals());
   }
 }
 
 template <typename T, data_layout L, El::Device D>
 void identity_zero_layer<T, L, D>::write_specific_proto(
-    lbann_data::Layer& proto) const
+  lbann_data::Layer& proto) const
 {
   proto.set_datatype(proto::ProtoDataType<T>);
   proto.mutable_identity_zero();
@@ -100,11 +105,11 @@ build_identity_zero_layer_from_pbuf(lbann_comm* comm,
   return std::make_unique<LayerType>(comm);
 }
 
-#define PROTO_DEVICE(T, Device) \
-  template class identity_zero_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class identity_zero_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  template class identity_zero_layer<T, data_layout::DATA_PARALLEL, Device>;   \
+  template class identity_zero_layer<T, data_layout::MODEL_PARALLEL, Device>;  \
   LBANN_LAYER_BUILDER_ETI(identity_zero, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

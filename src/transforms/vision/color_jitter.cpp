@@ -28,9 +28,9 @@
 #include "lbann/transforms/vision/adjust_brightness.hpp"
 #include "lbann/transforms/vision/adjust_contrast.hpp"
 #include "lbann/transforms/vision/adjust_saturation.hpp"
-#include "lbann/utils/random_number_generators.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
+#include "lbann/utils/random_number_generators.hpp"
 
 #include "lbann/proto/transforms.pb.h"
 
@@ -39,37 +39,42 @@
 namespace lbann {
 namespace transform {
 
-color_jitter::color_jitter(float min_brightness_factor, float max_brightness_factor,
-                           float min_contrast_factor, float max_contrast_factor,
-                           float min_saturation_factor, float max_saturation_factor) :
-  transform(),
-  m_min_brightness_factor(min_brightness_factor),
-  m_max_brightness_factor(max_brightness_factor),
-  m_min_contrast_factor(min_contrast_factor),
-  m_max_contrast_factor(max_contrast_factor),
-  m_min_saturation_factor(min_saturation_factor),
-  m_max_saturation_factor(max_saturation_factor) {
+color_jitter::color_jitter(float min_brightness_factor,
+                           float max_brightness_factor,
+                           float min_contrast_factor,
+                           float max_contrast_factor,
+                           float min_saturation_factor,
+                           float max_saturation_factor)
+  : transform(),
+    m_min_brightness_factor(min_brightness_factor),
+    m_max_brightness_factor(max_brightness_factor),
+    m_min_contrast_factor(min_contrast_factor),
+    m_max_contrast_factor(max_contrast_factor),
+    m_min_saturation_factor(min_saturation_factor),
+    m_max_saturation_factor(max_saturation_factor)
+{
   if (min_brightness_factor < 0.0f ||
       max_brightness_factor < min_brightness_factor) {
-    LBANN_ERROR("Min/max brightness factors out of range: "
-                + std::to_string(min_brightness_factor) + " "
-                + std::to_string(max_brightness_factor));
+    LBANN_ERROR("Min/max brightness factors out of range: " +
+                std::to_string(min_brightness_factor) + " " +
+                std::to_string(max_brightness_factor));
   }
-  if (min_contrast_factor < 0.0f ||
-      max_contrast_factor < min_contrast_factor) {
-    LBANN_ERROR("Min/max contrast factors out of range: "
-                + std::to_string(min_contrast_factor) + " "
-                + std::to_string(max_contrast_factor));
+  if (min_contrast_factor < 0.0f || max_contrast_factor < min_contrast_factor) {
+    LBANN_ERROR("Min/max contrast factors out of range: " +
+                std::to_string(min_contrast_factor) + " " +
+                std::to_string(max_contrast_factor));
   }
   if (min_saturation_factor < 0.0f ||
       max_saturation_factor < min_saturation_factor) {
-    LBANN_ERROR("Min/max saturation factors out of range: "
-                + std::to_string(min_saturation_factor) + " "
-                + std::to_string(max_saturation_factor));
+    LBANN_ERROR("Min/max saturation factors out of range: " +
+                std::to_string(min_saturation_factor) + " " +
+                std::to_string(max_saturation_factor));
   }
 }
 
-void color_jitter::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+void color_jitter::apply(utils::type_erased_matrix& data,
+                         std::vector<size_t>& dims)
+{
   fast_rng_gen& gen = get_fast_generator();
   // Determine the order to apply transforms.
   // Unused transforms will be skipped.
@@ -83,8 +88,8 @@ void color_jitter::apply(utils::type_erased_matrix& data, std::vector<size_t>& d
       // Brightness.
       if (!(m_min_brightness_factor == 0.0f &&
             m_min_brightness_factor == m_max_brightness_factor)) {
-        std::uniform_real_distribution<float> dist(
-          m_min_brightness_factor, m_max_brightness_factor);
+        std::uniform_real_distribution<float> dist(m_min_brightness_factor,
+                                                   m_max_brightness_factor);
         adjust_brightness trans = adjust_brightness(dist(gen));
         trans.apply(data, dims);
       }
@@ -93,8 +98,8 @@ void color_jitter::apply(utils::type_erased_matrix& data, std::vector<size_t>& d
       // Contrast.
       if (!(m_min_contrast_factor == 0.0f &&
             m_min_contrast_factor == m_max_contrast_factor)) {
-        std::uniform_real_distribution<float> dist(
-          m_min_contrast_factor, m_max_contrast_factor);
+        std::uniform_real_distribution<float> dist(m_min_contrast_factor,
+                                                   m_max_contrast_factor);
         adjust_contrast trans = adjust_contrast(dist(gen));
         trans.apply(data, dims);
       }
@@ -103,8 +108,8 @@ void color_jitter::apply(utils::type_erased_matrix& data, std::vector<size_t>& d
       // Saturation.
       if (!(m_min_saturation_factor == 0.0f &&
             m_min_saturation_factor == m_max_saturation_factor)) {
-        std::uniform_real_distribution<float> dist(
-          m_min_saturation_factor, m_max_saturation_factor);
+        std::uniform_real_distribution<float> dist(m_min_saturation_factor,
+                                                   m_max_saturation_factor);
         adjust_saturation trans = adjust_saturation(dist(gen));
         trans.apply(data, dims);
       }
@@ -116,13 +121,17 @@ void color_jitter::apply(utils::type_erased_matrix& data, std::vector<size_t>& d
 }
 
 std::unique_ptr<transform>
-build_color_jitter_transform_from_pbuf(google::protobuf::Message const& msg) {
-  auto const& params = dynamic_cast<lbann_data::Transform::ColorJitter const&>(msg);
-  return std::make_unique<color_jitter>(
-    params.min_brightness_factor(), params.max_brightness_factor(),
-    params.min_contrast_factor(), params.max_contrast_factor(),
-    params.min_saturation_factor(), params.max_saturation_factor());
+build_color_jitter_transform_from_pbuf(google::protobuf::Message const& msg)
+{
+  auto const& params =
+    dynamic_cast<lbann_data::Transform::ColorJitter const&>(msg);
+  return std::make_unique<color_jitter>(params.min_brightness_factor(),
+                                        params.max_brightness_factor(),
+                                        params.min_contrast_factor(),
+                                        params.max_contrast_factor(),
+                                        params.min_saturation_factor(),
+                                        params.max_saturation_factor());
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

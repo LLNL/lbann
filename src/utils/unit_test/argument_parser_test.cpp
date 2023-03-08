@@ -31,9 +31,10 @@
 
 #include "stubs/preset_env_accessor.hpp"
 
-TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
-                    lbann::utils::strict_parsing,
-                    lbann::utils::allow_extra_parameters)
+TEMPLATE_TEST_CASE("Testing the argument parser",
+                   "[parser][utilities]",
+                   lbann::utils::strict_parsing,
+                   lbann::utils::allow_extra_parameters)
 {
   using error_handler = TestType;
   using parser_type = lbann::utils::argument_parser<error_handler>;
@@ -41,11 +42,10 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
   parser_type parser;
   SECTION("Passing default arguments")
   {
-      char const* argv[] = { "argument_parser_test.exe" };
-      int const argc = sizeof(argv) / sizeof(argv[0]);
-      REQUIRE_NOTHROW(parser.parse(argc, argv));
-      CHECK(
-        parser.get_exe_name() == "argument_parser_test.exe");
+    char const* argv[] = {"argument_parser_test.exe"};
+    int const argc = sizeof(argv) / sizeof(argv[0]);
+    REQUIRE_NOTHROW(parser.parse(argc, argv));
+    CHECK(parser.get_exe_name() == "argument_parser_test.exe");
   }
 
   SECTION("Short help flag")
@@ -77,8 +77,7 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
   SECTION("Boolean flags are false by default")
   {
     auto flag_v =
-      parser.add_flag(
-        "flag v", {"-v", "--flag-v"}, "print verbosely");
+      parser.add_flag("flag v", {"-v", "--flag-v"}, "print verbosely");
 
     CHECK(parser.option_is_defined("flag v"));
     CHECK_FALSE(flag_v);
@@ -91,8 +90,7 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
 
     SECTION("Short flag sets flag to true")
     {
-      char const* argv[]
-        = {"argument_parser_test.exe", "-v"};
+      char const* argv[] = {"argument_parser_test.exe", "-v"};
       int const argc = sizeof(argv) / sizeof(argv[0]);
 
       CHECK_FALSE(parser.template get<bool>("flag v"));
@@ -104,8 +102,7 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
 
     SECTION("Long flag sets flag to true")
     {
-      char const* argv[]
-        = {"argument_parser_test.exe", "--flag-v"};
+      char const* argv[] = {"argument_parser_test.exe", "--flag-v"};
       int const argc = sizeof(argv) / sizeof(argv[0]);
 
       CHECK_FALSE(parser.template get<bool>("flag v"));
@@ -118,29 +115,28 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
 
   SECTION("Numeric option")
   {
-    auto param_t =
-      parser.add_option("parameter t", {"-t", "--param-t"},
-                        "Docstring for \"parameter t\"", 1);
+    auto param_t = parser.add_option("parameter t",
+                                     {"-t", "--param-t"},
+                                     "Docstring for \"parameter t\"",
+                                     1);
 
     CHECK(parser.option_is_defined("parameter t"));
     CHECK(parser.template get<int>("parameter t") == 1);
     CHECK(param_t == 1);
 
-    SECTION ("Short flag")
+    SECTION("Short flag")
     {
       char const* argv[] = {"argument_parser_test.exe", "-t", "9"};
       int const argc = sizeof(argv) / sizeof(argv[0]);
 
       REQUIRE_NOTHROW(parser.parse(argc, argv));
-      CHECK(
-        parser.template get<int>("parameter t") == 9);
+      CHECK(parser.template get<int>("parameter t") == 9);
       CHECK(param_t == 9);
     }
 
-    SECTION ("Long flag")
+    SECTION("Long flag")
     {
-      char const* argv[]
-        = {"argument_parser_test.exe", "--param-t", "13"};
+      char const* argv[] = {"argument_parser_test.exe", "--param-t", "13"};
       int const argc = sizeof(argv) / sizeof(argv[0]);
 
       REQUIRE_NOTHROW(parser.parse(argc, argv));
@@ -151,62 +147,60 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
 
   SECTION("String-valued option")
   {
-    auto param_n =
-      parser.add_option("parameter n", {"-n", "--param-n", "--parameter-n"},
-                        "Docstring for \"parameter t\"",
-                        "<unregistered parameter value>");
+    auto param_n = parser.add_option("parameter n",
+                                     {"-n", "--param-n", "--parameter-n"},
+                                     "Docstring for \"parameter t\"",
+                                     "<unregistered parameter value>");
 
     CHECK(parser.option_is_defined("parameter n"));
-    CHECK(parser.template get<std::string>("parameter n")
-          == "<unregistered parameter value>");
+    CHECK(parser.template get<std::string>("parameter n") ==
+          "<unregistered parameter value>");
 
     SECTION("The short option is passed on the command line")
     {
-      char const* argv[]
-        = {"argument_parser_test.exe", "-n", "short form of param n"};
+      char const* argv[] = {"argument_parser_test.exe",
+                            "-n",
+                            "short form of param n"};
       int const argc = sizeof(argv) / sizeof(argv[0]);
 
       REQUIRE_NOTHROW(parser.parse(argc, argv));
-      CHECK(
-        parser.template get<std::string>("parameter n")
-        == "short form of param n");
+      CHECK(parser.template get<std::string>("parameter n") ==
+            "short form of param n");
       CHECK(param_n == "short form of param n");
     }
 
-    SECTION ("First long option")
+    SECTION("First long option")
     {
-      char const* argv[]
-        = {"argument_parser_test.exe", "--param-n",
-           "first long form of param n"};
+      char const* argv[] = {"argument_parser_test.exe",
+                            "--param-n",
+                            "first long form of param n"};
       int const argc = sizeof(argv) / sizeof(argv[0]);
 
       REQUIRE_NOTHROW(parser.parse(argc, argv));
-      CHECK(
-        parser.template get<std::string>("parameter n")
-        == "first long form of param n");
+      CHECK(parser.template get<std::string>("parameter n") ==
+            "first long form of param n");
       CHECK(param_n == "first long form of param n");
     }
 
-    SECTION ("Second long option")
+    SECTION("Second long option")
     {
-      char const* argv[]
-        = {"argument_parser_test.exe", "--parameter-n",
-           "second long form of param n"};
+      char const* argv[] = {"argument_parser_test.exe",
+                            "--parameter-n",
+                            "second long form of param n"};
       int const argc = sizeof(argv) / sizeof(argv[0]);
 
       REQUIRE_NOTHROW(parser.parse(argc, argv));
-      CHECK(
-        parser.template get<std::string>("parameter n")
-        == "second long form of param n");
+      CHECK(parser.template get<std::string>("parameter n") ==
+            "second long form of param n");
       CHECK(param_n == "second long form of param n");
     }
   }
 
-  SECTION ("Required numeric argument")
+  SECTION("Required numeric argument")
   {
     auto required_int =
-      parser.template add_required_argument<int>(
-        "required", "This argument is required.");
+      parser.template add_required_argument<int>("required",
+                                                 "This argument is required.");
 
     CHECK(parser.option_is_defined("required"));
 
@@ -215,15 +209,14 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
       char const* argv[] = {"argument_parser_test.exe"};
       int const argc = sizeof(argv) / sizeof(argv[0]);
 
-      parser.parse_no_finalize(argc,argv);
-      REQUIRE_THROWS_AS(
-        parser.finalize(),
-        typename parser_type::missing_required_arguments);
+      parser.parse_no_finalize(argc, argv);
+      REQUIRE_THROWS_AS(parser.finalize(),
+                        typename parser_type::missing_required_arguments);
     }
 
     SECTION("Required argument is passed")
     {
-      char const* argv[] = {"argument_parser_test.exe","13"};
+      char const* argv[] = {"argument_parser_test.exe", "13"};
       int const argc = sizeof(argv) / sizeof(argv[0]);
 
       REQUIRE_NOTHROW(parser.parse(argc, argv));
@@ -232,11 +225,11 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
 
     SECTION("Another is added option and passed in the arguments")
     {
-      auto required_string =
-        parser.template add_required_argument<std::string>(
-          "required string", "This argument is also required.");
+      auto required_string = parser.template add_required_argument<std::string>(
+        "required string",
+        "This argument is also required.");
 
-      char const* argv[] = {"argument_parser_test.exe","13","bananas"};
+      char const* argv[] = {"argument_parser_test.exe", "13", "bananas"};
       int const argc = sizeof(argv) / sizeof(argv[0]);
 
       REQUIRE_NOTHROW(parser.parse(argc, argv));
@@ -248,8 +241,7 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
   SECTION("More complex argument relationships")
   {
     auto optional_int =
-      parser.add_argument(
-        "optional", "This argument is optional.", -1);
+      parser.add_argument("optional", "This argument is optional.", -1);
 
     CHECK(parser.option_is_defined("optional"));
     CHECK(parser.template get<int>("optional") == -1);
@@ -260,7 +252,7 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
       int const argc = 1;
       char const* argv[] = {"argument_parser_test.exe"};
 
-      REQUIRE_NOTHROW(parser.parse(argc,argv));
+      REQUIRE_NOTHROW(parser.parse(argc, argv));
       CHECK(parser.template get<int>("optional") == -1);
       CHECK(optional_int == -1);
     }
@@ -268,9 +260,9 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
     SECTION("Option is passed in the arguments")
     {
       int const argc = 2;
-      char const* argv[] = {"argument_parser_test.exe","13"};
+      char const* argv[] = {"argument_parser_test.exe", "13"};
 
-      REQUIRE_NOTHROW(parser.parse(argc,argv));
+      REQUIRE_NOTHROW(parser.parse(argc, argv));
       CHECK(parser.template get<int>("optional") == 13);
       CHECK(optional_int == 13);
     }
@@ -278,14 +270,14 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
     SECTION("Another optional argument is added")
     {
       auto optional_string =
-        parser.add_argument(
-          "optional string", "This argument is also optional.",
-          "pickles");
+        parser.add_argument("optional string",
+                            "This argument is also optional.",
+                            "pickles");
 
       SECTION("Parsing both arguments works")
       {
         int const argc = 3;
-        char const* argv[] = {"argument_parser_test.exe","42","bananas"};
+        char const* argv[] = {"argument_parser_test.exe", "42", "bananas"};
 
         CHECK(optional_int == -1);
         CHECK(optional_string == "pickles");
@@ -298,23 +290,22 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
       {
         auto required_string =
           parser.template add_required_argument<std::string>(
-            "required string", "This argument is required.");
+            "required string",
+            "This argument is required.");
 
         SECTION("Bad ordering of the arguments")
         {
           int const argc = 3;
-          char const* argv[] = {
-            "argument_parser_test.exe","42","bananas"};
+          char const* argv[] = {"argument_parser_test.exe", "42", "bananas"};
 
-          REQUIRE_THROWS(parser.parse(argc,argv));
+          REQUIRE_THROWS(parser.parse(argc, argv));
           CHECK(required_string == "42");
         }
 
         SECTION("Correct ordering of the arguments")
         {
           int const argc = 3;
-          char const* argv[] = {
-            "argument_parser_test.exe","bananas","42"};
+          char const* argv[] = {"argument_parser_test.exe", "bananas", "42"};
 
           CHECK(optional_int == -1);
           REQUIRE_NOTHROW(parser.parse(argc, argv));
@@ -331,16 +322,14 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
     using TestENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
 
     auto verbose =
-      parser.add_flag("verbose", {"-v"},
-                      TestENV("VALUE_IS_TRUE"), "");
+      parser.add_flag("verbose", {"-v"}, TestENV("VALUE_IS_TRUE"), "");
 
     CHECK(parser.option_is_defined("verbose"));
     CHECK(verbose);
 
     SECTION("Command line flag overrides environment variable")
     {
-      char const* argv[]
-        = {"argument_parser_test.exe", "-v"};
+      char const* argv[] = {"argument_parser_test.exe", "-v"};
       int const argc = sizeof(argv) / sizeof(argv[0]);
 
       REQUIRE_NOTHROW(parser.parse(argc, argv));
@@ -355,16 +344,14 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
     using TestENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
 
     auto verbose =
-      parser.add_flag("verbose", {"-v"},
-                      TestENV("VALUE_IS_FALSE"), "");
+      parser.add_flag("verbose", {"-v"}, TestENV("VALUE_IS_FALSE"), "");
 
     CHECK(parser.option_is_defined("verbose"));
     CHECK_FALSE(verbose);
 
     SECTION("Command line flag overrides environment variable")
     {
-      char const* argv[]
-        = {"argument_parser_test.exe", "-v"};
+      char const* argv[] = {"argument_parser_test.exe", "-v"};
       int const argc = sizeof(argv) / sizeof(argv[0]);
 
       REQUIRE_NOTHROW(parser.parse(argc, argv));
@@ -379,16 +366,14 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
     using TestENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
 
     auto verbose =
-      parser.add_flag("verbose", {"-v"},
-                      TestENV("VALUE_IS_UNDEFINED"), "");
+      parser.add_flag("verbose", {"-v"}, TestENV("VALUE_IS_UNDEFINED"), "");
 
     CHECK(parser.option_is_defined("verbose"));
     CHECK_FALSE(verbose);
 
     SECTION("Command line flag overrides environment variable")
     {
-      char const* argv[]
-        = {"argument_parser_test.exe", "-v"};
+      char const* argv[] = {"argument_parser_test.exe", "-v"};
       int const argc = sizeof(argv) / sizeof(argv[0]);
 
       REQUIRE_NOTHROW(parser.parse(argc, argv));
@@ -402,9 +387,11 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
     using namespace lbann::utils::stubs;
     using TestENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
 
-    parser.add_option(
-      "apple", {"-a"}, TestENV("APPLE"),
-      "Apple pie tastes good.", 1.23);
+    parser.add_option("apple",
+                      {"-a"},
+                      TestENV("APPLE"),
+                      "Apple pie tastes good.",
+                      1.23);
 
     CHECK(parser.option_is_defined("apple"));
 
@@ -432,9 +419,11 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
     using namespace lbann::utils::stubs;
     using TestENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
 
-    parser.add_option(
-      "platypus", {"-p"}, TestENV("DOESNT_EXIST"),
-      "This variable won't exist.", 1.23);
+    parser.add_option("platypus",
+                      {"-p"},
+                      TestENV("DOESNT_EXIST"),
+                      "This variable won't exist.",
+                      1.23);
 
     CHECK(parser.option_is_defined("platypus"));
 
@@ -443,8 +432,8 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
       int const argc = 1;
       char const* argv[] = {"argument_parser_test.exe"};
 
-          REQUIRE_NOTHROW(parser.parse(argc, argv));
-          CHECK(parser.template get<double>("platypus") == 1.23);
+      REQUIRE_NOTHROW(parser.parse(argc, argv));
+      CHECK(parser.template get<double>("platypus") == 1.23);
     }
     SECTION("The option is passed in the arguments")
     {
@@ -461,9 +450,11 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
     using namespace lbann::utils::stubs;
     using TestENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
 
-    parser.add_option(
-      "pizza", {"-p"}, TestENV("PIZZA"),
-      "Mmmm pizza.", "mushroom");
+    parser.add_option("pizza",
+                      {"-p"},
+                      TestENV("PIZZA"),
+                      "Mmmm pizza.",
+                      "mushroom");
 
     CHECK(parser.option_is_defined("pizza"));
 
@@ -491,9 +482,11 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
     using namespace lbann::utils::stubs;
     using TestENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
 
-    parser.add_option(
-      "parameter p", {"-p"}, TestENV("DOESNT_EXIST"),
-      "This variable won't exist.", "parameter p test string");
+    parser.add_option("parameter p",
+                      {"-p"},
+                      TestENV("DOESNT_EXIST"),
+                      "This variable won't exist.",
+                      "parameter p test string");
 
     CHECK(parser.option_is_defined("parameter p"));
 
@@ -503,19 +496,20 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
       char const* argv[] = {"argument_parser_test.exe"};
 
       REQUIRE_NOTHROW(parser.parse(argc, argv));
-      CHECK(parser.template get<std::string>("parameter p")
-            == "parameter p test string");
+      CHECK(parser.template get<std::string>("parameter p") ==
+            "parameter p test string");
     }
 
     SECTION("The option is passed in the arguments")
     {
       int const argc = 3;
-      char const* argv[] = {"argument_parser_test.exe", "-p",
+      char const* argv[] = {"argument_parser_test.exe",
+                            "-p",
                             "parameter p argument value"};
 
       REQUIRE_NOTHROW(parser.parse(argc, argv));
-      CHECK(parser.template get<std::string>("parameter p")
-            == "parameter p argument value");
+      CHECK(parser.template get<std::string>("parameter p") ==
+            "parameter p argument value");
     }
   }
 }
@@ -525,15 +519,15 @@ TEST_CASE("Partial argument parsing", "[parser][utilities]")
 {
   lbann::utils::argument_parser<lbann::utils::allow_extra_parameters> parser;
   auto flag_v =
-    parser.add_flag(
-      "flag v", {"-v", "--flag-v"}, "Docstring for \"flag v\"");
-  auto param_s =
-    parser.add_option("parameter s", {"-s", "--param-s"},
-                      "Docstring for \"parameter s\"",
-                      "default value of s");
-  auto param_t =
-    parser.add_option("parameter t", {"-t", "--param-t"},
-                      "Docstring for \"parameter t\"", 1);
+    parser.add_flag("flag v", {"-v", "--flag-v"}, "Docstring for \"flag v\"");
+  auto param_s = parser.add_option("parameter s",
+                                   {"-s", "--param-s"},
+                                   "Docstring for \"parameter s\"",
+                                   "default value of s");
+  auto param_t = parser.add_option("parameter t",
+                                   {"-t", "--param-t"},
+                                   "Docstring for \"parameter t\"",
+                                   1);
 
   CHECK(parser.option_is_defined("parameter t"));
   CHECK(parser.option_is_defined("flag v"));
@@ -553,8 +547,8 @@ TEST_CASE("Partial argument parsing", "[parser][utilities]")
 
   SECTION("Unknown arguments are ok.")
   {
-    char const* argv[] = {"argument_parser_test.exe",
-                          "-o", "-v", "-a", "-t", "2", "-p", "13"};
+    char const* argv[] =
+      {"argument_parser_test.exe", "-o", "-v", "-a", "-t", "2", "-p", "13"};
     int const argc = sizeof(argv) / sizeof(argv[0]);
 
     REQUIRE_NOTHROW(parser.parse(argc, argv));
@@ -569,7 +563,14 @@ TEST_CASE("Partial argument parsing", "[parser][utilities]")
   SECTION("Final argument is unknown flag is ok.")
   {
     char const* argv[] = {"argument_parser_test.exe",
-                          "-o", "-v", "-a", "-t", "2", "-p", "13", "-flag"};
+                          "-o",
+                          "-v",
+                          "-a",
+                          "-t",
+                          "2",
+                          "-p",
+                          "13",
+                          "-flag"};
     int const argc = sizeof(argv) / sizeof(argv[0]);
 
     REQUIRE_NOTHROW(parser.parse(argc, argv));
@@ -613,14 +614,17 @@ TEST_CASE("Partial argument parsing", "[parser][utilities]")
 
       REQUIRE_NOTHROW(parser.parse(argc, argv));
 
-      CHECK(parser.template get<std::string>("parameter s") == "something=other");
+      CHECK(parser.template get<std::string>("parameter s") ==
+            "something=other");
       CHECK(param_s == "something=other");
     }
 
     SECTION("Unknown parameters may also use equals signs")
     {
-      char const* argv[] = {"argument_parser_test.exe", "--flag-v",
-                            "--param-q=121", "--param-t=21"};
+      char const* argv[] = {"argument_parser_test.exe",
+                            "--flag-v",
+                            "--param-q=121",
+                            "--param-t=21"};
       int const argc = sizeof(argv) / sizeof(argv[0]);
 
       REQUIRE_NOTHROW(parser.parse(argc, argv));

@@ -32,16 +32,18 @@
 #include "lbann/data_readers/sample_list_ifstream.hpp"
 
 namespace lbann {
-  /**
-   * Data reader for SMILES (string) data. The string data is converted to
-   * a vector of shorts according to an arbitrary mapping.
-   *
-   * Terminology and Notes:
-   *   "local_id" (or similar name): refers to a line number in a file.
-   *   "global_id" (aka, sample_id, etc) refers to an index from the
-   *               m_shuffled_indices vector.
-   */
-class smiles_data_reader : public data_reader_sample_list<sample_list_ifstream<long long>> {
+/**
+ * Data reader for SMILES (string) data. The string data is converted to
+ * a vector of shorts according to an arbitrary mapping.
+ *
+ * Terminology and Notes:
+ *   "local_id" (or similar name): refers to a line number in a file.
+ *   "global_id" (aka, sample_id, etc) refers to an index from the
+ *               m_shuffled_indices vector.
+ */
+class smiles_data_reader
+  : public data_reader_sample_list<sample_list_ifstream<long long>>
+{
 public:
   // Types for mapping a sample id to an <offset,length> locator
   using offset_t = std::pair<long long, unsigned short>;
@@ -52,34 +54,47 @@ public:
   smiles_data_reader& operator=(const smiles_data_reader&);
   ~smiles_data_reader() override;
 
-  smiles_data_reader* copy() const override { return new smiles_data_reader(*this); }
-
-  std::string get_type() const override {
-    return "smiles_data_reader";
+  smiles_data_reader* copy() const override
+  {
+    return new smiles_data_reader(*this);
   }
+
+  std::string get_type() const override { return "smiles_data_reader"; }
 
   void load() override;
 
-  int get_linearized_data_size() const override { return m_linearized_data_size; }
-  int get_linearized_label_size() const override {  return m_linearized_label_size; }
-  int get_linearized_response_size() const override { return m_linearized_response_size; }
-  const std::vector<int> get_data_dims() const override {  return {get_linearized_data_size()}; }
+  int get_linearized_data_size() const override
+  {
+    return m_linearized_data_size;
+  }
+  int get_linearized_label_size() const override
+  {
+    return m_linearized_label_size;
+  }
+  int get_linearized_response_size() const override
+  {
+    return m_linearized_response_size;
+  }
+  const std::vector<int> get_data_dims() const override
+  {
+    return {get_linearized_data_size()};
+  }
   int get_num_labels() const override { return m_num_labels; }
 
-  void set_sequence_length(int n) {
+  void set_sequence_length(int n)
+  {
     m_sequence_length = n;
-    m_linearized_data_size = n+2;
+    m_linearized_data_size = n + 2;
   }
   int get_sequence_length() { return m_sequence_length; }
 
   void use_unused_index_set(execution_mode m) override;
 
   /** This method is for use during testing and development */
-  void get_sample_origin(
-    const size_t index_in,
-    std::string& filename_out,
-    size_t& offset_out,
-    unsigned short& length_out) const;
+  void get_sample_origin(const size_t index_in,
+                         std::string& filename_out,
+                         size_t& offset_out,
+                         unsigned short& length_out) const;
 
   /** This method is for use during testing and development.
    *  Returns the set of indices whose samples are cached in
@@ -90,15 +105,18 @@ public:
   /** This method made public for use during testing.
    *  Convert SMILES string to a vector of shorts
    */
-  bool encode_smiles(const char *smiles, unsigned short size, std::vector<unsigned short> &data);
+  bool encode_smiles(const char* smiles,
+                     unsigned short size,
+                     std::vector<unsigned short>& data);
   /** This method made public for use during testing.
    *  Convert SMILES string to a vector of shorts
    */
-  bool encode_smiles(const std::string &smiles, std::vector<unsigned short> &data);
+  bool encode_smiles(const std::string& smiles,
+                     std::vector<unsigned short>& data);
   /** This method made public for use during testing.
    *  Decode SMILES string from a vector of shorts
    */
-  void decode_smiles(const std::vector<unsigned short> &data, std::string &out);
+  void decode_smiles(const std::vector<unsigned short>& data, std::string& out);
 
   /** This method made public for use during testing. */
   void load_vocab(std::string filename);
@@ -108,7 +126,8 @@ public:
   void set_linearized_data_size(size_t s) { m_linearized_data_size = s; }
   /** This method made public for use during testing. */
   // reads and returns the smiles string from the input stream
-  std::string get_raw_sample(std::istream* istrm, size_t index, size_t buf_offset=0);
+  std::string
+  get_raw_sample(std::istream* istrm, size_t index, size_t buf_offset = 0);
   /** This method made public only for use during testing.
    *  Insert an entry into a map: index -> (offset, length),
    *  where 'index' is an alias for an entry in the shuffled_indices
@@ -118,32 +137,31 @@ public:
   /** This method made public for use during testing. */
   void load_list_of_samples(const std::string sample_list_file);
 
-
   /** @brief Sets the name of the metadata file */
-  void set_metadata_filename(std::string fn) { m_metadata_filename = std::move(fn); }
-
-  /** @brief Returns the name of the metadata file */
-  const std::string& get_metadata_filename()
+  void set_metadata_filename(std::string fn)
   {
-    return m_metadata_filename;
+    m_metadata_filename = std::move(fn);
   }
 
+  /** @brief Returns the name of the metadata file */
+  const std::string& get_metadata_filename() { return m_metadata_filename; }
 
 private:
-
   // note: linearized_size is m_sequence_length+2; the +2 is for the
   //       <bos> and <eos> characters that get tacked on
   int m_sequence_length = 0;
 
   const size_t OffsetBinarySize = sizeof(long long);
   const size_t LengthBinarySize = sizeof(unsigned short);
-  const std::streamsize OffsetAndLengthBinarySize = OffsetBinarySize+LengthBinarySize;
+  const std::streamsize OffsetAndLengthBinarySize =
+    OffsetBinarySize + LengthBinarySize;
 
-  struct SampleData {
+  struct SampleData
+  {
     SampleData() {}
     SampleData(int idx, long long off, unsigned short len)
-      : index(idx),  offset(off), length(len) {
-    }
+      : index(idx), offset(off), length(len)
+    {}
     size_t index;
     long long offset;
     unsigned short length;
@@ -163,7 +181,7 @@ private:
   std::string m_metadata_filename;
 
   std::unordered_map<char, short> m_vocab;
-  std::unordered_map<short,std::string> m_vocab_inv;
+  std::unordered_map<short, std::string> m_vocab_inv;
 
   std::mutex m_mutex;
 
@@ -212,27 +230,33 @@ private:
   void load_offsets_and_lengths();
 
   // called by load_offsets_and_lengths
-  void read_offset_data(std::vector<SampleData> &data);
+  void read_offset_data(std::vector<SampleData>& data);
 
   // calls load_sample
-  void construct_conduit_node(conduit::Node &node, std::istream* istream, size_t sample_id, size_t buf_offset=0);
+  void construct_conduit_node(conduit::Node& node,
+                              std::istream* istream,
+                              size_t sample_id,
+                              size_t buf_offset = 0);
 
   // calls get_raw_sample; returns in 'output' an encoded version of the sample
-  void load_sample(std::istream* istrm, size_t index, std::vector<unsigned short> &output, size_t buf_offset=0);
+  void load_sample(std::istream* istrm,
+                   size_t index,
+                   std::vector<unsigned short>& output,
+                   size_t buf_offset = 0);
 
   void build_some_maps();
 
   // called by read_offset_data()
-  void read_metadata_file(
-    std::vector<size_t>& samples_per_file,
-    std::vector<std::string>& data_filenames,
-    std::vector<std::string>& offsets_filenames);
+  void read_metadata_file(std::vector<size_t>& samples_per_file,
+                          std::vector<std::string>& data_filenames,
+                          std::vector<std::string>& offsets_filenames);
 
-  bool is_delimiter(const char c) {
+  bool is_delimiter(const char c)
+  {
     return (isspace(c) || c == '\n' || c == '\t' || c == ',');
   }
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif //LBANN_DATA_READER_SMILES_HPP
+#endif // LBANN_DATA_READER_SMILES_HPP

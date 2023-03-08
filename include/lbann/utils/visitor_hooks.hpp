@@ -36,33 +36,38 @@
 namespace lbann {
 
 /// Neural network execution mode
-enum class visitor_hook{setup_begin,
-    setup_end,
-    phase_end,
-    epoch_begin,
-    epoch_end,
-    optimize_begin,
-    optimize_end,
+enum class visitor_hook
+{
+  setup_begin,
+  setup_end,
+  phase_end,
+  epoch_begin,
+  epoch_end,
+  optimize_begin,
+  optimize_end,
 
-    /// Special visitor hooks that execute in conjunction with the execution mode
-    execution_mode_begin,
-    execution_mode_end,
-    execution_mode_batch_begin,
-    execution_mode_batch_end,
-    execution_mode_forward_prop_begin,
-    execution_mode_forward_prop_end,
-    execution_mode_backward_prop_begin,
-    execution_mode_backward_prop_end,
-    invalid};
-
+  /// Special visitor hooks that execute in conjunction with the execution mode
+  execution_mode_begin,
+  execution_mode_end,
+  execution_mode_batch_begin,
+  execution_mode_batch_end,
+  execution_mode_forward_prop_begin,
+  execution_mode_forward_prop_end,
+  execution_mode_backward_prop_begin,
+  execution_mode_backward_prop_end,
+  invalid
+};
 
 bool is_execution_mode_hook(visitor_hook hook);
 std::string to_string(visitor_hook hook);
 std::string to_string(visitor_hook hook, execution_mode mode);
-using visitor_hook_iterator = enum_iterator<visitor_hook, visitor_hook::setup_begin, visitor_hook::invalid>;
+using visitor_hook_iterator =
+  enum_iterator<visitor_hook, visitor_hook::setup_begin, visitor_hook::invalid>;
 
 /** @brief Convert a string to an execution_mode. */
-void visitor_hook_from_string(std::string const& str, visitor_hook& hook, execution_mode& mode);
+void visitor_hook_from_string(std::string const& str,
+                              visitor_hook& hook,
+                              execution_mode& mode);
 /** @brief Extract an execution_mode from a stream. */
 std::istream& operator>>(std::istream& os, visitor_hook& e);
 

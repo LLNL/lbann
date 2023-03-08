@@ -30,7 +30,6 @@
 #ifndef LBANN_CALLBACKS_SUMMARIZE_IMAGES_HPP_INCLUDED
 #define LBANN_CALLBACKS_SUMMARIZE_IMAGES_HPP_INCLUDED
 
-
 #include "lbann/callbacks/callback.hpp"
 
 #include <google/protobuf/message.h>
@@ -50,32 +49,34 @@ namespace callback {
  *  @brief Interface for strategies for determining which images
  *  to output to the summarizer.
  */
-class image_output_strategy {
+class image_output_strategy
+{
 
 public:
   virtual std::vector<std::pair<size_t, El::Int>>
   get_image_indices(model const&) const = 0;
   virtual std::string get_tag(std::string const& layer_name,
-                              El::Int index, El::Int epoch) const = 0;
+                              El::Int index,
+                              El::Int epoch) const = 0;
   virtual void write_strategy_proto(
     lbann_data::Callback_CallbackSummarizeImages& msg) const = 0;
   virtual ~image_output_strategy() = default;
 
-}; //class image_output_strategy
-
+}; // class image_output_strategy
 
 /** @class CategoricalAccuracy
  *  @brief Subclass of image_output_strategy to dump categorized
  *  images to event files based on categorization criteria
  */
-class categorical_accuracy_strategy : public image_output_strategy {
+class categorical_accuracy_strategy : public image_output_strategy
+{
 public:
-
-  enum class MatchType {
-    NOMATCH=0,
-    MATCH=1,
-    ALL=2
-  };// enum class MatchType
+  enum class MatchType
+  {
+    NOMATCH = 0,
+    MATCH = 1,
+    ALL = 2
+  }; // enum class MatchType
 
   /** @brief summarize_images Constructor.
    *  @param cat_accuracy_layer_name Name of categorical accuracy layer
@@ -83,11 +84,12 @@ public:
    *  @param num_images Number of images to summarize per epoch
    */
   categorical_accuracy_strategy(std::string const& cat_accuracy_layer_name,
-                                MatchType match_type=MatchType::NOMATCH,
-                                size_t num_images=10)
+                                MatchType match_type = MatchType::NOMATCH,
+                                size_t num_images = 10)
     : m_cat_accuracy_layer_name(cat_accuracy_layer_name),
       m_match_type(match_type),
-      m_num_images(num_images) {}
+      m_num_images(num_images)
+  {}
 
   /** @brief Get vector containing indices of images to be dumped.
    *  @returns std::vector<int> Vector with indices of images to dump.
@@ -97,16 +99,17 @@ public:
 
   /** @brief Construct tag for image */
   std::string get_tag(std::string const& layer_name,
-                      El::Int index, El::Int epoch) const final;
+                      El::Int index,
+                      El::Int epoch) const final;
 
 private:
   /** @brief Write strategy specific data to prototext */
   void write_strategy_proto(
     lbann_data::Callback_CallbackSummarizeImages& msg) const final;
 
-   /** @brief Tests whether image should be dumped based on criteria
-    *  @returns bool Value is true if matches criteria and false otherwise
-    */
+  /** @brief Tests whether image should be dumped based on criteria
+   *  @returns bool Value is true if matches criteria and false otherwise
+   */
   bool meets_criteria(const DataType& match) const noexcept;
 
   /** @brief Name of categorical accuracy layer*/
@@ -127,7 +130,8 @@ build_categorical_accuracy_strategy_from_pbuf(google::protobuf::Message const&);
  *  @brief Subclass of image_output_strategy to dump autoencoder images.
  *  @details Dump images to event files based on strategy
  */
-class autoencoder_strategy : public image_output_strategy {
+class autoencoder_strategy : public image_output_strategy
+{
 
 public:
   /** @brief Constructor
@@ -136,8 +140,8 @@ public:
    */
   autoencoder_strategy(std::string const& input_layer_name,
                        size_t num_images = 10)
-    : m_input_layer_name{input_layer_name},
-      m_num_images{num_images} {}
+    : m_input_layer_name{input_layer_name}, m_num_images{num_images}
+  {}
 
   /** @brief Get vector containing indices of images to be dumped.
    *  @returns std::vector<int> Vector with indices of images to dump.
@@ -147,14 +151,14 @@ public:
 
   /** @brief Construct tag for image */
   std::string get_tag(std::string const& layer_name,
-                      El::Int index, El::Int epoch) const final;
+                      El::Int index,
+                      El::Int epoch) const final;
 
   /** @brief Write strategy specific data to prototext */
   void write_strategy_proto(
     lbann_data::Callback_CallbackSummarizeImages& msg) const final;
 
 private:
-
   /** @brief Name of input layer */
   std::string m_input_layer_name;
 
@@ -165,7 +169,8 @@ private:
   mutable std::unordered_set<El::Int> m_tracked_images;
 
   /** @brief A map from models to shuffled indices */
-  mutable std::unordered_map<model const*, std::vector<size_t>> m_shuffled_indices;
+  mutable std::unordered_map<model const*, std::vector<size_t>>
+    m_shuffled_indices;
 
 }; // class Autoencoder : image_output_strategy
 
@@ -175,7 +180,8 @@ build_track_sample_ids_strategy_from_pbuf(google::protobuf::Message const&);
 /** @class summarize_images
  *  @brief Callback to dump images to event files based on strategy
  */
-class summarize_images : public callback_base {
+class summarize_images : public callback_base
+{
 
 public:
   /** @brief summarize_images Constructor.
@@ -192,10 +198,7 @@ public:
                    std::string const& img_format = ".jpg");
 
   /** @brief Copy constructor */
-  callback_base* copy() const override {
-    LBANN_ERROR( "This callback is not copyable.");
-    return nullptr;
-  }
+  callback_base* copy() const override;
 
   /** @brief Return name of callback */
   std::string name() const override { return "summarize_images"; }
@@ -207,13 +210,10 @@ public:
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
 private:
-
   /** @brief Add image to event file */
   void dump_images_to_summary(model const& m) const;
 
-
 private:
-
   /* @brief lbann_summary object */
   std::shared_ptr<lbann_summary> m_summarizer;
 
@@ -237,12 +237,11 @@ private:
  */
 Layer const& get_layer_by_name(model const& m, std::string const& layer_name);
 
-std::unique_ptr<callback_base>
-build_summarize_images_callback_from_pbuf(
+std::unique_ptr<callback_base> build_summarize_images_callback_from_pbuf(
   const google::protobuf::Message&,
   const std::shared_ptr<lbann_summary>& summarizer);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_SUMMARIZE_IMAGES_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_SUMMARIZE_IMAGES_HPP_INCLUDED

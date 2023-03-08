@@ -78,10 +78,7 @@ public:
   my_identity_layer(lbann::lbann_comm* comm)
     : lbann::data_type_layer<TensorDataType>(comm)
   {}
-  my_identity_layer* copy() const final
-  {
-    return new my_identity_layer(*this);
-  }
+  my_identity_layer* copy() const final { return new my_identity_layer(*this); }
 
   std::string get_type() const final { return "my_identity"; }
   lbann::data_layout get_data_layout() const final { return Layout; }

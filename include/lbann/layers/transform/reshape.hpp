@@ -39,11 +39,12 @@ namespace lbann {
  *  views.
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class reshape_layer : public data_type_layer<TensorDataType> {
+class reshape_layer : public data_type_layer<TensorDataType>
+{
 public:
-  reshape_layer(lbann_comm *comm,
-                std::vector<int> dims)
-    : data_type_layer<TensorDataType>(comm) {
+  reshape_layer(lbann_comm* comm, std::vector<int> dims)
+    : data_type_layer<TensorDataType>(comm)
+  {
     this->set_output_dims(dims);
   }
   reshape_layer* copy() const override { return new reshape_layer(*this); }
@@ -61,17 +62,14 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  reshape_layer()
-    : reshape_layer(nullptr, { 1 } )
-  {}
+  reshape_layer() : reshape_layer(nullptr, {1}) {}
 
-
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
     const auto& input_dims = this->get_input_dims();
@@ -81,7 +79,9 @@ protected:
     int unspecified_dim = -1;
     for (size_t dim = 0; dim < output_dims.size(); ++dim) {
       if (output_dims[dim] <= 0) {
-        if (unspecified_dim < 0) { unspecified_dim = dim; }
+        if (unspecified_dim < 0) {
+          unspecified_dim = dim;
+        }
         output_dims[dim] = 1;
       }
     }
@@ -104,26 +104,26 @@ protected:
       }
       err << ")";
       err << " in " << this->get_type() << " layer "
-            << "\"" << this->get_name() << "\"";
+          << "\"" << this->get_name() << "\"";
       LBANN_ERROR(err.str());
     }
-
   }
 
-  void fp_setup_outputs(El::Int mini_batch_size) override {
+  void fp_setup_outputs(El::Int mini_batch_size) override
+  {
     El::LockedView(this->get_activations(), this->get_prev_activations());
   }
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
+  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override
+  {
     El::LockedView(this->get_error_signals(), this->get_prev_error_signals());
   }
   void fp_compute() override {}
   void bp_compute() override {}
-
 };
 
 #ifndef LBANN_RESHAPE_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class reshape_layer<T, data_layout::DATA_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class reshape_layer<T, data_layout::DATA_PARALLEL, Device>;  \
   extern template class reshape_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"

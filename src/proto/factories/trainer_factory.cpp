@@ -24,34 +24,33 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/callbacks/callback.hpp"
+#include "lbann/data_coordinator/buffered_data_coordinator.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/execution_algorithms/factory.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/factories.hpp"
 #include "lbann/trainers/trainer.hpp"
-#include "lbann/callbacks/callback.hpp"
-#include "lbann/execution_algorithms/execution_context.hpp"
-#include "lbann/proto/datatype_helpers.hpp"
-#include "lbann/data_coordinator/buffered_data_coordinator.hpp"
-#include "lbann/execution_algorithms/factory.hpp"
 
 #include "lbann/proto/trainer.pb.h"
 
 namespace lbann {
 namespace proto {
 
-std::unique_ptr<trainer> construct_trainer(lbann_comm* comm,
-                                           const lbann_data::Trainer& proto_trainer) {
+std::unique_ptr<trainer>
+construct_trainer(lbann_comm* comm, const lbann_data::Trainer& proto_trainer)
+{
 
   auto proto_datatype = proto_trainer.data_coordinator().datatype();
   std::unique_ptr<data_coordinator> dc;
-#define TEMPLATE_INSTANTIATION(TensorDataType)                              \
-    do {                                                                    \
-      if (proto_datatype == TypeToProtoDataType<TensorDataType>::value) {   \
-        dc = std::make_unique<buffered_data_coordinator<TensorDataType>>( \
-          comm);                                                            \
-      }                                                                     \
-    } while (0)
+#define TEMPLATE_INSTANTIATION(TensorDataType)                                 \
+  do {                                                                         \
+    if (proto_datatype == TypeToProtoDataType<TensorDataType>::value) {        \
+      dc = std::make_unique<buffered_data_coordinator<TensorDataType>>(comm);  \
+    }                                                                          \
+  } while (0)
 
-#define PROTO(T) \
-    TEMPLATE_INSTANTIATION(T)
+#define PROTO(T) TEMPLATE_INSTANTIATION(T)
 
 #include "lbann/macros/instantiate.hpp"
 
@@ -72,7 +71,7 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm* comm,
   }
 
   // Construct callbacks
-  for (int i=0; i<proto_trainer.callback_size(); i++) {
+  for (int i = 0; i < proto_trainer.callback_size(); i++) {
     t->add_callback(construct_callback(proto_trainer.callback(i)));
   }
 

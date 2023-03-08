@@ -33,12 +33,14 @@ namespace lbann {
 namespace {
 
 template <int block_size, typename TensorDataType>
-__global__ void fp_kernel(int height, int width,
+__global__ void fp_kernel(int height,
+                          int width,
                           const TensorDataType* __restrict__ prediction,
                           int prediction_ldim,
                           const TensorDataType* __restrict__ ground_truth,
                           int ground_truth_ldim,
-                          TensorDataType* __restrict__ contribution) {
+                          TensorDataType* __restrict__ contribution)
+{
 
   // Indices
   const int tid = threadIdx.x;
@@ -53,9 +55,9 @@ __global__ void fp_kernel(int height, int width,
     auto private_contribution = TensorDataType(0.);
     for (int row = gidx; row < height; row += nthreadsx) {
       const auto& xhat = ground_truth[row + col * ground_truth_ldim];
-      if (xhat > TensorDataType(0.)){
+      if (xhat > TensorDataType(0.)) {
         const auto& x = prediction[row + col * prediction_ldim];
-        private_contribution += - xhat * gpu_lib::log(x);
+        private_contribution += -xhat * gpu_lib::log(x);
       }
     }
 
@@ -72,15 +74,14 @@ __global__ void fp_kernel(int height, int width,
     if (tid == 0) {
       gpu_lib::atomic_add(&contribution[col], shared_contribution[0]);
     }
-
   }
-
 }
 
 template <typename TensorDataType>
 void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
                   const El::AbstractMatrix<TensorDataType>& local_ground_truth,
-                  El::AbstractMatrix<TensorDataType>& local_contribution) {
+                  El::AbstractMatrix<TensorDataType>& local_contribution)
+{
   El::Zero(local_contribution);
   const auto& height = local_prediction.Height();
   const auto& width = local_prediction.Width();
@@ -93,27 +94,35 @@ void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
     block_dims.x = block_size;
     grid_dims.x = (height + block_size - 1) / block_size;
     grid_dims.y = width;
-    hydrogen::gpu::LaunchKernel(
-      fp_kernel<block_size, TensorDataType>,
-      grid_dims, block_dims, 0, multisync,
-      height, width,
-      local_prediction.LockedBuffer(), local_prediction.LDim(),
-      local_ground_truth.LockedBuffer(), local_ground_truth.LDim(),
-      local_contribution.Buffer());
+    hydrogen::gpu::LaunchKernel(fp_kernel<block_size, TensorDataType>,
+                                grid_dims,
+                                block_dims,
+                                0,
+                                multisync,
+                                height,
+                                width,
+                                local_prediction.LockedBuffer(),
+                                local_prediction.LDim(),
+                                local_ground_truth.LockedBuffer(),
+                                local_ground_truth.LDim(),
+                                local_contribution.Buffer());
   }
 }
 
 template <int block_size, typename TensorDataType>
-__global__ void bp_kernel(int height, int width,
-                          const TensorDataType* __restrict__ prediction,
-                          int prediction_ldim,
-                          const TensorDataType* __restrict__ ground_truth,
-                          int ground_truth_ldim,
-                          const TensorDataType* __restrict__ gradient_wrt_output,
-                          TensorDataType* __restrict__ gradient_wrt_prediction,
-                          int gradient_wrt_prediction_ldim,
-                          TensorDataType* __restrict__ gradient_wrt_ground_truth,
-                          int gradient_wrt_ground_truth_ldim) {
+__global__ void
+bp_kernel(int height,
+          int width,
+          const TensorDataType* __restrict__ prediction,
+          int prediction_ldim,
+          const TensorDataType* __restrict__ ground_truth,
+          int ground_truth_ldim,
+          const TensorDataType* __restrict__ gradient_wrt_output,
+          TensorDataType* __restrict__ gradient_wrt_prediction,
+          int gradient_wrt_prediction_ldim,
+          TensorDataType* __restrict__ gradient_wrt_ground_truth,
+          int gradient_wrt_ground_truth_ldim)
+{
 
   // Indices
   const int gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -126,21 +135,24 @@ __global__ void bp_kernel(int height, int width,
     for (int row = gidx; row < height; row += nthreadsx) {
       const auto& x = prediction[row + col * prediction_ldim];
       const auto& xhat = ground_truth[row + col * ground_truth_ldim];
-      auto& dx = gradient_wrt_prediction[row + col * gradient_wrt_prediction_ldim];
-      auto& dxhat = gradient_wrt_ground_truth[row + col * gradient_wrt_ground_truth_ldim];
-      dx = (xhat > TensorDataType(0.)) ? - dy * xhat / x : TensorDataType(0.);
-      dxhat = - dy * gpu_lib::log(x);
+      auto& dx =
+        gradient_wrt_prediction[row + col * gradient_wrt_prediction_ldim];
+      auto& dxhat =
+        gradient_wrt_ground_truth[row + col * gradient_wrt_ground_truth_ldim];
+      dx = (xhat > TensorDataType(0.)) ? -dy * xhat / x : TensorDataType(0.);
+      dxhat = -dy * gpu_lib::log(x);
     }
   }
-
 }
 
 template <typename TensorDataType>
-void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
-                  const El::AbstractMatrix<TensorDataType>& local_ground_truth,
-                  const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
-                  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
-                  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
+void local_bp_gpu(
+  const El::AbstractMatrix<TensorDataType>& local_prediction,
+  const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+  const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
+  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth)
+{
   const auto& height = local_prediction.Height();
   const auto& width = local_prediction.Width();
   if (height > 0 && width > 0) {
@@ -156,31 +168,38 @@ void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
     block_dims.x = block_size;
     grid_dims.x = (height + block_size - 1) / block_size;
     grid_dims.y = width;
-    hydrogen::gpu::LaunchKernel(
-      bp_kernel<block_size, TensorDataType>,
-      grid_dims, block_dims, 0, multisync,
-      height, width,
-      local_prediction.LockedBuffer(), local_prediction.LDim(),
-      local_ground_truth.LockedBuffer(), local_ground_truth.LDim(),
-      local_gradient_wrt_output.LockedBuffer(),
-      local_gradient_wrt_prediction.Buffer(),
-      local_gradient_wrt_prediction.LDim(),
-      local_gradient_wrt_ground_truth.Buffer(),
-      local_gradient_wrt_ground_truth.LDim());
+    hydrogen::gpu::LaunchKernel(bp_kernel<block_size, TensorDataType>,
+                                grid_dims,
+                                block_dims,
+                                0,
+                                multisync,
+                                height,
+                                width,
+                                local_prediction.LockedBuffer(),
+                                local_prediction.LDim(),
+                                local_ground_truth.LockedBuffer(),
+                                local_ground_truth.LDim(),
+                                local_gradient_wrt_output.LockedBuffer(),
+                                local_gradient_wrt_prediction.Buffer(),
+                                local_gradient_wrt_prediction.LDim(),
+                                local_gradient_wrt_ground_truth.Buffer(),
+                                local_gradient_wrt_ground_truth.LDim());
   }
 }
 
 } // namespace
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
+void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_fp_compute()
+{
   local_fp_gpu(this->get_local_prev_activations(0),
                this->get_local_prev_activations(1),
                this->m_workspace->Matrix());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
+void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_bp_compute()
+{
   local_bp_gpu(this->get_local_prev_activations(0),
                this->get_local_prev_activations(1),
                this->m_workspace->LockedMatrix(),
@@ -188,11 +207,13 @@ void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
                this->get_local_error_signals(1));
 }
 
-#define PROTO(T)                                      \
-  template class cross_entropy_layer<                 \
-    T, data_layout::DATA_PARALLEL, El::Device::GPU>;  \
-  template class cross_entropy_layer<                 \
-    T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+#define PROTO(T)                                                               \
+  template class cross_entropy_layer<T,                                        \
+                                     data_layout::DATA_PARALLEL,               \
+                                     El::Device::GPU>;                         \
+  template class cross_entropy_layer<T,                                        \
+                                     data_layout::MODEL_PARALLEL,              \
+                                     El::Device::GPU>
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"

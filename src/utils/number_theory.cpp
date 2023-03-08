@@ -32,13 +32,16 @@
 namespace lbann {
 namespace number_theory {
 
-int prime(int n) {
+int prime(int n)
+{
   if (n < 0) {
     std::stringstream err;
     err << "invalid index (" << n << ")";
     LBANN_ERROR(err.str());
   }
-  if (n == 0) { return 2; }
+  if (n == 0) {
+    return 2;
+  }
 
   // Expand list of odd primes if needed
   // Note: Odd primes are cached for future function calls. We iterate
@@ -46,11 +49,11 @@ int prime(int n) {
   // divisors. The smallest prime divisor of a composite number q must
   // be less than or equal to sqrt(q).
   static std::vector<int> cache = {3};
-  for (int q = cache.back() + 2;
-       n-1 >= (int) cache.size();
-       q += 2) {
+  for (int q = cache.back() + 2; n - 1 >= (int)cache.size(); q += 2) {
     for (const auto& p : cache) {
-      if (q % p == 0) { break; }
+      if (q % p == 0) {
+        break;
+      }
       if (p * p > q) {
         cache.push_back(q);
         break;
@@ -59,11 +62,11 @@ int prime(int n) {
   }
 
   // Return cached prime
-  return cache[n-1];
-
+  return cache[n - 1];
 }
 
-std::vector<int> prime_factors(int n) {
+std::vector<int> prime_factors(int n)
+{
   if (n < 2) {
     std::stringstream err;
     err << "invalid number to factorize (" << n << ")";
@@ -80,12 +83,15 @@ std::vector<int> prime_factors(int n) {
       n /= p;
     }
   }
-  if (n > 1) { factors.push_back(n); }
+  if (n > 1) {
+    factors.push_back(n);
+  }
 
   return factors;
 }
 
-std::vector<int> balanced_factors(int n, int num_factors) {
+std::vector<int> balanced_factors(int n, int num_factors)
+{
   std::stringstream err;
   if (n < 1) {
     err << "invalid number to factorize (" << n << ")";
@@ -97,7 +103,9 @@ std::vector<int> balanced_factors(int n, int num_factors) {
   }
 
   // Trivial case when n = 1
-  if (n == 1) { return std::vector<int>(num_factors, 1); };
+  if (n == 1) {
+    return std::vector<int>(num_factors, 1);
+  };
 
   // Get prime factorization
   const auto& primes = prime_factors(n);
@@ -107,13 +115,10 @@ std::vector<int> balanced_factors(int n, int num_factors) {
   std::vector<int> factors(num_factors, 1);
   for (int i = primes.size() - 1; i >= 0; --i) {
     factors.front() *= primes[i];
-    std::inplace_merge(factors.begin(),
-                       factors.begin()+1,
-                       factors.end());
+    std::inplace_merge(factors.begin(), factors.begin() + 1, factors.end());
   }
   return factors;
-
 }
 
 } // namespace number_theory
-} // lbann
+} // namespace lbann

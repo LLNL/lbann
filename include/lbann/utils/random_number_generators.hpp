@@ -29,16 +29,17 @@
 
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
-#include <random>
 #include <atomic>
+#include <random>
 #include <thread>
 
 namespace lbann {
 
-using rng_gen = std::mt19937;  // Mersenne Twister
-using fast_rng_gen = std::minstd_rand;  // Minimum standard, LC
+using rng_gen = std::mt19937;          // Mersenne Twister
+using fast_rng_gen = std::minstd_rand; // Minimum standard, LC
 
-struct io_rng_t {
+struct io_rng_t
+{
   lbann::rng_gen generator;
   lbann::fast_rng_gen fast_generator;
   // Track the owner so that it is easy to ensure the right thread is
@@ -48,32 +49,38 @@ struct io_rng_t {
   io_rng_t()
     : generator(42ULL),
       fast_generator(42ULL),
-      active_thread_id(std::thread::id()) {}
+      active_thread_id(std::thread::id())
+  {}
 
   io_rng_t(const io_rng_t& other)
     : generator(other.generator),
       fast_generator(other.fast_generator),
-      active_thread_id(other.active_thread_id.load()) {}
+      active_thread_id(other.active_thread_id.load())
+  {}
 };
 
-struct locked_io_rng_ref {
+struct locked_io_rng_ref
+{
   io_rng_t* rng_;
-  locked_io_rng_ref(io_rng_t& rng)
-    : rng_(&rng)
+  locked_io_rng_ref(io_rng_t& rng) : rng_(&rng)
   {
-    std::thread::id prev_tid = rng_->active_thread_id.exchange( std::this_thread::get_id());
-    if(prev_tid != std::thread::id()) {
+    std::thread::id prev_tid =
+      rng_->active_thread_id.exchange(std::this_thread::get_id());
+    if (prev_tid != std::thread::id()) {
       LBANN_ERROR("Acquired a \'locked\' RNG that isn't owned by this thread");
     }
   }
   explicit operator io_rng_t&() { return *rng_; }
-  ~locked_io_rng_ref() {
-    std::thread::id prev_tid = rng_->active_thread_id.exchange(std::thread::id());
-    if(prev_tid != std::this_thread::get_id()) {
-      LBANN_WARNING("Releasing a \'locked\' RNG that isn't owned by this thread");
+  ~locked_io_rng_ref()
+  {
+    std::thread::id prev_tid =
+      rng_->active_thread_id.exchange(std::thread::id());
+    if (prev_tid != std::this_thread::get_id()) {
+      LBANN_WARNING(
+        "Releasing a \'locked\' RNG that isn't owned by this thread");
     }
   }
-  locked_io_rng_ref(locked_io_rng_ref&& ) = default;
+  locked_io_rng_ref(locked_io_rng_ref&&) = default;
 };
 
 /**
@@ -131,7 +138,9 @@ fast_rng_gen& get_fast_io_generator();
  *              rank.
  *
  */
-void init_random(int seed = -1, int num_io_RNGs = 1, lbann_comm *comm = nullptr);
+void init_random(int seed = -1,
+                 int num_io_RNGs = 1,
+                 lbann_comm* comm = nullptr);
 
 /**
  * Initialize a random number generator (with optional seed) that is

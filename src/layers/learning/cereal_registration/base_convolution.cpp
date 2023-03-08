@@ -32,7 +32,7 @@ namespace lbann {
 
 template <typename TensorDataType, El::Device Device>
 template <typename ArchiveT>
-void base_convolution_layer<TensorDataType,Device>::serialize(ArchiveT& ar)
+void base_convolution_layer<TensorDataType, Device>::serialize(ArchiveT& ar)
 {
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",
@@ -49,10 +49,10 @@ void base_convolution_layer<TensorDataType,Device>::serialize(ArchiveT& ar)
 } // namespace lbann
 
 #define LBANN_COMMA ,
-#define PROTO_DEVICE(T, D)                                              \
-  LBANN_ADD_ALL_SERIALIZE_ETI(::lbann::base_convolution_layer<T,D>);    \
-  CEREAL_REGISTER_TYPE_WITH_NAME(                                       \
-    ::lbann::base_convolution_layer<T LBANN_COMMA D>,                   \
+#define PROTO_DEVICE(T, D)                                                     \
+  LBANN_ADD_ALL_SERIALIZE_ETI(::lbann::base_convolution_layer<T, D>);          \
+  CEREAL_REGISTER_TYPE_WITH_NAME(                                              \
+    ::lbann::base_convolution_layer<T LBANN_COMMA D>,                          \
     "base_convolution_layer(" #T "," #D ")")
 #include "lbann/macros/instantiate_device.hpp"
 

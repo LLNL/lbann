@@ -27,15 +27,15 @@
 // MUST include this
 #include "Catch2BasicSupport.hpp"
 
-#include "TestHelpers.hpp"
 #include "MPITestHelpers.hpp"
+#include "TestHelpers.hpp"
 
-#include <lbann_config.hpp>
 #include "lbann/base.hpp"
 #include "lbann/layers/transform/permute.hpp"
 #include "lbann/utils/description.hpp"
 #include <lbann/utils/serialize.hpp>
 #include <lbann/utils/typename.hpp>
+#include <lbann_config.hpp>
 
 #include <sstream>
 #include <vector>

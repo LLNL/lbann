@@ -41,7 +41,8 @@ namespace lbann {
 
 /** @brief Scheme for initializing weight values. */
 class weights_initializer
-  : public Cloneable<HasAbstractFunction<weights_initializer>> {
+  : public Cloneable<HasAbstractFunction<weights_initializer>>
+{
 public:
   weights_initializer() = default;
   virtual ~weights_initializer() = default;
@@ -51,7 +52,6 @@ public:
 
   /** Human-readable description of class instance. */
   virtual description get_description() const;
-
 };
 
 /** @brief Scheme for initializing weight values. */
@@ -59,7 +59,8 @@ template <typename TensorDataType>
 class data_type_weights_initializer
   : public Cloneable<
       HasAbstractFunction<data_type_weights_initializer<TensorDataType>>,
-      weights_initializer> {
+      weights_initializer>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -81,14 +82,14 @@ public:
 
   /** @brief Add initializer to prototext */
   virtual void write_proto(lbann_data::Initializer& proto) const = 0;
-
 };
 
 /** @brief Fill weights with a single constant value. */
 template <typename TensorDataType>
 class constant_initializer
   : public Cloneable<constant_initializer<TensorDataType>,
-                     data_type_weights_initializer<TensorDataType>> {
+                     data_type_weights_initializer<TensorDataType>>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -99,9 +100,7 @@ public:
   ///@}
 
 public:
-  constant_initializer(TensorDataType value)
-    : m_value(value)
-  {}
+  constant_initializer(TensorDataType value) : m_value(value) {}
   std::string get_type() const override { return "constant"; }
   description get_description() const override;
   void fill(AbsDistMatrixType& matrix) override;
@@ -110,10 +109,8 @@ public:
   void write_proto(lbann_data::Initializer& init) const final;
 
 private:
-
   /** Weights value. */
   TensorDataType m_value;
-
 };
 
 /** @brief Fill weights with values from a list.
@@ -127,7 +124,8 @@ private:
 template <typename TensorDataType>
 class value_initializer
   : public Cloneable<value_initializer<TensorDataType>,
-                     data_type_weights_initializer<TensorDataType>> {
+                     data_type_weights_initializer<TensorDataType>>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -148,10 +146,8 @@ public:
   void write_proto(lbann_data::Initializer& init) const final;
 
 private:
-
   /** List of weights values. */
   std::vector<TensorDataType> m_values;
-
 };
 
 /** @brief Fill weights with values from a NumPy file.
@@ -162,7 +158,8 @@ private:
 template <typename TensorDataType>
 class numpy_initializer
   : public Cloneable<numpy_initializer<TensorDataType>,
-                     data_type_weights_initializer<TensorDataType>> {
+                     data_type_weights_initializer<TensorDataType>>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -173,9 +170,7 @@ public:
   ///@}
 
 public:
-  numpy_initializer(std::string file)
-    : m_file{std::move(file)}
-  {}
+  numpy_initializer(std::string file) : m_file{std::move(file)} {}
   std::string get_type() const override { return "NumPy"; }
   void fill(AbsDistMatrixType& matrix) override;
 
@@ -183,17 +178,16 @@ public:
   void write_proto(lbann_data::Initializer& init) const final;
 
 private:
-
   /** NumPy file */
   std::string m_file;
-
 };
 
 /** @brief Draw weights values from a uniform random distribution. */
 template <typename TensorDataType>
 class uniform_initializer
   : public Cloneable<uniform_initializer<TensorDataType>,
-                     data_type_weights_initializer<TensorDataType>> {
+                     data_type_weights_initializer<TensorDataType>>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -203,12 +197,12 @@ public:
 
   ///@}
 
- public:
+public:
   uniform_initializer(TensorDataType min = El::To<TensorDataType>(0),
                       TensorDataType max = El::To<TensorDataType>(1))
     : m_min{min}, m_max{max}
   {}
-  std::string get_type() const override{ return "uniform"; }
+  std::string get_type() const override { return "uniform"; }
   description get_description() const override;
   void fill(AbsDistMatrixType& matrix) override;
 
@@ -216,19 +210,18 @@ public:
   void write_proto(lbann_data::Initializer& init) const final;
 
 private:
-
   /** Uniform distribution minimum. */
   TensorDataType m_min;
   /** Uniform distribution maximum. */
   TensorDataType m_max;
-
 };
 
 /** @brief Draw weights values from a normal random distribution. */
 template <typename TensorDataType>
 class normal_initializer
   : public Cloneable<normal_initializer<TensorDataType>,
-                     data_type_weights_initializer<TensorDataType>> {
+                     data_type_weights_initializer<TensorDataType>>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -242,8 +235,7 @@ public:
   normal_initializer(
     TensorDataType mean = El::TypeTraits<TensorDataType>::Zero(),
     TensorDataType standard_deviation = El::TypeTraits<TensorDataType>::One())
-    : m_mean{mean},
-      m_standard_deviation{standard_deviation}
+    : m_mean{mean}, m_standard_deviation{standard_deviation}
   {}
   std::string get_type() const override { return "normal"; }
   description get_description() const override;
@@ -253,12 +245,10 @@ public:
   void write_proto(lbann_data::Initializer& init) const final;
 
 private:
-
   /** Normal distribution mean. */
   TensorDataType m_mean;
   /** Normal distribution standard deviation. */
   TensorDataType m_standard_deviation;
-
 };
 
 template <typename TensorDataType>
@@ -282,12 +272,12 @@ std::unique_ptr<weights_initializer>
 build_normal_initializer_from_pbuf(google::protobuf::Message const& msg);
 
 #ifndef LBANN_INITIALIZER_INSTANTIATE
-#define PROTO(T)                                          \
-  extern template class data_type_weights_initializer<T>; \
-  extern template class constant_initializer<T>;          \
-  extern template class value_initializer<T>;             \
-  extern template class numpy_initializer<T>;             \
-  extern template class uniform_initializer<T>;           \
+#define PROTO(T)                                                               \
+  extern template class data_type_weights_initializer<T>;                      \
+  extern template class constant_initializer<T>;                               \
+  extern template class value_initializer<T>;                                  \
+  extern template class numpy_initializer<T>;                                  \
+  extern template class uniform_initializer<T>;                                \
   extern template class normal_initializer<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF

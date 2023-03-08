@@ -35,13 +35,12 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class constant_layer : public data_type_layer<TensorDataType> {
+class constant_layer : public data_type_layer<TensorDataType>
+{
 public:
-
-  constant_layer(lbann_comm *comm,
-                 TensorDataType value,
-                 std::vector<int> dims)
-    : data_type_layer<TensorDataType>(comm), m_value(value) {
+  constant_layer(lbann_comm* comm, TensorDataType value, std::vector<int> dims)
+    : data_type_layer<TensorDataType>(comm), m_value(value)
+  {
     this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
   }
@@ -60,41 +59,37 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  description get_description() const override {
+  description get_description() const override
+  {
     auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Value", m_value);
     return desc;
   }
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  constant_layer()
-    : constant_layer(nullptr, El::To<TensorDataType>(0), { 1 } )
-  {}
+  constant_layer() : constant_layer(nullptr, El::To<TensorDataType>(0), {1}) {}
 
-
-  void fp_compute() override {
+  void fp_compute() override
+  {
     if (m_value == EvalType(0)) {
       El::Zero(this->get_activations());
-    } else {
+    }
+    else {
       El::Fill(this->get_activations(), m_value);
     }
   }
 
 private:
-
   /** Constant value. */
   TensorDataType m_value;
-
 };
 
-
 #ifndef LBANN_CONSTANT_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
+#define PROTO_DEVICE(T, Device)                                                \
   extern template class constant_layer<T, data_layout::DATA_PARALLEL, Device>; \
   extern template class constant_layer<T, data_layout::MODEL_PARALLEL, Device>
 

@@ -27,13 +27,12 @@
 #ifndef LBANN_UTILS_FACTORY_HPP_INCLUDED
 #define LBANN_UTILS_FACTORY_HPP_INCLUDED
 
-#include <lbann_config.hpp>
 #include <lbann/utils/factory_error_policies.hpp>
+#include <lbann_config.hpp>
 
 #include <h2/patterns/factory/ObjectFactory.hpp>
 
-namespace lbann
-{
+namespace lbann {
 
 /** @brief Generic factory template.
  *
@@ -52,10 +51,11 @@ namespace lbann
  *  @tparam BuilderT     The functor type that builds concrete types.
  *  @tparam ErrorPolicy  The policy for handling id errors.
  */
-template <class BaseT, typename KeyT,
+template <class BaseT,
+          typename KeyT,
           typename BuilderT = std::function<std::unique_ptr<BaseT>()>,
-          template <typename, class> class KeyErrorPolicy
-          = default_key_error_policy>
+          template <typename, class> class KeyErrorPolicy =
+            default_key_error_policy>
 using generic_factory =
   h2::factory::ObjectFactory<BaseT, KeyT, BuilderT, KeyErrorPolicy>;
 
@@ -80,5 +80,5 @@ template <typename OutT, typename... Args>
 using generate_builder_type =
   typename GenerateBuilderType_struct<OutT, Args...>::type;
 
-}// namespace lbann
+} // namespace lbann
 #endif // LBANN_UTILS_FACTORY_HPP_INCLUDED

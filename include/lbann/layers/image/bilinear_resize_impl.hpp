@@ -33,7 +33,9 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void bilinear_resize_layer<TensorDataType, Layout, Device>::setup_dims(DataReaderMetaData& dr_metadata) {
+void bilinear_resize_layer<TensorDataType, Layout, Device>::setup_dims(
+  DataReaderMetaData& dr_metadata)
+{
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
   // Get input dimensions
@@ -50,12 +52,14 @@ void bilinear_resize_layer<TensorDataType, Layout, Device>::setup_dims(DataReade
       err << (i > 0 ? " x " : "") << dims[i];
     }
     LBANN_ERROR(err.str());
-  } else if (m_height <= 0) {
+  }
+  else if (m_height <= 0) {
     err << get_type() << " layer \"" << this->get_name() << "\" "
         << "attempted to resize with "
         << "negative height (" << m_height << ")";
     LBANN_ERROR(err.str());
-  } else if (m_width <= 0) {
+  }
+  else if (m_width <= 0) {
     err << get_type() << " layer \"" << this->get_name() << "\" "
         << "attempted to resize with "
         << "negative width (" << m_width << ")";
@@ -63,10 +67,9 @@ void bilinear_resize_layer<TensorDataType, Layout, Device>::setup_dims(DataReade
   }
 
   // Resize output tensor
-  dims[num_dims-2] = m_height;
-  dims[num_dims-1] = m_width;
+  dims[num_dims - 2] = m_height;
+  dims[num_dims - 1] = m_width;
   this->set_output_dims(dims);
-
 }
 
 } // namespace lbann

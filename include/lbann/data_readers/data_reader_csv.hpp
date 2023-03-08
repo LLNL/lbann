@@ -41,8 +41,9 @@ namespace lbann {
  * or escape sequences. The label column is by default converted to an integer.
  * @note This does not currently support comments or blank lines.
  */
-class csv_reader : public generic_data_reader {
- public:
+class csv_reader : public generic_data_reader
+{
+public:
   /**
    * This defaults to using the last column for the label/response.
    */
@@ -53,21 +54,21 @@ class csv_reader : public generic_data_reader {
 
   csv_reader* copy() const override { return new csv_reader(*this); }
 
-  std::string get_type() const override {
-    return "csv_reader";
-  }
+  std::string get_type() const override { return "csv_reader"; }
 
   /// Set the label column.
   void set_label_col(int col) { m_label_col = col; }
   /// Set the response column.
   void set_response_col(int col) { m_response_col = col; }
   /// Disable fetching labels.
-  void disable_labels(bool b = true) {
+  void disable_labels(bool b = true)
+  {
     m_supported_input_types[INPUT_DATA_TYPE_LABELS] = false;
     m_disable_labels = b;
   }
   /// Enable fetching responses (disabled by default).
-  void enable_responses(bool b = false) {
+  void enable_responses(bool b = false)
+  {
     m_supported_input_types[INPUT_DATA_TYPE_RESPONSES] = true;
     m_disable_responses = b;
   }
@@ -87,7 +88,8 @@ class csv_reader : public generic_data_reader {
    * @param f The transform to apply.
    */
   void set_column_transform(int col,
-                            std::function<DataType(const std::string&)> f) {
+                            std::function<DataType(const std::string&)> f)
+  {
     m_col_transforms[col] = f;
   }
 
@@ -95,13 +97,15 @@ class csv_reader : public generic_data_reader {
    * Supply a custom transform to convert the label column to an integer.
    * Note that the label should be an integer starting from 0.
    */
-  void set_label_transform(std::function<int(const std::string&)> f) {
+  void set_label_transform(std::function<int(const std::string&)> f)
+  {
     m_label_transform = f;
   }
   /**
    * Supply a custom transform to convert the response column to a DataType.
    */
-  void set_response_transform(std::function<DataType(const std::string&)> f) {
+  void set_response_transform(std::function<DataType(const std::string&)> f)
+  {
     m_response_transform = f;
   }
 
@@ -110,21 +114,23 @@ class csv_reader : public generic_data_reader {
    */
   void load() override;
 
-  void setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) override;
+  void setup(int num_io_threads,
+             observer_ptr<thread_pool> io_thread_pool) override;
 
   int get_num_labels() const override { return m_num_labels; }
-  int get_linearized_data_size() const override {
+  int get_linearized_data_size() const override
+  {
     // Account for label and skipped columns.
     if (m_label_col < m_skip_cols) {
       return m_num_cols - m_skip_cols;
-    } else {
+    }
+    else {
       return m_num_cols - 1 - m_skip_cols;
     }
   }
-  int get_linearized_label_size() const override {
-    return m_num_labels;
-  }
-  const std::vector<int> get_data_dims() const override {
+  int get_linearized_label_size() const override { return m_num_labels; }
+  const std::vector<int> get_data_dims() const override
+  {
     return {get_linearized_data_size()};
   }
 
@@ -136,7 +142,7 @@ class csv_reader : public generic_data_reader {
    */
   std::vector<DataType> fetch_line_label_response(int data_id);
 
- protected:
+protected:
   /**
    * Fetch the data associated with data_id.
    * Note this does *not* normalize the data.
@@ -206,12 +212,12 @@ class csv_reader : public generic_data_reader {
     m_col_transforms;
   /// Label transform function that converts to an int.
   std::function<int(const std::string&)> m_label_transform =
-    [] (const std::string& s) -> int { return std::stoi(s); };
+    [](const std::string& s) -> int { return std::stoi(s); };
   /// Response transform function that converts to a DataType.
   std::function<DataType(const std::string&)> m_response_transform =
-    [] (const std::string& s) -> DataType { return std::stod(s); };
+    [](const std::string& s) -> DataType { return std::stod(s); };
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_DATA_READER_CSV_HPP
+#endif // LBANN_DATA_READER_CSV_HPP

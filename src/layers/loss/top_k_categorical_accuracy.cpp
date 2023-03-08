@@ -30,14 +30,14 @@
 #include <algorithm>
 #include <limits>
 
-
 namespace lbann {
 
 namespace {
 
 /** Sparse vector entry. */
 template <typename TensorDataType>
-struct entry {
+struct entry
+{
 
   /** Vector entry value. */
   TensorDataType value = min_value;
@@ -45,7 +45,8 @@ struct entry {
   El::Int index = max_index;
 
   /** Minimum possible value. */
-  static constexpr TensorDataType min_value = -std::numeric_limits<TensorDataType>::infinity();
+  static constexpr TensorDataType min_value =
+    -std::numeric_limits<TensorDataType>::infinity();
   /** Maximum possible index. */
   static constexpr El::Int max_index = std::numeric_limits<El::Int>::max();
 
@@ -53,10 +54,11 @@ struct entry {
    *  Entries are sorted by value in decreasing order, with ties
    *  broken in favor of entries with smaller indices.
    */
-  static bool compare(const entry<TensorDataType>& a, const entry<TensorDataType>& b) {
+  static bool compare(const entry<TensorDataType>& a,
+                      const entry<TensorDataType>& b)
+  {
     return a.value > b.value || (a.value == b.value && a.index < b.index);
   }
-
 };
 
 /** CPU implementation of top-k categorical accuracy layer forward prop. */
@@ -65,7 +67,8 @@ void fp_cpu(lbann_comm& comm,
             El::Int k,
             const El::AbstractDistMatrix<TensorDataType>& predictions,
             const El::AbstractDistMatrix<TensorDataType>& labels,
-            El::AbstractDistMatrix<TensorDataType>& loss) {
+            El::AbstractDistMatrix<TensorDataType>& loss)
+{
 
   // Local matrices
   const auto& local_predictions = predictions.LockedMatrix();
@@ -79,10 +82,12 @@ void fp_cpu(lbann_comm& comm,
   if (k < 1) {
     El::Zero(loss);
     return;
-  } else if (k >= height) {
+  }
+  else if (k >= height) {
     El::Fill(loss, El::TypeTraits<TensorDataType>::One());
     return;
-  } else if (local_width < 1) {
+  }
+  else if (local_width < 1) {
     return;
   }
 
@@ -122,8 +127,8 @@ void fp_cpu(lbann_comm& comm,
     }
     std::partial_sort_copy(local_entries.begin(),
                            local_entries.end(),
-                           &top_entries[col*k],
-                           &top_entries[col*k] + k,
+                           &top_entries[col * k],
+                           &top_entries[col * k] + k,
                            entry<TensorDataType>::compare);
   }
 
@@ -133,28 +138,32 @@ void fp_cpu(lbann_comm& comm,
       comm.gather(reinterpret_cast<El::byte*>(top_entries.data()),
                   top_entries.size() * sizeof(entry<TensorDataType>),
                   col_comm_root,
-                  col_comm, El::SyncInfo<El::Device::CPU>{});
-    } else {
-      std::vector<entry<TensorDataType>> global_top_entries(col_comm_size * local_width * k);
+                  col_comm,
+                  El::SyncInfo<El::Device::CPU>{});
+    }
+    else {
+      std::vector<entry<TensorDataType>> global_top_entries(col_comm_size *
+                                                            local_width * k);
       comm.gather(reinterpret_cast<El::byte*>(top_entries.data()),
                   top_entries.size() * sizeof(entry<TensorDataType>),
                   reinterpret_cast<El::byte*>(global_top_entries.data()),
-                  col_comm, El::SyncInfo<El::Device::CPU>{});
+                  col_comm,
+                  El::SyncInfo<El::Device::CPU>{});
       LBANN_OMP_PARALLEL_FOR
       for (El::Int col = 0; col < local_width; ++col) {
         std::vector<entry<TensorDataType>> col_entries(col_comm_size * k);
         for (El::Int rank = 0; rank < col_comm_size; ++rank) {
-          const auto* start = &global_top_entries[rank*local_width*k+col*k];
-          std::copy(start, start + k, &col_entries[rank*k]);
+          const auto* start =
+            &global_top_entries[rank * local_width * k + col * k];
+          std::copy(start, start + k, &col_entries[rank * k]);
         }
         std::partial_sort_copy(col_entries.begin(),
                                col_entries.end(),
-                               &top_entries[col*k],
-                               &top_entries[col*k] + k,
+                               &top_entries[col * k],
+                               &top_entries[col * k] + k,
                                entry<TensorDataType>::compare);
       }
     }
-
   }
 
   // Compute categorical accuracy
@@ -165,20 +174,21 @@ void fp_cpu(lbann_comm& comm,
     for (El::Int col = 0; col < local_width; ++col) {
       for (El::Int i = 0; i < k; ++i) {
         const auto& label_index = label_indices[col];
-        if (top_entries[col*k+i].index == label_index
-            && label_index < height) {
+        if (top_entries[col * k + i].index == label_index &&
+            label_index < height) {
           local_loss(0, col) = El::TypeTraits<TensorDataType>::One();
         }
       }
     }
   }
-
 }
 
 } // namespace
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void top_k_categorical_accuracy_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+void top_k_categorical_accuracy_layer<TensorDataType, T_layout, Dev>::
+  fp_compute()
+{
   fp_cpu(*this->get_comm(),
          this->m_k,
          this->get_prev_activations(0),
@@ -186,11 +196,13 @@ void top_k_categorical_accuracy_layer<TensorDataType, T_layout, Dev>::fp_compute
          this->get_activations());
 }
 
-#define PROTO(T)                                      \
-  template class top_k_categorical_accuracy_layer<    \
-    T, data_layout::DATA_PARALLEL, El::Device::CPU>;  \
-  template class top_k_categorical_accuracy_layer<    \
-    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  template class top_k_categorical_accuracy_layer<T,                           \
+                                                  data_layout::DATA_PARALLEL,  \
+                                                  El::Device::CPU>;            \
+  template class top_k_categorical_accuracy_layer<T,                           \
+                                                  data_layout::MODEL_PARALLEL, \
+                                                  El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

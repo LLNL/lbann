@@ -30,8 +30,8 @@
 
 #include "lbann/layers/io/input_layer.hpp"
 #include "lbann/utils/memory.hpp"
-#include "lbann/utils/timer.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/utils/timer.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
 
@@ -39,10 +39,10 @@ namespace lbann {
 namespace callback {
 
 template <class Archive>
-void sync_layers::serialize(Archive & ar) {
-  ar(::cereal::make_nvp(
-       "BaseCallback",
-       ::cereal::base_class<callback_base>(this)),
+void sync_layers::serialize(Archive& ar)
+{
+  ar(::cereal::make_nvp("BaseCallback",
+                        ::cereal::base_class<callback_base>(this)),
      CEREAL_NVP(m_sync_gpus),
      CEREAL_NVP(m_sync_mpi),
      CEREAL_NVP(m_only_input));
@@ -56,16 +56,18 @@ void sync_layers::write_specific_proto(lbann_data::Callback& proto) const
   msg->set_only_input(m_only_input);
 }
 
-void sync_layers::on_forward_prop_end(model *m, Layer *l) {
+void sync_layers::on_forward_prop_end(model* m, Layer* l)
+{
   if (m_only_input && dynamic_cast<input_layer<DataType>*>(l) == nullptr) {
-    return;  // Skip non-input layers.
+    return; // Skip non-input layers.
   }
   double start = get_time();
   do_sync(l);
   l->m_fp_time += get_time() - start;
 }
 
-void sync_layers::on_backward_prop_end(model *m, Layer *l) {
+void sync_layers::on_backward_prop_end(model* m, Layer* l)
+{
   if (m_only_input) {
     return;
   }
@@ -74,7 +76,8 @@ void sync_layers::on_backward_prop_end(model *m, Layer *l) {
   l->m_bp_time += get_time() - start;
 }
 
-void sync_layers::do_sync(Layer *l) {
+void sync_layers::do_sync(Layer* l)
+{
 #ifdef LBANN_HAS_GPU
   if (m_sync_gpus) {
     hydrogen::gpu::SynchronizeDevice();
@@ -86,13 +89,14 @@ void sync_layers::do_sync(Layer *l) {
 }
 
 std::unique_ptr<callback_base>
-build_sync_layers_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+build_sync_layers_callback_from_pbuf(const google::protobuf::Message& proto_msg,
+                                     const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSyncLayers&>(proto_msg);
   return std::make_unique<sync_layers>(params.sync_gpus(),
-                                                 params.sync_mpi(),
-                                                 params.only_input());
+                                       params.sync_mpi(),
+                                       params.only_input());
 }
 
 } // namespace callback

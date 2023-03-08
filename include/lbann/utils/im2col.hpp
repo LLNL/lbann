@@ -51,10 +51,10 @@ void im2col(const CPUMatDT<TensorDataType>& im,
             CPUMatDT<TensorDataType>& col,
             int num_channels,
             int im_num_dims,
-            const int * im_dims,
-            const int * im_pads,
-            const int * window_dims,
-            const int * window_strides);
+            const int* im_dims,
+            const int* im_pads,
+            const int* window_dims,
+            const int* window_strides);
 
 #ifdef LBANN_HAS_GPU
 template <typename TensorDataType>
@@ -62,23 +62,22 @@ void im2col(const El::Matrix<TensorDataType, El::Device::GPU>& im,
             El::Matrix<TensorDataType, El::Device::GPU>& col,
             const int num_channels,
             const int im_num_dims,
-            const int * im_dims,
-            const int * im_pads,
-            const int * window_dims,
-            const int * window_strides,
+            const int* im_dims,
+            const int* im_pads,
+            const int* window_dims,
+            const int* window_strides,
             const El::SyncInfo<El::Device::GPU>& sync_info);
 #endif // LBANN_HAS_GPU
 
 /** Get the height and the width of col matrix.
  */
-std::pair<size_t, size_t> get_im2col_output_size(
-    const int num_samples,
-    const int num_channels,
-    const int im_num_dims,
-    const int * im_dims,
-    const int * im_pads,
-    const int * window_dims,
-    const int * window_strides);
+std::pair<size_t, size_t> get_im2col_output_size(const int num_samples,
+                                                 const int num_channels,
+                                                 const int im_num_dims,
+                                                 const int* im_dims,
+                                                 const int* im_pads,
+                                                 const int* window_dims,
+                                                 const int* window_strides);
 
 /// Rearrange matrix columns into image blocks
 /** This is approximately the inverse of im2col. The output tensor im
@@ -101,10 +100,10 @@ void col2im(const CPUMatDT<TensorDataType>& col,
             CPUMatDT<TensorDataType>& im,
             int num_channels,
             int im_num_dims,
-            const int * im_dims,
-            const int * im_pads,
-            const int * window_dims,
-            const int * window_strides);
+            const int* im_dims,
+            const int* im_pads,
+            const int* window_dims,
+            const int* window_strides);
 
 /// Rearrange matrix columns into image blocks
 /** This is approximately the inverse of im2col. The output tensor im
@@ -128,11 +127,12 @@ void col2im(const CPUMatDT<TensorDataType>& col,
             CPUMatDT<TensorDataType>& im,
             int num_channels,
             int im_num_dims,
-            const int * im_dims,
-            const int * im_pads,
-            const int * window_dims,
-            const int * window_strides,
-            std::function<TensorDataType(const TensorDataType&, const TensorDataType&)> reduction_op);
+            const int* im_dims,
+            const int* im_pads,
+            const int* window_dims,
+            const int* window_strides,
+            std::function<TensorDataType(const TensorDataType&,
+                                         const TensorDataType&)> reduction_op);
 
 /// Rearrange 1x1 image blocks into matrix columns
 /** This is an optimized implementation of im2col when the window has
@@ -141,19 +141,19 @@ void col2im(const CPUMatDT<TensorDataType>& col,
  *  1x1 im2col.
  */
 template <typename TensorDataType>
-void im2col_1x1(const TensorDataType * input_buffer,
-                TensorDataType * output_buffer,
+void im2col_1x1(const TensorDataType* input_buffer,
+                TensorDataType* output_buffer,
                 int num_channels,
                 int num_input_dims,
-                const int * input_dims);
+                const int* input_dims);
 
 /// Rearrange 2D image blocks into matrix columns
 /** This is an optimized implementation of im2col for 2D data. im2col
  *  will automatically call this routine if it detects 2D data.
  */
 template <typename TensorDataType>
-void im2col_2d(const TensorDataType *__restrict__ input_buffer,
-               TensorDataType *__restrict__ output_buffer,
+void im2col_2d(const TensorDataType* __restrict__ input_buffer,
+               TensorDataType* __restrict__ output_buffer,
                int input_dim_x,
                int input_dim_y,
                int input_pad_x,
@@ -171,19 +171,19 @@ void im2col_2d(const TensorDataType *__restrict__ input_buffer,
  *  1x1 col2im.
  */
 template <typename TensorDataType>
-void col2im_1x1(const TensorDataType * input_buffer,
-                TensorDataType * output_buffer,
+void col2im_1x1(const TensorDataType* input_buffer,
+                TensorDataType* output_buffer,
                 const int num_channels,
                 const int num_output_dims,
-                const int * output_dims);
+                const int* output_dims);
 
 /// Rearrange matrix columns into 2D image blocks
 /** This is an optimized implementation of col2im for 2D data. col2im
  *  will automatically call this routine if it detects 2D data.
  */
 template <typename TensorDataType>
-void col2im_2d(const TensorDataType *__restrict__ input_buffer,
-               TensorDataType *__restrict__ output_buffer,
+void col2im_2d(const TensorDataType* __restrict__ input_buffer,
+               TensorDataType* __restrict__ output_buffer,
                int output_dim_x,
                int output_dim_y,
                int output_pad_x,

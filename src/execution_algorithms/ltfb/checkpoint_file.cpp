@@ -27,8 +27,8 @@
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/weights/data_type_weights.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
 #include "checkpoint_common.hpp"
 

@@ -32,32 +32,27 @@
 
 #include "utils.hpp"
 
-namespace lbann
-{
+namespace lbann {
 
 #ifdef LBANN_HAS_CUDNN
-namespace dnn_lib
-{
+namespace dnn_lib {
 
 using namespace cudnn;
 
-inline size_t get_lrn_ws_size(TensorDescriptor const& yDesc)
-{
-  return 0UL;
-}
-
+inline size_t get_lrn_ws_size(TensorDescriptor const& yDesc) { return 0UL; }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
-                               ScalarParameterType const& alpha_in,
-                               TensorDescriptor const& xDesc,
-                               El::AbstractMatrix<TensorDataType> const& x,
-                               ScalarParameterType const& beta_in,
-                               TensorDescriptor const& yDesc,
-                               El::AbstractMatrix<TensorDataType>& y,
-                               El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
-                               El::SyncInfo<El::Device::GPU> const& si,
-                               dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL)
+void lrn_cross_channel_forward(
+  LRNDescriptor const& normDesc,
+  ScalarParameterType const& alpha_in,
+  TensorDescriptor const& xDesc,
+  El::AbstractMatrix<TensorDataType> const& x,
+  ScalarParameterType const& beta_in,
+  TensorDescriptor const& yDesc,
+  El::AbstractMatrix<TensorDataType>& y,
+  El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
+  El::SyncInfo<El::Device::GPU> const& si,
+  dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL)
 {
 
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
@@ -76,41 +71,48 @@ void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
-                               ScalarParameterType const& alpha_in,
-                               TensorDescriptor const& xDesc,
-                               El::AbstractMatrix<TensorDataType> const& x,
-                               ScalarParameterType const& beta_in,
-                               TensorDescriptor const& yDesc,
-                               El::AbstractMatrix<TensorDataType>& y,
-                               El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
-                               dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL)
+void lrn_cross_channel_forward(
+  LRNDescriptor const& normDesc,
+  ScalarParameterType const& alpha_in,
+  TensorDescriptor const& xDesc,
+  El::AbstractMatrix<TensorDataType> const& x,
+  ScalarParameterType const& beta_in,
+  TensorDescriptor const& yDesc,
+  El::AbstractMatrix<TensorDataType>& y,
+  El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
+  dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL)
 {
 
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
-                                     gpu::get_sync_info(x));
+  auto multisync =
+    El::MakeMultiSync(gpu::get_sync_info(y), gpu::get_sync_info(x));
   lrn_cross_channel_forward(normDesc,
-                            alpha_in, xDesc, x,
-                            beta_in, yDesc, y,
+                            alpha_in,
+                            xDesc,
+                            x,
+                            beta_in,
+                            yDesc,
+                            y,
                             workSpace,
-                            multisync, mode);
+                            multisync,
+                            mode);
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
-                                ScalarParameterType const& alpha_in,
-                                TensorDescriptor const& yDesc,
-                                El::AbstractMatrix<TensorDataType> const& y,
-                                TensorDescriptor const& dyDesc,
-                                El::AbstractMatrix<TensorDataType> const& dy,
-                                TensorDescriptor const& xDesc,
-                                El::AbstractMatrix<TensorDataType> const& x,
-                                ScalarParameterType const& beta_in,
-                                TensorDescriptor const& dxDesc,
-                                El::AbstractMatrix<TensorDataType>& dx,
-                                El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
-                                El::SyncInfo<El::Device::GPU> const& si,
-                                dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL)
+void lrn_cross_channel_backward(
+  LRNDescriptor const& normDesc,
+  ScalarParameterType const& alpha_in,
+  TensorDescriptor const& yDesc,
+  El::AbstractMatrix<TensorDataType> const& y,
+  TensorDescriptor const& dyDesc,
+  El::AbstractMatrix<TensorDataType> const& dy,
+  TensorDescriptor const& xDesc,
+  El::AbstractMatrix<TensorDataType> const& x,
+  ScalarParameterType const& beta_in,
+  TensorDescriptor const& dxDesc,
+  El::AbstractMatrix<TensorDataType>& dx,
+  El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
+  El::SyncInfo<El::Device::GPU> const& si,
+  dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL)
 {
 
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
@@ -133,19 +135,20 @@ void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
-                                ScalarParameterType const& alpha_in,
-                                TensorDescriptor const& yDesc,
-                                El::AbstractMatrix<TensorDataType> const& y,
-                                TensorDescriptor const& dyDesc,
-                                El::AbstractMatrix<TensorDataType> const& dy,
-                                TensorDescriptor const& xDesc,
-                                El::AbstractMatrix<TensorDataType> const& x,
-                                ScalarParameterType const& beta_in,
-                                TensorDescriptor const& dxDesc,
-                                El::AbstractMatrix<TensorDataType>& dx,
-                                El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
-                                dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL)
+void lrn_cross_channel_backward(
+  LRNDescriptor const& normDesc,
+  ScalarParameterType const& alpha_in,
+  TensorDescriptor const& yDesc,
+  El::AbstractMatrix<TensorDataType> const& y,
+  TensorDescriptor const& dyDesc,
+  El::AbstractMatrix<TensorDataType> const& dy,
+  TensorDescriptor const& xDesc,
+  El::AbstractMatrix<TensorDataType> const& x,
+  ScalarParameterType const& beta_in,
+  TensorDescriptor const& dxDesc,
+  El::AbstractMatrix<TensorDataType>& dx,
+  El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
+  dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL)
 {
 
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(dx),
@@ -153,13 +156,22 @@ void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
                                      gpu::get_sync_info(dy),
                                      gpu::get_sync_info(y));
   lrn_cross_channel_backward(normDesc,
-                             alpha_in, yDesc, y, dyDesc, dy,
-                             xDesc, x, beta_in, dxDesc, dx,
+                             alpha_in,
+                             yDesc,
+                             y,
+                             dyDesc,
+                             dy,
+                             xDesc,
+                             x,
+                             beta_in,
+                             dxDesc,
+                             dx,
                              workSpace,
-                             multisync, mode);
+                             multisync,
+                             mode);
 }
 
-}// namespace dnn_lib
+} // namespace dnn_lib
 #endif // LBANN_HAS_CUDNN
-}// namespace lbann
+} // namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_CUDNN_LRN_HPP_

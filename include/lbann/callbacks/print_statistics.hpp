@@ -38,45 +38,50 @@ namespace callback {
  *  Prints average objective function value and metric scores after
  *  each training epoch and evaluation.
  */
-class print_statistics : public callback_base {
- public:
-  print_statistics(int batch_interval = 1, bool print_global_stat_only=false) :
-    callback_base(batch_interval),
-    m_print_global_stat_only(print_global_stat_only) {}
+class print_statistics : public callback_base
+{
+public:
+  print_statistics(int batch_interval = 1, bool print_global_stat_only = false)
+    : callback_base(batch_interval),
+      m_print_global_stat_only(print_global_stat_only)
+  {}
   print_statistics(const print_statistics&) = default;
   print_statistics& operator=(const print_statistics&) = default;
-  print_statistics* copy() const override { return new print_statistics(*this); }
-  void setup(model *m) override;
-  void on_epoch_begin(model *m) override;
-  void on_epoch_end(model *m) override;
-  void on_validation_end(model *m) override;
-  void on_test_end(model *m) override;
+  print_statistics* copy() const override
+  {
+    return new print_statistics(*this);
+  }
+  void setup(model* m) override;
+  void on_epoch_begin(model* m) override;
+  void on_epoch_end(model* m) override;
+  void on_validation_end(model* m) override;
+  void on_test_end(model* m) override;
   std::string name() const override { return "print_statistics"; }
 
   /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
- private:
+private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
   /** Print objective function and metrics to standard output. */
-  void report_results(model *m);
+  void report_results(model* m);
   bool m_print_global_stat_only;
-
 };
 
 // Builder function
-std::unique_ptr<callback_base>
-build_print_statistics_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+std::unique_ptr<callback_base> build_print_statistics_callback_from_pbuf(
+  const google::protobuf::Message&,
+  std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_PRINT_STATISTICS_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_PRINT_STATISTICS_HPP_INCLUDED

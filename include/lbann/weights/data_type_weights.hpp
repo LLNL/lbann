@@ -27,14 +27,13 @@
 #ifndef LBANN_DATA_TYPE_WEIGHTS_HPP
 #define LBANN_DATA_TYPE_WEIGHTS_HPP
 
-#include "lbann/weights/weights.hpp"
-#include "lbann/weights/initializer.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
+#include "lbann/weights/initializer.hpp"
+#include "lbann/weights/weights.hpp"
 
-namespace cereal
-{
-  class access;
-}// namespace cereal
+namespace cereal {
+class access;
+} // namespace cereal
 
 namespace lbann {
 
@@ -58,7 +57,8 @@ namespace lbann {
  */
 template <typename TensorDataType>
 class data_type_weights
-  : public Cloneable<data_type_weights<TensorDataType>, weights> {
+  : public Cloneable<data_type_weights<TensorDataType>, weights>
+{
   using BaseType = Cloneable<data_type_weights<TensorDataType>, weights>;
 
 public:
@@ -148,8 +148,11 @@ public:
    */
   void reconcile_values(Al::request& req) override;
 
-  bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list, El::FileFormat el_mode);
-  bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list) override;
+  bool load_from_save(std::string const& ckpt_dir,
+                      std::vector<std::string> const& weight_list,
+                      El::FileFormat el_mode);
+  bool load_from_save(std::string const& ckpt_dir,
+                      std::vector<std::string> const& weight_list) override;
 
   /** Write weights to proto file */
   void write_proto(lbann_data::Weights& proto) const final;
@@ -167,14 +170,13 @@ public:
 
   ///@}
 
-
 #ifdef LBANN_HAS_ONNX
   /** @brief Add weights data to onnx graph.
    *  Adds serialized weights into graph initializers. Each initializer
    *  will have the name of the corresponding weights object.
    */
   void fill_onnx_node(onnx::GraphProto& graph) const override;
-#endif //LBANN_HAS_ONNX
+#endif // LBANN_HAS_ONNX
 
 private:
   friend cereal::access;
@@ -186,8 +188,8 @@ private:
                     std::vector<size_t> const& matrix_width_dims) override;
   void do_move_values_(data_type_weights& other);
   void do_steal_values_(weights& other) override;
-private:
 
+private:
   /** Weight matrix. */
   std::unique_ptr<AbsDistMatrixType> m_values;
 
@@ -204,8 +206,7 @@ private:
 };
 
 #ifndef LBANN_DATA_TYPE_WEIGHTS_INSTANTIATE
-#define PROTO(T)                           \
-  extern template class data_type_weights<T>
+#define PROTO(T) extern template class data_type_weights<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

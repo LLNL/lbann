@@ -28,10 +28,10 @@
 #define LBANN_LAYERS_MISC_ROWWISE_WEIGHTS_NORMS_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/weights/weights_helpers.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
-#include "lbann/utils/exception.hpp"
 #include "lbann/proto/layers.pb.h"
+#include "lbann/utils/exception.hpp"
+#include "lbann/weights/weights_helpers.hpp"
 
 namespace lbann {
 
@@ -53,12 +53,14 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class rowwise_weights_norms_layer : public data_type_layer<TensorDataType> {
+class rowwise_weights_norms_layer : public data_type_layer<TensorDataType>
+{
 public:
-
   rowwise_weights_norms_layer();
-  rowwise_weights_norms_layer(const rowwise_weights_norms_layer& other) = default;
-  rowwise_weights_norms_layer& operator=(const rowwise_weights_norms_layer& other) = default;
+  rowwise_weights_norms_layer(const rowwise_weights_norms_layer& other) =
+    default;
+  rowwise_weights_norms_layer&
+  operator=(const rowwise_weights_norms_layer& other) = default;
 
   rowwise_weights_norms_layer* copy() const override;
 
@@ -75,7 +77,6 @@ public:
   El::Device get_device_allocation() const override;
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
@@ -85,34 +86,37 @@ protected:
   void bp_compute() override;
 
 private:
-
   using LocalMat = El::Matrix<TensorDataType, Device>;
   LocalMat m_local_norms;
 
   static void row_sqsums(const LocalMat& mat, LocalMat& row_sqsums);
   static void sqrt(LocalMat& mat);
   static void divide(LocalMat& numer, const LocalMat& denom);
-  static void row_axpy(
-    TensorDataType alpha,
-    const LocalMat& a_vec,
-    const LocalMat& x_mat,
-    TensorDataType beta,
-    LocalMat& y_mat);
-
+  static void row_axpy(TensorDataType alpha,
+                       const LocalMat& a_vec,
+                       const LocalMat& x_mat,
+                       TensorDataType beta,
+                       LocalMat& y_mat);
 };
 
 template <typename T, data_layout L, El::Device D>
-void rowwise_weights_norms_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void rowwise_weights_norms_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   proto.mutable_rowwise_weights_norms();
 }
 
 #ifndef LBANN_ROWWISE_WEIGHTS_NORMS_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device)                             \
-  extern template class rowwise_weights_norms_layer<        \
-    T, data_layout::DATA_PARALLEL, Device>;                 \
-  extern template class rowwise_weights_norms_layer<        \
-    T, data_layout::MODEL_PARALLEL, Device>;
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class rowwise_weights_norms_layer<                           \
+    T,                                                                         \
+    data_layout::DATA_PARALLEL,                                                \
+    Device>;                                                                   \
+  extern template class rowwise_weights_norms_layer<                           \
+    T,                                                                         \
+    data_layout::MODEL_PARALLEL,                                               \
+    Device>;
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
 #endif // LBANN_ROWWISE_WEIGHTS_NORMS_LAYER_INSTANTIATE

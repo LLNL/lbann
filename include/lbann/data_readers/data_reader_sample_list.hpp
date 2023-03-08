@@ -27,7 +27,7 @@
 #ifndef LBANN_DATA_READER_SAMPLE_LIST_HPP
 #define LBANN_DATA_READER_SAMPLE_LIST_HPP
 
-//#include "lbann_config.hpp"
+// #include "lbann_config.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include <conduit/conduit.hpp>
 

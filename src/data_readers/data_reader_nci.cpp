@@ -23,18 +23,19 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_nci .hpp .cpp - generic_data_reader class for National Cancer Institute (NCI) dataset
+// lbann_data_reader_nci .hpp .cpp - generic_data_reader class for National
+// Cancer Institute (NCI) dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_nci.hpp"
 #include <cstdio>
-#include <string>
 #include <omp.h>
+#include <string>
 
 namespace lbann {
 
-data_reader_nci::data_reader_nci(bool shuffle)
-  : csv_reader(shuffle) {
+data_reader_nci::data_reader_nci(bool shuffle) : csv_reader(shuffle)
+{
   set_response_col(2);
   enable_responses();
   set_label_col(3);
@@ -46,12 +47,9 @@ data_reader_nci::data_reader_nci(bool shuffle)
   set_has_header(false);
   // Transform to binary classification.
   set_label_transform(
-    [] (const std::string& s) -> int {
-      return s == "rs" ? 0 : 1;
-    });
+    [](const std::string& s) -> int { return s == "rs" ? 0 : 1; });
 }
 
-data_reader_nci::data_reader_nci()
-  : data_reader_nci(true) {}
+data_reader_nci::data_reader_nci() : data_reader_nci(true) {}
 
-}  // namespace lbann
+} // namespace lbann

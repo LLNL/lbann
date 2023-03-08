@@ -38,35 +38,39 @@ namespace callback {
  *  description includes information on the model's layers, weights,
  *  and callbacks.
  */
-class print_model_description : public callback_base {
+class print_model_description : public callback_base
+{
 public:
   print_model_description() : callback_base() {}
   print_model_description(const print_model_description&) = default;
   print_model_description& operator=(const print_model_description&) = default;
-  print_model_description* copy() const override { return new print_model_description(*this); }
-  void on_setup_end(model *m) override;
+  print_model_description* copy() const override
+  {
+    return new print_model_description(*this);
+  }
+  void on_setup_end(model* m) override;
   std::string name() const override { return "print_model_description"; }
 
   /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
 private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
-
 };
 
 // Builder function
-std::unique_ptr<callback_base>
-build_print_model_description_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+std::unique_ptr<callback_base> build_print_model_description_callback_from_pbuf(
+  const google::protobuf::Message&,
+  std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_PRINT_MODEL_DESCRIPTION_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_PRINT_MODEL_DESCRIPTION_HPP_INCLUDED

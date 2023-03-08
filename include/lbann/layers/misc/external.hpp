@@ -31,8 +31,7 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/proto/datatype.pb.h"
 
-namespace lbann
-{
+namespace lbann {
 
 typedef Layer* (*external_layer_setup_t)(lbann_data::DataType datatype,
                                          data_layout layout,

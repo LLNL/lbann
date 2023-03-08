@@ -43,11 +43,13 @@ namespace transform {
  * (e.g. it is not an image), it is treated as having one "channel".
  * This is only applicable after conversion to an LBANN CPUMat.
  */
-class normalize : public transform {
+class normalize : public transform
+{
 public:
   /** Apply channel-wise means and standard deviations. */
-  normalize(std::vector<float> means, std::vector<float> stds) :
-    transform(), m_means(means), m_stds(stds) {
+  normalize(std::vector<float> means, std::vector<float> stds)
+    : transform(), m_means(means), m_stds(stds)
+  {
     if (m_means.size() != m_stds.size()) {
       LBANN_ERROR("Normalize mean and std have different numbers of channels.");
     }
@@ -59,9 +61,12 @@ public:
 
   bool supports_non_inplace() const override { return true; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
-  void apply(utils::type_erased_matrix& data, CPUMat& out,
+  void apply(utils::type_erased_matrix& data,
              std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data,
+             CPUMat& out,
+             std::vector<size_t>& dims) override;
+
 private:
   /** Channel-wise means. */
   std::vector<float> m_means;
@@ -73,7 +78,7 @@ private:
 std::unique_ptr<transform>
 build_normalize_transform_from_pbuf(google::protobuf::Message const&);
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_NORMALIZED_CENTER_CROP_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_NORMALIZED_CENTER_CROP_HPP_INCLUDED

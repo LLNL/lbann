@@ -45,7 +45,9 @@ namespace lbann {
 #include "lbann/macros/instantiate_device.hpp"
 
 template <typename T, typename O, data_layout L, El::Device D>
-void OperatorLayer<T, O, L, D>::write_specific_proto(lbann_data::Layer& proto) const {
+void OperatorLayer<T, O, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
 
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_operator_layer();

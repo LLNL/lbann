@@ -24,14 +24,14 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/perturb_learning_rate.hpp"
+#include "lbann/comm_impl.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/random_number_generators.hpp"
 #include "lbann/utils/serialize.hpp"
-#include "lbann/utils/protobuf.hpp"
 #include "lbann/weights/weights.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
@@ -46,24 +46,26 @@
 namespace lbann {
 namespace callback {
 
-perturb_learning_rate::perturb_learning_rate(DataType learning_rate_factor,
-                           bool perturb_during_training,
-                           El::Int batch_interval,
-                           std::set<std::string> weights_names)
+perturb_learning_rate::perturb_learning_rate(
+  DataType learning_rate_factor,
+  bool perturb_during_training,
+  El::Int batch_interval,
+  std::set<std::string> weights_names)
   : callback_base(batch_interval),
     m_learning_rate_factor(learning_rate_factor),
     m_perturb_during_training(perturb_during_training),
-    m_weights_names(std::move(weights_names)) {}
+    m_weights_names(std::move(weights_names))
+{}
 
 perturb_learning_rate::perturb_learning_rate()
   : perturb_learning_rate(0, false, 0)
 {}
 
 template <class Archive>
-void perturb_learning_rate::serialize(Archive & ar) {
-  ar(::cereal::make_nvp(
-       "BaseCallback",
-       ::cereal::base_class<callback_base>(this)),
+void perturb_learning_rate::serialize(Archive& ar)
+{
+  ar(::cereal::make_nvp("BaseCallback",
+                        ::cereal::base_class<callback_base>(this)),
      CEREAL_NVP(m_learning_rate_factor),
      CEREAL_NVP(m_perturb_during_training),
      CEREAL_NVP(m_weights_names));
@@ -79,50 +81,55 @@ void perturb_learning_rate::write_specific_proto(
   msg->set_weights(protobuf::to_space_sep_string(m_weights_names));
 }
 
-void perturb_learning_rate::setup(model* m) {
-  perturb(*m);
-}
+void perturb_learning_rate::setup(model* m) { perturb(*m); }
 
-void perturb_learning_rate::on_batch_begin(model* m) {
+void perturb_learning_rate::on_batch_begin(model* m)
+{
   const auto& c = m->get_execution_context();
-  if (m_perturb_during_training &&
-      c.get_step() % m_batch_interval == 0 &&
+  if (m_perturb_during_training && c.get_step() % m_batch_interval == 0 &&
       c.get_step() > 0) {
     perturb(*m);
   }
 }
 
-void perturb_learning_rate::perturb(model& m) const {
+void perturb_learning_rate::perturb(model& m) const
+{
   auto* comm = m.get_comm();
   for (auto* w : m.get_weights()) {
     if (w == nullptr) {
-      LBANN_ERROR("callback \"", name(), "\" "
+      LBANN_ERROR("callback \"",
+                  name(),
+                  "\" "
                   "got a weights pointer that is a null pointer");
     }
-    if (m_weights_names.empty()
-        || m_weights_names.count(w->get_name()) > 0) {
+    if (m_weights_names.empty() || m_weights_names.count(w->get_name()) > 0) {
 
       // Check if weights has optimizer
-      auto *opt = dynamic_cast<data_type_optimizer<DataType>*>(w->get_optimizer());
+      auto* opt =
+        dynamic_cast<data_type_optimizer<DataType>*>(w->get_optimizer());
       if (!m_weights_names.empty() && opt == nullptr) {
         auto* opt_ = w->get_optimizer();
-        LBANN_ERROR(
-          "callback \"", name(), "\" "
-          "expected weights \"", w->get_name(), "\" "
-          "to have an optimizer, but found ",
-          (opt_ ? opt_->get_type() : "no optimizer"));
+        LBANN_ERROR("callback \"",
+                    name(),
+                    "\" "
+                    "expected weights \"",
+                    w->get_name(),
+                    "\" "
+                    "to have an optimizer, but found ",
+                    (opt_ ? opt_->get_type() : "no optimizer"));
       }
 
       // Perturb optimizer learning rate
       if (opt) {
         perturb(*comm, *opt);
       }
-
     }
   }
 }
 
-void perturb_learning_rate::perturb(lbann_comm& comm, data_type_optimizer<DataType>& opt) const {
+void perturb_learning_rate::perturb(lbann_comm& comm,
+                                    data_type_optimizer<DataType>& opt) const
+{
 
   // Perturb learning rate on trainer master processes
   DataType new_lr;
@@ -145,22 +152,22 @@ void perturb_learning_rate::perturb(lbann_comm& comm, data_type_optimizer<DataTy
       learning_rate = std::exp(log_val);
     }
     new_lr = learning_rate;
-
   }
 
   // Communicate new lr  from trainer master processes
-  comm.trainer_broadcast(comm.get_trainer_master(),new_lr);
+  comm.trainer_broadcast(comm.get_trainer_master(), new_lr);
 
   // Workers update new lr
   opt.set_learning_rate(new_lr);
-
 }
 
-std::unique_ptr<callback_base>
-build_perturb_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+std::unique_ptr<callback_base> build_perturb_learning_rate_callback_from_pbuf(
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
-    dynamic_cast<const lbann_data::Callback::CallbackPerturbLearningRate&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackPerturbLearningRate&>(
+      proto_msg);
   return std::make_unique<perturb_learning_rate>(
     params.learning_rate_factor(),
     params.perturb_during_training(),

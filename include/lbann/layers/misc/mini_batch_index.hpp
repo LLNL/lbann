@@ -60,7 +60,6 @@ public:
   El::Device get_device_allocation() const override;
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 

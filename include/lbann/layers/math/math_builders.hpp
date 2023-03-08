@@ -26,9 +26,8 @@
 
 #include "lbann/layers/layer.hpp"
 
-namespace lbann
-{
+namespace lbann {
 
 LBANN_DEFINE_LAYER_BUILDER(matmul);
 
-}// namespace lbann
+} // namespace lbann

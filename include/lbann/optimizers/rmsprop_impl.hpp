@@ -34,9 +34,8 @@ namespace lbann {
 
 template <typename TensorDataType>
 template <class Archive>
-void
-rmsprop<TensorDataType>
-::serialize(Archive & ar) {
+void rmsprop<TensorDataType>::serialize(Archive& ar)
+{
   ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
      CEREAL_NVP(m_decay_rate),
      CEREAL_NVP(m_eps),

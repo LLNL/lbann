@@ -23,66 +23,68 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef LBANN_LAYERS_MATH_DISTCONV_MATMUL 
+#ifndef LBANN_LAYERS_MATH_DISTCONV_MATMUL
 #define LBANN_LAYERS_MATH_DISTCONV_MATMUL
-#include "lbann/utils/distconv.hpp"
 #include "distconv/base.hpp"
 #include "distconv/tensor/tensor.hpp"
 #include "distconv/tensor/tensor_mpi.hpp"
+#include "lbann/utils/distconv.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
-namespace distconv{
-  template <typename Backend, typename DataType>
-  class MatMul {
-    using LocalMPI = tensor::LocaleMPI;
+namespace distconv {
+template <typename Backend, typename DataType>
+class MatMul
+{
+  using LocalMPI = tensor::LocaleMPI;
 
-    public:
-      MatMul(Backend &backend):m_be(backend){};
-    
-    template <typename Allocator>
-    int forward(
-      const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input_0,
-      const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input_1,
-      tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output,
-      const bool transpose_0,
-      const bool transpose_1);
+public:
+  MatMul(Backend& backend) : m_be(backend){};
 
-    template <typename Allocator>
-    int backward(
-      const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input_0,
-      const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input_1,
-      const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,
-      tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input_grad_0,
-      tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input_grad_1,
-      const bool transpose_0,
-      const bool transpose_1);
-    
-    protected:
-      Backend &m_be;
-  };
+  template <typename Allocator>
+  int forward(
+    const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator>& input_0,
+    const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator>& input_1,
+    tensor::Tensor<DataType, tensor::LocaleMPI, Allocator>& output,
+    const bool transpose_0,
+    const bool transpose_1);
 
-  template<typename DataType, typename locale, typename Allocator>
-  tensor::Shape
-  get_matmul_local_tensor_shape(const tensor::Tensor<DataType, locale, Allocator> &input_0,
-                                const tensor::Tensor<DataType, locale, Allocator> &input_1,
-                                bool transpose_1,
-                                bool transpose_2){
-    // Use input dims to fill channel and mini-batch dimensions
-    auto output_local_shape = input_0.get_local_shape(); 
+  template <typename Allocator>
+  int backward(
+    const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator>& input_0,
+    const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator>& input_1,
+    const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator>& output_grad,
+    tensor::Tensor<DataType, tensor::LocaleMPI, Allocator>& input_grad_0,
+    tensor::Tensor<DataType, tensor::LocaleMPI, Allocator>& input_grad_1,
+    const bool transpose_0,
+    const bool transpose_1);
 
-    auto inp_0_dims = input_0.get_local_shape();
-    auto inp_1_dims = input_1.get_local_shape();
-    
-    // Update the matrix dimensions according to transpose and input matrix shapes
-    output_local_shape[0] = transpose_2? inp_1_dims[1] : inp_1_dims[0];
-    output_local_shape[1] = transpose_1? inp_0_dims[0] : inp_0_dims[1];
+protected:
+  Backend& m_be;
+};
 
-    return output_local_shape; 
-  }
+template <typename DataType, typename locale, typename Allocator>
+tensor::Shape get_matmul_local_tensor_shape(
+  const tensor::Tensor<DataType, locale, Allocator>& input_0,
+  const tensor::Tensor<DataType, locale, Allocator>& input_1,
+  bool transpose_1,
+  bool transpose_2)
+{
+  // Use input dims to fill channel and mini-batch dimensions
+  auto output_local_shape = input_0.get_local_shape();
+
+  auto inp_0_dims = input_0.get_local_shape();
+  auto inp_1_dims = input_1.get_local_shape();
+
+  // Update the matrix dimensions according to transpose and input matrix shapes
+  output_local_shape[0] = transpose_2 ? inp_1_dims[1] : inp_1_dims[0];
+  output_local_shape[1] = transpose_1 ? inp_0_dims[0] : inp_0_dims[1];
+
+  return output_local_shape;
+}
 
 extern template class MatMul<::distconv::BackendDNNLib, float>;
 extern template class MatMul<::distconv::BackendDNNLib, double>;
-}  // namespace distconv
+} // namespace distconv
 
 #endif // LBANN_HAS_DISTCONV
-#endif  // LBANN_LAYERS_MATH_DISTCONV_MATMUL
+#endif // LBANN_LAYERS_MATH_DISTCONV_MATMUL

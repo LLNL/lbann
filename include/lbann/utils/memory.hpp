@@ -40,6 +40,6 @@ std::unique_ptr<T> to_unique_ptr(T* ptr)
   return std::unique_ptr<T>(ptr);
 }
 
-}// namespace lbann
+} // namespace lbann
 
 #endif /* LBANN_MEMORY_HPP_ */

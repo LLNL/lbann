@@ -38,15 +38,18 @@ class PresetEnvAccessor
 {
 public:
   std::string get(std::string const&) const;
+
 private:
   static void populate_vars();
+
 private:
   static std::unordered_map<std::string, std::string> vars_;
 };
 
 inline std::string PresetEnvAccessor::get(std::string const& var_name) const
 {
-  if (vars_.size() == 0UL) populate_vars();
+  if (vars_.size() == 0UL)
+    populate_vars();
 
   auto it = vars_.find(var_name);
   if (it == vars_.end())
@@ -58,18 +61,18 @@ inline std::string PresetEnvAccessor::get(std::string const& var_name) const
 inline void PresetEnvAccessor::populate_vars()
 {
   vars_ = {
-    {"APPLE", "3.14"}, // float
-    {"ICE_CREAM_SCOOPS", "3"}, // int
-    {"PIZZA", "pepperoni"}, // string
-    {"VALUE_IS_TRUE", "true"}, // true as string
-    {"VALUE_IS_ONE", "1"}, // true as int
+    {"APPLE", "3.14"},           // float
+    {"ICE_CREAM_SCOOPS", "3"},   // int
+    {"PIZZA", "pepperoni"},      // string
+    {"VALUE_IS_TRUE", "true"},   // true as string
+    {"VALUE_IS_ONE", "1"},       // true as int
     {"VALUE_IS_FALSE", "false"}, // false as string
-    {"VALUE_IS_ZERO", "0"}, // false as int
+    {"VALUE_IS_ZERO", "0"},      // false as int
   };
 }
 
-}// namespace stubs
-}// namespace utils
-}// namespace lbann
+} // namespace stubs
+} // namespace utils
+} // namespace lbann
 
 #endif /* LBANN_UTILS_STUBS_PRESET_ENV_ACCESSOR_HPP_INCLUDED */

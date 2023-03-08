@@ -34,9 +34,8 @@ namespace lbann {
 
 template <typename TensorDataType>
 template <class Archive>
-void
-hypergradient_adam<TensorDataType>
-::serialize(Archive & ar) {
+void hypergradient_adam<TensorDataType>::serialize(Archive& ar)
+{
   ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
      CEREAL_NVP(m_hyper_learning_rate),
      CEREAL_NVP(m_beta1),

@@ -34,9 +34,7 @@ namespace lbann {
 
 template <typename TensorDataType>
 template <class ArchiveT>
-void
-sgd<TensorDataType>
-::serialize(ArchiveT & ar)
+void sgd<TensorDataType>::serialize(ArchiveT& ar)
 {
   ar(::cereal::base_class<data_type_optimizer<TensorDataType>>(this),
      CEREAL_NVP(m_momentum),

@@ -27,8 +27,8 @@
 #ifndef LBANN_UTILS_SERIALIZE_HPP_
 #define LBANN_UTILS_SERIALIZE_HPP_
 
-#include <lbann_config.hpp>
 #include "serialization/cereal_utils.hpp"
+#include <lbann_config.hpp>
 
 // Serialization code is only valid in C++ code.
 #if !(defined __CUDACC__)

@@ -30,9 +30,8 @@ namespace lbann {
 
 template <typename TensorDataType>
 template <typename ArchiveT>
-void
-abstract_evaluation_layer<TensorDataType>
-::serialize(ArchiveT& ar) {
+void abstract_evaluation_layer<TensorDataType>::serialize(ArchiveT& ar)
+{
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",
                         ::cereal::base_class<DataTypeLayer>(this)));
@@ -40,9 +39,7 @@ abstract_evaluation_layer<TensorDataType>
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
-void
-evaluation_layer<TensorDataType,Layout,Device>
-::serialize(ArchiveT& ar)
+void evaluation_layer<TensorDataType, Layout, Device>::serialize(ArchiveT& ar)
 {
   using AbstractEvaluationLayer = abstract_evaluation_layer<TensorDataType>;
   ar(::cereal::make_nvp("AbstractEvaluationLayer",
@@ -50,7 +47,6 @@ evaluation_layer<TensorDataType,Layout,Device>
 }
 
 } // namespace lbann
-
 
 #define LBANN_LAYER_NAME evaluation_layer
 #include <lbann/macros/register_layer_with_cereal.hpp>

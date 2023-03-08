@@ -29,8 +29,8 @@
 #include "lbann/utils/protobuf/decl.hpp"
 #include "lbann/utils/protobuf/impl.hpp"
 
-#include <google/protobuf/descriptor.h>
 #include "protobuf_utils_test_messages.pb.h"
+#include <google/protobuf/descriptor.h>
 
 #include <string>
 
@@ -135,17 +135,17 @@ another_field: false
 }
 TEST_CASE("Assign container to repeated protobuf field")
 {
-  std::vector<lbann::protobuf::uint32> const values{0u,1u,2u,3u};
+  std::vector<lbann::protobuf::uint32> const values{0u, 1u, 2u, 3u};
   lbann_testing::HasRepeatedPODFields msg;
   lbann::protobuf::assign_to_repeated(*msg.mutable_my_uint32s(), values);
 
-  REQUIRE((size_t) msg.my_uint32s_size() == values.size());
-  for (size_t ii = 0; ii < values.size() ; ++ii)
+  REQUIRE((size_t)msg.my_uint32s_size() == values.size());
+  for (size_t ii = 0; ii < values.size(); ++ii)
     CHECK(msg.my_uint32s(ii) == values[ii]);
 }
 TEST_CASE("Convert container of streamable objects to space separated string")
 {
-  std::vector<int> values{0,1,2,3};
+  std::vector<int> values{0, 1, 2, 3};
   auto my_str = lbann::protobuf::to_space_sep_string(values);
 
   CHECK(my_str == "0 1 2 3");

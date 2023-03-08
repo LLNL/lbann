@@ -39,9 +39,9 @@ namespace callback {
  *  perturbed by a normal random number. The resulting values are
  *  clamped within a range.
  */
-class perturb_weights : public callback_base {
+class perturb_weights : public callback_base
+{
 public:
-
   /**
    *  @param batch_interval Number of training mini-batch steps
    *                        between perturbations
@@ -52,8 +52,11 @@ public:
    *  @param perturb_probability    Probability of applying
    *                        perturbation to a given weights value
    */
-  perturb_weights(EvalType upper, EvalType lower, EvalType scale, EvalType perturb_probability,
-		  std::string output_name,
+  perturb_weights(EvalType upper,
+                  EvalType lower,
+                  EvalType scale,
+                  EvalType perturb_probability,
+                  std::string output_name,
                   El::Int batch_interval = 1);
 
   perturb_weights* copy() const override { return new perturb_weights(*this); }
@@ -66,7 +69,8 @@ public:
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
@@ -90,13 +94,12 @@ private:
   EvalType m_perturb_probability;
 
   void perturb(model& m);
-
 };
 
 // Builder function
 std::unique_ptr<callback_base>
-build_perturb_weights_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_perturb_weights_callback_from_pbuf(const google::protobuf::Message&,
+                                         std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann

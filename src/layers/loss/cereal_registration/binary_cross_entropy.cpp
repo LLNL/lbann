@@ -30,9 +30,9 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
-void
-binary_cross_entropy_layer<TensorDataType,Layout,Device>
-::serialize(ArchiveT& ar) {
+void binary_cross_entropy_layer<TensorDataType, Layout, Device>::serialize(
+  ArchiveT& ar)
+{
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",
                         ::cereal::base_class<DataTypeLayer>(this)));

@@ -23,17 +23,15 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/utils/serialize.hpp"
 #include <lbann/layers/transform/slice.hpp>
-#include "lbann/execution_algorithms/execution_context.hpp"
 
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
-void
-slice_layer<TensorDataType,Layout,Device>
-::serialize(ArchiveT& ar)
+void slice_layer<TensorDataType, Layout, Device>::serialize(ArchiveT& ar)
 {
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",

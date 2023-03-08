@@ -41,16 +41,17 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class bernoulli_layer : public data_type_layer<TensorDataType> {
+class bernoulli_layer : public data_type_layer<TensorDataType>
+{
 public:
-
   using ProbabilityType = double;
 
 public:
-  bernoulli_layer(lbann_comm *comm,
+  bernoulli_layer(lbann_comm* comm,
                   std::vector<int> dims,
                   ProbabilityType prob = 0.5)
-    : data_type_layer<TensorDataType>(comm), m_prob(prob) {
+    : data_type_layer<TensorDataType>(comm), m_prob(prob)
+  {
     this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
   }
@@ -68,36 +69,33 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  description get_description() const override {
+  description get_description() const override
+  {
     auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Probability", m_prob);
     return desc;
   }
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  bernoulli_layer()
-    : bernoulli_layer(nullptr, { 1 }, 0.5 )
-  {}
+  bernoulli_layer() : bernoulli_layer(nullptr, {1}, 0.5) {}
 
   void fp_compute() override;
 
 private:
-
   /** Probability of outputting 1. */
   ProbabilityType m_prob;
-
 };
-
 
 #ifndef LBANN_BERNOULLI_LAYER_INSTANTIATE
 
-#define PROTO_DEVICE(T, Device) \
-  extern template class bernoulli_layer<T, data_layout::DATA_PARALLEL, Device>;  \
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class bernoulli_layer<T,                                     \
+                                        data_layout::DATA_PARALLEL,            \
+                                        Device>;                               \
   extern template class bernoulli_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"

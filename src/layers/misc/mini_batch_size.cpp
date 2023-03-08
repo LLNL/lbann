@@ -63,7 +63,9 @@ El::Device mini_batch_size_layer<T, L, D>::get_device_allocation() const
 }
 
 template <typename T, data_layout L, El::Device D>
-void mini_batch_size_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void mini_batch_size_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   proto.mutable_mini_batch_size();
 }

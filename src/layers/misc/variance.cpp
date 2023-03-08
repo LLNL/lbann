@@ -40,11 +40,13 @@ void fp_cpu(const El::AbstractDistMatrix<TensorDataType>& input,
             El::AbstractDistMatrix<TensorDataType>& output,
             El::AbstractDistMatrix<TensorDataType>& means,
             El::AbstractDistMatrix<TensorDataType>& workspace,
-            bool biased) {
+            bool biased)
+{
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
-  const auto& local_input = static_cast<const CPUMatType&>(input.LockedMatrix());
+  const auto& local_input =
+    static_cast<const CPUMatType&>(input.LockedMatrix());
   auto& local_means = static_cast<CPUMatType&>(means.Matrix());
   auto& local_workspace = static_cast<CPUMatType&>(workspace.Matrix());
 
@@ -84,7 +86,6 @@ void fp_cpu(const El::AbstractDistMatrix<TensorDataType>& input,
   }
   El::AllReduce(workspace, workspace.RedundantComm());
   El::Copy(workspace, output);
-
 }
 
 /** CPU backprop implementation.
@@ -96,13 +97,17 @@ void bp_cpu(const El::AbstractDistMatrix<TensorDataType>& input,
             El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
             const El::AbstractDistMatrix<TensorDataType>& means,
             El::AbstractDistMatrix<TensorDataType>& workspace,
-            bool biased) {
+            bool biased)
+{
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
-  const auto& local_input = static_cast<const CPUMatType&>(input.LockedMatrix());
-  auto& local_gradient_wrt_input = static_cast<CPUMatType&>(gradient_wrt_input.Matrix());
-  const auto& local_means = static_cast<const CPUMatType&>(means.LockedMatrix());
+  const auto& local_input =
+    static_cast<const CPUMatType&>(input.LockedMatrix());
+  auto& local_gradient_wrt_input =
+    static_cast<CPUMatType&>(gradient_wrt_input.Matrix());
+  const auto& local_means =
+    static_cast<const CPUMatType&>(means.LockedMatrix());
   auto& local_workspace = static_cast<CPUMatType&>(workspace.Matrix());
 
   // Dimensions
@@ -114,8 +119,9 @@ void bp_cpu(const El::AbstractDistMatrix<TensorDataType>& input,
   El::Copy(gradient_wrt_output, workspace);
 
   // Compute gradients w.r.t. input
-  const TensorDataType scale = TensorDataType(2)
-    / (biased? El::To<TensorDataType>(height) : El::To<TensorDataType>(height - 1));
+  const TensorDataType scale =
+    TensorDataType(2) / (biased ? El::To<TensorDataType>(height)
+                                : El::To<TensorDataType>(height - 1));
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
@@ -126,13 +132,13 @@ void bp_cpu(const El::AbstractDistMatrix<TensorDataType>& input,
       dx = dy * scale * (x - mean);
     }
   }
-
 }
 
 } // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void variance_layer<TensorDataType, Layout, Device>::fp_compute() {
+void variance_layer<TensorDataType, Layout, Device>::fp_compute()
+{
   fp_cpu(this->get_prev_activations(),
          this->get_activations(),
          *this->m_means,
@@ -141,7 +147,8 @@ void variance_layer<TensorDataType, Layout, Device>::fp_compute() {
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void variance_layer<TensorDataType, Layout, Device>::bp_compute() {
+void variance_layer<TensorDataType, Layout, Device>::bp_compute()
+{
   bp_cpu(this->get_prev_activations(),
          this->get_prev_error_signals(),
          this->get_error_signals(),
@@ -150,8 +157,10 @@ void variance_layer<TensorDataType, Layout, Device>::bp_compute() {
          this->m_biased);
 }
 
-#define PROTO(T)                     \
-  template class variance_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+#define PROTO(T)                                                               \
+  template class variance_layer<T,                                             \
+                                data_layout::DATA_PARALLEL,                    \
+                                El::Device::CPU>;                              \
   template class variance_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF

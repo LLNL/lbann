@@ -36,7 +36,9 @@
 namespace lbann {
 namespace transform {
 
-void resized_center_crop::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+void resized_center_crop::apply(utils::type_erased_matrix& data,
+                                std::vector<size_t>& dims)
+{
   cv::Mat src = utils::get_opencv_mat(data, dims);
   std::vector<size_t> new_dims = {dims[0], m_crop_h, m_crop_w};
   auto dst_real = El::Matrix<uint8_t>(get_linear_size(new_dims), 1);
@@ -45,10 +47,10 @@ void resized_center_crop::apply(utils::type_erased_matrix& data, std::vector<siz
   // then resizes it.
   // Thus, we resize a smaller image, which is faster.
   // Method due to @JaeseungYeom.
-  const float zoom = std::min(float(src.rows) / float(m_h),
-                              float(src.cols) / float(m_w));
-  const size_t zoom_h = m_crop_h*zoom;
-  const size_t zoom_w = m_crop_w*zoom;
+  const float zoom =
+    std::min(float(src.rows) / float(m_h), float(src.cols) / float(m_w));
+  const size_t zoom_h = m_crop_h * zoom;
+  const size_t zoom_w = m_crop_w * zoom;
   const size_t x = std::round(float(src.cols - zoom_w) / 2.0f);
   const size_t y = std::round(float(src.rows - zoom_h) / 2.0f);
   // Sanity check.
@@ -68,13 +70,16 @@ void resized_center_crop::apply(utils::type_erased_matrix& data, std::vector<siz
   dims = new_dims;
 }
 
-std::unique_ptr<transform>
-build_resized_center_crop_transform_from_pbuf(google::protobuf::Message const& msg) {
-  auto const& params = dynamic_cast<lbann_data::Transform::ResizedCenterCrop const&>(msg);
-  return std::make_unique<resized_center_crop>(
-    params.height(), params.width(),
-    params.crop_height(), params.crop_width());
+std::unique_ptr<transform> build_resized_center_crop_transform_from_pbuf(
+  google::protobuf::Message const& msg)
+{
+  auto const& params =
+    dynamic_cast<lbann_data::Transform::ResizedCenterCrop const&>(msg);
+  return std::make_unique<resized_center_crop>(params.height(),
+                                               params.width(),
+                                               params.crop_height(),
+                                               params.crop_width());
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

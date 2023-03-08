@@ -26,9 +26,9 @@
 
 #include "lbann/callbacks/alternate_updates.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
-#include "lbann/proto/proto_common.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf.hpp"
 
 #include "callback_helpers.hpp"
@@ -41,26 +41,29 @@
 namespace lbann {
 namespace callback {
 
-void alternate_updates::setup(model *m) {
+void alternate_updates::setup(model* m)
+{
   auto const layers = m->get_layers();
   unfreeze_layers = select_things_by_name(layers, m_layer_names_1);
   freeze_layers = select_things_by_name(layers, m_layer_names_2);
 }
 
-void alternate_updates::on_batch_begin(model *m) {
+void alternate_updates::on_batch_begin(model* m)
+{
   const auto& c = m->get_execution_context();
   const auto& step = c.get_step();
 
-  if(step % m_iters_tot == 0ul || step % m_iters_tot == (unsigned long) m_iters_1) {
-    for(size_t i = 0; i < freeze_layers.size(); i++){
-      if(!freeze_layers[i])
+  if (step % m_iters_tot == 0ul ||
+      step % m_iters_tot == (unsigned long)m_iters_1) {
+    for (size_t i = 0; i < freeze_layers.size(); i++) {
+      if (!freeze_layers[i])
         LBANN_ERROR("Layer pointer is null.");
 
       freeze_layers[i]->freeze();
     }
 
-    for(size_t i = 0; i < unfreeze_layers.size(); i++){
-      if(!unfreeze_layers[i])
+    for (size_t i = 0; i < unfreeze_layers.size(); i++) {
+      if (!unfreeze_layers[i])
         LBANN_ERROR("Layer pointer is null.");
 
       unfreeze_layers[i]->unfreeze();
@@ -70,7 +73,8 @@ void alternate_updates::on_batch_begin(model *m) {
   }
 }
 
-void alternate_updates::write_specific_proto(lbann_data::Callback& proto) const{
+void alternate_updates::write_specific_proto(lbann_data::Callback& proto) const
+{
   auto* msg = proto.mutable_alternate_updates();
   msg->set_layers_1(protobuf::to_space_sep_string(m_layer_names_1));
   msg->set_layers_2(protobuf::to_space_sep_string(m_layer_names_2));
@@ -78,11 +82,13 @@ void alternate_updates::write_specific_proto(lbann_data::Callback& proto) const{
   msg->set_iters_2(m_iters_tot - m_iters_1);
 }
 
-std::unique_ptr<callback_base>
-build_alternate_updates_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+std::unique_ptr<callback_base> build_alternate_updates_callback_from_pbuf(
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
-    dynamic_cast<const lbann_data::Callback::CallbackAlternateUpdates&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackAlternateUpdates&>(
+      proto_msg);
   return std::make_unique<alternate_updates>(
     parse_list<std::string>(params.layers_1()),
     parse_list<std::string>(params.layers_2()),

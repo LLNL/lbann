@@ -30,21 +30,27 @@ namespace lbann {
 #include <lbann/utils/memory.hpp>
 
 template <typename TensorDataType, typename EvalDataType>
-struct ViewIfPossibleOrCopy {
-  static std::unique_ptr<El::AbstractMatrix<EvalDataType>> get(El::AbstractMatrix<TensorDataType> const& x)
+struct ViewIfPossibleOrCopy
+{
+  static std::unique_ptr<El::AbstractMatrix<EvalDataType>>
+  get(El::AbstractMatrix<TensorDataType> const& x)
   {
     switch (x.GetDevice()) {
     case El::Device::CPU:
-      return get(static_cast<El::Matrix<TensorDataType, El::Device::CPU> const&>(x));
+      return get(
+        static_cast<El::Matrix<TensorDataType, El::Device::CPU> const&>(x));
 #ifdef LBANN_HAS_GPU
     case El::Device::GPU:
-      return get(static_cast<El::Matrix<TensorDataType, El::Device::GPU> const&>(x));
+      return get(
+        static_cast<El::Matrix<TensorDataType, El::Device::GPU> const&>(x));
 #endif
-    default: return nullptr;
+    default:
+      return nullptr;
     }
   }
   template <El::Device D>
-  static std::unique_ptr<El::Matrix<EvalDataType, D>> get(El::Matrix<TensorDataType, D> const& x)
+  static std::unique_ptr<El::Matrix<EvalDataType, D>>
+  get(El::Matrix<TensorDataType, D> const& x)
   {
     auto ret = std::make_unique<El::Matrix<EvalDataType, D>>();
     El::Copy(x, *ret);
@@ -54,8 +60,10 @@ struct ViewIfPossibleOrCopy {
 
 // Specialize for same data type -- make a view instead.
 template <typename DataType>
-struct ViewIfPossibleOrCopy<DataType,DataType> {
-  static std::unique_ptr<El::AbstractMatrix<DataType>> get(El::AbstractMatrix<DataType> const& x)
+struct ViewIfPossibleOrCopy<DataType, DataType>
+{
+  static std::unique_ptr<El::AbstractMatrix<DataType>>
+  get(El::AbstractMatrix<DataType> const& x)
   {
     switch (x.GetDevice()) {
     case El::Device::CPU:
@@ -64,11 +72,13 @@ struct ViewIfPossibleOrCopy<DataType,DataType> {
     case El::Device::GPU:
       return get(static_cast<El::Matrix<DataType, El::Device::GPU> const&>(x));
 #endif
-    default: return nullptr;
+    default:
+      return nullptr;
     }
   }
   template <El::Device D>
-  static std::unique_ptr<El::Matrix<DataType, D>> get(El::Matrix<DataType, D> const& x)
+  static std::unique_ptr<El::Matrix<DataType, D>>
+  get(El::Matrix<DataType, D> const& x)
   {
     auto ret = std::make_unique<El::Matrix<DataType, D>>();
     El::LockedView(*ret, x);
@@ -76,4 +86,4 @@ struct ViewIfPossibleOrCopy<DataType,DataType> {
   }
 };
 
-}
+} // namespace lbann

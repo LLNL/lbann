@@ -39,8 +39,8 @@
 
 #include <memory>
 #include <string>
-#include <unordered_set>
 #include <typeindex>
+#include <unordered_set>
 
 namespace lbann_data {
 class Optimizer;
@@ -49,7 +49,8 @@ class Optimizer;
 namespace lbann {
 
 /** @brief Status of values in objective function gradient. */
-enum class optimizer_gradient_status {
+enum class optimizer_gradient_status
+{
   /** @brief Values can be accessed immediately. */
   ready,
   /** @brief Values have been cleared.
@@ -81,9 +82,9 @@ class weights;
  *  optimization step requires the objective function gradient
  *  w.r.t. the weights.
  */
-class optimizer : public Cloneable<HasAbstractFunction<optimizer>> {
+class optimizer : public Cloneable<HasAbstractFunction<optimizer>>
+{
 public:
-
   /** @name Constructors and Destructor */
   ///@{
 
@@ -173,10 +174,10 @@ public:
    *                          be allreduced.
    */
   template <typename TensorDataType>
-  El::AbstractDistMatrix<TensorDataType>& get_gradient_buffer(
-    TensorDataType& buf_scale,
-    TensorDataType& in_scale,
-    bool allreduce_needed = false);
+  El::AbstractDistMatrix<TensorDataType>&
+  get_gradient_buffer(TensorDataType& buf_scale,
+                      TensorDataType& in_scale,
+                      bool allreduce_needed = false);
 
   ///@}
   /** @brief Communicator access */
@@ -203,7 +204,8 @@ public:
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
@@ -211,7 +213,8 @@ public:
   virtual void write_proto(lbann_data::Optimizer& proto) const = 0;
 
   /** @brief Manage gradient information. */
-  class GradientHelper {
+  class GradientHelper
+  {
   public:
     virtual ~GradientHelper() = default;
     optimizer_gradient_status get_status() const noexcept { return status_; }
@@ -221,14 +224,17 @@ public:
     virtual void start_allreduce(lbann_comm&) = 0;
     virtual void complete_allreduce(lbann_comm&) = 0;
     virtual void clear() = 0;
+
   private:
     optimizer_gradient_status status_ = optimizer_gradient_status::cleared;
-  };// class GradientHelper
+  }; // class GradientHelper
 
   template <typename TensorDataType>
-  class GradientHelperImpl : public GradientHelper {
+  class GradientHelperImpl : public GradientHelper
+  {
   public:
     using AbsDistMatType = El::AbstractDistMatrix<TensorDataType>;
+
   public:
     GradientHelperImpl(El::Int height, El::Int width, El::DistData dist_data)
       : gradient_{AbsDistMatType::Instantiate(dist_data)}
@@ -236,29 +242,34 @@ public:
       El::Zeros(*gradient_, height, width);
     }
     AbsDistMatType& gradient() noexcept override { return *gradient_; }
-    AbsDistMatType const& gradient() const noexcept override {
+    AbsDistMatType const& gradient() const noexcept override
+    {
       return *gradient_;
     }
     void start_allreduce(lbann_comm& comm) override;
     void complete_allreduce(lbann_comm& comm) override;
     void clear() override;
+
   private:
     std::unique_ptr<AbsDistMatType> gradient_;
     Al::request allreduce_req_;
-  };// class GradientHelperImpl
+  }; // class GradientHelperImpl
 
   /** @brief Copy construct/copy assign */
   optimizer(const optimizer& other);
   optimizer& operator=(const optimizer& other);
 
   /** @brief Return the current gradient status */
-  optimizer_gradient_status get_gradient_status() const {
+  optimizer_gradient_status get_gradient_status() const
+  {
     return m_gradient_status;
   }
-  void set_gradient_status(const optimizer_gradient_status status) {
+  void set_gradient_status(const optimizer_gradient_status status)
+  {
     m_gradient_status = status;
   }
-  std::unordered_set<const void*>& get_gradient_sources() {
+  std::unordered_set<const void*>& get_gradient_sources()
+  {
     return m_gradient_sources;
   }
   void set_comm(lbann_comm& comm) { m_comm = &comm; }
@@ -267,7 +278,8 @@ public:
 
   void inc_step_time(EvalType time) { m_step_time += time; }
 
-  virtual std::tuple<El::Int,El::Int,El::DistData> get_matrix_info() const = 0;
+  virtual std::tuple<El::Int, El::Int, El::DistData>
+  get_matrix_info() const = 0;
 
   template <typename TensorDataType>
   void accumulate_all_gradient_contributions(
@@ -286,8 +298,8 @@ public:
    *  if an allreduce is needed but hasn't been started.
    */
   void finish_gradient_allreduce();
-private:
 
+private:
   /** @brief LBANN communicator. */
   lbann_comm* m_comm;
 
@@ -304,7 +316,8 @@ private:
   std::unordered_set<const void*> m_gradient_sources;
 
   /** @brief Status of values in objective function gradient. */
-  optimizer_gradient_status m_gradient_status = optimizer_gradient_status::cleared;
+  optimizer_gradient_status m_gradient_status =
+    optimizer_gradient_status::cleared;
 
   /** @brief Time spent in optimization step. */
   EvalType m_step_time = 0;
@@ -315,7 +328,6 @@ private:
   using gradient_manager_type = GradientHelper;
   using gradient_manager_ptr = std::unique_ptr<gradient_manager_type>;
   std::unordered_map<std::type_index, gradient_manager_ptr> gradients_;
-
 };
 
 } // namespace lbann

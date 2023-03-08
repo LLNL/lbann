@@ -26,61 +26,71 @@
 
 #define LBANN_REDUCTION_LAYER_INSTANTIATE
 #include "lbann/layers/transform/reduction.hpp"
-#include "lbann/proto/proto_common.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/proto/proto_common.hpp"
 
 #include "lbann/proto/layers.pb.h"
 
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-reduction_layer<TensorDataType, Layout, Device>::reduction_layer(reduction_mode mode)
-    : data_type_layer<TensorDataType>(nullptr),
-      m_mode(mode) {
-    if (mode == reduction_mode::INVALID) {
-      LBANN_ERROR("invalid reduction mode");
-    }
+reduction_layer<TensorDataType, Layout, Device>::reduction_layer(
+  reduction_mode mode)
+  : data_type_layer<TensorDataType>(nullptr), m_mode(mode)
+{
+  if (mode == reduction_mode::INVALID) {
+    LBANN_ERROR("invalid reduction mode");
   }
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_reduction_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const& proto_layer)
+std::unique_ptr<Layer>
+build_reduction_layer_from_pbuf(lbann_comm* comm,
+                                lbann_data::Layer const& proto_layer)
 {
-  using LayerType = reduction_layer<TensorDataType,Layout,Device>;
+  using LayerType = reduction_layer<TensorDataType, Layout, Device>;
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, reduction);
   const auto& params = proto_layer.reduction();
   const std::string mode_str = params.mode();
   reduction_mode mode = reduction_mode::INVALID;
-  if (mode_str == "sum" || mode_str.empty()) { mode = reduction_mode::SUM; }
-  if (mode_str == "mean" || mode_str == "average") { mode = reduction_mode::AVERAGE; }
+  if (mode_str == "sum" || mode_str.empty()) {
+    mode = reduction_mode::SUM;
+  }
+  if (mode_str == "mean" || mode_str == "average") {
+    mode = reduction_mode::AVERAGE;
+  }
   return std::make_unique<LayerType>(mode);
 }
 
 template <typename T, data_layout L, El::Device D>
-void reduction_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void reduction_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_reduction();
-  switch (m_mode)
-  {
-    case reduction_mode::SUM:
-      msg->set_mode("sum");
-      break;
-    case reduction_mode::AVERAGE:
-      msg->set_mode("mean");
-      break;
-    default:
-      msg->set_mode("invalid");
+  switch (m_mode) {
+  case reduction_mode::SUM:
+    msg->set_mode("sum");
+    break;
+  case reduction_mode::AVERAGE:
+    msg->set_mode("mean");
+    break;
+  default:
+    msg->set_mode("invalid");
   }
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void reduction_layer<TensorDataType, Layout, Device>::setup_dims(DataReaderMetaData& dr_metadata) {
+void reduction_layer<TensorDataType, Layout, Device>::setup_dims(
+  DataReaderMetaData& dr_metadata)
+{
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
   this->set_output_dims({1});
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void reduction_layer<TensorDataType, Layout, Device>::fp_compute() {
+void reduction_layer<TensorDataType, Layout, Device>::fp_compute()
+{
 
   // Constants
   const auto one = El::TypeTraits<TensorDataType>::One();
@@ -107,22 +117,20 @@ void reduction_layer<TensorDataType, Layout, Device>::fp_compute() {
   // Compute local reductions
   switch (m_mode) {
   case reduction_mode::SUM:
-    El::Gemv(
-      El::TRANSPOSE,
-      one,
-      input.LockedMatrix(),
-      ones,
-      zero,
-      local_reduction);
+    El::Gemv(El::TRANSPOSE,
+             one,
+             input.LockedMatrix(),
+             ones,
+             zero,
+             local_reduction);
     break;
   case reduction_mode::AVERAGE:
-    El::Gemv(
-      El::TRANSPOSE,
-      one / El::To<TensorDataType>(input.Height()),
-      input.LockedMatrix(),
-      ones,
-      zero,
-      local_reduction);
+    El::Gemv(El::TRANSPOSE,
+             one / El::To<TensorDataType>(input.Height()),
+             input.LockedMatrix(),
+             ones,
+             zero,
+             local_reduction);
     break;
   default:
     LBANN_ERROR("invalid reduction mode");
@@ -131,11 +139,11 @@ void reduction_layer<TensorDataType, Layout, Device>::fp_compute() {
   // Accumulate local reductions in output matrix
   /// @todo Replace with Reduce when supported in Hydrogen.
   El::AllReduce(local_reduction, col_comm, El::mpi::SUM);
-
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void reduction_layer<TensorDataType, Layout, Device>::bp_compute() {
+void reduction_layer<TensorDataType, Layout, Device>::bp_compute()
+{
 
   // Constants
   const auto one = El::TypeTraits<TensorDataType>::One();
@@ -168,37 +176,32 @@ void reduction_layer<TensorDataType, Layout, Device>::bp_compute() {
   // Populate error signals
   switch (m_mode) {
   case reduction_mode::SUM:
-    El::Gemm(
-      El::NORMAL,
-      El::NORMAL,
-      one,
-      ones,
-      local_output_grad,
-      zero,
-      input_grad.Matrix());
+    El::Gemm(El::NORMAL,
+             El::NORMAL,
+             one,
+             ones,
+             local_output_grad,
+             zero,
+             input_grad.Matrix());
     break;
   case reduction_mode::AVERAGE:
-    El::Gemm(
-      El::NORMAL,
-      El::NORMAL,
-      one / El::To<TensorDataType>(input_grad.Height()),
-      ones,
-      local_output_grad,
-      zero,
-      input_grad.Matrix());
+    El::Gemm(El::NORMAL,
+             El::NORMAL,
+             one / El::To<TensorDataType>(input_grad.Height()),
+             ones,
+             local_output_grad,
+             zero,
+             input_grad.Matrix());
     break;
   default:
     LBANN_ERROR("invalid reduction mode");
   }
-
 }
 
-#define PROTO_DEVICE(T, Device)                 \
-  template class reduction_layer<               \
-    T, data_layout::DATA_PARALLEL, Device>;     \
-  template class reduction_layer<               \
-    T, data_layout::MODEL_PARALLEL, Device>;    \
+#define PROTO_DEVICE(T, Device)                                                \
+  template class reduction_layer<T, data_layout::DATA_PARALLEL, Device>;       \
+  template class reduction_layer<T, data_layout::MODEL_PARALLEL, Device>;      \
   LBANN_LAYER_BUILDER_ETI(reduction, T, Device)
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

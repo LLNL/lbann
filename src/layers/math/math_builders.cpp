@@ -27,34 +27,32 @@
 #include <lbann/layers/math/math_builders.hpp>
 #include <lbann/layers/math/matmul.hpp>
 
-#include <lbann/proto/proto_common.hpp>
 #include "lbann/proto/layers.pb.h"
+#include <lbann/proto/proto_common.hpp>
 
-namespace lbann
-{
+namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_matmul_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const& proto_layer)
+std::unique_ptr<Layer>
+build_matmul_layer_from_pbuf(lbann_comm* comm,
+                             lbann_data::Layer const& proto_layer)
 {
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, matmul);
   if constexpr (Layout == data_layout::DATA_PARALLEL) {
     using LayerType = matmul_layer<TensorDataType, Layout, Device>;
     const auto& params = proto_layer.matmul();
-    return std::make_unique<LayerType>(
-      comm,
-      params.transpose_a(),
-      params.transpose_b());
+    return std::make_unique<LayerType>(comm,
+                                       params.transpose_a(),
+                                       params.transpose_b());
   }
   else {
-    (void) comm;
-    (void) proto_layer;
+    (void)comm;
+    (void)proto_layer;
     LBANN_ERROR("matrix multiply layer is only supported with "
                 "a data-parallel layout");
   }
 }
 
-#define PROTO_DEVICE(T,D)                               \
-  LBANN_LAYER_BUILDER_ETI(matmul, T, D)
+#define PROTO_DEVICE(T, D) LBANN_LAYER_BUILDER_ETI(matmul, T, D)
 #include <lbann/macros/instantiate_device.hpp>
 } // namespace lbann

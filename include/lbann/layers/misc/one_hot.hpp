@@ -42,11 +42,11 @@ namespace lbann {
  *  are ignored.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class one_hot_layer : public data_type_layer<TensorDataType> {
+class one_hot_layer : public data_type_layer<TensorDataType>
+{
 public:
-
-  one_hot_layer(size_t size)
-    : data_type_layer<TensorDataType>(nullptr) {
+  one_hot_layer(size_t size) : data_type_layer<TensorDataType>(nullptr)
+  {
     this->set_output_dims({static_cast<int>(size)});
   }
   one_hot_layer* copy() const override { return new one_hot_layer(*this); }
@@ -64,34 +64,30 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  one_hot_layer()
-    : one_hot_layer(0)
-  {}
+  one_hot_layer() : one_hot_layer(0) {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 
   void fp_compute() override;
-
 };
 
 template <typename T, data_layout L, El::Device D>
-void one_hot_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void one_hot_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_one_hot();
   msg->set_size(this->get_output_dims()[0]);
 }
 
 #ifndef LBANN_ONE_HOT_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device)                 \
-  extern template class one_hot_layer<          \
-    T, data_layout::DATA_PARALLEL, Device>;     \
-  extern template class one_hot_layer<          \
-    T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class one_hot_layer<T, data_layout::DATA_PARALLEL, Device>;  \
+  extern template class one_hot_layer<T, data_layout::MODEL_PARALLEL, Device>
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
 #endif // LBANN_ONE_HOT_LAYER_INSTANTIATE

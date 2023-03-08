@@ -39,28 +39,25 @@ namespace callback {
  *  Weights/parameters replacement on k-batch end
  *  Currently support replacing weights/parameters using layer names
  *  Can easily be extended to support replacement by weights name
- *  Given two layers specified in prototext, weights are copied from source layer to destination layer.
+ *  Given two layers specified in prototext, weights are copied from source
+ * layer to destination layer.
  */
-class replace_weights : public callback_base {
- public:
-  replace_weights(
-    std::vector<std::string> src,
-    std::vector<std::string> dst,
-    int batch_interval=1);
+class replace_weights : public callback_base
+{
+public:
+  replace_weights(std::vector<std::string> src,
+                  std::vector<std::string> dst,
+                  int batch_interval = 1);
 
-  replace_weights(
-    const replace_weights&) = default;
-  replace_weights& operator=(
-    const replace_weights&) = default;
-  replace_weights* copy() const override {
-    return new replace_weights(*this);
-  }
-  void setup(model *m) override;
-  void on_batch_end(model *m) override;
+  replace_weights(const replace_weights&) = default;
+  replace_weights& operator=(const replace_weights&) = default;
+  replace_weights* copy() const override { return new replace_weights(*this); }
+  void setup(model* m) override;
+  void on_batch_end(model* m) override;
 
   std::string name() const override { return "replace weights"; }
 
- private:
+private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
@@ -70,10 +67,10 @@ class replace_weights : public callback_base {
 
 // Builder function
 std::unique_ptr<callback_base>
-build_replace_weights_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_replace_weights_callback_from_pbuf(const google::protobuf::Message&,
+                                         std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_REPLACE_WEIGHTS_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_REPLACE_WEIGHTS_HPP_INCLUDED

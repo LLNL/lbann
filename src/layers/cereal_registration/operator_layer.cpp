@@ -26,8 +26,8 @@
 #include "lbann/layers/operator_layer_impl.hpp"
 #include "lbann/weights/weights.hpp"
 
-#include "lbann/utils/serialize.hpp"
 #include "lbann/macros/common_cereal_registration.hpp"
+#include "lbann/utils/serialize.hpp"
 #include <cereal/types/polymorphic.hpp>
 
 // Note (trb 02/07/2022): This does not use the
@@ -43,20 +43,20 @@
 #define LBANN_LAYER_NAME OperatorLayer
 #define LBANN_COMMA ,
 
-#define LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(NAME, TYPE, LAYOUT, DEVICE) \
-  LBANN_ADD_ALL_SERIALIZE_ETI(                                          \
-    ::lbann::NAME<TYPE, TYPE, ::lbann::data_layout::LAYOUT, DEVICE>);   \
-  CEREAL_REGISTER_TYPE_WITH_NAME(                                       \
-    ::lbann::NAME<TYPE LBANN_COMMA TYPE LBANN_COMMA ::lbann::data_layout::LAYOUT LBANN_COMMA DEVICE>, \
+#define LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(NAME, TYPE, LAYOUT, DEVICE)      \
+  LBANN_ADD_ALL_SERIALIZE_ETI(                                                 \
+    ::lbann::NAME<TYPE, TYPE, ::lbann::data_layout::LAYOUT, DEVICE>);          \
+  CEREAL_REGISTER_TYPE_WITH_NAME(                                              \
+    ::lbann::NAME<                                                             \
+      TYPE LBANN_COMMA TYPE                                                    \
+        LBANN_COMMA ::lbann::data_layout::LAYOUT LBANN_COMMA DEVICE>,          \
     #NAME "(" #TYPE "," #LAYOUT "," #DEVICE ")")
 
-#define LBANN_REGISTER_LAYER_WITH_CEREAL(NAME, TYPE, DEVICE)            \
-  LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(                                \
-    NAME, TYPE, DATA_PARALLEL, DEVICE);                                 \
-  LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(                                \
-    NAME, TYPE, MODEL_PARALLEL, DEVICE)
+#define LBANN_REGISTER_LAYER_WITH_CEREAL(NAME, TYPE, DEVICE)                   \
+  LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(NAME, TYPE, DATA_PARALLEL, DEVICE);    \
+  LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(NAME, TYPE, MODEL_PARALLEL, DEVICE)
 
-#define PROTO_DEVICE(T, D)                              \
+#define PROTO_DEVICE(T, D)                                                     \
   LBANN_REGISTER_LAYER_WITH_CEREAL(LBANN_LAYER_NAME, T, D)
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO

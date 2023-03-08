@@ -41,10 +41,8 @@
 #include <unordered_set>
 #include <utility>
 
-namespace lbann
-{
-namespace utils
-{
+namespace lbann {
+namespace utils {
 
 /** @class parse_error
  *  @brief std::exception subclass that is thrown if the parser
@@ -56,9 +54,9 @@ struct parse_error : std::runtime_error
    *         return by what()
    */
   template <typename T>
-  parse_error(T&& what_arg)
-    : std::runtime_error{std::forward<T>(what_arg)} {}
-};// parse_error
+  parse_error(T&& what_arg) : std::runtime_error{std::forward<T>(what_arg)}
+  {}
+}; // parse_error
 
 /** @class strict_parsing
  *
@@ -70,7 +68,7 @@ struct strict_parsing
   void handle_error(clara::detail::InternalParseResult result,
                     clara::Parser& parser,
                     std::vector<char const*>& argv);
-};// struct strict_parsing
+}; // struct strict_parsing
 
 /** @class allow_extra_parameters
  *
@@ -83,7 +81,7 @@ struct allow_extra_parameters
   void handle_error(clara::detail::InternalParseResult result,
                     clara::Parser& parser,
                     std::vector<char const*>& argv);
-};// struct allow_extra_parameters
+}; // struct allow_extra_parameters
 
 /** @class argument_parser
  *  @brief Basic argument parsing with automatic help messages.
@@ -161,7 +159,6 @@ template <typename ErrorHandler>
 class argument_parser : ErrorHandler
 {
 public:
-
   /** @name Public types */
   ///@{
 
@@ -179,15 +176,17 @@ public:
   public:
     readonly_reference(T& val) noexcept : ref_(val) {}
     T const& get() const noexcept { return ref_; }
-    operator T const& () const noexcept { return this->get(); }
+    operator T const&() const noexcept { return this->get(); }
 
     template <typename S>
     bool operator==(S const& y) const noexcept
-    { return this->get() == y; }
+    {
+      return this->get() == y;
+    }
 
   private:
     T& ref_;
-  };// class readonly_reference<T>
+  }; // class readonly_reference<T>
 
   /** @class parse_error
    *  @brief std::exception subclass that is thrown if the parser
@@ -199,8 +198,8 @@ public:
      *         return by what()
      */
     template <typename T>
-    parse_error(T&& what_arg)
-      : std::runtime_error{std::forward<T>(what_arg)} {}
+    parse_error(T&& what_arg) : std::runtime_error{std::forward<T>(what_arg)}
+    {}
   };
 
   /** @class missing_required_arguments
@@ -236,7 +235,6 @@ public:
   ///@}
 
 public:
-
   /** @name Constructors */
   ///@{
 
@@ -355,11 +353,10 @@ public:
    *          option.
    */
   template <typename T>
-  readonly_reference<T>
-  add_option(std::string const& name,
-             std::initializer_list<std::string> cli_flags,
-             std::string const& description,
-             T default_value = T());
+  readonly_reference<T> add_option(std::string const& name,
+                                   std::initializer_list<std::string> cli_flags,
+                                   std::string const& description,
+                                   T default_value = T());
 
   /** @brief Add an additional named option.
    *
@@ -388,12 +385,11 @@ public:
    *          option.
    */
   template <typename T, typename AccessPolicy>
-  readonly_reference<T>
-  add_option(std::string const& name,
-             std::initializer_list<std::string> cli_flags,
-             EnvVariable<AccessPolicy> env,
-             std::string const& description,
-             T default_value = T())
+  readonly_reference<T> add_option(std::string const& name,
+                                   std::initializer_list<std::string> cli_flags,
+                                   EnvVariable<AccessPolicy> env,
+                                   std::string const& description,
+                                   T default_value = T())
   {
     if (env.exists())
       return add_option(name,
@@ -430,7 +426,9 @@ public:
              std::string const& description,
              char const* default_value)
   {
-    return add_option(name, std::move(cli_flags), description,
+    return add_option(name,
+                      std::move(cli_flags),
+                      description,
                       std::string(default_value));
   }
 
@@ -488,10 +486,9 @@ public:
    *          argument.
    */
   template <typename T>
-  readonly_reference<T> add_argument(
-    std::string const& name,
-    std::string const& description,
-    T default_value = T());
+  readonly_reference<T> add_argument(std::string const& name,
+                                     std::string const& description,
+                                     T default_value = T());
 
   /** @brief Add a positional argument; char const* overload
    *
@@ -507,13 +504,11 @@ public:
    *  @return A read-only reference to the value pointed to by this
    *          argument.
    */
-  readonly_reference<std::string> add_argument(
-    std::string const& name,
-    std::string const& description,
-    char const* default_value)
+  readonly_reference<std::string> add_argument(std::string const& name,
+                                               std::string const& description,
+                                               char const* default_value)
   {
-    return add_argument(
-      name, description, std::string(default_value));
+    return add_argument(name, description, std::string(default_value));
   }
 
   /** @brief Add a "required" positional argument.
@@ -528,9 +523,8 @@ public:
    *          argument.
    */
   template <typename T>
-  readonly_reference<T> add_required_argument(
-    std::string const& name,
-    std::string const& description);
+  readonly_reference<T> add_required_argument(std::string const& name,
+                                              std::string const& description);
 
   /** @brief Clear all state in the parser.
    *
@@ -627,7 +621,6 @@ public:
   ///@}
 
 private:
-
   /** @brief Reinitialize the parser. */
   void init() noexcept;
 
@@ -645,19 +638,19 @@ private:
   std::unordered_set<std::string> required_;
   /** @brief The underlying clara object */
   clara::Parser parser_;
-
 };
 
 template <typename ErrorHandler>
-inline bool
-argument_parser<ErrorHandler>::option_is_defined(std::string const& option_name) const
+inline bool argument_parser<ErrorHandler>::option_is_defined(
+  std::string const& option_name) const
 {
   return params_.count(option_name);
 }
 
 template <typename ErrorHandler>
 template <typename T>
-inline T const& argument_parser<ErrorHandler>::get(std::string const& option_name) const
+inline T const&
+argument_parser<ErrorHandler>::get(std::string const& option_name) const
 {
   return std::any_cast<T const&>(params_.at(option_name));
 }
@@ -668,8 +661,7 @@ inline auto argument_parser<ErrorHandler>::add_option(
   std::string const& name,
   std::initializer_list<std::string> cli_flags,
   std::string const& description,
-  T default_value)
-  -> readonly_reference<T>
+  T default_value) -> readonly_reference<T>
 {
   params_[name] = std::move(default_value);
   auto& param_ref = std::any_cast<T&>(params_[name]);
@@ -682,17 +674,15 @@ inline auto argument_parser<ErrorHandler>::add_option(
 
 template <typename ErrorHandler>
 template <typename T>
-inline auto argument_parser<ErrorHandler>::add_argument(
-  std::string const& name,
-  std::string const& description,
-  T default_value)
+inline auto
+argument_parser<ErrorHandler>::add_argument(std::string const& name,
+                                            std::string const& description,
+                                            T default_value)
   -> readonly_reference<T>
 {
   params_[name] = std::move(default_value);
   auto& param_ref = std::any_cast<T&>(params_[name]);
-  parser_ |= clara::Arg
-    (param_ref, name)
-    (description).optional();
+  parser_ |= clara::Arg(param_ref, name)(description).optional();
   return param_ref;
 }
 
@@ -700,8 +690,7 @@ template <typename ErrorHandler>
 template <typename T>
 inline auto argument_parser<ErrorHandler>::add_required_argument(
   std::string const& name,
-  std::string const& description)
-  -> readonly_reference<T>
+  std::string const& description) -> readonly_reference<T>
 {
   // Add the reference to bind to
   params_[name] = T{};
@@ -718,15 +707,14 @@ inline auto argument_parser<ErrorHandler>::add_required_argument(
   // Create the argument
   auto ret = parser_.m_args.emplace(
     iter,
-    [name,&param_ref,this](std::string const& value)
-    {
+    [name, &param_ref, this](std::string const& value) {
       auto result = clara::detail::convertInto(value, param_ref);
       if (result)
         required_.erase(name);
       return result;
     },
     name);
-  ret->operator() (description).required();
+  ret->operator()(description).required();
   return param_ref;
 }
 
@@ -761,9 +749,10 @@ void argument_parser<ErrorHandler>::parse(int argc, char const* const argv[])
 }
 
 template <typename ErrorHandler>
-void argument_parser<ErrorHandler>::parse_no_finalize(int argc, char const* const argv[])
+void argument_parser<ErrorHandler>::parse_no_finalize(int argc,
+                                                      char const* const argv[])
 {
-  std::vector<char const*> newargv(argv, argv+argc);
+  std::vector<char const*> newargv(argv, argv + argc);
   auto parse_result =
     parser_.parse(clara::Args(newargv.size(), newargv.data()));
 
@@ -782,8 +771,7 @@ template <typename ErrorHandler>
 auto argument_parser<ErrorHandler>::add_flag(
   std::string const& name,
   std::initializer_list<std::string> cli_flags,
-  std::string const& description)
-  -> readonly_reference<bool>
+  std::string const& description) -> readonly_reference<bool>
 {
   return add_flag_impl_(name, std::move(cli_flags), description, false);
 }
@@ -811,8 +799,7 @@ auto argument_parser<ErrorHandler>::add_flag_impl_(
   std::string const& name,
   std::initializer_list<std::string> cli_flags,
   std::string const& description,
-  bool default_value)
-  -> readonly_reference<bool>
+  bool default_value) -> readonly_reference<bool>
 {
   params_[name] = default_value;
   auto& param_ref = std::any_cast<bool&>(params_[name]);
@@ -823,19 +810,19 @@ auto argument_parser<ErrorHandler>::add_flag_impl_(
   return param_ref;
 }
 
-}// namespace utils
+} // namespace utils
 
 using default_arg_parser_type = utils::argument_parser<utils::strict_parsing>;
 
 default_arg_parser_type& global_argument_parser();
 
-}// namespace lbann
+} // namespace lbann
 
 /** @brief Write the parser's help string to the given @c ostream */
 template <typename ErrorHandler>
-std::ostream& operator<<(
-  std::ostream& os,
-  lbann::utils::argument_parser<ErrorHandler> const& parser)
+std::ostream&
+operator<<(std::ostream& os,
+           lbann::utils::argument_parser<ErrorHandler> const& parser)
 {
   parser.print_help(os);
   return os;

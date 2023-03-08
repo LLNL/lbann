@@ -43,7 +43,9 @@ void entrywise_mean_and_stdev(const Mat& data, DataType& mean, DataType& stdev);
  *  @param mean    Mean value (output).
  *  @param stdev   Standard deviation (output).
  */
-void entrywise_mean_and_stdev(const AbsDistMat& data, DataType& mean, DataType& stdev);
+void entrywise_mean_and_stdev(const AbsDistMat& data,
+                              DataType& mean,
+                              DataType& stdev);
 
 /** @brief Compute column-wise means and standard deviations
  *  @param data    Input matrix.
@@ -83,8 +85,8 @@ void columnwise_mean_and_stdev(const AbsDistMat& data,
  *                 a row vector with same number of columns as 'data'.
  */
 void columnwise_sums_and_sqsums(const AbsDistMat& data,
-                               AbsDistMat& sums,
-                               AbsDistMat& sqsums);
+                                AbsDistMat& sums,
+                                AbsDistMat& sqsums);
 
 /** @brief Compute row-wise means and standard deviations
  *  @param data    Input matrix.
@@ -103,10 +105,10 @@ void rowwise_mean_and_stdev(const Mat& data, Mat& means, Mat& stdevs);
  *                 a column vector with same number of rows as 'data'.
  */
 void rowwise_sums_and_sqsums(const AbsDistMat& data,
-                            AbsDistMat& sums,
-                            AbsDistMat& sqsums);
+                             AbsDistMat& sums,
+                             AbsDistMat& sqsums);
 
-//Wraps around rowwise_sum_and_sqsum
+// Wraps around rowwise_sum_and_sqsum
 /** @brief Compute row-wise means and standard deviations
  *  @param data    Input matrix in U,V format.
  *  @param means   Mean vector in U,STAR format. Output as a column
@@ -132,5 +134,5 @@ void columnwise_covariance(const AbsDistMat& data1,
                            const AbsDistMat& means2,
                            AbsDistMat& cov);
 
-} // end namespace
+} // namespace lbann
 #endif // LBANN_UTILS_STATISTICS_HPP

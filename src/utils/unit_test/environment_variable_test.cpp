@@ -146,8 +146,7 @@ TEST_CASE("Environment variable wrapper", "[utilities][parser]")
     SECTION("Variable has a value not convertible to bool")
     {
       TestENV not_a_bool("PIZZA");
-      CHECK_THROWS_AS(not_a_bool.value<bool>(),
-                      std::invalid_argument);
+      CHECK_THROWS_AS(not_a_bool.value<bool>(), std::invalid_argument);
     }
   }
 

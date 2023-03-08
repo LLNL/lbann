@@ -29,8 +29,8 @@ namespace lbann {
 namespace utils {
 namespace stubs {
 
-std::unordered_map<std::string,std::string> PresetEnvAccessor::vars_;
+std::unordered_map<std::string, std::string> PresetEnvAccessor::vars_;
 
-}// namespace stubs
-}// namespace utils
-}// namespace lbann
+} // namespace stubs
+} // namespace utils
+} // namespace lbann

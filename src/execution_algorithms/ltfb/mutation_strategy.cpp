@@ -414,8 +414,7 @@ lbann::make_abstract<lbann::ltfb::MutationStrategy>(
   using ProtoStrategy = lbann_data::MutationStrategy;
   auto const& params = dynamic_cast<ProtoStrategy const&>(msg);
 
-  auto const& mutate_params =
-    protobuf::get_oneof_message(params, "strategy");
+  auto const& mutate_params = protobuf::get_oneof_message(params, "strategy");
   return get_mutation_factory().create_object(
     protobuf::message_type(mutate_params),
     mutate_params);

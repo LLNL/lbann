@@ -37,17 +37,18 @@ namespace lbann {
 namespace transform {
 
 void random_resized_crop::apply(utils::type_erased_matrix& data,
-                                std::vector<size_t>& dims) {
+                                std::vector<size_t>& dims)
+{
   cv::Mat src = utils::get_opencv_mat(data, dims);
   std::vector<size_t> new_dims = {dims[0], m_h, m_w};
   auto dst_real = El::Matrix<uint8_t>(get_linear_size(new_dims), 1);
   cv::Mat dst = utils::get_opencv_mat(dst_real, new_dims);
   size_t x = 0, y = 0, h = 0, w = 0;
-  const size_t area = dims[1]*dims[2];
+  const size_t area = dims[1] * dims[2];
   // There's a chance this can fail, so we only make ten attempts.
   for (int attempt = 0; attempt < 10; ++attempt) {
-    const float target_area = area*transform::get_uniform_random(m_scale_min,
-                                                                 m_scale_max);
+    const float target_area =
+      area * transform::get_uniform_random(m_scale_min, m_scale_max);
     const float target_ar = transform::get_uniform_random(m_ar_min, m_ar_max);
     w = El::Sqrt(target_area * target_ar);
     h = El::Sqrt(target_area / target_ar);
@@ -79,8 +80,8 @@ void random_resized_crop::apply(utils::type_erased_matrix& data,
       (x + w) > static_cast<size_t>(src.cols) ||
       (y + h) > static_cast<size_t>(src.rows)) {
     std::stringstream ss;
-    ss << "Bad crop dimensions for " << src.rows << "x" << src.cols << ": "
-       << h << "x" << w << " at (" << x << "," << y << ") fallback=" << fallback;
+    ss << "Bad crop dimensions for " << src.rows << "x" << src.cols << ": " << h
+       << "x" << w << " at (" << x << "," << y << ") fallback=" << fallback;
     LBANN_ERROR(ss.str());
   }
   // This is just a view.
@@ -94,20 +95,24 @@ void random_resized_crop::apply(utils::type_erased_matrix& data,
   dims = new_dims;
 }
 
-std::unique_ptr<transform>
-build_random_resized_crop_transform_from_pbuf(
-  google::protobuf::Message const& msg) {
+std::unique_ptr<transform> build_random_resized_crop_transform_from_pbuf(
+  google::protobuf::Message const& msg)
+{
   auto const& params =
     dynamic_cast<lbann_data::Transform::RandomResizedCrop const&>(msg);
   if (params.scale_min() != 0.0f) {
-    return std::make_unique<random_resized_crop>(
-      params.height(), params.width(),
-      params.scale_min(), params.scale_max(),
-      params.ar_min(), params.ar_max());
-  } else {
-    return std::make_unique<random_resized_crop>(params.height(), params.width());
+    return std::make_unique<random_resized_crop>(params.height(),
+                                                 params.width(),
+                                                 params.scale_min(),
+                                                 params.scale_max(),
+                                                 params.ar_min(),
+                                                 params.ar_max());
+  }
+  else {
+    return std::make_unique<random_resized_crop>(params.height(),
+                                                 params.width());
   }
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

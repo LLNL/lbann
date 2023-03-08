@@ -30,16 +30,15 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
-void
-mini_batch_size_layer<TensorDataType,Layout,Device>
-::serialize(ArchiveT& ar) {
+void mini_batch_size_layer<TensorDataType, Layout, Device>::serialize(
+  ArchiveT& ar)
+{
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",
                         ::cereal::base_class<DataTypeLayer>(this)));
 }
 
 } // namespace lbann
-
 
 #define LBANN_LAYER_NAME mini_batch_size_layer
 #include <lbann/macros/register_layer_with_cereal.hpp>

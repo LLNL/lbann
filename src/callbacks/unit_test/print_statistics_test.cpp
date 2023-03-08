@@ -26,8 +26,8 @@
 
 #include "Catch2BasicSupport.hpp"
 
-#include "TestHelpers.hpp"
 #include "MPITestHelpers.hpp"
+#include "TestHelpers.hpp"
 
 #include <lbann/base.hpp>
 #include <lbann/callbacks/print_statistics.hpp>
@@ -48,9 +48,10 @@ TEST_CASE("Serializing \"print statistics\" callback",
 
   // Create the objects
   CallbackType src(3, true), tgt(4, false);
-  std::unique_ptr<lbann::callback_base>
-    src_ptr = std::make_unique<CallbackType>(3, true),
-    tgt_ptr;
+  std::unique_ptr<lbann::callback_base> src_ptr =
+                                          std::make_unique<CallbackType>(3,
+                                                                         true),
+                                        tgt_ptr;
 
   // Verify that the callbacks differ in the first place.
   CHECK_FALSE(src.get_batch_interval() == tgt.get_batch_interval());

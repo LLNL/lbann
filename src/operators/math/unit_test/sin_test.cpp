@@ -43,11 +43,11 @@
 #include <h2/meta/Core.hpp>
 #include <h2/meta/TypeList.hpp>
 
+#include "lbann/proto/operators.pb.h"
 #include <functional>
 #include <h2/meta/core/Lazy.hpp>
 #include <memory>
 #include <numeric>
-#include "lbann/proto/operators.pb.h"
 
 #include <math.h>
 #if defined M_PI_2

@@ -30,48 +30,101 @@
 // File being tested
 #include <lbann/utils/from_string.hpp>
 
-namespace
+namespace {
+
+template <typename T>
+T PositiveAnswer() noexcept;
+template <typename T>
+T NegativeAnswer() noexcept;
+
+template <>
+int PositiveAnswer() noexcept
 {
+  return 123;
+}
+template <>
+int NegativeAnswer() noexcept
+{
+  return -456;
+}
+template <>
+long PositiveAnswer() noexcept
+{
+  return 123L;
+}
+template <>
+long NegativeAnswer() noexcept
+{
+  return -456L;
+}
+template <>
+long long PositiveAnswer() noexcept
+{
+  return 123LL;
+}
+template <>
+long long NegativeAnswer() noexcept
+{
+  return -456LL;
+}
 
-template <typename T> T PositiveAnswer() noexcept;
-template <typename T> T NegativeAnswer() noexcept;
-
-template <> int PositiveAnswer() noexcept { return 123; }
-template <> int NegativeAnswer() noexcept { return -456; }
-template <> long PositiveAnswer() noexcept { return 123L; }
-template <> long NegativeAnswer() noexcept { return -456L; }
-template <> long long PositiveAnswer() noexcept { return 123LL; }
-template <> long long NegativeAnswer() noexcept { return -456LL; }
-
-template <> unsigned long PositiveAnswer() noexcept
+template <>
+unsigned long PositiveAnswer() noexcept
 {
   return 9876543210UL;
 }
-template <> unsigned long NegativeAnswer() noexcept
+template <>
+unsigned long NegativeAnswer() noexcept
 {
   return static_cast<unsigned long>(-1);
 }
-template <> unsigned long long PositiveAnswer() noexcept
+template <>
+unsigned long long PositiveAnswer() noexcept
 {
   return 9876543210ULL;
 }
-template <> unsigned long long NegativeAnswer() noexcept
+template <>
+unsigned long long NegativeAnswer() noexcept
 {
   return static_cast<unsigned long long>(-1);
 }
 
-template <> float PositiveAnswer() noexcept { return 9.87f; }
-template <> float NegativeAnswer() noexcept { return -6.54f; }
-template <> double PositiveAnswer() noexcept { return 9.87; }
-template <> double NegativeAnswer() noexcept { return -6.54; }
-template <> long double PositiveAnswer() noexcept { return 9.87l; }
-template <> long double NegativeAnswer() noexcept { return -6.54l; }
+template <>
+float PositiveAnswer() noexcept
+{
+  return 9.87f;
+}
+template <>
+float NegativeAnswer() noexcept
+{
+  return -6.54f;
+}
+template <>
+double PositiveAnswer() noexcept
+{
+  return 9.87;
+}
+template <>
+double NegativeAnswer() noexcept
+{
+  return -6.54;
+}
+template <>
+long double PositiveAnswer() noexcept
+{
+  return 9.87l;
+}
+template <>
+long double NegativeAnswer() noexcept
+{
+  return -6.54l;
+}
 
-}// namespace <anon>
+} // namespace
 
 using lbann::utils::from_string;
 
-TEST_CASE("From string corner cases","[utilities][string]")
+TEST_CASE("From string corner cases", "[utilities][string]")
 {
   SECTION("Boolean strings")
   {
@@ -90,7 +143,7 @@ TEST_CASE("From string corner cases","[utilities][string]")
     CHECK_FALSE(from_string<bool>("0.0"));
 
     // FIXME: This should be true:
-    //CHECK(from_string<bool>("0.2"));
+    // CHECK(from_string<bool>("0.2"));
 
     CHECK_THROWS_AS(from_string<bool>("not a bool"), std::invalid_argument);
   }
@@ -115,7 +168,9 @@ TEST_CASE("From string corner cases","[utilities][string]")
 
 TEMPLATE_TEST_CASE("From string to floating point type",
                    "[utilities][string]",
-                   float, double, long double)
+                   float,
+                   double,
+                   long double)
 {
   REQUIRE_THROWS_AS(from_string<TestType>("pineapple"), std::invalid_argument);
   REQUIRE(from_string<TestType>("9.87") == PositiveAnswer<TestType>());
@@ -124,7 +179,9 @@ TEMPLATE_TEST_CASE("From string to floating point type",
 
 TEMPLATE_TEST_CASE("From string to signed integer type",
                    "[utilities][string]",
-                   int, long, long long)
+                   int,
+                   long,
+                   long long)
 {
   REQUIRE_THROWS_AS(from_string<TestType>("pineapple"), std::invalid_argument);
   REQUIRE(from_string<TestType>("123") == PositiveAnswer<TestType>());
@@ -133,7 +190,8 @@ TEMPLATE_TEST_CASE("From string to signed integer type",
 
 TEMPLATE_TEST_CASE("From string to unsigned integer type",
                    "[utilities][string]",
-                   unsigned long, unsigned long long)
+                   unsigned long,
+                   unsigned long long)
 {
   REQUIRE_THROWS_AS(from_string<TestType>("pineapple"), std::invalid_argument);
   REQUIRE(from_string<TestType>("9876543210") == PositiveAnswer<TestType>());

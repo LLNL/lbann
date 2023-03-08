@@ -25,26 +25,27 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/stack_trace.hpp"
-#include "lbann/utils/exception.hpp"
 #include "lbann/comm_impl.hpp"
+#include "lbann/utils/exception.hpp"
 #include <algorithm>
-#include <vector>
-#include <string>
-#include <iostream>
 #include <fstream>
-#include <sstream>
 #include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
 
-#include <execinfo.h>
-#include <dlfcn.h>
 #include <cxxabi.h>
+#include <dlfcn.h>
+#include <execinfo.h>
 // #include <unistd.h>
 #include <csignal>
 
 namespace lbann {
 namespace stack_trace {
 
-std::string get() {
+std::string get()
+{
   std::stringstream ss;
 
   // Get stack frames
@@ -59,16 +60,20 @@ std::string get() {
     Dl_info info;
     dladdr(frames[i], &info);
     if (info.dli_sname != nullptr) {
-      auto* name = abi::__cxa_demangle(info.dli_sname,
-                                       nullptr, nullptr, nullptr);
+      auto* name =
+        abi::__cxa_demangle(info.dli_sname, nullptr, nullptr, nullptr);
       if (name == nullptr) {
         ss << info.dli_sname << " (demangling failed)";
-      } else {
+      }
+      else {
         ss << name;
       }
       std::free(name);
-    } else {
-      if (symbols != nullptr) { ss << symbols[i] << " "; }
+    }
+    else {
+      if (symbols != nullptr) {
+        ss << symbols[i] << " ";
+      }
       ss << "(could not find stack frame symbol)";
     }
     ss << std::endl;
@@ -81,7 +86,8 @@ std::string get() {
 namespace {
 
 /** Get human-readable description of signal. */
-std::string signal_description(int signal) {
+std::string signal_description(int signal)
+{
 
   // Get signal description
   // Note: Multiple signals can share the same code, so we can't use a
@@ -89,21 +95,21 @@ std::string signal_description(int signal) {
   // POSIX C standard
   // (http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html).
   std::string desc;
-#define SIGNAL_CASE(name, description)          \
-  do {                                          \
-    if (desc.empty() && signal == name) {       \
-      desc = #name " - " description;           \
-    }                                           \
+#define SIGNAL_CASE(name, description)                                         \
+  do {                                                                         \
+    if (desc.empty() && signal == name) {                                      \
+      desc = #name " - " description;                                          \
+    }                                                                          \
   } while (false)
   SIGNAL_CASE(SIGABRT, "process abort signal");
   SIGNAL_CASE(SIGALRM, "alarm clock");
-  SIGNAL_CASE(SIGBUS,  "access to an undefined portion of a memory object");
+  SIGNAL_CASE(SIGBUS, "access to an undefined portion of a memory object");
   SIGNAL_CASE(SIGCHLD, "child process terminated, stopped");
   SIGNAL_CASE(SIGCONT, "continue executing, if stopped");
-  SIGNAL_CASE(SIGFPE,  "erroneous arithmetic operation");
-  SIGNAL_CASE(SIGHUP,  "hangup");
-  SIGNAL_CASE(SIGILL,  "illegal instruction");
-  SIGNAL_CASE(SIGINT,  "terminal interrupt signal");
+  SIGNAL_CASE(SIGFPE, "erroneous arithmetic operation");
+  SIGNAL_CASE(SIGHUP, "hangup");
+  SIGNAL_CASE(SIGILL, "illegal instruction");
+  SIGNAL_CASE(SIGINT, "terminal interrupt signal");
   SIGNAL_CASE(SIGKILL, "kill (cannot be caught or ignored)");
   SIGNAL_CASE(SIGPIPE, "write on a pipe with no one to read it");
   SIGNAL_CASE(SIGQUIT, "terminal quit signal");
@@ -116,7 +122,7 @@ std::string signal_description(int signal) {
   SIGNAL_CASE(SIGUSR1, "user-defined signal 1");
   SIGNAL_CASE(SIGUSR2, "user-defined signal 2");
   SIGNAL_CASE(SIGTRAP, "trace/breakpoint trap");
-  SIGNAL_CASE(SIGURG,  "high bandwidth data is available at a socket");
+  SIGNAL_CASE(SIGURG, "high bandwidth data is available at a socket");
   SIGNAL_CASE(SIGXCPU, "CPU time limit exceeded");
   SIGNAL_CASE(SIGXFSZ, "file size limit exceeded");
 #undef SIGNAL_CASE
@@ -124,9 +130,10 @@ std::string signal_description(int signal) {
   // Construct signal description
   std::stringstream ss;
   ss << "signal " << signal;
-  if (!desc.empty()) { ss << " (" << desc << ")"; }
+  if (!desc.empty()) {
+    ss << " (" << desc << ")";
+  }
   return ss.str();
-
 }
 
 /** Base name for stack trace output file. */
@@ -136,13 +143,16 @@ std::string stack_trace_file_base = "";
  *  Output signal name and stack trace to standard error and to a file
  *  (if desired).
  */
-void handle_signal(int const signal) {
+void handle_signal(int const signal)
+{
   const auto rank = get_rank_in_world();
 
   // Print error message and stack trace to standard error
   std::ostringstream oss;
   oss << "Caught " << signal_description(signal);
-  if (rank >= 0) { oss << " on rank " << rank; }
+  if (rank >= 0) {
+    oss << " on rank " << rank;
+  }
 
   // Hack to use the exception machinery to generate the stack trace
   // report... I. um. really?
@@ -152,7 +162,9 @@ void handle_signal(int const signal) {
   // Print error message and stack trace to file
   if (!stack_trace_file_base.empty()) {
     std::ostringstream{stack_trace_file_base, std::ios_base::ate}.swap(oss);
-    if (rank >= 0) { oss << "_rank" << rank; }
+    if (rank >= 0) {
+      oss << "_rank" << rank;
+    }
     oss << ".txt";
     std::ofstream fs(oss.str());
     e.print_report(fs);
@@ -164,7 +176,8 @@ void handle_signal(int const signal) {
 
 } // namespace
 
-void register_signal_handler(std::string file_base) {
+void register_signal_handler(std::string file_base)
+{
   stack_trace_file_base = file_base;
 
   // Construct signal action object with signal handler
@@ -174,16 +187,27 @@ void register_signal_handler(std::string file_base) {
   sigfillset(&sa.sa_mask);
 
   // Register signal handler for fatal signals
-  std::vector<int> fatal_signals = {SIGABRT, SIGALRM, SIGBUS , SIGFPE ,
-                                    SIGHUP , SIGILL , SIGINT , SIGKILL,
-                                    SIGPIPE, SIGQUIT, SIGSEGV, SIGTERM,
-                                    SIGUSR1, SIGUSR2, SIGTRAP, SIGXCPU,
+  std::vector<int> fatal_signals = {SIGABRT,
+                                    SIGALRM,
+                                    SIGBUS,
+                                    SIGFPE,
+                                    SIGHUP,
+                                    SIGILL,
+                                    SIGINT,
+                                    SIGKILL,
+                                    SIGPIPE,
+                                    SIGQUIT,
+                                    SIGSEGV,
+                                    SIGTERM,
+                                    SIGUSR1,
+                                    SIGUSR2,
+                                    SIGTRAP,
+                                    SIGXCPU,
                                     SIGXFSZ};
   for (const auto& signal : fatal_signals) {
     sigaction(signal, &sa, nullptr);
   }
-
 }
 
-} //namespace stack_trace
-} //namespace lbann
+} // namespace stack_trace
+} // namespace lbann

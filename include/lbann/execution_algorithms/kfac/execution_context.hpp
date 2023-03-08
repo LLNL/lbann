@@ -27,9 +27,9 @@
 #define LBANN_EXECUTION_ALGORITHMS_KFAC_EXECUTION_CONTEXT_HPP_INCLUDED
 
 #include "lbann/execution_algorithms/execution_context.hpp"
-#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_block.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_util.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include <memory>
 #include <string>
 
@@ -38,7 +38,8 @@ namespace lbann {
 class KFAC;
 template <El::Device Device>
 class kfac_block;
-}
+class model;
+} // namespace lbann
 
 namespace lbann {
 namespace kfac {
@@ -59,12 +60,11 @@ public:
   friend class ::lbann::KFAC;
 
   /** Constructor. */
-  KFACExecutionContext(
-    size_t mini_batch_size,
-    double damping_act,
-    double damping_err,
-    double damping_bn_act,
-    double damping_bn_err);
+  KFACExecutionContext(size_t mini_batch_size,
+                       double damping_act,
+                       double damping_err,
+                       double damping_bn_act,
+                       double damping_bn_err);
   /** Destructor. */
   ~KFACExecutionContext() = default;
 
@@ -93,16 +93,16 @@ public:
 
   /** @brief Gets the Kronecker factor matrix of a FC layer.
    *  The same key is tied with the same matrix instance. */
-  El::Matrix<DataType,Device>& get_workspace_matrix(
-    const std::string& key,
-    const size_t height,
-    const size_t width);
+  El::Matrix<DataType, Device>& get_workspace_matrix(const std::string& key,
+                                                     const size_t height,
+                                                     const size_t width);
 
   /** @name Checkpointing and Serialization */
   ///@{
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive& ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   /** @brief Checkpoint exection_context to a shared checkpoint. */
   void save_to_checkpoint_shared(persist& p) override;
@@ -114,26 +114,13 @@ public:
   void load_from_checkpoint_distributed(persist& p) override;
   ///@}
 
-  void print_workspace_size(model& model){
-    auto& comm = *model.get_comm();
-    int tot_size = 0;
-    for (auto const &pair: m_workspace) {
-        std::cout<<"Workspace Rank:"<<comm.get_rank_in_world()
-            <<" "<<"Name:"<<pair.first
-            <<" "<<"size:"<<pair.second.Height()<<" "<<pair.second.Width()<<"\n";
-        tot_size += pair.second.Height() * pair.second.Width();
-    }
-    std::cout<<"Workspace Rank:"<<comm.get_rank_in_world()
-            <<" Size of:"<<" "<<"Total size:"<<tot_size<<"\n";
-  }
+  void print_workspace_size(model& model);
 
 private:
-
   SGDExecutionContext m_sgd_execution_context;
 
   /** @brief The current damping values. */
-  double m_damping_act, m_damping_err,
-    m_damping_bn_act, m_damping_bn_err;
+  double m_damping_act, m_damping_err, m_damping_bn_act, m_damping_bn_err;
 
   /** @brief The current update interval. */
   size_t m_update_interval;
@@ -142,8 +129,7 @@ private:
   std::vector<std::shared_ptr<kfac_block<Device>>> m_blocks;
 
   /** @brief Workspace matrices that are used by m_blocks. */
-  std::unordered_map<std::string,
-                     El::Matrix<DataType, Device>> m_workspace;
+  std::unordered_map<std::string, El::Matrix<DataType, Device>> m_workspace;
 
 }; // class ExecutionContext
 

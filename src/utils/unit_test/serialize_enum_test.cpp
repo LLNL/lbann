@@ -25,15 +25,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "Catch2BasicSupport.hpp"
 
-#include "TestHelpers.hpp"
 #include "MPITestHelpers.hpp"
+#include "TestHelpers.hpp"
 
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 #include <lbann/base.hpp>
 #include <lbann/utils/serialize.hpp>
-#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
-namespace
-{
+namespace {
 enum class myenum
 {
   DEFAULT,

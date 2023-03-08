@@ -31,7 +31,8 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
+void one_hot_layer<TensorDataType, Layout, Device>::fp_compute()
+{
 
   // Local matrices
   using LocalMat = El::Matrix<TensorDataType, El::Device::CPU>;
@@ -54,32 +55,29 @@ void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
   }
   /** @todo (tym1 3/12/21): We are working around a bug in Hydrogen.
    *  Broadcast with Matrix<T,D> is not instatiated. */
-  El::Broadcast(
-    static_cast<El::AbstractMatrix<TensorDataType>&>(local_input),
-    col_comm,
-    owner_rank);
+  El::Broadcast(static_cast<El::AbstractMatrix<TensorDataType>&>(local_input),
+                col_comm,
+                owner_rank);
 
   // Populate one-hot vectors
   El::Zero(output);
   LBANN_OMP_PARALLEL_FOR
-  for (El::Int j=0; j<local_mini_batch_size; ++j) {
-    const auto& x = local_input.CRef(0,j);
+  for (El::Int j = 0; j < local_mini_batch_size; ++j) {
+    const auto& x = local_input.CRef(0, j);
     const auto i_global = static_cast<El::Int>(std::floor(x));
-    if (0 <= i_global
-        && i_global < output_size
-        && output.RowOwner(i_global) == col_rank) {
-      local_output(output.LocalRow(i_global), j)
-        = El::TypeTraits<TensorDataType>::One();
+    if (0 <= i_global && i_global < output_size &&
+        output.RowOwner(i_global) == col_rank) {
+      local_output(output.LocalRow(i_global), j) =
+        El::TypeTraits<TensorDataType>::One();
     }
   }
-
 }
 
-#define PROTO(T)                                            \
-  template class one_hot_layer<                             \
-    T, data_layout::DATA_PARALLEL, El::Device::CPU>;        \
-  template class one_hot_layer<                             \
-    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  template class one_hot_layer<T,                                              \
+                               data_layout::DATA_PARALLEL,                     \
+                               El::Device::CPU>;                               \
+  template class one_hot_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 

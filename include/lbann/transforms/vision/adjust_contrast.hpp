@@ -39,14 +39,16 @@ namespace transform {
  *
  * This operates similarly to the contrast control on a television.
  */
-class adjust_contrast : public transform {
+class adjust_contrast : public transform
+{
 public:
   /**
    * Adjust contrast with given factor.
    * @param factor A non-negative factor. 0 gives a solid grey image,
    *     1 the original.
    */
-  adjust_contrast(float factor) : transform(), m_factor(factor) {
+  adjust_contrast(float factor) : transform(), m_factor(factor)
+  {
     if (factor < 0.0f) {
       LBANN_ERROR("Contrast factor must be non-negative.");
     }
@@ -56,7 +58,8 @@ public:
 
   std::string get_type() const override { return "adjust_contrast"; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data,
+             std::vector<size_t>& dims) override;
 
 private:
   /** Factor to adjust contrast by. */
@@ -67,7 +70,7 @@ private:
 std::unique_ptr<transform>
 build_adjust_contrast_transform_from_pbuf(google::protobuf::Message const&);
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_ADJUST_CONTRAST_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_ADJUST_CONTRAST_HPP_INCLUDED

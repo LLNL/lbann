@@ -31,9 +31,7 @@ namespace lbann {
 // Template implementation
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
-void
-gru_layer<TensorDataType,Layout,Device>
-::serialize(ArchiveT& ar)
+void gru_layer<TensorDataType, Layout, Device>::serialize(ArchiveT& ar)
 {
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",

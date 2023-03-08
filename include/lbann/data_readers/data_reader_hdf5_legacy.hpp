@@ -38,9 +38,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 #ifndef LBANN_DATA_READER_HDF5_HPP
 #define LBANN_DATA_READER_HDF5_HPP
+#include "conduit/conduit.hpp"
 #include "data_reader_image.hpp"
 #include "hdf5.h"
-#include "conduit/conduit.hpp"
 
 namespace lbann {
 /**
@@ -61,8 +61,9 @@ namespace lbann {
  * respectively.
  */
 template <typename TensorDataType>
-class hdf5_reader : public generic_data_reader {
- public:
+class hdf5_reader : public generic_data_reader
+{
+public:
   hdf5_reader(const bool shuffle,
               const std::string key_data,
               const std::string key_label,
@@ -76,65 +77,74 @@ class hdf5_reader : public generic_data_reader {
 
   void copy_members(const hdf5_reader& rhs);
 
-  std::string get_type() const override {
-    return "data_reader_hdf5_images";
-  }
-  //void set_input_params(int width, int height, int depth, int num_ch, int num_labels);
+  std::string get_type() const override { return "data_reader_hdf5_images"; }
+  // void set_input_params(int width, int height, int depth, int num_ch, int
+  // num_labels);
   void load() override;
-  void set_hdf5_paths(const std::vector<std::string> hdf5_paths) {m_file_paths = hdf5_paths;}
+  void set_hdf5_paths(const std::vector<std::string> hdf5_paths)
+  {
+    m_file_paths = hdf5_paths;
+  }
 
-  void set_num_responses(const size_t num_responses) {
+  void set_num_responses(const size_t num_responses)
+  {
     m_all_responses.resize(num_responses);
   }
 
-  int get_num_labels() const override {
-    if(!this->has_labels()) {
+  int get_num_labels() const override
+  {
+    if (!this->has_labels()) {
       return generic_data_reader::get_num_labels();
     }
     // This data reader currently assumes that the shape of the label
     // tensor is the same to the data tensor.
     return m_num_features;
   }
-  int get_num_responses() const override {
-    if(!this->has_responses()) {
+  int get_num_responses() const override
+  {
+    if (!this->has_responses()) {
       return generic_data_reader::get_num_responses();
     }
     return get_linearized_response_size();
   }
-  int get_linearized_data_size() const override {
-    return m_num_features;
-  }
-  int get_linearized_label_size() const override {
-    if(!this->has_labels()) {
+  int get_linearized_data_size() const override { return m_num_features; }
+  int get_linearized_label_size() const override
+  {
+    if (!this->has_labels()) {
       return generic_data_reader::get_linearized_label_size();
     }
     // This data reader currently assumes that the shape of the label
     // tensor is the same to the data tensor.
     return m_num_features;
   }
-  int get_linearized_response_size() const override {
-    if(!this->has_responses()) {
+  int get_linearized_response_size() const override
+  {
+    if (!this->has_responses()) {
       return generic_data_reader::get_linearized_response_size();
     }
     return m_all_responses.size();
   }
-  const std::vector<int> get_data_dims() const override {
-    return m_data_dims;
-  }
+  const std::vector<int> get_data_dims() const override { return m_data_dims; }
 
 #ifdef LBANN_HAS_DISTCONV
-   bool is_tensor_shuffle_required() const override { return false; }
+  bool is_tensor_shuffle_required() const override { return false; }
 #endif // LBANN_HAS_DISTCONV
 
- protected:
-  void read_hdf5_hyperslab(hsize_t h_data, hsize_t filespace, int rank,
-                           TensorDataType *sample);
-  void read_hdf5_sample(int data_id, TensorDataType *sample, TensorDataType *labels);
-  //void set_defaults() override;
+protected:
+  void read_hdf5_hyperslab(hsize_t h_data,
+                           hsize_t filespace,
+                           int rank,
+                           TensorDataType* sample);
+  void
+  read_hdf5_sample(int data_id, TensorDataType* sample, TensorDataType* labels);
+  // void set_defaults() override;
   void load_sample(conduit::Node& node, int data_id);
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   void fetch_datum_conduit(Mat& X, int data_id);
-  bool fetch_data_field(data_field_type data_field, CPUMat& Y, int data_id, int mb_idx) override;
+  bool fetch_data_field(data_field_type data_field,
+                        CPUMat& Y,
+                        int data_id,
+                        int mb_idx) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
   hid_t get_hdf5_data_type() const;
@@ -154,8 +164,8 @@ class hdf5_reader : public generic_data_reader {
   std::string m_key_data, m_key_labels, m_key_responses;
   bool m_hyperslab_labels;
 
- private:
+private:
   static const std::string HDF5_KEY_DATA, HDF5_KEY_LABELS, HDF5_KEY_RESPONSES;
 };
-}
+} // namespace lbann
 #endif // LBANN_DATA_READER_HDF5_HPP

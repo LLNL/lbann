@@ -33,12 +33,12 @@
 #include "lbann/base.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/metrics/metric.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/weights/data_type_weights_impl.hpp"
-#include "lbann/metrics/metric.hpp"
 
 #include "lbann/proto/training_algorithm.pb.h"
 

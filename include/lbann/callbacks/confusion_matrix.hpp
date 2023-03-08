@@ -38,11 +38,12 @@ namespace callback {
  *  with prediction i and label j. The prediction and label layers are
  *  assumed to output one-hot vectors for each mini-batch sample.
  */
-class confusion_matrix : public callback_base {
+class confusion_matrix : public callback_base
+{
 public:
   using AbsDistMatType = El::AbstractDistMatrix<DataType>;
-public:
 
+public:
   confusion_matrix(std::string&& prediction_layer,
                    std::string&& label_layer,
                    std::string&& prefix);
@@ -51,21 +52,22 @@ public:
                    std::string const& prefix);
   confusion_matrix(const confusion_matrix&);
   confusion_matrix& operator=(const confusion_matrix&);
-  confusion_matrix* copy() const override {
+  confusion_matrix* copy() const override
+  {
     return new confusion_matrix(*this);
   }
   std::string name() const override { return "confusion matrix"; }
 
-  void setup(model *m) override;
+  void setup(model* m) override;
 
-  void on_epoch_begin(model *m) override      { reset_counts(*m); }
-  void on_epoch_end(model *m) override        { save_confusion_matrix(*m); }
-  void on_validation_begin(model *m) override { reset_counts(*m); }
-  void on_validation_end(model *m) override   { save_confusion_matrix(*m); }
-  void on_test_begin(model *m) override       { reset_counts(*m); }
-  void on_test_end(model *m) override         { save_confusion_matrix(*m); }
-  void on_batch_end(model *m) override          { update_counts(*m); }
-  void on_batch_evaluate_end(model *m) override { update_counts(*m); }
+  void on_epoch_begin(model* m) override { reset_counts(*m); }
+  void on_epoch_end(model* m) override { save_confusion_matrix(*m); }
+  void on_validation_begin(model* m) override { reset_counts(*m); }
+  void on_validation_end(model* m) override { save_confusion_matrix(*m); }
+  void on_test_begin(model* m) override { reset_counts(*m); }
+  void on_test_end(model* m) override { save_confusion_matrix(*m); }
+  void on_batch_end(model* m) override { update_counts(*m); }
+  void on_batch_evaluate_end(model* m) override { update_counts(*m); }
 
 private:
   /** Add callback specific data to prototext */
@@ -87,7 +89,7 @@ private:
    *  matrix in row-major order. The (i,j)-entry is the number of
    *  samples with prediction i and label j.
    */
-  std::map<execution_mode,std::vector<El::Int>> m_counts;
+  std::map<execution_mode, std::vector<El::Int>> m_counts;
 
   /** "View" into prediction matrix.
    *  This is a CPU matrix. If the prediction layer keeps data on GPU,
@@ -115,15 +117,14 @@ private:
   void update_counts(const model& m);
   /** Output confusion matrix to file. */
   void save_confusion_matrix(const model& m);
-
 };
 
 // Builder function
-std::unique_ptr<callback_base>
-build_confusion_matrix_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+std::unique_ptr<callback_base> build_confusion_matrix_callback_from_pbuf(
+  const google::protobuf::Message&,
+  std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_CONFUSION_MATRIX_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_CONFUSION_MATRIX_HPP_INCLUDED

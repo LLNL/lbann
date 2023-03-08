@@ -32,8 +32,9 @@
 #include "data_reader_image.hpp"
 
 namespace lbann {
-class imagenet_reader : public image_data_reader {
- public:
+class imagenet_reader : public image_data_reader
+{
+public:
   imagenet_reader(bool shuffle = true);
   imagenet_reader(const imagenet_reader&) = default;
   imagenet_reader& operator=(const imagenet_reader&) = default;
@@ -41,16 +42,14 @@ class imagenet_reader : public image_data_reader {
 
   imagenet_reader* copy() const override { return new imagenet_reader(*this); }
 
-  std::string get_type() const override {
-    return "imagenet_reader";
-  }
+  std::string get_type() const override { return "imagenet_reader"; }
 
- protected:
+protected:
   void set_defaults() override;
   virtual CPUMat create_datum_view(CPUMat& X, const int mb_idx) const;
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_DATA_READER_IMAGENET_HPP
+#endif // LBANN_DATA_READER_IMAGENET_HPP

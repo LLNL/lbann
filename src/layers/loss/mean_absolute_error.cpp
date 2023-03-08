@@ -35,7 +35,8 @@ template <typename TensorDataType>
 void local_fp_cpu(El::Int height,
                   const El::AbstractMatrix<TensorDataType>& local_prediction,
                   const El::AbstractMatrix<TensorDataType>& local_ground_truth,
-                  El::AbstractMatrix<TensorDataType>& local_contribution) {
+                  El::AbstractMatrix<TensorDataType>& local_contribution)
+{
 
   // Useful constants
   const auto& local_height = local_prediction.Height();
@@ -46,24 +47,26 @@ void local_fp_cpu(El::Int height,
   for (El::Int col = 0; col < local_width; ++col) {
     TensorDataType sum = El::TypeTraits<TensorDataType>::Zero();
     for (El::Int row = 0; row < local_height; ++row) {
-      sum += std::fabs(local_prediction(row, col)
-                       - local_ground_truth(row, col));
+      sum +=
+        std::fabs(local_prediction(row, col) - local_ground_truth(row, col));
     }
     local_contribution(0, col) = sum / height;
   }
-
 }
 
 template <typename TensorDataType>
-void local_bp_cpu(El::Int height,
-                  const El::AbstractMatrix<TensorDataType>& local_prediction,
-                  const El::AbstractMatrix<TensorDataType>& local_ground_truth,
-                  const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
-                  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
-                  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
+void local_bp_cpu(
+  El::Int height,
+  const El::AbstractMatrix<TensorDataType>& local_prediction,
+  const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+  const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
+  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth)
+{
 
   // Useful constants
-  const TensorDataType scale = El::TypeTraits<TensorDataType>::One() / El::To<TensorDataType>(height);
+  const TensorDataType scale =
+    El::TypeTraits<TensorDataType>::One() / El::To<TensorDataType>(height);
   const El::Int local_height = local_prediction.Height();
   const El::Int local_width = local_prediction.Width();
 
@@ -78,23 +81,26 @@ void local_bp_cpu(El::Int height,
       auto& dxhat = local_gradient_wrt_ground_truth(row, col);
       if (x > xhat) {
         dx = scale * dy;
-        dxhat = - scale * dy;
-      } else if (x < xhat) {
-        dx = - scale * dy;
+        dxhat = -scale * dy;
+      }
+      else if (x < xhat) {
+        dx = -scale * dy;
         dxhat = scale * dy;
-      } else {
+      }
+      else {
         dx = El::TypeTraits<TensorDataType>::Zero();
         dxhat = El::TypeTraits<TensorDataType>::Zero();
       }
     }
   }
-
 }
 
 } // namespace
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void mean_absolute_error_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
+void mean_absolute_error_layer<TensorDataType, T_layout, Dev>::
+  local_fp_compute()
+{
   local_fp_cpu(this->get_input_size(),
                this->get_local_prev_activations(0),
                this->get_local_prev_activations(1),
@@ -102,7 +108,9 @@ void mean_absolute_error_layer<TensorDataType, T_layout, Dev>::local_fp_compute(
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void mean_absolute_error_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
+void mean_absolute_error_layer<TensorDataType, T_layout, Dev>::
+  local_bp_compute()
+{
   local_bp_cpu(this->get_input_size(),
                this->get_local_prev_activations(0),
                this->get_local_prev_activations(1),
@@ -111,11 +119,13 @@ void mean_absolute_error_layer<TensorDataType, T_layout, Dev>::local_bp_compute(
                this->get_local_error_signals(1));
 }
 
-#define PROTO(T)                                      \
-  template class mean_absolute_error_layer<           \
-    T, data_layout::DATA_PARALLEL, El::Device::CPU>;  \
-  template class mean_absolute_error_layer<           \
-    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  template class mean_absolute_error_layer<T,                                  \
+                                           data_layout::DATA_PARALLEL,         \
+                                           El::Device::CPU>;                   \
+  template class mean_absolute_error_layer<T,                                  \
+                                           data_layout::MODEL_PARALLEL,        \
+                                           El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

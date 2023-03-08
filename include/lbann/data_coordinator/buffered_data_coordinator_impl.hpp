@@ -34,10 +34,9 @@ namespace lbann {
 
 template <typename TensorDataType>
 template <class Archive>
-void
-buffered_data_coordinator<TensorDataType>
-::serialize( Archive & ar ) {
-  ar(cereal::base_class<data_coordinator>( this )
+void buffered_data_coordinator<TensorDataType>::serialize(Archive& ar)
+{
+  ar(cereal::base_class<data_coordinator>(this)
      /*CEREAL_NVP(m_active_buffer),*/
      /*CEREAL_NVP(m_data_buffers)*/);
 }

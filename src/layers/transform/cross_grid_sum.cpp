@@ -28,11 +28,11 @@
 #define LBANN_CROSS_GRID_SUM_LAYER_INSTANTIATE
 #include "lbann/layers/transform/cross_grid_sum.hpp"
 
-#include <lbann/proto/proto_common.hpp>
 #include "lbann/proto/datatype_helpers.hpp"
+#include <lbann/proto/proto_common.hpp>
 
-#include "lbann/proto/lbann.pb.h"
 #include "lbann/proto/layers.pb.h"
+#include "lbann/proto/lbann.pb.h"
 
 namespace lbann {
 
@@ -51,7 +51,9 @@ build_cross_grid_sum_layer_from_pbuf(lbann_comm* comm,
 }
 
 template <typename T, El::Device D>
-void cross_grid_sum_layer<T,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void cross_grid_sum_layer<T, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   proto.mutable_cross_grid_sum();
 }

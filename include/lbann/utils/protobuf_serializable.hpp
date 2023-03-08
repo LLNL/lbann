@@ -32,7 +32,7 @@ namespace lbann {
 
 /** @brief Represents a class that is describable in LBANN's protobuf
  *         specification.
-*/
+ */
 class ProtobufSerializable
 {
 public:

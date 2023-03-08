@@ -35,15 +35,14 @@
 
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/layers/data_type_distconv_adapter.hpp"
-#include <set>
-#include <map>
 #include <array>
+#include <map>
+#include <set>
 #endif // LBANN_HAS_DISTCONV
 
-namespace cereal
-{
-  class access;
-}// namespace cereal
+namespace cereal {
+class access;
+} // namespace cereal
 
 namespace lbann {
 
@@ -53,7 +52,7 @@ template <typename U>
 class data_parallel_layer_tensor_manager;
 template <typename U>
 class entrywise_layer_tensor_manager;
-} // dnn_lib
+} // namespace dnn_lib
 
 using supported_layer_data_type = h2::meta::TL<
 #ifdef LBANN_HAS_GPU_FP16
@@ -62,11 +61,13 @@ using supported_layer_data_type = h2::meta::TL<
 #ifdef LBANN_HAS_HALF
   cpu_fp16,
 #endif
-  float, double>;
+  float,
+  double>;
 
 template <typename InputTensorDataType,
           typename OutputTensorDataType = InputTensorDataType>
-class data_type_layer : public Layer {
+class data_type_layer : public Layer
+{
 public:
   /** @name Public Types */
   ///@{
@@ -97,15 +98,15 @@ public:
     h2::meta::tlist::MemberV<InputTensorDataType, supported_layer_data_type>(),
     "Must use a supported type.");
 
-  data_type_layer(lbann_comm* /*comm*/, bool persistent_error_signals=false)
-    : Layer(),
-      m_persistent_error_signals{persistent_error_signals}
+  data_type_layer(lbann_comm* /*comm*/, bool persistent_error_signals = false)
+    : Layer(), m_persistent_error_signals{persistent_error_signals}
   {}
   virtual ~data_type_layer() = default;
 
   /** Get a string representing the layer datatype
    */
-  std::string get_datatype_name() const override {
+  std::string get_datatype_name() const override
+  {
     return TypeName<OutputTensorDataType>();
   };
 
@@ -125,23 +126,29 @@ public:
   // ===========================================================
 
   /** Get activation tensor corresponding to child layer. */
-  const OutputAbsDistMatrixType& get_activations(const Layer& child) const override;
+  const OutputAbsDistMatrixType&
+  get_activations(const Layer& child) const override;
   /** Get error signal tensor corresponding to parent layer. */
-  const InputAbsDistMatrixType& get_error_signals(const Layer& parent) const override;
+  const InputAbsDistMatrixType&
+  get_error_signals(const Layer& parent) const override;
 
   /** Get temp Grad Tensor. */
-  OutputAbsDistMatrixType& get_temp_grad() ;
+  OutputAbsDistMatrixType& get_temp_grad();
   /** Get transfered input for each branch tag **/
-  InputAbsDistMatrixType& get_branch_tag_input(int tag) ;
+  InputAbsDistMatrixType& get_branch_tag_input(int tag);
 
-  std::vector<std::unique_ptr<InputAbsDistMatrixType>>& get_branch_tag_input_vector() ;
+  std::vector<std::unique_ptr<InputAbsDistMatrixType>>&
+  get_branch_tag_input_vector();
 
   /** return all activations/errors for a layer
-      Used in subgraph parallelism to implement collective communication in split, sum, ... layers*/
-  std::vector<std::unique_ptr<OutputAbsDistMatrixType>>& get_all_activations() ;
-  std::vector<std::unique_ptr<InputAbsDistMatrixType>>& get_all_prev_activations() ;
-  std::vector<std::unique_ptr<OutputAbsDistMatrixType>>& get_all_prev_error_signals() ;
-  std::vector<std::unique_ptr<InputAbsDistMatrixType>>& get_all_error_signals() ;
+      Used in subgraph parallelism to implement collective communication in
+     split, sum, ... layers*/
+  std::vector<std::unique_ptr<OutputAbsDistMatrixType>>& get_all_activations();
+  std::vector<std::unique_ptr<InputAbsDistMatrixType>>&
+  get_all_prev_activations();
+  std::vector<std::unique_ptr<OutputAbsDistMatrixType>>&
+  get_all_prev_error_signals();
+  std::vector<std::unique_ptr<InputAbsDistMatrixType>>& get_all_error_signals();
 
   /** Get activation tensor. */
   OutputAbsDistMatrixType& get_activations(int child_index = 0);
@@ -168,7 +175,6 @@ public:
    */
   void set_keep_error_signals(bool) override;
 
-
   El::mpi::Comm& get_subgrid_comm() { return *m_interSubGridVCComm; }
 
   /** @name Serialization */
@@ -180,7 +186,6 @@ public:
   ///@}
 
 protected:
-
   /** @brief Protected lifecycle functions */
   ///@{
   data_type_layer(data_type_layer&& other) = default;
@@ -195,17 +200,20 @@ protected:
   // ===========================================================
 
   /** Get previous activation tensor. */
-  const InputAbsDistMatrixType& get_prev_activations(int parent_index = 0) const;
+  const InputAbsDistMatrixType&
+  get_prev_activations(int parent_index = 0) const;
   /** Get previous error signal tensor. */
-  const OutputAbsDistMatrixType& get_prev_error_signals(int child_index = 0) const;
+  const OutputAbsDistMatrixType&
+  get_prev_error_signals(int child_index = 0) const;
 
   /** Get local portion of previous activation tensor. */
-  const InputAbsMatrixType& get_local_prev_activations(int parent_index = 0) const;
+  const InputAbsMatrixType&
+  get_local_prev_activations(int parent_index = 0) const;
   /** Get local portion of previous error signal tensor. */
-  const OutputAbsMatrixType& get_local_prev_error_signals(int child_index = 0) const;
+  const OutputAbsMatrixType&
+  get_local_prev_error_signals(int child_index = 0) const;
 
 protected:
-
   // ===========================================================
   // Setup helper functions
   // ===========================================================
@@ -270,18 +278,13 @@ protected:
    *  This is sufficient for setting or accessing metadata about the
    *  weights class.
    */
-  weights& master_weights(size_t idx) {
-    return get_weights(idx);
-  }
-  weights const& master_weights(size_t idx) const {
-    return get_weights(idx);
-  }
+  weights& master_weights(size_t idx) { return get_weights(idx); }
+  weights const& master_weights(size_t idx) const { return get_weights(idx); }
 
   void setup_inter_subgrid_comm_based_on_childs(const El::Grid& grid);
   void setup_inter_subgrid_comm_based_on_parents(const El::Grid& grid);
 
 private:
-
   /** @brief Attempt to take ownership of the previous error signal.
    *
    *  If the underlying matrix has the right datatype and
@@ -312,9 +315,8 @@ private:
    *  @param child The layer from which the error signal has come.
    *  @param signal The error signal from the layer.
    */
-  void view_or_copy_prev_error_signal_(
-    const Layer& child,
-    const El::BaseDistMatrix& signal) final;
+  void view_or_copy_prev_error_signal_(const Layer& child,
+                                       const El::BaseDistMatrix& signal) final;
 
   /** @brief Deep copy the error signal.
    *
@@ -324,9 +326,8 @@ private:
    *  @param child The layer from which the error signal has come.
    *  @param signal The error signal from the layer.
    */
-  void deep_copy_prev_error_signal_(
-    const Layer& child,
-    const El::BaseDistMatrix& signal) final;
+  void deep_copy_prev_error_signal_(const Layer& child,
+                                    const El::BaseDistMatrix& signal) final;
 
   /** @brief Ensure that gradient matrices exist.
    *
@@ -358,8 +359,6 @@ private:
    *  chain rule.
    */
   void back_prop_impl_() final;
-
-
 
   // ===========================================================
   // Private class members
@@ -401,8 +400,9 @@ private:
    */
   std::vector<std::unique_ptr<OutputAbsDistMatrixType>> m_temp_grad;
 
-  /** For Split layer create a tensor for each branch_tag (opt for not transfering data for each branch)
-   *  Each matrix column corresponds to a flattened mini-batch sample.
+  /** For Split layer create a tensor for each branch_tag (opt for not
+   * transfering data for each branch) Each matrix column corresponds to a
+   * flattened mini-batch sample.
    */
   std::vector<std::unique_ptr<OutputAbsDistMatrixType>> m_subgrid_tensors_split;
 
@@ -414,12 +414,16 @@ private:
   bool m_persistent_error_signals = false;
 
 #ifdef LBANN_HAS_DISTCONV
-  friend class data_type_distconv_adapter<InputTensorDataType,OutputTensorDataType>;
- public:
-  data_type_distconv_adapter<InputTensorDataType,OutputTensorDataType>& get_distconv_adapter() override;
-  const data_type_distconv_adapter<InputTensorDataType,OutputTensorDataType>& get_distconv_adapter() const override;
+  friend class data_type_distconv_adapter<InputTensorDataType,
+                                          OutputTensorDataType>;
 
- protected:
+public:
+  data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>&
+  get_distconv_adapter() override;
+  const data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>&
+  get_distconv_adapter() const override;
+
+protected:
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
 #endif // LBANN_HAS_DISTCONV
 
@@ -432,8 +436,7 @@ private:
 };
 
 #ifndef LBANN_DATA_TYPE_LAYER_INSTANTIATE
-#define PROTO(T)                                \
-  extern template class data_type_layer<T>
+#define PROTO(T) extern template class data_type_layer<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

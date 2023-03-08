@@ -26,13 +26,13 @@
 
 #include "lbann/proto/proto_common.hpp"
 
-#include "lbann/lbann.hpp"
 #include "lbann/base.hpp"
 #include "lbann/comm_impl.hpp"
-#include "lbann/proto/init_image_data_readers.hpp"
+#include "lbann/lbann.hpp"
 #include "lbann/proto/factories.hpp"
-#include "lbann/utils/file_utils.hpp"
+#include "lbann/proto/init_image_data_readers.hpp"
 #include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/file_utils.hpp"
 
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 #include "lbann/utils/options.hpp"
@@ -46,52 +46,54 @@
 
 #include <functional>
 #include <memory>
+#include <sys/stat.h>
 #include <unordered_map>
 #include <unordered_set>
-#include <sys/stat.h>
 
 namespace lbann {
 
-int get_requested_num_parallel_readers(
-  const lbann_comm& comm, const lbann_data::LbannPB& p);
+int get_requested_num_parallel_readers(const lbann_comm& comm,
+                                       const lbann_data::LbannPB& p);
 
 void init_data_readers(
-  lbann_comm* comm, const lbann_data::LbannPB& p,
-  std::map<execution_mode, generic_data_reader *>& data_readers)
+  lbann_comm* comm,
+  const lbann_data::LbannPB& p,
+  std::map<execution_mode, generic_data_reader*>& data_readers)
 {
   const bool master = comm->am_world_master();
   std::ostringstream err;
 
-  const lbann_data::DataReader & d_reader = p.data_reader();
+  const lbann_data::DataReader& d_reader = p.data_reader();
   const int size = d_reader.reader_size();
 
   const lbann_data::DataSetMetaData& pb_metadata = p.data_set_metadata();
 
-  // A separate explicit validation/tournament set is created only if a reader with role "validate/tournament"
-  // is found in the list of data readers. Otherwise, a validation set is created as a
-  // percentage of data from the train set.
+  // A separate explicit validation/tournament set is created only if a reader
+  // with role "validate/tournament" is found in the list of data readers.
+  // Otherwise, a validation set is created as a percentage of data from the
+  // train set.
   bool separate_validation = false;
   bool separate_tournament = false;
-  for (int j=0; j<size; j++) {
+  for (int j = 0; j < size; j++) {
     const lbann_data::Reader& readme = d_reader.reader(j);
     if (readme.role() == "validate") {
-        separate_validation = true;
-        continue;
+      separate_validation = true;
+      continue;
     }
     if (readme.role() == "tournament") {
-        separate_tournament = true;
-        continue;
+      separate_tournament = true;
+      continue;
     }
   }
 
-  for (int j=0; j<size; j++) {
+  for (int j = 0; j < size; j++) {
     const lbann_data::Reader& readme = d_reader.reader(j);
 
     const std::string& name = readme.name();
 
     const bool shuffle = readme.shuffle();
 
-    generic_data_reader *reader = nullptr;
+    generic_data_reader* reader = nullptr;
 
     // This is a hack that should be fixed when we clean up data reader setup.
     bool set_transform_pipeline = true;
@@ -99,24 +101,28 @@ void init_data_readers(
     if ((name == "mnist") || (name == "cifar10")) {
       init_org_image_data_reader(readme, master, reader);
       set_transform_pipeline = false;
-    } else if ((name == "imagenet")) {
+    }
+    else if ((name == "imagenet")) {
       init_image_data_reader(readme, pb_metadata, master, reader);
       reader->set_data_sample_list(readme.sample_list());
       reader->keep_sample_order(readme.sample_list_keep_order());
       set_transform_pipeline = false;
-    } else if (name == "jag_conduit") {
+    }
+    else if (name == "jag_conduit") {
       init_image_data_reader(readme, pb_metadata, master, reader);
       set_transform_pipeline = false;
       auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
       const lbann_data::Model& pb_model = p.model();
       const lbann_data::Trainer& pb_trainer = p.trainer();
-      reader->set_mini_batch_size(static_cast<int>(pb_trainer.mini_batch_size()));
+      reader->set_mini_batch_size(
+        static_cast<int>(pb_trainer.mini_batch_size()));
       reader->set_data_sample_list(readme.sample_list());
-      reader_jag_conduit->set_list_per_trainer(readme.sample_list_per_trainer());
+      reader_jag_conduit->set_list_per_trainer(
+        readme.sample_list_per_trainer());
       reader_jag_conduit->set_list_per_model(readme.sample_list_per_model());
       reader_jag_conduit->keep_sample_order(readme.sample_list_keep_order());
 
-      for (int i=0; i < pb_model.layer_size(); ++i) {
+      for (int i = 0; i < pb_model.layer_size(); ++i) {
         const auto& proto_layer = pb_model.layer(i);
         if (proto_layer.has_input()) {
           const auto num_readers = get_requested_num_parallel_readers(*comm, p);
@@ -125,23 +131,29 @@ void init_data_readers(
           break;
         }
       }
-    } else if (name == "jag_conduit_hdf5") {
+    }
+    else if (name == "jag_conduit_hdf5") {
       init_image_data_reader(readme, pb_metadata, master, reader);
       set_transform_pipeline = false;
-    } else if (name == "nci") {
+    }
+    else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
-    } else if (name == "smiles") {
-      smiles_data_reader * smiles = new smiles_data_reader(shuffle);
-      if(readme.label_filename() != "") {
-        LBANN_ERROR("Unsupported data reader field label_filename = ", readme.label_filename());
+    }
+    else if (name == "smiles") {
+      smiles_data_reader* smiles = new smiles_data_reader(shuffle);
+      if (readme.label_filename() != "") {
+        LBANN_ERROR("Unsupported data reader field label_filename = ",
+                    readme.label_filename());
       }
-      if(readme.metadata_filename().empty()) {
-        LBANN_ERROR("Required SMILES data reader field metadata_filename is missing");
+      if (readme.metadata_filename().empty()) {
+        LBANN_ERROR(
+          "Required SMILES data reader field metadata_filename is missing");
       }
       smiles->set_metadata_filename(readme.metadata_filename());
       reader = smiles;
       reader->set_data_sample_list(readme.sample_list());
-    } else if (name == "hdf5_data_reader") {
+    }
+    else if (name == "hdf5_data_reader") {
       hdf5_data_reader* dr = new hdf5_data_reader(shuffle);
       dr->keep_sample_order(readme.sample_list_keep_order());
       dr->set_experiment_schema_filename(readme.experiment_schema_filename());
@@ -150,16 +162,18 @@ void init_data_readers(
       dr->set_has_responses(readme.enable_responses());
       reader = dr;
       reader->set_data_sample_list(readme.sample_list());
-    } else if (name == "ras_lipid") {
+    }
+    else if (name == "ras_lipid") {
 #ifdef LBANN_HAS_CNPY
-      auto *ras_lipid = new ras_lipid_conduit_data_reader(shuffle);
+      auto* ras_lipid = new ras_lipid_conduit_data_reader(shuffle);
       ras_lipid->set_num_labels(readme.num_labels());
       reader = ras_lipid;
 #else
       LBANN_ERROR("attempted to construct ras_lipid numpy data reader, "
                   "but LBANN is not built with CNPY");
 #endif // LBANN_HAS_CNPY
-    } else if (name == "csv") {
+    }
+    else if (name == "csv") {
       auto* reader_csv = new csv_reader(shuffle);
       reader_csv->set_label_col(readme.label_col());
       reader_csv->set_response_col(readme.response_col());
@@ -170,9 +184,10 @@ void init_data_readers(
       reader_csv->set_skip_rows(readme.skip_rows());
       reader_csv->set_has_header(readme.has_header());
       reader = reader_csv;
-    } else if (name == "numpy_npz_conduit_reader") {
+    }
+    else if (name == "numpy_npz_conduit_reader") {
 #ifdef LBANN_HAS_CNPY
-      auto *npz_conduit = new numpy_npz_conduit_reader(shuffle);
+      auto* npz_conduit = new numpy_npz_conduit_reader(shuffle);
       npz_conduit->set_has_labels(!readme.disable_labels());
       npz_conduit->set_has_responses(!readme.disable_responses());
       npz_conduit->set_scaling_factor_int16(readme.scaling_factor_int16());
@@ -184,7 +199,8 @@ void init_data_readers(
       LBANN_ERROR("attempted to construct numpy_npz_conduit data reader, "
                   "but LBANN is not built with CNPY");
 #endif // LBANN_HAS_CNPY
-    } else if (name == "numpy") {
+    }
+    else if (name == "numpy") {
 #ifdef LBANN_HAS_CNPY
       auto* reader_numpy = new numpy_reader(shuffle);
       reader_numpy->set_has_labels(!readme.disable_labels());
@@ -194,7 +210,8 @@ void init_data_readers(
       LBANN_ERROR("attempted to construct numpy data reader, "
                   "but LBANN is not built with CNPY");
 #endif // LBANN_HAS_CNPY
-    } else if (name == "numpy_npz") {
+    }
+    else if (name == "numpy_npz") {
 #ifdef LBANN_HAS_CNPY
       auto* reader_numpy_npz = new numpy_npz_reader(shuffle);
       reader_numpy_npz->set_has_labels(!readme.disable_labels());
@@ -206,88 +223,111 @@ void init_data_readers(
                   "but LBANN is not built with CNPY");
 #endif // LBANN_HAS_CNPY
 #ifdef LBANN_HAS_DISTCONV
-    } else if (name == "cosmoflow_hdf5" || name == "hdf5") {
-      if(name == "cosmoflow_hdf5") {
-        LBANN_WARNING("The \"cosmoflow_hdf5\" data reader is deprecated. Use \"hdf5\" instead.");
+    }
+    else if (name == "cosmoflow_hdf5" || name == "hdf5") {
+      if (name == "cosmoflow_hdf5") {
+        LBANN_WARNING("The \"cosmoflow_hdf5\" data reader is deprecated. Use "
+                      "\"hdf5\" instead.");
       }
       const auto key_data = readme.hdf5_key_data();
       const auto key_labels = readme.hdf5_key_labels();
       const auto key_responses = readme.hdf5_key_responses();
       const auto hyperslab_labels = readme.hdf5_hyperslab_labels();
-      auto* reader_hdf5 = new hdf5_reader<DataType>(shuffle, key_data,
-                                                          key_labels,
-                                                          key_responses,
-                                                          hyperslab_labels);
+      auto* reader_hdf5 = new hdf5_reader<DataType>(shuffle,
+                                                    key_data,
+                                                    key_labels,
+                                                    key_responses,
+                                                    hyperslab_labels);
       reader_hdf5->set_has_data_field(INPUT_DATA_TYPE_SAMPLES, true);
-      reader_hdf5->set_has_data_field(INPUT_DATA_TYPE_LABEL_RECONSTRUCTION, true);
+      reader_hdf5->set_has_data_field(INPUT_DATA_TYPE_LABEL_RECONSTRUCTION,
+                                      true);
       reader_hdf5->set_has_labels(!readme.disable_labels());
       reader_hdf5->set_has_responses(!readme.disable_responses());
       reader_hdf5->set_num_responses(readme.num_responses());
       auto filedir = readme.data_filedir();
-      if(!endsWith(filedir, "/")) {
+      if (!endsWith(filedir, "/")) {
         filedir = filedir + "/";
       }
-      const auto paths = glob(filedir +readme.data_file_pattern());
+      const auto paths = glob(filedir + readme.data_file_pattern());
       reader_hdf5->set_hdf5_paths(paths);
       reader = reader_hdf5;
 #endif // LBANN_HAS_DISTCONV
-    } else if (name == "pilot2_molecular_reader") {
+    }
+    else if (name == "pilot2_molecular_reader") {
 #ifdef LBANN_HAS_CNPY
-      pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
+      pilot2_molecular_reader* reader_pilot2_molecular =
+        new pilot2_molecular_reader(readme.num_neighbors(),
+                                    readme.max_neighborhood(),
+                                    shuffle);
       reader = reader_pilot2_molecular;
 #else
       LBANN_ERROR("attempted to construct pilot2_molecular numpy data reader, "
                   "but LBANN is not built with CNPY");
 #endif // LBANN_HAS_CNPY
-    } else if (name == "merge_samples" || name == "merge_features" || name == "multi_conduit") {
-      //TODO: verify how much of wildcard conflict with label file, label file should be loaded separately
+    }
+    else if (name == "merge_samples" || name == "merge_features" ||
+             name == "multi_conduit") {
+      // TODO: verify how much of wildcard conflict with label file, label file
+      // should be loaded separately
       auto filedir = readme.data_filedir();
-      if(!endsWith(filedir, "/")) {
+      if (!endsWith(filedir, "/")) {
         filedir = filedir + "/";
       }
       auto paths = glob(filedir + readme.data_file_pattern());
       std::vector<generic_data_reader*> npy_readers;
-      for(auto i = paths.begin(); i != paths.end(); i++) {
+      for (auto i = paths.begin(); i != paths.end(); i++) {
         const auto path = *i;
-        if(master) { std::cout << "Loading file: " << path << std::endl; }
+        if (master) {
+          std::cout << "Loading file: " << path << std::endl;
+        }
         if (readme.format() == "numpy") {
 #ifdef LBANN_HAS_CNPY
-          auto *reader_numpy = new numpy_reader(false);
+          auto* reader_numpy = new numpy_reader(false);
           reader_numpy->set_data_filename(path);
           reader_numpy->set_has_labels(!readme.disable_labels());
           reader_numpy->set_has_responses(!readme.disable_responses());
           npy_readers.push_back(reader_numpy);
 #else
-      LBANN_ERROR("attempted to construct numpy data reader, "
-                  "but LBANN is not built with CNPY");
+          LBANN_ERROR("attempted to construct numpy data reader, "
+                      "but LBANN is not built with CNPY");
 #endif // LBANN_HAS_CNPY
-        } else if (readme.format() == "numpy_npz") {
+        }
+        else if (readme.format() == "numpy_npz") {
 #ifdef LBANN_HAS_CNPY
           auto* reader_numpy_npz = new numpy_npz_reader(false);
           reader_numpy_npz->set_data_filename(path);
           reader_numpy_npz->set_has_labels(!readme.disable_labels());
           reader_numpy_npz->set_has_responses(!readme.disable_responses());
-          reader_numpy_npz->set_scaling_factor_int16(readme.scaling_factor_int16());
+          reader_numpy_npz->set_scaling_factor_int16(
+            readme.scaling_factor_int16());
           npy_readers.push_back(reader_numpy_npz);
 #else
-      LBANN_ERROR("attempted to construct numpy data reader, "
-                  "but LBANN is not built with CNPY");
+          LBANN_ERROR("attempted to construct numpy data reader, "
+                      "but LBANN is not built with CNPY");
 #endif // LBANN_HAS_CNPY
-        } else if (readme.format() == "jag_conduit") {
+        }
+        else if (readme.format() == "jag_conduit") {
           init_image_data_reader(readme, pb_metadata, master, reader);
           npy_readers.push_back(reader);
-        } else if (readme.format() == "pilot2_molecular_reader") {
+        }
+        else if (readme.format() == "pilot2_molecular_reader") {
 #ifdef LBANN_HAS_CNPY
-          pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
+          pilot2_molecular_reader* reader_pilot2_molecular =
+            new pilot2_molecular_reader(readme.num_neighbors(),
+                                        readme.max_neighborhood(),
+                                        shuffle);
           reader_pilot2_molecular->set_data_filename(path);
           npy_readers.push_back(reader_pilot2_molecular);
 #else
-      LBANN_ERROR("attempted to construct numpy data reader, "
-                  "but LBANN is not built with CNPY");
+          LBANN_ERROR("attempted to construct numpy data reader, "
+                      "but LBANN is not built with CNPY");
 #endif // LBANN_HAS_CNPY
-        } else if (readme.format() == "csv") {
+        }
+        else if (readme.format() == "csv") {
           auto* reader_csv = new csv_reader(shuffle);
-          if(master) { std::cout << "Set data filename: " << path << std::endl; }
+          if (master) {
+            std::cout << "Set data filename: " << path << std::endl;
+          }
           reader_csv->set_data_filename(path);
           reader_csv->set_label_col(readme.label_col());
           reader_csv->set_response_col(readme.response_col());
@@ -297,80 +337,103 @@ void init_data_readers(
           reader_csv->set_skip_cols(readme.skip_cols());
           reader_csv->set_skip_rows(readme.skip_rows());
           reader_csv->set_has_header(readme.has_header());
-          reader_csv->set_absolute_sample_count( readme.absolute_sample_count() );
-          reader_csv->set_use_percent( readme.percent_of_data_to_use() );
-          reader_csv->set_first_n( readme.first_n() );
+          reader_csv->set_absolute_sample_count(readme.absolute_sample_count());
+          reader_csv->set_use_percent(readme.percent_of_data_to_use());
+          reader_csv->set_first_n(readme.first_n());
           npy_readers.push_back(reader_csv);
-        } else {
-          err << __FILE__ << " " << __LINE__ << " :: unknown format for merged data reader: "
-              << name;
+        }
+        else {
+          err << __FILE__ << " " << __LINE__
+              << " :: unknown format for merged data reader: " << name;
           throw lbann_exception(err.str());
         }
       }
-      if(name == "merge_samples") {
-        data_reader_merge_samples* merged_samples = new data_reader_merge_samples(npy_readers, shuffle);
+      if (name == "merge_samples") {
+        data_reader_merge_samples* merged_samples =
+          new data_reader_merge_samples(npy_readers, shuffle);
         reader = merged_samples;
-      } else if (name == "multi_conduit") {
-        //note: this is not a mistake! We may have a separate multi_conduit
-        //      reader in the future, but for now merge_samples does what we need.
-        data_reader_merge_samples* multi_conduit = new data_reader_merge_samples(npy_readers, shuffle);
+      }
+      else if (name == "multi_conduit") {
+        // note: this is not a mistake! We may have a separate multi_conduit
+        //       reader in the future, but for now merge_samples does what we
+        //       need.
+        data_reader_merge_samples* multi_conduit =
+          new data_reader_merge_samples(npy_readers, shuffle);
         reader = multi_conduit;
-      } else {
-        //create label file
-        //we can use merge_features without label
+      }
+      else {
+        // create label file
+        // we can use merge_features without label
         generic_data_reader* label_reader = nullptr;
-        if(readme.label_filename() != "") {
-          if(master) { std::cout << "Set label filename: " << readme.label_filename() << std::endl; }
+        if (readme.label_filename() != "") {
+          if (master) {
+            std::cout << "Set label filename: " << readme.label_filename()
+                      << std::endl;
+          }
           if (readme.format() == "numpy") {
 #ifdef LBANN_HAS_CNPY
-             auto* label_numpy  = new numpy_reader(false);
-             label_numpy->set_label_filename(readme.label_filename());
-             label_numpy->set_data_filename(readme.label_filename());
-             label_reader = label_numpy;
+            auto* label_numpy = new numpy_reader(false);
+            label_numpy->set_label_filename(readme.label_filename());
+            label_numpy->set_data_filename(readme.label_filename());
+            label_reader = label_numpy;
 #else
-      LBANN_ERROR("attempted to construct numpy data reader, "
-                  "but LBANN is not built with CNPY");
+            LBANN_ERROR("attempted to construct numpy data reader, "
+                        "but LBANN is not built with CNPY");
 #endif // LBANN_HAS_CNPY
-           } else if (readme.format() == "csv") { //if format is csv and label_filename is not empty
-             auto* label_csv = new csv_reader(shuffle);
-             if(master) { std::cout << "Set label filename: " << readme.label_filename() << std::endl; }
-             label_csv->set_label_filename(readme.label_filename());
-             label_csv->set_data_filename(readme.label_filename());
-             label_csv->disable_labels(readme.disable_labels());
-             label_csv->enable_responses(readme.disable_responses());
-             label_csv->set_has_header(readme.has_header()); //use same as parent file
-             label_csv->set_comm(comm);
-             label_csv->set_label_col(0); //assume there is only one label file and the column and is label column
-             label_csv->set_response_col(0);
-             label_reader = label_csv;
-           } else {
-             err << __FILE__ << " " << __LINE__ << " :: unknown format for merged features label: "
+          }
+          else if (readme.format() ==
+                   "csv") { // if format is csv and label_filename is not empty
+            auto* label_csv = new csv_reader(shuffle);
+            if (master) {
+              std::cout << "Set label filename: " << readme.label_filename()
+                        << std::endl;
+            }
+            label_csv->set_label_filename(readme.label_filename());
+            label_csv->set_data_filename(readme.label_filename());
+            label_csv->disable_labels(readme.disable_labels());
+            label_csv->enable_responses(readme.disable_responses());
+            label_csv->set_has_header(
+              readme.has_header()); // use same as parent file
+            label_csv->set_comm(comm);
+            label_csv->set_label_col(0); // assume there is only one label file
+                                         // and the column and is label column
+            label_csv->set_response_col(0);
+            label_reader = label_csv;
+          }
+          else {
+            err << __FILE__ << " " << __LINE__
+                << " :: unknown format for merged features label: "
                 << readme.format();
-             throw lbann_exception(err.str());
-           }
-         }
-        //data_reader_merge_features* merged_features = new data_reader_merge_features(npy_readers,label_csv, shuffle);
-        data_reader_merge_features* merged_features = new data_reader_merge_features(npy_readers,label_reader, shuffle);
+            throw lbann_exception(err.str());
+          }
+        }
+        // data_reader_merge_features* merged_features = new
+        // data_reader_merge_features(npy_readers,label_csv, shuffle);
+        data_reader_merge_features* merged_features =
+          new data_reader_merge_features(npy_readers, label_reader, shuffle);
         reader = merged_features;
       }
-
-    } else if (name == "synthetic") {
+    }
+    else if (name == "synthetic") {
       if (readme.num_labels() != 0) {
-        reader = new data_reader_synthetic(
-          readme.num_samples(),
-          parse_list<int>(readme.synth_dimensions()),
-          readme.num_labels(),
-          shuffle);
-      } else {
+        reader =
+          new data_reader_synthetic(readme.num_samples(),
+                                    parse_list<int>(readme.synth_dimensions()),
+                                    readme.num_labels(),
+                                    shuffle);
+      }
+      else {
         reader = new data_reader_synthetic(
           readme.num_samples(),
           parse_list<int>(readme.synth_dimensions()),
           parse_list<int>(readme.synth_response_dimensions()),
           shuffle);
       }
-    } else if (name == "mesh") {
+    }
+    else if (name == "mesh") {
       reader = new mesh_reader(shuffle);
-    } else if (name == "python") {
+    }
+    else if (name == "python") {
 #ifdef LBANN_HAS_EMBEDDED_PYTHON
       const auto& params = readme.python();
       reader = new python_reader(params.module(),
@@ -383,25 +446,26 @@ void init_data_readers(
       LBANN_ERROR("attempted to construct Python data reader, "
                   "but LBANN is not built with Python/C API");
 #endif // LBANN_HAS_EMBEDDED_PYTHON
-    } else if (name == "node2vec") {
+    }
+    else if (name == "node2vec") {
 #ifdef LBANN_HAS_LARGESCALE_NODE2VEC
       const auto& params = readme.node2vec();
-      reader = new node2vec_reader(
-        params.graph_file(),
-        params.epoch_size(),
-        params.walk_length(),
-        params.return_param(),
-        params.inout_param(),
-        params.num_negative_samples());
+      reader = new node2vec_reader(params.graph_file(),
+                                   params.epoch_size(),
+                                   params.walk_length(),
+                                   params.return_param(),
+                                   params.inout_param(),
+                                   params.num_negative_samples());
 #else
       LBANN_ERROR("attempted to construct node2vec data reader, "
                   "but LBANN is not built with "
                   "largescale_node2vec or HavoqGT");
 #endif // LBANN_HAS_LARGESCALE_NODE2VEC
-    } else {
-        err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
-            << name;
-        throw lbann_exception(err.str());
+    }
+    else {
+      err << __FILE__ << " " << __LINE__
+          << " :: unknown name for data reader: " << name;
+      throw lbann_exception(err.str());
     }
     reader->set_comm(comm);
 
@@ -411,128 +475,167 @@ void init_data_readers(
     }
 
     if (readme.data_filename() != "") {
-      reader->set_data_filename( readme.data_filename() );
+      reader->set_data_filename(readme.data_filename());
     }
-    if (readme.label_filename() != "" && name != "merge_features") { //label_file set differently for merge_features
-      reader->set_label_filename( readme.label_filename() );
+    if (readme.label_filename() != "" &&
+        name !=
+          "merge_features") { // label_file set differently for merge_features
+      reader->set_label_filename(readme.label_filename());
     }
     if (readme.data_filedir() != "") {
-      reader->set_file_dir( readme.data_filedir() );
+      reader->set_file_dir(readme.data_filedir());
     }
-    reader->set_max_files_to_load( readme.max_files_to_load() );
+    reader->set_max_files_to_load(readme.max_files_to_load());
     if (readme.data_local_filedir() != "") {
-      reader->set_local_file_dir( readme.data_local_filedir() );
+      reader->set_local_file_dir(readme.data_local_filedir());
     }
 
-    reader->set_absolute_sample_count( readme.absolute_sample_count() );
-    reader->set_use_percent( readme.percent_of_data_to_use() );
-    reader->set_first_n( readme.first_n() );
+    reader->set_absolute_sample_count(readme.absolute_sample_count());
+    reader->set_use_percent(readme.percent_of_data_to_use());
+    reader->set_first_n(readme.first_n());
 
     reader->set_gan_labelling(readme.gan_labelling());
     reader->set_gan_label_value(readme.gan_label_value());
 
     if (readme.role() == "train") {
       reader->set_role("train");
-    } else if (readme.role() == "test") {
+    }
+    else if (readme.role() == "test") {
       reader->set_role("test");
-    } else if (readme.role() == "validate") {
+    }
+    else if (readme.role() == "validate") {
       reader->set_role("validate");
-    } else if (readme.role() == "tournament") {
+    }
+    else if (readme.role() == "tournament") {
       reader->set_role("tournament");
-    } else {
+    }
+    else {
       reader->set_role("error");
     }
     if (readme.role() == "train") {
-      reader->set_execution_mode_split_percent(execution_mode::validation, readme.validation_percent() );
-      reader->set_execution_mode_split_percent(execution_mode::tournament, readme.tournament_percent() );
+      reader->set_execution_mode_split_percent(execution_mode::validation,
+                                               readme.validation_percent());
+      reader->set_execution_mode_split_percent(execution_mode::tournament,
+                                               readme.tournament_percent());
     }
 
     reader->load();
 
     if (readme.role() == "train") {
       data_readers[execution_mode::training] = reader;
-    } else if (readme.role() == "test") {
-      // While the default validation_percent is 0.0, this line is added to be consistent with the case of "train"
-      reader->set_execution_mode_split_percent(execution_mode::validation,  0. );
+    }
+    else if (readme.role() == "test") {
+      // While the default validation_percent is 0.0, this line is added to be
+      // consistent with the case of "train"
+      reader->set_execution_mode_split_percent(execution_mode::validation, 0.);
       data_readers[execution_mode::testing] = reader;
-    } else if (readme.role() == "validate") {
-      reader->set_execution_mode_split_percent(execution_mode::validation, 0. );
+    }
+    else if (readme.role() == "validate") {
+      reader->set_execution_mode_split_percent(execution_mode::validation, 0.);
       data_readers[execution_mode::validation] = reader;
-    } else if (readme.role() == "tournament") {
-      reader->set_execution_mode_split_percent(execution_mode::tournament, 0. );
+    }
+    else if (readme.role() == "tournament") {
+      reader->set_execution_mode_split_percent(execution_mode::tournament, 0.);
       data_readers[execution_mode::tournament] = reader;
     }
 
     if (readme.role() == "train") {
-      for(auto m : execution_mode_iterator()) {
-        if((m == execution_mode::validation && readme.validation_percent() > 0. && !separate_validation)
-           || (m == execution_mode::tournament && readme.tournament_percent() > 0. && !separate_tournament)) {
-          generic_data_reader *split_reader = nullptr;
+      for (auto m : execution_mode_iterator()) {
+        if ((m == execution_mode::validation &&
+             readme.validation_percent() > 0. && !separate_validation) ||
+            (m == execution_mode::tournament &&
+             readme.tournament_percent() > 0. && !separate_tournament)) {
+          generic_data_reader* split_reader = nullptr;
 
           if (name == "mnist") {
             split_reader = new mnist_reader(shuffle);
-            (*(mnist_reader *)split_reader) = (*(mnist_reader *)reader);
-          } else if (name == "numpy_npz_conduit_reader") {
+            (*(mnist_reader*)split_reader) = (*(mnist_reader*)reader);
+          }
+          else if (name == "numpy_npz_conduit_reader") {
 #ifdef LBANN_HAS_CNPY
-            split_reader = new numpy_npz_conduit_reader(*dynamic_cast<const numpy_npz_conduit_reader*>(reader));
+            split_reader = new numpy_npz_conduit_reader(
+              *dynamic_cast<const numpy_npz_conduit_reader*>(reader));
 #else
-      LBANN_ERROR("attempted to construct npz_conduit numpy data reader, "
-                  "but LBANN is not built with CNPY");
+            LBANN_ERROR("attempted to construct npz_conduit numpy data reader, "
+                        "but LBANN is not built with CNPY");
 #endif // LBANN_HAS_CNPY
-          } else if (name == "imagenet") {
+          }
+          else if (name == "imagenet") {
 #ifdef LBANN_HAS_OPENCV
-            split_reader = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
+            split_reader = new imagenet_reader(
+              *dynamic_cast<const imagenet_reader*>(reader));
 #else
             LBANN_ERROR("imagenet reader not supported without OpenCV.");
 #endif // LBANN_HAS_OPENCV
-          } else if (name == "smiles") {
-            split_reader = new smiles_data_reader(*dynamic_cast<const smiles_data_reader*>(reader));
-          } else if (name == "jag_conduit") {
-            split_reader = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
+          }
+          else if (name == "smiles") {
+            split_reader = new smiles_data_reader(
+              *dynamic_cast<const smiles_data_reader*>(reader));
+          }
+          else if (name == "jag_conduit") {
+            split_reader = new data_reader_jag_conduit(
+              *dynamic_cast<const data_reader_jag_conduit*>(reader));
             const std::string role = "validate";
-            auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(split_reader);
+            auto reader_jag_conduit =
+              dynamic_cast<data_reader_jag_conduit*>(split_reader);
             reader_jag_conduit->set_role(role);
-          } else if (name == "ras_lipid") {
+          }
+          else if (name == "ras_lipid") {
 #ifdef LBANN_HAS_CNPY
-            auto *ras_lipid = new ras_lipid_conduit_data_reader(shuffle);
+            auto* ras_lipid = new ras_lipid_conduit_data_reader(shuffle);
             ras_lipid->set_num_labels(readme.num_labels());
             split_reader = ras_lipid;
-            (*(ras_lipid_conduit_data_reader *)split_reader) = (*(ras_lipid_conduit_data_reader *)reader);
+            (*(ras_lipid_conduit_data_reader*)split_reader) =
+              (*(ras_lipid_conduit_data_reader*)reader);
 #else
-      LBANN_ERROR("attempted to construct ras_lipid numpy data reader, "
-                  "but LBANN is not built with CNPY");
+            LBANN_ERROR("attempted to construct ras_lipid numpy data reader, "
+                        "but LBANN is not built with CNPY");
 #endif // LBANN_HAS_CNPY
-          } else if (name == "nci") {
+          }
+          else if (name == "nci") {
             split_reader = new data_reader_nci(shuffle);
-            (*(data_reader_nci *)split_reader) = (*(data_reader_nci *)reader);
-          } else if (name == "hdf5_data_reader") {
+            (*(data_reader_nci*)split_reader) = (*(data_reader_nci*)reader);
+          }
+          else if (name == "hdf5_data_reader") {
             split_reader = new hdf5_data_reader(shuffle);
-            (*(hdf5_data_reader*)split_reader) = (*(hdf5_data_reader *)reader);
-          } else if (name == "csv") {
+            (*(hdf5_data_reader*)split_reader) = (*(hdf5_data_reader*)reader);
+          }
+          else if (name == "csv") {
             split_reader = new csv_reader(shuffle);
-            (*(csv_reader *)split_reader) = (*(csv_reader *)reader);
-          } else if (name == "numpy") {
+            (*(csv_reader*)split_reader) = (*(csv_reader*)reader);
+          }
+          else if (name == "numpy") {
 #ifdef LBANN_HAS_CNPY
             split_reader = new numpy_reader(shuffle);
-            (*(numpy_reader *)split_reader) = (*(numpy_reader *)reader);
+            (*(numpy_reader*)split_reader) = (*(numpy_reader*)reader);
 #else
-      LBANN_ERROR("attempted to construct numpy data reader, "
-                  "but LBANN is not built with CNPY");
+            LBANN_ERROR("attempted to construct numpy data reader, "
+                        "but LBANN is not built with CNPY");
 #endif // LBANN_HAS_CNPY
-          } else if (name == "merge_samples") {
-            split_reader = new data_reader_merge_samples(*(data_reader_merge_samples *)reader);
-          } else if (name == "merge_features") {
-            split_reader = new data_reader_merge_features(*(data_reader_merge_features *)reader);
-          } else if (name == "cifar10") {
+          }
+          else if (name == "merge_samples") {
+            split_reader = new data_reader_merge_samples(
+              *(data_reader_merge_samples*)reader);
+          }
+          else if (name == "merge_features") {
+            split_reader = new data_reader_merge_features(
+              *(data_reader_merge_features*)reader);
+          }
+          else if (name == "cifar10") {
             split_reader = new cifar10_reader(shuffle);
-            (*(cifar10_reader *)split_reader) = (*(cifar10_reader *)reader);
-          } else if (name == "synthetic") {
-            split_reader = new data_reader_synthetic(*(data_reader_synthetic *)reader);
-            (*(data_reader_synthetic *) split_reader) = (*(data_reader_synthetic *)reader);
-          } else if (name == "mesh") {
+            (*(cifar10_reader*)split_reader) = (*(cifar10_reader*)reader);
+          }
+          else if (name == "synthetic") {
+            split_reader =
+              new data_reader_synthetic(*(data_reader_synthetic*)reader);
+            (*(data_reader_synthetic*)split_reader) =
+              (*(data_reader_synthetic*)reader);
+          }
+          else if (name == "mesh") {
             split_reader = new mesh_reader(shuffle);
-            (*(mesh_reader *)split_reader) = (*(mesh_reader *)reader);
-          } else if (name == "python") {
+            (*(mesh_reader*)split_reader) = (*(mesh_reader*)reader);
+          }
+          else if (name == "python") {
 #ifdef LBANN_HAS_EMBEDDED_PYTHON
             const auto& params = readme.python();
             split_reader = new python_reader(params.module(),
@@ -541,26 +644,26 @@ void init_data_readers(
                                              params.num_samples_function(),
                                              params.sample_dims_function(),
                                              shuffle);
-            (*(python_reader *)split_reader) = (*(python_reader *)reader);
+            (*(python_reader*)split_reader) = (*(python_reader*)reader);
 #else
             LBANN_ERROR("attempted to construct Python data reader, "
                         "but LBANN is not built with Python/C API");
 #endif // LBANN_HAS_EMBEDDED_PYTHON
           }
 
-          //this will save someone much grief someday:
+          // this will save someone much grief someday:
           if (split_reader == nullptr) {
             LBANN_ERROR("split_reader == nullptr");
           }
 
-
-          if(m == execution_mode::validation) {
+          if (m == execution_mode::validation) {
             split_reader->set_role("validate");
-          }else if(m == execution_mode::tournament) {
+          }
+          else if (m == execution_mode::tournament) {
             split_reader->set_role("tournament");
           }
           split_reader->use_unused_index_set(m);
-          data_store_conduit *store = split_reader->get_data_store_ptr();
+          data_store_conduit* store = split_reader->get_data_store_ptr();
           if (store != nullptr) {
             store->set_data_reader_ptr(split_reader);
             split_reader->get_data_store_ptr()->compact_nodes();
@@ -574,10 +677,16 @@ void init_data_readers(
           if (master) {
             size_t num_train = reader->get_num_data();
             size_t num_split = split_reader->get_num_data();
-            double validate_percent = ((double) num_split / (double) (num_train+num_split))*100.0;
-            double train_percent = ((double) num_train / (double) (num_train+num_split))*100.0;
-            std::cout << "Training using " << train_percent << "% of the training data set, which is " << reader->get_num_data() << " samples." << std::endl
-                      << to_string(m) << " training using " << validate_percent << "% of the training data set, which is " << split_reader->get_num_data() << " samples.";
+            double validate_percent =
+              ((double)num_split / (double)(num_train + num_split)) * 100.0;
+            double train_percent =
+              ((double)num_train / (double)(num_train + num_split)) * 100.0;
+            std::cout << "Training using " << train_percent
+                      << "% of the training data set, which is "
+                      << reader->get_num_data() << " samples." << std::endl
+                      << to_string(m) << " training using " << validate_percent
+                      << "% of the training data set, which is "
+                      << split_reader->get_num_data() << " samples.";
             std::cout << std::endl;
           }
 
@@ -589,38 +698,48 @@ void init_data_readers(
 
   if (master) {
     if (separate_validation) {
-      const generic_data_reader* r_train = peek_map(data_readers, execution_mode::training);
-      const generic_data_reader* r_validate = peek_map(data_readers, execution_mode::validation);
-      const size_t num_train = (r_train == nullptr)? 0u : r_train->get_num_data();
-      const size_t num_validate = (r_validate == nullptr)? 0u : r_validate->get_num_data();
+      const generic_data_reader* r_train =
+        peek_map(data_readers, execution_mode::training);
+      const generic_data_reader* r_validate =
+        peek_map(data_readers, execution_mode::validation);
+      const size_t num_train =
+        (r_train == nullptr) ? 0u : r_train->get_num_data();
+      const size_t num_validate =
+        (r_validate == nullptr) ? 0u : r_validate->get_num_data();
       std::cout << "Training using " << num_train << " samples." << std::endl
-                << "Validating using " << num_validate << " samples." << std::endl;
+                << "Validating using " << num_validate << " samples."
+                << std::endl;
     }
-    const generic_data_reader* r_test = peek_map(data_readers, execution_mode::testing);
-    const size_t num_test = (r_test == nullptr)? 0u : r_test->get_num_data();
+    const generic_data_reader* r_test =
+      peek_map(data_readers, execution_mode::testing);
+    const size_t num_test = (r_test == nullptr) ? 0u : r_test->get_num_data();
     std::cout << "Testing using " << num_test << " samples." << std::endl;
   }
   // remove null data_reader pointers if there is any
-  for (auto it = data_readers.cbegin(); it != data_readers.cend() ; ) {
+  for (auto it = data_readers.cbegin(); it != data_readers.cend();) {
     if (!it->second) {
       it = data_readers.erase(it);
-    } else {
+    }
+    else {
       ++it;
     }
   }
 }
 
-void read_prototext_file(const std::string& fn, lbann_data::LbannPB& pb, const bool master)
+void read_prototext_file(const std::string& fn,
+                         lbann_data::LbannPB& pb,
+                         const bool master)
 {
   std::ostringstream err;
   int fd = open(fn.c_str(), O_RDONLY);
   if (fd == -1) {
     if (master) {
-      err <<  __FILE__ << " " << __LINE__ << " :: failed to open " << fn << " for reading";
+      err << __FILE__ << " " << __LINE__ << " :: failed to open " << fn
+          << " for reading";
       throw lbann_exception(err.str());
     }
   }
-  using FIS=google::protobuf::io::FileInputStream;
+  using FIS = google::protobuf::io::FileInputStream;
   auto input = std::unique_ptr<FIS, std::function<void(FIS*)>>(
     new google::protobuf::io::FileInputStream(fd),
     [](FIS* x) {
@@ -630,7 +749,8 @@ void read_prototext_file(const std::string& fn, lbann_data::LbannPB& pb, const b
   bool success = google::protobuf::TextFormat::Parse(input.get(), &pb);
   if (!success) {
     if (master) {
-      err <<  __FILE__ << " " << __LINE__ << " :: failed to read or parse prototext file: " << fn << std::endl;
+      err << __FILE__ << " " << __LINE__
+          << " :: failed to read or parse prototext file: " << fn << std::endl;
       throw lbann_exception(err.str());
     }
   }
@@ -642,7 +762,7 @@ bool write_prototext_file(const std::string& fn, lbann_data::LbannPB& pb)
   if (fd == -1) {
     return false;
   }
-  auto *output = new google::protobuf::io::FileOutputStream(fd);
+  auto* output = new google::protobuf::io::FileOutputStream(fd);
   if (!google::protobuf::TextFormat::Print(pb, output)) {
     close(fd);
     delete output;
@@ -653,15 +773,16 @@ bool write_prototext_file(const std::string& fn, lbann_data::LbannPB& pb)
   return true;
 }
 
-bool check_if_num_parallel_readers_set(const lbann_comm& comm, const lbann_data::Trainer& trainer)
+bool check_if_num_parallel_readers_set(const lbann_comm& comm,
+                                       const lbann_data::Trainer& trainer)
 {
   const bool master = comm.am_world_master();
   const int parallel_io = trainer.num_parallel_readers();
 
   if (parallel_io == 0) {
     if (master) {
-      std::cout << "\tMax Parallel I/O Fetch: " << comm.get_procs_per_trainer() <<
-        " (Limited to # Processes)" << std::endl;
+      std::cout << "\tMax Parallel I/O Fetch: " << comm.get_procs_per_trainer()
+                << " (Limited to # Processes)" << std::endl;
     }
     return false;
   }
@@ -673,16 +794,17 @@ bool check_if_num_parallel_readers_set(const lbann_comm& comm, const lbann_data:
 
 void set_num_parallel_readers(const lbann_comm& comm, lbann_data::LbannPB& p)
 {
-  lbann_data::Trainer *trainer = p.mutable_trainer();
+  lbann_data::Trainer* trainer = p.mutable_trainer();
   const bool is_set = check_if_num_parallel_readers_set(comm, *trainer);
 
   if (!is_set) {
     const int parallel_io = comm.get_procs_per_trainer();
-    trainer->set_num_parallel_readers(parallel_io); //adjust the prototext
+    trainer->set_num_parallel_readers(parallel_io); // adjust the prototext
   }
 }
 
-int get_requested_num_parallel_readers(const lbann_comm& comm, const lbann_data::LbannPB& p)
+int get_requested_num_parallel_readers(const lbann_comm& comm,
+                                       const lbann_data::LbannPB& p)
 {
   const lbann_data::Trainer& trainer = p.trainer();
   const bool is_set = check_if_num_parallel_readers_set(comm, trainer);
@@ -693,14 +815,14 @@ int get_requested_num_parallel_readers(const lbann_comm& comm, const lbann_data:
   return trainer.num_parallel_readers();
 }
 
-void set_data_readers_filenames(
-  const std::string& which, lbann_data::LbannPB& p)
+void set_data_readers_filenames(const std::string& which,
+                                lbann_data::LbannPB& p)
 {
   auto& arg_parser = global_argument_parser();
-  lbann_data::DataReader *readers = p.mutable_data_reader();
+  lbann_data::DataReader* readers = p.mutable_data_reader();
   int size = readers->reader_size();
-  for (int j=0; j<size; j++) {
-    lbann_data::Reader *r = readers->mutable_reader(j);
+  for (int j = 0; j < size; j++) {
+    lbann_data::Reader* r = readers->mutable_reader(j);
     if (r->role() == which) {
       std::ostringstream s;
       s << "data_filedir_" << which;
@@ -731,16 +853,16 @@ void set_data_readers_filenames(
   }
 }
 
-void set_data_readers_sample_list(
-  const std::string& which, lbann_data::LbannPB& p)
+void set_data_readers_sample_list(const std::string& which,
+                                  lbann_data::LbannPB& p)
 {
   auto& arg_parser = global_argument_parser();
-  lbann_data::DataReader *readers = p.mutable_data_reader();
+  lbann_data::DataReader* readers = p.mutable_data_reader();
   int size = readers->reader_size();
   const std::string key_role = "sample_list_" + which;
 
-  for (int j=0; j<size; j++) {
-    lbann_data::Reader *r = readers->mutable_reader(j);
+  for (int j = 0; j < size; j++) {
+    lbann_data::Reader* r = readers->mutable_reader(j);
     if (r->role() == which) {
       r->set_sample_list(arg_parser.get<std::string>(key_role));
     }
@@ -752,26 +874,27 @@ void set_data_readers_percent(lbann_data::LbannPB& p)
   auto& arg_parser = global_argument_parser();
   double percent = arg_parser.get<float>(LBANN_OPTION_DATA_READER_PERCENT);
   if (percent <= 0 || percent > 1.0) {
-      std::ostringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << " --data_reader_percent=<float> must be > 0 and <= 1.0";
-      throw lbann_exception(err.str());
+    std::ostringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << " --data_reader_percent=<float> must be > 0 and <= 1.0";
+    throw lbann_exception(err.str());
   }
-  lbann_data::DataReader *readers = p.mutable_data_reader();
+  lbann_data::DataReader* readers = p.mutable_data_reader();
   int size = readers->reader_size();
-  for (int j=0; j<size; j++) {
-    lbann_data::Reader *r = readers->mutable_reader(j);
-    r->set_percent_of_data_to_use( percent );
+  for (int j = 0; j < size; j++) {
+    lbann_data::Reader* r = readers->mutable_reader(j);
+    r->set_percent_of_data_to_use(percent);
   }
 }
 
-void customize_data_readers_sample_list(const lbann_comm& comm, lbann_data::LbannPB& p)
+void customize_data_readers_sample_list(const lbann_comm& comm,
+                                        lbann_data::LbannPB& p)
 {
-  lbann_data::DataReader *readers = p.mutable_data_reader();
+  lbann_data::DataReader* readers = p.mutable_data_reader();
   const lbann_data::Model& pb_model = p.model();
   int size = readers->reader_size();
-  for (int j=0; j<size; j++) {
-    lbann_data::Reader *r = readers->mutable_reader(j);
+  for (int j = 0; j < size; j++) {
+    lbann_data::Reader* r = readers->mutable_reader(j);
     std::ostringstream s;
     std::string basename = get_basename_without_ext(r->sample_list());
     std::string ext = get_ext_name(r->sample_list());
@@ -784,10 +907,10 @@ void customize_data_readers_sample_list(const lbann_comm& comm, lbann_data::Lban
     }
 
     s << dir << '/';
-    if(r->sample_list_per_model()) {
+    if (r->sample_list_per_model()) {
       s << pb_model.name() << "_";
     }
-    if(r->sample_list_per_trainer()) {
+    if (r->sample_list_per_trainer()) {
       s << "t" << comm.get_trainer_rank() << "_";
     }
     s << basename;
@@ -801,15 +924,15 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   std::ostringstream err;
 
   auto& arg_parser = global_argument_parser();
-  lbann_data::Trainer *trainer = p.mutable_trainer();
-  lbann_data::Model *model = p.mutable_model();
-  lbann_data::DataReader *d_reader = p.mutable_data_reader();
+  lbann_data::Trainer* trainer = p.mutable_trainer();
+  lbann_data::Model* model = p.mutable_model();
+  lbann_data::DataReader* d_reader = p.mutable_data_reader();
   int size = d_reader->reader_size();
 
   if (arg_parser.get<int>(LBANN_OPTION_ABSOLUTE_SAMPLE_COUNT) != -1) {
-    for (int j=0; j<size; j++) {
+    for (int j = 0; j < size; j++) {
       int n = arg_parser.get<int>(LBANN_OPTION_ABSOLUTE_SAMPLE_COUNT);
-      lbann_data::Reader *readme = d_reader->mutable_reader(j);
+      lbann_data::Reader* readme = d_reader->mutable_reader(j);
       readme->set_percent_of_data_to_use(0.0);
       readme->set_absolute_sample_count(n);
     }
@@ -823,8 +946,10 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   }
   if ((arg_parser.get<std::string>(LBANN_OPTION_DATA_FILEDIR) != "") or
       (arg_parser.get<std::string>(LBANN_OPTION_DATA_FILEDIR_VALIDATE) != "") or
-      (arg_parser.get<std::string>(LBANN_OPTION_DATA_FILENAME_VALIDATE) != "") or
-      (arg_parser.get<std::string>(LBANN_OPTION_LABEL_FILENAME_VALIDATE) != "")) {
+      (arg_parser.get<std::string>(LBANN_OPTION_DATA_FILENAME_VALIDATE) !=
+       "") or
+      (arg_parser.get<std::string>(LBANN_OPTION_LABEL_FILENAME_VALIDATE) !=
+       "")) {
     set_data_readers_filenames("validate", p);
   }
   if ((arg_parser.get<std::string>(LBANN_OPTION_DATA_FILEDIR) != "") or
@@ -847,21 +972,23 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   }
   if (arg_parser.get<bool>(LBANN_OPTION_NO_IM_COMM)) {
     int sz = model->callback_size();
-    for (int j=0; j<sz; j++) {
-      lbann_data::Callback *c = model->mutable_callback(j);
+    for (int j = 0; j < sz; j++) {
+      lbann_data::Callback* c = model->mutable_callback(j);
       if (c->has_imcomm()) {
         c->clear_imcomm();
       }
     }
   }
   if (arg_parser.get<int>(LBANN_OPTION_MINI_BATCH_SIZE) != -1) {
-    trainer->set_mini_batch_size(arg_parser.get<int>(LBANN_OPTION_MINI_BATCH_SIZE));
+    trainer->set_mini_batch_size(
+      arg_parser.get<int>(LBANN_OPTION_MINI_BATCH_SIZE));
   }
   if (arg_parser.get<int>(LBANN_OPTION_NUM_EPOCHS) != -1) {
     model->set_num_epochs(arg_parser.get<int>(LBANN_OPTION_NUM_EPOCHS));
   }
   if (arg_parser.get<int>(LBANN_OPTION_HYDROGEN_BLOCK_SIZE) != -1) {
-    trainer->set_hydrogen_block_size(arg_parser.get<int>(LBANN_OPTION_HYDROGEN_BLOCK_SIZE));
+    trainer->set_hydrogen_block_size(
+      arg_parser.get<int>(LBANN_OPTION_HYDROGEN_BLOCK_SIZE));
   }
   if (arg_parser.get<int>(LBANN_OPTION_NUM_PARALLEL_READERS) != -1) {
     trainer->set_num_parallel_readers(
@@ -973,7 +1100,10 @@ void print_parameters(const lbann_comm& comm,
             << "     (only used for metrics)" << std::endl;
 }
 
-void save_session(const lbann_comm& comm, const int argc, char * const* argv, lbann_data::LbannPB& p)
+void save_session(const lbann_comm& comm,
+                  const int argc,
+                  char* const* argv,
+                  lbann_data::LbannPB& p)
 {
   if (!comm.am_world_master()) {
     return;
@@ -981,37 +1111,39 @@ void save_session(const lbann_comm& comm, const int argc, char * const* argv, lb
 
   auto& arg_parser = global_argument_parser();
 
-  //do not write output file for a repeated experiment;
-  //may want to revisit this decision later ...
+  // do not write output file for a repeated experiment;
+  // may want to revisit this decision later ...
   if (arg_parser.get<std::string>(LBANN_OPTION_PROTOTEXT) != "") {
     return;
   }
 
-  //setup file name
-  // Note: If the file name is not unique, append numbers until it is.
+  // setup file name
+  //  Note: If the file name is not unique, append numbers until it is.
   std::string model_name = p.model().name();
-  if (model_name.empty()) { model_name = "model"; };
+  if (model_name.empty()) {
+    model_name = "model";
+  };
   std::string file_name = model_name + ".prototext";
   El::Int file_name_index = 1;
   while (std::ifstream(file_name.c_str())) {
     file_name_index++;
-    file_name = (model_name
-                 + "_" + std::to_string(file_name_index)
-                 + ".prototext");
+    file_name =
+      (model_name + "_" + std::to_string(file_name_index) + ".prototext");
   }
 
-  //open output file
+  // open output file
   std::ofstream out(file_name.c_str());
   if (!out.is_open()) {
     std::ostringstream err;
     err << "failed to open file (" << file_name << ") for writing";
     LBANN_ERROR(err.str());
   }
-  std::cout << std::endl << "writing options and prototext to file: " << file_name << "\n\n";
+  std::cout << std::endl
+            << "writing options and prototext to file: " << file_name << "\n\n";
 
-  //output all data
+  // output all data
   out << "# cmd line for original experiment:\n#  $ ";
-  for (int h=0; h<argc; h++) {
+  for (int h = 0; h < argc; h++) {
     out << argv[h] << " ";
   }
   std::string lbann_version("unknown: LBANN_VERSION is not defined");
@@ -1021,20 +1153,23 @@ void save_session(const lbann_comm& comm, const int argc, char * const* argv, lb
 #endif
 
   std::time_t r = std::time(nullptr);
-  char *tm = std::ctime(&r);
+  char* tm = std::ctime(&r);
   size_t fixme = strlen(tm);
-  tm[fixme-1] = 0;
-  out << "\n#\n# Experiment conducted at: "
-      <<  tm
-      << "\n#\n#\n# Experiment was run with lbann version: "
-      << lbann_version << "\n#\n#\n# To rerun the experiment: \n"
+  tm[fixme - 1] = 0;
+  out << "\n#\n# Experiment conducted at: " << tm
+      << "\n#\n#\n# Experiment was run with lbann version: " << lbann_version
+      << "\n#\n#\n# To rerun the experiment: \n"
       << "#  $ srun -n" << comm.get_procs_in_world() << " " << argv[0]
       << " --prototext=" << file_name << "\n#\n#\n";
 
   out << "# Selected SLURM Environment Variables:\n";
-  std::vector<std::string> v = {"HOST", "SLURM_NODELIST", "SLURM_NNODES", "SLURM_NTASKS", "SLURM_TASKS_PER_NODE"};
-  for (auto & i : v) {
-    char *c = std::getenv(i.c_str());
+  std::vector<std::string> v = {"HOST",
+                                "SLURM_NODELIST",
+                                "SLURM_NNODES",
+                                "SLURM_NTASKS",
+                                "SLURM_TASKS_PER_NODE"};
+  for (auto& i : v) {
+    char* c = std::getenv(i.c_str());
     if (c != nullptr) {
       out << "# " << i << "=" << c << std::endl;
     }
@@ -1050,16 +1185,18 @@ void save_session(const lbann_comm& comm, const int argc, char * const* argv, lb
 std::string trim(std::string const& str)
 {
   // Short-circuit on the empty string
-  if (str.size() == 0) return std::string();
+  if (str.size() == 0)
+    return std::string();
 
   const std::string whitespace = "\f\n\r\t\v ";
   auto first = str.find_first_not_of(whitespace);
 
   // All characters are whitespace; short-circuit.
-  if (first == std::string::npos) return std::string();
+  if (first == std::string::npos)
+    return std::string();
 
   auto last = str.find_last_not_of(whitespace);
-  return str.substr(first, (last-first)+1);
+  return str.substr(first, (last - first) + 1);
 }
 
 } // namespace lbann

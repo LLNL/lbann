@@ -35,9 +35,9 @@ using namespace lbann::onednn;
 using namespace dnnl;
 TEST_CASE("oneDNN data type mapping", "[onednn][utilities]")
 {
-  REQUIRE(get_data_type<  float>() == memory::data_type::f32);
+  REQUIRE(get_data_type<float>() == memory::data_type::f32);
   REQUIRE(get_data_type<int32_t>() == memory::data_type::s32);
-  REQUIRE(get_data_type< int8_t>() == memory::data_type::s8);
+  REQUIRE(get_data_type<int8_t>() == memory::data_type::s8);
   REQUIRE(get_data_type<uint8_t>() == memory::data_type::u8);
 
 #ifdef LBANN_HAS_HALF

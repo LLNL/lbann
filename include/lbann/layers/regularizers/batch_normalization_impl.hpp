@@ -36,7 +36,9 @@
 namespace lbann {
 
 template <typename T, data_layout L, El::Device D>
-void batch_normalization_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void batch_normalization_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_batch_normalization();
   msg->set_decay(m_decay);
@@ -47,28 +49,37 @@ void batch_normalization_layer<T,L,D>::write_specific_proto(lbann_data::Layer& p
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 const batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>&
-batch_normalization_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const {
-  return dynamic_cast<const batch_normalization_distconv_adapter<
-    TensorDataType, T_layout, Dev>&>(data_type_layer<TensorDataType>::get_distconv_adapter());
+batch_normalization_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter()
+  const
+{
+  return dynamic_cast<
+    const batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+    data_type_layer<TensorDataType>::get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>&
-batch_normalization_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() {
-  return const_cast<batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      static_cast<const batch_normalization_layer<TensorDataType, T_layout, Dev>&>(*this).get_distconv_adapter());
+batch_normalization_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter()
+{
+  return const_cast<
+    batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+    static_cast<
+      const batch_normalization_layer<TensorDataType, T_layout, Dev>&>(*this)
+      .get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 dc::Shape batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::
-get_per_channel_stat_shape() const {
-  auto &l = dynamic_cast<const batch_normalization_layer<
-    TensorDataType, T_layout, Dev>&>(this->layer());
+  get_per_channel_stat_shape() const
+{
+  auto& l = dynamic_cast<
+    const batch_normalization_layer<TensorDataType, T_layout, Dev>&>(
+    this->layer());
   const int num_channels = this->get_activations_shape()[dc::get_channel_dim()];
   // Sanity check that the shared tensors have the correct shape
   assert_ne(num_channels, 0);
   assert_eq(l.m_mean_and_var->Matrix().Width() *
-            l.m_mean_and_var->Matrix().Height(),
+              l.m_mean_and_var->Matrix().Height(),
             num_channels * 2);
   dc::Shape per_channel_stat_shape(dc::get_num_dims(l), 1);
   per_channel_stat_shape[dc::get_channel_dim()] = num_channels;
@@ -77,9 +88,9 @@ get_per_channel_stat_shape() const {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 dc::Dist batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::
-get_per_channel_stat_dist(const dc::Dist &input_dist) const {
-  auto shared_dist = dc::Dist::make_distribution(
-      input_dist.get_locale_shape());
+  get_per_channel_stat_dist(const dc::Dist& input_dist) const
+{
+  auto shared_dist = dc::Dist::make_distribution(input_dist.get_locale_shape());
   auto split_shape = input_dist.get_split_shape();
   // set all dimensions to be 1 except for the channel dimension
   auto pc = split_shape[-2];
@@ -93,12 +104,14 @@ get_per_channel_stat_dist(const dc::Dist &input_dist) const {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::
-setup_fp_tensors() {
+  setup_fp_tensors()
+{
   data_type_distconv_adapter<TensorDataType>::setup_fp_tensors();
 
-  auto &l = static_cast<batch_normalization_layer<
-    TensorDataType, T_layout, Dev>&>(this->layer());
-  const auto &input_dist = this->get_prev_activations_dist();
+  auto& l =
+    static_cast<batch_normalization_layer<TensorDataType, T_layout, Dev>&>(
+      this->layer());
+  const auto& input_dist = this->get_prev_activations_dist();
 
   const auto per_channel_stat_shape = get_per_channel_stat_shape();
   const auto shared_dist = get_per_channel_stat_dist(input_dist);
@@ -123,54 +136,58 @@ setup_fp_tensors() {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::
-setup_bp_tensors() {
+  setup_bp_tensors()
+{
   data_type_distconv_adapter<TensorDataType>::setup_bp_tensors();
 
-  const auto &prev_error_signal_dist = this->get_prev_error_signals_dist();
-  auto &l = static_cast<batch_normalization_layer<
-    TensorDataType, T_layout, Dev>&>(this->layer());
+  const auto& prev_error_signal_dist = this->get_prev_error_signals_dist();
+  auto& l =
+    static_cast<batch_normalization_layer<TensorDataType, T_layout, Dev>&>(
+      this->layer());
 
   const auto per_channel_stat_shape = get_per_channel_stat_shape();
-  const auto shared_dist = get_per_channel_stat_dist(
-      prev_error_signal_dist);
+  const auto shared_dist = get_per_channel_stat_dist(prev_error_signal_dist);
 
   const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
 
   // scale_gradient
   m_scale_gradient = TensorDevType(per_channel_stat_shape, loc, shared_dist);
-  assert0(dc::tensor::View(
-      m_scale_gradient, l.m_scale_gradient->Buffer()));
+  assert0(dc::tensor::View(m_scale_gradient, l.m_scale_gradient->Buffer()));
   // bias_gradient
   m_bias_gradient = TensorDevType(per_channel_stat_shape, loc, shared_dist);
-  assert0(dc::tensor::View(
-      m_bias_gradient, l.m_bias_gradient->Buffer()));
+  assert0(dc::tensor::View(m_bias_gradient, l.m_bias_gradient->Buffer()));
   // mean_gradient
   m_mean_gradient = TensorDevType(per_channel_stat_shape, loc, shared_dist);
-  assert0(dc::tensor::View(
-      m_mean_gradient, l.m_mean_gradient_v->Buffer()));
+  assert0(dc::tensor::View(m_mean_gradient, l.m_mean_gradient_v->Buffer()));
   // var_gradient
   m_var_gradient = TensorDevType(per_channel_stat_shape, loc, shared_dist);
-  assert0(dc::tensor::View(
-      m_var_gradient, l.m_var_gradient_v->Buffer()));
+  assert0(dc::tensor::View(m_var_gradient, l.m_var_gradient_v->Buffer()));
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
-    size_t workspace_capacity) {
-  auto &l = dynamic_cast<batch_normalization_layer<
-    TensorDataType, T_layout, Dev>&>(this->layer());
+void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::
+  setup_layer(size_t workspace_capacity)
+{
+  auto& l =
+    dynamic_cast<batch_normalization_layer<TensorDataType, T_layout, Dev>&>(
+      this->layer());
   bool global_stats;
-  if (l.m_statistics_group_size  == 0) {
+  if (l.m_statistics_group_size == 0) {
     global_stats = true;
-  } else if (l.m_statistics_group_size == 1) {
+  }
+  else if (l.m_statistics_group_size == 1) {
     global_stats = false;
-  } else {
+  }
+  else {
     LBANN_ERROR("statistics_group_size must be either 0 or 1 for now.");
   }
 
   m_bn = std::make_unique<dc::BatchNormalization<TensorDataType>>(
-      dc::get_backend(), dc::get_num_dims(l),
-      l.m_decay, l.m_epsilon, global_stats);
+    dc::get_backend(),
+    dc::get_num_dims(l),
+    l.m_decay,
+    l.m_epsilon,
+    global_stats);
 }
 #endif // LBANN_HAS_DISTCONV
 

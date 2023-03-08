@@ -80,9 +80,8 @@ public:
    *  If the variable doesn't exist, the empty string is returned.
    */
   virtual std::string env_variable_value(std::string const& var_name) const;
-
 };
 
-}// namespace utils
-}// namespace lbann
+} // namespace utils
+} // namespace lbann
 #endif // LBANN_UTILS_SYSTEM_INFO_HPP_INCLUDED

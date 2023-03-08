@@ -35,7 +35,8 @@ namespace lbann {
 namespace transform {
 
 /** Horizontally flip image data with given probability. */
-class horizontal_flip : public transform {
+class horizontal_flip : public transform
+{
 public:
   /** Flip image with probability p. */
   horizontal_flip(float p) : transform(), m_p(p) {}
@@ -44,7 +45,8 @@ public:
 
   std::string get_type() const override { return "horizontal_flip"; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data,
+             std::vector<size_t>& dims) override;
 
 private:
   /** Probability that that the image is flipped. */
@@ -54,7 +56,7 @@ private:
 std::unique_ptr<transform>
 build_horizontal_flip_transform_from_pbuf(google::protobuf::Message const&);
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_HORIZONTAL_FLIP_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_HORIZONTAL_FLIP_HPP_INCLUDED

@@ -33,33 +33,40 @@
 namespace lbann {
 
 template <typename TensorDataType>
-void optimizer::add_to_gradient(El::AbstractDistMatrix<TensorDataType> const& contrib,
-                     TensorDataType scale,
-                     bool allreduce_needed) {
+void optimizer::add_to_gradient(
+  El::AbstractDistMatrix<TensorDataType> const& contrib,
+  TensorDataType scale,
+  bool allreduce_needed)
+{
   TensorDataType buf_scale, in_scale;
   auto& grad = get_gradient_buffer(buf_scale, in_scale, allreduce_needed);
   El::Scale(buf_scale, grad);
-  El::Axpy(in_scale*scale, contrib, grad);
+  El::Axpy(in_scale * scale, contrib, grad);
 }
 
 template <typename TensorDataType>
-El::AbstractDistMatrix<TensorDataType>& optimizer::get_gradient_buffer(
-  TensorDataType& buf_scale,
-  TensorDataType& in_scale,
-  bool allreduce_needed) {
+El::AbstractDistMatrix<TensorDataType>&
+optimizer::get_gradient_buffer(TensorDataType& buf_scale,
+                               TensorDataType& in_scale,
+                               bool allreduce_needed)
+{
 
   // Anon enum to clarify "get<#>" calls below.
-  enum { HEIGHT=0, WIDTH, DISTDATA };
+  enum
+  {
+    HEIGHT = 0,
+    WIDTH,
+    DISTDATA
+  };
   using GradMgrType = GradientHelperImpl<TensorDataType>;
 
   auto& grad_mgr_ptr = gradients_[std::type_index(typeid(TensorDataType))];
   // If the manager hasn't been created, let's make it.
   if (!grad_mgr_ptr) {
     auto mat_info = this->get_matrix_info();
-    grad_mgr_ptr = std::make_unique<GradMgrType>(
-      std::get<HEIGHT>(mat_info),
-      std::get<WIDTH>(mat_info),
-      std::get<DISTDATA>(mat_info));
+    grad_mgr_ptr = std::make_unique<GradMgrType>(std::get<HEIGHT>(mat_info),
+                                                 std::get<WIDTH>(mat_info),
+                                                 std::get<DISTDATA>(mat_info));
     grad_mgr_ptr->set_status(optimizer_gradient_status::cleared);
   }
   // Get the underlying matrix back out.
@@ -83,21 +90,20 @@ El::AbstractDistMatrix<TensorDataType>& optimizer::get_gradient_buffer(
   case optimizer_gradient_status::cleared:
     buf_scale = DataType(0);
     in_scale = DataType(1);
-    grad_mgr.set_status(allreduce_needed ?
-                        optimizer_gradient_status::allreduce_needed :
-                        optimizer_gradient_status::ready);
+    grad_mgr.set_status(allreduce_needed
+                          ? optimizer_gradient_status::allreduce_needed
+                          : optimizer_gradient_status::ready);
     break;
   case optimizer_gradient_status::allreduce_needed:
     buf_scale = DataType(1);
     // Properly scale data that does not need to be allreduced.
-    in_scale = (allreduce_needed ?
-                DataType(1) :
-                DataType(1) / buffer.RedundantSize());
+    in_scale =
+      (allreduce_needed ? DataType(1) : DataType(1) / buffer.RedundantSize());
     break;
   case optimizer_gradient_status::allreduce_started:
   default:
-    LBANN_ERROR("unexpected gradient status ("
-                + to_string(grad_mgr.get_status()) + ")");
+    LBANN_ERROR("unexpected gradient status (" +
+                to_string(grad_mgr.get_status()) + ")");
   }
   return buffer;
 }
@@ -181,25 +187,29 @@ void optimizer::accumulate_all_gradient_contributions(
 }
 
 template <typename TensorDataType>
-void optimizer::GradientHelperImpl<TensorDataType>::start_allreduce(lbann_comm& comm) {
+void optimizer::GradientHelperImpl<TensorDataType>::start_allreduce(
+  lbann_comm& comm)
+{
   switch (this->get_status()) {
   case optimizer_gradient_status::allreduce_needed:
-    comm.nb_allreduce(*gradient_,
-                      gradient_->RedundantComm(),
-                      allreduce_req_);
+    comm.nb_allreduce(*gradient_, gradient_->RedundantComm(), allreduce_req_);
     this->set_status(optimizer_gradient_status::allreduce_started);
     break;
   case optimizer_gradient_status::ready:
   case optimizer_gradient_status::cleared:
   case optimizer_gradient_status::allreduce_started:
     break;
-  default: LBANN_ERROR("unexpected gradient status "
-                       "(" + to_string(this->get_status()) + ")");
+  default:
+    LBANN_ERROR("unexpected gradient status "
+                "(" +
+                to_string(this->get_status()) + ")");
   }
 }
 
 template <typename TensorDataType>
-void optimizer::GradientHelperImpl<TensorDataType>::complete_allreduce(lbann_comm& comm) {
+void optimizer::GradientHelperImpl<TensorDataType>::complete_allreduce(
+  lbann_comm& comm)
+{
   switch (this->get_status()) {
   case optimizer_gradient_status::allreduce_started:
     comm.wait(allreduce_req_);
@@ -214,12 +224,14 @@ void optimizer::GradientHelperImpl<TensorDataType>::complete_allreduce(lbann_com
     break;
   default:
     LBANN_ERROR("unexpected gradient status "
-                "(" + to_string(this->get_status()) + ")");
+                "(" +
+                to_string(this->get_status()) + ")");
   }
 }
 
 template <typename TensorDataType>
-void optimizer::GradientHelperImpl<TensorDataType>::clear() {
+void optimizer::GradientHelperImpl<TensorDataType>::clear()
+{
   this->set_status(optimizer_gradient_status::cleared);
 }
 

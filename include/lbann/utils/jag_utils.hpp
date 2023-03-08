@@ -34,7 +34,9 @@
 namespace lbann {
 
 // P_0 reads a filelist and bcasts to all other procs
-void read_filelist(lbann_comm *comm, const std::string &fn, std::vector<std::string> &filelist_out);
+void read_filelist(lbann_comm* comm,
+                   const std::string& fn,
+                   std::vector<std::string>& filelist_out);
 
 } // namespace lbann
 

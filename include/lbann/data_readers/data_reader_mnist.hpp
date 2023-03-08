@@ -33,8 +33,9 @@
 
 namespace lbann {
 
-class mnist_reader : public image_data_reader {
- public:
+class mnist_reader : public image_data_reader
+{
+public:
   mnist_reader(bool shuffle = true);
   mnist_reader();
   mnist_reader(const mnist_reader&) = default;
@@ -42,24 +43,25 @@ class mnist_reader : public image_data_reader {
   ~mnist_reader() override {}
   mnist_reader* copy() const override { return new mnist_reader(*this); }
 
-  std::string get_type() const override {
-    return "mnist_reader";
-  }
+  std::string get_type() const override { return "mnist_reader"; }
 
-  void set_input_params(const int, const int, const int, const int) override { set_defaults(); }
+  void set_input_params(const int, const int, const int, const int) override
+  {
+    set_defaults();
+  }
 
   // MNIST-specific functions
   void load() override;
 
- protected:
+protected:
   void set_defaults() override;
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
 
- protected:
+protected:
   std::vector<std::vector<unsigned char>> m_image_data;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_DATA_READER_MNIST_HPP
+#endif // LBANN_DATA_READER_MNIST_HPP

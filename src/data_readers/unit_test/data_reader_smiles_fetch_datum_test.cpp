@@ -307,10 +307,11 @@ static std::string get_tmpdir() noexcept
     tmpdir = tmp;
   else
     tmpdir = "/tmp";
-  return join_path(
-    tmpdir,
-    lbann::build_string("smiles_fetch_datum_test_", std::time(nullptr), "_",
-                        lbann::get_rank_in_world()));
+  return join_path(tmpdir,
+                   lbann::build_string("smiles_fetch_datum_test_",
+                                       std::time(nullptr),
+                                       "_",
+                                       lbann::get_rank_in_world()));
 }
 
 static void setup_tmp_filetree(std::string const& tmp_dir)

@@ -38,14 +38,14 @@ namespace lbann {
  *  maximum value, outputs the index of the first one.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class argmax_layer : public data_type_layer<TensorDataType> {
+class argmax_layer : public data_type_layer<TensorDataType>
+{
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "argmax layer only supports data parallel layout");
-  static_assert(Device == El::Device::CPU,
-                "argmax layer only supports CPU");
-public:
+  static_assert(Device == El::Device::CPU, "argmax layer only supports CPU");
 
-  argmax_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm) { }
+public:
+  argmax_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm) {}
   argmax_layer* copy() const override { return new argmax_layer(*this); }
 
   /** @name Serialization */
@@ -61,24 +61,22 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  argmax_layer()
-    : argmax_layer(nullptr)
-  {}
+  argmax_layer() : argmax_layer(nullptr) {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 
   void fp_compute() override;
 };
 
-
 #ifndef LBANN_ARGMAX_LAYER_INSTANTIATE
-#define PROTO(T) \
-  extern template class argmax_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  extern template class argmax_layer<T,                                        \
+                                     data_layout::DATA_PARALLEL,               \
+                                     El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

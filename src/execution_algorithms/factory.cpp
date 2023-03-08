@@ -30,9 +30,9 @@
 #include "lbann/utils/make_abstract.hpp"
 #include "lbann/utils/protobuf.hpp"
 
+#include "lbann/proto/training_algorithm.pb.h"
 #include <google/protobuf/message.h>
 #include <memory>
-#include "lbann/proto/training_algorithm.pb.h"
 
 namespace {
 

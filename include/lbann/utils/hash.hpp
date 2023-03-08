@@ -43,8 +43,9 @@ namespace lbann {
  *  @param val      Input to hash function.
  *  @tparam Hash    Hash function for type @c T.
  */
-template <class T, class Hash=std::hash<T>>
-std::size_t hash_combine(std::size_t seed, const T& val) {
+template <class T, class Hash = std::hash<T>>
+std::size_t hash_combine(std::size_t seed, const T& val)
+{
   return seed ^ (Hash()(val) + 0x9e3779b9 + (seed << 6) + (seed >> 2));
 }
 
@@ -54,12 +55,14 @@ std::size_t hash_combine(std::size_t seed, const T& val) {
  *  type.
  */
 template <class T>
-struct enum_hash {
-  using underlying_t
-  = typename std::conditional<std::is_enum<T>::value,
+struct enum_hash
+{
+  using underlying_t =
+    typename std::conditional<std::is_enum<T>::value,
                               typename std::underlying_type<T>::type,
                               T>::type;
-  std::size_t operator()(T val) const {
+  std::size_t operator()(T val) const
+  {
     return std::hash<underlying_t>()(static_cast<underlying_t>(val));
   }
 };
@@ -67,12 +70,14 @@ struct enum_hash {
 /** @brief Hash function for @c std::pair */
 template <class T1,
           class T2,
-          class Hash1=std::hash<T1>,
-          class Hash2=std::hash<T2>>
-struct pair_hash {
-  std::size_t operator()(const std::pair<T1,T2>& val) const {
+          class Hash1 = std::hash<T1>,
+          class Hash2 = std::hash<T2>>
+struct pair_hash
+{
+  std::size_t operator()(const std::pair<T1, T2>& val) const
+  {
     auto seed = Hash1()(val.first);
-    return hash_combine<T2,Hash2>(seed, val.second);
+    return hash_combine<T2, Hash2>(seed, val.second);
   }
 };
 

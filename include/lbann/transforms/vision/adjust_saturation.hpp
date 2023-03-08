@@ -41,14 +41,16 @@ namespace transform {
  * (as opposed to a direct adjustment of saturation) by interpolating
  * between the original value and its grayscale value.
  */
-class adjust_saturation : public transform {
+class adjust_saturation : public transform
+{
 public:
   /**
    * Adjust saturation with given factor.
    * @param factor A non-negative factor. 0 gives a grayscale image,
    *     1 the original.
    */
-  adjust_saturation(float factor) : transform(), m_factor(factor) {
+  adjust_saturation(float factor) : transform(), m_factor(factor)
+  {
     if (factor < 0.0f) {
       LBANN_ERROR("Saturation factor must be non-negative.");
     }
@@ -58,18 +60,18 @@ public:
 
   std::string get_type() const override { return "adjust_saturation"; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data,
+             std::vector<size_t>& dims) override;
 
 private:
   /** Factor to adjust saturation by. */
   float m_factor;
 };
 
-
 std::unique_ptr<transform>
 build_adjust_saturation_transform_from_pbuf(google::protobuf::Message const&);
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_ADJUST_SATURATION_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_ADJUST_SATURATION_HPP_INCLUDED

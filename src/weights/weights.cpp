@@ -25,10 +25,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/weights/weights.hpp"
+#include "lbann/io/file_io.hpp"
 #include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/serialize.hpp"
-#include "lbann/io/file_io.hpp"
 
 #include "lbann/proto/layers.pb.h"
 
@@ -47,7 +47,8 @@ namespace {
  *  dimensions corresponding to the matrix height and width.
  */
 std::string get_dims_string(const std::vector<size_t>& matrix_height_dims,
-                            const std::vector<size_t>& matrix_width_dims) {
+                            const std::vector<size_t>& matrix_width_dims)
+{
   std::stringstream ss;
   ss << "(";
   for (size_t i = 0; i < matrix_height_dims.size(); ++i) {
@@ -63,9 +64,8 @@ std::string get_dims_string(const std::vector<size_t>& matrix_height_dims,
 
 } // namespace
 
-weights::weights()
-  : m_comm(nullptr),
-    m_frozen(false) {
+weights::weights() : m_comm(nullptr), m_frozen(false)
+{
 
   // Initialize weights name
   static int num_weights = 0;
@@ -73,8 +73,8 @@ weights::weights()
   num_weights++;
 }
 
-weights::weights(lbann_comm& comm)
-  : weights() {
+weights::weights(lbann_comm& comm) : weights()
+{
 
   m_comm = &comm;
 
@@ -84,8 +84,7 @@ weights::weights(lbann_comm& comm)
 template <typename ArchiveT>
 void weights::serialize(ArchiveT& ar)
 {
-  ar(CEREAL_NVP(m_name),
-     CEREAL_NVP(m_frozen));
+  ar(CEREAL_NVP(m_name), CEREAL_NVP(m_frozen));
 
   // What about:
   //   m_matrix_height_dims
@@ -93,7 +92,8 @@ void weights::serialize(ArchiveT& ar)
   //   m_matrix_dist
 }
 
-description weights::get_description() const {
+description weights::get_description() const
+{
   std::ostringstream ss;
 
   // Construct description object
@@ -123,19 +123,24 @@ description weights::get_description() const {
 // Dimension accessors
 // -----------------------------------------------
 
-std::vector<size_t> weights::get_dims() const {
+std::vector<size_t> weights::get_dims() const
+{
   std::vector<size_t> dims;
-  for (const auto& d : get_matrix_width_dims())  { dims.push_back(d); }
-  for (const auto& d : get_matrix_height_dims()) { dims.push_back(d); }
+  for (const auto& d : get_matrix_width_dims()) {
+    dims.push_back(d);
+  }
+  for (const auto& d : get_matrix_height_dims()) {
+    dims.push_back(d);
+  }
   return dims;
 }
-size_t weights::get_size() const {
-  return get_linear_size(get_dims());
-}
-std::vector<size_t> weights::get_matrix_height_dims() const {
+size_t weights::get_size() const { return get_linear_size(get_dims()); }
+std::vector<size_t> weights::get_matrix_height_dims() const
+{
   return m_matrix_height_dims;
 }
-std::vector<size_t> weights::get_matrix_width_dims() const {
+std::vector<size_t> weights::get_matrix_width_dims() const
+{
   return m_matrix_width_dims;
 }
 size_t weights::get_matrix_height() const
@@ -159,29 +164,32 @@ void weights::set_dims(std::vector<size_t> matrix_height_dims,
 // Matrix distribution accessors
 // -----------------------------------------------
 
-void weights::set_values(El::BaseDistMatrix const& values) {
-  if ((values.Height() != get_values().Height())
-      || (values.Width() != get_values().Width())) {
+void weights::set_values(El::BaseDistMatrix const& values)
+{
+  if ((values.Height() != get_values().Height()) ||
+      (values.Width() != get_values().Width())) {
     LBANN_ERROR("Expected matrix size ",
-                this->get_matrix_height(), "x", this->get_matrix_width(),
+                this->get_matrix_height(),
+                "x",
+                this->get_matrix_width(),
                 "; got a matrix with size ",
-                values.Height(), "x", values.Width());
+                values.Height(),
+                "x",
+                values.Width());
   }
   El::Copy(values, this->get_values());
 }
 
-El::DistData weights::get_matrix_distribution() const {
-  return m_matrix_dist;
-}
-void weights::set_matrix_distribution(El::DistData dist) {
+El::DistData weights::get_matrix_distribution() const { return m_matrix_dist; }
+void weights::set_matrix_distribution(El::DistData dist)
+{
   m_matrix_dist = dist;
 }
 
-void weights::set_comm(lbann_comm& comm) {
-  m_comm = &comm;
-}
+void weights::set_comm(lbann_comm& comm) { m_comm = &comm; }
 
-void weights::setup_default_matrix_distribution() {
+void weights::setup_default_matrix_distribution()
+{
   // Default matrix distribution
   m_matrix_dist.colDist = El::STAR;
   m_matrix_dist.rowDist = El::STAR;
@@ -200,20 +208,22 @@ void weights::setup_default_matrix_distribution() {
 // Setup
 // -----------------------------------------------
 
-void weights::setup() {
+void weights::setup()
+{
 
   // Check that tensor dimensions are valid
-  const auto& is_nonpositive = [] (size_t d) { return d <= 0; };
+  const auto& is_nonpositive = [](size_t d) { return d <= 0; };
   if (std::any_of(m_matrix_height_dims.begin(),
                   m_matrix_height_dims.end(),
-                  is_nonpositive)
-      || std::any_of(m_matrix_width_dims.begin(),
-                     m_matrix_width_dims.end(),
-                     is_nonpositive)) {
-    LBANN_ERROR(
-      "attempted to setup weights \"", this->get_name(), "\" with a ",
-      get_dims_string(m_matrix_height_dims, m_matrix_width_dims),
-      " weights matrix");
+                  is_nonpositive) ||
+      std::any_of(m_matrix_width_dims.begin(),
+                  m_matrix_width_dims.end(),
+                  is_nonpositive)) {
+    LBANN_ERROR("attempted to setup weights \"",
+                this->get_name(),
+                "\" with a ",
+                get_dims_string(m_matrix_height_dims, m_matrix_width_dims),
+                " weights matrix");
   }
 
   // Derived class setup
@@ -231,7 +241,7 @@ void weights::steal_values(weights& other)
     // Copy things over.
     this->set_values(other.get_values());
 }
-}  // namespace lbann
+} // namespace lbann
 
 #define LBANN_CLASS_NAME weights
 #include <lbann/macros/register_class_with_cereal.hpp>

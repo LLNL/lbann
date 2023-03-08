@@ -27,9 +27,9 @@
 #ifndef LBANN_LAYER_WEIGHTED_SUM_HPP_INCLUDED
 #define LBANN_LAYER_WEIGHTED_SUM_HPP_INCLUDED
 
-#include <vector>
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
+#include <vector>
 
 namespace lbann {
 
@@ -37,21 +37,23 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class weighted_sum_layer : public data_type_layer<TensorDataType> {
+class weighted_sum_layer : public data_type_layer<TensorDataType>
+{
 private:
-
   /** Scaling factors for weighted sum. */
   std::vector<DataType> m_scaling_factors;
 
 public:
-  weighted_sum_layer(lbann_comm *comm,
-                     std::vector<DataType> scaling_factors)
-    : data_type_layer<TensorDataType>(comm),
-      m_scaling_factors(scaling_factors) {
+  weighted_sum_layer(lbann_comm* comm, std::vector<DataType> scaling_factors)
+    : data_type_layer<TensorDataType>(comm), m_scaling_factors(scaling_factors)
+  {
     this->m_expected_num_parent_layers = -1; // No limit on parents
   }
 
-  weighted_sum_layer* copy() const override { return new weighted_sum_layer(*this); }
+  weighted_sum_layer* copy() const override
+  {
+    return new weighted_sum_layer(*this);
+  }
 
   /** @name Serialization */
   ///@{
@@ -65,7 +67,8 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  description get_description() const override {
+  description get_description() const override
+  {
     auto desc = data_type_layer<TensorDataType>::get_description();
     std::stringstream ss;
     for (size_t i = 0; i < m_scaling_factors.size(); ++i) {
@@ -76,16 +79,14 @@ public:
   }
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  weighted_sum_layer()
-    : weighted_sum_layer(nullptr, { 1 } )
-  {}
+  weighted_sum_layer() : weighted_sum_layer(nullptr, {1}) {}
 
-  void setup_pointers() override {
+  void setup_pointers() override
+  {
     data_type_layer<TensorDataType>::setup_pointers();
     std::stringstream err;
     if (this->get_num_parents() < 1) {
@@ -93,7 +94,7 @@ protected:
           << "has no parent layers";
       LBANN_ERROR(err.str());
     }
-    if ((int) m_scaling_factors.size() != this->get_num_parents()) {
+    if ((int)m_scaling_factors.size() != this->get_num_parents()) {
       err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has an invalid number of scaling factors "
           << "(found " << m_scaling_factors.size() << ", "
@@ -102,7 +103,8 @@ protected:
     }
   }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
 
@@ -116,8 +118,8 @@ protected:
             << "has input tensors with incompatible dimensions (";
         for (int j = 0; j < this->get_num_parents(); ++j) {
           const auto& dims = this->get_input_dims(j);
-          err << (j > 0 ? ", " : "")
-              << "layer \"" << parents[j]->get_name() << "\" outputs ";
+          err << (j > 0 ? ", " : "") << "layer \"" << parents[j]->get_name()
+              << "\" outputs ";
           for (size_t k = 0; k < dims.size(); ++k) {
             err << (k > 0 ? " x " : "") << dims[k];
           }
@@ -126,10 +128,10 @@ protected:
         LBANN_ERROR(err.str());
       }
     }
-
   }
 
-  void fp_compute() override {
+  void fp_compute() override
+  {
     auto& output = this->get_activations();
     El::Zero(output);
     for (int i = 0; i < this->get_num_parents(); ++i) {
@@ -137,23 +139,25 @@ protected:
     }
   }
 
-  void bp_compute() override {
+  void bp_compute() override
+  {
     const auto& gradient_wrt_output = this->get_prev_error_signals();
     for (int i = 0; i < this->get_num_parents(); ++i) {
       auto& gradient_wrt_input = this->get_error_signals(i);
       El::Zero(gradient_wrt_input);
-      El::Axpy(m_scaling_factors[i], gradient_wrt_output,
-               gradient_wrt_input);
+      El::Axpy(m_scaling_factors[i], gradient_wrt_output, gradient_wrt_input);
     }
   }
-
 };
 
-
 #ifndef LBANN_WEIGHTED_SUM_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class weighted_sum_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  extern template class weighted_sum_layer<T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class weighted_sum_layer<T,                                  \
+                                           data_layout::DATA_PARALLEL,         \
+                                           Device>;                            \
+  extern template class weighted_sum_layer<T,                                  \
+                                           data_layout::MODEL_PARALLEL,        \
+                                           Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

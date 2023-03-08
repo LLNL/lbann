@@ -86,7 +86,8 @@ public:
   ///@{
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive& ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   /** @brief Checkpoint exection_context to a shared checkpoint. */
   virtual void save_to_checkpoint_shared(persist& p) = 0;
@@ -110,7 +111,6 @@ protected:
   ExecutionContext& operator=(ExecutionContext&& other) = default;
 
 private:
-
   /** @brief Current step in the training algorithm
    *  @details Step counts the number of iterations in the training
    *  algorithm's internal state
@@ -123,7 +123,7 @@ private:
  *  The stopping criteria must be compatible with the training
  *  algorithm, and specifically its execution context, but can
  *  otherwise be anything meaningful in the context of that algorithm.
-*/
+ */
 class TerminationCriteria
 {
 public:

@@ -25,13 +25,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/save_images.hpp"
-#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 #include "lbann/models/model.hpp"
 #include "lbann/proto/proto_common.hpp"
-#include "lbann/utils/serialize.hpp"
 #include "lbann/utils/protobuf.hpp"
+#include "lbann/utils/serialize.hpp"
 #include <cereal/types/polymorphic.hpp>
 
 #include "lbann/proto/callbacks.pb.h"
@@ -48,14 +48,15 @@ namespace {
 void save_image(std::string prefix,
                 std::string format,
                 const std::vector<Layer*>& layers,
-                const std::vector<std::string>& layer_names) {
+                const std::vector<std::string>& layer_names)
+{
 #ifdef LBANN_HAS_OPENCV
   for (const auto* l : layers) {
 
     // Only save outputs of layers in list
     const auto& name = l->get_name();
-    if (std::find(layer_names.begin(), layer_names.end(), name)
-        == layer_names.end()) {
+    if (std::find(layer_names.begin(), layer_names.end(), name) ==
+        layer_names.end()) {
       continue;
     }
 
@@ -67,27 +68,28 @@ void save_image(std::string prefix,
       num_channels = 1;
       height = dims[0];
       width = dims[1];
-    } else if (dims.size() == 3) {
+    }
+    else if (dims.size() == 3) {
       num_channels = dims[0];
       height = dims[1];
       width = dims[2];
     }
-    if (!(num_channels == 1 || num_channels == 3)
-        || height < 1 || width < 1) {
+    if (!(num_channels == 1 || num_channels == 3) || height < 1 || width < 1) {
       std::stringstream err;
       err << "images are assumed to either be "
           << "2D tensors in HW format or 3D tensors in CHW format, "
           << "but the output of layer \"" << l->get_name() << "\" "
           << "has dimensions ";
-        for (size_t i = 0; i < dims.size(); ++i) {
-          err << (i > 0 ? "" : " x ") << dims[i];
-        }
+      for (size_t i = 0; i < dims.size(); ++i) {
+        err << (i > 0 ? "" : " x ") << dims[i];
+      }
       LBANN_ERROR(err.str());
     }
 
     // Get tensor data
     const auto& raw_data = dtl->get_activations();
-    std::unique_ptr<El::AbstractDistMatrix<DataType>> raw_data_v(raw_data.Construct(raw_data.Grid(), raw_data.Root()));
+    std::unique_ptr<El::AbstractDistMatrix<DataType>> raw_data_v(
+      raw_data.Construct(raw_data.Grid(), raw_data.Root()));
     El::LockedView(*raw_data_v, raw_data, El::ALL, El::IR(0));
     CircMat<El::Device::CPU> circ_data(raw_data_v->Grid(), raw_data_v->Root());
     circ_data = *raw_data_v;
@@ -103,26 +105,33 @@ void save_image(std::string prefix,
         lower = std::min(lower, data(i, 0));
         upper = std::max(upper, data(i, 0));
       }
-      const auto& scale = ((upper > lower) ?
-                           256 / (upper - lower) :
-                           DataType(1));
+      const auto& scale =
+        ((upper > lower) ? 256 / (upper - lower) : DataType(1));
 
       // Copy data into OpenCV matrix
       int type = -1;
-      if (num_channels == 1) { type = CV_8UC1; }
-      if (num_channels == 3) { type = CV_8UC3; }
+      if (num_channels == 1) {
+        type = CV_8UC1;
+      }
+      if (num_channels == 3) {
+        type = CV_8UC3;
+      }
       cv::Mat img(height, width, type);
       for (El::Int row = 0; row < height; ++row) {
         for (El::Int col = 0; col < width; ++col) {
           const auto& offset = row * width + col;
           if (num_channels == 1) {
-            img.at<uchar>(row, col)
-              = cv::saturate_cast<uchar>(scale * (data(offset, 0) - lower));
-          } else if (num_channels == 3) {
+            img.at<uchar>(row, col) =
+              cv::saturate_cast<uchar>(scale * (data(offset, 0) - lower));
+          }
+          else if (num_channels == 3) {
             cv::Vec3b pixel;
-            pixel[0] = cv::saturate_cast<uchar>(scale * (data(offset, 0) - lower));
-            pixel[1] = cv::saturate_cast<uchar>(scale * (data(height*width + offset, 0) - lower));
-            pixel[2] = cv::saturate_cast<uchar>(scale * (data(2*height*width + offset, 0) - lower));
+            pixel[0] =
+              cv::saturate_cast<uchar>(scale * (data(offset, 0) - lower));
+            pixel[1] = cv::saturate_cast<uchar>(
+              scale * (data(height * width + offset, 0) - lower));
+            pixel[2] = cv::saturate_cast<uchar>(
+              scale * (data(2 * height * width + offset, 0) - lower));
             img.at<cv::Vec3b>(row, col) = pixel;
           }
         }
@@ -130,9 +139,7 @@ void save_image(std::string prefix,
 
       // Write image to file
       cv::imwrite(prefix + "-" + name + "." + format, img);
-
     }
-
   }
 #endif // LBANN_HAS_OPENCV
 }
@@ -140,19 +147,21 @@ void save_image(std::string prefix,
 } // namespace
 
 save_images::save_images(std::vector<std::string> layer_names,
-                                         std::string image_format,
-                                         std::string image_prefix)
+                         std::string image_format,
+                         std::string image_prefix)
   : callback_base(),
     m_layer_names(std::move(layer_names)),
     m_image_format(image_format.empty() ? "jpg" : image_format),
-    m_image_prefix(std::move(image_prefix)) {
+    m_image_prefix(std::move(image_prefix))
+{
 #ifndef LBANN_HAS_OPENCV
   LBANN_ERROR("OpenCV not detected");
 #endif // LBANN_HAS_OPENCV
 }
 
 template <class Archive>
-void save_images::serialize(Archive & ar) {
+void save_images::serialize(Archive& ar)
+{
   ar(cereal::base_class<callback_base>(this),
      CEREAL_NVP(m_layer_names),
      CEREAL_NVP(m_image_format),
@@ -167,7 +176,8 @@ void save_images::write_specific_proto(lbann_data::Callback& proto) const
   msg->set_image_prefix(m_image_prefix);
 }
 
-void save_images::on_epoch_end(model *m) {
+void save_images::on_epoch_end(model* m)
+{
   const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   save_image(build_string(m_image_prefix, "epoch", c.get_epoch()),
              m_image_format,
@@ -175,7 +185,8 @@ void save_images::on_epoch_end(model *m) {
              m_layer_names);
 }
 
-void save_images::on_test_end(model *m) {
+void save_images::on_test_end(model* m)
+{
   save_image(build_string(m_image_prefix, "test"),
              m_image_format,
              m->get_layers(),
@@ -183,15 +194,14 @@ void save_images::on_test_end(model *m) {
 }
 
 std::unique_ptr<callback_base>
-build_save_images_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg,
-  const std::shared_ptr<lbann_summary>&) {
+build_save_images_callback_from_pbuf(const google::protobuf::Message& proto_msg,
+                                     const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSaveImages&>(proto_msg);
-  return std::make_unique<save_images>(
-    parse_list<>(params.layers()),
-    params.image_format(),
-    params.image_prefix());
+  return std::make_unique<save_images>(parse_list<>(params.layers()),
+                                       params.image_format(),
+                                       params.image_prefix());
 }
 
 } // namespace callback

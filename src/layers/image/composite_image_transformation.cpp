@@ -35,7 +35,9 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void composite_image_transformation_layer<TensorDataType, Layout, Device>::setup_dims(DataReaderMetaData& dr_metadata) {
+void composite_image_transformation_layer<TensorDataType, Layout, Device>::
+  setup_dims(DataReaderMetaData& dr_metadata)
+{
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
   // Get input dimensions
@@ -47,20 +49,28 @@ void composite_image_transformation_layer<TensorDataType, Layout, Device>::setup
     for (size_t i = 0; i < dims.size(); ++i) {
       ss << (i > 0 ? " x " : "") << dims[i];
     }
-    LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
-      "expects a 3D input in CHW format, ",
-      "but input dimensions are ",ss.str());
+    LBANN_ERROR(this->get_type(),
+                " layer \"",
+                this->get_name(),
+                "\" ",
+                "expects a 3D input in CHW format, ",
+                "but input dimensions are ",
+                ss.str());
   }
 }
 
 template <typename T, data_layout L, El::Device D>
-void composite_image_transformation_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void composite_image_transformation_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   proto.mutable_composite_image_transformation();
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void composite_image_transformation_layer<TensorDataType, Layout, Device>::fp_compute() {
+void composite_image_transformation_layer<TensorDataType, Layout, Device>::
+  fp_compute()
+{
 
   // Useful constants
   constexpr DataType Pi = M_PI;
@@ -88,7 +98,6 @@ void composite_image_transformation_layer<TensorDataType, Layout, Device>::fp_co
   // Get translation factor
   const auto& translations = this->get_local_prev_activations(3);
 
-
   // Perform rotation for each input pixel based on the center pixel
   LBANN_OMP_PARALLEL_FOR_COLLAPSE4
   for (El::Int sample = 0; sample < num_samples; ++sample) {
@@ -100,85 +109,85 @@ void composite_image_transformation_layer<TensorDataType, Layout, Device>::fp_co
           const auto& angle = angles.Get(0, sample);
           const auto& angle_rad = angle * Pi / degree;
 
-	  // Shear factor
+          // Shear factor
           const auto& shear_X = shears.Get(0, sample);
           const auto& shear_Y = shears.Get(1, sample);
 
-	  // Translation factor
+          // Translation factor
           const auto& translate_X = translations.Get(0, sample);
           const auto& translate_Y = translations.Get(1, sample);
 
-
           // Get center pixel for rotation
-          const El::Int col_center = input_width/2;
-          const El::Int row_center = input_height/2;
+          const El::Int col_center = input_width / 2;
+          const El::Int row_center = input_height / 2;
 
           // Rotate point relative to input pixel centers
-          const auto& rotated_col = (output_row - row_center) * sin(angle_rad) + (output_col - col_center) * cos(angle_rad) + col_center;
-          const auto& rotated_row =  (output_row - row_center) * cos(angle_rad) - (output_col - col_center) * sin(angle_rad) + row_center;
+          const auto& rotated_col = (output_row - row_center) * sin(angle_rad) +
+                                    (output_col - col_center) * cos(angle_rad) +
+                                    col_center;
+          const auto& rotated_row = (output_row - row_center) * cos(angle_rad) -
+                                    (output_col - col_center) * sin(angle_rad) +
+                                    row_center;
 
-	  // Shear the rotated point
-          const auto& shear_col = rotated_col + shear_X*rotated_row;
-          const auto& shear_row = rotated_row + shear_Y*rotated_col;
+          // Shear the rotated point
+          const auto& shear_col = rotated_col + shear_X * rotated_row;
+          const auto& shear_row = rotated_row + shear_Y * rotated_col;
 
-	  // Translate the shear point
+          // Translate the shear point
           const auto& translated_col = shear_col + translate_X;
           const auto& translated_row = shear_row + translate_Y;
 
-
           // Find input pixels near output point
-          const auto input_col = static_cast<El::Int>(std::floor(translated_col));
-          const auto input_row = static_cast<El::Int>(std::floor(translated_row));
+          const auto input_col =
+            static_cast<El::Int>(std::floor(translated_col));
+          const auto input_row =
+            static_cast<El::Int>(std::floor(translated_row));
 
           // Input and output pixels
-          auto& pixel_output = local_output(channel * input_height * input_width
-                                                + output_row * input_width
-                                                + output_col,
-                                                sample);
+          auto& pixel_output =
+            local_output(channel * input_height * input_width +
+                           output_row * input_width + output_col,
+                         sample);
 
-	  if((input_row >= 0 && input_row < input_height-1) && (input_col >= 0 && input_col < input_width-1)){
+          if ((input_row >= 0 && input_row < input_height - 1) &&
+              (input_col >= 0 && input_col < input_width - 1)) {
 
-          	const El::Int input_col0 = std::max(input_col, El::Int(0));
-          	const El::Int input_col1 = std::min(input_col+1, input_width-1);
+            const El::Int input_col0 = std::max(input_col, El::Int(0));
+            const El::Int input_col1 = std::min(input_col + 1, input_width - 1);
 
-         	const El::Int input_row0 = std::max(input_row, El::Int(0));
-         	const El::Int input_row1 = std::min(input_row+1, input_height-1);
+            const El::Int input_row0 = std::max(input_row, El::Int(0));
+            const El::Int input_row1 =
+              std::min(input_row + 1, input_height - 1);
 
-          	// Point relative to input pixel centers
-         	const auto& unit_col = translated_col - input_col;
-          	const auto& unit_row = translated_row - input_row;
+            // Point relative to input pixel centers
+            const auto& unit_col = translated_col - input_col;
+            const auto& unit_row = translated_row - input_row;
 
-               	auto& pixel00 = local_input(channel * input_height * input_width
-                                           	+ input_row0 * input_width
-                                            	+ input_col0,
-                                            	sample);
+            auto& pixel00 = local_input(channel * input_height * input_width +
+                                          input_row0 * input_width + input_col0,
+                                        sample);
 
-               	auto& pixel01 = local_input(channel * input_height * input_width
-                                            	+ input_row0 * input_width
-                                            	+ input_col1,
-                                           	 sample);
+            auto& pixel01 = local_input(channel * input_height * input_width +
+                                          input_row0 * input_width + input_col1,
+                                        sample);
 
-          	auto& pixel10 = local_input(channel * input_height * input_width
-                                            	+ input_row1 * input_width
-                                            	+ input_col0,
-                                            	sample);
+            auto& pixel10 = local_input(channel * input_height * input_width +
+                                          input_row1 * input_width + input_col0,
+                                        sample);
 
-          	auto& pixel11 = local_input(channel * input_height * input_width
-                                           	+ input_row1 * input_width
-                                            	+ input_col1,
-                                            	sample);
+            auto& pixel11 = local_input(channel * input_height * input_width +
+                                          input_row1 * input_width + input_col1,
+                                        sample);
 
-
-          	// Bilinear interpolation
-         	pixel_output = (pixel00 * (one - unit_col) * (one - unit_row)
-                       	+ pixel01 * unit_col * (one - unit_row)
-                       	+ pixel10 * (one - unit_col) * unit_row
-                       	+ pixel11 * unit_col * unit_row);
-
-	  }
-	  else {
-          	pixel_output = zero;
-	  }
+            // Bilinear interpolation
+            pixel_output = (pixel00 * (one - unit_col) * (one - unit_row) +
+                            pixel01 * unit_col * (one - unit_row) +
+                            pixel10 * (one - unit_col) * unit_row +
+                            pixel11 * unit_col * unit_row);
+          }
+          else {
+            pixel_output = zero;
+          }
         }
       }
     }

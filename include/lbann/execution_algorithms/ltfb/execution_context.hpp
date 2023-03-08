@@ -72,7 +72,8 @@ public:
   ///@{
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive& ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   /** @brief Checkpoint exection_context to a shared checkpoint. */
   void save_to_checkpoint_shared(persist& p) override

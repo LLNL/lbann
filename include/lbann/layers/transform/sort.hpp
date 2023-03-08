@@ -38,14 +38,15 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class sort_layer : public data_type_layer<TensorDataType> {
+class sort_layer : public data_type_layer<TensorDataType>
+{
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "sort layer only supports DATA_PARALLEL");
- public:
 
-  sort_layer(lbann_comm *comm, bool descending = false)
-    : data_type_layer<TensorDataType>(comm), m_descending(descending) {
-  }
+public:
+  sort_layer(lbann_comm* comm, bool descending = false)
+    : data_type_layer<TensorDataType>(comm), m_descending(descending)
+  {}
   sort_layer(const sort_layer& other);
 
   sort_layer& operator=(const sort_layer& other);
@@ -64,21 +65,19 @@ class sort_layer : public data_type_layer<TensorDataType> {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  description get_description() const override {
+  description get_description() const override
+  {
     auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Descending", m_descending);
     return desc;
   }
 
- protected:
-
+protected:
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  sort_layer()
-    : sort_layer(nullptr)
-  {}
+  sort_layer() : sort_layer(nullptr) {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 
@@ -89,8 +88,7 @@ class sort_layer : public data_type_layer<TensorDataType> {
   void fp_compute() override;
   void bp_compute() override;
 
- private:
-
+private:
   /** Whether values are sorted by descending order. */
   bool m_descending;
 
@@ -99,18 +97,18 @@ class sort_layer : public data_type_layer<TensorDataType> {
    *  in Hydrogen.
    */
   std::unique_ptr<El::AbstractMatrix<El::Int>> m_indices;
-
 };
 
 template <typename T, data_layout L, El::Device D>
-void sort_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void sort_layer<T, L, D>::write_specific_proto(lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_sort();
   msg->set_descending(m_descending);
 }
 
 #ifndef LBANN_SORT_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
+#define PROTO_DEVICE(T, Device)                                                \
   extern template class sort_layer<T, data_layout::DATA_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"

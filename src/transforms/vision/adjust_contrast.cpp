@@ -36,7 +36,9 @@
 namespace lbann {
 namespace transform {
 
-void adjust_contrast::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+void adjust_contrast::apply(utils::type_erased_matrix& data,
+                            std::vector<size_t>& dims)
+{
   // To adjust contrast, we essentially add the mean of the grayscale version
   // of the image, scaled by (1 - m_factor) to each pixel.
   cv::Mat src = utils::get_opencv_mat(data, dims);
@@ -58,7 +60,8 @@ void adjust_contrast::apply(utils::type_erased_matrix& data, std::vector<size_t>
     }
     gray_mean = static_cast<uint8_t>(
       std::round(static_cast<double>(sum) / static_cast<double>(size)));
-  } else {
+  }
+  else {
     std::vector<size_t> gray_dims = {1, dims[1], dims[2]};
     const size_t size = get_linear_size(gray_dims);
     auto gray_real = El::Matrix<uint8_t>(size, 1);
@@ -80,16 +83,18 @@ void adjust_contrast::apply(utils::type_erased_matrix& data, std::vector<size_t>
   const float one_minus_factor = 1.0f - m_factor;
   const size_t size = get_linear_size(dims);
   for (size_t i = 0; i < size; ++i) {
-    src_buf[i] = cv::saturate_cast<uint8_t>(
-      src_buf[i]*m_factor + gray_mean*one_minus_factor);
+    src_buf[i] = cv::saturate_cast<uint8_t>(src_buf[i] * m_factor +
+                                            gray_mean * one_minus_factor);
   }
 }
 
 std::unique_ptr<transform>
-build_adjust_contrast_transform_from_pbuf(google::protobuf::Message const& msg) {
-  auto const& params = dynamic_cast<lbann_data::Transform::AdjustContrast const&>(msg);
+build_adjust_contrast_transform_from_pbuf(google::protobuf::Message const& msg)
+{
+  auto const& params =
+    dynamic_cast<lbann_data::Transform::AdjustContrast const&>(msg);
   return std::make_unique<adjust_contrast>(params.factor());
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

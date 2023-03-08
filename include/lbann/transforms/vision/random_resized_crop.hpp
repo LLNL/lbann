@@ -39,7 +39,8 @@ namespace transform {
  * This is commonly used for Inception-style networks and some other
  * image classification networks.
  */
-class random_resized_crop : public transform {
+class random_resized_crop : public transform
+{
 public:
   /**
    * Crop to a random size and aspect ratio, then resize to h x w.
@@ -49,19 +50,28 @@ public:
    * These default to (0.08, 1.0) and (3/4, 4/3), respectively, which are the
    * standard.
    */
-  random_resized_crop(size_t h, size_t w,
-                      float scale_min=0.08, float scale_max=1.0,
-                      float ar_min=0.75, float ar_max=4.0f/3.0f) :
-    transform(),
-    m_h(h), m_w(w),
-    m_scale_min(scale_min), m_scale_max(scale_max),
-    m_ar_min(ar_min), m_ar_max(ar_max) {}
+  random_resized_crop(size_t h,
+                      size_t w,
+                      float scale_min = 0.08,
+                      float scale_max = 1.0,
+                      float ar_min = 0.75,
+                      float ar_max = 4.0f / 3.0f)
+    : transform(),
+      m_h(h),
+      m_w(w),
+      m_scale_min(scale_min),
+      m_scale_max(scale_max),
+      m_ar_min(ar_min),
+      m_ar_max(ar_max)
+  {}
 
   transform* copy() const override { return new random_resized_crop(*this); }
 
   std::string get_type() const override { return "random_resized_crop"; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data,
+             std::vector<size_t>& dims) override;
+
 private:
   /** Height and width of the final crop. */
   size_t m_h, m_w;
@@ -74,7 +84,7 @@ private:
 std::unique_ptr<transform>
 build_random_resized_crop_transform_from_pbuf(google::protobuf::Message const&);
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_RANDOM_RESIZED_CROP_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_RANDOM_RESIZED_CROP_HPP_INCLUDED

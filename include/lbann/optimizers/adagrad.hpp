@@ -27,8 +27,8 @@
 #ifndef LBANN_OPTIMIZERS_ADAGRAD_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_ADAGRAD_HPP_INCLUDED
 
-#include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/proto/optimizers.pb.h"
 
 namespace lbann {
@@ -43,9 +43,11 @@ namespace lbann {
  */
 template <typename TensorDataType>
 class adagrad : public Cloneable<adagrad<TensorDataType>,
-                                 data_type_optimizer<TensorDataType>> {
-  using BaseType = Cloneable<adagrad<TensorDataType>,
-                             data_type_optimizer<TensorDataType>>;
+                                 data_type_optimizer<TensorDataType>>
+{
+  using BaseType =
+    Cloneable<adagrad<TensorDataType>, data_type_optimizer<TensorDataType>>;
+
 public:
   /** @name Public Types */
   ///@{
@@ -62,14 +64,14 @@ public:
   ///@}
 
 public:
-
   adagrad(TensorDataType learning_rate, TensorDataType eps = 1e-8);
   adagrad(const adagrad& other);
   adagrad& operator=(const adagrad& other);
   ~adagrad() override = default;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   /** Human-readable type name. */
   std::string get_type() const override { return "AdaGrad"; }
@@ -79,20 +81,17 @@ public:
   using OptimizerType::setup;
   void setup(WeightsType* w = nullptr) override;
 
-   /** Add optimizer data to prototext */
+  /** Add optimizer data to prototext */
   void write_proto(lbann_data::Optimizer& opt) const final;
 
 protected:
-
   friend cereal::access;
 
   /** @brief Default constructor.
    *  @details This constructor exists as an implementation detail of
    *  the serialization code. It is not for general use.
    */
-  adagrad()
-    : adagrad(El::To<TensorDataType>(1.f),
-              El::To<TensorDataType>(1e-8))
+  adagrad() : adagrad(El::To<TensorDataType>(1.f), El::To<TensorDataType>(1e-8))
   {}
 
   /** Computation for an optimization step. */
@@ -100,25 +99,24 @@ protected:
                     const AbsDistMatrixType& gradient) override;
 
 private:
-
   /** Small factor to avoid division by zero. */
   TensorDataType m_eps;
   /** AdaGrad cache. */
   std::unique_ptr<AbsDistMatrixType> m_cache;
 
   /** CPU implementation of optimization step. */
-  void step_compute_cpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
+  void step_compute_cpu(AbsDistMatrixType& values,
+                        const AbsDistMatrixType& gradient);
 #ifdef LBANN_HAS_DNN_LIB
   /** GPU implementation of optimization step. */
-  void step_compute_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
+  void step_compute_gpu(AbsDistMatrixType& values,
+                        const AbsDistMatrixType& gradient);
 #endif // LBANN_HAS_DNN_LIB
-
 };
 
 template <typename TensorDataType>
 std::unique_ptr<optimizer>
-build_adagrad_optimizer_from_pbuf(
-  google::protobuf::Message const&);
+build_adagrad_optimizer_from_pbuf(google::protobuf::Message const&);
 
 } // namespace lbann
 

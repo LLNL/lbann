@@ -45,9 +45,9 @@ namespace callback {
  *  derivative computed during backprop, the gradient check has
  *  failed.
  */
-class check_gradients : public callback_base {
+class check_gradients : public callback_base
+{
 public:
-
   /**
    *  @param modes              Execution modes with gradient checks. If
    *                            none are provided, gradient checking is
@@ -65,19 +65,18 @@ public:
                   DataType step_size = DataType(0),
                   bool verbose = false,
                   bool error_on_failure = false);
-  check_gradients* copy() const override {
-    return new check_gradients(*this);
-  }
+  check_gradients* copy() const override { return new check_gradients(*this); }
   std::string name() const override { return "check gradients"; }
-  void on_train_end(model *m) override      { do_check_gradients(*m); }
-  void on_validation_end(model *m) override { do_check_gradients(*m); }
-  void on_test_end(model *m) override       { do_check_gradients(*m); }
+  void on_train_end(model* m) override { do_check_gradients(*m); }
+  void on_validation_end(model* m) override { do_check_gradients(*m); }
+  void on_test_end(model* m) override { do_check_gradients(*m); }
 
   /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
@@ -96,15 +95,14 @@ private:
 
   /** Does nothing if current execution mode is not in m_modes. */
   void do_check_gradients(model& m) const;
-
 };
 
 // Builder function
 std::unique_ptr<callback_base>
-build_check_gradients_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_check_gradients_callback_from_pbuf(const google::protobuf::Message&,
+                                         std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_CHECK_GRADIENTS_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_CHECK_GRADIENTS_HPP_INCLUDED

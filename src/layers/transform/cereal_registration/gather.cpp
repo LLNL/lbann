@@ -30,11 +30,12 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
-void gather_layer<TensorDataType,Layout,Device>::serialize(ArchiveT& ar) {
+void gather_layer<TensorDataType, Layout, Device>::serialize(ArchiveT& ar)
+{
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",
                         ::cereal::base_class<DataTypeLayer>(this)),
-    CEREAL_NVP(m_gather_axis));
+     CEREAL_NVP(m_gather_axis));
 }
 
 } // namespace lbann

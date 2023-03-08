@@ -27,12 +27,13 @@
 #ifndef LBANN_OBJECTIVE_FUNCTION_LAYER_TERM_HPP_INCLUDED
 #define LBANN_OBJECTIVE_FUNCTION_LAYER_TERM_HPP_INCLUDED
 
-#include "lbann/objective_functions/objective_function_term.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
+#include "lbann/objective_functions/objective_function_term.hpp"
 
 namespace lbann {
 
-class layer_term : public objective_function_term {
+class layer_term : public objective_function_term
+{
 public:
   layer_term(EvalType scale_factor = EvalType(1));
   layer_term* copy() const override { return new layer_term(*this); }
@@ -53,7 +54,7 @@ public:
 
   void differentiate() override;
 
-  void compute_weight_regularization() override {};
+  void compute_weight_regularization() override{};
 
   template <typename ArchiveT>
   void serialize(ArchiveT& ar);
@@ -63,8 +64,7 @@ private:
   void write_specific_proto(lbann_data::ObjectiveFunction& proto) const final;
 
   /** Get corresponding evaluation layer. */
-  /*abstract_evaluation_*/Layer& get_evaluation_layer();
-
+  /*abstract_evaluation_*/ Layer& get_evaluation_layer();
 };
 
 } // namespace lbann

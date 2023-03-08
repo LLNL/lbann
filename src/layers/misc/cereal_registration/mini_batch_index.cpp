@@ -30,9 +30,8 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
-void
-mini_batch_index_layer<TensorDataType,Layout,Device>
-::serialize(ArchiveT& ar)
+void mini_batch_index_layer<TensorDataType, Layout, Device>::serialize(
+  ArchiveT& ar)
 {
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",

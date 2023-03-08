@@ -25,8 +25,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_LOG_SOFTMAX_LAYER_INSTANTIATE
-#include "lbann/comm_impl.hpp"
 #include "lbann/layers/activations/log_softmax.hpp"
+#include "lbann/comm_impl.hpp"
 
 namespace lbann {
 
@@ -36,7 +36,8 @@ template <typename TensorDataType>
 void fp(lbann_comm& comm,
         const El::AbstractDistMatrix<TensorDataType>& input,
         El::AbstractDistMatrix<TensorDataType>& output,
-        El::AbstractDistMatrix<TensorDataType>& workspace) {
+        El::AbstractDistMatrix<TensorDataType>& workspace)
+{
 
   // Setup workspace
   workspace.Empty(false);
@@ -44,9 +45,11 @@ void fp(lbann_comm& comm,
   workspace.Resize(1, input.Width());
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const CPUMatDT<TensorDataType>&>(input.LockedMatrix());
+  const auto& local_input =
+    dynamic_cast<const CPUMatDT<TensorDataType>&>(input.LockedMatrix());
   auto& local_output = dynamic_cast<CPUMatDT<TensorDataType>&>(output.Matrix());
-  auto& local_workspace = dynamic_cast<CPUMatDT<TensorDataType>&>(workspace.Matrix());
+  auto& local_workspace =
+    dynamic_cast<CPUMatDT<TensorDataType>&>(workspace.Matrix());
   const auto local_height = local_input.Height();
   const auto local_width = local_input.Width();
 
@@ -80,13 +83,13 @@ void fp(lbann_comm& comm,
   // Compute output by subtracting LogSumExp
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
-    const TensorDataType log_sum_exp = static_cast<TensorDataType>(std::log(local_workspace(El::TypeTraits<TensorDataType>::Zero(), col)));
+    const TensorDataType log_sum_exp = static_cast<TensorDataType>(
+      std::log(local_workspace(El::TypeTraits<TensorDataType>::Zero(), col)));
     for (El::Int row = 0; row < local_height; ++row) {
       auto& y = local_output(row, col);
       y -= log_sum_exp;
     }
   }
-
 }
 
 template <typename TensorDataType>
@@ -94,12 +97,15 @@ void bp(lbann_comm& comm,
         const El::AbstractDistMatrix<TensorDataType>& output,
         const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
         El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
-        El::AbstractDistMatrix<TensorDataType>& workspace) {
+        El::AbstractDistMatrix<TensorDataType>& workspace)
+{
 
   // Local matrices
   const auto& local_output = dynamic_cast<const CPUMat&>(output.LockedMatrix());
-  const auto& local_gradient_wrt_output = dynamic_cast<const CPUMat&>(gradient_wrt_output.LockedMatrix());
-  auto& local_gradient_wrt_input = dynamic_cast<CPUMat&>(gradient_wrt_input.Matrix());
+  const auto& local_gradient_wrt_output =
+    dynamic_cast<const CPUMat&>(gradient_wrt_output.LockedMatrix());
+  auto& local_gradient_wrt_input =
+    dynamic_cast<CPUMat&>(gradient_wrt_input.Matrix());
   auto& local_workspace = dynamic_cast<CPUMat&>(workspace.Matrix());
   const auto& local_height = local_output.Height();
   const auto& local_width = local_output.Width();
@@ -127,20 +133,21 @@ void bp(lbann_comm& comm,
       dx = dy - std::exp(y) * sum;
     }
   }
-
 }
 
 } // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void log_softmax_layer<TensorDataType, Layout, Device>::fp_compute() {
+void log_softmax_layer<TensorDataType, Layout, Device>::fp_compute()
+{
   fp(*this->get_comm(),
      this->get_prev_activations(),
      this->get_activations(),
      *this->m_workspace);
 }
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void log_softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
+void log_softmax_layer<TensorDataType, Layout, Device>::bp_compute()
+{
   bp(*this->get_comm(),
      this->get_activations(),
      this->get_prev_error_signals(),
@@ -148,9 +155,13 @@ void log_softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
      *this->m_workspace);
 }
 
-#define PROTO(T)                                      \
-  template class log_softmax_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
-  template class log_softmax_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>; \
+#define PROTO(T)                                                               \
+  template class log_softmax_layer<T,                                          \
+                                   data_layout::DATA_PARALLEL,                 \
+                                   El::Device::CPU>;                           \
+  template class log_softmax_layer<T,                                          \
+                                   data_layout::MODEL_PARALLEL,                \
+                                   El::Device::CPU>;
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

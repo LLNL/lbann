@@ -52,22 +52,27 @@ struct TypeMapT;
  *  @brief Predicate indicating if a type is supported by oneDNN.
  */
 template <typename T>
-struct IsSupportedTypeT : std::false_type {};
+struct IsSupportedTypeT : std::false_type
+{
+};
 
-#define ADD_ONEDNN_TYPE_MAP(CPPTYPE, EVAL)                      \
-  template <>                                                   \
-  struct TypeMapT<CPPTYPE>                                      \
-    : std::integral_constant<dnnl::memory::data_type,           \
-                             dnnl::memory::data_type::EVAL>     \
-  {};                                                           \
-  template <>                                                   \
-  struct IsSupportedTypeT<CPPTYPE> : std::true_type {}
+#define ADD_ONEDNN_TYPE_MAP(CPPTYPE, EVAL)                                     \
+  template <>                                                                  \
+  struct TypeMapT<CPPTYPE>                                                     \
+    : std::integral_constant<dnnl::memory::data_type,                          \
+                             dnnl::memory::data_type::EVAL>                    \
+  {                                                                            \
+  };                                                                           \
+  template <>                                                                  \
+  struct IsSupportedTypeT<CPPTYPE> : std::true_type                            \
+  {                                                                            \
+  }
 
 // Basic types
-ADD_ONEDNN_TYPE_MAP(  float, f32);
+ADD_ONEDNN_TYPE_MAP(float, f32);
 ADD_ONEDNN_TYPE_MAP(int32_t, s32);
-ADD_ONEDNN_TYPE_MAP( int8_t,  s8);
-ADD_ONEDNN_TYPE_MAP(uint8_t,  u8);
+ADD_ONEDNN_TYPE_MAP(int8_t, s8);
+ADD_ONEDNN_TYPE_MAP(uint8_t, u8);
 
 // 16-bit floating point
 // TODO: bfloat16 types (not yet supported in Hydrogen)
@@ -78,7 +83,7 @@ ADD_ONEDNN_TYPE_MAP(cpu_fp16, f16);
 ADD_ONEDNN_TYPE_MAP(fp16, f16);
 #endif
 
-}// namespace details
+} // namespace details
 
 template <typename T>
 using TypeMap = typename details::TypeMapT<T>;
@@ -98,7 +103,9 @@ inline constexpr dnnl::memory::data_type get_data_type()
 template <typename T, ::h2::meta::EnableUnless<IsSupportedType<T>, int> = 0>
 inline dnnl::memory::data_type get_data_type()
 {
-  LBANN_ERROR("Type \"", El::TypeName<T>(), "\" is not supported "
+  LBANN_ERROR("Type \"",
+              El::TypeName<T>(),
+              "\" is not supported "
               "by the oneDNN runtime.");
 }
 
@@ -116,7 +123,10 @@ struct onednn_backend
   static constexpr auto device = D;
 
   template <typename T>
-  static auto data_type() { return onednn::get_data_type<T>(); }
+  static auto data_type()
+  {
+    return onednn::get_data_type<T>();
+  }
 
   class TensorDescriptor
   {
@@ -140,7 +150,6 @@ struct onednn_backend
     using internal_descriptor_type = dnnl::memory::desc;
 
   public:
-
     /** @name Lifecycle management */
     ///@{
     /** @brief Construct an empty descriptor. */
@@ -164,13 +173,10 @@ struct onednn_backend
     TensorDescriptor& operator=(TensorDescriptor&&) = default;
 
     /** @brief Exchange contents with another descriptor. */
-    void swap(TensorDescriptor& other)
-    {
-      std::swap(desc_, other.desc_);
-    }
+    void swap(TensorDescriptor& other) { std::swap(desc_, other.desc_); }
 
     /** @brief Take ownership of DNN library object */
-    void reset(dnnTensorDescriptor_t desc=dnnTensorDescriptor_t{})
+    void reset(dnnTensorDescriptor_t desc = dnnTensorDescriptor_t{})
     {
       desc_ = dnnl::memory{std::move(desc)};
     }
@@ -184,16 +190,10 @@ struct onednn_backend
     }
 
     /** @brief Return DNN library object without releasing ownership */
-    dnnTensorDescriptor_t get() const noexcept
-    {
-      return desc_;
-    }
+    dnnTensorDescriptor_t get() const noexcept { return desc_; }
 
     /** @brief Return DNN library object without releasing ownership */
-    operator dnnTensorDescriptor_t() const noexcept
-    {
-      return desc_;
-    }
+    operator dnnTensorDescriptor_t() const noexcept { return desc_; }
 
     /** @brief Create DNN library object
      *
@@ -201,18 +201,16 @@ struct onednn_backend
      */
     void create() noexcept {}
 
-    void set(
-      dnnDataType_t data_type,
-      dnnl::memory::dims dims,
-      dnnl::memory::dims strides={})
+    void set(dnnDataType_t data_type,
+             dnnl::memory::dims dims,
+             dnnl::memory::dims strides = {})
     {
       if (strides.empty())
         strides = get_packed_strides(dims);
 
       auto md = dnnl::memory::desc(dims, data_type, strides);
-      desc_ = dnnl::memory(md,
-                           onednn::get_device_engine<D>(),
-                           DNNL_MEMORY_NONE);
+      desc_ =
+        dnnl::memory(md, onednn::get_device_engine<D>(), DNNL_MEMORY_NONE);
     }
 
     /** @brief Configure DNN library object
@@ -220,10 +218,9 @@ struct onednn_backend
      *  Creates DNN library object if needed.
      */
     template <typename DimT>
-    void set(
-      dnnDataType_t data_type,
-      std::vector<DimT> const& dims_in,
-      std::vector<DimT> const& strides_in = {})
+    void set(dnnDataType_t data_type,
+             std::vector<DimT> const& dims_in,
+             std::vector<DimT> const& strides_in = {})
     {
       dnnl::memory::dims dims{cbegin(dims_in), cend(dims_in)};
       dnnl::memory::dims strides{cbegin(strides_in), cend(strides_in)};
@@ -235,23 +232,19 @@ struct onednn_backend
      *  Creates DNN library object if needed.
      */
     template <typename... IntTs>
-    void set(
-      dnnDataType_t data_type,
-      IntTs... dims)
+    void set(dnnDataType_t data_type, IntTs... dims)
     {
       set(data_type, {static_cast<dnnl::memory::dim>(dims)...});
     }
     // This function is required for API compatibility.
-    void set(
-      dnnDataType_t data_type,
-      dnnTensorFormat_t /*format*/,
-      const std::vector<int>& dims)
+    void set(dnnDataType_t data_type,
+             dnnTensorFormat_t /*format*/,
+             const std::vector<int>& dims)
     {
       this->set(data_type, dims);
     }
 
   private:
-
     /** @brief The DNNL memory handle.
      *
      *  @note This handle is tied to a specific device. This is
@@ -261,66 +254,62 @@ struct onednn_backend
      */
     dnnl::memory desc_;
 
-  };// class TensorDescriptor
+  }; // class TensorDescriptor
 
   template <typename DataT, typename ScalarT>
-  static void softmax_forward(
-    ScalarT const& alpha_in,
-    TensorDescriptor const& xDesc,
-    El::Matrix<DataT, D> const& x,
-    ScalarT const& beta_in,
-    TensorDescriptor const& yDesc,
-    El::Matrix<DataT, D>& y,
-    El::SyncInfo<D> const& si,
-    softmax_mode mode,
-    softmax_alg alg = softmax_alg::ACCURATE);
+  static void softmax_forward(ScalarT const& alpha_in,
+                              TensorDescriptor const& xDesc,
+                              El::Matrix<DataT, D> const& x,
+                              ScalarT const& beta_in,
+                              TensorDescriptor const& yDesc,
+                              El::Matrix<DataT, D>& y,
+                              El::SyncInfo<D> const& si,
+                              softmax_mode mode,
+                              softmax_alg alg = softmax_alg::ACCURATE);
 
   template <typename DataT, typename ScalarT>
-  static void logsoftmax_forward(
-    ScalarT const& alpha_in,
-    TensorDescriptor const& xDesc,
-    El::Matrix<DataT, D> const& x,
-    ScalarT const& beta_in,
-    TensorDescriptor const& yDesc,
-    El::Matrix<DataT, D>& y,
-    El::SyncInfo<D> const& si,
-    softmax_mode mode)
+  static void logsoftmax_forward(ScalarT const& alpha_in,
+                                 TensorDescriptor const& xDesc,
+                                 El::Matrix<DataT, D> const& x,
+                                 ScalarT const& beta_in,
+                                 TensorDescriptor const& yDesc,
+                                 El::Matrix<DataT, D>& y,
+                                 El::SyncInfo<D> const& si,
+                                 softmax_mode mode)
   {
     LBANN_ERROR("Not yet implemented.");
   }
 
   template <typename DataT, typename ScalarT>
-  static void softmax_backward(
-    ScalarT const& alpha_in,
-    TensorDescriptor const& yDesc,
-    El::Matrix<DataT, D> const& y,
-    TensorDescriptor const& dyDesc,
-    El::Matrix<DataT, D> const& dy,
-    ScalarT const& beta_in,
-    TensorDescriptor const& dxDesc,
-    El::Matrix<DataT, D>& dx,
-    El::SyncInfo<D> const& si,
-    softmax_mode mode,
-    softmax_alg alg = softmax_alg::ACCURATE);
+  static void softmax_backward(ScalarT const& alpha_in,
+                               TensorDescriptor const& yDesc,
+                               El::Matrix<DataT, D> const& y,
+                               TensorDescriptor const& dyDesc,
+                               El::Matrix<DataT, D> const& dy,
+                               ScalarT const& beta_in,
+                               TensorDescriptor const& dxDesc,
+                               El::Matrix<DataT, D>& dx,
+                               El::SyncInfo<D> const& si,
+                               softmax_mode mode,
+                               softmax_alg alg = softmax_alg::ACCURATE);
 
   template <typename DataT, typename ScalarT>
-  static void logsoftmax_backward(
-    ScalarT const& alpha_in,
-    TensorDescriptor const& yDesc,
-    El::Matrix<DataT, D> const& y,
-    TensorDescriptor const& dyDesc,
-    El::Matrix<DataT, D> const& dy,
-    ScalarT const& beta_in,
-    TensorDescriptor const& dxDesc,
-    El::Matrix<DataT, D>& dx,
-    El::SyncInfo<D> const& si,
-    softmax_mode mode,
-    softmax_alg alg = softmax_alg::ACCURATE)
+  static void logsoftmax_backward(ScalarT const& alpha_in,
+                                  TensorDescriptor const& yDesc,
+                                  El::Matrix<DataT, D> const& y,
+                                  TensorDescriptor const& dyDesc,
+                                  El::Matrix<DataT, D> const& dy,
+                                  ScalarT const& beta_in,
+                                  TensorDescriptor const& dxDesc,
+                                  El::Matrix<DataT, D>& dx,
+                                  El::SyncInfo<D> const& si,
+                                  softmax_mode mode,
+                                  softmax_alg alg = softmax_alg::ACCURATE)
   {
     LBANN_ERROR("Not yet implemented.");
   }
 
-};// struct onednn_backend
+}; // struct onednn_backend
 
 } // namespace lbann
 #endif // LBANN_HAS_ONEDNN

@@ -36,6 +36,6 @@ using data_field_type = std::string;
 #define INPUT_DATA_TYPE_LABELS "labels"
 #define INPUT_DATA_TYPE_RESPONSES "responses"
 #define INPUT_DATA_TYPE_LABEL_RECONSTRUCTION "label_reconstruction"
-}
+} // namespace lbann
 
 #endif // LBANN_INPUT_DATA_TYPE_HPP_INCLUDED

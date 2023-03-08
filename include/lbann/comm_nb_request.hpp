@@ -68,7 +68,8 @@ using hosttransfer_backend = ::Al::HostTransferBackend;
 using hosttransfer_backend = lbann::Al::dummy_backend;
 #endif // defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_HOST_TRANSFER)
 using hosttransfer_req_type = hosttransfer_backend::req_type;
-static const hosttransfer_req_type hosttransfer_null_req = hosttransfer_backend::null_req;
+static const hosttransfer_req_type hosttransfer_null_req =
+  hosttransfer_backend::null_req;
 
 /** Wrapper for Aluminum non-blocking routine requests. */
 struct request

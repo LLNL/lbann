@@ -54,7 +54,9 @@ sort_layer<TensorDataType, T_layout, Dev>::sort_layer(const sort_layer& other)
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-sort_layer<TensorDataType, T_layout, Dev>& sort_layer<TensorDataType, T_layout, Dev>::operator=(const sort_layer& other) {
+sort_layer<TensorDataType, T_layout, Dev>&
+sort_layer<TensorDataType, T_layout, Dev>::operator=(const sort_layer& other)
+{
   data_type_layer<TensorDataType>::operator=(other);
   m_descending = other.m_descending;
   if (!other.m_indices) {
@@ -79,13 +81,17 @@ sort_layer<TensorDataType, T_layout, Dev>& sort_layer<TensorDataType, T_layout, 
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void sort_layer<TensorDataType, T_layout, Dev>::setup_dims(DataReaderMetaData& dr_metadata) {
+void sort_layer<TensorDataType, T_layout, Dev>::setup_dims(
+  DataReaderMetaData& dr_metadata)
+{
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
   this->set_output_dims(this->get_input_dims());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void sort_layer<TensorDataType, T_layout, Dev>::setup_data(size_t max_mini_batch_size) {
+void sort_layer<TensorDataType, T_layout, Dev>::setup_data(
+  size_t max_mini_batch_size)
+{
   data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
   const auto& dist = this->get_activations().DistData();
   switch (dist.device) {
@@ -104,7 +110,9 @@ void sort_layer<TensorDataType, T_layout, Dev>::setup_data(size_t max_mini_batch
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void sort_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(El::Int mini_batch_size) {
+void sort_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(
+  El::Int mini_batch_size)
+{
   data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
   const auto& output = this->get_activations();
   m_indices->Resize(output.LocalHeight(), output.LocalWidth());

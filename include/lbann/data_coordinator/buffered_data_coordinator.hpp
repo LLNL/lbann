@@ -33,8 +33,9 @@
 namespace lbann {
 
 template <typename TensorDataType>
-class buffered_data_coordinator : public data_coordinator {
- public:
+class buffered_data_coordinator : public data_coordinator
+{
+public:
   /** @name Public Types */
   ///@{
 
@@ -47,24 +48,27 @@ class buffered_data_coordinator : public data_coordinator {
   using IODataType = DataType;
 
   ///@}
- public:
-  typedef std::map<execution_mode, std::unique_ptr<data_buffer<IODataType>>> data_buffer_map_t;
- public:
-  buffered_data_coordinator(lbann_comm *comm) :
-    data_coordinator(comm) {
+public:
+  typedef std::map<execution_mode, std::unique_ptr<data_buffer<IODataType>>>
+    data_buffer_map_t;
+
+public:
+  buffered_data_coordinator(lbann_comm* comm) : data_coordinator(comm)
+  {
 
     // Initialize two buffers
     m_data_buffers.resize(2);
-    for(size_t i = 0; i < m_data_buffers.size(); i++) {
-      for(auto m : execution_mode_iterator()) {
-        if(m != execution_mode::invalid) {
-          m_data_buffers[i][m] = std::make_unique<data_buffer<IODataType>>(comm);
+    for (size_t i = 0; i < m_data_buffers.size(); i++) {
+      for (auto m : execution_mode_iterator()) {
+        if (m != execution_mode::invalid) {
+          m_data_buffers[i][m] =
+            std::make_unique<data_buffer<IODataType>>(comm);
         }
       }
     }
 
-    for(auto m : execution_mode_iterator()) {
-      if(m != execution_mode::invalid) {
+    for (auto m : execution_mode_iterator()) {
+      if (m != execution_mode::invalid) {
         this->m_active_buffer[m].store(-1);
       }
     }
@@ -74,20 +78,20 @@ class buffered_data_coordinator : public data_coordinator {
 
   // Data Coordinators copy their data readers.
   buffered_data_coordinator(const buffered_data_coordinator& other)
-    : data_coordinator(other) {
+    : data_coordinator(other)
+  {
     m_data_buffers.resize(other.m_data_buffers.size());
     for (size_t i = 0; i < other.m_data_buffers.size(); i++) {
       data_buffer_map_t& buffer_map = m_data_buffers[i];
       const data_buffer_map_t& other_buffer_map = other.m_data_buffers[i];
       for (auto& b : other_buffer_map) {
-        buffer_map[b.first].reset(b.second ?
-                                  b.second->copy() :
-                                  nullptr);
+        buffer_map[b.first].reset(b.second ? b.second->copy() : nullptr);
       }
     }
   }
 
-  buffered_data_coordinator& operator=(const buffered_data_coordinator& other) {
+  buffered_data_coordinator& operator=(const buffered_data_coordinator& other)
+  {
     data_coordinator::operator=(other);
     m_data_buffers.clear();
     m_data_buffers.resize(other.m_data_buffers.size());
@@ -95,23 +99,23 @@ class buffered_data_coordinator : public data_coordinator {
       data_buffer_map_t& buffer_map = m_data_buffers[i];
       const data_buffer_map_t& other_buffer_map = other.m_data_buffers[i];
       for (auto& b : other_buffer_map) {
-        buffer_map[b.first].reset(b.second ?
-                                  b.second->copy() :
-                                  nullptr);
+        buffer_map[b.first].reset(b.second ? b.second->copy() : nullptr);
       }
     }
     return *this;
   }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar );
+  template <class Archive>
+  void serialize(Archive& ar);
 
   /** @brief After registering the active data field, allocate storage for each
    *  data field in the context maps within the double buffer.
    */
   void register_active_data_field(data_field_type const data_field) override;
 
-  void fp_setup_data(data_buffer<IODataType>& buffer, El::Int cur_mini_batch_size);
+  void fp_setup_data(data_buffer<IODataType>& buffer,
+                     El::Int cur_mini_batch_size);
 
   void fetch_data(execution_mode mode) override;
 
@@ -121,7 +125,8 @@ class buffered_data_coordinator : public data_coordinator {
   const data_buffer<IODataType>& get_active_buffer(execution_mode mode) const;
   data_buffer<IODataType>& get_active_buffer(execution_mode mode);
 
-  const El::Matrix<El::Int>* get_sample_indices_per_mb(execution_mode mode) const override;
+  const El::Matrix<El::Int>*
+  get_sample_indices_per_mb(execution_mode mode) const override;
   El::Matrix<El::Int>* get_sample_indices_per_mb(execution_mode mode) override;
 
   /** @brief Complete any background I/O data fetch for the execution
@@ -130,27 +135,35 @@ class buffered_data_coordinator : public data_coordinator {
 
   bool epoch_complete(execution_mode mode) override;
 
-  const data_buffer<IODataType>& get_data_buffer(const data_buffer_map_t& buffer_map, const execution_mode mode) const;
-  data_buffer<IODataType>& get_data_buffer(data_buffer_map_t& buffer_map, const execution_mode mode);
+  const data_buffer<IODataType>&
+  get_data_buffer(const data_buffer_map_t& buffer_map,
+                  const execution_mode mode) const;
+  data_buffer<IODataType>& get_data_buffer(data_buffer_map_t& buffer_map,
+                                           const execution_mode mode);
 
   void distribute_from_local_matrix(execution_mode mode,
                                     data_field_type data_field,
                                     AbsDistMatrixType& input_buffer);
 
 protected:
-  int fetch_to_local_matrix(data_buffer_map_t& buffer_map, const execution_mode mode);
+  int fetch_to_local_matrix(data_buffer_map_t& buffer_map,
+                            const execution_mode mode);
 
   void fetch_data_in_background(int future_active_buffer, execution_mode mode);
 
-  int get_active_buffer_idx(execution_mode m) const { return m_active_buffer.at(m).load(); }
-
-  int get_active_buffer_idx(execution_mode m) { return m_active_buffer[m].load(); }
-
-  void increment_active_buffer_idx(execution_mode m) {
-    m_active_buffer[m]++;
+  int get_active_buffer_idx(execution_mode m) const
+  {
+    return m_active_buffer.at(m).load();
   }
 
-  bool update_data_set(generic_data_reader *data_reader, execution_mode mode);
+  int get_active_buffer_idx(execution_mode m)
+  {
+    return m_active_buffer[m].load();
+  }
+
+  void increment_active_buffer_idx(execution_mode m) { m_active_buffer[m]++; }
+
+  bool update_data_set(generic_data_reader* data_reader, execution_mode mode);
 
   //************************************************************************
   //

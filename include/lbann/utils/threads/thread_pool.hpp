@@ -28,9 +28,9 @@
 
 #include "lbann_config.hpp"
 
+#include "lbann/utils/exception.hpp"
 #include "thread_safe_queue.hpp"
 #include "type_erased_function.hpp"
-#include "lbann/utils/exception.hpp"
 
 #if defined(LBANN_TOPO_AWARE)
 #include <hwloc.h>
@@ -48,7 +48,8 @@
 
 namespace lbann {
 
-class thread_pool {
+class thread_pool
+{
 public:
   using thread_container_type = std::vector<std::thread>;
   using size_type = typename thread_container_type::size_type;
@@ -62,7 +63,12 @@ private:
     /** @brief Grab container reference */
     thread_joiner(thread_container_type& threads) : threads_(threads) {}
     /** @brief Destructor: safely shut all threads down */
-    ~thread_joiner() { for (auto& t : threads_) if (t.joinable()) t.join(); }
+    ~thread_joiner()
+    {
+      for (auto& t : threads_)
+        if (t.joinable())
+          t.join();
+    }
     /** @brief Thread container reference */
     thread_container_type& threads_;
   };
@@ -119,7 +125,8 @@ public:
   }
 
   /** @brief Wait for all of the jobs in a work group to finish */
-  bool finish_work_group() {
+  bool finish_work_group()
+  {
     std::string error_message;
     for (auto& f : m_work_group) {
       bool valid = f.get();
@@ -128,7 +135,9 @@ public:
       }
     }
     m_work_group.clear();
-    if (!error_message.empty()) { LBANN_ERROR(error_message); }
+    if (!error_message.empty()) {
+      LBANN_ERROR(error_message);
+    }
     return true;
   }
 
@@ -145,10 +154,11 @@ private:
   /** @brief The task executed by each thread */
   void do_thread_work_();
 #if defined(LBANN_TOPO_AWARE)
-  void do_thread_work_pinned_thread_(int tid, hwloc_topology_t topo, hwloc_cpuset_t cpuset);
+  void do_thread_work_pinned_thread_(int tid,
+                                     hwloc_topology_t topo,
+                                     hwloc_cpuset_t cpuset);
 #endif // LBANN_TOPO_AWARE
 private:
-
   /** @brief Container holding the threads */
   thread_container_type threads_;
 
@@ -169,7 +179,7 @@ private:
 
   int m_threads_offset;
 
-};// class thread_pool
+}; // class thread_pool
 
-}// namespace lbann
+} // namespace lbann
 #endif /* LBANN_UTILS_THREADS_THREAD_POOL_HPP_INCLUDED */

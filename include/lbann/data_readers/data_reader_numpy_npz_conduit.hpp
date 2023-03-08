@@ -25,22 +25,22 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-
 #ifndef LBANN_DATA_READER_NUMPY_NPZ_CONDUIT_HPP
 #define LBANN_DATA_READER_NUMPY_NPZ_CONDUIT_HPP
 
-#include "lbann/data_readers/data_reader.hpp"
 #include "conduit/conduit.hpp"
+#include "lbann/data_readers/data_reader.hpp"
 #include <cnpy.h>
 
 namespace lbann {
-  /**
-   * Data reader for data stored in numpy (.npz) files that are encapsulated .
-   * in conduit::Nodes
-   */
-class numpy_npz_conduit_reader : public generic_data_reader {
+/**
+ * Data reader for data stored in numpy (.npz) files that are encapsulated .
+ * in conduit::Nodes
+ */
+class numpy_npz_conduit_reader : public generic_data_reader
+{
 
- public:
+public:
   numpy_npz_conduit_reader(const bool shuffle);
   // These need to be explicit because of some issue with the cnpy copy
   // constructor/assignment operator not linking correctly otherwise.
@@ -49,13 +49,14 @@ class numpy_npz_conduit_reader : public generic_data_reader {
   numpy_npz_conduit_reader& operator=(const numpy_npz_conduit_reader&);
   ~numpy_npz_conduit_reader() override {}
 
-  numpy_npz_conduit_reader* copy() const override { return new numpy_npz_conduit_reader(*this); }
+  numpy_npz_conduit_reader* copy() const override
+  {
+    return new numpy_npz_conduit_reader(*this);
+  }
 
   void copy_members(const numpy_npz_conduit_reader& rhs);
 
-  std::string get_type() const override {
-    return "numpy_npz_conduit_reader";
-  }
+  std::string get_type() const override { return "numpy_npz_conduit_reader"; }
 
   /// Set a scaling factor for int16 data.
   void set_scaling_factor_int16(DataType s) { m_scaling_factor_int16 = s; }
@@ -64,52 +65,61 @@ class numpy_npz_conduit_reader : public generic_data_reader {
 
   void set_num_labels(int n) { m_num_labels = n; }
   int get_num_labels() const override { return m_num_labels; }
-  int get_num_responses() const override { return get_linearized_response_size(); }
+  int get_num_responses() const override
+  {
+    return get_linearized_response_size();
+  }
   int get_linearized_data_size() const override { return m_num_features; }
   int get_linearized_label_size() const override { return m_num_labels; }
-  int get_linearized_response_size() const override { return m_num_response_features; }
+  int get_linearized_response_size() const override
+  {
+    return m_num_response_features;
+  }
   const std::vector<int> get_data_dims() const override { return m_data_dims; }
 
-  protected:
-    void do_preload_data_store() override;
+protected:
+  void do_preload_data_store() override;
 
-    bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
-    bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
-    bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
 
-    /// Number of samples.
-    int m_num_samples = 0;
-    /// Number of features in each sample.
-    int m_num_features = 0;
-    /// Number of label classes.
-    int m_num_labels = 0;
-    /// Number of features in each response.
-    int m_num_response_features = 0;
+  /// Number of samples.
+  int m_num_samples = 0;
+  /// Number of features in each sample.
+  int m_num_features = 0;
+  /// Number of label classes.
+  int m_num_labels = 0;
+  /// Number of features in each response.
+  int m_num_response_features = 0;
 
-    std::vector<int> m_data_dims;
-    int m_data_word_size = 0;
-    size_t m_response_word_size = 0;
+  std::vector<int> m_data_dims;
+  int m_data_word_size = 0;
+  size_t m_response_word_size = 0;
 
-    // A constant to be multiplied when data is converted
-    // from int16 to DataType.
-    DataType m_scaling_factor_int16 = 1.0;
+  // A constant to be multiplied when data is converted
+  // from int16 to DataType.
+  DataType m_scaling_factor_int16 = 1.0;
 
-    // fills in: m_num_samples, m_num_features, m_num_response_features,
-    // m_data_dims, m_data_word_size, m_response_word_size
-    void fill_in_metadata();
+  // fills in: m_num_samples, m_num_features, m_num_response_features,
+  // m_data_dims, m_data_word_size, m_response_word_size
+  void fill_in_metadata();
 
-    std::vector<std::string> m_filenames;
+  std::vector<std::string> m_filenames;
 
-    bool load_numpy_npz_from_file(const std::unordered_set<int> &data_ids, std::unordered_set<int>& label_classes);
+  bool load_numpy_npz_from_file(const std::unordered_set<int>& data_ids,
+                                std::unordered_set<int>& label_classes);
 
-    void load_conduit_node(const std::string filename, int data_id, conduit::Node &output, bool reset = true);
+  void load_conduit_node(const std::string filename,
+                         int data_id,
+                         conduit::Node& output,
+                         bool reset = true);
 
-    std::unordered_map<int, std::map<std::string, cnpy::NpyArray>> m_npz_cache;
+  std::unordered_map<int, std::map<std::string, cnpy::NpyArray>> m_npz_cache;
 
-    void load_npz(const std::string filename, int data_id, conduit::Node &node);
-
+  void load_npz(const std::string filename, int data_id, conduit::Node& node);
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_DATA_READER_NUMPY_NPZ_CONDUIT_HPP
+#endif // LBANN_DATA_READER_NUMPY_NPZ_CONDUIT_HPP

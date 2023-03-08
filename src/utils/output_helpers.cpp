@@ -187,14 +187,20 @@ std::ostream& lbann::bgyellow(std::ostream& os)
   return os << LBANN_ANSI_FG_YELLOW;
 }
 
-std::ostream& lbann::bgblue(std::ostream& os) { return os << LBANN_ANSI_FG_BLUE; }
+std::ostream& lbann::bgblue(std::ostream& os)
+{
+  return os << LBANN_ANSI_FG_BLUE;
+}
 
 std::ostream& lbann::bgmagenta(std::ostream& os)
 {
   return os << LBANN_ANSI_FG_MAGENTA;
 }
 
-std::ostream& lbann::bgcyan(std::ostream& os) { return os << LBANN_ANSI_FG_CYAN; }
+std::ostream& lbann::bgcyan(std::ostream& os)
+{
+  return os << LBANN_ANSI_FG_CYAN;
+}
 
 std::ostream& lbann::bgwhite(std::ostream& os)
 {

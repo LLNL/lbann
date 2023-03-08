@@ -45,14 +45,17 @@ namespace lbann {
  *  differentiable.
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class categorical_accuracy_layer : public data_type_layer<TensorDataType> {
+class categorical_accuracy_layer : public data_type_layer<TensorDataType>
+{
 public:
-
-  categorical_accuracy_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {
+  categorical_accuracy_layer(lbann_comm* comm)
+    : data_type_layer<TensorDataType>(comm)
+  {
     this->m_expected_num_parent_layers = 2;
   }
 
-  categorical_accuracy_layer* copy() const override {
+  categorical_accuracy_layer* copy() const override
+  {
     return new categorical_accuracy_layer(*this);
   }
 
@@ -77,19 +80,17 @@ public:
   void fp_compute() override;
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  categorical_accuracy_layer()
-    : categorical_accuracy_layer(nullptr)
-  {}
-
+  categorical_accuracy_layer() : categorical_accuracy_layer(nullptr) {}
 };
 
 template <typename T, data_layout L, El::Device D>
-void categorical_accuracy_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void categorical_accuracy_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   proto.mutable_categorical_accuracy();
 }
@@ -97,7 +98,8 @@ void categorical_accuracy_layer<T,L,D>::write_specific_proto(lbann_data::Layer& 
 #ifdef LBANN_HAS_ONNX
 template <typename T, data_layout L, El::Device D>
 void categorical_accuracy_layer<T, L, D>::fill_onnx_node(
-  onnx::GraphProto& graph) const {
+  onnx::GraphProto& graph) const
+{
   auto* shape = graph.add_initializer();
   shape->set_name(this->get_name() + "_shape_0");
   shape->set_data_type(onnx::TensorProto::INT64);
@@ -112,19 +114,20 @@ void categorical_accuracy_layer<T, L, D>::fill_onnx_node(
     size_t idx = parent->find_child_layer_index(*this);
     size_t prt_idx = this->find_parent_layer_index(*parent);
 
-    //x = Reshape(data=x, shape=[0,-1])
-    //y = Reshape(data=y, shape=[0,-1])
+    // x = Reshape(data=x, shape=[0,-1])
+    // y = Reshape(data=y, shape=[0,-1])
     auto* reshape = graph.add_node();
     reshape->add_input(parent->get_name() + "_" + std::to_string(idx));
     reshape->add_input(this->get_name() + "_shape_0");
-    reshape->add_output(this->get_name() + "_reshape_" + std::to_string(prt_idx));
+    reshape->add_output(this->get_name() + "_reshape_" +
+                        std::to_string(prt_idx));
     reshape->set_name(this->get_name() + "_reshape" + std::to_string(prt_idx));
     reshape->set_op_type("Reshape");
     reshape->set_domain("");
     reshape->set_doc_string("Reshape node for Categorical Accuracy Layer");
 
-    //xmax = ArgMax(data=x, axis=-1)
-    //ymax = ArgMax(data=y, axis=-1)
+    // xmax = ArgMax(data=x, axis=-1)
+    // ymax = ArgMax(data=y, axis=-1)
     auto* argmax = graph.add_node();
     argmax->add_input(reshape->output(0));
     auto* attribute = argmax->add_attribute();
@@ -137,7 +140,7 @@ void categorical_accuracy_layer<T, L, D>::fill_onnx_node(
     argmax->set_domain("");
     argmax->set_doc_string("Argmax node for Categorical Accuracy Layer");
 
-    //z = Equal(A=xmax, B=ymax)
+    // z = Equal(A=xmax, B=ymax)
     equal->add_input(argmax->output(0));
   }
   equal->add_output(this->get_name() + "_equal_0");
@@ -146,7 +149,7 @@ void categorical_accuracy_layer<T, L, D>::fill_onnx_node(
   equal->set_domain("");
   equal->set_doc_string("Equal node for Categorical Accuracy Layer");
 
-  //z = Cast(input=z, to=float)
+  // z = Cast(input=z, to=float)
   auto* cast = graph.add_node();
   cast->add_input(equal->output(0));
   auto* attribute = cast->add_attribute();
@@ -162,15 +165,18 @@ void categorical_accuracy_layer<T, L, D>::fill_onnx_node(
   cast->set_domain("");
   cast->set_doc_string("Cast node for Categorical Accuracy Layer");
 }
-#endif //LBANN_HAS_ONNX
+#endif // LBANN_HAS_ONNX
 
 #ifndef LBANN_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
 
-#define PROTO_DEVICE(T, Device)                     \
-  extern template class categorical_accuracy_layer< \
-    T, data_layout::DATA_PARALLEL, Device>;         \
-  extern template class categorical_accuracy_layer< \
-    T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class categorical_accuracy_layer<T,                          \
+                                                   data_layout::DATA_PARALLEL, \
+                                                   Device>;                    \
+  extern template class categorical_accuracy_layer<                            \
+    T,                                                                         \
+    data_layout::MODEL_PARALLEL,                                               \
+    Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

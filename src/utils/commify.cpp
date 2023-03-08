@@ -25,19 +25,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/commify.hpp"
-#include <sstream>
 #include <algorithm>
+#include <sstream>
 
-namespace lbann
-{
-namespace utils
-{
+namespace lbann {
+namespace utils {
 
-std::string commify(size_t n) {
+std::string commify(size_t n)
+{
   std::string s = std::to_string(n);
   std::stringstream s2;
   int c = 0;
-  for (int j = (int)s.size()-1; j>=0; j--) {
+  for (int j = (int)s.size() - 1; j >= 0; j--) {
     s2 << s[j];
     ++c;
     if (c == 3) {
@@ -52,5 +51,5 @@ std::string commify(size_t n) {
   return r;
 }
 
-}// namespace utils
-}// namespace lbann
+} // namespace utils
+} // namespace lbann

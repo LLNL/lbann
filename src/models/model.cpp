@@ -40,16 +40,16 @@
 #include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/metrics/layer_metric.hpp"
-#include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/graph.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/utils/onnx_utils.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/summary_impl.hpp"
-#include "lbann/utils/onnx_utils.hpp"
 
 #include "lbann/proto/model.pb.h"
 #include "lbann/proto/optimizers.pb.h"
@@ -423,7 +423,8 @@ std::vector<ViewingWeightsPtr> model::get_weights_pointers() const
 }
 
 #ifdef LBANN_HAS_ONNX
-void model::serialize_to_onnx(onnx::ModelProto& mp) {
+void model::serialize_to_onnx(onnx::ModelProto& mp)
+{
   mp.set_ir_version(7);
   auto* opset = mp.add_opset_import();
   // The empty string ("") domain indicates the operators defined
@@ -2642,8 +2643,9 @@ void model::write_proto(lbann_data::Model& proto)
 
   proto.Clear();
   proto.set_name(this->get_name());
-  this->get_objective_function()->write_proto(*proto.mutable_objective_function());
-  for (auto const* metric : this->get_metrics()){
+  this->get_objective_function()->write_proto(
+    *proto.mutable_objective_function());
+  for (auto const* metric : this->get_metrics()) {
     auto* met = proto.add_metric()->mutable_layer_metric();
     met->set_name(metric->name());
     met->set_unit(metric->get_unit());
@@ -2672,7 +2674,6 @@ void model::write_proto(lbann_data::Model& proto)
   // proto.subgraph_parent_grid_resources(int64_value);
   // proto.set_disable_cuda(bool_value);
   // proto.set_summarizer(Summarizer_value);
-
 }
 
 void model::save_model()

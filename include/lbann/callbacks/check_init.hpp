@@ -37,37 +37,36 @@ namespace callback {
 /**
  * Verify that every model uses the same initialization.
  */
-class check_init : public callback_base {
- public:
+class check_init : public callback_base
+{
+public:
   check_init() = default;
   check_init(const check_init&) = default;
   check_init& operator=(const check_init&) = default;
-  check_init* copy() const override {
-    return new check_init(*this);
-  }
+  check_init* copy() const override { return new check_init(*this); }
   /** Check initializations. */
-  void on_train_begin(model *m) override;
+  void on_train_begin(model* m) override;
   std::string name() const override { return "check init"; }
 
   /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
 private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
-
 };
 
 // Builder function
-LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
-  check_init, build_check_init_callback_from_pbuf);
+LBANN_ADD_DEFAULT_CALLBACK_BUILDER(check_init,
+                                   build_check_init_callback_from_pbuf);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_CHECK_INIT_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_CHECK_INIT_HPP_INCLUDED

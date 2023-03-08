@@ -75,7 +75,7 @@ template <typename SampleListT>
 void data_reader_sample_list<SampleListT>::shuffle_indices(rng_gen& gen)
 {
   generic_data_reader::shuffle_indices(gen);
-  if(get_mini_batch_size() != 0) {
+  if (get_mini_batch_size() != 0) {
     m_sample_list.compute_epochs_file_usage(get_shuffled_indices(),
                                             get_mini_batch_size(),
                                             *m_comm);
@@ -105,7 +105,8 @@ void data_reader_sample_list<SampleListT>::load_list_of_samples(
 
   // dah: I've not a clue what this next block does;
   //      is it a hack that should come out?
-  if (this->m_keep_sample_order || arg_parser.get<bool>(LBANN_OPTION_KEEP_SAMPLE_ORDER)) {
+  if (this->m_keep_sample_order ||
+      arg_parser.get<bool>(LBANN_OPTION_KEEP_SAMPLE_ORDER)) {
     m_sample_list.keep_sample_order(true);
   }
   else {

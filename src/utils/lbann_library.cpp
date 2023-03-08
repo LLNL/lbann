@@ -24,37 +24,37 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/utils/lbann_library.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/lbann_library.hpp"
 
-#include "lbann/proto/factories.hpp"
-#include "lbann/utils/omp_diagnostics.hpp"
-#include "lbann/utils/threads/thread_utils.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/callbacks/dump_weights.hpp"
-#include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/load_model.hpp"
+#include "lbann/callbacks/save_model.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/utils/argument_parser.hpp"
-#include "lbann/trainers/trainer.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/proto/factories.hpp"
+#include "lbann/trainers/trainer.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/utils/threads/thread_utils.hpp"
 
-#include <cstdlib>
 #include "lbann/proto/lbann.pb.h"
-#include <memory>
 #include "lbann/proto/model.pb.h"
+#include <cstdlib>
+#include <memory>
 
 namespace lbann {
 
 // Creates a datareader metadata to get around the need for an actual
 // datareader in inference only mode
-auto mock_dr_metadata(std::vector<int> input_dims,
-                      std::vector<int> output_dims) {
+auto mock_dr_metadata(std::vector<int> input_dims, std::vector<int> output_dims)
+{
   DataReaderMetaData drmd;
   auto& md_dims = drmd.data_dims;
   md_dims[data_reader_target_mode::INPUT] = input_dims;
@@ -85,14 +85,20 @@ std::unique_ptr<model> load_inference_model(lbann_comm* lc,
 
 /// Split the MPI communicator into trainers
 /// Return the
-int allocate_trainer_resources(lbann_comm *comm) {
+int allocate_trainer_resources(lbann_comm* comm)
+{
   auto& arg_parser = global_argument_parser();
   int procs_per_trainer = arg_parser.get<int>(LBANN_OPTION_PROCS_PER_TRAINER);
-  int trainer_grid_height = arg_parser.get<int>(LBANN_OPTION_TRAINER_GRID_HEIGHT);
-  int trainer_primary_grid_size = arg_parser.get<int>(LBANN_OPTION_TRAINER_PRIMARY_GRID_SIZE);
-  bool trainer_create_two_models = arg_parser.get<bool>(LBANN_OPTION_TRAINER_CREATE_TWO_MODELS);
-  bool trainer_async_comm_subgrid = arg_parser.get<bool>(LBANN_OPTION_TRAINER_ENABLE_SUBGRID_ASYNC_COMM);
-  bool trainer_topo_aware_subgrid = arg_parser.get<bool>(LBANN_OPTION_TRAINER_ENABLE_TOPO_AWARE_SUBGRID);
+  int trainer_grid_height =
+    arg_parser.get<int>(LBANN_OPTION_TRAINER_GRID_HEIGHT);
+  int trainer_primary_grid_size =
+    arg_parser.get<int>(LBANN_OPTION_TRAINER_PRIMARY_GRID_SIZE);
+  bool trainer_create_two_models =
+    arg_parser.get<bool>(LBANN_OPTION_TRAINER_CREATE_TWO_MODELS);
+  bool trainer_async_comm_subgrid =
+    arg_parser.get<bool>(LBANN_OPTION_TRAINER_ENABLE_SUBGRID_ASYNC_COMM);
+  bool trainer_topo_aware_subgrid =
+    arg_parser.get<bool>(LBANN_OPTION_TRAINER_ENABLE_TOPO_AWARE_SUBGRID);
 
   if (procs_per_trainer == 0) {
     procs_per_trainer = comm->get_procs_in_world();
@@ -101,17 +107,17 @@ int allocate_trainer_resources(lbann_comm *comm) {
   // Set up the communicator and get the grid based on the commandline spec.
   // We do not currently support splitting different trainers in different ways,
   // as this implies different grids.
-  if (procs_per_trainer != comm->get_procs_per_trainer()
-      || trainer_grid_height != comm->get_trainer_grid().Height()) {
+  if (procs_per_trainer != comm->get_procs_per_trainer() ||
+      trainer_grid_height != comm->get_trainer_grid().Height()) {
     comm->split_trainers(procs_per_trainer, trainer_grid_height);
   }
 
   // Split trainer when sub-grid parallelism is enabled
-  if(trainer_primary_grid_size > 0) {
-    comm->split_trainer_grid( trainer_primary_grid_size,
-                              trainer_create_two_models,
-                              trainer_async_comm_subgrid,
-                              trainer_topo_aware_subgrid);
+  if (trainer_primary_grid_size > 0) {
+    comm->split_trainer_grid(trainer_primary_grid_size,
+                             trainer_create_two_models,
+                             trainer_async_comm_subgrid,
+                             trainer_topo_aware_subgrid);
   }
 
   return procs_per_trainer;
@@ -125,18 +131,18 @@ void cleanup_trainer_atexit() { global_trainer_ = nullptr; }
 
 } // namespace
 
-trainer& get_trainer() {
+trainer& get_trainer()
+{
   LBANN_ASSERT(global_trainer_);
   return *global_trainer_;
 }
-trainer const& get_const_trainer() {
+trainer const& get_const_trainer()
+{
   LBANN_ASSERT(global_trainer_);
   return *global_trainer_;
 }
 
-void finalize_trainer() {
-  global_trainer_.reset();
-}
+void finalize_trainer() { global_trainer_.reset(); }
 
 /// Construct a trainer that contains a lbann comm object and threadpool
 trainer& construct_trainer(lbann_comm* comm,
@@ -362,8 +368,9 @@ std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm* comm,
                                                       bool serialized_io)
 {
   int max_io_threads = num_free_cores_per_process(comm);
-  // Allow the trainer to override the command-line option or environment variable
-  if(serialized_io) {
+  // Allow the trainer to override the command-line option or environment
+  // variable
+  if (serialized_io) {
     max_io_threads = 1;
   }
 
@@ -373,10 +380,10 @@ std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm* comm,
 
   auto io_threads_offset = free_core_offset(comm);
 
-  if(comm->am_world_master()) {
-    std::cout << "\tNum. I/O Threads: " << num_io_threads <<
-      " (Limited to # Unused Compute Cores or 1) at offset "
-      << io_threads_offset << std::endl;
+  if (comm->am_world_master()) {
+    std::cout << "\tNum. I/O Threads: " << num_io_threads
+              << " (Limited to # Unused Compute Cores or 1) at offset "
+              << io_threads_offset << std::endl;
   }
 
   auto io_thread_pool = std::make_unique<thread_pool>();
@@ -386,13 +393,15 @@ std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm* comm,
 }
 
 std::unique_ptr<model> build_model_from_prototext(
-  int argc, char **argv,
+  int argc,
+  char** argv,
   const lbann_data::Trainer* pb_trainer,
-  lbann_data::LbannPB &pb,
-  lbann_comm *comm,
+  lbann_data::LbannPB& pb,
+  lbann_comm* comm,
   thread_pool& io_thread_pool,
   std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
-  int training_dr_linearized_data_size) {
+  int training_dr_linearized_data_size)
+{
 
   bool master = comm->am_world_master();
   if (master) {
@@ -401,8 +410,8 @@ std::unique_ptr<model> build_model_from_prototext(
 
   std::ostringstream err;
 
-  // Save info to file; this includes the complete prototext (with any over-rides
-  // from the cmd line) and various other info
+  // Save info to file; this includes the complete prototext (with any
+  // over-rides from the cmd line) and various other info
   save_session(*comm, argc, argv, pb);
 
   // Display how the OpenMP threads are provisioned
@@ -412,11 +421,12 @@ std::unique_ptr<model> build_model_from_prototext(
   }
 
   // Initalize model
-  std::unique_ptr<model> ret_model = proto::construct_model(comm,
-                                                            training_dr_linearized_data_size,
-                                                            pb.optimizer(),
-                                                            pb.trainer(),
-                                                            pb.model());
+  std::unique_ptr<model> ret_model =
+    proto::construct_model(comm,
+                           training_dr_linearized_data_size,
+                           pb.optimizer(),
+                           pb.trainer(),
+                           pb.model());
 
   // Add the trainer's callbacks to the model
   for (auto&& c : shared_callbacks) {
@@ -429,19 +439,23 @@ std::unique_ptr<model> build_model_from_prototext(
     for (auto&& c : ret_model->get_callbacks()) {
       {
         auto* cb = dynamic_cast<callback::dump_weights*>(c);
-        if(cb != nullptr) {
-          cb->set_target_dir(arg_parser.get<std::string>(LBANN_OPTION_CKPT_DIR));
-          if(comm->am_trainer_master()) {
-            std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
+        if (cb != nullptr) {
+          cb->set_target_dir(
+            arg_parser.get<std::string>(LBANN_OPTION_CKPT_DIR));
+          if (comm->am_trainer_master()) {
+            std::cout << "Setting the dump weights directory to "
+                      << cb->get_target_dir() << std::endl;
           }
         }
       }
       {
         auto* cb = dynamic_cast<callback::save_model*>(c);
-        if(cb != nullptr) {
-          cb->set_target_dir(arg_parser.get<std::string>(LBANN_OPTION_CKPT_DIR));
-          if(comm->am_trainer_master()) {
-            std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
+        if (cb != nullptr) {
+          cb->set_target_dir(
+            arg_parser.get<std::string>(LBANN_OPTION_CKPT_DIR));
+          if (comm->am_trainer_master()) {
+            std::cout << "Setting the dump weights directory to "
+                      << cb->get_target_dir() << std::endl;
           }
         }
       }
@@ -452,7 +466,7 @@ std::unique_ptr<model> build_model_from_prototext(
     callback::load_model* cb = nullptr;
     for (auto&& c : ret_model->get_callbacks()) {
       cb = dynamic_cast<callback::load_model*>(c);
-      if(cb != nullptr) {
+      if (cb != nullptr) {
         break;
       }
     }
@@ -464,55 +478,83 @@ std::unique_ptr<model> build_model_from_prototext(
       active_load_model_dir = load_model_dir;
     }
     else {
-      size_t epochLast = std::numeric_limits<size_t>::max();;
-      size_t stepLast = std::numeric_limits<size_t>::max();;
+      size_t epochLast = std::numeric_limits<size_t>::max();
+      ;
+      size_t stepLast = std::numeric_limits<size_t>::max();
+      ;
       execution_mode mode = execution_mode::invalid;
       visitor_hook hook = visitor_hook::invalid;
-      active_load_model_dir = callback::get_last_shared_checkpoint_filename("sgd", load_model_dir);
+      active_load_model_dir =
+        callback::get_last_shared_checkpoint_filename("sgd", load_model_dir);
 
       // get last epoch and step saved.
-      int success = callback::read_latest(active_load_model_dir, &hook, &mode, &epochLast, &stepLast);
-      if(!success) {
-        LBANN_ERROR("Unable to find the latest checkpoint ", active_load_model_dir);
+      int success = callback::read_latest(active_load_model_dir,
+                                          &hook,
+                                          &mode,
+                                          &epochLast,
+                                          &stepLast);
+      if (!success) {
+        LBANN_ERROR("Unable to find the latest checkpoint ",
+                    active_load_model_dir);
         return nullptr;
       }
-      active_load_model_dir = callback::get_shared_checkpoint_dirname("sgd", load_model_dir, hook, mode, epochLast, stepLast) + ret_model->get_name() + '/';
+      active_load_model_dir =
+        callback::get_shared_checkpoint_dirname("sgd",
+                                                load_model_dir,
+                                                hook,
+                                                mode,
+                                                epochLast,
+                                                stepLast) +
+        ret_model->get_name() + '/';
     }
 
-    if(cb == nullptr) {
+    if (cb == nullptr) {
       std::vector<std::string> dirs = {active_load_model_dir};
       std::unique_ptr<callback::load_model> load_model_cb =
         std::make_unique<callback::load_model>(dirs);
       cb = load_model_cb.get();
       ret_model->add_callback(std::move(load_model_cb));
 #ifdef LBANN_DEBUG
-      if(comm->am_trainer_master()) {
-        LBANN_WARNING("command line flag --load_model_dir was provided but there was no explicit load_model callback, adding one automagically!");
+      if (comm->am_trainer_master()) {
+        LBANN_WARNING(
+          "command line flag --load_model_dir was provided but there was no "
+          "explicit load_model callback, adding one automagically!");
       }
 #endif
-    }else {
-      cb->add_dir(arg_parser.get<std::string>(LBANN_OPTION_LOAD_MODEL_WEIGHTS_DIR));
+    }
+    else {
+      cb->add_dir(
+        arg_parser.get<std::string>(LBANN_OPTION_LOAD_MODEL_WEIGHTS_DIR));
     }
   }
 
   // restart model from checkpoint if we have one
   //@todo
-  //model->restartShared();
+  // model->restartShared();
 
   return ret_model;
 }
 
-void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int io_threads_offset) {
+void print_lbann_configuration(lbann_comm* comm,
+                               int io_threads_per_process,
+                               int io_threads_offset)
+{
   // Report hardware settings
   std::cout << "Hardware properties (for master process)" << std::endl
-            << "  Processes on node          : " << comm->get_procs_per_node() << std::endl
-            << "  Total number of processes  : " << comm->get_procs_in_world() << std::endl
-            << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl
-            << "  I/O threads per process (+offset) : " << io_threads_per_process
-            << " (+" << io_threads_offset << ")" << std::endl
-            << "  Background I/O enabled     : " << get_trainer().background_io_activity_allowed() << std::endl;
+            << "  Processes on node          : " << comm->get_procs_per_node()
+            << std::endl
+            << "  Total number of processes  : " << comm->get_procs_in_world()
+            << std::endl
+            << "  OpenMP threads per process : " << omp_get_max_threads()
+            << std::endl
+            << "  I/O threads per process (+offset) : "
+            << io_threads_per_process << " (+" << io_threads_offset << ")"
+            << std::endl
+            << "  Background I/O enabled     : "
+            << get_trainer().background_io_activity_allowed() << std::endl;
 #ifdef HYDROGEN_HAVE_GPU
-  std::cout << "  GPUs on node               : " << hydrogen::gpu::DeviceCount() << std::endl;
+  std::cout << "  GPUs on node               : " << hydrogen::gpu::DeviceCount()
+            << std::endl;
 #endif // HYDROGEN_HAVE_GPU
   std::cout << std::endl;
 
@@ -598,9 +640,12 @@ void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int
   // Report model settings
   const auto& grid = comm->get_trainer_grid();
   std::cout << "Trainer settings" << std::endl
-            << "  Trainers              : " << comm->get_num_trainers() << std::endl
-            << "  Processes per trainer : " << comm->get_procs_per_trainer() << std::endl
-            << "  Grid dimensions       : " << grid.Height() << " x " << grid.Width() << std::endl;
+            << "  Trainers              : " << comm->get_num_trainers()
+            << std::endl
+            << "  Processes per trainer : " << comm->get_procs_per_trainer()
+            << std::endl
+            << "  Grid dimensions       : " << grid.Height() << " x "
+            << grid.Width() << std::endl;
   std::cout << std::endl;
 }
 

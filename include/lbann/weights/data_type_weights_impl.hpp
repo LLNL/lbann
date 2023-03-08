@@ -33,28 +33,25 @@ namespace lbann {
 
 template <typename TensorDataType>
 template <typename ArchiveT>
-void
-data_type_weights<TensorDataType>
-::serialize(ArchiveT& ar)
+void data_type_weights<TensorDataType>::serialize(ArchiveT& ar)
 #if !(defined __CUDACC__)
 {
   ar(cereal::base_class<weights>(this),
      CEREAL_NVP(m_values),
      CEREAL_NVP(m_optimizer));
-  if constexpr (utils::IsInputArchive<ArchiveT>)
-  {
+  if constexpr (utils::IsInputArchive<ArchiveT>) {
     if (m_optimizer)
       m_optimizer->setup_base(this);
   }
 }
 #else
-;
+  ;
 #endif
 
 template <typename TensorDataType>
 data_type_weights<TensorDataType>::data_type_weights()
 #if !(defined __CUDACC__)
-    : data_type_weights(utils::get_current_comm()) {}
+  : data_type_weights(utils::get_current_comm()){}
 #else
   ;
 #endif

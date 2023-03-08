@@ -36,7 +36,8 @@
 namespace lbann {
 namespace transform {
 
-void resize::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+void resize::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims)
+{
   cv::Mat src = utils::get_opencv_mat(data, dims);
   std::vector<size_t> new_dims = {dims[0], m_h, m_w};
   auto dst_real = El::Matrix<uint8_t>(get_linear_size(new_dims), 1);
@@ -47,10 +48,11 @@ void resize::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
 }
 
 std::unique_ptr<transform>
-build_resize_transform_from_pbuf(google::protobuf::Message const& msg) {
+build_resize_transform_from_pbuf(google::protobuf::Message const& msg)
+{
   auto const& params = dynamic_cast<lbann_data::Transform::Resize const&>(msg);
   return std::make_unique<resize>(params.height(), params.width());
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

@@ -28,10 +28,8 @@
 
 #include <stdlib.h>
 
-namespace lbann
-{
-namespace utils
-{
+namespace lbann {
+namespace utils {
 
 std::string GetEnvAccessor::get(std::string const& var_name) const
 {
@@ -44,5 +42,5 @@ std::string GetEnvAccessor::get(std::string const& var_name) const
   return std::string(env ? env : "");
 }
 
-}// namespace utils
-}// namespace lbann
+} // namespace utils
+} // namespace lbann

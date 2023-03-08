@@ -31,7 +31,9 @@
 namespace lbann {
 namespace transform {
 
-void sample_normalize::apply(utils::type_erased_matrix& data, std::vector<size_t>&) {
+void sample_normalize::apply(utils::type_erased_matrix& data,
+                             std::vector<size_t>&)
+{
   // Only work with DataTypes to avoid rounding/floating point issues.
   auto& mat = data.template get<DataType>();
   if (mat.Height() != mat.LDim()) {
@@ -47,9 +49,10 @@ void sample_normalize::apply(utils::type_erased_matrix& data, std::vector<size_t
 }
 
 std::unique_ptr<transform>
-build_sample_normalize_transform_from_pbuf(google::protobuf::Message const&) {
+build_sample_normalize_transform_from_pbuf(google::protobuf::Message const&)
+{
   return std::make_unique<sample_normalize>();
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

@@ -42,26 +42,34 @@ namespace transform {
  * Normalization is applied after the scaling to [0, 1].
  * This essentially fuses the to_lbann_layout and normalize transforms.
  */
-class normalize_to_lbann_layout : public transform {
+class normalize_to_lbann_layout : public transform
+{
 public:
   /** Apply channel-wise means and standard deviations. */
-  normalize_to_lbann_layout(std::vector<float> means, std::vector<float> stds) :
-    transform(), m_means(means), m_stds(stds) {
+  normalize_to_lbann_layout(std::vector<float> means, std::vector<float> stds)
+    : transform(), m_means(means), m_stds(stds)
+  {
     if (m_means.size() != m_stds.size()) {
       LBANN_ERROR("Normalize mean and std have different numbers of channels.");
     }
   }
 
-  transform* copy() const override { return new normalize_to_lbann_layout(*this); }
+  transform* copy() const override
+  {
+    return new normalize_to_lbann_layout(*this);
+  }
 
   std::string get_type() const override { return "normalize_to_lbann_layout"; }
 
   bool supports_non_inplace() const override { return true; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
-
-  void apply(utils::type_erased_matrix& data, CPUMat& out,
+  void apply(utils::type_erased_matrix& data,
              std::vector<size_t>& dims) override;
+
+  void apply(utils::type_erased_matrix& data,
+             CPUMat& out,
+             std::vector<size_t>& dims) override;
+
 private:
   /** Channel-wise means. */
   std::vector<float> m_means;
@@ -69,11 +77,10 @@ private:
   std::vector<float> m_stds;
 };
 
-std::unique_ptr<transform>
-build_normalize_to_lbann_layout_transform_from_pbuf(
+std::unique_ptr<transform> build_normalize_to_lbann_layout_transform_from_pbuf(
   google::protobuf::Message const&);
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_NORMALIZE_TO_LBANN_LAYOUT_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_NORMALIZE_TO_LBANN_LAYOUT_HPP_INCLUDED

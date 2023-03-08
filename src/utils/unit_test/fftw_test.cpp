@@ -38,23 +38,19 @@
 #include <fftw3.h>
 
 // These
-namespace
-{
+namespace {
 auto get_input_dims(size_t ndims)
 {
-  std::vector<int> dims(ndims+1, 16);
-  dims.front() = 4;// 4 channels of size 16^ndims
+  std::vector<int> dims(ndims + 1, 16);
+  dims.front() = 4; // 4 channels of size 16^ndims
   return dims;
 }
 
-auto get_num_samples()
-{
-  return 7;
-}
+auto get_num_samples() { return 7; }
 
 auto get_ldim_offset()
 {
-  return 13;// because PRIME!
+  return 13; // because PRIME!
 }
 
 // The real-to-complex case reveals a certain symmetry in the DFT, but
@@ -71,9 +67,8 @@ auto get_ldim_offset()
 // as useful information for the future, should we ever revisit the
 // R2C case.
 template <typename T>
-bool assert_r2c_symmetry_1d(
-  El::Matrix<T, El::Device::CPU> const& full_output,
-  std::vector<int> const& full_dims)
+bool assert_r2c_symmetry_1d(El::Matrix<T, El::Device::CPU> const& full_output,
+                            std::vector<int> const& full_dims)
 {
   if (full_dims.size() != 2UL)
     LBANN_ERROR("Only valid for 1-D feature maps.");
@@ -85,23 +80,18 @@ bool assert_r2c_symmetry_1d(
   auto const num_entries_r2c = r2c_dims[1];
 
   bool all_good = true;
-  for (El::Int sample = 0; sample < num_samples; ++sample)
-  {
-    for (int feat_map = 0; feat_map < num_feat_maps; ++feat_map)
-    {
-      T const* feat_map_mat = full_output.LockedBuffer()
-        + sample*full_output.LDim()
-        + feat_map*num_entries;
-      for (int ent = num_entries_r2c; ent < num_entries; ++ent)
-      {
-        auto const conj_ent = (ent == 0 ? 0 : num_entries-ent);
+  for (El::Int sample = 0; sample < num_samples; ++sample) {
+    for (int feat_map = 0; feat_map < num_feat_maps; ++feat_map) {
+      T const* feat_map_mat = full_output.LockedBuffer() +
+                              sample * full_output.LDim() +
+                              feat_map * num_entries;
+      for (int ent = num_entries_r2c; ent < num_entries; ++ent) {
+        auto const conj_ent = (ent == 0 ? 0 : num_entries - ent);
         auto const val = feat_map_mat[ent];
         auto const conj_val = feat_map_mat[conj_ent];
-        if (val != El::Conj(conj_val))
-        {
-          std::cout << "Error at (S,F,E,E') = ("
-                    << sample << "," << feat_map << ","
-                    << ent << "," << conj_ent << "): "
+        if (val != El::Conj(conj_val)) {
+          std::cout << "Error at (S,F,E,E') = (" << sample << "," << feat_map
+                    << "," << ent << "," << conj_ent << "): "
                     << "val = " << val << "; "
                     << "conj_val = " << conj_val << "\n";
           all_good = false;
@@ -113,9 +103,8 @@ bool assert_r2c_symmetry_1d(
 }
 
 template <typename T>
-bool assert_r2c_symmetry_2d(
-  El::Matrix<T, El::Device::CPU> const& full_output,
-  std::vector<int> const& full_dims)
+bool assert_r2c_symmetry_2d(El::Matrix<T, El::Device::CPU> const& full_output,
+                            std::vector<int> const& full_dims)
 {
   if (full_dims.size() != 3UL)
     LBANN_ERROR("Only valid for 2-D feature maps.");
@@ -129,28 +118,24 @@ bool assert_r2c_symmetry_2d(
 
   bool all_good = true;
   for (El::Int sample = 0; sample < num_samples; ++sample)
-    for (int feat_map = 0; feat_map < num_feat_maps; ++feat_map)
-    {
-      T const* feat_map_mat = full_output.LockedBuffer()
-        + sample*full_output.LDim()
-        + feat_map*num_rows*num_cols;
+    for (int feat_map = 0; feat_map < num_feat_maps; ++feat_map) {
+      T const* feat_map_mat = full_output.LockedBuffer() +
+                              sample * full_output.LDim() +
+                              feat_map * num_rows * num_cols;
       for (int row = 0; row < num_rows; ++row)
-        for (int col = num_cols_r2c; col < num_cols; ++col)
-        {
-          auto const conj_row = (row == 0 ? 0 : num_rows-row);
-          auto const conj_col = (col == 0 ? 0 : num_cols-col);
-          auto const idx = col + row*num_cols;
-          auto const conj_idx = conj_col + conj_row*num_cols;
+        for (int col = num_cols_r2c; col < num_cols; ++col) {
+          auto const conj_row = (row == 0 ? 0 : num_rows - row);
+          auto const conj_col = (col == 0 ? 0 : num_cols - col);
+          auto const idx = col + row * num_cols;
+          auto const conj_idx = conj_col + conj_row * num_cols;
           auto const val = feat_map_mat[idx];
           auto const conj_val = feat_map_mat[conj_idx];
 
-          if ((Approx(El::RealPart(val)) != El::RealPart(conj_val))
-              || (Approx(El::ImagPart(val)) != -El::ImagPart(conj_val)))
-          {
-            std::cout << "Error at (S,F,R,C,R',C') = ("
-                      << sample << "," << feat_map << ","
-                      << row << "," << col << ","
-                      << conj_row << "," << conj_col << "): "
+          if ((Approx(El::RealPart(val)) != El::RealPart(conj_val)) ||
+              (Approx(El::ImagPart(val)) != -El::ImagPart(conj_val))) {
+            std::cout << "Error at (S,F,R,C,R',C') = (" << sample << ","
+                      << feat_map << "," << row << "," << col << "," << conj_row
+                      << "," << conj_col << "): "
                       << "val = " << val << "; "
                       << "conj_val = " << conj_val << "\n";
             all_good = false;
@@ -161,12 +146,10 @@ bool assert_r2c_symmetry_2d(
 }
 
 template <typename T>
-bool assert_r2c_symmetry(
-  El::Matrix<T, El::Device::CPU> const& full_output,
-  std::vector<int> const& full_dims)
+bool assert_r2c_symmetry(El::Matrix<T, El::Device::CPU> const& full_output,
+                         std::vector<int> const& full_dims)
 {
-  switch (full_dims.size())
-  {
+  switch (full_dims.size()) {
   case 0:
   case 1:
     LBANN_ERROR("Invalid dimension size. Remember: "
@@ -186,7 +169,7 @@ bool assert_r2c_symmetry(
   }
   return false;
 }
-}// namespace <anon>
+} // namespace
 
 // This is an early test that I wrote to consider the possibility of
 // doing a Real-to-Complex (forward) DFT. I think there are some
@@ -196,7 +179,8 @@ bool assert_r2c_symmetry(
 // here in case we ever go in this direction.
 TEMPLATE_TEST_CASE("Testing FFTW wrapper (R2C)",
                    "[fft][fftw][utilities]",
-                   float, double)
+                   float,
+                   double)
 {
   using DataT = TestType;
 
@@ -211,8 +195,7 @@ TEMPLATE_TEST_CASE("Testing FFTW wrapper (R2C)",
   auto const input_matrix_height = lbann::get_linear_size(input_dims);
   auto const input_matrix_width = num_samples;
   auto const input_matrix_ldim_offset = (use_ldim ? get_ldim_offset() : 0);
-  auto const input_matrix_ldim =
-    input_matrix_height + input_matrix_ldim_offset;
+  auto const input_matrix_ldim = input_matrix_height + input_matrix_ldim_offset;
 
   auto const output_matrix_height = lbann::get_linear_size(output_dims);
   auto const output_matrix_width = num_samples;
@@ -220,31 +203,31 @@ TEMPLATE_TEST_CASE("Testing FFTW wrapper (R2C)",
   auto const output_matrix_ldim =
     output_matrix_height + output_matrix_ldim_offset;
 
-  El::Matrix<DataT, El::Device::CPU>
-    input(input_matrix_height, input_matrix_width, input_matrix_ldim),
+  El::Matrix<DataT, El::Device::CPU> input(input_matrix_height,
+                                           input_matrix_width,
+                                           input_matrix_ldim),
     input_bwd(input_matrix_height, input_matrix_width);
-  El::Matrix<El::Complex<DataT>, El::Device::CPU>
-    r2c_output(output_matrix_height, output_matrix_width, output_matrix_ldim);
-  El::Matrix<DataT, El::Device::CPU>
-    full_output(input_matrix_height, input_matrix_width);
+  El::Matrix<El::Complex<DataT>, El::Device::CPU> r2c_output(
+    output_matrix_height,
+    output_matrix_width,
+    output_matrix_ldim);
+  El::Matrix<DataT, El::Device::CPU> full_output(input_matrix_height,
+                                                 input_matrix_width);
 
   // Do the forward/backward setups up front.
-  REQUIRE_NOTHROW(
-    fftw.setup_forward(input, r2c_output, input_dims));
-  REQUIRE_NOTHROW(
-    fftw.setup_backward(r2c_output, input_bwd, input_dims));
+  REQUIRE_NOTHROW(fftw.setup_forward(input, r2c_output, input_dims));
+  REQUIRE_NOTHROW(fftw.setup_backward(r2c_output, input_bwd, input_dims));
 
   // Do some initializations
   El::MakeUniform(input, DataT(-1.f), DataT(1.f));
-  El::Fill(r2c_output, El::Complex<DataT>(10.19,11.23));
+  El::Fill(r2c_output, El::Complex<DataT>(10.19, 11.23));
   El::Fill(full_output, -DataT(4.13));
 
   // Compute the forward transformation
   REQUIRE_NOTHROW(fftw.compute_forward(input, r2c_output));
 
   // Copy into the full format needed for LBANN
-  REQUIRE_NOTHROW(
-    lbann::fft::r2c_to_full(r2c_output, full_output, input_dims));
+  REQUIRE_NOTHROW(lbann::fft::r2c_to_full(r2c_output, full_output, input_dims));
 
   // Verify the results
   REQUIRE(assert_r2c_symmetry(full_output, input_dims));
@@ -256,30 +239,26 @@ TEMPLATE_TEST_CASE("Testing FFTW wrapper (R2C)",
   // Assert that we've gotten back to the ballpark of the original
   // input, with appropriate scaling (FFTW transforms are *not*
   // normalized).
-  auto const scale_factor
-    = DataT(lbann::get_linear_size(input_dims.size() - 1,
-                                   input_dims.data() + 1));
-  for (auto col = decltype(input_matrix_width){0};
-       col < input_matrix_width;
-       ++col)
-  {
-    for (auto row = decltype(input_matrix_height){0};
-         row < input_matrix_height;
-         ++row)
-    {
+  auto const scale_factor =
+    DataT(lbann::get_linear_size(input_dims.size() - 1, input_dims.data() + 1));
+  for (auto col = decltype(input_matrix_width){0}; col < input_matrix_width;
+       ++col) {
+    for (auto row = decltype(input_matrix_height){0}; row < input_matrix_height;
+         ++row) {
       CAPTURE(row, col);
       auto const& input_ij = input.CRef(row, col);
       auto const& input_bwd_ij = input_bwd.CRef(row, col);
 
       // Ehhhh this is fine for now...
-      CHECK(input_bwd_ij == Approx(scale_factor*input_ij).epsilon(0.05));
+      CHECK(input_bwd_ij == Approx(scale_factor * input_ij).epsilon(0.05));
     }
   }
 }
 
 TEMPLATE_TEST_CASE("Testing FFTW wrapper (C2C)",
                    "[fft][fftw][utilities]",
-                   float, double)
+                   float,
+                   double)
 {
   using RealT = TestType;
   using DataT = El::Complex<RealT>;
@@ -294,8 +273,7 @@ TEMPLATE_TEST_CASE("Testing FFTW wrapper (C2C)",
   auto const input_matrix_height = lbann::get_linear_size(dims);
   auto const input_matrix_width = num_samples;
   auto const input_matrix_ldim_offset = (use_ldim ? get_ldim_offset() : 0);
-  auto const input_matrix_ldim =
-    input_matrix_height + input_matrix_ldim_offset;
+  auto const input_matrix_ldim = input_matrix_height + input_matrix_ldim_offset;
 
   // The two matrices may have different LDim
   auto const output_matrix_height = input_matrix_height;
@@ -304,17 +282,17 @@ TEMPLATE_TEST_CASE("Testing FFTW wrapper (C2C)",
   auto const output_matrix_ldim =
     output_matrix_height + output_matrix_ldim_offset;
 
-  El::Matrix<DataT, El::Device::CPU>
-    input(input_matrix_height, input_matrix_width, input_matrix_ldim),
+  El::Matrix<DataT, El::Device::CPU> input(input_matrix_height,
+                                           input_matrix_width,
+                                           input_matrix_ldim),
     input_bwd(input_matrix_height, input_matrix_width);
-  El::Matrix<DataT, El::Device::CPU>
-    output(output_matrix_height, output_matrix_width, output_matrix_ldim);
+  El::Matrix<DataT, El::Device::CPU> output(output_matrix_height,
+                                            output_matrix_width,
+                                            output_matrix_ldim);
 
   // Do the forward/backward setups up front.
-  REQUIRE_NOTHROW(
-    fftw.setup_forward(input, output, dims));
-  REQUIRE_NOTHROW(
-    fftw.setup_backward(output, input_bwd, dims));
+  REQUIRE_NOTHROW(fftw.setup_forward(input, output, dims));
+  REQUIRE_NOTHROW(fftw.setup_backward(output, input_bwd, dims));
 
   // Do some initializations
   El::MakeUniform(input, DataT(0.f), RealT(2.f));
@@ -330,38 +308,34 @@ TEMPLATE_TEST_CASE("Testing FFTW wrapper (C2C)",
   // Assert that we've gotten back to the ballpark of the original
   // input, with appropriate scaling (FFTW transforms are *not*
   // normalized).
-  auto const scale_factor
-    = RealT(lbann::get_linear_size(dims.size() - 1,
-                                   dims.data() + 1));
-  for (auto col = decltype(input_matrix_width){0};
-       col < input_matrix_width;
-       ++col)
-  {
-    for (auto row = decltype(input_matrix_height){0};
-         row < input_matrix_height;
-         ++row)
-    {
+  auto const scale_factor =
+    RealT(lbann::get_linear_size(dims.size() - 1, dims.data() + 1));
+  for (auto col = decltype(input_matrix_width){0}; col < input_matrix_width;
+       ++col) {
+    for (auto row = decltype(input_matrix_height){0}; row < input_matrix_height;
+         ++row) {
       CAPTURE(row, col);
       auto const& input_ij = input.CRef(row, col);
       auto const& input_bwd_ij = input_bwd.CRef(row, col);
 
       // Ehhhh this is fine for now...
-      CHECK(RealPart(input_bwd_ij)
-            == Approx(scale_factor*RealPart(input_ij)).epsilon(0.05));
-      CHECK(ImagPart(input_bwd_ij)
-            == Approx(scale_factor*ImagPart(input_ij)).epsilon(0.05));
+      CHECK(RealPart(input_bwd_ij) ==
+            Approx(scale_factor * RealPart(input_ij)).epsilon(0.05));
+      CHECK(ImagPart(input_bwd_ij) ==
+            Approx(scale_factor * ImagPart(input_ij)).epsilon(0.05));
     }
   }
 }
 
 TEMPLATE_TEST_CASE("Testing FFTW wrapper (C2C-InPlace)",
                    "[fft][fftw][utilities]",
-                   float, double)
+                   float,
+                   double)
 {
   using RealT = TestType;
   using DataT = El::Complex<RealT>;
 
-  int const ndims = GENERATE(1,2);
+  int const ndims = GENERATE(1, 2);
   bool const use_ldim = GENERATE(false, true);
 
   lbann::fftw::FFTWWrapper<DataT> fftw;
@@ -371,18 +345,16 @@ TEMPLATE_TEST_CASE("Testing FFTW wrapper (C2C-InPlace)",
   auto const matrix_height = lbann::get_linear_size(dims);
   auto const matrix_width = num_samples;
   auto const matrix_ldim_offset = (use_ldim ? get_ldim_offset() : 0);
-  auto const matrix_ldim =
-    matrix_height + matrix_ldim_offset;
+  auto const matrix_ldim = matrix_height + matrix_ldim_offset;
 
-  El::Matrix<DataT, El::Device::CPU>
-    mat(matrix_height, matrix_width, matrix_ldim),
+  El::Matrix<DataT, El::Device::CPU> mat(matrix_height,
+                                         matrix_width,
+                                         matrix_ldim),
     mat_orig(matrix_height, matrix_width);
 
   // Do the forward/backward setups up front.
-  REQUIRE_NOTHROW(
-    fftw.setup_forward(mat, dims));
-  REQUIRE_NOTHROW(
-    fftw.setup_backward(mat, dims));
+  REQUIRE_NOTHROW(fftw.setup_forward(mat, dims));
+  REQUIRE_NOTHROW(fftw.setup_backward(mat, dims));
 
   // Do some initializations
   El::MakeUniform(mat, DataT(0.f), RealT(2.f));
@@ -397,21 +369,19 @@ TEMPLATE_TEST_CASE("Testing FFTW wrapper (C2C-InPlace)",
   // Assert that we've gotten back to the ballpark of the original
   // input, with appropriate scaling (FFTW transforms are *not*
   // normalized).
-  auto const scale_factor
-    = RealT(lbann::get_linear_size(dims.size() - 1, dims.data() + 1));
-  for (auto col = decltype(matrix_width){0}; col < matrix_width; ++col)
-  {
-    for (auto row = decltype(matrix_height){0}; row < matrix_height; ++row)
-    {
+  auto const scale_factor =
+    RealT(lbann::get_linear_size(dims.size() - 1, dims.data() + 1));
+  for (auto col = decltype(matrix_width){0}; col < matrix_width; ++col) {
+    for (auto row = decltype(matrix_height){0}; row < matrix_height; ++row) {
       CAPTURE(row, col);
       auto const& mat_ij = mat.CRef(row, col);
       auto const& mat_orig_ij = mat_orig.CRef(row, col);
 
       // Ehhhh this is fine for now...
-      CHECK(Approx(RealPart(mat_ij)).epsilon(0.05)
-            == scale_factor*RealPart(mat_orig_ij));
-      CHECK(Approx(ImagPart(mat_ij)).epsilon(0.05)
-            == scale_factor*ImagPart(mat_orig_ij));
+      CHECK(Approx(RealPart(mat_ij)).epsilon(0.05) ==
+            scale_factor * RealPart(mat_orig_ij));
+      CHECK(Approx(ImagPart(mat_ij)).epsilon(0.05) ==
+            scale_factor * ImagPart(mat_orig_ij));
     }
   }
 }

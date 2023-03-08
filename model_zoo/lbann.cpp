@@ -114,15 +114,14 @@ int main(int argc, char* argv[])
     }
 
     auto const hang_rank = arg_parser.get<int>("hang on start");
-    if (hang_rank >= 0)
-    {
+    if (hang_rank >= 0) {
       auto const my_rank = comm->get_rank_in_world();
       if (hang_rank == my_rank) {
 #ifdef LBANN_HAS_UNISTD_H
         char hostname[1024];
         gethostname(hostname, 1024);
-        std::cout << "LBANN [hang]: (hostname: " << hostname << ", pid: " << getpid()
-                  << ")" << std::endl;
+        std::cout << "LBANN [hang]: (hostname: " << hostname
+                  << ", pid: " << getpid() << ")" << std::endl;
 #endif
         int volatile wait = 1;
         while (wait) {
@@ -132,8 +131,10 @@ int main(int argc, char* argv[])
     }
 
     // Setup cuDNN and cuBLAS defaults
-    auto use_cudnn_tensor_ops = arg_parser.get<bool>(LBANN_OPTION_USE_CUDNN_TENSOR_OPS);
-    auto use_cublas_tensor_ops = arg_parser.get<bool>(LBANN_OPTION_USE_CUBLAS_TENSOR_OPS);
+    auto use_cudnn_tensor_ops =
+      arg_parser.get<bool>(LBANN_OPTION_USE_CUDNN_TENSOR_OPS);
+    auto use_cublas_tensor_ops =
+      arg_parser.get<bool>(LBANN_OPTION_USE_CUBLAS_TENSOR_OPS);
     if (master) {
       std::cout << "Default tensor core settings:\n"
                 << "   cuDNN: " << (use_cudnn_tensor_ops ? "" : "NOT ")
@@ -156,7 +157,8 @@ int main(int argc, char* argv[])
     // this must be called after call to arg_parser.parse();
     if (!arg_parser.get<bool>(LBANN_OPTION_DISABLE_SIGNAL_HANDLER)) {
       std::string file_base =
-        (arg_parser.get<bool>(LBANN_OPTION_STACK_TRACE_TO_FILE) ? "stack_trace" : "");
+        (arg_parser.get<bool>(LBANN_OPTION_STACK_TRACE_TO_FILE) ? "stack_trace"
+                                                                : "");
       stack_trace::register_signal_handler(file_base);
     }
 

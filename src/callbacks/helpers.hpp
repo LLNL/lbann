@@ -32,20 +32,21 @@
 namespace lbann {
 namespace {
 template <typename T>
-std::vector<T*> select_things_by_name(
-  std::vector<T*> const& things,
-  std::vector<std::string> const& thing_names) {
+std::vector<T*>
+select_things_by_name(std::vector<T*> const& things,
+                      std::vector<std::string> const& thing_names)
+{
 
   std::vector<T*> out_things;
   for (auto const& name : thing_names) {
-    auto it = std::find_if(
-      things.begin(), things.end(),
-      [&name](const T* t) { return t->get_name() == name; });
+    auto it = std::find_if(things.begin(), things.end(), [&name](const T* t) {
+      return t->get_name() == name;
+    });
     if (it != things.end())
       out_things.push_back(*it);
     else
-      LBANN_ERROR(std::string("Requested thing \"") + name
-                  + "\" does not exist in the list of things.");
+      LBANN_ERROR(std::string("Requested thing \"") + name +
+                  "\" does not exist in the list of things.");
   }
   return out_things;
 }

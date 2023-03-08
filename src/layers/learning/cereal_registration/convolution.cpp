@@ -30,9 +30,7 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
-void
-convolution_layer<TensorDataType,Layout,Device>
-::serialize(ArchiveT& ar)
+void convolution_layer<TensorDataType, Layout, Device>::serialize(ArchiveT& ar)
 {
   using BaseConvolutionLayer = base_convolution_layer<TensorDataType, Device>;
   ar(::cereal::make_nvp("BaseConvolutionLayer",

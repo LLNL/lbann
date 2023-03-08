@@ -38,7 +38,8 @@ namespace lbann {
 /**
  * A generalized data reader for data stored in HDF5 files.
  */
-class hdf5_data_reader : public data_reader_sample_list<sample_list_hdf5<std::string>>
+class hdf5_data_reader
+  : public data_reader_sample_list<sample_list_hdf5<std::string>>
 {
 public:
   hdf5_data_reader(bool shuffle = true);

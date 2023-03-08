@@ -54,7 +54,7 @@ std::string get();
  */
 void register_signal_handler(std::string file_base = "");
 
-} //namespace stack_trace
-} //namespace lbann
+} // namespace stack_trace
+} // namespace lbann
 
 #endif // LBANN_UTILS_STACK_TRACE_HPP_INCLUDED

@@ -33,7 +33,9 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void covariance_layer<TensorDataType, Layout, Device>::setup_data(size_t max_mini_batch_size) {
+void covariance_layer<TensorDataType, Layout, Device>::setup_data(
+  size_t max_mini_batch_size)
+{
   data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
   auto dist_data = this->get_prev_activations().DistData();
   dist_data.colDist = El::STAR;
@@ -42,7 +44,9 @@ void covariance_layer<TensorDataType, Layout, Device>::setup_data(size_t max_min
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void covariance_layer<TensorDataType, Layout, Device>::setup_dims(DataReaderMetaData& dr_metadata) {
+void covariance_layer<TensorDataType, Layout, Device>::setup_dims(
+  DataReaderMetaData& dr_metadata)
+{
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
   this->set_output_dims({1});
   if (this->get_input_dims(0) != this->get_input_dims(1)) {
@@ -52,8 +56,8 @@ void covariance_layer<TensorDataType, Layout, Device>::setup_dims(DataReaderMeta
         << "has input tensors with different dimensions (";
     for (int i = 0; i < this->get_num_parents(); ++i) {
       const auto& dims = this->get_input_dims(i);
-      err << (i > 0 ? ", " : "")
-          << "layer \"" << parents[i]->get_name() << "\" outputs ";
+      err << (i > 0 ? ", " : "") << "layer \"" << parents[i]->get_name()
+          << "\" outputs ";
       for (size_t j = 0; j < dims.size(); ++j) {
         err << (j > 0 ? " x " : "") << dims[j];
       }

@@ -41,7 +41,7 @@ namespace file {
  *  if needed and synchronizes all other trainer ranks to ensure they
  *  see a consistent state of the file system.
  */
-  void trainer_master_make_directory(const std::string& path, lbann_comm* comm);
+void trainer_master_make_directory(const std::string& path, lbann_comm* comm);
 
 } // namespace file
 

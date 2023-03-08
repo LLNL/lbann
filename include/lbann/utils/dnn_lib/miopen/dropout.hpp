@@ -33,12 +33,10 @@
 
 #include "utils.hpp"
 
-namespace lbann
-{
+namespace lbann {
 
 #if defined LBANN_HAS_MIOPEN
-namespace dnn_lib
-{
+namespace dnn_lib {
 
 using namespace miopen;
 
@@ -132,8 +130,8 @@ void dropout_backward(DropoutDescriptor const& dropoutDesc,
   dropout_backward(dropoutDesc, dyDesc, dy, dxDesc, dx, workSpace, multisync);
 }
 
-}// namespace dnn_lib
+} // namespace dnn_lib
 #endif // LBANN_HAS_MIOPEN
 
-}// namespace lbann
+} // namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_MIOPEN_DROPOUT_HPP_

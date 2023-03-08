@@ -30,9 +30,9 @@
 namespace lbann {
 
 template <class Archive>
-void dataset::serialize( Archive & ar ) {
-  ar(CEREAL_NVP(m_num_samples_processed),
-     CEREAL_NVP(m_total_samples));
+void dataset::serialize(Archive& ar)
+{
+  ar(CEREAL_NVP(m_num_samples_processed), CEREAL_NVP(m_total_samples));
 }
 
 } // namespace lbann

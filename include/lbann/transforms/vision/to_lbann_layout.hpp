@@ -39,7 +39,8 @@ namespace transform {
  * Currently only supports converting from OpenCV layouts.
  * This will also rescale data from [0, 255] to [0, 1].
  */
-class to_lbann_layout : public transform {
+class to_lbann_layout : public transform
+{
 public:
   transform* copy() const override { return new to_lbann_layout(*this); }
 
@@ -47,16 +48,18 @@ public:
 
   bool supports_non_inplace() const override { return true; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data,
+             std::vector<size_t>& dims) override;
 
-  void apply(utils::type_erased_matrix& data, CPUMat& out,
+  void apply(utils::type_erased_matrix& data,
+             CPUMat& out,
              std::vector<size_t>& dims) override;
 };
 
 std::unique_ptr<transform>
 build_to_lbann_layout_transform_from_pbuf(google::protobuf::Message const&);
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_TO_LBANN_LAYOUT_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_TO_LBANN_LAYOUT_HPP_INCLUDED

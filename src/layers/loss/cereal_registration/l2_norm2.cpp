@@ -30,9 +30,7 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
-void
-l2_norm2_layer<TensorDataType,Layout,Device>
-::serialize(ArchiveT& ar)
+void l2_norm2_layer<TensorDataType, Layout, Device>::serialize(ArchiveT& ar)
 {
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",

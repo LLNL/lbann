@@ -40,29 +40,35 @@ namespace lbann {
  * Data reader for generating random samples.
  * Samples are different every time.
  */
-class data_reader_synthetic : public generic_data_reader {
- public:
+class data_reader_synthetic : public generic_data_reader
+{
+public:
   // TODO: add what data distribution to use
   data_reader_synthetic(int num_samples, int num_features, bool shuffle = true);
-  data_reader_synthetic(int num_samples, std::vector<int> dims,
-                        int num_labels, bool shuffle = true);
-  data_reader_synthetic(int num_samples, std::vector<int> dims,
-                        std::vector<int> response_dims, bool shuffle = true);
-  data_reader_synthetic(int num_samples, std::map<data_field_type, std::vector<int>> data_fields,
+  data_reader_synthetic(int num_samples,
+                        std::vector<int> dims,
+                        int num_labels,
+                        bool shuffle = true);
+  data_reader_synthetic(int num_samples,
+                        std::vector<int> dims,
+                        std::vector<int> response_dims,
+                        bool shuffle = true);
+  data_reader_synthetic(int num_samples,
+                        std::map<data_field_type, std::vector<int>> data_fields,
                         bool shuffle = true);
   data_reader_synthetic(const data_reader_synthetic&) = default;
   data_reader_synthetic& operator=(const data_reader_synthetic&) = default;
   ~data_reader_synthetic() override {}
-  data_reader_synthetic* copy() const override {
+  data_reader_synthetic* copy() const override
+  {
     return new data_reader_synthetic(*this);
   }
-  std::string get_type() const override {
-    return "data_reader_synthetic";
-  }
+  std::string get_type() const override { return "data_reader_synthetic"; }
 
   void load() override;
 
-  int get_linearized_size(data_field_type const& data_field) const override {
+  int get_linearized_size(data_field_type const& data_field) const override
+  {
     auto iter = m_synthetic_data_fields.find(data_field);
     if (iter == end(m_synthetic_data_fields)) {
       LBANN_ERROR("Unknown data field ", data_field);
@@ -70,27 +76,29 @@ class data_reader_synthetic : public generic_data_reader {
     return get_linear_size(iter->second);
   }
 
-  int get_linearized_data_size() const override {
+  int get_linearized_data_size() const override
+  {
     return get_linear_size(m_dimensions);
   }
-  int get_linearized_label_size() const override {
-    return m_num_labels;
-  }
-  int get_linearized_response_size() const override {
+  int get_linearized_label_size() const override { return m_num_labels; }
+  int get_linearized_response_size() const override
+  {
     return get_linear_size(m_response_dimensions);
   }
 
-  const std::vector<int> get_data_dims() const override {
-    return m_dimensions;
-  }
+  const std::vector<int> get_data_dims() const override { return m_dimensions; }
 
   int get_num_labels() const override { return m_num_labels; }
-  int get_num_responses() const override {
+  int get_num_responses() const override
+  {
     return get_linearized_response_size();
   }
 
- protected:
-  bool fetch_data_field(data_field_type data_field, CPUMat& Y, int data_id, int mb_idx) override;
+protected:
+  bool fetch_data_field(data_field_type data_field,
+                        CPUMat& Y,
+                        int data_id,
+                        int mb_idx) override;
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
@@ -111,6 +119,6 @@ private:
   std::map<data_field_type, std::vector<int>> m_synthetic_data_fields;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_DATA_READER_SYNTHETIC_HPP
+#endif // LBANN_DATA_READER_SYNTHETIC_HPP

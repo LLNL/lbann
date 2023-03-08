@@ -27,8 +27,8 @@
 #ifndef LBANN_OPTIMIZERS_HYPERGRADIENT_ADAM_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_HYPERGRADIENT_ADAM_HPP_INCLUDED
 
-#include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/proto/optimizers.pb.h"
 
 namespace lbann {
@@ -42,11 +42,12 @@ namespace lbann {
  *  Descent", 2017.
  */
 template <typename TensorDataType>
-class hypergradient_adam
-  : public Cloneable<hypergradient_adam<TensorDataType>,
-                     data_type_optimizer<TensorDataType>> {
+class hypergradient_adam : public Cloneable<hypergradient_adam<TensorDataType>,
+                                            data_type_optimizer<TensorDataType>>
+{
   using BaseType = Cloneable<hypergradient_adam<TensorDataType>,
                              data_type_optimizer<TensorDataType>>;
+
 public:
   /** @name Public Types */
   ///@{
@@ -63,7 +64,6 @@ public:
   ///@}
 
 public:
-
   /** @brief Construct a Hypergradient Adam optimizer object
    *
    *  @param init_learning_rate     Initial Adam learning rate (0.001 is
@@ -86,8 +86,9 @@ public:
   hypergradient_adam& operator=(const hypergradient_adam& other);
   ~hypergradient_adam() override = default;
 
-    /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  /** Archive for checkpoint and restart */
+  template <class Archive>
+  void serialize(Archive& ar);
 
   /** @brief Human-readable type name. */
   std::string get_type() const override { return "hypergradient Adam"; }
@@ -101,13 +102,11 @@ public:
   void write_proto(lbann_data::Optimizer& opt) const final;
 
 protected:
-
   /** @brief Computation for an optimization step. */
   void step_compute(AbsDistMatrixType& values,
                     const AbsDistMatrixType& gradient) override;
 
 private:
-
   /** @brief Hypergradient learning rate. */
   TensorDataType m_hyper_learning_rate;
   /** @brief Update factor for first moment estimate. */
@@ -126,13 +125,11 @@ private:
   std::unique_ptr<AbsDistMatrixType> m_moment2;
   /** @brief Gradient estimate from the prior step (for hypergradient). */
   std::unique_ptr<AbsDistMatrixType> m_old_gradient;
-
 };
 
 template <typename TensorDataType>
 std::unique_ptr<optimizer>
-build_hypergradient_adam_optimizer_from_pbuf(
-  google::protobuf::Message const&);
+build_hypergradient_adam_optimizer_from_pbuf(google::protobuf::Message const&);
 
 } // namespace lbann
 

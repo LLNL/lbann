@@ -26,36 +26,36 @@
 
 #include "Catch2BasicSupport.hpp"
 
-#include "TestHelpers.hpp"
 #include "MPITestHelpers.hpp"
+#include "TestHelpers.hpp"
 
 #include <lbann/base.hpp>
 #include <lbann/layers/regularizers/batch_normalization.hpp>
 
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 #include <lbann/utils/memory.hpp>
 #include <lbann/utils/serialize.hpp>
-#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 // Some convenience typedefs
 
 template <typename T, lbann::data_layout L, El::Device D>
-using LayerType = lbann::batch_normalization_layer<T,L,D>;
+using LayerType = lbann::batch_normalization_layer<T, L, D>;
 
 template <typename T, El::Device D>
-using LayerTypesAllLayouts = h2::meta::TL<
-  LayerType<T, lbann::data_layout::DATA_PARALLEL, D>>;
+using LayerTypesAllLayouts =
+  h2::meta::TL<LayerType<T, lbann::data_layout::DATA_PARALLEL, D>>;
 
 template <typename T>
-using LayerTypesAllDevices = h2::meta::TL<
-  LayerType<T, lbann::data_layout::DATA_PARALLEL, El::Device::CPU>
+using LayerTypesAllDevices =
+  h2::meta::TL<LayerType<T, lbann::data_layout::DATA_PARALLEL, El::Device::CPU>
 #ifdef LBANN_HAS_GPU
-  , LayerType<T, lbann::data_layout::DATA_PARALLEL, El::Device::GPU>
+               ,
+               LayerType<T, lbann::data_layout::DATA_PARALLEL, El::Device::GPU>
 #endif // LBANN_HAS_GPU
-  >;
+               >;
 
-using AllLayerTypes = h2::meta::tlist::Append<
-  LayerTypesAllDevices<float>,
-  LayerTypesAllDevices<double>>;
+using AllLayerTypes = h2::meta::tlist::Append<LayerTypesAllDevices<float>,
+                                              LayerTypesAllDevices<double>>;
 
 using unit_test::utilities::IsValidPtr;
 TEMPLATE_LIST_TEST_CASE("Serializing batchnorm layer",
@@ -65,7 +65,7 @@ TEMPLATE_LIST_TEST_CASE("Serializing batchnorm layer",
   using LayerType = TestType;
 
   auto& world_comm = unit_test::utilities::current_world_comm();
-  //int const size_of_world = world_comm.get_procs_in_world();
+  // int const size_of_world = world_comm.get_procs_in_world();
 
   auto const& g = world_comm.get_trainer_grid();
   lbann::utils::grid_manager mgr(g);
@@ -74,9 +74,9 @@ TEMPLATE_LIST_TEST_CASE("Serializing batchnorm layer",
 
   // Create the objects
   LayerType src_layer(1., 2., 3), tgt_layer(4., 5., 6);
-  std::unique_ptr<lbann::Layer>
-    src_layer_ptr = std::make_unique<LayerType>(0.75, 1e-1, 0),
-    tgt_layer_ptr;
+  std::unique_ptr<lbann::Layer> src_layer_ptr =
+                                  std::make_unique<LayerType>(0.75, 1e-1, 0),
+                                tgt_layer_ptr;
 
 #ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
   SECTION("Binary archive")

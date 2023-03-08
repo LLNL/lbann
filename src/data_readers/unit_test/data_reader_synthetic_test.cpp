@@ -27,15 +27,15 @@
 #include "Catch2BasicSupport.hpp"
 
 #include "TestHelpers.hpp"
+#include "lbann/proto/lbann.pb.h"
 #include "lbann/proto/proto_common.hpp"
 #include <google/protobuf/text_format.h>
-#include "lbann/proto/lbann.pb.h"
 
 #include <cstdlib>
 #include <errno.h>
 #include <string.h>
 
-//#include "./data_reader_common_catch2.hpp"
+// #include "./data_reader_common_catch2.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/utils/hash.hpp"
@@ -220,7 +220,7 @@ TEST_CASE("Synthetic data reader data field",
   std::map<lbann::data_field_type, std::vector<int>> fields;
   int f = 0;
   for (auto const& data_field : data_fields) {
-    std::vector<int> dims = {s+f, s+f};
+    std::vector<int> dims = {s + f, s + f};
     fields[data_field] = dims;
     ++f;
   }

@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/utils/serialize.hpp"
 #include "lbann/operators/activations/activations.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #define LBANN_OPERATOR_NAME SoftplusOperator
 #include <lbann/macros/register_operator_with_cereal.hpp>

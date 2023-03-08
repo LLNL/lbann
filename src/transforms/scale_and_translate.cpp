@@ -29,7 +29,9 @@
 namespace lbann {
 namespace transform {
 
-void scale_and_translate::apply(utils::type_erased_matrix& data, std::vector<size_t>&) {
+void scale_and_translate::apply(utils::type_erased_matrix& data,
+                                std::vector<size_t>&)
+{
   // Currently only works on DataTypes.
   // Need to decide how to handle uint8_t matrices.
   auto& mat = data.template get<DataType>();
@@ -44,5 +46,5 @@ void scale_and_translate::apply(utils::type_erased_matrix& data, std::vector<siz
   }
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

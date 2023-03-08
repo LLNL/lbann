@@ -38,14 +38,13 @@
 #include <lbann/utils/cufft_wrapper.hpp>
 #endif // defined LBANN_HAS_CUDA
 
-namespace
-{
+namespace {
 // Metaprogramming for the layer impl.
 template <typename T, El::Device D>
 struct FFTBackendT;
 
 template <typename T, El::Device D>
-using FFTBackend = typename FFTBackendT<T,D>::type;
+using FFTBackend = typename FFTBackendT<T, D>::type;
 
 template <typename T>
 struct FFTBackendT<T, El::Device::CPU>
@@ -56,10 +55,7 @@ struct FFTBackendT<T, El::Device::CPU>
 using namespace El;
 // Updates B(i,j) = func(A(i,j), B(i,j));
 template <typename S, typename T, typename F>
-void Combine(
-  Matrix<S, Device::CPU> const& A,
-  Matrix<T, Device::CPU>& B,
-  F func)
+void Combine(Matrix<S, Device::CPU> const& A, Matrix<T, Device::CPU>& B, F func)
 {
   EL_DEBUG_CSE;
   const Int m = A.Height();
@@ -75,22 +71,17 @@ void Combine(
 
   // Use entry-wise parallelization for column vectors. Otherwise
   // use column-wise parallelization.
-  if (n == 1)
-  {
+  if (n == 1) {
     EL_PARALLEL_FOR
-    for (Int i=0; i<m; ++i)
-    {
+    for (Int i = 0; i < m; ++i) {
       BBuf[i] = func(ABuf[i], BBuf[i]);
     }
   }
-  else
-  {
+  else {
     EL_PARALLEL_FOR_COLLAPSE2
-    for (Int j=0; j<n; ++j)
-    {
-      for (Int i=0; i<m; ++i)
-      {
-        BBuf[i+j*BLDim] = func(ABuf[i+j*ALDim], BBuf[i+j*BLDim]);
+    for (Int j = 0; j < n; ++j) {
+      for (Int i = 0; i < m; ++i) {
+        BBuf[i + j * BLDim] = func(ABuf[i + j * ALDim], BBuf[i + j * BLDim]);
       }
     }
   }
@@ -106,19 +97,18 @@ struct FFTBackendT<T, El::Device::GPU>
 
 #endif // LBANN_HAS_GPU
 
-}// namespace <anon>
+} // namespace
 
-namespace lbann
-{
-namespace internal
-{
+namespace lbann {
+namespace internal {
 
 template <typename T>
 static void Abs(El::Matrix<El::Complex<T>, El::Device::CPU> const& in,
                 El::Matrix<T, El::Device::CPU>& out)
 {
   using ComplexT = El::Complex<T>;
-  El::EntrywiseMap(in, out,
+  El::EntrywiseMap(in,
+                   out,
                    std::function<T(ComplexT const&)>(
                      [](ComplexT const& x) { return El::Abs(x); }));
 }
@@ -129,19 +119,15 @@ static void ApplyAbsGradientUpdate(
   El::Matrix<El::Complex<T>, El::Device::CPU>& input_output)
 {
   using ComplexT = El::Complex<T>;
-  Combine(grad_wrt_output, input_output,
-          [](T const& dy, ComplexT const& x)
-          {
-            return (x == ComplexT(T(0))
-                    ? ComplexT(T(0))
-                    : El::Conj(x * (dy / El::Abs(x))));
-          });
+  Combine(grad_wrt_output, input_output, [](T const& dy, ComplexT const& x) {
+    return (x == ComplexT(T(0)) ? ComplexT(T(0))
+                                : El::Conj(x * (dy / El::Abs(x))));
+  });
 }
 
 template <typename T>
-static void MyRealPart(
-  El::Matrix<El::Complex<T>, El::Device::CPU> const& in,
-  El::Matrix<T, El::Device::CPU>& out)
+static void MyRealPart(El::Matrix<El::Complex<T>, El::Device::CPU> const& in,
+                       El::Matrix<T, El::Device::CPU>& out)
 {
   // out should be setup, so make sure no resize will happen.
   if ((in.Height() != out.Height()) || (in.Width() != out.Width()))
@@ -161,15 +147,13 @@ void ApplyAbsGradientUpdate(
 void ApplyAbsGradientUpdate(
   El::Matrix<double, El::Device::GPU> const& grad_wrt_output,
   El::Matrix<El::Complex<double>, El::Device::GPU>& input_output);
-void MyRealPart(
-  El::Matrix<El::Complex<float>, El::Device::GPU> const& in,
-  El::Matrix<float, El::Device::GPU>& out);
-void MyRealPart(
-  El::Matrix<El::Complex<double>, El::Device::GPU> const& in,
-  El::Matrix<double, El::Device::GPU>& out);
+void MyRealPart(El::Matrix<El::Complex<float>, El::Device::GPU> const& in,
+                El::Matrix<float, El::Device::GPU>& out);
+void MyRealPart(El::Matrix<El::Complex<double>, El::Device::GPU> const& in,
+                El::Matrix<double, El::Device::GPU>& out);
 #endif // LBANN_HAS_GPU
 
-}// namespace internal
+} // namespace internal
 
 // NB (trb 08/04/2020): This is only exposing FFTW and cuFFT for
 // now. ROCm support via rocFFT will come later, as might (?)
@@ -184,6 +168,7 @@ class dft_abs_impl
   using ComplexT = El::Complex<T>;
   using RealMatType = El::Matrix<T, D>;
   using ComplexMatType = El::Matrix<ComplexT, D>;
+
 public:
   /** @brief Constructor.
    *  @param dims The dimensions corresponding to a full sample.
@@ -191,17 +176,13 @@ public:
    *        change, while we assume the sample dims stay constant and
    *        are the same for each sample.
    */
-  dft_abs_impl(std::vector<int> const& dims)
-    : full_dims_{dims}
-  {}
+  dft_abs_impl(std::vector<int> const& dims) : full_dims_{dims} {}
 
   ~dft_abs_impl() {}
 
   dft_abs_impl(dft_abs_impl&&) noexcept = default;
 
-  dft_abs_impl(dft_abs_impl const& other)
-    : dft_abs_impl(other.full_dims_)
-  {}
+  dft_abs_impl(dft_abs_impl const& other) : dft_abs_impl(other.full_dims_) {}
 
   /** @brief Compute the action of forward propagation.
    *  @details This is a DFT followed by and entrywise Abs() application.
@@ -263,32 +244,34 @@ public:
     auto const expected_height = get_linear_size(full_dims_);
     if (grad_wrt_output.Height() != expected_height)
       LBANN_ERROR("Gradient with respect to output has "
-                  "unexpected height (", grad_wrt_output.Height(),
-                  "). Expected height=", expected_height, ".");
+                  "unexpected height (",
+                  grad_wrt_output.Height(),
+                  "). Expected height=",
+                  expected_height,
+                  ".");
   }
 
 private:
-
   FFTBackend<El::Complex<T>, D> fft_impl_;
   /** @brief Cache the output of the fp DFT. */
   mutable El::Matrix<El::Complex<T>, D> workspace_;
   std::vector<int> full_dims_;
 
-};// struct dft_abs_impl
+}; // struct dft_abs_impl
 
 // Public
 template <typename T, El::Device D>
-dft_abs_layer<T,D>::dft_abs_layer(lbann_comm* const comm)
+dft_abs_layer<T, D>::dft_abs_layer(lbann_comm* const comm)
   : data_type_layer<T>(comm)
 {}
 
 template <typename T, El::Device D>
-dft_abs_layer<T,D>::~dft_abs_layer()
+dft_abs_layer<T, D>::~dft_abs_layer()
 {}
 
 // Protected
 template <typename T, El::Device D>
-void dft_abs_layer<T,D>::setup_dims(DataReaderMetaData& dr_metadata)
+void dft_abs_layer<T, D>::setup_dims(DataReaderMetaData& dr_metadata)
 {
   data_type_layer<T>::setup_dims(dr_metadata);
   this->set_output_dims(this->get_input_dims());
@@ -296,7 +279,7 @@ void dft_abs_layer<T,D>::setup_dims(DataReaderMetaData& dr_metadata)
 }
 
 template <typename T, El::Device D>
-void dft_abs_layer<T,D>::fp_compute()
+void dft_abs_layer<T, D>::fp_compute()
 {
   using LocalMatT = El::Matrix<T, D>;
   pimpl_->setup_fp(
@@ -307,7 +290,7 @@ void dft_abs_layer<T,D>::fp_compute()
 }
 
 template <typename T, El::Device D>
-void dft_abs_layer<T,D>::bp_compute()
+void dft_abs_layer<T, D>::bp_compute()
 {
   using LocalMatT = El::Matrix<T, D>;
   pimpl_->setup_fp(
@@ -318,11 +301,10 @@ void dft_abs_layer<T,D>::bp_compute()
 }
 
 template <typename T, El::Device D>
-dft_abs_layer<T,D>::dft_abs_layer(dft_abs_layer const& other)
+dft_abs_layer<T, D>::dft_abs_layer(dft_abs_layer const& other)
   : data_type_layer<T>(other),
-    pimpl_(other.pimpl_
-           ? std::make_unique<dft_abs_impl<T,D>>(*(other.pimpl_))
-           : nullptr)
+    pimpl_(other.pimpl_ ? std::make_unique<dft_abs_impl<T, D>>(*(other.pimpl_))
+                        : nullptr)
 {}
 
 #ifdef LBANN_HAS_FFTW_FLOAT
@@ -337,4 +319,4 @@ template class dft_abs_layer<float, El::Device::GPU>;
 template class dft_abs_layer<double, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 
-}// namespace lbann
+} // namespace lbann

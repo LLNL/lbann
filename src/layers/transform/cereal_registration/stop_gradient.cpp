@@ -30,9 +30,9 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
-void
-stop_gradient_layer<TensorDataType,Layout,Device>
-::serialize(ArchiveT& ar) {
+void stop_gradient_layer<TensorDataType, Layout, Device>::serialize(
+  ArchiveT& ar)
+{
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",
                         ::cereal::base_class<DataTypeLayer>(this)));

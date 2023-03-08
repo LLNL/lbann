@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/utils/serialize.hpp"
 #include "lbann/operators/loss/entrywise.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #define LBANN_OPERATOR_NAME BooleanAccuracyOperator
 #include <lbann/macros/register_operator_with_cereal.hpp>

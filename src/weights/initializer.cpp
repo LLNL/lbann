@@ -42,22 +42,26 @@
 
 namespace lbann {
 
-description weights_initializer::get_description() const {
+description weights_initializer::get_description() const
+{
   return description(get_type() + " weights initializer");
 }
 
 template <typename TensorDataType>
-description constant_initializer<TensorDataType>::get_description() const {
+description constant_initializer<TensorDataType>::get_description() const
+{
   auto desc = data_type_weights_initializer<TensorDataType>::get_description();
   desc.add("Value", m_value);
   return desc;
 }
 
 template <typename TensorDataType>
-void constant_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
+void constant_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix)
+{
   if (m_value == TensorDataType(0.)) {
     El::Zero(matrix);
-  } else {
+  }
+  else {
     El::Fill(matrix, m_value);
   }
 }
@@ -70,14 +74,15 @@ void constant_initializer<TensorDataType>::write_proto(
 }
 
 template <typename TensorDataType>
-void value_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
+void value_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix)
+{
 
   // Check that number of values matches weights matrix
-  if (matrix.Height() * matrix.Width() != (El::Int) m_values.size()) {
+  if (matrix.Height() * matrix.Width() != (El::Int)m_values.size()) {
     std::stringstream err;
     err << "a value initializer with " << m_values.size() << " values "
-        << "attempted to initialize a "
-        << matrix.Height() << " x " << matrix.Width() << " "
+        << "attempted to initialize a " << matrix.Height() << " x "
+        << matrix.Width() << " "
         << "weights matrix";
     LBANN_ERROR(err.str());
   }
@@ -89,7 +94,8 @@ void value_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
   El::Matrix<TensorDataType, El::Device::CPU> matrix_cpu;
   if (matrix.GetLocalDevice() == El::Device::CPU) {
     El::View(matrix_cpu, matrix.Matrix());
-  } else {
+  }
+  else {
     matrix_cpu.Resize(matrix.LocalHeight(), matrix.LocalWidth());
   }
   auto const width = matrix.LocalWidth();
@@ -106,22 +112,25 @@ void value_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
   if (matrix.GetLocalDevice() != El::Device::CPU) {
     El::Copy(matrix_cpu, matrix.Matrix());
 #ifdef HYDROGEN_HAVE_GPU
-    Synchronize(hydrogen::gpu::DefaultSyncInfo()); /// @todo Use new Hydrogen synchronization semantics when available
-#endif // HYDROGEN_HAVE_GPU
+    Synchronize(hydrogen::gpu::DefaultSyncInfo()); /// @todo Use new Hydrogen
+                                                   /// synchronization semantics
+                                                   /// when available
+#endif                                             // HYDROGEN_HAVE_GPU
   }
-
 }
 
 template <typename TensorDataType>
 void value_initializer<TensorDataType>::write_proto(
   lbann_data::Initializer& init) const
 {
-  protobuf::assign_to_repeated(*init.mutable_value_initializer()->
-                               mutable_values(), m_values);
+  protobuf::assign_to_repeated(
+    *init.mutable_value_initializer()->mutable_values(),
+    m_values);
 }
 
 template <typename TensorDataType>
-void numpy_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
+void numpy_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix)
+{
 #ifndef LBANN_HAS_CNPY
   LBANN_ERROR("CNPY not detected");
 #else
@@ -129,16 +138,23 @@ void numpy_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
   // Load NumPy file
   cnpy::NpyArray array = cnpy::npy_load(m_file);
   const size_t num_values = array.num_bytes() / array.word_size;
-  if (matrix.Height() * matrix.Width() != (El::Int) num_values) {
-    LBANN_ERROR(
-      "NumPy weight initializer attempted to initialize a ",
-      matrix.Height()," x ",matrix.Width()," weights matrix, "
-      "but ",m_file," contains ",num_values," values");
+  if (matrix.Height() * matrix.Width() != (El::Int)num_values) {
+    LBANN_ERROR("NumPy weight initializer attempted to initialize a ",
+                matrix.Height(),
+                " x ",
+                matrix.Width(),
+                " weights matrix, "
+                "but ",
+                m_file,
+                " contains ",
+                num_values,
+                " values");
   }
   if (array.fortran_order) {
-    LBANN_ERROR(
-      "NumPy weight initializer does not support Fortran order ",
-      "(error while loading ",m_file,")");
+    LBANN_ERROR("NumPy weight initializer does not support Fortran order ",
+                "(error while loading ",
+                m_file,
+                ")");
   }
 
   // Extract weight values from NumPy array
@@ -146,22 +162,20 @@ void numpy_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
   // already in the right datatype.
   std::vector<TensorDataType> values(num_values);
   switch (array.word_size) {
-  case 4:
-  {
+  case 4: {
     const auto* src = array.data<float>();
     auto* dst = values.data();
     LBANN_OMP_PARALLEL_FOR
-    for (size_t i=0; i<num_values; ++i) {
+    for (size_t i = 0; i < num_values; ++i) {
       dst[i] = src[i];
     }
     break;
   }
-  case 8:
-  {
+  case 8: {
     const auto* src = array.data<double>();
     auto* dst = values.data();
     LBANN_OMP_PARALLEL_FOR
-    for (size_t i=0; i<num_values; ++i) {
+    for (size_t i = 0; i < num_values; ++i) {
       dst[i] = src[i];
     }
     break;
@@ -169,39 +183,57 @@ void numpy_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
   default:
     LBANN_ERROR(
       "NumPy weight initializer only supports float32 and float64 data",
-      "(error while loading ",m_file,")");
+      "(error while loading ",
+      m_file,
+      ")");
   }
 
   // Construct CPU matrix from weight values
-  using CPUMatType = El::DistMatrix<TensorDataType, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU>;
+  using CPUMatType = El::DistMatrix<TensorDataType,
+                                    El::STAR,
+                                    El::STAR,
+                                    El::ELEMENT,
+                                    El::Device::CPU>;
   CPUMatType cpu_matrix(matrix.Grid(), matrix.Root());
   if (matrix.Width() == 1) {
-    cpu_matrix.LockedAttach(
-      matrix.Height(),
-      matrix.Width(),
-      matrix.Grid(),
-      matrix.ColAlign(),
-      matrix.RowAlign(),
-      values.data(),
-      matrix.Height(),
-      matrix.Root());
+    cpu_matrix.LockedAttach(matrix.Height(),
+                            matrix.Width(),
+                            matrix.Grid(),
+                            matrix.ColAlign(),
+                            matrix.RowAlign(),
+                            values.data(),
+                            matrix.Height(),
+                            matrix.Root());
   }
   else {
     // Weights in fully-connected layer are in Fortran-order. Need to
     // transpose NumPy array before copying in Hydrogen matrix
     if (array.shape.size() != 2) {
-      LBANN_ERROR(
-        "NumPy weight initializer attempted to initialize a ",
-        matrix.Height()," x ",matrix.Width()," weights matrix, "
-        "but ",m_file," contains a ",array.shape.size(),"-D array");
+      LBANN_ERROR("NumPy weight initializer attempted to initialize a ",
+                  matrix.Height(),
+                  " x ",
+                  matrix.Width(),
+                  " weights matrix, "
+                  "but ",
+                  m_file,
+                  " contains a ",
+                  array.shape.size(),
+                  "-D array");
     }
-    if ((El::Int) array.shape[0] != matrix.Height()
-        || (El::Int) array.shape[1] != matrix.Width()) {
-      LBANN_ERROR(
-        "NumPy weight initializer attempted to initialize a ",
-        matrix.Height()," x ",matrix.Width()," weights matrix, "
-        "but ",m_file," contains a ",
-        array.shape[0]," x ",array.shape[1], " array");
+    if ((El::Int)array.shape[0] != matrix.Height() ||
+        (El::Int)array.shape[1] != matrix.Width()) {
+      LBANN_ERROR("NumPy weight initializer attempted to initialize a ",
+                  matrix.Height(),
+                  " x ",
+                  matrix.Width(),
+                  " weights matrix, "
+                  "but ",
+                  m_file,
+                  " contains a ",
+                  array.shape[0],
+                  " x ",
+                  array.shape[1],
+                  " array");
     }
     El::Matrix<TensorDataType, El::Device::CPU> cpu_matrix_trans(
       matrix.Width(),
@@ -226,7 +258,8 @@ void numpy_initializer<TensorDataType>::write_proto(
 }
 
 template <typename TensorDataType>
-description uniform_initializer<TensorDataType>::get_description() const {
+description uniform_initializer<TensorDataType>::get_description() const
+{
   auto desc = data_type_weights_initializer<TensorDataType>::get_description();
   std::stringstream ss;
   ss << "[" << m_min << "," << m_max << ")";
@@ -235,8 +268,11 @@ description uniform_initializer<TensorDataType>::get_description() const {
 }
 
 template <typename TensorDataType>
-void uniform_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
-  uniform_fill(matrix, matrix.Height(), matrix.Width(),
+void uniform_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix)
+{
+  uniform_fill(matrix,
+               matrix.Height(),
+               matrix.Width(),
                (m_max + m_min) / El::To<TensorDataType>(2),
                (m_max - m_min) / El::To<TensorDataType>(2));
 }
@@ -251,7 +287,8 @@ void uniform_initializer<TensorDataType>::write_proto(
 }
 
 template <typename TensorDataType>
-description normal_initializer<TensorDataType>::get_description() const {
+description normal_initializer<TensorDataType>::get_description() const
+{
   auto desc = data_type_weights_initializer<TensorDataType>::get_description();
   desc.add("Mean", m_mean);
   desc.add("Standard deviation", m_standard_deviation);
@@ -259,9 +296,13 @@ description normal_initializer<TensorDataType>::get_description() const {
 }
 
 template <typename TensorDataType>
-void normal_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
-  gaussian_fill(matrix, matrix.Height(), matrix.Width(),
-                m_mean, m_standard_deviation);
+void normal_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix)
+{
+  gaussian_fill(matrix,
+                matrix.Height(),
+                matrix.Width(),
+                m_mean,
+                m_standard_deviation);
 }
 
 template <typename TensorDataType>
@@ -279,10 +320,12 @@ void normal_initializer<TensorDataType>::write_proto(
 
 template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
-build_constant_initializer_from_pbuf(google::protobuf::Message const& msg) {
+build_constant_initializer_from_pbuf(google::protobuf::Message const& msg)
+{
   const auto& params =
     dynamic_cast<lbann_data::Initializer::ConstantInitializer const&>(msg);
-  return std::make_unique<constant_initializer<TensorDataType>>(El::To<TensorDataType>(params.value()));
+  return std::make_unique<constant_initializer<TensorDataType>>(
+    El::To<TensorDataType>(params.value()));
 }
 
 template <typename TensorDataType>
@@ -297,7 +340,8 @@ build_value_initializer_from_pbuf(google::protobuf::Message const& msg)
 
 template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
-build_numpy_initializer_from_pbuf(google::protobuf::Message const& msg) {
+build_numpy_initializer_from_pbuf(google::protobuf::Message const& msg)
+{
   const auto& params =
     dynamic_cast<lbann_data::Initializer::NumpyInitializer const&>(msg);
   return std::make_unique<numpy_initializer<TensorDataType>>(params.file());
@@ -305,49 +349,55 @@ build_numpy_initializer_from_pbuf(google::protobuf::Message const& msg) {
 
 template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
-build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg) {
+build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg)
+{
   const auto& params =
     dynamic_cast<lbann_data::Initializer::UniformInitializer const&>(msg);
   const auto& min = El::To<TensorDataType>(params.min());
   const auto& max = El::To<TensorDataType>(params.max());
   if (min != 0.0 || max != 0.0) {
     return std::make_unique<uniform_initializer<TensorDataType>>(min, max);
-  } else {
+  }
+  else {
     return std::make_unique<uniform_initializer<TensorDataType>>();
   }
 }
 
 template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
-build_normal_initializer_from_pbuf(google::protobuf::Message const& msg) {
+build_normal_initializer_from_pbuf(google::protobuf::Message const& msg)
+{
   const auto& params =
     dynamic_cast<lbann_data::Initializer::NormalInitializer const&>(msg);
   const auto& mean = El::To<TensorDataType>(params.mean());
-  const auto& standard_deviation = El::To<TensorDataType>(params.standard_deviation());
+  const auto& standard_deviation =
+    El::To<TensorDataType>(params.standard_deviation());
   if (mean != 0.0 || standard_deviation != 0.0) {
-    return std::make_unique<normal_initializer<TensorDataType>>(mean, standard_deviation);
-  } else {
+    return std::make_unique<normal_initializer<TensorDataType>>(
+      mean,
+      standard_deviation);
+  }
+  else {
     return std::make_unique<normal_initializer<TensorDataType>>();
   }
 }
 
-
-#define PROTO(T)                                                             \
-  template class data_type_weights_initializer<T>;                           \
-  template class constant_initializer<T>;                                    \
-  template class value_initializer<T>;                                       \
-  template class numpy_initializer<T>;                                       \
-  template class uniform_initializer<T>;                                     \
-  template class normal_initializer<T>;                                      \
-  template std::unique_ptr<weights_initializer>                              \
-  build_constant_initializer_from_pbuf<T>(google::protobuf::Message const&); \
-  template std::unique_ptr<weights_initializer>                              \
-  build_value_initializer_from_pbuf<T>(google::protobuf::Message const&);    \
-  template std::unique_ptr<weights_initializer>                              \
-  build_numpy_initializer_from_pbuf<T>(google::protobuf::Message const&);    \
-  template std::unique_ptr<weights_initializer>                              \
-  build_uniform_initializer_from_pbuf<T>(google::protobuf::Message const&);  \
-  template std::unique_ptr<weights_initializer>                              \
+#define PROTO(T)                                                               \
+  template class data_type_weights_initializer<T>;                             \
+  template class constant_initializer<T>;                                      \
+  template class value_initializer<T>;                                         \
+  template class numpy_initializer<T>;                                         \
+  template class uniform_initializer<T>;                                       \
+  template class normal_initializer<T>;                                        \
+  template std::unique_ptr<weights_initializer>                                \
+  build_constant_initializer_from_pbuf<T>(google::protobuf::Message const&);   \
+  template std::unique_ptr<weights_initializer>                                \
+  build_value_initializer_from_pbuf<T>(google::protobuf::Message const&);      \
+  template std::unique_ptr<weights_initializer>                                \
+  build_numpy_initializer_from_pbuf<T>(google::protobuf::Message const&);      \
+  template std::unique_ptr<weights_initializer>                                \
+  build_uniform_initializer_from_pbuf<T>(google::protobuf::Message const&);    \
+  template std::unique_ptr<weights_initializer>                                \
   build_normal_initializer_from_pbuf<T>(google::protobuf::Message const&)
 
 #define LBANN_INSTANTIATE_CPU_HALF

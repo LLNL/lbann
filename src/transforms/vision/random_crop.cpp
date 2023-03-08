@@ -34,12 +34,14 @@
 namespace lbann {
 namespace transform {
 
-void random_crop::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+void random_crop::apply(utils::type_erased_matrix& data,
+                        std::vector<size_t>& dims)
+{
   cv::Mat src = utils::get_opencv_mat(data, dims);
   if (dims[1] <= m_h || dims[2] <= m_w) {
     std::stringstream ss;
-    ss << "Random crop to " << m_h << "x" << m_w
-       << " applied to input " << dims[1] << "x" << dims[2];
+    ss << "Random crop to " << m_h << "x" << m_w << " applied to input "
+       << dims[1] << "x" << dims[2];
     LBANN_ERROR(ss.str());
   }
   std::vector<size_t> new_dims = {dims[0], m_h, m_w};
@@ -65,11 +67,12 @@ void random_crop::apply(utils::type_erased_matrix& data, std::vector<size_t>& di
 }
 
 std::unique_ptr<transform>
-build_random_crop_transform_from_pbuf(google::protobuf::Message const& msg) {
+build_random_crop_transform_from_pbuf(google::protobuf::Message const& msg)
+{
   auto const& params =
     dynamic_cast<lbann_data::Transform::RandomCrop const&>(msg);
   return std::make_unique<random_crop>(params.height(), params.width());
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

@@ -37,33 +37,39 @@
 
 /** @brief A utility macro for easily defining default-constructed sub-class
  *  builders.*/
-#define LBANN_DEFINE_LAYER_BUILDER(LAYER_NAME)                          \
-  template <typename TensorDataType, data_layout Layout, El::Device Device> \
-  std::unique_ptr<Layer> build_##LAYER_NAME##_layer_from_pbuf( \
-    lbann_comm*, lbann_data::Layer const&)
+#define LBANN_DEFINE_LAYER_BUILDER(LAYER_NAME)                                 \
+  template <typename TensorDataType, data_layout Layout, El::Device Device>    \
+  std::unique_ptr<Layer> build_##LAYER_NAME##_layer_from_pbuf(                 \
+    lbann_comm*,                                                               \
+    lbann_data::Layer const&)
 
 /** @brief A utility macro for easily defining "default" builders.
  *  @note Must be called inside lbann namespace.
  */
-#define LBANN_LAYER_DEFAULT_BUILDER(LAYER_NAME) \
-  template <typename TensorDataType, data_layout Layout, El::Device Device> \
-  std::unique_ptr<Layer> build_##LAYER_NAME##_layer_from_pbuf(          \
-    lbann_comm* comm, lbann_data::Layer const&)                         \
-  {                                                                     \
-    using LayerType = LAYER_NAME##_layer<TensorDataType, Layout, Device>; \
-    return std::make_unique<LayerType>(comm);                                \
+#define LBANN_LAYER_DEFAULT_BUILDER(LAYER_NAME)                                \
+  template <typename TensorDataType, data_layout Layout, El::Device Device>    \
+  std::unique_ptr<Layer> build_##LAYER_NAME##_layer_from_pbuf(                 \
+    lbann_comm* comm,                                                          \
+    lbann_data::Layer const&)                                                  \
+  {                                                                            \
+    using LayerType = LAYER_NAME##_layer<TensorDataType, Layout, Device>;      \
+    return std::make_unique<LayerType>(comm);                                  \
   }
 
 /** @brief A utility macro for easily adding ETI for layer builders
  *  @note Must be called inside lbann namespace.
  */
-#define LBANN_LAYER_BUILDER_ETI(LAYER_NAME, T, Device)                  \
-  template std::unique_ptr<Layer>                                       \
-  build_##LAYER_NAME##_layer_from_pbuf<T,::lbann::data_layout::DATA_PARALLEL,Device>( \
-    lbann_comm*, lbann_data::Layer const&);                             \
-  template std::unique_ptr<Layer>                                       \
-  build_##LAYER_NAME##_layer_from_pbuf<T,::lbann::data_layout::MODEL_PARALLEL,Device>( \
-    lbann_comm*, lbann_data::Layer const&)
+#define LBANN_LAYER_BUILDER_ETI(LAYER_NAME, T, Device)                         \
+  template std::unique_ptr<Layer>                                              \
+    build_##LAYER_NAME##_layer_from_pbuf<T,                                    \
+                                         ::lbann::data_layout::DATA_PARALLEL,  \
+                                         Device>(lbann_comm*,                  \
+                                                 lbann_data::Layer const&);    \
+  template std::unique_ptr<Layer>                                              \
+    build_##LAYER_NAME##_layer_from_pbuf<T,                                    \
+                                         ::lbann::data_layout::MODEL_PARALLEL, \
+                                         Device>(lbann_comm*,                  \
+                                                 lbann_data::Layer const&)
 
 // Forward-declare protobuf classes
 namespace lbann_data {
@@ -127,7 +133,8 @@ using OwningLayerPtr = std::shared_ptr<Layer>;
 using ViewingLayerPtr = std::weak_ptr<Layer>;
 
 /** Represents a parallel strategy for a layer. */
-struct ParallelStrategy {
+struct ParallelStrategy
+{
   /** Number of process groups the sample dimension is split over. */
   int sample_groups = 0;
   /** Number of groups the sample dimension is split over. */
@@ -160,74 +167,62 @@ struct ParallelStrategy {
   int sub_branch_tag = 0;
   /** percentage of parent resources to be allocated to this branch. */
   int sub_branch_resource_percentage = 0;
-  bool operator==(const ParallelStrategy &ps) const {
+  bool operator==(const ParallelStrategy& ps) const
+  {
     return sample_groups == ps.sample_groups &&
-        sample_splits == ps.sample_splits &&
-        depth_groups == ps.depth_groups &&
-        depth_splits == ps.depth_splits &&
-        height_groups == ps.height_groups &&
-        height_splits == ps.height_splits &&
-        width_groups == ps.width_groups &&
-        width_splits == ps.width_splits &&
-        channel_groups == ps.channel_groups &&
-        channel_splits == ps.channel_splits &&
-        filter_groups == ps.filter_groups &&
-        filter_splits == ps.filter_splits &&
-        replications == ps.replications &&
-        sub_branch_tag == ps.sub_branch_tag &&
-        sub_branch_resource_percentage == ps.sub_branch_resource_percentage &&
-        enable_subgraph == ps.enable_subgraph;
+           sample_splits == ps.sample_splits &&
+           depth_groups == ps.depth_groups && depth_splits == ps.depth_splits &&
+           height_groups == ps.height_groups &&
+           height_splits == ps.height_splits &&
+           width_groups == ps.width_groups && width_splits == ps.width_splits &&
+           channel_groups == ps.channel_groups &&
+           channel_splits == ps.channel_splits &&
+           filter_groups == ps.filter_groups &&
+           filter_splits == ps.filter_splits &&
+           replications == ps.replications &&
+           sub_branch_tag == ps.sub_branch_tag &&
+           sub_branch_resource_percentage ==
+             ps.sub_branch_resource_percentage &&
+           enable_subgraph == ps.enable_subgraph;
   }
-  bool operator!=(const ParallelStrategy &ps) const {
-    return !(*this == ps);
-  }
+  bool operator!=(const ParallelStrategy& ps) const { return !(*this == ps); }
 };
 
-inline std::ostream &operator<<(std::ostream &os,
-                                const ParallelStrategy &ps) {
+inline std::ostream& operator<<(std::ostream& os, const ParallelStrategy& ps)
+{
   os << "{"
-     << "N: " << ps.sample_groups
-     << "/" << ps.sample_splits
-     << ", "
-     << "C: " << ps.channel_groups
-     << "/" << ps.channel_splits
-     << ", "
-     << "D: " << ps.depth_groups
-     << "/" << ps.depth_splits
-     << ", "
-     << "H: " << ps.height_groups
-     << "/" << ps.height_splits
-     << ", "
-     << "W: " << ps.width_groups
-     << "/" << ps.width_splits
-     << ", "
-     << "F: " << ps.filter_groups
-     << "/" << ps.filter_splits
-     << ", "
-     << "R: " << ps.replications
-     << ", "
-     << "T: " << ps.sub_branch_tag
-     << ", "
-     << "%: " << ps.sub_branch_resource_percentage
-     << ", "
-     << "e: " << ps.enable_subgraph
-     << "}";
+     << "N: " << ps.sample_groups << "/" << ps.sample_splits << ", "
+     << "C: " << ps.channel_groups << "/" << ps.channel_splits << ", "
+     << "D: " << ps.depth_groups << "/" << ps.depth_splits << ", "
+     << "H: " << ps.height_groups << "/" << ps.height_splits << ", "
+     << "W: " << ps.width_groups << "/" << ps.width_splits << ", "
+     << "F: " << ps.filter_groups << "/" << ps.filter_splits << ", "
+     << "R: " << ps.replications << ", "
+     << "T: " << ps.sub_branch_tag << ", "
+     << "%: " << ps.sub_branch_resource_percentage << ", "
+     << "e: " << ps.enable_subgraph << "}";
   return os;
 }
 
-inline std::ostream &print_parallel_strategy_header(std::ostream &os) {
+inline std::ostream& print_parallel_strategy_header(std::ostream& os)
+{
   os << "Axis over which DistConv can parallelize:\n"
      << "\tSamples in the mini-batch (N)\n"
      << "\tDepth, Height, and Width (D x H x W)\n"
      << "\tChannel (C)\n"
      << "\tFilters (F)\n"
-     << "\tReplications (R): Number of times the layer is replicated (for FC layers right now)\n"
+     << "\tReplications (R): Number of times the layer is replicated (for FC "
+        "layers right now)\n"
      << "\tBranch number in the subgraph (T)\n"
      << "\tPercentage of parent resources to be allocated to this branch (%)\n"
      << "\tEnable subgraph for the layer (e)\n"
      << "\nFor each of the above dimensions there are two fields:\n"
-     <<"\t# Groups (G): refers to how many reduced-order tensors exist with respect to that dimension" << std::endl
-     << "\t             e.g. For a kD tensor you would have a stack of G (k-1)D tensors" << std::endl
+     << "\t# Groups (G): refers to how many reduced-order tensors exist with "
+        "respect to that dimension"
+     << std::endl
+     << "\t             e.g. For a kD tensor you would have a stack of G "
+        "(k-1)D tensors"
+     << std::endl
      << "\t\t[N, C, D, H, W]" << std::endl
      << "\t\t[2, 1, 4, 1, 1] ---" << std::endl
      << "\t\t                  |" << std::endl
@@ -243,9 +238,10 @@ inline std::ostream &print_parallel_strategy_header(std::ostream &os) {
      << "\t\t 2 Sample groups: [C, D, H, W]" << std::endl
      << "\t\t                  [1, 4, 1, 1]" << std::endl
      << "\t\t                  [1, 4, 1, 1]" << std::endl
-     << "\n\tSplit per Dimension (S): Number of groups the dimension is split over (i.e. split K times) (aka H2 split shape) (must divide groups evenly).\n"
+     << "\n\tSplit per Dimension (S): Number of groups the dimension is split "
+        "over (i.e. split K times) (aka H2 split shape) (must divide groups "
+        "evenly).\n"
      << std::endl;
-
 
   os << "Reporting order for the parallel strategy" << std::endl;
   os << "{N: G/S"
@@ -262,7 +258,12 @@ inline std::ostream &print_parallel_strategy_header(std::ostream &os) {
   return os;
 }
 
-enum SubGraphCommunication{PT2PT=0, COLL=10, COLL_OPT=2};
+enum SubGraphCommunication
+{
+  PT2PT = 0,
+  COLL = 10,
+  COLL_OPT = 2
+};
 
 /**
  * @brief Neural network tensor operation.
@@ -281,7 +282,8 @@ enum SubGraphCommunication{PT2PT=0, COLL=10, COLL_OPT=2};
  * differentiation and to apply first-order optimization methods to
  * the weights.
  */
-class Layer {
+class Layer
+{
   friend class callback::sync_layers;
   friend class KFAC;
   template <hydrogen::Device Device>
@@ -294,7 +296,6 @@ class Layer {
   friend class kfac_block_gru;
 
 public:
-
   Layer();
   virtual ~Layer() = default;
 
@@ -327,64 +328,42 @@ public:
   void set_communication_flag(int type)
   {
     subgraph_communication_method = static_cast<SubGraphCommunication>(type);
-
   }
 
   SubGraphCommunication get_communication_flag()
   {
     return subgraph_communication_method;
-
   }
 
   void reset_subgrid_ranks(std::set<int> sub_grid_rank)
   {
-    m_subgrid_ranks.reset(new std::set<int>(sub_grid_rank.begin(),sub_grid_rank.end()));
+    m_subgrid_ranks.reset(
+      new std::set<int>(sub_grid_rank.begin(), sub_grid_rank.end()));
   }
 
-  std::set<int> get_subgrid_ranks() const
-  {
-    return *m_subgrid_ranks;
-  }
+  std::set<int> get_subgrid_ranks() const { return *m_subgrid_ranks; }
 
   void reset_parent_tags(std::vector<int> tags)
   {
-    m_parent_tags.reset(new std::vector<int>(tags.begin(),tags.end()));
+    m_parent_tags.reset(new std::vector<int>(tags.begin(), tags.end()));
   }
 
-  std::vector<int> get_parent_tags() const
-  {
-    return *m_parent_tags;
-  }
+  std::vector<int> get_parent_tags() const { return *m_parent_tags; }
 
   void set_num_spliting_groups(El::Int spliting_groups)
   {
     m_num_spliting_groups = spliting_groups;
   }
 
-  El::Int get_num_spliting_groups() const
-  {
-    return m_num_spliting_groups;
-  }
+  El::Int get_num_spliting_groups() const { return m_num_spliting_groups; }
 
-  void set_subgrid_index(std::string index)
-  {
-    m_subgrid_index = index;
-  }
+  void set_subgrid_index(std::string index) { m_subgrid_index = index; }
 
-  std::string get_subgrid_index() const
-  {
-    return m_subgrid_index;
-  }
+  std::string get_subgrid_index() const { return m_subgrid_index; }
 
-  void reset_mygrid(std::shared_ptr<El::Grid> grid)
-  {
-    m_mygrid = grid;
-  }
+  void reset_mygrid(std::shared_ptr<El::Grid> grid) { m_mygrid = grid; }
 
-  std::shared_ptr<El::Grid> get_mygrid() const
-  {
-    return m_mygrid;
-  }
+  std::shared_ptr<El::Grid> get_mygrid() const { return m_mygrid; }
 
   void reset_inter_subgrid_vc_comm(std::shared_ptr<El::mpi::Comm> mpi_comm)
   {
@@ -396,37 +375,26 @@ public:
     return m_interSubGridVCComm;
   }
 
-  void enable_subgraph_parallelism()
-  {
-    apply_subgraph_parallelism = true;
-  }
-  //model wide sub graph parallelism enabled
-  bool is_subgraph_parallelism_enabled()
-  {
-    return apply_subgraph_parallelism;
-  }
+  void enable_subgraph_parallelism() { apply_subgraph_parallelism = true; }
+  // model wide sub graph parallelism enabled
+  bool is_subgraph_parallelism_enabled() { return apply_subgraph_parallelism; }
 
-  void set_run_layer_in_subgraph()
-  {
-    run_layer_in_subgraph = true;
-  }
+  void set_run_layer_in_subgraph() { run_layer_in_subgraph = true; }
 
-  bool get_run_layer_in_subgraph()
-  {
-    return run_layer_in_subgraph;
-  }
+  bool get_run_layer_in_subgraph() { return run_layer_in_subgraph; }
 
   /** @brief Get a string representing the layer datatype */
 
-  virtual std::string get_datatype_name() const {
+  virtual std::string get_datatype_name() const
+  {
     return TypeName<DataType>();
   };
 
-  //enable subgraph parallelism for this layer
-  //to set variable for ssplit layer
+  // enable subgraph parallelism for this layer
+  // to set variable for ssplit layer
   void set_enable_subgraph_variable()
   {
-    m_parallel_strategy.enable_subgraph=true;
+    m_parallel_strategy.enable_subgraph = true;
   }
 
   /** @brief Human-readable description. */
@@ -434,11 +402,13 @@ public:
   virtual description get_description() const;
 
   /** @brief Get the parallel strategy for the layer. */
-  inline ParallelStrategy& get_parallel_strategy() {
+  inline ParallelStrategy& get_parallel_strategy()
+  {
     return m_parallel_strategy;
   }
   /** @brief Get the parallel strategy for the layer. */
-  const ParallelStrategy& get_parallel_strategy() const {
+  const ParallelStrategy& get_parallel_strategy() const
+  {
     return m_parallel_strategy;
   }
 
@@ -446,7 +416,7 @@ public:
    *  Apply a mathematical operation to input tensors to obtain output
    *  tensors.
    */
-  virtual void forward_prop() {};
+  virtual void forward_prop(){};
   /** @brief Backward propagation step.
    *  Given the objective function gradients w.r.t. the output
    *  tensors, compute the gradients w.r.t. the input tensors and
@@ -471,13 +441,11 @@ public:
    *  assumed that pointers to parent/child layers have already been
    *  initialized.
    */
-  virtual void setup(
-    size_t max_mini_batch_size,
-    DataReaderMetaData& dr_metadata,
-    const std::vector<El::Grid*>& grids);
+  virtual void setup(size_t max_mini_batch_size,
+                     DataReaderMetaData& dr_metadata,
+                     const std::vector<El::Grid*>& grids);
 
   /** @brief Check that the setup is reasonable. */
-
 
   virtual void check_setup();
 
@@ -500,7 +468,8 @@ public:
   virtual void reset_counters();
 
   /** @brief Whether the layer is using a GPU implementation. */
-  inline bool using_gpus() const {
+  inline bool using_gpus() const
+  {
 #ifdef LBANN_HAS_GPU
     return get_device_allocation() == El::Device::GPU;
 #else
@@ -511,11 +480,17 @@ public:
   /** @brief Get expected number of parent layers.
    *  A negative value indicates no limit.
    */
-  inline int get_expected_num_parent_layers() const { return m_expected_num_parent_layers; }
+  inline int get_expected_num_parent_layers() const
+  {
+    return m_expected_num_parent_layers;
+  }
   /** @brief Get expected number of child layers.
    *  A negative value indicates no limit.
    */
-  inline int get_expected_num_child_layers() const { return m_expected_num_child_layers; }
+  inline int get_expected_num_child_layers() const
+  {
+    return m_expected_num_child_layers;
+  }
 
   /** @brief Return the model that manages this layer. */
   inline model* get_model() const { return m_model; }
@@ -528,12 +503,10 @@ public:
   void write_proto(lbann_data::Layer& proto);
 
 private:
-
   /** @brief Add layer specific data to prototext */
   virtual void write_specific_proto(lbann_data::Layer& proto) const = 0;
 
 public:
-
 #ifdef LBANN_HAS_ONNX
   /** @brief Add layer specific data to onnx graph
    *  Fills layer specific data in onnx nodes. Needs to
@@ -553,9 +526,8 @@ private:
 #endif // LBANN_HAS_ONNX
 
 public:
-
-  const Layer& get_parent_layer(size_t index=0) const;
-  const Layer& get_child_layer(size_t index=0) const;
+  const Layer& get_parent_layer(size_t index = 0) const;
+  const Layer& get_child_layer(size_t index = 0) const;
 
   std::vector<const Layer*> get_parent_layers() const;
   std::vector<const Layer*> get_child_layers() const;
@@ -693,7 +665,6 @@ public:
   ///@}
 
 protected:
-
   /** @name Protected lifecycle functions */
   ///@{
   Layer(Layer&& other) = default;
@@ -704,16 +675,19 @@ protected:
 
   /** @name Weights-related accessors */
   ///@{
-  void add_weights(ViewingWeightsPtr w) {
+  void add_weights(ViewingWeightsPtr w)
+  {
     m_weights.emplace_back(std::move(w));
   }
   size_t num_weights() const noexcept { return m_weights.size(); }
   bool has_weights() const noexcept { return num_weights() > 0; }
-  bool has_weights(size_t idx) const noexcept {
+  bool has_weights(size_t idx) const noexcept
+  {
     return ((idx < m_weights.size()) && (!m_weights[idx].expired()));
   }
   void set_num_weights(size_t n) { m_weights.resize(n); }
-  void set_weights(size_t idx, ViewingWeightsPtr w) {
+  void set_weights(size_t idx, ViewingWeightsPtr w)
+  {
     m_weights.at(idx) = std::move(w);
   }
   weights const& get_weights(size_t idx) const;
@@ -751,13 +725,12 @@ protected:
    *  'construct_matrix' function. If any matrices have already been
    *  setup, they are destroyed and reinstantiated.
    */
-  virtual void setup_matrices(
-    const std::vector<El::Grid*>& grids) = 0;
+  virtual void setup_matrices(const std::vector<El::Grid*>& grids) = 0;
   /** @brief Setup layer data.
    *  Called by the 'setup' function. Memory is allocated for
    *  distributed matrices.
    */
-  virtual void setup_data(size_t max_mini_batch_size) {};
+  virtual void setup_data(size_t max_mini_batch_size){};
   /** @brief Setup GPU objects.
    *  Called by the 'setup' function if the layer is on GPUs.
    */
@@ -799,7 +772,7 @@ protected:
    *  tensors are populated with the computed values and the gradients
    *  w.r.t. the weights are sent to the appropriate optimizers.
    */
-  virtual void bp_compute() {};
+  virtual void bp_compute(){};
 
   // ===========================================================
   // Update step helper functions
@@ -824,7 +797,7 @@ protected:
   int m_expected_num_child_layers = 1;
 
   /** @brief Reference to model managing this layer. */
-  model *m_model = nullptr;
+  model* m_model = nullptr;
 
   /** @brief Avoid back prop if frozen */
   bool m_frozen;
@@ -872,15 +845,14 @@ protected:
   bool run_layer_in_subgraph = false;
 
   /** Ranks in grid for the sub-graph */
-  std::unique_ptr<std::set <int>> m_subgrid_ranks;
+  std::unique_ptr<std::set<int>> m_subgrid_ranks;
   std::unique_ptr<std::vector<int>> m_parent_tags;
-  std::string m_subgrid_index="";
-  El::Int m_num_spliting_groups=1;
+  std::string m_subgrid_index = "";
+  El::Int m_num_spliting_groups = 1;
   std::shared_ptr<El::Grid> m_mygrid;
-  std::shared_ptr<El::mpi::Comm>  m_interSubGridVCComm;
+  std::shared_ptr<El::mpi::Comm> m_interSubGridVCComm;
 
 private:
-
   /** @name Implementation details of back-prop. */
   ///@{
 
@@ -896,15 +868,15 @@ private:
    *  @param child  The child layer, from which the signal is moved
    *  @param signal The now-released error signal from the child layer
    */
-  friend void attempt_move_error_signal(
-    Layer& parent, Layer const& child,
-    std::unique_ptr<BaseDistMat> signal);
-  friend void attempt_view_error_signal(
-    Layer& parent, Layer const& child,
-    const BaseDistMat& signals);
-  friend void deep_copy_error_signal(
-    Layer& parent, Layer const& child,
-    const BaseDistMat& signals);
+  friend void attempt_move_error_signal(Layer& parent,
+                                        Layer const& child,
+                                        std::unique_ptr<BaseDistMat> signal);
+  friend void attempt_view_error_signal(Layer& parent,
+                                        Layer const& child,
+                                        const BaseDistMat& signals);
+  friend void deep_copy_error_signal(Layer& parent,
+                                     Layer const& child,
+                                     const BaseDistMat& signals);
 
   /** @brief Computes the core back-prop steps. */
   virtual void back_prop_impl_() = 0;
@@ -960,9 +932,9 @@ private:
    *  @param child The layer whence the signal is coming.
    *  @param signal The error signals being sent to this layer.
    */
-  virtual void view_or_copy_prev_error_signal_(
-    const Layer& child,
-    const El::BaseDistMatrix& signal) = 0;
+  virtual void
+  view_or_copy_prev_error_signal_(const Layer& child,
+                                  const El::BaseDistMatrix& signal) = 0;
 
   /** @brief Deep-copy the error signals from the specified child
    *         layer.
@@ -970,9 +942,9 @@ private:
    *  @param child The layer whence the signal is coming.
    *  @param signal The error signals being sent to this layer.
    */
-  virtual void deep_copy_prev_error_signal_(
-    const Layer& child,
-    const El::BaseDistMatrix& signal) = 0;
+  virtual void
+  deep_copy_prev_error_signal_(const Layer& child,
+                               const El::BaseDistMatrix& signal) = 0;
 
   ///@}
 
@@ -1009,36 +981,44 @@ private:
   ParallelStrategy m_parallel_strategy;
 
 #ifdef LBANN_HAS_DISTCONV
- private:
+private:
   friend class distconv_adapter;
- public:
+
+public:
   /** @brief Indicate whether distconv is enabled. */
   bool distconv_enabled() const;
   /** @brief Indicate whether original input matrices need to be set up. */
   virtual bool keep_original_inputs(int index) const;
   /** @brief Indicate whether original output matrices need to be set up. */
   virtual bool keep_original_outputs(int index) const;
-  /** @brief Indicate whether original gradient wrt input matrices need to be set up. */
+  /** @brief Indicate whether original gradient wrt input matrices need to be
+   * set up. */
   virtual bool keep_original_gradient_wrt_inputs(int index) const;
-  /** @brief Indicate whether original gradient wrt output matrices need to be set up. */
+  /** @brief Indicate whether original gradient wrt output matrices need to be
+   * set up. */
   virtual bool keep_original_gradient_wrt_outputs(int index) const;
   /** @brief Retrieves distconv adapter. */
   virtual const distconv_adapter& get_distconv_adapter() const;
   /** @brief Retrieves distconv adapter. */
   virtual distconv_adapter& get_distconv_adapter();
 
- protected:
+protected:
   /** @brief Indicate whether distconv is supported. */
   virtual bool is_distconv_supported() const { return false; }
   /** @brief Pre-initialize distconv attributes needed for setup_data(). */
   void prepare_distconv(const DataReaderMetaData& dr_metadata);
-  virtual void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) = 0;
-  std::unique_ptr<distconv_adapter>& get_distconv_adapter_ptr() {
-    return m_dc; };
-  const std::unique_ptr<distconv_adapter>& get_distconv_adapter_ptr() const {
-    return m_dc; };
+  virtual void
+  setup_distconv_adapter(const DataReaderMetaData& dr_metadata) = 0;
+  std::unique_ptr<distconv_adapter>& get_distconv_adapter_ptr()
+  {
+    return m_dc;
+  };
+  const std::unique_ptr<distconv_adapter>& get_distconv_adapter_ptr() const
+  {
+    return m_dc;
+  };
 
- private:
+private:
   mutable bool m_distconv_enabled = false;
   mutable bool m_distconv_enabled_set = false;
   std::unique_ptr<distconv_adapter> m_dc;

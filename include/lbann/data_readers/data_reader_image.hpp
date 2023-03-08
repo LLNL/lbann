@@ -34,8 +34,9 @@
 #include "lbann/data_store/data_store_conduit.hpp"
 
 namespace lbann {
-class image_data_reader : public generic_data_reader {
- public:
+class image_data_reader : public generic_data_reader
+{
+public:
   using img_src_t = std::string;
   using label_t = int;
   using sample_t = std::pair<img_src_t, label_t>;
@@ -53,55 +54,51 @@ class image_data_reader : public generic_data_reader {
    *  the corresponding parameter. However, width and height can only be both
    *  zero or both non-zero.
    */
-  virtual void set_input_params(const int width=0, const int height=0, const int num_ch=0, const int num_labels=0);
+  virtual void set_input_params(const int width = 0,
+                                const int height = 0,
+                                const int num_ch = 0,
+                                const int num_labels = 0);
 
   // dataset specific functions
   void load() override;
 
-  void setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) override;
+  void setup(int num_io_threads,
+             observer_ptr<thread_pool> io_thread_pool) override;
 
-  int get_num_labels() const override {
-    return m_num_labels;
-  }
-  virtual int get_image_width() const {
-    return m_image_width;
-  }
-  virtual int get_image_height() const {
-    return m_image_height;
-  }
-  virtual int get_image_num_channels() const {
-    return m_image_num_channels;
-  }
+  int get_num_labels() const override { return m_num_labels; }
+  virtual int get_image_width() const { return m_image_width; }
+  virtual int get_image_height() const { return m_image_height; }
+  virtual int get_image_num_channels() const { return m_image_num_channels; }
   /// Get the total number of channel values in a sample of image(s).
-  int get_linearized_data_size() const override {
+  int get_linearized_data_size() const override
+  {
     return m_image_linearized_size;
   }
-  int get_linearized_label_size() const override {
-    return m_num_labels;
-  }
-  const std::vector<int> get_data_dims() const override {
+  int get_linearized_label_size() const override { return m_num_labels; }
+  const std::vector<int> get_data_dims() const override
+  {
     return {m_image_num_channels, m_image_height, m_image_width};
   }
 
   /// Allow read-only access to the entire sample list
-  const sample_list_t& get_sample_list() const {
-    return m_sample_list;
-  }
+  const sample_list_t& get_sample_list() const { return m_sample_list; }
 
   /**
    * Returns idx-th sample in the initial loading order.
-   * The second argument is only to facilitate overloading, and not to be used by users.
+   * The second argument is only to facilitate overloading, and not to be used
+   * by users.
    */
   sample_t get_sample(const size_t idx) const;
 
   void do_preload_data_store() override;
 
-  void load_conduit_node_from_file(int data_id, conduit::Node &node);
+  void load_conduit_node_from_file(int data_id, conduit::Node& node);
 
- protected:
-   void copy_members(const image_data_reader &rhs);
+protected:
+  void copy_members(const image_data_reader& rhs);
 
-  /// Set the default values for the width, the height, the number of channels, and the number of labels of an image
+  /// Set the default values for the width, the height, the number of channels,
+  /// and the number of labels of an image
   virtual void set_defaults();
   bool fetch_label(Mat& Y, int data_id, int mb_idx) override;
   void set_linearized_image_size();
@@ -112,8 +109,10 @@ class image_data_reader : public generic_data_reader {
   /// Rely on pre-determined list of samples.
   void load_list_of_samples(const std::string filename);
   /// Load the sample list from a serialized archive from another rank
-  void load_list_of_samples_from_archive(const std::string& sample_list_archive);
-  /// Use the imagenet image list file, and generate sample list header on-the-fly
+  void
+  load_list_of_samples_from_archive(const std::string& sample_list_archive);
+  /// Use the imagenet image list file, and generate sample list header
+  /// on-the-fly
   void gen_list_of_samples();
   /// Load the labels for samples
   void load_labels(std::vector<char>& preloaded_buffer);
@@ -122,20 +121,19 @@ class image_data_reader : public generic_data_reader {
   /// Return the number of lines in the input stream
   size_t determine_num_of_samples(std::istream& istrm) const;
 
-  std::string m_image_dir; ///< where images are stored
-  int m_image_width; ///< image width
-  int m_image_height; ///< image height
-  int m_image_num_channels; ///< number of image channels
+  std::string m_image_dir;     ///< where images are stored
+  int m_image_width;           ///< image width
+  int m_image_height;          ///< image height
+  int m_image_num_channels;    ///< number of image channels
   int m_image_linearized_size; ///< linearized image size
-  int m_num_labels; ///< number of labels
+  int m_num_labels;            ///< number of labels
 
   sample_list_t m_sample_list;
   labels_t m_labels;
 
-  bool load_conduit_nodes_from_file(const std::unordered_set<int> &data_ids);
-
+  bool load_conduit_nodes_from_file(const std::unordered_set<int>& data_ids);
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // IMAGE_DATA_READER_HPP
+#endif // IMAGE_DATA_READER_HPP

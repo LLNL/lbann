@@ -38,21 +38,23 @@ namespace callback {
  * This callback dumps a graphviz graph that represents the model at
  * the end of setup.
  */
-class dump_model_graph : public callback_base {
- public:
-  dump_model_graph(std::string basename, bool print) :
-      m_basename(basename), m_print(print) {}
+class dump_model_graph : public callback_base
+{
+public:
+  dump_model_graph(std::string basename, bool print)
+    : m_basename(basename), m_print(print)
+  {}
   dump_model_graph(const dump_model_graph&) = default;
-  dump_model_graph& operator=(
-    const dump_model_graph&) = default;
-  dump_model_graph* copy() const override {
+  dump_model_graph& operator=(const dump_model_graph&) = default;
+  dump_model_graph* copy() const override
+  {
     return new dump_model_graph(*this);
   }
   std::string name() const override { return "print tensor dimensions"; }
 
-  void on_setup_end(model *m) override;
+  void on_setup_end(model* m) override;
 
- private:
+private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
@@ -60,15 +62,14 @@ class dump_model_graph : public callback_base {
   std::string m_basename;
   /** Whether to print the model architecture to stdout. */
   bool m_print;
-
 };
 
 // Builder function
-std::unique_ptr<callback_base>
-build_dump_model_graph_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+std::unique_ptr<callback_base> build_dump_model_graph_callback_from_pbuf(
+  const google::protobuf::Message&,
+  std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_DUMP_MODEL_GRAPH_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_DUMP_MODEL_GRAPH_HPP_INCLUDED

@@ -35,67 +35,66 @@
 
 namespace lbann {
 
-template<typename... Ts>
-struct make_void {
+template <typename... Ts>
+struct make_void
+{
   using type = void;
 };
 
 /// Alternative to c++17 std::void_t for older compilers.
-template<typename... Ts>
+template <typename... Ts>
 using void_t = typename make_void<Ts...>::type;
 
-
 /// By default, assume no instantiation for the type T in El::mpi.
-template<typename T, typename = void>
-struct is_instantiated_El_mpi_type : std::false_type {};
+template <typename T, typename = void>
+struct is_instantiated_El_mpi_type : std::false_type
+{
+};
 
 /**
  * Detect instantiated types in El::mpi. This should match the instantiations
  * of El::mpi::Types<> in hydrogen/src/src/core/mpi_register.cpp.
  */
-template<typename T>
+template <typename T>
 struct is_instantiated_El_mpi_type<
-         T,
-         void_t<typename std::enable_if< std::is_same<T, El::byte>::value ||
-                                         std::is_same<T, short>::value ||
-                                         std::is_same<T, int>::value ||
-                                         std::is_same<T, unsigned>::value ||
-                                         std::is_same<T, long int>::value ||
-                                         std::is_same<T, unsigned long>::value ||
+  T,
+  void_t<typename std::enable_if<
+    std::is_same<T, El::byte>::value || std::is_same<T, short>::value ||
+    std::is_same<T, int>::value || std::is_same<T, unsigned>::value ||
+    std::is_same<T, long int>::value || std::is_same<T, unsigned long>::value ||
 #ifdef EL_HAVE_MPI_LONG_LONG
-                                         std::is_same<T, long long int>::value ||
-                                         std::is_same<T, unsigned long long>::value ||
+    std::is_same<T, long long int>::value ||
+    std::is_same<T, unsigned long long>::value ||
 #endif
-                                         std::is_same<T, float>::value ||
-                                         std::is_same<T, double>::value ||
-                                         std::is_same<T, El::Complex<float>>::value ||
-                                         std::is_same<T, El::Complex<double>>::value
-                                       >::type
-               >
-       >
-  : std::true_type {};
-
+    std::is_same<T, float>::value || std::is_same<T, double>::value ||
+    std::is_same<T, El::Complex<float>>::value ||
+    std::is_same<T, El::Complex<double>>::value>::type>> : std::true_type
+{
+};
 
 /**
  * Set to use El::byte as type except if the first template argument B is true
- * and the second argument T is non-void, in which case the non-void type is used.
- * The first template argument B should indicate if Elemental has instantiated
- * MPI wrappers for the type T.
+ * and the second argument T is non-void, in which case the non-void type is
+ * used. The first template argument B should indicate if Elemental has
+ * instantiated MPI wrappers for the type T.
  */
-template<bool B, class T = void>
-struct interpret_as_byte_if_needed {
+template <bool B, class T = void>
+struct interpret_as_byte_if_needed
+{
   using type = El::byte;
 };
 
 /// Use type T as is if Elemental has instantiated MPI wrappers for type T.
-template<class T>
-struct interpret_as_byte_if_needed<true, T> {
+template <class T>
+struct interpret_as_byte_if_needed<true, T>
+{
   using type = T;
 };
 
 /// For void pointers
-template<>
-struct interpret_as_byte_if_needed<true, void> {
+template <>
+struct interpret_as_byte_if_needed<true, void>
+{
   using type = El::byte;
 };
 

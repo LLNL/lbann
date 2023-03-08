@@ -45,10 +45,10 @@
 #include <h2/meta/Core.hpp>
 #include <h2/meta/TypeList.hpp>
 
+#include "lbann/proto/operators.pb.h"
 #include <functional>
 #include <memory>
 #include <numeric>
-#include "lbann/proto/operators.pb.h"
 
 using namespace lbann;
 
@@ -61,8 +61,7 @@ using AbsOperatorAllDevices = h2::meta::TL<
 #endif // LBANN_HAS_GPU
   AbsOperator<T, El::Device::CPU>>;
 
-using AllAbsOpTypes =
-  h2::meta::tlist::Append<
+using AllAbsOpTypes = h2::meta::tlist::Append<
 #if !defined LBANN_HAS_ROCM
   AbsOperatorAllDevices<El::Complex<float>>,
   AbsOperatorAllDevices<El::Complex<double>>,

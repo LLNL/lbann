@@ -42,21 +42,19 @@
 #undef PROTO
 
 #define LBANN_COMMA ,
-#define LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(NAME, TYPE, LAYOUT, DEVICE) \
-  LBANN_ADD_ALL_SERIALIZE_ETI(                                          \
-    ::lbann::NAME<TYPE, ::lbann::data_layout::LAYOUT, DEVICE>);         \
-  CEREAL_REGISTER_TYPE_WITH_NAME(                                       \
-    ::lbann::NAME<TYPE LBANN_COMMA ::lbann::data_layout::LAYOUT LBANN_COMMA DEVICE>, \
+#define LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(NAME, TYPE, LAYOUT, DEVICE)      \
+  LBANN_ADD_ALL_SERIALIZE_ETI(                                                 \
+    ::lbann::NAME<TYPE, ::lbann::data_layout::LAYOUT, DEVICE>);                \
+  CEREAL_REGISTER_TYPE_WITH_NAME(                                              \
+    ::lbann::NAME<                                                             \
+      TYPE LBANN_COMMA ::lbann::data_layout::LAYOUT LBANN_COMMA DEVICE>,       \
     #NAME "(" #TYPE "," #LAYOUT "," #DEVICE ")")
 
-#define LBANN_REGISTER_LAYER_WITH_CEREAL(NAME, TYPE, DEVICE)            \
-  LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(                                \
-    NAME, TYPE, DATA_PARALLEL, DEVICE);                                 \
-  LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(                                \
-    NAME, TYPE, MODEL_PARALLEL, DEVICE)
+#define LBANN_REGISTER_LAYER_WITH_CEREAL(NAME, TYPE, DEVICE)                   \
+  LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(NAME, TYPE, DATA_PARALLEL, DEVICE);    \
+  LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(NAME, TYPE, MODEL_PARALLEL, DEVICE)
 
-
-#define PROTO(T)                                                        \
+#define PROTO(T)                                                               \
   LBANN_REGISTER_LAYER_WITH_CEREAL(LBANN_LAYER_NAME, T, El::Device::GPU)
 #include "instantiate.hpp"
 #undef PROTO

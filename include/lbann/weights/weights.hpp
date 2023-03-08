@@ -36,7 +36,7 @@
 #include <vector>
 #ifdef LBANN_HAS_ONNX
 #include <onnx/onnx_pb.h>
-#endif //LBANN_HAS_ONNX
+#endif // LBANN_HAS_ONNX
 
 namespace lbann_data {
 class Weights;
@@ -47,7 +47,7 @@ namespace lbann {
 namespace Al {
 // Forward declaration
 struct request;
-} // namespace lbann::Al
+} // namespace Al
 
 // Forward declaration
 class lbann_comm;
@@ -97,7 +97,8 @@ using ViewingWeightsPtr = std::weak_ptr<weights>;
  *  Note that LBANN weights are similar to Tensorflow variables and
  *  Caffe parameters.
  */
-class weights : public Cloneable<HasAbstractFunction<weights>> {
+class weights : public Cloneable<HasAbstractFunction<weights>>
+{
 private:
   weights();
   // -----------------------------------------------
@@ -119,9 +120,7 @@ public:
   /** Get weights name. */
   std::string get_name() const { return m_name; }
 
-  lbann_comm& get_comm() const {
-    return *m_comm;
-  }
+  lbann_comm& get_comm() const { return *m_comm; }
 
   /** Human-readable description. */
   description get_description() const;
@@ -258,7 +257,8 @@ public:
    */
   virtual void reconcile_values(Al::request& req) = 0;
 
-  virtual bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list) = 0;
+  virtual bool load_from_save(std::string const& ckpt_dir,
+                              std::vector<std::string> const& weight_list) = 0;
 
   /** Write weights to proto file */
   virtual void write_proto(lbann_data::Weights& proto) const = 0;
@@ -302,7 +302,6 @@ public:
 
   ///@}
 protected:
-
   weights(const weights& other) = default;
   weights& operator=(const weights& other) = default;
 
@@ -337,7 +336,6 @@ private:
 
   /** Whether weight optimization is disabled. */
   bool m_frozen;
-
 };
 
 } // namespace lbann

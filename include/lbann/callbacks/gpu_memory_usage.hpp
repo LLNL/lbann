@@ -35,37 +35,40 @@ namespace lbann {
 namespace callback {
 
 /** Callback hooks for printing GPU memory usage. */
-class gpu_memory_usage : public callback_base {
- public:
-
+class gpu_memory_usage : public callback_base
+{
+public:
   /** Constructor.
    */
   gpu_memory_usage() = default;
   gpu_memory_usage(const gpu_memory_usage&) = default;
   gpu_memory_usage& operator=(const gpu_memory_usage&) = default;
-  gpu_memory_usage* copy() const override { return new gpu_memory_usage(*this); }
-  void on_epoch_begin(model *m) override;
+  gpu_memory_usage* copy() const override
+  {
+    return new gpu_memory_usage(*this);
+  }
+  void on_epoch_begin(model* m) override;
   std::string name() const override { return "GPU memory usage"; }
 
   /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
 private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
-
 };
 
 // Builder function
-LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
-  gpu_memory_usage, build_gpu_memory_usage_callback_from_pbuf);
+LBANN_ADD_DEFAULT_CALLBACK_BUILDER(gpu_memory_usage,
+                                   build_gpu_memory_usage_callback_from_pbuf);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_GPU_MEMORY_USAGE_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_GPU_MEMORY_USAGE_HPP_INCLUDED

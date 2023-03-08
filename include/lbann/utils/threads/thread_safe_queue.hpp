@@ -48,9 +48,9 @@ namespace lbann {
  *  @tparam T A move- or copy-constructible type
  */
 template <typename T>
-class thread_safe_queue {
+class thread_safe_queue
+{
 private:
-
   /** @class _Node
    *  @brief A data value in the thread-safe FIFO queue
    */
@@ -61,7 +61,6 @@ private:
   };
 
 public:
-
   /** @brief Default constructor; creates an empty queue */
   thread_safe_queue()
     : head_(make_unique<_Node>()), tail_(head_.get()), m_stop_threads(false)
@@ -85,7 +84,8 @@ public:
     data_available_.notify_one();
   }
 
-  void wake_all(bool stop = false) {
+  void wake_all(bool stop = false)
+  {
     {
       std::lock_guard<std::mutex> lk(head_mtx_);
       m_stop_threads = stop;
@@ -104,7 +104,8 @@ public:
   std::unique_ptr<T> try_pop()
   {
     std::unique_lock<std::mutex> lk(head_mtx_);
-    if (head_.get() == do_get_tail_()) return nullptr;
+    if (head_.get() == do_get_tail_())
+      return nullptr;
 
     // Remove the head
     auto popped_head = std::move(head_);
@@ -117,13 +118,13 @@ public:
   std::unique_ptr<T> wait_and_pop()
   {
     std::unique_lock<std::mutex> lk(head_mtx_);
-    data_available_.wait(lk,[&]{return ((head_.get() != do_get_tail_())
-                                        || ((head_.get() ==
-                                             do_get_tail_()) &&
-                                            m_stop_threads ));});
+    data_available_.wait(lk, [&] {
+      return ((head_.get() != do_get_tail_()) ||
+              ((head_.get() == do_get_tail_()) && m_stop_threads));
+    });
 
     // There is no more work to do, bail
-    if(head_.get() == do_get_tail_() && m_stop_threads) {
+    if (head_.get() == do_get_tail_() && m_stop_threads) {
       return nullptr;
     }
 
@@ -142,7 +143,6 @@ public:
   }
 
 private:
-
   /** @brief Get the tail pointer */
   _Node* do_get_tail_() const
   {
@@ -151,7 +151,6 @@ private:
   }
 
 private:
-
   /** @brief The mutex protecting the head of the list */
   mutable std::mutex head_mtx_;
 
@@ -169,7 +168,7 @@ private:
 
   bool m_stop_threads;
 
-};// class thread_safe_queue
+}; // class thread_safe_queue
 
-}// namespace lbann
+} // namespace lbann
 #endif /* LBANN_UTILS_THREADS_THREAD_SAFE_QUEUE_HPP_INCLUDED */

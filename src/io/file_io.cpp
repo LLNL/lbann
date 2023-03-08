@@ -34,33 +34,35 @@
 #include <sys/types.h>
 
 #include <cerrno>
-#include <cstring>
 #include <cstdio>
+#include <cstring>
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
-#include <string>
 #include <sstream>
-
+#include <string>
 
 /// @todo Deprecated.
-int lbann::makedir(const char *dir) {
+int lbann::makedir(const char* dir)
+{
   std::string dir_(dir);
   file::make_directory(dir_);
   return 1;
 }
 
 /// @todo Deprecated.
-int lbann::exists(const char *file) {
+int lbann::exists(const char* file)
+{
   std::string file_(file);
   return (file::file_exists(file_) ? 1 : 0);
 }
 
 /// @todo Deprecated.
-int lbann::openread(const char *file) {
+int lbann::openread(const char* file)
+{
   // open the file for writing
   int fd = open(file, O_RDONLY);
   if (fd == -1) {
@@ -69,13 +71,18 @@ int lbann::openread(const char *file) {
 }
 
 /// @todo Deprecated.
-int lbann::closeread(int fd, const char *file) {
+int lbann::closeread(int fd, const char* file)
+{
   // close file
   int close_rc = close(fd);
   if (close_rc == -1) {
-    fprintf(stderr, "ERROR: Failed to close file `%s' (%d: %s) @ %s:%d\n",
-            file, errno, strerror(errno), __FILE__, __LINE__
-           );
+    fprintf(stderr,
+            "ERROR: Failed to close file `%s' (%d: %s) @ %s:%d\n",
+            file,
+            errno,
+            strerror(errno),
+            __FILE__,
+            __LINE__);
     fflush(stderr);
   }
 
@@ -83,37 +90,51 @@ int lbann::closeread(int fd, const char *file) {
 }
 
 /// @todo Deprecated.
-int lbann::openwrite(const char *file) {
+int lbann::openwrite(const char* file)
+{
   // define mode (permissions) for new file
   mode_t mode_file = S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP;
   // open the file for writing
   int fd = open(file, O_WRONLY | O_CREAT | O_TRUNC, mode_file);
   if (fd == -1) {
-    fprintf(stderr, "ERROR: Failed to create file `%s' (%d: %s) @ %s:%d\n",
-            file, errno, strerror(errno), __FILE__, __LINE__
-           );
+    fprintf(stderr,
+            "ERROR: Failed to create file `%s' (%d: %s) @ %s:%d\n",
+            file,
+            errno,
+            strerror(errno),
+            __FILE__,
+            __LINE__);
     fflush(stderr);
   }
   return fd;
 }
 
 /// @todo Deprecated.
-int lbann::closewrite(int fd, const char *file) {
+int lbann::closewrite(int fd, const char* file)
+{
   // fsync file
   int fsync_rc = fsync(fd);
   if (fsync_rc == -1) {
-    fprintf(stderr, "ERROR: Failed to fsync file `%s' (%d: %s) @ %s:%d\n",
-            file, errno, strerror(errno), __FILE__, __LINE__
-           );
+    fprintf(stderr,
+            "ERROR: Failed to fsync file `%s' (%d: %s) @ %s:%d\n",
+            file,
+            errno,
+            strerror(errno),
+            __FILE__,
+            __LINE__);
     fflush(stderr);
   }
 
   // close file
   int close_rc = close(fd);
   if (close_rc == -1) {
-    fprintf(stderr, "ERROR: Failed to close file `%s' (%d: %s) @ %s:%d\n",
-            file, errno, strerror(errno), __FILE__, __LINE__
-           );
+    fprintf(stderr,
+            "ERROR: Failed to close file `%s' (%d: %s) @ %s:%d\n",
+            file,
+            errno,
+            strerror(errno),
+            __FILE__,
+            __LINE__);
     fflush(stderr);
   }
 

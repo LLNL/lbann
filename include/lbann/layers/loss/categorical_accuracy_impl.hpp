@@ -33,7 +33,9 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void categorical_accuracy_layer<TensorDataType, T_layout, Dev>::setup_dims(DataReaderMetaData& dr_metadata) {
+void categorical_accuracy_layer<TensorDataType, T_layout, Dev>::setup_dims(
+  DataReaderMetaData& dr_metadata)
+{
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
   this->set_output_dims({1});
 
@@ -45,8 +47,8 @@ void categorical_accuracy_layer<TensorDataType, T_layout, Dev>::setup_dims(DataR
         << "has input tensors with different dimensions (";
     for (int i = 0; i < this->get_num_parents(); ++i) {
       const auto& dims = this->get_input_dims(i);
-      err << (i > 0 ? ", " : "")
-          << "layer \"" << parents[i]->get_name() << "\" outputs ";
+      err << (i > 0 ? ", " : "") << "layer \"" << parents[i]->get_name()
+          << "\" outputs ";
       for (size_t j = 0; j < dims.size(); ++j) {
         err << (j > 0 ? " x " : "") << dims[j];
       }
@@ -54,7 +56,6 @@ void categorical_accuracy_layer<TensorDataType, T_layout, Dev>::setup_dims(DataR
     err << ")";
     LBANN_ERROR(err.str());
   }
-
 }
 
 } // namespace lbann

@@ -103,8 +103,9 @@ public:
 
 private:
   /** @brief Get the value of the given metric from the model. */
-  EvalType
-  evaluate_model(model& m, LTFBExecutionContext& ctxt, data_coordinator& dc) const;
+  EvalType evaluate_model(model& m,
+                          LTFBExecutionContext& ctxt,
+                          data_coordinator& dc) const;
 
 private:
   /** @brief The list of metric/strategy pairs.

@@ -30,16 +30,14 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
-void
-crop_layer<TensorDataType,Layout,Device>
-::serialize(ArchiveT& ar) {
+void crop_layer<TensorDataType, Layout, Device>::serialize(ArchiveT& ar)
+{
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",
                         ::cereal::base_class<DataTypeLayer>(this)));
 }
 
 } // namespace lbann
-
 
 #define LBANN_LAYER_NAME crop_layer
 #include <lbann/macros/register_layer_with_cereal_data_parallel_only.hpp>

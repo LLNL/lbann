@@ -37,22 +37,24 @@ namespace lbann {
 namespace transform {
 
 void random_resized_crop_with_fixed_aspect_ratio::apply(
-  utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+  utils::type_erased_matrix& data,
+  std::vector<size_t>& dims)
+{
   cv::Mat src = utils::get_opencv_mat(data, dims);
   std::vector<size_t> new_dims = {dims[0], m_crop_h, m_crop_w};
   auto dst_real = El::Matrix<uint8_t>(get_linear_size(new_dims), 1);
   cv::Mat dst = utils::get_opencv_mat(dst_real, new_dims);
   // Compute the projected crop area in the original image, crop it, and resize.
-  const float zoom = std::min(float(src.rows) / float(m_h),
-                              float(src.cols) / float(m_w));
-  const size_t zoom_h = m_h*zoom;
-  const size_t zoom_w = m_w*zoom;
-  const size_t zoom_crop_h = m_crop_h*zoom;
-  const size_t zoom_crop_w = m_crop_w*zoom;
-  const size_t dx = transform::get_uniform_random_int(
-    0, 2*(zoom*m_w - zoom_crop_w) + 1);
-  const size_t dy = transform::get_uniform_random_int(
-    0, 2*(zoom*m_h - zoom_crop_h) + 1);
+  const float zoom =
+    std::min(float(src.rows) / float(m_h), float(src.cols) / float(m_w));
+  const size_t zoom_h = m_h * zoom;
+  const size_t zoom_w = m_w * zoom;
+  const size_t zoom_crop_h = m_crop_h * zoom;
+  const size_t zoom_crop_w = m_crop_w * zoom;
+  const size_t dx =
+    transform::get_uniform_random_int(0, 2 * (zoom * m_w - zoom_crop_w) + 1);
+  const size_t dy =
+    transform::get_uniform_random_int(0, 2 * (zoom * m_h - zoom_crop_h) + 1);
   const size_t x = (dims[2] - zoom_w + dx + 1) / 2;
   const size_t y = (dims[1] - zoom_h + dy + 1) / 2;
   // Sanity check.
@@ -74,14 +76,17 @@ void random_resized_crop_with_fixed_aspect_ratio::apply(
 
 std::unique_ptr<transform>
 build_random_resized_crop_with_fixed_aspect_ratio_transform_from_pbuf(
-  google::protobuf::Message const& msg) {
+  google::protobuf::Message const& msg)
+{
   using namespace lbann_data;
   auto const& params =
     dynamic_cast<Transform::RandomResizedCropWithFixedAspectRatio const&>(msg);
   return std::make_unique<random_resized_crop_with_fixed_aspect_ratio>(
-    params.height(), params.width(),
-    params.crop_height(), params.crop_width());
+    params.height(),
+    params.width(),
+    params.crop_height(),
+    params.crop_width());
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

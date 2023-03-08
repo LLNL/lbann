@@ -38,47 +38,45 @@ namespace callback {
  * Check matrices for whether they include any NaNs or infs to help debugging.
  * This will kill the rank if such values are discovered.
  */
-class check_nan : public callback_base {
- public:
-  using callback_base::on_forward_prop_end;
+class check_nan : public callback_base
+{
+public:
   using callback_base::on_backward_prop_end;
+  using callback_base::on_forward_prop_end;
 
   check_nan() = default;
   check_nan(const check_nan&) = default;
-  check_nan& operator=(
-    const check_nan&) = default;
-  check_nan* copy() const override {
-    return new check_nan(*this);
-  }
+  check_nan& operator=(const check_nan&) = default;
+  check_nan* copy() const override { return new check_nan(*this); }
   /** Check that activations are good. */
-  void on_forward_prop_end(model *m, Layer *l) override;
+  void on_forward_prop_end(model* m, Layer* l) override;
   /** Check that error signals are good. */
-  void on_backward_prop_end(model *m, Layer *l) override;
+  void on_backward_prop_end(model* m, Layer* l) override;
   /** Check that gradients are good. */
-  void on_backward_prop_end(model *m) override;
+  void on_backward_prop_end(model* m) override;
   /** Check that weights are good. */
-  void on_batch_end(model *m) override;
+  void on_batch_end(model* m) override;
   std::string name() const override { return "check_nan"; }
 
   /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
 private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
-
 };
 
 // Builder function
-LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
-  check_nan, build_check_nan_callback_from_pbuf)
+LBANN_ADD_DEFAULT_CALLBACK_BUILDER(check_nan,
+                                   build_check_nan_callback_from_pbuf)
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_CHECK_NAN_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_CHECK_NAN_HPP_INCLUDED

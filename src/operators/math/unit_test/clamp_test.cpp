@@ -43,10 +43,10 @@
 #include <h2/meta/Core.hpp>
 #include <h2/meta/TypeList.hpp>
 
+#include "lbann/proto/operators.pb.h"
 #include <functional>
 #include <memory>
 #include <numeric>
-#include "lbann/proto/operators.pb.h"
 
 using namespace lbann;
 

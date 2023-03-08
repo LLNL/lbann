@@ -30,10 +30,10 @@ namespace lbann {
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
 template <typename ArchiveT>
-void data_type_layer<InputTensorDataType, OutputTensorDataType>::serialize(ArchiveT& ar)
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::serialize(
+  ArchiveT& ar)
 {
-  ar(::cereal::make_nvp("BaseLayer",
-                        ::cereal::base_class<Layer>(this)),
+  ar(::cereal::make_nvp("BaseLayer", ::cereal::base_class<Layer>(this)),
      CEREAL_NVP(m_persistent_error_signals));
   // Members not serialized:
   //   m_weights_proxy

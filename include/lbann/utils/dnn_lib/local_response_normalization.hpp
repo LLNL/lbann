@@ -33,7 +33,9 @@
 #elif defined LBANN_HAS_MIOPEN
 #include "lbann/utils/dnn_lib/miopen/local_response_normalization.hpp"
 #else
-static_assert(false, "This file must be included only if there is support from a valid DNN library.");
+static_assert(false,
+              "This file must be included only if there is support from a "
+              "valid DNN library.");
 #endif // LBANN_HAS_CUDNN
 
 #endif // LBANN_UTILS_DNN_LIB_LRN_HPP

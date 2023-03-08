@@ -29,11 +29,11 @@
 #include "MPITestHelpers.hpp"
 #include "TestHelpers.hpp"
 #include "lbann/data_coordinator/buffered_data_coordinator.hpp"
+#include "lbann/proto/lbann.pb.h"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 #include "lbann/utils/threads/thread_utils.hpp"
 #include <google/protobuf/text_format.h>
-#include "lbann/proto/lbann.pb.h"
 
 #include <conduit/conduit.hpp>
 #include <cstdlib>
@@ -41,9 +41,9 @@
 #include <ostream>
 #include <string.h>
 
-#include "lbann/data_readers/data_reader_HDF5.hpp"
 #include "../src/data_readers/unit_test/test_data/hdf5_hrrl_experiment_schema.yaml"
 #include "../src/data_readers/unit_test/test_data/hdf5_hrrl_test_data_and_schema.yaml"
+#include "lbann/data_readers/data_reader_HDF5.hpp"
 
 class DataReaderHDF5WhiteboxTester
 {
@@ -52,47 +52,51 @@ public:
                  conduit::Node& node,
                  const std::string& path,
                  const conduit::Node& metadata)
-  { x.normalize(node, path, metadata); }
+  {
+    x.normalize(node, path, metadata);
+  }
   void repack_image(lbann::hdf5_data_reader& x,
                     conduit::Node& node,
                     const std::string& path,
                     const conduit::Node& metadata)
-  { x.repack_image(node, path, metadata); }
-
-  void pack(lbann::hdf5_data_reader& x,
-            conduit::Node& node,
-            size_t index)
-  { x.pack(node, index); }
-
-  void parse_schemas(lbann::hdf5_data_reader& x) {
-    return x.parse_schemas();
+  {
+    x.repack_image(node, path, metadata);
   }
 
-  conduit::Node& get_data_schema(lbann::hdf5_data_reader& x) {
+  void pack(lbann::hdf5_data_reader& x, conduit::Node& node, size_t index)
+  {
+    x.pack(node, index);
+  }
+
+  void parse_schemas(lbann::hdf5_data_reader& x) { return x.parse_schemas(); }
+
+  conduit::Node& get_data_schema(lbann::hdf5_data_reader& x)
+  {
     return x.m_data_schema;
   }
 
-  conduit::Node& get_experiment_schema(lbann::hdf5_data_reader& x) {
+  conduit::Node& get_experiment_schema(lbann::hdf5_data_reader& x)
+  {
     return x.m_experiment_schema;
   }
 
-  void set_data_schema(lbann::hdf5_data_reader& x,
-                       const conduit::Node& s) {
+  void set_data_schema(lbann::hdf5_data_reader& x, const conduit::Node& s)
+  {
     x.set_data_schema(s);
   }
 
-  void set_experiment_schema(lbann::hdf5_data_reader& x,
-                             const conduit::Node& s) {
+  void set_experiment_schema(lbann::hdf5_data_reader& x, const conduit::Node& s)
+  {
     x.set_experiment_schema(s);
   }
 
-  void print_metadata(lbann::hdf5_data_reader& x,
-                      std::ostream& os = std::cout) {
+  void print_metadata(lbann::hdf5_data_reader& x, std::ostream& os = std::cout)
+  {
     x.print_metadata(os);
   }
 
-  void set_delete_packed_fields(lbann::hdf5_data_reader& x,
-                                const bool flag) {
+  void set_delete_packed_fields(lbann::hdf5_data_reader& x, const bool flag)
+  {
     x.set_delete_packed_fields(flag);
   }
 
@@ -135,11 +139,10 @@ public:
     return dr.get_linearized_size(data_field);
   }
   void construct_linearized_size_lookup_tables(lbann::hdf5_data_reader& dr,
-                                              conduit::Node& node)
+                                               conduit::Node& node)
   {
     return dr.construct_linearized_size_lookup_tables(node);
   }
-
 };
 
 TEST_CASE("Data Coordinator hdf5 conduit fetch tests",
@@ -153,8 +156,9 @@ TEST_CASE("Data Coordinator hdf5 conduit fetch tests",
   conduit::Node ref_node;
   ref_node.parse(hdf5_hrrl_data_sample_id, "yaml");
 
-  //std::unique_ptr<lbann::data_coordinator> dc = lbann::make_unique<lbann::buffered_data_coordinator<float>>(&comm);
-  //  dc->set_trainer(*this);
+  // std::unique_ptr<lbann::data_coordinator> dc =
+  // lbann::make_unique<lbann::buffered_data_coordinator<float>>(&comm);
+  //   dc->set_trainer(*this);
 
   lbann::hdf5_data_reader* hdf5_dr = new lbann::hdf5_data_reader();
   DataReaderHDF5WhiteboxTester white_box_tester;
@@ -162,7 +166,8 @@ TEST_CASE("Data Coordinator hdf5 conduit fetch tests",
   // Setup the data schema for this HRRL data set
   conduit::Node& data_schema = white_box_tester.get_data_schema(*hdf5_dr);
   data_schema.parse(hdf5_hrrl_data_schema_test, "yaml");
-  conduit::Node& experiment_schema = white_box_tester.get_experiment_schema(*hdf5_dr);
+  conduit::Node& experiment_schema =
+    white_box_tester.get_experiment_schema(*hdf5_dr);
   experiment_schema.parse(hdf5_hrrl_experiment_schema, "yaml");
   white_box_tester.parse_schemas(*hdf5_dr);
   // Manually tell the data reader to extract all of the data fields
@@ -200,27 +205,30 @@ TEST_CASE("Data Coordinator hdf5 conduit fetch tests",
   {
     std::vector<conduit::Node> samples(1);
     El::Matrix<El::Int> indices_fetched;
-    indices_fetched.Resize(1,1);
+    indices_fetched.Resize(1, 1);
     auto valid = hdf5_dr->fetch(samples, indices_fetched, 1);
     //    auto valid = hdf5_dr->fetch(samples, indices_fetched, 2);
 
     std::cout << "HEre is the sample " << valid << std::endl;
     samples[0].print();
 
-    std::cout << "HEre is the ref node "  << std::endl;
+    std::cout << "HEre is the ref node " << std::endl;
     ref_node.print();
 
     //    lbann::CPUMat X;
     // Check the primary data fields
-    std::vector<std::string> fields = {"Epmax", "Etot", "Image", "N", "T", "alpha"};
+    std::vector<std::string> fields =
+      {"Epmax", "Etot", "Image", "N", "T", "alpha"};
     for (auto& data_field : fields) {
       const std::string test_pathname("000000334/" + data_field);
       for (El::Int j = 0; j < num_samples; j++) {
         conduit::Node& sample = samples[j];
-        // Check to make sure that each element in the transformed field are properly normalized
-        size_t num_elements = ref_node[test_pathname].dtype().number_of_elements();
-        if(num_elements > 1) {
-          for(size_t i = 0; i < num_elements; i++) {
+        // Check to make sure that each element in the transformed field are
+        // properly normalized
+        size_t num_elements =
+          ref_node[test_pathname].dtype().number_of_elements();
+        if (num_elements > 1) {
+          for (size_t i = 0; i < num_elements; i++) {
             double test = sample[test_pathname].as_double_array()[i];
             double check = ref_node[test_pathname].as_double_array()[i];
             CHECK(test == Approx(check));
@@ -245,10 +253,12 @@ TEST_CASE("Data Coordinator hdf5 conduit fetch tests",
       const std::string test_pathname("000000334/" + data_field);
       for (El::Int j = 0; j < num_samples; j++) {
         conduit::Node& sample = samples[j];
-        // Check to make sure that each element in the transformed field are properly normalized
-        size_t num_elements = packed_ref_node[test_pathname].dtype().number_of_elements();
-        if(num_elements > 1) {
-          for(size_t i = 0; i < num_elements; i++) {
+        // Check to make sure that each element in the transformed field are
+        // properly normalized
+        size_t num_elements =
+          packed_ref_node[test_pathname].dtype().number_of_elements();
+        if (num_elements > 1) {
+          for (size_t i = 0; i < num_elements; i++) {
             double test = sample[test_pathname].as_double_array()[i];
             double check = packed_ref_node[test_pathname].as_double_array()[i];
             CHECK(test == Approx(check));
@@ -267,7 +277,7 @@ TEST_CASE("Data Coordinator hdf5 conduit fetch tests",
   {
     std::vector<conduit::Node> samples;
     El::Matrix<El::Int> indices_fetched;
-    indices_fetched.Resize(1,1);
+    indices_fetched.Resize(1, 1);
     CHECK_THROWS(hdf5_dr->fetch(samples, indices_fetched, 1));
   }
 
@@ -275,7 +285,7 @@ TEST_CASE("Data Coordinator hdf5 conduit fetch tests",
   {
     std::vector<conduit::Node> samples(1);
     El::Matrix<El::Int> indices_fetched;
-    indices_fetched.Resize(1,1);
+    indices_fetched.Resize(1, 1);
     CHECK_THROWS(hdf5_dr->fetch(samples, indices_fetched, 2));
   }
 }

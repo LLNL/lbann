@@ -35,21 +35,16 @@ namespace {
 bool is_initialized_ = false;
 bool is_finalized_ = false;
 
-} // namespace <anon>
+} // namespace
 
-bool is_initialized() noexcept {
-  return is_initialized_;
-}
+bool is_initialized() noexcept { return is_initialized_; }
 
-bool is_finalized() noexcept {
-  return is_finalized_;
-}
+bool is_finalized() noexcept { return is_finalized_; }
 
-bool is_active() noexcept {
-  return is_initialized() && !is_finalized();
-}
+bool is_active() noexcept { return is_initialized() && !is_finalized(); }
 
-void initialize(MPI_Comm comm) {
+void initialize(MPI_Comm comm)
+{
 
   // Check if NVSHMEM has already been initialized or finalized
   if (is_active()) {
@@ -64,13 +59,13 @@ void initialize(MPI_Comm comm) {
   attr.mpi_comm = &comm;
   auto status = nvshmemx_init_attr(NVSHMEMX_INIT_WITH_MPI_COMM, &attr);
   if (status != 0) {
-    LBANN_ERROR("failed to initialize NVSHMEM (status ",status,")");
+    LBANN_ERROR("failed to initialize NVSHMEM (status ", status, ")");
   }
   is_initialized_ = true;
-
 }
 
-void finalize() {
+void finalize()
+{
   if (is_active()) {
     nvshmem_finalize();
     is_finalized_ = true;

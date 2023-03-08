@@ -32,21 +32,23 @@ namespace lbann {
 
 template <typename TensorDataType>
 rmsprop<TensorDataType>::rmsprop(TensorDataType learning_rate,
-                 TensorDataType decay_rate,
-                 TensorDataType eps)
-  : BaseType(learning_rate),
-    m_decay_rate(decay_rate),
-    m_eps(eps) {}
+                                 TensorDataType decay_rate,
+                                 TensorDataType eps)
+  : BaseType(learning_rate), m_decay_rate(decay_rate), m_eps(eps)
+{}
 
 template <typename TensorDataType>
-rmsprop<TensorDataType>::rmsprop(const rmsprop& other) :
-  BaseType(other),
-  m_decay_rate(other.m_decay_rate),
-  m_eps(other.m_eps),
-  m_cache(other.m_cache ? other.m_cache->Copy() : nullptr) {}
+rmsprop<TensorDataType>::rmsprop(const rmsprop& other)
+  : BaseType(other),
+    m_decay_rate(other.m_decay_rate),
+    m_eps(other.m_eps),
+    m_cache(other.m_cache ? other.m_cache->Copy() : nullptr)
+{}
 
 template <typename TensorDataType>
-rmsprop<TensorDataType>& rmsprop<TensorDataType>::operator=(const rmsprop& other) {
+rmsprop<TensorDataType>&
+rmsprop<TensorDataType>::operator=(const rmsprop& other)
+{
   OptimizerType::operator=(other);
   m_decay_rate = other.m_decay_rate;
   m_eps = other.m_eps;
@@ -55,7 +57,8 @@ rmsprop<TensorDataType>& rmsprop<TensorDataType>::operator=(const rmsprop& other
 }
 
 template <typename TensorDataType>
-description rmsprop<TensorDataType>::get_description() const {
+description rmsprop<TensorDataType>::get_description() const
+{
   auto desc = OptimizerType::get_description();
   desc.add("Decay rate", m_decay_rate);
   desc.add("eps", m_eps);
@@ -63,7 +66,8 @@ description rmsprop<TensorDataType>::get_description() const {
 }
 
 template <typename TensorDataType>
-void rmsprop<TensorDataType>::setup(WeightsType* w) {
+void rmsprop<TensorDataType>::setup(WeightsType* w)
+{
   OptimizerType::setup(w);
   const auto& gradient = this->get_gradient();
   m_cache.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
@@ -71,8 +75,7 @@ void rmsprop<TensorDataType>::setup(WeightsType* w) {
 }
 
 template <typename TensorDataType>
-void rmsprop<TensorDataType>::write_proto(
-  lbann_data::Optimizer& proto) const
+void rmsprop<TensorDataType>::write_proto(lbann_data::Optimizer& proto) const
 {
   auto* opt = proto.mutable_rmsprop();
   opt->set_learn_rate(this->get_learning_rate());
@@ -82,11 +85,16 @@ void rmsprop<TensorDataType>::write_proto(
 
 template <typename TensorDataType>
 void rmsprop<TensorDataType>::step_compute(AbsDistMatrixType& values,
-                                           const AbsDistMatrixType& gradient) {
+                                           const AbsDistMatrixType& gradient)
+{
   switch (values.GetLocalDevice()) {
-  case El::Device::CPU: step_compute_cpu(values, gradient); break;
+  case El::Device::CPU:
+    step_compute_cpu(values, gradient);
+    break;
 #ifdef LBANN_HAS_GPU
-  case El::Device::GPU: step_compute_gpu(values, gradient); break;
+  case El::Device::GPU:
+    step_compute_gpu(values, gradient);
+    break;
 #endif // LBANN_HAS_GPU
   default:
     std::ostringstream err;
@@ -97,8 +105,10 @@ void rmsprop<TensorDataType>::step_compute(AbsDistMatrixType& values,
 }
 
 template <typename TensorDataType>
-void rmsprop<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
-                                               const AbsDistMatrixType& gradient) {
+void rmsprop<TensorDataType>::step_compute_cpu(
+  AbsDistMatrixType& values,
+  const AbsDistMatrixType& gradient)
+{
 
   // Get local matrix data
   const size_t local_height = values.LocalHeight();
@@ -115,32 +125,29 @@ void rmsprop<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (size_t col = 0; col < local_width; ++col) {
     for (size_t row = 0; row < local_height; ++row) {
-      auto& x = values_buffer[row+col*values_ldim];
-      const auto& g = gradient_buffer[row+col*gradient_ldim];
-      auto& c = cache_buffer[row+col*cache_ldim];
+      auto& x = values_buffer[row + col * values_ldim];
+      const auto& g = gradient_buffer[row + col * gradient_ldim];
+      auto& c = cache_buffer[row + col * cache_ldim];
       c = m_decay_rate * c + (TensorDataType(1.) - m_decay_rate) * g * g;
       x -= learning_rate * g / (El::Sqrt(c) + m_eps);
     }
   }
-
 }
 
 template <typename TensorDataType>
 std::unique_ptr<optimizer>
-build_rmsprop_optimizer_from_pbuf(
-  google::protobuf::Message const& msg) {
-  const auto& params =
-    dynamic_cast<lbann_data::Optimizer::RMSprop const&>(msg);
+build_rmsprop_optimizer_from_pbuf(google::protobuf::Message const& msg)
+{
+  const auto& params = dynamic_cast<lbann_data::Optimizer::RMSprop const&>(msg);
   return std::make_unique<rmsprop<TensorDataType>>(
     TensorDataType(params.learn_rate()),
     TensorDataType(params.decay_rate()),
     TensorDataType(params.eps()));
 }
 
-#define PROTO(T)                                    \
-  template class rmsprop<T>;                        \
-  template std::unique_ptr<optimizer>               \
-  build_rmsprop_optimizer_from_pbuf<T>(             \
+#define PROTO(T)                                                               \
+  template class rmsprop<T>;                                                   \
+  template std::unique_ptr<optimizer> build_rmsprop_optimizer_from_pbuf<T>(    \
     google::protobuf::Message const&)
 
 #define LBANN_INSTANTIATE_CPU_HALF

@@ -26,20 +26,22 @@
 
 #include "lbann/layers/layer.hpp"
 #define LBANN_UNIFORM_LAYER_INSTANTIATE
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/layers/transform/uniform.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
-#include "lbann/utils/protobuf.hpp"
 #include "lbann/proto/layers.pb.h"
-#include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 namespace lbann {
 
 template <typename TensorDataType, data_layout L, El::Device D>
-void uniform_layer<TensorDataType,L,D>::fp_compute() {
+void uniform_layer<TensorDataType, L, D>::fp_compute()
+{
   const auto& mean = (m_max + m_min) / El::To<TensorDataType>(2);
   const auto& radius = (m_max - m_min) / El::To<TensorDataType>(2);
   auto& output = this->get_activations();
-  const auto& mode = this->m_model->get_execution_context().get_execution_mode();
+  const auto& mode =
+    this->m_model->get_execution_context().get_execution_mode();
   if (m_training_only && (mode != execution_mode::training)) {
     El::Fill(output, mean);
   }
@@ -49,7 +51,9 @@ void uniform_layer<TensorDataType,L,D>::fp_compute() {
 }
 
 template <typename T, data_layout L, El::Device D>
-void uniform_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void uniform_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_uniform();
   msg->set_min(m_min);

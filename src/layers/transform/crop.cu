@@ -39,13 +39,21 @@ namespace {
  *  - Crop position - width x 3 (i.e. a 3 x width matrix)
  */
 template <typename TensorDataType>
-__global__ void fp_compute_3d_kernel(
-  El::Int input_dimx, El::Int input_dimy, El::Int input_dimz,
-  El::Int output_dimx, El::Int output_dimy, El::Int output_dimz,
-  El::Int width,
-  const TensorDataType * __restrict__ input, int input_ldim,
-        TensorDataType * __restrict__ output, int output_ldim,
-  const TensorDataType * __restrict__ crop_pos, int crop_pos_ldim) {
+__global__ void
+fp_compute_3d_kernel(El::Int input_dimx,
+                     El::Int input_dimy,
+                     El::Int input_dimz,
+                     El::Int output_dimx,
+                     El::Int output_dimy,
+                     El::Int output_dimz,
+                     El::Int width,
+                     const TensorDataType* __restrict__ input,
+                     int input_ldim,
+                     TensorDataType* __restrict__ output,
+                     int output_ldim,
+                     const TensorDataType* __restrict__ crop_pos,
+                     int crop_pos_ldim)
+{
 
   // Indices
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -62,16 +70,18 @@ __global__ void fp_compute_3d_kernel(
   for (El::Int col = bidy; col < width; col += num_blocks_y) {
 
     // Crop offsets
-    El::Int offz = num_offsets_z * static_cast<El::Int>(crop_pos[col*crop_pos_ldim]);
-    El::Int offy = num_offsets_y * static_cast<El::Int>(crop_pos[col*crop_pos_ldim+1]);
-    El::Int offx = num_offsets_x * static_cast<El::Int>(crop_pos[col*crop_pos_ldim+2]);
+    El::Int offz =
+      num_offsets_z * static_cast<El::Int>(crop_pos[col * crop_pos_ldim]);
+    El::Int offy =
+      num_offsets_y * static_cast<El::Int>(crop_pos[col * crop_pos_ldim + 1]);
+    El::Int offx =
+      num_offsets_x * static_cast<El::Int>(crop_pos[col * crop_pos_ldim + 2]);
     offz = min(max(offz, El::Int(0)), num_offsets_z - 1);
     offy = min(max(offy, El::Int(0)), num_offsets_y - 1);
     offx = min(max(offx, El::Int(0)), num_offsets_x - 1);
 
     // Iterate through output entries in mini-batch sample
-    for (El::Int output_pos = gidx;
-         output_pos < output_size;
+    for (El::Int output_pos = gidx; output_pos < output_size;
          output_pos += num_threads_x) {
 
       // Get output entry
@@ -84,17 +94,14 @@ __global__ void fp_compute_3d_kernel(
       const auto& input_posx = output_posx + offx;
       const auto& input_posy = output_posy + offy;
       const auto& input_posz = output_posz + offz;
-      const auto& input_pos = (input_posx
-                               + input_posy * input_dimx
-                               + input_posz * input_dimx * input_dimy);
+      const auto& input_pos = (input_posx + input_posy * input_dimx +
+                               input_posz * input_dimx * input_dimy);
       const auto& input_entry = input[input_pos + col * input_ldim];
 
       // Copy entry
       output_entry = input_entry;
-
     }
   }
-
 }
 
 /** CUDA kernel for 3D tensor crop backprop.
@@ -104,13 +111,21 @@ __global__ void fp_compute_3d_kernel(
  *  - Crop position - width x 3 (i.e. a 3 x width matrix)
  */
 template <typename TensorDataType>
-__global__ void bp_compute_3d_kernel(
-  El::Int input_dimx, El::Int input_dimy, El::Int input_dimz,
-  El::Int output_dimx, El::Int output_dimy, El::Int output_dimz,
-  El::Int width,
-  const TensorDataType * __restrict__ gradient_wrt_output, int gradient_wrt_output_ldim,
-        TensorDataType * __restrict__ gradient_wrt_input, int gradient_wrt_input_ldim,
-  const TensorDataType * __restrict__ crop_pos, int crop_pos_ldim) {
+__global__ void
+bp_compute_3d_kernel(El::Int input_dimx,
+                     El::Int input_dimy,
+                     El::Int input_dimz,
+                     El::Int output_dimx,
+                     El::Int output_dimy,
+                     El::Int output_dimz,
+                     El::Int width,
+                     const TensorDataType* __restrict__ gradient_wrt_output,
+                     int gradient_wrt_output_ldim,
+                     TensorDataType* __restrict__ gradient_wrt_input,
+                     int gradient_wrt_input_ldim,
+                     const TensorDataType* __restrict__ crop_pos,
+                     int crop_pos_ldim)
+{
 
   // Indices
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -127,45 +142,47 @@ __global__ void bp_compute_3d_kernel(
   for (El::Int col = bidy; col < width; col += num_blocks_y) {
 
     // Crop offsets
-    El::Int offz = num_offsets_z * static_cast<El::Int>(crop_pos[col*crop_pos_ldim]);
-    El::Int offy = num_offsets_y * static_cast<El::Int>(crop_pos[col*crop_pos_ldim+1]);
-    El::Int offx = num_offsets_x * static_cast<El::Int>(crop_pos[col*crop_pos_ldim+2]);
+    El::Int offz =
+      num_offsets_z * static_cast<El::Int>(crop_pos[col * crop_pos_ldim]);
+    El::Int offy =
+      num_offsets_y * static_cast<El::Int>(crop_pos[col * crop_pos_ldim + 1]);
+    El::Int offx =
+      num_offsets_x * static_cast<El::Int>(crop_pos[col * crop_pos_ldim + 2]);
     offz = min(max(offz, El::Int(0)), num_offsets_z - 1);
     offy = min(max(offy, El::Int(0)), num_offsets_y - 1);
     offx = min(max(offx, El::Int(0)), num_offsets_x - 1);
 
     // Iterate through output entries in mini-batch sample
-    for (El::Int output_pos = gidx;
-         output_pos < output_size;
+    for (El::Int output_pos = gidx; output_pos < output_size;
          output_pos += num_threads_x) {
 
       // Get output entry
       const auto& output_posx = output_pos % output_dimx;
       const auto& output_posy = (output_pos / output_dimx) % output_dimy;
       const auto& output_posz = output_pos / (output_dimx * output_dimy);
-      const auto& output_entry = gradient_wrt_output[output_pos + col * gradient_wrt_output_ldim];
+      const auto& output_entry =
+        gradient_wrt_output[output_pos + col * gradient_wrt_output_ldim];
 
       // Get input entry
       const auto& input_posx = output_posx + offx;
       const auto& input_posy = output_posy + offy;
       const auto& input_posz = output_posz + offz;
-      const auto& input_pos = (input_posx
-                               + input_posy * input_dimx
-                               + input_posz * input_dimx * input_dimy);
-      auto& input_entry = gradient_wrt_input[input_pos + col * gradient_wrt_input_ldim];
+      const auto& input_pos = (input_posx + input_posy * input_dimx +
+                               input_posz * input_dimx * input_dimy);
+      auto& input_entry =
+        gradient_wrt_input[input_pos + col * gradient_wrt_input_ldim];
 
       // Copy entry
       input_entry = output_entry;
-
     }
   }
-
 }
 
 } // namespace
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void crop_layer<TensorDataType, T_layout, Dev>::fp_compute_3d() {
+void crop_layer<TensorDataType, T_layout, Dev>::fp_compute_3d()
+{
 
   // Local matrices
   const auto& local_input = this->get_local_prev_activations(0);
@@ -188,21 +205,30 @@ void crop_layer<TensorDataType, T_layout, Dev>::fp_compute_3d() {
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
                                        gpu::get_sync_info(local_input),
                                        gpu::get_sync_info(local_crop_pos));
-    hydrogen::gpu::LaunchKernel(
-      fp_compute_3d_kernel<TensorDataType>,
-      grid_dims, block_dims, 0, multisync,
-      input_dims[2], input_dims[1], input_dims[0],
-      output_dims[2], output_dims[1], output_dims[0],
-      local_width,
-      local_input.LockedBuffer(), local_input.LDim(),
-      local_output.Buffer(), local_output.LDim(),
-      local_crop_pos.LockedBuffer(), local_crop_pos.LDim());
+    hydrogen::gpu::LaunchKernel(fp_compute_3d_kernel<TensorDataType>,
+                                grid_dims,
+                                block_dims,
+                                0,
+                                multisync,
+                                input_dims[2],
+                                input_dims[1],
+                                input_dims[0],
+                                output_dims[2],
+                                output_dims[1],
+                                output_dims[0],
+                                local_width,
+                                local_input.LockedBuffer(),
+                                local_input.LDim(),
+                                local_output.Buffer(),
+                                local_output.LDim(),
+                                local_crop_pos.LockedBuffer(),
+                                local_crop_pos.LDim());
   }
-
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void crop_layer<TensorDataType, T_layout, Dev>::bp_compute_3d() {
+void crop_layer<TensorDataType, T_layout, Dev>::bp_compute_3d()
+{
 
   // Clear error signals
   El::Zero(this->get_error_signals(0));
@@ -226,24 +252,32 @@ void crop_layer<TensorDataType, T_layout, Dev>::bp_compute_3d() {
     block_dims.x = block_size;
     grid_dims.x = (output_size + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    auto multisync = El::MakeMultiSync(
-      gpu::get_sync_info(local_gradient_wrt_output),
-      gpu::get_sync_info(local_gradient_wrt_input),
-      gpu::get_sync_info(local_crop_pos));
-    hydrogen::gpu::LaunchKernel(
-      bp_compute_3d_kernel<TensorDataType>,
-      grid_dims, block_dims, 0, multisync,
-      input_dims[2], input_dims[1], input_dims[0],
-      output_dims[2], output_dims[1], output_dims[0],
-      local_width,
-      local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
-      local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim(),
-      local_crop_pos.LockedBuffer(), local_crop_pos.LDim());
+    auto multisync =
+      El::MakeMultiSync(gpu::get_sync_info(local_gradient_wrt_output),
+                        gpu::get_sync_info(local_gradient_wrt_input),
+                        gpu::get_sync_info(local_crop_pos));
+    hydrogen::gpu::LaunchKernel(bp_compute_3d_kernel<TensorDataType>,
+                                grid_dims,
+                                block_dims,
+                                0,
+                                multisync,
+                                input_dims[2],
+                                input_dims[1],
+                                input_dims[0],
+                                output_dims[2],
+                                output_dims[1],
+                                output_dims[0],
+                                local_width,
+                                local_gradient_wrt_output.LockedBuffer(),
+                                local_gradient_wrt_output.LDim(),
+                                local_gradient_wrt_input.Buffer(),
+                                local_gradient_wrt_input.LDim(),
+                                local_crop_pos.LockedBuffer(),
+                                local_crop_pos.LDim());
   }
-
 }
 
-#define PROTO(T)                                      \
+#define PROTO(T)                                                               \
   template class crop_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>
 
 #define LBANN_INSTANTIATE_GPU_HALF

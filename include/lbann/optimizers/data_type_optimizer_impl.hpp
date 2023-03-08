@@ -27,9 +27,9 @@
 #ifndef LBANN_OPTIMIZERS_DATA_TYPE_OPTIMIZER_IMPL_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_DATA_TYPE_OPTIMIZER_IMPL_HPP_INCLUDED
 
-#include "lbann/weights/data_type_weights.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
 #include "lbann/optimizers/data_type_optimizer.hpp"
 

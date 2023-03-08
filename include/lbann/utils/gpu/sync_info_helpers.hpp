@@ -39,16 +39,18 @@ namespace gpu {
  *  @throws std::bad_cast If @c m is not a GPU matrix.
  */
 template <typename TensorDataType>
-El::SyncInfo<El::Device::GPU> get_sync_info(
-  El::AbstractMatrix<TensorDataType> const& m) {
+El::SyncInfo<El::Device::GPU>
+get_sync_info(El::AbstractMatrix<TensorDataType> const& m)
+{
   using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
   return El::SyncInfoFromMatrix(dynamic_cast<GPUMatType const&>(m));
 }
 
 /** @brief Get a SyncInfo from an Matrix. */
 template <typename TensorDataType>
-El::SyncInfo<El::Device::GPU> get_sync_info(
-  El::Matrix<TensorDataType, El::Device::GPU> const& m) noexcept {
+El::SyncInfo<El::Device::GPU>
+get_sync_info(El::Matrix<TensorDataType, El::Device::GPU> const& m) noexcept
+{
   return El::SyncInfoFromMatrix(m);
 }
 
@@ -57,8 +59,9 @@ El::SyncInfo<El::Device::GPU> get_sync_info(
  *  @throws std::bad_cast If @c m is not a GPU matrix.
  */
 template <typename TensorDataType>
-El::SyncInfo<El::Device::GPU> get_sync_info(
-  El::AbstractDistMatrix<TensorDataType> const& m) {
+El::SyncInfo<El::Device::GPU>
+get_sync_info(El::AbstractDistMatrix<TensorDataType> const& m)
+{
   using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
   return El::SyncInfoFromMatrix(
     dynamic_cast<GPUMatType const&>(m.LockedMatrix()));
@@ -69,11 +72,13 @@ El::SyncInfo<El::Device::GPU> get_sync_info(
  *  This saves a dynamic_cast over the AbstractDistMatrix version.
  */
 template <typename TensorDataType, El::Dist RowDist, El::Dist ColDist>
-El::SyncInfo<El::Device::GPU> get_sync_info(
-  El::DistMatrix<TensorDataType,
-                 RowDist, ColDist,
-                 El::ELEMENT,
-                 El::Device::GPU> const& m) noexcept {
+El::SyncInfo<El::Device::GPU>
+get_sync_info(El::DistMatrix<TensorDataType,
+                             RowDist,
+                             ColDist,
+                             El::ELEMENT,
+                             El::Device::GPU> const& m) noexcept
+{
   return El::SyncInfoFromMatrix(m.LockedMatrix());
 }
 

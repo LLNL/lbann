@@ -53,7 +53,10 @@
     OP_NAME##Operator& operator=(OP_NAME##Operator&&) = default;               \
     OP_NAME##Operator& operator=(OP_NAME##Operator const&) = default;          \
     ~OP_NAME##Operator() = default;                                            \
-    std::string get_type() const final { return OP_STRING; }                   \
+    std::string get_type() const final                                         \
+    {                                                                          \
+      return OP_STRING;                                                        \
+    }                                                                          \
     template <typename ArchiveT>                                               \
     void serialize(ArchiveT& ar)                                               \
     {                                                                          \
@@ -73,7 +76,8 @@
     {                                                                          \
       msg.mutable_parameters()->PackFrom(lbann_data::OP_NAME##Operator{});     \
     }                                                                          \
-    void do_fill_description(description&) const final {}                      \
+    void do_fill_description(description&) const final                         \
+    {}                                                                         \
   }
 
 #define LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(OP_NAME, OP_STRING)       \
@@ -98,7 +102,10 @@
     OP_NAME##Operator& operator=(OP_NAME##Operator&&) = default;               \
     OP_NAME##Operator& operator=(OP_NAME##Operator const&) = default;          \
     ~OP_NAME##Operator() = default;                                            \
-    std::string get_type() const final { return OP_STRING; }                   \
+    std::string get_type() const final                                         \
+    {                                                                          \
+      return OP_STRING;                                                        \
+    }                                                                          \
     template <typename ArchiveT>                                               \
     void serialize(ArchiveT& ar)                                               \
     {                                                                          \
@@ -119,7 +126,8 @@
     {                                                                          \
       msg.mutable_parameters()->PackFrom(lbann_data::OP_NAME##Operator{});     \
     }                                                                          \
-    void do_fill_description(description&) const final {}                      \
+    void do_fill_description(description&) const final                         \
+    {}                                                                         \
   }
 
 #endif // LBANN_INCLUDE_LBANN_OPERATORS_DECLARE_STATELESS_OP_HPP_INCLUDED

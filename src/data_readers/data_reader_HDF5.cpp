@@ -130,10 +130,12 @@ void hdf5_data_reader::pack(std::string const& group_name,
   for (size_t k = 0; k < g.names.size(); k++) {
     size_t const n_elts = g.sizes[k];
     std::string path;
-    if(node.name() == "") {
+    if (node.name() == "") {
       path = build_string(node.child(0).name(), '/', g.names[k]);
-    }else {
-      path = build_string(node.name(), '/', node.child(0).name(), '/', g.names[k]);
+    }
+    else {
+      path =
+        build_string(node.name(), '/', node.child(0).name(), '/', g.names[k]);
     }
     if (!node.has_path(path)) {
       LBANN_ERROR("no leaf for path: ", path);
@@ -225,8 +227,9 @@ void hdf5_data_reader::load()
   // TODO MRW
   // opts->set_option("preload_data_store", true);
   if (!arg_parser.get<bool>(LBANN_OPTION_USE_DATA_STORE)) {
-    LBANN_ERROR("HDF5 data reader requires the data store.",
-                "Set command line arguments --use_data_store --preload_data_store");
+    LBANN_ERROR(
+      "HDF5 data reader requires the data store.",
+      "Set command line arguments --use_data_store --preload_data_store");
   }
 
   // Load the sample list(s)
@@ -264,7 +267,8 @@ void hdf5_data_reader::load()
               << "; num samples: " << m_shuffled_indices.size() << std::endl;
   }
 
-  if (!arg_parser.get<bool>(LBANN_OPTION_QUIET) && get_comm()->am_world_master()) {
+  if (!arg_parser.get<bool>(LBANN_OPTION_QUIET) &&
+      get_comm()->am_world_master()) {
     print_metadata();
   }
 }
@@ -291,7 +295,8 @@ void hdf5_data_reader::do_preload_data_store()
 
   for (size_t idx = 0; idx < m_shuffled_indices.size(); idx++) {
     int index = m_shuffled_indices[idx];
-    if (m_data_store->get_index_owner(index) != get_comm()->get_rank_in_trainer()) {
+    if (m_data_store->get_index_owner(index) !=
+        get_comm()->get_rank_in_trainer()) {
       continue;
     }
     try {
@@ -310,7 +315,8 @@ void hdf5_data_reader::do_preload_data_store()
 
   for (size_t idx = 0; idx < m_shuffled_indices.size(); idx++) {
     int index = m_shuffled_indices[idx];
-    if (m_data_store->get_index_owner(index) != get_comm()->get_rank_in_trainer()) {
+    if (m_data_store->get_index_owner(index) !=
+        get_comm()->get_rank_in_trainer()) {
       continue;
     }
     close_file(index); // data_reader_sample_list::close_file
@@ -331,7 +337,7 @@ void hdf5_data_reader::load_sample(conduit::Node& node,
                                    size_t index,
                                    bool ignore_failure)
 {
-  auto [file_handle,sample_name] = data_reader_sample_list::open_file(index);
+  auto [file_handle, sample_name] = data_reader_sample_list::open_file(index);
   // load data for the field names specified in the user's experiment-schema
   for (auto& [pathname, path_node] : m_useme_node_map) {
     // do not load a "packed" field, as it doesn't exist on disk!
@@ -828,7 +834,8 @@ const std::vector<int> hdf5_data_reader::get_data_dims(std::string name) const
   return iter->second;
 }
 
-int hdf5_data_reader::get_linearized_size(data_field_type const& data_field) const
+int hdf5_data_reader::get_linearized_size(
+  data_field_type const& data_field) const
 {
   if (m_linearized_size_lookup_table.size() == 0) {
     LBANN_ERROR("get_linearized_size was called with an empty lookup table");
@@ -851,7 +858,9 @@ int hdf5_data_reader::get_linearized_size(data_field_type const& data_field) con
 void hdf5_data_reader::construct_linearized_size_lookup_tables()
 {
   // If there are no loaded samples bail out
-  if(m_shuffled_indices.size() == 0) { return; }
+  if (m_shuffled_indices.size() == 0) {
+    return;
+  }
   m_linearized_size_lookup_table.clear();
   m_data_dims_lookup_table.clear();
 
@@ -865,7 +874,8 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables()
   return construct_linearized_size_lookup_tables(node);
 }
 
-void hdf5_data_reader::construct_linearized_size_lookup_tables(conduit::Node& node)
+void hdf5_data_reader::construct_linearized_size_lookup_tables(
+  conduit::Node& node)
 {
   std::unordered_map<std::string, conduit::Node*> leaves;
   get_leaves(&node, leaves);
@@ -909,8 +919,7 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables(conduit::Node& no
   }
 }
 
-bool hdf5_data_reader::fetch_conduit_node(conduit::Node& sample,
-                             int data_id)
+bool hdf5_data_reader::fetch_conduit_node(conduit::Node& sample, int data_id)
 {
   // get the pathname to the data, and verify it exists in the conduit::Node
   const conduit::Node& node = get_data_store().get_conduit_node(data_id);
@@ -930,7 +939,7 @@ void hdf5_data_reader::print_metadata(std::ostream& os)
   // load a sample from file, applying all transformations along the way;
   // need to do this so we can get the correct dtypes
   conduit::Node populated_node;
-  if(m_shuffled_indices.size() != 0) {
+  if (m_shuffled_indices.size() != 0) {
     size_t index = random() % m_shuffled_indices.size();
     bool ignore_failure = true;
     load_sample(populated_node, index, ignore_failure);

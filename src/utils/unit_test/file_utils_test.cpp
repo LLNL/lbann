@@ -33,11 +33,11 @@
 #include <numeric>
 #include <vector>
 
-TEST_CASE ("Testing \"file_join\" function", "[seq][file][utilities]")
+TEST_CASE("Testing \"file_join\" function", "[seq][file][utilities]")
 {
   REQUIRE(lbann::file::join_path("a") == "a");
   REQUIRE(lbann::file::join_path("a", "b") == "a/b");
   REQUIRE(lbann::file::join_path("a/", "b") == "a//b");
-  REQUIRE(lbann::file::join_path(
-            "/a", "b", std::string("c"), "d") == "/a/b/c/d");
+  REQUIRE(lbann::file::join_path("/a", "b", std::string("c"), "d") ==
+          "/a/b/c/d");
 }

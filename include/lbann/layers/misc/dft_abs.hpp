@@ -27,10 +27,10 @@
 #ifndef LBANN_LAYERS_MATH_DFT_ABS_HPP_INCLUDED
 #define LBANN_LAYERS_MATH_DFT_ABS_HPP_INCLUDED
 
-#include "lbann_config.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/layers.pb.h"
+#include "lbann_config.hpp"
 
 // This layer is only supported if LBANN has FFTW support.
 #ifdef LBANN_HAS_FFTW
@@ -66,10 +66,10 @@ class lbann_comm;
  *        "MODEL_PARALLEL" is not supported at this time.
  */
 template <typename TensorDataType, El::Device Device>
-class dft_abs_layer
-  : public data_type_layer<TensorDataType>
+class dft_abs_layer : public data_type_layer<TensorDataType>
 {
   static const auto Layout = data_layout::DATA_PARALLEL;
+
 public:
   dft_abs_layer(lbann_comm* const comm);
   ~dft_abs_layer();
@@ -84,24 +84,20 @@ public:
   ///@}
 
   std::string get_type() const override { return "DFT Abs"; }
-  data_layout get_data_layout() const override {
-    return Layout;
-  }
+  data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  description get_description() const override {
+  description get_description() const override
+  {
     return data_type_layer<TensorDataType>::get_description();
   }
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  dft_abs_layer()
-    : dft_abs_layer(nullptr)
-  {}
+  dft_abs_layer() : dft_abs_layer(nullptr) {}
 
   dft_abs_layer(dft_abs_layer const&);
   void setup_dims(DataReaderMetaData& dr_metadata) override;
@@ -111,10 +107,11 @@ protected:
 private:
   using impl_type = dft_abs_impl<TensorDataType, Device>;
   std::unique_ptr<impl_type> pimpl_;
-};// class dft_abs_layer
+}; // class dft_abs_layer
 
 template <typename T, El::Device D>
-void dft_abs_layer<T,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void dft_abs_layer<T, D>::write_specific_proto(lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   proto.mutable_dft_abs();
 }

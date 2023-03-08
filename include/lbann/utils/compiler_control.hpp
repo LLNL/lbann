@@ -34,4 +34,4 @@
 #pragma warning disable 2196
 #endif
 
-#endif  // LBANN_UTILS_COMPILER_CONTROL_HPP_INCLUDED
+#endif // LBANN_UTILS_COMPILER_CONTROL_HPP_INCLUDED

@@ -29,8 +29,9 @@
 
 namespace lbann {
 
-bool is_execution_mode_hook(visitor_hook hook) {
-  switch(hook) {
+bool is_execution_mode_hook(visitor_hook hook)
+{
+  switch (hook) {
   case visitor_hook::setup_begin:
   case visitor_hook::setup_end:
   case visitor_hook::phase_end:
@@ -54,8 +55,9 @@ bool is_execution_mode_hook(visitor_hook hook) {
   }
 }
 
-std::string to_string(visitor_hook hook) {
-  switch(hook) {
+std::string to_string(visitor_hook hook)
+{
+  switch (hook) {
   case visitor_hook::setup_begin:
     return "setup_begin";
   case visitor_hook::setup_end:
@@ -86,8 +88,9 @@ std::string to_string(visitor_hook hook) {
   }
 }
 
-std::string to_string(visitor_hook hook, execution_mode mode) {
-  switch(hook) {
+std::string to_string(visitor_hook hook, execution_mode mode)
+{
+  switch (hook) {
   case visitor_hook::execution_mode_begin:
     return to_string(mode) + "_begin";
   case visitor_hook::execution_mode_end:
@@ -118,62 +121,82 @@ std::string to_string(visitor_hook hook, execution_mode mode) {
   }
 }
 
-void visitor_hook_from_string(std::string const& str, visitor_hook& hook, execution_mode& mode) {
+void visitor_hook_from_string(std::string const& str,
+                              visitor_hook& hook,
+                              execution_mode& mode)
+{
   mode = execution_mode::invalid;
 
-  if(str == "setup_begin") {
+  if (str == "setup_begin") {
     hook = visitor_hook::setup_begin;
     return;
-  }else if(str == "setup_end") {
+  }
+  else if (str == "setup_end") {
     hook = visitor_hook::setup_end;
     return;
-  }else if(str == "phase_end") {
+  }
+  else if (str == "phase_end") {
     hook = visitor_hook::phase_end;
     return;
-  }else if(str == "epoch_begin") {
+  }
+  else if (str == "epoch_begin") {
     hook = visitor_hook::epoch_begin;
     return;
-  }else if(str == "epoch_end") {
-    hook =  visitor_hook::epoch_end;
+  }
+  else if (str == "epoch_end") {
+    hook = visitor_hook::epoch_end;
     return;
-  }else if(str == "optimize_begin") {
+  }
+  else if (str == "optimize_begin") {
     hook = visitor_hook::optimize_begin;
     return;
-  }else if(str == "optimize_end") {
+  }
+  else if (str == "optimize_end") {
     hook = visitor_hook::optimize_end;
     return;
-  }else if(str == "invalid") {
+  }
+  else if (str == "invalid") {
     hook = visitor_hook::invalid;
     return;
-  }else {
+  }
+  else {
     std::string delimiter = "_";
     size_t pos = str.find(delimiter);
-    if(pos != std::string::npos) {
+    if (pos != std::string::npos) {
       std::string mode_token = str.substr(0, pos);
       mode = exec_mode_from_string(mode_token);
       std::string visitor_token = str.substr(pos, str.length());
-      if(visitor_token == "_batch_begin") {
+      if (visitor_token == "_batch_begin") {
         hook = visitor_hook::execution_mode_batch_begin;
         return;
-      }else if(visitor_token == "_batch_end") {
+      }
+      else if (visitor_token == "_batch_end") {
         hook = visitor_hook::execution_mode_batch_end;
         return;
-      }else if(visitor_token == "_forward_prop_begin") {
+      }
+      else if (visitor_token == "_forward_prop_begin") {
         hook = visitor_hook::execution_mode_forward_prop_begin;
         return;
-      }else if(visitor_token == "_forward_prop_end") {
+      }
+      else if (visitor_token == "_forward_prop_end") {
         hook = visitor_hook::execution_mode_forward_prop_end;
         return;
-      }else if(visitor_token == "_backward_prop_begin") {
+      }
+      else if (visitor_token == "_backward_prop_begin") {
         hook = visitor_hook::execution_mode_backward_prop_begin;
         return;
-      }else if(visitor_token == "_backward_prop_end") {
+      }
+      else if (visitor_token == "_backward_prop_end") {
         hook = visitor_hook::execution_mode_backward_prop_end;
         return;
-      }else if(visitor_token == "_begin") { // Needs to be last to avoid substrings
+      }
+      else if (visitor_token ==
+               "_begin") { // Needs to be last to avoid substrings
         hook = visitor_hook::execution_mode_begin;
         return;
-      }else if(visitor_token == "_end") { // Needs to be last to avoid substrings
+      }
+      else if (visitor_token ==
+               "_end") { // Needs to be last to avoid substrings
         hook = visitor_hook::execution_mode_end;
         return;
       }
@@ -184,7 +207,8 @@ void visitor_hook_from_string(std::string const& str, visitor_hook& hook, execut
   return;
 }
 
-std::istream& operator>>(std::istream& is, visitor_hook& hook) {
+std::istream& operator>>(std::istream& is, visitor_hook& hook)
+{
   std::string tmp;
   is >> tmp;
   execution_mode mode;

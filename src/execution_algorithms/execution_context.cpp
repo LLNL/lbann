@@ -35,7 +35,8 @@ namespace lbann {
 
 ExecutionContext::ExecutionContext() : m_step{0UL} {}
 
-template <class Archive> void ExecutionContext::serialize(Archive& ar)
+template <class Archive>
+void ExecutionContext::serialize(Archive& ar)
 {
   ar(CEREAL_NVP(m_step));
 }

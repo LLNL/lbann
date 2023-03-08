@@ -39,10 +39,7 @@ void ApplyAddFP(T c,
                 El::Matrix<T, El::Device::GPU> const& x,
                 El::Matrix<T, El::Device::GPU>& y)
 {
-  El::EntrywiseMap(x, y,
-                   [c] __device__ (T const& x) {
-                     return x + c;
-                   });
+  El::EntrywiseMap(x, y, [c] __device__(T const& x) { return x + c; });
 }
 
 template <typename T>
@@ -50,21 +47,15 @@ void ApplyScaleFP(T c,
                   El::Matrix<T, El::Device::GPU> const& x,
                   El::Matrix<T, El::Device::GPU>& y)
 {
-  El::EntrywiseMap(x, y,
-                   [c] __device__ (T const& x) {
-                     return x * c;
-                   });
+  El::EntrywiseMap(x, y, [c] __device__(T const& x) { return x * c; });
 }
 
 template <typename T>
 void ApplySubtractFP(T c,
-                  El::Matrix<T, El::Device::GPU> const& x,
-                  El::Matrix<T, El::Device::GPU>& y)
+                     El::Matrix<T, El::Device::GPU> const& x,
+                     El::Matrix<T, El::Device::GPU>& y)
 {
-  El::EntrywiseMap(x, y,
-                   [c] __device__ (T const& x) {
-                     return x - c;
-                   });
+  El::EntrywiseMap(x, y, [c] __device__(T const& x) { return x - c; });
 }
 
 template <typename T>
@@ -72,20 +63,14 @@ void ApplyCSubtractFP(T c,
                       El::Matrix<T, El::Device::GPU> const& x,
                       El::Matrix<T, El::Device::GPU>& y)
 {
-  El::EntrywiseMap(x, y,
-                   [c] __device__ (T const& x) {
-                     return c - x;
-                   });
+  El::EntrywiseMap(x, y, [c] __device__(T const& x) { return c - x; });
 }
 
 template <typename T>
 void ApplyCSubtractBP(El::Matrix<T, El::Device::GPU> const& x,
                       El::Matrix<T, El::Device::GPU>& y)
 {
-  El::EntrywiseMap(x, y,
-                   [] __device__ (T const& x) {
-                     return -x;
-                   });
+  El::EntrywiseMap(x, y, [] __device__(T const& x) { return -x; });
 }
 
 template <typename T>
@@ -93,10 +78,9 @@ void ApplyMaxFP(T c,
                 El::Matrix<T, El::Device::GPU> const& x,
                 El::Matrix<T, El::Device::GPU>& y)
 {
-  El::EntrywiseMap(x, y,
-                   [c] __device__ (T const& x) {
-                     return ::lbann::gpu_lib::max(c, x);
-                   });
+  El::EntrywiseMap(x, y, [c] __device__(T const& x) {
+    return ::lbann::gpu_lib::max(c, x);
+  });
 }
 
 template <typename T>
@@ -106,11 +90,12 @@ void ApplyMaxBP(T c,
                 El::Matrix<T, El::Device::GPU>& grad_wrt_in)
 {
   ::lbann::internal::EntrywiseZipInto(
-    in, grad_wrt_out, grad_wrt_in,
-    [c] __device__ (T const& x, T const& dy) {
-      return (x < c ? (T) 0. : (x > c ? dy : dy / (T) 2.));
+    in,
+    grad_wrt_out,
+    grad_wrt_in,
+    [c] __device__(T const& x, T const& dy) {
+      return (x < c ? (T)0. : (x > c ? dy : dy / (T)2.));
     });
-
 }
 
 template <typename T>
@@ -118,10 +103,9 @@ void ApplyMinFP(T c,
                 El::Matrix<T, El::Device::GPU> const& x,
                 El::Matrix<T, El::Device::GPU>& y)
 {
-  El::EntrywiseMap(x, y,
-                   [c] __device__ (T const& x) {
-                     return ::lbann::gpu_lib::min(c, x);
-                   });
+  El::EntrywiseMap(x, y, [c] __device__(T const& x) {
+    return ::lbann::gpu_lib::min(c, x);
+  });
 }
 
 template <typename T>
@@ -131,9 +115,11 @@ void ApplyMinBP(T c,
                 El::Matrix<T, El::Device::GPU>& grad_wrt_in)
 {
   ::lbann::internal::EntrywiseZipInto(
-    in, grad_wrt_out, grad_wrt_in,
-    [c] __device__ (T const& x, T const& dy) {
-      return (x < c ? dy : (x > c ? (T) 0. : dy / (T) 2.));
+    in,
+    grad_wrt_out,
+    grad_wrt_in,
+    [c] __device__(T const& x, T const& dy) {
+      return (x < c ? dy : (x > c ? (T)0. : dy / (T)2.));
     });
 }
 
@@ -142,10 +128,9 @@ void ApplyEqualFP(T c,
                   El::Matrix<T, El::Device::GPU> const& x,
                   El::Matrix<T, El::Device::GPU>& y)
 {
-  El::EntrywiseMap(x, y,
-                   [c] __device__ (T const& x) {
-                     return (c == x ? (T) 1. : (T) 0.);
-                   });
+  El::EntrywiseMap(x, y, [c] __device__(T const& x) {
+    return (c == x ? (T)1. : (T)0.);
+  });
 }
 
 template <typename T>
@@ -153,10 +138,9 @@ void ApplyNotEqualFP(T c,
                      El::Matrix<T, El::Device::GPU> const& x,
                      El::Matrix<T, El::Device::GPU>& y)
 {
-  El::EntrywiseMap(x, y,
-                   [c] __device__ (T const& x) {
-                     return (c == x ? (T) 0. : (T) 1.);
-                   });
+  El::EntrywiseMap(x, y, [c] __device__(T const& x) {
+    return (c == x ? (T)0. : (T)1.);
+  });
 }
 
 template <typename T>
@@ -164,10 +148,9 @@ void ApplyLessFP(T c,
                  El::Matrix<T, El::Device::GPU> const& x,
                  El::Matrix<T, El::Device::GPU>& y)
 {
-  El::EntrywiseMap(x, y,
-                   [c] __device__ (T const& x) {
-                     return (x < c ? (T) 1. : (T) 0.);
-                   });
+  El::EntrywiseMap(x, y, [c] __device__(T const& x) {
+    return (x < c ? (T)1. : (T)0.);
+  });
 }
 
 template <typename T>
@@ -175,10 +158,9 @@ void ApplyGreaterFP(T c,
                     El::Matrix<T, El::Device::GPU> const& x,
                     El::Matrix<T, El::Device::GPU>& y)
 {
-  El::EntrywiseMap(x, y,
-                   [c] __device__ (T const& x) {
-                     return (c < x ? (T) 1. : (T) 0.);
-                   });
+  El::EntrywiseMap(x, y, [c] __device__(T const& x) {
+    return (c < x ? (T)1. : (T)0.);
+  });
 }
 
 template <typename T>
@@ -186,10 +168,9 @@ void ApplyLessEqualFP(T c,
                       El::Matrix<T, El::Device::GPU> const& x,
                       El::Matrix<T, El::Device::GPU>& y)
 {
-  El::EntrywiseMap(x, y,
-                   [c] __device__ (T const& x) {
-                     return (x <= c ? (T) 1. : (T) 0.);
-                   });
+  El::EntrywiseMap(x, y, [c] __device__(T const& x) {
+    return (x <= c ? (T)1. : (T)0.);
+  });
 }
 
 template <typename T>
@@ -197,10 +178,9 @@ void ApplyGreaterEqualFP(T c,
                          El::Matrix<T, El::Device::GPU> const& x,
                          El::Matrix<T, El::Device::GPU>& y)
 {
-  El::EntrywiseMap(x, y,
-                   [c] __device__ (T const& x) {
-                     return (c <= x ? (T) 1. : (T) 0.);
-                   });
+  El::EntrywiseMap(x, y, [c] __device__(T const& x) {
+    return (c <= x ? (T)1. : (T)0.);
+  });
 }
 
 } // namespace
@@ -214,9 +194,7 @@ void AddConstantOperator<DataT, D>::fp_compute_local(
 {
   LBANN_ASSERT_DEBUG(inputs.size() == 1);
   LBANN_ASSERT_DEBUG(outputs.size() == 1);
-  ApplyAddFP(this->m_constant,
-             inputs.front().data(),
-             outputs.front().data());
+  ApplyAddFP(this->m_constant, inputs.front().data(), outputs.front().data());
 }
 
 template <typename DataT, El::Device D>
@@ -238,9 +216,7 @@ void ScaleOperator<DataT, D>::fp_compute_local(
 {
   LBANN_ASSERT_DEBUG(inputs.size() == 1);
   LBANN_ASSERT_DEBUG(outputs.size() == 1);
-  ApplyScaleFP(this->m_constant,
-               inputs.front().data(),
-               outputs.front().data());
+  ApplyScaleFP(this->m_constant, inputs.front().data(), outputs.front().data());
 }
 
 template <typename DataT, El::Device D>
@@ -308,9 +284,7 @@ void MaxConstantOperator<DataT, D>::fp_compute_local(
 {
   LBANN_ASSERT_DEBUG(inputs.size() == 1);
   LBANN_ASSERT_DEBUG(outputs.size() == 1);
-  ApplyMaxFP(this->m_constant,
-             inputs.front().data(),
-             outputs.front().data());
+  ApplyMaxFP(this->m_constant, inputs.front().data(), outputs.front().data());
 }
 
 template <typename DataT, El::Device D>
@@ -335,9 +309,7 @@ void MinConstantOperator<DataT, D>::fp_compute_local(
 {
   LBANN_ASSERT_DEBUG(inputs.size() == 1);
   LBANN_ASSERT_DEBUG(outputs.size() == 1);
-  ApplyMinFP(this->m_constant,
-             inputs.front().data(),
-             outputs.front().data());
+  ApplyMinFP(this->m_constant, inputs.front().data(), outputs.front().data());
 }
 
 template <typename DataT, El::Device D>
@@ -362,9 +334,7 @@ void EqualConstantOperator<DataT, D>::fp_compute_local(
 {
   LBANN_ASSERT_DEBUG(inputs.size() == 1);
   LBANN_ASSERT_DEBUG(outputs.size() == 1);
-  ApplyEqualFP(this->m_constant,
-               inputs.front().data(),
-               outputs.front().data());
+  ApplyEqualFP(this->m_constant, inputs.front().data(), outputs.front().data());
 }
 
 template <typename DataT, El::Device D>
@@ -385,8 +355,8 @@ void NotEqualConstantOperator<DataT, D>::fp_compute_local(
   LBANN_ASSERT_DEBUG(inputs.size() == 1);
   LBANN_ASSERT_DEBUG(outputs.size() == 1);
   ApplyNotEqualFP(this->m_constant,
-               inputs.front().data(),
-               outputs.front().data());
+                  inputs.front().data(),
+                  outputs.front().data());
 }
 
 template <typename DataT, El::Device D>
@@ -406,9 +376,7 @@ void LessConstantOperator<DataT, D>::fp_compute_local(
 {
   LBANN_ASSERT_DEBUG(inputs.size() == 1);
   LBANN_ASSERT_DEBUG(outputs.size() == 1);
-  ApplyLessFP(this->m_constant,
-              inputs.front().data(),
-              outputs.front().data());
+  ApplyLessFP(this->m_constant, inputs.front().data(), outputs.front().data());
 }
 
 template <typename DataT, El::Device D>

@@ -27,9 +27,9 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED
 
+#include "lbann/callbacks/callback.hpp"
 #include <string>
 #include <vector>
-#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 namespace callback {
@@ -38,9 +38,9 @@ namespace callback {
  *  Image files are in the form
  *  "<prefix><tag>-<layer name>.<format>".
  */
-class save_images : public callback_base {
+class save_images : public callback_base
+{
 public:
-
   /** Constructor.
    *  @param layer_names  List of layer names to save as images.
    *  @param image_format Image file format (e.g. jpg, png, pgm).
@@ -50,25 +50,22 @@ public:
               std::string image_format = "jpg",
               std::string image_prefix = "");
   save_images(const save_images&) = default;
-  save_images& operator=(
-    const save_images&) = default;
-  save_images* copy() const override {
-    return new save_images(*this);
-  }
-  void on_epoch_end(model *m) override;
-  void on_test_end(model *m) override;
+  save_images& operator=(const save_images&) = default;
+  save_images* copy() const override { return new save_images(*this); }
+  void on_epoch_end(model* m) override;
+  void on_test_end(model* m) override;
   std::string name() const override { return "save images"; }
 
   /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
 private:
-
   friend class cereal::access;
   save_images() = default;
 
@@ -84,15 +81,14 @@ private:
   std::string m_image_format;
   /** Prefix for saved image files. */
   std::string m_image_prefix;
-
 };
 
 // Builder function
 std::unique_ptr<callback_base>
-build_save_images_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_save_images_callback_from_pbuf(const google::protobuf::Message&,
+                                     std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED

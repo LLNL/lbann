@@ -49,7 +49,8 @@ __global__ void fp_kernel(El::Int num_embeddings,
                           const TensorDataType* __restrict__ embeddings,
                           El::Int embeddings_ldim,
                           TensorDataType* __restrict__ output,
-                          El::Int output_ldim) {
+                          El::Int output_ldim)
+{
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int gidy = threadIdx.y + blockIdx.y * blockDim.y;
   const El::Int gidz = threadIdx.z + blockIdx.z * blockDim.z;
@@ -59,10 +60,10 @@ __global__ void fp_kernel(El::Int num_embeddings,
   for (El::Int k = gidz; k < mini_batch_size; k += nthreadsz) {
     for (El::Int j = gidy; j < input_size; j += nthreadsy) {
       for (El::Int i = gidx; i < embedding_dim; i += nthreadsx) {
-        auto& y = output[i+j*embedding_dim+k*output_ldim];
-        const El::Int ind = static_cast<El::Int>(indices[j+k*indices_ldim]);
-        if (0<=ind && ind<num_embeddings) {
-          y = embeddings[i+ind*embeddings_ldim];
+        auto& y = output[i + j * embedding_dim + k * output_ldim];
+        const El::Int ind = static_cast<El::Int>(indices[j + k * indices_ldim]);
+        if (0 <= ind && ind < num_embeddings) {
+          y = embeddings[i + ind * embeddings_ldim];
         }
         else {
           y = TensorDataType(0.0);
@@ -89,7 +90,8 @@ __global__ void bp_kernel(El::Int num_embeddings,
                           const TensorDataType* __restrict__ output_grad,
                           El::Int output_grad_ldim,
                           TensorDataType* __restrict__ embeddings_grad,
-                          El::Int embeddings_grad_ldim) {
+                          El::Int embeddings_grad_ldim)
+{
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int gidy = threadIdx.y + blockIdx.y * blockDim.y;
   const El::Int gidz = threadIdx.z + blockIdx.z * blockDim.z;
@@ -99,10 +101,11 @@ __global__ void bp_kernel(El::Int num_embeddings,
   for (El::Int k = gidz; k < mini_batch_size; k += nthreadsz) {
     for (El::Int j = gidy; j < input_size; j += nthreadsy) {
       for (El::Int i = gidx; i < embedding_dim; i += nthreadsx) {
-        const El::Int ind = static_cast<El::Int>(indices[j+k*indices_ldim]);
-        if (0<=ind && ind<num_embeddings && ind!=padding_idx) {
-          const auto& dy = output_grad[i+j*embedding_dim+k*output_grad_ldim];
-          auto& dw = embeddings_grad[i+ind*embeddings_grad_ldim];
+        const El::Int ind = static_cast<El::Int>(indices[j + k * indices_ldim]);
+        if (0 <= ind && ind < num_embeddings && ind != padding_idx) {
+          const auto& dy =
+            output_grad[i + j * embedding_dim + k * output_grad_ldim];
+          auto& dw = embeddings_grad[i + ind * embeddings_grad_ldim];
           gpu_lib::atomic_add(&dw, dy);
         }
       }
@@ -113,12 +116,15 @@ __global__ void bp_kernel(El::Int num_embeddings,
 } // namespace
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void embedding_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+void embedding_layer<TensorDataType, T_layout, Dev>::fp_compute()
+{
   using MatType = El::Matrix<TensorDataType, El::Device::GPU>;
 
   // Local data
-  const auto& local_embeddings = dynamic_cast<const MatType&>(this->weights_values(0).LockedMatrix());
-  const auto& local_input = dynamic_cast<const MatType&>(this->get_local_prev_activations());
+  const auto& local_embeddings =
+    dynamic_cast<const MatType&>(this->weights_values(0).LockedMatrix());
+  const auto& local_input =
+    dynamic_cast<const MatType&>(this->get_local_prev_activations());
   auto& local_output = dynamic_cast<MatType&>(this->get_local_activations());
   const auto& input_size = this->get_input_size();
   const auto& local_mini_batch_size = local_input.Width();
@@ -134,68 +140,76 @@ void embedding_layer<TensorDataType, T_layout, Dev>::fp_compute() {
     grid_dims.x = (this->m_embedding_dim + block_size - 1) / block_size;
     grid_dims.y = input_size;
     grid_dims.z = local_mini_batch_size;
-    hydrogen::gpu::LaunchKernel(
-      fp_kernel<TensorDataType>,
-      grid_dims, block_dims, 0, multisync,
-      this->m_num_embeddings,
-      this->m_embedding_dim,
-      input_size,
-      local_mini_batch_size,
-      local_input.LockedBuffer(),
-      local_input.LDim(),
-      local_embeddings.LockedBuffer(),
-      local_embeddings.LDim(),
-      local_output.Buffer(),
-      local_output.LDim());
+    hydrogen::gpu::LaunchKernel(fp_kernel<TensorDataType>,
+                                grid_dims,
+                                block_dims,
+                                0,
+                                multisync,
+                                this->m_num_embeddings,
+                                this->m_embedding_dim,
+                                input_size,
+                                local_mini_batch_size,
+                                local_input.LockedBuffer(),
+                                local_input.LDim(),
+                                local_embeddings.LockedBuffer(),
+                                local_embeddings.LDim(),
+                                local_output.Buffer(),
+                                local_output.LDim());
   }
-
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute() {
+void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute()
+{
   using MatType = El::Matrix<TensorDataType, El::Device::GPU>;
 
   // Embedding layer is not differentiable w.r.t. inputs
   El::Zero(this->get_error_signals());
 
   // Nothing to be done if embeddings are not being optimized
-  if (this->get_weights(0).get_optimizer() == nullptr) { return; }
+  if (this->get_weights(0).get_optimizer() == nullptr) {
+    return;
+  }
   auto& opt = *this->get_weights(0).get_optimizer();
 
   // Local data
-  const auto& local_input = dynamic_cast<const MatType&>(this->get_local_prev_activations());
-  auto& local_embedding_grad = dynamic_cast<MatType&>(this->m_embeddings_grad->Matrix());
-  const auto& local_output_grad = dynamic_cast<const MatType&>(this->get_local_prev_error_signals());
+  const auto& local_input =
+    dynamic_cast<const MatType&>(this->get_local_prev_activations());
+  auto& local_embedding_grad =
+    dynamic_cast<MatType&>(this->m_embeddings_grad->Matrix());
+  const auto& local_output_grad =
+    dynamic_cast<const MatType&>(this->get_local_prev_error_signals());
   const auto& input_size = this->get_input_size();
   const auto& local_mini_batch_size = local_input.Width();
 
   // Launch GPU kernel
   El::Zero(local_embedding_grad);
   if (!local_input.IsEmpty()) {
-    auto multisync =
-      El::MakeMultiSync(gpu::get_sync_info(local_embedding_grad),
-                        gpu::get_sync_info(local_output_grad),
-                        gpu::get_sync_info(local_input));
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_embedding_grad),
+                                       gpu::get_sync_info(local_output_grad),
+                                       gpu::get_sync_info(local_input));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (this->m_embedding_dim + block_size - 1) / block_size;
     grid_dims.y = input_size;
     grid_dims.z = local_mini_batch_size;
-    hydrogen::gpu::LaunchKernel(
-      bp_kernel<TensorDataType>,
-      grid_dims, block_dims, 0, multisync,
-      this->m_num_embeddings,
-      this->m_embedding_dim,
-      input_size,
-      local_mini_batch_size,
-      this->m_padding_idx,
-      local_input.LockedBuffer(),
-      local_input.LDim(),
-      local_output_grad.LockedBuffer(),
-      local_output_grad.LDim(),
-      local_embedding_grad.Buffer(),
-      local_embedding_grad.LDim());
+    hydrogen::gpu::LaunchKernel(bp_kernel<TensorDataType>,
+                                grid_dims,
+                                block_dims,
+                                0,
+                                multisync,
+                                this->m_num_embeddings,
+                                this->m_embedding_dim,
+                                input_size,
+                                local_mini_batch_size,
+                                this->m_padding_idx,
+                                local_input.LockedBuffer(),
+                                local_input.LDim(),
+                                local_output_grad.LockedBuffer(),
+                                local_output_grad.LDim(),
+                                local_embedding_grad.Buffer(),
+                                local_embedding_grad.LDim());
   }
   opt.add_to_gradient(*this->m_embeddings_grad,
                       El::TypeTraits<TensorDataType>::One(),
@@ -203,7 +217,7 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute() {
 }
 
 // Explicit instantiation
-#define PROTO(T)                     \
+#define PROTO(T)                                                               \
   template class embedding_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>
 
 #define LBANN_INSTANTIATE_GPU_HALF

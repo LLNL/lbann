@@ -31,8 +31,7 @@
 
 #include <lbann/utils/exception.hpp>
 
-namespace lbann
-{
+namespace lbann {
 
 /** @class default_id_error_policy
  *  @brief Default policy describing how to handle unknown ids.
@@ -55,7 +54,7 @@ struct default_key_error_policy
     // necessarily the case.
     LBANN_ERROR("Unknown id \"", id, "\" detected.");
   }
-};// class default_key_error_policy
+}; // class default_key_error_policy
 
 /** @class nullptr_key_error_policy
  *  @brief Policy returning a nullptr if the id is unknown
@@ -75,7 +74,7 @@ struct nullptr_key_error_policy
   {
     return nullptr;
   }
-};// class nullptr_key_error_policy
+}; // class nullptr_key_error_policy
 
-}// namespace lbann
+} // namespace lbann
 #endif /* LBANN_UTILS_FACTORY_ERROR_POLICIES_HPP_ */

@@ -33,7 +33,8 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void l2_norm2_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+void l2_norm2_layer<TensorDataType, T_layout, Dev>::fp_compute()
+{
 
   // Initialize workspace
   m_workspace->Empty();
@@ -67,7 +68,9 @@ void l2_norm2_layer<TensorDataType, T_layout, Dev>::bp_compute()
 }
 
 template <typename T, data_layout L, El::Device D>
-void l2_norm2_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void l2_norm2_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   proto.mutable_l2_norm2();
 }

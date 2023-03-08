@@ -27,12 +27,12 @@
 #ifndef LBANN_PROTO_FACTORIES_HPP_INCLUDED
 #define LBANN_PROTO_FACTORIES_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
 #include "lbann/data_readers/data_reader.hpp"
+#include "lbann/layers/layer.hpp"
+#include "lbann/operators/operator.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/transforms/transform.hpp"
 #include "lbann/transforms/transform_pipeline.hpp"
-#include "lbann/operators/operator.hpp"
 
 #include <google/protobuf/message.h>
 
@@ -48,7 +48,7 @@ class Operator;
 class Reader;
 class Transform;
 class Weights;
-}// namespace lbann_data
+} // namespace lbann_data
 
 namespace lbann {
 
@@ -65,31 +65,29 @@ class weights;
 namespace proto {
 
 /** Construct a trainer specified with a prototext. */
-std::unique_ptr<trainer> construct_trainer(lbann_comm* comm,
-                                           const lbann_data::Trainer& proto_trainer);
+std::unique_ptr<trainer>
+construct_trainer(lbann_comm* comm, const lbann_data::Trainer& proto_trainer);
 
 /** Construct a model specified with a prototext. */
-std::unique_ptr<model> construct_model(
-  lbann_comm* comm,
-  int training_dr_linearized_data_size,
-  const lbann_data::Optimizer& proto_opt,
-  const lbann_data::Trainer& proto_trainer,
-  const lbann_data::Model& proto_model);
+std::unique_ptr<model> construct_model(lbann_comm* comm,
+                                       int training_dr_linearized_data_size,
+                                       const lbann_data::Optimizer& proto_opt,
+                                       const lbann_data::Trainer& proto_trainer,
+                                       const lbann_data::Model& proto_model);
 
 /** Construct a layer graph specified with a prototext. */
-std::vector<OwningLayerPtr> construct_layer_graph(
-  lbann_comm* comm,
-  int training_dr_linearized_data_size,
-  const lbann_data::Trainer& proto_trainer,
-  const lbann_data::Model& proto_model);
+std::vector<OwningLayerPtr>
+construct_layer_graph(lbann_comm* comm,
+                      int training_dr_linearized_data_size,
+                      const lbann_data::Trainer& proto_trainer,
+                      const lbann_data::Model& proto_model);
 
 /** Construct a layer specified with prototext. */
 template <typename TensorDataType, data_layout layout, El::Device Dev>
-std::unique_ptr<Layer> construct_layer(
-  lbann_comm* comm,
-  int training_dr_linearized_data_size,
-  int num_parallel_readers,
-  const lbann_data::Layer& proto_layer);
+std::unique_ptr<Layer> construct_layer(lbann_comm* comm,
+                                       int training_dr_linearized_data_size,
+                                       int num_parallel_readers,
+                                       const lbann_data::Layer& proto_layer);
 
 /** Construct an operator specified with prototext. */
 template <typename InputT, typename OutputT, El::Device D>
@@ -97,10 +95,10 @@ auto construct_operator(const lbann_data::Operator& proto_operator)
   -> std::unique_ptr<Operator<InputT, OutputT, D>>;
 
 /** Construct weights specified with prototext. */
-std::unique_ptr<weights> construct_weights(
-  lbann_comm* comm,
-  const lbann_data::Optimizer& proto_opt,
-  const lbann_data::Weights& proto_weights);
+std::unique_ptr<weights>
+construct_weights(lbann_comm* comm,
+                  const lbann_data::Optimizer& proto_opt,
+                  const lbann_data::Weights& proto_weights);
 
 /** Construct a callback specified with prototext. */
 std::unique_ptr<callback_base>
@@ -120,19 +118,19 @@ std::unique_ptr<lbann_summary> construct_summarizer(lbann_comm* comm,
 
 /** Construct an optimizer specified with prototext. */
 template <typename T>
-std::unique_ptr<optimizer> construct_optimizer(
-  const lbann_data::Optimizer& proto_opt);
+std::unique_ptr<optimizer>
+construct_optimizer(const lbann_data::Optimizer& proto_opt);
 
 /** Construct an objective function specified with prototext. */
 std::unique_ptr<objective_function>
 construct_objective_function(const lbann_data::ObjectiveFunction& proto_obj);
 
 /** Construct a transform given a prototext. */
-std::unique_ptr<transform::transform> construct_transform(
-  const lbann_data::Transform& trans);
+std::unique_ptr<transform::transform>
+construct_transform(const lbann_data::Transform& trans);
 /** Construct a transform pipeline given a data reader prototext. */
-transform::transform_pipeline construct_transform_pipeline(
-  const lbann_data::Reader& data_reader);
+transform::transform_pipeline
+construct_transform_pipeline(const lbann_data::Reader& data_reader);
 
 } // namespace proto
 } // namespace lbann

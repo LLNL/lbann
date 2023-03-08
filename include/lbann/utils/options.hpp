@@ -30,14 +30,15 @@
 
 #include <iostream>
 #include <map>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace lbann {
 
 /****** std options ******/
 // Bool flags
-#define LBANN_OPTION_DISABLE_BACKGROUND_IO_ACTIVITY "disable_background_io_activity"
+#define LBANN_OPTION_DISABLE_BACKGROUND_IO_ACTIVITY                            \
+  "disable_background_io_activity"
 #define LBANN_OPTION_DISABLE_CUDA "disable_cuda"
 #define LBANN_OPTION_DISABLE_SIGNAL_HANDLER "disable_signal_handler"
 #define LBANN_OPTION_EXIT_AFTER_SETUP "exit_after_setup"
@@ -45,12 +46,11 @@ namespace lbann {
 #define LBANN_OPTION_LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE                        \
   "load_model_weights_dir_is_complete"
 // Deprecated -- "LTFB Callback"
-#define LBANN_OPTION_LTFB_ALLOW_GLOBAL_STATISTICS \
-  "LTFB Allow global statistics"
+#define LBANN_OPTION_LTFB_ALLOW_GLOBAL_STATISTICS "LTFB Allow global statistics"
 // Deprecated -- "LTFB Callback"
 #define LBANN_OPTION_LTFB_VERBOSE "ltfb_verbose"
 #define LBANN_OPTION_MULTITRAINER_VERBOSE "multitrainer_verbose"
-#define LBANN_OPTION_ALLOW_MULTITRAINER_GLOBAL_STATISTICS \
+#define LBANN_OPTION_ALLOW_MULTITRAINER_GLOBAL_STATISTICS                      \
   "Allow multitrainer global statistics"
 #define LBANN_OPTION_NO_IM_COMM "no_im_comm"
 #define LBANN_OPTION_PRELOAD_DATA_STORE "preload_data_store"
@@ -63,7 +63,8 @@ namespace lbann {
 #define LBANN_OPTION_USE_CUDNN_TENSOR_OPS "use_cudnn_tensor_ops"
 #define LBANN_OPTION_USE_DATA_STORE "use_data_store"
 #define LBANN_OPTION_VERBOSE "verbose"
-#define LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP "Use Hydrogen's default memory mode for GPU buffers in forward prop"
+#define LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP                    \
+  "Use Hydrogen's default memory mode for GPU buffers in forward prop"
 #define LBANN_OPTION_INIT_SHMEM "Initialize SHMEM when initializing LBANN"
 #define LBANN_OPTION_INIT_NVSHMEM "Initialize NVSHMEM when initializing LBANN"
 
@@ -84,12 +85,17 @@ namespace lbann {
 #define LBANN_OPTION_RANDOM_SEED "random_seed"
 #define LBANN_OPTION_READER "reader"
 #define LBANN_OPTION_RESTART_DIR "restart_dir"
-#define LBANN_OPTION_TRAINER_CREATE_TWO_MODELS "Create two models in Sub-grid parallelism"
-#define LBANN_OPTION_TRAINER_GRID_HEIGHT "Height of 2D process grid for each trainer"
+#define LBANN_OPTION_TRAINER_CREATE_TWO_MODELS                                 \
+  "Create two models in Sub-grid parallelism"
+#define LBANN_OPTION_TRAINER_GRID_HEIGHT                                       \
+  "Height of 2D process grid for each trainer"
 #define LBANN_OPTION_TRAINER_PRIMARY_GRID_SIZE "Primary Grid Size per trainer"
-#define LBANN_OPTION_TRAINER_ENABLE_SUBGRID_ASYNC_COMM "Enable async communication in Sub-grid parallelism"
-#define LBANN_OPTION_TRAINER_ENABLE_TOPO_AWARE_SUBGRID "Enable topology aware process placement in Sub-grid parallelism"
-#define LBANN_OPTION_NUM_SUBGRIDS_BLOCK_ORDER "Divide each trainer into equally-sized sub-grids with blocked ordering"
+#define LBANN_OPTION_TRAINER_ENABLE_SUBGRID_ASYNC_COMM                         \
+  "Enable async communication in Sub-grid parallelism"
+#define LBANN_OPTION_TRAINER_ENABLE_TOPO_AWARE_SUBGRID                         \
+  "Enable topology aware process placement in Sub-grid parallelism"
+#define LBANN_OPTION_NUM_SUBGRIDS_BLOCK_ORDER                                  \
+  "Divide each trainer into equally-sized sub-grids with blocked ordering"
 
 /****** datastore options ******/
 // Bool flags

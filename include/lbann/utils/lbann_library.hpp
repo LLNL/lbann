@@ -55,16 +55,21 @@ std::unique_ptr<model> load_inference_model(lbann_comm* lc,
  * @param[in] mbs The max mini-batch size
  * @return Matrix of predicted labels
  */
-template <typename DataT, El::Dist CDist, El::Dist RDist, El::DistWrap DistView, El::Device Device>
+template <typename DataT,
+          El::Dist CDist,
+          El::Dist RDist,
+          El::DistWrap DistView,
+          El::Device Device>
 El::Matrix<int, El::Device::CPU>
 infer(observer_ptr<model> model,
       El::DistMatrix<DataT, CDist, RDist, DistView, Device> const& samples,
-      size_t mbs) {
+      size_t mbs)
+{
   auto inf_alg = batch_functional_inference_algorithm();
   return inf_alg.infer(model, samples, mbs);
 }
 
-int allocate_trainer_resources(lbann_comm *comm);
+int allocate_trainer_resources(lbann_comm* comm);
 
 // The constructed trainer has global scope. This returns a reference
 // to this global trainer.
@@ -76,15 +81,16 @@ std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm* comm,
                                                       bool serialized_io);
 
 std::unique_ptr<model> build_model_from_prototext(
-    int argc, char **argv,
-    const lbann_data::Trainer* pb_trainer,
-    lbann_data::LbannPB &pb,
-    lbann_comm *comm,
-    thread_pool& io_thread_pool,
-    std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
-    int training_dr_linearized_data_size);
+  int argc,
+  char** argv,
+  const lbann_data::Trainer* pb_trainer,
+  lbann_data::LbannPB& pb,
+  lbann_comm* comm,
+  thread_pool& io_thread_pool,
+  std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
+  int training_dr_linearized_data_size);
 
-void print_lbann_configuration(lbann_comm *comm,
+void print_lbann_configuration(lbann_comm* comm,
                                int io_threads_per_process,
                                int io_threads_offset);
 

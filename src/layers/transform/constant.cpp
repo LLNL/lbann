@@ -28,8 +28,8 @@
 #include "lbann/layers/transform/constant.hpp"
 
 // LBANN_ASSERT_MSG_HAS_FIELD
-#include "lbann/proto/proto_common.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf.hpp"
 
 #include "lbann/proto/layers.pb.h"
@@ -53,7 +53,9 @@ build_constant_layer_from_pbuf(lbann_comm* comm,
 }
 
 template <typename T, data_layout L, El::Device D>
-void constant_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void constant_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_constant();
   msg->set_value(m_value);
@@ -61,11 +63,11 @@ void constant_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const
                                this->get_output_dims());
 }
 
-#define PROTO_DEVICE(T, Device) \
-  template class constant_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class constant_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  template class constant_layer<T, data_layout::DATA_PARALLEL, Device>;        \
+  template class constant_layer<T, data_layout::MODEL_PARALLEL, Device>;       \
   LBANN_LAYER_BUILDER_ETI(constant, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

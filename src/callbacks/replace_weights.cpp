@@ -26,10 +26,10 @@
 
 #include "lbann/callbacks/replace_weights.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
-#include "lbann/utils/exception.hpp"
-#include "lbann/proto/proto_common.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/utils/protobuf.hpp"
 
 #include "callback_helpers.hpp"
@@ -42,18 +42,20 @@
 namespace lbann {
 namespace callback {
 
-replace_weights::replace_weights(
-  std::vector<std::string> src,
-  std::vector<std::string> dst,
-  int batch_interval)
+replace_weights::replace_weights(std::vector<std::string> src,
+                                 std::vector<std::string> dst,
+                                 int batch_interval)
   : callback_base(batch_interval),
     m_src_layer_names(std::move(src)),
-    m_dst_layer_names(std::move(dst)) {
-  if(m_src_layer_names.size() != m_dst_layer_names.size())
-    LBANN_ERROR("In replace weights callback: number of src and dest layers does not match.");
+    m_dst_layer_names(std::move(dst))
+{
+  if (m_src_layer_names.size() != m_dst_layer_names.size())
+    LBANN_ERROR("In replace weights callback: number of src and dest layers "
+                "does not match.");
 }
 
-void replace_weights::setup(model *m) {
+void replace_weights::setup(model* m)
+{
   auto const layers = m->get_layers();
   m_src_layers = select_things_by_name(layers, m_src_layer_names);
   m_dst_layers = select_things_by_name(layers, m_dst_layer_names);
@@ -63,13 +65,16 @@ void replace_weights::setup(model *m) {
   std::vector<std::string>().swap(m_dst_layer_names);
 }
 
-void replace_weights::on_batch_end(model *m) {
+void replace_weights::on_batch_end(model* m)
+{
   const auto& c = m->get_execution_context();
   const auto& step = c.get_step();
-  if(step % m_batch_interval == 0) {
-    for(size_t i = 0; i < m_src_layers.size(); i++) {
+  if (step % m_batch_interval == 0) {
+    for (size_t i = 0; i < m_src_layers.size(); i++) {
       if (!m_src_layers[i])
-        LBANN_ERROR("Source layer pointer ", i, " is null. "
+        LBANN_ERROR("Source layer pointer ",
+                    i,
+                    " is null. "
                     "It probably shouldn't be.");
       m_dst_layers[i]->replace_weights(*m_src_layers[i]);
     }
@@ -84,11 +89,13 @@ void replace_weights::write_specific_proto(lbann_data::Callback& proto) const
   msg->set_batch_interval(m_batch_interval);
 }
 
-std::unique_ptr<callback_base>
-build_replace_weights_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+std::unique_ptr<callback_base> build_replace_weights_callback_from_pbuf(
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
-    dynamic_cast<const lbann_data::Callback::CallbackReplaceWeights&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackReplaceWeights&>(
+      proto_msg);
   return std::make_unique<replace_weights>(
     parse_list<std::string>(params.source_layers()),
     parse_list<std::string>(params.destination_layers()),

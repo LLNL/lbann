@@ -27,14 +27,15 @@
 #include "lbann/utils/threads/thread_utils.hpp"
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/lbann_library.hpp"
-#include <thread>
 #include <omp.h>
+#include <thread>
 
 namespace lbann {
 
-int num_free_cores_per_process(const lbann_comm *comm) {
+int num_free_cores_per_process(const lbann_comm* comm)
+{
   auto hw_cc = std::thread::hardware_concurrency();
-  auto max_threads = std::max(hw_cc,decltype(hw_cc){1});
+  auto max_threads = std::max(hw_cc, decltype(hw_cc){1});
 
   auto omp_threads = omp_get_max_threads();
   auto processes_on_node = comm->get_procs_per_node();
@@ -44,16 +45,19 @@ int num_free_cores_per_process(const lbann_comm *comm) {
   aluminum_threads = 1;
 #endif // LBANN_HAS_ALUMINUM
 
-  auto max_cores_per_process = static_cast<int>(max_threads / processes_on_node);
+  auto max_cores_per_process =
+    static_cast<int>(max_threads / processes_on_node);
 
-  auto io_threads_per_process = std::max(1, (max_cores_per_process - omp_threads - aluminum_threads));
+  auto io_threads_per_process =
+    std::max(1, (max_cores_per_process - omp_threads - aluminum_threads));
 
   return io_threads_per_process;
 }
 
-int free_core_offset(const lbann_comm *comm) {
+int free_core_offset(const lbann_comm* comm)
+{
   auto hw_cc = std::thread::hardware_concurrency();
-  auto max_threads = std::max(hw_cc,decltype(hw_cc){1});
+  auto max_threads = std::max(hw_cc, decltype(hw_cc){1});
 
   auto omp_threads = omp_get_max_threads();
 
@@ -63,7 +67,7 @@ int free_core_offset(const lbann_comm *comm) {
 #endif // LBANN_HAS_ALUMINUM
 
   // Offset into the CPUMASK of each process
-  auto io_threads_offset = (omp_threads+aluminum_threads)% max_threads;
+  auto io_threads_offset = (omp_threads + aluminum_threads) % max_threads;
 
   return io_threads_offset;
 }

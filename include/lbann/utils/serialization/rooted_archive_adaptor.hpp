@@ -36,25 +36,20 @@
 #include <optional>
 #include <string>
 
-namespace details
-{
+namespace details {
 
-template <typename ArchiveT,
-          lbann::utils::WhenTextArchive<ArchiveT> = 1>
+template <typename ArchiveT, lbann::utils::WhenTextArchive<ArchiveT> = 1>
 void set_next_name(ArchiveT& ar, char const* name)
 {
   ar.setNextName(name);
 }
-template <typename ArchiveT,
-          lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
+template <typename ArchiveT, lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
 void set_next_name(ArchiveT&, char const*)
-{
-}
+{}
 
-}// namespace details
+} // namespace details
 
-namespace lbann
-{
+namespace lbann {
 
 // An archive that collects data to the root of a grid on save and
 // broadcasts/scatters it on load.
@@ -69,35 +64,27 @@ class RootedOutputArchiveAdaptor
 
 public:
   using archive_type = OutputArchiveT;
+
 private:
   using ThisType_ = RootedOutputArchiveAdaptor<archive_type>;
   using BaseType_ = cereal::OutputArchive<ThisType_>;
+
 public:
   RootedOutputArchiveAdaptor(std::ostream& os,
                              El::Grid const& g,
-                             El::Int root=0)
+                             El::Int root = 0)
     : BaseType_{this},
-      ar_(g.Rank() == root
-          ? std::make_optional<archive_type>(os)
-          : std::nullopt),
+      ar_(g.Rank() == root ? std::make_optional<archive_type>(os)
+                           : std::nullopt),
       grid_{&g},
       root_{root}
   {}
 
-  El::Grid const& grid() const noexcept
-  {
-    return *grid_;
-  }
+  El::Grid const& grid() const noexcept { return *grid_; }
 
-  El::Int root() const noexcept
-  {
-    return root_;
-  }
+  El::Int root() const noexcept { return root_; }
 
-  bool am_root() const noexcept
-  {
-    return (this->root() == grid_->Rank());
-  }
+  bool am_root() const noexcept { return (this->root() == grid_->Rank()); }
 
   void set_next_name(char const* name)
   {
@@ -130,7 +117,7 @@ private:
   std::optional<archive_type> ar_;
   El::Grid const* grid_;
   El::Int root_;
-};// RootedOutputArchiveAdaptor
+}; // RootedOutputArchiveAdaptor
 
 template <typename InputArchiveT>
 class RootedInputArchiveAdaptor
@@ -140,37 +127,30 @@ class RootedInputArchiveAdaptor
                 "At this time only built-in Cereal archives are supported.");
   static_assert(lbann::utils::IsInputArchive<InputArchiveT>,
                 "The given archive type must be an \"input\" archive type.");
+
 public:
   using archive_type = InputArchiveT;
+
 private:
   using ThisType_ = RootedInputArchiveAdaptor<archive_type>;
   using BaseType_ = cereal::InputArchive<ThisType_>;
+
 public:
   RootedInputArchiveAdaptor(std::istream& is,
                             El::Grid const& g,
-                            El::Int root=0)
+                            El::Int root = 0)
     : BaseType_{this},
-      ar_(g.Rank() == root
-          ? std::make_optional<archive_type>(is)
-          : std::nullopt),
+      ar_(g.Rank() == root ? std::make_optional<archive_type>(is)
+                           : std::nullopt),
       grid_{&g},
       root_{root}
   {}
 
-  El::Grid const& grid() const noexcept
-  {
-    return *grid_;
-  }
+  El::Grid const& grid() const noexcept { return *grid_; }
 
-  El::Int root() const noexcept
-  {
-    return root_;
-  }
+  El::Int root() const noexcept { return root_; }
 
-  bool am_root() const noexcept
-  {
-    return (this->root() == grid_->Rank());
-  }
+  bool am_root() const noexcept { return (this->root() == grid_->Rank()); }
 
   void set_next_name(char const* name)
   {
@@ -203,7 +183,7 @@ private:
   std::optional<archive_type> ar_;
   El::Grid const* grid_;
   El::Int root_;
-};// RootedInputArchiveAdaptor
+}; // RootedInputArchiveAdaptor
 
 #ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
 using RootedBinaryInputArchive =
@@ -233,10 +213,9 @@ using RootedXMLOutputArchive =
   RootedOutputArchiveAdaptor<cereal::XMLOutputArchive>;
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 
-}// namespace lbann
+} // namespace lbann
 
-namespace cereal
-{
+namespace cereal {
 
 // POD types are "broadcast" types by default. That is, the root value
 // is stored in the archive and merely "forgotten" on non-root
@@ -244,16 +223,16 @@ namespace cereal
 // "HasValidMPIDataType" trait or something.
 template <typename OutputArchiveT, typename DataT>
 h2::meta::EnableWhen<std::is_arithmetic_v<DataT>, void>
-CEREAL_SAVE_FUNCTION_NAME(
-  lbann::RootedOutputArchiveAdaptor<OutputArchiveT>& ar,
-  DataT const& val)
+CEREAL_SAVE_FUNCTION_NAME(lbann::RootedOutputArchiveAdaptor<OutputArchiveT>& ar,
+                          DataT const& val)
 {
   ar.save_on_root(val);
 }
 
 template <typename OutputArchiveT>
 void CEREAL_SAVE_FUNCTION_NAME(
-  lbann::RootedOutputArchiveAdaptor<OutputArchiveT>& ar, bool const& b)
+  lbann::RootedOutputArchiveAdaptor<OutputArchiveT>& ar,
+  bool const& b)
 {
   ar.save_on_root(b);
 }
@@ -271,33 +250,36 @@ void CEREAL_SAVE_FUNCTION_NAME(
 // root and broadcast across the grid.
 template <typename InputArchiveT, typename DataT>
 h2::meta::EnableWhen<std::is_arithmetic_v<DataT>, void>
-CEREAL_LOAD_FUNCTION_NAME(
-  lbann::RootedInputArchiveAdaptor<InputArchiveT>& ar,
-  DataT& val)
+CEREAL_LOAD_FUNCTION_NAME(lbann::RootedInputArchiveAdaptor<InputArchiveT>& ar,
+                          DataT& val)
 {
-  static_assert(!std::is_same_v<DataT,char>,
+  static_assert(!std::is_same_v<DataT, char>,
                 "Don't be a basic char. "
                 "Apparently Hydrogen doesn't support them.");
 
   ar.load_on_root(val);
-  El::mpi::Broadcast(val, ar.root(), ar.grid().Comm(),
+  El::mpi::Broadcast(val,
+                     ar.root(),
+                     ar.grid().Comm(),
                      El::SyncInfo<El::Device::CPU>{});
 }
 
 template <typename InputArchiveT>
 void CEREAL_LOAD_FUNCTION_NAME(
-  lbann::RootedInputArchiveAdaptor<InputArchiveT>& ar, bool& b)
+  lbann::RootedInputArchiveAdaptor<InputArchiveT>& ar,
+  bool& b)
 {
   ar.load_on_root(b);
   int val = b;
-  El::mpi::Broadcast(val, ar.root(), ar.grid().Comm(),
+  El::mpi::Broadcast(val,
+                     ar.root(),
+                     ar.grid().Comm(),
                      El::SyncInfo<El::Device::CPU>{});
   if (!ar.am_root())
     b = val;
 }
 
-template <typename ArchiveT,
-          typename CharT, typename TraitsT, typename AllocT>
+template <typename ArchiveT, typename CharT, typename TraitsT, typename AllocT>
 void CEREAL_SAVE_FUNCTION_NAME(
   lbann::RootedOutputArchiveAdaptor<ArchiveT>& ar,
   std::basic_string<CharT, TraitsT, AllocT> const& str)
@@ -305,22 +287,23 @@ void CEREAL_SAVE_FUNCTION_NAME(
   ar.save_on_root(str);
 }
 
-template <typename ArchiveT,
-          typename CharT, typename TraitsT, typename AllocT>
-void CEREAL_LOAD_FUNCTION_NAME(
-  lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
-  std::basic_string<CharT, TraitsT, AllocT>& str)
+template <typename ArchiveT, typename CharT, typename TraitsT, typename AllocT>
+void CEREAL_LOAD_FUNCTION_NAME(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
+                               std::basic_string<CharT, TraitsT, AllocT>& str)
 {
   ar.load_on_root(str);
   auto str_len = str.size();
-  El::mpi::Broadcast(str_len, ar.root(), ar.grid().Comm(),
+  El::mpi::Broadcast(str_len,
+                     ar.root(),
+                     ar.grid().Comm(),
                      El::SyncInfo<El::Device::CPU>{});
   str.resize(str_len);
   // I was seeing an undefined reference if using plain ol' char. I
   // fear the day someone uses a wstring in here.
   El::mpi::Broadcast(reinterpret_cast<El::byte*>(str.data()),
-                     str_len*sizeof(CharT),
-                     ar.root(), ar.grid().Comm(),
+                     str_len * sizeof(CharT),
+                     ar.root(),
+                     ar.grid().Comm(),
                      El::SyncInfo<El::Device::CPU>{});
 }
 
@@ -336,88 +319,121 @@ void CEREAL_LOAD_FUNCTION_NAME(
 }
 
 template <class ArchiveT, class T>
-void CEREAL_SAVE_FUNCTION_NAME(
-  lbann::RootedOutputArchiveAdaptor<ArchiveT>& ar,
-  SizeTag<T> const& tag)
+void CEREAL_SAVE_FUNCTION_NAME(lbann::RootedOutputArchiveAdaptor<ArchiveT>& ar,
+                               SizeTag<T> const& tag)
 {
   ar.save_on_root(tag);
 }
 
 template <class ArchiveT, class T>
-void CEREAL_LOAD_FUNCTION_NAME(
-  lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
-  SizeTag<T>& tag)
+void CEREAL_LOAD_FUNCTION_NAME(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
+                               SizeTag<T>& tag)
 {
   ar.load_on_root(tag);
   El::mpi::Broadcast(tag.size,
-                     ar.root(), ar.grid().Comm(),
+                     ar.root(),
+                     ar.grid().Comm(),
                      El::SyncInfo<El::Device::CPU>{});
 }
 
-template <class ArchiveT, class T,
-          h2::meta::EnableWhen<!std::is_arithmetic_v<T>
-                               && !::cereal::traits::has_minimal_base_class_serialization<T, ::cereal::traits::has_minimal_output_serialization, ArchiveT>::value
-                               && !::cereal::traits::has_minimal_output_serialization<T, ArchiveT>::value, int> = 1>
+template <
+  class ArchiveT,
+  class T,
+  h2::meta::EnableWhen<
+    !std::is_arithmetic_v<T> &&
+      !::cereal::traits::has_minimal_base_class_serialization<
+        T,
+        ::cereal::traits::has_minimal_output_serialization,
+        ArchiveT>::value &&
+      !::cereal::traits::has_minimal_output_serialization<T, ArchiveT>::value,
+    int> = 1>
 void prologue(lbann::RootedOutputArchiveAdaptor<ArchiveT>& ar, T const& data)
 {
   ar.prologue_on_root(data);
 }
 
-template <class ArchiveT, class T,
-          h2::meta::EnableWhen<!std::is_arithmetic_v<T>
-                               && !::cereal::traits::has_minimal_base_class_serialization<T, ::cereal::traits::has_minimal_output_serialization, ArchiveT>::value
-                               && !::cereal::traits::has_minimal_output_serialization<T, ArchiveT>::value, int> = 1>
+template <
+  class ArchiveT,
+  class T,
+  h2::meta::EnableWhen<
+    !std::is_arithmetic_v<T> &&
+      !::cereal::traits::has_minimal_base_class_serialization<
+        T,
+        ::cereal::traits::has_minimal_output_serialization,
+        ArchiveT>::value &&
+      !::cereal::traits::has_minimal_output_serialization<T, ArchiveT>::value,
+    int> = 1>
 void epilogue(lbann::RootedOutputArchiveAdaptor<ArchiveT>& ar, T const& data)
 {
   ar.epilogue_on_root(data);
 }
 
-template <class ArchiveT, class T,
-          h2::meta::EnableWhen<!std::is_arithmetic_v<T>
-                               && !::cereal::traits::has_minimal_base_class_serialization<T, ::cereal::traits::has_minimal_input_serialization, ArchiveT>::value
-                               && !::cereal::traits::has_minimal_input_serialization<T, ArchiveT>::value, int> = 1>
-void prologue(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
-              T const& data)
+template <
+  class ArchiveT,
+  class T,
+  h2::meta::EnableWhen<
+    !std::is_arithmetic_v<T> &&
+      !::cereal::traits::has_minimal_base_class_serialization<
+        T,
+        ::cereal::traits::has_minimal_input_serialization,
+        ArchiveT>::value &&
+      !::cereal::traits::has_minimal_input_serialization<T, ArchiveT>::value,
+    int> = 1>
+void prologue(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar, T const& data)
 {
   ar.prologue_on_root(data);
 }
 
-template <class ArchiveT, class T,
-          h2::meta::EnableWhen<!std::is_arithmetic_v<T>
-                               && !::cereal::traits::has_minimal_base_class_serialization<T, ::cereal::traits::has_minimal_input_serialization, ArchiveT>::value
-                               && !::cereal::traits::has_minimal_input_serialization<T, ArchiveT>::value, int> = 1>
-void epilogue(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
-              T const& data)
+template <
+  class ArchiveT,
+  class T,
+  h2::meta::EnableWhen<
+    !std::is_arithmetic_v<T> &&
+      !::cereal::traits::has_minimal_base_class_serialization<
+        T,
+        ::cereal::traits::has_minimal_input_serialization,
+        ArchiveT>::value &&
+      !::cereal::traits::has_minimal_input_serialization<T, ArchiveT>::value,
+    int> = 1>
+void epilogue(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar, T const& data)
 {
   ar.epilogue_on_root(data);
 }
 
 // For strings:
 template <typename ArchiveT,
-          typename CharT, typename TraitsT, typename AllocatorT>
+          typename CharT,
+          typename TraitsT,
+          typename AllocatorT>
 void prologue(lbann::RootedOutputArchiveAdaptor<ArchiveT>&,
-              std::basic_string<CharT,TraitsT,AllocatorT> const&)
+              std::basic_string<CharT, TraitsT, AllocatorT> const&)
 {}
 
 template <typename ArchiveT,
-          typename CharT, typename TraitsT, typename AllocatorT>
+          typename CharT,
+          typename TraitsT,
+          typename AllocatorT>
 void epilogue(lbann::RootedOutputArchiveAdaptor<ArchiveT>&,
-              std::basic_string<CharT,TraitsT,AllocatorT> const&)
+              std::basic_string<CharT, TraitsT, AllocatorT> const&)
 {}
 
 template <typename ArchiveT,
-          typename CharT, typename TraitsT, typename AllocatorT>
+          typename CharT,
+          typename TraitsT,
+          typename AllocatorT>
 void prologue(lbann::RootedInputArchiveAdaptor<ArchiveT>&,
-              std::basic_string<CharT,TraitsT,AllocatorT> const&)
+              std::basic_string<CharT, TraitsT, AllocatorT> const&)
 {}
 
 template <typename ArchiveT,
-          typename CharT, typename TraitsT, typename AllocatorT>
+          typename CharT,
+          typename TraitsT,
+          typename AllocatorT>
 void epilogue(lbann::RootedInputArchiveAdaptor<ArchiveT>&,
-              std::basic_string<CharT,TraitsT,AllocatorT> const&)
+              std::basic_string<CharT, TraitsT, AllocatorT> const&)
 {}
 
-}// namespace cereal
+} // namespace cereal
 
 #ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
 CEREAL_REGISTER_ARCHIVE(

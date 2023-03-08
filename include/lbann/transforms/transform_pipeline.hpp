@@ -28,8 +28,8 @@
 #define LBANN_TRANSFORMS_TRANSFORM_PIPELINE_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-#include "lbann/utils/description.hpp"
 #include "lbann/transforms/transform.hpp"
+#include "lbann/utils/description.hpp"
 
 namespace lbann {
 namespace transform {
@@ -37,7 +37,8 @@ namespace transform {
 /**
  * Applies a sequence of transforms to input data.
  */
-class transform_pipeline {
+class transform_pipeline
+{
 public:
   transform_pipeline() {}
   transform_pipeline(const transform_pipeline&);
@@ -51,7 +52,8 @@ public:
   /**
    * Add trans as the next transform to apply.
    */
-  void add_transform(std::unique_ptr<transform>&& trans) {
+  void add_transform(std::unique_ptr<transform>&& trans)
+  {
     m_transforms.push_back(std::move(trans));
   }
 
@@ -59,7 +61,8 @@ public:
    * Set the expected dimensions of the data after applying the transforms.
    * This is primarily meant as a debugging aid/sanity check.
    */
-  void set_expected_out_dims(std::vector<size_t> expected_out_dims) {
+  void set_expected_out_dims(std::vector<size_t> expected_out_dims)
+  {
     m_expected_out_dims = expected_out_dims;
   }
 
@@ -77,8 +80,9 @@ public:
    * @param out_data Output will be placed here. It will not be reallocated.
    * @param dims Dimensions of data. Will be modified in-place.
    */
-  void apply(El::Matrix<uint8_t>& data, CPUMat& out_data,
-             std::vector<size_t>& dims);
+  void
+  apply(El::Matrix<uint8_t>& data, CPUMat& out_data, std::vector<size_t>& dims);
+
 private:
   /** Ordered list of transforms to apply. */
   std::vector<std::unique_ptr<transform>> m_transforms;
@@ -89,7 +93,7 @@ private:
   void assert_expected_out_dims(const std::vector<size_t>& dims);
 };
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_TRANSFORM_PIPELINE_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_TRANSFORM_PIPELINE_HPP_INCLUDED

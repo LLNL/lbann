@@ -39,18 +39,18 @@ namespace callback {
  * Implementations should override implement the abstract methods to define
  * concrete schedules.
  */
-class variable_minibatch : public callback_base {
- public:
+class variable_minibatch : public callback_base
+{
+public:
   variable_minibatch(size_t starting_mbsize);
-  variable_minibatch(
-    const variable_minibatch&) = default;
-  variable_minibatch& operator=(
-    const variable_minibatch&) = default;
+  variable_minibatch(const variable_minibatch&) = default;
+  variable_minibatch& operator=(const variable_minibatch&) = default;
   /// Set the initial mini-batch size.
-  void on_train_begin(model *m) override;
+  void on_train_begin(model* m) override;
   /// Potentially change the mini-batch size.
-  void on_epoch_end(model *m) override;
- protected:
+  void on_epoch_end(model* m) override;
+
+protected:
   /**
    * Implemented by child classes to provide the mini-batch/learning schedule.
    * This is called at the end of every training epoch. If it returns false,
@@ -64,12 +64,12 @@ class variable_minibatch : public callback_base {
    * behavior; also be aware of interactions with other learning rate
    * schedules.
    */
-  virtual bool schedule(model *m, size_t& new_mbsize, float& new_lr,
-                        size_t& ramp_time) = 0;
+  virtual bool
+  schedule(model* m, size_t& new_mbsize, float& new_lr, size_t& ramp_time) = 0;
   /// Change the learning rate of every layer in m to new_lr.
-  void change_learning_rate(model *m, float new_lr) const;
+  void change_learning_rate(model* m, float new_lr) const;
   /// Get the current learning rate (assumes every layer has the same one).
-  float get_current_learning_rate(model *m) const;
+  float get_current_learning_rate(model* m) const;
 
   /// Initial mini-batch size.
   size_t m_starting_mbsize;
@@ -90,21 +90,22 @@ class variable_minibatch : public callback_base {
  * Double the mini-batch size every set number of epochs.
  * Also doubles the learning rate.
  */
-class step_minibatch : public variable_minibatch {
- public:
-  step_minibatch(size_t starting_mbsize, size_t step,
-                                size_t ramp_time = 0);
+class step_minibatch : public variable_minibatch
+{
+public:
+  step_minibatch(size_t starting_mbsize, size_t step, size_t ramp_time = 0);
   step_minibatch(const step_minibatch&) = default;
-  step_minibatch& operator=(
-    const step_minibatch&) = delete;
-  step_minibatch* copy() const override {
-    return new step_minibatch(*this);
-  }
+  step_minibatch& operator=(const step_minibatch&) = delete;
+  step_minibatch* copy() const override { return new step_minibatch(*this); }
   std::string name() const override { return "step minibatch"; }
- protected:
-  bool schedule(model *m, size_t& new_mbsize, float& new_lr, size_t& ramp_time) override;
 
- private:
+protected:
+  bool schedule(model* m,
+                size_t& new_mbsize,
+                float& new_lr,
+                size_t& ramp_time) override;
+
+private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
@@ -116,13 +117,15 @@ class step_minibatch : public variable_minibatch {
 
 // Builder function
 std::unique_ptr<callback_base>
-build_step_minibatch_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_step_minibatch_callback_from_pbuf(const google::protobuf::Message&,
+                                        std::shared_ptr<lbann_summary> const&);
 
-class minibatch_schedule : public variable_minibatch {
- public:
+class minibatch_schedule : public variable_minibatch
+{
+public:
   /// Represents a step in a schedule of mini-batch sizes.
-  struct minibatch_step {
+  struct minibatch_step
+  {
     /// Epoch for this schedule to start.
     size_t epoch;
     /// Mini-batch size to use.
@@ -131,25 +134,27 @@ class minibatch_schedule : public variable_minibatch {
     float lr;
     /// Number of epochs to ramp the learning rate over.
     size_t ramp_time;
-    minibatch_step(size_t _epoch, size_t _mbsize, float _lr, size_t _ramp_time) :
-      epoch(_epoch), mbsize(_mbsize), lr(_lr), ramp_time(_ramp_time) {}
+    minibatch_step(size_t _epoch, size_t _mbsize, float _lr, size_t _ramp_time)
+      : epoch(_epoch), mbsize(_mbsize), lr(_lr), ramp_time(_ramp_time)
+    {}
   };
 
-  minibatch_schedule(
-    size_t starting_mbsize, std::vector<minibatch_step> steps);
-  minibatch_schedule(
-    const minibatch_schedule&) = default;
-  minibatch_schedule& operator=(
-    const minibatch_schedule&) = delete;
-  minibatch_schedule* copy() const override {
+  minibatch_schedule(size_t starting_mbsize, std::vector<minibatch_step> steps);
+  minibatch_schedule(const minibatch_schedule&) = default;
+  minibatch_schedule& operator=(const minibatch_schedule&) = delete;
+  minibatch_schedule* copy() const override
+  {
     return new minibatch_schedule(*this);
   }
   std::string name() const override { return "minibatch schedule"; }
 
- protected:
-  bool schedule(model *m, size_t& new_mbsize, float& new_lr, size_t& ramp_time) override;
+protected:
+  bool schedule(model* m,
+                size_t& new_mbsize,
+                float& new_lr,
+                size_t& ramp_time) override;
 
- private:
+private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
@@ -158,11 +163,11 @@ class minibatch_schedule : public variable_minibatch {
 };
 
 // Builder function
-std::unique_ptr<callback_base>
-build_minibatch_schedule_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+std::unique_ptr<callback_base> build_minibatch_schedule_callback_from_pbuf(
+  const google::protobuf::Message&,
+  std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_VARIABLE_MINIBATCH_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_VARIABLE_MINIBATCH_HPP_INCLUDED

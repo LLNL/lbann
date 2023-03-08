@@ -122,8 +122,9 @@ auto get_repeated_field_ref(google::protobuf::Message const& msg,
 } // namespace lbann
 
 template <typename T, typename ContainerT>
-void lbann::protobuf::assign_to_repeated(google::protobuf::RepeatedField<T>& field,
-                        ContainerT const& values)
+void lbann::protobuf::assign_to_repeated(
+  google::protobuf::RepeatedField<T>& field,
+  ContainerT const& values)
 {
   /** @todo Change to Assign if Protobuf v3.16.0 and greater is required. */
   field.Clear();

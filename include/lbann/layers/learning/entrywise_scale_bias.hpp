@@ -28,10 +28,10 @@
 #define LBANN_LAYER_LEARNING_ENTRYWISE_SCALE_BIAS_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/utils/exception.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/layers.pb.h"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
@@ -54,7 +54,8 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class entrywise_scale_bias_layer : public data_type_layer<TensorDataType> {
+class entrywise_scale_bias_layer : public data_type_layer<TensorDataType>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -71,13 +72,13 @@ public:
   ///@}
 
 public:
-
-  entrywise_scale_bias_layer(lbann_comm *comm=nullptr);
+  entrywise_scale_bias_layer(lbann_comm* comm = nullptr);
   entrywise_scale_bias_layer(const entrywise_scale_bias_layer& other);
-  entrywise_scale_bias_layer& operator=(
-    const entrywise_scale_bias_layer& other);
+  entrywise_scale_bias_layer&
+  operator=(const entrywise_scale_bias_layer& other);
 
-  entrywise_scale_bias_layer* copy() const override {
+  entrywise_scale_bias_layer* copy() const override
+  {
     return new entrywise_scale_bias_layer(*this);
   }
 
@@ -96,7 +97,6 @@ public:
   void setup_data(size_t max_mini_batch_size) override;
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
@@ -104,102 +104,109 @@ protected:
   void bp_compute() override;
 
 private:
-
   /** @brief Objective function gradient w.r.t. weights. */
   std::unique_ptr<AbsDistMatrixType> m_weights_gradient;
-
 };
 
 // Template implementation
 
 template <typename T, data_layout L, El::Device D>
-void entrywise_scale_bias_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void entrywise_scale_bias_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   proto.mutable_entrywise_scale_bias();
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Dev>
-entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
-::entrywise_scale_bias_layer(lbann_comm *comm)
+entrywise_scale_bias_layer<TensorDataType, Layout, Dev>::
+  entrywise_scale_bias_layer(lbann_comm* comm)
   : data_type_layer<TensorDataType>(comm)
 {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Dev>
-entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
-::entrywise_scale_bias_layer(const entrywise_scale_bias_layer& other)
+entrywise_scale_bias_layer<TensorDataType, Layout, Dev>::
+  entrywise_scale_bias_layer(const entrywise_scale_bias_layer& other)
   : data_type_layer<TensorDataType>(other),
-  m_weights_gradient(other.m_weights_gradient ?
-                     other.m_weights_gradient->Copy() : nullptr)
+    m_weights_gradient(
+      other.m_weights_gradient ? other.m_weights_gradient->Copy() : nullptr)
 {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Dev>
-auto entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
-::operator=(const entrywise_scale_bias_layer& other)
-  -> entrywise_scale_bias_layer& {
+auto entrywise_scale_bias_layer<TensorDataType, Layout, Dev>::operator=(
+  const entrywise_scale_bias_layer& other) -> entrywise_scale_bias_layer&
+{
   data_type_layer<TensorDataType>::operator=(other);
-  m_weights_gradient.reset(other.m_weights_gradient ?
-                           other.m_weights_gradient->Copy() :
-                           nullptr);
+  m_weights_gradient.reset(
+    other.m_weights_gradient ? other.m_weights_gradient->Copy() : nullptr);
   return *this;
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Dev>
-void
-entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
-::setup_data(size_t max_mini_batch_size) {
-    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
+void entrywise_scale_bias_layer<TensorDataType, Layout, Dev>::setup_data(
+  size_t max_mini_batch_size)
+{
+  data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
-    // Initialize output dimensions
-    this->set_output_dims(this->get_input_dims());
-    const auto& output_dims_ = this->get_output_dims();
-    std::vector<size_t> output_dims(output_dims_.begin(), output_dims_.end());
-    const auto output_size = this->get_output_size();
+  // Initialize output dimensions
+  this->set_output_dims(this->get_input_dims());
+  const auto& output_dims_ = this->get_output_dims();
+  std::vector<size_t> output_dims(output_dims_.begin(), output_dims_.end());
+  const auto output_size = this->get_output_size();
 
-    // Construct default weights if needed
-    // Note: Scale is initialized to 1 and bias to 0
-    if (!this->has_weights()) {
-      auto w = std::make_shared<WeightsType>(*this->get_comm());
-      std::vector<TensorDataType> vals(2*output_size,
-                                       El::TypeTraits<TensorDataType>::Zero());
-      std::fill(vals.begin(), vals.begin()+output_size,
-                El::TypeTraits<TensorDataType>::One());
-      auto init = std::make_unique<value_initializer<TensorDataType>>(vals);
-      auto opt = this->m_model->template create_optimizer<TensorDataType>();
-      w->set_name(this->get_name() + "_weights");
-      w->set_initializer(std::move(init));
-      w->set_optimizer(std::move(opt));
-      this->add_weights(w);
-      this->m_model->add_weights(std::move(w));
-    }
-    if (this->num_weights() != 1) {
-      LBANN_ERROR("attempted to setup ",
-                  this->get_type()," layer \"",this->get_name(),"\" ",
-                  "with an invalid number of weights ",
-                  "(expected 1, found ",this->num_weights(),")");
-    }
+  // Construct default weights if needed
+  // Note: Scale is initialized to 1 and bias to 0
+  if (!this->has_weights()) {
+    auto w = std::make_shared<WeightsType>(*this->get_comm());
+    std::vector<TensorDataType> vals(2 * output_size,
+                                     El::TypeTraits<TensorDataType>::Zero());
+    std::fill(vals.begin(),
+              vals.begin() + output_size,
+              El::TypeTraits<TensorDataType>::One());
+    auto init = std::make_unique<value_initializer<TensorDataType>>(vals);
+    auto opt = this->m_model->template create_optimizer<TensorDataType>();
+    w->set_name(this->get_name() + "_weights");
+    w->set_initializer(std::move(init));
+    w->set_optimizer(std::move(opt));
+    this->add_weights(w);
+    this->m_model->add_weights(std::move(w));
+  }
+  if (this->num_weights() != 1) {
+    LBANN_ERROR("attempted to setup ",
+                this->get_type(),
+                " layer \"",
+                this->get_name(),
+                "\" ",
+                "with an invalid number of weights ",
+                "(expected 1, found ",
+                this->num_weights(),
+                ")");
+  }
 
-    // Setup weights
-    auto dist = this->get_prev_activations().DistData();
-    dist.rowDist = El::STAR;
-    this->get_weights(0).set_dims(output_dims,
-                                  {static_cast<int>(2)});
-    this->get_weights(0).set_matrix_distribution(dist);
+  // Setup weights
+  auto dist = this->get_prev_activations().DistData();
+  dist.rowDist = El::STAR;
+  this->get_weights(0).set_dims(output_dims, {static_cast<int>(2)});
+  this->get_weights(0).set_matrix_distribution(dist);
 
-    // Setup gradient w.r.t. weights
-    m_weights_gradient.reset(AbsDistMatrixType::Instantiate(dist));
-    m_weights_gradient->AlignWith(dist);
-    m_weights_gradient->Resize(output_size, 2);
+  // Setup gradient w.r.t. weights
+  m_weights_gradient.reset(AbsDistMatrixType::Instantiate(dist));
+  m_weights_gradient->AlignWith(dist);
+  m_weights_gradient->Resize(output_size, 2);
 }
 
 LBANN_DEFINE_LAYER_BUILDER(entrywise_scale_bias);
 
 #ifndef LBANN_ENTRYWISE_SCALE_BIAS_LAYER_INSTANTIATE
 
-#define PROTO_DEVICE(T, Device)                     \
-  extern template class entrywise_scale_bias_layer< \
-    T, data_layout::DATA_PARALLEL, Device>;         \
-  extern template class entrywise_scale_bias_layer< \
-    T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class entrywise_scale_bias_layer<T,                          \
+                                                   data_layout::DATA_PARALLEL, \
+                                                   Device>;                    \
+  extern template class entrywise_scale_bias_layer<                            \
+    T,                                                                         \
+    data_layout::MODEL_PARALLEL,                                               \
+    Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

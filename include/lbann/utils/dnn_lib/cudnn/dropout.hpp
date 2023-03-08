@@ -32,12 +32,10 @@
 
 #include "utils.hpp"
 
-namespace lbann
-{
+namespace lbann {
 
 #if defined LBANN_HAS_CUDNN
-namespace dnn_lib
-{
+namespace dnn_lib {
 
 using namespace cudnn;
 
@@ -65,15 +63,14 @@ void dropout_forward(DropoutDescriptor const& dropoutDesc,
                      El::SyncInfo<El::Device::GPU> const& si)
 {
   auto handle_manager = internal::make_default_handle_manager(si);
-  CHECK_CUDNN(
-    cudnnDropoutForward(handle_manager.get(),
-                        dropoutDesc,
-                        xDesc,
-                        x.LockedBuffer(),
-                        yDesc,
-                        y.Buffer(),
-                        workSpace.Buffer(),
-                        workSpace.Height() * sizeof(TensorDataType)));
+  CHECK_CUDNN(cudnnDropoutForward(handle_manager.get(),
+                                  dropoutDesc,
+                                  xDesc,
+                                  x.LockedBuffer(),
+                                  yDesc,
+                                  y.Buffer(),
+                                  workSpace.Buffer(),
+                                  workSpace.Height() * sizeof(TensorDataType)));
 }
 
 template <typename TensorDataType>
@@ -125,8 +122,8 @@ void dropout_backward(DropoutDescriptor const& dropoutDesc,
   dropout_backward(dropoutDesc, dyDesc, dy, dxDesc, dx, workSpace, multisync);
 }
 
-}// namespace dnn_lib
+} // namespace dnn_lib
 #endif // LBANN_HAS_CUDNN
 
-}// namespace lbann
+} // namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_CUDNN_DROPOUT_HPP_

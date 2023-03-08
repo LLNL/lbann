@@ -30,9 +30,7 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
-void
-pooling_layer<TensorDataType,Layout,Device>
-::serialize(ArchiveT& ar)
+void pooling_layer<TensorDataType, Layout, Device>::serialize(ArchiveT& ar)
 {
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",
@@ -44,7 +42,6 @@ pooling_layer<TensorDataType,Layout,Device>
      CEREAL_NVP(m_strides));
   // Members that aren't serialized
   //     m_max_pool_indices;
-
 }
 
 } // namespace lbann

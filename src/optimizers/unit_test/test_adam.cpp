@@ -32,13 +32,13 @@
 
 // See test_sgd.cpp for a detailed, annotated test case.
 
-namespace
-{
+namespace {
 
 template <typename TensorDataType>
 struct AdamBuilder
 {
-  static lbann::adam<TensorDataType> Stateful() {
+  static lbann::adam<TensorDataType> Stateful()
+  {
     lbann::adam<TensorDataType> ret(
       /*learning_rate=*/TensorDataType(3.f),
       /*beta1=*/TensorDataType(1.f),
@@ -52,21 +52,21 @@ struct AdamBuilder
     return ret;
   }
 
-  static lbann::adam<TensorDataType> Default() {
+  static lbann::adam<TensorDataType> Default()
+  {
     return lbann::adam<TensorDataType>(
       /*learning_rate=*/TensorDataType(0.0f),
       /*beta1=*/TensorDataType(0.0f),
       /*beta2=*/TensorDataType(0.0f),
       /*eps=*/TensorDataType(0.0f));
   }
-};// struct AdamBuilder
+}; // struct AdamBuilder
 
-}// namespace <anon>
+} // namespace
 
-TEMPLATE_LIST_TEST_CASE(
-  "Adam Optimizer serialization",
-  "[optimizer][serialize]",
-  AllArchiveTypes)
+TEMPLATE_LIST_TEST_CASE("Adam Optimizer serialization",
+                        "[optimizer][serialize]",
+                        AllArchiveTypes)
 {
   using ValueType = tlist::Car<TestType>;
 

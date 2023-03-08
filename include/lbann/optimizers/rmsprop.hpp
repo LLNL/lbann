@@ -27,10 +27,10 @@
 #ifndef LBANN_OPTIMIZERS_RMSPROP_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_RMSPROP_HPP_INCLUDED
 
-#include "lbann/optimizers/data_type_optimizer.hpp"
-#include <sys/stat.h>
 #include "lbann/io/persist.hpp"
+#include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/proto/optimizers.pb.h"
+#include <sys/stat.h>
 
 namespace lbann {
 
@@ -41,9 +41,11 @@ namespace lbann {
  */
 template <typename TensorDataType>
 class rmsprop : public Cloneable<rmsprop<TensorDataType>,
-                                 data_type_optimizer<TensorDataType>> {
-  using BaseType = Cloneable<rmsprop<TensorDataType>,
-                             data_type_optimizer<TensorDataType>>;
+                                 data_type_optimizer<TensorDataType>>
+{
+  using BaseType =
+    Cloneable<rmsprop<TensorDataType>, data_type_optimizer<TensorDataType>>;
+
 public:
   /** @name Public Types */
   ///@{
@@ -60,7 +62,6 @@ public:
   ///@}
 
 public:
-
   rmsprop(TensorDataType learning_rate,
           TensorDataType decay_rate,
           TensorDataType eps = 1e-8);
@@ -69,7 +70,8 @@ public:
   ~rmsprop() override = default;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   /** Human-readable type name. */
   std::string get_type() const override { return "RMSprop"; }
@@ -83,7 +85,6 @@ public:
   void write_proto(lbann_data::Optimizer& opt) const final;
 
 protected:
-
   friend cereal::access;
 
   /** @brief Default constructor.
@@ -101,7 +102,6 @@ protected:
                     const AbsDistMatrixType& gradient) override;
 
 private:
-
   /** Decay rate. */
   TensorDataType m_decay_rate;
   /** Small factor to avoid division by zero. */
@@ -110,18 +110,18 @@ private:
   std::unique_ptr<AbsDistMatrixType> m_cache;
 
   /** CPU implementation of optimization step. */
-  void step_compute_cpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
+  void step_compute_cpu(AbsDistMatrixType& values,
+                        const AbsDistMatrixType& gradient);
 #ifdef LBANN_HAS_GPU
   /** GPU implementation of optimization step. */
-  void step_compute_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
+  void step_compute_gpu(AbsDistMatrixType& values,
+                        const AbsDistMatrixType& gradient);
 #endif // LBANN_HAS_GPU
-
 };
 
 template <typename TensorDataType>
 std::unique_ptr<optimizer>
-build_rmsprop_optimizer_from_pbuf(
-  google::protobuf::Message const&);
+build_rmsprop_optimizer_from_pbuf(google::protobuf::Message const&);
 
 } // namespace lbann
 

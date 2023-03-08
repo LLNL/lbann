@@ -24,12 +24,12 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "common.hpp"
 #include <lbann/utils/serialization/serialize_matrices.hpp>
 #include <lbann/utils/serialization/serialize_matrices_impl.hpp>
-#include "common.hpp"
 
 // Enumerate valid DistMatrix permutations and add Matrix.
-#define REGISTER_SPECIFIC_DISTMATRIX(TYPE, DEVICE)           \
+#define REGISTER_SPECIFIC_DISTMATRIX(TYPE, DEVICE)                             \
   REGISTER_DISTMATRIX(TYPE, STAR, STAR, DEVICE)
 
 // Enumerate the valid device types. This is done here rather than
@@ -37,17 +37,16 @@
 // slightly prettier printing is worth it to me -- the namespace and
 // enum class are irrelevant to users!
 #if defined LBANN_HAS_GPU
-#define REGISTER_SPECIFIC_DISTMATRIX_DEVICES(TYPE)   \
-  REGISTER_SPECIFIC_DISTMATRIX(TYPE, CPU)            \
+#define REGISTER_SPECIFIC_DISTMATRIX_DEVICES(TYPE)                             \
+  REGISTER_SPECIFIC_DISTMATRIX(TYPE, CPU)                                      \
   REGISTER_SPECIFIC_DISTMATRIX(TYPE, GPU)
 #else
-#define REGISTER_SPECIFIC_DISTMATRIX_DEVICES(TYPE)   \
+#define REGISTER_SPECIFIC_DISTMATRIX_DEVICES(TYPE)                             \
   REGISTER_SPECIFIC_DISTMATRIX(TYPE, CPU)
 #endif // defined LBANN_HAS_GPU
 
 // Enumerate all the valid data types.
-#define PROTO(T)                                \
-  REGISTER_SPECIFIC_DISTMATRIX_DEVICES(T)
+#define PROTO(T) REGISTER_SPECIFIC_DISTMATRIX_DEVICES(T)
 #include <lbann/macros/instantiate.hpp>
 
 CEREAL_REGISTER_DYNAMIC_INIT(DistMat_STAR_STAR);

@@ -28,8 +28,8 @@
 #define LBANN_LAYERS_LEARNING_CONVOLUTION_HPP_INCLUDED
 
 #include "lbann/layers/learning/base_convolution.hpp"
-#include "lbann/utils/exception.hpp"
 #include "lbann/utils/distconv.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
@@ -41,18 +41,20 @@ class imcomm;
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class convolution_distconv_adapter
-  : public base_convolution_adapter<TensorDataType, Device> {
+  : public base_convolution_adapter<TensorDataType, Device>
+{
 public:
-  using TensorDevType = typename base_convolution_adapter<TensorDataType, Device>::TensorDevType;
+  using TensorDevType =
+    typename base_convolution_adapter<TensorDataType, Device>::TensorDevType;
 
   convolution_distconv_adapter(Layer& layer)
     : base_convolution_adapter<TensorDataType, Device>(layer)
   {}
   virtual ~convolution_distconv_adapter() = default;
 
-  void setup_distributions(tensor_overlap_constraints &constraints) override;
+  void setup_distributions(tensor_overlap_constraints& constraints) override;
   void setup_layer(size_t workspace_capacity) override;
-  dc::Shape get_activations_local_shape(int index=0) const override;
+  dc::Shape get_activations_local_shape(int index = 0) const override;
 };
 #endif // LBANN_HAS_DISTCONV
 
@@ -70,18 +72,16 @@ public:
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class convolution_layer
-  : public base_convolution_layer<TensorDataType, Device> {
+class convolution_layer : public base_convolution_layer<TensorDataType, Device>
+{
 
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "convolution layer only supports DATA_PARALLEL");
 
 private:
-
   friend class callback::imcomm;
 
 public:
-
   convolution_layer(int num_data_dims,
                     int num_output_channels,
                     int conv_dim,
@@ -100,7 +100,10 @@ public:
                     int groups,
                     bool has_bias = true);
 
-  convolution_layer* copy() const override { return new convolution_layer(*this); }
+  convolution_layer* copy() const override
+  {
+    return new convolution_layer(*this);
+  }
 
   std::string get_type() const override { return "convolution"; }
 
@@ -111,7 +114,7 @@ public:
 #ifdef LBANN_HAS_ONNX
   std::string get_onnx_op_type() const override { return "Conv"; }
   void fill_onnx_node(onnx::GraphProto& graph) const override;
-#endif //LBANN_HAS_ONNX
+#endif // LBANN_HAS_ONNX
 
   /** @name Serialization */
   ///@{
@@ -122,7 +125,6 @@ public:
   ///@}
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
@@ -136,7 +138,8 @@ protected:
 
 #ifdef LBANN_HAS_DISTCONV
   friend class convolution_distconv_adapter<TensorDataType, Layout, Device>;
- protected:
+
+protected:
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
   bool is_distconv_supported() const override;
 #endif // LBANN_HAS_DISTCONV
@@ -147,8 +150,10 @@ LBANN_DEFINE_LAYER_BUILDER(convolution);
 
 #ifndef LBANN_CONVOLUTION_LAYER_INSTANTIATE
 
-#define PROTO_DEVICE(T, Device) \
-  extern template class convolution_layer<T, data_layout::DATA_PARALLEL, Device>;
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class convolution_layer<T,                                   \
+                                          data_layout::DATA_PARALLEL,          \
+                                          Device>;
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
