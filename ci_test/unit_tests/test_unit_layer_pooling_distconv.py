@@ -104,6 +104,11 @@ def setup_experiment(lbann, weekly):
         lbann (module): Module for LBANN Python frontend
 
     """
+    if (not lbann.has_feature('DISTCONV'):
+        message = f'{os.path.basename(__file__)} requires DISTCONV'
+        print('Skip - ' + message)
+        pytest.skip(message)
+    
     mini_batch_size = num_samples() // 2
     trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model(lbann)
