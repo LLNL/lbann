@@ -84,13 +84,17 @@ def setup_experiment(lbann, weekly):
 
     """
 
-    # Skip test on non-GPU systems
-    # Note: Test requires cuDNN (on GPU) or oneDNN (on CPU).
-    ### @todo Assume LBANN has been built with oneDNN?
-    if not tools.gpus_per_node(lbann):
-        message = f'{os.path.basename(__file__)} requires cuDNN or oneDNN'
-        print('Skip - ' + message)
-        pytest.skip(message)
+    # Skip test when not supported.    
+    if not tools.gpus_per_node(lbann):   # CPU system
+        if not lbann.has_feature('ONEDNN_CPU'):
+            message = f'{os.path.basename(__file__)} requires oneDNN on CPU'
+            print('Skip - ' + message)
+            pytest.skip(message)
+    else:                                # GPU system
+        if not (lbann.has_feature('CUDA') and lbann.has_feature('CUDNN')):
+            message = f'{os.path.basename(__file__)} requires CUDA and cuDNN on GPU'
+            print('Skip - ' + message)
+            pytest.skip(message)
 
     mini_batch_size = num_samples() // 2
     trainer = lbann.Trainer(mini_batch_size)
