@@ -58,6 +58,15 @@ void cross_entropy_layer<TensorDataType, T_layout, Dev>::setup_dims(
 
 
     if (m_use_labels){
+
+      if (T_layout == data_layout::MODEL_PARALLEL){
+        std::stringstream err;
+        err << get_type() << " layer \"" << this->get_name() <<"\" "
+            << "only supports use_labels is not supported in model parallel layout"
+            << " (for now)"; 
+        LBANN_ERROR(err.str());
+      }
+      
       const auto& predictions_dims = this->get_input_dims(0);
       const auto& labels_dims = this->get_input_dims(0);
       // Check if the first dimension is 1 for the labels tensor
@@ -79,10 +88,12 @@ void cross_entropy_layer<TensorDataType, T_layout, Dev>::setup_dims(
       // Check if the number of dimensions match for predictions and labels 
       // tensors
 
-      if (predictions_dims.size() != labels_dims.size()){
+      if (predictions_dims.size() != labels_dims.size()
+          || predictions_dims.size() < 2){
         std::stringstream err;
         err << get_type() << " layer \"" << this->get_name() <<"\" "
-            << "expects both input tensors to have the same number of dimensions. "
+            << "expects both input tensors to have the same number of dimensions "
+            << "and have >2 dimensions when use_lables is enabled. "
             << "Found tensors with shape (";
         
         // TODO: Put this loop in util as it's used frequently to 
