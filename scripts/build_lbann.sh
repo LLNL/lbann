@@ -38,7 +38,7 @@ CMD_LINE_VARIANTS=
 
 # Default versions of Hydrogen, DiHydrogen, and Aluminum - use head of repo
 HYDROGEN_VER="@develop"
-ALUMINUM_VER="@1.2.1"
+ALUMINUM_VER="@1.2.3:"
 #ALUMINUM_VER="@1.0.0-lbann"
 DIHYDROGEN_VER="@develop"
 # Default variants for Conduit to minimize dependencies
