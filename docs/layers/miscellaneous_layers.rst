@@ -36,7 +36,8 @@ ________________________________________
 Argmax
 ----------------------------------------
 
-Get index of maximum-value tensor entry
+The :python:`Argmax` layer gets the index of the maximum-value tensor
+entry.
 
 Expects a 1D input tensor. If multiple entries have the same maximum
 value, outputs the index of the first one.
@@ -54,7 +55,8 @@ ________________________________________
 Argmin
 ----------------------------------------
 
-Get index of minimum-value tensor entry
+The :python:`Argmin` layer gets the index of the minimum-value tensor
+entry.
 
 Expects a 1D input tensor. If multiple entries have the same minimum
 value, outputs the index of the first one.
@@ -72,10 +74,11 @@ ________________________________________
 ChannelwiseMean
 ----------------------------------------
 
-Mean values across channel dimension
+The :python:`ChannelwiseMean` layer computes mean values across
+channel dimensions.
 
 The input tensor is sliced along the first tensor dimension (the
-"channel" dimension for image data in CHW format) and the mean  value
+"channel" dimension for image data in CHW format) and the mean value
 is computed for each slice.
 
 Arguments: None
@@ -91,7 +94,8 @@ ________________________________________
 ChannelwiseSoftmax
 ----------------------------------------
 
-Softmax across channel dimension
+The :python:`ChannelwiseSoftmax` layer applies the Softmax function
+across channel dimensions.
 
 The input tensor is sliced along the first tensor dimension (the
 "channel" dimension for image data in CHW format) and the softmax
@@ -110,7 +114,8 @@ ________________________________________
 Covariance
 ----------------------------------------
 
-Covariance between entries of two tensors
+The :python:`Covariance` layer computes the covarience between entries
+of two tensors.
 
 Arguments:
 
@@ -127,7 +132,8 @@ ________________________________________
 DistEmbedding
 ----------------------------------------
 
-Embedding layer with distributed weights
+The :python:`DistEmbedding` layer is the embedding layer with
+distributed weights.
 
 This is similar to the embedding layer, which takes integer indices
 and returns embedding vectors from a lookup table. However, the
@@ -189,7 +195,8 @@ Arguments:
 External
 ----------------------------------------
 
-Create layer from an external library
+The :python:`External` layer creates a layer from an external
+library.
 
 An external layer can be created by compiling an LBANN layer object in
 a separate shared library (such as an .so file), along with a setup
@@ -200,7 +207,7 @@ in the external library can be set with an arbitrary number of inputs,
 outputs, and weights.
 
 Compiling a layer only needs to include the LBANN headers and link against
-``liblbann.so``. An ``extern "C"`` function named ``setup_<LAYER NAME>`` 
+``liblbann.so``. An ``extern "C"`` function named ``setup_<LAYER NAME>``
 must exist for LBANN to be able to create the layer.
 
 .. warning::
@@ -229,7 +236,8 @@ ________________________________________
 MiniBatchIndex
 ----------------------------------------
 
-Position of data sample within mini-batch
+The :python:`MiniBatchIndex` is the position of a data sample within a
+mini-batch.
 
 LBANN does implicit mini-batching and data samples are usually
 processed independently. This layer is helpful if some mini-batch
@@ -248,7 +256,7 @@ ________________________________________
 MiniBatchSize
 ----------------------------------------
 
-Size of current mini-batch
+The :python:`MiniBatchSize` is the size of the current mini-batch.
 
 Arguments: None
 
@@ -263,7 +271,7 @@ ________________________________________
 OneHot
 ----------------------------------------
 
-Convert index to a one-hot vector
+The :python:`OneHot` layer converts an index to a one-hot vector.
 
 Expects a scalar input tensor and outputs a 1D tensor. The input is
 interpreted as an index, and output entries are one if they correspond
@@ -284,7 +292,8 @@ ________________________________________
 RowwiseWeightsNorms
 ----------------------------------------
 
-L2 norm of each row of a weights matrix.
+The :python:`RowwiseWeightsNorms` layer is the L2 norm of each row of
+a weights matrix.
 
 .. warning::
 
@@ -314,7 +323,8 @@ ________________________________________
 UniformHash
 ----------------------------------------
 
-Apply a hash function to get uniformly distributed values
+The :python:`UniformHash` layer applies a hash function to get
+uniformly distributed values.
 
 Each input entry is hashed with MD5 and scaled to [0,1).
 
@@ -333,7 +343,7 @@ ________________________________________
 Variance
 ----------------------------------------
 
-Variance of tensor entries
+The :python:`Variance` layer computes the variance of tensor entries.
 
 Arguments:
 

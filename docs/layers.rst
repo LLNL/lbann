@@ -200,7 +200,7 @@ LBANN Layers List
    :maxdepth: 2
 
    I/O Layers <layers/io_layers>
-   Operator Layers <layers/operator_layers>
+   Operator Layer <layers/operator_layer>
    Transform Layers <layers/transform_layers>
    Learning Layers <layers/learning_layers>
    Loss Layers <layers/loss_layers>

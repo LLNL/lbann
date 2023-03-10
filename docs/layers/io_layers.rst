@@ -22,7 +22,7 @@ ________________________________________
 Input
 ---------------------------
 
-The input layer is a data tensor from data reader
+The :python:`Input` layer is a data tensor from data reader.
 
 Arguments:
 

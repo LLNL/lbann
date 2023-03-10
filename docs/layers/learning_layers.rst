@@ -31,8 +31,8 @@ ________________________________________
 ChannelwiseFullyConnected
 ----------------------------------------
 
-The ChannelwiseFullyConnected layer applies an affine transformation
-to tensor channels.
+The :python:`ChannelwiseFullyConnected` layer applies an affine
+transformation to tensor channels.
 
 The input tensor is sliced along the first tensor dimension (the
 "channel" dimension for image data in CHW format) and the same affine
@@ -78,9 +78,8 @@ ________________________________________
 ChannelwiseScaleBias
 ----------------------------------------
 
-The ChannelwiseScaleBias layer applies per-channel scale and bias.
-
-The input tensor is sliced along the first tensor dimension (the
+The :python:`ChannelwiseScaleBias` layer applies per-channel scale and
+bias. The input tensor is sliced along the first tensor dimension (the
 "channel" dimension, assuming image data in CHW format) and scale and
 bias terms are applied independently to each slice. More precisely,
 given input and output tensors
@@ -110,7 +109,7 @@ ________________________________________
 Convolution
 ----------------------------------------
 
-The Convolution layer applies convolution (more precisely,
+The :python:`Convolution` layer applies convolution (more precisely,
 cross-correlation) to the input tensor. This is primarily optimized
 for image data in CHW format.
 
@@ -189,7 +188,8 @@ ________________________________________
 Deconvolution
 ----------------------------------------
 
-This operation is the transpose of standard deep learning convolution.
+The :python:`Deconvolution` layer is the transpose of standard deep
+learning convolution.
 
 Pedantic comments: this operation is commonly called "deconvolution"
 in the deep learning community, but it is not a true deconvolution.
@@ -236,7 +236,7 @@ ________________________________________
 Embedding
 ----------------------------------------
 
-The Embedding layer is a lookup table to embedding vectors.
+The :python:`Embedding` layer is a lookup table to embedding vectors.
 
 Takes a scalar input, interprets it as an index, and outputs the
 corresponding vector. The number of embedding vectors and the size of
@@ -268,7 +268,8 @@ ________________________________________
 EntrywiseScaleBias
 ----------------------------------------
 
-The EntrywiseScaleBias layer applies entry-wise scale and bias.
+The :python:`EntrywiseScaleBias` layer applies entry-wise scale and
+bias.
 
 Scale and bias terms are applied independently to each tensor
 entry. More precisely, given input, output, scale, and bias tensors
@@ -297,7 +298,7 @@ ________________________________________
 FullyConnected
 ----------------------------------------
 
-Affine transformation
+The :python:`FullyConnected` layer is an affine transformation.
 
 Flattens the input tensor, multiplies with a weights matrix, and
 optionally applies an entry-wise bias. Following a row-vector
@@ -337,7 +338,7 @@ ________________________________________
 GRU
 ----------------------------------------
 
-Stacked gated recurrent unit
+The :python:`GRU` layer is a stacked gated recurrent unit.
 
 Expects two inputs: a 2D input sequence (
 :math:`\text{sequence_length}\times\text{input_size}`) and a 2D

@@ -29,7 +29,7 @@ ________________________________________
 CategoricalAccuracy
 ----------------------------------------
 
-The Categorical Accuracy Layer is a 0-1 loss function.
+The :python:`CategoricalAccuracy` Layer is a 0-1 loss function.
 
 Requires two inputs, which are respectively interpreted as prediction
 scores and as a one-hot label vector. The output is one if the top
@@ -52,7 +52,8 @@ ________________________________________
 CrossEntropy
 ----------------------------------------
 
-Cross entropy between probability vectors.
+The :python:`CrossEntropy` layer measures the probability and error
+between vectors.
 
 Given a predicted distribution :math:`y` and ground truth distribution
 :math:`\hat{y}`,
@@ -76,7 +77,7 @@ ________________________________________
 L1Norm
 ----------------------------------------
 
-L1 vector norm
+The :python:`L1Norm` layer is the L1 norm of a vector.
 
 .. math::
 
@@ -95,7 +96,7 @@ ________________________________________
 L2Norm2
 ----------------------------------------
 
-Square of L2 vector norm
+The :python:`L2Norm2` layer is the square of L2 vector norm.
 
 .. math::
 
@@ -114,7 +115,8 @@ ________________________________________
 MeanAbsoluteError
 ----------------------------------------
 
-Given a prediction :math:`y` and ground truth :math:`\hat{y}`,
+The :python:`MeanAbsoluteError` given a prediction :math:`y` and
+ground truth :math:`\hat{y}`:
 
 .. math::
 
@@ -134,7 +136,8 @@ ________________________________________
 MeanSquaredError
 ----------------------------------------
 
-Given a prediction :math:`y` and ground truth :math:`\hat{y}`,
+The :python:`MeanSquaredError` layer given a prediction :math:`y` and
+ground truth :math:`\hat{y}`:
 
 .. math::
 
@@ -154,11 +157,12 @@ ________________________________________
 TopKCategoricalAccuracy
 ----------------------------------------
 
-Requires two inputs, which are respectively interpreted as prediction
-scores and as a one-hot label vector. The output is one if the
-corresponding label matches one of the top-k prediction scores and is
-otherwise zero. Ties in the top-k prediction scores are broken in
-favor of entries with smaller indices.
+The :python:`TopKCategoricalAccuracy` layer requires two inputs, which
+are respectively interpreted as prediction  scores and as a one-hot
+label vector. The output is one if the corresponding label matches one
+of the top-k prediction scores and is otherwise zero. Ties in the
+top-k prediction scores are broken in favor of entries with smaller
+indices.
 
 Arguments:
 
