@@ -160,12 +160,16 @@ def construct_model(args):
     if args.alternate_updates:
         block_ids = list(range(0, len(losses)-1, 2))
         for l, i in enumerate(block_ids):
-            obj.append(lbann.IdentityZero(lbann.SigmoidBinaryCrossEntropy([losses[i],one],name='d1_real_bce'+str(l))))
-            obj.append(lbann.IdentityZero(lbann.SigmoidBinaryCrossEntropy([losses[i+1],zero],name='d1_fake_bce'+str(l))))
-            obj.append(lbann.IdentityZero(lbann.SigmoidBinaryCrossEntropy([losses[i+1],one],name='d_adv_bce'+str(l))))
-            disc_layers.append('d1_real_bce'+str(l))
-            disc_layers.append('d1_fake_bce'+str(l))
-            gen_layers.append('d_adv_bce'+str(l))
+            obj.append(lbann.IdentityZero(lbann.SigmoidBinaryCrossEntropy([losses[i],one]),name=f'd1_real_bce_{l}'))
+            obj.append(lbann.IdentityZero(lbann.SigmoidBinaryCrossEntropy([losses[i+1],zero]),name=f'd1_fake_bce_{l}'))
+            obj.append(lbann.IdentityZero(lbann.SigmoidBinaryCrossEntropy([losses[i+1],one]),name=f'd_adv_bce_{l}'))
+            disc_layers.append(f'd1_real_bce_{l}')
+            disc_layers.append(f'd1_fake_bce_{l}')
+            gen_layers.append(f'd_adv_bce_{l}')
+
+            metrics.append(lbann.Metric(obj[-3],name=f'd1_real_bce_{i}'))
+            metrics.append(lbann.Metric(obj[-2],name=f'd1_fake_bce_{i}'))
+            metrics.append(lbann.Metric(obj[-1],name=f'g_adv_bce_{i}'))
     else:
         block_ids = list(range(0, len(losses)-1, 3))
         for l, i in enumerate(block_ids):

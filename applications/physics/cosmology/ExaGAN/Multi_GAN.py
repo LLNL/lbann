@@ -188,7 +188,7 @@ class Exa3DMultiGAN(lbann.modules.Module):
             gen_img = self.forward_generator(z,self.g_ps,label)
 
         b1 = lbann.Identity(img)
-        b2 = lbann.StopGradient(gen_img)
+        b2 = lbann.Identity(gen_img) if self.alternate_updates else lbann.StopGradient(gen_img)
         b3 = lbann.Identity(gen_img)
         for bId in range(self.num_blocks):
             if label:
