@@ -427,6 +427,7 @@ CENTER_DEPENDENCIES=
 CENTER_LINKER_FLAGS=
 CENTER_BLAS_LIBRARY=
 CENTER_PIP_PACKAGES=
+CENTER_UPSTREAM_PATH=
 set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
 
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^hydrogen".* ]]; then
@@ -553,13 +554,12 @@ fi
 
 ##########################################################################################
 # Set an upstream spack repository that is holding standard dependencies
-UPSTREAM_PATH="/p/vast1/lbann/spack_installed_packages/opt/spack"
-if [[ -r "${UPSTREAM_PATH:-}" ]]; then
+if [[ -r "${CENTER_UPSTREAM_PATH:-}" ]]; then
     EXISTING_UPSTREAM=`spack config get upstreams`
     if [[ ${EXISTING_UPSTREAM} == "upstreams: {}" ]]; then
-        read -p "Do you want to add pointer for this spack repository to ${UPSTREAM_PATH} (y/N): " response
+        read -p "Do you want to add pointer for this spack repository to ${CENTER_UPSTREAM_PATH} (y/N): " response
         if [[ ${response^^} == "Y" ]]; then
-            CMD="spack config --scope site add upstreams:spack-lbann-vast:install_tree:${UPSTREAM_PATH}"
+            CMD="spack config --scope site add upstreams:spack-lbann-vast:install_tree:${CENTER_UPSTREAM_PATH}"
             echo ${CMD} | tee -a ${LOG}
             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
         fi
