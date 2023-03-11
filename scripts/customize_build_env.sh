@@ -101,7 +101,8 @@ set_center_specific_modules()
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 MODULE_CMD_GCC="module load gcc/10.3.1-magic cuda/11.8.0 mvapich2/2.3.6 python/3.9.12"
-                MODULE_CMD_CLANG="module --force unload StdEnv; module load clang/12.0.1 cuda/11.6.1 mvapich2/2.3.6 python/3.7.2"
+                # Note that clang is installed in /usr/workspace/brain/tom/pascal/llvm/latest/ and it is version 17.0.0
+                MODULE_CMD_CLANG="module load gcc/10.3.1-magic cuda/11.8.0 mvapich2/2.3.6 python/3.9.12"
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
                 MODULE_CMD="module --force unload StdEnv; module load gcc/10.2.1 mvapich2/2.3.6 python/3.7.2"
@@ -168,6 +169,7 @@ set_center_specific_spack_dependencies()
                 fi
             done
         fi
+        CENTER_UPSTREAM_PATH="/p/vast1/lbann/spack_installed_packages/opt/spack"
         # MIRRORS="/p/vast1/lbann/spack/mirror /p/vast1/atom/spack/mirror"
         case ${spack_arch_target} in
             "power9le") # Lassen
@@ -179,8 +181,10 @@ set_center_specific_spack_dependencies()
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 # On LC the mvapich2 being used is built against HWLOC v1
+                CENTER_COMPILER_PATHS="/usr/tce/packages/gcc/gcc-10.3.1/ /usr/workspace/brain/tom/pascal/llvm/latest/"
                 CENTER_COMPILER="%gcc"
 #                CENTER_COMPILER="%clang"
+#                DEPENDENTS_CENTER_COMPILER="%gcc@10.3.1"
                 CENTER_DEPENDENCIES="^mvapich2@2.3.6 ^hwloc@1.11.13"
 #                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 ;;

@@ -32,6 +32,7 @@ BUILD_JOBS="-j $(($(sysctl -n hw.physicalcpu)/2+2))"
 else
 BUILD_JOBS="-j $(($(nproc)/2+2))"
 fi
+SPACK_INSTALL_ARGS=
 
 LBANN_VARIANTS=
 CMD_LINE_VARIANTS=
@@ -69,6 +70,7 @@ Options:
   ${C}--clean-deps${N}               Forcibly uninstall Hydrogen, Aluminum, and DiHydrogen dependencies
   ${C}--configure-only${N}           Stop after adding all packages to the environment
   ${C}-d | --define-env${N}          Define (create) a Spack environment, including the lbann dependencies, for building LBANN from local source.  (This wil overwrite any existing environment of the same name)
+  ${C}--dependencies-only${N}        Only install the dependencies of the top-level packages (e.g. LBANN)
   ${C}--dry-run${N}                  Dry run the commands (no effect)
   ${C}-e | --extras <PATH>${N}       Add other packages from file at PATH to the Spack environment in addition to LBANN (Flag can be repeated)
   ${C}-j | --build-jobs <N>${N}      Number of parallel processes to use for compiling, e.g. -j \$((\$(nproc)+2))
@@ -119,6 +121,9 @@ while :; do
             ;;
         -d|--define-env)
             INSTALL_DEPS="TRUE"
+            ;;
+        --dependencies-only)
+            SPACK_INSTALL_ARGS+="--only dependencies"
             ;;
         --dry-run)
             DRY_RUN="TRUE"
@@ -320,7 +325,7 @@ else
 fi
 
 SPACK_VERSION=$(spack --version | sed 's/-.*//g' | sed 's/[(].*[)]//g')
-MIN_SPACK_VERSION=0.18.0
+MIN_SPACK_VERSION=0.19.1
 
 compare_versions ${SPACK_VERSION} ${MIN_SPACK_VERSION}
 VALID_SPACK=$?
@@ -422,6 +427,7 @@ CENTER_DEPENDENCIES=
 CENTER_LINKER_FLAGS=
 CENTER_BLAS_LIBRARY=
 CENTER_PIP_PACKAGES=
+CENTER_UPSTREAM_PATH=
 set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
 
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^hydrogen".* ]]; then
@@ -543,6 +549,22 @@ if [[ -n "${REUSE_ENV:-}" ]]; then
     else
         echo "Spack environment ${LBANN_ENV} does not exists... creating it (as if -d flag was thrown)"
         INSTALL_DEPS="TRUE"
+    fi
+fi
+
+##########################################################################################
+# Set an upstream spack repository that is holding standard dependencies
+if [[ -r "${CENTER_UPSTREAM_PATH:-}" ]]; then
+    EXISTING_UPSTREAM=`spack config get upstreams`
+    if [[ ${EXISTING_UPSTREAM} == "upstreams: {}" ]]; then
+        read -p "Do you want to add pointer for this spack repository to ${CENTER_UPSTREAM_PATH} (y/N): " response
+        if [[ ${response^^} == "Y" ]]; then
+            CMD="spack config --scope site add upstreams:spack-lbann-vast:install_tree:${CENTER_UPSTREAM_PATH}"
+            echo ${CMD} | tee -a ${LOG}
+            [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        fi
+    else
+        printf "Spack is using\n${EXISTING_UPSTREAM}\n"
     fi
 fi
 
@@ -834,7 +856,7 @@ fi
 
 ##########################################################################################
 # Actually install LBANN from local source
-CMD="spack install ${BUILD_JOBS}"
+CMD="spack install ${BUILD_JOBS} ${SPACK_INSTALL_ARGS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
