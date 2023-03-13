@@ -87,8 +87,9 @@ build and install:
     - printenv LD_LIBRARY_PATH
 #    - module load rocm/5.4.1
     - module load StdEnv gcc-tce/10.3.1 cmake/3.23.1 openmpi-tce/4.1.2 rocm/5.4.1
-    - export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
-    - printenv LD_LIBRARY_PATH
+#    - printenv LD_LIBRARY_PATH
+#    - export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
+#    - printenv LD_LIBRARY_PATH
 #    - export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
     - export SPACK_ARCH=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch)
     - export SPACK_ARCH_TARGET=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t)
