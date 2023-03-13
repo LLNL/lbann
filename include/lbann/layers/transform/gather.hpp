@@ -34,7 +34,7 @@
 
 #if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
 #include "lbann/layers/data_type_distconv_adapter.hpp"
-#include "lbann/layers/transform/distconv/distconv_scatter.hpp"
+#include "lbann/layers/transform/distconv/distconv_gather.hpp"
 #include "lbann/utils/nvshmem.hpp"
 #endif // LBANN_HAS_DISTCONV && LBANN_HAS_NVSHMEM
 
