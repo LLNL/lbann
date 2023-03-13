@@ -58,6 +58,7 @@ void cross_entropy_layer<TensorDataType, T_layout, Dev>::setup_dims(
 
 
     if (m_use_labels){
+      const auto& parents = this->get_parent_layers();
 
       if (T_layout == data_layout::MODEL_PARALLEL){
         std::stringstream err;
@@ -112,6 +113,7 @@ void cross_entropy_layer<TensorDataType, T_layout, Dev>::setup_dims(
       // Check if all spatial dimensions match for predictions and labels 
       // tensors
       if (!std::equal(predictions_dims.begin() + 1,
+                      predictions_dims.end(),
                       labels_dims.begin() + 1)){
         std::stringstream err;
         err << get_type() << " layer \"" << this->get_name() <<"\" "

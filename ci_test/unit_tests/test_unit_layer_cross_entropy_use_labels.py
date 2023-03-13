@@ -107,15 +107,17 @@ def construct_model(lbann):
     x0_weights = lbann.Weights(optimizer=lbann.SGD(),
                                initializer=lbann.ConstantInitializer(value=0.0),
                                name='input0_weights')
-    x1_weights = lbann.Weights(optimizer=lbann.SGD(),
-                               initializer=lbann.ConstantInitializer(value=0.0),
-                               name='input1_weights')
+    # x1_weights = lbann.Weights(optimizer=lbann.SGD(),
+    #                            initializer=lbann.ConstantInitializer(value=0.0),
+    #                            name='input1_weights')
     x_slice = lbann.Slice(lbann.Input(data_field='samples'),
                           slice_points=[0, slice_size, data_size])
     x0 = lbann.Sum(x_slice,
                    lbann.WeightsLayer(weights=x0_weights, dims=[slice_size]))
-    x1 = lbann.Sum(x_slice,
-                   lbann.WeightsLayer(weights=x1_weights, dims=[SAMPLE_SPATIAL_SIZE]))
+    # x1 = lbann.Sum(x_slice,
+    #                lbann.WeightsLayer(weights=x1_weights, dims=[SAMPLE_SPATIAL_SIZE]))
+    # Don't do gradient check for the labels
+    x1 = lbann.Reshape(lbann.Identity(x_slice), dims=[SAMPLE_SPATIAL_SIZE])
     x0_lbann = x0
     x1_lbann = x1
 
@@ -195,40 +197,6 @@ def construct_model(lbann):
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
-
-    # NumPy implementation
-    vals = []
-    for i in range(num_samples()):
-        x = get_sample(i).astype(np.float64)
-        x0 = x[:slice_size]
-        x1 = x[slice_size:]
-        y = -np.inner(x1, np.log(x0))
-        z = tools.numpy_l2norm2(y)
-        vals.append(z)
-    val = np.mean(vals)
-    tol = 8 * val * np.finfo(np.float32).eps
-    callbacks.append(lbann.CallbackCheckMetric(
-        metric=metrics[-1].name,
-        lower_bound=val-tol,
-        upper_bound=val+tol,
-        error_on_failure=True,
-        execution_modes='test'))
-
-    # ------------------------------------------
-    # Model-parallel layout
-    # ------------------------------------------
-
-    # LBANN implementation
-    x0 = x0_lbann
-    x1 = x1_lbann
-
-    x0 = lbann.reshape(x0, dims=sample_shape_2d)
-    x1 = lbann.reshape(x1, dims=label_shape_2d)
-
-    y = lbann.CrossEntropy(x0, x1, data_layout='model_parallel', use_labels=True)
-    z = lbann.L2Norm2(y)
-    obj.append(z)
-    metrics.append(lbann.Metric(z, name='model-parallel layout'))
 
     # NumPy implementation
     vals = []
