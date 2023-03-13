@@ -55,8 +55,18 @@ __global__ void fp_kernel(int height, int width,
     // Compute contributions for each thread
     auto private_contribution = TensorDataType(0.);
     for (int row = gidx; row < height; row += nthreadsx) {
-      const auto& xhat = ground_truth[row + col * ground_truth_ldim];
-      if (xhat > TensorDataType(0.)) {
+      TensorDataType xhat;
+      if (use_labels){
+        // Don't calculate dxhat when use_labels is enabled
+        const auto channel = row / spatial_sample_size;
+        const auto offset = row % spatial_sample_size;
+        const int correct_label = ground_truth[spatial_sample_size * col + offset];
+        xhat = TensorDataType(channel == correct_label? 1. : 0);
+      }else{
+        xhat = ground_truth[row + col * ground_truth_ldim];
+      }
+
+      if (xhat > TensorDataType(0.)){
         const auto& x = prediction[row + col * prediction_ldim];
         private_contribution += -xhat * gpu_lib::log(x);
       }
@@ -133,13 +143,21 @@ __global__ void bp_kernel(int height, int width,
     const auto& dy = gradient_wrt_output[col];
     for (int row = gidx; row < height; row += nthreadsx) {
       const auto& x = prediction[row + col * prediction_ldim];
-      const auto& xhat = ground_truth[row + col * ground_truth_ldim];
-      auto& dx =
-        gradient_wrt_prediction[row + col * gradient_wrt_prediction_ldim];
-      auto& dxhat =
-        gradient_wrt_ground_truth[row + col * gradient_wrt_ground_truth_ldim];
-      dx = (xhat > TensorDataType(0.)) ? -dy * xhat / x : TensorDataType(0.);
-      dxhat = -dy * gpu_lib::log(x);
+      TensorDataType xhat;
+      if (use_labels){
+        // Don't calculate dxhat when use_labels is enabled
+        const auto channel = row / spatial_sample_size;
+        const auto offset = row % spatial_sample_size;
+        const int correct_label = ground_truth[spatial_sample_size * col + offset];
+        xhat = TensorDataType(channel == correct_label? 1. : 0);
+      }else{
+        xhat = ground_truth[row + col * ground_truth_ldim];
+        auto& dxhat = gradient_wrt_ground_truth[row + col * gradient_wrt_ground_truth_ldim];
+        dxhat = - dy * gpu_lib::log(x);
+      }
+      auto& dx = gradient_wrt_prediction[row + col * gradient_wrt_prediction_ldim];
+      dx = (xhat > TensorDataType(0.)) ? - dy * xhat / x : TensorDataType(0.);
+      
     }
   }
 }
