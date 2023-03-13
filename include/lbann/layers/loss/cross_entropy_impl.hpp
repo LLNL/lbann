@@ -69,7 +69,7 @@ void cross_entropy_layer<TensorDataType, T_layout, Dev>::setup_dims(
       }
       
       const auto& predictions_dims = this->get_input_dims(0);
-      const auto& labels_dims = this->get_input_dims(0);
+      const auto& labels_dims = this->get_input_dims(1);
       // Check if the first dimension is 1 for the labels tensor
       if (labels_dims[0] != 1){
         std::stringstream err;

@@ -34,7 +34,7 @@ namespace {
 
 template <int block_size, typename TensorDataType>
 __global__ void fp_kernel(int height, int width,
-                          int spatial_sample_size, int num_channels,
+                          int spatial_sample_size,
                           bool use_labels,
                           const TensorDataType* __restrict__ prediction,
                           int prediction_ldim,
@@ -92,7 +92,6 @@ template <typename TensorDataType>
 void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
                   const El::AbstractMatrix<TensorDataType>& local_ground_truth,
                   El::AbstractMatrix<TensorDataType>& local_contribution,
-                  const int& num_channels,
                   const int& spatial_sample_size,
                   const bool& use_labels) {
   El::Zero(local_contribution);
@@ -111,7 +110,7 @@ void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
       fp_kernel<block_size, TensorDataType>,
       grid_dims, block_dims, 0, multisync,
       height, width,
-      spatial_sample_size, num_channels,
+      spatial_sample_size,
       use_labels,
       local_prediction.LockedBuffer(), local_prediction.LDim(),
       local_ground_truth.LockedBuffer(), local_ground_truth.LDim(),
@@ -121,7 +120,7 @@ void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
 
 template <int block_size, typename TensorDataType>
 __global__ void bp_kernel(int height, int width,
-                          int spatial_sample_size, int num_channels,
+                          int spatial_sample_size,
                           bool use_labels,
                           const TensorDataType* __restrict__ prediction,
                           int prediction_ldim,
@@ -168,7 +167,6 @@ void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
                   const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
                   El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
                   El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth,
-                  const int& num_channels,
                   const int& spatial_sample_size,
                   const bool& use_labels) {
   const auto& height = local_prediction.Height();
@@ -190,7 +188,7 @@ void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
       bp_kernel<block_size, TensorDataType>,
       grid_dims, block_dims, 0, multisync,
       height, width,
-      spatial_sample_size, num_channels,
+      spatial_sample_size,
       use_labels,
       local_prediction.LockedBuffer(), local_prediction.LDim(),
       local_ground_truth.LockedBuffer(), local_ground_truth.LDim(),
@@ -206,27 +204,24 @@ void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
-  const auto& input_dims = this->get_input_dims();
-  const auto& spatial_sample_size_no_labels = std::accumulate(
-    input_dims.begin(), input_dims.end(), 1, std::multiplies<size_t>());
-  const auto& num_channels = input_dims[0];
-  const auto& spatial_sample_size = m_use_labels ? spatial_sample_size_no_labels : 1;
+  const auto& input_dims = this->get_input_dims(0);
+  const auto& spatial_sample_size_labels_only = std::accumulate(
+    input_dims.begin()+1, input_dims.end(), 1, std::multiplies<size_t>());
+  const auto& spatial_sample_size = m_use_labels ? spatial_sample_size_labels_only : 1;
 
   local_fp_gpu(this->get_local_prev_activations(0),
                this->get_local_prev_activations(1),
                this->m_workspace->Matrix(),
                spatial_sample_size,
-               num_channels,
                this->m_use_labels);
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
-  const auto& input_dims = this->get_input_dims();
-  const auto& spatial_sample_size_no_labels = std::accumulate(
-    input_dims.begin(), input_dims.end(), 1, std::multiplies<size_t>());
-  const auto& num_channels = input_dims[0];
-  const auto& spatial_sample_size = m_use_labels ? spatial_sample_size_no_labels : 1;
+  const auto& input_dims = this->get_input_dims(0);
+  const auto& spatial_sample_size_labels_only = std::accumulate(
+    input_dims.begin()+1, input_dims.end(), 1, std::multiplies<size_t>());
+  const auto& spatial_sample_size = m_use_labels ? spatial_sample_size_labels_only : 1;
 
   local_bp_gpu(this->get_local_prev_activations(0),
                this->get_local_prev_activations(1),
@@ -234,7 +229,6 @@ void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
                this->get_local_error_signals(0),
                this->get_local_error_signals(1),
                spatial_sample_size,
-               num_channels,
                this->m_use_labels);
 }
 

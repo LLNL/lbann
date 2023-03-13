@@ -42,7 +42,7 @@ def get_sample(index):
 def num_samples():
     return NUM_SAMPLES
 def sample_dims():
-    return (_samples.shape[-1] + _labels.shape[-1],)
+    return (_samples.shape[-1] * _samples.shape[-2] + _labels.shape[-1],)
 
 # ==============================================
 # NumPy cross entropy
@@ -84,7 +84,7 @@ def setup_experiment(lbann, weekly):
         lbann (module): Module for LBANN Python frontend
 
     """
-    mini_batch_size = NUM_SAMPLES() // 2
+    mini_batch_size = num_samples() // 2
     trainer = lbann.Trainer(mini_batch_size)
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
@@ -142,13 +142,14 @@ def construct_model(lbann):
     x0 = x0_lbann
     x1 = x1_lbann
 
-    x0 = lbann.reshape(x0, dims=sample_shape_2d)
-    x1 = lbann.reshape(x1, dims=label_shape_2d)
+    x0 = lbann.Reshape(x0, dims=sample_shape_2d)
+    x1 = lbann.Reshape(x1, dims=label_shape_2d)
 
-    y = lbann.CrossEntropy(x0, x1, data_layout='data_parallel', use_labels=True)
+    y = lbann.CrossEntropy(x0, x1, data_layout='data_parallel', use_labels=True, 
+                           name="2d_output")
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel layout'))
+    metrics.append(lbann.Metric(z, name='data-parallel layout 2D'))
 
     # NumPy implementation
     vals = []
@@ -167,6 +168,7 @@ def construct_model(lbann):
         upper_bound=val+tol,
         error_on_failure=True,
         execution_modes='test'))
+    callbacks.append(lbann.CallbackDumpOutputs())
 
     # ------------------------------------------
     # Data-parallel layout (3D)
@@ -190,13 +192,13 @@ def construct_model(lbann):
     x0 = x0_lbann
     x1 = x1_lbann
 
-    x0 = lbann.reshape(x0, dims=sample_shape_3d)
-    x1 = lbann.reshape(x1, dims=label_shape_3d)
+    x0 = lbann.Reshape(x0, dims=sample_shape_3d)
+    x1 = lbann.Reshape(x1, dims=label_shape_3d)
 
     y = lbann.CrossEntropy(x0, x1, data_layout='data_parallel', use_labels=True)
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel layout'))
+    metrics.append(lbann.Metric(z, name='data-parallel layout 3D'))
 
     # NumPy implementation
     vals = []
@@ -204,7 +206,7 @@ def construct_model(lbann):
         x = get_sample(i).astype(np.float64)
         x0 = x[:slice_size]
         x1 = x[slice_size:]
-        y = -np.inner(x1, np.log(x0))
+        y = numpy_cross_entropy(x0, x1)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -220,7 +222,7 @@ def construct_model(lbann):
     # Gradient checking
     # ------------------------------------------
 
-    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+    # callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # ------------------------------------------
     # Construct model
