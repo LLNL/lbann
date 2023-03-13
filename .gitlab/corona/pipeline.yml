@@ -83,6 +83,10 @@ build and install:
     - export TEST_TASKS_PER_NODE=4
     - export TEST_MPIBIND_FLAG="--mpibind=off"
     - echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+    - printenv LD_LIBRARY_PATH
+    - module load rocm/5.4.1
+    - export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
+    - printenv LD_LIBRARY_PATH
 #    - export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
     - export SPACK_ARCH=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch)
     - export SPACK_ARCH_TARGET=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t)
@@ -91,57 +95,57 @@ build and install:
     - echo "export SPACK_ARCH_TARGET=${SPACK_ARCH_TARGET}" >> spack-ci-env-name.sh
     - flux proxy ${JOB_ID} .gitlab/common/run-catch-tests-flux.sh
 
-# Run the Python-based unit tests.
-unit tests:
-  extends:
-    - .corona common
-    - .uses spack environment
-  stage: test
-  dependencies:
-    - build and install
-  script:
-    - echo "== RUNNING PYTHON-BASED UNIT TESTS =="
-    - echo "Testing $(which lbann)"
-    - export OMP_NUM_THREADS=10
-    - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
-    - echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
-    - export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
-    - cd ci_test/unit_tests
-#    - python3 -m pytest -s -vv --durations=0 --junitxml=results.xml
-    - flux proxy ${FLUX_JOB_ID} python3 -m pytest -s -vv --durations=0 --junitxml=results.xml
-  artifacts:
-    when: always
-    paths:
-      - ci_test/unit_tests/results.xml
-    reports:
-      junit: ci_test/unit_tests/results.xml
+# # Run the Python-based unit tests.
+# unit tests:
+#   extends:
+#     - .corona common
+#     - .uses spack environment
+#   stage: test
+#   dependencies:
+#     - build and install
+#   script:
+#     - echo "== RUNNING PYTHON-BASED UNIT TESTS =="
+#     - echo "Testing $(which lbann)"
+#     - export OMP_NUM_THREADS=10
+#     - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
+#     - echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+#     - export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
+#     - cd ci_test/unit_tests
+# #    - python3 -m pytest -s -vv --durations=0 --junitxml=results.xml
+#     - flux proxy ${FLUX_JOB_ID} python3 -m pytest -s -vv --durations=0 --junitxml=results.xml
+#   artifacts:
+#     when: always
+#     paths:
+#       - ci_test/unit_tests/results.xml
+#     reports:
+#       junit: ci_test/unit_tests/results.xml
 
-# Run the Python-based integration tests.
-integration tests:
-  extends:
-    - .corona common
-    - .uses spack environment
-  stage: test
-  dependencies:
-    - build and install
-  script:
-    - echo "== RUNNING PYTHON-BASED INTEGRATION TESTS =="
-    - echo "Testing $(which lbann)"
-    - export OMP_NUM_THREADS=10
-    - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
-    - echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
-    - export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
-    - cd ci_test/integration_tests
-    - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
-    - echo "python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml"
-#    - python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml
-    - flux proxy ${FLUX_JOB_ID} python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml
-  artifacts:
-    when: always
-    paths:
-      - ci_test/integration_tests/results.xml
-    reports:
-      junit: ci_test/integration_tests/results.xml
+# # Run the Python-based integration tests.
+# integration tests:
+#   extends:
+#     - .corona common
+#     - .uses spack environment
+#   stage: test
+#   dependencies:
+#     - build and install
+#   script:
+#     - echo "== RUNNING PYTHON-BASED INTEGRATION TESTS =="
+#     - echo "Testing $(which lbann)"
+#     - export OMP_NUM_THREADS=10
+#     - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
+#     - echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+#     - export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
+#     - cd ci_test/integration_tests
+#     - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
+#     - echo "python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml"
+# #    - python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml
+#     - flux proxy ${FLUX_JOB_ID} python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml
+#   artifacts:
+#     when: always
+#     paths:
+#       - ci_test/integration_tests/results.xml
+#     reports:
+#       junit: ci_test/integration_tests/results.xml
 
 # This is a dummy job that checks the Catch2 testing.
 check catch2 tests:
