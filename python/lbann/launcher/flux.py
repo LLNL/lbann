@@ -132,6 +132,7 @@ class FluxBatchScript(BatchScript):
         # args.append(f'-c {int(self.cores_per_node / procs_per_node)}') #--cores-per-task
         args.append(f'-o gpu-affinity=per-task')
         args.append(f'-o cpu-affinity=per-task')
+        args.append(f'-o nosetpgrp')
         args.append(f'--output={self.out_log_file}')
         args.append(f'--error={self.err_log_file}')
 
