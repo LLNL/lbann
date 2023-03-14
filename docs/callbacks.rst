@@ -64,7 +64,7 @@ Profobuf (Advanced)
    callback {
      timer {
      }
-     print_atatistics {
+     print_statistics {
        batch_interval: 5
      }
      save_model {
