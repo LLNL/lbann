@@ -33,6 +33,10 @@ def get_system_mpi_launch(cluster):
 # GitLab CI artifact on Catalyst, Corona, or Pascal, this should only
 # run on Ray and Lassen in GitLab CI testing pipelines.
 def test_run_sequential_catch_tests(cluster, dirname):
+    if cluster != 'lassen':
+      message = f'{os.path.basename(__file__)} is only required on lassen due to limitations of CI testing'
+      print('Skip - ' + message)
+      pytest.skip(message)
     output_dir = os.path.join(dirname, 'ci_test', 'unit_tests')
     build_dir = hack_find_spack_build_dir(dirname)
     seq_catch_exe = os.path.join(build_dir, 'unit_test', 'seq-catch-tests')
@@ -49,6 +53,10 @@ def test_run_sequential_catch_tests(cluster, dirname):
     tools.assert_success(output.returncode, seq_error_file)
 
 def test_run_parallel_catch_tests(cluster, dirname):
+    if cluster != 'lassen':
+      message = f'{os.path.basename(__file__)} is only required on lassen due to limitations of CI testing'
+      print('Skip - ' + message)
+      pytest.skip(message)
     output_dir = os.path.join(dirname, 'ci_test', 'unit_tests')
     build_dir = hack_find_spack_build_dir(dirname)
     mpi_catch_exe = os.path.join(build_dir, 'unit_test', 'mpi-catch-tests')
@@ -65,6 +73,10 @@ def test_run_parallel_catch_tests(cluster, dirname):
     tools.assert_success(output.returncode, mpi_error_file)
 
 def test_run_parallel_filesystem_catch_tests(cluster, dirname):
+    if cluster != 'lassen':
+      message = f'{os.path.basename(__file__)} is only required on lassen due to limitations of CI testing'
+      print('Skip - ' + message)
+      pytest.skip(message)
     output_dir = os.path.join(dirname, 'ci_test', 'unit_tests')
     build_dir = hack_find_spack_build_dir(dirname)
     mpi_catch_exe = os.path.join(build_dir, 'unit_test', 'mpi-catch-tests')
