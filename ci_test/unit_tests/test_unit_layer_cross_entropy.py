@@ -25,10 +25,6 @@ import tools
 #   L'''' = O( xhat^2 * log(x) / x^4 )
 # We have x >= 0.25 to make sure the fourth derivative does not get
 # too big and mess up the error bounds.
-# np.random.seed(201910143)
-# _samples = np.random.uniform(low=0.25,
-#                              high=1,
-#                              size=(23,2,7)).astype(np.float32)
 
 np.random.seed(202303102)
 SAMPLE_SPATIAL_SIZE = 4**3
