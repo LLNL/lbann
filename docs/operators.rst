@@ -24,21 +24,174 @@ allows the model to perform automatic differentiation.
 
 Operators are specified for unique input and output data types.
 
+.. csv-table::
+   :header: "Operator", "Description"
+   :widths: auto
 
-.. _abs:
+   :ref:`Operator`, "Base class for LBANN operators"
+   :ref:`Abs`, "Apply the Abs operator entrywise"
+   :ref:`Acosh`, "Apply the Acosh operator entrywise"
+   :ref:`Acos`, "Apply the Acos operator entrywise"
+   :ref:`Add`, "Apply the Add operator entrywise"
+   :ref:`AddConstant`, "Add a constant to each input value (x+c)"
+   :ref:`Asin`, "Apply the Asin operator entrywise"
+   :ref:`Asinh`, "Apply the Asinh operator entrywise"
+   :ref:`Atan`, "Apply the Atan operator entrywise"
+   :ref:`Atanh`, "Apply the Atanh operator entrywise"
+   :ref:`BinaryCrossEntropy`, "Apply the BinaryCrossEntropy operator entrywise"
+   :ref:`BooleanAccuracy`, "Apply the BooleanAccuracy operator entrywise"
+   :ref:`BooleanFalseNegative`, "Apply the BooleanFalseNegative operator
+   entrywise"
+   :ref:`BooleanFalsePositive`, "Apply the BooleanFalsePositive operator
+   entrywise"
+   :ref:`Ceil`, "Apply the Ceil operator entrywise"
+   :ref:`Clamp`, "Constrain all values in a tensor within a range"
+   :ref:`ConstantSubtract`, "Subtract each input value from a constant (c-x)"
+   :ref:`Cos`, "Apply the Cos operator entrywise"
+   :ref:`Cosh`, "Apply the Cosh operator entrywise"
+   :ref:`Divide`, "Apply the Divide operator entrywise"
+   :ref:`Equal`, "Apply the Equal operator entrywise"
+   :ref:`EqualConstant`, "Test each value for equality with a constant
+   (x==c)"
+   :ref:`Erf`, "Apply the Erf operator entrywise"
+   :ref:`ErfInv`, "Apply the ErfInv operator entrywise"
+   :ref:`Exp`, "Apply the Exp operator entrywise"
+   :ref:`Expm1`, "Apply the Expm1 operator entrywise"
+   :ref:`Floor`, "Apply the Floor operator entrywise"
+   :ref:`Greater`, "Apply the Greater operator entrywise"
+   :ref:`GreaterConstant`, "Test each value for 'greater-than' with a
+   constant (x>c)"
+   :ref:`GreaterEqual`, "Apply the GreaterEqual operator entrywise"
+   :ref:`GreaterEqualConstant`, "Test each value for
+   'greater-than-or-equal-to' with a constant (x>=c)"
+   :ref:`Less`, "Apply the Less operator entrywise"
+   :ref:`LessConstant`, "Test each value for 'less-than' with a constant
+   (x<c)"
+   :ref:`LessEqual`, "Apply the LessEqual operator entrywise"
+   :ref:`LessEqualConstant`, "Test each value for 'less-than-or-equal-to' with
+   a constant (x<=c)"
+   :ref:`Log`, "Apply the Log operator entrywise"
+   :ref:`Log1p`, "Apply the Log1p operator entrywise"
+   :ref:`LogSigmoid`, "Apply the LogSigmoid operator entrywise"
+   :ref:`LogicalAnd`, "Apply the LogicalAnd operator entrywise"
+   :ref:`LogicalNot`, "Apply the LogicalNot operator entrywise"
+   :ref:`LogicalOr`, "Apply the LogicalOr operator entrywise"
+   :ref:`LogicalXor`, "Apply the LogicalXor operator entrywise"
+   :ref:`Max`, "Apply the Max operator entrywise"
+   :ref:`MaxConstant`, "Apply the MaxConstant operator entrywise"
+   :ref:`Min`, "Apply the Min operator entrywise"
+   :ref:`MinConstant`, "Apply the MinConstant operator entrywise"
+   :ref:`Mod`, "Apply the Mod operator entrywise"
+   :ref:`Multiply`, "Apply the Multiply operator entrywise"
+   :ref:`Negative`, "Apply the Log Negative entrywise"
+   :ref:`NotEqual`, "Apply the NotEqual operator entrywise"
+   :ref:`NotEqualConstant`, "Test each value for inequality with a constant
+   (x!=c)"
+   :ref:`Pow`, "Apply the Pow operator entrywise"
+   :ref:`Reciprocal`, "Apply the Reciprocal operator entrywise"
+   :ref:`Round`, "Apply the Round operator entrywise"
+   :ref:`Rsqrt`, "Apply the Rsqrt operator entrywise"
+   :ref:`SafeDivide`, "Apply the SafeDivide operator entrywise"
+   :ref:`SafeReciprocal`, "Apply the SafeReciprocal operator entrywise"
+   :ref:`Scale`, "Scale each input value by a constant value (c*x)"
+   :ref:`Selu`, "Apply the Selu operator entrywise"
+   :ref:`Sigmoid`, "Apply the Sigmoid operator entrywise"
+   :ref:`SigmoidBinaryCrossEntropy`, "Apply the SigmoidBinaryCrossEntropy
+   operator entrywise."
+   :ref:`Sign`, "Apply the Sign operator entrywise"
+   :ref:`Sin`, "Apply the Sin operator entrywise"
+   :ref:`Sinh`, "Apply the Sinh operator entrywise"
+   :ref:`Softplus`, "Apply the Softplus operator entrywise"
+   :ref:`Softsign`, "Apply the Softsign operator entrywise"
+   :ref:`Sqrt`, "Apply the Sqrt operator entrywise"
+   :ref:`Square`, "Apply the Square operator entrywise"
+   :ref:`SquareDifference`, "Apply the SquareDifference operator entrywise"
+   :ref:`Subtract`, "Apply the Subtract operator entrywise"
+   :ref:`SubtractConstant`, "Apply the SubtractConstant operator entrywise"
+   :ref:`Tan`, "Apply the Tan operator entrywise"
+   :ref:`Tanh`, "Apply the Tanh operator entrywise"
+
+
+
+.. _Operator:
+
+------------------------------------------------
+Operator
+------------------------------------------------
+
+Operator is the base class for LBANN operators
+
+Arguments:
+
+   :input_type: (``lbann.DataType``) The type expected as input
+
+   :output_type: (``lbann.DataType``) The type expected as output
+
+   :device: (``lbann.device_allocation``) The device allocation
+
+Methods:
+
+   :export_proto(): Get a protobuf representation of this object
+
+   :do_export_proto():
+
+      Get a protobuf representation of this object
+
+      Must be implemented in derived classes
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Abs:
 
 ------------------------------------------------
 Abs
 ------------------------------------------------
 
-Perform entrywise absolute value on input tensor.
+Perform entrywise absolute value on the input tensor.
 
 .. math::
 
-  \text{abs}(x) = |x|
+  y = |x|
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
 
 
-.. _add:
+
+.. _Acosh:
+
+------------------------------------------------
+Acosh
+------------------------------------------------
+
+Apply the inverse hyperbolic cosine entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Acos:
+
+------------------------------------------------
+Acos
+------------------------------------------------
+
+Apply the inverse cosine function entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Add:
 
 ------------------------------------------------
 Add
@@ -46,14 +199,164 @@ Add
 
 Perform entrywise addition on two input tensors.
 
+:ref:`Back to Top<operators>`
 
-.. _add-constant:
+________________________________________________
+
+
+
+.. _AddConstant:
 
 ------------------------------------------------
-Add Constant
+AddConstant
 ------------------------------------------------
 
 Add a constant to each input value.
+
+.. math::
+
+   y = x + c
+
+Arguments:
+
+   :constant: (``double``) The constant to be added
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Asin:
+
+------------------------------------------------
+Asin
+------------------------------------------------
+
+Apply the inverse sine function entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Asinh:
+
+------------------------------------------------
+Asinh
+------------------------------------------------
+
+Apply the hyperbolic inverse sine function entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Atan:
+
+------------------------------------------------
+Atan
+------------------------------------------------
+
+Apply the inverse tangent function entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Atanh:
+
+------------------------------------------------
+Atanh
+------------------------------------------------
+
+Apply the hyperbolic inverse tangent function entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _BinaryCrossEntropy:
+
+------------------------------------------------
+BinaryCrossEntropy
+------------------------------------------------
+
+Apply the BinaryCrossEntropy operator entrywise.
+
+Compare each predicted probability to actual class value, either 0
+or 1. Calculate the score that penalizes the probabilities based on
+the distance from the expected value.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _BooleanAccuracy:
+
+------------------------------------------------
+BooleanAccuracy
+------------------------------------------------
+
+FIXME: What do the boolean operators do?
+
+Apply the BooleanAccuracy operator entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _BooleanFalseNegative:
+
+------------------------------------------------
+BooleanFalseNegative
+------------------------------------------------
+
+Apply the BooleanFalseNegative operator entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _BooleanFalsePositive:
+
+------------------------------------------------
+BooleanFalsePositive
+------------------------------------------------
+
+Apply the BooleanFalsePositive operator entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Ceil:
+
+------------------------------------------------
+Ceil
+------------------------------------------------
+
+Apply the ceiling function to an input tensor entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
 
 
 .. _clamp:
@@ -62,7 +365,7 @@ Add a constant to each input value.
 Clamp
 ------------------------------------------------
 
-Constrain values to a range.
+Constrain all values in a tensor within a range
 
 .. math::
 
@@ -73,39 +376,507 @@ Constrain values to a range.
          \text{max} & x \geq \text{max}
        \end{cases}
 
+:ref:`Back to Top<operators>`
 
-.. _constant-subtract:
+________________________________________________
+
+
+
+.. _ConstantSubtract:
 
 ------------------------------------------------
-Constant Subtract
+ConstantSubtract
 ------------------------------------------------
 
 Subtract each input value from a constant.
 
 .. math::
 
-   y = (c - x)
+   y = c - x
+
+Arguments:
+
+   :constant: (``double``) The constant to subtract from
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
 
 
-.. _cosine:
+
+.. _Cos:
 
 ------------------------------------------------
 Cos
 ------------------------------------------------
 
-Calculate entrywise cosine of the input tensor.
+Compute the cosine of the input tensor entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
 
 
-.. _equal-constant:
+
+.. _Cosh:
 
 ------------------------------------------------
-Equal Constant
+Cosh
+------------------------------------------------
+
+Compute the hyperbolic cosine of the input tensor entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Divide:
+
+------------------------------------------------
+Divide
+------------------------------------------------
+
+Perform entrywise division on two input tensors.
+
+.. math::
+
+   z = \frac{x}{y}
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Equal:
+
+------------------------------------------------
+Equal
+------------------------------------------------
+
+Perform entrywise logical equal on two input tensors.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _EqualConstant:
+
+------------------------------------------------
+EqualConstant
 ------------------------------------------------
 
 Perform entrywise logical equal on input tensor and a constant.
 
+.. math::
 
-.. _multiply:
+   x == c
+
+Arguments:
+
+   :constant: (``double``) The constant used for comparison
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Erf:
+
+------------------------------------------------
+Erf
+------------------------------------------------
+
+Compute the error function of the inpute tensor entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _ErfInv:
+
+------------------------------------------------
+ErfInv
+------------------------------------------------
+
+Compute the inverse error function entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Exp:
+
+------------------------------------------------
+Exp
+------------------------------------------------
+
+Calculate the exponential of the input tensor entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Expm1:
+
+------------------------------------------------
+Expm1
+------------------------------------------------
+
+Calculate the exponential of the input tensor entrywise. More accurate
+than Exp for small values.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Floor:
+
+------------------------------------------------
+Floor
+------------------------------------------------
+
+Apply the floor function to the input tensor entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Greater:
+
+------------------------------------------------
+Greater
+------------------------------------------------
+
+Perform entrywise logical 'greater' on two input tensors.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _GreaterConstant:
+
+------------------------------------------------
+GreaterConstant
+------------------------------------------------
+
+Perform entrywise logical 'greater-than' on input tensor and a constant.
+
+.. math::
+
+   x > c
+
+Arguments:
+
+   :constant: (``double``) The constant to be used for comparison
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _GreaterEqual:
+
+------------------------------------------------
+GreaterEqual
+------------------------------------------------
+
+Perform entrywise logical 'greater-or-equal' on two input tensors.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _GreaterEqualConstant:
+
+------------------------------------------------
+GreaterEqualConstant
+------------------------------------------------
+
+Perform entrywise logical 'greater-or-equal' on input tensor and a
+constant.
+
+.. math::
+
+   x \geq c
+
+Arguments:
+
+   :constant: (``double``) The constant to be used for comparison
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Less:
+
+------------------------------------------------
+Less
+------------------------------------------------
+
+Perform entrywise logical 'less-than' on two input tensors.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _LessConstant:
+
+------------------------------------------------
+LessConstant
+------------------------------------------------
+
+Perform entrywise logical 'less-than' on input tensor and a constant.
+
+.. math::
+
+   x < c
+
+Arguments:
+
+   :constant: (``double``) The constant to be used for comparison
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _LessEqual:
+
+------------------------------------------------
+LessEqual
+------------------------------------------------
+
+Perform entrywise logical 'less-equal' on two input tensors.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _LessEqualConstant:
+
+------------------------------------------------
+LessEqualConstant
+------------------------------------------------
+
+Perform entrywise logical 'less-or-equal' on input tensor and a
+constant.
+
+.. math::
+
+   x \leq c
+
+Arguments:
+
+   :constant: (``double``) The constant to be used for comparison
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Log:
+
+------------------------------------------------
+Log
+------------------------------------------------
+
+Calculate the natural log of the input tensor entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Log1p:
+
+------------------------------------------------
+Log1p
+------------------------------------------------
+
+Calculate the natural log of one plus the input tensor entrywise.
+
+.. math::
+
+   y = \log{1 + x}
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _LogSigmoid:
+
+------------------------------------------------
+LogSigmoid
+------------------------------------------------
+
+Calculate the natural log of the output from the sigmoid function
+entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _LogicalAnd:
+
+------------------------------------------------
+LogicalAnd
+------------------------------------------------
+
+Perform entrywise logical 'and' on two input tensors.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _LogicalNot:
+
+------------------------------------------------
+LogicalNot
+------------------------------------------------
+
+Perform entrywise logical 'not' on two input tensors.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _LogicalOr:
+
+------------------------------------------------
+LogicalOr
+------------------------------------------------
+
+Perform entrywise logical 'or' on two input tensors.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _LogicalXor:
+
+------------------------------------------------
+LogicalXor
+------------------------------------------------
+
+Perform entrywise logical 'xor' on two input tensors.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Max:
+
+------------------------------------------------
+Max
+------------------------------------------------
+
+Perform entrywise max of input tensors.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _MaxConstant:
+
+------------------------------------------------
+MaxConstant
+------------------------------------------------
+
+Perform entrywise max of input tensor against a constant.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Min:
+
+------------------------------------------------
+Min
+------------------------------------------------
+
+Perform entrywise min of input tensors.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _MinConstant:
+
+------------------------------------------------
+MinConstant
+------------------------------------------------
+
+Perform entrywise min of input tensor against a constant.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Mod:
+
+------------------------------------------------
+Mod
+------------------------------------------------
+
+Perform entrywise modulus on two input tensors.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Multiply:
 
 ------------------------------------------------
 Multiply
@@ -113,17 +884,171 @@ Multiply
 
 Perform entrywise multiplication on input tensors.
 
+:ref:`Back to Top<operators>`
 
-.. _not-equal-constant:
+________________________________________________
+
+
+
+.. _Negative:
 
 ------------------------------------------------
-Not Equal Constant
+Negative
 ------------------------------------------------
 
-Perform entrywise logical not equal on input tensor and a constant.
+Produce output tensor with flipped sign.
+
+.. math::
+
+   y = -x
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
 
 
-.. _scale:
+
+.. _NotEqual:
+
+------------------------------------------------
+NotEqual
+------------------------------------------------
+
+Perform entrywise logical 'not-equal' on two input tensors.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _NotEqualConstant:
+
+------------------------------------------------
+NotEqualConstant
+------------------------------------------------
+
+Perform entrywise logical 'not-equal' on input tensor and a constant.
+
+.. math::
+
+   x \neq c
+
+Arguments:
+
+   :constant: (``double``) The constant to be used for comparison
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Pow:
+
+------------------------------------------------
+Pow
+------------------------------------------------
+
+Perform entrywise exponent using one input tensor as the base and a
+second input tensor as the exponent.
+
+.. math::
+
+   z = x^y
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Reciprocal:
+
+------------------------------------------------
+Reciprocal
+------------------------------------------------
+
+Perform entrywise reciprocal function on input tensor.
+
+.. math::
+
+   y = \frac{1}{x}
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Round:
+
+------------------------------------------------
+Round
+------------------------------------------------
+
+Round input tensor values to the nearest integer entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Rsqrt:
+
+------------------------------------------------
+Rsqrt
+------------------------------------------------
+
+Compute reciprocal of square-root of values in the input tensor
+entrywise.
+
+.. math::
+
+   y = \frac{1}{\sqrt{x}}
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _SafeDivide:
+
+------------------------------------------------
+SafeDivide
+------------------------------------------------
+
+Perform entrywise division on two input tensors. Return zero if the
+divisor is zero.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _SafeReciprocal:
+
+------------------------------------------------
+SafeReciprocal
+------------------------------------------------
+
+Perform entrywise reciprocal function on input tensor. Return zero if
+the input value is zero.
+
+.. math::
+
+   y = \frac{1}{x}
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Scale:
 
 ------------------------------------------------
 Scale
@@ -135,14 +1060,183 @@ Scale each input value by a constant.
 
    y = c * x
 
+Arguments:
 
-.. _sin:
+   :constant: (``double``) The constant to scale by
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Selu:
+
+------------------------------------------------
+Selu
+------------------------------------------------
+
+Apply scaled exponential linear unit function to input tensor
+entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Sigmoid:
+
+------------------------------------------------
+Sigmoid
+------------------------------------------------
+
+Apply the sigmoid function to the input tensor entrywise.
+
+.. math::
+
+   y = \frac{1}{1+e^{-x}}
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _SigmoidBinaryCrossEntropy:
+
+------------------------------------------------
+SigmoidBinaryCrossEntropy
+------------------------------------------------
+
+Apply the SigmoidBinaryCrossEntropy operator entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Sign:
+
+------------------------------------------------
+Sign
+------------------------------------------------
+
+Compute the sign of the imput tensor entrywise. If input > 0,
+output 1. if input < 0, output -1. if input == 0, output 0.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Sin:
 
 ------------------------------------------------
 Sin
 ------------------------------------------------
 
-Calculate entrywise sin of the input tensor.
+Calculate entrywise sine of the input tensor.
+
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Sinh:
+
+------------------------------------------------
+Sinh
+------------------------------------------------
+
+Calculate entrywise hyperbolic sine of the input tensor.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Softplus:
+
+------------------------------------------------
+Softplus
+------------------------------------------------
+
+Calculate the softplus of the input tensor entrywise.
+
+.. math::
+
+   y = \log{1 + e^x}
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Softsign:
+
+------------------------------------------------
+Softsign
+------------------------------------------------
+
+Calculate the softsign of the input tensor entrywise.
+
+.. math::
+
+   y = \frac{x}{1+|x|}
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Sqrt:
+
+------------------------------------------------
+Sqrt
+------------------------------------------------
+
+Compute square root of input tensor values entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Square:
+
+------------------------------------------------
+Square
+------------------------------------------------
+
+Compute square of input tensor values entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _SquareDifference:
+
+------------------------------------------------
+SquareDifference
+------------------------------------------------
+
+Apply the SquareDifference operator entrywise
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
 
 
 .. _subtract:
@@ -155,18 +1249,58 @@ Perform entrywise subtraction on two input tensors.
 
 .. math::
 
-   \text{subtract}(x, y) \\
    z = x - y
 
 
-.. _subtract-constant:
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _SubtractConstant:
 
 ------------------------------------------------
-Subtract Constant
+SubtractConstant
 ------------------------------------------------
 
-Subtract a constant from each input value.
+Subtract a constant from from the input tensor entrywise.
 
 .. math::
 
-   y = (x - c)
+
+   y = x - c
+
+Arguments:
+
+   :constant: (``double``) The constant to subtract
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Tan:
+
+------------------------------------------------
+Tan
+------------------------------------------------
+
+Apply the tangent function entrywise.
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Tanh:
+
+------------------------------------------------
+Tanh
+------------------------------------------------
+
+Apply the hyperbolic tangent function entrywise.
+
+:ref:`Back to Top<operators>`
