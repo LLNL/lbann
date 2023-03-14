@@ -75,6 +75,10 @@ def setup_experiment(lbann, weekly):
         lbann (module): Module for LBANN Python frontend
 
     """
+    if not lbann.has_feature('OPENCV') :
+        message = f'{os.path.basename(__file__)} requires VISION support with OPENCV'
+        print('Skip - ' + message)
+        pytest.skip(message)
     if weekly:
         options = weekly_options_and_targets
     else:
