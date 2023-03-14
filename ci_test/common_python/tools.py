@@ -277,10 +277,13 @@ def get_command(cluster,
             option_resources_per_host, option_tasks_per_resource)
 
     elif scheduler == 'flux':
+        # Check to see if we are already in a flux allocation
+        flux_depth = subprocess.check_output("flux uptime | grep depth | awk -F, '{print $3}' | awk '{print $2}'",
+                                             shell=True, universal_newlines=True).rstrip()
         # Create allocate command
         command_allocate = ''
         # Allocate nodes only if we don't already have an allocation.
-        if os.getenv('FLUX_JOB_ID') is None:
+        if os.getenv('FLUX_JOB_ID') is None and flux_depth == 0:
             print('Allocating flux nodes.')
             command_allocate = 'flux mini alloc'
             option_num_nodes = ''
