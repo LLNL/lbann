@@ -48,7 +48,7 @@ def sample_dims():
 # NumPy cross entropy
 # ==============================================
 
-def numpy_cross_entropy(x, xhat):
+def numpy_cross_entropy(x, xhat, rescale=1):
     """Cross entropy between a distribution and ground truth labels, 
        computed with NumPy
 
@@ -71,7 +71,7 @@ def numpy_cross_entropy(x, xhat):
         correct_channel = xhat[j]
         offset = int((correct_channel * SAMPLE_SPATIAL_SIZE) + j)
         loss += np.log(x[offset])
-    return -loss 
+    return -loss * rescale 
 
 # ==============================================
 # Setup LBANN experiment
@@ -107,16 +107,12 @@ def construct_model(lbann):
     x0_weights = lbann.Weights(optimizer=lbann.SGD(),
                                initializer=lbann.ConstantInitializer(value=0.0),
                                name='input0_weights')
-    # x1_weights = lbann.Weights(optimizer=lbann.SGD(),
-    #                            initializer=lbann.ConstantInitializer(value=0.0),
-    #                            name='input1_weights')
+
     x_slice = lbann.Slice(lbann.Input(data_field='samples'),
                           slice_points=[0, slice_size, data_size])
     x0 = lbann.Sum(x_slice,
                    lbann.WeightsLayer(weights=x0_weights, dims=[slice_size]))
-    # x1 = lbann.Sum(x_slice,
-    #                lbann.WeightsLayer(weights=x1_weights, dims=[SAMPLE_SPATIAL_SIZE]))
-    # Don't do gradient check for the labels
+
     x1 = lbann.Reshape(lbann.Identity(x_slice), dims=[SAMPLE_SPATIAL_SIZE])
     x0_lbann = x0
     x1_lbann = x1
@@ -147,6 +143,7 @@ def construct_model(lbann):
 
     y = lbann.CrossEntropy(x0, x1, data_layout='data_parallel', use_labels=True, 
                            name="2d_output")
+    y = lbann.Scale(y, constant=1e-1)
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout 2D'))
@@ -157,7 +154,7 @@ def construct_model(lbann):
         x = get_sample(i).astype(np.float64)
         x0 = x[:slice_size]
         x1 = x[slice_size:]
-        y = numpy_cross_entropy(x0, x1)
+        y = numpy_cross_entropy(x0, x1, rescale=1e-1)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -168,7 +165,6 @@ def construct_model(lbann):
         upper_bound=val+tol,
         error_on_failure=True,
         execution_modes='test'))
-    callbacks.append(lbann.CallbackDumpOutputs())
 
     # ------------------------------------------
     # Data-parallel layout (3D)
@@ -196,6 +192,7 @@ def construct_model(lbann):
     x1 = lbann.Reshape(x1, dims=label_shape_3d)
 
     y = lbann.CrossEntropy(x0, x1, data_layout='data_parallel', use_labels=True)
+    y = lbann.Scale(y, constant=1e-1)
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout 3D'))
@@ -206,7 +203,7 @@ def construct_model(lbann):
         x = get_sample(i).astype(np.float64)
         x0 = x[:slice_size]
         x1 = x[slice_size:]
-        y = numpy_cross_entropy(x0, x1)
+        y = numpy_cross_entropy(x0, x1, rescale=1e-1)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -222,7 +219,7 @@ def construct_model(lbann):
     # Gradient checking
     # ------------------------------------------
 
-    # callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+    callbacks.append(lbann.CallbackCheckGradients())
 
     # ------------------------------------------
     # Construct model

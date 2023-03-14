@@ -33,6 +33,7 @@ Support for new layers:
 - Added IdentityZero layer that allows alternating generator/discriminator
   updates for training GANs.
 - Added an External layer that enables separately-compiled library to be loaded dynamically
+- Added support for labels_only mode on data-parallel cross entropy layer
 
 Python front-end:
  - Added support for buidling and launching jobs on Fugaku

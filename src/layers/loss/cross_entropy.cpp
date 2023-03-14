@@ -117,9 +117,9 @@ void local_bp_cpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
   const auto& input_dims = this->get_input_dims(0);
-  const auto& spatial_sample_size_labels_only = std::accumulate(
+  // Only used if m_use_labels is true
+  const auto& spatial_sample_size = std::accumulate(
     input_dims.begin()+1, input_dims.end(), 1, std::multiplies<size_t>());
-  const auto& spatial_sample_size = m_use_labels ? spatial_sample_size_labels_only : 1;
 
   local_fp_cpu(this->get_local_prev_activations(0),
                this->get_local_prev_activations(1),
@@ -131,9 +131,9 @@ void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
   const auto& input_dims = this->get_input_dims(0);
-  const auto& spatial_sample_size_labels_only = std::accumulate(
+  // Only used if m_use_labels is true
+  const auto& spatial_sample_size = std::accumulate(
     input_dims.begin()+1, input_dims.end(), 1, std::multiplies<size_t>());
-  const auto& spatial_sample_size = m_use_labels ? spatial_sample_size_labels_only : 1;
 
   local_bp_cpu(this->get_local_prev_activations(0),
                this->get_local_prev_activations(1),
