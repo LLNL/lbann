@@ -110,7 +110,8 @@ def construct_model(lbann):
     # verify that error signals are correct.
     slice_size = NUM_CHANNELS * SAMPLE_SPATIAL_SIZE
     label_slice = 2 * slice_size
-    label_only_slice = label_slice + SAMPLE_SPATIAL_SIZE  
+    label_only_slice = label_slice + SAMPLE_SPATIAL_SIZE
+    RESCALE_CONST = 1e-3 
      
     x0_weights = lbann.Weights(optimizer=lbann.SGD(),
                                initializer=lbann.ConstantInitializer(value=0.0),
@@ -143,6 +144,8 @@ def construct_model(lbann):
     x0 = x0_lbann
     x1 = x1_lbann
     y = lbann.CrossEntropy(x0, x1, data_layout='data_parallel')
+    # Rescale the output so the objective isn't too high
+    y = lbann.Scale(y, constant=RESCALE_CONST)
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
@@ -153,7 +156,7 @@ def construct_model(lbann):
         x = get_sample(i).astype(np.float64)
         x0 = x[:slice_size]
         x1 = x[slice_size:2 * slice_size]
-        y = -np.inner(x1, np.log(x0))
+        y = -np.inner(x1, np.log(x0)) * RESCALE_CONST
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -169,7 +172,6 @@ def construct_model(lbann):
     # Data-parallel layout (2D labels-only)
     # ------------------------------------------
 
-    RESCALE_CONST = 1e-1
     sample_shape_2d = [NUM_CHANNELS,
                        int(np.sqrt(SAMPLE_SPATIAL_SIZE)),
                        int(np.sqrt(SAMPLE_SPATIAL_SIZE))]
@@ -269,6 +271,8 @@ def construct_model(lbann):
     x0 = x0_lbann
     x1 = x1_lbann
     y = lbann.CrossEntropy(x0, x1, data_layout='model_parallel')
+    # Rescale the output so the objective isn't too high
+    y = lbann.Scale(y, constant=RESCALE_CONST)
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='model-parallel layout'))
@@ -279,7 +283,7 @@ def construct_model(lbann):
         x = get_sample(i).astype(np.float64)
         x0 = x[:slice_size]
         x1 = x[slice_size:2 * slice_size]
-        y = -np.inner(x1, np.log(x0))
+        y = -np.inner(x1, np.log(x0)) * RESCALE_CONST
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
