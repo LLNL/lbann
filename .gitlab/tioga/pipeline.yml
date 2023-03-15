@@ -110,6 +110,7 @@ unit tests:
   script:
     - echo "== RUNNING PYTHON-BASED UNIT TESTS =="
     - echo "Testing $(which lbann)"
+    - export FLUX_F58_FORCE_ASCII=t
     - export OMP_NUM_THREADS=10
     - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - cd ci_test/unit_tests
@@ -135,6 +136,7 @@ integration tests:
   script:
     - echo "== RUNNING PYTHON-BASED INTEGRATION TESTS =="
     - echo "Testing $(which lbann)"
+    - export FLUX_F58_FORCE_ASCII=t
     - export OMP_NUM_THREADS=10
     - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - cd ci_test/integration_tests
