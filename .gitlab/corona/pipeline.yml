@@ -160,7 +160,7 @@ check catch2 tests:
   dependencies:
     - build and install
   script:
-    - ([[ $(find . -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
+    - ([[ $(find ${RESULTS_DIR} -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
   artifacts:
     reports:
       junit: ${RESULTS_DIR}/*.xml
