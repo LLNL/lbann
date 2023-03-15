@@ -15,12 +15,11 @@ of the forward operation, applying the function to the operator's
 forward inputs and gradient with respect to the outputs, to compute
 the gradient with respect to the input.
 
-Operators act as curried functions, they can have state that is
-defined during construction but do not hold internal state.  A
-operator should also be able to take objective function gradients
-w.r.t. the outputs ("previous error signals") and compute the
-objective function gradients w.r.t. the inputs ("error signals"). This
-allows the model to perform automatic differentiation.
+Operators only store immutable state; they do not have learnable
+parameters. An operator should also be able to take objective function
+gradients w.r.t. the outputs ("previous error signals") and compute
+the objective function gradients w.r.t. the inputs ("error
+signals"). This allows the model to perform automatic differentiation.
 
 Operators are specified for unique input and output data types.
 
@@ -29,87 +28,79 @@ Operators are specified for unique input and output data types.
    :widths: auto
 
    :ref:`Operator`, "Base class for LBANN operators"
-   :ref:`Abs`, "Apply the Abs operator entrywise"
-   :ref:`Acosh`, "Apply the Acosh operator entrywise"
-   :ref:`Acos`, "Apply the Acos operator entrywise"
-   :ref:`Add`, "Apply the Add operator entrywise"
-   :ref:`AddConstant`, "Add a constant to each input value (x+c)"
-   :ref:`Asin`, "Apply the Asin operator entrywise"
-   :ref:`Asinh`, "Apply the Asinh operator entrywise"
-   :ref:`Atan`, "Apply the Atan operator entrywise"
-   :ref:`Atanh`, "Apply the Atanh operator entrywise"
-   :ref:`BinaryCrossEntropy`, "Apply the BinaryCrossEntropy operator entrywise"
-   :ref:`BooleanAccuracy`, "Apply the BooleanAccuracy operator entrywise"
-   :ref:`BooleanFalseNegative`, "Apply the BooleanFalseNegative operator
-   entrywise"
-   :ref:`BooleanFalsePositive`, "Apply the BooleanFalsePositive operator
-   entrywise"
-   :ref:`Ceil`, "Apply the Ceil operator entrywise"
-   :ref:`Clamp`, "Constrain all values in a tensor within a range"
-   :ref:`ConstantSubtract`, "Subtract each input value from a constant (c-x)"
-   :ref:`Cos`, "Apply the Cos operator entrywise"
-   :ref:`Cosh`, "Apply the Cosh operator entrywise"
-   :ref:`Divide`, "Apply the Divide operator entrywise"
-   :ref:`Equal`, "Apply the Equal operator entrywise"
-   :ref:`EqualConstant`, "Test each value for equality with a constant
-   (x==c)"
-   :ref:`Erf`, "Apply the Erf operator entrywise"
-   :ref:`ErfInv`, "Apply the ErfInv operator entrywise"
-   :ref:`Exp`, "Apply the Exp operator entrywise"
-   :ref:`Expm1`, "Apply the Expm1 operator entrywise"
-   :ref:`Floor`, "Apply the Floor operator entrywise"
-   :ref:`Greater`, "Apply the Greater operator entrywise"
-   :ref:`GreaterConstant`, "Test each value for 'greater-than' with a
-   constant (x>c)"
-   :ref:`GreaterEqual`, "Apply the GreaterEqual operator entrywise"
-   :ref:`GreaterEqualConstant`, "Test each value for
-   'greater-than-or-equal-to' with a constant (x>=c)"
-   :ref:`Less`, "Apply the Less operator entrywise"
-   :ref:`LessConstant`, "Test each value for 'less-than' with a constant
-   (x<c)"
-   :ref:`LessEqual`, "Apply the LessEqual operator entrywise"
-   :ref:`LessEqualConstant`, "Test each value for 'less-than-or-equal-to' with
-   a constant (x<=c)"
-   :ref:`Log`, "Apply the Log operator entrywise"
-   :ref:`Log1p`, "Apply the Log1p operator entrywise"
-   :ref:`LogSigmoid`, "Apply the LogSigmoid operator entrywise"
-   :ref:`LogicalAnd`, "Apply the LogicalAnd operator entrywise"
-   :ref:`LogicalNot`, "Apply the LogicalNot operator entrywise"
-   :ref:`LogicalOr`, "Apply the LogicalOr operator entrywise"
-   :ref:`LogicalXor`, "Apply the LogicalXor operator entrywise"
-   :ref:`Max`, "Apply the Max operator entrywise"
-   :ref:`MaxConstant`, "Apply the MaxConstant operator entrywise"
-   :ref:`Min`, "Apply the Min operator entrywise"
-   :ref:`MinConstant`, "Apply the MinConstant operator entrywise"
-   :ref:`Mod`, "Apply the Mod operator entrywise"
-   :ref:`Multiply`, "Apply the Multiply operator entrywise"
-   :ref:`Negative`, "Apply the Log Negative entrywise"
-   :ref:`NotEqual`, "Apply the NotEqual operator entrywise"
-   :ref:`NotEqualConstant`, "Test each value for inequality with a constant
-   (x!=c)"
-   :ref:`Pow`, "Apply the Pow operator entrywise"
-   :ref:`Reciprocal`, "Apply the Reciprocal operator entrywise"
-   :ref:`Round`, "Apply the Round operator entrywise"
-   :ref:`Rsqrt`, "Apply the Rsqrt operator entrywise"
-   :ref:`SafeDivide`, "Apply the SafeDivide operator entrywise"
-   :ref:`SafeReciprocal`, "Apply the SafeReciprocal operator entrywise"
-   :ref:`Scale`, "Scale each input value by a constant value (c*x)"
-   :ref:`Selu`, "Apply the Selu operator entrywise"
-   :ref:`Sigmoid`, "Apply the Sigmoid operator entrywise"
-   :ref:`SigmoidBinaryCrossEntropy`, "Apply the SigmoidBinaryCrossEntropy
-   operator entrywise."
-   :ref:`Sign`, "Apply the Sign operator entrywise"
-   :ref:`Sin`, "Apply the Sin operator entrywise"
-   :ref:`Sinh`, "Apply the Sinh operator entrywise"
-   :ref:`Softplus`, "Apply the Softplus operator entrywise"
-   :ref:`Softsign`, "Apply the Softsign operator entrywise"
-   :ref:`Sqrt`, "Apply the Sqrt operator entrywise"
-   :ref:`Square`, "Apply the Square operator entrywise"
-   :ref:`SquareDifference`, "Apply the SquareDifference operator entrywise"
-   :ref:`Subtract`, "Apply the Subtract operator entrywise"
-   :ref:`SubtractConstant`, "Apply the SubtractConstant operator entrywise"
-   :ref:`Tan`, "Apply the Tan operator entrywise"
-   :ref:`Tanh`, "Apply the Tanh operator entrywise"
+   :ref:`AbsOperator <Abs>`, "Apply the Abs operator entrywise"
+   :ref:`AcoshOperator <Acosh>`, "Apply the Acosh operator entrywise"
+   :ref:`AcosOperator <Acos>`, "Apply the Acos operator entrywise"
+   :ref:`AddOperator <Add>`, "Apply the Add operator entrywise"
+   :ref:`AddConstantOperator <AddConstant>`, "Add a constant to each input value (x+c)"
+   :ref:`AsinOperator <Asin>`, "Apply the Asin operator entrywise"
+   :ref:`AsinhOperator <Asinh>`, "Apply the Asinh operator entrywise"
+   :ref:`AtanOperator <Atan>`, "Apply the Atan operator entrywise"
+   :ref:`AtanhOperator <Atanh>`, "Apply the Atanh operator entrywise"
+   :ref:`BinaryCrossEntropyOperator <BinaryCrossEntropy>`, "Apply the BinaryCrossEntropy operator entrywise"
+   :ref:`BooleanAccuracyOperator <BooleanAccuracy>`, "Apply the BooleanAccuracy operator entrywise"
+   :ref:`BooleanFalseNegativeOperator <BooleanFalseNegative>`, "Apply the BooleanFalseNegative operator entrywise"
+   :ref:`BooleanFalsePositiveOperator <BooleanFalsePositive>`, "Apply the BooleanFalsePositive operator entrywise"
+   :ref:`CeilOperator <Ceil>`, "Apply the Ceil operator entrywise"
+   :ref:`ClampOperator <Clamp>`, "Constrain all values in a tensor within a range"
+   :ref:`ConstantSubtractOperator <ConstantSubtract>`, "Subtract each input value from a constant (c-x)"
+   :ref:`CosOperator <Cos>`, "Apply the Cos operator entrywise"
+   :ref:`CoshOperator <Cosh>`, "Apply the Cosh operator entrywise"
+   :ref:`DivideOperator <Divide>`, "Apply the Divide operator entrywise"
+   :ref:`EqualOperator <Equal>`, "Apply the Equal operator entrywise"
+   :ref:`EqualConstantOperator <EqualConstant>`, "Test each value for equality with a constant (x==c)"
+   :ref:`ErfOperator <Erf>`, "Apply the Erf operator entrywise"
+   :ref:`ErfInvOperator <ErfInv>`, "Apply the ErfInv operator entrywise"
+   :ref:`ExpOperator <Exp>`, "Apply the Exp operator entrywise"
+   :ref:`Expm1Operator <Expm1>`, "Apply the Expm1 operator entrywise"
+   :ref:`FloorOperator <Floor>`, "Apply the Floor operator entrywise"
+   :ref:`GreaterOperator <Greater>`, "Apply the Greater operator entrywise"
+   :ref:`GreaterConstantOperator <GreaterConstant>`, "Test each value for 'greater-than' with a constant (x>c)"
+   :ref:`GreaterEqualOperator <GreaterEqual>`, "Apply the GreaterEqual operator entrywise"
+   :ref:`GreaterEqualConstantOperator <GreaterEqualConstant>`, "Test each value for 'greater-than-or-equal-to' with a constant (x>=c)"
+   :ref:`LessOperator <Less>`, "Apply the Less operator entrywise"
+   :ref:`LessConstantOperator <LessConstant>`, "Test each value for 'less-than' with a constant (x<c)"
+   :ref:`LessEqualOperator <LessEqual>`, "Apply the LessEqual operator entrywise"
+   :ref:`LessEqualConstantOperator <LessEqualConstant>`, "Test each value for 'less-than-or-equal-to' with a constant (x<=c)"
+   :ref:`LogOperator <Log>`, "Apply the Log operator entrywise"
+   :ref:`Log1pOperator <Log1p>`, "Apply the Log1p operator entrywise"
+   :ref:`LogSigmoidOperator <LogSigmoid>`, "Apply the LogSigmoid operator entrywise"
+   :ref:`LogSoftmaxOperator <LogSoftmaxOp>`, "Apply the LogSoftmax operator entrywise"
+   :ref:`LogicalAndOperator <LogicalAnd>`, "Apply the LogicalAnd operator entrywise"
+   :ref:`LogicalNotOperator <LogicalNot>`, "Apply the LogicalNot operator entrywise"
+   :ref:`LogicalOrOperator <LogicalOr>`, "Apply the LogicalOr operator entrywise"
+   :ref:`LogicalXorOperator <LogicalXor>`, "Apply the LogicalXor operator entrywise"
+   :ref:`MaxOperator <Max>`, "Apply the Max operator entrywise"
+   :ref:`MaxConstantOperator <MaxConstant>`, "Apply the MaxConstant operator entrywise"
+   :ref:`MinOperator <Min>`, "Apply the Min operator entrywise"
+   :ref:`MinConstantOperator <MinConstant>`, "Apply the MinConstant operator entrywise"
+   :ref:`ModOperator <Mod>`, "Apply the Mod operator entrywise"
+   :ref:`MultiplyOperator <Multiply>`, "Apply the Multiply operator entrywise"
+   :ref:`NegativeOperator <Negative>`, "Apply the Log Negative entrywise"
+   :ref:`NotEqualOperator <NotEqual>`, "Apply the NotEqual operator entrywise"
+   :ref:`NotEqualConstantOperator <NotEqualConstant>`, "Test each value for inequality with a constant (x!=c)"
+   :ref:`PowOperator <Pow>`, "Apply the Pow operator entrywise"
+   :ref:`ReciprocalOperator <Reciprocal>`, "Apply the Reciprocal operator entrywise"
+   :ref:`RoundOperator <Round>`, "Apply the Round operator entrywise"
+   :ref:`RsqrtOperator <Rsqrt>`, "Apply the Rsqrt operator entrywise"
+   :ref:`SafeDivideOperator <SafeDivide>`, "Apply the SafeDivide operator entrywise"
+   :ref:`SafeReciprocalOperator <SafeReciprocal>`, "Apply the SafeReciprocal operator entrywise"
+   :ref:`ScaleOperator <Scale>`, "Scale each input value by a constant value (c*x)"
+   :ref:`SeluOperator <Selu>`, "Apply the Selu operator entrywise"
+   :ref:`SigmoidOperator <Sigmoid>`, "Apply the Sigmoid operator entrywise"
+   :ref:`SigmoidBinaryCrossEntropyOperator <SigmoidBinaryCrossEntropy>`, "Apply the SigmoidBinaryCrossEntropy operator entrywise."
+   :ref:`SignOperator <Sign>`, "Apply the Sign operator entrywise"
+   :ref:`SinOperator <Sin>`, "Apply the Sin operator entrywise"
+   :ref:`SinhOperator <Sinh>`, "Apply the Sinh operator entrywise"
+   :ref:`SoftplusOperator <Softplus>`, "Apply the Softplus operator entrywise"
+   :ref:`SoftsignOperator <Softsign>`, "Apply the Softsign operator entrywise"
+   :ref:`SqrtOperator <Sqrt>`, "Apply the Sqrt operator entrywise"
+   :ref:`SquareOperator <Square>`, "Apply the Square operator entrywise"
+   :ref:`SquareDifferenceOperator <SquareDifference>`, "Apply the SquareDifference operator entrywise"
+   :ref:`SubtractOperator <Subtract>`, "Apply the Subtract operator entrywise"
+   :ref:`SubtractConstantOperator <SubtractConstant>`, "Apply the SubtractConstant operator entrywise"
+   :ref:`TanOperator <Tan>`, "Apply the Tan operator entrywise"
+   :ref:`TanhOperator <Tanh>`, "Apply the Tanh operator entrywise"
 
 
 
@@ -155,7 +146,7 @@ Perform entrywise absolute value on the input tensor.
 
 .. math::
 
-  y = |x|
+  \text{Abs}(x) = |x|
 
 :ref:`Back to Top<operators>`
 
@@ -215,7 +206,7 @@ Add a constant to each input value.
 
 .. math::
 
-   y = x + c
+   \text{AddConstant}(x,c) = x + c
 
 Arguments:
 
@@ -288,6 +279,8 @@ ________________________________________________
 ------------------------------------------------
 BinaryCrossEntropy
 ------------------------------------------------
+
+FIXME: Is this right?
 
 Apply the BinaryCrossEntropy operator entrywise.
 
@@ -369,12 +362,17 @@ Constrain all values in a tensor within a range
 
 .. math::
 
-   \text{clamp}(x; \text{min}, \text{max}) =
+   \text{Clamp}(x; \text{min}, \text{max}) =
        \begin{cases}
          \text{min} & x \leq \text{min}           \\
          x          & \text{min} < x < \text{max} \\
          \text{max} & x \geq \text{max}
        \end{cases}
+
+Arguments:
+
+   :min: (``double``) Minimum value in range
+   :max: (``double``) Maximum value in range
 
 :ref:`Back to Top<operators>`
 
@@ -392,7 +390,7 @@ Subtract each input value from a constant.
 
 .. math::
 
-   y = c - x
+   \text{ConstantSubtract}(c,x) = c - x
 
 Arguments:
 
@@ -442,7 +440,7 @@ Perform entrywise division on two input tensors.
 
 .. math::
 
-   z = \frac{x}{y}
+   \text{Divide}(x,y) = \frac{x}{y}
 
 :ref:`Back to Top<operators>`
 
@@ -474,7 +472,7 @@ Perform entrywise logical equal on input tensor and a constant.
 
 .. math::
 
-   x == c
+   \text{EqualConstant}(x,c) = x \equiv c
 
 Arguments:
 
@@ -522,6 +520,10 @@ Exp
 
 Calculate the exponential of the input tensor entrywise.
 
+.. math::
+
+   \text{Exp}(x) = e^x
+
 :ref:`Back to Top<operators>`
 
 ________________________________________________
@@ -534,8 +536,11 @@ ________________________________________________
 Expm1
 ------------------------------------------------
 
-Calculate the exponential of the input tensor entrywise. More accurate
-than Exp for small values.
+Calculate the exponential minus one of the input tensor entrywise.
+
+.. math::
+
+   \text{Expm1}(x) = e^x - 1
 
 :ref:`Back to Top<operators>`
 
@@ -565,6 +570,10 @@ Greater
 
 Perform entrywise logical 'greater' on two input tensors.
 
+.. math::
+
+   \text{Greater}(x,y) = x > y
+
 :ref:`Back to Top<operators>`
 
 ________________________________________________
@@ -581,7 +590,7 @@ Perform entrywise logical 'greater-than' on input tensor and a constant.
 
 .. math::
 
-   x > c
+   \text{GreaterConstant}(x,c) = x > c
 
 Arguments:
 
@@ -601,6 +610,10 @@ GreaterEqual
 
 Perform entrywise logical 'greater-or-equal' on two input tensors.
 
+.. math::
+
+   \text{GreaterEqual}(x,y) = x \geq y
+
 :ref:`Back to Top<operators>`
 
 ________________________________________________
@@ -618,7 +631,7 @@ constant.
 
 .. math::
 
-   x \geq c
+   \text{GreaterEqualConstant}(x,c) = x \geq c
 
 Arguments:
 
@@ -638,6 +651,10 @@ Less
 
 Perform entrywise logical 'less-than' on two input tensors.
 
+.. math::
+
+   \text{Less}(x,y) = x < y
+
 :ref:`Back to Top<operators>`
 
 ________________________________________________
@@ -654,7 +671,7 @@ Perform entrywise logical 'less-than' on input tensor and a constant.
 
 .. math::
 
-   x < c
+   \text{LessConstant}(x,y) = x < c
 
 Arguments:
 
@@ -674,6 +691,10 @@ LessEqual
 
 Perform entrywise logical 'less-equal' on two input tensors.
 
+.. math::
+
+   \text{LessEqual}(x,y) = x \leq y
+
 :ref:`Back to Top<operators>`
 
 ________________________________________________
@@ -691,7 +712,7 @@ constant.
 
 .. math::
 
-   x \leq c
+   \text{LessEqualConstant}(x,c) = x \leq c
 
 Arguments:
 
@@ -709,7 +730,7 @@ ________________________________________________
 Log
 ------------------------------------------------
 
-Calculate the natural log of the input tensor entrywise.
+Calculate the log of the input tensor entrywise.
 
 :ref:`Back to Top<operators>`
 
@@ -723,11 +744,11 @@ ________________________________________________
 Log1p
 ------------------------------------------------
 
-Calculate the natural log of one plus the input tensor entrywise.
+Calculate the log of one plus the input tensor entrywise.
 
 .. math::
 
-   y = \log{1 + x}
+   \text{Log1p}(x) = \log{1 + x}
 
 :ref:`Back to Top<operators>`
 
@@ -741,14 +762,33 @@ ________________________________________________
 LogSigmoid
 ------------------------------------------------
 
-Calculate the natural log of the output from the sigmoid function
-entrywise.
+Calculate the log of the output from the sigmoid function entrywise.
+
+.. math::
+
+   \text{LogSigmoid}(x) = \log \frac{1}{1+e^{-x}}
 
 :ref:`Back to Top<operators>`
 
 ________________________________________________
 
 
+
+.. _LogSoftmaxOp:
+
+------------------------------------------------
+LogSoftmax
+------------------------------------------------
+
+Calculate the log of the softmax function entrywise.
+
+.. math::
+
+   \text{LogSoftmax}(x)_i = x_i - \log \sum_j e^{x_j}
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
 
 .. _LogicalAnd:
 
@@ -900,7 +940,7 @@ Produce output tensor with flipped sign.
 
 .. math::
 
-   y = -x
+   \text{Negative}(x) = -x
 
 :ref:`Back to Top<operators>`
 
@@ -932,7 +972,7 @@ Perform entrywise logical 'not-equal' on input tensor and a constant.
 
 .. math::
 
-   x \neq c
+   \text{NotEqualConstant}(x, c) = x \neq c
 
 Arguments:
 
@@ -955,7 +995,7 @@ second input tensor as the exponent.
 
 .. math::
 
-   z = x^y
+   \text{Pow}(x,y) = x^y
 
 :ref:`Back to Top<operators>`
 
@@ -973,7 +1013,7 @@ Perform entrywise reciprocal function on input tensor.
 
 .. math::
 
-   y = \frac{1}{x}
+   \text{Reciprocal}(x) = \frac{1}{x}
 
 :ref:`Back to Top<operators>`
 
@@ -1006,7 +1046,7 @@ entrywise.
 
 .. math::
 
-   y = \frac{1}{\sqrt{x}}
+   \text{Rsqrt}(x) = \frac{1}{\sqrt{x}}
 
 :ref:`Back to Top<operators>`
 
@@ -1019,6 +1059,8 @@ ________________________________________________
 ------------------------------------------------
 SafeDivide
 ------------------------------------------------
+
+FIXME: Is this right?
 
 Perform entrywise division on two input tensors. Return zero if the
 divisor is zero.
@@ -1035,12 +1077,14 @@ ________________________________________________
 SafeReciprocal
 ------------------------------------------------
 
+FIXME: Is this right?
+
 Perform entrywise reciprocal function on input tensor. Return zero if
 the input value is zero.
 
 .. math::
 
-   y = \frac{1}{x}
+   \text{SafeReciprocal}(x) = \frac{1}{x}
 
 :ref:`Back to Top<operators>`
 
@@ -1058,7 +1102,7 @@ Scale each input value by a constant.
 
 .. math::
 
-   y = c * x
+   \text{Scale}(x,c) = c * x
 
 Arguments:
 
@@ -1095,7 +1139,7 @@ Apply the sigmoid function to the input tensor entrywise.
 
 .. math::
 
-   y = \frac{1}{1+e^{-x}}
+   \text{Sigmoid}(x) = \frac{1}{1+e^{-x}}
 
 :ref:`Back to Top<operators>`
 
@@ -1108,6 +1152,8 @@ ________________________________________________
 ------------------------------------------------
 SigmoidBinaryCrossEntropy
 ------------------------------------------------
+
+FIXME: Better description of this?
 
 Apply the SigmoidBinaryCrossEntropy operator entrywise.
 
@@ -1122,6 +1168,8 @@ ________________________________________________
 ------------------------------------------------
 Sign
 ------------------------------------------------
+
+FIXME: Is this output right?
 
 Compute the sign of the imput tensor entrywise. If input > 0,
 output 1. if input < 0, output -1. if input == 0, output 0.
@@ -1171,7 +1219,7 @@ Calculate the softplus of the input tensor entrywise.
 
 .. math::
 
-   y = \log{1 + e^x}
+   \text{Softplus}(x) = \log{1 + e^x}
 
 :ref:`Back to Top<operators>`
 
@@ -1189,7 +1237,7 @@ Calculate the softsign of the input tensor entrywise.
 
 .. math::
 
-   y = \frac{x}{1+|x|}
+   \text{Softsign}(x) = \frac{x}{1+|x|}
 
 :ref:`Back to Top<operators>`
 
@@ -1231,6 +1279,8 @@ ________________________________________________
 SquareDifference
 ------------------------------------------------
 
+FIXME: Better description?
+
 Apply the SquareDifference operator entrywise
 
 :ref:`Back to Top<operators>`
@@ -1249,7 +1299,7 @@ Perform entrywise subtraction on two input tensors.
 
 .. math::
 
-   z = x - y
+   \text{Subtract}(x,y) = x - y
 
 
 :ref:`Back to Top<operators>`
@@ -1268,8 +1318,7 @@ Subtract a constant from from the input tensor entrywise.
 
 .. math::
 
-
-   y = x - c
+   \text{SubtractConstant}(x,c) = x - c
 
 Arguments:
 
