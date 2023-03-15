@@ -52,6 +52,10 @@ def setup_experiment(lbann, weekly):
         lbann (module): Module for LBANN Python frontend
 
     """
+    if lbann.has_feature('DETERMINISTIC') and lbann.has_feature('MIOPEN') :
+        message = f'{os.path.basename(__file__)} Deterministic max pooling mode not supported in MIOpen'
+        print('Skip - ' + message)
+        pytest.skip(message)
     trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model(lbann)
 
