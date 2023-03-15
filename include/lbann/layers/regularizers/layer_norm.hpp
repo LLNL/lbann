@@ -36,16 +36,19 @@
 #include <memory>
 
 #ifdef LBANN_HAS_DISTCONV
+#include "lbann/utils/distconv.hpp"
 #include "lbann/layers/data_type_distconv_adapter.hpp"
-#include "lbann/layers/regularizeres/distconv/distconv_layer_norm.hpp"
+#include "lbann/layers/regularizers/distconv/distconv_layer_norm.hpp"
 #endif // LBANN_HAS_DISTCONV
 
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
 namespace dc {
+using Shape =  ::distconv::tensor::Shape;
+using Backend= ::distconv::BackendDNNLib; 
 template <typename TensorDataType>
-using LayerNorm = ::distconv::LayerNorm<Backend, TensorDataType>;
+using LayerNormalization = ::distconv::LayerNormalization<Backend, TensorDataType>;
 } // namespace dc
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -64,11 +67,15 @@ public:
 
   void setup_distributions(tensor_overlap_constraints& constraints) override;
   void setup_layer(size_t workspace_capacity) override;
+  void setup_fp_tensors() override;
+  void setup_bp_tensors() override;
 
   void fp_compute();
   void bp_compute();
-
-  std::unique_ptr<dc::LayerNorm<TensorDataType>> m_layer_norm_operator;
+  
+  TensorDevType m_statistics;
+  TensorDevType m_statistics_grad;
+  std::unique_ptr<dc::LayerNormalization<TensorDataType>> m_layer_norm_operator;
 }; // class definition channelwise_fully_connected_distconv_adapter
 
 #endif // LBANN_HAS_DISTCONV
@@ -149,7 +156,7 @@ protected:
   get_distconv_adapter() override;
   const layer_norm_distconv_adapter<TensorDataType, Layout, Device>&
   get_distconv_adapter() const override;
-#endif
+#endif // LBANN_HAS_DISTCONV
 
 private:
   using AbsDistMatType = El::AbstractDistMatrix<TensorDataType>;
@@ -407,7 +414,7 @@ void layer_norm_layer<TensorDataType, Layout, Device>::setup_data(
   }
 }
 
-<<<<<<< HEAD
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void layer_norm_layer<TensorDataType, Layout, Device>::get_normdims(
   El::Int& normalization_size,
@@ -453,7 +460,6 @@ void layer_norm_layer<TensorDataType, Layout, Device>::get_normdims(
   global_normalization_size = normalization_size;
 }
 
-=======
 #ifdef LBANN_HAS_DISTCONV
 
 // =============================================================
@@ -495,77 +501,13 @@ layer_norm_layer<TensorDataType, Layout, Device>
 // Scatter DistConv Adapter implementation
 // =============================================================
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void
-layer_norm_distconv_adapter<TensorDataType, Layout, Device>
-::setup_distributions(tensor_overlap_constraints &constraints){
-  data_type_distconv_adapter<TensorDataType>::setup_distributions(constraints);
-  // no overlap needed
-  for (auto &d: this->m_prev_activations_dists) {
-    d.clear_overlap();
-    constraints.mark_updated(d);
-    constraints.mark_invariant(d);
-  }
-  for (auto &d: this->m_activations_dists) {
-    d.clear_overlap();
-    constraints.mark_updated(d);
-    constraints.mark_invariant(d);
-  }
-  for (auto &d: this->m_prev_error_signals_dists) {
-    d.clear_overlap();
-    constraints.mark_updated(d);
-    constraints.mark_invariant(d);
-  }
-  for (auto &d: this->m_error_signals_dists) {
-    d.clear_overlap();
-    constraints.mark_updated(d);
-    constraints.mark_invariant(d);
-  }
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void
-layer_norm_distconv_adapter<TensorDataType, Layout, Device>
-::setup_layer(size_t workspace_capacity){
-  data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
-  auto &layer = dynamic_cast<channelwise_fully_connected_layer
-    <TensorDataType, Layout, Device>&>(this->layer());
-  m_layer_norm_operator = make_unique<dc::Scatter<TensorDataType>>(dc::get_backend(),
-                                                                   layer.m_epsilon);
-}
-
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void
-layer_norm_distconv_adapter<TensorDataType, Layout, Device>
-::fp_compute(){
-  // Compute the forward pass
-  m_layer_norm_operator->forward(this->get_prev_activations(0),
-                              this-m_epsilon);
-}
-
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void
-layer_norm_distconv_adapter<TensorDataType, Layout, Device>
-::bp_compute(){
-  // Compute the backward pass
-  m_layer_norm_operator->backward(this->get_prev_error_signals(0));  // Indices gradient. Will be 0'ed out
-}
-
-#define PROTO_DEVICE(T, Device)                       \
-  template class layer_norm_distconv_adapter<         \
-    T,data_layout::DATA_PARALLEL, Device>
-#include "lbann/macros/instantiate_device.hpp"
-#undef PROTO_DEVICE
 #endif // LBANN_HAS_DISTCONV
 
->>>>>>> 28add8cf8 (Added distconv-enabled layer norm CI test)
 LBANN_DEFINE_LAYER_BUILDER(layer_norm);
 
-// =========================================================
-// Explicit template instantiation
-// =========================================================
+  // =========================================================
+  // Explicit template instantiation
+  // =========================================================
 
 #ifndef LBANN_LAYER_NORM_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device)                                                \
