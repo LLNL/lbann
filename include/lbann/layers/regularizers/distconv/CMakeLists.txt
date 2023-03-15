@@ -1,5 +1,5 @@
 ################################################################################
-## Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 ## Produced at the Lawrence Livermore National Laboratory.
 ## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 ## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -23,20 +23,9 @@
 ## implied. See the License for the specific language governing
 ## permissions and limitations under the license.
 ################################################################################
-# Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
-  batch_normalization.hpp
-  batch_normalization_impl.hpp
-  dropout.hpp
-  entrywise_batch_normalization.hpp
-  layer_norm.hpp
-  local_response_normalization.hpp
-  selu_dropout.hpp
+  distconv_layer_norm.hpp
   )
-
-if (LBANN_HAS_DISTCONV)
-  add_subdirectory(distconv)
-endif()
 
 # Propagate the files up the tree
 set(HEADERS "${HEADERS}" "${THIS_DIR_HEADERS}" PARENT_SCOPE)
