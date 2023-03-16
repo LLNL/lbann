@@ -90,7 +90,7 @@ fi
 #flux proxy ${JOB_ID} flux mini run \
 flux mini run \
      -N ${LBANN_NNODES} -n $((${TEST_TASKS_PER_NODE} * ${LBANN_NNODES})) \
-     -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task \
+     -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task -o mpibind=off \
      ./unit_test/mpi-catch-tests "exclude:[random]" "exclude:[filesystem]"\
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-results-rank=%r-size=%s.xml"
@@ -103,7 +103,7 @@ fi
 #flux proxy ${JOB_ID} flux mini run \
 flux mini run \
      -N ${LBANN_NNODES} -n $((${TEST_TASKS_PER_NODE} * ${LBANN_NNODES})) \
-     -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task \
+     -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task -o mpibind=off \
      ./unit_test/mpi-catch-tests -s "[filesystem]" \
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
