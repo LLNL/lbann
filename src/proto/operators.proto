@@ -125,22 +125,22 @@ message MinConstantOperator {
   double constant = 1;
 }
 message NotEqualConstantOperator {
-    double constant = 1;
+  double constant = 1;
 }
 message EqualConstantOperator {
-    double constant = 1;
+  double constant = 1;
 }
 message LessEqualConstantOperator {
-    double constant = 1;
+  double constant = 1;
 }
 message LessConstantOperator {
-    double constant = 1;
+  double constant = 1;
 }
 message GreaterEqualConstantOperator {
-    double constant = 1;
+  double constant = 1;
 }
 message GreaterConstantOperator {
-    double constant = 1;
+  double constant = 1;
 }
 
 /// @}

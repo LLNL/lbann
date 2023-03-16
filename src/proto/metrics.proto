@@ -29,7 +29,6 @@ syntax = "proto3";
 package lbann_data;
 
 message Metric {
-
   message LayerMetric {
     string layer = 1;
     string name = 2;

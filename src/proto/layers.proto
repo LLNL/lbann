@@ -62,7 +62,6 @@ enum ConvTensorOpsMode {
  *  zero-like unless otherwise stated.
  */
 message Layer {
-
   // ===========================================
   // Basic layer options
   // ===========================================
@@ -133,12 +132,11 @@ message Layer {
   // inheritance.
 
   oneof layer_type {
-
     // Input layer
     Input input = 20;
 
     // Operator layer
-    OperatorLayer operator_layer = 21; // Name chosen to avoid collision
+    OperatorLayer operator_layer = 21;  // Name chosen to avoid collision
 
     // Transform layers
     Reshape reshape = 50;
@@ -170,8 +168,8 @@ message Layer {
     BatchwiseReduceSum batchwise_reduce_sum = 76;
     TensorPermute permute = 77;
     IdentityZero identity_zero = 78;
-    CategoricalRandom categorical_random = 406; // Deprecated
-    DiscreteRandom discrete_random = 407; // Deprecated
+    CategoricalRandom categorical_random = 406;  // Deprecated
+    DiscreteRandom discrete_random = 407;        // Deprecated
 
     // Learning layers
     FullyConnected fully_connected = 100;
@@ -467,7 +465,6 @@ message Layer {
     double bias_init = 3;
     /// Deprecated
     string stats_aggregation = 5;
-
   }
 
   /** @brief Entry-wise batch normalization
@@ -626,7 +623,6 @@ message Layer {
    *  window and applies a reduction operation.
    */
   message Pooling {
-
     /** @brief Pooling operation
      *
      *  Options: max, average, average_no_pad
@@ -683,7 +679,6 @@ message Layer {
      *  Used when @c has_vectors is disabled.
      */
     int64 pool_strides_i = 9;
-
   }
 
   /** @brief Transpose of pooling layer
@@ -720,7 +715,6 @@ message Layer {
    *  points, and each child layer recieves one piece.
    */
   message Slice {
-
     /// Tensor dimension to slice along
     int64 axis = 1;
     /** @brief Positions at which to slice tensor
@@ -748,27 +742,23 @@ message Layer {
    *  PyTorch or TensorFlow. The name refers to splits in the compute
    *  graph.
    */
-  message Split {
-  }
+  message Split {}
 
   /** @brief Add multiple tensors */
-  message Sum {
-  }
+  message Sum {}
 
   /** @brief Add tensors over multiple sub-grids and slice
    *
    *  This is experimental functionality for use with sub-grid
    *  parallelism.
    */
-  message Cross_Grid_Sum_Slice {
-  }
+  message Cross_Grid_Sum_Slice {}
   /** @brief Add tensors over multiple sub-grids
    *
    *  This is experimental functionality for use with sub-grid
    *  parallelism.
    */
-  message Cross_Grid_Sum {
-  }
+  message Cross_Grid_Sum {}
 
   /** @brief Add tensors with scaling factors */
   message WeightedSum {
@@ -779,8 +769,7 @@ message Layer {
   }
 
   /** @brief Entry-wise tensor product */
-  message Hadamard {
-  }
+  message Hadamard {}
 
   /** @brief Output tensor filled with a single value */
   message Constant {
@@ -805,8 +794,7 @@ message Layer {
    *  Rarely needed by users. Evaluation layers are automatically
    *  created when needed in the compute graph.
    */
-  message Evaluation {
-  }
+  message Evaluation {}
 
   /** @brief Random tensor with Gaussian/normal distribution */
   message Gaussian {
@@ -878,8 +866,7 @@ message Layer {
    *  Rarely needed by users. This layer is used internally to handle
    *  cases where a layer has no child layers.
    */
-  message Dummy {
-  }
+  message Dummy {}
 
   /** @brief Block error signals during back propagation
    *
@@ -889,8 +876,7 @@ message Layer {
    *  means that computed gradients in preceeding layers are not exact
    *  gradients of the objective function.
    */
-  message StopGradient {
-  }
+  message StopGradient {}
 
   /** @brief One-hot vector indicating top-k entries
    *
@@ -950,26 +936,26 @@ message Layer {
   }
 
   /** @brief Scatter values to specified tensor indices
-    *
-    *  Expects two input tensors: an @f$ N @f$-D data tensor and a 1D
-    *  index vector. For 1D data:
-    *  @f[
-    *    y[\text{ind}[i]] = x[i]
-    *  @f]
-    *  Out-of-range indices are ignored.
-    *
-    *  For higher-dimensional data, the layer performs a scatter along
-    *  one dimension. For example, with 2D data and axis=1,
-    *  @f[
-    *    y[i,\text{ind}[j]] = x[i,j]
-    *  @f]
-    *  Currently, only 1D and 2D data is supported.
-    *
-    *  The size of the index vector must match the size of the data
-    *  tensor along the scatter dimension.
-    *
-    *  @todo Support higher-dimensional data
-    */
+   *
+   *  Expects two input tensors: an @f$ N @f$-D data tensor and a 1D
+   *  index vector. For 1D data:
+   *  @f[
+   *    y[\text{ind}[i]] = x[i]
+   *  @f]
+   *  Out-of-range indices are ignored.
+   *
+   *  For higher-dimensional data, the layer performs a scatter along
+   *  one dimension. For example, with 2D data and axis=1,
+   *  @f[
+   *    y[i,\text{ind}[j]] = x[i,j]
+   *  @f]
+   *  Currently, only 1D and 2D data is supported.
+   *
+   *  The size of the index vector must match the size of the data
+   *  tensor along the scatter dimension.
+   *
+   *  @todo Support higher-dimensional data
+   */
   message Scatter {
     /** @brief Output tensor dimensions
      *
@@ -982,37 +968,37 @@ message Layer {
   }
 
   /** @brief Gather values from specified tensor indices
-    *
-    *  Expects two input tensors: an @f$ N @f$-D data tensor and a 1D
-    *  index vector. For 1D data:
-    *  @f[
-    *    y[i] = x[\text{ind}[i]]
-    *  @f]
-    *  If an index is out-of-range, the corresponding output is set to
-    *  zero.
-    *
-    *  For higher-dimensional data, the layer performs a gather along
-    *  one dimension. For example, with 2D data and axis=1,
-    *  @f[
-    *    y[i,j] = x[i,\text{ind}[j]]
-    *  @f]
-    *  Currently, only 1D and 2D data is supported.
-    *
-    *  The size of the the output tensor along the gather dimension is
-    *  equal to the size of the index vector. The remaining dimensions
-    *  of the output tensor are identical to the data tensor.
-    *
-    *  @todo Support higher-dimensional data
-    */
+   *
+   *  Expects two input tensors: an @f$ N @f$-D data tensor and a 1D
+   *  index vector. For 1D data:
+   *  @f[
+   *    y[i] = x[\text{ind}[i]]
+   *  @f]
+   *  If an index is out-of-range, the corresponding output is set to
+   *  zero.
+   *
+   *  For higher-dimensional data, the layer performs a gather along
+   *  one dimension. For example, with 2D data and axis=1,
+   *  @f[
+   *    y[i,j] = x[i,\text{ind}[j]]
+   *  @f]
+   *  Currently, only 1D and 2D data is supported.
+   *
+   *  The size of the the output tensor along the gather dimension is
+   *  equal to the size of the index vector. The remaining dimensions
+   *  of the output tensor are identical to the data tensor.
+   *
+   *  @todo Support higher-dimensional data
+   */
   message Gather {
     /// Dimension to gather along
     google.protobuf.UInt64Value axis = 1;
   }
 
   /** @brief Sum of tensor entries over batch dimension
-    *
-    *  Output tensor has same shape as input tensor.
-    */
+   *
+   *  Output tensor has same shape as input tensor.
+   */
   message BatchwiseReduceSum {}
 
   /** @brief Permute a tensor's indices ("tensor transpose")
@@ -1028,16 +1014,14 @@ message Layer {
   }
 
   /** @brief Toggle identity or zero function.
-   *  
-   *  Outputs zeros when the layer is frozen or acts as the identity function 
+   *
+   *  Outputs zeros when the layer is frozen or acts as the identity function
    *  otherwise.
    */
-  message IdentityZero {
-  }
+  message IdentityZero {}
 
   /// Deprecated
-  message CategoricalRandom {
-  }
+  message CategoricalRandom {}
   /// Deprecated
   message DiscreteRandom {
     repeated double values = 1;
@@ -1088,7 +1072,6 @@ message Layer {
    *  the bias weights are initialized to zero.
    */
   message Convolution {
-
     /** @brief Number of spatial dimensions
      *
      *  The first data dimension is treated as the channel dimension,
@@ -1145,7 +1128,6 @@ message Layer {
      *  @details Ignored for non-GPU layers.
      */
     ConvTensorOpsMode conv_tensor_op_mode = 14;
-
   }
 
   /** @brief Convolution transpose
@@ -1159,7 +1141,6 @@ message Layer {
    *  used in the deep learning is actually cross-correlation.
    */
   message Deconvolution {
-
     /// Number of spatial dimensions
     int64 num_dims = 1;
 
@@ -1201,7 +1182,6 @@ message Layer {
      *  @details Ignored for non-GPU layers.
      */
     ConvTensorOpsMode conv_tensor_op_mode = 10;
-
   }
 
   /** @brief Lookup table to embedding vectors.
@@ -1346,7 +1326,8 @@ message Layer {
    */
   message Rotation {}
 
-  /** @brief Rotate a image clockwise around its center, then shear , then translate
+  /** @brief Rotate a image clockwise around its center, then shear , then
+   * translate
    *
    *  Expects 4 inputs: a 3D image tensor in CHW format, a scalar
    *  rotation angle, a tensor for (X,Y) shear factor, a tensor
@@ -1424,10 +1405,10 @@ message Layer {
 
   /** @brief Create layer from an external library
    *
-   *  Expects any number of input tensors. Invokes a shared object (e.g., .so file)
-   *  to call the layer.
+   *  Expects any number of input tensors. Invokes a shared object (e.g., .so
+   * file) to call the layer.
    */
-   message External {
+  message External {
     /// Library filename or path
     string filename = 1;
 
@@ -1472,7 +1453,6 @@ message Layer {
    *  @todo Sparse SGD with optimizer class
    */
   message DistEmbedding {
-
     /** Size of dictionary of embeddings. */
     int64 num_embeddings = 1;
     /** Size of embedding vectors. */
@@ -1498,7 +1478,6 @@ message Layer {
      *  @todo Think of a way to avoid this synchronization.
      */
     bool barrier_in_forward_prop = 5;
-
   }
 
   /** @brief Apply a hash function to get uniformly distributed values
@@ -1526,7 +1505,7 @@ message Layer {
    */
   message RowwiseWeightsNorms {}
 
-} // message Layer
+}  // message Layer
 
 //========================================================================
 // Parallel strategies for generalized layer-wise parallelism
@@ -1534,7 +1513,6 @@ message Layer {
 
 /** @brief Configuration for advanced parallelization strategies */
 message ParallelStrategy {
-
   // ---------------------------
   // distconv
   // ---------------------------
@@ -1572,7 +1550,6 @@ message ParallelStrategy {
   int64 sub_branch_resource_percentage = 16;
   /// @todo Remove
   bool enable_subgraph = 17;
-
 }
 
 // =============================================
@@ -1589,15 +1566,16 @@ message WeightsData {
   string name = 1;
   int64 height = 2;
   int64 width = 3;
-  repeated float data = 4 [packed=true];
+  repeated float data = 4 [packed = true];
   Imcomm imcomm = 55;
 }
 /// Deprecated
 enum Imcomm {
-  DEFAULT = 0; //add Layer to Imcomm callback if all_learning_layers = true in
-               //the CallbackImComm
-  EXCLUDE = 1; //*do not* add Layer to Imcomm callback if all_learning_layers = true in
-               //the CallbackImComm
-  INCLUDE = 2;  //add Layer to Imcomm callback regardless of whether all_learning_layers
-                //in the CallbackImComm is set to true or false
+  DEFAULT = 0;  // add Layer to Imcomm callback if all_learning_layers = true in
+                // the CallbackImComm
+  EXCLUDE = 1;  //*do not* add Layer to Imcomm callback if all_learning_layers =
+                //true in the CallbackImComm
+  INCLUDE =
+      2;  // add Layer to Imcomm callback regardless of whether
+          // all_learning_layers in the CallbackImComm is set to true or false
 }

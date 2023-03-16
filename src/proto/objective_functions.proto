@@ -29,7 +29,6 @@ syntax = "proto3";
 package lbann_data;
 
 message ObjectiveFunction {
-
   message LayerTerm {
     double scale_factor = 1;
     string layer = 2;

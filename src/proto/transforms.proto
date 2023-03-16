@@ -128,7 +128,8 @@ message Transform {
     uint64 height = 1;
     uint64 width = 2;
   }
-  // Resize to height x width then crop to crop_height x crop_width at the center.
+  // Resize to height x width then crop to crop_height x crop_width at the
+  // center.
   message ResizedCenterCrop {
     uint64 height = 1;
     uint64 width = 2;
@@ -136,7 +137,7 @@ message Transform {
     uint64 crop_width = 4;
   }
   // Convert from an image to LBANN data.
-  message ToLBANNLayout { }
+  message ToLBANNLayout {}
   // Vertical flip with probability p.
   message VerticalFlip {
     float p = 1;
@@ -157,7 +158,8 @@ message Transform {
     RandomAffine random_affine = 105;
     RandomCrop random_crop = 106;
     RandomResizedCrop random_resized_crop = 107;
-    RandomResizedCropWithFixedAspectRatio random_resized_crop_with_fixed_aspect_ratio = 108;
+    RandomResizedCropWithFixedAspectRatio
+        random_resized_crop_with_fixed_aspect_ratio = 108;
     Resize resize = 109;
     ResizedCenterCrop resized_center_crop = 110;
     ToLBANNLayout to_lbann_layout = 111;
