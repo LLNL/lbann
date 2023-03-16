@@ -138,6 +138,12 @@ def setup_experiment(lbann, weekly):
         lbann (module): Module for LBANN Python frontend
 
     """
+    if not lbann.has_feature('DISTCONV'):
+      message = f'{os.path.basename(__file__)} requires DistConv support'
+      print('Skip - ' + message)
+      pytest.skip(message)
+
+    # FIXME: Remove this check after Pack/Unpack PR on H2 merges.
     if tools.system(lbann) != 'lassen' and tools.system(lbann) != 'pascal' and tools.system(lbann) != 'tioga':
       message = f'{os.path.basename(__file__)} is only supported on lassen, tioga, and pascal systems'
       print('Skip - ' + message)
