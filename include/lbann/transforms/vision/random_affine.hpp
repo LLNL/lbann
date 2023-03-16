@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,7 +35,8 @@ namespace lbann {
 namespace transform {
 
 /** Apply a random affine transform to an image. */
-class random_affine : public transform {
+class random_affine : public transform
+{
 public:
   /**
    * Set up the affine transform.
@@ -47,21 +48,32 @@ public:
    * Shear by a random number of degrees in [shear_min, shear_max].
    * Set arguments to 0 to disable that transform.
    */
-  random_affine(float rotate_min, float rotate_max,
-                float translate_h, float translate_w,
-                float scale_min, float scale_max,
-                float shear_min, float shear_max) :
-    transform(),
-    m_rotate_min(rotate_min), m_rotate_max(rotate_max),
-    m_translate_h(translate_h), m_translate_w(translate_w),
-    m_scale_min(scale_min), m_scale_max(scale_max),
-    m_shear_min(shear_min), m_shear_max(shear_max) {}
+  random_affine(float rotate_min,
+                float rotate_max,
+                float translate_h,
+                float translate_w,
+                float scale_min,
+                float scale_max,
+                float shear_min,
+                float shear_max)
+    : transform(),
+      m_rotate_min(rotate_min),
+      m_rotate_max(rotate_max),
+      m_translate_h(translate_h),
+      m_translate_w(translate_w),
+      m_scale_min(scale_min),
+      m_scale_max(scale_max),
+      m_shear_min(shear_min),
+      m_shear_max(shear_max)
+  {}
 
   transform* copy() const override { return new random_affine(*this); }
 
   std::string get_type() const override { return "random_affine"; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data,
+             std::vector<size_t>& dims) override;
+
 private:
   /** Range in degrees to rotate. */
   float m_rotate_min, m_rotate_max;
@@ -76,7 +88,7 @@ private:
 std::unique_ptr<transform>
 build_random_affine_transform_from_pbuf(google::protobuf::Message const&);
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_RANDOM_AFFINED_CENTER_CROP_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_RANDOM_AFFINED_CENTER_CROP_HPP_INCLUDED

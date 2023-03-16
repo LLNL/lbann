@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,15 +37,15 @@ using namespace h2::meta;
 
 using Fp16Types = TL<lbann::cpu_fp16
 #ifdef LBANN_HAS_GPU_FP16
-                     , lbann::fp16
+                     ,
+                     lbann::fp16
 #endif // LBANN_HAS_GPU_FP16
                      >;
 
 #ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
 template <typename T>
-using BinaryArchiveTypeBundle = TL<T,
-                                   cereal::BinaryOutputArchive,
-                                   cereal::BinaryInputArchive>;
+using BinaryArchiveTypeBundle =
+  TL<T, cereal::BinaryOutputArchive, cereal::BinaryInputArchive>;
 using BinaryArchiveTypes = tlist::ExpandTL<BinaryArchiveTypeBundle, Fp16Types>;
 #else
 using BinaryArchiveTypes = tlist::Empty;
@@ -53,21 +53,18 @@ using BinaryArchiveTypes = tlist::Empty;
 
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
 template <typename T>
-using XMLArchiveTypeBundle = TL<T,
-                                cereal::XMLOutputArchive,
-                                cereal::XMLInputArchive>;
+using XMLArchiveTypeBundle =
+  TL<T, cereal::XMLOutputArchive, cereal::XMLInputArchive>;
 using XMLArchiveTypes = tlist::ExpandTL<XMLArchiveTypeBundle, Fp16Types>;
 #else
 using XMLArchiveTypes = tlist::Empty;
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 
-using AllArchiveTypes = tlist::Append<BinaryArchiveTypes,
-                                      XMLArchiveTypes>;
+using AllArchiveTypes = tlist::Append<BinaryArchiveTypes, XMLArchiveTypes>;
 
-TEMPLATE_LIST_TEST_CASE(
-  "Serialization of half types",
-  "[utilities][half][serialize]",
-  AllArchiveTypes)
+TEMPLATE_LIST_TEST_CASE("Serialization of half types",
+                        "[utilities][half][serialize]",
+                        AllArchiveTypes)
 {
   using ValueType = tlist::Car<TestType>;
   using ArchiveTypes = tlist::Cdr<TestType>;

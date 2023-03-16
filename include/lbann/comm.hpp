@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -127,7 +127,7 @@ public:
    *  trainer. Must divide @c procs_per_trainer. Default grid is
    *  approximately square.
    */
-  void split_trainers(int procs_per_trainer=-1, int trainer_grid_height=-1);
+  void split_trainers(int procs_per_trainer = -1, int trainer_grid_height = -1);
 
   /** Split the commicator for the given trainer into primary and secondary
    *
@@ -142,12 +142,13 @@ public:
    *  allocated to the same compute node assuming that there are
    *  always an even number of accelerators per node.
    */
-  void split_trainer_grid(int num_process_primary_grid=0,
-                          bool create_two_models=false,
-                          bool enable_async_comm=false,
-                          bool enable_topo_aware=false);
+  void split_trainer_grid(int num_process_primary_grid = 0,
+                          bool create_two_models = false,
+                          bool enable_async_comm = false,
+                          bool enable_topo_aware = false);
 
-  /** Get trainer grid number (0: no primary/secondary grid, 1: part of primary grid, 2: part of secondary grid). */
+  /** Get trainer grid number (0: no primary/secondary grid, 1: part of primary
+   * grid, 2: part of secondary grid). */
   inline GridType get_grid_type() const noexcept { return m_grid_type; }
 
   /** Get which trainer this process is in. */
@@ -162,13 +163,14 @@ public:
   /** Return the COMM_WORLD rank of the rank'th processor in trainer. */
   inline int get_world_rank(int trainer, int rank) const noexcept
   {
-    if(m_secondary_grid_ranks.size() == 0){
+    if (m_secondary_grid_ranks.size() == 0) {
       return m_procs_per_trainer * trainer + rank;
     }
-    else{
-      return (m_secondary_grid_ranks.size() + m_primary_grid_ranks.size()) * trainer + rank;
+    else {
+      return (m_secondary_grid_ranks.size() + m_primary_grid_ranks.size()) *
+               trainer +
+             rank;
     }
-
   }
   /** Return the "rank" of the trainer that this rank is in */
   inline int map_world_rank_to_trainer_rank(int world_rank) const noexcept
@@ -200,13 +202,19 @@ public:
   inline El::Grid& get_trainer_grid() { return *m_grid; }
   /** Return a read-only grid to use for this trainer. */
   inline const El::Grid& get_trainer_grid() const { return *m_grid; }
-  /** Return secondary grid to use for this trainer when sub-grid parallelism is enabled. */
+  /** Return secondary grid to use for this trainer when sub-grid parallelism is
+   * enabled. */
   inline El::Grid& get_secondary_grid() { return *m_secondary_grid; }
   /** Return read-only secondary grid to use for this trainer. */
-  inline const El::Grid& get_secondary_grid() const { return *m_secondary_grid; }
-  /** Return subset grid to use for this trainer when sub-grid parallelism is enabled. */
+  inline const El::Grid& get_secondary_grid() const
+  {
+    return *m_secondary_grid;
+  }
+  /** Return subset grid to use for this trainer when sub-grid parallelism is
+   * enabled. */
   inline El::Grid& get_subset_grid() { return *m_subset_grid; }
-  /** Return read-only subset grid to use for this trainer when sub-grid parallelism is enabled. */
+  /** Return read-only subset grid to use for this trainer when sub-grid
+   * parallelism is enabled. */
   inline const El::Grid& get_subset_grid() const { return *m_subset_grid; }
   /** Return the total number of trainers. */
   inline int get_num_trainers() const noexcept { return m_num_trainers; }
@@ -262,11 +270,14 @@ public:
   void broadcast_native(int root, T& val, const El::mpi::Comm& c) const;
 
   /// World broadcast of a scalar.
-  template <typename T> void world_broadcast(int root, T& val) const;
+  template <typename T>
+  void world_broadcast(int root, T& val) const;
   /// Inter-trainer broadcast of a scalar.
-  template <typename T> void intertrainer_broadcast(int root, T& val) const;
+  template <typename T>
+  void intertrainer_broadcast(int root, T& val) const;
   /// Within-trainer broadcast of a scalar.
-  template <typename T> void trainer_broadcast(int root, T& val) const;
+  template <typename T>
+  void trainer_broadcast(int root, T& val) const;
 
   /**
    * Broadcast a buffer over an arbitrary communicator assuming that
@@ -399,9 +410,11 @@ public:
   void trainer_all_gather(T const& src, std::vector<T>& data) const;
 
   /** Within-trainer scalar gather (for non-root processes). */
-  template <typename T> void trainer_gather(T snd, int root) const;
+  template <typename T>
+  void trainer_gather(T snd, int root) const;
   /** Within-trainer scalar gather (for root processes). */
-  template <typename T> void trainer_gather(T snd, T* rcv) const;
+  template <typename T>
+  void trainer_gather(T snd, T* rcv) const;
   /** Within-trainer scalar-array gather (for non-root processes). */
   template <typename T>
   void trainer_gather(T const* snd, int count, int root) const;
@@ -418,7 +431,8 @@ public:
                        int const* rcv_counts,
                        int const* rcv_displacements) const;
   /** Inter-trainer gather (for non-root processes). */
-  template <typename T> void intertrainer_gather(T snd, int root) const;
+  template <typename T>
+  void intertrainer_gather(T snd, int root) const;
   /** Inter-trainer gather (for root processes). */
   template <typename T>
   void intertrainer_gather(T snd, std::vector<T>& rcv) const;
@@ -456,9 +470,11 @@ public:
               const El::mpi::Comm& c,
               El::SyncInfo<D> const& syncInfo) const;
   /** Scalar scatter (for non-root processes). */
-  template <typename T> T scatter(int root, const El::mpi::Comm& c) const;
+  template <typename T>
+  T scatter(int root, const El::mpi::Comm& c) const;
   /** Scalar scatter (for root processes). */
-  template <typename T> T scatter(T const* snd, const El::mpi::Comm& c) const;
+  template <typename T>
+  T scatter(T const* snd, const El::mpi::Comm& c) const;
   /** Inter-trainer reduce (for non-root processes). */
   template <typename T>
   void
@@ -619,7 +635,8 @@ public:
   void wait_all(std::vector<El::mpi::Request<T>>& req) const;
 
   /** Wait for a non-blocking request to complete. */
-  template <typename T> void wait(El::mpi::Request<T>& req) const;
+  template <typename T>
+  void wait(El::mpi::Request<T>& req) const;
 
   /** Wait for a non-blocking request to complete. */
   void wait(Al::request& req) const;
@@ -702,8 +719,10 @@ public:
   /** Corresponding receive to send. */
   template <typename T>
   void recv(T* data, int count, int trainer, int rank) const;
-  template <typename T> void recv(T* data, int count, int trainer) const;
-  template <typename T> void recv(T* data, int count) const;
+  template <typename T>
+  void recv(T* data, int count, int trainer) const;
+  template <typename T>
+  void recv(T* data, int count) const;
   template <typename T, El::Device D>
   void recv(T* data,
             int count,
@@ -805,8 +824,10 @@ public:
                 El::SyncInfo<D> const& syncInfo) const;
 
   /** Determine the size (count) of an incoming message. */
-  template <typename T> int get_count(int trainer, int rank) const;
-  template <typename T> int get_count(int trainer) const;
+  template <typename T>
+  int get_count(int trainer, int rank) const;
+  template <typename T>
+  int get_count(int trainer) const;
 
   // Statistics methods.
   /** Return the number of trainer barriers performed. */
@@ -883,18 +904,18 @@ public:
   const El::mpi::Comm& get_node_comm() const noexcept { return m_node_comm; }
 
   /** Return the communicator for this grid in sub-grid parallelism. */
-  const El::mpi::Comm& get_KFAC_comm() const noexcept { return m_trainer_comm;  }
+  const El::mpi::Comm& get_KFAC_comm() const noexcept { return m_trainer_comm; }
 
   /** Return the ranks of primary grid in the trainer */
-  std::vector<int> get_primary_grid_ranks(){ return m_primary_grid_ranks; }
+  std::vector<int> get_primary_grid_ranks() { return m_primary_grid_ranks; }
 
   /** Return the ranks of secondary grid in the trainer */
-  std::vector<int> get_secondary_grid_ranks(){ return m_secondary_grid_ranks; }
+  std::vector<int> get_secondary_grid_ranks() { return m_secondary_grid_ranks; }
 
-  bool get_KFAC_subgrid_create_two_models(){ return m_create_two_models; }
+  bool get_KFAC_subgrid_create_two_models() { return m_create_two_models; }
 
   /** Return asynchronous flag for sub-grid parallelism */
-  bool enable_subgrid_async_communication(){ return m_subgrid_async_progress; }
+  bool enable_subgrid_async_communication() { return m_subgrid_async_progress; }
 
   /**
    * Return a communicator containing num_per_group processors.
@@ -960,7 +981,7 @@ private:
   /** Grid type for current process when sub-grid parallelism is enabled */
   GridType m_grid_type = GridType::NO_GRID;
 
-  bool m_create_two_models=false, m_subgrid_async_progress=false;
+  bool m_create_two_models = false, m_subgrid_async_progress = false;
 
   std::unique_ptr<El::Grid> m_secondary_grid, m_subset_grid;
 

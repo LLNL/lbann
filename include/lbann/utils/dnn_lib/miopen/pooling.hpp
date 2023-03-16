@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,12 +33,10 @@
 
 #include "utils.hpp"
 
-namespace lbann
-{
+namespace lbann {
 
 #ifdef LBANN_HAS_MIOPEN
-namespace dnn_lib
-{
+namespace dnn_lib {
 
 using namespace miopen;
 
@@ -46,12 +44,9 @@ inline size_t get_pooling_ws_size(PoolingDescriptor const& poolingDesc,
                                   TensorDescriptor const& yDesc)
 {
   BASIC_PROF_REGION("miopen:get_pooling_ws_size");
-  CHECK_MIOPEN(miopenSetPoolingIndexType(poolingDesc,
-                                         miopenIndexUint32));
+  CHECK_MIOPEN(miopenSetPoolingIndexType(poolingDesc, miopenIndexUint32));
   size_t size;
-  CHECK_MIOPEN(miopenPoolingGetWorkSpaceSizeV2(poolingDesc,
-                                               yDesc,
-                                               &size));
+  CHECK_MIOPEN(miopenPoolingGetWorkSpaceSizeV2(poolingDesc, yDesc, &size));
   return size;
 }
 
@@ -84,18 +79,19 @@ void pooling_forward(PoolingDescriptor const& poolingDesc,
                                       nullptr,
                                       0));
   }
-  else {                                                  // Training
-    CHECK_MIOPEN(miopenPoolingForward(handle_manager.get(),
-                                      poolingDesc,
-                                      &alpha,
-                                      xDesc,
-                                      x.LockedBuffer(),
-                                      &beta,
-                                      yDesc,
-                                      y.Buffer(),
-                                      true,
-                                      workSpace.Buffer(),
-                                      workSpace.Height()*sizeof(TensorDataType)));
+  else { // Training
+    CHECK_MIOPEN(
+      miopenPoolingForward(handle_manager.get(),
+                           poolingDesc,
+                           &alpha,
+                           xDesc,
+                           x.LockedBuffer(),
+                           &beta,
+                           yDesc,
+                           y.Buffer(),
+                           true,
+                           workSpace.Buffer(),
+                           workSpace.Height() * sizeof(TensorDataType)));
   }
 }
 
@@ -113,8 +109,12 @@ void pooling_forward(PoolingDescriptor const& poolingDesc,
                                      gpu::get_sync_info(y),
                                      gpu::get_sync_info(x));
   pooling_forward(poolingDesc,
-                  alpha_in, xDesc, x,
-                  beta_in, yDesc, y,
+                  alpha_in,
+                  xDesc,
+                  x,
+                  beta_in,
+                  yDesc,
+                  y,
                   workSpace,
                   multisync);
 }
@@ -174,13 +174,21 @@ void pooling_backward(PoolingDescriptor const& poolingDesc,
                                      gpu::get_sync_info(dy),
                                      gpu::get_sync_info(y));
   pooling_backward(poolingDesc,
-                   alpha_in, yDesc, y, dyDesc, dy,
-                   xDesc, x, beta_in, dxDesc, dx,
+                   alpha_in,
+                   yDesc,
+                   y,
+                   dyDesc,
+                   dy,
+                   xDesc,
+                   x,
+                   beta_in,
+                   dxDesc,
+                   dx,
                    workSpace,
                    multisync);
 }
 
-}// namespace dnn_lib
+} // namespace dnn_lib
 #endif // LBANN_HAS_MIOPEN
-}// namespace lbann
+} // namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_MIOPEN_POOLING_HPP_

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,12 +33,10 @@
 
 #include "utils.hpp"
 
-namespace lbann
-{
+namespace lbann {
 
 #ifdef LBANN_HAS_MIOPEN
-namespace dnn_lib
-{
+namespace dnn_lib {
 
 using namespace miopen;
 
@@ -73,60 +71,69 @@ get_bwd_weights_conv_workspace_size(TensorDescriptor const& dyDesc,
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void convolution_forward(
-  ScalarParameterType const& alpha_in,
-  TensorDescriptor const& xDesc,
-  El::AbstractMatrix<TensorDataType> const& x,
-  FilterDescriptor const& wDesc,
-  El::AbstractMatrix<TensorDataType> const& w,
-  ConvolutionDescriptor const& convDesc,
-  fwd_conv_alg alg,
-  El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
-  ScalarParameterType const& beta_in,
-  TensorDescriptor const& yDesc,
-  El::AbstractMatrix<TensorDataType>& y,
-  El::SyncInfo<El::Device::GPU> const& si)
+void convolution_forward(ScalarParameterType const& alpha_in,
+                         TensorDescriptor const& xDesc,
+                         El::AbstractMatrix<TensorDataType> const& x,
+                         FilterDescriptor const& wDesc,
+                         El::AbstractMatrix<TensorDataType> const& w,
+                         ConvolutionDescriptor const& convDesc,
+                         fwd_conv_alg alg,
+                         El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
+                         ScalarParameterType const& beta_in,
+                         TensorDescriptor const& yDesc,
+                         El::AbstractMatrix<TensorDataType>& y,
+                         El::SyncInfo<El::Device::GPU> const& si)
 {
   BASIC_PROF_REGION("miopen:convolution_forward");
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_MIOPEN(miopenConvolutionForward(handle_manager.get(),
-                                        &alpha,
-                                        xDesc,
-                                        x.LockedBuffer(),
-                                        wDesc,
-                                        w.LockedBuffer(),
-                                        convDesc,
-                                        miopen::to_miopen(alg),
-                                        &beta,
-                                        yDesc,
-                                        y.Buffer(),
-                                        workSpace.Buffer(),
-                                        workSpace.Height()*sizeof(TensorDataType)));
+  CHECK_MIOPEN(
+    miopenConvolutionForward(handle_manager.get(),
+                             &alpha,
+                             xDesc,
+                             x.LockedBuffer(),
+                             wDesc,
+                             w.LockedBuffer(),
+                             convDesc,
+                             miopen::to_miopen(alg),
+                             &beta,
+                             yDesc,
+                             y.Buffer(),
+                             workSpace.Buffer(),
+                             workSpace.Height() * sizeof(TensorDataType)));
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void convolution_forward(
-  ScalarParameterType const& alpha_in,
-  TensorDescriptor const& xDesc,
-  El::AbstractMatrix<TensorDataType> const& x,
-  FilterDescriptor const& wDesc,
-  El::AbstractMatrix<TensorDataType> const& w,
-  ConvolutionDescriptor const& convDesc,
-  fwd_conv_alg alg,
-  El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
-  ScalarParameterType const& beta_in,
-  TensorDescriptor const& yDesc,
-  El::AbstractMatrix<TensorDataType>& y)
+void convolution_forward(ScalarParameterType const& alpha_in,
+                         TensorDescriptor const& xDesc,
+                         El::AbstractMatrix<TensorDataType> const& x,
+                         FilterDescriptor const& wDesc,
+                         El::AbstractMatrix<TensorDataType> const& w,
+                         ConvolutionDescriptor const& convDesc,
+                         fwd_conv_alg alg,
+                         El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
+                         ScalarParameterType const& beta_in,
+                         TensorDescriptor const& yDesc,
+                         El::AbstractMatrix<TensorDataType>& y)
 {
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
                                      gpu::get_sync_info(workSpace),
                                      gpu::get_sync_info(w),
                                      gpu::get_sync_info(x));
-  convolution_forward(alpha_in, xDesc, x, wDesc, w, convDesc, alg,
-                      workSpace, beta_in, yDesc, y, multisync);
+  convolution_forward(alpha_in,
+                      xDesc,
+                      x,
+                      wDesc,
+                      w,
+                      convDesc,
+                      alg,
+                      workSpace,
+                      beta_in,
+                      yDesc,
+                      y,
+                      multisync);
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
@@ -149,19 +156,20 @@ void convolution_backward_data(
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_MIOPEN(miopenConvolutionBackwardData(handle_manager.get(),
-                                             &alpha,
-                                             dyDesc,
-                                             dy.LockedBuffer(),
-                                             wDesc,
-                                             w.LockedBuffer(),
-                                             convDesc,
-                                             miopen::to_miopen(alg),
-                                             &beta,
-                                             dxDesc,
-                                             dx.Buffer(),
-                                             workSpace.Buffer(),
-                                             workSpace.Height()*sizeof(TensorDataType)));
+  CHECK_MIOPEN(
+    miopenConvolutionBackwardData(handle_manager.get(),
+                                  &alpha,
+                                  dyDesc,
+                                  dy.LockedBuffer(),
+                                  wDesc,
+                                  w.LockedBuffer(),
+                                  convDesc,
+                                  miopen::to_miopen(alg),
+                                  &beta,
+                                  dxDesc,
+                                  dx.Buffer(),
+                                  workSpace.Buffer(),
+                                  workSpace.Height() * sizeof(TensorDataType)));
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
@@ -182,20 +190,28 @@ void convolution_backward_data(
                                      gpu::get_sync_info(workSpace),
                                      gpu::get_sync_info(dy),
                                      gpu::get_sync_info(w));
-  convolution_backward_data(alpha_in, wDesc, w, dyDesc, dy, convDesc, alg,
-                            workSpace, beta_in, dxDesc, dx, multisync);
-
+  convolution_backward_data(alpha_in,
+                            wDesc,
+                            w,
+                            dyDesc,
+                            dy,
+                            convDesc,
+                            alg,
+                            workSpace,
+                            beta_in,
+                            dxDesc,
+                            dx,
+                            multisync);
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void convolution_backward_bias(
-  ScalarParameterType const& alpha_in,
-  TensorDescriptor const& dyDesc,
-  El::AbstractMatrix<TensorDataType> const& dy,
-  ScalarParameterType const& beta_in,
-  TensorDescriptor const& dbDesc,
-  El::AbstractMatrix<TensorDataType>& db,
-  El::SyncInfo<El::Device::GPU> const& si)
+void convolution_backward_bias(ScalarParameterType const& alpha_in,
+                               TensorDescriptor const& dyDesc,
+                               El::AbstractMatrix<TensorDataType> const& dy,
+                               ScalarParameterType const& beta_in,
+                               TensorDescriptor const& dbDesc,
+                               El::AbstractMatrix<TensorDataType>& db,
+                               El::SyncInfo<El::Device::GPU> const& si)
 {
   BASIC_PROF_REGION("miopen:convolution_backward_bias");
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
@@ -212,18 +228,21 @@ void convolution_backward_bias(
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void convolution_backward_bias(
-  ScalarParameterType const& alpha_in,
-  TensorDescriptor const& dyDesc,
-  El::AbstractMatrix<TensorDataType> const& dy,
-  ScalarParameterType const& beta_in,
-  TensorDescriptor const& dbDesc,
-  El::AbstractMatrix<TensorDataType>& db)
+void convolution_backward_bias(ScalarParameterType const& alpha_in,
+                               TensorDescriptor const& dyDesc,
+                               El::AbstractMatrix<TensorDataType> const& dy,
+                               ScalarParameterType const& beta_in,
+                               TensorDescriptor const& dbDesc,
+                               El::AbstractMatrix<TensorDataType>& db)
 {
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(db),
-                                     gpu::get_sync_info(dy));
-  convolution_backward_bias(alpha_in, dyDesc, dy,
-                            beta_in, dbDesc, db,
+  auto multisync =
+    El::MakeMultiSync(gpu::get_sync_info(db), gpu::get_sync_info(dy));
+  convolution_backward_bias(alpha_in,
+                            dyDesc,
+                            dy,
+                            beta_in,
+                            dbDesc,
+                            db,
                             multisync);
 }
 
@@ -266,9 +285,11 @@ void convolution_backward_filter(
                                                   dwDesc,
                                                   dw.Buffer(),
                                                   workSpace.Buffer(),
-                                                  workSpace.Height()*sizeof(TensorDataType)));
+                                                  workSpace.Height() *
+                                                    sizeof(TensorDataType)));
     add_tensor(alpha_in, dwDesc, dw, beta_in, dwDesc, dw_old);
-  } else {
+  }
+  else {
     CHECK_MIOPEN(miopenConvolutionBackwardWeights(handle_manager.get(),
                                                   &alpha,
                                                   dyDesc,
@@ -281,7 +302,8 @@ void convolution_backward_filter(
                                                   dwDesc,
                                                   dw.Buffer(),
                                                   workSpace.Buffer(),
-                                                  workSpace.Height()*sizeof(TensorDataType)));
+                                                  workSpace.Height() *
+                                                    sizeof(TensorDataType)));
   }
 }
 
@@ -303,8 +325,18 @@ void convolution_backward_filter(
                                      gpu::get_sync_info(workSpace),
                                      gpu::get_sync_info(dy),
                                      gpu::get_sync_info(x));
-  convolution_backward_filter(alpha_in, xDesc, x, dyDesc, dy, convDesc, alg,
-                              workSpace, beta_in, dwDesc, dw, multisync);
+  convolution_backward_filter(alpha_in,
+                              xDesc,
+                              x,
+                              dyDesc,
+                              dy,
+                              convDesc,
+                              alg,
+                              workSpace,
+                              beta_in,
+                              dwDesc,
+                              dw,
+                              multisync);
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
@@ -343,12 +375,12 @@ void add_tensor(ScalarParameterType const& alpha_in,
                 TensorDescriptor const& cDesc,
                 El::AbstractMatrix<TensorDataType>& C)
 {
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(C),
-                                     gpu::get_sync_info(A));
+  auto multisync =
+    El::MakeMultiSync(gpu::get_sync_info(C), gpu::get_sync_info(A));
   add_tensor(alpha_in, aDesc, A, beta_in, cDesc, C, multisync);
 }
 
-}// namespace dnn_lib
+} // namespace dnn_lib
 #endif // LBANN_HAS_MIOPEN
-}// namespace lbann
+} // namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_MIOPEN_CONVOLUTION_HPP_

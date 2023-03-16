@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -36,10 +36,10 @@
 #include "lbann/proto/callbacks.pb.h"
 
 #ifdef LBANN_NVPROF
+#include "cuda_runtime.h"
 #include "nvToolsExt.h"
 #include "nvToolsExtCuda.h"
 #include "nvToolsExtCudaRt.h"
-#include "cuda_runtime.h"
 #endif
 
 #include <algorithm>
@@ -48,8 +48,9 @@
 namespace lbann {
 namespace callback {
 
-profiler::profiler(bool sync, bool skip_init) :
-    callback_base(), m_sync(sync), m_skip_init(skip_init) {
+profiler::profiler(bool sync, bool skip_init)
+  : callback_base(), m_sync(sync), m_skip_init(skip_init)
+{
 #ifdef LBANN_NVPROF
   nvtxNameCudaStreamA(hydrogen::cuda::GetDefaultStream(), "Hydrogen");
 #endif
@@ -59,10 +60,10 @@ profiler::profiler(bool sync, bool skip_init) :
 }
 
 template <class Archive>
-void profiler::serialize(Archive & ar) {
-  ar(::cereal::make_nvp(
-       "BaseCallback",
-       ::cereal::base_class<callback_base>(this)),
+void profiler::serialize(Archive& ar)
+{
+  ar(::cereal::make_nvp("BaseCallback",
+                        ::cereal::base_class<callback_base>(this)),
      CEREAL_NVP(m_sync),
      CEREAL_NVP(m_skip_init));
 }
@@ -74,168 +75,205 @@ void profiler::write_specific_proto(lbann_data::Callback& proto) const
   msg->set_skip_init(m_skip_init);
 }
 
-void profiler::on_epoch_begin(model *m) {
+void profiler::on_epoch_begin(model* m)
+{
   const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   // Skip the first epoch
   if (m_skip_init && c.get_epoch() == 1) {
     prof_start();
   }
   prof_region_begin(("epoch " + std::to_string(c.get_epoch())).c_str(),
-                    prof_colors[0], m_sync);
+                    prof_colors[0],
+                    m_sync);
 }
 
-void profiler::on_epoch_end(model *m) {
+void profiler::on_epoch_end(model* m)
+{
   const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
-  prof_region_end(("epoch " + std::to_string(c.get_epoch())).c_str(),
-                  m_sync);
+  prof_region_end(("epoch " + std::to_string(c.get_epoch())).c_str(), m_sync);
 }
 
-void profiler::on_validation_begin(model *m) {
+void profiler::on_validation_begin(model* m)
+{
   const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   prof_region_begin(("val " + std::to_string(c.get_epoch())).c_str(),
-                    prof_colors[0], m_sync);
+                    prof_colors[0],
+                    m_sync);
 }
 
-void profiler::on_validation_end(model *m) {
+void profiler::on_validation_end(model* m)
+{
   const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
-  prof_region_end(("val " + std::to_string(c.get_epoch())).c_str(),
-                  m_sync);
+  prof_region_end(("val " + std::to_string(c.get_epoch())).c_str(), m_sync);
 }
 
-void profiler::on_test_begin(model *m) {
+void profiler::on_test_begin(model* m)
+{
   const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   prof_region_begin(("test " + std::to_string(c.get_epoch())).c_str(),
-                    prof_colors[0], m_sync);
+                    prof_colors[0],
+                    m_sync);
 }
 
-void profiler::on_test_end(model *m) {
+void profiler::on_test_end(model* m)
+{
   const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
-  prof_region_end(("test " + std::to_string(c.get_epoch())).c_str(),
-                  m_sync);
+  prof_region_end(("test " + std::to_string(c.get_epoch())).c_str(), m_sync);
 }
 
-void profiler::on_batch_begin(model *m) {
+void profiler::on_batch_begin(model* m)
+{
   const auto& c = m->get_execution_context();
   prof_region_begin(("batch " + std::to_string(c.get_step())).c_str(),
-                    prof_colors[1], m_sync);
+                    prof_colors[1],
+                    m_sync);
 }
 
-void profiler::on_batch_end(model *m) {
+void profiler::on_batch_end(model* m)
+{
   const auto& c = m->get_execution_context();
-  prof_region_end(("batch " + std::to_string(c.get_step())).c_str(),
-                  m_sync);
+  prof_region_end(("batch " + std::to_string(c.get_step())).c_str(), m_sync);
 }
 
-void profiler::on_batch_evaluate_begin(model *m) {
+void profiler::on_batch_evaluate_begin(model* m)
+{
   const auto& c = m->get_execution_context();
   prof_region_begin(("batch eval " + std::to_string(c.get_step())).c_str(),
-                    prof_colors[1], m_sync);
+                    prof_colors[1],
+                    m_sync);
 }
 
-void profiler::on_batch_evaluate_end(model *m) {
+void profiler::on_batch_evaluate_end(model* m)
+{
   const auto& c = m->get_execution_context();
   prof_region_end(("batch eval " + std::to_string(c.get_step())).c_str(),
                   m_sync);
 }
 
-void profiler::on_forward_prop_begin(model *m) {
+void profiler::on_forward_prop_begin(model* m)
+{
   prof_region_begin("forward", prof_colors[2], m_sync);
 }
 
-void profiler::on_forward_prop_end(model *m) {
+void profiler::on_forward_prop_end(model* m)
+{
   prof_region_end("forward", m_sync);
 }
 
-void profiler::on_evaluate_forward_prop_begin(model *m) {
+void profiler::on_evaluate_forward_prop_begin(model* m)
+{
   prof_region_begin("forward", prof_colors[2], m_sync);
 }
 
-void profiler::on_evaluate_forward_prop_end(model *m) {
+void profiler::on_evaluate_forward_prop_end(model* m)
+{
   prof_region_end("forward", m_sync);
 }
 
-void profiler::on_backward_prop_begin(model *m) {
+void profiler::on_backward_prop_begin(model* m)
+{
   prof_region_begin("backward", prof_colors[3], m_sync);
 }
 
-void profiler::on_backward_prop_end(model *m) {
+void profiler::on_backward_prop_end(model* m)
+{
   prof_region_end("backward", m_sync);
 }
 
-void profiler::on_optimize_begin(model *m) {
+void profiler::on_optimize_begin(model* m)
+{
   prof_region_begin("optimize", prof_colors[4], m_sync);
 }
 
-void profiler::on_optimize_end(model *m) {
+void profiler::on_optimize_end(model* m)
+{
   prof_region_end("optimize", m_sync);
 }
 
-int profiler::get_color(Layer *l) {
-  const std::string &lname = l->get_type();
+int profiler::get_color(Layer* l)
+{
+  const std::string& lname = l->get_type();
   int idx = 5;
   if (lname == "fully connected") {
     idx = 6;
-  } else if (lname == "convolution") {
+  }
+  else if (lname == "convolution") {
     idx = 7;
-  } else if (lname == "pooling") {
+  }
+  else if (lname == "pooling") {
     idx = 8;
-  } else if (lname == "input:partitioned") {
+  }
+  else if (lname == "input:partitioned") {
     idx = 9;
-  } else if (lname == "input:distributed") {
+  }
+  else if (lname == "input:distributed") {
     idx = 9;
-  } else if (lname == "batch normalization") {
+  }
+  else if (lname == "batch normalization") {
     idx = 10;
-  } else if (lname == "softmax") {
+  }
+  else if (lname == "softmax") {
     idx = 11;
-  } else if (lname == "ReLU") {
+  }
+  else if (lname == "ReLU") {
     idx = 12;
-  } else if (lname == "split") {
+  }
+  else if (lname == "split") {
     idx = 13;
-  } else if (lname == "sum") {
+  }
+  else if (lname == "sum") {
     idx = 13;
   }
   return prof_colors[idx % num_prof_colors];
 }
 
-void profiler::on_forward_prop_begin(model *m, Layer *l) {
+void profiler::on_forward_prop_begin(model* m, Layer* l)
+{
   prof_region_begin(("fw " + l->get_name()).c_str(), get_color(l), m_sync);
 }
 
-void profiler::on_forward_prop_end(model *m, Layer *l) {
+void profiler::on_forward_prop_end(model* m, Layer* l)
+{
   prof_region_end(("fw " + l->get_name()).c_str(), m_sync);
 }
 
-void profiler::on_evaluate_forward_prop_begin(model *m, Layer *l) {
+void profiler::on_evaluate_forward_prop_begin(model* m, Layer* l)
+{
   prof_region_begin(("fw " + l->get_name()).c_str(), get_color(l), m_sync);
 }
 
-void profiler::on_evaluate_forward_prop_end(model *m, Layer *l) {
+void profiler::on_evaluate_forward_prop_end(model* m, Layer* l)
+{
   prof_region_end(("fw " + l->get_name()).c_str(), m_sync);
 }
 
-void profiler::on_backward_prop_begin(model *m, Layer *l) {
+void profiler::on_backward_prop_begin(model* m, Layer* l)
+{
   prof_region_begin(("bw " + l->get_name()).c_str(), get_color(l), m_sync);
 }
 
-void profiler::on_backward_prop_end(model *m, Layer *l) {
+void profiler::on_backward_prop_end(model* m, Layer* l)
+{
   prof_region_end(("bw " + l->get_name()).c_str(), m_sync);
 }
 
-void profiler::on_optimize_begin(model *m, weights *w) {
+void profiler::on_optimize_begin(model* m, weights* w)
+{
   prof_region_begin(("opt " + w->get_name()).c_str(), prof_colors[5], m_sync);
 }
 
-void profiler::on_optimize_end(model *m, weights *w) {
+void profiler::on_optimize_end(model* m, weights* w)
+{
   prof_region_end(("opt " + w->get_name()).c_str(), m_sync);
 }
 
 std::unique_ptr<callback_base>
-build_profiler_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+build_profiler_callback_from_pbuf(const google::protobuf::Message& proto_msg,
+                                  const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackProfiler&>(proto_msg);
-  return std::make_unique<profiler>(params.sync(),
-                                              params.skip_init());
+  return std::make_unique<profiler>(params.sync(), params.skip_init());
 }
 
 } // namespace callback

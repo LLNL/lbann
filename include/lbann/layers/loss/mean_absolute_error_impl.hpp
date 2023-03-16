@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,7 +33,9 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void mean_absolute_error_layer<TensorDataType, Layout, Device>::setup_dims(DataReaderMetaData& dr_metadata) {
+void mean_absolute_error_layer<TensorDataType, Layout, Device>::setup_dims(
+  DataReaderMetaData& dr_metadata)
+{
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
   this->set_output_dims({1});
 
@@ -45,8 +47,8 @@ void mean_absolute_error_layer<TensorDataType, Layout, Device>::setup_dims(DataR
         << "has input tensors with different dimensions (";
     for (int i = 0; i < this->get_num_parents(); ++i) {
       const auto& dims = this->get_input_dims(i);
-      err << (i > 0 ? ", " : "")
-          << "layer \"" << parents[i]->get_name() << "\" outputs ";
+      err << (i > 0 ? ", " : "") << "layer \"" << parents[i]->get_name()
+          << "\" outputs ";
       for (size_t j = 0; j < dims.size(); ++j) {
         err << (j > 0 ? " x " : "") << dims[j];
       }
@@ -54,11 +56,12 @@ void mean_absolute_error_layer<TensorDataType, Layout, Device>::setup_dims(DataR
     err << ")";
     LBANN_ERROR(err.str());
   }
-
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void mean_absolute_error_layer<TensorDataType, Layout, Device>::setup_data(size_t max_mini_batch_size) {
+void mean_absolute_error_layer<TensorDataType, Layout, Device>::setup_data(
+  size_t max_mini_batch_size)
+{
   data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
   // Initialize workspace
@@ -79,7 +82,8 @@ void mean_absolute_error_layer<TensorDataType, Layout, Device>::setup_data(size_
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void mean_absolute_error_layer<TensorDataType, Layout, Device>::fp_compute() {
+void mean_absolute_error_layer<TensorDataType, Layout, Device>::fp_compute()
+{
 
   // Initialize workspace
   m_workspace->Empty();
@@ -97,7 +101,8 @@ void mean_absolute_error_layer<TensorDataType, Layout, Device>::fp_compute() {
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void mean_absolute_error_layer<TensorDataType, Layout, Device>::bp_compute() {
+void mean_absolute_error_layer<TensorDataType, Layout, Device>::bp_compute()
+{
 
   // Initialize workspace
   m_workspace->Empty();

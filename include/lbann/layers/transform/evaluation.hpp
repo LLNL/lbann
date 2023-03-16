@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,7 +33,8 @@ namespace lbann {
 
 /** @brief Interface with objective function and metrics */
 template <typename TensorDataType>
-class abstract_evaluation_layer : public data_type_layer<TensorDataType> {
+class abstract_evaluation_layer : public data_type_layer<TensorDataType>
+{
 public:
 #ifdef LBANN_DETERMINISTIC
   using EvalDataType = EvalType;
@@ -43,7 +44,6 @@ public:
   using CPUMatType = El::Matrix<EvalDataType, El::Device::CPU>;
 
 public:
-
   /** Get scaling factor. */
   EvalType get_scale() const { return m_scale; }
   /** Set scaling factor. */
@@ -54,12 +54,11 @@ public:
   /** Construct an evaluation layer.
    *  The caller is responsible for deallocating the layer.
    */
-  static abstract_evaluation_layer* construct(lbann_comm *comm,
-                                              data_layout layout,
-                                              El::Device device);
+  static abstract_evaluation_layer*
+  construct(lbann_comm* comm, data_layout layout, El::Device device);
 
 protected:
-  abstract_evaluation_layer(lbann_comm *comm);
+  abstract_evaluation_layer(lbann_comm* comm);
   /** @name Serialization */
   ///@{
 
@@ -69,9 +68,7 @@ protected:
   ///@}
 
   friend class cereal::access;
-  abstract_evaluation_layer()
-    : abstract_evaluation_layer(nullptr)
-  {}
+  abstract_evaluation_layer() : abstract_evaluation_layer(nullptr) {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void setup_data(size_t max_mini_batch_size) override;
@@ -79,7 +76,6 @@ protected:
   void bp_compute() override;
 
 private:
-
   /** Scaling factor to apply to evaluated value. */
   EvalType m_scale = 0;
   /** Evaluated value.
@@ -92,7 +88,6 @@ private:
   /** CUDA event after a non-blocking GPU-CPU memory copy. */
   gpu_lib::event_wrapper m_copy_event;
 #endif // LBANN_HAS_GPU
-
 };
 
 /** Evaluation layer.
@@ -102,10 +97,16 @@ private:
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class evaluation_layer : public abstract_evaluation_layer<TensorDataType> {
+class evaluation_layer : public abstract_evaluation_layer<TensorDataType>
+{
 public:
-  evaluation_layer(lbann_comm *comm) : abstract_evaluation_layer<TensorDataType>(comm) {}
-  evaluation_layer* copy() const override { return new evaluation_layer(*this); }
+  evaluation_layer(lbann_comm* comm)
+    : abstract_evaluation_layer<TensorDataType>(comm)
+  {}
+  evaluation_layer* copy() const override
+  {
+    return new evaluation_layer(*this);
+  }
 
   /** @name Serialization */
   ///@{
@@ -124,14 +125,11 @@ public:
 #endif // LBANN_HAS_ONNX
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  evaluation_layer()
-    : evaluation_layer(nullptr)
-  {}
+  evaluation_layer() : evaluation_layer(nullptr) {}
 };
 
 #ifdef LBANN_HAS_ONNX
@@ -153,7 +151,8 @@ void evaluation_layer<T, L, D>::fill_onnx_node(onnx::GraphProto& graph) const
   auto graph_output = graph.add_output();
   graph_output->set_name(eval->output(0));
   auto* graph_output_type = graph_output->mutable_type();
-  graph_output_type->mutable_tensor_type()->set_elem_type(onnx::AttributeProto::FLOAT);
+  graph_output_type->mutable_tensor_type()->set_elem_type(
+    onnx::AttributeProto::FLOAT);
 
   auto* dims =
     graph_output_type->mutable_tensor_type()->mutable_shape()->add_dim();
@@ -163,10 +162,8 @@ void evaluation_layer<T, L, D>::fill_onnx_node(onnx::GraphProto& graph) const
 }
 #endif // LBANN_HAS_ONNX
 
-
 #ifndef LBANN_EVALUATION_LAYER_INSTANTIATE
-#define PROTO(T)                           \
-  extern template class abstract_evaluation_layer<T>
+#define PROTO(T) extern template class abstract_evaluation_layer<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
@@ -175,8 +172,10 @@ void evaluation_layer<T, L, D>::fill_onnx_node(onnx::GraphProto& graph) const
 #undef LBANN_INSTANTIATE_CPU_HALF
 #undef LBANN_INSTANTIATE_GPU_HALF
 
-#define PROTO_DEVICE(T, Device)                                         \
-  extern template class evaluation_layer<T, data_layout::DATA_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class evaluation_layer<T,                                    \
+                                         data_layout::DATA_PARALLEL,           \
+                                         Device>;                              \
   extern template class evaluation_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"

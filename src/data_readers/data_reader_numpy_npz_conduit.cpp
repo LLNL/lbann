@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,26 +25,32 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader_numpy_npz_conduit.hpp"
+#include "lbann/comm_impl.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
-#include <unordered_set>
-#include "lbann/utils/file_utils.hpp" // pad()
-#include "lbann/utils/jag_utils.hpp"  // read_filelist(..) TODO should be move to file_utils
-#include "lbann/utils/timer.hpp"
 #include "lbann/trainers/trainer.hpp"
+#include "lbann/utils/file_utils.hpp" // pad()
+#include "lbann/utils/jag_utils.hpp" // read_filelist(..) TODO should be move to file_utils
 #include "lbann/utils/lbann_library.hpp"
+#include "lbann/utils/timer.hpp"
+#include <unordered_set>
 
 namespace lbann {
 
 numpy_npz_conduit_reader::numpy_npz_conduit_reader(const bool shuffle)
-  : generic_data_reader(shuffle) {}
+  : generic_data_reader(shuffle)
+{}
 
-numpy_npz_conduit_reader::numpy_npz_conduit_reader(const numpy_npz_conduit_reader& rhs)  : generic_data_reader(rhs) {
+numpy_npz_conduit_reader::numpy_npz_conduit_reader(
+  const numpy_npz_conduit_reader& rhs)
+  : generic_data_reader(rhs)
+{
   copy_members(rhs);
 }
 
-numpy_npz_conduit_reader& numpy_npz_conduit_reader::operator=(const numpy_npz_conduit_reader& rhs) {
+numpy_npz_conduit_reader&
+numpy_npz_conduit_reader::operator=(const numpy_npz_conduit_reader& rhs)
+{
   // check for self-assignment
   if (this == &rhs) {
     return (*this);
@@ -54,10 +60,10 @@ numpy_npz_conduit_reader& numpy_npz_conduit_reader::operator=(const numpy_npz_co
   return (*this);
 }
 
-
-void numpy_npz_conduit_reader::copy_members(const numpy_npz_conduit_reader &rhs) {
-  if(rhs.m_data_store != nullptr) {
-      m_data_store = new data_store_conduit(rhs.get_data_store());
+void numpy_npz_conduit_reader::copy_members(const numpy_npz_conduit_reader& rhs)
+{
+  if (rhs.m_data_store != nullptr) {
+    m_data_store = new data_store_conduit(rhs.get_data_store());
   }
   m_data_store->set_data_reader_ptr(this);
 
@@ -72,8 +78,9 @@ void numpy_npz_conduit_reader::copy_members(const numpy_npz_conduit_reader &rhs)
   m_filenames = rhs.m_filenames;
 }
 
-void numpy_npz_conduit_reader::load() {
-  if(get_comm()->am_world_master()) {
+void numpy_npz_conduit_reader::load()
+{
+  if (get_comm()->am_world_master()) {
     std::cout << "starting load" << std::endl;
   }
 
@@ -81,14 +88,16 @@ void numpy_npz_conduit_reader::load() {
 
   if (!(arg_parser.get<bool>(LBANN_OPTION_PRELOAD_DATA_STORE) ||
         arg_parser.get<bool>(LBANN_OPTION_USE_DATA_STORE))) {
-    LBANN_ERROR("numpy_npz_conduit_reader requires data_store; please pass either --use_data_store or --preload_data_store on the cmd line");
+    LBANN_ERROR(
+      "numpy_npz_conduit_reader requires data_store; please pass either "
+      "--use_data_store or --preload_data_store on the cmd line");
   }
 
-  //dah - for now, I assume the input file contains, on each line, the complete
-  //      pathname of an npz file. This will no doubt change in the future.
-  //      I'd like to call load_list_of_samples(), but the sample_list class
-  //      is too specialized -- it checks data in a manner particular to
-  //      conduit, and that doesn't apply here.
+  // dah - for now, I assume the input file contains, on each line, the complete
+  //       pathname of an npz file. This will no doubt change in the future.
+  //       I'd like to call load_list_of_samples(), but the sample_list class
+  //       is too specialized -- it checks data in a manner particular to
+  //       conduit, and that doesn't apply here.
 
   std::string infile = get_data_filename();
   read_filelist(m_comm, infile, m_filenames);
@@ -104,9 +113,11 @@ void numpy_npz_conduit_reader::load() {
   resize_shuffled_indices();
   m_num_samples = m_shuffled_indices.size();
 
-  if (m_num_labels == 0 && !arg_parser.get<bool>(LBANN_OPTION_PRELOAD_DATA_STORE) &&
+  if (m_num_labels == 0 &&
+      !arg_parser.get<bool>(LBANN_OPTION_PRELOAD_DATA_STORE) &&
       arg_parser.get<bool>(LBANN_OPTION_USE_DATA_STORE)) {
-    LBANN_WARNING("when not preloading you must specify the number of labels in the prototext file if you are doing classification");
+    LBANN_WARNING("when not preloading you must specify the number of labels "
+                  "in the prototext file if you are doing classification");
   }
 
   instantiate_data_store();
@@ -114,24 +125,35 @@ void numpy_npz_conduit_reader::load() {
   select_subset_of_data();
 }
 
-void numpy_npz_conduit_reader::do_preload_data_store() {
+void numpy_npz_conduit_reader::do_preload_data_store()
+{
   double tm1 = get_time();
 
-  if (get_comm()->am_world_master()) std::cout << "Starting numpy_npz_conduit_reader::preload_data_store; num indices: " << m_shuffled_indices.size() << std::endl;
+  if (get_comm()->am_world_master())
+    std::cout
+      << "Starting numpy_npz_conduit_reader::preload_data_store; num indices: "
+      << m_shuffled_indices.size() << std::endl;
 
   size_t count = get_absolute_sample_count();
   double use_percent = get_use_percent();
   if (count != 0 || use_percent != 1) {
-    LBANN_ERROR("numpy_npz_conduit_reader currently assumes you are using 100% of the data set; you specified get_absolute_sample_count() = ", count, " and get_use_percent() = ", use_percent, "; please ask Dave Hysom to modify the code, if you want to use less than 100%");
+    LBANN_ERROR("numpy_npz_conduit_reader currently assumes you are using 100% "
+                "of the data set; you specified get_absolute_sample_count() = ",
+                count,
+                " and get_use_percent() = ",
+                use_percent,
+                "; please ask Dave Hysom to modify the code, if you want to "
+                "use less than 100%");
   }
 
   int rank = m_comm->get_rank_in_trainer();
 
   std::unordered_set<int> label_classes;
 
-  bool threaded = !global_argument_parser().get<bool>(LBANN_OPTION_DATA_STORE_NO_THREAD);
+  bool threaded =
+    !global_argument_parser().get<bool>(LBANN_OPTION_DATA_STORE_NO_THREAD);
 
-  //threaded mode
+  // threaded mode
   if (threaded) {
     if (get_comm()->am_world_master()) {
       std::cout << "mode: data_store_thread\n";
@@ -140,10 +162,10 @@ void numpy_npz_conduit_reader::do_preload_data_store() {
       construct_io_thread_pool(m_comm, false);
     int num_threads = static_cast<int>(io_thread_pool->get_num_threads());
 
-    //collect the set of indices that belong to this rank
+    // collect the set of indices that belong to this rank
     std::vector<std::unordered_set<int>> data_ids(num_threads);
     int j = 0;
-    for (size_t data_id=0; data_id<m_shuffled_indices.size(); data_id++) {
+    for (size_t data_id = 0; data_id < m_shuffled_indices.size(); data_id++) {
       int index = m_shuffled_indices[data_id];
       if (m_data_store->get_index_owner(index) != rank) {
         continue;
@@ -154,37 +176,44 @@ void numpy_npz_conduit_reader::do_preload_data_store() {
       }
     }
 
-    //load the samples
+    // load the samples
     for (int t = 0; t < num_threads; t++) {
-      if(t == io_thread_pool->get_local_thread_id()) {
+      if (t == io_thread_pool->get_local_thread_id()) {
         continue;
-      } else {
-        io_thread_pool->submit_job_to_work_group(std::bind(&numpy_npz_conduit_reader::load_numpy_npz_from_file, this, data_ids[t], label_classes));
+      }
+      else {
+        io_thread_pool->submit_job_to_work_group(
+          std::bind(&numpy_npz_conduit_reader::load_numpy_npz_from_file,
+                    this,
+                    data_ids[t],
+                    label_classes));
       }
     }
-    load_numpy_npz_from_file(data_ids[io_thread_pool->get_local_thread_id()], label_classes);
+    load_numpy_npz_from_file(data_ids[io_thread_pool->get_local_thread_id()],
+                             label_classes);
     io_thread_pool->finish_work_group();
-  } //end: threaded mode
+  } // end: threaded mode
 
-  //non-threaded mode
+  // non-threaded mode
   else {
-    for (size_t data_id=0; data_id<m_filenames.size(); data_id++) {
+    for (size_t data_id = 0; data_id < m_filenames.size(); data_id++) {
       if (m_data_store->get_index_owner(data_id) != rank) {
         continue;
       }
 
       conduit::Node node;
       load_npz(m_filenames[data_id], data_id, node);
-      const char *char_ptr = node[LBANN_DATA_ID_STR(data_id) + "/frm/data"].value();
+      const char* char_ptr =
+        node[LBANN_DATA_ID_STR(data_id) + "/frm/data"].value();
       const int* label_ptr = reinterpret_cast<const int*>(char_ptr);
       label_classes.insert(*label_ptr);
       m_data_store->set_conduit_node(data_id, node);
     }
-  } //end: non-threaded mode
+  } // end: non-threaded mode
 
-  // Nikoli says we're not using labels, so I'm commenting this section out
-  // (this section is a mess, anyway)
-  #if 0
+// Nikoli says we're not using labels, so I'm commenting this section out
+// (this section is a mess, anyway)
+#if 0
   if (m_supported_input_types[INPUT_DATA_TYPE_LABELS]) {
 
     // get max element. Yes, I know you can do this with, e.g, lambda
@@ -202,7 +231,7 @@ void numpy_npz_conduit_reader::do_preload_data_store() {
     // dah - commenting out sanity checks, as I don't know if they're
     //       valid. Also, Nikoli says we're not using labels, so NA
     //       for now
-    #if 0
+#if 0
     // sanity checks
     if (trainer_min < 0) {
       LBANN_ERROR("trainer_min < 0");
@@ -210,7 +239,7 @@ void numpy_npz_conduit_reader::do_preload_data_store() {
     if (trainer_max < 0) {
       LBANN_ERROR("trainer_max < 0");
     }
-    #endif
+#endif
 
     // if we're using a subset of the data we may not have a contiguous
     // set of zero-based labels, so let's pretend like we do
@@ -221,7 +250,7 @@ void numpy_npz_conduit_reader::do_preload_data_store() {
       }
     }
 
-    #if 0
+#if 0
     // Sanity checks.
     auto minmax = std::minmax_element(label_classes.begin(), label_classes.end());
     if (*minmax.first != 0) {
@@ -231,21 +260,26 @@ void numpy_npz_conduit_reader::do_preload_data_store() {
       LBANN_ERROR("numpy_reader: label classes are not contiguous");
     }
     m_num_labels = label_classes.size();
-    #endif
+#endif
   }
-  #endif
+#endif
 
   double tm2 = get_time();
   if (get_comm()->am_world_master()) {
-    std::cout << "time to preload: " << tm2 - tm1 << " for role: " << get_role() << "\n";
+    std::cout << "time to preload: " << tm2 - tm1 << " for role: " << get_role()
+              << "\n";
   }
 }
 
-bool numpy_npz_conduit_reader::load_numpy_npz_from_file(const std::unordered_set<int> &data_ids, std::unordered_set<int> &label_classes) {
+bool numpy_npz_conduit_reader::load_numpy_npz_from_file(
+  const std::unordered_set<int>& data_ids,
+  std::unordered_set<int>& label_classes)
+{
   for (auto data_id : data_ids) {
     conduit::Node node;
     load_conduit_node(m_filenames[data_id], data_id, node);
-    const char *char_ptr = node[LBANN_DATA_ID_STR(data_id) + "/frm/data"].value();
+    const char* char_ptr =
+      node[LBANN_DATA_ID_STR(data_id) + "/frm/data"].value();
     const int* label_ptr = reinterpret_cast<const int*>(char_ptr);
     label_classes.insert(*label_ptr);
     m_data_store->set_conduit_node(data_id, node);
@@ -253,48 +287,52 @@ bool numpy_npz_conduit_reader::load_numpy_npz_from_file(const std::unordered_set
   return true;
 }
 
-bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
-  Mat X_v = El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx+1));
+bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx)
+{
+  Mat X_v = El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
   conduit::Node node;
   if (data_store_active()) {
     const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
     node.set_external(ds_node);
-  } else {
+  }
+  else {
     load_npz(m_filenames[data_id], data_id, node);
-    //note: if testing, and test set is touched more than once, the following
-    //      will through an exception TODO: relook later
-    const auto& c = static_cast<const ExecutionContext&>(get_trainer().get_data_coordinator().get_execution_context());
-    if (priming_data_store() || c.get_execution_mode() == execution_mode::testing) {
+    // note: if testing, and test set is touched more than once, the following
+    //       will through an exception TODO: relook later
+    const auto& c = static_cast<const ExecutionContext&>(
+      get_trainer().get_data_coordinator().get_execution_context());
+    if (priming_data_store() ||
+        c.get_execution_mode() == execution_mode::testing) {
       m_data_store->set_conduit_node(data_id, node);
     }
   }
 
-  const char *char_data = node[LBANN_DATA_ID_STR(data_id) + "/data/data"].value();
-  char *char_data_2 = const_cast<char*>(char_data);
+  const char* char_data =
+    node[LBANN_DATA_ID_STR(data_id) + "/data/data"].value();
+  char* char_data_2 = const_cast<char*>(char_data);
 
   if (m_data_word_size == 2) {
     // Convert int16 to DataType.
-    short *data = reinterpret_cast<short*>(char_data_2);
-    DataType *dest = X_v.Buffer();
+    short* data = reinterpret_cast<short*>(char_data_2);
+    DataType* dest = X_v.Buffer();
 
     // OPTIMIZE
     LBANN_OMP_PARALLEL_FOR
-      for(int j = 0; j < m_num_features; j++) {
-        dest[j] = data[j] * m_scaling_factor_int16;
-      }
-
-  } else {
-    void *data = (void*)char_data_2;
+    for (int j = 0; j < m_num_features; j++) {
+      dest[j] = data[j] * m_scaling_factor_int16;
+    }
+  }
+  else {
+    void* data = (void*)char_data_2;
     std::memcpy(X_v.Buffer(), data, m_num_features * m_data_word_size);
 
     /*
-    // the following is from data_reader_numpy_npz -- I don't think it's necessary
-    if (m_data_word_size == 4) {
-      float *f = reinterpret_cast<float*>(char_data_2);
-      data = (void*)(f + data_id * m_num_features);
-    } else if (m_data_word_size == 8) {
-      double *d = reinterpret_cast<double*>(char_data_2);
-      data = (void*)(d + data_id * m_num_features);
+    // the following is from data_reader_numpy_npz -- I don't think it's
+    necessary if (m_data_word_size == 4) { float *f =
+    reinterpret_cast<float*>(char_data_2); data = (void*)(f + data_id *
+    m_num_features); } else if (m_data_word_size == 8) { double *d =
+    reinterpret_cast<double*>(char_data_2); data = (void*)(d + data_id *
+    m_num_features);
     }
     std::memcpy(X_v.Buffer(), data, m_num_features * m_data_word_size);
     */
@@ -303,24 +341,29 @@ bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
   return true;
 }
 
-bool numpy_npz_conduit_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
+bool numpy_npz_conduit_reader::fetch_label(Mat& Y, int data_id, int mb_idx)
+{
   if (!m_supported_input_types[INPUT_DATA_TYPE_LABELS]) {
     LBANN_ERROR("numpy_npz_conduit_reader: do not have labels");
   }
   if (m_num_labels == 0) {
-    LBANN_ERROR("num labels = 0. num_labels is only valid when run with --preload_data_store, *or* if your reader prototext contains a 'num_labels' field");
+    LBANN_ERROR("num labels = 0. num_labels is only valid when run with "
+                "--preload_data_store, *or* if your reader prototext contains "
+                "a 'num_labels' field");
   }
 
   const conduit::Node& node = m_data_store->get_conduit_node(data_id);
-  const char *char_data = node[LBANN_DATA_ID_STR(data_id)+ "/frm/data"].value();
-  char *char_data_2 = const_cast<char*>(char_data);
-  int *label = reinterpret_cast<int*>(char_data_2);
+  const char* char_data =
+    node[LBANN_DATA_ID_STR(data_id) + "/frm/data"].value();
+  char* char_data_2 = const_cast<char*>(char_data);
+  int* label = reinterpret_cast<int*>(char_data_2);
   Y(*label, mb_idx) = 1;
 
   return true;
 }
 
-bool numpy_npz_conduit_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
+bool numpy_npz_conduit_reader::fetch_response(Mat& Y, int data_id, int mb_idx)
+{
   if (!m_supported_input_types[INPUT_DATA_TYPE_RESPONSES]) {
     LBANN_ERROR("numpy_npz_conduit_reader: do not have responses");
   }
@@ -334,35 +377,41 @@ bool numpy_npz_conduit_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
   if (data_store_active()) {
     const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
     node.set_external(ds_node);
-  } else {
+  }
+  else {
     load_npz(m_filenames[data_id], data_id, node);
     if (priming_data_store()) {
       m_data_store->set_conduit_node(data_id, node);
-    } else {
+    }
+    else {
       LBANN_ERROR("you shouldn't be here; please contact Dave Hysom");
     }
   }
 
-  const char *char_data = node[LBANN_DATA_ID_STR(data_id) + "/responses/data"].value();
-  void *responses =  (void*)char_data;
-  //char *char_data_2 = const_cast<char*>(char_data);
-  //void *responses = (void*)
+  const char* char_data =
+    node[LBANN_DATA_ID_STR(data_id) + "/responses/data"].value();
+  void* responses = (void*)char_data;
+  // char *char_data_2 = const_cast<char*>(char_data);
+  // void *responses = (void*)
   /*
   if (m_response_word_size == 4) {
     responses = (void *) reinterpret_cast<float*>(char_data_2);
   } else if (m_response_word_size == 8) {
     responses = (void *) reinterpret_cast<double*>(char_data_2);
   } else {
-    LBANN_ERROR("m_response_word_size= " + std::to_string(m_response_word_size) + "; should be 4 our 8");
+    LBANN_ERROR("m_response_word_size= " + std::to_string(m_response_word_size)
+  + "; should be 4 our 8");
   }
   */
   Mat Y_v = El::View(Y, El::IR(0, Y.Height()), El::IR(mb_idx, mb_idx + 1));
-  std::memcpy(Y_v.Buffer(), responses,
+  std::memcpy(Y_v.Buffer(),
+              responses,
               m_num_response_features * m_response_word_size);
   return true;
 }
 
-void numpy_npz_conduit_reader::fill_in_metadata() {
+void numpy_npz_conduit_reader::fill_in_metadata()
+{
   int rank = m_comm->get_rank_in_trainer();
   // to avoid contention, each rank opens a separate file
   size_t my_file = rank;
@@ -379,26 +428,28 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
     std::cout << "num samples: " << m_num_samples << "\n";
   }
 
-  int data_id = 0; //meaningless
+  int data_id = 0; // meaningless
   conduit::Node node;
   load_npz(m_filenames[my_file], data_id, node);
 
-  //fill in m_data_dims
-  auto shape = node[LBANN_DATA_ID_STR(data_id) + "/data/shape"].as_uint64_array();
+  // fill in m_data_dims
+  auto shape =
+    node[LBANN_DATA_ID_STR(data_id) + "/data/shape"].as_uint64_array();
   int shape_num_elts = shape.number_of_elements();
-  for (int k=1; k<shape_num_elts; k++) {
+  for (int k = 1; k < shape_num_elts; k++) {
     m_data_dims.push_back(shape[k]);
   }
   m_num_features = std::accumulate(m_data_dims.begin(),
                                    m_data_dims.end(),
-                                   (unsigned) 1,
+                                   (unsigned)1,
                                    std::multiplies<unsigned>());
   if (get_comm()->am_world_master()) {
     std::cout << "num features: " << m_num_features << "\n";
   }
 
   // Ensure we understand the word sizes
-  size_t word_size = node[LBANN_DATA_ID_STR(data_id) + "/data/word_size"].value();
+  size_t word_size =
+    node[LBANN_DATA_ID_STR(data_id) + "/data/word_size"].value();
   if (!(word_size == 2 || word_size == 4 || word_size == 8)) {
     LBANN_ERROR("numpy_npz_conduit_reader: word size " +
                 std::to_string(word_size) + " not supported");
@@ -411,26 +462,34 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
   if (m_supported_input_types[INPUT_DATA_TYPE_LABELS]) {
     word_size = node[LBANN_DATA_ID_STR(data_id) + "/frm/word_size"].value();
     if (word_size != 4) {
-      LBANN_ERROR("numpy_npz_conduit_reader: label should be in int32, but word_size= " + std::to_string(word_size));
+      LBANN_ERROR(
+        "numpy_npz_conduit_reader: label should be in int32, but word_size= " +
+        std::to_string(word_size));
     }
   }
 
   if (m_supported_input_types[INPUT_DATA_TYPE_RESPONSES]) {
-    m_response_word_size = node[LBANN_DATA_ID_STR(data_id) + "/responses/word_size"].value();
-    auto r_shape = node[LBANN_DATA_ID_STR(data_id) + "/responses/shape"].as_uint64_array();
+    m_response_word_size =
+      node[LBANN_DATA_ID_STR(data_id) + "/responses/word_size"].value();
+    auto r_shape =
+      node[LBANN_DATA_ID_STR(data_id) + "/responses/shape"].as_uint64_array();
     int n = r_shape.number_of_elements();
     m_num_response_features = 1;
-    for (int k=1; k<n; k++) {
+    for (int k = 1; k < n; k++) {
       m_num_response_features *= r_shape[k];
     }
     if (get_comm()->am_world_master()) {
       std::cout << "response word size: " << m_response_word_size << "\n";
-      std::cout << "num response features: " << m_num_response_features<< "\n";
+      std::cout << "num response features: " << m_num_response_features << "\n";
     }
   }
 }
 
-void numpy_npz_conduit_reader::load_conduit_node(const std::string filename, int data_id, conduit::Node &output, bool reset) {
+void numpy_npz_conduit_reader::load_conduit_node(const std::string filename,
+                                                 int data_id,
+                                                 conduit::Node& output,
+                                                 bool reset)
+{
 
   try {
     if (reset) {
@@ -440,64 +499,90 @@ void numpy_npz_conduit_reader::load_conduit_node(const std::string filename, int
     std::vector<size_t> shape;
     std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(filename);
 
-    for (auto &&t : a) {
-      cnpy::NpyArray &b = t.second;
+    for (auto&& t : a) {
+      cnpy::NpyArray& b = t.second;
       if (b.shape[0] != 1) {
-        LBANN_ERROR("lbann currently only supports one sample per npz file; this file appears to contain " + std::to_string(b.shape[0]) + " samples; (", filename);
+        LBANN_ERROR("lbann currently only supports one sample per npz file; "
+                    "this file appears to contain " +
+                      std::to_string(b.shape[0]) + " samples; (",
+                    filename);
       }
-      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/word_size"] = b.word_size;
-      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/fortran_order"] = b.fortran_order;
-      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/num_vals"] = b.num_vals;
+      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/word_size"] =
+        b.word_size;
+      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/fortran_order"] =
+        b.fortran_order;
+      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/num_vals"] =
+        b.num_vals;
       output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/shape"] = b.shape;
 
       if (b.data_holder->size() / b.word_size != b.num_vals) {
-        LBANN_ERROR("b.data_holder->size() / b.word_size (" + std::to_string(b.data_holder->size()) + " / " + std::to_string(b.word_size) + ") != b.num_vals (" + std::to_string(b.num_vals));
+        LBANN_ERROR("b.data_holder->size() / b.word_size (" +
+                    std::to_string(b.data_holder->size()) + " / " +
+                    std::to_string(b.word_size) + ") != b.num_vals (" +
+                    std::to_string(b.num_vals));
       }
 
       // conduit makes a copy of the data, hence owns the data, hence it
       // will be properly deleted when then conduit::Node is deleted
-      char *data = b.data_holder->data();
-      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/data"].set_char_ptr(data, b.word_size*b.num_vals);
+      char* data = b.data_holder->data();
+      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/data"].set_char_ptr(
+        data,
+        b.word_size * b.num_vals);
     }
-  } catch (...) {
-    //note: npz_load throws std::runtime_error, but I don't want to assume
-    //      that won't change in the future
+  }
+  catch (...) {
+    // note: npz_load throws std::runtime_error, but I don't want to assume
+    //       that won't change in the future
     LBANN_ERROR("failed to open " + filename + " during cnpy::npz_load");
   }
 }
 
-void numpy_npz_conduit_reader::load_npz(const std::string filename, int data_id, conduit::Node &output) {
+void numpy_npz_conduit_reader::load_npz(const std::string filename,
+                                        int data_id,
+                                        conduit::Node& output)
+{
 
   try {
     output.reset();
 
     std::vector<size_t> shape;
     m_npz_cache[data_id] = cnpy::npz_load(filename);
-    std::map<std::string, cnpy::NpyArray> &a = m_npz_cache[data_id];
+    std::map<std::string, cnpy::NpyArray>& a = m_npz_cache[data_id];
 
-    for (auto &&t : a) {
-      cnpy::NpyArray &b = t.second;
+    for (auto&& t : a) {
+      cnpy::NpyArray& b = t.second;
       if (b.shape[0] != 1) {
-        LBANN_ERROR("lbann currently only supports one sample per npz file; this file appears to contain " + std::to_string(b.shape[0]) + " samples; (", filename);
+        LBANN_ERROR("lbann currently only supports one sample per npz file; "
+                    "this file appears to contain " +
+                      std::to_string(b.shape[0]) + " samples; (",
+                    filename);
       }
-      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/word_size"] = b.word_size;
-      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/fortran_order"] = b.fortran_order;
-      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/num_vals"] = b.num_vals;
+      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/word_size"] =
+        b.word_size;
+      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/fortran_order"] =
+        b.fortran_order;
+      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/num_vals"] =
+        b.num_vals;
       output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/shape"] = b.shape;
 
       if (b.data_holder->size() / b.word_size != b.num_vals) {
-        LBANN_ERROR("b.data_holder->size() / b.word_size (" + std::to_string(b.data_holder->size()) + " / " + std::to_string(b.word_size) + ") != b.num_vals (" + std::to_string(b.num_vals));
+        LBANN_ERROR("b.data_holder->size() / b.word_size (" +
+                    std::to_string(b.data_holder->size()) + " / " +
+                    std::to_string(b.word_size) + ") != b.num_vals (" +
+                    std::to_string(b.num_vals));
       }
 
-      conduit::uint8 *data = reinterpret_cast<conduit::uint8*>(b.data_holder->data());
-      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/data"].set_external_uint8_ptr(data, b.word_size*b.num_vals);
+      conduit::uint8* data =
+        reinterpret_cast<conduit::uint8*>(b.data_holder->data());
+      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/data"]
+        .set_external_uint8_ptr(data, b.word_size * b.num_vals);
     }
-  } catch (...) {
-    //note: npz_load throws std::runtime_error, but I don't want to assume
-    //      that won't change in the future
+  }
+  catch (...) {
+    // note: npz_load throws std::runtime_error, but I don't want to assume
+    //       that won't change in the future
     LBANN_ERROR("failed to open " + filename + " during cnpy::npz_load");
   }
 }
 
-
-}  // namespace lbann
+} // namespace lbann

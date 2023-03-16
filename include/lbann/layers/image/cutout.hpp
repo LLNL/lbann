@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,11 +37,12 @@ namespace lbann {
  *  length of the cutout square.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class cutout_layer : public data_type_layer<TensorDataType> {
+class cutout_layer : public data_type_layer<TensorDataType>
+{
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "cutout_layer only supports DATA_PARALLEL");
-  static_assert(Device == El::Device::CPU,
-                "cutou_layer only supports CPU");
+  static_assert(Device == El::Device::CPU, "cutou_layer only supports CPU");
+
 public:
   /** @name Public Types */
   ///@{
@@ -51,17 +52,13 @@ public:
 
   ///@}
 
-
 public:
-
-  cutout_layer(lbann_comm *comm)
-    : data_type_layer<TensorDataType>(comm) {
-		 this->m_expected_num_parent_layers = 2;
+  cutout_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm)
+  {
+    this->m_expected_num_parent_layers = 2;
   }
 
-  cutout_layer* copy() const override {
-    return new cutout_layer(*this);
-  }
+  cutout_layer* copy() const override { return new cutout_layer(*this); }
 
   /** @name Serialization */
   ///@{
@@ -78,11 +75,8 @@ public:
   void fp_compute() override;
 
 protected:
-
   friend class cereal::access;
-  cutout_layer()
-    : cutout_layer(nullptr)
-  {}
+  cutout_layer() : cutout_layer(nullptr) {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 
@@ -90,8 +84,10 @@ protected:
 };
 
 #ifndef LBANN_CUTOUT_LAYER_INSTANTIATE
-#define PROTO(T) \
-  extern template class cutout_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  extern template class cutout_layer<T,                                        \
+                                     data_layout::DATA_PARALLEL,               \
+                                     El::Device::CPU>
 
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO

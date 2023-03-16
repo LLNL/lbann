@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -43,12 +43,14 @@ namespace utils {
  * @param dims The dimensions associated with data.
  */
 inline bool check_is_image(const utils::type_erased_matrix& data,
-                           const std::vector<size_t>& dims) {
+                           const std::vector<size_t>& dims)
+{
   try {
     // Check if we can do the conversion.
     const auto& unused = data.template get<uint8_t>();
-    (void) unused;
-  } catch (const std::bad_any_cast&) {
+    (void)unused;
+  }
+  catch (const std::bad_any_cast&) {
     return false;
   }
   if (dims.size() != 3 || (dims[0] != 1 && dims[0] != 3)) {
@@ -67,12 +69,14 @@ inline bool check_is_image(const utils::type_erased_matrix& data,
  * @param dims The dimensions associated with data.
  */
 inline void assert_is_image(const utils::type_erased_matrix& data,
-                            const std::vector<size_t>& dims) {
+                            const std::vector<size_t>& dims)
+{
   try {
     // Check if we can do the conversion.
     const auto& unused = data.template get<uint8_t>();
-    (void) unused;
-  } catch (const std::bad_any_cast&) {
+    (void)unused;
+  }
+  catch (const std::bad_any_cast&) {
     LBANN_ERROR("Data is not an image: not uint8_t.");
   }
   if (dims.size() != 3 || (dims[0] != 1 && dims[0] != 3)) {
@@ -86,10 +90,14 @@ inline void assert_is_image(const utils::type_erased_matrix& data,
  * @param data The matrix with data to use.
  * @param dims Dimensions of the data.
  */
-inline cv::Mat get_opencv_mat(utils::type_erased_matrix& data, const std::vector<size_t>& dims) {
+inline cv::Mat get_opencv_mat(utils::type_erased_matrix& data,
+                              const std::vector<size_t>& dims)
+{
   assert_is_image(data, dims);
   auto& mat = data.template get<uint8_t>();
-  return cv::Mat(dims[1], dims[2], dims[0] == 1 ? CV_8UC1 : CV_8UC3,
+  return cv::Mat(dims[1],
+                 dims[2],
+                 dims[0] == 1 ? CV_8UC1 : CV_8UC3,
                  mat.Buffer());
 }
 
@@ -99,15 +107,19 @@ inline cv::Mat get_opencv_mat(utils::type_erased_matrix& data, const std::vector
  * @param data The matrix with data to use.
  * @param dims Dimensions of the data.
  */
-inline cv::Mat get_opencv_mat(El::Matrix<uint8_t>& data, const std::vector<size_t>& dims) {
+inline cv::Mat get_opencv_mat(El::Matrix<uint8_t>& data,
+                              const std::vector<size_t>& dims)
+{
   if (dims.size() != 3 || (dims[0] != 1 && dims[0] != 3)) {
     LBANN_ERROR("Data is not an image: bad dims.");
   }
-  return cv::Mat(dims[1], dims[2], dims[0] == 1 ? CV_8UC1 : CV_8UC3,
+  return cv::Mat(dims[1],
+                 dims[2],
+                 dims[0] == 1 ? CV_8UC1 : CV_8UC3,
                  data.Buffer());
 }
 
-}  // namespace utils
-}  // namespace lbann
+} // namespace utils
+} // namespace lbann
 
-#endif  // LBANN_UTILS_OPENCV_HPP_INCLUDED
+#endif // LBANN_UTILS_OPENCV_HPP_INCLUDED

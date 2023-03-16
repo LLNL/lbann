@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,8 +31,8 @@
 #include "lbann/transforms/vision/adjust_contrast.hpp"
 #include "lbann/transforms/vision/adjust_saturation.hpp"
 #include "lbann/transforms/vision/center_crop.hpp"
-#include "lbann/transforms/vision/colorize.hpp"
 #include "lbann/transforms/vision/color_jitter.hpp"
+#include "lbann/transforms/vision/colorize.hpp"
 #include "lbann/transforms/vision/cutout.hpp"
 #include "lbann/transforms/vision/grayscale.hpp"
 #include "lbann/transforms/vision/horizontal_flip.hpp"
@@ -65,49 +65,64 @@ using factory_type = lbann::generic_factory<
                                google::protobuf::Message const&>,
   lbann::default_key_error_policy>;
 
-void register_default_builders(factory_type& factory) {
+void register_default_builders(factory_type& factory)
+{
   using namespace lbann::transform;
   factory.register_builder("Normalize", build_normalize_transform_from_pbuf);
-  factory.register_builder("SampleNormalize", build_sample_normalize_transform_from_pbuf);
+  factory.register_builder("SampleNormalize",
+                           build_sample_normalize_transform_from_pbuf);
   factory.register_builder("Scale", build_scale_transform_from_pbuf);
 #ifdef LBANN_HAS_OPENCV
-  factory.register_builder("AdjustBrightness", build_adjust_brightness_transform_from_pbuf);
-  factory.register_builder("AdjustContrast", build_adjust_contrast_transform_from_pbuf);
-  factory.register_builder("AdjustSaturation", build_adjust_saturation_transform_from_pbuf);
+  factory.register_builder("AdjustBrightness",
+                           build_adjust_brightness_transform_from_pbuf);
+  factory.register_builder("AdjustContrast",
+                           build_adjust_contrast_transform_from_pbuf);
+  factory.register_builder("AdjustSaturation",
+                           build_adjust_saturation_transform_from_pbuf);
   factory.register_builder("CenterCrop", build_center_crop_transform_from_pbuf);
-  factory.register_builder("ColorJitter", build_color_jitter_transform_from_pbuf);
+  factory.register_builder("ColorJitter",
+                           build_color_jitter_transform_from_pbuf);
   factory.register_builder("Colorize", build_colorize_transform_from_pbuf);
   factory.register_builder("Cutout", build_cutout_transform_from_pbuf);
   factory.register_builder("Grayscale", build_grayscale_transform_from_pbuf);
-  factory.register_builder("HorizontalFlip", build_horizontal_flip_transform_from_pbuf);
-  factory.register_builder("NormalizeToLBANNLayout", build_normalize_to_lbann_layout_transform_from_pbuf);
+  factory.register_builder("HorizontalFlip",
+                           build_horizontal_flip_transform_from_pbuf);
+  factory.register_builder("NormalizeToLBANNLayout",
+                           build_normalize_to_lbann_layout_transform_from_pbuf);
   factory.register_builder("Pad", build_pad_transform_from_pbuf);
-  factory.register_builder("RandomAffine", build_random_affine_transform_from_pbuf);
+  factory.register_builder("RandomAffine",
+                           build_random_affine_transform_from_pbuf);
   factory.register_builder("RandomCrop", build_random_crop_transform_from_pbuf);
-  factory.register_builder("RandomResizedCrop", build_random_resized_crop_transform_from_pbuf);
-  factory.register_builder("RandomResizedCropWithFixedAspectRatio", build_random_resized_crop_with_fixed_aspect_ratio_transform_from_pbuf);
+  factory.register_builder("RandomResizedCrop",
+                           build_random_resized_crop_transform_from_pbuf);
+  factory.register_builder(
+    "RandomResizedCropWithFixedAspectRatio",
+    build_random_resized_crop_with_fixed_aspect_ratio_transform_from_pbuf);
   factory.register_builder("Resize", build_resize_transform_from_pbuf);
-  factory.register_builder("ResizedCenterCrop", build_resized_center_crop_transform_from_pbuf);
-  factory.register_builder("ToLBANNLayout", build_to_lbann_layout_transform_from_pbuf);
-  factory.register_builder("VerticalFlip", build_vertical_flip_transform_from_pbuf);
+  factory.register_builder("ResizedCenterCrop",
+                           build_resized_center_crop_transform_from_pbuf);
+  factory.register_builder("ToLBANNLayout",
+                           build_to_lbann_layout_transform_from_pbuf);
+  factory.register_builder("VerticalFlip",
+                           build_vertical_flip_transform_from_pbuf);
 #endif // LBANN_HAS_OPENCV
 }
 
 // Manage a global factory
-struct factory_manager {
+struct factory_manager
+{
   factory_type factory_;
 
-  factory_manager() {
-    register_default_builders(factory_);
-  }
+  factory_manager() { register_default_builders(factory_); }
 };
 
 factory_manager factory_mgr_;
-factory_type const& get_transform_factory() noexcept {
+factory_type const& get_transform_factory() noexcept
+{
   return factory_mgr_.factory_;
 }
 
-}// namespace <anon>
+} // namespace
 
 std::unique_ptr<lbann::transform::transform>
 lbann::proto::construct_transform(const lbann_data::Transform& trans)

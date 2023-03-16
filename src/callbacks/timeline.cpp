@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,8 +30,8 @@
 
 #include "lbann/models/model.hpp"
 #include "lbann/utils/memory.hpp"
-#include "lbann/utils/timer.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/utils/timer.hpp"
 #include "lbann/weights/weights.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
@@ -44,15 +44,13 @@
 namespace lbann {
 namespace callback {
 
-timeline::timeline()
-  : timeline("")
-{}
+timeline::timeline() : timeline("") {}
 
 template <class Archive>
-void timeline::serialize(Archive & ar) {
-  ar(::cereal::make_nvp(
-       "BaseCallback",
-       ::cereal::base_class<callback_base>(this)),
+void timeline::serialize(Archive& ar)
+{
+  ar(::cereal::make_nvp("BaseCallback",
+                        ::cereal::base_class<callback_base>(this)),
      CEREAL_NVP(m_outdir),
      CEREAL_NVP(m_start_time),
      CEREAL_NVP(m_fp_start_time),
@@ -69,22 +67,28 @@ void timeline::write_specific_proto(lbann_data::Callback& proto) const
   msg->set_directory(m_outdir);
 }
 
-void timeline::on_train_begin(model *m) {
+void timeline::on_train_begin(model* m)
+{
   // Set up layers and weights.
   for (const auto& l : m->get_layers()) {
-    m_fp_times.emplace(l->get_name(), std::vector<std::pair<EvalType,EvalType>>());
-    m_bp_times.emplace(l->get_name(), std::vector<std::pair<EvalType,EvalType>>());
+    m_fp_times.emplace(l->get_name(),
+                       std::vector<std::pair<EvalType, EvalType>>());
+    m_bp_times.emplace(l->get_name(),
+                       std::vector<std::pair<EvalType, EvalType>>());
   }
   for (const auto& w : m->get_weights()) {
-    m_opt_times.emplace(w->get_name(), std::vector<std::pair<EvalType,EvalType>>());
+    m_opt_times.emplace(w->get_name(),
+                        std::vector<std::pair<EvalType, EvalType>>());
   }
   // Ensure the model is synchronized at the start.
   m->get_comm()->trainer_barrier();
   m_start_time = get_time();
 }
 
-void timeline::on_train_end(model *m) {
-  const std::string path = m_outdir + "/timeline.m" +
+void timeline::on_train_end(model* m)
+{
+  const std::string path =
+    m_outdir + "/timeline.m" +
     std::to_string(m->get_comm()->get_trainer_rank()) + "." +
     std::to_string(m->get_comm()->get_rank_in_trainer()) + ".txt";
   std::ofstream f(path);
@@ -108,36 +112,43 @@ void timeline::on_train_end(model *m) {
   }
 }
 
-void timeline::on_forward_prop_begin(model *m, Layer *l) {
+void timeline::on_forward_prop_begin(model* m, Layer* l)
+{
   m_fp_start_time = get_rel_time();
 }
 
-void timeline::on_forward_prop_end(model *m, Layer *l) {
+void timeline::on_forward_prop_end(model* m, Layer* l)
+{
   EvalType end = get_rel_time();
   m_fp_times[l->get_name()].emplace_back(m_fp_start_time, end);
 }
 
-void timeline::on_backward_prop_begin(model *m, Layer *l) {
+void timeline::on_backward_prop_begin(model* m, Layer* l)
+{
   m_bp_start_time = get_rel_time();
 }
 
-void timeline::on_backward_prop_end(model *m, Layer *l) {
+void timeline::on_backward_prop_end(model* m, Layer* l)
+{
   EvalType end = get_rel_time();
   m_bp_times[l->get_name()].emplace_back(m_bp_start_time, end);
 }
 
-void timeline::on_optimize_begin(model *m, weights *w) {
+void timeline::on_optimize_begin(model* m, weights* w)
+{
   m_opt_start_time = get_rel_time();
 }
 
-void timeline::on_optimize_end(model *m, weights *w) {
+void timeline::on_optimize_end(model* m, weights* w)
+{
   EvalType end = get_rel_time();
   m_opt_times[w->get_name()].emplace_back(m_opt_start_time, end);
 }
 
 std::unique_ptr<callback_base>
-build_timeline_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, std::shared_ptr<lbann_summary> const&) {
+build_timeline_callback_from_pbuf(const google::protobuf::Message& proto_msg,
+                                  std::shared_ptr<lbann_summary> const&)
+{
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackTimeline&>(proto_msg);
   return std::make_unique<timeline>(params.directory());

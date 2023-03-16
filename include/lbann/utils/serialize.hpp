@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,8 +27,8 @@
 #ifndef LBANN_UTILS_SERIALIZE_HPP_
 #define LBANN_UTILS_SERIALIZE_HPP_
 
-#include <lbann_config.hpp>
 #include "serialization/cereal_utils.hpp"
+#include <lbann_config.hpp>
 
 // Serialization code is only valid in C++ code.
 #if !(defined __CUDACC__)

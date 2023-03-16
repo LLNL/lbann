@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,7 +35,8 @@ namespace lbann {
 namespace transform {
 
 /** Pad an image. */
-class pad : public transform {
+class pad : public transform
+{
 public:
   /** Pad p on all size. */
   pad(size_t p) : transform(), m_p(p) {}
@@ -44,7 +45,9 @@ public:
 
   std::string get_type() const override { return "pad"; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data,
+             std::vector<size_t>& dims) override;
+
 private:
   /** Pad for the image. */
   size_t m_p;
@@ -53,7 +56,7 @@ private:
 std::unique_ptr<transform>
 build_pad_transform_from_pbuf(google::protobuf::Message const&);
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_PAD_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_PAD_HPP_INCLUDED

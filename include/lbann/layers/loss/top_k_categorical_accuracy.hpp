@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -34,7 +34,6 @@
 
 namespace lbann {
 
-
 /**
  *  Requires two inputs, which are respectively interpreted as
  *  prediction scores and as a one-hot label vector. The output is one
@@ -45,15 +44,17 @@ namespace lbann {
  *  @todo Gracefully handle case where label is not a one-hot vector.
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class top_k_categorical_accuracy_layer : public data_type_layer<TensorDataType> {
+class top_k_categorical_accuracy_layer : public data_type_layer<TensorDataType>
+{
 public:
-
-  top_k_categorical_accuracy_layer(lbann_comm *comm, El::Int k)
-    : data_type_layer<TensorDataType>(comm), m_k(k) {
+  top_k_categorical_accuracy_layer(lbann_comm* comm, El::Int k)
+    : data_type_layer<TensorDataType>(comm), m_k(k)
+  {
     this->m_expected_num_parent_layers = 2;
   }
 
-  top_k_categorical_accuracy_layer* copy() const override {
+  top_k_categorical_accuracy_layer* copy() const override
+  {
     return new top_k_categorical_accuracy_layer(*this);
   }
 
@@ -69,14 +70,14 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  description get_description() const override {
+  description get_description() const override
+  {
     auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("k", m_k);
     return desc;
   }
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
@@ -90,14 +91,14 @@ protected:
   void fp_compute() override;
 
 private:
-
   /** Parameter for top-k search. */
   /*const*/ El::Int m_k;
 };
 
 template <typename T, data_layout L, El::Device D>
-void top_k_categorical_accuracy_layer<T,L,D>::write_specific_proto(
-  lbann_data::Layer& proto) const {
+void top_k_categorical_accuracy_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_top_k_categorical_accuracy();
   msg->set_k(m_k);
@@ -105,11 +106,15 @@ void top_k_categorical_accuracy_layer<T,L,D>::write_specific_proto(
 
 #ifndef LBANN_TOP_K_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
 
-#define PROTO_DEVICE(T, Device)                           \
-  extern template class top_k_categorical_accuracy_layer< \
-    T, data_layout::DATA_PARALLEL, Device>;               \
-  extern template class top_k_categorical_accuracy_layer< \
-    T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class top_k_categorical_accuracy_layer<                      \
+    T,                                                                         \
+    data_layout::DATA_PARALLEL,                                                \
+    Device>;                                                                   \
+  extern template class top_k_categorical_accuracy_layer<                      \
+    T,                                                                         \
+    data_layout::MODEL_PARALLEL,                                               \
+    Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

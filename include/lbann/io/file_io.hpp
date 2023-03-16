@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,23 +31,23 @@
 #ifndef LBANN_IO_H
 #define LBANN_IO_H
 
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <fcntl.h>
 
 namespace lbann {
 /// @todo Deprecated.
-int makedir(const char *dirname);
+int makedir(const char* dirname);
 /// @todo Deprecated.
-int exists(const char *filename);
+int exists(const char* filename);
 /// @todo Deprecated.
-int openread(const char *filename);
+int openread(const char* filename);
 /// @todo Deprecated.
-int closeread(int fd, const char *filename);
+int closeread(int fd, const char* filename);
 /// @todo Deprecated.
-int openwrite(const char *filename);
+int openwrite(const char* filename);
 /// @todo Deprecated.
-int closewrite(int fd, const char *filename);
-}
+int closewrite(int fd, const char* filename);
+} // namespace lbann
 
 #endif // LBANN_IO_H

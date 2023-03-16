@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -36,40 +36,45 @@
 namespace lbann {
 
 objective_function_term::objective_function_term(EvalType scale_factor)
-  : m_scale_factor(scale_factor) {
+  : m_scale_factor(scale_factor)
+{
   if (m_scale_factor == EvalType(0)) {
     m_scale_factor = EvalType(1);
   }
 }
 
-template <class Archive> void
-objective_function_term::serialize( Archive & ar ) {
-  ar(CEREAL_NVP(m_scale_factor),
-     CEREAL_NVP(m_layers),
-     CEREAL_NVP(m_weights));
+template <class Archive>
+void objective_function_term::serialize(Archive& ar)
+{
+  ar(CEREAL_NVP(m_scale_factor), CEREAL_NVP(m_layers), CEREAL_NVP(m_weights));
 }
 
-void objective_function_term::setup(model& m) {
-  m_comm = m.get_comm();
-}
+void objective_function_term::setup(model& m) { m_comm = m.get_comm(); }
 
-std::vector<ViewingLayerPtr> objective_function_term::get_layer_pointers() const {
+std::vector<ViewingLayerPtr> objective_function_term::get_layer_pointers() const
+{
   return m_layers;
 }
 
-void objective_function_term::set_layer_pointers(std::vector<ViewingLayerPtr> layers) {
+void objective_function_term::set_layer_pointers(
+  std::vector<ViewingLayerPtr> layers)
+{
   m_layers = std::move(layers);
 }
 
-std::vector<ViewingWeightsPtr> objective_function_term::get_weights_pointers() const {
+std::vector<ViewingWeightsPtr>
+objective_function_term::get_weights_pointers() const
+{
   return m_weights;
 }
 
-void objective_function_term::set_weights_pointers(std::vector<ViewingWeightsPtr> w) {
+void objective_function_term::set_weights_pointers(
+  std::vector<ViewingWeightsPtr> w)
+{
   m_weights = std::move(w);
 }
 
-}  // namespace lbann
+} // namespace lbann
 
 #define LBANN_CLASS_NAME objective_function_term
 #include <lbann/macros/register_class_with_cereal.hpp>

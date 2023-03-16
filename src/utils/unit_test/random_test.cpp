@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,18 +33,22 @@
 
 constexpr size_t num_tests = 1000;
 
-TEST_CASE("Testing random_uniform", "[random][utilities]") {
+TEST_CASE("Testing random_uniform", "[random][utilities]")
+{
 
-  SECTION("32-bit Mersenne Twister") {
+  SECTION("32-bit Mersenne Twister")
+  {
     std::mt19937 gen;
-    SECTION("floats") {
+    SECTION("floats")
+    {
       for (size_t i = 0; i < num_tests; ++i) {
         const float val = lbann::random_uniform<float>(gen);
         REQUIRE(val >= 0.0f);
         REQUIRE(val < 1.0f);
       }
     }
-    SECTION("doubles") {
+    SECTION("doubles")
+    {
       for (size_t i = 0; i < num_tests; ++i) {
         const double val = lbann::random_uniform<double>(gen);
         REQUIRE(val >= 0.0);
@@ -53,16 +57,19 @@ TEST_CASE("Testing random_uniform", "[random][utilities]") {
     }
   }
 
-  SECTION("64-bit Mersenne Twister") {
+  SECTION("64-bit Mersenne Twister")
+  {
     std::mt19937_64 gen;
-    SECTION("floats") {
+    SECTION("floats")
+    {
       for (size_t i = 0; i < num_tests; ++i) {
         const float val = lbann::random_uniform<float>(gen);
         REQUIRE(val >= 0.0f);
         REQUIRE(val < 1.0f);
       }
     }
-    SECTION("doubles") {
+    SECTION("doubles")
+    {
       for (size_t i = 0; i < num_tests; ++i) {
         const double val = lbann::random_uniform<double>(gen);
         REQUIRE(val >= 0.0);
@@ -71,33 +78,39 @@ TEST_CASE("Testing random_uniform", "[random][utilities]") {
     }
   }
 
-  SECTION("Bounds") {
-    SECTION("float") {
-      SECTION("Min") {
+  SECTION("Bounds")
+  {
+    SECTION("float")
+    {
+      SECTION("Min")
+      {
         auto gen = []() -> uint64_t { return 0ull; };
         const float val = lbann::random_uniform<float>(gen);
         REQUIRE(val == 0.0f);
       }
-      SECTION("Max") {
+      SECTION("Max")
+      {
         auto gen = []() -> uint64_t { return -1ull; };
         const float val = lbann::random_uniform<float>(gen);
         constexpr float eps = std::numeric_limits<float>::epsilon();
-        REQUIRE(val == 1.0f - eps/2);
+        REQUIRE(val == 1.0f - eps / 2);
       }
     }
-    SECTION("double") {
-      SECTION("Min") {
+    SECTION("double")
+    {
+      SECTION("Min")
+      {
         auto gen = []() -> uint64_t { return 0ull; };
         const double val = lbann::random_uniform<double>(gen);
         REQUIRE(val == 0.0);
       }
-      SECTION("Max") {
+      SECTION("Max")
+      {
         auto gen = []() -> uint64_t { return -1ull; };
         const double val = lbann::random_uniform<double>(gen);
         constexpr double eps = std::numeric_limits<double>::epsilon();
-        REQUIRE(val == 1.0 - eps/2);
+        REQUIRE(val == 1.0 - eps / 2);
       }
     }
   }
-
 }

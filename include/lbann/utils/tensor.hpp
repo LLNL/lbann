@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -72,7 +72,7 @@ std::vector<size_t> get_tensor_dims(MatrixT const& A)
  *  This is only valid in two cases. Either the matrix must be
  *  column-distributed or it must logically represent a collection of
  *  1D arrays.
-*/
+ */
 template <typename T>
 std::vector<size_t> localize_dims(El::AbstractDistMatrix<T> const& A,
                                   std::vector<size_t> const& global_dims)
@@ -156,8 +156,7 @@ class MatrixAsTensorView : public MatrixReferenceWrapper<MatrixT>
 public:
   template <typename MatT>
   MatrixAsTensorView(MatT&& mat, std::vector<size_t> const& dims)
-    : MatrixReferenceWrapper<MatrixT>{std::forward<MatT>(mat)},
-      m_dims{dims}
+    : MatrixReferenceWrapper<MatrixT>{std::forward<MatT>(mat)}, m_dims{dims}
   {}
 
   std::vector<size_t> const& dims() const noexcept { return m_dims; }
@@ -169,9 +168,8 @@ private:
 
 /** @brief Copy between two tensors on different process grids */
 template <typename TDT>
-void do_tensor_copy_between_grids(
-  const BaseDistMat& src,
-  El::AbstractDistMatrix<TDT>& tgt);
+void do_tensor_copy_between_grids(const BaseDistMat& src,
+                                  El::AbstractDistMatrix<TDT>& tgt);
 
 /** @brief Copy between two tensors on different process grids */
 template <typename TDT,

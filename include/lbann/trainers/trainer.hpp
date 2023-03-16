@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,9 +30,9 @@
 #include "lbann/base.hpp"
 #include "lbann/detect_El_mpi.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/proto/lbann.pb.h"
 #include "lbann/utils/hash.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
-#include "lbann/proto/lbann.pb.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -51,7 +51,6 @@ class generic_data_reader;
 class TrainingAlgorithm;
 class TerminationCriteria;
 class model;
-
 
 /** @brief User-facing class that represents a set of compute resources.
  *
@@ -85,7 +84,8 @@ public:
   ///@{
 
   /** @brief Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive& ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
   /** @name Configuration */
@@ -220,12 +220,11 @@ public:
                                     execution_mode mode);
 
   ExecutionContext& get_execution_context(observer_ptr<model> model,
-                                           execution_mode mode);
+                                          execution_mode mode);
 
   ExecutionContext& get_execution_context(execution_context_key_pair_t key);
 
-  bool execution_context_valid(model& m,
-                               execution_mode mode) const noexcept;
+  bool execution_context_valid(model& m, execution_mode mode) const noexcept;
 
   bool execution_context_valid(execution_context_key_pair_t key) const noexcept;
 
@@ -344,7 +343,6 @@ private:
 
   /** @brief Flag that allows input layers to fetch data in the background. */
   bool m_background_io_allowed;
-
 };
 
 /** @brief Get a reference to the global trainer visible to this rank. */

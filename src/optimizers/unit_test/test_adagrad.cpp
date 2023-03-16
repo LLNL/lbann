@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,8 +32,7 @@
 
 // See test_sgd.cpp for a detailed, annotated test case.
 
-namespace
-{
+namespace {
 
 template <typename TensorDataType>
 struct AdagradBuilder
@@ -45,19 +44,19 @@ struct AdagradBuilder
       /*eps=*/TensorDataType(2.f));
   }
 
-  static lbann::adagrad<TensorDataType> Default() {
+  static lbann::adagrad<TensorDataType> Default()
+  {
     return lbann::adagrad<TensorDataType>(
       /*learning_rate=*/TensorDataType(0.0f),
       /*eps=*/TensorDataType(0.0f));
   }
-};// struct AdagradBuilder
+}; // struct AdagradBuilder
 
-}// namespace <anon>
+} // namespace
 
-TEMPLATE_LIST_TEST_CASE(
-  "Adagrad Optimizer serialization",
-  "[optimizer][serialize]",
-  AllArchiveTypes)
+TEMPLATE_LIST_TEST_CASE("Adagrad Optimizer serialization",
+                        "[optimizer][serialize]",
+                        AllArchiveTypes)
 {
   using ValueType = tlist::Car<TestType>;
 

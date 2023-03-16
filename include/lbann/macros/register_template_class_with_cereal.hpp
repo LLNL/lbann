@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,11 +37,10 @@
 #define LBANN_STRINGIFY_IMPL(STR) #STR
 
 #undef PROTO
-#define PROTO(T)                                                        \
-  LBANN_ADD_ALL_SERIALIZE_ETI(::lbann::LBANN_CLASS_NAME<T>);            \
-  CEREAL_REGISTER_TYPE_WITH_NAME(                                       \
-    lbann::LBANN_CLASS_NAME<T>,                                         \
-    LBANN_STRINGIFY(LBANN_CLASS_NAME) "(" #T ")")
+#define PROTO(T)                                                               \
+  LBANN_ADD_ALL_SERIALIZE_ETI(::lbann::LBANN_CLASS_NAME<T>);                   \
+  CEREAL_REGISTER_TYPE_WITH_NAME(lbann::LBANN_CLASS_NAME<T>,                   \
+                                 LBANN_STRINGIFY(LBANN_CLASS_NAME) "(" #T ")")
 
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO

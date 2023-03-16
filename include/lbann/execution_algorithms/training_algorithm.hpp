@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -129,10 +129,7 @@ public:
    */
   void apply(model& model, data_coordinator& dc)
   {
-    apply(*get_new_execution_context(),
-          model,
-          dc,
-          execution_mode::training);
+    apply(*get_new_execution_context(), model, dc, execution_mode::training);
   }
 
   /** @brief Setup a collection of models.
@@ -144,11 +141,10 @@ public:
    *  @param[in] grids Process grids for distributed tensors.
    *  @todo Remove the dr_metadata argument.
    */
-  void setup_models(
-    std::vector<observer_ptr<model>> const& models,
-    size_t max_mini_batch_size,
-    DataReaderMetaData& dr_metadata,
-    const std::vector<El::Grid*>& grids);
+  void setup_models(std::vector<observer_ptr<model>> const& models,
+                    size_t max_mini_batch_size,
+                    DataReaderMetaData& dr_metadata,
+                    const std::vector<El::Grid*>& grids);
 
   /** @brief Get a default-initialized execution context that fits
    *         this training algorithm.

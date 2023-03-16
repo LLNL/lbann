@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -39,8 +39,9 @@ namespace lbann {
  * This assumes the data is stored as floats in row-major order.
  * The channels to load are currently hardcoded. This only supports regression.
  */
-class mesh_reader : public generic_data_reader {
- public:
+class mesh_reader : public generic_data_reader
+{
+public:
   mesh_reader(bool shuffle = true);
   ~mesh_reader() override {}
 
@@ -50,31 +51,33 @@ class mesh_reader : public generic_data_reader {
   /// Set a suffix to append to the channel directories.
   void set_suffix(const std::string suffix) { m_suffix = suffix; }
   /// Set the shape (height and width) of the data.
-  void set_data_shape(int height, int width) {
+  void set_data_shape(int height, int width)
+  {
     m_data_height = height;
     m_data_width = width;
   }
   /// Set the index length for filenames.
-  void set_index_length(int l) {
-    m_index_length = l;
-  }
+  void set_index_length(int l) { m_index_length = l; }
   /// Set whether to do random horizontal and vertical flips.
   void set_random_flips(bool b) { m_random_flips = b; }
 
   void load() override;
-  void setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) override;
-  int get_linearized_data_size() const override {
+  void setup(int num_io_threads,
+             observer_ptr<thread_pool> io_thread_pool) override;
+  int get_linearized_data_size() const override
+  {
     return m_channels.size() * m_data_height * m_data_width;
   }
-  int get_linearized_response_size() const override {
+  int get_linearized_response_size() const override
+  {
     return m_data_height * m_data_width;
   }
-  const std::vector<int> get_data_dims() const override {
-    return {static_cast<int>(m_channels.size()),
-        m_data_height,
-        m_data_width};
+  const std::vector<int> get_data_dims() const override
+  {
+    return {static_cast<int>(m_channels.size()), m_data_height, m_data_width};
   }
- protected:
+
+protected:
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
 
@@ -97,28 +100,26 @@ class mesh_reader : public generic_data_reader {
   /// Target channel; contains the relaxation information.
   std::string m_target_name = "mask";
   /// Names of each channel to load as data.
-  std::vector<std::string> m_channels = {
-    "Density",
-    "Pressure",
-    "VectorComp_AvgVelocity_R",
-    "VolumeFractions_bubble",
-    "aspectRatio",
-    "conditionNumber",
-    "distortion",
-    "jacobian",
-    "largestAngle",
-    "oddy",
-    "scaledJacobian",
-    "shape",
-    //"shapeAndSize",
-    "shear",
-    //"shearAndSize",
-    "skew",
-    "smallestAngle",
-    "stretch",
-    "taper",
-    "volume"
-  };
+  std::vector<std::string> m_channels = {"Density",
+                                         "Pressure",
+                                         "VectorComp_AvgVelocity_R",
+                                         "VolumeFractions_bubble",
+                                         "aspectRatio",
+                                         "conditionNumber",
+                                         "distortion",
+                                         "jacobian",
+                                         "largestAngle",
+                                         "oddy",
+                                         "scaledJacobian",
+                                         "shape",
+                                         //"shapeAndSize",
+                                         "shear",
+                                         //"shearAndSize",
+                                         "skew",
+                                         "smallestAngle",
+                                         "stretch",
+                                         "taper",
+                                         "volume"};
   /**
    * Character length of the index in filenames.
    * Indices will be left-padded with zeros to this length.
@@ -144,6 +145,6 @@ class mesh_reader : public generic_data_reader {
   std::vector<std::pair<bool, bool>> m_flip_choices;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_DATA_READER_MESH_HPP
+#endif // LBANN_DATA_READER_MESH_HPP

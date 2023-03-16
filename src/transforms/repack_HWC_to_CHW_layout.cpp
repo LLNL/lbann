@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,20 +30,25 @@
 namespace lbann {
 namespace transform {
 
-void repack_HWC_to_CHW_layout::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+void repack_HWC_to_CHW_layout::apply(utils::type_erased_matrix& data,
+                                     std::vector<size_t>& dims)
+{
   auto dst = CPUMat(get_linear_size(dims), 1);
   apply(data, dst, dims);
   data.emplace<DataType>(std::move(dst));
 }
 
-void repack_HWC_to_CHW_layout::apply(utils::type_erased_matrix& data, CPUMat& out,
-                            std::vector<size_t>& dims) {
-  CPUMat &src = data.template get<DataType>();
+void repack_HWC_to_CHW_layout::apply(utils::type_erased_matrix& data,
+                                     CPUMat& out,
+                                     std::vector<size_t>& dims)
+{
+  CPUMat& src = data.template get<DataType>();
   if (!src.Contiguous()) {
     LBANN_ERROR("RepackHWCtoCHWLayout does not support non-contiguous src.");
   }
   if (!out.Contiguous()) {
-    LBANN_ERROR("RepackHWCtoCHWLayout does not support non-contiguous destination.");
+    LBANN_ERROR(
+      "RepackHWCtoCHWLayout does not support non-contiguous destination.");
   }
   const DataType* __restrict__ src_buf = src.LockedBuffer();
   const size_t out_size = get_linear_size(dims);
@@ -58,14 +63,14 @@ void repack_HWC_to_CHW_layout::apply(utils::type_erased_matrix& data, CPUMat& ou
     for (size_t col = 0; col < dims[2]; ++col) {
       int N = dims[0];
       // Multiply by N because there are N channels.
-      const size_t src_base = N*(row + col*dims[1]);
-      const size_t dst_base = row + col*dims[1];
-      switch(N) {
+      const size_t src_base = N * (row + col * dims[1]);
+      const size_t dst_base = row + col * dims[1];
+      switch (N) {
       case 4:
-        dst_buf[dst_base + 3*size] = src_buf[src_base + 3];
+        dst_buf[dst_base + 3 * size] = src_buf[src_base + 3];
         [[fallthrough]];
       case 3:
-        dst_buf[dst_base + 2*size] = src_buf[src_base + 2];
+        dst_buf[dst_base + 2 * size] = src_buf[src_base + 2];
         [[fallthrough]];
       case 2:
         dst_buf[dst_base + size] = src_buf[src_base + 1];
@@ -80,5 +85,5 @@ void repack_HWC_to_CHW_layout::apply(utils::type_erased_matrix& data, CPUMat& ou
   }
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,65 +27,81 @@
 #include "Catch2BasicSupport.hpp"
 
 // File being tested
+#include "helper.hpp"
 #include <lbann/transforms/vision/random_crop.hpp>
 #include <lbann/utils/random_number_generators.hpp>
-#include "helper.hpp"
 
-TEST_CASE("Testing random crop preprocessing", "[preproc]") {
-  lbann::utils::type_erased_matrix mat = lbann::utils::type_erased_matrix(El::Matrix<uint8_t>());
+TEST_CASE("Testing random crop preprocessing", "[preproc]")
+{
+  lbann::utils::type_erased_matrix mat =
+    lbann::utils::type_erased_matrix(El::Matrix<uint8_t>());
   // Grab the necessary I/O RNG and lock it
   lbann::locked_io_rng_ref io_rng = lbann::set_io_generators_local_index(0);
 
-  SECTION("matrix with one channel") {
+  SECTION("matrix with one channel")
+  {
     ones(mat.template get<uint8_t>(), 5, 5, 1);
     std::vector<size_t> dims = {1, 5, 5};
     auto cropper = lbann::transform::random_crop(3, 3);
 
-    SECTION("applying the crop") {
+    SECTION("applying the crop")
+    {
       REQUIRE_NOTHROW(cropper.apply(mat, dims));
 
-      SECTION("cropping changes dims correctly") {
+      SECTION("cropping changes dims correctly")
+      {
         REQUIRE(dims[0] == 1);
         REQUIRE(dims[1] == 3);
         REQUIRE(dims[2] == 3);
       }
-      SECTION("cropping does not change matrix type") {
+      SECTION("cropping does not change matrix type")
+      {
         REQUIRE_NOTHROW(mat.template get<uint8_t>());
       }
-      SECTION("cropping produces correct values") {
+      SECTION("cropping produces correct values")
+      {
         auto& real_mat = mat.template get<uint8_t>();
-        apply_elementwise(
-          real_mat, 3, 3, 1,
-          [](uint8_t& x, El::Int row, El::Int col, El::Int) {
-            REQUIRE(x == 1);
-          });
+        apply_elementwise(real_mat,
+                          3,
+                          3,
+                          1,
+                          [](uint8_t& x, El::Int row, El::Int col, El::Int) {
+                            REQUIRE(x == 1);
+                          });
       }
     }
   }
 
-  SECTION("matrix with three channels") {
+  SECTION("matrix with three channels")
+  {
     ones(mat.template get<uint8_t>(), 5, 5, 3);
     std::vector<size_t> dims = {3, 5, 5};
     auto cropper = lbann::transform::random_crop(3, 3);
 
-    SECTION("applying the crop") {
+    SECTION("applying the crop")
+    {
       REQUIRE_NOTHROW(cropper.apply(mat, dims));
 
-      SECTION("cropping changes dims correctly") {
+      SECTION("cropping changes dims correctly")
+      {
         REQUIRE(dims[0] == 3);
         REQUIRE(dims[1] == 3);
         REQUIRE(dims[2] == 3);
       }
-      SECTION("cropping does not change matrix type") {
+      SECTION("cropping does not change matrix type")
+      {
         REQUIRE_NOTHROW(mat.template get<uint8_t>());
       }
-      SECTION("cropping produces correct values") {
+      SECTION("cropping produces correct values")
+      {
         auto& real_mat = mat.template get<uint8_t>();
-        apply_elementwise(
-          real_mat, 3, 3, 3,
-          [](uint8_t& x, El::Int row, El::Int col, El::Int) {
-            REQUIRE(x == 1);
-          });
+        apply_elementwise(real_mat,
+                          3,
+                          3,
+                          3,
+                          [](uint8_t& x, El::Int row, El::Int col, El::Int) {
+                            REQUIRE(x == 1);
+                          });
       }
     }
   }

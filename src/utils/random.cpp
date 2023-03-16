@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,15 +26,15 @@
 
 #include <omp.h>
 #define LBANN_RANDOM_INSTANTIATE
-#include "lbann/utils/random.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/utils/hash.hpp"
+#include "lbann/utils/random.hpp"
 #include <thread>
-
 
 namespace lbann {
 
-bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed) {
+bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed)
+{
   std::string dirname = std::string(p.m_checkpoint_dir) + "/rng_state";
   std::string rank_in_trainer;
   std::string rng_name;
@@ -42,7 +42,8 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed) {
   if (comm == nullptr) {
     rank_in_trainer = std::to_string(El::mpi::Rank(El::mpi::COMM_WORLD));
     makedir(dirname.c_str());
-  } else {
+  }
+  else {
     rank_in_trainer = std::to_string(comm->get_rank_in_trainer());
     if (comm->am_trainer_master() || is_distributed) {
       makedir(dirname.c_str());
@@ -54,26 +55,34 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed) {
     /// @todo - Note that the RNG with thread local data is not correct
     rng_name = dirname + "/rng_seq_generator";
     std::ofstream rng_seq(rng_name);
-    if(!rng_seq) { LBANN_ERROR("Failed to open ", rng_name); }
+    if (!rng_seq) {
+      LBANN_ERROR("Failed to open ", rng_name);
+    }
     rng_seq << get_data_seq_generator();
     rng_seq.close();
 
     rng_name = dirname + "/EL_generator";
     std::ofstream rng_EL(rng_name);
-    if(!rng_EL) { LBANN_ERROR("Failed to open ", rng_name); }
+    if (!rng_EL) {
+      LBANN_ERROR("Failed to open ", rng_name);
+    }
     rng_EL << El::Generator();
     rng_EL.close();
   }
 
-  for(int i = 0; i < get_num_io_generators(); i++) {
-    rng_name = dirname + "/rng_io_generator_" + rank_in_trainer
-      + "_t" + std::to_string(i);
+  for (int i = 0; i < get_num_io_generators(); i++) {
+    rng_name = dirname + "/rng_io_generator_" + rank_in_trainer + "_t" +
+               std::to_string(i);
     std::ofstream rng_io(rng_name);
-    if(!rng_io) { LBANN_ERROR("Failed to open ", rng_name); }
-    rng_name = dirname + "/rng_fast_io_generator_" + rank_in_trainer
-      + "_t" + std::to_string(i);
+    if (!rng_io) {
+      LBANN_ERROR("Failed to open ", rng_name);
+    }
+    rng_name = dirname + "/rng_fast_io_generator_" + rank_in_trainer + "_t" +
+               std::to_string(i);
     std::ofstream rng_fast_io(rng_name);
-    if(!rng_fast_io) { LBANN_ERROR("Failed to open ", rng_name); }
+    if (!rng_fast_io) {
+      LBANN_ERROR("Failed to open ", rng_name);
+    }
 
     locked_io_rng_ref io_rng = set_io_generators_local_index(i);
     rng_io << get_io_generator();
@@ -84,61 +93,76 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed) {
   }
 
 #ifdef _OPENMP
-  #pragma omp parallel private(rng_name)
+#pragma omp parallel private(rng_name)
   {
-    rng_name = dirname + "/rng_generator_" + rank_in_trainer + "_"
-             + std::to_string(omp_get_thread_num());
+    rng_name = dirname + "/rng_generator_" + rank_in_trainer + "_" +
+               std::to_string(omp_get_thread_num());
     std::ofstream rng(rng_name);
-    if(!rng) { LBANN_ERROR("Failed to open ", rng_name); }
+    if (!rng) {
+      LBANN_ERROR("Failed to open ", rng_name);
+    }
     rng << get_generator();
     rng.close();
 
-    rng_name = dirname + "/rng_fast_generator_" + rank_in_trainer + "_"
-             + std::to_string(omp_get_thread_num());
+    rng_name = dirname + "/rng_fast_generator_" + rank_in_trainer + "_" +
+               std::to_string(omp_get_thread_num());
     std::ofstream rng_fast(rng_name);
-    if(!rng_fast) { LBANN_ERROR("Failed to open ", rng_name); }
+    if (!rng_fast) {
+      LBANN_ERROR("Failed to open ", rng_name);
+    }
     rng_fast << get_fast_generator();
     rng_fast.close();
 
-    rng_name = dirname + "/rng_ltfb_generator_" + rank_in_trainer + "_"
-             + std::to_string(omp_get_thread_num());
+    rng_name = dirname + "/rng_ltfb_generator_" + rank_in_trainer + "_" +
+               std::to_string(omp_get_thread_num());
     std::ofstream rng_ltfb(rng_name);
-    if(!rng_ltfb) { LBANN_ERROR("Failed to open ", rng_name); }
+    if (!rng_ltfb) {
+      LBANN_ERROR("Failed to open ", rng_name);
+    }
     rng_ltfb << get_ltfb_generator();
     rng_ltfb.close();
   }
 #else
-    rng_name = dirname + "/rng_generator_" + rank_in_trainer;
-    std::ofstream rng(rng_name);
-    if(!rng) { LBANN_ERROR("Failed to open ", rng_name); }
-    rng << get_generator();
-    rng.close();
+  rng_name = dirname + "/rng_generator_" + rank_in_trainer;
+  std::ofstream rng(rng_name);
+  if (!rng) {
+    LBANN_ERROR("Failed to open ", rng_name);
+  }
+  rng << get_generator();
+  rng.close();
 
-    rng_name = dirname + "/rng_fast_generator_" + rank_in_trainer;
-    std::ofstream rng_fast(rng_name);
-    if(!rng_fast) { LBANN_ERROR("Failed to open ", rng_name); }
-    rng_fast << get_fast_generator();
-    rng_fast.close();
+  rng_name = dirname + "/rng_fast_generator_" + rank_in_trainer;
+  std::ofstream rng_fast(rng_name);
+  if (!rng_fast) {
+    LBANN_ERROR("Failed to open ", rng_name);
+  }
+  rng_fast << get_fast_generator();
+  rng_fast.close();
 
-    rng_name = dirname + "/rng_ltfb_generator_" + rank_in_trainer;
-    std::ofstream rng_ltfb(rng_name);
-    if(!rng_ltfb) { LBANN_ERROR("Failed to open ", rng_name); }
-    rng_ltfb << get_ltfb_generator();
-    rng_ltfb.close();
+  rng_name = dirname + "/rng_ltfb_generator_" + rank_in_trainer;
+  std::ofstream rng_ltfb(rng_name);
+  if (!rng_ltfb) {
+    LBANN_ERROR("Failed to open ", rng_name);
+  }
+  rng_ltfb << get_ltfb_generator();
+  rng_ltfb.close();
 #endif
 
-   return true;
+  return true;
 }
 
-bool save_rng_to_checkpoint_shared(persist& p, lbann_comm* comm) {
+bool save_rng_to_checkpoint_shared(persist& p, lbann_comm* comm)
+{
   return save_rng_to_checkpoint(p, comm, false);
 }
 
-bool save_rng_to_checkpoint_distributed(persist& p, lbann_comm* comm) {
+bool save_rng_to_checkpoint_distributed(persist& p, lbann_comm* comm)
+{
   return save_rng_to_checkpoint(p, comm, true);
 }
 
-bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm) {
+bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm)
+{
 
   std::string dirname = std::string(p.m_checkpoint_dir) + "/rng_state";
   std::string rng_name;
@@ -146,84 +170,104 @@ bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm) {
   /// @todo - Note that the RNG with thread local data is not correct
   rng_name = dirname + "/rng_seq_generator";
   std::ifstream rng_seq(rng_name);
-  if(!rng_seq) { LBANN_ERROR("Failed to open ", rng_name); }
+  if (!rng_seq) {
+    LBANN_ERROR("Failed to open ", rng_name);
+  }
   rng_seq >> get_data_seq_generator();
 
   rng_name = dirname + "/EL_generator";
   std::ifstream rng_EL(rng_name);
-  if(!rng_EL) { LBANN_ERROR("Failed to open ", rng_name); }
+  if (!rng_EL) {
+    LBANN_ERROR("Failed to open ", rng_name);
+  }
   rng_EL >> El::Generator();
 
   std::string rank_in_trainer;
   if (comm == nullptr) {
     rank_in_trainer = std::to_string(El::mpi::Rank(El::mpi::COMM_WORLD));
-  } else {
+  }
+  else {
     rank_in_trainer = std::to_string(comm->get_rank_in_trainer());
   }
 
-  for(int i = 0; i < get_num_io_generators(); i++) {
-    rng_name = dirname + "/rng_io_generator_" + rank_in_trainer
-      + "_t" + std::to_string(i);
+  for (int i = 0; i < get_num_io_generators(); i++) {
+    rng_name = dirname + "/rng_io_generator_" + rank_in_trainer + "_t" +
+               std::to_string(i);
     std::ifstream rng_io(rng_name);
-    if(!rng_io) { LBANN_ERROR("Failed to open ", rng_name); }
-    rng_name = dirname + "/rng_fast_io_generator_" + rank_in_trainer
-      + "_t" + std::to_string(i);
+    if (!rng_io) {
+      LBANN_ERROR("Failed to open ", rng_name);
+    }
+    rng_name = dirname + "/rng_fast_io_generator_" + rank_in_trainer + "_t" +
+               std::to_string(i);
     std::ifstream rng_fast_io(rng_name);
-    if(!rng_fast_io) { LBANN_ERROR("Failed to open ", rng_name); }
+    if (!rng_fast_io) {
+      LBANN_ERROR("Failed to open ", rng_name);
+    }
 
     locked_io_rng_ref io_rng = set_io_generators_local_index(i);
     rng_io >> get_io_generator();
     rng_fast_io >> get_fast_io_generator();
   }
 
-
 #ifdef _OPENMP
-  #pragma omp parallel private(rng_name)
+#pragma omp parallel private(rng_name)
   {
-    rng_name = dirname + "/rng_generator_" + rank_in_trainer + "_"
-             + std::to_string(omp_get_thread_num());
+    rng_name = dirname + "/rng_generator_" + rank_in_trainer + "_" +
+               std::to_string(omp_get_thread_num());
     std::ifstream rng(rng_name);
-    if(!rng) { LBANN_ERROR("Failed to open ", rng_name); }
+    if (!rng) {
+      LBANN_ERROR("Failed to open ", rng_name);
+    }
     rng >> get_generator();
 
-    rng_name = dirname + "/rng_fast_generator_" + rank_in_trainer + "_"
-             + std::to_string(omp_get_thread_num());
+    rng_name = dirname + "/rng_fast_generator_" + rank_in_trainer + "_" +
+               std::to_string(omp_get_thread_num());
     std::ifstream rng_fast(rng_name);
-    if(!rng_fast) { LBANN_ERROR("Failed to open ", rng_name); }
+    if (!rng_fast) {
+      LBANN_ERROR("Failed to open ", rng_name);
+    }
     rng_fast >> get_fast_generator();
 
-    rng_name = dirname + "/rng_ltfb_generator_" + rank_in_trainer + "_"
-             + std::to_string(omp_get_thread_num());
+    rng_name = dirname + "/rng_ltfb_generator_" + rank_in_trainer + "_" +
+               std::to_string(omp_get_thread_num());
     std::ifstream rng_ltfb(rng_name);
-    if(!rng_ltfb) { LBANN_ERROR("Failed to open ", rng_name); }
+    if (!rng_ltfb) {
+      LBANN_ERROR("Failed to open ", rng_name);
+    }
     rng_ltfb >> get_ltfb_generator();
-   }
+  }
 #else
-    rng_name = dirname + "/rng_generator_" + rank_in_trainer;
-    std::ifstream rng(rng_name);
-    if(!rng) { LBANN_ERROR("Failed to open ", rng_name); }
-    rng >> get_generator();
+  rng_name = dirname + "/rng_generator_" + rank_in_trainer;
+  std::ifstream rng(rng_name);
+  if (!rng) {
+    LBANN_ERROR("Failed to open ", rng_name);
+  }
+  rng >> get_generator();
 
-    rng_name = dirname + "/rng_fast_generator_" + rank_in_trainer;
-    std::ifstream rng_fast(rng_name);
-    if(!rng_fast) { LBANN_ERROR("Failed to open ", rng_name); }
-    rng_fast >> get_fast_generator();
+  rng_name = dirname + "/rng_fast_generator_" + rank_in_trainer;
+  std::ifstream rng_fast(rng_name);
+  if (!rng_fast) {
+    LBANN_ERROR("Failed to open ", rng_name);
+  }
+  rng_fast >> get_fast_generator();
 
-    rng_name = dirname + "/rng_ltfb_generator_" + rank_in_trainer;
-    std::ifstream rng_ltfb(rng_name);
-    if(!rng_ltfb) { LBANN_ERROR("Failed to open ", rng_name); }
-    rng_ltfb >> get_ltfb_generator();
+  rng_name = dirname + "/rng_ltfb_generator_" + rank_in_trainer;
+  std::ifstream rng_ltfb(rng_name);
+  if (!rng_ltfb) {
+    LBANN_ERROR("Failed to open ", rng_name);
+  }
+  rng_ltfb >> get_ltfb_generator();
 #endif
   return true;
 }
 
 template <typename TensorDataType>
-void gaussian_fill(
-  El::AbstractDistMatrix<TensorDataType>& mat,
-  El::Int m,
-  El::Int n,
-  TensorDataType mean,
-  TensorDataType stddev) {
+void gaussian_fill(El::AbstractDistMatrix<TensorDataType>& mat,
+                   El::Int m,
+                   El::Int n,
+                   TensorDataType mean,
+                   TensorDataType stddev)
+{
 #ifdef LBANN_DETERMINISTIC
   gaussian_fill_procdet(mat, m, n, mean, stddev);
 #else
@@ -232,53 +276,68 @@ void gaussian_fill(
 }
 
 template <typename TensorDataType>
-void bernoulli_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, double p) {
+void bernoulli_fill(El::AbstractDistMatrix<TensorDataType>& mat,
+                    El::Int m,
+                    El::Int n,
+                    double p)
+{
 #ifndef LBANN_DETERMINISTIC
   El::Bernoulli(mat, m, n, p);
 #else
   bernoulli_fill_procdet(mat, m, n, p);
-#endif  // LBANN_DETERMINISTIC
+#endif // LBANN_DETERMINISTIC
 }
 
 template <typename TensorDataType>
-void uniform_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
-                  TensorDataType center, TensorDataType radius) {
+void uniform_fill(El::AbstractDistMatrix<TensorDataType>& mat,
+                  El::Int m,
+                  El::Int n,
+                  TensorDataType center,
+                  TensorDataType radius)
+{
 #ifndef LBANN_DETERMINISTIC
   El::Uniform(mat, m, n, center, radius);
 #else
   uniform_fill_procdet(mat, m, n, center, radius);
-#endif  // LBANN_DETERMINISTIC
+#endif // LBANN_DETERMINISTIC
 }
 
 template <typename TensorDataType>
-void gaussian_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
-                           TensorDataType mean, TensorDataType stddev) {
+void gaussian_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat,
+                           El::Int m,
+                           El::Int n,
+                           TensorDataType mean,
+                           TensorDataType stddev)
+{
 #if defined(LBANN_HAS_GPU_FP16) && defined(LBANN_HAS_HALF)
-  using RandDataType = typename std::conditional<
-    El::Or<std::is_same<TensorDataType,cpu_fp16>,
-           std::is_same<TensorDataType,fp16>>::value,
-    float, TensorDataType>::type;
+  using RandDataType =
+    typename std::conditional<El::Or<std::is_same<TensorDataType, cpu_fp16>,
+                                     std::is_same<TensorDataType, fp16>>::value,
+                              float,
+                              TensorDataType>::type;
 #elif defined(LBANN_HAS_GPU_FP16)
-  using RandDataType = typename std::conditional<
-    std::is_same<TensorDataType,fp16>::value,
-    float, TensorDataType>::type;
+  using RandDataType =
+    typename std::conditional<std::is_same<TensorDataType, fp16>::value,
+                              float,
+                              TensorDataType>::type;
 #elif defined(LBANN_HAS_HALF)
-  using RandDataType = typename std::conditional<
-    std::is_same<TensorDataType,cpu_fp16>::value,
-    float, TensorDataType>::type;
+  using RandDataType =
+    typename std::conditional<std::is_same<TensorDataType, cpu_fp16>::value,
+                              float,
+                              TensorDataType>::type;
 #else
   using RandDataType = TensorDataType;
 #endif // LBANN_HAS_GPU_FP16
 
-  using CircMatType = El::DistMatrix<
-    RandDataType, El::CIRC, El::CIRC, El::ELEMENT, El::Device::CPU>;
+  using CircMatType = El::
+    DistMatrix<RandDataType, El::CIRC, El::CIRC, El::ELEMENT, El::Device::CPU>;
   CircMatType vals(m, n, mat.Grid(), 0);
   if (vals.Participating()) {
     auto* __restrict__ buffer = vals.Buffer(); // Should be contiguous
     const size_t size = vals.LocalHeight() * vals.LocalWidth();
     std::normal_distribution<RandDataType> dist(mean, stddev);
     auto& gen = get_generator();
-    for (size_t i=0; i<size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
       buffer[i] = dist(gen);
     }
   }
@@ -286,7 +345,11 @@ void gaussian_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int 
 }
 
 template <typename TensorDataType>
-void bernoulli_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, double p) {
+void bernoulli_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat,
+                            El::Int m,
+                            El::Int n,
+                            double p)
+{
   CircMatDT<TensorDataType, El::Device::CPU> vals(m, n, mat.Grid(), 0);
   if (vals.Participating()) {
     auto& local_vals = vals.Matrix();
@@ -302,21 +365,28 @@ void bernoulli_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int
 }
 
 template <typename TensorDataType>
-void uniform_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
-                          TensorDataType center, TensorDataType radius) {
+void uniform_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat,
+                          El::Int m,
+                          El::Int n,
+                          TensorDataType center,
+                          TensorDataType radius)
+{
 #if defined(LBANN_HAS_GPU_FP16) && defined(LBANN_HAS_HALF)
-  using RandDataType = typename std::conditional<
-    El::Or<std::is_same<TensorDataType,cpu_fp16>,
-           std::is_same<TensorDataType,fp16>>::value,
-    float, TensorDataType>::type;
+  using RandDataType =
+    typename std::conditional<El::Or<std::is_same<TensorDataType, cpu_fp16>,
+                                     std::is_same<TensorDataType, fp16>>::value,
+                              float,
+                              TensorDataType>::type;
 #elif defined(LBANN_HAS_GPU_FP16)
-  using RandDataType = typename std::conditional<
-    std::is_same<TensorDataType,fp16>::value,
-    float, TensorDataType>::type;
+  using RandDataType =
+    typename std::conditional<std::is_same<TensorDataType, fp16>::value,
+                              float,
+                              TensorDataType>::type;
 #elif defined(LBANN_HAS_HALF)
-  using RandDataType = typename std::conditional<
-    std::is_same<TensorDataType,cpu_fp16>::value,
-    float, TensorDataType>::type;
+  using RandDataType =
+    typename std::conditional<std::is_same<TensorDataType, cpu_fp16>::value,
+                              float,
+                              TensorDataType>::type;
 #else
   using RandDataType = TensorDataType;
 #endif // LBANN_HAS_GPU_FP16
@@ -337,27 +407,30 @@ void uniform_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m
 }
 
 template <typename TensorDataType>
-void gaussian_fill_parallel(
-  El::AbstractDistMatrix<TensorDataType>& mat,
-  El::Int m,
-  El::Int n,
-  TensorDataType mean,
-  TensorDataType stddev) {
+void gaussian_fill_parallel(El::AbstractDistMatrix<TensorDataType>& mat,
+                            El::Int m,
+                            El::Int n,
+                            TensorDataType mean,
+                            TensorDataType stddev)
+{
 
   // Type for generating random variables
 #if defined(LBANN_HAS_GPU_FP16) && defined(LBANN_HAS_HALF)
-  using RandDataType = typename std::conditional<
-    El::Or<std::is_same<TensorDataType,cpu_fp16>,
-           std::is_same<TensorDataType,fp16>>::value,
-    float, TensorDataType>::type;
+  using RandDataType =
+    typename std::conditional<El::Or<std::is_same<TensorDataType, cpu_fp16>,
+                                     std::is_same<TensorDataType, fp16>>::value,
+                              float,
+                              TensorDataType>::type;
 #elif defined(LBANN_HAS_GPU_FP16)
-  using RandDataType = typename std::conditional<
-    std::is_same<TensorDataType,fp16>::value,
-    float, TensorDataType>::type;
+  using RandDataType =
+    typename std::conditional<std::is_same<TensorDataType, fp16>::value,
+                              float,
+                              TensorDataType>::type;
 #elif defined(LBANN_HAS_HALF)
-  using RandDataType = typename std::conditional<
-    std::is_same<TensorDataType,cpu_fp16>::value,
-    float, TensorDataType>::type;
+  using RandDataType =
+    typename std::conditional<std::is_same<TensorDataType, cpu_fp16>::value,
+                              float,
+                              TensorDataType>::type;
 #else
   using RandDataType = TensorDataType;
 #endif // LBANN_HAS_GPU_FP16
@@ -376,7 +449,7 @@ void gaussian_fill_parallel(
     // Local buffer to hold random variables
     using LocalMatType = El::Matrix<RandDataType, El::Device::CPU>;
     LocalMatType local_vals;
-    if constexpr (std::is_same<TensorDataType,RandDataType>::value) {
+    if constexpr (std::is_same<TensorDataType, RandDataType>::value) {
       if (mat.GetLocalDevice() == El::Device::CPU) {
         El::View(local_vals, mat.Matrix());
       }
@@ -394,7 +467,7 @@ void gaussian_fill_parallel(
       auto* __restrict__ buffer = local_vals.Buffer();
       const size_t size = local_vals.Height() * local_vals.Width();
       LBANN_OMP_PARALLEL_FOR_ARGS(firstprivate(dist))
-      for (size_t i=0; i<size; ++i) {
+      for (size_t i = 0; i < size; ++i) {
         buffer[i] = dist(get_generator());
       }
     }
@@ -404,9 +477,9 @@ void gaussian_fill_parallel(
       const size_t width = local_vals.Width();
       const size_t ldim = local_vals.LDim();
       LBANN_OMP_PARALLEL_FOR_ARGS(collapse(2) firstprivate(dist))
-      for (size_t j=0; j<width; ++j) {
-        for (size_t i=0; i<height; ++i) {
-          buffer[i+j*ldim] = dist(get_generator());
+      for (size_t j = 0; j < width; ++j) {
+        for (size_t i = 0; i < height; ++i) {
+          buffer[i + j * ldim] = dist(get_generator());
         }
       }
     }
@@ -415,28 +488,51 @@ void gaussian_fill_parallel(
     if (!local_vals.Viewing()) {
       El::Copy(local_vals, mat.Matrix());
     }
-
   }
 
   // Make sure local matrix is identical across redundant comm
-  El::Broadcast(
-    static_cast<El::AbstractMatrix<TensorDataType>&>(mat.Matrix()),
-    mat.RedundantComm(),
-    0);
-
+  El::Broadcast(static_cast<El::AbstractMatrix<TensorDataType>&>(mat.Matrix()),
+                mat.RedundantComm(),
+                0);
 }
 
-#define PROTO(T)                                                                                                  \
-  template void gaussian_fill<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T mean, T stddev);         \
-  template void bernoulli_fill<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, double p);                \
-  template void uniform_fill<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T center, T radius);        \
-  template void gaussian_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T mean, T stddev); \
-  template void bernoulli_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, double p);        \
-  template void uniform_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T center, T radius); \
-  template void gaussian_fill_parallel<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T mean, T stddev)
+#define PROTO(T)                                                               \
+  template void gaussian_fill<T>(El::AbstractDistMatrix<T> & mat,              \
+                                 El::Int m,                                    \
+                                 El::Int n,                                    \
+                                 T mean,                                       \
+                                 T stddev);                                    \
+  template void bernoulli_fill<T>(El::AbstractDistMatrix<T> & mat,             \
+                                  El::Int m,                                   \
+                                  El::Int n,                                   \
+                                  double p);                                   \
+  template void uniform_fill<T>(El::AbstractDistMatrix<T> & mat,               \
+                                El::Int m,                                     \
+                                El::Int n,                                     \
+                                T center,                                      \
+                                T radius);                                     \
+  template void gaussian_fill_procdet<T>(El::AbstractDistMatrix<T> & mat,      \
+                                         El::Int m,                            \
+                                         El::Int n,                            \
+                                         T mean,                               \
+                                         T stddev);                            \
+  template void bernoulli_fill_procdet<T>(El::AbstractDistMatrix<T> & mat,     \
+                                          El::Int m,                           \
+                                          El::Int n,                           \
+                                          double p);                           \
+  template void uniform_fill_procdet<T>(El::AbstractDistMatrix<T> & mat,       \
+                                        El::Int m,                             \
+                                        El::Int n,                             \
+                                        T center,                              \
+                                        T radius);                             \
+  template void gaussian_fill_parallel<T>(El::AbstractDistMatrix<T> & mat,     \
+                                          El::Int m,                           \
+                                          El::Int n,                           \
+                                          T mean,                              \
+                                          T stddev)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
-}  // namespace lbann
+} // namespace lbann

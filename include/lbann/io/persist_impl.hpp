@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,8 +35,9 @@
 
 namespace lbann {
 
-inline persist_type execution_mode_to_persist_type(execution_mode m) {
-  switch(m) {
+inline persist_type execution_mode_to_persist_type(execution_mode m)
+{
+  switch (m) {
   case execution_mode::training:
     return persist_type::training_context;
   case execution_mode::validation:
@@ -55,8 +56,9 @@ inline persist_type execution_mode_to_persist_type(execution_mode m) {
   }
 }
 
-inline std::string to_string(persist_type pt) {
-  switch(pt) {
+inline std::string to_string(persist_type pt)
+{
+  switch (pt) {
   case persist_type::model:
     return "model";
   case persist_type::metrics:
@@ -80,78 +82,100 @@ inline std::string to_string(persist_type pt) {
   case persist_type::inference_context:
     return "inference";
   default:
-      LBANN_ERROR("Invalid persist type specified");
+    LBANN_ERROR("Invalid persist type specified");
   }
 }
 
 /** Archive for checkpoint and restart */
 template <class Archive>
-void persist::serialize(Archive & ar) {
+void persist::serialize(Archive& ar)
+{
   ar(CEREAL_NVP(ckpt_type));
 }
 
 template <typename C>
-void write_cereal_archive(C& obj, const std::string& filename) {
+void write_cereal_archive(C& obj, const std::string& filename)
+{
   std::ofstream os(filename);
-  if(!os.is_open()) {
+  if (!os.is_open()) {
     throw NonexistentArchiveFile(filename);
   }
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
   cereal::XMLOutputArchive archive(os);
-#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+#else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
   cereal::BinaryOutputArchive archive(os);
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   archive(obj);
 }
 
 template <typename C>
-void write_cereal_archive(C& obj, persist& p, const std::string& filename) {
+void write_cereal_archive(C& obj, persist& p, const std::string& filename)
+{
   write_cereal_archive<C>(obj, p.get_checkpoint_dir() + "/" + filename);
 }
 
 template <typename C>
-void write_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
+void write_cereal_archive(C& obj,
+                          persist& p,
+                          persist_type pt,
+                          const std::string& suffix)
+{
   write_cereal_archive<C>(obj, p.get_filename(pt) + suffix);
 }
 
 template <typename C>
-void write_cereal_archive(C& obj, persist& p, execution_mode mode, const std::string& suffix) {
+void write_cereal_archive(C& obj,
+                          persist& p,
+                          execution_mode mode,
+                          const std::string& suffix)
+{
   const persist_type pt = execution_mode_to_persist_type(mode);
   write_cereal_archive<C>(obj, p, pt, suffix);
 }
 
 template <typename C>
-void read_cereal_archive(C& obj, const std::string& filename) {
+void read_cereal_archive(C& obj, const std::string& filename)
+{
   std::ifstream is(filename);
-  if(!is.is_open()) {
+  if (!is.is_open()) {
     throw NonexistentArchiveFile(filename);
   }
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
   cereal::XMLInputArchive archive(is);
-#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+#else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
   cereal::BinaryInputArchive archive(is);
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   archive(obj);
 }
 
 template <typename C>
-void read_cereal_archive(C& obj, persist& p, const std::string& filename) {
+void read_cereal_archive(C& obj, persist& p, const std::string& filename)
+{
   read_cereal_archive(obj, p.get_checkpoint_dir() + "/" + filename);
 }
 
 template <typename C>
-void read_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
+void read_cereal_archive(C& obj,
+                         persist& p,
+                         persist_type pt,
+                         const std::string& suffix)
+{
   read_cereal_archive(obj, p.get_filename(pt) + suffix);
 }
 
 template <typename C>
-void read_cereal_archive(C& obj, persist& p, execution_mode mode, const std::string& suffix) {
+void read_cereal_archive(C& obj,
+                         persist& p,
+                         execution_mode mode,
+                         const std::string& suffix)
+{
   const persist_type pt = execution_mode_to_persist_type(mode);
   read_cereal_archive<C>(obj, p, pt, suffix);
 }
 
 template <typename C>
-std::string create_cereal_archive_binary_string(C& obj) {
+std::string create_cereal_archive_binary_string(C& obj)
+{
   std::ostringstream ss;
   {
     cereal::BinaryOutputArchive archive(ss);
@@ -161,7 +185,8 @@ std::string create_cereal_archive_binary_string(C& obj) {
 }
 
 template <typename C>
-void unpack_cereal_archive_binary_string(C& obj, const std::string& buf) {
+void unpack_cereal_archive_binary_string(C& obj, const std::string& buf)
+{
   std::istringstream ss(buf);
   {
     cereal::BinaryInputArchive archive(ss);
@@ -172,15 +197,17 @@ void unpack_cereal_archive_binary_string(C& obj, const std::string& buf) {
 template <typename C>
 void load_from_shared_cereal_archive(C& obj,
                                      lbann_comm& comm,
-                                     const std::string& filename) {
+                                     const std::string& filename)
+{
   std::string buf;
   if (comm.am_trainer_master()) {
     read_cereal_archive<C>(obj, filename);
     buf = create_cereal_archive_binary_string<C>(obj);
-  }else {
+  }
+  else {
     // If you are not the trainer master, still check to see if the file exists
     std::ifstream is(filename);
-    if(!is.is_open()) {
+    if (!is.is_open()) {
       throw NonexistentArchiveFile(filename);
     }
   }
@@ -195,23 +222,31 @@ void load_from_shared_cereal_archive(C& obj,
 }
 
 template <typename C>
-void load_from_shared_cereal_archive(C& obj, persist& p,
+void load_from_shared_cereal_archive(C& obj,
+                                     persist& p,
                                      lbann_comm& comm,
-                                     const std::string& filename) {
+                                     const std::string& filename)
+{
   load_from_shared_cereal_archive(obj, comm, p.get_checkpoint_dir() + filename);
 }
 
 template <typename C>
-void load_from_shared_cereal_archive(C& obj, persist& p, persist_type pt,
+void load_from_shared_cereal_archive(C& obj,
+                                     persist& p,
+                                     persist_type pt,
                                      lbann_comm& comm,
-                                     const std::string& suffix) {
+                                     const std::string& suffix)
+{
   load_from_shared_cereal_archive(obj, comm, p.get_filename(pt) + suffix);
 }
 
 template <typename C>
-void load_from_shared_cereal_archive(C& obj, persist& p, execution_mode mode,
+void load_from_shared_cereal_archive(C& obj,
+                                     persist& p,
+                                     execution_mode mode,
                                      lbann_comm& comm,
-                                     const std::string& suffix) {
+                                     const std::string& suffix)
+{
   const persist_type pt = execution_mode_to_persist_type(mode);
   load_from_shared_cereal_archive<C>(obj, p, pt, comm, suffix);
 }

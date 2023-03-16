@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,24 +29,27 @@
 
 namespace lbann {
 
-class dataset {
- public:
-  dataset() : m_num_samples_processed(0), m_total_samples(0) {};
+class dataset
+{
+public:
+  dataset() : m_num_samples_processed(0), m_total_samples(0){};
   // The associated model/IO layer using this dataset is responsible for copying
   // the data reader.
   dataset(const dataset& other) = default;
   dataset& operator=(const dataset& other) = default;
-  template <class Archive> void serialize( Archive & ar );
+  template <class Archive>
+  void serialize(Archive& ar);
 
   long get_num_samples_processed() const { return m_num_samples_processed; }
   long& num_samples_processed() { return m_num_samples_processed; }
   long get_total_samples() const { return m_total_samples; }
   long& total_samples() { return m_total_samples; }
- protected:
+
+protected:
   long m_num_samples_processed;
   long m_total_samples;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_DATASET_HPP_INCLUDED
+#endif // LBANN_DATASET_HPP_INCLUDED

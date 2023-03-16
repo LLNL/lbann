@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,20 +32,22 @@ namespace lbann {
 namespace {
 
 template <typename TensorDataType>
-__global__ void adam_noncontiguous_kernel(size_t height,
-                                          size_t width,
-                                          TensorDataType correction,
-                                          TensorDataType eps,
-                                          TensorDataType beta1,
-                                          TensorDataType beta2,
-                                          TensorDataType * __restrict__ values,
-                                          size_t values_ldim,
-                                          const TensorDataType * __restrict__ gradient,
-                                          size_t gradient_ldim,
-                                          TensorDataType * __restrict__ moment1,
-                                          size_t moment1_ldim,
-                                          TensorDataType * __restrict__ moment2,
-                                          size_t moment2_ldim) {
+__global__ void
+adam_noncontiguous_kernel(size_t height,
+                          size_t width,
+                          TensorDataType correction,
+                          TensorDataType eps,
+                          TensorDataType beta1,
+                          TensorDataType beta2,
+                          TensorDataType* __restrict__ values,
+                          size_t values_ldim,
+                          const TensorDataType* __restrict__ gradient,
+                          size_t gradient_ldim,
+                          TensorDataType* __restrict__ moment1,
+                          size_t moment1_ldim,
+                          TensorDataType* __restrict__ moment2,
+                          size_t moment2_ldim)
+{
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if (gid < height * width) {
     const auto& row = gid % height;
@@ -64,15 +66,17 @@ __global__ void adam_noncontiguous_kernel(size_t height,
 }
 
 template <typename TensorDataType>
-__global__ void adam_contiguous_kernel(size_t size,
-                                       TensorDataType correction,
-                                       TensorDataType eps,
-                                       TensorDataType beta1,
-                                       TensorDataType beta2,
-                                       TensorDataType * __restrict__ values,
-                                       const TensorDataType * __restrict__ gradient,
-                                       TensorDataType * __restrict__ moment1,
-                                       TensorDataType * __restrict__ moment2) {
+__global__ void
+adam_contiguous_kernel(size_t size,
+                       TensorDataType correction,
+                       TensorDataType eps,
+                       TensorDataType beta1,
+                       TensorDataType beta2,
+                       TensorDataType* __restrict__ values,
+                       const TensorDataType* __restrict__ gradient,
+                       TensorDataType* __restrict__ moment1,
+                       TensorDataType* __restrict__ moment2)
+{
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if (gid < size) {
     const auto& g = gradient[gid] + eps;
@@ -93,53 +97,75 @@ __global__ void adam_contiguous_kernel(size_t size,
 template <typename TensorDataType>
 void adam<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
                                             const AbsDistMatrixType& gradient,
-                                            const TensorDataType& correction) {
+                                            const TensorDataType& correction)
+{
   // Get matrix dimensions
   const size_t local_height = values.LocalHeight();
   const size_t local_width = values.LocalWidth();
   const size_t local_size = local_height * local_width;
-  if (local_size <= 0) { return; }
+  if (local_size <= 0) {
+    return;
+  }
 
   // Launch GPU kernel
   constexpr size_t block_size = 256;
   const size_t grid_size = (local_size + block_size - 1) / block_size;
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(values),
-                                     gpu::get_sync_info(gradient));
-  if (values.Contiguous() && gradient.Contiguous()
-      && m_moment1->Contiguous() && m_moment2->Contiguous()) {
-    hydrogen::gpu::LaunchKernel(
-      adam_contiguous_kernel<TensorDataType>,
-      grid_size, block_size, 0, multisync,
-      local_size, correction, m_eps, m_beta1, m_beta2,
-      values.Buffer(), gradient.LockedBuffer(),
-      m_moment1->Buffer(), m_moment2->Buffer());
-  } else {
-    hydrogen::gpu::LaunchKernel(
-      adam_noncontiguous_kernel<TensorDataType>,
-      grid_size, block_size, 0, multisync,
-      local_height, local_width, correction, m_eps, m_beta1, m_beta2,
-      values.Buffer(), values.LDim(),
-      gradient.LockedBuffer(), gradient.LDim(),
-      m_moment1->Buffer(), m_moment1->LDim(),
-      m_moment2->Buffer(), m_moment2->LDim());
+  auto multisync =
+    El::MakeMultiSync(gpu::get_sync_info(values), gpu::get_sync_info(gradient));
+  if (values.Contiguous() && gradient.Contiguous() && m_moment1->Contiguous() &&
+      m_moment2->Contiguous()) {
+    hydrogen::gpu::LaunchKernel(adam_contiguous_kernel<TensorDataType>,
+                                grid_size,
+                                block_size,
+                                0,
+                                multisync,
+                                local_size,
+                                correction,
+                                m_eps,
+                                m_beta1,
+                                m_beta2,
+                                values.Buffer(),
+                                gradient.LockedBuffer(),
+                                m_moment1->Buffer(),
+                                m_moment2->Buffer());
   }
-
+  else {
+    hydrogen::gpu::LaunchKernel(adam_noncontiguous_kernel<TensorDataType>,
+                                grid_size,
+                                block_size,
+                                0,
+                                multisync,
+                                local_height,
+                                local_width,
+                                correction,
+                                m_eps,
+                                m_beta1,
+                                m_beta2,
+                                values.Buffer(),
+                                values.LDim(),
+                                gradient.LockedBuffer(),
+                                gradient.LDim(),
+                                m_moment1->Buffer(),
+                                m_moment1->LDim(),
+                                m_moment2->Buffer(),
+                                m_moment2->LDim());
+  }
 }
 
 #ifdef LBANN_HAS_HALF
 template <>
 void adam<cpu_fp16>::step_compute_gpu(AbsDistMatrixType&,
                                       const AbsDistMatrixType&,
-                                      const cpu_fp16&) {
+                                      const cpu_fp16&)
+{
   LBANN_ERROR("Can't call this function with cpu_fp16!");
 }
 #endif // LBANN_HAS_HALF
 
-
-#define PROTO(T)                                \
-  template void adam<T>::step_compute_gpu(      \
-    El::AbstractDistMatrix<T>&,                 \
-    const El::AbstractDistMatrix<T>&, const T&)
+#define PROTO(T)                                                               \
+  template void adam<T>::step_compute_gpu(El::AbstractDistMatrix<T>&,          \
+                                          const El::AbstractDistMatrix<T>&,    \
+                                          const T&)
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"

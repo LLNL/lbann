@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,189 +28,185 @@
 
 #include "El.hpp"
 
-#include <lbann_config.hpp>
 #include "lbann/Elemental_extensions.hpp"
+#include <lbann_config.hpp>
 
 namespace El {
 
-template<typename F>
-void ColumnSum( const Matrix<F>& X, Matrix<F>& sums ) {
-//    DEBUG_ONLY(CSE cse("ColumnSum"))
+template <typename F>
+void ColumnSum(const Matrix<F>& X, Matrix<F>& sums)
+{
+  //    DEBUG_ONLY(CSE cse("ColumnSum"))
 
-    // Input matrix parameters
-    const Int m = X.Height();
-    const Int n = X.Width();
-    const F *XBuf = X.LockedBuffer();
-    const Int XLDim = X.LDim();
+  // Input matrix parameters
+  const Int m = X.Height();
+  const Int n = X.Width();
+  const F* XBuf = X.LockedBuffer();
+  const Int XLDim = X.LDim();
 
-    // Initialize output
-    Zeros( sums, 1, n );
-    F *sumsBuf = sums.Buffer();
-    const Int sumsLDim = sums.LDim();
+  // Initialize output
+  Zeros(sums, 1, n);
+  F* sumsBuf = sums.Buffer();
+  const Int sumsLDim = sums.LDim();
 
-    // Compute sum over each column
-    EL_PARALLEL_FOR
-    for( Int j=0; j<n; ++j )
-    {
-        for( Int i=0; i<m; ++i )
-        {
-            sumsBuf[j*sumsLDim] += XBuf[i+j*XLDim];
-        }
+  // Compute sum over each column
+  EL_PARALLEL_FOR
+  for (Int j = 0; j < n; ++j) {
+    for (Int i = 0; i < m; ++i) {
+      sumsBuf[j * sumsLDim] += XBuf[i + j * XLDim];
     }
-
-}
-
-template<typename F>
-void ColumnSum( const AbstractMatrix<F>& X, AbstractMatrix<F>& sums ) {
-    if (X.GetDevice() != sums.GetDevice())
-        LogicError("ColumnSum requires matching device types.");
-
-    if ((X.GetDevice() == Device::CPU)) {
-      ColumnSum(static_cast<const Matrix<F,Device::CPU>&>(X),
-                static_cast<Matrix<F,Device::CPU>&>(sums));
-#ifdef LBANN_HAS_GPU
-    }else if ((X.GetDevice() == Device::GPU)) {
-      LogicError("ColumnSum: Unsupported device type.");
-      // ColumnSum(static_cast<const Matrix<F,Device::GPU>&>(X),
-      //           static_cast<Matrix<F,Device::GPU>&>(sums));
-#endif // LBANN_HAS_GPU
-    }else {
-      LogicError("ColumnSum: Unsupported device type.");
-    }
-}
-
-template<typename F>
-void ColumnSum
-( const AbstractDistMatrix<F>& A, AbstractDistMatrix<F>& sums ) {
-//    DEBUG_ONLY(CSE cse("ColumnSum"))
-
-    // Check that distributed matrix formats are valid
-    if( A.DistData().rowDist != sums.DistData().rowDist
-        || sums.DistData().colDist != STAR
-        || A.DistData().blockHeight != sums.DistData().blockHeight
-        || A.DistData().blockWidth != sums.DistData().blockWidth)
-    {
-        LogicError("Matrices do not have compatible data distributions");
-    }
-
-    // Compute column-wise sums
-    sums.AlignWith( A );
-    sums.Resize( 1, A.Width() );
-    ColumnSum( A.LockedMatrix(), sums.Matrix() );
-    AllReduce( sums.Matrix(), sums.RedundantComm(), mpi::SUM );
-
-}
-
-template<typename F>
-void RowSum(const Matrix<F>& X, Matrix<F>& sums) {
-
-    // Input matrix parameters
-    const Int m = X.Height();
-    const Int n = X.Width();
-    const F *XBuf = X.LockedBuffer();
-    const Int XLDim = X.LDim();
-
-    // Initialize output
-    Zeros( sums, m, 1 );
-    F *sumsBuf = sums.Buffer();
-
-    // Iterate through row blocks
-    const Int bsize = Max( 64 / sizeof(F), 1 );
-    EL_PARALLEL_FOR
-    for( Int i=0; i<m; i+=bsize )
-    {
-        const Int mb = Min( bsize, m - i );
-        for( Int j=0; j<n; ++j )
-        {
-            for( Int ib=0; ib<mb; ++ib )
-            {
-                sumsBuf[i+ib] += XBuf[(i+ib)+j*XLDim];
-            }
-        }
-    }
-
-}
-
-template<typename F>
-void RowSum(const AbstractMatrix<F>& X, AbstractMatrix<F>& sums) {
-    if (X.GetDevice() != sums.GetDevice())
-        LogicError("RowSum requires matching device types.");
-
-    if ((X.GetDevice() == Device::CPU)) {
-      RowSum(static_cast<const Matrix<F,Device::CPU>&>(X),
-             static_cast<Matrix<F,Device::CPU>&>(sums));
-#ifdef LBANN_HAS_GPU
-    }else if ((X.GetDevice() == Device::GPU)) {
-      LogicError("RowSum: Unsupported device type.");
-      // RowSum(static_cast<const Matrix<F,Device::GPU>&>(X),
-      //        static_cast<Matrix<F,Device::GPU>&>(sums));
-#endif // LBANN_HAS_GPU
-    }else {
-      LogicError("RowSum: Unsupported device type.");
-    }
+  }
 }
 
 template <typename F>
-void RowSum(const AbstractDistMatrix<F>& A, AbstractDistMatrix<F>& sums) {
+void ColumnSum(const AbstractMatrix<F>& X, AbstractMatrix<F>& sums)
+{
+  if (X.GetDevice() != sums.GetDevice())
+    LogicError("ColumnSum requires matching device types.");
+
+  if ((X.GetDevice() == Device::CPU)) {
+    ColumnSum(static_cast<const Matrix<F, Device::CPU>&>(X),
+              static_cast<Matrix<F, Device::CPU>&>(sums));
+#ifdef LBANN_HAS_GPU
+  }
+  else if ((X.GetDevice() == Device::GPU)) {
+    LogicError("ColumnSum: Unsupported device type.");
+    // ColumnSum(static_cast<const Matrix<F,Device::GPU>&>(X),
+    //           static_cast<Matrix<F,Device::GPU>&>(sums));
+#endif // LBANN_HAS_GPU
+  }
+  else {
+    LogicError("ColumnSum: Unsupported device type.");
+  }
+}
+
+template <typename F>
+void ColumnSum(const AbstractDistMatrix<F>& A, AbstractDistMatrix<F>& sums)
+{
+  //    DEBUG_ONLY(CSE cse("ColumnSum"))
 
   // Check that distributed matrix formats are valid
-  if( A.DistData().colDist != sums.DistData().colDist
-      || sums.DistData().rowDist != STAR
-      || A.DistData().blockHeight != sums.DistData().blockHeight
-      || A.DistData().blockWidth != sums.DistData().blockWidth)
-  {
-      LogicError("Matrices do not have compatible data distributions");
+  if (A.DistData().rowDist != sums.DistData().rowDist ||
+      sums.DistData().colDist != STAR ||
+      A.DistData().blockHeight != sums.DistData().blockHeight ||
+      A.DistData().blockWidth != sums.DistData().blockWidth) {
+    LogicError("Matrices do not have compatible data distributions");
+  }
+
+  // Compute column-wise sums
+  sums.AlignWith(A);
+  sums.Resize(1, A.Width());
+  ColumnSum(A.LockedMatrix(), sums.Matrix());
+  AllReduce(sums.Matrix(), sums.RedundantComm(), mpi::SUM);
+}
+
+template <typename F>
+void RowSum(const Matrix<F>& X, Matrix<F>& sums)
+{
+
+  // Input matrix parameters
+  const Int m = X.Height();
+  const Int n = X.Width();
+  const F* XBuf = X.LockedBuffer();
+  const Int XLDim = X.LDim();
+
+  // Initialize output
+  Zeros(sums, m, 1);
+  F* sumsBuf = sums.Buffer();
+
+  // Iterate through row blocks
+  const Int bsize = Max(64 / sizeof(F), 1);
+  EL_PARALLEL_FOR
+  for (Int i = 0; i < m; i += bsize) {
+    const Int mb = Min(bsize, m - i);
+    for (Int j = 0; j < n; ++j) {
+      for (Int ib = 0; ib < mb; ++ib) {
+        sumsBuf[i + ib] += XBuf[(i + ib) + j * XLDim];
+      }
+    }
+  }
+}
+
+template <typename F>
+void RowSum(const AbstractMatrix<F>& X, AbstractMatrix<F>& sums)
+{
+  if (X.GetDevice() != sums.GetDevice())
+    LogicError("RowSum requires matching device types.");
+
+  if ((X.GetDevice() == Device::CPU)) {
+    RowSum(static_cast<const Matrix<F, Device::CPU>&>(X),
+           static_cast<Matrix<F, Device::CPU>&>(sums));
+#ifdef LBANN_HAS_GPU
+  }
+  else if ((X.GetDevice() == Device::GPU)) {
+    LogicError("RowSum: Unsupported device type.");
+    // RowSum(static_cast<const Matrix<F,Device::GPU>&>(X),
+    //        static_cast<Matrix<F,Device::GPU>&>(sums));
+#endif // LBANN_HAS_GPU
+  }
+  else {
+    LogicError("RowSum: Unsupported device type.");
+  }
+}
+
+template <typename F>
+void RowSum(const AbstractDistMatrix<F>& A, AbstractDistMatrix<F>& sums)
+{
+
+  // Check that distributed matrix formats are valid
+  if (A.DistData().colDist != sums.DistData().colDist ||
+      sums.DistData().rowDist != STAR ||
+      A.DistData().blockHeight != sums.DistData().blockHeight ||
+      A.DistData().blockWidth != sums.DistData().blockWidth) {
+    LogicError("Matrices do not have compatible data distributions");
   }
 
   // Compute row-wise sums
-  sums.AlignWith( A );
-  sums.Resize( A.Height(), 1 );
-  RowSum( A.LockedMatrix(), sums.Matrix() );
-  AllReduce( sums.Matrix(), sums.RedundantComm(), mpi::SUM );
-
+  sums.AlignWith(A);
+  sums.Resize(A.Height(), 1);
+  RowSum(A.LockedMatrix(), sums.Matrix());
+  AllReduce(sums.Matrix(), sums.RedundantComm(), mpi::SUM);
 }
 
-template<typename F>
-void ColumnSummaryStats( const Matrix<F>& X, F& sum, F& min, F& max, F& mean) {
-//    DEBUG_ONLY(CSE cse("ColumnSum"))
+template <typename F>
+void ColumnSummaryStats(const Matrix<F>& X, F& sum, F& min, F& max, F& mean)
+{
+  //    DEBUG_ONLY(CSE cse("ColumnSum"))
 
-    // Input matrix parameters
-    const Int m = X.Height();
-    const Int n = X.Width();
-    const F *XBuf = X.LockedBuffer();
-    const Int XLDim = X.LDim();
+  // Input matrix parameters
+  const Int m = X.Height();
+  const Int n = X.Width();
+  const F* XBuf = X.LockedBuffer();
+  const Int XLDim = X.LDim();
 
-    //    if (X.Width() != 1) {
-    // Initialize output
-    // Zeros( sums, 1, n );
-    // F *sumsBuf = sums.Buffer();
-    // const Int sumsLDim = sums.LDim();
+  //    if (X.Width() != 1) {
+  // Initialize output
+  // Zeros( sums, 1, n );
+  // F *sumsBuf = sums.Buffer();
+  // const Int sumsLDim = sums.LDim();
 
-    sum = 0.;
-    min = std::numeric_limits<F>::max();
-    max = std::numeric_limits<F>::min();
-    mean = 0.;
+  sum = 0.;
+  min = std::numeric_limits<F>::max();
+  max = std::numeric_limits<F>::min();
+  mean = 0.;
 
-    F value;
-    // Compute sum over each column
-    EL_PARALLEL_FOR
-    for( Int j=0; j<n; ++j )
-    {
-        for( Int i=0; i<m; ++i )
-        {
-            value = XBuf[i+j*XLDim];
-            sum += value;
-            if( value < min ) {
-              min = value;
-            }
-            if( value > max ) {
-              max = value;
-            }
-        }
+  F value;
+  // Compute sum over each column
+  EL_PARALLEL_FOR
+  for (Int j = 0; j < n; ++j) {
+    for (Int i = 0; i < m; ++i) {
+      value = XBuf[i + j * XLDim];
+      sum += value;
+      if (value < min) {
+        min = value;
+      }
+      if (value > max) {
+        max = value;
+      }
     }
+  }
 
-    mean = sum / El::To<F>(m);
-
+  mean = sum / El::To<F>(m);
 }
 
 LBANN_PROTO_FLOAT

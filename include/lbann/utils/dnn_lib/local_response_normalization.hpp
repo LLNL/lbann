@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,7 +33,9 @@
 #elif defined LBANN_HAS_MIOPEN
 #include "lbann/utils/dnn_lib/miopen/local_response_normalization.hpp"
 #else
-static_assert(false, "This file must be included only if there is support from a valid DNN library.");
+static_assert(false,
+              "This file must be included only if there is support from a "
+              "valid DNN library.");
 #endif // LBANN_HAS_CUDNN
 
 #endif // LBANN_UTILS_DNN_LIB_LRN_HPP

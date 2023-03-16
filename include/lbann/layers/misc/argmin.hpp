@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,14 +37,14 @@ namespace lbann {
  *  minimum value, outputs the index of the first one.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class argmin_layer : public data_type_layer<TensorDataType> {
+class argmin_layer : public data_type_layer<TensorDataType>
+{
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "argmin layer only supports data parallel layout");
-  static_assert(Device == El::Device::CPU,
-                "argmin layer only supports CPU");
-public:
+  static_assert(Device == El::Device::CPU, "argmin layer only supports CPU");
 
-  argmin_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm) { }
+public:
+  argmin_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm) {}
   argmin_layer* copy() const override { return new argmin_layer(*this); }
 
   /** @name Serialization */
@@ -60,24 +60,22 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  argmin_layer()
-    : argmin_layer(nullptr)
-  {}
+  argmin_layer() : argmin_layer(nullptr) {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 
   void fp_compute() override;
 };
 
-
 #ifndef LBANN_ARGMIN_LAYER_INSTANTIATE
-#define PROTO(T) \
-  extern template class argmin_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  extern template class argmin_layer<T,                                        \
+                                     data_layout::DATA_PARALLEL,               \
+                                     El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

@@ -26,44 +26,54 @@
 
 #ifndef LBANN_LAYERS_TRANSFORM_DISTCONV_SCATTER
 #define LBANN_LAYERS_TRANSFORM_DISTCONV_SCATTER
-#include "lbann/utils/distconv.hpp"
 #include "distconv/base.hpp"
 #include "distconv/tensor/tensor.hpp"
 #include "distconv/tensor/tensor_mpi.hpp"
 #include "lbann/layers/transform/distconv/distconv_nvshmem_vector_addressing.hpp"
+#include "lbann/utils/distconv.hpp"
 
 #if defined(LBANN_HAS_NVSHMEM) && defined(LBANN_HAS_DISTCONV)
 
-namespace distconv{
-  template <typename Backend, typename DataType>
-  class Scatter{
-    using LocaleMPI = tensor::LocaleMPI;
-    
-    public:
-      Scatter(Backend &backend):m_backend(backend){
-        m_dist_scatter = util::make_unique<tensor::ScatterNVSHMEM<DataType>>(m_backend.get_stream());
-        m_dist_gather = util::make_unique<tensor::GatherNVSHMEM<DataType>>(m_backend.get_stream());
-      }
+namespace distconv {
+template <typename Backend, typename DataType>
+class Scatter
+{
+  using LocaleMPI = tensor::LocaleMPI;
 
-    template<typename Allocator>
-    int forward(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input,
-                const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices,
-                tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output);
+public:
+  Scatter(Backend& backend) : m_backend(backend)
+  {
+    m_dist_scatter = util::make_unique<tensor::ScatterNVSHMEM<DataType>>(
+      m_backend.get_stream());
+    m_dist_gather = util::make_unique<tensor::GatherNVSHMEM<DataType>>(
+      m_backend.get_stream());
+  }
 
-    template<typename Allocator>
-    int backward(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,       
-                 const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices,           
-                 tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &values_grad,             
-                 tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices_grad);
-    template<typename Allocator>
-    void setup(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input,
-               const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &indices,
-               const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output);
-  protected:
-    Backend &m_backend;
-    std::unique_ptr<tensor::ScatterNVSHMEM<DataType>> m_dist_scatter;  // Forward prop
-    std::unique_ptr<tensor::GatherNVSHMEM<DataType>> m_dist_gather; // Backwad prop
-  };  // class definition Scatter
+  template <typename Allocator>
+  int forward(
+    const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator>& input,
+    const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator>& indices,
+    tensor::Tensor<DataType, tensor::LocaleMPI, Allocator>& output);
+
+  template <typename Allocator>
+  int backward(
+    const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator>& output_grad,
+    const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator>& indices,
+    tensor::Tensor<DataType, tensor::LocaleMPI, Allocator>& values_grad,
+    tensor::Tensor<DataType, tensor::LocaleMPI, Allocator>& indices_grad);
+  template <typename Allocator>
+  void
+  setup(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator>& input,
+        const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator>& indices,
+        const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator>& output);
+
+protected:
+  Backend& m_backend;
+  std::unique_ptr<tensor::ScatterNVSHMEM<DataType>>
+    m_dist_scatter; // Forward prop
+  std::unique_ptr<tensor::GatherNVSHMEM<DataType>>
+    m_dist_gather; // Backwad prop
+};                 // class definition Scatter
 } // namespace distconv
 #endif // defined(LBANN_HAS_NVSHMEM) && defined(LBANN_HAS_DISTCONV)
 #endif // LBANN_LAYERS_TRANSFORM_DISTCONV_SCATTER

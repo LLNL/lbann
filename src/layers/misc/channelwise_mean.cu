@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -43,7 +43,8 @@ __global__ void mean_kernel(El::Int num_channels,
                             const TensorDataType* __restrict__ input,
                             El::Int input_ldim,
                             TensorDataType* __restrict__ output,
-                            El::Int output_ldim) {
+                            El::Int output_ldim)
+{
 
   // Indices
   const El::Int tid = threadIdx.x;
@@ -61,7 +62,7 @@ __global__ void mean_kernel(El::Int num_channels,
       // Sum for each thread
       TensorDataType private_sum = 0;
       for (El::Int i = gidx; i < channel_size; i += nthreadsx) {
-        private_sum += input[i + channel*channel_size + col*input_ldim];
+        private_sum += input[i + channel * channel_size + col * input_ldim];
       }
 
       // Shared memory reduction to get sum for each block
@@ -76,22 +77,22 @@ __global__ void mean_kernel(El::Int num_channels,
       }
       if (tid == 0) {
         gpu_lib::atomic_add(&output[channel + col * output_ldim],
-                         shared_sums[0] / TensorDataType(channel_size));
+                            shared_sums[0] / TensorDataType(channel_size));
       }
-
     }
   }
-
 }
 
 template <typename TensorDataType>
-__global__ void backprop_kernel(El::Int num_channels,
-                                El::Int channel_size,
-                                El::Int width,
-                                const TensorDataType* __restrict__ gradient_wrt_output,
-                                El::Int gradient_wrt_output_ldim,
-                                TensorDataType* __restrict__ gradient_wrt_input,
-                                El::Int gradient_wrt_input_ldim) {
+__global__ void
+backprop_kernel(El::Int num_channels,
+                El::Int channel_size,
+                El::Int width,
+                const TensorDataType* __restrict__ gradient_wrt_output,
+                El::Int gradient_wrt_output_ldim,
+                TensorDataType* __restrict__ gradient_wrt_input,
+                El::Int gradient_wrt_input_ldim)
+{
 
   // Indices
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -104,21 +105,22 @@ __global__ void backprop_kernel(El::Int num_channels,
   // Compute local contribution for each channel
   for (El::Int col = bidz; col < width; col += nblocksz) {
     for (El::Int channel = bidy; channel < num_channels; channel += nblocksy) {
-      const auto& dy = gradient_wrt_output[channel + col * gradient_wrt_output_ldim];
+      const auto& dy =
+        gradient_wrt_output[channel + col * gradient_wrt_output_ldim];
       const auto& dx = dy / TensorDataType(channel_size);
       for (El::Int i = gidx; i < channel_size; i += nthreadsx) {
-        gradient_wrt_input[i + channel*channel_size + col*gradient_wrt_input_ldim] = dx;
+        gradient_wrt_input[i + channel * channel_size +
+                           col * gradient_wrt_input_ldim] = dx;
       }
     }
   }
-
 }
-
 
 } // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void channelwise_mean_layer<TensorDataType, Layout, Device>::fp_compute() {
+void channelwise_mean_layer<TensorDataType, Layout, Device>::fp_compute()
+{
 
   // Local matrices
   const auto& local_input = this->get_local_prev_activations();
@@ -131,7 +133,8 @@ void channelwise_mean_layer<TensorDataType, Layout, Device>::fp_compute() {
   const El::Int num_channels = input_dims[0];
   const El::Int channel_size = std::accumulate(input_dims.begin() + 1,
                                                input_dims.end(),
-                                               1, std::multiplies<int>());
+                                               1,
+                                               std::multiplies<int>());
   const auto& local_width = local_input.Width();
 
   // Compute channel-wise mean
@@ -146,18 +149,24 @@ void channelwise_mean_layer<TensorDataType, Layout, Device>::fp_compute() {
     grid_dims.y = num_channels;
     grid_dims.z = local_width;
     gpu_lib::clip_grid_dims(grid_dims);
-    hydrogen::gpu::LaunchKernel(
-      mean_kernel<block_size, TensorDataType>,
-      grid_dims, block_dims, 0, multisync,
-      num_channels, channel_size, local_width,
-      local_input.LockedBuffer(), local_input.LDim(),
-      local_output.Buffer(), local_output.LDim());
+    hydrogen::gpu::LaunchKernel(mean_kernel<block_size, TensorDataType>,
+                                grid_dims,
+                                block_dims,
+                                0,
+                                multisync,
+                                num_channels,
+                                channel_size,
+                                local_width,
+                                local_input.LockedBuffer(),
+                                local_input.LDim(),
+                                local_output.Buffer(),
+                                local_output.LDim());
   }
-
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void channelwise_mean_layer<TensorDataType, Layout, Device>::bp_compute() {
+void channelwise_mean_layer<TensorDataType, Layout, Device>::bp_compute()
+{
   // Local matrices
   const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
   auto& local_gradient_wrt_input = this->get_local_error_signals();
@@ -169,7 +178,8 @@ void channelwise_mean_layer<TensorDataType, Layout, Device>::bp_compute() {
   const El::Int num_channels = input_dims[0];
   const El::Int channel_size = std::accumulate(input_dims.begin() + 1,
                                                input_dims.end(),
-                                               1, std::multiplies<int>());
+                                               1,
+                                               std::multiplies<int>());
   const auto& local_width = local_gradient_wrt_input.Width();
 
   // Compute gradients
@@ -184,19 +194,25 @@ void channelwise_mean_layer<TensorDataType, Layout, Device>::bp_compute() {
     grid_dims.y = num_channels;
     grid_dims.z = local_width;
     gpu_lib::clip_grid_dims(grid_dims);
-    hydrogen::gpu::LaunchKernel(
-      backprop_kernel<TensorDataType>,
-      grid_dims, block_dims, 0, multisync,
-      num_channels, channel_size, local_width,
-      local_gradient_wrt_output.LockedBuffer(),
-      local_gradient_wrt_output.LDim(),
-      local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim());
+    hydrogen::gpu::LaunchKernel(backprop_kernel<TensorDataType>,
+                                grid_dims,
+                                block_dims,
+                                0,
+                                multisync,
+                                num_channels,
+                                channel_size,
+                                local_width,
+                                local_gradient_wrt_output.LockedBuffer(),
+                                local_gradient_wrt_output.LDim(),
+                                local_gradient_wrt_input.Buffer(),
+                                local_gradient_wrt_input.LDim());
   }
-
 }
 
-#define PROTO(T)                     \
-  template class channelwise_mean_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>
+#define PROTO(T)                                                               \
+  template class channelwise_mean_layer<T,                                     \
+                                        data_layout::DATA_PARALLEL,            \
+                                        El::Device::GPU>
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"

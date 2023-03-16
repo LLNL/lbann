@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -36,12 +36,14 @@
 namespace lbann {
 namespace transform {
 
-void center_crop::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+void center_crop::apply(utils::type_erased_matrix& data,
+                        std::vector<size_t>& dims)
+{
   cv::Mat src = utils::get_opencv_mat(data, dims);
   if (dims[1] <= m_h || dims[2] <= m_w) {
     std::stringstream ss;
-    ss << "Center crop to " << m_h << "x" << m_w
-       << " applied to input " << dims[1] << "x" << dims[2];
+    ss << "Center crop to " << m_h << "x" << m_w << " applied to input "
+       << dims[1] << "x" << dims[2];
     LBANN_ERROR(ss.str());
   }
   std::vector<size_t> new_dims = {dims[0], m_h, m_w};
@@ -67,10 +69,12 @@ void center_crop::apply(utils::type_erased_matrix& data, std::vector<size_t>& di
 }
 
 std::unique_ptr<transform>
-build_center_crop_transform_from_pbuf(google::protobuf::Message const& msg) {
-  auto const& params = dynamic_cast<lbann_data::Transform::CenterCrop const&>(msg);
+build_center_crop_transform_from_pbuf(google::protobuf::Message const& msg)
+{
+  auto const& params =
+    dynamic_cast<lbann_data::Transform::CenterCrop const&>(msg);
   return std::make_unique<center_crop>(params.height(), params.width());
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

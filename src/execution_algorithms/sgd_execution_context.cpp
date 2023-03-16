@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -34,12 +34,14 @@
 namespace lbann {
 
 SGDExecutionContext::SGDExecutionContext(execution_mode mode,
-                                             size_t mini_batch_size)
+                                         size_t mini_batch_size)
   : m_current_mini_batch_size(mini_batch_size),
-    m_effective_mini_batch_size(mini_batch_size), m_execution_mode(mode)
+    m_effective_mini_batch_size(mini_batch_size),
+    m_execution_mode(mode)
 {}
 
-template <class Archive> void SGDExecutionContext::serialize(Archive& ar)
+template <class Archive>
+void SGDExecutionContext::serialize(Archive& ar)
 {
   ar(cereal::base_class<ExecutionContext>(this),
      CEREAL_NVP(m_epoch),
@@ -56,12 +58,12 @@ void SGDExecutionContext::save_to_checkpoint_shared(persist& p)
 {
   if (get_trainer().get_comm()->am_trainer_master()) {
     write_cereal_archive<SGDExecutionContext>(*this,
-                                                p,
-                                                get_execution_mode(),
+                                              p,
+                                              get_execution_mode(),
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
-                                                "_ctx.xml"
+                                              "_ctx.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                                "_ctx.bin"
+                                              "_ctx.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
     );
   }
@@ -87,12 +89,12 @@ void SGDExecutionContext::load_from_checkpoint_shared(persist& p)
 void SGDExecutionContext::save_to_checkpoint_distributed(persist& p)
 {
   write_cereal_archive<SGDExecutionContext>(*this,
-                                              p,
-                                              get_execution_mode(),
+                                            p,
+                                            get_execution_mode(),
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
-                                              "_ctx.xml"
+                                            "_ctx.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                              "_ctx.bin"
+                                            "_ctx.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   );
   return;
@@ -101,12 +103,12 @@ void SGDExecutionContext::save_to_checkpoint_distributed(persist& p)
 void SGDExecutionContext::load_from_checkpoint_distributed(persist& p)
 {
   read_cereal_archive<SGDExecutionContext>(*this,
-                                             p,
-                                             get_execution_mode(),
+                                           p,
+                                           get_execution_mode(),
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
-                                             "_ctx.xml"
+                                           "_ctx.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                             "_ctx.bin"
+                                           "_ctx.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   );
   return;

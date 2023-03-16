@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,9 +24,9 @@
 // permissions and limitations under the license.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/callbacks/confusion_matrix.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
-#include "lbann/callbacks/confusion_matrix.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 
@@ -51,7 +51,8 @@ confusion_matrix::confusion_matrix(std::string&& prediction_layer,
   : callback_base(1),
     m_prediction_layer(std::move(prediction_layer)),
     m_label_layer(std::move(label_layer)),
-    m_prefix(std::move(prefix)) {}
+    m_prefix(std::move(prefix))
+{}
 
 confusion_matrix::confusion_matrix(std::string const& prediction_layer,
                                    std::string const& label_layer,
@@ -59,7 +60,8 @@ confusion_matrix::confusion_matrix(std::string const& prediction_layer,
   : callback_base(1),
     m_prediction_layer(prediction_layer),
     m_label_layer(label_layer),
-    m_prefix(prefix) {}
+    m_prefix(prefix)
+{}
 
 confusion_matrix::confusion_matrix(const confusion_matrix& other)
   : callback_base(other),
@@ -67,16 +69,20 @@ confusion_matrix::confusion_matrix(const confusion_matrix& other)
     m_label_layer(other.m_label_layer),
     m_prefix(other.m_prefix),
     m_counts(other.m_counts),
-    m_predictions_v(other.m_predictions_v ? other.m_predictions_v->Copy() : nullptr),
-    m_labels_v(other.m_labels_v ? other.m_labels_v->Copy() : nullptr) {}
+    m_predictions_v(other.m_predictions_v ? other.m_predictions_v->Copy()
+                                          : nullptr),
+    m_labels_v(other.m_labels_v ? other.m_labels_v->Copy() : nullptr)
+{}
 
-confusion_matrix& confusion_matrix::operator=(const confusion_matrix& other) {
+confusion_matrix& confusion_matrix::operator=(const confusion_matrix& other)
+{
   callback_base::operator=(other);
   m_prediction_layer = other.m_prediction_layer;
   m_label_layer = other.m_label_layer;
   m_prefix = other.m_prefix;
   m_counts = other.m_counts;
-  m_predictions_v.reset(other.m_predictions_v ? other.m_predictions_v->Copy() : nullptr);
+  m_predictions_v.reset(other.m_predictions_v ? other.m_predictions_v->Copy()
+                                              : nullptr);
   m_labels_v.reset(other.m_labels_v ? other.m_labels_v->Copy() : nullptr);
   return *this;
 }
@@ -85,7 +91,8 @@ confusion_matrix& confusion_matrix::operator=(const confusion_matrix& other) {
 // Setup
 // ---------------------------------------------------------
 
-void confusion_matrix::setup(model* m) {
+void confusion_matrix::setup(model* m)
+{
   callback_base::setup(m);
 
   // Initialize matrix views/copies
@@ -98,14 +105,23 @@ void confusion_matrix::setup(model* m) {
 
   // Check output dimensions of prediction and label layers
   if (predictions.Height() != labels.Height()) {
-    LBANN_ERROR("callback \"", name(), "\" "
+    LBANN_ERROR("callback \"",
+                name(),
+                "\" "
                 "has prediction and label layers with different dimensions "
-                "(prediction layer \"", m_prediction_layer, "\" "
-                "outputs ", predictions.Height(), " entries, "
-                "label layer \"", m_label_layer, "\" "
-                "outputs ", labels.Height(), " entries)");
+                "(prediction layer \"",
+                m_prediction_layer,
+                "\" "
+                "outputs ",
+                predictions.Height(),
+                " entries, "
+                "label layer \"",
+                m_label_layer,
+                "\" "
+                "outputs ",
+                labels.Height(),
+                " entries)");
   }
-
 }
 
 // ---------------------------------------------------------
@@ -113,41 +129,52 @@ void confusion_matrix::setup(model* m) {
 // ---------------------------------------------------------
 
 auto confusion_matrix::get_predictions(const model& m) const
-  -> const AbsDistMatType& {
+  -> const AbsDistMatType&
+{
   for (const auto* l : m.get_layers()) {
     if (l->get_name() == m_prediction_layer) {
       auto const& dtl = dynamic_cast<data_type_layer<DataType> const&>(*l);
       return dtl.get_activations();
     }
   }
-  LBANN_ERROR("callback \"", name(), "\" could not find "
-              "prediction layer \"", m_prediction_layer, "\"");
+  LBANN_ERROR("callback \"",
+              name(),
+              "\" could not find "
+              "prediction layer \"",
+              m_prediction_layer,
+              "\"");
 }
 
-auto confusion_matrix::get_labels(const model& m) const
-  -> const AbsDistMatType& {
+auto confusion_matrix::get_labels(const model& m) const -> const AbsDistMatType&
+{
   for (const auto* l : m.get_layers()) {
     if (l->get_name() == m_label_layer) {
       auto const& dtl = dynamic_cast<data_type_layer<DataType> const&>(*l);
       return dtl.get_activations();
     }
   }
-  LBANN_ERROR("callback \"", name(), "\" could not find "
-              "label layer \"", m_prediction_layer, "\"");
+  LBANN_ERROR("callback \"",
+              name(),
+              "\" could not find "
+              "label layer \"",
+              m_prediction_layer,
+              "\"");
 }
 
 // ---------------------------------------------------------
 // Count management functions
 // ---------------------------------------------------------
 
-void confusion_matrix::reset_counts(const model& m) {
+void confusion_matrix::reset_counts(const model& m)
+{
   const auto& c = m.get_execution_context();
   auto& counts = m_counts[c.get_execution_mode()];
   const auto& num_classes = get_predictions(m).Height();
   counts.assign(num_classes * num_classes, 0);
 }
 
-void confusion_matrix::update_counts(const model& m) {
+void confusion_matrix::update_counts(const model& m)
+{
   constexpr DataType zero = 0;
 
   // Get predictions
@@ -157,7 +184,8 @@ void confusion_matrix::update_counts(const model& m) {
   m_predictions_v->AlignWith(predictions);
   if (m_predictions_v->DistData() == predictions.DistData()) {
     El::LockedView(*m_predictions_v, predictions);
-  } else {
+  }
+  else {
     El::Copy(predictions, *m_predictions_v);
   }
   const auto& local_predictions = m_predictions_v->LockedMatrix();
@@ -168,7 +196,8 @@ void confusion_matrix::update_counts(const model& m) {
   m_labels_v->AlignWith(predictions);
   if (m_labels_v->DistData() == labels.DistData()) {
     El::LockedView(*m_labels_v, labels);
-  } else {
+  }
+  else {
     El::Copy(labels, *m_labels_v);
   }
   const auto& local_labels = m_labels_v->LockedMatrix();
@@ -193,11 +222,12 @@ void confusion_matrix::update_counts(const model& m) {
       counts[label_index + prediction_index * num_classes]++;
     }
   }
-
 }
 
-void confusion_matrix::save_confusion_matrix(const model& m) {
-  const auto& c = static_cast<const SGDExecutionContext&>(m.get_execution_context());
+void confusion_matrix::save_confusion_matrix(const model& m)
+{
+  const auto& c =
+    static_cast<const SGDExecutionContext&>(m.get_execution_context());
 
   // Get counts
   const auto& mode = c.get_execution_mode();
@@ -209,10 +239,12 @@ void confusion_matrix::save_confusion_matrix(const model& m) {
   auto&& comm = *m.get_comm();
   if (comm.am_trainer_master()) {
     comm.trainer_reduce(static_cast<El::Int*>(MPI_IN_PLACE),
-                      counts.size(),
-                      counts.data());
-  } else {
-    comm.trainer_reduce(counts.data(), counts.size(),
+                        counts.size(),
+                        counts.data());
+  }
+  else {
+    comm.trainer_reduce(counts.data(),
+                        counts.size(),
                         comm.get_trainer_master(),
                         El::mpi::SUM);
     counts.assign(counts.size(), 0);
@@ -236,7 +268,8 @@ void confusion_matrix::save_confusion_matrix(const model& m) {
     case execution_mode::testing:
       mode_string = "test";
       break;
-    default: return; // Exit immediately if execution mode is unknown
+    default:
+      return; // Exit immediately if execution mode is unknown
     }
 
     // Write to file
@@ -248,9 +281,7 @@ void confusion_matrix::save_confusion_matrix(const model& m) {
       fs << "\n";
     }
     fs.close();
-
   }
-
 }
 
 // ---------------------------------------------------------
@@ -265,15 +296,16 @@ void confusion_matrix::write_specific_proto(lbann_data::Callback& proto) const
   msg->set_prefix(m_prefix);
 }
 
-std::unique_ptr<callback_base>
-build_confusion_matrix_callback_from_pbuf(
+std::unique_ptr<callback_base> build_confusion_matrix_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
-  const std::shared_ptr<lbann_summary>&) {
+  const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
-    dynamic_cast<const lbann_data::Callback::CallbackConfusionMatrix&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackConfusionMatrix&>(
+      proto_msg);
   return std::make_unique<confusion_matrix>(params.prediction(),
-                                       params.label(),
-                                       params.prefix());
+                                            params.label(),
+                                            params.prefix());
 }
 
 } // namespace callback

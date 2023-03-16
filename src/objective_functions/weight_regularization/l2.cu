@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/objective_functions/weight_regularization/l2.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/objective_functions/weight_regularization/l2.hpp"
 
 #include "lbann/utils/gpu/helpers.hpp"
 
@@ -34,11 +34,13 @@ namespace lbann {
 namespace {
 
 template <typename TensorDataType, El::Int block_size>
-__global__ void accumulate_contribution_kernel(El::Int height,
-                                               El::Int width,
-                                               const TensorDataType * __restrict__ vals,
-                                               El::Int vals_ldim,
-                                               DataType * __restrict__ contribution) {
+__global__ void
+accumulate_contribution_kernel(El::Int height,
+                               El::Int width,
+                               const TensorDataType* __restrict__ vals,
+                               El::Int vals_ldim,
+                               DataType* __restrict__ contribution)
+{
 
   // Indices
   const El::Int tid = threadIdx.x;
@@ -68,7 +70,6 @@ __global__ void accumulate_contribution_kernel(El::Int height,
   if (tid == 0) {
     gpu_lib::atomic_add(contribution, shared_contribution[0]);
   }
-
 }
 
 } // namespace
@@ -76,7 +77,8 @@ __global__ void accumulate_contribution_kernel(El::Int height,
 template <>
 void l2_weight_regularization::accumulate_contribution<El::Device::GPU>(
   const El::Matrix<AccumulateDataType, El::Device::GPU>& vals,
-  El::Matrix<AccumulateDataType, El::Device::GPU>& contribution) {
+  El::Matrix<AccumulateDataType, El::Device::GPU>& contribution)
+{
 
   if (!vals.IsEmpty()) {
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(contribution),
@@ -87,9 +89,14 @@ void l2_weight_regularization::accumulate_contribution<El::Device::GPU>(
     const auto& grid_size = (size + block_size - 1) / block_size;
     hydrogen::gpu::LaunchKernel(
       accumulate_contribution_kernel<AccumulateDataType, block_size>,
-      grid_size, block_size, 0, multisync,
-      vals.Height(), vals.Width(),
-      vals.LockedBuffer(), vals.LDim(),
+      grid_size,
+      block_size,
+      0,
+      multisync,
+      vals.Height(),
+      vals.Width(),
+      vals.LockedBuffer(),
+      vals.LDim(),
       contribution.Buffer());
   }
 }

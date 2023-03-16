@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -414,8 +414,7 @@ lbann::make_abstract<lbann::ltfb::MutationStrategy>(
   using ProtoStrategy = lbann_data::MutationStrategy;
   auto const& params = dynamic_cast<ProtoStrategy const&>(msg);
 
-  auto const& mutate_params =
-    protobuf::get_oneof_message(params, "strategy");
+  auto const& mutate_params = protobuf::get_oneof_message(params, "strategy");
   return get_mutation_factory().create_object(
     protobuf::message_type(mutate_params),
     mutate_params);

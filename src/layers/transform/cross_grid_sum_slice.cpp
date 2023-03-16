@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,11 +27,11 @@
 #define LBANN_CROSS_GRID_SUM_SLICE_LAYER_INSTANTIATE
 #include "lbann/layers/transform/cross_grid_sum_slice.hpp"
 
-#include <lbann/proto/proto_common.hpp>
 #include "lbann/proto/datatype_helpers.hpp"
+#include <lbann/proto/proto_common.hpp>
 
-#include "lbann/proto/lbann.pb.h"
 #include "lbann/proto/layers.pb.h"
+#include "lbann/proto/lbann.pb.h"
 
 namespace lbann {
 
@@ -51,7 +51,9 @@ build_cross_grid_sum_slice_layer_from_pbuf(lbann_comm* comm,
 }
 
 template <typename T, El::Device D>
-void cross_grid_sum_slice_layer<T,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void cross_grid_sum_slice_layer<T, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   proto.mutable_cross_grid_sum_slice();
 }

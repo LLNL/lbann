@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -41,37 +41,36 @@ namespace callback {
  *  epochs and for model evaluations. This reports times for the
  *  master process in each model.
  */
-class timer : public callback_base {
+class timer : public callback_base
+{
 public:
-
   timer(const std::shared_ptr<lbann_summary>& summarizer = nullptr)
-    : callback_base(1) {}
+    : callback_base(1)
+  {}
   timer(const timer&) = default;
   timer& operator=(const timer&) = default;
-  timer* copy() const override {
-    return new timer(*this);
-  }
+  timer* copy() const override { return new timer(*this); }
 
   /** Start timing for a training epoch. */
-  void on_epoch_begin(model *m) override      { timing_begin(*m); }
+  void on_epoch_begin(model* m) override { timing_begin(*m); }
   /** Report timing for a training epoch. */
-  void on_epoch_end(model *m) override        { timing_end(*m);   }
+  void on_epoch_end(model* m) override { timing_end(*m); }
   /** Start timing for validation. */
-  void on_validation_begin(model *m) override { timing_begin(*m); }
+  void on_validation_begin(model* m) override { timing_begin(*m); }
   /** Report timing for validation. */
-  void on_validation_end(model *m) override   { timing_end(*m);   }
+  void on_validation_end(model* m) override { timing_end(*m); }
   /** Start timing for testing. */
-  void on_test_begin(model *m) override       { timing_begin(*m); }
+  void on_test_begin(model* m) override { timing_begin(*m); }
   /** Report timing for testing. */
-  void on_test_end(model *m) override         { timing_end(*m);   }
+  void on_test_end(model* m) override { timing_end(*m); }
   /** Record training mini-batch start time. */
-  void on_batch_begin(model *m) override          { batch_timing_begin(*m); }
+  void on_batch_begin(model* m) override { batch_timing_begin(*m); }
   /** Record training mini-batch run time. */
-  void on_batch_end(model *m) override            { batch_timing_end(*m);   }
+  void on_batch_end(model* m) override { batch_timing_end(*m); }
   /** Record evaluation mini-batch start time. */
-  void on_batch_evaluate_begin(model *m) override { batch_timing_begin(*m); }
+  void on_batch_evaluate_begin(model* m) override { batch_timing_begin(*m); }
   /** Record evaluation mini-batch run time. */
-  void on_batch_evaluate_end(model *m) override   { batch_timing_end(*m);   }
+  void on_batch_evaluate_end(model* m) override { batch_timing_end(*m); }
 
   /** Callback name. */
   std::string name() const override { return "timer"; }
@@ -80,7 +79,8 @@ public:
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
@@ -89,11 +89,11 @@ private:
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
   /** Timing session start times. */
-  std::map<execution_mode,EvalType> m_start_times;
+  std::map<execution_mode, EvalType> m_start_times;
   /** Mini-batch timing session start times. */
-  std::map<execution_mode,EvalType> m_batch_start_times;
+  std::map<execution_mode, EvalType> m_batch_start_times;
   /** Mini-batch times. */
-  std::map<execution_mode,std::vector<EvalType>> m_batch_times;
+  std::map<execution_mode, std::vector<EvalType>> m_batch_times;
 
   /** Start timing session. */
   void timing_begin(const model& m);
@@ -110,15 +110,14 @@ private:
 
   /** @brief lbann_summary */
   std::shared_ptr<lbann_summary> m_summarizer = nullptr;
-
 };
 
 // Builder function
 std::unique_ptr<callback_base>
-build_timer_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_timer_callback_from_pbuf(const google::protobuf::Message&,
+                               std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_TIMER_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_TIMER_HPP_INCLUDED

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,16 +30,16 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
 #ifdef LBANN_HAS_DNN_LIB
-#include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/dnn_lib/convolution.hpp"
+#include "lbann/utils/dnn_lib/helpers.hpp"
 #endif // LBANN_HAS_DNN_LIB
 #include "lbann/utils/memory.hpp"
 
 #include <vector>
 
 #ifdef LBANN_HAS_DISTCONV
-#include "lbann/utils/distconv.hpp"
 #include "distconv/dnn_backend/convolution.hpp"
+#include "lbann/utils/distconv.hpp"
 #endif
 
 namespace lbann {
@@ -52,11 +52,16 @@ using Convolution = ::distconv::Convolution<Backend, TensorDataType>;
 } // namespace dc
 
 template <typename TensorDataType, El::Device Device>
-class base_convolution_adapter: public data_type_distconv_adapter<TensorDataType> {
- public:
-  using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+class base_convolution_adapter
+  : public data_type_distconv_adapter<TensorDataType>
+{
+public:
+  using TensorDevType =
+    typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
 
-  base_convolution_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
+  base_convolution_adapter(Layer& layer)
+    : data_type_distconv_adapter<TensorDataType>(layer)
+  {}
   virtual ~base_convolution_adapter() = default;
 
   void setup_fp_tensors() override;
@@ -84,7 +89,8 @@ class base_convolution_adapter: public data_type_distconv_adapter<TensorDataType
 /** @brief Computation kernels for convolution and deconvolution layers.
  */
 template <typename TensorDataType, El::Device Device>
-class base_convolution_layer : public data_type_layer<TensorDataType> {
+class base_convolution_layer : public data_type_layer<TensorDataType>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -113,7 +119,6 @@ public:
   const std::vector<int>& get_dilations() const { return m_dilations; }
 
 protected:
-
   int m_output_channels;
   /** @brief Spatial dimensions for convolution kernel.
    *  @details Excludes number of input and output channels.
@@ -151,7 +156,8 @@ protected:
   /** Bias tensor DNN library descriptor. */
   dnn_lib::TensorDescriptor m_bias_dnn_desc;
   /** Tensor DNN library descriptors. */
-  dnn_lib::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_dnn_desc;
+  dnn_lib::data_parallel_layer_tensor_manager<TensorDataType>
+    m_tensors_dnn_desc;
   /** Forward algorithm cache (mini-batch size -> algo). */
   std::unordered_map<int, fwd_conv_alg> m_fwd_dnn_algos;
   /** Backward data algorithm cache (mini-batch size -> algo). */
@@ -202,7 +208,6 @@ public:
   ///@}
 
 protected:
-
   /** Dimensions of convolution kernel. */
   virtual std::vector<int> get_kernel_dims() const = 0;
 
@@ -226,21 +231,20 @@ protected:
   void compute_gradients_im2col(bool using_transposed_convolution);
 
 private:
-
 #ifdef LBANN_HAS_DNN_LIB
 
   /** Get the DNN library algorithm to use for forward prop. */
-  fwd_conv_alg get_forward_algo_dnn(
-    const int local_mini_batch_size,
-    const dnn_lib::TensorDescriptor& input_desc,
-    const TensorDataType* input,
-    const dnn_lib::FilterDescriptor& kernel_desc,
-    const TensorDataType* kernel,
-    const dnn_lib::ConvolutionDescriptor& conv_desc,
-    const dnn_lib::TensorDescriptor& output_desc,
-    TensorDataType* output,
-    size_t ws_size,
-    TensorDataType* ws);
+  fwd_conv_alg
+  get_forward_algo_dnn(const int local_mini_batch_size,
+                       const dnn_lib::TensorDescriptor& input_desc,
+                       const TensorDataType* input,
+                       const dnn_lib::FilterDescriptor& kernel_desc,
+                       const TensorDataType* kernel,
+                       const dnn_lib::ConvolutionDescriptor& conv_desc,
+                       const dnn_lib::TensorDescriptor& output_desc,
+                       TensorDataType* output,
+                       size_t ws_size,
+                       TensorDataType* ws);
 
   /** Get the DNN library algorithm to use for backward-data. */
   bwd_data_conv_alg get_backward_data_algo_dnn(
@@ -273,7 +277,8 @@ private:
 
 #ifdef LBANN_HAS_DISTCONV
   friend class base_convolution_adapter<TensorDataType, Device>;
- protected:
+
+protected:
   using BaseConvAdapterType = base_convolution_adapter<TensorDataType, Device>;
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
   BaseConvAdapterType& get_distconv_adapter() override;

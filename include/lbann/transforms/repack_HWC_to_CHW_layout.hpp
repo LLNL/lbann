@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -36,21 +36,27 @@ namespace transform {
  * Convert data to LBANN's native data layout.
  * Currently only supports converting from and interleaved channel format.
  */
-class repack_HWC_to_CHW_layout : public transform {
+class repack_HWC_to_CHW_layout : public transform
+{
 public:
-  transform* copy() const override { return new repack_HWC_to_CHW_layout(*this); }
+  transform* copy() const override
+  {
+    return new repack_HWC_to_CHW_layout(*this);
+  }
 
   std::string get_type() const override { return "to_lbann_layout"; }
 
   bool supports_non_inplace() const override { return true; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data,
+             std::vector<size_t>& dims) override;
 
-  void apply(utils::type_erased_matrix& data, CPUMat& out,
+  void apply(utils::type_erased_matrix& data,
+             CPUMat& out,
              std::vector<size_t>& dims) override;
 };
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_REPACK_HWC_TO_CHW_LAYOUT_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_REPACK_HWC_TO_CHW_LAYOUT_HPP_INCLUDED

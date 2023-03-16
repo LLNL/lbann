@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,14 +28,12 @@
 
 namespace lbann {
 
-description::description(std::string title)
-  : m_title(std::move(title)) {}
+description::description(std::string title) : m_title(std::move(title)) {}
 
-void description::set_title(std::string title) {
-  m_title = std::move(title);
-}
+void description::set_title(std::string title) { m_title = std::move(title); }
 
-std::ostream& operator<<(std::ostream& os, const description& desc) {
+std::ostream& operator<<(std::ostream& os, const description& desc)
+{
   os << desc.m_title << "\n";
   for (const auto& line : desc.m_lines) {
     if (!line.empty()) {
@@ -46,16 +44,16 @@ std::ostream& operator<<(std::ostream& os, const description& desc) {
   return os;
 }
 
-void description::add(std::string line) {
-  m_lines.push_back(std::move(line));
-}
+void description::add(std::string line) { m_lines.push_back(std::move(line)); }
 
-void description::add(const description& desc) {
+void description::add(const description& desc)
+{
   add(desc.m_title);
   for (const auto& line : desc.m_lines) {
     if (line.empty()) {
       add(std::string{});
-    } else {
+    }
+    else {
       add("  " + line);
     }
   }

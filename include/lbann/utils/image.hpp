@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -38,7 +38,8 @@ namespace lbann {
  * @param dims Will contain the dimensions of the image as {channels, height,
  * width}.
  */
-void load_image(const std::string& filename, El::Matrix<uint8_t>& dst,
+void load_image(const std::string& filename,
+                El::Matrix<uint8_t>& dst,
                 std::vector<size_t>& dims);
 
 /**
@@ -48,7 +49,8 @@ void load_image(const std::string& filename, El::Matrix<uint8_t>& dst,
  * @param dims Will contain the dimensions of the image as {channels, height,
  * width}.
  */
-void decode_image(El::Matrix<uint8_t>& src, El::Matrix<uint8_t>& dst,
+void decode_image(El::Matrix<uint8_t>& src,
+                  El::Matrix<uint8_t>& dst,
                   std::vector<size_t>& dims);
 
 /**
@@ -57,7 +59,8 @@ void decode_image(El::Matrix<uint8_t>& src, El::Matrix<uint8_t>& dst,
  * @param src The image to save. This is in OpenCV format.
  * @param dims The dimensions of the image.
  */
-void save_image(const std::string& filename, El::Matrix<uint8_t>& src,
+void save_image(const std::string& filename,
+                El::Matrix<uint8_t>& src,
                 const std::vector<size_t>& dims);
 /**
  * @brief Save an image to filename.
@@ -67,7 +70,8 @@ void save_image(const std::string& filename, El::Matrix<uint8_t>& src,
  * in it.
  * @param dims The dimensions of the image.
  */
-void save_image(const std::string& filename, const CPUMat& src,
+void save_image(const std::string& filename,
+                const CPUMat& src,
                 const std::vector<size_t>& dims);
 /**
  * @brief Convert image from El::Matrix<DataType> to El::Matrix<uint8_t>
@@ -88,6 +92,6 @@ std::string encode_image(const El::Matrix<uint8_t>& image,
                          const std::vector<size_t>& dims,
                          std::string const& img_format);
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_UTILS_IMAGE_HPP
+#endif // LBANN_UTILS_IMAGE_HPP

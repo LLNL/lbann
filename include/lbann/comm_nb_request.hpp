@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -68,7 +68,8 @@ using hosttransfer_backend = ::Al::HostTransferBackend;
 using hosttransfer_backend = lbann::Al::dummy_backend;
 #endif // defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_HOST_TRANSFER)
 using hosttransfer_req_type = hosttransfer_backend::req_type;
-static const hosttransfer_req_type hosttransfer_null_req = hosttransfer_backend::null_req;
+static const hosttransfer_req_type hosttransfer_null_req =
+  hosttransfer_backend::null_req;
 
 /** Wrapper for Aluminum non-blocking routine requests. */
 struct request

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -34,8 +34,8 @@
 #include "lbann/optimizers/rmsprop.hpp"
 #include "lbann/optimizers/sgd.hpp"
 
-#include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/factory.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include "lbann/proto/optimizers.pb.h"
 
@@ -57,12 +57,11 @@ using factory_type = lbann::generic_factory<
 
 // Manage a global factory
 template <typename T>
-struct factory_manager {
+struct factory_manager
+{
   factory_type factory_;
 
-  factory_manager() {
-    register_default_builders();
-  }
+  factory_manager() { register_default_builders(); }
 
 private:
   void register_default_builders()
@@ -81,16 +80,18 @@ private:
 };
 
 template <typename T>
-factory_type const& get_optimizer_factory() noexcept {
+factory_type const& get_optimizer_factory() noexcept
+{
   static factory_manager<T> factory_mgr_;
   return factory_mgr_.factory_;
 }
 
-}// namespace <anon>
+} // namespace
 
 template <typename TensorDataType>
-std::unique_ptr<lbann::optimizer> lbann::proto::construct_optimizer(
-  const lbann_data::Optimizer& proto_opt) {
+std::unique_ptr<lbann::optimizer>
+lbann::proto::construct_optimizer(const lbann_data::Optimizer& proto_opt)
+{
   auto const& factory = get_optimizer_factory<TensorDataType>();
   auto const& msg = protobuf::get_oneof_message(proto_opt, "optimizer_type");
   return factory.create_object(msg.GetDescriptor()->name(), msg);

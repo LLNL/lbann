@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -38,8 +38,9 @@ namespace callback {
 /**
  * Summarize information to Tensorboard using LBANN's summary interface.
  */
-class summary : public callback_base {
- public:
+class summary : public callback_base
+{
+public:
   /**
    * @param summarizer The summary object to write to; this callback takes
    * ownership of it.
@@ -47,22 +48,21 @@ class summary : public callback_base {
    * @param mat_interval FIXME
    * @todo Document mat_interval parameter.
    */
-  summary(const std::shared_ptr<lbann_summary>& summarizer, int batch_interval = 1,
-    int mat_interval = 25);
+  summary(const std::shared_ptr<lbann_summary>& summarizer,
+          int batch_interval = 1,
+          int mat_interval = 25);
   summary(const summary&) = default;
   summary& operator=(const summary&) = default;
-  summary* copy() const override {
-    return new summary(*this);
-  }
-  void on_train_begin(model *m) override;
-  void on_batch_end(model *m) override;
-  void on_epoch_end(model *m) override;
-  void on_test_end(model *m) override;
+  summary* copy() const override { return new summary(*this); }
+  void on_train_begin(model* m) override;
+  void on_batch_end(model* m) override;
+  void on_epoch_end(model* m) override;
+  void on_test_end(model* m) override;
   std::string name() const override { return "summary"; }
 
 protected:
   /** Write out histograms from the model's layers. */
-  void save_histograms(model *m);
+  void save_histograms(model* m);
 
 private:
   /** Add callback specific data to prototext */
@@ -77,10 +77,10 @@ private:
 
 // Builder function
 std::unique_ptr<callback_base>
-build_summary_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_summary_callback_from_pbuf(const google::protobuf::Message&,
+                                 std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_SUMMARY_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_SUMMARY_HPP_INCLUDED

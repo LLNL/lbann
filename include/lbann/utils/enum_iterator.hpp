@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,22 +33,26 @@ namespace lbann {
 
 /** @brief Create an iterator that goes over a contiguous (unit-step)
     enum class  */
-template < typename C, C beginVal, C endVal>
-class enum_iterator {
+template <typename C, C beginVal, C endVal>
+class enum_iterator
+{
   typedef typename std::underlying_type<C>::type val_t;
   int val;
+
 public:
-  enum_iterator(const C & f) : val(static_cast<val_t>(f)) {}
+  enum_iterator(const C& f) : val(static_cast<val_t>(f)) {}
   enum_iterator() : val(static_cast<val_t>(beginVal)) {}
-  enum_iterator operator++() {
+  enum_iterator operator++()
+  {
     ++val;
     return *this;
   }
   C operator*() { return static_cast<C>(val); }
-  enum_iterator begin() { return *this; } //default ctor is good
-  enum_iterator end() {
-      static const enum_iterator endIter=++enum_iterator(endVal); // cache it
-      return endIter;
+  enum_iterator begin() { return *this; } // default ctor is good
+  enum_iterator end()
+  {
+    static const enum_iterator endIter = ++enum_iterator(endVal); // cache it
+    return endIter;
   }
   bool operator!=(const enum_iterator& i) { return val != i.val; }
 };

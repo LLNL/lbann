@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,10 +25,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_EVALUATION_LAYER_INSTANTIATE
-#include "lbann/comm_impl.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
-#include "lbann/models/model.hpp"
+#include "lbann/comm_impl.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/hydrogen_utils.hpp"
@@ -46,13 +46,14 @@ template <typename TensorDataType, typename EvalDataType>
 void fp_cpu(lbann_comm& comm,
             const El::AbstractDistMatrix<TensorDataType>& input,
             EvalDataType& value,
-            Al::request& req) {
+            Al::request& req)
+{
   const auto& local_input = input.LockedMatrix();
   const auto& local_height = local_input.Height();
   const auto& local_width = local_input.Width();
   const auto& mini_batch_size = input.Width();
   value = El::TypeTraits<EvalDataType>::Zero();
-  LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:value) collapse(2))
+  LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+ : value) collapse(2))
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       value += local_input(row, col);
@@ -67,8 +68,9 @@ template <typename EvalDataType>
 void fp_cpu(lbann_comm& comm,
             const El::AbstractDistMatrix<cpu_fp16>& input,
             EvalDataType& value,
-            Al::request& req) {
-    LBANN_ERROR("This function is not supported in FP16 on CPUs");
+            Al::request& req)
+{
+  LBANN_ERROR("This function is not supported in FP16 on CPUs");
 }
 #endif // LBANN_HAS_HALF
 
@@ -77,8 +79,9 @@ template <typename EvalDataType>
 void fp_cpu(lbann_comm& comm,
             const El::AbstractDistMatrix<fp16>& input,
             EvalDataType& value,
-            Al::request& req) {
-    LBANN_ERROR("This function is not supported in FP16 on CPUs");
+            Al::request& req)
+{
+  LBANN_ERROR("This function is not supported in FP16 on CPUs");
 }
 #endif // LBANN_HAS_GPU_HALF
 
@@ -88,13 +91,15 @@ template <typename TensorDataType, typename EvalDataType>
 void fp_gpu(lbann_comm& comm,
             const El::AbstractDistMatrix<TensorDataType>& input,
             EvalDataType& value,
-            gpu_lib::event_wrapper& copy_event) {
+            gpu_lib::event_wrapper& copy_event)
+{
   const EvalDataType zero = El::TypeTraits<EvalDataType>::Zero();
   const EvalDataType one = El::TypeTraits<EvalDataType>::One();
 
   // Local matrix
   const auto& local_tdf_input = input.LockedMatrix();
-  const auto local_input = ViewIfPossibleOrCopy<TensorDataType, EvalDataType>::get(local_tdf_input);
+  const auto local_input =
+    ViewIfPossibleOrCopy<TensorDataType, EvalDataType>::get(local_tdf_input);
   const auto& local_height = local_input->Height();
   const auto& local_width = local_input->Width();
   const auto& mini_batch_size = input.Width();
@@ -104,7 +109,7 @@ void fp_gpu(lbann_comm& comm,
 #ifdef HYDROGEN_HAVE_CUB
   sum_d.SetMemoryMode(1);  // Use CUB GPU memory pool
   ones_d.SetMemoryMode(1); // Use CUB GPU memory pool
-#endif // HYDROGEN_HAVE_CUB
+#endif                     // HYDROGEN_HAVE_CUB
   sum_d.Resize(1, 1);
 
   // Sync object
@@ -120,29 +125,35 @@ void fp_gpu(lbann_comm& comm,
   static constexpr El::Int int_one = 1;
   if (local_input->IsEmpty()) {
     El::Zero(sum_d);
-  } else if (local_input->Contiguous()) {
+  }
+  else if (local_input->Contiguous()) {
     ones_d.Resize(local_height * local_width, 1);
     El::Fill(ones_d, one);
     hydrogen::gpu_blas::Dot(local_height * local_width,
-                            local_input->LockedBuffer(), int_one,
-                            ones_d.LockedBuffer(), int_one,
+                            local_input->LockedBuffer(),
+                            int_one,
+                            ones_d.LockedBuffer(),
+                            int_one,
                             sum_d.Buffer(),
                             sync_info);
-  } else if (local_height == 1) {
+  }
+  else if (local_height == 1) {
     ones_d.Resize(local_width, 1);
     El::Fill(ones_d, one);
     hydrogen::gpu_blas::Dot(local_width,
                             local_input->LockedBuffer(),
                             local_input->LDim(),
-                            ones_d.LockedBuffer(), int_one,
+                            ones_d.LockedBuffer(),
+                            int_one,
                             sum_d.Buffer(),
                             sync_info);
-  } else {
+  }
+  else {
     El::Matrix<EvalDataType, El::Device::GPU> col_sums_d;
     El::SetSyncInfo(col_sums_d, sync_info);
 #ifdef HYDROGEN_HAVE_CUB
-    col_sums_d.SetMemoryMode(1);  // Use CUB GPU memory pool
-#endif // HYDROGEN_HAVE_CUB
+    col_sums_d.SetMemoryMode(1); // Use CUB GPU memory pool
+#endif                           // HYDROGEN_HAVE_CUB
     col_sums_d.Resize(local_width, 1);
     ones_d.Resize(local_height, 1);
     El::Fill(ones_d, one);
@@ -152,8 +163,10 @@ void fp_gpu(lbann_comm& comm,
       El::Fill(ones_d, one);
     }
     hydrogen::gpu_blas::Dot(local_width,
-                            col_sums_d.LockedBuffer(), int_one,
-                            ones_d.LockedBuffer(), int_one,
+                            col_sums_d.LockedBuffer(),
+                            int_one,
+                            ones_d.LockedBuffer(),
+                            int_one,
                             sum_d.Buffer(),
                             sync_info);
   }
@@ -162,8 +175,8 @@ void fp_gpu(lbann_comm& comm,
 
   // Compute average value across mini-batch
   El::Scale(one / El::To<EvalDataType>(mini_batch_size), sum_d);
-  comm.allreduce(
-    static_cast<El::AbstractMatrix<EvalDataType>&>(sum_d), input.DistComm());
+  comm.allreduce(static_cast<El::AbstractMatrix<EvalDataType>&>(sum_d),
+                 input.DistComm());
   hydrogen::gpu::Copy1DToHost(sum_d.LockedBuffer(), &value, 1, sync_info);
   copy_event.record(sync_info.Stream());
 }
@@ -173,7 +186,8 @@ template <typename EvalDataType>
 void fp_gpu(lbann_comm& comm,
             const El::AbstractDistMatrix<cpu_fp16>& input,
             EvalDataType& value,
-            gpu_lib::event_wrapper& copy_event) {
+            gpu_lib::event_wrapper& copy_event)
+{
   LBANN_ERROR("This function is not supported with "
               "the CPU FP16 type on GPUs. "
               "A severe logic error has occured; please "
@@ -186,39 +200,56 @@ void fp_gpu(lbann_comm& comm,
 } // namespace
 
 template <typename T, data_layout L, El::Device D>
-void evaluation_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void evaluation_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   proto.mutable_evaluation();
 }
 
 template <typename TensorDataType>
-EvalType abstract_evaluation_layer<TensorDataType>::get_value(bool scaled) {
+EvalType abstract_evaluation_layer<TensorDataType>::get_value(bool scaled)
+{
   switch (this->get_device_allocation()) {
-  case El::Device::CPU: this->get_comm()->wait(m_allreduce_req); break;
+  case El::Device::CPU:
+    this->get_comm()->wait(m_allreduce_req);
+    break;
 #ifdef LBANN_HAS_GPU
-  case El::Device::GPU: this->m_copy_event.synchronize(); break;
+  case El::Device::GPU:
+    this->m_copy_event.synchronize();
+    break;
 #endif // LBANN_HAS_GPU
-  default: LBANN_ERROR("invalid device");
+  default:
+    LBANN_ERROR("invalid device");
   }
-  if (scaled) { return El::To<EvalDataType>(m_scale) * El::To<EvalDataType>(m_value(0,0)); }
-  else        { return m_value(0,0); }
+  if (scaled) {
+    return El::To<EvalDataType>(m_scale) * El::To<EvalDataType>(m_value(0, 0));
+  }
+  else {
+    return m_value(0, 0);
+  }
 }
 
 template <typename TensorDataType>
-abstract_evaluation_layer<TensorDataType>::abstract_evaluation_layer(lbann_comm *comm)
-  : data_type_layer<TensorDataType>(comm) {
+abstract_evaluation_layer<TensorDataType>::abstract_evaluation_layer(
+  lbann_comm* comm)
+  : data_type_layer<TensorDataType>(comm)
+{
   this->m_expected_num_child_layers = 0;
 }
 
 template <typename TensorDataType>
-void abstract_evaluation_layer<TensorDataType>::setup_dims(DataReaderMetaData& dr_metadata) {
+void abstract_evaluation_layer<TensorDataType>::setup_dims(
+  DataReaderMetaData& dr_metadata)
+{
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
   if (this->get_input_size() != 1) {
     std::stringstream err;
     const auto& dims = this->get_input_dims();
     err << this->get_type() << " layer \"" << this->get_name() << "\" "
         << "expects a scalar input, but "
-        << "parent layer \"" << this->get_parent_layers()[0]->get_name() << "\" "
+        << "parent layer \"" << this->get_parent_layers()[0]->get_name()
+        << "\" "
         << "has dimensions of ";
     for (size_t i = 0; i < dims.size(); ++i) {
       err << (i > 0 ? " x " : "") << dims[i];
@@ -228,16 +259,19 @@ void abstract_evaluation_layer<TensorDataType>::setup_dims(DataReaderMetaData& d
 }
 
 template <typename TensorDataType>
-void abstract_evaluation_layer<TensorDataType>::setup_data(size_t max_mini_batch_size) {
+void abstract_evaluation_layer<TensorDataType>::setup_data(
+  size_t max_mini_batch_size)
+{
   data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 #ifdef LBANN_HAS_GPU
   m_value.SetMemoryMode(1); // Use pinned memory on host
-#endif // LBANN_HAS_GPU
+#endif                      // LBANN_HAS_GPU
   El::Zeros(m_value, 1, 1);
 }
 
 template <typename TensorDataType>
-void abstract_evaluation_layer<TensorDataType>::fp_compute() {
+void abstract_evaluation_layer<TensorDataType>::fp_compute()
+{
   switch (this->get_device_allocation()) {
   case El::Device::CPU:
     this->get_comm()->wait(m_allreduce_req);
@@ -254,27 +288,32 @@ void abstract_evaluation_layer<TensorDataType>::fp_compute() {
            m_copy_event);
     break;
 #endif // LBANN_HAS_GPU
-  default: LBANN_ERROR("invalid device");
+  default:
+    LBANN_ERROR("invalid device");
   }
 }
 
 template <typename TensorDataType>
-void abstract_evaluation_layer<TensorDataType>::bp_compute() {
-  const auto& context = static_cast<SGDExecutionContext&>(this->m_model->get_execution_context());
+void abstract_evaluation_layer<TensorDataType>::bp_compute()
+{
+  const auto& context =
+    static_cast<SGDExecutionContext&>(this->m_model->get_execution_context());
   const auto mini_batch_size = context.get_effective_mini_batch_size();
-  El::Fill(this->get_error_signals(), TensorDataType(m_scale / mini_batch_size));
+  El::Fill(this->get_error_signals(),
+           TensorDataType(m_scale / mini_batch_size));
 }
 
 template <typename TensorDataType>
 abstract_evaluation_layer<TensorDataType>*
-abstract_evaluation_layer<TensorDataType>::construct(lbann_comm *comm,
+abstract_evaluation_layer<TensorDataType>::construct(lbann_comm* comm,
                                                      data_layout layout,
-                                                     El::Device device) {
-#define EVAL_LAYER_CONSTRUCT(T_layout, T_device)                \
-  do {                                                          \
-    if (layout == T_layout && device == T_device) {             \
-      return new evaluation_layer<TensorDataType, T_layout, T_device>(comm); \
-    }                                                           \
+                                                     El::Device device)
+{
+#define EVAL_LAYER_CONSTRUCT(T_layout, T_device)                               \
+  do {                                                                         \
+    if (layout == T_layout && device == T_device) {                            \
+      return new evaluation_layer<TensorDataType, T_layout, T_device>(comm);   \
+    }                                                                          \
   } while (false)
   EVAL_LAYER_CONSTRUCT(data_layout::DATA_PARALLEL, El::Device::CPU);
   EVAL_LAYER_CONSTRUCT(data_layout::MODEL_PARALLEL, El::Device::CPU);
@@ -287,15 +326,17 @@ abstract_evaluation_layer<TensorDataType>::construct(lbann_comm *comm,
   // Could not construct evaluation layer
   LBANN_ERROR("Attempted to construct evaluation layer "
               "with invalid parameters "
-              "(data layout type: ", to_string(layout), ", device type: ",
-              to_string(device), ")");
+              "(data layout type: ",
+              to_string(layout),
+              ", device type: ",
+              to_string(device),
+              ")");
   return nullptr;
 }
 
 LBANN_LAYER_DEFAULT_BUILDER(evaluation)
 
-#define PROTO(T)                              \
-  template class abstract_evaluation_layer<T>
+#define PROTO(T) template class abstract_evaluation_layer<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
@@ -304,9 +345,9 @@ LBANN_LAYER_DEFAULT_BUILDER(evaluation)
 #undef LBANN_INSTANTIATE_CPU_HALF
 #undef LBANN_INSTANTIATE_GPU_HALF
 
-#define PROTO_DEVICE(T, Device)                                           \
-  template class evaluation_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class evaluation_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  template class evaluation_layer<T, data_layout::DATA_PARALLEL, Device>;      \
+  template class evaluation_layer<T, data_layout::MODEL_PARALLEL, Device>;     \
   LBANN_LAYER_BUILDER_ETI(evaluation, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"

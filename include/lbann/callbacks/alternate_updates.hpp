@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -41,30 +41,31 @@ namespace callback {
  * Supports a separate number of updates for each set of layers between
  * freezing and unfreezing.
  */
-class alternate_updates : public callback_base {
- public:
-  alternate_updates(
-    std::vector<std::string> layers_1,
-    std::vector<std::string> layers_2,
-    int iters_1=1,
-    int iters_2=1)
+class alternate_updates : public callback_base
+{
+public:
+  alternate_updates(std::vector<std::string> layers_1,
+                    std::vector<std::string> layers_2,
+                    int iters_1 = 1,
+                    int iters_2 = 1)
     : callback_base(1),
       m_layer_names_1(std::move(layers_1)),
       m_layer_names_2(std::move(layers_2)),
       m_iters_1(iters_1),
-      m_iters_tot(iters_1 + iters_2) {}
+      m_iters_tot(iters_1 + iters_2)
+  {}
 
-  alternate_updates(
-    const alternate_updates&) = default;
-  alternate_updates& operator=(
-    const alternate_updates&) = default;
-  alternate_updates* copy() const override {
+  alternate_updates(const alternate_updates&) = default;
+  alternate_updates& operator=(const alternate_updates&) = default;
+  alternate_updates* copy() const override
+  {
     return new alternate_updates(*this);
   }
-  void setup(model *m) override;
-  void on_batch_begin(model *m) override;
+  void setup(model* m) override;
+  void on_batch_begin(model* m) override;
   std::string name() const override { return "alternate updates"; }
- private:
+
+private:
   void write_specific_proto(lbann_data::Callback& proto) const final;
   std::vector<std::string> m_layer_names_1, m_layer_names_2;
   std::vector<Layer*> freeze_layers, unfreeze_layers;
@@ -72,11 +73,11 @@ class alternate_updates : public callback_base {
 };
 
 // Builder function
-std::unique_ptr<callback_base>
-build_alternate_updates_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+std::unique_ptr<callback_base> build_alternate_updates_callback_from_pbuf(
+  const google::protobuf::Message&,
+  std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_ALTERNATE_UPDATES_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_ALTERNATE_UPDATES_HPP_INCLUDED

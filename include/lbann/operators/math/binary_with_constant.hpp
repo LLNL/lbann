@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -76,7 +76,10 @@
     OP_NAME##Operator& operator=(OP_NAME##Operator&&) = default;               \
     OP_NAME##Operator& operator=(OP_NAME##Operator const&) = default;          \
     ~OP_NAME##Operator() = default;                                            \
-    std::string get_type() const final { return OP_STRING; }                   \
+    std::string get_type() const final                                         \
+    {                                                                          \
+      return OP_STRING;                                                        \
+    }                                                                          \
     template <typename ArchiveT>                                               \
     void serialize(ArchiveT& ar)                                               \
     {                                                                          \
@@ -85,7 +88,10 @@
                             ::cereal::base_class<OperatorType>(this)),         \
          CEREAL_NVP(m_constant));                                              \
     }                                                                          \
-    DataT get_constant() const noexcept { return m_constant; }                 \
+    DataT get_constant() const noexcept                                        \
+    {                                                                          \
+      return m_constant;                                                       \
+    }                                                                          \
                                                                                \
   private:                                                                     \
     void                                                                       \

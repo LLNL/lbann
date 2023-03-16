@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,8 +26,8 @@
 #ifndef LBANN_EXECUTION_ALGORITHMS_LTFB_TERMINATION_CRITERIA_HPP_INCLUDED
 #define LBANN_EXECUTION_ALGORITHMS_LTFB_TERMINATION_CRITERIA_HPP_INCLUDED
 
-#include "lbann/execution_algorithms/ltfb/execution_context.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/execution_algorithms/ltfb/execution_context.hpp"
 
 namespace lbann {
 namespace ltfb {
@@ -53,6 +53,7 @@ public:
   {
     return exe_state.get_step() >= m_max_metalearning_steps;
   }
+
 private:
   size_t m_max_metalearning_steps;
 }; // class TerminationCriteria

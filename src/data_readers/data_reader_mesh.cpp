@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,18 +32,19 @@
 
 namespace lbann {
 
-mesh_reader::mesh_reader(bool shuffle)
-  : generic_data_reader(shuffle) {
+mesh_reader::mesh_reader(bool shuffle) : generic_data_reader(shuffle)
+{
   m_supported_input_types[INPUT_DATA_TYPE_RESPONSES] = true;
 }
 
-void mesh_reader::load() {
+void mesh_reader::load()
+{
   if (m_data_height == 0 || m_data_width == 0) {
     throw lbann_exception("mesh_reader: data shape must be non-zero");
   }
   // Compute total number of samples based on number of targets.
-  std::vector<std::string> matches = glob(
-    get_file_dir() + m_target_name + m_suffix + "/*.bin");
+  std::vector<std::string> matches =
+    glob(get_file_dir() + m_target_name + m_suffix + "/*.bin");
   if (matches.size() == 0) {
     throw lbann_exception("mesh_reader: could not find any targets");
   }
@@ -64,7 +65,9 @@ void mesh_reader::load() {
   select_subset_of_data();
 }
 
-void mesh_reader::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
+void mesh_reader::setup(int num_io_threads,
+                        observer_ptr<thread_pool> io_thread_pool)
+{
   generic_data_reader::setup(num_io_threads, io_thread_pool);
   // Set up buffers to load data into.
   m_load_bufs.resize(m_io_thread_pool->get_num_threads());
@@ -73,7 +76,8 @@ void mesh_reader::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_
   }
 }
 
-bool mesh_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+bool mesh_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx)
+{
   if (m_random_flips) {
     fast_rng_gen& gen = get_fast_io_generator();
     std::uniform_int_distribution<int> dist(0, 1);
@@ -81,21 +85,24 @@ bool mesh_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     m_flip_choices[data_id].second = dist(gen);
   }
   for (size_t i = 0; i < m_channels.size(); ++i) {
-    Mat X_view = El::View(
-      X, El::IR(i*m_data_height*m_data_width, (i+1)*m_data_height*m_data_width),
-      El::IR(mb_idx));
+    Mat X_view = El::View(X,
+                          El::IR(i * m_data_height * m_data_width,
+                                 (i + 1) * m_data_height * m_data_width),
+                          El::IR(mb_idx));
     load_file(data_id, m_channels[i], X_view);
   }
   return true;
 }
 
-bool mesh_reader::fetch_response(CPUMat& Y, int data_id, int mb_idx) {
+bool mesh_reader::fetch_response(CPUMat& Y, int data_id, int mb_idx)
+{
   Mat Y_view = El::View(Y, El::ALL, El::IR(mb_idx));
   load_file(data_id, m_target_name, Y_view);
   return true;
 }
 
-void mesh_reader::load_file(int data_id, const std::string channel, Mat& mat) {
+void mesh_reader::load_file(int data_id, const std::string channel, Mat& mat)
+{
   const std::string filename = construct_filename(channel, data_id);
   std::ifstream f(filename, std::ios::binary);
   if (f.fail()) {
@@ -103,7 +110,7 @@ void mesh_reader::load_file(int data_id, const std::string channel, Mat& mat) {
   }
   // Load into a local buffer.
   DataType* buf = m_load_bufs[m_io_thread_pool->get_local_thread_id()].data();
-  if (!f.read((char*) buf, m_data_height * m_data_width * sizeof(float))) {
+  if (!f.read((char*)buf, m_data_height * m_data_width * sizeof(float))) {
     throw lbann_exception("mesh_reader: failed to read " + filename);
   }
   if (std::is_same<float, DataType>::value) {
@@ -120,20 +127,23 @@ void mesh_reader::load_file(int data_id, const std::string channel, Mat& mat) {
         vertical_flip(mat_reshape);
       }
     }
-  } else {
+  }
+  else {
     // Need to transpose and convert from float. Not yet supported.
     throw lbann_exception("mesh_reader: does not support DataType != float");
   }
 }
 
-std::string mesh_reader::construct_filename(std::string channel, int data_id) {
+std::string mesh_reader::construct_filename(std::string channel, int data_id)
+{
   std::string filename = get_file_dir() + channel + m_suffix + "/" + channel;
   char idx[m_index_length + 1];
   std::snprintf(idx, m_index_length + 1, m_index_format_str.c_str(), data_id);
   return filename + std::string(idx) + ".bin";
 }
 
-void mesh_reader::horizontal_flip(CPUMat& mat) {
+void mesh_reader::horizontal_flip(CPUMat& mat)
+{
   // TODO: Could probably optimize this for better locality.
   const El::Int height = mat.Height();
   const El::Int width = mat.Width();
@@ -146,7 +156,8 @@ void mesh_reader::horizontal_flip(CPUMat& mat) {
   }
 }
 
-void mesh_reader::vertical_flip(CPUMat& mat) {
+void mesh_reader::vertical_flip(CPUMat& mat)
+{
   // TODO: Could probably optimize this for better locality.
   const El::Int height = mat.Height();
   const El::Int width = mat.Width();
@@ -159,4 +170,4 @@ void mesh_reader::vertical_flip(CPUMat& mat) {
   }
 }
 
-}  // namespace lbann
+} // namespace lbann

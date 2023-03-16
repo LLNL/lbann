@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -36,29 +36,29 @@ namespace lbann {
 namespace {
 
 template <typename DataT>
-struct AbsOpImpl {
+struct AbsOpImpl
+{
   using ComplexT = thrust::complex<DataT>;
 
-  inline __device__ DataT operator()(DataT const& x) const {
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::abs(x);
   }
-  inline __device__ DataT operator()(ComplexT const& x) const {
+  inline __device__ DataT operator()(ComplexT const& x) const
+  {
     return thrust::abs(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
-    return (x > (DataT) 0.
-            ? dy
-            : (x < (DataT) 0.
-               ? -dy
-               : (DataT) 0.));
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
+    return (x > (DataT)0. ? dy : (x < (DataT)0. ? -dy : (DataT)0.));
   }
   inline __device__ ComplexT operator()(ComplexT const& x,
-                                        DataT const& dy) const {
-    return (x == ComplexT(0.f)
-            ? ComplexT(0.f)
-            : thrust::conj(x * (dy / thrust::abs(x))));
+                                        DataT const& dy) const
+  {
+    return (x == ComplexT(0.f) ? ComplexT(0.f)
+                               : thrust::conj(x * (dy / thrust::abs(x))));
   }
-};// struct AbsOpImpl
+}; // struct AbsOpImpl
 
 } // namespace
 
@@ -71,9 +71,7 @@ void AbsOperator<DataT, Device>::fp_compute_local(
   LBANN_ASSERT_DEBUG(outputs.size() == 1);
   auto const& input = inputs.front().data();
   auto& output = outputs.front().data();
-  El::EntrywiseMap(input,
-                   output,
-                   AbsOpImpl<El::Base<DataT>>{});
+  El::EntrywiseMap(input, output, AbsOpImpl<El::Base<DataT>>{});
 }
 
 template <typename DataT, El::Device Device>

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,17 +35,21 @@ namespace lbann {
 namespace transform {
 
 /** Resize an image and then crop its center. */
-class resized_center_crop : public transform {
+class resized_center_crop : public transform
+{
 public:
   /** Resize to h x w, then extract a crop_h x crop_w crop from the center. */
-  resized_center_crop(size_t h, size_t w, size_t crop_h, size_t crop_w) :
-    transform(), m_h(h), m_w(w), m_crop_h(crop_h), m_crop_w(crop_w) {}
+  resized_center_crop(size_t h, size_t w, size_t crop_h, size_t crop_w)
+    : transform(), m_h(h), m_w(w), m_crop_h(crop_h), m_crop_w(crop_w)
+  {}
 
   transform* copy() const override { return new resized_center_crop(*this); }
 
   std::string get_type() const override { return "resized_center_crop"; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data,
+             std::vector<size_t>& dims) override;
+
 private:
   /** Height and width of the resized image. */
   size_t m_h, m_w;
@@ -56,7 +60,7 @@ private:
 std::unique_ptr<transform>
 build_resized_center_crop_transform_from_pbuf(google::protobuf::Message const&);
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_RESIZED_CENTER_CROP_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_RESIZED_CENTER_CROP_HPP_INCLUDED

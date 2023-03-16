@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -38,7 +38,8 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class weights_layer : public data_type_layer<TensorDataType> {
+class weights_layer : public data_type_layer<TensorDataType>
+{
 
 public:
   /** @name Public Types */
@@ -52,8 +53,7 @@ public:
 
   ///@}
 
- public:
-
+public:
   weights_layer(std::vector<El::Int> dims = {});
   weights_layer(const weights_layer& other) = default;
   weights_layer& operator=(const weights_layer& other) = default;
@@ -71,8 +71,7 @@ public:
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
 
- protected:
-
+protected:
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
@@ -80,15 +79,14 @@ public:
 
   void fp_compute() override;
   void bp_compute() override;
-
 };
 
 // Builder function
 
 // Explicit template instantiation
 #ifndef LBANN_WEIGHTS_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class weights_layer<T, data_layout::DATA_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class weights_layer<T, data_layout::DATA_PARALLEL, Device>;  \
   extern template class weights_layer<T, data_layout::MODEL_PARALLEL, Device>
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

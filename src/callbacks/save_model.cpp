@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,12 +37,12 @@
 #include "lbann/proto/callbacks.pb.h"
 #include "lbann/proto/model.pb.h"
 
-#include <google/protobuf/text_format.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
+#include <google/protobuf/text_format.h>
 
-#include <unistd.h>
 #include <dirent.h>
+#include <unistd.h>
 
 #include <cstdlib>
 #include <fstream>
@@ -51,22 +51,25 @@
 namespace lbann {
 namespace callback {
 
-
 /// Save the model's prototext and weights
-void save_model::on_train_end(model *m) {
-  if(!m_disable_save_after_training){
+void save_model::on_train_end(model* m)
+{
+  if (!m_disable_save_after_training) {
     do_save_model(m);
   }
 }
 
 void save_model::write_proto_binary(const lbann_data::Model& proto,
-                                                   const std::string filename) {
-  std::fstream output(filename.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
+                                    const std::string filename)
+{
+  std::fstream output(filename.c_str(),
+                      std::ios::out | std::ios::trunc | std::ios::binary);
   proto.SerializeToOstream(&output);
 }
 
 void save_model::write_proto_text(const lbann_data::Model& proto,
-                                                 const std::string filename) {
+                                  const std::string filename)
+{
   int fd = openwrite(filename.c_str());
   auto output = new google::protobuf::io::FileOutputStream(fd);
   google::protobuf::TextFormat::Print(proto, output);
@@ -82,14 +85,16 @@ void save_model::write_specific_proto(lbann_data::Callback& proto) const
   msg->set_disable_save_after_training(m_disable_save_after_training);
 }
 
-bool save_model::do_save_model(model *m) {
+bool save_model::do_save_model(model* m)
+{
   lbann_data::Model model_param;
 
   p.set_cb_type(callback_type::weights_only);
   do_save_model_weights(m);
   p.set_cb_type(callback_type::invalid);
 
-#if 0 /// @todo BVE FIXME this method for writing out the prototext does not seem to work
+#if 0 /// @todo BVE FIXME this method for writing out the prototext does not
+      /// seem to work
   m->write_proto(&model_param);
   t->write_proto(&trainer_param);
   std::string filename = m->get_name() + "." + m_extension;
@@ -103,7 +108,8 @@ bool save_model::do_save_model(model *m) {
 }
 
 // Save model weights
-bool save_model::do_save_model_weights(model *m) {
+bool save_model::do_save_model_weights(model* m)
+{
   const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   // if the checkpoint directory is not defined, bail
   if (m_dir.length() == 0) {
@@ -112,14 +118,18 @@ bool save_model::do_save_model_weights(model *m) {
   // time how long this takes
   // read current epoch and step counters from model
   El::Timer timer;
-  lbann_comm *comm = m->get_comm();
+  lbann_comm* comm = m->get_comm();
   comm->trainer_barrier();
   // let user know we're saving the weights
   int epoch = c.get_epoch();
   int step = c.get_step();
   if (comm->am_trainer_master()) {
     timer.Start();
-    printf("[%s.%d] Saving model weights: epoch %d step %d ...\n", m->get_name().c_str(), comm->get_trainer_rank(), epoch, step);
+    printf("[%s.%d] Saving model weights: epoch %d step %d ...\n",
+           m->get_name().c_str(),
+           comm->get_trainer_rank(),
+           epoch,
+           step);
     fflush(stdout);
   }
 
@@ -130,11 +140,15 @@ bool save_model::do_save_model_weights(model *m) {
                                                 m_dir.c_str());
   p.open_checkpoint_dir(epochdir.c_str(), comm->am_trainer_master());
 
-  for (weights *w : m->get_weights()) {
+  for (weights* w : m->get_weights()) {
     // create weight file name to match to weight list entry
     const auto* dtw = dynamic_cast<const data_type_weights<DataType>*>(w);
-    auto file = El::BuildString(epochdir, "model_weights_", w->get_name(), "_",
-                                dtw->get_values().Height(), "x",
+    auto file = El::BuildString(epochdir,
+                                "model_weights_",
+                                w->get_name(),
+                                "_",
+                                dtw->get_values().Height(),
+                                "x",
                                 dtw->get_values().Width());
 
     El::Write(dtw->get_values(), file, El::BINARY);
@@ -148,8 +162,15 @@ bool save_model::do_save_model_weights(model *m) {
     if (secs > 0.0) {
       bw = EvalType(bytes_count) / (secs * 1024.0 * 1024.0);
     }
-    printf("[%s.%d] Saving model weights complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
-           m->get_name().c_str(), comm->get_trainer_rank(), epoch, step, secs, (unsigned long long) bytes_count, bw);
+    printf("[%s.%d] Saving model weights complete: Epoch=%d Step=%d (%f secs, "
+           "%llu bytes, %f MB/sec)\n",
+           m->get_name().c_str(),
+           comm->get_trainer_rank(),
+           epoch,
+           step,
+           secs,
+           (unsigned long long)bytes_count,
+           bw);
     fflush(stdout);
   }
   p.reset_bytes();
@@ -157,20 +178,19 @@ bool save_model::do_save_model_weights(model *m) {
 }
 
 std::unique_ptr<callback_base>
-build_save_model_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+build_save_model_callback_from_pbuf(const google::protobuf::Message& proto_msg,
+                                    const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSaveModel&>(proto_msg);
-  if(params.extension().size() != 0) {
-    return std::make_unique<save_model>(
-      params.dir(),
-      params.disable_save_after_training(),
-      params.extension());
+  if (params.extension().size() != 0) {
+    return std::make_unique<save_model>(params.dir(),
+                                        params.disable_save_after_training(),
+                                        params.extension());
   }
   else {
-    return std::make_unique<save_model>(
-      params.dir(),
-      params.disable_save_after_training());
+    return std::make_unique<save_model>(params.dir(),
+                                        params.disable_save_after_training());
   }
 }
 

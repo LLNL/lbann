@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,8 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_INSTANTIATE_CPU_HALF
-#define PROTO(T)                    \
-  PROTO_DEVICE(T, El::Device::CPU)
+#define PROTO(T) PROTO_DEVICE(T, El::Device::CPU)
 
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
@@ -34,8 +33,7 @@
 
 #ifdef LBANN_HAS_GPU
 #define LBANN_INSTANTIATE_GPU_HALF
-#define PROTO(T)                    \
-  PROTO_DEVICE(T, El::Device::GPU)
+#define PROTO(T) PROTO_DEVICE(T, El::Device::GPU)
 
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO

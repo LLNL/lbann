@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -54,7 +54,6 @@ public:
   El::Device get_device_allocation() const final { return Dev; }
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
@@ -165,8 +164,6 @@ private:
       El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
       &gradient_wrt_input);
 
-
-
     const El::Int mloc = gradient_wrt_input_cast->LocalHeight();
     const El::Int nloc = gradient_wrt_input_cast->LocalWidth();
 
@@ -174,14 +171,11 @@ private:
 
     El::Copy(gradient_wrt_input_cast->LockedMatrix(), temp_output);
 
-    El::AllReduce(gradient_wrt_input,
-                       this->get_subgrid_comm(),
-                       El::mpi::SUM);
+    El::AllReduce(gradient_wrt_input, this->get_subgrid_comm(), El::mpi::SUM);
   }
 
-  void bp_compute() final { }
+  void bp_compute() final {}
 };
-
 
 #ifndef LBANN_CROSS_GRID_SUM_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device)                                                \

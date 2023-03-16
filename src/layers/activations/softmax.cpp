@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -40,9 +40,10 @@ void fp_model_parallel(lbann_comm& comm,
                        El::AbstractDistMatrix<TensorDataType>& output,
                        El::AbstractDistMatrix<TensorDataType>& workspace,
                        TensorDataType threshold_val,
-                       softmax_mode mode) {
+                       softmax_mode mode)
+{
 
-  if(mode != softmax_mode::INSTANCE) {
+  if (mode != softmax_mode::INSTANCE) {
     LBANN_ERROR("Unsupported softmax mode");
   }
 
@@ -100,7 +101,6 @@ void fp_model_parallel(lbann_comm& comm,
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
     }
   }
-
 }
 
 template <typename TensorDataType>
@@ -114,7 +114,7 @@ void bp_model_parallel(
   softmax_mode mode)
 {
 
-  if(mode != softmax_mode::INSTANCE) {
+  if (mode != softmax_mode::INSTANCE) {
     LBANN_ERROR("Unsupported softmax mode");
   }
 
@@ -155,9 +155,9 @@ void bp_model_parallel(
 } // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void softmax_layer<TensorDataType, Layout, Device>::fp_compute() {
-  if constexpr (Layout == data_layout::DATA_PARALLEL)
-  {
+void softmax_layer<TensorDataType, Layout, Device>::fp_compute()
+{
+  if constexpr (Layout == data_layout::DATA_PARALLEL) {
     const auto& local_input =
       dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU> const&>(
         this->get_prev_activations().LockedMatrix());
@@ -182,34 +182,36 @@ void softmax_layer<TensorDataType, Layout, Device>::fp_compute() {
   }
   else
     fp_model_parallel(*this->get_comm(),
-                     this->get_prev_activations(),
-                     this->get_activations(),
-                     *this->m_workspace,
-                     this->threshold_val,
-                     this->m_mode);
+                      this->get_prev_activations(),
+                      this->get_activations(),
+                      *this->m_workspace,
+                      this->threshold_val,
+                      this->m_mode);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
-  if constexpr (Layout == data_layout::DATA_PARALLEL)
-  {
+void softmax_layer<TensorDataType, Layout, Device>::bp_compute()
+{
+  if constexpr (Layout == data_layout::DATA_PARALLEL) {
     auto const& local_output =
       dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU> const&>(
         this->get_activations().LockedMatrix());
     auto const& local_grad_wrt_output =
       dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU> const&>(
         this->get_prev_error_signals().LockedMatrix());
-    auto & local_grad_wrt_input =
+    auto& local_grad_wrt_input =
       dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(
         this->get_error_signals().Matrix());
     auto const data_type = dnn_backend::template data_type<TensorDataType>();
     grad_wrt_output_descriptor_.set(
       data_type,
-      std::vector<El::Int>{local_grad_wrt_output.Width(), local_grad_wrt_output.Height()},
+      std::vector<El::Int>{local_grad_wrt_output.Width(),
+                           local_grad_wrt_output.Height()},
       std::vector<El::Int>{local_grad_wrt_output.LDim(), El::To<El::Int>(1)});
     grad_wrt_input_descriptor_.set(
       data_type,
-      std::vector<El::Int>{local_grad_wrt_input.Width(), local_grad_wrt_input.Height()},
+      std::vector<El::Int>{local_grad_wrt_input.Width(),
+                           local_grad_wrt_input.Height()},
       std::vector<El::Int>{local_grad_wrt_input.LDim(), El::To<El::Int>(1)});
     dnn_lib::softmax_backward(1.f,
                               this->output_descriptor_,
@@ -231,8 +233,10 @@ void softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
                       this->m_mode);
 }
 
-#define PROTO(T)                                      \
-  template class softmax_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+#define PROTO(T)                                                               \
+  template class softmax_layer<T,                                              \
+                               data_layout::DATA_PARALLEL,                     \
+                               El::Device::CPU>;                               \
   template class softmax_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,13 +31,13 @@
 
 #include "lbann/layers/activations/relu.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
 #include <lbann/base.hpp>
 #include <lbann/models/model.hpp>
 #include <lbann/utils/lbann_library.hpp>
-#include "lbann/objective_functions/objective_function.hpp"
 
-#include <google/protobuf/text_format.h>
 #include "lbann/proto/lbann.pb.h"
+#include <google/protobuf/text_format.h>
 
 using namespace lbann;
 

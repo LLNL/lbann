@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,9 +28,9 @@
 #define _LBANN_CNPY_UTILS_HPP_
 
 #include "cnpy.h"
+#include "lbann/utils/exception.hpp"
 #include <string>
 #include <vector>
-#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 namespace cnpy_utils {
@@ -41,7 +41,8 @@ namespace cnpy_utils {
  * If the number of indices is less than the dimension of na array, the indices
  * vector is appended with zeros to match the dimension.
  */
-size_t compute_cnpy_array_offset(const cnpy::NpyArray& na, std::vector<size_t> indices);
+size_t compute_cnpy_array_offset(const cnpy::NpyArray& na,
+                                 std::vector<size_t> indices);
 
 /**
  * If the type T of the numpy array element is something larger than 1 byte in
@@ -54,48 +55,52 @@ size_t compute_cnpy_array_offset(const cnpy::NpyArray& na, std::vector<size_t> i
  * cnpy treats an array of strings as a 1D array, for which the word_size is
  * equal to the length of the largest string.
  */
-template<typename T>
-inline size_t ptr_offset(const cnpy::NpyArray& na, std::vector<size_t> indices) {
+template <typename T>
+inline size_t ptr_offset(const cnpy::NpyArray& na, std::vector<size_t> indices)
+{
   if ((sizeof(T) != na.word_size) && (sizeof(T) != 1u)) {
-    throw lbann_exception(std::string("cnpy_utils::ptr_offset() :") +
-           "The data type is not consistent with the word size of the array.");
+    throw lbann_exception(
+      std::string("cnpy_utils::ptr_offset() :") +
+      "The data type is not consistent with the word size of the array.");
   }
-  return (compute_cnpy_array_offset(na, indices)
-           * ((sizeof(T) == 1u)? na.word_size : 1u));
+  return (compute_cnpy_array_offset(na, indices) *
+          ((sizeof(T) == 1u) ? na.word_size : 1u));
 }
-
 
 /**
  * Allow the access to the data element identified by the indices and the
  * word_size of the array na, but present it as a type T element at the address.
  */
-template<typename T>
-inline T& data(const cnpy::NpyArray& na, const std::vector<size_t> indices) {
-  return *(reinterpret_cast<T*>(&(* na.data_holder)[0]) + ptr_offset<T>(na, indices));
+template <typename T>
+inline T& data(const cnpy::NpyArray& na, const std::vector<size_t> indices)
+{
+  return *(reinterpret_cast<T*>(&(*na.data_holder)[0]) +
+           ptr_offset<T>(na, indices));
 }
-
 
 /**
  * Return the address of the data element identified by the indices and the
  * word_size of the array na, but present it as the address of a type T element
  */
-template<typename T>
-inline T* data_ptr(const cnpy::NpyArray& na, const std::vector<size_t> indices) {
-  return (reinterpret_cast<T*>(&(* na.data_holder)[0]) + ptr_offset<T>(na, indices));
+template <typename T>
+inline T* data_ptr(const cnpy::NpyArray& na, const std::vector<size_t> indices)
+{
+  return (reinterpret_cast<T*>(&(*na.data_holder)[0]) +
+          ptr_offset<T>(na, indices));
 }
 
-template<>
-inline void* data_ptr<void>(const cnpy::NpyArray& na, const std::vector<size_t> indices) {
+template <>
+inline void* data_ptr<void>(const cnpy::NpyArray& na,
+                            const std::vector<size_t> indices)
+{
   return data_ptr<uint8_t>(na, indices);
 }
-
 
 /**
  * Shrink the first dimension of cnpy::NpyArray to the given size.
  * This is used to choose only first sz samples in data.
  */
 void shrink_to_fit(cnpy::NpyArray& na, size_t sz);
-
 
 /// Show the dimensions of loaded data
 std::string show_shape(const cnpy::NpyArray& na);

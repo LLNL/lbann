@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,8 +33,11 @@
 #include "lbann/weights/weights.hpp"
 
 #if defined LBANN_DEBUG
-#define LBANN_DEBUG_ASSERT_POINTER(ptr) \
-  do { if (!ptr) LBANN_ERROR("Pointer \"" #ptr "\" is null."); } while (0)
+#define LBANN_DEBUG_ASSERT_POINTER(ptr)                                        \
+  do {                                                                         \
+    if (!ptr)                                                                  \
+      LBANN_ERROR("Pointer \"" #ptr "\" is null.");                            \
+  } while (0)
 #define LBANN_IN_DEBUG_MODE true
 #else
 #define LBANN_DEBUG_ASSERT_POINTER(ptr)
@@ -78,7 +81,6 @@ class WeightsProxy
   using ValuesPtrType = std::unique_ptr<ValuesType>;
 
 public:
-
   /** @name Constructors */
   ///@{
 
@@ -116,8 +118,7 @@ public:
    *                      values.
    */
   template <typename T>
-  WeightsProxy(WeightsProxy<T> const& other)
-    : WeightsProxy()
+  WeightsProxy(WeightsProxy<T> const& other) : WeightsProxy()
   {
     auto ptr = other.master_weights_pointer();
     if (!ptr.expired()) {
@@ -131,17 +132,14 @@ public:
    *  for WeightsProxy objects of the same static type.
    */
   WeightsProxy(WeightsProxy&& other) noexcept
-  : master_weights_{std::move(other.master_weights_)},
-    values_{std::move(other.values_)}
+    : master_weights_{std::move(other.master_weights_)},
+      values_{std::move(other.values_)}
   {
     other.clear();
   }
 
   /** @brief Destructor */
-  ~WeightsProxy() noexcept
-  {
-    this->clear();
-  }
+  ~WeightsProxy() noexcept { this->clear(); }
 
   ///@}
 
@@ -220,7 +218,8 @@ public:
     if (!empty()) {
       const auto& master_values = master_weights_.lock()->get_values();
       if (values_->Viewing()) {
-        El::LockedView(*values_, dynamic_cast<const ValuesType&>(master_values));
+        El::LockedView(*values_,
+                       dynamic_cast<const ValuesType&>(master_values));
       }
       else {
         El::Copy(master_values, *values_);
@@ -259,7 +258,8 @@ public:
     return *master_weights_.lock();
   }
 
-  ViewingWeightsPtr master_weights_pointer() const noexcept(!LBANN_IN_DEBUG_MODE)
+  ViewingWeightsPtr master_weights_pointer() const
+    noexcept(!LBANN_IN_DEBUG_MODE)
   {
     LBANN_DEBUG_ASSERT_POINTER(master_weights_.lock());
     return master_weights_;
@@ -283,7 +283,8 @@ private:
   ///@{
 
   /** @brief Establish the view of the master data. */
-  ValuesPtrType setup_values_(data_type_weights<TensorDataType> const& dtw) const
+  ValuesPtrType
+  setup_values_(data_type_weights<TensorDataType> const& dtw) const
   {
     auto const& vals = dtw.get_values();
     ValuesPtrType ret(vals.Construct(vals.Grid(), vals.Root()));
@@ -343,6 +344,6 @@ private:
 template <typename TensorDataType>
 using weights_proxy = WeightsProxy<TensorDataType>;
 
-}// namespace lbann
+} // namespace lbann
 #undef LBANN_IN_DEBUG_MODE
 #endif // LBANN_WEIGHTS_WEIGHTS_PROXY_HPP_INCLUDED

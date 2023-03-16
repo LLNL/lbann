@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,8 +29,8 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #ifdef LBANN_HAS_DNN_LIB
-#include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/dnn_lib/dropout.hpp"
+#include "lbann/utils/dnn_lib/helpers.hpp"
 #endif // LBANN_HAS_DNN_LIB
 #include "lbann/utils/random_number_generators.hpp"
 
@@ -48,7 +48,8 @@ namespace lbann {
  *  Learning Research 15, no. 1 (2014): 1929-1958.
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class dropout : public data_type_layer<TensorDataType> {
+class dropout : public data_type_layer<TensorDataType>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -64,10 +65,10 @@ public:
     : data_type_layer<TensorDataType>(nullptr),
       m_keep_prob(keep_prob)
 #ifdef LBANN_HAS_DNN_LIB
-    , m_tensors_dnn_desc(this)
+      ,
+      m_tensors_dnn_desc(this)
 #endif // LBANN_HAS_DNN_LIB
   {}
-
 
   dropout(const dropout& other)
     : data_type_layer<TensorDataType>(other),
@@ -88,10 +89,13 @@ public:
 #endif // LBANN_HAS_DNN_LIB
   }
 
-  dropout& operator=(const dropout& other) {
+  dropout& operator=(const dropout& other)
+  {
     data_type_layer<TensorDataType>::operator=(other);
     m_keep_prob = other.m_keep_prob;
-    m_mask = other.m_mask ? std::unique_ptr<AbsDistMatrixType>(other.m_mask->Copy()) : nullptr;
+    m_mask = other.m_mask
+               ? std::unique_ptr<AbsDistMatrixType>(other.m_mask->Copy())
+               : nullptr;
 #ifdef LBANN_HAS_DNN_LIB
     m_tensors_dnn_desc = other.m_tensors_dnn_desc;
     m_tensors_dnn_desc.set_layer(this);
@@ -111,19 +115,16 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  description get_description() const override {
+  description get_description() const override
+  {
     auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Keep probability", m_keep_prob);
     return desc;
   }
   /** @brief get prob for keep each unit. */
-  EvalType get_keep_prob() const {
-    return m_keep_prob;
-  }
+  EvalType get_keep_prob() const { return m_keep_prob; }
   /** @brief set prob for keep each unit. */
-  void set_keep_prob(EvalType keep_prob) {
-    m_keep_prob = keep_prob;
-  }
+  void set_keep_prob(EvalType keep_prob) { m_keep_prob = keep_prob; }
 
   /** @name Serialization */
   ///@{
@@ -134,21 +135,23 @@ public:
   ///@}
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 
-  void setup_data(size_t max_mini_batch_size) override {
+  void setup_data(size_t max_mini_batch_size) override
+  {
     data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
     m_mask = std::unique_ptr<AbsDistMatrixType>(this->get_activations().Copy());
   }
 
-  void setup_gpu() override {
+  void setup_gpu() override
+  {
     data_type_layer<TensorDataType>::setup_gpu();
 #ifndef LBANN_HAS_DNN_LIB
     LBANN_ERROR("DNN library not detected");
@@ -157,9 +160,11 @@ protected:
 #ifdef LBANN_DETERMINISTIC
     /// @todo GPU implementation of dropout with sequential consistency
     if (this->get_comm()->am_trainer_master()) {
-      LBANN_WARNING(
-        this->get_type()," layer \"",this->get_name(),"\" ",
-        "does not guarantee sequential consistency");
+      LBANN_WARNING(this->get_type(),
+                    " layer \"",
+                    this->get_name(),
+                    "\" ",
+                    "does not guarantee sequential consistency");
     }
 #endif // LBANN_DETERMINISTIC
 
@@ -169,24 +174,27 @@ protected:
 #endif // LBANN_HAS_DNN_LIB
   }
 
-  void fp_compute () override {
+  void fp_compute() override
+  {
     if (this->using_gpus()) {
       fp_compute_gpu();
-    } else {
+    }
+    else {
       fp_compute_cpu();
     }
   }
 
-  void bp_compute () override {
+  void bp_compute() override
+  {
     if (this->using_gpus()) {
       bp_compute_gpu();
-    } else {
+    }
+    else {
       bp_compute_cpu();
     }
   }
 
- private:
-
+private:
   void fp_compute_cpu();
 
   /** Adjust gradients for dropout in backprop. */
@@ -199,18 +207,20 @@ protected:
 #ifdef LBANN_HAS_DNN_LIB
   /** Setup DNN library dropout descriptor and RNG state.
    */
-  void setup_dropout_dnn_desc() {
+  void setup_dropout_dnn_desc()
+  {
 
     // Setup RNG state
     size_t size = dnn_lib::get_dropout_states_size();
-    m_states.Resize((size + sizeof(TensorDataType) - 1) / sizeof(TensorDataType), 1);
+    m_states.Resize((size + sizeof(TensorDataType) - 1) /
+                      sizeof(TensorDataType),
+                    1);
 
     // Setup dropout descriptor
     m_dropout_dnn_desc.set(float(1 - m_keep_prob),
-                             m_states.Buffer(),
-                             m_states.Height() * sizeof(TensorDataType),
-                             get_generator()());
-
+                           m_states.Buffer(),
+                           m_states.Height() * sizeof(TensorDataType),
+                           get_generator()());
   }
 #endif // LBANN_HAS_DNN_LIB
 
@@ -229,7 +239,6 @@ protected:
   /** Work space for DNN library dropout. */
   El::Matrix<TensorDataType, El::Device::GPU> m_reserve_space;
 #endif // LBANN_HAS_DNN_LIB
-
 };
 
 template <typename T, data_layout L, El::Device D>
@@ -238,8 +247,8 @@ using dropout_layer = dropout<T, L, D>;
 LBANN_DEFINE_LAYER_BUILDER(dropout);
 
 #ifndef LBANN_DROPOUT_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class dropout<T, data_layout::DATA_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class dropout<T, data_layout::DATA_PARALLEL, Device>;        \
   extern template class dropout<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"

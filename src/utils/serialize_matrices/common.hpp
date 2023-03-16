@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,17 +24,19 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lbann/utils/serialization/serialize_matrices.hpp>
 #include <cereal/types/polymorphic.hpp>
+#include <lbann/utils/serialization/serialize_matrices.hpp>
 
 // Register types outside Cereal's namespace.
 #define LBANN_COMMA ,
 
 // Handle general DistMatrix registration.
-#define REGISTER_DISTMATRIX(TYPE, CDIST, RDIST, DEVICE)                 \
-  CEREAL_REGISTER_TYPE_WITH_NAME(                                       \
-    El::DistMatrix<TYPE LBANN_COMMA El::CDIST LBANN_COMMA El::RDIST LBANN_COMMA El::ELEMENT LBANN_COMMA El::Device::DEVICE>, \
-    "DistMatrix(" #TYPE "," #CDIST "," #RDIST "," #DEVICE ")")                  \
-  CEREAL_REGISTER_POLYMORPHIC_RELATION(                                 \
-    El::AbstractDistMatrix<TYPE>,                                       \
-    El::DistMatrix<TYPE LBANN_COMMA El::CDIST LBANN_COMMA El::RDIST LBANN_COMMA El::ELEMENT LBANN_COMMA El::Device::DEVICE>)
+#define REGISTER_DISTMATRIX(TYPE, CDIST, RDIST, DEVICE)                        \
+  CEREAL_REGISTER_TYPE_WITH_NAME(                                              \
+    El::DistMatrix<TYPE LBANN_COMMA El::CDIST LBANN_COMMA El::RDIST            \
+                     LBANN_COMMA El::ELEMENT LBANN_COMMA El::Device::DEVICE>,  \
+    "DistMatrix(" #TYPE "," #CDIST "," #RDIST "," #DEVICE ")")                 \
+  CEREAL_REGISTER_POLYMORPHIC_RELATION(                                        \
+    El::AbstractDistMatrix<TYPE>,                                              \
+    El::DistMatrix<TYPE LBANN_COMMA El::CDIST LBANN_COMMA El::RDIST            \
+                     LBANN_COMMA El::ELEMENT LBANN_COMMA El::Device::DEVICE>)

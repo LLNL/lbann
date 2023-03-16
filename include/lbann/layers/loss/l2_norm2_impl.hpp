@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,7 +33,8 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void l2_norm2_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+void l2_norm2_layer<TensorDataType, T_layout, Dev>::fp_compute()
+{
 
   // Initialize workspace
   m_workspace->Empty();
@@ -67,7 +68,9 @@ void l2_norm2_layer<TensorDataType, T_layout, Dev>::bp_compute()
 }
 
 template <typename T, data_layout L, El::Device D>
-void l2_norm2_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void l2_norm2_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   proto.mutable_l2_norm2();
 }

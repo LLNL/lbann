@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -39,8 +39,7 @@
 // exemplar of the serialization tests. Subsequent testing will be
 // more compact.
 
-namespace
-{
+namespace {
 
 // We need a way to construct objects. One must at least pretend
 // to have meaningful state, and the other must have some "default"
@@ -65,27 +64,28 @@ namespace
 template <typename TensorDataType>
 struct SGDBuilder
 {
-  static lbann::sgd<TensorDataType> Stateful() {
+  static lbann::sgd<TensorDataType> Stateful()
+  {
     return lbann::sgd<TensorDataType>(
       /*learning_rate=*/TensorDataType(2.f),
       /*momentum=*/TensorDataType(3.f),
       /*nesterov=*/true);
   }
 
-  static lbann::sgd<TensorDataType> Default() {
+  static lbann::sgd<TensorDataType> Default()
+  {
     return lbann::sgd<TensorDataType>(
       /*learning_rate=*/TensorDataType(0.0f),
       /*momentum=*/TensorDataType(0.0f),
       /*nesterov=*/false);
   }
-};// struct SGDBuilder
+}; // struct SGDBuilder
 
-}// namespace <anon>
+} // namespace
 
-TEMPLATE_LIST_TEST_CASE(
-  "SGD Optimizer serialization",
-  "[optimizer][serialize]",
-  AllArchiveTypes)
+TEMPLATE_LIST_TEST_CASE("SGD Optimizer serialization",
+                        "[optimizer][serialize]",
+                        AllArchiveTypes)
 {
   using ValueType = tlist::Car<TestType>;
 
@@ -120,5 +120,4 @@ TEMPLATE_LIST_TEST_CASE(
   CHECK(opt.get_learning_rate() == opt_restore.get_learning_rate());
   CHECK(opt.get_momentum() == opt_restore.get_momentum());
   CHECK(opt.using_nesterov() == opt_restore.using_nesterov());
-
 }

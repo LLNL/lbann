@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -34,7 +34,9 @@
 namespace lbann {
 namespace transform {
 
-void horizontal_flip::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+void horizontal_flip::apply(utils::type_erased_matrix& data,
+                            std::vector<size_t>& dims)
+{
   if (transform::get_bool_random(m_p)) {
     cv::Mat src = utils::get_opencv_mat(data, dims);
     auto dst_real = El::Matrix<uint8_t>(get_linear_size(dims), 1);
@@ -45,10 +47,12 @@ void horizontal_flip::apply(utils::type_erased_matrix& data, std::vector<size_t>
 }
 
 std::unique_ptr<transform>
-build_horizontal_flip_transform_from_pbuf(google::protobuf::Message const& msg) {
-  auto const& params = dynamic_cast<lbann_data::Transform::HorizontalFlip const&>(msg);
+build_horizontal_flip_transform_from_pbuf(google::protobuf::Message const& msg)
+{
+  auto const& params =
+    dynamic_cast<lbann_data::Transform::HorizontalFlip const&>(msg);
   return std::make_unique<horizontal_flip>(params.p());
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

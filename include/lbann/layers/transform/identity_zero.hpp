@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,15 +35,18 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class identity_zero_layer : public data_type_layer<TensorDataType> {
+class identity_zero_layer : public data_type_layer<TensorDataType>
+{
 public:
-
-  identity_zero_layer(lbann_comm *comm)
-    : data_type_layer<TensorDataType>(comm) {
+  identity_zero_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm)
+  {
     this->m_expected_num_parent_layers = 1;
   }
 
-  identity_zero_layer* copy() const override { return new identity_zero_layer(*this); }
+  identity_zero_layer* copy() const override
+  {
+    return new identity_zero_layer(*this);
+  }
 
   /** @name Serialization */
   ///@{
@@ -58,12 +61,8 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
 protected:
-
   friend class cereal::access;
-  identity_zero_layer()
-    : identity_zero_layer(nullptr)
-  {}
-
+  identity_zero_layer() : identity_zero_layer(nullptr) {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 
@@ -72,14 +71,16 @@ protected:
   void bp_compute() override;
 
   void write_specific_proto(lbann_data::Layer& proto) const final;
-
 };
 
-
 #ifndef LBANN_IDENTITY_ZERO_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class identity_zero_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  extern template class identity_zero_layer<T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class identity_zero_layer<T,                                 \
+                                            data_layout::DATA_PARALLEL,        \
+                                            Device>;                           \
+  extern template class identity_zero_layer<T,                                 \
+                                            data_layout::MODEL_PARALLEL,       \
+                                            Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

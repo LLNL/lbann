@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -39,9 +39,9 @@ namespace lbann {
 // implement derived classes in the source file and forward declare
 // them in this header.
 namespace node2vec_reader_impl {
-  class DistributedDatabase;
-  class EdgeWeightData;
-  class RandomWalker;
+class DistributedDatabase;
+class EdgeWeightData;
+class RandomWalker;
 } // namespace node2vec_reader_impl
 
 /** Adapter for HavoqGT distributed node2vec walker.
@@ -59,16 +59,15 @@ namespace node2vec_reader_impl {
  *  @warning This is experimental.
  *
  */
-class node2vec_reader : public generic_data_reader {
+class node2vec_reader : public generic_data_reader
+{
 public:
-
-  node2vec_reader(
-    std::string graph_file,
-    size_t epoch_size,
-    size_t walk_length,
-    double return_param,
-    double inout_param,
-    size_t num_negative_samples);
+  node2vec_reader(std::string graph_file,
+                  size_t epoch_size,
+                  size_t walk_length,
+                  double return_param,
+                  double inout_param,
+                  size_t num_negative_samples);
   node2vec_reader(const node2vec_reader&) = delete;
   node2vec_reader& operator=(const node2vec_reader&) = delete;
   ~node2vec_reader() override;
@@ -84,24 +83,21 @@ public:
   void load() override;
 
 protected:
-  bool fetch_data_block(
-    CPUMat& X,
-    El::Int block_offset,
-    El::Int block_stride,
-    El::Int mb_size,
-    El::Matrix<El::Int>& indices_fetched) override;
+  bool fetch_data_block(CPUMat& X,
+                        El::Int block_offset,
+                        El::Int block_stride,
+                        El::Int mb_size,
+                        El::Matrix<El::Int>& indices_fetched) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
 
 private:
-
   /** Perform random walks, starting from random local vertices.
    *
    *  This uses IO RNG objects internally, so we have to make sure
    *  that the caller has acquired control of the IO RNG.
    */
-  std::vector<std::vector<size_t>> run_walker(
-    size_t num_walks,
-    const locked_io_rng_ref&);
+  std::vector<std::vector<size_t>> run_walker(size_t num_walks,
+                                              const locked_io_rng_ref&);
 
   /** Update noise distribution for negative sampling.
    *
@@ -112,7 +108,8 @@ private:
   void update_noise_distribution();
 
   /** HavoqGT database for distributed graph. */
-  std::unique_ptr<node2vec_reader_impl::DistributedDatabase> m_distributed_database;
+  std::unique_ptr<node2vec_reader_impl::DistributedDatabase>
+    m_distributed_database;
   /** Edge weights for distributed graph. */
   std::unique_ptr<node2vec_reader_impl::EdgeWeightData> m_edge_weight_data;
   /** Manager for node2vec random walks on distributed graph. */
@@ -135,7 +132,7 @@ private:
    *
    *  Inverse of @c m_local_vertex_global_indices.
    */
-  std::unordered_map<size_t,size_t> m_local_vertex_local_indices;
+  std::unordered_map<size_t, size_t> m_local_vertex_local_indices;
 
   /** Number of times each local vertex has been visited in random
    *  walks.
@@ -186,7 +183,6 @@ private:
   double m_inout_param;
   /** @brief Number of negative samples per data sample. */
   size_t m_num_negative_samples;
-
 };
 
 } // namespace lbann

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,19 +35,21 @@ namespace lbann {
 namespace transform {
 
 /** Convert an image from grayscale to color. */
-class colorize : public transform {
+class colorize : public transform
+{
 public:
   transform* copy() const override { return new colorize(*this); }
 
   std::string get_type() const override { return "colorize"; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data,
+             std::vector<size_t>& dims) override;
 };
 
 std::unique_ptr<transform>
 build_colorize_transform_from_pbuf(google::protobuf::Message const&);
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_COLORIZE_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_COLORIZE_HPP_INCLUDED

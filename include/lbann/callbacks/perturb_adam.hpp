@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -46,9 +46,9 @@ namespace callback {
  *  @f$\log(\text{learning rate})@f$, @f$\log(1-\beta_1)@f$,
  *  @f$\log(1-\beta_2)@f$, and @f$\log\epsilon@f$.
  */
-class perturb_adam : public callback_base {
+class perturb_adam : public callback_base
+{
 public:
-
   /** @param learning_rate_factor   Standard deviation of learning rate
    *                                perturbation (in log space).
    *  @param beta1_factor           Standard deviation of @f$\beta_1@f$
@@ -74,8 +74,7 @@ public:
                DataType eps_factor = 0,
                bool perturb_during_training = false,
                El::Int batch_interval = 1,
-               std::set<std::string> weights_names
-               = std::set<std::string>());
+               std::set<std::string> weights_names = std::set<std::string>());
   perturb_adam* copy() const override { return new perturb_adam(*this); }
   std::string name() const override { return "perturb Adam"; }
 
@@ -86,7 +85,8 @@ public:
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
@@ -134,13 +134,12 @@ private:
   void perturb(model& m) const;
   /** Perturb Adam optimizer hyperparameters. */
   void perturb(lbann_comm& comm, adam<DataType>& m) const;
-
 };
 
 // Builder function
 std::unique_ptr<callback_base>
-build_perturb_adam_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_perturb_adam_callback_from_pbuf(const google::protobuf::Message&,
+                                      std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann

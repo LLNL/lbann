@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -41,7 +41,8 @@ __global__ void fp_kernel(DataT min,
                           const DataT* __restrict__ input,
                           El::Int input_ldim,
                           DataT* __restrict__ output,
-                          El::Int output_ldim) {
+                          El::Int output_ldim)
+{
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int size = height * width;
   const El::Int num_threads = blockDim.x * gridDim.x;
@@ -50,9 +51,15 @@ __global__ void fp_kernel(DataT min,
     const auto& col = pos / height;
     const auto& x = input[row + col * input_ldim];
     auto& y = output[row + col * output_ldim];
-    if (x <= min)      { y = min; }
-    else if (x >= max) { y = max; }
-    else              { y = x;   }
+    if (x <= min) {
+      y = min;
+    }
+    else if (x >= max) {
+      y = max;
+    }
+    else {
+      y = x;
+    }
   }
 }
 
@@ -67,7 +74,8 @@ __global__ void bp_kernel(DataT min,
                           const DataT* __restrict__ gradient_wrt_output,
                           El::Int gradient_wrt_output_ldim,
                           DataT* __restrict__ gradient_wrt_input,
-                          El::Int gradient_wrt_input_ldim) {
+                          El::Int gradient_wrt_input_ldim)
+{
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int size = height * width;
   const El::Int num_threads = blockDim.x * gridDim.x;
@@ -86,7 +94,8 @@ template <typename DataT>
 void local_fp(DataT min,
               DataT max,
               El::Matrix<DataT, El::Device::GPU> const& input,
-              El::Matrix<DataT, El::Device::GPU>& output) {
+              El::Matrix<DataT, El::Device::GPU>& output)
+{
 
   // Get CUDA grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
@@ -96,23 +105,29 @@ void local_fp(DataT min,
   const El::Int width = input.Width();
   const El::Int block_dim = 256;
   El::Int grid_dim = (height * width + block_dim - 1) / block_dim;
-  if (sizeof(El::Int) > sizeof(unsigned int)
-      && grid_dim > std::numeric_limits<uint32_t>::max()) {
+  if (sizeof(El::Int) > sizeof(unsigned int) &&
+      grid_dim > std::numeric_limits<uint32_t>::max()) {
     grid_dim = std::numeric_limits<uint32_t>::max();
   }
 
   // Launch GPU kernel
   if (grid_dim > 0) {
-    auto multisync = El::MakeMultiSync(gpu::get_sync_info(input),
-                                       gpu::get_sync_info(output));
-    hydrogen::gpu::LaunchKernel(
-      fp_kernel<DataT>,
-      grid_dim, block_dim, 0, multisync,
-      min, max, height, width,
-      input.LockedBuffer(), input.LDim(),
-      output.Buffer(), output.LDim());
+    auto multisync =
+      El::MakeMultiSync(gpu::get_sync_info(input), gpu::get_sync_info(output));
+    hydrogen::gpu::LaunchKernel(fp_kernel<DataT>,
+                                grid_dim,
+                                block_dim,
+                                0,
+                                multisync,
+                                min,
+                                max,
+                                height,
+                                width,
+                                input.LockedBuffer(),
+                                input.LDim(),
+                                output.Buffer(),
+                                output.LDim());
   }
-
 }
 
 /** Local backprop computation. */
@@ -121,7 +136,8 @@ void local_bp(DataT min,
               DataT max,
               El::Matrix<DataT, El::Device::GPU> const& input,
               El::Matrix<DataT, El::Device::GPU> const& gradient_wrt_output,
-              El::Matrix<DataT, El::Device::GPU>& gradient_wrt_input) {
+              El::Matrix<DataT, El::Device::GPU>& gradient_wrt_input)
+{
 
   // Get CUDA grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
@@ -131,8 +147,8 @@ void local_bp(DataT min,
   const El::Int width = input.Width();
   const El::Int block_dim = 256;
   El::Int grid_dim = (height * width + block_dim - 1) / block_dim;
-  if (sizeof(El::Int) > sizeof(unsigned int)
-      && grid_dim > std::numeric_limits<uint32_t>::max()) {
+  if (sizeof(El::Int) > sizeof(unsigned int) &&
+      grid_dim > std::numeric_limits<uint32_t>::max()) {
     grid_dim = std::numeric_limits<uint32_t>::max();
   }
 
@@ -140,15 +156,22 @@ void local_bp(DataT min,
   if (grid_dim > 0) {
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(gradient_wrt_output),
                                        gpu::get_sync_info(gradient_wrt_input));
-    hydrogen::gpu::LaunchKernel(
-      bp_kernel<DataT>,
-      grid_dim, block_dim, 0, multisync,
-      min, max, height, width,
-      input.LockedBuffer(), input.LDim(),
-      gradient_wrt_output.LockedBuffer(), gradient_wrt_output.LDim(),
-      gradient_wrt_input.Buffer(), gradient_wrt_input.LDim());
+    hydrogen::gpu::LaunchKernel(bp_kernel<DataT>,
+                                grid_dim,
+                                block_dim,
+                                0,
+                                multisync,
+                                min,
+                                max,
+                                height,
+                                width,
+                                input.LockedBuffer(),
+                                input.LDim(),
+                                gradient_wrt_output.LockedBuffer(),
+                                gradient_wrt_output.LDim(),
+                                gradient_wrt_input.Buffer(),
+                                gradient_wrt_input.LDim());
   }
-
 }
 
 } // namespace
@@ -159,10 +182,7 @@ void ClampOperator<DataT, D>::fp_compute_local(
   std::vector<LocalOutputTensorType> outputs) const
 {
   LBANN_ASSERT(inputs.size() == 1 && outputs.size() == 1);
-  local_fp(this->m_min,
-           this->m_max,
-           inputs[0].data(),
-           outputs[0].data());
+  local_fp(this->m_min, this->m_max, inputs[0].data(), outputs[0].data());
 }
 
 template <typename DataT, El::Device D>

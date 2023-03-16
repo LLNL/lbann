@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,8 +32,7 @@
 
 #include "lbann/utils/dnn_lib/openmp.hpp"
 
-namespace lbann
-{
+namespace lbann {
 
 // This is simply the "fp_model_parallel" implementation, without the
 // communication.
@@ -59,13 +58,12 @@ void openmp_backend::softmax_forward(
                               si,
                               mode);
 
-  if(mode != softmax_mode::INSTANCE) {
+  if (mode != softmax_mode::INSTANCE) {
     LBANN_ERROR("Unsupported softmax mode");
   }
 
   // Local matrices
-  using workspace_type =
-    hydrogen::simple_buffer<DataT, El::Device::CPU>;
+  using workspace_type = hydrogen::simple_buffer<DataT, El::Device::CPU>;
   const auto& local_height = local_input.Height();
   const auto& local_width = local_input.Width();
   workspace_type local_workspace(local_width,
@@ -144,13 +142,12 @@ void openmp_backend::softmax_backward(
                                si,
                                mode);
 
-  if(mode != softmax_mode::INSTANCE) {
+  if (mode != softmax_mode::INSTANCE) {
     LBANN_ERROR("Unsupported softmax mode");
   }
 
   // Local matrices
-  using workspace_type =
-    hydrogen::simple_buffer<DataT, El::Device::CPU>;
+  using workspace_type = hydrogen::simple_buffer<DataT, El::Device::CPU>;
   const auto& local_height = local_output.Height();
   const auto& local_width = local_output.Width();
   workspace_type local_workspace(local_width,
@@ -181,7 +178,6 @@ void openmp_backend::softmax_backward(
       dx = y * (dy - y_dot_dy);
     }
   }
-
 }
 } // namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_OPENMP_SOFTMAX_HPP_

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,11 +37,12 @@ namespace lbann {
  *  rotation angle.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class rotation_layer : public data_type_layer<TensorDataType> {
+class rotation_layer : public data_type_layer<TensorDataType>
+{
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "rotation_layer only supports DATA_PARALLEL");
-  static_assert(Device == El::Device::CPU,
-                "rotation_layer only supports CPU");
+  static_assert(Device == El::Device::CPU, "rotation_layer only supports CPU");
+
 public:
   /** @name Public Types */
   ///@{
@@ -51,17 +52,13 @@ public:
 
   ///@}
 
-
 public:
-
-  rotation_layer(lbann_comm *comm)
-    : data_type_layer<TensorDataType>(comm) {
-		 this->m_expected_num_parent_layers = 2;
+  rotation_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm)
+  {
+    this->m_expected_num_parent_layers = 2;
   }
 
-  rotation_layer* copy() const override {
-    return new rotation_layer(*this);
-  }
+  rotation_layer* copy() const override { return new rotation_layer(*this); }
 
   /** @name Serialization */
   ///@{
@@ -78,21 +75,20 @@ public:
   void fp_compute() override;
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  rotation_layer()
-    : rotation_layer(nullptr)
-  {}
+  rotation_layer() : rotation_layer(nullptr) {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 };
 
 #ifndef LBANN_ROTATION_LAYER_INSTANTIATE
-#define PROTO(T) \
-  extern template class rotation_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  extern template class rotation_layer<T,                                      \
+                                       data_layout::DATA_PARALLEL,             \
+                                       El::Device::CPU>
 
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO

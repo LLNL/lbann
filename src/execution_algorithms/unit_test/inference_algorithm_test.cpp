@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,14 +26,14 @@
 
 #include "Catch2BasicSupport.hpp"
 
-#include "TestHelpers.hpp"
 #include "MPITestHelpers.hpp"
+#include "TestHelpers.hpp"
 
+#include "lbann/objective_functions/objective_function.hpp"
 #include <lbann/base.hpp>
 #include <lbann/execution_algorithms/batch_functional_inference_algorithm.hpp>
 #include <lbann/models/model.hpp>
 #include <lbann/utils/lbann_library.hpp>
-#include "lbann/objective_functions/objective_function.hpp"
 
 #include "lbann/proto/lbann.pb.h"
 #include <google/protobuf/text_format.h>
@@ -67,7 +67,7 @@ auto mock_datareader_metadata(int class_n)
   auto& md_dims = md.data_dims;
   // This is all that should be needed for this test.
   md_dims[lbann::data_reader_target_mode::CLASSIFICATION] = {class_n};
-  md_dims[lbann::data_reader_target_mode::INPUT] = {1,1,class_n};
+  md_dims[lbann::data_reader_target_mode::INPUT] = {1, 1, class_n};
   return md;
 }
 
@@ -89,7 +89,7 @@ auto make_model(lbann::lbann_comm& comm, int class_n)
   return my_model;
 }
 
-} // namespace <anon>
+} // namespace
 
 TEST_CASE("Test batch_function_inference_algorithm", "[inference]")
 {
@@ -114,9 +114,9 @@ TEST_CASE("Test batch_function_inference_algorithm", "[inference]")
     auto const& dtl = dynamic_cast<lbann::data_type_layer<float> const&>(*l);
     const auto& output = dtl.get_activations();
 
-    for (int i=0; i<output.Height(); i++) {
-      for (int j=0; j<output.Width(); j++) {
-        REQUIRE(output.Get(i,j) == Approx( 1.0/mbs_class_n ) );
+    for (int i = 0; i < output.Height(); i++) {
+      for (int j = 0; j < output.Width(); j++) {
+        REQUIRE(output.Get(i, j) == Approx(1.0 / mbs_class_n));
       }
     }
   }
@@ -128,7 +128,7 @@ TEST_CASE("Test batch_function_inference_algorithm", "[inference]")
 
     auto labels = inf_alg.infer(model.get(), data, mbs_class_n);
 
-    for (int i=0; i<labels.Height(); i++) {
+    for (int i = 0; i < labels.Height(); i++) {
       REQUIRE(labels(i) == i);
     }
   }

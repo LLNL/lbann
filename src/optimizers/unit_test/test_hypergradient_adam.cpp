@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,13 +32,13 @@
 
 // See test_sgd.cpp for a detailed, annotated test case.
 
-namespace
-{
+namespace {
 
 template <typename TensorDataType>
 struct HypergradientAdamBuilder
 {
-  static lbann::hypergradient_adam<TensorDataType> Stateful() {
+  static lbann::hypergradient_adam<TensorDataType> Stateful()
+  {
     return lbann::hypergradient_adam<TensorDataType>(
       /*init_learning_rate=*/TensorDataType(0.0123f),
       /*hyper_learning_rate=*/TensorDataType(0.0321f),
@@ -47,7 +47,8 @@ struct HypergradientAdamBuilder
       /*eps=*/TensorDataType(0.0234f));
   }
 
-  static lbann::hypergradient_adam<TensorDataType> Default() {
+  static lbann::hypergradient_adam<TensorDataType> Default()
+  {
     return lbann::hypergradient_adam<TensorDataType>(
       /*init_learning_rate=*/TensorDataType(0.0f),
       /*hyper_learning_rate=*/TensorDataType(0.0f),
@@ -55,14 +56,13 @@ struct HypergradientAdamBuilder
       /*beta2=*/TensorDataType(0.0f),
       /*eps=*/TensorDataType(0.0f));
   }
-};// struct Hypergradient_AdamBuilder
+}; // struct Hypergradient_AdamBuilder
 
-}// namespace <anon>
+} // namespace
 
-TEMPLATE_LIST_TEST_CASE(
-  "Hypergradient Adam Optimizer serialization",
-  "[optimizer][serialize]",
-  AllArchiveTypes)
+TEMPLATE_LIST_TEST_CASE("Hypergradient Adam Optimizer serialization",
+                        "[optimizer][serialize]",
+                        AllArchiveTypes)
 {
   using ValueType = tlist::Car<TestType>;
 

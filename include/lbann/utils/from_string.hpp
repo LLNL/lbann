@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -50,10 +50,7 @@ namespace utils {
 template <typename T>
 T from_string(std::string const& str);
 
-inline std::string from_string(std::string&& str)
-{
-  return std::move(str);
-}
+inline std::string from_string(std::string&& str) { return std::move(str); }
 
 template <>
 inline std::string from_string<std::string>(std::string const& str)
@@ -86,7 +83,8 @@ inline unsigned long from_string<unsigned long>(std::string const& str)
 }
 
 template <>
-inline unsigned long long from_string<unsigned long long>(std::string const& str)
+inline unsigned long long
+from_string<unsigned long long>(std::string const& str)
 {
   return std::stoull(str);
 }
@@ -113,11 +111,11 @@ template <>
 inline bool from_string<bool>(std::string const& str)
 {
   auto upcase = [](std::string s) {
-                  std::transform(s.begin(), s.end(), s.begin(),
-                                 [](unsigned char c)
-                                 { return std::toupper(c); });
-                  return s;
-                };
+    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) {
+      return std::toupper(c);
+    });
+    return s;
+  };
   auto upper = upcase(str);
   if (upper == "TRUE")
     return true;
@@ -127,6 +125,6 @@ inline bool from_string<bool>(std::string const& str)
     return from_string<int>(str);
 }
 
-}// namespace utils
-}// namespace lbann
+} // namespace utils
+} // namespace lbann
 #endif // LBANN_UTILS_FROM_STRING_INCLUDED

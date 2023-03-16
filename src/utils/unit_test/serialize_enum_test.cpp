@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,15 +25,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "Catch2BasicSupport.hpp"
 
-#include "TestHelpers.hpp"
 #include "MPITestHelpers.hpp"
+#include "TestHelpers.hpp"
 
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 #include <lbann/base.hpp>
 #include <lbann/utils/serialize.hpp>
-#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
-namespace
-{
+namespace {
 enum class myenum
 {
   DEFAULT,

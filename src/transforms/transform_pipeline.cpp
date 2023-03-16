@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,15 +30,17 @@
 namespace lbann {
 namespace transform {
 
-transform_pipeline::transform_pipeline(const transform_pipeline& other) :
-  m_expected_out_dims(other.m_expected_out_dims) {
+transform_pipeline::transform_pipeline(const transform_pipeline& other)
+  : m_expected_out_dims(other.m_expected_out_dims)
+{
   for (const auto& trans : other.m_transforms) {
     m_transforms.emplace_back(trans->copy());
   }
 }
 
-transform_pipeline& transform_pipeline::operator=(
-  const transform_pipeline& other) {
+transform_pipeline&
+transform_pipeline::operator=(const transform_pipeline& other)
+{
   m_expected_out_dims = other.m_expected_out_dims;
   m_transforms.clear();
   for (const auto& trans : other.m_transforms) {
@@ -48,21 +50,25 @@ transform_pipeline& transform_pipeline::operator=(
 }
 
 void transform_pipeline::apply(utils::type_erased_matrix& data,
-                               std::vector<size_t>& dims) {
+                               std::vector<size_t>& dims)
+{
   for (auto& trans : m_transforms) {
     trans->apply(data, dims);
   }
   assert_expected_out_dims(dims);
 }
 
-void transform_pipeline::apply(CPUMat& data, std::vector<size_t>& dims) {
+void transform_pipeline::apply(CPUMat& data, std::vector<size_t>& dims)
+{
   utils::type_erased_matrix m = utils::type_erased_matrix(std::move(data));
   apply(m, dims);
   data = std::move(m.template get<DataType>());
 }
 
-void transform_pipeline::apply(El::Matrix<uint8_t>& data, CPUMat& out_data,
-                               std::vector<size_t>& dims) {
+void transform_pipeline::apply(El::Matrix<uint8_t>& data,
+                               CPUMat& out_data,
+                               std::vector<size_t>& dims)
+{
   utils::type_erased_matrix m = utils::type_erased_matrix(std::move(data));
   if (!m_transforms.empty()) {
     bool applied_non_inplace = false;
@@ -71,7 +77,8 @@ void transform_pipeline::apply(El::Matrix<uint8_t>& data, CPUMat& out_data,
       if (m_transforms[i]->supports_non_inplace()) {
         applied_non_inplace = true;
         m_transforms[i]->apply(m, out_data, dims);
-      } else {
+      }
+      else {
         m_transforms[i]->apply(m, dims);
       }
     }
@@ -87,24 +94,30 @@ void transform_pipeline::apply(El::Matrix<uint8_t>& data, CPUMat& out_data,
       }
       out_data = std::move(m.template get<DataType>());
     }
-  } else {
+  }
+  else {
     LBANN_ERROR("No transform to go from uint8 -> DataType");
   }
   assert_expected_out_dims(dims);
 }
 
 void transform_pipeline::assert_expected_out_dims(
-  const std::vector<size_t>& dims) {
+  const std::vector<size_t>& dims)
+{
   if (!m_expected_out_dims.empty() && dims != m_expected_out_dims) {
     std::stringstream ss;
     ss << "Transformed dims do not match expected dims, got {";
-    for (const auto& d : dims) { ss << d << " "; }
+    for (const auto& d : dims) {
+      ss << d << " ";
+    }
     ss << "} expected {";
-    for (const auto& d : m_expected_out_dims) { ss << d << " "; }
+    for (const auto& d : m_expected_out_dims) {
+      ss << d << " ";
+    }
     ss << "}";
     LBANN_ERROR(ss.str());
   }
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

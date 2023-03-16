@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -80,9 +80,8 @@ public:
    *  If the variable doesn't exist, the empty string is returned.
    */
   virtual std::string env_variable_value(std::string const& var_name) const;
-
 };
 
-}// namespace utils
-}// namespace lbann
+} // namespace utils
+} // namespace lbann
 #endif // LBANN_UTILS_SYSTEM_INFO_HPP_INCLUDED

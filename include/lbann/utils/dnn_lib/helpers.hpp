@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,8 +27,8 @@
 #ifndef LBANN_UTILS_DNN_LIB_HELPERS_HPP
 #define LBANN_UTILS_DNN_LIB_HELPERS_HPP
 
-#include "lbann_config.hpp"
 #include "lbann/utils/dnn_enums.hpp"
+#include "lbann_config.hpp"
 
 #ifdef LBANN_HAS_DNN_LIB
 
@@ -38,8 +38,8 @@
 namespace lbann {
 namespace dnn_lib {
 using namespace cudnn;
-}// namespace dnn_lib
-}// namespace lbann
+} // namespace dnn_lib
+} // namespace lbann
 
 #elif defined LBANN_HAS_MIOPEN
 
@@ -48,8 +48,8 @@ using namespace cudnn;
 namespace lbann {
 namespace dnn_lib {
 using namespace miopen;
-}// namespace dnn_lib
-}// namespace lbann
+} // namespace dnn_lib
+} // namespace lbann
 
 #endif // LBANN_HAS_CUDNN
 

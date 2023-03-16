@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,65 +27,61 @@
 #ifndef LBANN_UTILS_CUDA_HPP
 #define LBANN_UTILS_CUDA_HPP
 
-#include "lbann_config.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann_config.hpp"
 
 #ifdef LBANN_HAS_CUDA
 
 #include <cuda.h>
-#include <thrust/memory.h>
-#include <thrust/version.h>
 #include <thrust/detail/allocator/tagged_allocator.h>
-#include <thrust/system/cuda/detail/par.h>
 #include <thrust/device_vector.h>
+#include <thrust/memory.h>
+#include <thrust/system/cuda/detail/par.h>
+#include <thrust/version.h>
 
 // -------------------------------------------------------------
 // Error utility macros
 // -------------------------------------------------------------
-#define LBANN_CUDA_SYNC(async)                                  \
-  do {                                                          \
-    /* Synchronize GPU and check for errors. */                 \
-    cudaError_t status_CUDA_SYNC = cudaDeviceSynchronize();     \
-    if (status_CUDA_SYNC == cudaSuccess)                        \
-      status_CUDA_SYNC = cudaGetLastError();                    \
-    if (status_CUDA_SYNC != cudaSuccess) {                      \
-      LBANN_ERROR((async ? "Asynchronous " : ""),               \
-                  "CUDA error (",                               \
-                  cudaGetErrorString(status_CUDA_SYNC),         \
-                  ")");                                         \
-    }                                                           \
+#define LBANN_CUDA_SYNC(async)                                                 \
+  do {                                                                         \
+    /* Synchronize GPU and check for errors. */                                \
+    cudaError_t status_CUDA_SYNC = cudaDeviceSynchronize();                    \
+    if (status_CUDA_SYNC == cudaSuccess)                                       \
+      status_CUDA_SYNC = cudaGetLastError();                                   \
+    if (status_CUDA_SYNC != cudaSuccess) {                                     \
+      LBANN_ERROR((async ? "Asynchronous " : ""),                              \
+                  "CUDA error (",                                              \
+                  cudaGetErrorString(status_CUDA_SYNC),                        \
+                  ")");                                                        \
+    }                                                                          \
   } while (0)
-#define LBANN_CUDA_CHECK_LAST_ERROR(async)                      \
-  do {                                                          \
-    cudaError_t status = cudaGetLastError();                    \
-    if (status != cudaSuccess) {                                \
-      LBANN_ERROR((async ? "Asynchronous " : ""),               \
-                  "CUDA error (",                               \
-                  cudaGetErrorString(status),                   \
-                  ")");                                         \
-    }                                                           \
+#define LBANN_CUDA_CHECK_LAST_ERROR(async)                                     \
+  do {                                                                         \
+    cudaError_t status = cudaGetLastError();                                   \
+    if (status != cudaSuccess) {                                               \
+      LBANN_ERROR((async ? "Asynchronous " : ""),                              \
+                  "CUDA error (",                                              \
+                  cudaGetErrorString(status),                                  \
+                  ")");                                                        \
+    }                                                                          \
   } while (0)
-#define FORCE_CHECK_CUDA(cuda_call)                             \
-  do {                                                          \
-    /* Call CUDA API routine, synchronizing before and */       \
-    /* after to check for errors. */                            \
-    LBANN_CUDA_SYNC(true);                                      \
-    cudaError_t status_CHECK_CUDA = (cuda_call);                \
-    if (status_CHECK_CUDA != cudaSuccess) {                     \
-      LBANN_ERROR("CUDA error (",                               \
-                  cudaGetErrorString(status_CHECK_CUDA),        \
-                  ")");                                         \
-    }                                                           \
-    LBANN_CUDA_SYNC(false);                                     \
+#define FORCE_CHECK_CUDA(cuda_call)                                            \
+  do {                                                                         \
+    /* Call CUDA API routine, synchronizing before and */                      \
+    /* after to check for errors. */                                           \
+    LBANN_CUDA_SYNC(true);                                                     \
+    cudaError_t status_CHECK_CUDA = (cuda_call);                               \
+    if (status_CHECK_CUDA != cudaSuccess) {                                    \
+      LBANN_ERROR("CUDA error (", cudaGetErrorString(status_CHECK_CUDA), ")"); \
+    }                                                                          \
+    LBANN_CUDA_SYNC(false);                                                    \
   } while (0)
-#define FORCE_CHECK_CUDA_NOSYNC(cuda_call)                      \
-  do {                                                          \
-    cudaError_t status_CHECK_CUDA = (cuda_call);                \
-    if (status_CHECK_CUDA != cudaSuccess) {                     \
-      LBANN_ERROR("CUDA error (",                               \
-                  cudaGetErrorString(status_CHECK_CUDA),        \
-                  ")");                                         \
-    }                                                           \
+#define FORCE_CHECK_CUDA_NOSYNC(cuda_call)                                     \
+  do {                                                                         \
+    cudaError_t status_CHECK_CUDA = (cuda_call);                               \
+    if (status_CHECK_CUDA != cudaSuccess) {                                    \
+      LBANN_ERROR("CUDA error (", cudaGetErrorString(status_CHECK_CUDA), ")"); \
+    }                                                                          \
   } while (0)
 #ifdef LBANN_DEBUG
 #define CHECK_CUDA(cuda_call) FORCE_CHECK_CUDA(cuda_call);
@@ -103,7 +99,8 @@ constexpr cudaMemcpyKind GPU_MEMCPY_DEVICE_TO_DEVICE = cudaMemcpyDeviceToDevice;
 // -------------------------------------------------------------
 
 /** Wrapper class for a CUDA event. */
-class event_wrapper {
+class event_wrapper
+{
 public:
   event_wrapper();
   event_wrapper(const event_wrapper& other);
@@ -117,6 +114,7 @@ public:
   void synchronize();
   /** Get CUDA event object. */
   cudaEvent_t& get_event();
+
 private:
   /** CUDA event object.
    *  The event object lifetime is managed internally.
@@ -129,11 +127,11 @@ private:
 };
 
 /** Wrapper around @c cudaGraph_t */
-class Graph {
+class Graph
+{
 
 public:
-
-  Graph(cudaGraph_t graph=nullptr);
+  Graph(cudaGraph_t graph = nullptr);
   ~Graph();
 
   // Copy-and-swap idiom
@@ -143,7 +141,7 @@ public:
   friend void swap(Graph& first, Graph& second);
 
   /** @brief Take ownership of CUDA object */
-  void reset(cudaGraph_t graph=nullptr);
+  void reset(cudaGraph_t graph = nullptr);
   /** @brief Return CUDA object and release ownership */
   cudaGraph_t release();
   /** @brief Return CUDA object without releasing ownership */
@@ -158,24 +156,22 @@ public:
   void create();
 
   /** @begin Begin stream capture */
-  static void begin_capture(
-    cudaStream_t stream,
-    cudaStreamCaptureMode mode=cudaStreamCaptureModeGlobal);
+  static void
+  begin_capture(cudaStream_t stream,
+                cudaStreamCaptureMode mode = cudaStreamCaptureModeGlobal);
   /** @begin End stream capture and return the resulting CUDA graph */
   static Graph end_capture(cudaStream_t stream);
 
 private:
-
   cudaGraph_t graph_{nullptr};
-
 };
 
 /** Wrapper around @c cudaGraphExec_t */
-class ExecutableGraph {
+class ExecutableGraph
+{
 
 public:
-
-  ExecutableGraph(cudaGraphExec_t graph_exec=nullptr);
+  ExecutableGraph(cudaGraphExec_t graph_exec = nullptr);
   ExecutableGraph(cudaGraph_t graph);
   ~ExecutableGraph();
 
@@ -186,7 +182,7 @@ public:
   friend void swap(ExecutableGraph& first, ExecutableGraph& second);
 
   /** @brief Take ownership of CUDA object */
-  void reset(cudaGraphExec_t graph=nullptr);
+  void reset(cudaGraphExec_t graph = nullptr);
   /** @brief Return CUDA object and release ownership */
   cudaGraphExec_t release();
   /** @brief Return CUDA object without releasing ownership */
@@ -205,9 +201,7 @@ public:
   void update(cudaGraph_t graph);
 
 private:
-
   cudaGraphExec_t graph_exec_{nullptr};
-
 };
 
 // -------------------------------------------------------------
@@ -216,20 +210,18 @@ private:
 
 /** Copy entries between GPU tensors. */
 template <typename TensorDataType>
-void copy_tensor(
-  cudaStream_t stream,
-  const std::vector<size_t>& dims,
-  const TensorDataType* input,
-  const std::vector<size_t>& input_strides,
-  TensorDataType* output,
-  const std::vector<size_t>& output_strides);
+void copy_tensor(cudaStream_t stream,
+                 const std::vector<size_t>& dims,
+                 const TensorDataType* input,
+                 const std::vector<size_t>& input_strides,
+                 TensorDataType* output,
+                 const std::vector<size_t>& output_strides);
 
-void mem_copy_async(
-  void* output,
-  const void* input,
-  const size_t count,
-  cudaMemcpyKind kind,
-  cudaStream_t stream);
+void mem_copy_async(void* output,
+                    const void* input,
+                    const size_t count,
+                    cudaMemcpyKind kind,
+                    cudaStream_t stream);
 
 // -------------------------------------------------------------
 // Utilities for Thrust
@@ -244,7 +236,7 @@ using execute_on_stream
   = ::thrust::system::cuda::detail::execute_on_stream;
 #else
   = std::nullptr_t;
-  static_assert(false, "Thrust 1.8 or newer is required");
+static_assert(false, "Thrust 1.8 or newer is required");
 #endif
 
 /** GPU memory allocator that can interact with Thrust.
@@ -252,18 +244,21 @@ using execute_on_stream
  *  Hydrogen's CUB memory pool if available.
  */
 template <typename T = El::byte>
-class allocator
-  : public ::thrust::detail::tagged_allocator<
-               T, execute_on_stream,
-               ::thrust::pointer<T, execute_on_stream>> {
+class allocator : public ::thrust::detail::tagged_allocator<
+                    T,
+                    execute_on_stream,
+                    ::thrust::pointer<T, execute_on_stream>>
+{
 public:
   // Convenient typedefs
   typedef ::thrust::detail::tagged_allocator<
-              T, execute_on_stream,
-              ::thrust::pointer<T, execute_on_stream>> parent_class;
-  typedef typename parent_class::value_type  value_type;
-  typedef typename parent_class::pointer     pointer;
-  typedef typename parent_class::size_type   size_type;
+    T,
+    execute_on_stream,
+    ::thrust::pointer<T, execute_on_stream>>
+    parent_class;
+  typedef typename parent_class::value_type value_type;
+  typedef typename parent_class::pointer pointer;
+  typedef typename parent_class::size_type size_type;
   typedef typename parent_class::system_type system_type;
 
   /** Default constructor. */
@@ -282,7 +277,6 @@ private:
   cudaStream_t m_stream;
   /** Thrust execution policy. */
   system_type m_system;
-
 };
 
 /** Thrust device vector. */

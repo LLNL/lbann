@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -102,7 +102,8 @@ factory_type const& get_weight_initializer_factory() noexcept
 /* Construct a weights initialization specified with prototext. */
 template <typename TensorDataType>
 std::unique_ptr<lbann::weights_initializer>
-construct_initializer(const lbann_data::Weights& proto_weights) {
+construct_initializer(const lbann_data::Weights& proto_weights)
+{
   auto const& factory = get_weight_initializer_factory<TensorDataType>();
   auto const& msg =
     ::lbann::protobuf::get_oneof_message(proto_weights.initializer(),
@@ -112,10 +113,11 @@ construct_initializer(const lbann_data::Weights& proto_weights) {
 
 } // namespace
 
-std::unique_ptr<lbann::weights> lbann::proto::construct_weights(
-  lbann_comm* comm,
-  const lbann_data::Optimizer& proto_opt,
-  const lbann_data::Weights& proto_weights) {
+std::unique_ptr<lbann::weights>
+lbann::proto::construct_weights(lbann_comm* comm,
+                                const lbann_data::Optimizer& proto_opt,
+                                const lbann_data::Weights& proto_weights)
+{
 
   if (!comm)
     LBANN_ERROR("Cannot have a null communicator.");
@@ -144,8 +146,7 @@ std::unique_ptr<lbann::weights> lbann::proto::construct_weights(
     }                                                                          \
   } while (0)
 
-#define PROTO(T) \
-    TEMPLATE_INSTANTIATION(T)
+#define PROTO(T) TEMPLATE_INSTANTIATION(T)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

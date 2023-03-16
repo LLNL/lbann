@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -45,7 +45,9 @@ namespace lbann {
 #include "lbann/macros/instantiate_device.hpp"
 
 template <typename T, typename O, data_layout L, El::Device D>
-void OperatorLayer<T, O, L, D>::write_specific_proto(lbann_data::Layer& proto) const {
+void OperatorLayer<T, O, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
 
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_operator_layer();

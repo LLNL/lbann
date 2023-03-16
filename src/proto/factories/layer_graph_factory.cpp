@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/proto/factories.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/proto/factories.hpp"
 #include "lbann/utils/protobuf.hpp"
 
 #include "lbann/layers/learning/fully_connected.hpp"
@@ -146,34 +146,32 @@ construct_layer_graph(lbann_comm* comm,
     // Input layers must be on CPU
     if (!proto_layer.has_input() && !model_disable_gpus) {
       const auto& device_str = proto_layer.device_allocation();
-      device = (device_str.empty()
-                ? El::Device::GPU
-                : device_from_string(device_str));
+      device =
+        (device_str.empty() ? El::Device::GPU : device_from_string(device_str));
     }
 #else
-    (void) model_disable_gpus;
+    (void)model_disable_gpus;
 #endif // LBANN_HAS_GPU
 
     auto proto_datatype = proto_layer.datatype();
 
     // Construct layer
     OwningLayerPtr l;
-#define TEMPLATE_INSTANTIATION(TensorDataType, T_layout, T_device)      \
-    do {                                                                \
-      if (proto_datatype == TypeToProtoDataType<TensorDataType>::value  \
-          && layout == T_layout                                         \
-          && device == T_device) {                                      \
-        l = construct_layer<TensorDataType, T_layout, T_device>(        \
-          comm,                                                         \
-          training_dr_linearized_data_size,                             \
-          num_parallel_readers,                                         \
-          proto_layer);                                                 \
-  }                                                                     \
-} while (0)
+#define TEMPLATE_INSTANTIATION(TensorDataType, T_layout, T_device)             \
+  do {                                                                         \
+    if (proto_datatype == TypeToProtoDataType<TensorDataType>::value &&        \
+        layout == T_layout && device == T_device) {                            \
+      l = construct_layer<TensorDataType, T_layout, T_device>(                 \
+        comm,                                                                  \
+        training_dr_linearized_data_size,                                      \
+        num_parallel_readers,                                                  \
+        proto_layer);                                                          \
+    }                                                                          \
+  } while (0)
 
-#define PROTO_DEVICE(T, Device) \
-    TEMPLATE_INSTANTIATION(T, data_layout::DATA_PARALLEL, Device); \
-    TEMPLATE_INSTANTIATION(T, data_layout::MODEL_PARALLEL, Device)
+#define PROTO_DEVICE(T, Device)                                                \
+  TEMPLATE_INSTANTIATION(T, data_layout::DATA_PARALLEL, Device);               \
+  TEMPLATE_INSTANTIATION(T, data_layout::MODEL_PARALLEL, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
 
@@ -196,7 +194,8 @@ construct_layer_graph(lbann_comm* comm,
     ps.depth_splits = proto_layer.parallel_strategy().depth_splits();
     ps.enable_subgraph = proto_layer.parallel_strategy().enable_subgraph();
     ps.sub_branch_tag = proto_layer.parallel_strategy().sub_branch_tag();
-    ps.sub_branch_resource_percentage = proto_layer.parallel_strategy().sub_branch_resource_percentage();
+    ps.sub_branch_resource_percentage =
+      proto_layer.parallel_strategy().sub_branch_resource_percentage();
 
     // Check that layer has been constructed
     if (l == nullptr)
@@ -212,11 +211,11 @@ construct_layer_graph(lbann_comm* comm,
     names_to_layers[name] = l;
 
     if (proto_layer.freeze()) {
-      #ifdef LBANN_DEBUG
+#ifdef LBANN_DEBUG
       if (comm->am_world_master()) {
         std::cout << "freezing " << l->get_name() << std::endl;
       }
-      #endif
+#endif
       l->freeze();
     }
     // Add layer to list

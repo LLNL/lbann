@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,8 +29,9 @@
 namespace lbann {
 namespace cnpy_utils {
 
-size_t compute_cnpy_array_offset(
-  const cnpy::NpyArray& na, std::vector<size_t> indices) {
+size_t compute_cnpy_array_offset(const cnpy::NpyArray& na,
+                                 std::vector<size_t> indices)
+{
 
   if (indices.size() < na.shape.size()) {
     indices.resize(na.shape.size(), 0u);
@@ -39,10 +40,10 @@ size_t compute_cnpy_array_offset(
   size_t unit_stride = 1u;
   size_t offset = 0u;
 
-  for (size_t i = indices.size(); ok && (i-- > 0u); ) {
+  for (size_t i = indices.size(); ok && (i-- > 0u);) {
     ok = (indices[i] < na.shape[i]) ||
-        // relax to allow representing the exclusive upper bound
-        ((i == 0u) && (indices[i] == na.shape[i]));
+         // relax to allow representing the exclusive upper bound
+         ((i == 0u) && (indices[i] == na.shape[i]));
     offset += indices[i] * unit_stride;
     unit_stride *= na.shape[i];
   }
@@ -52,31 +53,32 @@ size_t compute_cnpy_array_offset(
   return offset;
 }
 
-
-void shrink_to_fit(cnpy::NpyArray& na, size_t sz) {
+void shrink_to_fit(cnpy::NpyArray& na, size_t sz)
+{
   if ((na.shape.size() == 0u) || (na.shape[0] <= sz)) {
-    //std::cerr << "not able to shrink to " << sz << std::endl;
+    // std::cerr << "not able to shrink to " << sz << std::endl;
     return;
   }
   size_t new_size = sz;
-  for(size_t i = 1u; i < na.shape.size(); ++i) {
+  for (size_t i = 1u; i < na.shape.size(); ++i) {
     new_size *= na.shape[i];
   }
-  na.data_holder->resize(new_size*na.word_size);
+  na.data_holder->resize(new_size * na.word_size);
   na.data_holder->shrink_to_fit();
   na.num_vals = new_size;
   na.shape[0] = sz;
 }
 
-
-std::string show_shape(const cnpy::NpyArray& na) {
+std::string show_shape(const cnpy::NpyArray& na)
+{
   std::string ret;
-  for (const size_t s: na.shape) {
+  for (const size_t s : na.shape) {
     ret += std::to_string(s) + 'x';
   }
   if (ret.size() == 0u) {
     return "empty";
-  } else {
+  }
+  else {
     ret.pop_back(); // remove the last 'x'
     ret += " " + std::to_string(na.word_size);
   }

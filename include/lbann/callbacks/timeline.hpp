@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -45,42 +45,41 @@ namespace callback {
  * Each line is a separate event, written as name:start-time:end-time.
  * Times are relative to the beginning of training.
  */
-class timeline : public callback_base {
- public:
-  timeline(std::string outdir) : callback_base(1),
-                                                m_outdir(outdir) {}
+class timeline : public callback_base
+{
+public:
+  timeline(std::string outdir) : callback_base(1), m_outdir(outdir) {}
   timeline(const timeline&) = default;
   timeline& operator=(const timeline&) = default;
-  timeline* copy() const override {
-    return new timeline(*this);
-  }
+  timeline* copy() const override { return new timeline(*this); }
   std::string name() const override { return "timeline"; }
-  void on_train_begin(model *m) override;
-  void on_train_end(model *m) override;
+  void on_train_begin(model* m) override;
+  void on_train_end(model* m) override;
 
-  using callback_base::on_forward_prop_begin;
-  using callback_base::on_forward_prop_end;
   using callback_base::on_backward_prop_begin;
   using callback_base::on_backward_prop_end;
+  using callback_base::on_forward_prop_begin;
+  using callback_base::on_forward_prop_end;
   using callback_base::on_optimize_begin;
   using callback_base::on_optimize_end;
 
-  void on_forward_prop_begin(model *m, Layer *l) override;
-  void on_forward_prop_end(model *m, Layer *l) override;
-  void on_backward_prop_begin(model *m, Layer *l) override;
-  void on_backward_prop_end(model *m, Layer *l) override;
-  void on_optimize_begin(model *m, weights *w) override;
-  void on_optimize_end(model *m, weights *w) override;
+  void on_forward_prop_begin(model* m, Layer* l) override;
+  void on_forward_prop_end(model* m, Layer* l) override;
+  void on_backward_prop_begin(model* m, Layer* l) override;
+  void on_backward_prop_end(model* m, Layer* l) override;
+  void on_optimize_begin(model* m, weights* w) override;
+  void on_optimize_end(model* m, weights* w) override;
 
   /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
- private:
+private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
@@ -101,17 +100,20 @@ class timeline : public callback_base {
   /// Time the current weights' optimization pass started.
   EvalType m_opt_start_time = EvalType(0);
   /// Store (relative) timing information.
-  std::unordered_map<std::string, std::vector<std::pair<EvalType, EvalType>>> m_fp_times;
-  std::unordered_map<std::string, std::vector<std::pair<EvalType, EvalType>>> m_bp_times;
-  std::unordered_map<std::string, std::vector<std::pair<EvalType, EvalType>>> m_opt_times;
+  std::unordered_map<std::string, std::vector<std::pair<EvalType, EvalType>>>
+    m_fp_times;
+  std::unordered_map<std::string, std::vector<std::pair<EvalType, EvalType>>>
+    m_bp_times;
+  std::unordered_map<std::string, std::vector<std::pair<EvalType, EvalType>>>
+    m_opt_times;
 };
 
 // Builder function
 std::unique_ptr<callback_base>
-build_timeline_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_timeline_callback_from_pbuf(const google::protobuf::Message&,
+                                  std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_TIMELINE_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_TIMELINE_HPP_INCLUDED

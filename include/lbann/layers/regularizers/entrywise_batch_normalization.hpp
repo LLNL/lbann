@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,8 +31,8 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
-#include "lbann/utils/memory.hpp"
 #include "lbann/proto/layers.pb.h"
+#include "lbann/utils/memory.hpp"
 
 namespace lbann {
 
@@ -49,7 +49,9 @@ namespace lbann {
  *  pp. 448-456. 2015.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class entrywise_batch_normalization_layer : public data_type_layer<TensorDataType> {
+class entrywise_batch_normalization_layer
+  : public data_type_layer<TensorDataType>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -63,10 +65,9 @@ public:
   ///@}
 
 public:
-
   entrywise_batch_normalization_layer(
-    TensorDataType decay=El::To<TensorDataType>(0.9),
-    TensorDataType epsilon=El::To<TensorDataType>(1e-5))
+    TensorDataType decay = El::To<TensorDataType>(0.9),
+    TensorDataType epsilon = El::To<TensorDataType>(1e-5))
     : data_type_layer<TensorDataType>(nullptr),
       m_decay(decay),
       m_epsilon(epsilon)
@@ -77,35 +78,41 @@ public:
     : data_type_layer<TensorDataType>(other),
       m_decay(other.m_decay),
       m_epsilon(other.m_epsilon),
-      m_batch_statistics(other.m_batch_statistics ?
-                         other.m_batch_statistics->Copy() :
-                         nullptr),
-      m_batch_statistics_gradient(other.m_batch_statistics_gradient ?
-                                  other.m_batch_statistics_gradient->Copy() :
-                                  nullptr)
+      m_batch_statistics(
+        other.m_batch_statistics ? other.m_batch_statistics->Copy() : nullptr),
+      m_batch_statistics_gradient(other.m_batch_statistics_gradient
+                                    ? other.m_batch_statistics_gradient->Copy()
+                                    : nullptr)
   {}
 
-  entrywise_batch_normalization_layer& operator=(
-    const entrywise_batch_normalization_layer& other)
+  entrywise_batch_normalization_layer&
+  operator=(const entrywise_batch_normalization_layer& other)
   {
     data_type_layer<TensorDataType>::operator=(other);
     m_decay = other.m_decay;
     m_epsilon = other.m_epsilon;
-    m_batch_statistics.reset(other.m_batch_statistics ?
-                             other.m_batch_statistics->Copy() :
-                             nullptr);
-    m_batch_statistics_gradient.reset(other.m_batch_statistics_gradient ?
-                                      other.m_batch_statistics_gradient->Copy() :
-                                      nullptr);
+    m_batch_statistics.reset(
+      other.m_batch_statistics ? other.m_batch_statistics->Copy() : nullptr);
+    m_batch_statistics_gradient.reset(
+      other.m_batch_statistics_gradient
+        ? other.m_batch_statistics_gradient->Copy()
+        : nullptr);
     return *this;
   }
 
-  entrywise_batch_normalization_layer* copy() const override { return new entrywise_batch_normalization_layer(*this); }
-  std::string get_type() const override { return "entry-wise batch normalization"; }
+  entrywise_batch_normalization_layer* copy() const override
+  {
+    return new entrywise_batch_normalization_layer(*this);
+  }
+  std::string get_type() const override
+  {
+    return "entry-wise batch normalization";
+  }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  description get_description() const override {
+  description get_description() const override
+  {
     auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Decay", m_decay);
     desc.add("Epsilon", m_epsilon);
@@ -121,11 +128,11 @@ public:
   ///@}
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
-  void setup_data(size_t max_mini_batch_size) override {
+  void setup_data(size_t max_mini_batch_size) override
+  {
     data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
     // Initialize output dimensions
@@ -146,7 +153,8 @@ protected:
     this->set_num_weights(2);
     if (!this->has_weights(0)) {
       auto w = std::make_shared<WeightsType>(*this->get_comm());
-      auto init = std::make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
+      auto init = std::make_unique<constant_initializer<TensorDataType>>(
+        El::TypeTraits<TensorDataType>::Zero());
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
       this->set_weights(0, w);
@@ -154,7 +162,8 @@ protected:
     }
     if (!this->has_weights(1)) {
       auto w = std::make_shared<WeightsType>(*this->get_comm());
-      auto init = std::make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
+      auto init = std::make_unique<constant_initializer<TensorDataType>>(
+        El::TypeTraits<TensorDataType>::One());
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
       this->set_weights(1, w);
@@ -174,14 +183,12 @@ protected:
     // Initialize matrices
     m_batch_statistics.reset(AbsDistMatrixType::Instantiate(dist));
     m_batch_statistics_gradient.reset(AbsDistMatrixType::Instantiate(dist));
-
   }
 
   void fp_compute() override;
   void bp_compute() override;
 
 private:
-
   /** Decay rate for the running statistics. */
   TensorDataType m_decay;
   /** Small number to avoid division by zero. */
@@ -200,7 +207,9 @@ private:
 };
 
 template <typename T, data_layout L, El::Device D>
-void entrywise_batch_normalization_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void entrywise_batch_normalization_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_entrywise_batch_normalization();
   msg->set_decay(m_decay);
@@ -210,11 +219,15 @@ void entrywise_batch_normalization_layer<T,L,D>::write_specific_proto(lbann_data
 LBANN_DEFINE_LAYER_BUILDER(entrywise_batch_normalization);
 
 #ifndef LBANN_ENTRYWISE_BATCH_NORMALIZATION_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class entrywise_batch_normalization_layer< \
-    T, data_layout::DATA_PARALLEL, Device>;                  \
-  extern template class entrywise_batch_normalization_layer< \
-    T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class entrywise_batch_normalization_layer<                   \
+    T,                                                                         \
+    data_layout::DATA_PARALLEL,                                                \
+    Device>;                                                                   \
+  extern template class entrywise_batch_normalization_layer<                   \
+    T,                                                                         \
+    data_layout::MODEL_PARALLEL,                                               \
+    Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

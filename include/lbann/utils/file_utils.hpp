@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,40 +29,47 @@
 #ifndef LBANN_UTILS_FILE_HPP_INCLUDED
 #define LBANN_UTILS_FILE_HPP_INCLUDED
 
-#include <string>
-#include <vector>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <iterator>
+#include <string>
 #include <utility>
+#include <vector>
 
 namespace lbann {
 
-struct path_delimiter {
+struct path_delimiter
+{
   static const std::string characters;
-  static std::string preferred() {
-    return std::string(1, characters[0]);
-  }
-  static bool check(const char ch) {
+  static std::string preferred() { return std::string(1, characters[0]); }
+  static bool check(const char ch)
+  {
     return (characters.find(ch) != std::string::npos);
   }
-  bool operator()(const char ch) const {
+  bool operator()(const char ch) const
+  {
     return (characters.find(ch) != std::string::npos);
   }
 };
 
-/// Tokenize a string into integers by an ordered sequence of delimiter characters.
+/// Tokenize a string into integers by an ordered sequence of delimiter
+/// characters.
 std::vector<int> get_tokens(std::string str, const std::vector<char> delims);
 /// Tokenize a string into substrings by set of delimiter characters.
-std::vector<std::string> get_tokens(const std::string str, const std::string delims = " :;\t\r\n");
+std::vector<std::string> get_tokens(const std::string str,
+                                    const std::string delims = " :;\t\r\n");
 
 /** @todo Deprecated. Use @c lbann::file::extract_parent_directory and
  *  @c lbann::file::extract_base_name instead. */
-bool parse_path(const std::string& path, std::string& dir, std::string& basename);
+bool parse_path(const std::string& path,
+                std::string& dir,
+                std::string& basename);
 std::string get_ext_name(const std::string file_name);
 std::string get_basename_without_ext(const std::string file_name);
 std::string add_delimiter(const std::string dir);
-std::string modify_file_name(const std::string file_name, const std::string tag, const std::string new_ext="");
+std::string modify_file_name(const std::string file_name,
+                             const std::string tag,
+                             const std::string new_ext = "");
 
 /** @todo Deprecated. Use @c lbann::file::file_exists instead. */
 bool check_if_file_exists(const std::string& filename);
@@ -71,21 +78,28 @@ bool check_if_dir_exists(const std::string& dirname);
 /** @todo Deprecated. Use @c lbann::file::make_directory instead. */
 bool create_dir(const std::string output_dir);
 
-bool load_file(const std::string filename, std::vector<char>& buf, bool append = false);
+bool load_file(const std::string filename,
+               std::vector<char>& buf,
+               bool append = false);
 
-inline void __swapEndianInt(unsigned int& ui) {
-  ui = ((ui >> 24) | ((ui<<8) & 0x00FF0000) | ((ui>>8) & 0x0000FF00) | (ui << 24));
+inline void __swapEndianInt(unsigned int& ui)
+{
+  ui = ((ui >> 24) | ((ui << 8) & 0x00FF0000) | ((ui >> 8) & 0x0000FF00) |
+        (ui << 24));
 }
 
 // The generic approach
-template<typename T>
+template <typename T>
 std::basic_string<T> pad(const std::basic_string<T>& s,
-         typename std::basic_string<T>::size_type n, T c) {
+                         typename std::basic_string<T>::size_type n,
+                         T c)
+{
   if (n > s.length()) {
     std::string t = s;
     t.insert(t.begin(), n - t.length(), c);
     return t;
-  }else {
+  }
+  else {
     return s;
   }
 }
@@ -94,16 +108,12 @@ namespace file {
 #if !defined(DOXYGEN_SHOULD_SKIP_THIS)
 namespace details {
 
-template <typename BaseTypeT,
-          typename... PathRepresentationType>
+template <typename BaseTypeT, typename... PathRepresentationType>
 std::string join_path_impl(BaseTypeT const& base,
                            PathRepresentationType&&... rest);
 
 // Base cases
-inline std::string const& join_path_impl(std::string const& x)
-{
-  return x;
-}
+inline std::string const& join_path_impl(std::string const& x) { return x; }
 inline std::string join_path_impl(char const* const x)
 {
   return std::string(x);
@@ -111,26 +121,22 @@ inline std::string join_path_impl(char const* const x)
 
 // Recursive cases
 template <typename... PathRepresentationType>
-std::string join_path_impl(
-  std::string const& base,
-  PathRepresentationType&&... rest)
+std::string join_path_impl(std::string const& base,
+                           PathRepresentationType&&... rest)
 {
-  return base
-    + "/"
-    + join_path_impl(std::forward<PathRepresentationType>(rest)...);
+  return base + "/" +
+         join_path_impl(std::forward<PathRepresentationType>(rest)...);
 }
 
-template <typename BaseType,
-          typename... PathRepresentationType>
+template <typename BaseType, typename... PathRepresentationType>
 std::string join_path_impl(BaseType const& base,
                            PathRepresentationType&&... rest)
 {
-  return std::string(base)
-    + "/"
-    + join_path_impl(std::forward<PathRepresentationType>(rest)...);
+  return std::string(base) + "/" +
+         join_path_impl(std::forward<PathRepresentationType>(rest)...);
 }
 
-}// namespace details
+} // namespace details
 #endif // !defined(DOXYGEN_SHOULD_SKIP_THIS)
 
 /** @brief Concatenate all paths, injecting path separators between

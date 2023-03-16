@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,8 +33,8 @@ namespace lbann {
 
 LBANN_LAYER_DEFAULT_BUILDER(split)
 
-#define PROTO(T)                                                        \
-  template class split_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+#define PROTO(T)                                                               \
+  template class split_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>;  \
   template class split_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>; \
   LBANN_LAYER_BUILDER_ETI(split, T, El::Device::CPU)
 
@@ -44,17 +44,20 @@ LBANN_LAYER_DEFAULT_BUILDER(split)
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Dev>
-void split_distconv_adapter<TensorDataType, Layout, Dev>::bp_compute() {
+void split_distconv_adapter<TensorDataType, Layout, Dev>::bp_compute()
+{
   LBANN_ERROR(this->get_name(), ": Distconv not supported");
 }
 
-#define PROTO(T)                                                        \
-  template class split_distconv_adapter<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
-  template class split_distconv_adapter<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  template class split_distconv_adapter<T,                                     \
+                                        data_layout::DATA_PARALLEL,            \
+                                        El::Device::CPU>;                      \
+  template class split_distconv_adapter<T,                                     \
+                                        data_layout::MODEL_PARALLEL,           \
+                                        El::Device::CPU>
 
 #include "lbann/macros/instantiate.hpp"
 #endif // LBANN_HAS_DISTCONV
 
-
-
-}// namespace lbann
+} // namespace lbann

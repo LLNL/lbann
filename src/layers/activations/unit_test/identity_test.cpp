@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,25 +26,25 @@
 
 #include "Catch2BasicSupport.hpp"
 
-#include "TestHelpers.hpp"
 #include "MPITestHelpers.hpp"
+#include "TestHelpers.hpp"
 
 #include <lbann/base.hpp>
 #include <lbann/layers/activations/identity.hpp>
 
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 #include <lbann/utils/memory.hpp>
 #include <lbann/utils/serialize.hpp>
-#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 // Some convenience typedefs
 
 template <typename T, lbann::data_layout L, El::Device D>
-using LayerType = lbann::identity_layer<T,L,D>;
+using LayerType = lbann::identity_layer<T, L, D>;
 
 template <typename T, El::Device D>
-using LayerTypesAllLayouts = h2::meta::TL<
-  LayerType<T, lbann::data_layout::DATA_PARALLEL, D>,
-  LayerType<T, lbann::data_layout::MODEL_PARALLEL, D>>;
+using LayerTypesAllLayouts =
+  h2::meta::TL<LayerType<T, lbann::data_layout::DATA_PARALLEL, D>,
+               LayerType<T, lbann::data_layout::MODEL_PARALLEL, D>>;
 
 template <typename T>
 using LayerTypesAllDevices = h2::meta::tlist::Append<
@@ -53,9 +53,8 @@ using LayerTypesAllDevices = h2::meta::tlist::Append<
 #endif // LBANN_HAS_GPU
   LayerTypesAllLayouts<T, El::Device::CPU>>;
 
-using AllLayerTypes = h2::meta::tlist::Append<
-  LayerTypesAllDevices<float>,
-  LayerTypesAllDevices<double>>;
+using AllLayerTypes = h2::meta::tlist::Append<LayerTypesAllDevices<float>,
+                                              LayerTypesAllDevices<double>>;
 
 using unit_test::utilities::IsValidPtr;
 TEMPLATE_LIST_TEST_CASE("Serializing Identity layer",
@@ -65,7 +64,7 @@ TEMPLATE_LIST_TEST_CASE("Serializing Identity layer",
   using LayerType = TestType;
 
   auto& world_comm = unit_test::utilities::current_world_comm();
-  //int const size_of_world = world_comm.get_procs_in_world();
+  // int const size_of_world = world_comm.get_procs_in_world();
 
   auto const& g = world_comm.get_trainer_grid();
   lbann::utils::grid_manager mgr(g);
@@ -74,9 +73,8 @@ TEMPLATE_LIST_TEST_CASE("Serializing Identity layer",
 
   // Create the objects
   LayerType src_layer, tgt_layer;
-  std::unique_ptr<lbann::Layer>
-    src_layer_ptr = std::make_unique<LayerType>(),
-    tgt_layer_ptr;
+  std::unique_ptr<lbann::Layer> src_layer_ptr = std::make_unique<LayerType>(),
+                                tgt_layer_ptr;
 
 #ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
   SECTION("Binary archive")

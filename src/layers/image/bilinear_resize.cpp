@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,7 +30,8 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
+void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute()
+{
 
   // Useful constants
   constexpr DataType half = 0.5;
@@ -45,11 +46,11 @@ void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
   const auto& num_dims = input_dims.size();
   const auto& num_samples = local_input.Width();
   const El::Int num_channels = std::accumulate(input_dims.begin(),
-                                               input_dims.end()-2,
+                                               input_dims.end() - 2,
                                                1,
                                                std::multiplies<int>());
-  const El::Int input_height = input_dims[num_dims-2];
-  const El::Int input_width = input_dims[num_dims-1];
+  const El::Int input_height = input_dims[num_dims - 2];
+  const El::Int input_width = input_dims[num_dims - 1];
 
   // Perform bilinear interpolation for each output pixel
   const auto& x_stride = static_cast<DataType>(input_width) / this->m_width;
@@ -67,52 +68,51 @@ void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
           // Find input pixels near interpolation point
           const auto input_col = static_cast<El::Int>(std::floor(x - half));
           const auto& input_col0 = std::max(input_col, El::Int(0));
-          const auto& input_col1 = std::min(input_col+1, input_width-1);
+          const auto& input_col1 = std::min(input_col + 1, input_width - 1);
           const auto input_row = static_cast<El::Int>(std::floor(y - half));
           const auto& input_row0 = std::max(input_row, El::Int(0));
-          const auto& input_row1 = std::min(input_row+1, input_height-1);
+          const auto& input_row1 = std::min(input_row + 1, input_height - 1);
 
           // Interpolation point relative to input pixel centers
           const auto& unit_x = x - (input_col + half);
           const auto& unit_y = y - (input_row + half);
 
           // Input and output pixels
-          const auto& pixel00 = local_input(channel * input_height * input_width
-                                            + input_row0 * input_width
-                                            + input_col0,
-                                            sample);
-          const auto& pixel01 = local_input(channel * input_height * input_width
-                                            + input_row0 * input_width
-                                            + input_col1,
-                                            sample);
-          const auto& pixel10 = local_input(channel * input_height * input_width
-                                            + input_row1 * input_width
-                                            + input_col0,
-                                            sample);
-          const auto& pixel11 = local_input(channel * input_height * input_width
-                                            + input_row1 * input_width
-                                            + input_col1,
-                                            sample);
-          auto& result = local_output(channel * this->m_height * this->m_width
-                                      + output_row * this->m_width
-                                      + output_col,
+          const auto& pixel00 =
+            local_input(channel * input_height * input_width +
+                          input_row0 * input_width + input_col0,
+                        sample);
+          const auto& pixel01 =
+            local_input(channel * input_height * input_width +
+                          input_row0 * input_width + input_col1,
+                        sample);
+          const auto& pixel10 =
+            local_input(channel * input_height * input_width +
+                          input_row1 * input_width + input_col0,
+                        sample);
+          const auto& pixel11 =
+            local_input(channel * input_height * input_width +
+                          input_row1 * input_width + input_col1,
+                        sample);
+          auto& result = local_output(channel * this->m_height * this->m_width +
+                                        output_row * this->m_width + output_col,
                                       sample);
 
           // Bilinear interpolation
-          result = (pixel00 * (one - unit_x) * (one - unit_y)
-                    + pixel01 * unit_x * (one - unit_y)
-                    + pixel10 * (one - unit_x) * unit_y
-                    + pixel11 * unit_x * unit_y);
-
+          result =
+            (pixel00 * (one - unit_x) * (one - unit_y) +
+             pixel01 * unit_x * (one - unit_y) +
+             pixel10 * (one - unit_x) * unit_y + pixel11 * unit_x * unit_y);
         }
       }
     }
   }
-
 }
 
-#define PROTO(T)                                      \
-  template class bilinear_resize_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                                               \
+  template class bilinear_resize_layer<T,                                      \
+                                       data_layout::DATA_PARALLEL,             \
+                                       El::Device::CPU>;
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

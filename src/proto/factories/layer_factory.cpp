@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -109,9 +109,8 @@ private:
     // input/output type for the multi-precision-capable
     // OperatorLayer. This is temporary, until more of the factory
     // infrastructure considers multiple in/out types.
-    factory_.register_builder(
-      "OperatorLayer",
-      build_operator_layer_from_pbuf<T, T, L, D>);
+    factory_.register_builder("OperatorLayer",
+                              build_operator_layer_from_pbuf<T, T, L, D>);
 
     // Input layer
     LBANN_REGISTER_BUILDER(Input, input);
@@ -280,8 +279,8 @@ std::unique_ptr<Layer> construct_layer(lbann_comm* comm,
         num_parallel_readers,
         proto_layer);
     else {
-      (void) training_dr_linearized_data_size;
-      (void) num_parallel_readers;
+      (void)training_dr_linearized_data_size;
+      (void)num_parallel_readers;
       LBANN_ERROR("Currently, layers of type \"",
                   msg.GetDescriptor()->name(),
                   "\" are not constructible with any type other than the "

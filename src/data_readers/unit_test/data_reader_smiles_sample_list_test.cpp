@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,11 +26,11 @@
 
 #include "Catch2BasicSupport.hpp"
 
-#include "TestHelpers.hpp"
 #include "MPITestHelpers.hpp"
+#include "TestHelpers.hpp"
 
-#include "lbann/proto/proto_common.hpp"
 #include "lbann/proto/lbann.pb.h"
+#include "lbann/proto/proto_common.hpp"
 #include <google/protobuf/text_format.h>
 
 // The code being tested
@@ -54,20 +54,23 @@ std::string const sample_list_many_ranges = R"ptext(CONDUIT_HDF5_INCLUSION
 baz.txt 18 2 0 ... 5 7 ... 10 12 ... 19
 )ptext";
 
-std::string const multi_sample_inclusion_v2_list = R"ptext(MULTI-SAMPLE_INCLUSION_V2
+std::string const multi_sample_inclusion_v2_list =
+  R"ptext(MULTI-SAMPLE_INCLUSION_V2
 18 1
 /foo/bar/
 blah.txt 18 0 ... 5 7 ... 10 12 ... 19
 )ptext";
 
-std::string const multi_sample_inclusion_v2_list_multi_files = R"ptext(MULTI-SAMPLE_INCLUSION_V2
+std::string const multi_sample_inclusion_v2_list_multi_files =
+  R"ptext(MULTI-SAMPLE_INCLUSION_V2
 36 2
 /foo/bar/
 baz.txt 18 0 ... 5 7 ... 10 12 ... 19
 blah.txt 18 0 ... 4 6 ... 11 13 ... 19
 )ptext";
 
-std::string const multi_sample_inclusion_v2_list_many_files = R"ptext(MULTI-SAMPLE_INCLUSION_V2
+std::string const multi_sample_inclusion_v2_list_many_files =
+  R"ptext(MULTI-SAMPLE_INCLUSION_V2
 72 4
 /foo/bar/
 baz.txt 18 0 ... 5 7 ... 10 12 ... 19
@@ -77,16 +80,17 @@ babe.txt 18 0 ... 6 8 ... 14 16 ... 19
 )ptext";
 
 // std::vector<size_t,size_t> SH30M600_offsets = {{0,100}, {101, 75}}
-// std::vector<size_t,size_t> SH30M600_offsets_off_by_one_under = {{0,99}, {101, 75}}
-// std::vector<size_t,size_t> SH30M600_offsets_off_by_one_over = {{0,101}, {101, 75}}
-// std::vector<size_t,size_t> SH30M600_offsets_overlapping = {{0,100}, {100, 75}}
+// std::vector<size_t,size_t> SH30M600_offsets_off_by_one_under = {{0,99}, {101,
+// 75}} std::vector<size_t,size_t> SH30M600_offsets_off_by_one_over = {{0,101},
+// {101, 75}} std::vector<size_t,size_t> SH30M600_offsets_overlapping =
+// {{0,100}, {100, 75}}
 
-}// namespace <anon>
+} // namespace
 
 using unit_test::utilities::IsValidPtr;
 TEST_CASE("Sample list", "[mpi][data_reader][smiles]")
 {
-  //using DataType = float; commented out to silence compiler
+  // using DataType = float; commented out to silence compiler
 
   auto& comm = unit_test::utilities::current_world_comm();
   lbann::init_random(0, 2);
@@ -102,7 +106,6 @@ TEST_CASE("Sample list", "[mpi][data_reader][smiles]")
   // Avoid the sample list code checking that the files really exist
   // in the file system
   smiles->get_sample_list().unset_data_file_check();
-
 
   SECTION("CONDUIT_HDF5_INCLUSION - one range")
   {
@@ -132,7 +135,6 @@ TEST_CASE("Sample list", "[mpi][data_reader][smiles]")
     std::string buf;
     smiles->get_sample_list().to_string(buf);
     CHECK(sample_list == buf);
-
   }
   SECTION("MULTI-SAMPLE_INCLUSION_V2")
   {

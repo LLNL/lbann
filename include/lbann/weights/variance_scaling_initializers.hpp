@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,9 +27,9 @@
 #ifndef LBANN_WEIGHTS_VARIANCE_SCALING_INITIALIZER_HPP
 #define LBANN_WEIGHTS_VARIANCE_SCALING_INITIALIZER_HPP
 
-#include "lbann/weights/initializer.hpp"
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/random.hpp"
+#include "lbann/weights/initializer.hpp"
 
 namespace lbann {
 
@@ -47,7 +47,8 @@ template <typename TensorDataType>
 class variance_scaling_initializer
   : public Cloneable<
       HasAbstractFunction<variance_scaling_initializer<TensorDataType>>,
-      data_type_weights_initializer<TensorDataType>> {
+      data_type_weights_initializer<TensorDataType>>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -69,7 +70,9 @@ public:
 
   /** Get probability distribution. */
   probability_distribution get_prob_dist() const noexcept
-  { return m_prob_dist; }
+  {
+    return m_prob_dist;
+  }
 
 private:
   /** Get probability distribution variance. */
@@ -82,7 +85,6 @@ private:
   El::Int m_fan_in;
   /** Fan-out parameter.*/
   El::Int m_fan_out;
-
 };
 
 /** @brief Fill weights with variance of 2 / (fan-in + fan-out).
@@ -92,12 +94,14 @@ private:
 template <typename TensorDataType>
 class glorot_initializer
   : public Cloneable<glorot_initializer<TensorDataType>,
-                     variance_scaling_initializer<TensorDataType>> {
+                     variance_scaling_initializer<TensorDataType>>
+{
   using BaseType = Cloneable<glorot_initializer<TensorDataType>,
                              variance_scaling_initializer<TensorDataType>>;
+
 public:
-  glorot_initializer(probability_distribution prob_dist)
-    : BaseType(prob_dist) {}
+  glorot_initializer(probability_distribution prob_dist) : BaseType(prob_dist)
+  {}
   std::string get_type() const override { return "Glorot"; }
 
   /** @brief Add initializer data to prototext */
@@ -111,12 +115,13 @@ private:
 template <typename TensorDataType>
 class he_initializer
   : public Cloneable<he_initializer<TensorDataType>,
-                     variance_scaling_initializer<TensorDataType>> {
+                     variance_scaling_initializer<TensorDataType>>
+{
   using BaseType = Cloneable<he_initializer<TensorDataType>,
                              variance_scaling_initializer<TensorDataType>>;
+
 public:
-  he_initializer(probability_distribution prob_dist)
-    : BaseType(prob_dist) {}
+  he_initializer(probability_distribution prob_dist) : BaseType(prob_dist) {}
   std::string get_type() const override { return "He"; }
 
   /** @brief Add initializer data to prototext */
@@ -130,12 +135,13 @@ private:
 template <typename TensorDataType>
 class lecun_initializer
   : public Cloneable<lecun_initializer<TensorDataType>,
-                     variance_scaling_initializer<TensorDataType>> {
+                     variance_scaling_initializer<TensorDataType>>
+{
   using BaseType = Cloneable<lecun_initializer<TensorDataType>,
                              variance_scaling_initializer<TensorDataType>>;
+
 public:
-  lecun_initializer(probability_distribution prob_dist)
-    : BaseType(prob_dist) {}
+  lecun_initializer(probability_distribution prob_dist) : BaseType(prob_dist) {}
   std::string get_type() const override { return "LeCun"; }
 
   /** @brief Add initializer data to prototext */
@@ -159,9 +165,9 @@ std::unique_ptr<weights_initializer>
 build_lecun_initializer_from_pbuf(google::protobuf::Message const& msg);
 
 #ifndef LBANN_VARIANCE_SCALING_INITIALIZER_INSTANTIATE
-#define PROTO(T)                               \
-  extern template class glorot_initializer<T>; \
-  extern template class he_initializer<T>;     \
+#define PROTO(T)                                                               \
+  extern template class glorot_initializer<T>;                                 \
+  extern template class he_initializer<T>;                                     \
   extern template class lecun_initializer<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF

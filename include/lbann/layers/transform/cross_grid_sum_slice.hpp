@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -55,7 +55,6 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
@@ -129,15 +128,15 @@ protected:
       LBANN_ERROR("cross_grid_sum_slice layer: last dimension should be "
                   "divided by the number of branches in subgraph");
 
-    int const last_dim_index = int(last_dim / subgrid_comm_size) *
-                               subgrid_comm_rank;
+    int const last_dim_index =
+      int(last_dim / subgrid_comm_size) * subgrid_comm_rank;
 
     El::copy::util::InterleaveMatrix(
       (last_dim / subgrid_comm_size),
       input.LocalWidth() * last_dim_start_point,
       after_allreduce.LockedBuffer(last_dim_index, 0),
       1,
-      last_dim ,
+      last_dim,
       output_cast->Buffer(),
       1,
       (last_dim / subgrid_comm_size),
@@ -181,15 +180,15 @@ protected:
 
     int mloc = gradient_wrt_output_cast->LocalHeight();
     int nloc = gradient_wrt_output_cast->LocalWidth();
-    int per_grid_last_dim = last_dim/subgrid_comm_size;
+    int per_grid_last_dim = last_dim / subgrid_comm_size;
 
     El::Matrix<TensorDataType, Dev> temp_input(nloc, mloc),
-      temp_output(nloc*(mloc/per_grid_last_dim), last_dim),
-      transposed(nloc*(mloc/per_grid_last_dim), per_grid_last_dim),
-      transposed_output(last_dim, nloc*(mloc/per_grid_last_dim));
+      temp_output(nloc * (mloc / per_grid_last_dim), last_dim),
+      transposed(nloc * (mloc / per_grid_last_dim), per_grid_last_dim),
+      transposed_output(last_dim, nloc * (mloc / per_grid_last_dim));
 
     El::Copy(gradient_wrt_output_cast->LockedMatrix(), temp_input);
-    temp_input.Resize(per_grid_last_dim, nloc*(mloc/per_grid_last_dim));
+    temp_input.Resize(per_grid_last_dim, nloc * (mloc / per_grid_last_dim));
 
     El::Transpose(temp_input, transposed);
 
@@ -201,7 +200,7 @@ protected:
                        syncSubGridCommunication);
 
     El::Transpose(temp_output, transposed_output);
-    transposed_output.Resize(mloc*subgrid_comm_size, nloc);
+    transposed_output.Resize(mloc * subgrid_comm_size, nloc);
 
     gradient_wrt_input_cast->Resize(this->get_input_size(), mini_batch_size);
     El::Copy(transposed_output, gradient_wrt_input_cast->Matrix());
@@ -209,7 +208,6 @@ protected:
 
   void bp_compute() final {}
 };
-
 
 #ifndef LBANN_CROSS_GRID_SUM_SLICE_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device)                                                \

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -43,11 +43,11 @@
 #include <h2/meta/Core.hpp>
 #include <h2/meta/TypeList.hpp>
 
+#include "lbann/proto/operators.pb.h"
 #include <functional>
 #include <h2/meta/core/Lazy.hpp>
 #include <memory>
 #include <numeric>
-#include "lbann/proto/operators.pb.h"
 
 #include <math.h>
 #if defined M_PI_2

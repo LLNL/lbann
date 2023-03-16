@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -34,9 +34,8 @@ namespace lbann {
 
 template <typename TensorDataType>
 template <class Archive>
-void
-hypergradient_adam<TensorDataType>
-::serialize(Archive & ar) {
+void hypergradient_adam<TensorDataType>::serialize(Archive& ar)
+{
   ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
      CEREAL_NVP(m_hyper_learning_rate),
      CEREAL_NVP(m_beta1),

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,7 +33,8 @@
 namespace lbann {
 namespace transform {
 
-void cutout::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+void cutout::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims)
+{
   cv::Mat src = utils::get_opencv_mat(data, dims);
   for (size_t i = 0; i < m_num_holes; ++i) {
     // Select the center of the hole.
@@ -65,10 +66,11 @@ void cutout::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
 }
 
 std::unique_ptr<transform>
-build_cutout_transform_from_pbuf(google::protobuf::Message const& msg) {
+build_cutout_transform_from_pbuf(google::protobuf::Message const& msg)
+{
   auto const& params = dynamic_cast<lbann_data::Transform::Cutout const&>(msg);
   return std::make_unique<cutout>(params.num_holes(), params.length());
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

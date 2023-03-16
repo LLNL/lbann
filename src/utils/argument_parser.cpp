@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,8 +32,7 @@
 #include <iostream>
 #include <string>
 
-namespace
-{
+namespace {
 /** @brief Check a raw argument for a given token.
  *
  *  Returns "true" when EITHER:
@@ -42,26 +41,21 @@ namespace
  *    - rawargument has an equals sign and the substring up to (but not
  *      including) the equals sign compares equal to testtoken.
  */
-bool token_match(std::string const& testtoken,
-                 std::string const& rawargument)
+bool token_match(std::string const& testtoken, std::string const& rawargument)
 {
   return (rawargument.compare(0, rawargument.find('='), testtoken) == 0);
 }
-}// namespace <anon>
+} // namespace
 
-namespace lbann
-{
-namespace utils
-{
-void strict_parsing::handle_error(
-  clara::detail::InternalParseResult result,
-  clara::Parser&,
-  std::vector<char const*>&)
+namespace lbann {
+namespace utils {
+void strict_parsing::handle_error(clara::detail::InternalParseResult result,
+                                  clara::Parser&,
+                                  std::vector<char const*>&)
 {
   throw parse_error(
-    lbann::build_string(
-      "Arguments could not be parsed.\n\nMessage: ",
-      result.errorMessage()));
+    lbann::build_string("Arguments could not be parsed.\n\nMessage: ",
+                        result.errorMessage()));
 }
 
 void allow_extra_parameters::handle_error(
@@ -69,34 +63,29 @@ void allow_extra_parameters::handle_error(
   clara::Parser& parser_,
   std::vector<char const*>& newargv)
 {
-  do
-  {
+  do {
     std::string const base_text = "Unrecognised token: ";
     std::string const err_text = parse_result.errorMessage();
-    if ((err_text.size() > base_text.size())
-        && (err_text.substr(0, base_text.size()).compare(base_text) == 0))
-    {
+    if ((err_text.size() > base_text.size()) &&
+        (err_text.substr(0, base_text.size()).compare(base_text) == 0)) {
       auto const token = err_text.substr(base_text.size());
-      auto iter = std::find_if(newargv.cbegin(), newargv.cend(),
-                               [&token](char const* str)
-                               {
-                                 return token_match(token, str);
-                               });
+      auto iter = std::find_if(
+        newargv.cbegin(),
+        newargv.cend(),
+        [&token](char const* str) { return token_match(token, str); });
       newargv.erase(newargv.cbegin() + 1,
                     (iter == newargv.cend() ? iter : iter + 1));
       parse_result = parser_.parse(clara::Args(newargv.size(), newargv.data()));
     }
-    else
-    {
+    else {
       throw parse_error(
-        lbann::build_string(
-          "Arguments could not be parsed.\n\nMessage: ",
-          parse_result.errorMessage()));
+        lbann::build_string("Arguments could not be parsed.\n\nMessage: ",
+                            parse_result.errorMessage()));
     }
   } while (!parse_result);
 }
 
-}// namespace utils
+} // namespace utils
 
 default_arg_parser_type& global_argument_parser()
 {
@@ -104,4 +93,4 @@ default_arg_parser_type& global_argument_parser()
   return args;
 }
 
-}// namespace lbann
+} // namespace lbann

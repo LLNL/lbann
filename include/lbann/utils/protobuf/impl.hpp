@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -122,8 +122,9 @@ auto get_repeated_field_ref(google::protobuf::Message const& msg,
 } // namespace lbann
 
 template <typename T, typename ContainerT>
-void lbann::protobuf::assign_to_repeated(google::protobuf::RepeatedField<T>& field,
-                        ContainerT const& values)
+void lbann::protobuf::assign_to_repeated(
+  google::protobuf::RepeatedField<T>& field,
+  ContainerT const& values)
 {
   /** @todo Change to Assign if Protobuf v3.16.0 and greater is required. */
   field.Clear();

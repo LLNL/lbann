@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -165,7 +165,7 @@ lbann::build_argmax_layer_from_pbuf(lbann_comm* comm,
     return std::make_unique<
       argmax_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
   else {
-    (void) comm;
+    (void)comm;
     LBANN_ERROR(
       "argmax layer is only supported with a data-parallel layout and on CPU");
     return nullptr;
@@ -181,7 +181,7 @@ lbann::build_argmin_layer_from_pbuf(lbann_comm* comm,
     return std::make_unique<
       argmin_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
   else {
-    (void) comm;
+    (void)comm;
     LBANN_ERROR(
       "argmin layer is only supported with a data-parallel layout and on CPU");
     return nullptr;
@@ -198,7 +198,7 @@ std::unique_ptr<lbann::Layer> lbann::build_channelwise_mean_layer_from_pbuf(
       channelwise_mean_layer<T, data_layout::DATA_PARALLEL, D>>(comm);
   }
   else {
-    (void) comm;
+    (void)comm;
     LBANN_ERROR("channel-wise mean layer is only supported with "
                 "a data-parallel layout");
     return nullptr;
@@ -218,7 +218,7 @@ lbann::build_channelwise_softmax_layer_from_pbuf(lbann_comm* comm,
       return std::make_unique<
         channelwise_softmax_layer<double, data_layout::DATA_PARALLEL, D>>(comm);
   }
-  (void) comm;
+  (void)comm;
   LBANN_ERROR("Attempted to construct channelwise_softmax_layer ",
               "with invalid parameters ",
               "(TensorDataType=",
@@ -250,7 +250,7 @@ lbann::build_dft_abs_layer_from_pbuf(lbann_comm* comm, lbann_data::Layer const&)
   if constexpr (L == data_layout::DATA_PARALLEL)
     return build_dft_layer<T, D>(comm);
   else {
-    (void) comm;
+    (void)comm;
     LBANN_ERROR("dft_abs layers are only supported in DATA_PARALLEL. "
                 "Requested layout: ",
                 to_string(L));

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,13 +37,14 @@ namespace lbann {
 /** @class type_erased_function
  *  @brief A move-only callable type for wrapping functions
  */
-class type_erased_function {
+class type_erased_function
+{
 public:
-
   /** @brief Erase the type of input function F */
   template <typename FunctionT>
   type_erased_function(FunctionT&& F)
-    : held_function_(make_unique<Function<FunctionT>>(std::move(F))) {}
+    : held_function_(make_unique<Function<FunctionT>>(std::move(F)))
+  {}
 
   /** @brief Move constructor */
   type_erased_function(type_erased_function&& other) = default;
@@ -96,8 +97,7 @@ private:
                   "Given type is not move constructible!");
 
     /** @brief Construct by moving from the input function type */
-    Function(FunctionT&& f)
-      : F__(std::move(f)) {}
+    Function(FunctionT&& f) : F__(std::move(f)) {}
 
     /** @brief Destructor */
     ~Function() = default;
@@ -112,7 +112,7 @@ private:
 
   /** @brief A type-erased function */
   std::unique_ptr<FunctionHolder> held_function_;
-};// class type_erased_function
+}; // class type_erased_function
 
-}// namespace lbann
+} // namespace lbann
 #endif /* LBANN_UTILS_THREADS_TYPE_ERASED_FUNCTION_HPP_INCLUDED */

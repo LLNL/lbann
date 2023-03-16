@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,30 +27,32 @@
 #include "Catch2BasicSupport.hpp"
 
 #include "TestHelpers.hpp"
+#include "lbann/proto/lbann.pb.h"
 #include "lbann/proto/proto_common.hpp"
 #include <google/protobuf/text_format.h>
-#include "lbann/proto/lbann.pb.h"
 
 #include <conduit/conduit.hpp>
 #include <cstdlib>
 #include <errno.h>
 #include <string.h>
 
-#include "lbann/data_readers/data_reader_HDF5.hpp"
 #include "./test_data/hdf5_hrrl_data_schema.yaml"
 #include "./test_data/hdf5_hrrl_experiment_schema.yaml"
 #include "./test_data/hdf5_hrrl_test_data_and_schema.yaml"
+#include "lbann/data_readers/data_reader_HDF5.hpp"
 
 // Use a different schema to create a different packing
-const std::string packed_hdf5_hrrl_data_sample_id_foobar =R"FOO(000000334:
+const std::string packed_hdf5_hrrl_data_sample_id_foobar = R"FOO(000000334:
     samples: [456.288777930614, 231.340700217946, 113.528447010204, 115.115911382861, 116.716861149023, 118.331222098325, 120.52874207647, 122.175220756304, 123.834871115725, 125.507597035081, 126.011234474661, 123.587537036166]
     foo: [15.2486634101312, 0.0426354341969429]
     bar: [64037572840.4818, 5.34505173275895]
     baz: [32.6826031770453]
 )FOO";
 
-// Now change the ordering fields in the experiment schema to change the field order
-const std::string packed_hdf5_hrrl_data_sample_id_foobar_permute =R"FOO(000000334:
+// Now change the ordering fields in the experiment schema to change the field
+// order
+const std::string packed_hdf5_hrrl_data_sample_id_foobar_permute =
+  R"FOO(000000334:
     samples: [456.288777930614, 231.340700217946, 113.528447010204, 115.115911382861, 116.716861149023, 118.331222098325, 120.52874207647, 122.175220756304, 123.834871115725, 125.507597035081, 126.011234474661, 123.587537036166]
     foo: [0.0426354341969429, 15.2486634101312]
     bar: [5.34505173275895, 64037572840.4818]
@@ -80,7 +82,8 @@ alpha:
 )AurthurDent";
 
 // Change how the experiment data should be packed and ordered within each field
-const std::string hdf5_hrrl_experiment_schema_test_foobar_permute = R"AurthurDent(
+const std::string hdf5_hrrl_experiment_schema_test_foobar_permute =
+  R"AurthurDent(
 Image:
   metadata:
     pack: "samples"
@@ -114,49 +117,51 @@ public:
                  conduit::Node& node,
                  const std::string& path,
                  const conduit::Node& metadata)
-  { x.normalize(node, path, metadata); }
+  {
+    x.normalize(node, path, metadata);
+  }
   void repack_image(lbann::hdf5_data_reader& x,
                     conduit::Node& node,
                     const std::string& path,
                     const conduit::Node& metadata)
-  { x.repack_image(node, path, metadata); }
-
-  void pack(lbann::hdf5_data_reader& x,
-            conduit::Node& node,
-            size_t index)
-  { x.pack(node, index); }
-
-  void parse_schemas(lbann::hdf5_data_reader& x) {
-    return x.parse_schemas();
+  {
+    x.repack_image(node, path, metadata);
   }
 
-  conduit::Node& get_data_schema(lbann::hdf5_data_reader& x) {
+  void pack(lbann::hdf5_data_reader& x, conduit::Node& node, size_t index)
+  {
+    x.pack(node, index);
+  }
+
+  void parse_schemas(lbann::hdf5_data_reader& x) { return x.parse_schemas(); }
+
+  conduit::Node& get_data_schema(lbann::hdf5_data_reader& x)
+  {
     return x.m_data_schema;
   }
 
-  conduit::Node& get_experiment_schema(lbann::hdf5_data_reader& x) {
+  conduit::Node& get_experiment_schema(lbann::hdf5_data_reader& x)
+  {
     return x.m_experiment_schema;
   }
 
-  void set_data_schema(lbann::hdf5_data_reader& x,
-                       const conduit::Node& s) {
+  void set_data_schema(lbann::hdf5_data_reader& x, const conduit::Node& s)
+  {
     x.set_data_schema(s);
   }
 
-  void set_experiment_schema(lbann::hdf5_data_reader& x,
-                             const conduit::Node& s) {
+  void set_experiment_schema(lbann::hdf5_data_reader& x, const conduit::Node& s)
+  {
     x.set_experiment_schema(s);
   }
 
-  void print_metadata(lbann::hdf5_data_reader& x,
-                      std::ostream& os = std::cout) {
+  void print_metadata(lbann::hdf5_data_reader& x, std::ostream& os = std::cout)
+  {
     x.print_metadata(os);
   }
-
 };
 
-TEST_CASE("hdf5 data reader transform tests",
-          "[data_reader][hdf5][hrrl]")
+TEST_CASE("hdf5 data reader transform tests", "[data_reader][hdf5][hrrl]")
 {
   // initialize stuff (boilerplate)
   lbann::init_random(0, 2);
@@ -173,9 +178,10 @@ TEST_CASE("hdf5 data reader transform tests",
 
   SECTION("HRRL conduit node normalize")
   {
-    // Check to see if each field of the HRRL data set can be properly normalized and
-    // avoid clobbering other fields
-    std::vector<std::string>fields = {"Epmax", "Etot", "Image", "N", "T", "alpha"};
+    // Check to see if each field of the HRRL data set can be properly
+    // normalized and avoid clobbering other fields
+    std::vector<std::string> fields =
+      {"Epmax", "Etot", "Image", "N", "T", "alpha"};
     for (auto f : fields) {
       const std::string test_pathname("RUN_ID/000000334/" + f);
       // Instantiate a fresh copy of the sample
@@ -185,31 +191,44 @@ TEST_CASE("hdf5 data reader transform tests",
       const std::string metadata_path = f + "/metadata";
       conduit::Node metadata = schema[metadata_path];
       if (metadata.has_child("scale")) {
-        REQUIRE_NOTHROW(white_box_tester.normalize(*hdf5_dr, test_node, test_pathname, metadata));
+        REQUIRE_NOTHROW(white_box_tester.normalize(*hdf5_dr,
+                                                   test_node,
+                                                   test_pathname,
+                                                   metadata));
       }
-      // Check to make sure that each element in the transformed field are properly normalized
+      // Check to make sure that each element in the transformed field are
+      // properly normalized
       size_t num_elements = node[test_pathname].dtype().number_of_elements();
-      if(num_elements > 1) {
-        for(size_t i = 0; i < num_elements; i++) {
-          double check = node[test_pathname].as_double_array()[i] * metadata["scale"].as_double() + metadata["bias"].as_double();
+      if (num_elements > 1) {
+        for (size_t i = 0; i < num_elements; i++) {
+          double check = node[test_pathname].as_double_array()[i] *
+                           metadata["scale"].as_double() +
+                         metadata["bias"].as_double();
           CHECK(test_node[test_pathname].as_double_array()[i] == Approx(check));
         }
-      }else {
-        double check = node[test_pathname].as_double() * metadata["scale"].as_double() + metadata["bias"].as_double();
+      }
+      else {
+        double check =
+          node[test_pathname].as_double() * metadata["scale"].as_double() +
+          metadata["bias"].as_double();
         CHECK(test_node[test_pathname].as_double() == Approx(check));
       }
-      // Check to make sure that none of the other fields have accidentally changed
-      for(auto nf : fields) {
-        if(nf != f) {
+      // Check to make sure that none of the other fields have accidentally
+      // changed
+      for (auto nf : fields) {
+        if (nf != f) {
           const std::string ref_pathname("RUN_ID/000000334/" + nf);
-          size_t ref_num_elements = node[ref_pathname].dtype().number_of_elements();
-          if(ref_num_elements > 1) {
-            for(size_t i = 0; i < ref_num_elements; i++) {
-              CHECK(test_node[ref_pathname].as_double_array()[i] == node[ref_pathname].as_double_array()[i]);
+          size_t ref_num_elements =
+            node[ref_pathname].dtype().number_of_elements();
+          if (ref_num_elements > 1) {
+            for (size_t i = 0; i < ref_num_elements; i++) {
+              CHECK(test_node[ref_pathname].as_double_array()[i] ==
+                    node[ref_pathname].as_double_array()[i]);
             }
           }
           else {
-            CHECK(test_node[ref_pathname].as_double() == node[ref_pathname].as_double());
+            CHECK(test_node[ref_pathname].as_double() ==
+                  node[ref_pathname].as_double());
           }
         }
       }
@@ -218,7 +237,8 @@ TEST_CASE("hdf5 data reader transform tests",
 
   SECTION("HRRL conduit node repack_image")
   {
-    // Check to make sure that the repack_image function properly fails on the HRRL data
+    // Check to make sure that the repack_image function properly fails on the
+    // HRRL data
     const std::string f = "Image";
     const std::string test_pathname("RUN_ID/000000334/" + f);
     // Instantiate a fresh copy of the sample
@@ -228,13 +248,15 @@ TEST_CASE("hdf5 data reader transform tests",
     const std::string metadata_path = f + "/metadata";
     conduit::Node metadata = schema[metadata_path];
     if (metadata.has_child("channels")) {
-      REQUIRE_THROWS(white_box_tester.repack_image(*hdf5_dr, test_node, test_pathname, metadata));
+      REQUIRE_THROWS(white_box_tester.repack_image(*hdf5_dr,
+                                                   test_node,
+                                                   test_pathname,
+                                                   metadata));
     }
   }
 }
 
-TEST_CASE("hdf5 data reader pack test",
-          "[data_reader][hdf5][hrrl][pack]")
+TEST_CASE("hdf5 data reader pack test", "[data_reader][hdf5][hrrl][pack]")
 {
   // initialize stuff (boilerplate)
   lbann::init_random(0, 2);
@@ -260,7 +282,8 @@ TEST_CASE("hdf5 data reader pack test",
   SECTION("HRRL conduit pack node")
   {
     // Read in the experiment schema and setup the data reader
-    conduit::Node& experiment_schema = white_box_tester.get_experiment_schema(*hdf5_dr);
+    conduit::Node& experiment_schema =
+      white_box_tester.get_experiment_schema(*hdf5_dr);
     experiment_schema.parse(hdf5_hrrl_experiment_schema, "yaml");
     // experiment_schema.print();
     white_box_tester.parse_schemas(*hdf5_dr);
@@ -269,7 +292,7 @@ TEST_CASE("hdf5 data reader pack test",
     // Instantiate a fresh copy of the sample
     conduit::Node test_node;
     test_node.parse(hdf5_hrrl_data_sample_id, "yaml");
-    //white_box_tester.print_metadata(*hdf5_dr);
+    // white_box_tester.print_metadata(*hdf5_dr);
     white_box_tester.pack(*hdf5_dr, test_node, index);
 
     // Get the reference packed node
@@ -277,25 +300,28 @@ TEST_CASE("hdf5 data reader pack test",
     ref_node.parse(packed_hdf5_hrrl_data_sample_id, "yaml");
 
     // Check each of the fields to ensure that the packing worked
-    std::vector<std::string>fields = {"samples", "responses"};
+    std::vector<std::string> fields = {"samples", "responses"};
     for (auto f : fields) {
       const std::string ref_pathname("000000334/" + f);
-      size_t ref_num_elements = ref_node[ref_pathname].dtype().number_of_elements();
-      if(ref_num_elements > 1) {
-        for(size_t i = 0; i < ref_num_elements; i++) {
-          CHECK(test_node[ref_pathname].as_double_array()[i] == ref_node[ref_pathname].as_double_array()[i]);
+      size_t ref_num_elements =
+        ref_node[ref_pathname].dtype().number_of_elements();
+      if (ref_num_elements > 1) {
+        for (size_t i = 0; i < ref_num_elements; i++) {
+          CHECK(test_node[ref_pathname].as_double_array()[i] ==
+                ref_node[ref_pathname].as_double_array()[i]);
         }
       }
       else {
-        CHECK(test_node[ref_pathname].as_double() == ref_node[ref_pathname].as_double());
+        CHECK(test_node[ref_pathname].as_double() ==
+              ref_node[ref_pathname].as_double());
       }
-
     }
   }
   SECTION("Alternate packings HRRL conduit node")
   {
     // Read in the experiment schema and setup the data reader
-    conduit::Node& experiment_schema = white_box_tester.get_experiment_schema(*hdf5_dr);
+    conduit::Node& experiment_schema =
+      white_box_tester.get_experiment_schema(*hdf5_dr);
     experiment_schema.parse(hdf5_hrrl_experiment_schema_test_foobar, "yaml");
     white_box_tester.parse_schemas(*hdf5_dr);
 
@@ -310,27 +336,31 @@ TEST_CASE("hdf5 data reader pack test",
     ref_node.parse(packed_hdf5_hrrl_data_sample_id_foobar, "yaml");
 
     // Check each of the fields to ensure that the packing worked
-    std::vector<std::string>fields = {"samples", "foo", "bar", "baz"};
+    std::vector<std::string> fields = {"samples", "foo", "bar", "baz"};
     for (auto f : fields) {
       const std::string ref_pathname("000000334/" + f);
-      size_t ref_num_elements = ref_node[ref_pathname].dtype().number_of_elements();
-      if(ref_num_elements > 1) {
-        for(size_t i = 0; i < ref_num_elements; i++) {
-          CHECK(test_node[ref_pathname].as_double_array()[i] == ref_node[ref_pathname].as_double_array()[i]);
+      size_t ref_num_elements =
+        ref_node[ref_pathname].dtype().number_of_elements();
+      if (ref_num_elements > 1) {
+        for (size_t i = 0; i < ref_num_elements; i++) {
+          CHECK(test_node[ref_pathname].as_double_array()[i] ==
+                ref_node[ref_pathname].as_double_array()[i]);
         }
       }
       else {
-        CHECK(test_node[ref_pathname].as_double() == ref_node[ref_pathname].as_double());
+        CHECK(test_node[ref_pathname].as_double() ==
+              ref_node[ref_pathname].as_double());
       }
-
     }
   }
 
   SECTION("Alternate packings HRRL conduit node - Permuted Ordering")
   {
     // Read in the experiment schema and setup the data reader
-    conduit::Node& experiment_schema = white_box_tester.get_experiment_schema(*hdf5_dr);
-    experiment_schema.parse(hdf5_hrrl_experiment_schema_test_foobar_permute, "yaml");
+    conduit::Node& experiment_schema =
+      white_box_tester.get_experiment_schema(*hdf5_dr);
+    experiment_schema.parse(hdf5_hrrl_experiment_schema_test_foobar_permute,
+                            "yaml");
     white_box_tester.parse_schemas(*hdf5_dr);
 
     size_t index = 334;
@@ -344,19 +374,21 @@ TEST_CASE("hdf5 data reader pack test",
     ref_node.parse(packed_hdf5_hrrl_data_sample_id_foobar_permute, "yaml");
 
     // Check each of the fields to ensure that the packing worked
-    std::vector<std::string>fields = {"samples", "foo", "bar", "baz"};
+    std::vector<std::string> fields = {"samples", "foo", "bar", "baz"};
     for (auto f : fields) {
       const std::string ref_pathname("000000334/" + f);
-      size_t ref_num_elements = ref_node[ref_pathname].dtype().number_of_elements();
-      if(ref_num_elements > 1) {
-        for(size_t i = 0; i < ref_num_elements; i++) {
-          CHECK(test_node[ref_pathname].as_double_array()[i] == ref_node[ref_pathname].as_double_array()[i]);
+      size_t ref_num_elements =
+        ref_node[ref_pathname].dtype().number_of_elements();
+      if (ref_num_elements > 1) {
+        for (size_t i = 0; i < ref_num_elements; i++) {
+          CHECK(test_node[ref_pathname].as_double_array()[i] ==
+                ref_node[ref_pathname].as_double_array()[i]);
         }
       }
       else {
-        CHECK(test_node[ref_pathname].as_double() == ref_node[ref_pathname].as_double());
+        CHECK(test_node[ref_pathname].as_double() ==
+              ref_node[ref_pathname].as_double());
       }
-
     }
   }
 }

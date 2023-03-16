@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -45,35 +45,34 @@ namespace callback {
  * that isn't easily done in LBANN.  Note this dumps matrices during
  * each mini-batch. This will be slow and produce a lot of output.
  */
-class dump_gradients : public callback_base {
- public:
+class dump_gradients : public callback_base
+{
+public:
   using callback_base::on_backward_prop_end;
 
   /**
    * @param basename The basename for writing files.
    * @param batch_interval The frequency at which to dump the gradients
    */
-  dump_gradients(std::string basename, int batch_interval = 1) :
-    callback_base(batch_interval), m_basename(std::move(basename)) {}
-  dump_gradients(
-    const dump_gradients&) = default;
-  dump_gradients& operator=(
-    const dump_gradients&) = default;
-  dump_gradients* copy() const override {
-    return new dump_gradients(*this);
-  }
-  void on_backward_prop_end(model *m) override;
+  dump_gradients(std::string basename, int batch_interval = 1)
+    : callback_base(batch_interval), m_basename(std::move(basename))
+  {}
+  dump_gradients(const dump_gradients&) = default;
+  dump_gradients& operator=(const dump_gradients&) = default;
+  dump_gradients* copy() const override { return new dump_gradients(*this); }
+  void on_backward_prop_end(model* m) override;
   std::string name() const override { return "dump gradients"; }
 
   /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
- private:
+private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
@@ -82,15 +81,14 @@ class dump_gradients : public callback_base {
 
   /** @brief Basename for writing files. */
   std::string m_basename;
-
 };
 
 // Builder function
 std::unique_ptr<callback_base>
-build_dump_gradients_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_dump_gradients_callback_from_pbuf(const google::protobuf::Message&,
+                                        std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_DUMP_GRADIENTS_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_DUMP_GRADIENTS_HPP_INCLUDED

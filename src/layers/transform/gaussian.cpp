@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,16 +25,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_GAUSSIAN_LAYER_INSTANTIATE
-#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/layers/transform/gaussian.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
-#include "lbann/utils/protobuf.hpp"
 #include "lbann/proto/layers.pb.h"
+#include "lbann/utils/protobuf.hpp"
 
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void gaussian_layer<TensorDataType,Layout,Device>::fp_compute() {
+void gaussian_layer<TensorDataType, Layout, Device>::fp_compute()
+{
   auto& output = this->get_activations();
   const auto& mode =
     this->m_model->get_execution_context().get_execution_mode();
@@ -47,7 +48,9 @@ void gaussian_layer<TensorDataType,Layout,Device>::fp_compute() {
 }
 
 template <typename T, data_layout L, El::Device D>
-void gaussian_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void gaussian_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_gaussian();
   msg->set_mean(m_mean);
@@ -57,10 +60,10 @@ void gaussian_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const
   msg->set_training_only(m_training_only);
 }
 
-#define PROTO_DEVICE(T, Device)                                         \
-  template class gaussian_layer<T, data_layout::DATA_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  template class gaussian_layer<T, data_layout::DATA_PARALLEL, Device>;        \
   template class gaussian_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

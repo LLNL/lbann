@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -187,14 +187,20 @@ std::ostream& lbann::bgyellow(std::ostream& os)
   return os << LBANN_ANSI_FG_YELLOW;
 }
 
-std::ostream& lbann::bgblue(std::ostream& os) { return os << LBANN_ANSI_FG_BLUE; }
+std::ostream& lbann::bgblue(std::ostream& os)
+{
+  return os << LBANN_ANSI_FG_BLUE;
+}
 
 std::ostream& lbann::bgmagenta(std::ostream& os)
 {
   return os << LBANN_ANSI_FG_MAGENTA;
 }
 
-std::ostream& lbann::bgcyan(std::ostream& os) { return os << LBANN_ANSI_FG_CYAN; }
+std::ostream& lbann::bgcyan(std::ostream& os)
+{
+  return os << LBANN_ANSI_FG_CYAN;
+}
 
 std::ostream& lbann::bgwhite(std::ostream& os)
 {

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,8 +26,8 @@
 // save_topk_models .hpp .cpp - Callback hooks to save_topk_models information
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/save_topk_models.hpp"
+#include "lbann/comm_impl.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/metrics/metric.hpp"
 #include "lbann/models/model.hpp"
@@ -42,18 +42,22 @@
 
 namespace lbann {
 namespace callback {
-void save_topk_models::on_test_end(model *m) {
+void save_topk_models::on_test_end(model* m)
+{
   bool in_topk = false;
-  if(m->get_comm()->am_trainer_master()) {
+  if (m->get_comm()->am_trainer_master()) {
     in_topk = am_in_topk(m);
   }
   m->get_comm()->trainer_broadcast(0, in_topk);
-  if(in_topk) do_save_model(m);
+  if (in_topk)
+    do_save_model(m);
 }
 
-bool save_topk_models::am_in_topk(model *m) {
-  const auto& c = static_cast<const ExecutionContext&>(m->get_execution_context());
-  lbann_comm *comm = m->get_comm();
+bool save_topk_models::am_in_topk(model* m)
+{
+  const auto& c =
+    static_cast<const ExecutionContext&>(m->get_execution_context());
+  lbann_comm* comm = m->get_comm();
   const int num_trainers = comm->get_num_trainers();
   std::string mode_string = "test";
   bool found_metric = false;
@@ -65,7 +69,7 @@ bool save_topk_models::am_in_topk(model *m) {
       break;
     }
   }
-  //sanity check
+  // sanity check
   if (!found_metric) {
     std::stringstream err;
     err << "could not find metric \"" << m_metric_name << "\""
@@ -76,41 +80,49 @@ bool save_topk_models::am_in_topk(model *m) {
   if (m_k > num_trainers) {
     std::stringstream err;
     err << "k ( " << m_k << ") "
-        << " can not be greater than number of trainers ("
-        << num_trainers << ") " ;
+        << " can not be greater than number of trainers (" << num_trainers
+        << ") ";
     LBANN_ERROR(err.str());
   }
 
   std::vector<EvalType> score_list(comm->get_num_trainers());
-  comm->all_gather<EvalType>(score, score_list,comm->get_intertrainer_comm());
+  comm->all_gather<EvalType>(score, score_list, comm->get_intertrainer_comm());
   std::vector<EvalType> top_scores = score_list;
-  //top-k in an ascending order
-  if(m_ascending_ordering) std::sort(top_scores.begin(), top_scores.end(),std::less<EvalType>());
-  //top-k in an descending order
-  else  std::sort(top_scores.begin(), top_scores.end(),std::greater<EvalType>());
+  // top-k in an ascending order
+  if (m_ascending_ordering)
+    std::sort(top_scores.begin(), top_scores.end(), std::less<EvalType>());
+  // top-k in an descending order
+  else
+    std::sort(top_scores.begin(), top_scores.end(), std::greater<EvalType>());
   top_scores.resize(m_k);
 
   if (comm->am_world_master()) {
     std::cout << "Top " << m_k << " " << m_metric_name << " average "
-              << std::accumulate(top_scores.begin(), top_scores.end(), EvalType(0))/m_k << std::endl;
+              << std::accumulate(top_scores.begin(),
+                                 top_scores.end(),
+                                 EvalType(0)) /
+                   m_k
+              << std::endl;
   }
-  if(std::find(top_scores.begin(), top_scores.end(),
-                 score_list[comm->get_trainer_rank()]) != top_scores.end()) {
+  if (std::find(top_scores.begin(),
+                top_scores.end(),
+                score_list[comm->get_trainer_rank()]) != top_scores.end()) {
     return true;
   }
   return false;
 }
 
-std::unique_ptr<callback_base>
-build_save_topk_models_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+std::unique_ptr<callback_base> build_save_topk_models_callback_from_pbuf(
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
-    dynamic_cast<const lbann_data::Callback::CallbackSaveTopKModels&>(proto_msg);
-  return std::make_unique<save_topk_models>(
-    params.dir(),
-    params.k(),
-    params.metric(),
-    params.ascending_ordering());
+    dynamic_cast<const lbann_data::Callback::CallbackSaveTopKModels&>(
+      proto_msg);
+  return std::make_unique<save_topk_models>(params.dir(),
+                                            params.k(),
+                                            params.metric(),
+                                            params.ascending_ordering());
 }
 
 } // namespace callback

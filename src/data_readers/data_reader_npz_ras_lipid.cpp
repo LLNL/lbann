@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,26 +25,32 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader_npz_ras_lipid.hpp"
+#include "lbann/comm_impl.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
-#include "lbann/utils/jag_utils.hpp"
-#include "lbann/utils/timer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/commify.hpp"
+#include "lbann/utils/jag_utils.hpp"
 #include "lbann/utils/lbann_library.hpp"
-//#include <valarray>
+#include "lbann/utils/timer.hpp"
+// #include <valarray>
 
 namespace lbann {
 
 ras_lipid_conduit_data_reader::ras_lipid_conduit_data_reader(const bool shuffle)
-  : generic_data_reader(shuffle) {}
+  : generic_data_reader(shuffle)
+{}
 
-ras_lipid_conduit_data_reader::ras_lipid_conduit_data_reader(const ras_lipid_conduit_data_reader& rhs)  : generic_data_reader(rhs) {
+ras_lipid_conduit_data_reader::ras_lipid_conduit_data_reader(
+  const ras_lipid_conduit_data_reader& rhs)
+  : generic_data_reader(rhs)
+{
   copy_members(rhs);
 }
 
-ras_lipid_conduit_data_reader& ras_lipid_conduit_data_reader::operator=(const ras_lipid_conduit_data_reader& rhs) {
+ras_lipid_conduit_data_reader& ras_lipid_conduit_data_reader::operator=(
+  const ras_lipid_conduit_data_reader& rhs)
+{
   // check for self-assignment
   if (this == &rhs) {
     return (*this);
@@ -54,10 +60,11 @@ ras_lipid_conduit_data_reader& ras_lipid_conduit_data_reader::operator=(const ra
   return (*this);
 }
 
-
-void ras_lipid_conduit_data_reader::copy_members(const ras_lipid_conduit_data_reader &rhs) {
-  if(rhs.m_data_store != nullptr) {
-      m_data_store = new data_store_conduit(rhs.get_data_store());
+void ras_lipid_conduit_data_reader::copy_members(
+  const ras_lipid_conduit_data_reader& rhs)
+{
+  if (rhs.m_data_store != nullptr) {
+    m_data_store = new data_store_conduit(rhs.get_data_store());
   }
   m_data_store->set_data_reader_ptr(this);
   m_filenames = rhs.m_filenames;
@@ -77,8 +84,9 @@ void ras_lipid_conduit_data_reader::copy_members(const ras_lipid_conduit_data_re
   m_multi_sample_id_to_first_sample = rhs.m_multi_sample_id_to_first_sample;
 }
 
-void ras_lipid_conduit_data_reader::load() {
-  if(get_comm()->am_world_master()) {
+void ras_lipid_conduit_data_reader::load()
+{
+  if (get_comm()->am_world_master()) {
     std::cout << "starting load for role: " << get_role() << std::endl;
   }
 
@@ -93,7 +101,8 @@ void ras_lipid_conduit_data_reader::load() {
   }
   double use_percent = get_use_percent();
   if (use_percent != 1) {
-    LBANN_ERROR("use_percent for < 1.0 is not yet implemented; please contact Dave Hysom");
+    LBANN_ERROR("use_percent for < 1.0 is not yet implemented; please contact "
+                "Dave Hysom");
   }
 
   // The input file should contain, on each line, the complete
@@ -109,7 +118,9 @@ void ras_lipid_conduit_data_reader::load() {
   else {
     double tm3 = get_time();
     get_samples_per_file();
-    if (get_comm()->am_world_master()) std::cout << "time to compute samples_per_file: " << get_time() - tm3 << std::endl;
+    if (get_comm()->am_world_master())
+      std::cout << "time to compute samples_per_file: " << get_time() - tm3
+                << std::endl;
   }
   // Optionally save the samples-per-file info to file
   if (arg_parser.get<std::string>("pilot2_save_file_sizes") != "") {
@@ -130,7 +141,7 @@ void ras_lipid_conduit_data_reader::load() {
   std::vector<int> multi_samples_per_file;
   multi_samples_per_file.reserve(m_filenames.size());
   m_num_global_samples = 0;
-  for (const auto &t : m_samples_per_file) {
+  for (const auto& t : m_samples_per_file) {
     int n = t / m_seq_len; // this is the number of multi-samples
     multi_samples_per_file.push_back(n);
     m_num_global_samples += n;
@@ -139,38 +150,41 @@ void ras_lipid_conduit_data_reader::load() {
   // Compute the data_id of the first multi-sample in each file
   std::unordered_map<int, int> first_multi_id_per_file;
   first_multi_id_per_file[0] = 0;
-  for (size_t j=1; j<m_samples_per_file.size()+1; j++) {
-    first_multi_id_per_file[j] = (first_multi_id_per_file[j-1] + multi_samples_per_file[j-1]);
+  for (size_t j = 1; j < m_samples_per_file.size() + 1; j++) {
+    first_multi_id_per_file[j] =
+      (first_multi_id_per_file[j - 1] + multi_samples_per_file[j - 1]);
   }
 
   // Build owner map
   int np = m_comm->get_procs_per_trainer();
-  for (size_t j=0; j<m_filenames.size(); j++) {
+  for (size_t j = 0; j < m_filenames.size(); j++) {
     int owner = j % np;
     int first = first_multi_id_per_file[j];
-    for (int k=0; k<multi_samples_per_file[j]; ++k) {
-      m_multi_sample_to_owner[k+first] = owner;
+    for (int k = 0; k < multi_samples_per_file[j]; ++k) {
+      m_multi_sample_to_owner[k + first] = owner;
     }
   }
 
   int my_rank = m_comm->get_rank_in_trainer();
 
-  //m_filename_to_multi_sample maps filename -> multi-sample data_ids
-  //m_multi_sample_id_to_first_sample maps multi-sample data_id
-  //    -> first single-sample that is part of the multi-sample.
-  //Note: multi-sample data_id is global; single-sample data_id is
-  //      local (WRT the current file)
+  // m_filename_to_multi_sample maps filename -> multi-sample data_ids
+  // m_multi_sample_id_to_first_sample maps multi-sample data_id
+  //     -> first single-sample that is part of the multi-sample.
+  // Note: multi-sample data_id is global; single-sample data_id is
+  //       local (WRT the current file)
 
-  //Note: m_filename_to_multi_sample contains all multi-samples in the file;
-  //      some of these may be marked for transfer to the validation set
-  //      (during select_subset_of_data)
+  // Note: m_filename_to_multi_sample contains all multi-samples in the file;
+  //       some of these may be marked for transfer to the validation set
+  //       (during select_subset_of_data)
 
-  for (size_t j=my_rank; j<m_filenames.size(); j += np) {
+  for (size_t j = my_rank; j < m_filenames.size(); j += np) {
     int first_multi_sample_id = first_multi_id_per_file[j];
     int num_multi_samples = multi_samples_per_file[j];
-    for (int k=0; k<num_multi_samples; k++) {
-      m_filename_to_multi_sample[m_filenames[j]].insert(first_multi_sample_id+k);
-      m_multi_sample_id_to_first_sample[first_multi_sample_id+k] = k*m_seq_len;
+    for (int k = 0; k < num_multi_samples; k++) {
+      m_filename_to_multi_sample[m_filenames[j]].insert(first_multi_sample_id +
+                                                        k);
+      m_multi_sample_id_to_first_sample[first_multi_sample_id + k] =
+        k * m_seq_len;
     }
   }
 
@@ -188,8 +202,14 @@ void ras_lipid_conduit_data_reader::load() {
   m_num_validate_samples = m_num_global_samples - m_num_train_samples;
 }
 
-void ras_lipid_conduit_data_reader::do_preload_data_store() {
-  if (get_comm()->am_world_master()) std::cout << "starting ras_lipid_conduit_data_reader::do_preload_data_store; num indices: " << utils::commify(m_shuffled_indices.size()) << " for role: " << get_role() << std::endl;
+void ras_lipid_conduit_data_reader::do_preload_data_store()
+{
+  if (get_comm()->am_world_master())
+    std::cout
+      << "starting ras_lipid_conduit_data_reader::do_preload_data_store; num "
+         "indices: "
+      << utils::commify(m_shuffled_indices.size())
+      << " for role: " << get_role() << std::endl;
 
 #if 0
 ==========================================================================
@@ -218,7 +238,7 @@ data types, from python+numpy:
 
   // get the set of shuffled indices
   std::unordered_set<int> this_readers_indices;
-  for (const auto &data_id : m_shuffled_indices) {
+  for (const auto& data_id : m_shuffled_indices) {
     this_readers_indices.insert(data_id);
   }
 
@@ -238,24 +258,25 @@ data types, from python+numpy:
   int which = 2;
 
   // Loop over the files owned by this processer
-  for (const auto &t : m_filename_to_multi_sample) {
+  for (const auto& t : m_filename_to_multi_sample) {
 
     // Load the next data file
     std::map<std::string, cnpy::NpyArray> data = cnpy::npz_load(t.first);
 
-    for (const auto &multi_sample_id : t.second) {
-      if (this_readers_indices.find(multi_sample_id) != this_readers_indices.end()) {
+    for (const auto& multi_sample_id : t.second) {
+      if (this_readers_indices.find(multi_sample_id) !=
+          this_readers_indices.end()) {
         int starting_id = m_multi_sample_id_to_first_sample[multi_sample_id];
 
         // Load the single-samples that will be concatenated to form
         // the next multi-sample
-        for (int k=0; k<m_seq_len; ++k) {
-          load_the_next_sample(work[k], starting_id+k, data);
+        for (int k = 0; k < m_seq_len; ++k) {
+          load_the_next_sample(work[k], starting_id + k, data);
 
           ++nn;
           if (verbose && get_comm()->am_world_master() && nn % 1000 == 0) {
             std::cout << "estimated number of single-samples processed: "
-                      << utils::commify(nn/1000*np) << "K" << std::endl;
+                      << utils::commify(nn / 1000 * np) << "K" << std::endl;
           }
         }
 
@@ -295,78 +316,87 @@ data types, from python+numpy:
   }
 }
 
-bool ras_lipid_conduit_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
+bool ras_lipid_conduit_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx)
+{
   const conduit::Node& node = m_data_store->get_conduit_node(data_id);
-  const double *data = node[LBANN_DATA_ID_STR(data_id) + "/density_sig1"].value();
+  const double* data =
+    node[LBANN_DATA_ID_STR(data_id) + "/density_sig1"].value();
 
-  size_t n = m_seq_len*m_datum_num_words["density_sig1"];
+  size_t n = m_seq_len * m_datum_num_words["density_sig1"];
   for (size_t j = 0; j < n; ++j) {
     X(j, mb_idx) = data[j];
   }
 
-/*
-  Notes from Adam:
+  /*
+    Notes from Adam:
 
-  The keras model that I gave you only looks at the density_sig1 data
-  as input data and it uses the states data as labels.  We'll want to
-  also extract bbs to merge that with density_sig1 in various ways as
-  input data in future models that we're putting together.
+    The keras model that I gave you only looks at the density_sig1 data
+    as input data and it uses the states data as labels.  We'll want to
+    also extract bbs to merge that with density_sig1 in various ways as
+    input data in future models that we're putting together.
 
-  The probs field can be useful as an alternate label if building a
-  regression model instead of a classification model.  I've also been
-  using the probs field as a filter on the training data to only
-  consider those input data whose state probability exceeds some
-  threshold.
+    The probs field can be useful as an alternate label if building a
+    regression model instead of a classification model.  I've also been
+    using the probs field as a filter on the training data to only
+    consider those input data whose state probability exceeds some
+    threshold.
 
-  So that works out to:
+    So that works out to:
 
-   bb, density_sig1 - datum
-   states           - label
-   probs            - used as a filter to include/exclude certain samples
-*/
+     bb, density_sig1 - datum
+     states           - label
+     probs            - used as a filter to include/exclude certain samples
+  */
 
   return true;
 }
 
-std::map<double,int> m2;
+std::map<double, int> m2;
 
-bool ras_lipid_conduit_data_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
+bool ras_lipid_conduit_data_reader::fetch_label(Mat& Y, int data_id, int mb_idx)
+{
   const conduit::Node node = m_data_store->get_conduit_node(data_id);
-  const int *labels = node[LBANN_DATA_ID_STR(data_id) + "/states"].value();
-  for (int j=0; j<m_seq_len; j++) {
-    Y.Set(3*j + labels[j], mb_idx, 1);
+  const int* labels = node[LBANN_DATA_ID_STR(data_id) + "/states"].value();
+  for (int j = 0; j < m_seq_len; j++) {
+    Y.Set(3 * j + labels[j], mb_idx, 1);
   }
   return true;
 }
 
-bool ras_lipid_conduit_data_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
+bool ras_lipid_conduit_data_reader::fetch_response(Mat& Y,
+                                                   int data_id,
+                                                   int mb_idx)
+{
   LBANN_ERROR("ras_lipid_conduit_data_reader: do not have responses");
   return true;
 }
 
-void ras_lipid_conduit_data_reader::fill_in_metadata() {
+void ras_lipid_conduit_data_reader::fill_in_metadata()
+{
   std::map<std::string, cnpy::NpyArray> aa = cnpy::npz_load(m_filenames[0]);
-  for (const auto &t : aa) {
-    const std::string &name = t.first;
+  for (const auto& t : aa) {
+    const std::string& name = t.first;
     size_t word_size = t.second.word_size;
-    const std::vector<size_t> &shape = t.second.shape;
+    const std::vector<size_t>& shape = t.second.shape;
     size_t num_words = 1;
-    //size_t num_words = m_seq_len;
+    // size_t num_words = m_seq_len;
     if (shape.size() == 1) {
-      m_datum_shapes[name].push_back(1*m_seq_len);
-    } else {
-//      m_datum_shapes[name].push_back(m_seq_len);
-      for (size_t x=1; x<shape.size(); x++) {
+      m_datum_shapes[name].push_back(1 * m_seq_len);
+    }
+    else {
+      //      m_datum_shapes[name].push_back(m_seq_len);
+      for (size_t x = 1; x < shape.size(); x++) {
         num_words *= shape[x];
         m_datum_shapes[name].push_back(shape[x]);
       }
     }
     m_datum_num_words[name] = num_words;
     m_datum_word_sizes[name] = word_size;
-    m_datum_num_bytes[name] = num_words*word_size;
+    m_datum_num_bytes[name] = num_words * word_size;
   }
 
-  //TODO: this should be more generic, will need to change depending on what we fetch
+  // TODO: this should be more generic, will need to change depending on what we
+  // fetch
   if (m_datum_shapes.find("density_sig1") == m_datum_shapes.end()) {
     LBANN_ERROR("m_datum_shapes.find(\"density_sig1\") = m_datum_shapes.end()");
   }
@@ -378,13 +408,14 @@ void ras_lipid_conduit_data_reader::fill_in_metadata() {
   }
 }
 
-void ras_lipid_conduit_data_reader::rebuild_data_store_owner_map() {
+void ras_lipid_conduit_data_reader::rebuild_data_store_owner_map()
+{
   m_data_store->clear_owner_map();
   int np = m_comm->get_procs_per_trainer();
   size_t data_id = 0;
-  for (size_t j=0; j<m_filenames.size(); ++j) {
+  for (size_t j = 0; j < m_filenames.size(); ++j) {
     int file_owner = j % np;
-    for (int h=0; h<m_samples_per_file[j]; h++) {
+    for (int h = 0; h < m_samples_per_file[j]; h++) {
       m_data_store->add_owner(data_id, file_owner);
       ++data_id;
     }
@@ -392,20 +423,22 @@ void ras_lipid_conduit_data_reader::rebuild_data_store_owner_map() {
   m_data_store->set_finished_building_map();
 }
 
-void ras_lipid_conduit_data_reader::get_samples_per_file() {
+void ras_lipid_conduit_data_reader::get_samples_per_file()
+{
   int me = m_comm->get_rank_in_trainer();
   int np = m_comm->get_procs_per_trainer();
   std::vector<int> work;
   int x = 0;
-  for (size_t j=me; j<m_filenames.size(); j+=np) {
+  for (size_t j = me; j < m_filenames.size(); j += np) {
     ++x;
     std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(m_filenames[j]);
     size_t n = 0;
-    for (const auto &t2 : a) {
+    for (const auto& t2 : a) {
       size_t n2 = t2.second.shape[0];
       if (n == 0) {
         n = n2;
-      } else {
+      }
+      else {
         if (n2 != n) {
           LBANN_ERROR("n2 != n; ", n2, n);
         }
@@ -416,47 +449,50 @@ void ras_lipid_conduit_data_reader::get_samples_per_file() {
   }
 
   std::vector<int> num_files(np, 0);
-  for (size_t j=0; j<m_filenames.size(); ++j) {
+  for (size_t j = 0; j < m_filenames.size(); ++j) {
     int owner = j % np;
     num_files[owner] += 1;
   }
 
   m_samples_per_file.resize(m_filenames.size());
   std::vector<int> work_2;
-  std::vector<int> *work_ptr;
-  for (int j=0; j<np; j++) {
+  std::vector<int>* work_ptr;
+  for (int j = 0; j < np; j++) {
     if (me == j) {
       work_ptr = &work;
-    } else {
-      work_2.resize(num_files[j]*2);
+    }
+    else {
+      work_2.resize(num_files[j] * 2);
       work_ptr = &work_2;
     }
     m_comm->trainer_broadcast<int>(j, work_ptr->data(), work_ptr->size());
-    for (size_t h=0; h<work_ptr->size(); h+= 2) {
-      m_samples_per_file[(*work_ptr)[h]] = (*work_ptr)[h+1];
+    for (size_t h = 0; h < work_ptr->size(); h += 2) {
+      m_samples_per_file[(*work_ptr)[h]] = (*work_ptr)[h + 1];
     }
   }
 }
 
-void ras_lipid_conduit_data_reader::write_file_sizes() {
-  if (! get_comm()->am_world_master()) {
+void ras_lipid_conduit_data_reader::write_file_sizes()
+{
+  if (!get_comm()->am_world_master()) {
     return;
   }
-  std::string fn =
-    global_argument_parser().get<std::string>(LBANN_OPTION_PILOT2_SAVE_FILE_SIZES);
+  std::string fn = global_argument_parser().get<std::string>(
+    LBANN_OPTION_PILOT2_SAVE_FILE_SIZES);
   std::ofstream out(fn.c_str());
   if (!out) {
     LBANN_ERROR("failed to open ", fn, " for writing");
   }
-  for (size_t j=0; j<m_samples_per_file.size(); j++) {
+  for (size_t j = 0; j < m_samples_per_file.size(); j++) {
     out << m_filenames[j] << " " << m_samples_per_file[j] << std::endl;
   }
   out.close();
 }
 
-void ras_lipid_conduit_data_reader::read_file_sizes() {
-  std::string fn =
-    global_argument_parser().get<std::string>(LBANN_OPTION_PILOT2_READ_FILE_SIZES);
+void ras_lipid_conduit_data_reader::read_file_sizes()
+{
+  std::string fn = global_argument_parser().get<std::string>(
+    LBANN_OPTION_PILOT2_READ_FILE_SIZES);
   std::ifstream in(fn.c_str());
   if (!in) {
     LBANN_ERROR("failed to open ", fn, " for reading");
@@ -470,7 +506,7 @@ void ras_lipid_conduit_data_reader::read_file_sizes() {
   in.close();
 
   m_samples_per_file.resize(m_filenames.size());
-  for (size_t h=0; h<m_filenames.size(); h++) {
+  for (size_t h = 0; h < m_filenames.size(); h++) {
     if (mp.find(m_filenames[h]) == mp.end()) {
       LBANN_ERROR("failed to find filename '", m_filenames[h], "' in the map");
     }
@@ -478,7 +514,8 @@ void ras_lipid_conduit_data_reader::read_file_sizes() {
   }
 }
 
-void ras_lipid_conduit_data_reader::read_normalization_data() {
+void ras_lipid_conduit_data_reader::read_normalization_data()
+{
   m_use_min_max = false;
   m_use_z_score = false;
   auto& arg_parser = global_argument_parser();
@@ -488,7 +525,8 @@ void ras_lipid_conduit_data_reader::read_normalization_data() {
     if (get_comm()->am_world_master()) {
       if (m_use_z_score) {
         std::cout << "Normalizing data using z-score" << std::endl;
-      } else {
+      }
+      else {
         std::cout << "Normalizing data using min-max" << std::endl;
       }
     }
@@ -523,8 +561,9 @@ void ras_lipid_conduit_data_reader::read_normalization_data() {
   }
 }
 
-//user feedback
-void ras_lipid_conduit_data_reader::print_shapes_etc() {
+// user feedback
+void ras_lipid_conduit_data_reader::print_shapes_etc()
+{
   if (!get_comm()->am_world_master()) {
     return;
   }
@@ -537,7 +576,7 @@ void ras_lipid_conduit_data_reader::print_shapes_etc() {
   std::cout << "num features=" << get_linearized_data_size() << std::endl;
   std::cout << "num labels=" << get_num_labels() << std::endl;
   std::cout << "data dims=";
-  for (size_t h=0; h<m_datum_shapes["density_sig1"].size(); h++) {
+  for (size_t h = 0; h < m_datum_shapes["density_sig1"].size(); h++) {
     std::cout << m_datum_shapes["density_sig1"][h];
     if (h < m_datum_shapes["density_sig1"].size() - 1) {
       std::cout << "x";
@@ -547,9 +586,9 @@ void ras_lipid_conduit_data_reader::print_shapes_etc() {
 
   if (global_argument_parser().get<bool>(LBANN_OPTION_VERBOSE)) {
     std::cout << "\nAll data shapes:\n";
-    for (const auto &t : m_datum_shapes) {
+    for (const auto& t : m_datum_shapes) {
       std::cout << "  " << t.first << " ";
-      for (const auto &t2 : t.second) {
+      for (const auto& t2 : t.second) {
         std::cout << t2 << " ";
       }
       std::cout << std::endl;
@@ -560,36 +599,44 @@ void ras_lipid_conduit_data_reader::print_shapes_etc() {
   std::cout << "======================================================\n\n";
 }
 
-void ras_lipid_conduit_data_reader::load_the_next_sample(conduit::Node &node, int sample_index, std::map<std::string, cnpy::NpyArray> &a) {
+void ras_lipid_conduit_data_reader::load_the_next_sample(
+  conduit::Node& node,
+  int sample_index,
+  std::map<std::string, cnpy::NpyArray>& a)
+{
   node.reset();
   size_t offset;
-  for (const auto &t5 : m_datum_shapes) {
-    const std::string &name = t5.first;
+  for (const auto& t5 : m_datum_shapes) {
+    const std::string& name = t5.first;
     if (name == "bbs") {
-      conduit::float32 *data = reinterpret_cast<conduit::float32*>(a[name].data_holder->data());
-      offset = sample_index*m_datum_num_words["bbs"];
+      conduit::float32* data =
+        reinterpret_cast<conduit::float32*>(a[name].data_holder->data());
+      offset = sample_index * m_datum_num_words["bbs"];
       node[name].set(data + offset, m_datum_num_words[name]);
     }
 
     else { // rots, states, tilts, density_sig1, probs
-      offset = sample_index*m_datum_num_words[name];
-      conduit::float64 *data = reinterpret_cast<conduit::float64*>(a[name].data_holder->data());
+      offset = sample_index * m_datum_num_words[name];
+      conduit::float64* data =
+        reinterpret_cast<conduit::float64*>(a[name].data_holder->data());
 
       if (name == "states") {
         int label = static_cast<int>((data + offset)[0]);
         node["states"].set(label);
-      } else if (name == "density_sig1") {
+      }
+      else if (name == "density_sig1") {
         int s = 0;
         if (m_use_z_score) {
-          for (size_t j=offset; j<offset+m_datum_num_words[name]; j++) {
-            data[j]= (data[j] - m_mean[s]) / m_std_dev[s];
+          for (size_t j = offset; j < offset + m_datum_num_words[name]; j++) {
+            data[j] = (data[j] - m_mean[s]) / m_std_dev[s];
             ++s;
             if (s == 14) {
               s = 0;
             }
           }
-        } else if (m_use_min_max) {
-          for (size_t j=offset; j<offset+m_datum_num_words[name]; j++) {
+        }
+        else if (m_use_min_max) {
+          for (size_t j = offset; j < offset + m_datum_num_words[name]; j++) {
             data[j] = (data[j] - m_min[s]) / m_max_min[s];
             ++s;
             if (s == 14) {
@@ -599,24 +646,31 @@ void ras_lipid_conduit_data_reader::load_the_next_sample(conduit::Node &node, in
         }
         node[name].set(data + offset, m_datum_num_words[name]);
 
-      // rots, tilts, probs
-      } else {
+        // rots, tilts, probs
+      }
+      else {
         node[name].set(data + offset, m_datum_num_words[name]);
       }
     }
   }
 }
 
-void ras_lipid_conduit_data_reader::construct_multi_sample(std::vector<conduit::Node> &work, int data_id, conduit::Node &node) {
+void ras_lipid_conduit_data_reader::construct_multi_sample(
+  std::vector<conduit::Node>& work,
+  int data_id,
+  conduit::Node& node)
+{
   node.reset();
   std::vector<double> work_d;
   std::vector<float> work_f;
   std::vector<int> work_i;
   if (m_datum_num_words["states"] != 1) {
-    LBANN_ERROR("m_data_num_words[states] = ", m_datum_num_words["states"], "; should be 1");
+    LBANN_ERROR("m_data_num_words[states] = ",
+                m_datum_num_words["states"],
+                "; should be 1");
   }
-  for (const auto &t42 : m_datum_num_words) {
-    const std::string &name = t42.first;
+  for (const auto& t42 : m_datum_num_words) {
+    const std::string& name = t42.first;
     int n_words = t42.second;
 
     if (name == "frames") {
@@ -625,40 +679,45 @@ void ras_lipid_conduit_data_reader::construct_multi_sample(std::vector<conduit::
 
     if (name == "states") {
       work_i.clear();
-      for (const auto &t5 : work) {
+      for (const auto& t5 : work) {
         const int label = t5[name].value();
         work_i.push_back(label);
       }
-      node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(work_i.data(), m_seq_len * m_datum_num_words[name]);
+      node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(
+        work_i.data(),
+        m_seq_len * m_datum_num_words[name]);
     }
 
     // 'bbs' is float32
     else if (name == "bbs") {
-      work_f.resize(m_seq_len*n_words);
+      work_f.resize(m_seq_len * n_words);
       int offset = 0;
-      for (const auto &t5 : work) {
-        const float *d = t5[name].value();
-        for (size_t u=0; u<m_datum_num_words[name]; u++) {
+      for (const auto& t5 : work) {
+        const float* d = t5[name].value();
+        for (size_t u = 0; u < m_datum_num_words[name]; u++) {
           work_f[offset++] = d[u];
         }
       }
-      node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(work_f.data(), m_seq_len * m_datum_num_words[name]);
-
+      node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(
+        work_f.data(),
+        m_seq_len * m_datum_num_words[name]);
     }
 
     // rots, tilts, density_sig1, probs are float64
     else {
-      work_d.resize(m_seq_len*n_words);
+      work_d.resize(m_seq_len * n_words);
       int offset = 0;
-      for (const auto &t5 : work) {
-        const double *d = t5[name].value();
-        for (size_t u=0; u<m_datum_num_words[name]; u++) {
+      for (const auto& t5 : work) {
+        const double* d = t5[name].value();
+        for (size_t u = 0; u < m_datum_num_words[name]; u++) {
           work_d[offset++] = d[u];
         }
       }
-      node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(work_d.data(), m_seq_len * m_datum_num_words[name]);
+      node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(
+        work_d.data(),
+        m_seq_len * m_datum_num_words[name]);
     }
   }
 }
 
-}  // namespace lbann
+} // namespace lbann

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -34,7 +34,6 @@
 #include "lbann/layers/io/input_layer.hpp"
 #include "lbann/models/model.hpp"
 
-
 namespace lbann {
 
 /** @brief Class for LBANN batch inference algorithms.
@@ -44,18 +43,23 @@ namespace lbann {
  *  algorithm currently assumes that there is only 1 input layer in the model,
  *  and the output layer is a softmax layer.
  */
-class batch_functional_inference_algorithm {
+class batch_functional_inference_algorithm
+{
 public:
   /** Constructor. */
-  batch_functional_inference_algorithm() {};
+  batch_functional_inference_algorithm(){};
   /** Copy constructor. */
-  batch_functional_inference_algorithm(const batch_functional_inference_algorithm& other) = default;
+  batch_functional_inference_algorithm(
+    const batch_functional_inference_algorithm& other) = default;
   /** Copy assignment operator. */
-  batch_functional_inference_algorithm& operator=(const batch_functional_inference_algorithm& other) = default;
+  batch_functional_inference_algorithm&
+  operator=(const batch_functional_inference_algorithm& other) = default;
   /** Move constructor. */
-  batch_functional_inference_algorithm(batch_functional_inference_algorithm&& other) = default;
+  batch_functional_inference_algorithm(
+    batch_functional_inference_algorithm&& other) = default;
   /** Move assignment operator. */
-  batch_functional_inference_algorithm& operator=(batch_functional_inference_algorithm&& other) = default;
+  batch_functional_inference_algorithm&
+  operator=(batch_functional_inference_algorithm&& other) = default;
   /** Destructor. */
   virtual ~batch_functional_inference_algorithm() = default;
 
@@ -73,11 +77,16 @@ public:
    * @param[in] mbs The max mini-batch size
    * @return Matrix of predicted labels (by index)
    */
-  template <typename DataT, El::Dist CDist, El::Dist RDist, El::DistWrap DistView, El::Device Device>
+  template <typename DataT,
+            El::Dist CDist,
+            El::Dist RDist,
+            El::DistWrap DistView,
+            El::Device Device>
   El::Matrix<int, El::Device::CPU>
   infer(observer_ptr<model> model,
         El::DistMatrix<DataT, CDist, RDist, DistView, Device> const& samples,
-        size_t mbs) {
+        size_t mbs)
+  {
     if (mbs <= 0) {
       LBANN_ERROR("mini-batch size must be larger than 0");
     }
@@ -93,8 +102,8 @@ public:
     model->reset_mode(c, execution_mode::inference);
 
     // Infer on mini batches
-    for (size_t i = 0; i < samples_size; i+=mbs) {
-      size_t mb_idx = std::min(i+mbs, samples_size);
+    for (size_t i = 0; i < samples_size; i += mbs) {
+      size_t mb_idx = std::min(i + mbs, samples_size);
       auto mb_range = El::IR(i, mb_idx);
       auto mb_samples = El::LockedView(samples, mb_range, El::ALL);
       auto mb_labels = El::View(labels, mb_range, El::ALL);
@@ -106,20 +115,23 @@ public:
     return labels;
   }
 
-
 protected:
-
   /** @brief Run model inference on a single mini-batch of samples
    * This method takes a mini-batch of samples, inserts them into the input
    * layer of the model, and runs forward prop on the model.
    * @param[in] model A trained model
    * @param[in] samples A distributed matrix containing samples for model input
    */
-  template <typename DataT, El::Dist CDist, El::Dist RDist, El::DistWrap DistView, El::Device Device>
-  void
-  infer_mini_batch(model& model,
-                   El::DistMatrix<DataT, CDist, RDist, DistView, Device> const& samples) {
-    for (int i=0; i < model.get_num_layers(); i++) {
+  template <typename DataT,
+            El::Dist CDist,
+            El::Dist RDist,
+            El::DistWrap DistView,
+            El::Device Device>
+  void infer_mini_batch(
+    model& model,
+    El::DistMatrix<DataT, CDist, RDist, DistView, Device> const& samples)
+  {
+    for (int i = 0; i < model.get_num_layers(); i++) {
       auto& l = model.get_layer(i);
       // Insert samples into the input layer
       if (l.get_type() == "input") {
@@ -134,23 +146,24 @@ protected:
    * @param[in] model A model that has been used for inference
    * @param[in] labels A matrix to place predicted category labels
    */
-  void get_labels(model& model,\
-                  El::Matrix<int, El::Device::CPU> &labels) {
+  void get_labels(model& model, El::Matrix<int, El::Device::CPU>& labels)
+  {
     int pred_label = 0;
     float max, col_value;
 
     for (const auto* l : model.get_layers()) {
       // Find the output layer
       if (l->get_type() == "softmax") {
-        auto const& dtl = dynamic_cast<lbann::data_type_layer<float> const&>(*l);
+        auto const& dtl =
+          dynamic_cast<lbann::data_type_layer<float> const&>(*l);
         const auto& outputs = dtl.get_activations();
 
         // Find the prediction for each sample
         int col_count = outputs.Width();
         int row_count = outputs.Height();
-        for (int i=0; i<col_count; i++) {
+        for (int i = 0; i < col_count; i++) {
           max = 0;
-          for (int j=0; j<row_count; j++) {
+          for (int j = 0; j < row_count; j++) {
             col_value = outputs.Get(i, j);
             if (col_value > max) {
               max = col_value;
@@ -162,9 +175,8 @@ protected:
       }
     }
   }
-
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_BATCH_INFERENCE_ALGORITHM_HPP
+#endif // LBANN_BATCH_INFERENCE_ALGORITHM_HPP

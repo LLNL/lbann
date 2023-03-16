@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,29 +31,26 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::fp_compute()
+{
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
   const auto& local_input =
     dynamic_cast<const CPUMatType&>(this->get_local_prev_activations());
-  auto& local_output =
-    dynamic_cast<CPUMatType&>(this->get_local_activations());
+  auto& local_output = dynamic_cast<CPUMatType&>(this->get_local_activations());
   const auto& local_weights =
     dynamic_cast<const CPUMatType&>(this->weights_values(0).LockedMatrix());
-  const auto local_scale = El::LockedView(local_weights,
-                                          El::ALL, El::IR(0));
-  const auto local_bias = El::LockedView(local_weights,
-                                         El::ALL, El::IR(1));
+  const auto local_scale = El::LockedView(local_weights, El::ALL, El::IR(0));
+  const auto local_bias = El::LockedView(local_weights, El::ALL, El::IR(1));
 
   // Dimensions
   // Note: channel_size is the number of input entries per channel and
   // local_width is the number of local mini-batch samples.
   const auto dims = this->get_output_dims();
   const El::Int num_channels = dims[0];
-  const El::Int channel_size = std::accumulate(dims.begin() + 1,
-                                               dims.end(),
-                                               1, std::multiplies<int>());
+  const El::Int channel_size =
+    std::accumulate(dims.begin() + 1, dims.end(), 1, std::multiplies<int>());
   const El::Int local_width = local_input.Width();
 
   // Apply channel-wise scale and bias
@@ -76,7 +73,8 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::fp_compute() {
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
+void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute()
+{
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
@@ -90,21 +88,19 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
     dynamic_cast<const CPUMatType&>(this->weights_values(0).LockedMatrix());
   auto& local_gradient_wrt_weights =
     dynamic_cast<CPUMatType&>(this->m_weights_gradient->Matrix());
-  const auto local_scale = El::LockedView(local_weights,
-                                          El::ALL, El::IR(0));
-  auto local_gradient_wrt_scale = El::View(local_gradient_wrt_weights,
-                                           El::ALL, El::IR(0));
-  auto local_gradient_wrt_bias = El::View(local_gradient_wrt_weights,
-                                          El::ALL, El::IR(1));
+  const auto local_scale = El::LockedView(local_weights, El::ALL, El::IR(0));
+  auto local_gradient_wrt_scale =
+    El::View(local_gradient_wrt_weights, El::ALL, El::IR(0));
+  auto local_gradient_wrt_bias =
+    El::View(local_gradient_wrt_weights, El::ALL, El::IR(1));
 
   // Dimensions
   // Note: channel_size is the number of input entries per channel and
   // local_width is the number of local mini-batch samples.
   const auto dims = this->get_output_dims();
   const El::Int num_channels = dims[0];
-  const El::Int channel_size = std::accumulate(dims.begin() + 1,
-                                               dims.end(),
-                                               1, std::multiplies<int>());
+  const El::Int channel_size =
+    std::accumulate(dims.begin() + 1, dims.end(), 1, std::multiplies<int>());
   const El::Int local_width = local_input.Width();
 
   // Compute gradients
@@ -134,13 +130,16 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   // Update optimizer with gradient
   auto* opt = this->get_weights(0).get_optimizer();
   if (opt != nullptr) {
-    opt->add_to_gradient(*this->m_weights_gradient, El::TypeTraits<TensorDataType>::One(), true);
+    opt->add_to_gradient(*this->m_weights_gradient,
+                         El::TypeTraits<TensorDataType>::One(),
+                         true);
   }
 }
 
-#define PROTO(T)                                      \
-  template class channelwise_scale_bias_layer<        \
-    T, data_layout::DATA_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                                               \
+  template class channelwise_scale_bias_layer<T,                               \
+                                              data_layout::DATA_PARALLEL,      \
+                                              El::Device::CPU>;
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

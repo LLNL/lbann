@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,9 +33,9 @@ namespace lbann {
 namespace gpu_lib {
 
 #if defined LBANN_HAS_CUDA
-  using namespace cuda;
+using namespace cuda;
 #elif defined LBANN_HAS_ROCM
-  using namespace rocm;
+using namespace rocm;
 #endif // LBANN_HAS_CUDA
 
 // -------------------------------------------------------------
@@ -55,12 +55,9 @@ void clip_grid_dims(dim3& grid_dims);
 #if defined __CUDACC__ || defined __HIPCC__
 
 // Atomic add
-__device__ __forceinline__
-__half atomic_add(__half* address, __half val);
-__device__ __forceinline__
-float atomic_add(float* address, float val);
-__device__ __forceinline__
-double atomic_add(double* address, double val);
+__device__ __forceinline__ __half atomic_add(__half* address, __half val);
+__device__ __forceinline__ float atomic_add(float* address, float val);
+__device__ __forceinline__ double atomic_add(double* address, double val);
 
 /** @brief Sum over threads in CUDA block
  *
@@ -75,8 +72,7 @@ double atomic_add(double* address, double val);
  *  @returns On thread 0, the sum. Not meaningful on other threads.
  */
 template <size_t bdimx, size_t bdimy, size_t bdimz, class T>
-__device__ __forceinline__
-T block_reduce(T val);
+__device__ __forceinline__ T block_reduce(T val);
 
 /** @brief Reduction over threads in CUDA block
  *
@@ -93,17 +89,17 @@ T block_reduce(T val);
  *  threads.
  */
 template <size_t bdimx, size_t bdimy, size_t bdimz, class T, class Op>
-__device__ __forceinline__
-T block_reduce(T val);
+__device__ __forceinline__ T block_reduce(T val);
 
 // Unary math functions
-#define DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, type)    \
+#define DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, type)                          \
   __device__ __forceinline__ type func(type const& x)
-#define DECLARE_UNARY_MATH_FUNC(func)                 \
-  DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, __half);    \
-  DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, float);     \
+#define DECLARE_UNARY_MATH_FUNC(func)                                          \
+  DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, __half);                             \
+  DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, float);                              \
   DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, double)
-template <typename T> __device__ __forceinline__ T abs(const T& x);
+template <typename T>
+__device__ __forceinline__ T abs(const T& x);
 __device__ __forceinline__ float abs(float const& x);
 __device__ __forceinline__ double abs(double const& x);
 DECLARE_UNARY_MATH_FUNC(round);
@@ -129,22 +125,27 @@ DECLARE_UNARY_MATH_FUNC(asinh);
 DECLARE_UNARY_MATH_FUNC(atanh);
 DECLARE_UNARY_MATH_FUNC(erf);
 DECLARE_UNARY_MATH_FUNC(erfinv);
-template <typename T> __device__ __forceinline__ bool isfinite(const T& x);
-template <typename T> __device__ __forceinline__ bool isinf(const T& x);
-template <typename T> __device__ __forceinline__ bool isnan(const T& x);
+template <typename T>
+__device__ __forceinline__ bool isfinite(const T& x);
+template <typename T>
+__device__ __forceinline__ bool isinf(const T& x);
+template <typename T>
+__device__ __forceinline__ bool isnan(const T& x);
 #undef DECLARE_UNARY_MATH_FUNC
 #undef DECLARE_UNARY_MATH_FUNC_WITH_TYPE
 
 // Binary math functions
-#define DECLARE_BINARY_UNARY_MATH_FUNC_WITH_TYPE(func, type)            \
- __device__ __forceinline__ type func(type const& x, type const& y)
-#define DECLARE_BINARY_UNARY_MATH_FUNC(func)                 \
-  DECLARE_BINARY_UNARY_MATH_FUNC_WITH_TYPE(func, __half);    \
-  DECLARE_BINARY_UNARY_MATH_FUNC_WITH_TYPE(func, float);     \
+#define DECLARE_BINARY_UNARY_MATH_FUNC_WITH_TYPE(func, type)                   \
+  __device__ __forceinline__ type func(type const& x, type const& y)
+#define DECLARE_BINARY_UNARY_MATH_FUNC(func)                                   \
+  DECLARE_BINARY_UNARY_MATH_FUNC_WITH_TYPE(func, __half);                      \
+  DECLARE_BINARY_UNARY_MATH_FUNC_WITH_TYPE(func, float);                       \
   DECLARE_BINARY_UNARY_MATH_FUNC_WITH_TYPE(func, double)
-template <typename T> __device__ __forceinline__ T min(const T& x, const T& y);
+template <typename T>
+__device__ __forceinline__ T min(const T& x, const T& y);
 DECLARE_BINARY_UNARY_MATH_FUNC(min);
-template <typename T> __device__ __forceinline__ T max(const T& x, const T& y);
+template <typename T>
+__device__ __forceinline__ T max(const T& x, const T& y);
 DECLARE_BINARY_UNARY_MATH_FUNC(max);
 DECLARE_BINARY_UNARY_MATH_FUNC(mod);
 DECLARE_BINARY_UNARY_MATH_FUNC(pow);
@@ -152,14 +153,19 @@ DECLARE_BINARY_UNARY_MATH_FUNC(pow);
 #undef DECLARE_BINARY_UNARY_MATH_FUNC_WITH_TYPE
 
 // Numeric limits
-template <typename T> constexpr __device__ __forceinline__ T min();
-template <typename T> constexpr __device__ __forceinline__ T max();
-template <typename T> constexpr __device__ __forceinline__ T epsilon();
-template <typename T> __device__ __forceinline__ T infinity();
+template <typename T>
+constexpr __device__ __forceinline__ T min();
+template <typename T>
+constexpr __device__ __forceinline__ T max();
+template <typename T>
+constexpr __device__ __forceinline__ T epsilon();
+template <typename T>
+__device__ __forceinline__ T infinity();
 
 /** @brief Array with fixed type and size. */
 template <typename T, size_t N>
-struct array {
+struct array
+{
   T vals[N];
   __host__ __device__ __forceinline__ size_t size() const;
   __host__ __device__ __forceinline__ T& operator[](size_t i);
@@ -193,7 +199,6 @@ void apply_entrywise_binary_operator(
   const El::AbstractMatrix<TensorDataType>& input2,
   El::AbstractMatrix<TensorDataType>& output);
 
-
 /** Apply an entry-wise unary operator to GPU data.
  *  The input and output data must be on GPU, have the same
  *  dimensions, and be aligned.
@@ -220,8 +225,8 @@ void apply_entrywise_binary_operator(
 
 // Header implementations
 #include "lbann/utils/impl/cuda.hpp"
-#include "lbann/utils/impl/rocm.hpp"
 #include "lbann/utils/impl/gpu_lib.hpp"
+#include "lbann/utils/impl/rocm.hpp"
 
 #endif // LBANN_HAS_GPU
 #endif // LBANN_UTILS_GPULIB_HPP

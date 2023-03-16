@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,7 +32,9 @@
 namespace lbann {
 
 template <typename T, data_layout L, El::Device D>
-void unpooling_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void unpooling_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   proto.mutable_unpooling();
   // Unused
@@ -40,9 +42,7 @@ void unpooling_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) cons
 }
 
 #define PROTO(T)                                                               \
-  template class unpooling_layer<T,                                            \
-                                 data_layout::DATA_PARALLEL,                   \
-                                 El::Device::CPU>
+  template class unpooling_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

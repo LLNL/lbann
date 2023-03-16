@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -44,27 +44,32 @@
 static char const* cutt_err_string(cuttResult err) noexcept
 {
   switch (err) {
-  case CUTT_SUCCESS: return "Success";
-  case CUTT_INVALID_PLAN: return "Invalid plan handle";
-  case CUTT_INVALID_PARAMETER: return "Invalid input parameter";
+  case CUTT_SUCCESS:
+    return "Success";
+  case CUTT_INVALID_PLAN:
+    return "Invalid plan handle";
+  case CUTT_INVALID_PARAMETER:
+    return "Invalid input parameter";
   case CUTT_INVALID_DEVICE:
     return "Execution tried on device different than where plan was created";
-  case CUTT_INTERNAL_ERROR: return "Internal error";
-  case CUTT_UNDEFINED_ERROR: return "Undefined error";
+  case CUTT_INTERNAL_ERROR:
+    return "Internal error";
+  case CUTT_UNDEFINED_ERROR:
+    return "Undefined error";
   default:
     return "<Unknown error value>";
   }
 }
 
-#define CHECK_CUTT(cmd)                                          \
-  do {                                                           \
-    cuttResult _check_cutt_err_result = (cmd);                   \
-    if (CUTT_SUCCESS != _check_cutt_err_result) {                \
-      LBANN_ERROR("cuTT operation \"" #cmd "\" FAILED (",        \
-                  cutt_err_string(_check_cutt_err_result), ")"); \
-    }                                                            \
+#define CHECK_CUTT(cmd)                                                        \
+  do {                                                                         \
+    cuttResult _check_cutt_err_result = (cmd);                                 \
+    if (CUTT_SUCCESS != _check_cutt_err_result) {                              \
+      LBANN_ERROR("cuTT operation \"" #cmd "\" FAILED (",                      \
+                  cutt_err_string(_check_cutt_err_result),                     \
+                  ")");                                                        \
+    }                                                                          \
   } while (0)
-
 
 namespace {
 
@@ -144,38 +149,34 @@ public:
   ///@}
 
 private:
+  template <typename DataT>
+  cuttHandle get_mb_plan(ColMajorPerm const& perm,
+                         DimsType const& in_dims,
+                         DimsType const& out_dims,
+                         El::Matrix<DataT, El::Device::GPU> const& in,
+                         El::Matrix<DataT, El::Device::GPU> const& out) const;
 
   template <typename DataT>
-  cuttHandle get_mb_plan(
-    ColMajorPerm const& perm,
-    DimsType const& in_dims,
-    DimsType const& out_dims,
-    El::Matrix<DataT, El::Device::GPU> const& in,
-    El::Matrix<DataT, El::Device::GPU> const& out) const;
+  cuttHandle
+  get_sample_plan(ColMajorPerm const& perm,
+                  DimsType const& in_dims,
+                  DimsType const& out_dims,
+                  El::Matrix<DataT, El::Device::GPU> const& in,
+                  El::Matrix<DataT, El::Device::GPU> const& out) const;
 
   template <typename DataT>
-  cuttHandle get_sample_plan(
-    ColMajorPerm const& perm,
-    DimsType const& in_dims,
-    DimsType const& out_dims,
-    El::Matrix<DataT, El::Device::GPU> const& in,
-    El::Matrix<DataT, El::Device::GPU> const& out) const;
+  void do_mb_permute(ColMajorPerm const& perm,
+                     DimsType const& in_dims,
+                     DimsType const& out_dims,
+                     El::Matrix<DataT, El::Device::GPU> const& in,
+                     El::Matrix<DataT, El::Device::GPU>& out) const;
 
   template <typename DataT>
-  void do_mb_permute(
-    ColMajorPerm const& perm,
-    DimsType const& in_dims,
-    DimsType const& out_dims,
-    El::Matrix<DataT, El::Device::GPU> const& in,
-    El::Matrix<DataT, El::Device::GPU>& out) const;
-
-  template <typename DataT>
-  void do_sample_permute(
-    ColMajorPerm const& perm,
-    DimsType const& in_dims,
-    DimsType const& out_dims,
-    El::Matrix<DataT, El::Device::GPU> const& in,
-    El::Matrix<DataT, El::Device::GPU>& out) const;
+  void do_sample_permute(ColMajorPerm const& perm,
+                         DimsType const& in_dims,
+                         DimsType const& out_dims,
+                         El::Matrix<DataT, El::Device::GPU> const& in,
+                         El::Matrix<DataT, El::Device::GPU>& out) const;
 
 private:
   ColMajorPerm m_perm;
@@ -187,8 +188,7 @@ private:
 }; // class cuTT_PermuteImpl
 
 inline cuTT_PermuteImpl::cuTT_PermuteImpl(ColMajorPerm perm)
-  : m_perm{std::move(perm)},
-    m_inv_perm{invert(m_perm)}
+  : m_perm{std::move(perm)}, m_inv_perm{invert(m_perm)}
 {
   LBANN_ASSERT_DEBUG(is_valid(m_perm));
   LBANN_ASSERT_DEBUG(is_valid(m_inv_perm));
@@ -232,8 +232,8 @@ cuttHandle cuTT_PermuteImpl::get_mb_plan(
   El::Matrix<DataT, El::Device::GPU> const& out) const
 {
   LBANN_ASSERT_DEBUG(in.Width() == out.Width());
-  LBANN_ASSERT_DEBUG(perm.size() == in_dims.size()
-                     && perm.size() == out_dims.size());
+  LBANN_ASSERT_DEBUG(perm.size() == in_dims.size() &&
+                     perm.size() == out_dims.size());
 
   auto const mbs = in.Width();
   if (!m_mb_plan_map.count(mbs)) {
@@ -273,9 +273,8 @@ cuttHandle cuTT_PermuteImpl::get_sample_plan(
 }
 
 template <typename DataT>
-void cuTT_PermuteImpl::permute(
-  El::Matrix<DataT, El::Device::GPU> const& in,
-  El::Matrix<DataT, El::Device::GPU>& out) const
+void cuTT_PermuteImpl::permute(El::Matrix<DataT, El::Device::GPU> const& in,
+                               El::Matrix<DataT, El::Device::GPU>& out) const
 {
   if (in.Width() == El::Int{0})
     return;
@@ -287,7 +286,8 @@ void cuTT_PermuteImpl::permute(
   auto multisync =
     El::MakeMultiSync(El::SyncInfoFromMatrix(out), El::SyncInfoFromMatrix(in));
 
-  if (in.LDim() == in.Height() && out.LDim() == out.Height() && in.Width() > 1) {
+  if (in.LDim() == in.Height() && out.LDim() == out.Height() &&
+      in.Width() > 1) {
     do_mb_permute(perm, in_dims, out_dims, in, out);
   }
   else {
@@ -311,7 +311,8 @@ void cuTT_PermuteImpl::inverse_permute(
   auto multisync =
     El::MakeMultiSync(El::SyncInfoFromMatrix(out), El::SyncInfoFromMatrix(in));
 
-  if (in.LDim() == in.Height() && out.LDim() == out.Height() && in.Width() > 1) {
+  if (in.LDim() == in.Height() && out.LDim() == out.Height() &&
+      in.Width() > 1) {
     do_mb_permute(perm, in_dims, out_dims, in, out);
   }
   else {
@@ -349,8 +350,8 @@ void cuTT_PermuteImpl::do_sample_permute(
   auto const out_stride = out.LDim();
   for (El::Int sample = 0; sample < batch_size; ++sample) {
     CHECK_CUTT(cuttExecute(plan,
-                           in_buf + sample*in_stride,
-                           out_buf + sample*out_stride));
+                           in_buf + sample * in_stride,
+                           out_buf + sample * out_stride));
   }
 }
 

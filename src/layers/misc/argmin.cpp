@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,29 +35,39 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void argmin_layer<TensorDataType, Layout, Device>::setup_dims(DataReaderMetaData& dr_metadata) {
+void argmin_layer<TensorDataType, Layout, Device>::setup_dims(
+  DataReaderMetaData& dr_metadata)
+{
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
   this->set_output_dims({1});
 
   // Make sure input tensor is 1-D
   const auto input_dims = this->get_input_dims();
   if (input_dims.size() != 1) {
-    LBANN_ERROR(get_type()," layer \"",this->get_name(),"\" ",
+    LBANN_ERROR(get_type(),
+                " layer \"",
+                this->get_name(),
+                "\" ",
                 "expects a 1-D input tensor, ",
-                "but parent layer \"",this->get_parent_layer().get_name(),"\" ",
-                "outputs a ",input_dims.size(),"-D tensor");
+                "but parent layer \"",
+                this->get_parent_layer().get_name(),
+                "\" ",
+                "outputs a ",
+                input_dims.size(),
+                "-D tensor");
   }
-
 }
 
 template <typename T, data_layout L, El::Device D>
-void argmin_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void argmin_layer<T, L, D>::write_specific_proto(lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   proto.mutable_argmin();
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void argmin_layer<TensorDataType, Layout, Device>::fp_compute() {
+void argmin_layer<TensorDataType, Layout, Device>::fp_compute()
+{
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
   const auto& local_input =
     dynamic_cast<const CPUMatType&>(this->get_local_prev_activations());
@@ -67,14 +77,13 @@ void argmin_layer<TensorDataType, Layout, Device>::fp_compute() {
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const auto buf_start = local_input.LockedBuffer(0, col);
-    const auto buf_min = std::min_element(buf_start,
-                                          buf_start+local_height);
+    const auto buf_min = std::min_element(buf_start, buf_start + local_height);
     const auto min_ind = std::distance(buf_start, buf_min);
     local_output(0, col) = static_cast<TensorDataType>(min_ind);
   }
 }
 
-#define PROTO(T)                     \
+#define PROTO(T)                                                               \
   template class argmin_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF

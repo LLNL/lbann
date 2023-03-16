@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,8 +27,8 @@
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/weights/data_type_weights.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
 #include "checkpoint_common.hpp"
 

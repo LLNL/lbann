@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,24 +26,24 @@
 // profiling .hpp .cpp - Various routines for interfacing with profilers
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/base.hpp"
 #include "lbann/utils/profiling.hpp"
+#include "lbann/base.hpp"
 #include "lbann/utils/exception.hpp"
 
 #if defined(LBANN_SCOREP)
 #include <scorep/SCOREP_User.h>
 #elif defined(LBANN_NVPROF)
+#include "cuda_profiler_api.h"
+#include "cuda_runtime.h"
+#include "lbann/utils/gpu/helpers.hpp"
 #include "nvToolsExt.h"
 #include "nvToolsExtCuda.h"
 #include "nvToolsExtCudaRt.h"
-#include "cuda_runtime.h"
-#include "cuda_profiler_api.h"
-#include "lbann/utils/gpu/helpers.hpp"
 #endif
 
 #if defined(LBANN_HAS_ROCTRACER)
-#include <roctx.h>
 #include <roctracer_ext.h>
+#include <roctx.h>
 #endif
 
 namespace {
@@ -53,32 +53,37 @@ bool profiling_started = false;
 namespace lbann {
 
 #if defined(LBANN_SCOREP)
-void prof_start() {
+void prof_start()
+{
   profiling_started = true;
   return;
 }
-void prof_stop() {
-  return;
-}
-void prof_region_begin(const char *s, int, bool) {
+void prof_stop() { return; }
+void prof_region_begin(const char* s, int, bool)
+{
   SCOREP_USER_REGION_BY_NAME_BEGIN(s, SCOREP_USER_REGION_TYPE_COMMON);
   return;
 }
-void prof_region_end(const char *s, bool) {
+void prof_region_end(const char* s, bool)
+{
   SCOREP_USER_REGION_BY_NAME_END(s);
   return;
 }
 #elif defined(LBANN_NVPROF)
-void prof_start() {
+void prof_start()
+{
   CHECK_CUDA(cudaProfilerStart());
   profiling_started = true;
 }
-void prof_stop() {
+void prof_stop()
+{
   CHECK_CUDA(cudaProfilerStop());
   profiling_started = false;
 }
-void prof_region_begin(const char *s, int c, bool sync) {
-  if (!profiling_started) return;
+void prof_region_begin(const char* s, int c, bool sync)
+{
+  if (!profiling_started)
+    return;
   if (sync) {
     hydrogen::gpu::SynchronizeDevice();
   }
@@ -94,51 +99,57 @@ void prof_region_begin(const char *s, int c, bool sync) {
   ev.message.ascii = s;
   nvtxRangePushEx(&ev);
 }
-void prof_region_end(const char *, bool sync) {
-  if (!profiling_started) return;
+void prof_region_end(const char*, bool sync)
+{
+  if (!profiling_started)
+    return;
   if (sync) {
     hydrogen::gpu::SynchronizeDevice();
   }
   nvtxRangePop();
 }
 #elif defined(LBANN_HAS_ROCTRACER)
-void prof_start() {
+void prof_start()
+{
   roctracer_start();
   profiling_started = true;
 }
-void prof_stop() {
+void prof_stop()
+{
   roctracer_stop();
   profiling_started = false;
 }
-void prof_region_begin(const char *s, int, bool sync) {
-  if (!profiling_started) return;
+void prof_region_begin(const char* s, int, bool sync)
+{
+  if (!profiling_started)
+    return;
   if (sync) {
     hydrogen::gpu::SynchronizeDevice();
   }
   LBANN_ASSERT(0 <= roctxRangePush(s));
 }
-void prof_region_end(const char *, bool sync) {
-  if (!profiling_started) return;
+void prof_region_end(const char*, bool sync)
+{
+  if (!profiling_started)
+    return;
   if (sync) {
     hydrogen::gpu::SynchronizeDevice();
   }
   LBANN_ASSERT(0 <= roctxRangePop());
 }
 #else
-void prof_start() {
+void prof_start()
+{
   profiling_started = true;
   return;
 }
-void prof_stop() {
+void prof_stop()
+{
   profiling_started = false;
   return;
 }
-void prof_region_begin(const char *, int, bool) {
-  return;
-}
-void prof_region_end(const char *, bool) {
-  return;
-}
+void prof_region_begin(const char*, int, bool) { return; }
+void prof_region_end(const char*, bool) { return; }
 #endif
 
 static int next_color() noexcept
@@ -150,19 +161,14 @@ static int next_color() noexcept
 
 ProfRegion::ProfRegion(char const* name, bool sync)
   : ProfRegion{name, next_color(), sync}
-{
-}
+{}
 
 ProfRegion::ProfRegion(char const* name, int color, bool sync)
-  : m_name{name},
-    m_sync{sync}
+  : m_name{name}, m_sync{sync}
 {
   prof_region_begin(m_name, color, m_sync);
 }
 
-ProfRegion::~ProfRegion()
-{
-  prof_region_end(m_name, m_sync);
-}
+ProfRegion::~ProfRegion() { prof_region_end(m_name, m_sync); }
 
-}  // namespace lbann
+} // namespace lbann

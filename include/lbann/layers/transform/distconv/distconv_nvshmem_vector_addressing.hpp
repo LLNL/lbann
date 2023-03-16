@@ -30,182 +30,177 @@
 #if defined(LBANN_HAS_NVSHMEM) && defined(LBANN_HAS_DISTCONV)
 #include "distconv/tensor/allreduce.hpp"
 #include "distconv/tensor/memory_cuda.hpp"
-#include "distconv/util/util_mpi.hpp"
-#include "distconv/util/util_cuda.hpp"
 #include "distconv/util/nvshmem.hpp"
+#include "distconv/util/util_cuda.hpp"
+#include "distconv/util/util_mpi.hpp"
 
-namespace distconv{
-  namespace tensor{
+namespace distconv {
+namespace tensor {
 
-    template <typename DataType>
-    struct NVHSMEMDevice{
-      int m_pid;
-      int m_num_processes;
-      DataType *m_buf;
-      util::nvshmem::SyncArrayDevice m_sync_device;
-      NVHSMEMDevice(int pid,
-                    int num_processes, 
-                    DataType* buf, 
-                    const util::nvshmem::SyncArrayDevice &sync_device):
-        m_pid(pid), m_num_processes(num_processes), m_buf(buf), m_sync_device(sync_device){}
-    };
+template <typename DataType>
+struct NVHSMEMDevice
+{
+  int m_pid;
+  int m_num_processes;
+  DataType* m_buf;
+  util::nvshmem::SyncArrayDevice m_sync_device;
+  NVHSMEMDevice(int pid,
+                int num_processes,
+                DataType* buf,
+                const util::nvshmem::SyncArrayDevice& sync_device)
+    : m_pid(pid),
+      m_num_processes(num_processes),
+      m_buf(buf),
+      m_sync_device(sync_device)
+  {}
+};
 
-    template <typename DataType>
-    class ScatterNVSHMEM{
-      protected:
-        cudaStream_t m_stream;
-        int m_pid;
-        int m_np;
-        int m_stride; // mini_batch stride for rank
-        int m_group;  // mini batch group for rank
-        // Additional buffers on the symmetric heap
-        // To do: Remove bufferse - SZ
-        Memory<NVSHMEMAllocator> m_output_buffer;
-        util::nvshmem::SyncArray m_sync;
-      public:
-        ScatterNVSHMEM(cudaStream_t stream):m_stream(stream),
-                                            m_pid(nvshmem_my_pe()),   
-                                            m_np(nvshmem_n_pes()),
-                                            m_stride(nvshmem_n_pes()),
-                                            m_group(0), 
-                                            m_sync(0){}  
+template <typename DataType>
+class ScatterNVSHMEM
+{
+protected:
+  cudaStream_t m_stream;
+  int m_pid;
+  int m_np;
+  int m_stride; // mini_batch stride for rank
+  int m_group;  // mini batch group for rank
+  // Additional buffers on the symmetric heap
+  // To do: Remove bufferse - SZ
+  Memory<NVSHMEMAllocator> m_output_buffer;
+  util::nvshmem::SyncArray m_sync;
 
-        NVHSMEMDevice<DataType> get_for_device(){
-          return NVHSMEMDevice<DataType>(m_pid,
-                                          m_np,
-                                          static_cast<DataType*>(m_output_buffer.get()),
-                                          m_sync.get_for_device());
-        }
+public:
+  ScatterNVSHMEM(cudaStream_t stream)
+    : m_stream(stream),
+      m_pid(nvshmem_my_pe()),
+      m_np(nvshmem_n_pes()),
+      m_stride(nvshmem_n_pes()),
+      m_group(0),
+      m_sync(0)
+  {}
 
-        int get_stride() const {
-          return m_stride;
-        }
+  NVHSMEMDevice<DataType> get_for_device()
+  {
+    return NVHSMEMDevice<DataType>(
+      m_pid,
+      m_np,
+      static_cast<DataType*>(m_output_buffer.get()),
+      m_sync.get_for_device());
+  }
 
-        int get_group() const{
-          return m_group;
-        }
+  int get_stride() const { return m_stride; }
 
-        void set_stride(int stride){
-          m_stride = stride;  
-        }
+  int get_group() const { return m_group; }
 
-        void set_group(int group){
-          m_group = group;
-        }
+  void set_stride(int stride) { m_stride = stride; }
 
-        int get_num_ranks() const{
-          return m_np;
-        }
+  void set_group(int group) { m_group = group; }
 
-        int get_rank() const{
-          return m_pid;
-        }
+  int get_num_ranks() const { return m_np; }
 
-        void ensure_buffer(size_t count){        
-          size_t cur_size = m_output_buffer.get_size() / sizeof(DataType);
+  int get_rank() const { return m_pid; }
 
-          if (cur_size >= count){
-            m_output_buffer.memset(0);
-            return ; 
-          }
+  void ensure_buffer(size_t count)
+  {
+    size_t cur_size = m_output_buffer.get_size() / sizeof(DataType);
 
-          m_output_buffer.allocate(count * sizeof(DataType));
-          m_output_buffer.memset(0);
-        }
+    if (cur_size >= count) {
+      m_output_buffer.memset(0);
+      return;
+    }
 
-        void sync(){
-          // To do: Replace with non-blocking barrier - SZ
-          nvshmemx_barrier_all_on_stream(m_stream);
-        }
+    m_output_buffer.allocate(count * sizeof(DataType));
+    m_output_buffer.memset(0);
+  }
 
-        void scatter(const DataType* values, 
-                      const DataType* indices,
-                      DataType* output,
-                      const size_t local_mini_batch_size,
-                      const size_t values_rows_size,
-                      const size_t values_col_size,
-                      const size_t output_rows_size);
-    };
+  void sync()
+  {
+    // To do: Replace with non-blocking barrier - SZ
+    nvshmemx_barrier_all_on_stream(m_stream);
+  }
 
-    template <typename DataType>
-    class GatherNVSHMEM{
-      protected:
-        cudaStream_t m_stream;
-        int m_pid;
-        int m_np;
-        int m_stride; // mini_batch stride for rank
-        int m_group;  // mini batch group for rank
-        // Additional buffer on the symmetric heap
-        // To do: Remove bufferse - SZ
-        Memory<NVSHMEMAllocator> m_output_buffer;
-        util::nvshmem::SyncArray m_sync;
-      
-      public:
+  void scatter(const DataType* values,
+               const DataType* indices,
+               DataType* output,
+               const size_t local_mini_batch_size,
+               const size_t values_rows_size,
+               const size_t values_col_size,
+               const size_t output_rows_size);
+};
 
-        GatherNVSHMEM(cudaStream_t stream):m_stream(stream), 
-                                            m_pid(nvshmem_my_pe()),  
-                                            m_np(nvshmem_n_pes()),
-                                            m_stride(nvshmem_n_pes()),
-                                            m_group(0),   
-                                            m_sync(0){}  
+template <typename DataType>
+class GatherNVSHMEM
+{
+protected:
+  cudaStream_t m_stream;
+  int m_pid;
+  int m_np;
+  int m_stride; // mini_batch stride for rank
+  int m_group;  // mini batch group for rank
+  // Additional buffer on the symmetric heap
+  // To do: Remove bufferse - SZ
+  Memory<NVSHMEMAllocator> m_output_buffer;
+  util::nvshmem::SyncArray m_sync;
 
-        NVHSMEMDevice<DataType> get_for_device(){
-          return NVHSMEMDevice<DataType>(m_pid,
-                                        m_np,
-                                        static_cast<DataType*>(m_output_buffer.get()),
-                                        m_sync.get_for_device());
-        }
+public:
+  GatherNVSHMEM(cudaStream_t stream)
+    : m_stream(stream),
+      m_pid(nvshmem_my_pe()),
+      m_np(nvshmem_n_pes()),
+      m_stride(nvshmem_n_pes()),
+      m_group(0),
+      m_sync(0)
+  {}
 
-        int get_stride() const {
-          return m_stride;
-        }
+  NVHSMEMDevice<DataType> get_for_device()
+  {
+    return NVHSMEMDevice<DataType>(
+      m_pid,
+      m_np,
+      static_cast<DataType*>(m_output_buffer.get()),
+      m_sync.get_for_device());
+  }
 
-        int get_group() const{
-          return m_group;
-        }
+  int get_stride() const { return m_stride; }
 
-        void set_stride(int stride){
-          m_stride = stride;  
-        }
+  int get_group() const { return m_group; }
 
-        void set_group(int group){
-          m_group = group;
-        }
+  void set_stride(int stride) { m_stride = stride; }
 
-        int get_num_ranks() const{
-          return m_np;
-        }
+  void set_group(int group) { m_group = group; }
 
-        int get_rank() const{
-          return m_pid;
-        }
+  int get_num_ranks() const { return m_np; }
 
-        void ensure_buffer(size_t count){
-          size_t cur_size = m_output_buffer.get_size() / sizeof(DataType);
-          if (cur_size >= count){
-            m_output_buffer.memset(0);  // 0 out the buffer
-            return ; 
-          }
-          m_output_buffer.allocate(count * sizeof(DataType));
-          m_output_buffer.memset(0);
-        }
+  int get_rank() const { return m_pid; }
 
-        void sync(){
-            // To do: Replace with non-blocking barrier - SZ
-            nvshmemx_barrier_all_on_stream(m_stream);
-        }
+  void ensure_buffer(size_t count)
+  {
+    size_t cur_size = m_output_buffer.get_size() / sizeof(DataType);
+    if (cur_size >= count) {
+      m_output_buffer.memset(0); // 0 out the buffer
+      return;
+    }
+    m_output_buffer.allocate(count * sizeof(DataType));
+    m_output_buffer.memset(0);
+  }
 
-        void gather(const DataType* values,
-                    const DataType* indices,
-                    DataType* output,
-                    const size_t local_mini_batch_size,
-                    const size_t values_rows_size,
-                    const size_t values_cols_size,
-                    const size_t output_rows_size);
-    };
-  
-  } // namespace distconv::tensor
+  void sync()
+  {
+    // To do: Replace with non-blocking barrier - SZ
+    nvshmemx_barrier_all_on_stream(m_stream);
+  }
+
+  void gather(const DataType* values,
+              const DataType* indices,
+              DataType* output,
+              const size_t local_mini_batch_size,
+              const size_t values_rows_size,
+              const size_t values_cols_size,
+              const size_t output_rows_size);
+};
+
+} // namespace tensor
 } // namespace distconv
 
 #endif // LBANN_HAS_NVSHMEM
-#endif //LBANN_LAYERS_TRANSFORM_DISTCONV_NVSHMEM_VECTOR_ADDRESSING
+#endif // LBANN_LAYERS_TRANSFORM_DISTCONV_NVSHMEM_VECTOR_ADDRESSING

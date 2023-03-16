@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -34,12 +34,12 @@
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/dnn_lib/softmax.hpp"
 #endif // defined LBANN_HAS_DNN_LIB
-#include "lbann/utils/dnn_lib/softmax.hpp"
 #include "lbann/proto/layers.pb.h"
+#include "lbann/utils/dnn_lib/softmax.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
-#include "lbann/utils/distconv.hpp"
 #include "distconv/dnn_backend/softmax.hpp"
+#include "lbann/utils/distconv.hpp"
 #endif
 
 // Threshold outputs to a minimum value.
@@ -60,14 +60,19 @@ using Softmax = ::distconv::Softmax<Backend>;
 } // namespace dc
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class softmax_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
- public:
-  using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+class softmax_distconv_adapter
+  : public data_type_distconv_adapter<TensorDataType>
+{
+public:
+  using TensorDevType =
+    typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
 
-  softmax_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
+  softmax_distconv_adapter(Layer& layer)
+    : data_type_distconv_adapter<TensorDataType>(layer)
+  {}
   virtual ~softmax_distconv_adapter() = default;
 
-  void setup_distributions(tensor_overlap_constraints &constraints) override;
+  void setup_distributions(tensor_overlap_constraints& constraints) override;
   void setup_layer(size_t workspace_capacity) override;
 
   std::unique_ptr<dc::Softmax> m_softmax;
@@ -78,7 +83,8 @@ class softmax_distconv_adapter: public data_type_distconv_adapter<TensorDataType
  *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class softmax_layer : public data_type_layer<TensorDataType> {
+class softmax_layer : public data_type_layer<TensorDataType>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -89,16 +95,15 @@ public:
   ///@}
 
 public:
-
-  softmax_layer(lbann_comm *comm,
-                softmax_mode mode)
+  softmax_layer(lbann_comm* comm, softmax_mode mode)
     : data_type_layer<TensorDataType>(comm),
       m_mode(mode)
 #ifdef LBANN_HAS_DNN_LIB
-    , m_tensors_dnn_desc(this)
+      ,
+      m_tensors_dnn_desc(this)
 #endif // LBANN_HAS_DNN_LIB
   {
-    if(mode == softmax_mode::INVALID) {
+    if (mode == softmax_mode::INVALID) {
       LBANN_ERROR("invalid softmax mode");
     }
   }
@@ -106,10 +111,10 @@ public:
   softmax_layer(const softmax_layer& other)
     : data_type_layer<TensorDataType>(other),
       m_mode(other.m_mode),
-      m_workspace(other.m_workspace ?
-                  other.m_workspace->Copy() : nullptr)
+      m_workspace(other.m_workspace ? other.m_workspace->Copy() : nullptr)
 #ifdef LBANN_HAS_DNN_LIB
-    , m_tensors_dnn_desc(other.m_tensors_dnn_desc)
+      ,
+      m_tensors_dnn_desc(other.m_tensors_dnn_desc)
 #endif // LBANN_HAS_DNN_LIB
   {
 #ifdef LBANN_HAS_DNN_LIB
@@ -126,14 +131,16 @@ public:
 
 #ifdef LBANN_HAS_ONNX
   std::string get_onnx_op_type() const override { return "Softmax"; }
-#endif //LBANN_HAS_ONNX
+#endif // LBANN_HAS_ONNX
 
-  void setup_dims(DataReaderMetaData& dr_metadata) final {
+  void setup_dims(DataReaderMetaData& dr_metadata) final
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 
-  void setup_data(size_t max_mini_batch_size) override {
+  void setup_data(size_t max_mini_batch_size) override
+  {
     data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
     auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
@@ -147,7 +154,6 @@ public:
     if (!m_tensors_dnn_desc.get_layer())
       m_tensors_dnn_desc.set_layer(this);
 #endif // LBANN_HAS_DNN_LIB
-
   }
 
   void fp_compute() final;
@@ -167,7 +173,6 @@ public:
   ///@}
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
@@ -175,7 +180,7 @@ private:
   /** @name DNN library stuff */
   ///@{
 
-  //using dnn_backend = dnn_lib::get_backend<Device>;
+  // using dnn_backend = dnn_lib::get_backend<Device>;
 #ifdef LBANN_HAS_ONEDNN_CPU
   using dnn_backend = onednn_backend<Device>;
 #else
@@ -216,35 +221,41 @@ private:
 
 #ifdef LBANN_HAS_DNN_LIB
   /** Tensor DNN library descriptors. */
-  dnn_lib::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_dnn_desc;
+  dnn_lib::data_parallel_layer_tensor_manager<TensorDataType>
+    m_tensors_dnn_desc;
 #endif // LBANN_HAS_DNN_LIB
 
 // Minimum output value to avoid denormalized floats
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
-  TensorDataType threshold_val = static_cast<TensorDataType>(El::Sqrt(std::numeric_limits<TensorDataType>::min()));
+  TensorDataType threshold_val = static_cast<TensorDataType>(
+    El::Sqrt(std::numeric_limits<TensorDataType>::min()));
 #else
   TensorDataType threshold_val = El::TypeTraits<TensorDataType>::Zero();
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
 
 #ifdef LBANN_HAS_DISTCONV
   friend class softmax_distconv_adapter<TensorDataType, Layout, Device>;
- protected:
 
-  bool is_distconv_supported() const final {
+protected:
+  bool is_distconv_supported() const final
+  {
     return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) final {
-    this->get_distconv_adapter_ptr() = std::make_unique<softmax_distconv_adapter<
-      TensorDataType, Layout, Device>>(*this);
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) final
+  {
+    this->get_distconv_adapter_ptr() = std::make_unique<
+      softmax_distconv_adapter<TensorDataType, Layout, Device>>(*this);
   }
-  softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() final;
-  const softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() const final;
+  softmax_distconv_adapter<TensorDataType, Layout, Device>&
+  get_distconv_adapter() final;
+  const softmax_distconv_adapter<TensorDataType, Layout, Device>&
+  get_distconv_adapter() const final;
 #endif // LBANN_HAS_DISTCONV
 };
 
 #ifndef LBANN_SOFTMAX_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class softmax_layer<T, data_layout::DATA_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class softmax_layer<T, data_layout::DATA_PARALLEL, Device>;  \
   extern template class softmax_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"

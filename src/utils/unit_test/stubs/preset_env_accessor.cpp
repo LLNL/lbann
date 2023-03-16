@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,8 +29,8 @@ namespace lbann {
 namespace utils {
 namespace stubs {
 
-std::unordered_map<std::string,std::string> PresetEnvAccessor::vars_;
+std::unordered_map<std::string, std::string> PresetEnvAccessor::vars_;
 
-}// namespace stubs
-}// namespace utils
-}// namespace lbann
+} // namespace stubs
+} // namespace utils
+} // namespace lbann

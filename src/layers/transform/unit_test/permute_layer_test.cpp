@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,15 +27,15 @@
 // MUST include this
 #include "Catch2BasicSupport.hpp"
 
-#include "TestHelpers.hpp"
 #include "MPITestHelpers.hpp"
+#include "TestHelpers.hpp"
 
-#include <lbann_config.hpp>
 #include "lbann/base.hpp"
 #include "lbann/layers/transform/permute.hpp"
 #include "lbann/utils/description.hpp"
 #include <lbann/utils/serialize.hpp>
 #include <lbann/utils/typename.hpp>
+#include <lbann_config.hpp>
 
 #include <sstream>
 #include <vector>

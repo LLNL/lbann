@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,26 +33,23 @@
 
 #include "utils.hpp"
 
-namespace lbann
-{
+namespace lbann {
 
 #if defined LBANN_HAS_MIOPEN
-namespace dnn_lib
-{
+namespace dnn_lib {
 
 using namespace miopen;
 
 template <typename TensorDataType, typename ScalarParameterType>
-void softmax_forward(
-  ScalarParameterType const& alpha_in,
-  TensorDescriptor const& xDesc,
-  El::Matrix<TensorDataType, El::Device::GPU> const& x,
-  ScalarParameterType const& beta_in,
-  TensorDescriptor const& yDesc,
-  El::Matrix<TensorDataType, El::Device::GPU>& y,
-  El::SyncInfo<El::Device::GPU> const& si,
-  softmax_mode mode,
-  softmax_alg alg = softmax_alg::ACCURATE)
+void softmax_forward(ScalarParameterType const& alpha_in,
+                     TensorDescriptor const& xDesc,
+                     El::Matrix<TensorDataType, El::Device::GPU> const& x,
+                     ScalarParameterType const& beta_in,
+                     TensorDescriptor const& yDesc,
+                     El::Matrix<TensorDataType, El::Device::GPU>& y,
+                     El::SyncInfo<El::Device::GPU> const& si,
+                     softmax_mode mode,
+                     softmax_alg alg = softmax_alg::ACCURATE)
 {
   // Short-circuit if we can
   if (x.IsEmpty())
@@ -75,37 +72,32 @@ void softmax_forward(
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void softmax_forward(
-  ScalarParameterType const& alpha_in,
-  TensorDescriptor const& xDesc,
-  El::Matrix<TensorDataType, El::Device::GPU> const& x,
-  ScalarParameterType const& beta_in,
-  TensorDescriptor const& yDesc,
-  El::Matrix<TensorDataType, El::Device::GPU>& y,
-  softmax_mode mode,
-  softmax_alg alg = softmax_alg::ACCURATE)
+void softmax_forward(ScalarParameterType const& alpha_in,
+                     TensorDescriptor const& xDesc,
+                     El::Matrix<TensorDataType, El::Device::GPU> const& x,
+                     ScalarParameterType const& beta_in,
+                     TensorDescriptor const& yDesc,
+                     El::Matrix<TensorDataType, El::Device::GPU>& y,
+                     softmax_mode mode,
+                     softmax_alg alg = softmax_alg::ACCURATE)
 {
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
-                                     gpu::get_sync_info(x));
-  softmax_forward(alpha_in, xDesc, x,
-                  beta_in, yDesc, y,
-                  multisync,
-                  mode, alg);
+  auto multisync =
+    El::MakeMultiSync(gpu::get_sync_info(y), gpu::get_sync_info(x));
+  softmax_forward(alpha_in, xDesc, x, beta_in, yDesc, y, multisync, mode, alg);
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void softmax_backward(
-  ScalarParameterType const& alpha_in,
-  TensorDescriptor const& yDesc,
-  El::Matrix<TensorDataType, El::Device::GPU> const& y,
-  TensorDescriptor const& dyDesc,
-  El::Matrix<TensorDataType, El::Device::GPU> const& dy,
-  ScalarParameterType const& beta_in,
-  TensorDescriptor const& dxDesc,
-  El::Matrix<TensorDataType, El::Device::GPU>& dx,
-  El::SyncInfo<El::Device::GPU> const& si,
-  softmax_mode mode,
-  softmax_alg alg = softmax_alg::ACCURATE)
+void softmax_backward(ScalarParameterType const& alpha_in,
+                      TensorDescriptor const& yDesc,
+                      El::Matrix<TensorDataType, El::Device::GPU> const& y,
+                      TensorDescriptor const& dyDesc,
+                      El::Matrix<TensorDataType, El::Device::GPU> const& dy,
+                      ScalarParameterType const& beta_in,
+                      TensorDescriptor const& dxDesc,
+                      El::Matrix<TensorDataType, El::Device::GPU>& dx,
+                      El::SyncInfo<El::Device::GPU> const& si,
+                      softmax_mode mode,
+                      softmax_alg alg = softmax_alg::ACCURATE)
 {
   // Short-circuit if we can
   if (y.IsEmpty())
@@ -130,26 +122,31 @@ void softmax_backward(
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void softmax_backward(
-  ScalarParameterType const& alpha_in,
-  TensorDescriptor const& yDesc,
-  El::Matrix<TensorDataType, El::Device::GPU> const& y,
-  TensorDescriptor const& dyDesc,
-  El::Matrix<TensorDataType, El::Device::GPU> const& dy,
-  ScalarParameterType const& beta_in,
-  TensorDescriptor const& dxDesc,
-  El::Matrix<TensorDataType, El::Device::GPU>& dx,
-  softmax_mode mode,
-  softmax_alg alg = softmax_alg::ACCURATE)
+void softmax_backward(ScalarParameterType const& alpha_in,
+                      TensorDescriptor const& yDesc,
+                      El::Matrix<TensorDataType, El::Device::GPU> const& y,
+                      TensorDescriptor const& dyDesc,
+                      El::Matrix<TensorDataType, El::Device::GPU> const& dy,
+                      ScalarParameterType const& beta_in,
+                      TensorDescriptor const& dxDesc,
+                      El::Matrix<TensorDataType, El::Device::GPU>& dx,
+                      softmax_mode mode,
+                      softmax_alg alg = softmax_alg::ACCURATE)
 {
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(dx),
                                      gpu::get_sync_info(y),
                                      gpu::get_sync_info(dy));
-  softmax_backward(alpha_in, yDesc, y,
-                   dyDesc, dy,
-                   beta_in, dxDesc, dx,
+  softmax_backward(alpha_in,
+                   yDesc,
+                   y,
+                   dyDesc,
+                   dy,
+                   beta_in,
+                   dxDesc,
+                   dx,
                    multisync,
-                   mode, alg);
+                   mode,
+                   alg);
 }
 
 } // namespace dnn_lib

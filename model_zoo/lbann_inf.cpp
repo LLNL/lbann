@@ -28,8 +28,8 @@
 
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
-#include "lbann/utils/protobuf_utils.hpp"
 #include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/protobuf_utils.hpp"
 
 #include "lbann/proto/lbann.pb.h"
 #include "lbann/proto/model.pb.h"
@@ -40,7 +40,8 @@
 
 using namespace lbann;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
   auto& arg_parser = global_argument_parser();
   construct_all_options();
 
@@ -48,9 +49,8 @@ int main(int argc, char *argv[]) {
     arg_parser.parse(argc, argv);
   }
   catch (std::exception const& e) {
-    std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
-              << e.what() << "\n\nProcess terminating."
-              << std::endl;
+    std::cerr << "Error during argument parsing:\n\ne.what():\n\n  " << e.what()
+              << "\n\nProcess terminating." << std::endl;
     std::terminate();
   }
   auto comm = initialize(argc, argv);
@@ -70,27 +70,29 @@ int main(int argc, char *argv[]) {
 
     auto pbs = protobuf_utils::load_prototext(master);
     // Optionally over-ride some values in the prototext for each model
-    for(size_t i = 0; i < pbs.size(); i++) {
+    for (size_t i = 0; i < pbs.size(); i++) {
       get_cmdline_overrides(*comm, *(pbs[i]));
     }
 
     lbann_data::LbannPB& pb = *(pbs[0]);
-    lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
+    lbann_data::Trainer* pb_trainer = pb.mutable_trainer();
 
     // Construct the trainer
     auto& trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]));
 
     thread_pool& io_thread_pool = trainer.get_io_thread_pool();
     int training_dr_linearized_data_size = -1;
-    auto *dr = trainer.get_data_coordinator().get_data_reader(execution_mode::testing);
-    if(dr != nullptr) {
+    auto* dr =
+      trainer.get_data_coordinator().get_data_reader(execution_mode::testing);
+    if (dr != nullptr) {
       training_dr_linearized_data_size = dr->get_linearized_data_size();
-    } else {
+    }
+    else {
       LBANN_ERROR("No testing data reader defined");
     }
 
     std::vector<std::unique_ptr<model>> models;
-    for(auto&& pb_model : pbs) {
+    for (auto&& pb_model : pbs) {
       models.emplace_back(
         build_model_from_prototext(argc,
                                    argv,
@@ -102,17 +104,20 @@ int main(int argc, char *argv[]) {
                                    training_dr_linearized_data_size));
     }
 
-    /// Interleave the inference between the models so that they can use a shared data reader
-    /// Enable shared testing data readers on the command line via --share_testing_data_readers=1
+    /// Interleave the inference between the models so that they can use a
+    /// shared data reader Enable shared testing data readers on the command
+    /// line via --share_testing_data_readers=1
     El::Int num_samples = dr->get_num_iterations_per_epoch();
-    if(num_samples == 0) { LBANN_ERROR("The testing data reader does not have any samples"); }
-    for(El::Int s = 0; s < num_samples; s++) {
-      for(auto&& m : models) {
+    if (num_samples == 0) {
+      LBANN_ERROR("The testing data reader does not have any samples");
+    }
+    for (El::Int s = 0; s < num_samples; s++) {
+      for (auto&& m : models) {
         trainer.evaluate(m.get(), execution_mode::testing, 1);
       }
     }
-
-  } catch (std::exception& e) {
+  }
+  catch (std::exception& e) {
     El::ReportException(e);
     // It's possible that a proper subset of ranks throw some
     // exception. But we want to tear down the whole world.

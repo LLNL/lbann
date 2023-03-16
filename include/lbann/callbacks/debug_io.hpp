@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -40,44 +40,42 @@ namespace callback {
 /**
  * Print status updates on where training is.
  */
-class debug_io : public callback_base {
- public:
-  using callback_base::on_forward_prop_begin;
-  using callback_base::on_forward_prop_end;
+class debug_io : public callback_base
+{
+public:
   using callback_base::on_backward_prop_begin;
   using callback_base::on_backward_prop_end;
   using callback_base::on_evaluate_forward_prop_begin;
   using callback_base::on_evaluate_forward_prop_end;
+  using callback_base::on_forward_prop_begin;
+  using callback_base::on_forward_prop_end;
 
   /**
    * Debug a particular phase; use invalid to debug every phase.
    */
-  debug_io(execution_mode phase = execution_mode::invalid,
-                          int debug_lvl = 0) :
-    callback_base(1),
-    m_debug_phase(phase),
-    m_debug_lvl(debug_lvl) {}
+  debug_io(execution_mode phase = execution_mode::invalid, int debug_lvl = 0)
+    : callback_base(1), m_debug_phase(phase), m_debug_lvl(debug_lvl)
+  {}
   debug_io(const debug_io&) = default;
-  debug_io& operator=(
-    const debug_io&) = default;
+  debug_io& operator=(const debug_io&) = default;
   debug_io* copy() const override { return new debug_io(*this); }
   /** Print that a training epoch is being started. */
-  void on_epoch_begin(model *m) override;
+  void on_epoch_begin(model* m) override;
   /** Print that forward prop for a layer is beginning. */
-  void on_forward_prop_begin(model *m, Layer *l) override;
+  void on_forward_prop_begin(model* m, Layer* l) override;
 
   /** Print I/O details at the beginning of validation. */
-  void on_validation_begin(model *m) override;
+  void on_validation_begin(model* m) override;
   /** Print that an evaluation forward prop is beginning. */
-  void on_evaluate_forward_prop_begin(model *m, Layer *l) override;
+  void on_evaluate_forward_prop_begin(model* m, Layer* l) override;
 
   /** Print I/O details at the beginning of testing. */
-  void on_test_begin(model *m) override;
+  void on_test_begin(model* m) override;
 
   /** Common format for printing I/O stats at the start of a mini-batch */
-  void print_fp_start(model *m, input_layer<DataType> *input);
+  void print_fp_start(model* m, input_layer<DataType>* input);
   /** Common format for printing I/O stats at the start of a phase */
-  void print_phase_start(model *m, execution_mode mode);
+  void print_phase_start(model* m, execution_mode mode);
 
   std::string name() const override { return "debug_io"; }
 
@@ -85,11 +83,12 @@ class debug_io : public callback_base {
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
- private:
+private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
@@ -100,10 +99,10 @@ class debug_io : public callback_base {
 
 // Builder function
 std::unique_ptr<callback_base>
-build_debug_io_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_debug_io_callback_from_pbuf(const google::protobuf::Message&,
+                                  std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_DEBUG_IO_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_DEBUG_IO_HPP_INCLUDED

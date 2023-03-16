@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -36,7 +36,9 @@
 namespace lbann {
 namespace transform {
 
-void random_affine::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+void random_affine::apply(utils::type_erased_matrix& data,
+                          std::vector<size_t>& dims)
+{
   cv::Mat src = utils::get_opencv_mat(data, dims);
   auto dst_real = El::Matrix<uint8_t>(get_linear_size(dims), 1);
   cv::Mat dst = utils::get_opencv_mat(dst_real, dims);
@@ -49,12 +51,12 @@ void random_affine::apply(utils::type_erased_matrix& data, std::vector<size_t>& 
   }
   float translate_x = 0.0f;
   if (m_translate_h != 0.0f) {
-    const float dx = dims[2]*m_translate_w;
+    const float dx = dims[2] * m_translate_w;
     translate_x = std::round(transform::get_uniform_random(-dx, dx));
   }
   float translate_y = 0.0f;
   if (m_translate_w != 0.0f) {
-    const float dy = dims[1]*m_translate_h;
+    const float dy = dims[1] * m_translate_h;
     translate_y = std::round(transform::get_uniform_random(-dy, dy));
   }
   float scale = 1.0f;
@@ -66,8 +68,8 @@ void random_affine::apply(utils::type_erased_matrix& data, std::vector<size_t>& 
     shear = transform::get_uniform_random(m_shear_min, m_shear_max) * pi_rad;
   }
   // Centering matrix:
-  const float center_x = dims[2]*0.5f + 0.5f;
-  const float center_y = dims[1]*0.5f + 0.5f;
+  const float center_x = dims[2] * 0.5f + 0.5f;
+  const float center_y = dims[1] * 0.5f + 0.5f;
   // Compute the affine transformation matrix: M = T * C * R * S * Sc * C^-1
   // where
   // T = [1 0 translate_x | 0 1 translate_y | 0 0 1]
@@ -87,32 +89,40 @@ void random_affine::apply(utils::type_erased_matrix& data, std::vector<size_t>& 
   // This is a bit ugly to write out fully, but the below is the result, care of
   // Mathematica.
   const float sec_shear_scale = 1.0f / std::cos(shear) / scale;
-  float affine_mat[2][3] = {
-    {std::cos(angle+shear)*sec_shear_scale, std::sin(angle+shear)*sec_shear_scale, 0.0f},
-    {-std::sin(angle)*sec_shear_scale, std::cos(angle)*sec_shear_scale, 0.0f}
-  };
-  affine_mat[0][2] = affine_mat[0][0]*(-center_x - translate_x)
-    + affine_mat[0][1]*(-center_y - translate_y)
-    + center_x;
-  affine_mat[1][2] = affine_mat[1][0]*(-center_x - translate_x)
-    + affine_mat[1][1]*(-center_y - translate_y)
-    + center_y;
+  float affine_mat[2][3] = {{std::cos(angle + shear) * sec_shear_scale,
+                             std::sin(angle + shear) * sec_shear_scale,
+                             0.0f},
+                            {-std::sin(angle) * sec_shear_scale,
+                             std::cos(angle) * sec_shear_scale,
+                             0.0f}};
+  affine_mat[0][2] = affine_mat[0][0] * (-center_x - translate_x) +
+                     affine_mat[0][1] * (-center_y - translate_y) + center_x;
+  affine_mat[1][2] = affine_mat[1][0] * (-center_x - translate_x) +
+                     affine_mat[1][1] * (-center_y - translate_y) + center_y;
   cv::Mat cv_affine(2, 3, CV_32F, affine_mat);
-  cv::warpAffine(src, dst, cv_affine, dst.size(),
+  cv::warpAffine(src,
+                 dst,
+                 cv_affine,
+                 dst.size(),
                  cv::INTER_LINEAR | cv::WARP_INVERSE_MAP,
                  cv::BORDER_REPLICATE);
   data.emplace<uint8_t>(std::move(dst_real));
 }
 
 std::unique_ptr<transform>
-build_random_affine_transform_from_pbuf(google::protobuf::Message const& msg) {
-  auto const& params = dynamic_cast<lbann_data::Transform::RandomAffine const&>(msg);
-  return std::make_unique<random_affine>(
-    params.rotate_min(), params.rotate_max(),
-    params.translate_h(), params.translate_w(),
-    params.scale_min(), params.scale_max(),
-    params.shear_min(), params.shear_max());
+build_random_affine_transform_from_pbuf(google::protobuf::Message const& msg)
+{
+  auto const& params =
+    dynamic_cast<lbann_data::Transform::RandomAffine const&>(msg);
+  return std::make_unique<random_affine>(params.rotate_min(),
+                                         params.rotate_max(),
+                                         params.translate_h(),
+                                         params.translate_w(),
+                                         params.scale_min(),
+                                         params.scale_max(),
+                                         params.shear_min(),
+                                         params.shear_max());
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

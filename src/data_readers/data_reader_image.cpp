@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,8 +26,8 @@
 // data_reader_image .hpp .cpp - generic data reader class for image dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader_image.hpp"
+#include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/file_utils.hpp"
@@ -41,7 +41,8 @@
 namespace lbann {
 
 image_data_reader::image_data_reader(bool shuffle)
-  : generic_data_reader(shuffle) {
+  : generic_data_reader(shuffle)
+{
   set_defaults();
 }
 
@@ -51,7 +52,8 @@ image_data_reader::image_data_reader(const image_data_reader& rhs)
   copy_members(rhs);
 }
 
-image_data_reader& image_data_reader::operator=(const image_data_reader& rhs) {
+image_data_reader& image_data_reader::operator=(const image_data_reader& rhs)
+{
   if (this == &rhs) {
     return (*this);
   }
@@ -68,12 +70,13 @@ image_data_reader& image_data_reader::operator=(const image_data_reader& rhs) {
   return (*this);
 }
 
-void image_data_reader::copy_members(const image_data_reader &rhs) {
+void image_data_reader::copy_members(const image_data_reader& rhs)
+{
   if (this == &rhs) {
     return;
   }
 
-  if(rhs.m_data_store != nullptr) {
+  if (rhs.m_data_store != nullptr) {
     m_data_store = new data_store_conduit(rhs.get_data_store());
     m_data_store->set_data_reader_ptr(this);
   }
@@ -86,15 +89,17 @@ void image_data_reader::copy_members(const image_data_reader &rhs) {
   m_image_linearized_size = rhs.m_image_linearized_size;
   m_num_labels = rhs.m_num_labels;
   m_sample_list.copy(rhs.m_sample_list);
-  //m_thread_cv_buffer = rhs.m_thread_cv_buffer
+  // m_thread_cv_buffer = rhs.m_thread_cv_buffer
 }
 
-
-void image_data_reader::set_linearized_image_size() {
-  m_image_linearized_size = m_image_width * m_image_height * m_image_num_channels;
+void image_data_reader::set_linearized_image_size()
+{
+  m_image_linearized_size =
+    m_image_width * m_image_height * m_image_num_channels;
 }
 
-void image_data_reader::set_defaults() {
+void image_data_reader::set_defaults()
+{
   m_image_width = 256;
   m_image_height = 256;
   m_image_num_channels = 3;
@@ -102,48 +107,69 @@ void image_data_reader::set_defaults() {
   m_num_labels = 1000;
 }
 
-void image_data_reader::set_input_params(const int width, const int height, const int num_ch, const int num_labels) {
+void image_data_reader::set_input_params(const int width,
+                                         const int height,
+                                         const int num_ch,
+                                         const int num_labels)
+{
   if ((width > 0) && (height > 0)) { // set and valid
     m_image_width = width;
     m_image_height = height;
-  } else if (!((width == 0) && (height == 0))) { // set but not valid
+  }
+  else if (!((width == 0) && (height == 0))) { // set but not valid
     std::stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader setup error: invalid input image sizes";
+    err << __FILE__ << " " << __LINE__
+        << " :: Imagenet data reader setup error: invalid input image sizes";
     throw lbann_exception(err.str());
   }
   if (num_ch > 0) {
     m_image_num_channels = num_ch;
-  } else if (num_ch < 0) {
+  }
+  else if (num_ch < 0) {
     std::stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader setup error: invalid number of channels of input images";
+    err << __FILE__ << " " << __LINE__
+        << " :: Imagenet data reader setup error: invalid number of channels "
+           "of input images";
     throw lbann_exception(err.str());
   }
   set_linearized_image_size();
   if (num_labels > 0) {
     m_num_labels = num_labels;
-  } else if (num_labels < 0) {
+  }
+  else if (num_labels < 0) {
     std::stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader setup error: invalid number of labels";
+    err << __FILE__ << " " << __LINE__
+        << " :: Imagenet data reader setup error: invalid number of labels";
     throw lbann_exception(err.str());
   }
 }
 
-bool image_data_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
-  if (static_cast<size_t>(data_id) >=  m_labels.size()) {
-    LBANN_ERROR("Cannot find label for sample " +  std::to_string(data_id) + ".");
+bool image_data_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx)
+{
+  if (static_cast<size_t>(data_id) >= m_labels.size()) {
+    LBANN_ERROR("Cannot find label for sample " + std::to_string(data_id) +
+                ".");
   }
   const label_t label = m_labels[data_id];
   if (label < label_t{0} || label >= static_cast<label_t>(m_num_labels)) {
-    LBANN_ERROR(
-      "\"",this->get_type(),"\" data reader ",
-      "expects data with ",m_num_labels," labels, ",
-      "but data sample ",data_id," has a label of ",label);
+    LBANN_ERROR("\"",
+                this->get_type(),
+                "\" data reader ",
+                "expects data with ",
+                m_num_labels,
+                " labels, ",
+                "but data sample ",
+                data_id,
+                " has a label of ",
+                label);
   }
   Y.Set(label, mb_idx, 1);
   return true;
 }
 
-void image_data_reader::dump_sample_label_list(const std::string& dump_file_name) {
+void image_data_reader::dump_sample_label_list(
+  const std::string& dump_file_name)
+{
   std::ofstream os(dump_file_name);
   const auto num_samples = m_sample_list.size();
   for (size_t i = 0ul; i < num_samples; ++i) {
@@ -153,7 +179,8 @@ void image_data_reader::dump_sample_label_list(const std::string& dump_file_name
   }
 }
 
-void image_data_reader::load() {
+void image_data_reader::load()
+{
   auto& arg_parser = global_argument_parser();
 
   // Load sample list
@@ -161,32 +188,36 @@ void image_data_reader::load() {
 
   if (sample_list_file.empty()) {
     gen_list_of_samples();
-  } else {
+  }
+  else {
     load_list_of_samples(sample_list_file);
   }
 
-  if (arg_parser.get<bool>(LBANN_OPTION_WRITE_SAMPLE_LIST) && m_comm->am_trainer_master()) {
-    const std::string slist_name = (m_sample_list.get_header()).get_sample_list_name();
+  if (arg_parser.get<bool>(LBANN_OPTION_WRITE_SAMPLE_LIST) &&
+      m_comm->am_trainer_master()) {
+    const std::string slist_name =
+      (m_sample_list.get_header()).get_sample_list_name();
     std::stringstream s;
     std::string basename = get_basename_without_ext(slist_name);
     std::string ext = get_ext_name(slist_name);
     s << basename << "." << ext;
     {
-      const std::string msg = " writing sample list '" + slist_name
-                            + "' as '" + s.str() + "'";
+      const std::string msg =
+        " writing sample list '" + slist_name + "' as '" + s.str() + "'";
       LBANN_WARNING(msg);
     }
     m_sample_list.write(s.str());
   }
   if (arg_parser.get<bool>(LBANN_OPTION_WRITE_SAMPLE_LABEL_LIST) &&
       m_comm->am_trainer_master()) {
-    if (!(m_keep_sample_order || arg_parser.get<bool>(LBANN_OPTION_KEEP_SAMPLE_ORDER))) {
+    if (!(m_keep_sample_order ||
+          arg_parser.get<bool>(LBANN_OPTION_KEEP_SAMPLE_ORDER))) {
       std::cout << "Writting sample label list without the option "
                 << "`keep_sample_order' set." << std::endl;
     }
-    std::string dump_file = "image_list.trainer"
-                          + std::to_string(m_comm->get_trainer_rank())
-                          + "." + this->get_role() + ".txt";
+    std::string dump_file = "image_list.trainer" +
+                            std::to_string(m_comm->get_trainer_rank()) + "." +
+                            this->get_role() + ".txt";
     dump_sample_label_list(dump_file);
   }
 
@@ -203,16 +234,19 @@ void image_data_reader::load() {
   select_subset_of_data();
 }
 
-image_data_reader::sample_t image_data_reader::get_sample(const size_t idx) const {
-  if (idx >=  m_labels.size()) {
-    LBANN_ERROR("Cannot find label for sample " +  std::to_string(idx) + ".");
+image_data_reader::sample_t
+image_data_reader::get_sample(const size_t idx) const
+{
+  if (idx >= m_labels.size()) {
+    LBANN_ERROR("Cannot find label for sample " + std::to_string(idx) + ".");
   }
   const auto sample_name = m_sample_list[idx].second;
   const auto label = m_labels[idx];
   return sample_t(sample_name, label);
 }
 
-void read_raw_data(const std::string &filename, std::vector<char> &data) {
+void read_raw_data(const std::string& filename, std::vector<char>& data)
+{
   data.clear();
   std::ifstream in(filename.c_str());
   if (!in) {
@@ -226,8 +260,8 @@ void read_raw_data(const std::string &filename, std::vector<char> &data) {
   in.close();
 }
 
-
-void image_data_reader::do_preload_data_store() {
+void image_data_reader::do_preload_data_store()
+{
   auto& arg_parser = global_argument_parser();
 
   int rank = m_comm->get_rank_in_trainer();
@@ -243,7 +277,7 @@ void image_data_reader::do_preload_data_store() {
 
     std::vector<std::unordered_set<int>> data_ids(num_threads);
     int j = 0;
-    for (size_t data_id=0; data_id<m_shuffled_indices.size(); data_id++) {
+    for (size_t data_id = 0; data_id < m_shuffled_indices.size(); data_id++) {
       int index = m_shuffled_indices[data_id];
       if (m_data_store->get_index_owner(index) != rank) {
         continue;
@@ -255,56 +289,69 @@ void image_data_reader::do_preload_data_store() {
     }
 
     for (int t = 0; t < num_threads; t++) {
-      if(t == io_thread_pool->get_local_thread_id()) {
+      if (t == io_thread_pool->get_local_thread_id()) {
         continue;
-      } else {
-        io_thread_pool->submit_job_to_work_group(std::bind(&image_data_reader::load_conduit_nodes_from_file, this, data_ids[t]));
+      }
+      else {
+        io_thread_pool->submit_job_to_work_group(
+          std::bind(&image_data_reader::load_conduit_nodes_from_file,
+                    this,
+                    data_ids[t]));
       }
     }
-    load_conduit_nodes_from_file(data_ids[io_thread_pool->get_local_thread_id()]);
+    load_conduit_nodes_from_file(
+      data_ids[io_thread_pool->get_local_thread_id()]);
     io_thread_pool->finish_work_group();
   }
   else {
     if (get_comm()->am_world_master()) {
       std::cout << "mode: NOT data_store_thread\n";
     }
-    for (size_t data_id=0; data_id<m_shuffled_indices.size(); data_id++) {
+    for (size_t data_id = 0; data_id < m_shuffled_indices.size(); data_id++) {
       int index = m_shuffled_indices[data_id];
       if (m_data_store->get_index_owner(index) != rank) {
         continue;
       }
-      conduit::Node &node = m_data_store->get_empty_node(index);
+      conduit::Node& node = m_data_store->get_empty_node(index);
       load_conduit_node_from_file(index, node);
       m_data_store->set_preloaded_conduit_node(index, node);
     }
   }
 }
 
-void image_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
+void image_data_reader::setup(int num_io_threads,
+                              observer_ptr<thread_pool> io_thread_pool)
+{
   generic_data_reader::setup(num_io_threads, io_thread_pool);
-   m_transform_pipeline.set_expected_out_dims(
+  m_transform_pipeline.set_expected_out_dims(
     {static_cast<size_t>(m_image_num_channels),
      static_cast<size_t>(m_image_height),
      static_cast<size_t>(m_image_width)});
 }
 
-bool image_data_reader::load_conduit_nodes_from_file(const std::unordered_set<int> &data_ids) {
+bool image_data_reader::load_conduit_nodes_from_file(
+  const std::unordered_set<int>& data_ids)
+{
   for (auto data_id : data_ids) {
-    conduit::Node &node = m_data_store->get_empty_node(data_id);
+    conduit::Node& node = m_data_store->get_empty_node(data_id);
     load_conduit_node_from_file(data_id, node);
     m_data_store->set_preloaded_conduit_node(data_id, node);
   }
   return true;
 }
 
-void image_data_reader::load_conduit_node_from_file(int data_id, conduit::Node &node) {
+void image_data_reader::load_conduit_node_from_file(int data_id,
+                                                    conduit::Node& node)
+{
   node.reset();
 
   const auto file_id = m_sample_list[data_id].first;
-  const std::string filename = get_file_dir() + m_sample_list.get_samples_filename(file_id);
+  const std::string filename =
+    get_file_dir() + m_sample_list.get_samples_filename(file_id);
 
-  if (static_cast<size_t>(data_id) >=  m_labels.size()) {
-    LBANN_ERROR("Cannot find label for sample " +  std::to_string(data_id) + ".");
+  if (static_cast<size_t>(data_id) >= m_labels.size()) {
+    LBANN_ERROR("Cannot find label for sample " + std::to_string(data_id) +
+                ".");
   }
   const label_t label = m_labels[data_id];
 
@@ -316,24 +363,27 @@ void image_data_reader::load_conduit_node_from_file(int data_id, conduit::Node &
 }
 
 /**
- * Load a sample list and then load labels from a separate file using `load_labels()`
- * With the command line option `--load_full_sample_list_once`, the trainer master
- * first loads the entire sample list file into a memory buffer, and broadcasts it
- * to the other workers within the trainer. Then, the sample list is populated
- * using the buffer content. Otherwise, the sample list is directly read from the
- * file. The prototext variable `data_filedir` when specified overrides the base
- * location of data files, written in the header of the sample list file.
- * The option `keep_sample_order` from the command line or data reader prototexts,
- * makes sure the order of samples in the list remains the same even with loading
- * in an interleaving order by multiple trainer workers.
+ * Load a sample list and then load labels from a separate file using
+ * `load_labels()` With the command line option `--load_full_sample_list_once`,
+ * the trainer master first loads the entire sample list file into a memory
+ * buffer, and broadcasts it to the other workers within the trainer. Then, the
+ * sample list is populated using the buffer content. Otherwise, the sample list
+ * is directly read from the file. The prototext variable `data_filedir` when
+ * specified overrides the base location of data files, written in the header of
+ * the sample list file. The option `keep_sample_order` from the command line or
+ * data reader prototexts, makes sure the order of samples in the list remains
+ * the same even with loading in an interleaving order by multiple trainer
+ * workers.
  */
-void image_data_reader::load_list_of_samples(const std::string sample_list_file) {
+void image_data_reader::load_list_of_samples(const std::string sample_list_file)
+{
   // load the sample list
   double tm1 = get_time();
 
   auto& arg_parser = global_argument_parser();
 
-  if (m_keep_sample_order || arg_parser.get<bool>(LBANN_OPTION_KEEP_SAMPLE_ORDER)) {
+  if (m_keep_sample_order ||
+      arg_parser.get<bool>(LBANN_OPTION_KEEP_SAMPLE_ORDER)) {
     m_sample_list.keep_sample_order(true);
   }
   else {
@@ -365,8 +415,8 @@ void image_data_reader::load_list_of_samples(const std::string sample_list_file)
   double tm2 = get_time();
 
   if (get_comm()->am_world_master()) {
-    std::cout << "Time to load sample list '" << sample_list_file << "': "
-              << tm2 - tm1 << std::endl;
+    std::cout << "Time to load sample list '" << sample_list_file
+              << "': " << tm2 - tm1 << std::endl;
   }
 
   /// Merge all the sample list pieces from the workers within the trainer
@@ -374,9 +424,9 @@ void image_data_reader::load_list_of_samples(const std::string sample_list_file)
   set_file_dir(m_sample_list.get_samples_dirname());
 
   double tm3 = get_time();
-  if(get_comm()->am_world_master()) {
-    std::cout << "Time to gather sample list '" << sample_list_file << "': "
-              << tm3 - tm2 << std::endl;
+  if (get_comm()->am_world_master()) {
+    std::cout << "Time to gather sample list '" << sample_list_file
+              << "': " << tm3 - tm2 << std::endl;
   }
   buffer.clear();
   buffer.shrink_to_fit();
@@ -385,7 +435,9 @@ void image_data_reader::load_list_of_samples(const std::string sample_list_file)
   load_labels(empty_buffer);
 }
 
-void image_data_reader::load_list_of_samples_from_archive(const std::string& sample_list_archive) {
+void image_data_reader::load_list_of_samples_from_archive(
+  const std::string& sample_list_archive)
+{
   // load the sample list
   double tm1 = get_time();
   std::stringstream ss(sample_list_archive); // any stream can be used
@@ -396,7 +448,8 @@ void image_data_reader::load_list_of_samples_from_archive(const std::string& sam
   double tm2 = get_time();
 
   if (get_comm()->am_world_master()) {
-    std::cout << "Time to load sample list from archive: " << tm2 - tm1 << std::endl;
+    std::cout << "Time to load sample list from archive: " << tm2 - tm1
+              << std::endl;
   }
 }
 
@@ -409,7 +462,8 @@ void image_data_reader::load_list_of_samples_from_archive(const std::string& sam
  * sample list and modifying the prototext. The base location of data files
  * is specified via `data_filedir` prototext variable as it was.
  */
-void image_data_reader::gen_list_of_samples() {
+void image_data_reader::gen_list_of_samples()
+{
   // load the sample list
   double tm1 = get_time();
 
@@ -426,7 +480,8 @@ void image_data_reader::gen_list_of_samples() {
 
   auto& arg_parser = global_argument_parser();
 
-  if (m_keep_sample_order || arg_parser.get<bool>(LBANN_OPTION_KEEP_SAMPLE_ORDER)) {
+  if (m_keep_sample_order ||
+      arg_parser.get<bool>(LBANN_OPTION_KEEP_SAMPLE_ORDER)) {
     m_sample_list.keep_sample_order(true);
   }
   else {
@@ -458,7 +513,8 @@ void image_data_reader::gen_list_of_samples() {
     m_comm->trainer_broadcast(m_comm->get_trainer_master(), num_samples);
     header.set_sample_count(std::to_string(num_samples));
 
-    // Populate the sample list using the generated header and the preloaded buffer
+    // Populate the sample list using the generated header and the preloaded
+    // buffer
     vectorwrapbuf<char> strmbuf(buffer);
     std::istream iss(&strmbuf);
     m_sample_list.load(header, iss, *m_comm, true);
@@ -483,24 +539,25 @@ void image_data_reader::gen_list_of_samples() {
   double tm2 = get_time();
 
   if (get_comm()->am_world_master()) {
-    std::cout << "Time to load sample list '" << sample_list_file << "': "
-              << tm2 - tm1 << std::endl;
+    std::cout << "Time to load sample list '" << sample_list_file
+              << "': " << tm2 - tm1 << std::endl;
   }
 
   /// Merge all the sample list pieces from the workers within the trainer
   m_sample_list.all_gather_packed_lists(*m_comm);
 
   double tm3 = get_time();
-  if(get_comm()->am_world_master()) {
-    std::cout << "Time to gather sample list '" << sample_list_file << "': "
-              << tm3 - tm2 << std::endl;
+  if (get_comm()->am_world_master()) {
+    std::cout << "Time to gather sample list '" << sample_list_file
+              << "': " << tm3 - tm2 << std::endl;
   }
   // Reuse the preloaded buffer for obtaining labels when possible
   load_labels(buffer);
 }
 
 /// Populate the sample label vector out of the given input stream
-void image_data_reader::read_labels(std::istream& istrm) {
+void image_data_reader::read_labels(std::istream& istrm)
+{
   const std::string whitespaces(" \t\f\v\n\r");
   const size_t num_samples = m_sample_list.size();
 
@@ -531,7 +588,8 @@ void image_data_reader::read_labels(std::istream& istrm) {
     sstr >> sname >> label;
 
     // Translate the sample name into the index into the sample list
-    const auto sample_idx = m_sample_list.get_sample_index(sample_name_t(sname));
+    const auto sample_idx =
+      m_sample_list.get_sample_index(sample_name_t(sname));
     if (sample_idx >= num_samples) {
       continue;
     }
@@ -545,10 +603,11 @@ void image_data_reader::read_labels(std::istream& istrm) {
   m_sample_list.clear_sample_map_from_name_to_index();
 
   if (check_data && (num_samples != idx_set.size())) {
-    LBANN_ERROR("The number of samples is different from the number of labels: ",
-                std::to_string(num_samples),
-                " != ",
-                std::to_string(idx_set.size()));
+    LBANN_ERROR(
+      "The number of samples is different from the number of labels: ",
+      std::to_string(num_samples),
+      " != ",
+      std::to_string(idx_set.size()));
   }
 }
 
@@ -557,7 +616,8 @@ void image_data_reader::read_labels(std::istream& istrm) {
  * If the buffer given is empty, the label file specified in the sample list
  * header is used.
  */
-void image_data_reader::load_labels(std::vector<char>& preloaded_buffer) {
+void image_data_reader::load_labels(std::vector<char>& preloaded_buffer)
+{
   const std::string imageListFile = m_sample_list.get_label_filename();
 
   double tm1 = get_time();
@@ -570,19 +630,21 @@ void image_data_reader::load_labels(std::vector<char>& preloaded_buffer) {
       LBANN_ERROR("failed to open: " + imageListFile + " for reading");
     }
     read_labels(is);
-  } else { // read labels from a preloaded buffer
+  }
+  else { // read labels from a preloaded buffer
     vectorwrapbuf<char> strmbuf(preloaded_buffer);
     std::istream is(&strmbuf);
     read_labels(is);
   }
 
   if (get_comm()->am_world_master()) {
-    std::cout << "Time to load label file '" << imageListFile << "': "
-              << get_time() - tm1 << std::endl;
+    std::cout << "Time to load label file '" << imageListFile
+              << "': " << get_time() - tm1 << std::endl;
   }
 }
 
-size_t image_data_reader::determine_num_of_samples(std::istream& istrm) const {
+size_t image_data_reader::determine_num_of_samples(std::istream& istrm) const
+{
   const std::string whitespaces(" \t\f\v\n\r");
   size_t cnt = 0ul;
   std::string line;
@@ -592,9 +654,9 @@ size_t image_data_reader::determine_num_of_samples(std::istream& istrm) const {
     if (end_of_str == std::string::npos) { // empty line
       continue;
     }
-    cnt ++;
+    cnt++;
   }
   return cnt;
 }
 
-}  // namespace lbann
+} // namespace lbann

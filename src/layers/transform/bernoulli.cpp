@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,21 +27,24 @@
 #define LBANN_BERNOULLI_LAYER_INSTANTIATE
 #include "lbann/layers/transform/bernoulli.hpp"
 
-#include "lbann/proto/proto_common.hpp"
-#include "lbann/proto/datatype_helpers.hpp"
-#include "lbann/utils/protobuf.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include "lbann/proto/layers.pb.h"
 
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void bernoulli_layer<TensorDataType, Layout, Device>::fp_compute() {
+void bernoulli_layer<TensorDataType, Layout, Device>::fp_compute()
+{
   auto& output = this->get_activations();
-  if (this->m_model->get_execution_context().get_execution_mode() == execution_mode::training) {
+  if (this->m_model->get_execution_context().get_execution_mode() ==
+      execution_mode::training) {
     bernoulli_fill(output, output.Height(), output.Width(), m_prob);
-  } else {
+  }
+  else {
     El::Zero(output);
   }
 }
@@ -60,7 +63,9 @@ build_bernoulli_layer_from_pbuf(lbann_comm* comm,
 }
 
 template <typename T, data_layout L, El::Device D>
-void bernoulli_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void bernoulli_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_bernoulli();
   msg->set_prob(m_prob);

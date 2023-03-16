@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -72,9 +72,9 @@ void LTFB::apply(ExecutionContext& context,
     }
     {
       ScopeTimer _(ltfb_timer, "metalearning strategy");
-      if( m.get_comm()->get_grid_type() == GridType::NO_GRID or
+      if (m.get_comm()->get_grid_type() == GridType::NO_GRID or
           m.get_comm()->get_grid_type() == GridType::PRIMARY_GRID or
-          m.get_comm()->get_KFAC_subgrid_create_two_models()){
+          m.get_comm()->get_KFAC_subgrid_create_two_models()) {
         m_meta_learning_strategy->select_next(m, ltfb_ctxt, dc);
       }
     }

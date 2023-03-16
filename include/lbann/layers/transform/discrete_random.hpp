@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -44,25 +44,29 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class discrete_random_layer : public data_type_layer<TensorDataType> {
+class discrete_random_layer : public data_type_layer<TensorDataType>
+{
   static_assert(Dev == El::Device::CPU,
                 "discrete random layer currently only supports CPU");
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "discrete random layer currently only supports DATA_PARALLEL");
- private:
 
+private:
   /** Values in discrete distribution. */
   std::vector<DataType> m_values;
 
- public:
-  discrete_random_layer(lbann_comm *comm,
+public:
+  discrete_random_layer(lbann_comm* comm,
                         std::vector<DataType> values,
                         std::vector<int> dims)
-    : data_type_layer<TensorDataType>(comm),
-      m_values(values) {
+    : data_type_layer<TensorDataType>(comm), m_values(values)
+  {
     this->set_output_dims(dims);
   }
-  discrete_random_layer* copy() const override { return new discrete_random_layer(*this); }
+  discrete_random_layer* copy() const override
+  {
+    return new discrete_random_layer(*this);
+  }
 
   /** @name Serialization */
   ///@{
@@ -76,19 +80,17 @@ class discrete_random_layer : public data_type_layer<TensorDataType> {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
- protected:
-
+protected:
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  discrete_random_layer()
-    : discrete_random_layer(nullptr, { 0 }, { 1 } )
-  {}
+  discrete_random_layer() : discrete_random_layer(nullptr, {0}, {1}) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-    if (this->get_input_size() != (int) m_values.size()) {
+    if (this->get_input_size() != (int)m_values.size()) {
       LBANN_ERROR("input tensor dimensions don't match number of "
                   "values in discrete distribution");
     }
@@ -97,11 +99,11 @@ class discrete_random_layer : public data_type_layer<TensorDataType> {
   void fp_compute() override;
 };
 
-
 #ifndef LBANN_DISCRETE_RANDOM_LAYER_INSTANTIATE
-#define PROTO(T)                           \
-  extern template class discrete_random_layer< \
-    T, data_layout::DATA_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  extern template class discrete_random_layer<T,                               \
+                                              data_layout::DATA_PARALLEL,      \
+                                              El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -40,7 +40,8 @@ __global__ void fp_kernel(TensorDataType alpha,
                           const TensorDataType* __restrict__ input,
                           El::Int input_ldim,
                           TensorDataType* __restrict__ output,
-                          El::Int output_ldim) {
+                          El::Int output_ldim)
+{
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int size = height * width;
   const El::Int num_threads = blockDim.x * gridDim.x;
@@ -55,15 +56,17 @@ __global__ void fp_kernel(TensorDataType alpha,
 
 /** GPU kernel for backprop computation. */
 template <typename TensorDataType>
-__global__ void bp_kernel(TensorDataType alpha,
-                          El::Int height,
-                          El::Int width,
-                          const TensorDataType* __restrict__ input,
-                          El::Int input_ldim,
-                          const TensorDataType* __restrict__ gradient_wrt_output,
-                          El::Int gradient_wrt_output_ldim,
-                          TensorDataType* __restrict__ gradient_wrt_input,
-                          El::Int gradient_wrt_input_ldim) {
+__global__ void
+bp_kernel(TensorDataType alpha,
+          El::Int height,
+          El::Int width,
+          const TensorDataType* __restrict__ input,
+          El::Int input_ldim,
+          const TensorDataType* __restrict__ gradient_wrt_output,
+          El::Int gradient_wrt_output_ldim,
+          TensorDataType* __restrict__ gradient_wrt_input,
+          El::Int gradient_wrt_input_ldim)
+{
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int size = height * width;
   const El::Int num_threads = blockDim.x * gridDim.x;
@@ -81,7 +84,8 @@ __global__ void bp_kernel(TensorDataType alpha,
 template <typename TensorDataType>
 void local_fp(TensorDataType alpha,
               const El::AbstractMatrix<TensorDataType>& input,
-              El::AbstractMatrix<TensorDataType>& output) {
+              El::AbstractMatrix<TensorDataType>& output)
+{
 
   // Get GPU grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
@@ -91,21 +95,27 @@ void local_fp(TensorDataType alpha,
   const El::Int width = input.Width();
   const El::Int block_dim = 256;
   El::Int grid_dim = (height * width + block_dim - 1) / block_dim;
-  if (sizeof(El::Int) > sizeof(unsigned int)
-      && grid_dim > std::numeric_limits<uint32_t>::max()) {
+  if (sizeof(El::Int) > sizeof(unsigned int) &&
+      grid_dim > std::numeric_limits<uint32_t>::max()) {
     grid_dim = std::numeric_limits<uint32_t>::max();
   }
 
   // Launch GPU kernel
   if (grid_dim > 0) {
-    auto multisync = El::MakeMultiSync(gpu::get_sync_info(output),
-                                       gpu::get_sync_info(input));
-    hydrogen::gpu::LaunchKernel(
-      fp_kernel<TensorDataType>,
-      grid_dim, block_dim, 0, multisync,
-      alpha, height, width,
-      input.LockedBuffer(), input.LDim(),
-      output.Buffer(), output.LDim());
+    auto multisync =
+      El::MakeMultiSync(gpu::get_sync_info(output), gpu::get_sync_info(input));
+    hydrogen::gpu::LaunchKernel(fp_kernel<TensorDataType>,
+                                grid_dim,
+                                block_dim,
+                                0,
+                                multisync,
+                                alpha,
+                                height,
+                                width,
+                                input.LockedBuffer(),
+                                input.LDim(),
+                                output.Buffer(),
+                                output.LDim());
   }
 }
 
@@ -114,7 +124,8 @@ template <typename TensorDataType>
 void local_bp(TensorDataType alpha,
               const El::AbstractMatrix<TensorDataType>& input,
               const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
-              El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
+              El::AbstractMatrix<TensorDataType>& gradient_wrt_input)
+{
 
   // Get GPU grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
@@ -124,8 +135,8 @@ void local_bp(TensorDataType alpha,
   const El::Int width = input.Width();
   const El::Int block_dim = 256;
   El::Int grid_dim = (height * width + block_dim - 1) / block_dim;
-  if (sizeof(El::Int) > sizeof(unsigned int)
-      && grid_dim > std::numeric_limits<uint32_t>::max()) {
+  if (sizeof(El::Int) > sizeof(unsigned int) &&
+      grid_dim > std::numeric_limits<uint32_t>::max()) {
     grid_dim = std::numeric_limits<uint32_t>::max();
   }
 
@@ -134,35 +145,43 @@ void local_bp(TensorDataType alpha,
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(gradient_wrt_input),
                                        gpu::get_sync_info(gradient_wrt_output),
                                        gpu::get_sync_info(input));
-    hydrogen::gpu::LaunchKernel(
-      bp_kernel<TensorDataType>,
-      grid_dim, block_dim, 0, multisync,
-      alpha, height, width,
-      input.LockedBuffer(), input.LDim(),
-      gradient_wrt_output.LockedBuffer(), gradient_wrt_output.LDim(),
-      gradient_wrt_input.Buffer(), gradient_wrt_input.LDim());
+    hydrogen::gpu::LaunchKernel(bp_kernel<TensorDataType>,
+                                grid_dim,
+                                block_dim,
+                                0,
+                                multisync,
+                                alpha,
+                                height,
+                                width,
+                                input.LockedBuffer(),
+                                input.LDim(),
+                                gradient_wrt_output.LockedBuffer(),
+                                gradient_wrt_output.LDim(),
+                                gradient_wrt_input.Buffer(),
+                                gradient_wrt_input.LDim());
   }
-
 }
 
 } // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void elu_layer<TensorDataType, Layout, Device>::fp_compute() {
+void elu_layer<TensorDataType, Layout, Device>::fp_compute()
+{
   local_fp(this->m_alpha,
            this->get_local_prev_activations(),
            this->get_local_activations());
 }
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void elu_layer<TensorDataType, Layout, Device>::bp_compute() {
+void elu_layer<TensorDataType, Layout, Device>::bp_compute()
+{
   local_bp(this->m_alpha,
            this->get_local_prev_activations(),
            this->get_local_prev_error_signals(),
            this->get_local_error_signals());
 }
 
-#define PROTO(T)                                      \
-  template class elu_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
+#define PROTO(T)                                                               \
+  template class elu_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>;    \
   template class elu_layer<T, data_layout::MODEL_PARALLEL, El::Device::GPU>
 
 #define LBANN_INSTANTIATE_GPU_HALF

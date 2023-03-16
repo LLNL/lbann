@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,15 +24,13 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann_config.hpp"
 #include "lbann/utils/dnn_lib/onednn.hpp"
 #include "lbann/utils/dim_helpers.hpp"
+#include "lbann_config.hpp"
 
 #ifdef LBANN_HAS_ONEDNN
-namespace lbann
-{
-namespace onednn
-{
+namespace lbann {
+namespace onednn {
 namespace /* <anon> */
 {
 template <El::Device D>
@@ -43,19 +41,19 @@ inline static constexpr auto DeviceEnumMap = DeviceEnumMapT<D>::value;
 
 template <>
 struct DeviceEnumMapT<El::Device::CPU>
-  : std::integral_constant<dnnl::engine::kind,
-                           dnnl::engine::kind::cpu>
-{};
+  : std::integral_constant<dnnl::engine::kind, dnnl::engine::kind::cpu>
+{
+};
 
 #ifdef LBANN_HAS_GPU
 template <>
 struct DeviceEnumMapT<El::Device::GPU>
-  : std::integral_constant<dnnl::engine::kind,
-                           dnnl::engine::kind::gpu>
-{};
+  : std::integral_constant<dnnl::engine::kind, dnnl::engine::kind::gpu>
+{
+};
 #endif // LBANN_HAS_GPU
 
-}// namespace onednn
+} // namespace
 
 template <El::Device D>
 dnnl::engine& get_device_engine()
@@ -80,6 +78,6 @@ template dnnl::stream get_stream(dnnl::engine const&,
                                  El::SyncInfo<El::Device::GPU> const&);
 #endif // LBANN_HAS_GPU
 
-}// namespace onednn
-}// namespace lbann
+} // namespace onednn
+} // namespace lbann
 #endif // LBANN_HAS_ONEDNN

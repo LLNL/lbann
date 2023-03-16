@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,12 +30,12 @@
 
 #include "permute/permuteimpl.hpp"
 
-#include "lbann/utils/description.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/utils/description.hpp"
 #include "lbann/utils/protobuf.hpp"
 
-#include "lbann/proto/lbann.pb.h"
 #include "lbann/proto/layers.pb.h"
+#include "lbann/proto/lbann.pb.h"
 
 #include <memory>
 #include <sstream>
@@ -217,10 +217,12 @@ void PermuteLayer<T>::bp_compute()
 // protected:
 
 template <typename T>
-PermuteLayer<T>::PermuteLayer() : PermuteLayer(std::vector<int>{}) {}
+PermuteLayer<T>::PermuteLayer() : PermuteLayer(std::vector<int>{})
+{}
 
 template <typename T>
-void PermuteLayer<T>::write_specific_proto(lbann_data::Layer& proto) const {
+void PermuteLayer<T>::write_specific_proto(lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_permute();
   protobuf::assign_to_repeated(*msg->mutable_axes(), this->m_impl->get_perm());

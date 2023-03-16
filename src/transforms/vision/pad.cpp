@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -36,21 +36,32 @@
 namespace lbann {
 namespace transform {
 
-void pad::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+void pad::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims)
+{
   cv::Mat src = utils::get_opencv_mat(data, dims);
-  std::vector<size_t> new_dims = {dims[0], dims[1] + m_p*2, dims[2] + m_p*2};
+  std::vector<size_t> new_dims = {dims[0],
+                                  dims[1] + m_p * 2,
+                                  dims[2] + m_p * 2};
   auto dst_real = El::Matrix<uint8_t>(get_linear_size(new_dims), 1);
   cv::Mat dst = utils::get_opencv_mat(dst_real, new_dims);
-  cv::copyMakeBorder( src, dst, m_p, m_p, m_p, m_p, cv::BORDER_CONSTANT, cv::Scalar(0));
+  cv::copyMakeBorder(src,
+                     dst,
+                     m_p,
+                     m_p,
+                     m_p,
+                     m_p,
+                     cv::BORDER_CONSTANT,
+                     cv::Scalar(0));
   data.emplace<uint8_t>(std::move(dst_real));
   dims = new_dims;
 }
 
 std::unique_ptr<transform>
-build_pad_transform_from_pbuf(google::protobuf::Message const& msg) {
+build_pad_transform_from_pbuf(google::protobuf::Message const& msg)
+{
   auto const& params = dynamic_cast<lbann_data::Transform::Pad const&>(msg);
   return std::make_unique<pad>(params.pad());
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

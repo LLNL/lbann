@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -36,6 +36,6 @@ using data_field_type = std::string;
 #define INPUT_DATA_TYPE_LABELS "labels"
 #define INPUT_DATA_TYPE_RESPONSES "responses"
 #define INPUT_DATA_TYPE_LABEL_RECONSTRUCTION "label_reconstruction"
-}
+} // namespace lbann
 
 #endif // LBANN_INPUT_DATA_TYPE_HPP_INCLUDED

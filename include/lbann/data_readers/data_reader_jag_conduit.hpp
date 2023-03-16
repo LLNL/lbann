@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,16 +29,16 @@
 
 #include "lbann_config.hpp"
 
-#include "lbann/data_readers/data_reader.hpp"
 #include "conduit/conduit.hpp"
 #include "hdf5.h"
-#include <string>
-#include <set>
-#include <unordered_map>
+#include "lbann/data_readers/data_reader.hpp"
 #include <map>
 #include <memory>
+#include <set>
+#include <string>
+#include <unordered_map>
 
-//#define _USE_IO_HANDLE_
+// #define _USE_IO_HANDLE_
 #ifdef _USE_IO_HANDLE_
 #include "lbann/data_readers/sample_list_conduit_io_handle.hpp"
 #else
@@ -50,15 +50,19 @@ namespace lbann {
 class data_store_conduit;
 
 /**
- * Loads JAG simulation parameters and results from hdf5 files using conduit interfaces
+ * Loads JAG simulation parameters and results from hdf5 files using conduit
+ * interfaces
  */
-class data_reader_jag_conduit : public generic_data_reader {
- public:
+class data_reader_jag_conduit : public generic_data_reader
+{
+public:
   using ch_t = float; ///< jag output image channel type
-  using conduit_ch_t = conduit::float32_array; ///< conduit type for ch_t array wrapper
-  using scalar_t = double; ///< jag scalar output type
-  using input_t = double; ///< jag input parameter type
-  /// Type for the pair of the key string of a sample and the handle of the file that contains it
+  using conduit_ch_t =
+    conduit::float32_array; ///< conduit type for ch_t array wrapper
+  using scalar_t = double;  ///< jag scalar output type
+  using input_t = double;   ///< jag input parameter type
+  /// Type for the pair of the key string of a sample and the handle of the file
+  /// that contains it
   using sample_locator_t = std::pair<std::string, hid_t>;
   using sample_map_t = std::vector<sample_locator_t>; ///< valid sample map type
   using sample_name_t = std::string;
@@ -70,7 +74,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   using file_handle_t = sample_list_t::file_handle_t;
   using sample_file_id_t = sample_list_t::sample_file_id_t;
   using sample_t = std::pair<sample_file_id_t, sample_name_t>;
-  //using sample_t = sample_list_t::sample_t;
+  // using sample_t = sample_list_t::sample_t;
   /// linear transform on X defined as: first * X + second => X'
   using linear_transform_t = std::pair<double, double>;
 
@@ -81,28 +85,39 @@ class data_reader_jag_conduit : public generic_data_reader {
    * - JAG_Input: simulation input parameters
    * - Undefined: the default
    */
-  enum variable_t {Undefined=0, JAG_Image, JAG_Scalar, JAG_Input};
+  enum variable_t
+  {
+    Undefined = 0,
+    JAG_Image,
+    JAG_Scalar,
+    JAG_Input
+  };
   using TypeID = conduit::DataType::TypeID;
 
-  /// Type to define a prefix string and the minimum length requirement to filter out a key
+  /// Type to define a prefix string and the minimum length requirement to
+  /// filter out a key
   using prefix_t = std::pair<std::string, size_t>;
 
   data_reader_jag_conduit(bool shuffle = true);
   data_reader_jag_conduit(const data_reader_jag_conduit&);
   data_reader_jag_conduit& operator=(const data_reader_jag_conduit&);
   ~data_reader_jag_conduit() override;
-  data_reader_jag_conduit* copy() const override { return new data_reader_jag_conduit(*this); }
-
-  void setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) override;
-
-  std::string get_type() const override {
-    return "data_reader_jag_conduit";
+  data_reader_jag_conduit* copy() const override
+  {
+    return new data_reader_jag_conduit(*this);
   }
 
+  void setup(int num_io_threads,
+             observer_ptr<thread_pool> io_thread_pool) override;
+
+  std::string get_type() const override { return "data_reader_jag_conduit"; }
+
   /// Choose which data to use for independent variable
-  void set_independent_variable_type(const std::vector< std::vector<variable_t> >& independent);
+  void set_independent_variable_type(
+    const std::vector<std::vector<variable_t>>& independent);
   /// Choose which data to use for dependent variable
-  void set_dependent_variable_type(const std::vector< std::vector<variable_t> >& dependent);
+  void set_dependent_variable_type(
+    const std::vector<std::vector<variable_t>>& dependent);
 
   /// Tell which data to use for independent variable
   std::vector<variable_t> get_independent_variable_type() const;
@@ -110,9 +125,15 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::vector<variable_t> get_dependent_variable_type() const;
 
   /// Set the common prefix path for any output scalar fields stored
-  void set_output_scalar_prefix(const std::string& prefix) { m_output_scalar_prefix = prefix; }
+  void set_output_scalar_prefix(const std::string& prefix)
+  {
+    m_output_scalar_prefix = prefix;
+  }
   /// Set the common prefix path for any output images stored
-  void set_output_image_prefix(const std::string& prefix) { m_output_image_prefix = prefix; }
+  void set_output_image_prefix(const std::string& prefix)
+  {
+    m_output_image_prefix = prefix;
+  }
   /// Set the common prefix path for any input variables stored
   void set_input_prefix(const std::string& prefix) { m_input_prefix = prefix; }
 
@@ -209,13 +230,15 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::string get_description() const;
 
   /// Return the scalar simulation output data of the i-th sample
-  std::vector<scalar_t> get_scalars(const size_t i, conduit::Node& sample) const;
+  std::vector<scalar_t> get_scalars(const size_t i,
+                                    conduit::Node& sample) const;
 
   /// Return the simulation input parameters of the i-th sample
   std::vector<input_t> get_inputs(const size_t i, conduit::Node& sample) const;
 
-  template<typename S>
-  static size_t add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals);
+  template <typename S>
+  static size_t
+  add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals);
 
   void setup_data_store(int mini_batch_size);
 
@@ -232,8 +255,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   void add_scalar_normalization_param(const linear_transform_t& t);
   void add_input_normalization_param(const linear_transform_t& t);
 
- protected:
-
+protected:
   /// once the sample_list class and file formats are generalized and
   /// finalized, it should (may?) be possible to code a single
   /// preload_data_store method.
@@ -249,7 +271,8 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /// Check if a key is in the black lists to filter out
   bool filter(const std::set<std::string>& key_filter,
-              const std::vector<prefix_t>& prefix_filter, const std::string& name) const;
+              const std::vector<prefix_t>& prefix_filter,
+              const std::string& name) const;
 
   using generic_data_reader::get_linearized_size;
   /// Return the linearized size of a particular JAG variable type
@@ -257,7 +280,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Return the dimension of a particular JAG variable type
   const std::vector<int> get_dims(const variable_t t) const;
   /// Return the slice points for linearized data or responses
-  std::vector<El::Int> get_slice_points_impl(const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& var) const;
+  std::vector<El::Int> get_slice_points_impl(
+    const std::vector<std::vector<data_reader_jag_conduit::variable_t>>& var)
+    const;
   /// Return the slice points for linearized independent variables
   std::vector<El::Int> get_slice_points_independent() const;
   /// Return the slice points for linearized dependent variables
@@ -265,17 +290,24 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /// A utility function to make a string to show all the variable types
   static std::string to_string(const std::vector<variable_t>& vec);
-  /// A utility function to make a string to show all the groups of variable types
-  static std::string to_string(const std::vector< std::vector<variable_t> >& vec);
-
+  /// A utility function to make a string to show all the groups of variable
+  /// types
+  static std::string to_string(const std::vector<std::vector<variable_t>>& vec);
 
   virtual std::vector<CPUMat>
-    create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const;
+  create_datum_views(CPUMat& X,
+                     const std::vector<size_t>& sizes,
+                     const int mb_idx) const;
 
   /// Export cached data minibatch
 
-  bool fetch(CPUMat& X, int data_id, conduit::Node& sample, int mb_idx, int tid,
-             const variable_t vt, const std::string tag);
+  bool fetch(CPUMat& X,
+             int data_id,
+             conduit::Node& sample,
+             int mb_idx,
+             int tid,
+             const variable_t vt,
+             const std::string tag);
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
   bool fetch_label(CPUMat& X, int data_id, int mb_idx) override;
@@ -303,7 +335,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Rely on pre-determined list of samples.
   void load_list_of_samples(const std::string filename);
   /// Load the sample list from a serialized archive from another rank
-  void load_list_of_samples_from_archive(const std::string& sample_list_archive);
+  void
+  load_list_of_samples_from_archive(const std::string& sample_list_archive);
 
   /// See if the image size is consistent with the linearized size
   void check_image_data();
@@ -331,48 +364,57 @@ class data_reader_jag_conduit : public generic_data_reader {
   static bool check_non_numeric(const std::string key);
 
   bool has_path(const file_handle_t& h, const std::string& path) const;
-  void read_node(const file_handle_t& h, const std::string& path, conduit::Node& n) const;
+  void read_node(const file_handle_t& h,
+                 const std::string& path,
+                 conduit::Node& n) const;
 
   /// Allow const access to the conduit data structure
-  static const conduit::Node& get_conduit_node(const conduit::Node& n_base, const std::string key);
+  static const conduit::Node& get_conduit_node(const conduit::Node& n_base,
+                                               const std::string key);
   /** Load the conduit node with the data of the sample i identified by key
    *  from the file that contains the sample, and returm true. Upon failure
    *  to load from file, attempt to retrieve a random conduit node from
    *  the data_store (if --use_data_store) and return false.
    */
-  bool load_conduit_node(const size_t i, const std::string& key, conduit::Node& node) const;
+  bool load_conduit_node(const size_t i,
+                         const std::string& key,
+                         conduit::Node& node) const;
   /// Check if a key exist for sample i
   bool has_conduit_path(const size_t i, const std::string& key) const;
 
   /// Obtain image data
-  std::vector< std::vector<DataType> > get_image_data(const size_t i, conduit::Node& sample) const;
+  std::vector<std::vector<DataType>>
+  get_image_data(const size_t i, conduit::Node& sample) const;
 
-  bool data_store_active() const override {
+  bool data_store_active() const override
+  {
     bool flag = generic_data_reader::data_store_active();
     return (m_data_store != nullptr && flag);
   }
 
-  bool priming_data_store() const override {
+  bool priming_data_store() const override
+  {
     bool flag = generic_data_reader::priming_data_store();
     return (m_data_store != nullptr && flag);
   }
 
- protected:
+protected:
   /// The flat list of independent variable types
   std::vector<variable_t> m_independent;
   /// The list of independent variable types grouped for slicing
-  std::vector< std::vector<variable_t> > m_independent_groups;
+  std::vector<std::vector<variable_t>> m_independent_groups;
   /// The flat list of dependent variable types
   std::vector<variable_t> m_dependent;
   /// The list of independent variable types grouped for slicing
-  std::vector< std::vector<variable_t> > m_dependent_groups;
+  std::vector<std::vector<variable_t>> m_dependent_groups;
 
-  int m_image_width; ///< image width
-  int m_image_height; ///< image height
-  int m_image_num_channels; ///< number of image channels
-  size_t m_image_linearized_size; ///< The linearized size of an image
-  size_t m_1ch_image_linearized_size; ///< The linearized size of a single channel image
-  unsigned int m_num_img_srcs; ///< number of views result in images
+  int m_image_width;                  ///< image width
+  int m_image_height;                 ///< image height
+  int m_image_num_channels;           ///< number of image channels
+  size_t m_image_linearized_size;     ///< The linearized size of an image
+  size_t m_1ch_image_linearized_size; ///< The linearized size of a single
+                                      ///< channel image
+  unsigned int m_num_img_srcs;        ///< number of views result in images
   bool m_split_channels; ///< Whether to export a separate image per channel
 
   /// Whether data have been loaded
@@ -389,9 +431,11 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /// Allow image selection by the view and the time index
   std::vector<std::string> m_emi_image_keys;
-  /// Keys to select a set of scalar simulation outputs to use. By default, use all.
+  /// Keys to select a set of scalar simulation outputs to use. By default, use
+  /// all.
   std::vector<std::string> m_scalar_keys;
-  /// Keys to select a set of simulation input parameters to use. By default, use all.
+  /// Keys to select a set of simulation input parameters to use. By default,
+  /// use all.
   std::vector<std::string> m_input_keys;
 
   /**
@@ -419,7 +463,8 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /// The number of local instances of this reader type
   static std::unordered_map<std::string, int> m_num_local_readers;
-  /// locally addressable id in case of multiple data reader instances attached to a model
+  /// locally addressable id in case of multiple data reader instances attached
+  /// to a model
   int m_local_reader_id;
 
   CPUMat m_data_cache;
@@ -439,129 +484,163 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool m_list_per_trainer;
   bool m_list_per_model;
 
-  void preload_helper(const hid_t& h, const std::string &sample_name, const std::string &field_name, int data_id, conduit::Node &node);
+  void preload_helper(const hid_t& h,
+                      const std::string& sample_name,
+                      const std::string& field_name,
+                      int data_id,
+                      conduit::Node& node);
 };
 
 /**
- * To faciliate the type comparison between a c++ native type and a conduit type id.
- * By deafult, each pair of a native type TN and a conduit type TC is not the same.
- * Those that are the same require explicit instantication to say otherwise.
+ * To faciliate the type comparison between a c++ native type and a conduit type
+ * id. By deafult, each pair of a native type TN and a conduit type TC is not
+ * the same. Those that are the same require explicit instantication to say
+ * otherwise.
  */
-template<typename TN, conduit::DataType::TypeID TC>
-struct is_same : std::false_type {};
+template <typename TN, conduit::DataType::TypeID TC>
+struct is_same : std::false_type
+{
+};
 
-#define _LBANN_CONDUIT_DTYPE_INSTANTIATION_(TN, TC) \
-  template<> struct is_same<TN, TC> : std::true_type {}
+#define _LBANN_CONDUIT_DTYPE_INSTANTIATION_(TN, TC)                            \
+  template <>                                                                  \
+  struct is_same<TN, TC> : std::true_type                                      \
+  {                                                                            \
+  }
 
-_LBANN_CONDUIT_DTYPE_INSTANTIATION_(int8_t,   conduit::DataType::INT8_ID);
-_LBANN_CONDUIT_DTYPE_INSTANTIATION_(int16_t,  conduit::DataType::INT16_ID);
-_LBANN_CONDUIT_DTYPE_INSTANTIATION_(int32_t,  conduit::DataType::INT32_ID);
-_LBANN_CONDUIT_DTYPE_INSTANTIATION_(int64_t,  conduit::DataType::INT64_ID);
-_LBANN_CONDUIT_DTYPE_INSTANTIATION_(uint8_t,  conduit::DataType::UINT8_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(int8_t, conduit::DataType::INT8_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(int16_t, conduit::DataType::INT16_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(int32_t, conduit::DataType::INT32_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(int64_t, conduit::DataType::INT64_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(uint8_t, conduit::DataType::UINT8_ID);
 _LBANN_CONDUIT_DTYPE_INSTANTIATION_(uint16_t, conduit::DataType::UINT16_ID);
 _LBANN_CONDUIT_DTYPE_INSTANTIATION_(uint32_t, conduit::DataType::UINT32_ID);
 _LBANN_CONDUIT_DTYPE_INSTANTIATION_(uint64_t, conduit::DataType::UINT64_ID);
-_LBANN_CONDUIT_DTYPE_INSTANTIATION_(float,    conduit::DataType::FLOAT32_ID);
-_LBANN_CONDUIT_DTYPE_INSTANTIATION_(double,   conduit::DataType::FLOAT64_ID);
-_LBANN_CONDUIT_DTYPE_INSTANTIATION_(char*,    conduit::DataType::CHAR8_STR_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(float, conduit::DataType::FLOAT32_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(double, conduit::DataType::FLOAT64_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(char*, conduit::DataType::CHAR8_STR_ID);
 
 #undef _LBANN_CONDUIT_DTYPE_INSTANTIATION_
 
-/// Check if type identified by the conduit dtype id is the same type as the type given as the template parameter
-template<typename TN>
-inline bool is_same_type(const conduit::DataType::TypeID dt) {
-  switch(dt) {
-    case conduit::DataType::INT8_ID:    return is_same<TN, conduit::DataType::INT8_ID>::value;
-    case conduit::DataType::INT16_ID:   return is_same<TN, conduit::DataType::INT16_ID>::value;
-    case conduit::DataType::INT32_ID:   return is_same<TN, conduit::DataType::INT32_ID>::value;
-    case conduit::DataType::INT64_ID:   return is_same<TN, conduit::DataType::INT64_ID>::value;
-    case conduit::DataType::UINT8_ID:   return is_same<TN, conduit::DataType::UINT8_ID>::value;
-    case conduit::DataType::UINT16_ID:  return is_same<TN, conduit::DataType::UINT16_ID>::value;
-    case conduit::DataType::UINT32_ID:  return is_same<TN, conduit::DataType::UINT32_ID>::value;
-    case conduit::DataType::UINT64_ID:  return is_same<TN, conduit::DataType::UINT64_ID>::value;
-    case conduit::DataType::FLOAT32_ID: return is_same<TN, conduit::DataType::FLOAT32_ID>::value;
-    case conduit::DataType::FLOAT64_ID: return is_same<TN, conduit::DataType::FLOAT64_ID>::value;
-    case conduit::DataType::CHAR8_STR_ID: return is_same<TN, conduit::DataType::CHAR8_STR_ID>::value;
-    default: return false;
+/// Check if type identified by the conduit dtype id is the same type as the
+/// type given as the template parameter
+template <typename TN>
+inline bool is_same_type(const conduit::DataType::TypeID dt)
+{
+  switch (dt) {
+  case conduit::DataType::INT8_ID:
+    return is_same<TN, conduit::DataType::INT8_ID>::value;
+  case conduit::DataType::INT16_ID:
+    return is_same<TN, conduit::DataType::INT16_ID>::value;
+  case conduit::DataType::INT32_ID:
+    return is_same<TN, conduit::DataType::INT32_ID>::value;
+  case conduit::DataType::INT64_ID:
+    return is_same<TN, conduit::DataType::INT64_ID>::value;
+  case conduit::DataType::UINT8_ID:
+    return is_same<TN, conduit::DataType::UINT8_ID>::value;
+  case conduit::DataType::UINT16_ID:
+    return is_same<TN, conduit::DataType::UINT16_ID>::value;
+  case conduit::DataType::UINT32_ID:
+    return is_same<TN, conduit::DataType::UINT32_ID>::value;
+  case conduit::DataType::UINT64_ID:
+    return is_same<TN, conduit::DataType::UINT64_ID>::value;
+  case conduit::DataType::FLOAT32_ID:
+    return is_same<TN, conduit::DataType::FLOAT32_ID>::value;
+  case conduit::DataType::FLOAT64_ID:
+    return is_same<TN, conduit::DataType::FLOAT64_ID>::value;
+  case conduit::DataType::CHAR8_STR_ID:
+    return is_same<TN, conduit::DataType::CHAR8_STR_ID>::value;
+  default:
+    return false;
   }
   return false;
 }
 
 /**
- * Retrieve a value from the given node n, and add it to the vector of type S, vals.
- * The first argument key is the name of the current node (i.e. the name reported by
- * the node iterator to the node).
+ * Retrieve a value from the given node n, and add it to the vector of type S,
+ * vals. The first argument key is the name of the current node (i.e. the name
+ * reported by the node iterator to the node).
  */
-template<typename S>
-inline size_t data_reader_jag_conduit::add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals) {
+template <typename S>
+inline size_t data_reader_jag_conduit::add_val(const std::string key,
+                                               const conduit::Node& n,
+                                               std::vector<S>& vals)
+{
   size_t cnt = 0u;
 
   switch (n.dtype().id()) {
-    case TypeID::OBJECT_ID: {
-        //std::cout << "O " << n.path() << std::endl;
-        if (check_non_numeric(key)) {
-          return 0u;
-        }
-        conduit::NodeConstIterator itr = n.children();
-        while (itr.has_next()) {
-          const conduit::Node& n_child = itr.next();
-          cnt += add_val(itr.name(), n_child, vals);
-        }
-      }
-      break;
-    case TypeID::LIST_ID: {
-        //std::cout << "L " << n.path() << std::endl;
-        if (check_non_numeric(key)) {
-          return 0u;
-        }
-        conduit::NodeConstIterator itr = n.children();
-        while (itr.has_next()) {
-          const conduit::Node& n_child = itr.next();
-          cnt += add_val(itr.name(), n_child, vals);
-        }
-      }
-      break;
-    case TypeID::INT8_ID:
-    case TypeID::INT16_ID:
-    case TypeID::INT32_ID:
-    case TypeID::INT64_ID:
-    case TypeID::UINT8_ID:
-    case TypeID::UINT16_ID:
-    case TypeID::UINT32_ID:
-    case TypeID::UINT64_ID:
-    case TypeID::FLOAT32_ID:
-    case TypeID::FLOAT64_ID:
-      cnt = 1u;
-      //std::cout << "N " << n.path() << ": " << static_cast<S>(n.to_value()) << std::endl;
-      vals.push_back(static_cast<S>(n.to_value()));
-      break;
-    case TypeID::CHAR8_STR_ID: {
-        // In case of a charater string, the method to convert it to a float number is specific to each key
-        if (check_non_numeric(key)) {
-          return 0u;
-        //} else if (key == "some_key_with_non_numeric_values_that_can_be_converted_to_numerics_in_a_specific_way") {
-        } else {
-          const char* c_str = n.as_char8_str();
-          // make sure that the std::string does not contain null character
-          const std::string str
-            = ((c_str == nullptr)? std::string() : std::string(c_str, n.dtype().number_of_elements())).c_str();
+  case TypeID::OBJECT_ID: {
+    // std::cout << "O " << n.path() << std::endl;
+    if (check_non_numeric(key)) {
+      return 0u;
+    }
+    conduit::NodeConstIterator itr = n.children();
+    while (itr.has_next()) {
+      const conduit::Node& n_child = itr.next();
+      cnt += add_val(itr.name(), n_child, vals);
+    }
+  } break;
+  case TypeID::LIST_ID: {
+    // std::cout << "L " << n.path() << std::endl;
+    if (check_non_numeric(key)) {
+      return 0u;
+    }
+    conduit::NodeConstIterator itr = n.children();
+    while (itr.has_next()) {
+      const conduit::Node& n_child = itr.next();
+      cnt += add_val(itr.name(), n_child, vals);
+    }
+  } break;
+  case TypeID::INT8_ID:
+  case TypeID::INT16_ID:
+  case TypeID::INT32_ID:
+  case TypeID::INT64_ID:
+  case TypeID::UINT8_ID:
+  case TypeID::UINT16_ID:
+  case TypeID::UINT32_ID:
+  case TypeID::UINT64_ID:
+  case TypeID::FLOAT32_ID:
+  case TypeID::FLOAT64_ID:
+    cnt = 1u;
+    // std::cout << "N " << n.path() << ": " << static_cast<S>(n.to_value()) <<
+    // std::endl;
+    vals.push_back(static_cast<S>(n.to_value()));
+    break;
+  case TypeID::CHAR8_STR_ID: {
+    // In case of a charater string, the method to convert it to a float number
+    // is specific to each key
+    if (check_non_numeric(key)) {
+      return 0u;
+      //} else if (key ==
+      //"some_key_with_non_numeric_values_that_can_be_converted_to_numerics_in_a_specific_way")
+      //{
+    }
+    else {
+      const char* c_str = n.as_char8_str();
+      // make sure that the std::string does not contain null character
+      const std::string str =
+        ((c_str == nullptr)
+           ? std::string()
+           : std::string(c_str, n.dtype().number_of_elements()))
+          .c_str();
 
-          cnt = 1u;
-          const S v = static_cast<S>(atof(str.c_str()));
-          vals.push_back(v);
-          //std::cout << "S " << n.path() << ": " << str << " => " << vals.back() << std::endl;
-        }
-      }
-      break;
-    case TypeID::EMPTY_ID:
-    default:
-      std::string err = std::string("data_reader_jag_conduit::add_val() : invalid dtype (")
-                      + n.dtype().name() + ") for " + n.path() + '.';
-     #if 1
-      std::cerr << err << " Skipping for now." << std::endl;
-     #else
-      throw lbann_exception(err);
-     #endif
+      cnt = 1u;
+      const S v = static_cast<S>(atof(str.c_str()));
+      vals.push_back(v);
+      // std::cout << "S " << n.path() << ": " << str << " => " << vals.back()
+      // << std::endl;
+    }
+  } break;
+  case TypeID::EMPTY_ID:
+  default:
+    std::string err =
+      std::string("data_reader_jag_conduit::add_val() : invalid dtype (") +
+      n.dtype().name() + ") for " + n.path() + '.';
+#if 1
+    std::cerr << err << " Skipping for now." << std::endl;
+#else
+    throw lbann_exception(err);
+#endif
   }
   return cnt;
 }

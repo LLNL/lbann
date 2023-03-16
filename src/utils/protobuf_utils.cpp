@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -39,9 +39,9 @@ namespace lbann {
 namespace protobuf_utils {
 
 std::vector<prototext_fn_triple>
-parse_prototext_filenames_from_command_line(
-               const bool master,
-               const int trainer_rank) {
+parse_prototext_filenames_from_command_line(const bool master,
+                                            const int trainer_rank)
+{
   auto& arg_parser = global_argument_parser();
   std::vector<std::string> models;
   std::vector<std::string> optimizers;
@@ -49,12 +49,16 @@ parse_prototext_filenames_from_command_line(
   std::vector<std::string> data_set_metadata;
   bool single_file_load = false;
 
-  std::string params[] = {LBANN_OPTION_PROTOTEXT, LBANN_OPTION_MODEL, LBANN_OPTION_READER, LBANN_OPTION_METADATA, LBANN_OPTION_OPTIMIZER};
+  std::string params[] = {LBANN_OPTION_PROTOTEXT,
+                          LBANN_OPTION_MODEL,
+                          LBANN_OPTION_READER,
+                          LBANN_OPTION_METADATA,
+                          LBANN_OPTION_OPTIMIZER};
   for (auto& which : params) {
     std::string fn = arg_parser.get<std::string>(which);
     if (fn != "") {
       size_t t_pos = fn.find("trainer");
-      if(t_pos != std::string::npos) {
+      if (t_pos != std::string::npos) {
         // append appropriate trainer id to prototext filename
         std::string fname =
           fn.substr(0, t_pos + 7) + std::to_string(trainer_rank);
@@ -79,9 +83,9 @@ parse_prototext_filenames_from_command_line(
     }
   }
 
-  if(!single_file_load) {
+  if (!single_file_load) {
     size_t n = models.size();
-    if (! (optimizers.size() == 1 || optimizers.size() == n)) {
+    if (!(optimizers.size() == 1 || optimizers.size() == n)) {
       LBANN_ERROR(
         "you specified ",
         n,
@@ -89,14 +93,15 @@ parse_prototext_filenames_from_command_line(
         optimizers.size(),
         " optimizer filenames; you must specify 1 optimizer filenames");
     }
-    if (! (readers.size() == 1 || readers.size() == n)) {
+    if (!(readers.size() == 1 || readers.size() == n)) {
       LBANN_ERROR("you specified ",
                   n,
                   " model filenames, and ",
                   readers.size(),
                   " reader filenames; you must specify 1 reader filenames");
     }
-    if (! (data_set_metadata.size() == 0 || data_set_metadata.size() == 1 || data_set_metadata.size() == n)) {
+    if (!(data_set_metadata.size() == 0 || data_set_metadata.size() == 1 ||
+          data_set_metadata.size() == n)) {
       LBANN_ERROR("you specified ",
                   n,
                   " model filenames, and ",
@@ -107,28 +112,34 @@ parse_prototext_filenames_from_command_line(
   }
 
   std::vector<prototext_fn_triple> names;
-  for (size_t i=0; i<models.size(); i++) {
+  for (size_t i = 0; i < models.size(); i++) {
     prototext_fn_triple t;
     t.model = models[i];
     if (readers.size() == 0) {
       t.reader = "none";
-    }else if (readers.size() == 1) {
+    }
+    else if (readers.size() == 1) {
       t.reader = readers[0];
-    } else {
+    }
+    else {
       t.reader = readers[i];
     }
     if (data_set_metadata.size() == 0) {
       t.data_set_metadata = "none";
-    }else if (data_set_metadata.size() == 1) {
+    }
+    else if (data_set_metadata.size() == 1) {
       t.data_set_metadata = data_set_metadata[0];
-    } else {
+    }
+    else {
       t.data_set_metadata = data_set_metadata[i];
     }
     if (optimizers.size() == 0) {
       t.optimizer = "none";
-    }else if (optimizers.size() == 1) {
+    }
+    else if (optimizers.size() == 1) {
       t.optimizer = optimizers[0];
-    } else {
+    }
+    else {
       t.optimizer = optimizers[i];
     }
     names.push_back(t);
@@ -137,9 +148,8 @@ parse_prototext_filenames_from_command_line(
 }
 
 std::vector<std::unique_ptr<lbann_data::LbannPB>>
-read_in_prototext_files(
-  const bool master,
-  const std::vector<prototext_fn_triple> &names)
+read_in_prototext_files(const bool master,
+                        const std::vector<prototext_fn_triple>& names)
 {
   std::vector<std::unique_ptr<lbann_data::LbannPB>> models_out;
   for (auto const& t : names) {
@@ -167,9 +177,7 @@ read_in_prototext_files(
 }
 
 std::vector<std::unique_ptr<lbann_data::LbannPB>>
-load_prototext(
-  const bool master,
-  const int trainer_rank)
+load_prototext(const bool master, const int trainer_rank)
 {
   auto names =
     parse_prototext_filenames_from_command_line(master, trainer_rank);
@@ -183,37 +191,43 @@ load_prototext(
 
 void verify_prototext(
   const bool master,
-  const std::vector<std::unique_ptr<lbann_data::LbannPB>> &models) {
+  const std::vector<std::unique_ptr<lbann_data::LbannPB>>& models)
+{
   std::stringstream err;
   if (master) {
-    std::cout << "protobuf_utils::verify_prototext; starting verify for " << models.size() << " models\n";
+    std::cout << "protobuf_utils::verify_prototext; starting verify for "
+              << models.size() << " models\n";
   }
-  for (size_t j=0; j<models.size(); j++) {
+  for (size_t j = 0; j < models.size(); j++) {
     bool is_good = true;
-    lbann_data::LbannPB *t = models[j].get();
-    if (! t->has_data_reader()) {
+    lbann_data::LbannPB* t = models[j].get();
+    if (!t->has_data_reader()) {
       is_good = false;
       err << "model #" << j << " is missing data_reader\n";
-    } else {
-      if (t->data_reader().requires_data_set_metadata() && (! t->has_data_set_metadata())) {
+    }
+    else {
+      if (t->data_reader().requires_data_set_metadata() &&
+          (!t->has_data_set_metadata())) {
         is_good = false;
-        err << "model #" << j << " is missing metadata (cmd line flag: --metadata=<string>)\n";
+        err << "model #" << j
+            << " is missing metadata (cmd line flag: --metadata=<string>)\n";
       }
     }
-    if (! t->has_model()) {
+    if (!t->has_model()) {
       is_good = false;
       err << "model #" << j << " is missing model\n";
     }
-    if (! t->has_optimizer()) {
+    if (!t->has_optimizer()) {
       is_good = false;
       err << "model #" << j << " is missing optimizer\n";
     }
 
-    if (! is_good) {
-      LBANN_ERROR("please check your command line and/or prototext files:\n", err.str());
+    if (!is_good) {
+      LBANN_ERROR("please check your command line and/or prototext files:\n",
+                  err.str());
     }
   }
 }
 
-}// namespace protobuf_utils
-}// namespace lbann
+} // namespace protobuf_utils
+} // namespace lbann

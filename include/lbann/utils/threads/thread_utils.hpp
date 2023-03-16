@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,8 +31,8 @@
 
 namespace lbann {
 
-int num_free_cores_per_process(const lbann_comm *comm);
-int free_core_offset(const lbann_comm *comm);
+int num_free_cores_per_process(const lbann_comm* comm);
+int free_core_offset(const lbann_comm* comm);
 
 } // namespace lbann
 

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,7 +33,8 @@ namespace lbann {
 
 template <typename TensorDataType>
 template <class Archive>
-void data_buffer<TensorDataType>::serialize( Archive & ar ) {
+void data_buffer<TensorDataType>::serialize(Archive& ar)
+{
   ar(/*CEREAL_NVP(m_input_buffers)*//*,
                                   CEREAL_NVP(m_fetch_data_in_background),
      CEREAL_NVP(m_data_fetch_future),
@@ -58,6 +59,5 @@ void data_buffer<TensorDataType>::initialize_buffer_for_data_field(
 }
 
 } // namespace lbann
-
 
 #endif // LBANN_IO_BUFFER_HPP_IMPL_INCLUDED

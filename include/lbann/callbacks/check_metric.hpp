@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -36,28 +36,27 @@ namespace callback {
 /** Metric checking callback.
  *  Checks if a metric value falls within an expected range.
  */
-class check_metric : public callback_base {
+class check_metric : public callback_base
+{
 public:
-
   check_metric(std::string metric_name,
                std::set<execution_mode> modes,
                EvalType lower_bound,
                EvalType upper_bound,
                bool error_on_failure);
-  check_metric* copy() const override {
-    return new check_metric(*this);
-  }
+  check_metric* copy() const override { return new check_metric(*this); }
   std::string name() const override { return "check metric"; }
 
-  void on_epoch_end(model* m) override      { do_check_metric(*m); }
+  void on_epoch_end(model* m) override { do_check_metric(*m); }
   void on_validation_end(model* m) override { do_check_metric(*m); }
-  void on_test_end(model* m) override       { do_check_metric(*m); }
+  void on_test_end(model* m) override { do_check_metric(*m); }
 
   /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
@@ -86,13 +85,12 @@ private:
    *  Does nothing if current execution mode is not in m_modes;
    */
   void do_check_metric(const model& m) const;
-
 };
 
 // Builder function
 std::unique_ptr<callback_base>
-build_check_metric_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_check_metric_callback_from_pbuf(const google::protobuf::Message&,
+                                      std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann

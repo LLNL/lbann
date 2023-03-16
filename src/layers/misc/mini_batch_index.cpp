@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -63,7 +63,9 @@ El::Device mini_batch_index_layer<T, L, D>::get_device_allocation() const
 }
 
 template <typename T, data_layout L, El::Device D>
-void mini_batch_index_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void mini_batch_index_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   proto.mutable_mini_batch_index();
 }

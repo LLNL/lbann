@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,8 +31,8 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf.hpp"
 
-#include "lbann/proto/lbann.pb.h"
 #include "lbann/proto/layers.pb.h"
+#include "lbann/proto/lbann.pb.h"
 
 namespace lbann {
 
@@ -50,18 +50,20 @@ build_weighted_sum_layer_from_pbuf(lbann_comm* comm,
 }
 
 template <typename T, data_layout L, El::Device D>
-void weighted_sum_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void weighted_sum_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_weighted_sum();
   protobuf::assign_to_repeated(*msg->mutable_scaling_factors(),
                                m_scaling_factors);
 }
 
-#define PROTO_DEVICE(T, Device) \
-  template class weighted_sum_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class weighted_sum_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  template class weighted_sum_layer<T, data_layout::DATA_PARALLEL, Device>;    \
+  template class weighted_sum_layer<T, data_layout::MODEL_PARALLEL, Device>;   \
   LBANN_LAYER_BUILDER_ETI(weighted_sum, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

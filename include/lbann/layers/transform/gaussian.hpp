@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,7 +37,8 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class gaussian_layer : public data_type_layer<TensorDataType> {
+class gaussian_layer : public data_type_layer<TensorDataType>
+{
 private:
   /** @brief Gaussian distribution mean. */
   TensorDataType m_mean;
@@ -51,13 +52,16 @@ private:
   bool m_training_only;
 
 public:
-  gaussian_layer(lbann_comm *comm,
+  gaussian_layer(lbann_comm* comm,
                  const std::vector<int>& dims,
                  TensorDataType mean = El::TypeTraits<TensorDataType>::Zero(),
                  TensorDataType stdev = El::TypeTraits<TensorDataType>::One(),
                  bool training_only = false)
     : data_type_layer<TensorDataType>(comm),
-      m_mean(mean), m_stdev(stdev), m_training_only(training_only) {
+      m_mean(mean),
+      m_stdev(stdev),
+      m_training_only(training_only)
+  {
     this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
   }
@@ -75,7 +79,8 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  description get_description() const override {
+  description get_description() const override
+  {
     auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Mean", m_mean);
     desc.add("Standard deviation", m_stdev);
@@ -84,22 +89,17 @@ public:
   }
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  gaussian_layer()
-    : gaussian_layer(nullptr, { 1 } )
-  {}
-
+  gaussian_layer() : gaussian_layer(nullptr, {1}) {}
 
   void fp_compute() override;
 };
 
-
 #ifndef LBANN_GAUSSIAN_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
+#define PROTO_DEVICE(T, Device)                                                \
   extern template class gaussian_layer<T, data_layout::DATA_PARALLEL, Device>; \
   extern template class gaussian_layer<T, data_layout::MODEL_PARALLEL, Device>
 

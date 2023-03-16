@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -307,10 +307,11 @@ static std::string get_tmpdir() noexcept
     tmpdir = tmp;
   else
     tmpdir = "/tmp";
-  return join_path(
-    tmpdir,
-    lbann::build_string("smiles_fetch_datum_test_", std::time(nullptr), "_",
-                        lbann::get_rank_in_world()));
+  return join_path(tmpdir,
+                   lbann::build_string("smiles_fetch_datum_test_",
+                                       std::time(nullptr),
+                                       "_",
+                                       lbann::get_rank_in_world()));
 }
 
 static void setup_tmp_filetree(std::string const& tmp_dir)

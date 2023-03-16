@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -43,7 +43,8 @@ using ViewingLayerPtr = std::weak_ptr<Layer>;
 class persist;
 
 /** Metric statistics. */
-struct metric_statistics {
+struct metric_statistics
+{
   /** Sum of metric values. */
   EvalType m_sum;
   /** Number of samples. */
@@ -62,7 +63,8 @@ struct metric_statistics {
   ~metric_statistics() = default;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar );
+  template <class Archive>
+  void serialize(Archive& ar);
 
   /** Add metric value to statistics. */
   void add_value(EvalType value, int num_samples = 1);
@@ -81,12 +83,12 @@ struct metric_statistics {
  *  A metric function can be used to evaluate the performance of a
  *  model without affecting the training process.
  */
-class metric {
+class metric
+{
 
- public:
-
+public:
   /** Constructor. */
-  metric(lbann_comm *comm);
+  metric(lbann_comm* comm);
 
   /** Copy constructor. */
   metric(const metric& other) = default;
@@ -98,7 +100,8 @@ class metric {
   virtual metric* copy() const = 0;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar );
+  template <class Archive>
+  void serialize(Archive& ar);
 
   /** Return a string name for this metric. */
   virtual std::string name() const = 0;
@@ -120,7 +123,8 @@ class metric {
   virtual EvalType evaluate(execution_mode mode, int mini_batch_size) = 0;
 
   /** Clear all statistics. */
-  void reset_statistics() {
+  void reset_statistics()
+  {
     for (auto& stats : m_statistics) {
       stats.second.reset();
     }
@@ -147,9 +151,7 @@ class metric {
   EvalType& get_evaluate_time() { return m_evaluate_time; }
 
   /** Reset timing counters. */
-  void reset_counters() {
-    m_evaluate_time = 0.0;
-  }
+  void reset_counters() { m_evaluate_time = 0.0; }
 
   /** Save metric state to checkpoint. */
   virtual bool save_to_checkpoint_shared(persist& p) = 0;
@@ -159,8 +161,7 @@ class metric {
   virtual bool save_to_checkpoint_distributed(persist& p) = 0;
   virtual bool load_from_checkpoint_distributed(persist& p) = 0;
 
- protected:
-
+protected:
   /** Computation to evaluate the metric function.
    *  This should return the sum of metric values across the
    *  mini-batch, not the mean value.
@@ -172,21 +173,22 @@ class metric {
   lbann_comm& get_comm() { return *m_comm; }
 
   /** Get metric statistics. */
-  std::map<execution_mode,metric_statistics>& get_statistics() { return m_statistics; }
+  std::map<execution_mode, metric_statistics>& get_statistics()
+  {
+    return m_statistics;
+  }
 
- private:
-
+private:
   /** LBANN communicator. */
-  lbann_comm *m_comm;
+  lbann_comm* m_comm;
 
   /** Metric statistics. */
-  std::map<execution_mode,metric_statistics> m_statistics;
+  std::map<execution_mode, metric_statistics> m_statistics;
 
   /** Runtime for the metric evaluation. */
   EvalType m_evaluate_time = 0.0;
-
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_METRIC_HPP_INCLUDED
+#endif // LBANN_METRIC_HPP_INCLUDED

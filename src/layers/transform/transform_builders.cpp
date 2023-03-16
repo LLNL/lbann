@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -90,7 +90,7 @@ lbann::build_crop_layer_from_pbuf(lbann_comm* comm,
       protobuf::to_vector<int>(params.dims()));
   }
   else {
-    (void) comm;
+    (void)comm;
     LBANN_ERROR("Attempted to instantiate \"crop\" layer with "
                 "Layout=",
                 to_string(L),
@@ -114,7 +114,7 @@ std::unique_ptr<lbann::Layer> lbann::build_discrete_random_layer_from_pbuf(
       protobuf::to_vector<int>(params.dims()));
   }
   else {
-    (void) comm;
+    (void)comm;
     LBANN_ERROR("discrete random layer is only supported on CPU");
     return nullptr;
   }
@@ -253,7 +253,7 @@ lbann::build_sort_layer_from_pbuf(lbann_comm* comm,
       proto_layer.sort().descending());
   }
   else {
-    (void) comm;
+    (void)comm;
     LBANN_ERROR("sort layer is only supported with "
                 "a data-parallel layout");
     return nullptr;
@@ -300,7 +300,7 @@ lbann::build_unpooling_layer_from_pbuf(lbann_comm* comm,
       unpooling_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
   }
   else {
-    (void) comm;
+    (void)comm;
     LBANN_ERROR("unpooling layer is only supported with "
                 "a data-parallel layout and on CPU");
     return nullptr;

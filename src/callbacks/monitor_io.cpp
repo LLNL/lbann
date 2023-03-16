@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -34,8 +34,8 @@
 #include "lbann/models/model.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/trainers/trainer.hpp"
-#include "lbann/utils/serialize.hpp"
 #include "lbann/utils/protobuf.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
 
@@ -43,10 +43,10 @@ namespace lbann {
 namespace callback {
 
 template <class Archive>
-void monitor_io::serialize(Archive & ar) {
-  ar(::cereal::make_nvp(
-       "BaseCallback",
-       ::cereal::base_class<callback_base>(this)),
+void monitor_io::serialize(Archive& ar)
+{
+  ar(::cereal::make_nvp("BaseCallback",
+                        ::cereal::base_class<callback_base>(this)),
      CEREAL_NVP(m_layers));
 }
 
@@ -56,36 +56,43 @@ void monitor_io::write_specific_proto(lbann_data::Callback& proto) const
   msg->set_layers(protobuf::to_space_sep_string(m_layers));
 }
 
-void monitor_io::on_epoch_end(model *m) {
-  const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
+void monitor_io::on_epoch_end(model* m)
+{
+  const auto& c =
+    static_cast<const SGDExecutionContext&>(m->get_execution_context());
   const data_coordinator& dc = get_const_trainer().get_data_coordinator();
-  lbann_comm *comm = m->get_comm();
+  lbann_comm* comm = m->get_comm();
   std::cout << "Rank " << comm->get_trainer_rank() << "."
             << comm->get_rank_in_trainer() << " processed "
-            << dc.get_num_samples(execution_mode::training) << " training samples of "
+            << dc.get_num_samples(execution_mode::training)
+            << " training samples of "
             << dc.get_total_num_samples(execution_mode::training) << " ("
-            << dc.get_num_samples(execution_mode::training) / c.get_epoch() << " per epoch)" << std::endl;
+            << dc.get_num_samples(execution_mode::training) / c.get_epoch()
+            << " per epoch)" << std::endl;
 }
 
-void monitor_io::on_test_end(model *m) {
-  const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
+void monitor_io::on_test_end(model* m)
+{
+  const auto& c =
+    static_cast<const SGDExecutionContext&>(m->get_execution_context());
   const data_coordinator& dc = get_const_trainer().get_data_coordinator();
-  lbann_comm *comm = m->get_comm();
+  lbann_comm* comm = m->get_comm();
   std::cout << "Rank " << comm->get_trainer_rank() << "."
             << comm->get_rank_in_trainer() << " processed "
-            << dc.get_num_samples(execution_mode::testing) << " test samples of "
+            << dc.get_num_samples(execution_mode::testing)
+            << " test samples of "
             << dc.get_total_num_samples(execution_mode::testing) << " ("
             << dc.get_num_samples(execution_mode::testing) / c.get_epoch()
             << " per epoch)" << std::endl;
 }
 
 std::unique_ptr<callback_base>
-build_monitor_io_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+build_monitor_io_callback_from_pbuf(const google::protobuf::Message& proto_msg,
+                                    const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackDispIOStats&>(proto_msg);
-  return std::make_unique<monitor_io>(
-    parse_list<std::string>(params.layers()));
+  return std::make_unique<monitor_io>(parse_list<std::string>(params.layers()));
 }
 
 } // namespace callback

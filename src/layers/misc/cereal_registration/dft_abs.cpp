@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,9 +30,7 @@ namespace lbann {
 
 template <typename TensorDataType, El::Device Device>
 template <typename ArchiveT>
-void
-dft_abs_layer<TensorDataType,Device>
-::serialize(ArchiveT& ar)
+void dft_abs_layer<TensorDataType, Device>::serialize(ArchiveT& ar)
 {
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",
@@ -45,10 +43,11 @@ dft_abs_layer<TensorDataType,Device>
 // of supported data and device types
 #include <lbann/macros/common_cereal_registration.hpp>
 #define LBANN_COMMA ,
-#define PROTO_DEVICE(TYPE, DEVICE)                           \
-  LBANN_ADD_ALL_SERIALIZE_ETI(::lbann::dft_abs_layer<TYPE LBANN_COMMA DEVICE>); \
-  CEREAL_REGISTER_TYPE_WITH_NAME(                            \
-    ::lbann::dft_abs_layer<TYPE LBANN_COMMA DEVICE>,         \
+#define PROTO_DEVICE(TYPE, DEVICE)                                             \
+  LBANN_ADD_ALL_SERIALIZE_ETI(                                                 \
+    ::lbann::dft_abs_layer<TYPE LBANN_COMMA DEVICE>);                          \
+  CEREAL_REGISTER_TYPE_WITH_NAME(                                              \
+    ::lbann::dft_abs_layer<TYPE LBANN_COMMA DEVICE>,                           \
     "dft_abs_layer (" #TYPE "," #DEVICE ")");
 
 #ifdef LBANN_HAS_FFTW

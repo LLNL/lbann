@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -34,11 +34,11 @@
 
 #include "lbann/proto/datatype_helpers.hpp"
 
-
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void discrete_random_layer<TensorDataType,Layout,Device>::fp_compute() {
+void discrete_random_layer<TensorDataType, Layout, Device>::fp_compute()
+{
 
   // Input and output matrices
   const auto& input = this->get_prev_activations();
@@ -83,7 +83,9 @@ void discrete_random_layer<TensorDataType,Layout,Device>::fp_compute() {
 }
 
 template <typename T, data_layout L, El::Device D>
-void discrete_random_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void discrete_random_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_discrete_random();
   protobuf::assign_to_repeated(*msg->mutable_values(), m_values);

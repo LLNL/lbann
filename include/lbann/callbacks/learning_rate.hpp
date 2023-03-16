@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,9 +29,9 @@
 #ifndef LBANN_CALLBACKS_LEARNING_RATE_HPP_INCLUDED
 #define LBANN_CALLBACKS_LEARNING_RATE_HPP_INCLUDED
 
-#include <unordered_set>
-#include <unordered_map>
 #include "lbann/callbacks/callback.hpp"
+#include <unordered_map>
+#include <unordered_set>
 
 namespace lbann {
 
@@ -46,29 +46,30 @@ namespace callback {
  * Base class for learning rate schedules.
  * Child classes should implement the schedule method to make changes.
  */
-class learning_rate : public callback_base {
- public:
+class learning_rate : public callback_base
+{
+public:
   learning_rate();
   learning_rate(const learning_rate&) = default;
-  learning_rate& operator=(
-    const learning_rate&) = default;
+  learning_rate& operator=(const learning_rate&) = default;
   /** Only apply to specific weights. */
   learning_rate(std::vector<std::string> weights_names);
   /** Do some initialization. */
-  void setup(model *m) override;
+  void setup(model* m) override;
   /** Apply global learning rate schedules. */
-  void on_epoch_end(model *m) override;
+  void on_epoch_end(model* m) override;
 
   using callback_base::on_backward_prop_end;
   /** Apply local/per-optimizer learning rate schedules. */
-  void on_backward_prop_end(model *m) override;
+  void on_backward_prop_end(model* m) override;
+
 protected:
   std::vector<std::string> const& get_weights_names() const
   {
     return m_weights_names;
   }
 
- protected:
+protected:
   /**
    * This is called at the end of every epoch to update the learning
    * rate for every optimizer. Adjustments should be made based on the
@@ -76,7 +77,8 @@ protected:
    * The returned learning rate will be used to automatically update
    * the current global learning rate.
    */
-  virtual float global_schedule(model *m) {
+  virtual float global_schedule(model* m)
+  {
     return get_current_global_learning_rate();
   }
 
@@ -85,22 +87,25 @@ protected:
    * learning rate for optimizer opt. The current global learning rate is *not*
    * updated automatically based on this method.
    */
-  virtual float optimizer_schedule(model *m, optimizer &opt);
+  virtual float optimizer_schedule(model* m, optimizer& opt);
 
-  const std::unordered_set<weights*>& get_weights() const noexcept {
+  const std::unordered_set<weights*>& get_weights() const noexcept
+  {
     return m_weights;
   }
 
-  static float get_current_global_learning_rate() noexcept {
+  static float get_current_global_learning_rate() noexcept
+  {
     return m_cur_global_lr;
   }
 
-  static void update_global_learning_rate(float rate) noexcept {
+  static void update_global_learning_rate(float rate) noexcept
+  {
     m_cur_global_lr = rate;
   }
 
- private:
-    /**
+private:
+  /**
    * This should be maintained by all learning rate schedule
    * implementations as the current global learning rate. This enables
    * coordination among different schedules, particularly ones that
@@ -118,23 +123,26 @@ protected:
 /**
  * Decrease the learning rate by a fixed proportion every X epochs.
  */
-class step_learning_rate : public learning_rate {
- public:
+class step_learning_rate : public learning_rate
+{
+public:
   /** Decrease the learning rate by amt every step epochs. */
   step_learning_rate(size_t step, float amt);
-  step_learning_rate(size_t step, float amt,
+  step_learning_rate(size_t step,
+                     float amt,
                      std::vector<std::string> weights_names);
-  step_learning_rate(
-    const step_learning_rate&) = default;
-  step_learning_rate& operator=(
-    const step_learning_rate&) = default;
-  step_learning_rate* copy() const override {
+  step_learning_rate(const step_learning_rate&) = default;
+  step_learning_rate& operator=(const step_learning_rate&) = default;
+  step_learning_rate* copy() const override
+  {
     return new step_learning_rate(*this);
   }
   std::string name() const override { return "step learning rate"; }
- protected:
-  float global_schedule(model *m) override;
- private:
+
+protected:
+  float global_schedule(model* m) override;
+
+private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
@@ -145,29 +153,32 @@ class step_learning_rate : public learning_rate {
 };
 
 // Builder function
-std::unique_ptr<callback_base>
-build_step_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+std::unique_ptr<callback_base> build_step_learning_rate_callback_from_pbuf(
+  const google::protobuf::Message&,
+  std::shared_ptr<lbann_summary> const&);
 
 /**
  * Set the learning rate to given value at given epoch.
  */
-class set_learning_rate : public learning_rate {
- public:
+class set_learning_rate : public learning_rate
+{
+public:
   set_learning_rate(size_t step, float val);
-  set_learning_rate(size_t step, float val,
-                     std::vector<std::string> weights_names);
-  set_learning_rate(
-    const set_learning_rate&) = default;
-  set_learning_rate& operator=(
-    const set_learning_rate&) = default;
-  set_learning_rate* copy() const override {
+  set_learning_rate(size_t step,
+                    float val,
+                    std::vector<std::string> weights_names);
+  set_learning_rate(const set_learning_rate&) = default;
+  set_learning_rate& operator=(const set_learning_rate&) = default;
+  set_learning_rate* copy() const override
+  {
     return new set_learning_rate(*this);
   }
   std::string name() const override { return "step learning rate"; }
- protected:
-  float global_schedule(model *m) override;
- private:
+
+protected:
+  float global_schedule(model* m) override;
+
+private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
   /** Number of epochs between each learning rate decrease. */
@@ -177,34 +188,37 @@ class set_learning_rate : public learning_rate {
 };
 
 // Builder function
-std::unique_ptr<callback_base>
-build_set_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+std::unique_ptr<callback_base> build_set_learning_rate_callback_from_pbuf(
+  const google::protobuf::Message&,
+  std::shared_ptr<lbann_summary> const&);
 
 /**
  * Decrease the learning rate by a fixed proportion when validation error stops
  * improving.
  */
-class adaptive_learning_rate : public learning_rate {
- public:
+class adaptive_learning_rate : public learning_rate
+{
+public:
   /**
    * Decrease the learning rate by amt if accuracy does not improve for patience
    * epochs.
    */
   adaptive_learning_rate(size_t patience, float amt);
-  adaptive_learning_rate(size_t patience, float amt,
-                                        std::vector<std::string> weights_names);
-  adaptive_learning_rate(
-    const adaptive_learning_rate&) = default;
-  adaptive_learning_rate& operator=(
-    const adaptive_learning_rate&) = default;
-  adaptive_learning_rate* copy() const override {
+  adaptive_learning_rate(size_t patience,
+                         float amt,
+                         std::vector<std::string> weights_names);
+  adaptive_learning_rate(const adaptive_learning_rate&) = default;
+  adaptive_learning_rate& operator=(const adaptive_learning_rate&) = default;
+  adaptive_learning_rate* copy() const override
+  {
     return new adaptive_learning_rate(*this);
   }
   std::string name() const override { return "adaptive learning rate"; }
- protected:
-  float global_schedule(model *m) override;
- private:
+
+protected:
+  float global_schedule(model* m) override;
+
+private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
@@ -223,35 +237,37 @@ class adaptive_learning_rate : public learning_rate {
 };
 
 // Builder function
-std::unique_ptr<callback_base>
-build_adaptive_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+std::unique_ptr<callback_base> build_adaptive_learning_rate_callback_from_pbuf(
+  const google::protobuf::Message&,
+  std::shared_ptr<lbann_summary> const&);
 
 /**
  * Decrease learning rate by a fixed amount at fixed times.
  */
-class drop_fixed_learning_rate : public learning_rate {
- public:
+class drop_fixed_learning_rate : public learning_rate
+{
+public:
   /**
    * Decrease the learning rate by amt when each epoch in drop_epochs is
    * reached.
    */
-  drop_fixed_learning_rate(
-    std::vector<size_t> drop_epochs, float amt);
-  drop_fixed_learning_rate(
-    std::vector<size_t> drop_epochs, float amt,
-    std::vector<std::string> weights_names);
-  drop_fixed_learning_rate(
-    const drop_fixed_learning_rate&) = default;
-  drop_fixed_learning_rate& operator=(
-    const drop_fixed_learning_rate&) = default;
-  drop_fixed_learning_rate* copy() const override {
+  drop_fixed_learning_rate(std::vector<size_t> drop_epochs, float amt);
+  drop_fixed_learning_rate(std::vector<size_t> drop_epochs,
+                           float amt,
+                           std::vector<std::string> weights_names);
+  drop_fixed_learning_rate(const drop_fixed_learning_rate&) = default;
+  drop_fixed_learning_rate&
+  operator=(const drop_fixed_learning_rate&) = default;
+  drop_fixed_learning_rate* copy() const override
+  {
     return new drop_fixed_learning_rate(*this);
   }
   std::string name() const override { return "drop fixed learning rate"; }
- protected:
-  float global_schedule(model *m) override;
- private:
+
+protected:
+  float global_schedule(model* m) override;
+
+private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
@@ -267,7 +283,8 @@ class drop_fixed_learning_rate : public learning_rate {
 // Builder function
 std::unique_ptr<callback_base>
 build_drop_fixed_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+  const google::protobuf::Message&,
+  std::shared_ptr<lbann_summary> const&);
 
 /**
  * Linearly increase the learning rate to reach a target value over a
@@ -276,29 +293,32 @@ build_drop_fixed_learning_rate_callback_from_pbuf(
  * learning rate.  This also *forces* its schedule and will stomp over
  * other changes.
  */
-class linear_growth_learning_rate : public learning_rate {
- public:
+class linear_growth_learning_rate : public learning_rate
+{
+public:
   /**
    * Linearly increase the learning rate to reach target after num_epochs.
    */
-  linear_growth_learning_rate(
-    float target, size_t num_epochs);
-  linear_growth_learning_rate(
-    float target, size_t num_epochs, size_t delay);
-  linear_growth_learning_rate(
-    float target, size_t num_epochs, size_t delay,
-    std::vector<std::string> weights_names);
-  linear_growth_learning_rate(
-    const linear_growth_learning_rate&) = default;
-  linear_growth_learning_rate& operator=(
-    const linear_growth_learning_rate&) = default;
-  linear_growth_learning_rate* copy() const override {
-    return new linear_growth_learning_rate(*this); }
-  void setup(model *m) override;
+  linear_growth_learning_rate(float target, size_t num_epochs);
+  linear_growth_learning_rate(float target, size_t num_epochs, size_t delay);
+  linear_growth_learning_rate(float target,
+                              size_t num_epochs,
+                              size_t delay,
+                              std::vector<std::string> weights_names);
+  linear_growth_learning_rate(const linear_growth_learning_rate&) = default;
+  linear_growth_learning_rate&
+  operator=(const linear_growth_learning_rate&) = default;
+  linear_growth_learning_rate* copy() const override
+  {
+    return new linear_growth_learning_rate(*this);
+  }
+  void setup(model* m) override;
   std::string name() const override { return "linear growth learning rate"; }
- protected:
-  float global_schedule(model *m) override;
- private:
+
+protected:
+  float global_schedule(model* m) override;
+
+private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
@@ -317,7 +337,8 @@ class linear_growth_learning_rate : public learning_rate {
 // Builder function
 std::unique_ptr<callback_base>
 build_linear_growth_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message&,std::shared_ptr<lbann_summary> const&);
+  const google::protobuf::Message&,
+  std::shared_ptr<lbann_summary> const&);
 
 /**
  * Decrease the learning rate by polynomial policy
@@ -325,24 +346,29 @@ build_linear_growth_learning_rate_callback_from_pbuf(
  * base_lr is the initial learning rate, i_cur is the current iteration,
  * i_max is the maximum iteration, and p is a parameter.
  */
-class poly_learning_rate : public learning_rate {
- public:
+class poly_learning_rate : public learning_rate
+{
+public:
   poly_learning_rate(double p, size_t n_epochs, size_t max_iter);
-  poly_learning_rate(double p, size_t n_epochs, size_t max_iter, double endl_r,
-    std::vector<std::string> weights_names);
-  poly_learning_rate(
-    const poly_learning_rate&) = default;
-  poly_learning_rate& operator=(
-    const poly_learning_rate&) = default;
-  poly_learning_rate* copy() const override {
+  poly_learning_rate(double p,
+                     size_t n_epochs,
+                     size_t max_iter,
+                     double endl_r,
+                     std::vector<std::string> weights_names);
+  poly_learning_rate(const poly_learning_rate&) = default;
+  poly_learning_rate& operator=(const poly_learning_rate&) = default;
+  poly_learning_rate* copy() const override
+  {
     return new poly_learning_rate(*this);
   }
-  void setup(model *m) override;
+  void setup(model* m) override;
   std::string name() const override { return "poly learning rate"; }
- protected:
-  float global_schedule(model *m) override;
-  float optimizer_schedule(model *m, optimizer &opt) override;
- private:
+
+protected:
+  float global_schedule(model* m) override;
+  float optimizer_schedule(model* m, optimizer& opt) override;
+
+private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
@@ -359,9 +385,9 @@ class poly_learning_rate : public learning_rate {
 };
 
 // Builder function
-std::unique_ptr<callback_base>
-build_poly_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+std::unique_ptr<callback_base> build_poly_learning_rate_callback_from_pbuf(
+  const google::protobuf::Message&,
+  std::shared_ptr<lbann_summary> const&);
 
 /**
  * This implements an adaptive scheme for adjust each optimizer's
@@ -370,21 +396,29 @@ build_poly_learning_rate_callback_from_pbuf(
  * See: You et al. "Scaling SGD Batch Size to 32K for ImageNet
  * Training", 2017.
  */
-class optimizerwise_adaptive_learning_rate : public learning_rate {
- public:
+class optimizerwise_adaptive_learning_rate : public learning_rate
+{
+public:
   optimizerwise_adaptive_learning_rate(float scale);
-  optimizerwise_adaptive_learning_rate(
-    float scale, std::vector<std::string> weights_names);
+  optimizerwise_adaptive_learning_rate(float scale,
+                                       std::vector<std::string> weights_names);
   optimizerwise_adaptive_learning_rate(
     const optimizerwise_adaptive_learning_rate&) = default;
-  optimizerwise_adaptive_learning_rate& operator=(
-    const optimizerwise_adaptive_learning_rate&) = default;
-  optimizerwise_adaptive_learning_rate* copy() const override {
-    return new optimizerwise_adaptive_learning_rate(*this); }
-  std::string name() const override { return "optimizerwise adaptive learning rate"; }
- protected:
-  float optimizer_schedule(model *m, optimizer &opt) override;
- private:
+  optimizerwise_adaptive_learning_rate&
+  operator=(const optimizerwise_adaptive_learning_rate&) = default;
+  optimizerwise_adaptive_learning_rate* copy() const override
+  {
+    return new optimizerwise_adaptive_learning_rate(*this);
+  }
+  std::string name() const override
+  {
+    return "optimizerwise adaptive learning rate";
+  }
+
+protected:
+  float optimizer_schedule(model* m, optimizer& opt) override;
+
+private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
@@ -394,9 +428,10 @@ class optimizerwise_adaptive_learning_rate : public learning_rate {
 // Builder function
 std::unique_ptr<callback_base>
 build_optimizerwise_adaptive_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message&,std::shared_ptr<lbann_summary> const&);
+  const google::protobuf::Message&,
+  std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_LEARNING_RATE_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_LEARNING_RATE_HPP_INCLUDED

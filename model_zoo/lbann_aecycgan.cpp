@@ -28,8 +28,8 @@
 
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
-#include "lbann/utils/protobuf_utils.hpp"
 #include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/protobuf_utils.hpp"
 
 #include "lbann/proto/lbann.pb.h"
 #include "lbann/proto/model.pb.h"
@@ -59,9 +59,10 @@ int guess_global_rank() noexcept
       return -1;
   }
 }
-}// namespace <anon>
+} // namespace
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
   auto& arg_parser = global_argument_parser();
   construct_all_options();
 
@@ -74,8 +75,7 @@ int main(int argc, char *argv[]) {
       // Cannot call `El::ReportException` because MPI hasn't been
       // initialized yet.
       std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
-                << e.what() << "\n\nProcess terminating."
-                << std::endl;
+                << e.what() << "\n\nProcess terminating." << std::endl;
     std::terminate();
   }
 
@@ -96,12 +96,12 @@ int main(int argc, char *argv[]) {
 
     auto pbs = protobuf_utils::load_prototext(master);
     // Optionally over-ride some values in the prototext for each model
-    for(size_t i = 0; i < pbs.size(); i++) {
+    for (size_t i = 0; i < pbs.size(); i++) {
       get_cmdline_overrides(*comm, *(pbs[i]));
     }
 
     lbann_data::LbannPB& pb = *(pbs[0]);
-    lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
+    lbann_data::Trainer* pb_trainer = pb.mutable_trainer();
 
     // Construct the trainer
     auto& trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]));
@@ -109,8 +109,9 @@ int main(int argc, char *argv[]) {
     thread_pool& io_thread_pool = trainer.get_io_thread_pool();
 
     int training_dr_linearized_data_size = -1;
-    auto *dr = trainer.get_data_coordinator().get_data_reader(execution_mode::training);
-    if(dr != nullptr) {
+    auto* dr =
+      trainer.get_data_coordinator().get_data_reader(execution_mode::training);
+    if (dr != nullptr) {
       training_dr_linearized_data_size = dr->get_linearized_data_size();
     }
 
@@ -123,10 +124,8 @@ int main(int argc, char *argv[]) {
                                  io_thread_pool,
                                  trainer.get_callbacks_with_ownership(),
                                  training_dr_linearized_data_size); // ae
-    std::unique_ptr<model>
-      model_2, //cycgan
-      model_3; //ae+cycgan
-
+    std::unique_ptr<model> model_2,                                 // cycgan
+      model_3;                                                      // ae+cycgan
 
     if (pbs.size() > 1) {
       model_2 =
@@ -152,33 +151,38 @@ int main(int argc, char *argv[]) {
                                    training_dr_linearized_data_size);
     }
 
-
     const lbann_data::Model pb_model_1 = pbs[0]->model();
     const lbann_data::Model pb_model_2 = pbs[1]->model();
     const lbann_data::Model pb_model_3 = pbs[2]->model();
 
-    if(master) std::cout << " Pre-train autoencoder " << std::endl;
+    if (master)
+      std::cout << " Pre-train autoencoder " << std::endl;
     trainer.train(model_1.get(), pb_model_1.num_epochs());
     trainer.evaluate(model_1.get(), execution_mode::testing);
     auto ae_weights = model_1->get_weights();
     model_2->copy_trained_weights_from(ae_weights);
     model_3->copy_trained_weights_from(ae_weights);
 
-    //Train cycle GAN
-    if (master)  std::cerr << "\nSTARTING train - cycle GAN \n\n";
+    // Train cycle GAN
+    if (master)
+      std::cerr << "\nSTARTING train - cycle GAN \n\n";
     trainer.train(model_2.get(), pb_model_2.num_epochs());
     trainer.evaluate(model_2.get(), execution_mode::testing);
     auto model2_weights = model_2->get_weights();
 
-    //Evaluate on pretrained autoencoder
-    if(master) std::cout << " Copy trained weights from cycle GAN" << std::endl;
+    // Evaluate on pretrained autoencoder
+    if (master)
+      std::cout << " Copy trained weights from cycle GAN" << std::endl;
     model_3->copy_trained_weights_from(model2_weights);
-    if(master) std::cout << " Save AE + cycleGAN" << std::endl;
+    if (master)
+      std::cout << " Save AE + cycleGAN" << std::endl;
     model_3->save_model();
-    if(master) std::cout << " Evaluate cycleGAN model on pretrained autoencoder" << std::endl;
+    if (master)
+      std::cout << " Evaluate cycleGAN model on pretrained autoencoder"
+                << std::endl;
     trainer.evaluate(model_3.get(), execution_mode::testing);
-
-  } catch (std::exception& e) {
+  }
+  catch (std::exception& e) {
     El::ReportException(e);
     // It's possible that a proper subset of ranks throw some
     // exception. But we want to tear down the whole world.

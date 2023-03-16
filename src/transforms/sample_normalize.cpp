@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,7 +31,9 @@
 namespace lbann {
 namespace transform {
 
-void sample_normalize::apply(utils::type_erased_matrix& data, std::vector<size_t>&) {
+void sample_normalize::apply(utils::type_erased_matrix& data,
+                             std::vector<size_t>&)
+{
   // Only work with DataTypes to avoid rounding/floating point issues.
   auto& mat = data.template get<DataType>();
   if (mat.Height() != mat.LDim()) {
@@ -47,9 +49,10 @@ void sample_normalize::apply(utils::type_erased_matrix& data, std::vector<size_t
 }
 
 std::unique_ptr<transform>
-build_sample_normalize_transform_from_pbuf(google::protobuf::Message const&) {
+build_sample_normalize_transform_from_pbuf(google::protobuf::Message const&)
+{
   return std::make_unique<sample_normalize>();
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

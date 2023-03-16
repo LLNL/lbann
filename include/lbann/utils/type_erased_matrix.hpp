@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,10 +32,8 @@
 
 #include <any>
 
-namespace lbann
-{
-namespace utils
-{
+namespace lbann {
+namespace utils {
 
 /** @class type_erased_matrix
  *  @brief A type-erased wrapper around an @c El::Matrix<T,Device::CPU>
@@ -47,7 +45,6 @@ namespace utils
 class type_erased_matrix
 {
 public:
-
   /** @brief Construct from a copy of a given matrix.
    *
    *  Deep-copy the input matrix into the held matrix.
@@ -94,8 +91,7 @@ public:
   El::Matrix<Field>& get()
   {
     return const_cast<El::Matrix<Field>&>(
-        static_cast<type_erased_matrix const&>(*this)
-        .template get<Field>());
+      static_cast<type_erased_matrix const&>(*this).template get<Field>());
   }
 
   /** @brief Access the underlying matrix.
@@ -134,7 +130,7 @@ public:
 private:
   /** @brief Type-erased matrix storage */
   std::any m_matrix;
-};// class type_erased_matrix
+}; // class type_erased_matrix
 
 /** @brief Create an empty type-erased matrix with given underlying
  *      data type.
@@ -145,12 +141,11 @@ private:
  *      Field.
  */
 template <typename Field>
-std::unique_ptr<type_erased_matrix>
-create_type_erased_matrix()
+std::unique_ptr<type_erased_matrix> create_type_erased_matrix()
 {
   return std::make_unique<type_erased_matrix>(El::Matrix<Field>{});
 }
 
-}// namespace utils
-}// namespace lbann
+} // namespace utils
+} // namespace lbann
 #endif // LBANN_UTILS_TYPE_ERASED_MATRIX_HPP_INCLUDED

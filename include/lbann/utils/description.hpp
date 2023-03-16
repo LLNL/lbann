@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,10 +27,10 @@
 #ifndef LBANN_UTILS_DESCRIPTION_HPP
 #define LBANN_UTILS_DESCRIPTION_HPP
 
-#include <string>
-#include <vector>
 #include <ostream>
 #include <sstream>
+#include <string>
+#include <vector>
 
 namespace lbann {
 
@@ -46,9 +46,9 @@ Title
   Miscellaneous statement
 @endverbatim
  */
-class description {
+class description
+{
 public:
-
   /** @param title  First line in description message.
    */
   description(std::string title = "");
@@ -57,8 +57,7 @@ public:
   void set_title(std::string title);
 
   /** Print description to stream. */
-  friend std::ostream& operator<<(std::ostream& os,
-                                  const description& desc);
+  friend std::ostream& operator<<(std::ostream& os, const description& desc);
 
   /** Add new line. */
   void add(std::string line);
@@ -70,7 +69,8 @@ public:
    *  @verbatim <field>: <value> @endverbatim
    */
   template <typename T>
-  void add(std::string field, T value) {
+  void add(std::string field, T value)
+  {
     std::stringstream ss;
     ss.setf(std::ios_base::boolalpha);
     ss << field << ": " << value;
@@ -93,7 +93,6 @@ Outer description
   void add(const description& desc);
 
 private:
-
   /** First line of message.
    *
    *  When printed, this line isn't indented.
@@ -105,7 +104,6 @@ private:
    *  When printed, each line is indented.
    */
   std::vector<std::string> m_lines;
-
 };
 
 } // namespace lbann

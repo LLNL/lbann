@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -50,17 +50,20 @@ namespace lbann {
  *  (ELUs)." arXiv preprint arXiv:1511.07289 (2015).
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class elu_layer : public data_type_layer<TensorDataType> {
+class elu_layer : public data_type_layer<TensorDataType>
+{
 public:
   elu_layer() : elu_layer(nullptr, El::To<TensorDataType>(1)) {}
-  elu_layer(lbann_comm *comm, TensorDataType alpha = El::To<TensorDataType>(1))
-    : data_type_layer<TensorDataType>(comm), m_alpha(alpha) {}
+  elu_layer(lbann_comm* comm, TensorDataType alpha = El::To<TensorDataType>(1))
+    : data_type_layer<TensorDataType>(comm), m_alpha(alpha)
+  {}
   elu_layer* copy() const override { return new elu_layer(*this); }
   std::string get_type() const override { return "ELU"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  description get_description() const override {
+  description get_description() const override
+  {
     auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("alpha", m_alpha);
     return desc;
@@ -75,11 +78,11 @@ public:
   ///@}
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
@@ -89,19 +92,19 @@ protected:
 private:
   /** Scale parameter for negative region. */
   TensorDataType m_alpha;
-
 };
 
 template <typename T, data_layout L, El::Device D>
-void elu_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void elu_layer<T, L, D>::write_specific_proto(lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_elu();
   msg->set_alpha(m_alpha);
 }
 
 #ifndef LBANN_ELU_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class elu_layer<T, data_layout::DATA_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class elu_layer<T, data_layout::DATA_PARALLEL, Device>;      \
   extern template class elu_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"

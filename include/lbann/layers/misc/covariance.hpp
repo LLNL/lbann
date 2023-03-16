@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -47,7 +47,8 @@ namespace lbann {
  *  estimator.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class covariance_layer : public data_type_layer<TensorDataType> {
+class covariance_layer : public data_type_layer<TensorDataType>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -58,27 +59,30 @@ public:
   ///@}
 
 public:
-
-  covariance_layer(lbann_comm *comm, bool biased)
-    : data_type_layer<TensorDataType>(comm), m_biased(biased) {
+  covariance_layer(lbann_comm* comm, bool biased)
+    : data_type_layer<TensorDataType>(comm), m_biased(biased)
+  {
     this->m_expected_num_parent_layers = 2;
   }
   covariance_layer(const covariance_layer& other)
     : data_type_layer<TensorDataType>(other),
       m_biased(other.m_biased),
       m_means(other.m_means ? other.m_means->Copy() : nullptr),
-      m_workspace(other.m_workspace ?
-                  other.m_workspace->Copy() : nullptr) {}
-  covariance_layer& operator=(const covariance_layer& other) {
+      m_workspace(other.m_workspace ? other.m_workspace->Copy() : nullptr)
+  {}
+  covariance_layer& operator=(const covariance_layer& other)
+  {
     data_type_layer<TensorDataType>::operator=(other);
     m_biased = other.m_biased;
     m_means.reset(other.m_means ? other.m_means->Copy() : nullptr);
-    m_workspace.reset(other.m_workspace ?
-                      other.m_workspace->Copy() : nullptr);
+    m_workspace.reset(other.m_workspace ? other.m_workspace->Copy() : nullptr);
     return *this;
   }
 
-  covariance_layer* copy() const override { return new covariance_layer(*this); }
+  covariance_layer* copy() const override
+  {
+    return new covariance_layer(*this);
+  }
 
   /** @name Serialization */
   ///@{
@@ -92,21 +96,19 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  description get_description() const override {
+  description get_description() const override
+  {
     auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Biased", m_biased);
     return desc;
   }
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  covariance_layer()
-    : covariance_layer(nullptr, false)
-  {}
+  covariance_layer() : covariance_layer(nullptr, false) {}
 
   void setup_data(size_t max_mini_batch_size) override;
 
@@ -116,7 +118,6 @@ protected:
   void bp_compute() override;
 
 private:
-
   /** Whether to use biased covariance estimator. */
   bool m_biased;
 
@@ -127,15 +128,19 @@ private:
 };
 
 template <typename T, data_layout L, El::Device D>
-void covariance_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void covariance_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_covariance();
   msg->set_biased(m_biased);
 }
 
 #ifndef LBANN_COVARIANCE_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class covariance_layer<T, data_layout::DATA_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class covariance_layer<T,                                    \
+                                         data_layout::DATA_PARALLEL,           \
+                                         Device>;                              \
   extern template class covariance_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"

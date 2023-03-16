@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,33 +31,30 @@
 #include "lbann/utils/gpu/helpers.hpp"
 #include "utils.hpp"
 
-namespace lbann
-{
+namespace lbann {
 
 #if defined LBANN_HAS_CUDNN
-namespace dnn_lib
-{
+namespace dnn_lib {
 
 using namespace cudnn;
 
 template <typename TensorDataType, typename ScalarParameterType>
-void softmax_forward(
-  ScalarParameterType const& alpha_in,
-  TensorDescriptor const& xDesc,
-  El::Matrix<TensorDataType, El::Device::GPU> const& x,
-  ScalarParameterType const& beta_in,
-  TensorDescriptor const& yDesc,
-  El::Matrix<TensorDataType, El::Device::GPU>& y,
-  softmax_mode mode,
-  softmax_alg alg = softmax_alg::ACCURATE)
+void softmax_forward(ScalarParameterType const& alpha_in,
+                     TensorDescriptor const& xDesc,
+                     El::Matrix<TensorDataType, El::Device::GPU> const& x,
+                     ScalarParameterType const& beta_in,
+                     TensorDescriptor const& yDesc,
+                     El::Matrix<TensorDataType, El::Device::GPU>& y,
+                     softmax_mode mode,
+                     softmax_alg alg = softmax_alg::ACCURATE)
 {
   // Short-circuit if we can
   if (x.IsEmpty())
     return;
 
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
-                                     gpu::get_sync_info(x));
+  auto multisync =
+    El::MakeMultiSync(gpu::get_sync_info(y), gpu::get_sync_info(x));
   auto handle_manager = internal::make_default_handle_manager(multisync);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
@@ -73,17 +70,16 @@ void softmax_forward(
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void softmax_backward(
-  ScalarParameterType const& alpha_in,
-  TensorDescriptor const& yDesc,
-  El::Matrix<TensorDataType, El::Device::GPU> const& y,
-  TensorDescriptor const& dyDesc,
-  El::Matrix<TensorDataType, El::Device::GPU> const& dy,
-  ScalarParameterType const& beta_in,
-  TensorDescriptor const& dxDesc,
-  El::Matrix<TensorDataType, El::Device::GPU>& dx,
-  softmax_mode mode,
-  softmax_alg alg = softmax_alg::ACCURATE)
+void softmax_backward(ScalarParameterType const& alpha_in,
+                      TensorDescriptor const& yDesc,
+                      El::Matrix<TensorDataType, El::Device::GPU> const& y,
+                      TensorDescriptor const& dyDesc,
+                      El::Matrix<TensorDataType, El::Device::GPU> const& dy,
+                      ScalarParameterType const& beta_in,
+                      TensorDescriptor const& dxDesc,
+                      El::Matrix<TensorDataType, El::Device::GPU>& dx,
+                      softmax_mode mode,
+                      softmax_alg alg = softmax_alg::ACCURATE)
 {
   // Short-circuit if we can
   if (y.IsEmpty())
@@ -109,7 +105,7 @@ void softmax_backward(
                                    dx.Buffer()));
 }
 
-}// namespace dnn_lib
+} // namespace dnn_lib
 #endif // LBANN_HAS_CUDNN
-}// namespace lbann
+} // namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_CUDNN_SOFTMAX_HPP_

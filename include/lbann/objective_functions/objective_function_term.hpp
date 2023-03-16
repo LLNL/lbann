@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -43,25 +43,26 @@ class model;
 class weights;
 using ViewingWeightsPtr = std::weak_ptr<weights>;
 
-
 /** Abstract class for objective function terms. */
-class objective_function_term {
- public:
-
+class objective_function_term
+{
+public:
   /** Default constructor. */
   objective_function_term(EvalType scale_factor = EvalType(1));
 
   /** Copy constructor. */
   objective_function_term(const objective_function_term& other) = default;
   /** Copy assignment operator. */
-  objective_function_term& operator=(const objective_function_term& other) = default;
+  objective_function_term&
+  operator=(const objective_function_term& other) = default;
   /** Destructor. */
   virtual ~objective_function_term() = default;
   /** Copy function. */
   virtual objective_function_term* copy() const = 0;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar );
+  template <class Archive>
+  void serialize(Archive& ar);
 
   /** Get the name of the objective function term. */
   virtual std::string name() const = 0;
@@ -99,10 +100,10 @@ class objective_function_term {
   void set_weights_pointers(std::vector<ViewingWeightsPtr> w);
 
   /** Add Objective function data to prototext */
-  virtual void write_specific_proto(lbann_data::ObjectiveFunction& proto) const = 0;
+  virtual void
+  write_specific_proto(lbann_data::ObjectiveFunction& proto) const = 0;
 
- protected:
-
+protected:
   /** Scaling factor for objective function term. */
   EvalType m_scale_factor;
 
@@ -114,11 +115,9 @@ class objective_function_term {
   /** Get LBANN communicator. */
   lbann_comm& get_comm() { return *m_comm; }
 
- private:
-
+private:
   /** LBANN communicator. */
   lbann_comm* m_comm;
-
 };
 
 } // namespace lbann

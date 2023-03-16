@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -45,120 +45,157 @@ namespace {
 
 /** Logical not operator. */
 template <typename DataT>
-struct LogicalNotOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct LogicalNotOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     auto const& b = x != DataT(0.0) && !gpu_lib::isnan(x);
     return !b ? DataT(1.0) : DataT(0.0);
   }
-  inline __device__ DataT operator()(DataT const& /*x*/, DataT const& /*dy*/) const {
+  inline __device__ DataT operator()(DataT const& /*x*/,
+                                     DataT const& /*dy*/) const
+  {
     return DataT(0.0);
   }
 };
 
 /** Negative operator. */
 template <typename DataT>
-struct NegativeOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
-    return -x;
-  }
-  inline __device__ DataT operator()(DataT const& /*x*/, DataT const& dy) const {
+struct NegativeOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const { return -x; }
+  inline __device__ DataT operator()(DataT const& /*x*/, DataT const& dy) const
+  {
     return -dy;
   }
 };
 
 /** Sign operator. */
 template <typename DataT>
-struct SignOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct SignOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     DataT const zero = 0.;
     DataT const one = 1.;
-    if      (x > zero) { return one;  }
-    else if (x < zero) { return -one; }
-    else               { return zero; }
+    if (x > zero) {
+      return one;
+    }
+    else if (x < zero) {
+      return -one;
+    }
+    else {
+      return zero;
+    }
   }
-  inline __device__ DataT operator()(DataT const& /*x*/, DataT const& /*dy*/) const {
+  inline __device__ DataT operator()(DataT const& /*x*/,
+                                     DataT const& /*dy*/) const
+  {
     return DataT(0.0);
   }
 };
 
 /** Round operator. */
 template <typename DataT>
-struct RoundOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct RoundOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::round(x);
   }
-  inline __device__ DataT operator()(DataT const& /*x*/, DataT const& /*dy*/) const {
+  inline __device__ DataT operator()(DataT const& /*x*/,
+                                     DataT const& /*dy*/) const
+  {
     return DataT(0.0);
   }
 };
 
 /** Ceiling operator. */
 template <typename DataT>
-struct CeilOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct CeilOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::ceil(x);
   }
-  inline __device__ DataT operator()(DataT const& /*x*/, DataT const& /*dy*/) const {
+  inline __device__ DataT operator()(DataT const& /*x*/,
+                                     DataT const& /*dy*/) const
+  {
     return DataT(0.0);
   }
 };
 
 /** Floor operator. */
 template <typename DataT>
-struct FloorOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct FloorOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::floor(x);
   }
-  inline __device__ DataT operator()(DataT const& /*x*/, DataT const& /*dy*/) const {
+  inline __device__ DataT operator()(DataT const& /*x*/,
+                                     DataT const& /*dy*/) const
+  {
     return DataT(0.0);
   }
 };
 
 /** Reciprocal operator. */
 template <typename DataT>
-struct ReciprocalOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct ReciprocalOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return DataT(1.) / x;
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
-    if (dy == DataT(0.0)) { return DataT(0.0); }
-    else                   { return - dy / (x*x); }
-
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
+    if (dy == DataT(0.0)) {
+      return DataT(0.0);
+    }
+    else {
+      return -dy / (x * x);
+    }
   }
 };
 
 /** Square operator. */
 template <typename DataT>
-struct SquareOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
-    return x*x;
-  }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+struct SquareOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const { return x * x; }
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
     return DataT(2.) * x * dy;
   }
 };
 
-
 /** Square root operator. */
 template <typename DataT>
-struct SqrtOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct SqrtOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::sqrt(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
     return dy / (DataT(2.) * gpu_lib::sqrt(x));
   }
 };
 
 /** Reciprocal square root operator. */
 template <typename DataT>
-struct RsqrtOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct RsqrtOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::rsqrt(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
     auto const& s = gpu_lib::sqrt(x);
-    return - dy / (DataT(2.) * x * s);
+    return -dy / (DataT(2.) * x * s);
   }
 };
 
@@ -167,219 +204,285 @@ struct RsqrtOpImpl {
  *  output instead.
  */
 template <typename DataT>
-struct SafeReciprocalOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct SafeReciprocalOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     auto const& y = DataT(1.) / x;
-    if (gpu_lib::isfinite(y)) { return y; }
-    else             { return DataT(0.0); }
+    if (gpu_lib::isfinite(y)) {
+      return y;
+    }
+    else {
+      return DataT(0.0);
+    }
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
     auto const& y = DataT(1.) / x;
-    if (gpu_lib::isfinite(y)) { return - dy * y*y; }
-    else             { return DataT(0.0); }
+    if (gpu_lib::isfinite(y)) {
+      return -dy * y * y;
+    }
+    else {
+      return DataT(0.0);
+    }
   }
 };
 
 /** Exponential operator. */
 template <typename DataT>
-struct ExpOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct ExpOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::exp(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
     return dy * gpu_lib::exp(x);
   }
 };
 
 /** Exponential minus one operator. */
 template <typename DataT>
-struct Expm1OpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct Expm1OpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::expm1(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
     return dy * gpu_lib::exp(x);
   }
 };
 
 /** Natural logarithm operator. */
 template <typename DataT>
-struct LogOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct LogOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::log(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
     return dy / x;
   }
 };
 
 /** Natural logarithm one plus operator. */
 template <typename DataT>
-struct Log1pOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct Log1pOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::log1p(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
     return dy / (x + DataT(1.0));
   }
 };
 
 /** Cosine operator. */
 template <typename DataT>
-struct CosOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct CosOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::cos(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
     return -dy * gpu_lib::sin(x);
   }
 };
 
 /** Sine operator. */
 template <typename DataT>
-struct SinOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct SinOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::sin(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
     return dy * gpu_lib::cos(x);
   }
 };
 
 /** Tangent operator. */
 template <typename DataT>
-struct TanOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct TanOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::tan(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
     auto const& c = gpu_lib::cos(x);
-    return dy / (c*c);
+    return dy / (c * c);
   }
 };
 
 /** Arccosine operator. */
 template <typename DataT>
-struct AcosOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct AcosOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::acos(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
-    return -dy / gpu_lib::sqrt(DataT(1.0) - x*x);
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
+    return -dy / gpu_lib::sqrt(DataT(1.0) - x * x);
   }
 };
 
 /** Arcsine operator. */
 template <typename DataT>
-struct AsinOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct AsinOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::asin(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
-    return dy / gpu_lib::sqrt(DataT(1.0) - x*x);
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
+    return dy / gpu_lib::sqrt(DataT(1.0) - x * x);
   }
 };
 
 /** Arctangent operator. */
 template <typename DataT>
-struct AtanOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct AtanOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::atan(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
-    return dy / (DataT(1.0) + x*x);
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
+    return dy / (DataT(1.0) + x * x);
   }
 };
 
 /** Hyperbolic cosine operator. */
 template <typename DataT>
-struct CoshOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct CoshOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::cosh(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
     return dy * gpu_lib::sinh(x);
   }
 };
 
 /** Hyperbolic sine operator. */
 template <typename DataT>
-struct SinhOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct SinhOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::sinh(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
     return dy * gpu_lib::cosh(x);
   }
 };
 
 /** Hyperbolic tangent operator. */
 template <typename DataT>
-struct TanhOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct TanhOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::tanh(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
     auto const& c = gpu_lib::cosh(x);
-    return dy / (c*c);
+    return dy / (c * c);
   }
 };
 
 /** Hyperbolic arccosine operator. */
 template <typename DataT>
-struct AcoshOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct AcoshOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::acosh(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
-    return -dy / (gpu_lib::sqrt(x - DataT(1.0)) * gpu_lib::sqrt(x + DataT(1.0)));
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
+    return -dy /
+           (gpu_lib::sqrt(x - DataT(1.0)) * gpu_lib::sqrt(x + DataT(1.0)));
   }
 };
 
 /** Hyperbolic arcsine operator. */
 template <typename DataT>
-struct AsinhOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct AsinhOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::asinh(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
-    return dy / gpu_lib::sqrt(DataT(1.0) + x*x);
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
+    return dy / gpu_lib::sqrt(DataT(1.0) + x * x);
   }
 };
 
 /** Hyperbolic arctangent operator. */
 template <typename DataT>
-struct AtanhOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct AtanhOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::atanh(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
-    return dy / (DataT(1.0) - x*x);
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
+    return dy / (DataT(1.0) - x * x);
   }
 };
 
 /** Error function operator. */
 template <typename DataT>
-struct ErfOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct ErfOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::erf(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
     DataT const two_rsqrt_pi(1.12837916709551257389);
-    return dy * two_rsqrt_pi * gpu_lib::exp(-x*x);
+    return dy * two_rsqrt_pi * gpu_lib::exp(-x * x);
   }
 };
 
 /** Inverse error function operator. */
 template <typename DataT>
-struct ErfInvOpImpl {
-  inline __device__ DataT operator()(DataT const& x) const {
+struct ErfInvOpImpl
+{
+  inline __device__ DataT operator()(DataT const& x) const
+  {
     return gpu_lib::erfinv(x);
   }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const {
+  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
+  {
     DataT const half_sqrt_pi(0.88622692545275801364);
     auto const& y = gpu_lib::erfinv(x);
-    return dy * half_sqrt_pi * gpu_lib::exp(y*y);
+    return dy * half_sqrt_pi * gpu_lib::exp(y * y);
   }
 };
 
@@ -396,9 +499,7 @@ struct ErfInvOpImpl {
     LBANN_ASSERT_DEBUG(outputs.size() == 1);                                   \
     auto const& input = inputs.front().data();                                 \
     auto& output = outputs.front().data();                                     \
-    El::EntrywiseMap(input,                                                    \
-                     output,                                                   \
-                     OP_NAME##OpImpl<DataT>{});                                \
+    El::EntrywiseMap(input, output, OP_NAME##OpImpl<DataT>{});                 \
   }                                                                            \
   template <typename DataT, El::Device Device>                                 \
   void OP_NAME##Operator<DataT, Device>::bp_compute_local(                     \
@@ -448,37 +549,36 @@ DEFINE_COMPUTE_OPS(Square)
 DEFINE_COMPUTE_OPS(Tan)
 DEFINE_COMPUTE_OPS(Tanh)
 
-#define PROTO(T)                                                \
-  template class AcosOperator<T, El::Device::GPU>;              \
-  template class AcoshOperator<T, El::Device::GPU>;             \
-  template class AsinOperator<T, El::Device::GPU>;              \
-  template class AsinhOperator<T, El::Device::GPU>;             \
-  template class AtanOperator<T, El::Device::GPU>;              \
-  template class AtanhOperator<T, El::Device::GPU>;             \
-  template class CeilOperator<T, El::Device::GPU>;              \
-  template class CosOperator<T, El::Device::GPU>;               \
-  template class CoshOperator<T, El::Device::GPU>;              \
-  template class ErfInvOperator<T, El::Device::GPU>;            \
-  template class ErfOperator<T, El::Device::GPU>;               \
-  template class ExpOperator<T, El::Device::GPU>;               \
-  template class Expm1Operator<T, El::Device::GPU>;             \
-  template class FloorOperator<T, El::Device::GPU>;             \
-  template class Log1pOperator<T, El::Device::GPU>;             \
-  template class LogOperator<T, El::Device::GPU>;               \
-  template class LogicalNotOperator<T, El::Device::GPU>;        \
-  template class NegativeOperator<T, El::Device::GPU>;          \
-  template class ReciprocalOperator<T, El::Device::GPU>;        \
-  template class RoundOperator<T, El::Device::GPU>;             \
-  template class RsqrtOperator<T, El::Device::GPU>;             \
-  template class SafeReciprocalOperator<T, El::Device::GPU>;    \
-  template class SignOperator<T, El::Device::GPU>;              \
-  template class SinOperator<T, El::Device::GPU>;               \
-  template class SinhOperator<T, El::Device::GPU>;              \
-  template class SqrtOperator<T, El::Device::GPU>;              \
-  template class SquareOperator<T, El::Device::GPU>;            \
-  template class TanOperator<T, El::Device::GPU>;               \
+#define PROTO(T)                                                               \
+  template class AcosOperator<T, El::Device::GPU>;                             \
+  template class AcoshOperator<T, El::Device::GPU>;                            \
+  template class AsinOperator<T, El::Device::GPU>;                             \
+  template class AsinhOperator<T, El::Device::GPU>;                            \
+  template class AtanOperator<T, El::Device::GPU>;                             \
+  template class AtanhOperator<T, El::Device::GPU>;                            \
+  template class CeilOperator<T, El::Device::GPU>;                             \
+  template class CosOperator<T, El::Device::GPU>;                              \
+  template class CoshOperator<T, El::Device::GPU>;                             \
+  template class ErfInvOperator<T, El::Device::GPU>;                           \
+  template class ErfOperator<T, El::Device::GPU>;                              \
+  template class ExpOperator<T, El::Device::GPU>;                              \
+  template class Expm1Operator<T, El::Device::GPU>;                            \
+  template class FloorOperator<T, El::Device::GPU>;                            \
+  template class Log1pOperator<T, El::Device::GPU>;                            \
+  template class LogOperator<T, El::Device::GPU>;                              \
+  template class LogicalNotOperator<T, El::Device::GPU>;                       \
+  template class NegativeOperator<T, El::Device::GPU>;                         \
+  template class ReciprocalOperator<T, El::Device::GPU>;                       \
+  template class RoundOperator<T, El::Device::GPU>;                            \
+  template class RsqrtOperator<T, El::Device::GPU>;                            \
+  template class SafeReciprocalOperator<T, El::Device::GPU>;                   \
+  template class SignOperator<T, El::Device::GPU>;                             \
+  template class SinOperator<T, El::Device::GPU>;                              \
+  template class SinhOperator<T, El::Device::GPU>;                             \
+  template class SqrtOperator<T, El::Device::GPU>;                             \
+  template class SquareOperator<T, El::Device::GPU>;                           \
+  template class TanOperator<T, El::Device::GPU>;                              \
   template class TanhOperator<T, El::Device::GPU>
-
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"

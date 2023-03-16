@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -36,7 +36,8 @@ namespace lbann {
 namespace transform {
 
 void normalize_to_lbann_layout::apply(utils::type_erased_matrix& data,
-                                      std::vector<size_t>& dims) {
+                                      std::vector<size_t>& dims)
+{
   auto dst = CPUMat(get_linear_size(dims), 1);
   apply(data, dst, dims);
   data.emplace<DataType>(std::move(dst));
@@ -44,7 +45,8 @@ void normalize_to_lbann_layout::apply(utils::type_erased_matrix& data,
 
 void normalize_to_lbann_layout::apply(utils::type_erased_matrix& data,
                                       CPUMat& out,
-                                      std::vector<size_t>& dims) {
+                                      std::vector<size_t>& dims)
+{
   cv::Mat src = utils::get_opencv_mat(data, dims);
   if (!src.isContinuous()) {
     // This should not occur, but just in case.
@@ -53,11 +55,14 @@ void normalize_to_lbann_layout::apply(utils::type_erased_matrix& data,
   // Ensure we have the right number of channels.
   if (dims.size() == 3 && m_means.size() != dims[0]) {
     LBANN_ERROR("Normalize channels does not match data");
-  } else if (dims.size() != 3 && m_means.size() != 1) {
-    LBANN_ERROR("Transform data has no channels, cannot normalize with multiple channels");
+  }
+  else if (dims.size() != 3 && m_means.size() != 1) {
+    LBANN_ERROR("Transform data has no channels, cannot normalize with "
+                "multiple channels");
   }
   if (!out.Contiguous()) {
-    LBANN_ERROR("NormalizeToLBANNLayout does not support non-contiguous destination.");
+    LBANN_ERROR(
+      "NormalizeToLBANNLayout does not support non-contiguous destination.");
   }
   const uint8_t* __restrict__ src_buf = src.ptr();
   const size_t out_size = get_linear_size(dims);
@@ -72,32 +77,33 @@ void normalize_to_lbann_layout::apply(utils::type_erased_matrix& data,
     const DataType std = m_stds[0];
     for (size_t row = 0; row < dims[1]; ++row) {
       for (size_t col = 0; col < dims[2]; ++col) {
-        dst_buf[row + col*dims[1]] =
-          (src_buf[row*dims[2] + col] * scale - mean) / std;
+        dst_buf[row + col * dims[1]] =
+          (src_buf[row * dims[2] + col] * scale - mean) / std;
       }
     }
-  } else {
+  }
+  else {
     // RGB/three-channel.
     const size_t size = dims[1] * dims[2];
     for (size_t row = 0; row < dims[1]; ++row) {
       for (size_t col = 0; col < dims[2]; ++col) {
         // Multiply by 3 because there are three channels.
-        const size_t src_base = 3*(row*dims[2] + col);
-        const size_t dst_base = row + col*dims[1];
+        const size_t src_base = 3 * (row * dims[2] + col);
+        const size_t dst_base = row + col * dims[1];
         dst_buf[dst_base] =
           (src_buf[src_base] * scale - m_means[0]) / m_stds[0];
         dst_buf[dst_base + size] =
           (src_buf[src_base + 1] * scale - m_means[1]) / m_stds[1];
-        dst_buf[dst_base + 2*size] =
+        dst_buf[dst_base + 2 * size] =
           (src_buf[src_base + 2] * scale - m_means[2]) / m_stds[2];
       }
     }
   }
 }
 
-std::unique_ptr<transform>
-build_normalize_to_lbann_layout_transform_from_pbuf(
-  google::protobuf::Message const& msg) {
+std::unique_ptr<transform> build_normalize_to_lbann_layout_transform_from_pbuf(
+  google::protobuf::Message const& msg)
+{
   auto const& params =
     dynamic_cast<lbann_data::Transform::NormalizeToLBANNLayout const&>(msg);
   return std::make_unique<normalize_to_lbann_layout>(
@@ -105,5 +111,5 @@ build_normalize_to_lbann_layout_transform_from_pbuf(
     parse_list<float>(params.stddevs()));
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

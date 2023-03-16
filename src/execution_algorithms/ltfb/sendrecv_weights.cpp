@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,13 +27,13 @@
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/metrics/metric.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/optimizers/adam.hpp"
 #include "lbann/optimizers/sgd.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/weights/data_type_weights_impl.hpp"
-#include "lbann/metrics/metric.hpp"
-#include "lbann/objective_functions/objective_function.hpp"
 
 #include "checkpoint_common.hpp"
 
@@ -67,8 +67,8 @@ SendRecvWeights::SendRecvWeights(std::set<std::string> const& weights_names,
 
 SendRecvWeights::SendRecvWeights(std::set<std::string>&& weights_names,
                                  bool exchange_hyperparameters)
-  : BaseType(std::move(weights_names)), exchange_hyperparams_{
-                                          exchange_hyperparameters}
+  : BaseType(std::move(weights_names)),
+    exchange_hyperparams_{exchange_hyperparameters}
 {}
 
 std::unique_ptr<model>
@@ -111,7 +111,6 @@ SendRecvWeights::get_partner_model(model const& m,
                  comm.get_world_comm(),
                  partner_rank_in_world,
                  partner_rank_in_world);
-
 
     // If the two weights objects use different optimizers across
     // the set of trainers, we need to be careful about how we

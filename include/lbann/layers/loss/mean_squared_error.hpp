@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,8 +32,8 @@
 #include "lbann/proto/layers.pb.h"
 
 #ifdef LBANN_HAS_DISTCONV
-#include "lbann/utils/distconv.hpp"
 #include "distconv/dnn_backend/mean_squared_error.hpp"
+#include "lbann/utils/distconv.hpp"
 #endif
 
 namespace lbann {
@@ -45,13 +45,17 @@ using MeanSquaredError = ::distconv::MeanSquaredError<Backend>;
 } // namespace dc
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class mean_squared_error_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
- public:
-  using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+class mean_squared_error_distconv_adapter
+  : public data_type_distconv_adapter<TensorDataType>
+{
+public:
+  using TensorDevType =
+    typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
   mean_squared_error_distconv_adapter(Layer& layer)
-      : data_type_distconv_adapter<TensorDataType>(layer) {}
+    : data_type_distconv_adapter<TensorDataType>(layer)
+  {}
   virtual ~mean_squared_error_distconv_adapter() = default;
-  void setup_distributions(tensor_overlap_constraints &constraints) override;
+  void setup_distributions(tensor_overlap_constraints& constraints) override;
   dc::Shape get_prev_activations_shape(int index) const override;
   dc::Shape get_activations_shape(int index) const override;
   dc::Shape get_activations_local_shape(int index) const override;
@@ -69,7 +73,8 @@ class mean_squared_error_distconv_adapter: public data_type_distconv_adapter<Ten
  *  @f]
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class mean_squared_error_layer : public data_type_layer<TensorDataType> {
+class mean_squared_error_layer : public data_type_layer<TensorDataType>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -80,27 +85,29 @@ public:
   ///@}
 
 public:
-
-  mean_squared_error_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {
+  mean_squared_error_layer(lbann_comm* comm)
+    : data_type_layer<TensorDataType>(comm)
+  {
     this->m_expected_num_parent_layers = 2;
   }
 
   mean_squared_error_layer(const mean_squared_error_layer& other)
-    : data_type_layer<TensorDataType>(other) {
-    m_workspace.reset(other.m_workspace ?
-                      other.m_workspace->Copy() :
-                      nullptr);
+    : data_type_layer<TensorDataType>(other)
+  {
+    m_workspace.reset(other.m_workspace ? other.m_workspace->Copy() : nullptr);
   }
 
-  mean_squared_error_layer& operator=(const mean_squared_error_layer& other) {
+  mean_squared_error_layer& operator=(const mean_squared_error_layer& other)
+  {
     data_type_layer<TensorDataType>::operator=(other);
-    m_workspace.reset(other.m_workspace ?
-                      other.m_workspace->Copy() :
-                      nullptr);
+    m_workspace.reset(other.m_workspace ? other.m_workspace->Copy() : nullptr);
     return *this;
   }
 
-  mean_squared_error_layer* copy() const override { return new mean_squared_error_layer(*this); }
+  mean_squared_error_layer* copy() const override
+  {
+    return new mean_squared_error_layer(*this);
+  }
 
   /** @name Serialization */
   ///@{
@@ -127,17 +134,13 @@ public:
   void bp_compute() override;
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  mean_squared_error_layer()
-    : mean_squared_error_layer(nullptr)
-  {}
+  mean_squared_error_layer() : mean_squared_error_layer(nullptr) {}
 
 private:
-
   /** Compute local contributions to mean squared error loss. */
   void local_fp_compute();
   /** Compute local gradients. */
@@ -147,45 +150,59 @@ private:
   std::unique_ptr<AbsDistMatrixType> m_workspace;
 
 #ifdef LBANN_HAS_DISTCONV
-  friend class mean_squared_error_distconv_adapter<TensorDataType, T_layout, Dev>;
- protected:
-  bool is_distconv_supported() const override {
+  friend class mean_squared_error_distconv_adapter<TensorDataType,
+                                                   T_layout,
+                                                   Dev>;
+
+protected:
+  bool is_distconv_supported() const override
+  {
     return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
   }
 
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override
+  {
     this->get_distconv_adapter_ptr() = std::make_unique<
-      mean_squared_error_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
+      mean_squared_error_distconv_adapter<TensorDataType, T_layout, Dev>>(
+      *this);
   }
 
-  mean_squared_error_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() override;
-  const mean_squared_error_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() const override;
+  mean_squared_error_distconv_adapter<TensorDataType, T_layout, Dev>&
+  get_distconv_adapter() override;
+  const mean_squared_error_distconv_adapter<TensorDataType, T_layout, Dev>&
+  get_distconv_adapter() const override;
 
-  void fp_compute_distconv() {
+  void fp_compute_distconv()
+  {
     assert_always(this->distconv_enabled());
-    get_distconv_adapter().m_mean_squared_error->forward(this->get_distconv_adapter().get_prev_activations(0),
-                                                         this->get_distconv_adapter().get_prev_activations(1),
-                                                         this->get_distconv_adapter().get_activations());
+    get_distconv_adapter().m_mean_squared_error->forward(
+      this->get_distconv_adapter().get_prev_activations(0),
+      this->get_distconv_adapter().get_prev_activations(1),
+      this->get_distconv_adapter().get_activations());
   }
 
-  void bp_compute_distconv() {
+  void bp_compute_distconv()
+  {
     assert_always(this->distconv_enabled());
-    get_distconv_adapter().m_mean_squared_error->backward(this->get_distconv_adapter().get_prev_activations(0),
-                                                          this->get_distconv_adapter().get_prev_activations(1),
-                                                          this->get_distconv_adapter().get_prev_error_signals(0),
-                                                          this->get_distconv_adapter().get_error_signals(0),
-                                                          this->get_distconv_adapter().get_error_signals(1));
+    get_distconv_adapter().m_mean_squared_error->backward(
+      this->get_distconv_adapter().get_prev_activations(0),
+      this->get_distconv_adapter().get_prev_activations(1),
+      this->get_distconv_adapter().get_prev_error_signals(0),
+      this->get_distconv_adapter().get_error_signals(0),
+      this->get_distconv_adapter().get_error_signals(1));
   }
 #endif // LBANN_HAS_DISTCONV
 };
 
 #ifndef LBANN_MEAN_SQUARED_ERROR_LAYER_INSTANTIATE
 
-#define PROTO_DEVICE(T, Device)                     \
-  extern template class mean_squared_error_layer<   \
-    T, data_layout::DATA_PARALLEL, Device>;         \
-  extern template class mean_squared_error_layer<   \
-    T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class mean_squared_error_layer<T,                            \
+                                                 data_layout::DATA_PARALLEL,   \
+                                                 Device>;                      \
+  extern template class mean_squared_error_layer<T,                            \
+                                                 data_layout::MODEL_PARALLEL,  \
+                                                 Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

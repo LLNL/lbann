@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,15 +24,14 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/comm_impl.hpp"
 #include "lbann/utils/statistics.hpp"
+#include "lbann/comm_impl.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
-void entrywise_mean_and_stdev(const Mat& data,
-                              DataType& mean,
-                              DataType& stdev) {
+void entrywise_mean_and_stdev(const Mat& data, DataType& mean, DataType& stdev)
+{
   // Note: This routine is primarily called in an OpenMP-parallelized
   // loop in data_readers/image_preprocessor.hpp. If a more
   // significant use-case is found, it may be worthwhile parallelizing
@@ -47,8 +46,8 @@ void entrywise_mean_and_stdev(const Mat& data,
   const DataType shift = data(0, 0);
   DataType shifted_sum = 0;
   DataType shifted_sqsum = 0;
-  for(El::Int col = 0; col < width; ++col) {
-    for(El::Int row = 0; row < height; ++row) {
+  for (El::Int col = 0; col < width; ++col) {
+    for (El::Int row = 0; row < height; ++row) {
       const DataType shifted_val = data(row, col) - shift;
       shifted_sum += shifted_val;
       shifted_sqsum += shifted_val * shifted_val;
@@ -59,15 +58,15 @@ void entrywise_mean_and_stdev(const Mat& data,
   const DataType shifted_mean = shifted_sum / size;
   const DataType shifted_sqmean = shifted_sqsum / size;
   mean = shifted_mean + shift;
-  const DataType var = std::max(shifted_sqmean - shifted_mean * shifted_mean,
-                                DataType(0));
+  const DataType var =
+    std::max(shifted_sqmean - shifted_mean * shifted_mean, DataType(0));
   stdev = El::Sqrt(var);
-
 }
 
 void entrywise_mean_and_stdev(const AbsDistMat& data,
                               DataType& mean,
-                              DataType& stdev) {
+                              DataType& stdev)
+{
 
   // Matrix dimensions
   const El::Int size = data.Height() * data.Width();
@@ -80,28 +79,28 @@ void entrywise_mean_and_stdev(const AbsDistMat& data,
   // Compute sums over matrix entries
   DataType sum = 0;
   DataType sqsum = 0;
-  LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum,sqsum) collapse(2))
-  for(El::Int col = 0; col < local_width; ++col) {
-    for(El::Int row = 0; row < local_height; ++row) {
+  LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+ : sum, sqsum) collapse(2))
+  for (El::Int col = 0; col < local_width; ++col) {
+    for (El::Int row = 0; row < local_height; ++row) {
       const DataType val = local_data(row, col);
       sum += val;
       sqsum += val * val;
     }
   }
-  DataType sum_sqsum[2] = {sum, sqsum};  // Pack to do one allreduce.
-  El::mpi::AllReduce(sum_sqsum, 2, data.DistComm(),
+  DataType sum_sqsum[2] = {sum, sqsum}; // Pack to do one allreduce.
+  El::mpi::AllReduce(sum_sqsum,
+                     2,
+                     data.DistComm(),
                      El::SyncInfo<El::Device::CPU>{});
 
   // Compute mean and standard deviation
   mean = sum_sqsum[0] / size;
   const DataType var = std::max(sum_sqsum[1] / size - mean * mean, DataType(0));
   stdev = El::Sqrt(var);
-
 }
 
-void columnwise_mean_and_stdev(const Mat& data,
-                               Mat& means,
-                               Mat& stdevs) {
+void columnwise_mean_and_stdev(const Mat& data, Mat& means, Mat& stdevs)
+{
 
   // Matrix dimensions
   const El::Int height = data.Height();
@@ -113,11 +112,11 @@ void columnwise_mean_and_stdev(const Mat& data,
 
   // Compute mean and standard deviation of each matrix column
   LBANN_OMP_PARALLEL_FOR
-  for(El::Int col = 0; col < width; ++col) {
+  for (El::Int col = 0; col < width; ++col) {
     const DataType shift = data(0, col);
     DataType shifted_sum = 0;
     DataType shifted_sqsum = 0;
-    for(El::Int row = 0; row < height; ++row) {
+    for (El::Int row = 0; row < height; ++row) {
       const DataType shifted_val = data(row, col) - shift;
       shifted_sum += shifted_val;
       shifted_sqsum += shifted_val * shifted_val;
@@ -125,26 +124,25 @@ void columnwise_mean_and_stdev(const Mat& data,
     const DataType shifted_mean = shifted_sum / height;
     const DataType shifted_sqmean = shifted_sqsum / height;
     const DataType mean = shifted_mean + shift;
-    const DataType var = std::max(shifted_sqmean - shifted_mean * shifted_mean,
-                                  DataType(0));
+    const DataType var =
+      std::max(shifted_sqmean - shifted_mean * shifted_mean, DataType(0));
     const DataType stdev = El::Sqrt(var);
     means(0, col) = mean;
     stdevs(0, col) = stdev;
   }
-
 }
 
 /// @todo Numerically stable implementation
 void columnwise_sums_and_sqsums(const AbsDistMat& data,
-                               AbsDistMat& sums,
-                               AbsDistMat& sqsums) {
+                                AbsDistMat& sums,
+                                AbsDistMat& sqsums)
+{
 
 #ifdef LBANN_DEBUG
   El::DistData data_dist(data), sum_dist(sums), sqsum_dist(sqsums);
-  if(sum_dist.colDist != El::STAR
-      || sum_dist.rowDist != data_dist.rowDist
-      || sqsum_dist.colDist != El::STAR
-      || sqsum_dist.rowDist != data_dist.rowDist) {
+  if (sum_dist.colDist != El::STAR || sum_dist.rowDist != data_dist.rowDist ||
+      sqsum_dist.colDist != El::STAR ||
+      sqsum_dist.rowDist != data_dist.rowDist) {
     throw lbann_exception("columnwise_sum_and_sqsum: invalid matrix format");
   }
 #endif // #ifdef LBANN_DEBUG
@@ -165,10 +163,10 @@ void columnwise_sums_and_sqsums(const AbsDistMat& data,
 
   // Compute sum and sum of squares of each matrix column
   LBANN_OMP_PARALLEL_FOR
-  for(El::Int col = 0; col < local_width; ++col) {
+  for (El::Int col = 0; col < local_width; ++col) {
     DataType sum_val = 0;
     DataType sqsum_val = 0;
-    for(El::Int row = 0; row < local_height; ++row) {
+    for (El::Int row = 0; row < local_height; ++row) {
       const DataType val = local_data(row, col);
       sum_val += val;
       sqsum_val += val * val;
@@ -180,19 +178,19 @@ void columnwise_sums_and_sqsums(const AbsDistMat& data,
   // Allreduce sums and sums of squares
   AllReduce(sums, sums.RedundantComm(), El::mpi::SUM);
   AllReduce(sqsums, sqsums.RedundantComm(), El::mpi::SUM);
-
 }
 /// @todo Numerically stable implementation
 void columnwise_mean_and_stdev(const AbsDistMat& data,
                                AbsDistMat& means,
-                               AbsDistMat& stdevs) {
+                               AbsDistMat& stdevs)
+{
 
 #ifdef LBANN_DEBUG
   El::DistData data_dist(data), means_dist(means), stdevs_dist(stdevs);
-  if(means_dist.colDist != El::STAR
-      || means_dist.rowDist != data_dist.rowDist
-      || stdevs_dist.colDist != El::STAR
-      || stdevs_dist.rowDist != data_dist.rowDist) {
+  if (means_dist.colDist != El::STAR ||
+      means_dist.rowDist != data_dist.rowDist ||
+      stdevs_dist.colDist != El::STAR ||
+      stdevs_dist.rowDist != data_dist.rowDist) {
     throw lbann_exception("columnwise_mean_and_stdev: invalid matrix format");
   }
 #endif // #ifdef LBANN_DEBUG
@@ -206,7 +204,7 @@ void columnwise_mean_and_stdev(const AbsDistMat& data,
   Mat& local_means = means.Matrix();
   Mat& local_stdevs = stdevs.Matrix();
 
-  for(El::Int col = 0; col < local_width; ++col) {
+  for (El::Int col = 0; col < local_width; ++col) {
     const DataType mean = local_means(0, col) / height;
     const DataType sqmean = local_stdevs(0, col) / height;
     const DataType var = std::max(sqmean - mean * mean, DataType(0));
@@ -214,12 +212,10 @@ void columnwise_mean_and_stdev(const AbsDistMat& data,
     local_means(0, col) = mean;
     local_stdevs(0, col) = stdev;
   }
-
 }
 
-void rowwise_mean_and_stdev(const Mat& data,
-                            Mat& means,
-                            Mat& stdevs) {
+void rowwise_mean_and_stdev(const Mat& data, Mat& means, Mat& stdevs)
+{
 
   // Matrix dimensions
   const El::Int height = data.Height();
@@ -232,40 +228,39 @@ void rowwise_mean_and_stdev(const Mat& data,
   // Iterate through row blocks
   const El::Int block_size = 16;
   LBANN_OMP_PARALLEL_FOR
-  for(El::Int row_start = 0; row_start < height; row_start += block_size) {
+  for (El::Int row_start = 0; row_start < height; row_start += block_size) {
     const El::Int row_end = std::min(row_start + block_size, height);
 
     // Initialize shift and sums for each row
-    auto *shifts = new DataType[block_size];
-    for(El::Int row = row_start; row < row_end; ++row) {
+    auto* shifts = new DataType[block_size];
+    for (El::Int row = row_start; row < row_end; ++row) {
       means(row, 0) = 0;
       stdevs(row, 0) = 0;
-      shifts[row-row_start] = data(row, 0);
+      shifts[row - row_start] = data(row, 0);
     }
 
     // Iterate through blocks in row block
-    for(El::Int col_start = 0; col_start < width; col_start += block_size) {
+    for (El::Int col_start = 0; col_start < width; col_start += block_size) {
       const El::Int col_end = std::min(col_start + block_size, width);
 
       // Compute sums by iterating through block entries
-      for(El::Int col = col_start; col < col_end; ++col) {
-        for(El::Int row = row_start; row < row_end; ++row) {
+      for (El::Int col = col_start; col < col_end; ++col) {
+        for (El::Int row = row_start; row < row_end; ++row) {
           const DataType shift = shifts[row - row_start];
           const DataType shifted_val = data(row, col) - shift;
           means(row, 0) += shifted_val;
           stdevs(row, 0) += shifted_val * shifted_val;
         }
       }
-
     }
 
     // Compute mean and standard deviation of each row
-    for(El::Int row = row_start; row < row_end; ++row) {
+    for (El::Int row = row_start; row < row_end; ++row) {
       const DataType shifted_mean = means(row, 0) / width;
       const DataType shifted_sqmean = stdevs(row, 0) / width;
       const DataType mean = shifted_mean + shifts[row - row_start];
-      const DataType var = std::max(shifted_sqmean - shifted_mean * shifted_mean,
-                                    DataType(0));
+      const DataType var =
+        std::max(shifted_sqmean - shifted_mean * shifted_mean, DataType(0));
       const DataType stdev = El::Sqrt(var);
       means(row, 0) = mean;
       stdevs(row, 0) = stdev;
@@ -273,22 +268,20 @@ void rowwise_mean_and_stdev(const Mat& data,
 
     // Deallocate shifts
     delete[] shifts;
-
   }
-
 }
 
 /// @todo Numerically stable implementation
 void rowwise_sums_and_sqsums(const AbsDistMat& data,
-                            AbsDistMat& sums,
-                            AbsDistMat& sqsums) {
+                             AbsDistMat& sums,
+                             AbsDistMat& sqsums)
+{
 
 #ifdef LBANN_DEBUG
   El::DistData data_dist(data), sum_dist(sums), sqsum_dist(sqsums);
-  if(sum_dist.colDist != data_dist.colDist
-      || sum_dist.rowDist != El::STAR
-      || sqsum_dist.colDist != data_dist.colDist
-      || sqsum_dist.rowDist != El::STAR) {
+  if (sum_dist.colDist != data_dist.colDist || sum_dist.rowDist != El::STAR ||
+      sqsum_dist.colDist != data_dist.colDist ||
+      sqsum_dist.rowDist != El::STAR) {
     throw lbann_exception("rowwise_sums_and_sqsums: invalid matrix format");
   }
 #endif // #ifdef LBANN_DEBUG
@@ -310,37 +303,36 @@ void rowwise_sums_and_sqsums(const AbsDistMat& data,
   // Iterate through row blocks
   const El::Int block_size = 16;
   LBANN_OMP_PARALLEL_FOR
-  for(El::Int row_start = 0; row_start < local_height; row_start += block_size) {
+  for (El::Int row_start = 0; row_start < local_height;
+       row_start += block_size) {
     const El::Int row_end = std::min(row_start + block_size, local_height);
 
     // Iterate through blocks in row block
-    for(El::Int col_start = 0; col_start < local_width; col_start += block_size) {
+    for (El::Int col_start = 0; col_start < local_width;
+         col_start += block_size) {
       const El::Int col_end = std::min(col_start + block_size, local_width);
 
       // Compute sums by iterating through block entries
-      for(El::Int col = col_start; col < col_end; ++col) {
-        for(El::Int row = row_start; row < row_end; ++row) {
+      for (El::Int col = col_start; col < col_end; ++col) {
+        for (El::Int row = row_start; row < row_end; ++row) {
           const DataType val = local_data(row, col);
           local_sum(row, 0) += val;
           local_sqsum(row, 0) += val * val;
         }
       }
-
     }
-
   }
 
   // Allreduce sums and sums of squares
   AllReduce(sums, sums.RedundantComm(), El::mpi::SUM);
   AllReduce(sqsums, sqsums.RedundantComm(), El::mpi::SUM);
-
 }
 
 /// @todo Numerically stable implementation
 void rowwise_mean_and_stdev(const AbsDistMat& data,
                             AbsDistMat& means,
-                            AbsDistMat& stdevs) {
-
+                            AbsDistMat& stdevs)
+{
 
   const El::Int width = data.Width();
   const El::Int local_height = data.LocalHeight();
@@ -353,7 +345,7 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
 
   // Compute mean and standard deviation of each matrix row
   LBANN_OMP_PARALLEL_FOR
-  for(El::Int row = 0; row < local_height; ++row) {
+  for (El::Int row = 0; row < local_height; ++row) {
     const DataType mean = local_means(row, 0) / width;
     const DataType sqmean = local_stdevs(row, 0) / width;
     const DataType var = std::max(sqmean - mean * mean, DataType(0));
@@ -361,27 +353,26 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
     local_means(row, 0) = mean;
     local_stdevs(row, 0) = stdev;
   }
-
 }
 
 void columnwise_covariance(const AbsDistMat& data1,
                            const AbsDistMat& data2,
                            const AbsDistMat& means1,
                            const AbsDistMat& means2,
-                           AbsDistMat& covs) {
+                           AbsDistMat& covs)
+{
 
   // Check matrix formats and dimensions are valid
-  El::DistData data1_dist(data1), data2_dist(data2),
-    means1_dist(means1), means2_dist(means2), covs_dist(covs);
-  if(data1_dist != data2_dist
-     || means1_dist.colDist != El::STAR
-     || means1_dist.rowDist != data1_dist.rowDist
-     || means1_dist != means2_dist
-     || means1_dist != covs_dist) {
+  El::DistData data1_dist(data1), data2_dist(data2), means1_dist(means1),
+    means2_dist(means2), covs_dist(covs);
+  if (data1_dist != data2_dist || means1_dist.colDist != El::STAR ||
+      means1_dist.rowDist != data1_dist.rowDist || means1_dist != means2_dist ||
+      means1_dist != covs_dist) {
     throw lbann_exception("columnwise_covariance: invalid matrix format");
   }
-  if(data1.Height() != data2.Height() || data1.Width() != data2.Width()) {
-    throw lbann_exception("columnwise_covariance: data matrix dimensions don't match");
+  if (data1.Height() != data2.Height() || data1.Width() != data2.Width()) {
+    throw lbann_exception(
+      "columnwise_covariance: data matrix dimensions don't match");
   }
 
   // Matrix dimensions
@@ -402,11 +393,11 @@ void columnwise_covariance(const AbsDistMat& data1,
 
   // Accumulate sum and divide to get covariance
   LBANN_OMP_PARALLEL_FOR
-  for(El::Int col = 0; col < local_width; ++col) {
+  for (El::Int col = 0; col < local_width; ++col) {
     DataType sum = 0;
     const DataType mean1 = local_means1(0, col);
     const DataType mean2 = local_means2(0, col);
-    for(El::Int row = 0; row < local_height; ++row) {
+    for (El::Int row = 0; row < local_height; ++row) {
       const DataType val1 = local_data1(row, col);
       const DataType val2 = local_data2(row, col);
       sum += (val1 - mean1) * (val2 - mean2);
@@ -415,8 +406,6 @@ void columnwise_covariance(const AbsDistMat& data1,
   }
   El::AllReduce(covs, covs.RedundantComm(), El::mpi::SUM);
   El::Scale(DataType(1) / height, local_covs);
-
 }
 
-
-}
+} // namespace lbann

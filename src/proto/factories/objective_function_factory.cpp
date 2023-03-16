@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,26 +37,26 @@ namespace lbann {
 namespace proto {
 
 std::unique_ptr<objective_function>
-construct_objective_function(const lbann_data::ObjectiveFunction& proto_obj) {
+construct_objective_function(const lbann_data::ObjectiveFunction& proto_obj)
+{
 
   // Instantiate objective function
   auto obj = std::make_unique<objective_function>();
 
   // Weight regularization terms
-  for (int i=0; i<proto_obj.l2_weight_regularization_size(); ++i) {
+  for (int i = 0; i < proto_obj.l2_weight_regularization_size(); ++i) {
     const auto& params = proto_obj.l2_weight_regularization(i);
     obj->add_term(make_unique<l2_weight_regularization>(params.scale_factor()));
   }
 
   // Layer terms
-  for (int i=0; i<proto_obj.layer_term_size(); ++i) {
+  for (int i = 0; i < proto_obj.layer_term_size(); ++i) {
     const auto& params = proto_obj.layer_term(i);
     obj->add_term(make_unique<layer_term>(params.scale_factor()));
   }
 
   // Return objective function
   return obj;
-
 }
 
 } // namespace proto

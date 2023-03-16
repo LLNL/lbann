@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -38,20 +38,22 @@ namespace transform {
  * Normalize to have mean 0, standard deviation 1.
  * This only works after conversion to an LBANN CPUMat.
  */
-class sample_normalize : public transform {
+class sample_normalize : public transform
+{
 public:
   transform* copy() const override { return new sample_normalize(*this); }
 
   std::string get_type() const override { return "sample_normalize"; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data,
+             std::vector<size_t>& dims) override;
 };
 
 // Builder function
 std::unique_ptr<transform>
 build_sample_normalize_transform_from_pbuf(google::protobuf::Message const&);
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_SAMPLE_NORMALIZE_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_SAMPLE_NORMALIZE_HPP_INCLUDED

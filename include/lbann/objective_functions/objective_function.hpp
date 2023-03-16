@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,15 +27,15 @@
 #ifndef LBANN_OBJECTIVE_FUNCTION_HPP_INCLUDED
 #define LBANN_OBJECTIVE_FUNCTION_HPP_INCLUDED
 
-#include "lbann/objective_functions/objective_function_term.hpp"
 #include "lbann/metrics/metric.hpp"
+#include "lbann/objective_functions/objective_function_term.hpp"
 
 namespace lbann {
 
 /** Objective function class. */
-class objective_function {
- public:
-
+class objective_function
+{
+public:
   /** Default constructor. */
   objective_function() {}
 
@@ -49,7 +49,8 @@ class objective_function {
   objective_function* copy() const { return new objective_function(*this); }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar );
+  template <class Archive>
+  void serialize(Archive& ar);
 
   /** Add a term to the objective function. */
   void add_term(std::unique_ptr<objective_function_term> term);
@@ -84,7 +85,8 @@ class objective_function {
   void compute_weight_regularization();
 
   /** Clear all statistics. */
-  void reset_statistics() {
+  void reset_statistics()
+  {
     for (auto& stats : m_statistics) {
       stats.second.reset();
     }
@@ -114,7 +116,8 @@ class objective_function {
   /** Get the time spent computing the objective function gradient. */
   EvalType get_differentiation_time() const { return m_differentiation_time; }
   /** Reset time counters. */
-  void reset_counters() {
+  void reset_counters()
+  {
     m_evaluation_time = 0.0;
     m_differentiation_time = 0.0;
   }
@@ -122,19 +125,17 @@ class objective_function {
   /** Add Objection Function data to prototext */
   void write_proto(lbann_data::ObjectiveFunction& proto) const;
 
- private:
-
+private:
   /** List of objective function terms. */
   std::vector<std::unique_ptr<objective_function_term>> m_terms;
 
   /** Objective funciton statistics. */
-  std::map<execution_mode,metric_statistics> m_statistics;
+  std::map<execution_mode, metric_statistics> m_statistics;
 
   /** Time spent evaluating the objective function. */
   EvalType m_evaluation_time = EvalType(0);
   /** Time spent computing the objective function gradient. */
   EvalType m_differentiation_time = EvalType(0);
-
 };
 
 } // namespace lbann

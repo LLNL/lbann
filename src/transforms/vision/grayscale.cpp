@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -34,10 +34,12 @@
 namespace lbann {
 namespace transform {
 
-void grayscale::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+void grayscale::apply(utils::type_erased_matrix& data,
+                      std::vector<size_t>& dims)
+{
   cv::Mat src = utils::get_opencv_mat(data, dims);
   if (dims[0] == 1) {
-    return;  // Only one channel: Already grayscale.
+    return; // Only one channel: Already grayscale.
   }
   std::vector<size_t> new_dims = {1, dims[1], dims[2]};
   auto dst_real = El::Matrix<uint8_t>(get_linear_size(new_dims), 1);
@@ -48,9 +50,10 @@ void grayscale::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims
 }
 
 std::unique_ptr<transform>
-build_grayscale_transform_from_pbuf(google::protobuf::Message const&) {
+build_grayscale_transform_from_pbuf(google::protobuf::Message const&)
+{
   return std::make_unique<grayscale>();
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

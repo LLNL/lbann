@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -46,9 +46,9 @@ namespace callback {
  *  Currently implementation can be extended to support other
  *  exploration techniques e.g., Resample
  */
-class perturb_learning_rate : public callback_base {
+class perturb_learning_rate : public callback_base
+{
 public:
-
   /** @param learning_rate_factor   Standard deviation of learning rate
    *                                perturbation (in log space).
    *                                perturbation (in log space).
@@ -63,13 +63,19 @@ public:
    *                        empty, all optimizers in the model are
    *                        perturbed.
    */
-  perturb_learning_rate(DataType learning_rate_factor,
-               bool perturb_during_training = false,
-               El::Int batch_interval = 1,
-               std::set<std::string> weights_names
-               = std::set<std::string>());
-  perturb_learning_rate* copy() const override { return new perturb_learning_rate(*this); }
-  std::string name() const override { return "perturb optimizer learning rate"; }
+  perturb_learning_rate(
+    DataType learning_rate_factor,
+    bool perturb_during_training = false,
+    El::Int batch_interval = 1,
+    std::set<std::string> weights_names = std::set<std::string>());
+  perturb_learning_rate* copy() const override
+  {
+    return new perturb_learning_rate(*this);
+  }
+  std::string name() const override
+  {
+    return "perturb optimizer learning rate";
+  }
 
   void setup(model* m) override;
   void on_batch_begin(model* m) override;
@@ -78,7 +84,8 @@ public:
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
@@ -111,13 +118,12 @@ private:
   void perturb(model& m) const;
   /** Perturb optimizer learning rate. */
   void perturb(lbann_comm& comm, data_type_optimizer<DataType>& opt) const;
-
 };
 
 // Builder function
-std::unique_ptr<callback_base>
-build_perturb_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+std::unique_ptr<callback_base> build_perturb_learning_rate_callback_from_pbuf(
+  const google::protobuf::Message&,
+  std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann

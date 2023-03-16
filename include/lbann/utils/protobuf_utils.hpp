@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -42,16 +42,17 @@ namespace lbann {
  *         filenames, reading in prototext files, etc.
  */
 
-struct prototext_fn_triple {
+struct prototext_fn_triple
+{
   std::string model;
   std::string reader;
   std::string data_set_metadata;
   std::string optimizer;
 };
 
-namespace protobuf_utils
-{
-/** @brief convience wrapper for other parsing, loading, and verifying prototext.
+namespace protobuf_utils {
+/** @brief convience wrapper for other parsing, loading, and verifying
+ * prototext.
  *
  *  Calls parse_prototext_filenames_from_command_line(),
  *  then load_prototext(), then verify_prototext(). This is the only function
@@ -59,9 +60,7 @@ namespace protobuf_utils
  *  functions are made public for testing.
  */
 std::vector<std::unique_ptr<lbann_data::LbannPB>>
-load_prototext(
-  const bool master,
-  const int trainer_rank=0);
+load_prototext(const bool master, const int trainer_rank = 0);
 
 /** @brief Parses the command line for special prototext flags
  *
@@ -79,18 +78,17 @@ parse_prototext_filenames_from_command_line(const bool master,
                                             const int trainer_rank = 0);
 
 std::vector<std::unique_ptr<lbann_data::LbannPB>>
-read_in_prototext_files(
-  const bool master,
-  const std::vector<prototext_fn_triple> &names);
+read_in_prototext_files(const bool master,
+                        const std::vector<prototext_fn_triple>& names);
 
 /** @brief attempts to verify the all models are valid, and contain an
  *         optimizer and reader
  */
 void verify_prototext(
   const bool master,
-  const std::vector<std::unique_ptr<lbann_data::LbannPB>> &models);
+  const std::vector<std::unique_ptr<lbann_data::LbannPB>>& models);
 
 } // namespace protobuf_utils
 
-} //namespace lbann
+} // namespace lbann
 #endif // LBANN_UTILS_PROTOBUF_UTILS_HPP_INCLUDED

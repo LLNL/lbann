@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,7 +32,8 @@
 namespace lbann {
 
 /// World broadcast of a scalar.
-template <typename T> void lbann_comm::world_broadcast(int root, T& val) const
+template <typename T>
+void lbann_comm::world_broadcast(int root, T& val) const
 {
   broadcast(root, val, get_world_comm());
 }
@@ -43,7 +44,8 @@ void lbann_comm::intertrainer_broadcast(int root, T& val) const
   broadcast(root, val, get_intertrainer_comm());
 }
 /// Within-trainer broadcast of a scalar.
-template <typename T> void lbann_comm::trainer_broadcast(int root, T& val) const
+template <typename T>
+void lbann_comm::trainer_broadcast(int root, T& val) const
 {
   broadcast(root, val, get_trainer_comm());
 }
@@ -275,7 +277,8 @@ void lbann_comm::trainer_gather(const T snd, const int root) const
   gather(snd, root, m_trainer_comm);
 }
 /** Within-trainer scalar gather (for root processes). */
-template <typename T> void lbann_comm::trainer_gather(const T snd, T* rcv) const
+template <typename T>
+void lbann_comm::trainer_gather(const T snd, T* rcv) const
 {
   gather(snd, rcv, m_trainer_comm);
 }
@@ -747,7 +750,8 @@ void lbann_comm::wait_all(std::vector<El::mpi::Request<T>>& req) const
 }
 
 /** Wait for a non-blocking request to complete. */
-template <typename T> void lbann_comm::wait(El::mpi::Request<T>& req) const
+template <typename T>
+void lbann_comm::wait(El::mpi::Request<T>& req) const
 {
   El::mpi::Wait(req);
 }
@@ -1007,7 +1011,8 @@ int lbann_comm::get_count(const int trainer, const int rank) const
             &status);
   return El::mpi::GetCount<T>(status);
 }
-template <typename T> int lbann_comm::get_count(const int trainer) const
+template <typename T>
+int lbann_comm::get_count(const int trainer) const
 {
   return get_count<T>(trainer, m_rank_in_trainer);
 }

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -46,32 +46,28 @@ namespace callback {
 /**
  * Load pretrained model from file
  */
-class load_model : public callback_base {
+class load_model : public callback_base
+{
 public:
   /**
    * @param dirs directories from which to load model
    * @param extension file extension e.g., model, state ......
    */
-  load_model(std::vector<std::string> dirs,
-             std::string extension="prototext") :
-    callback_base(), m_dirs(std::move(dirs)),
-    m_extension(std::move(extension)),
-    m_loaded(false)
+  load_model(std::vector<std::string> dirs, std::string extension = "prototext")
+    : callback_base(),
+      m_dirs(std::move(dirs)),
+      m_extension(std::move(extension)),
+      m_loaded(false)
   {}
   load_model(const load_model&) = default;
-  load_model& operator=(
-    const load_model&) = default;
-  load_model* copy() const override {
-    return new load_model(*this);
-  }
+  load_model& operator=(const load_model&) = default;
+  load_model* copy() const override { return new load_model(*this); }
 
-  inline void add_dir(const std::string& dir){
-    m_dirs.emplace_back(dir);
-  }
+  inline void add_dir(const std::string& dir) { m_dirs.emplace_back(dir); }
 
-  void on_train_begin(model *m) override;
+  void on_train_begin(model* m) override;
 
-  void on_test_begin(model *m) override;
+  void on_test_begin(model* m) override;
 
   std::string name() const override { return "load model"; }
 
@@ -79,7 +75,8 @@ public:
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
@@ -92,9 +89,9 @@ private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
-  std::vector<std::string> m_dirs; //director(ies) to load pretrained model(s)
+  std::vector<std::string> m_dirs; // director(ies) to load pretrained model(s)
   /// Disables the normal behavior of saving when training is complete
-  std::string m_extension; //file extension
+  std::string m_extension; // file extension
 
   /// Flag to indicate if the model has already been loaded
   bool m_loaded;
@@ -102,10 +99,10 @@ private:
 
 // Builder function
 std::unique_ptr<callback_base>
-build_load_model_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_load_model_callback_from_pbuf(const google::protobuf::Message&,
+                                    std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_LOAD_MODEL_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_LOAD_MODEL_HPP_INCLUDED

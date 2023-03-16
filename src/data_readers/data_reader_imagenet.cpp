@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,19 +28,20 @@
 
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/sample_list_impl.hpp"
-#include "lbann/utils/image.hpp"
 #include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/image.hpp"
 
 namespace lbann {
 
-imagenet_reader::imagenet_reader(bool shuffle)
-  : image_data_reader(shuffle) {
+imagenet_reader::imagenet_reader(bool shuffle) : image_data_reader(shuffle)
+{
   set_defaults();
 }
 
 imagenet_reader::~imagenet_reader() {}
 
-void imagenet_reader::set_defaults() {
+void imagenet_reader::set_defaults()
+{
   m_image_width = 256;
   m_image_height = 256;
   m_image_num_channels = 3;
@@ -49,11 +50,13 @@ void imagenet_reader::set_defaults() {
   m_supported_input_types[INPUT_DATA_TYPE_LABELS] = true;
 }
 
-CPUMat imagenet_reader::create_datum_view(CPUMat& X, const int mb_idx) const {
+CPUMat imagenet_reader::create_datum_view(CPUMat& X, const int mb_idx) const
+{
   return El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
 }
 
-bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx)
+{
   El::Matrix<uint8_t> image;
   std::vector<size_t> dims;
   const auto file_id = m_sample_list[data_id].first;
@@ -67,23 +70,31 @@ bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
       if (m_data_store->has_conduit_node(data_id)) {
         const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
         node.set_external(ds_node);
-      } else {
+      }
+      else {
         load_conduit_node_from_file(data_id, node);
         m_data_store->set_conduit_node(data_id, node);
       }
-    } else if (data_store_active()) {
+    }
+    else if (data_store_active()) {
       const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
       node.set_external(ds_node);
-    } else if (priming_data_store()) {
+    }
+    else if (priming_data_store()) {
       load_conduit_node_from_file(data_id, node);
       m_data_store->set_conduit_node(data_id, node);
-    } else {
+    }
+    else {
       if (get_role() != "test") {
         LBANN_ERROR("you shouldn't be here; please contact Dave Hysom");
       }
       if (m_issue_warning) {
         if (get_comm()->am_world_master()) {
-          LBANN_WARNING("m_data_store != nullptr, but we are not retrivieving a node from the store; role: " + get_role() + "; this is probably OK for test mode, but may be an error for train or validate modes");
+          LBANN_WARNING("m_data_store != nullptr, but we are not retrivieving "
+                        "a node from the store; role: " +
+                        get_role() +
+                        "; this is probably OK for test mode, but may be an "
+                        "error for train or validate modes");
         }
       }
       m_issue_warning = false;
@@ -92,9 +103,12 @@ bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     }
 
     if (have_node) {
-      char *buf = node[LBANN_DATA_ID_STR(data_id) + "/buffer"].value();
+      char* buf = node[LBANN_DATA_ID_STR(data_id) + "/buffer"].value();
       size_t size = node[LBANN_DATA_ID_STR(data_id) + "/buffer_size"].value();
-      El::Matrix<uint8_t> encoded_image(size, 1, reinterpret_cast<uint8_t*>(buf), size);
+      El::Matrix<uint8_t> encoded_image(size,
+                                        1,
+                                        reinterpret_cast<uint8_t*>(buf),
+                                        size);
       decode_image(encoded_image, image, dims);
     }
   }
@@ -110,4 +124,4 @@ bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   return true;
 }
 
-}  // namespace lbann
+} // namespace lbann

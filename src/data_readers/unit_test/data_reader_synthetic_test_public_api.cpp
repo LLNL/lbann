@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,15 +28,15 @@
 
 #include "MPITestHelpers.hpp"
 #include "TestHelpers.hpp"
+#include "lbann/proto/lbann.pb.h"
 #include "lbann/proto/proto_common.hpp"
 #include <google/protobuf/text_format.h>
-#include "lbann/proto/lbann.pb.h"
 
 #include <cstdlib>
 #include <errno.h>
 #include <string.h>
 
-//#include "./data_reader_common_catch2.hpp"
+// #include "./data_reader_common_catch2.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/utils/dim_helpers.hpp"
@@ -215,7 +215,7 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
     owning_local_input_buffers;
   std::map<lbann::data_field_type, lbann::CPUMat*> local_input_buffers;
   for (auto const& data_field : data_fields) {
-    std::vector<int> dims = {s+f, s+f};
+    std::vector<int> dims = {s + f, s + f};
     fields[data_field] = dims;
     ++f;
     auto local_mat = std::make_unique<lbann::CPUMat>();
@@ -356,7 +356,7 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
     dr->set_last_mini_batch_size(num_samples);
     dr->set_initial_position();
 
-    for(auto const& data_field : data_fields) {
+    for (auto const& data_field : data_fields) {
       dr->set_has_data_field(data_field, false);
     }
 
@@ -372,5 +372,4 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
       }
     }
   }
-
 }

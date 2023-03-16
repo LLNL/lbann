@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,14 +31,15 @@
 
 namespace lbann {
 
-cifar10_reader::cifar10_reader(bool shuffle)
-  : image_data_reader(shuffle) {
+cifar10_reader::cifar10_reader(bool shuffle) : image_data_reader(shuffle)
+{
   set_defaults();
 }
 
 cifar10_reader::~cifar10_reader() {}
 
-void cifar10_reader::set_defaults() {
+void cifar10_reader::set_defaults()
+{
   m_image_width = 32;
   m_image_height = 32;
   m_image_num_channels = 3;
@@ -47,11 +48,12 @@ void cifar10_reader::set_defaults() {
   m_supported_input_types[INPUT_DATA_TYPE_LABELS] = true;
 }
 
-void cifar10_reader::load() {
+void cifar10_reader::load()
+{
   // These are all specified by the CIFAR10/100 description.
   constexpr size_t num_channels = 3;
-  constexpr size_t channel_size = 32*32;
-  constexpr size_t image_size = num_channels*channel_size;
+  constexpr size_t channel_size = 32 * 32;
+  constexpr size_t image_size = num_channels * channel_size;
   constexpr size_t cifar10_label_size = 1;
   constexpr size_t cifar100_label_size = 2;
 
@@ -69,35 +71,36 @@ void cifar10_reader::load() {
     if (cifar100) {
       filenames = {"train.bin"};
       images_per_file = 50000;
-    } else {
-      filenames = {
-        "data_batch_1.bin",
-        "data_batch_2.bin",
-        "data_batch_3.bin",
-        "data_batch_4.bin",
-        "data_batch_5.bin"
-      };
     }
-  } else if (this->get_role() == "test") {
+    else {
+      filenames = {"data_batch_1.bin",
+                   "data_batch_2.bin",
+                   "data_batch_3.bin",
+                   "data_batch_4.bin",
+                   "data_batch_5.bin"};
+    }
+  }
+  else if (this->get_role() == "test") {
     if (cifar100) {
       filenames = {"test.bin"};
-    } else {
+    }
+    else {
       filenames = {"test_batch.bin"};
     }
-  } else {
+  }
+  else {
     LBANN_ERROR("Unsupported training mode for CIFAR loading.");
   }
 
   for (const auto& filename : filenames) {
-    std::ifstream f(path + "/" + filename,
-                    std::ios::in | std::ios::binary);
+    std::ifstream f(path + "/" + filename, std::ios::in | std::ios::binary);
     if (!f.good()) {
       LBANN_ERROR("Could not open " + path + "/" + filename);
     }
     // Temporary buffer to hold an image.
-    std::vector<uint8_t> buf(image_size + (cifar100 ?
-                                           cifar100_label_size :
-                                           cifar10_label_size), 0);
+    std::vector<uint8_t> buf(
+      image_size + (cifar100 ? cifar100_label_size : cifar10_label_size),
+      0);
     for (size_t i = 0; i < images_per_file; ++i) {
       f.read(reinterpret_cast<char*>(buf.data()), buf.size());
       if (static_cast<size_t>(f.gcount()) != buf.size()) {
@@ -109,9 +112,9 @@ void cifar10_reader::load() {
       // Convert to OpenCV layout.
       std::vector<uint8_t> image(image_size);
       for (size_t channel = 0; channel < num_channels; ++channel) {
-        const size_t src_start = channel*channel_size;
+        const size_t src_start = channel * channel_size;
         for (size_t j = 0; j < channel_size; ++j) {
-          image[j*num_channels + channel] = buf[src_start + j];
+          image[j * num_channels + channel] = buf[src_start + j];
         }
       }
       m_images.push_back(std::move(image));
@@ -126,20 +129,22 @@ void cifar10_reader::load() {
   select_subset_of_data();
 }
 
-bool cifar10_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+bool cifar10_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx)
+{
   // Copy to a matrix so we can do data augmentation.
   // Sizes per CIFAR-10/100 dataset description.
-  El::Matrix<uint8_t> image(3*32*32, 1);
+  El::Matrix<uint8_t> image(3 * 32 * 32, 1);
   std::vector<size_t> dims = {size_t(3), size_t(32), size_t(32)};
-  std::copy_n(m_images[data_id].data(), 3*32*32, image.Buffer());
+  std::copy_n(m_images[data_id].data(), 3 * 32 * 32, image.Buffer());
   auto X_v = X(El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
   m_transform_pipeline.apply(image, X_v, dims);
   return true;
 }
 
-bool cifar10_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
+bool cifar10_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx)
+{
   Y.Set(m_labels[data_id], mb_idx, 1);
   return true;
 }
 
-}  // namespace lbann
+} // namespace lbann

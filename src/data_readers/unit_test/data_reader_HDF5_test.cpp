@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,9 +28,9 @@
 
 #include "MPITestHelpers.hpp"
 #include "TestHelpers.hpp"
+#include "lbann/proto/lbann.pb.h"
 #include "lbann/proto/proto_common.hpp"
 #include <google/protobuf/text_format.h>
-#include "lbann/proto/lbann.pb.h"
 
 #include <cstdlib>
 #include <errno.h>
@@ -69,7 +69,7 @@ TEST_CASE("hdf5 data reader schema tests",
   lbann::init_random(0, 2);
   lbann::init_data_seq_random(42);
   auto& arg_parser = lbann::global_argument_parser();
-  arg_parser.clear(); // Clear the argument parser.
+  arg_parser.clear();             // Clear the argument parser.
   lbann::construct_all_options(); // Reset to the default state.
 
   // create working directory
@@ -100,8 +100,8 @@ TEST_CASE("hdf5 data reader schema tests",
 
   // set up the options that the reader expects
   char const* argv[] = {"smiles_functional_black_box.exe",
-    "--use_data_store",
-    "--preload_data_store"};
+                        "--use_data_store",
+                        "--preload_data_store"};
   int const argc = sizeof(argv) / sizeof(argv[0]);
   REQUIRE_NOTHROW(arg_parser.parse(argc, argv));
 

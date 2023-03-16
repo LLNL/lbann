@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,13 +35,15 @@ namespace lbann {
 namespace transform {
 
 /** Adjust the brightness of an image. */
-class adjust_brightness : public transform {
+class adjust_brightness : public transform
+{
 public:
   /**
    * Adjust brightness with given factor.
    * @param factor A non-negative factor. 0 gives a black image, 1 the original.
    */
-  adjust_brightness(float factor) : transform(), m_factor(factor) {
+  adjust_brightness(float factor) : transform(), m_factor(factor)
+  {
     if (factor < 0.0f) {
       LBANN_ERROR("Brightness factor must be non-negative.");
     }
@@ -51,7 +53,8 @@ public:
 
   std::string get_type() const override { return "adjust_brightness"; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data,
+             std::vector<size_t>& dims) override;
 
 private:
   /** Factor to adjust brightness by. */
@@ -62,7 +65,7 @@ private:
 std::unique_ptr<transform>
 build_adjust_brightness_transform_from_pbuf(google::protobuf::Message const&);
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_ADJUST_BRIGHTNESS_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_ADJUST_BRIGHTNESS_HPP_INCLUDED

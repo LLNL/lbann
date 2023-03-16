@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -34,8 +34,10 @@ namespace {
 
 /** Entry-wise operator. */
 template <typename TensorDataType>
-struct op {
-  inline TensorDataType operator()(const TensorDataType &x) const {
+struct op
+{
+  inline TensorDataType operator()(const TensorDataType& x) const
+  {
     return std::max(x, El::TypeTraits<TensorDataType>::Zero());
   }
 };
@@ -46,9 +48,14 @@ struct op {
  *  \f$ \frac{dL}{dx} = \frac{dL}{dy} f'(x) \f$.
  */
 template <typename TensorDataType>
-struct op_backprop {
-  inline TensorDataType operator()(const TensorDataType &x, const TensorDataType &dy) const {
-    return x > El::TypeTraits<TensorDataType>::Zero() ? dy : El::TypeTraits<TensorDataType>::Zero();
+struct op_backprop
+{
+  inline TensorDataType operator()(const TensorDataType& x,
+                                   const TensorDataType& dy) const
+  {
+    return x > El::TypeTraits<TensorDataType>::Zero()
+             ? dy
+             : El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -56,20 +63,24 @@ struct op_backprop {
 
 // Template instantiation
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void relu_layer<TensorDataType, Layout, Device>::fp_compute() {
+void relu_layer<TensorDataType, Layout, Device>::fp_compute()
+{
   apply_entrywise_unary_operator<op, TensorDataType>(
-      this->get_prev_activations(), this->get_activations());
+    this->get_prev_activations(),
+    this->get_activations());
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void relu_layer<TensorDataType, Layout, Device>::bp_compute() {
+void relu_layer<TensorDataType, Layout, Device>::bp_compute()
+{
   apply_entrywise_binary_operator<op_backprop, TensorDataType>(
-      this->get_prev_activations(), this->get_prev_error_signals(),
-      this->get_error_signals());
+    this->get_prev_activations(),
+    this->get_prev_error_signals(),
+    this->get_error_signals());
 }
 
-#define PROTO(T)                                                        \
-  template class relu_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+#define PROTO(T)                                                               \
+  template class relu_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>;   \
   template class relu_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF

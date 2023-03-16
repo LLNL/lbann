@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -44,17 +44,22 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class categorical_random_layer : public data_type_layer<TensorDataType> {
+class categorical_random_layer : public data_type_layer<TensorDataType>
+{
   static_assert(Dev == El::Device::CPU,
                 "categorical random layer currently only supports CPU");
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "categorical random layer currently only "
                 "supports DATA_PARALLEL");
- public:
-  categorical_random_layer(lbann_comm *comm)
-    : data_type_layer<TensorDataType>(comm) {
+
+public:
+  categorical_random_layer(lbann_comm* comm)
+    : data_type_layer<TensorDataType>(comm)
+  {}
+  categorical_random_layer* copy() const override
+  {
+    return new categorical_random_layer(*this);
   }
-  categorical_random_layer* copy() const override { return new categorical_random_layer(*this); }
 
   /** @name Serialization */
   ///@{
@@ -68,25 +73,22 @@ class categorical_random_layer : public data_type_layer<TensorDataType> {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
- protected:
-
+protected:
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  categorical_random_layer()
-    : categorical_random_layer(nullptr)
-  {}
+  categorical_random_layer() : categorical_random_layer(nullptr) {}
 
   void fp_compute() override;
-
 };
-
 
 #ifndef LBANN_CATEGORICAL_RANDOM_LAYER_INSTANTIATE
 
-#define PROTO(T)                           \
-  extern template class categorical_random_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  extern template class categorical_random_layer<T,                            \
+                                                 data_layout::DATA_PARALLEL,   \
+                                                 El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

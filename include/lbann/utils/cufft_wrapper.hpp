@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,24 +33,23 @@
 
 #include <cufft.h>
 
-#define LBANN_CHECK_CUFFT(cmd)                                          \
-  do {                                                                  \
-    auto const lbann_check_cufft_result_ = (cmd);                       \
-    if (lbann_check_cufft_result_ != CUFFT_SUCCESS) {                   \
-      LBANN_ERROR(                                                      \
-        "cuFFT error!\n\n"                                              \
-        "      cmd: " #cmd "\n"                                         \
-        "   result: ",                                                  \
-        lbann::cufft::value_as_string(lbann_check_cufft_result_), "\n"  \
-        "  message: ",                                                  \
-        lbann::cufft::result_string(lbann_check_cufft_result_),"\n\n"); \
-    }                                                                   \
+#define LBANN_CHECK_CUFFT(cmd)                                                 \
+  do {                                                                         \
+    auto const lbann_check_cufft_result_ = (cmd);                              \
+    if (lbann_check_cufft_result_ != CUFFT_SUCCESS) {                          \
+      LBANN_ERROR("cuFFT error!\n\n"                                           \
+                  "      cmd: " #cmd "\n"                                      \
+                  "   result: ",                                               \
+                  lbann::cufft::value_as_string(lbann_check_cufft_result_),    \
+                  "\n"                                                         \
+                  "  message: ",                                               \
+                  lbann::cufft::result_string(lbann_check_cufft_result_),      \
+                  "\n\n");                                                     \
+    }                                                                          \
   } while (0)
 
-namespace lbann
-{
-namespace cufft
-{
+namespace lbann {
+namespace cufft {
 
 /** @brief The stringified name of the enumerated value. */
 std::string value_as_string(cufftResult_t);
@@ -60,12 +59,26 @@ std::string result_string(cufftResult_t);
 template <typename T>
 struct cuFFTTypeT;
 
-template <> struct cuFFTTypeT<float> { using type = float; };
-template <> struct cuFFTTypeT<double> { using type = double; };
 template <>
-struct cuFFTTypeT<El::Complex<float>> { using type = cufftComplex; };
+struct cuFFTTypeT<float>
+{
+  using type = float;
+};
 template <>
-struct cuFFTTypeT<El::Complex<double>> { using type = cufftDoubleComplex; };
+struct cuFFTTypeT<double>
+{
+  using type = double;
+};
+template <>
+struct cuFFTTypeT<El::Complex<float>>
+{
+  using type = cufftComplex;
+};
+template <>
+struct cuFFTTypeT<El::Complex<double>>
+{
+  using type = cufftDoubleComplex;
+};
 
 template <typename T>
 using cuFFTType = typename cuFFTTypeT<T>::type;
@@ -89,13 +102,12 @@ struct cuFFTExecutor<El::Complex<float>, El::Complex<float>>
                       El::Complex<float>* output_data,
                       int direction)
   {
-    LBANN_CHECK_CUFFT(
-      cufftExecC2C(plan,
-                   AsCUFFTType(input_data),
-                   AsCUFFTType(output_data),
-                   direction));
+    LBANN_CHECK_CUFFT(cufftExecC2C(plan,
+                                   AsCUFFTType(input_data),
+                                   AsCUFFTType(output_data),
+                                   direction));
   }
-};// struct cuFFTExecutor<Complex<float>, Complex<float>>
+}; // struct cuFFTExecutor<Complex<float>, Complex<float>>
 
 template <>
 struct cuFFTExecutor<El::Complex<double>, El::Complex<double>>
@@ -106,13 +118,12 @@ struct cuFFTExecutor<El::Complex<double>, El::Complex<double>>
                       El::Complex<double>* output_data,
                       int direction)
   {
-    LBANN_CHECK_CUFFT(
-      cufftExecZ2Z(plan,
-                   AsCUFFTType(input_data),
-                   AsCUFFTType(output_data),
-                   direction));
+    LBANN_CHECK_CUFFT(cufftExecZ2Z(plan,
+                                   AsCUFFTType(input_data),
+                                   AsCUFFTType(output_data),
+                                   direction));
   }
-};// struct cuFFTExecutor<Complex<double>, Complex<double>>
+}; // struct cuFFTExecutor<Complex<double>, Complex<double>>
 
 /** @brief Wrapper around cuFFT
  *
@@ -154,14 +165,11 @@ private:
     PlanType plan_ = 0;
     int num_samples_ = -1; // It's just an int in the basic interface
     InternalPlanType(PlanType plan, size_t worksize, int n)
-      : worksize_{worksize},
-        plan_{plan},
-        num_samples_{n}
+      : worksize_{worksize}, plan_{plan}, num_samples_{n}
     {}
     ~InternalPlanType()
     {
-      if (plan_ != 0)
-      {
+      if (plan_ != 0) {
         cufftDestroy(plan_);
         plan_ = 0;
       }
@@ -175,7 +183,7 @@ private:
       other.plan_ = 0;
       other.num_samples_ = -1;
     }
-  };// struct InternalPlanType
+  }; // struct InternalPlanType
 
 public:
   cuFFTWrapper() = default;
@@ -202,8 +210,7 @@ public:
    *                   in/out. The format is expected to be
    *                   [num_feature_maps, feature_map_dims].
    */
-  void setup_forward(InputMatType& in,
-                     std::vector<int> const& full_dims)
+  void setup_forward(InputMatType& in, std::vector<int> const& full_dims)
   {
     /// @todo Assert this is ok for R2C cases!!!
     return setup_forward(in, in, full_dims);
@@ -229,8 +236,7 @@ public:
    *                   in/out. The format is expected to be
    *                   [num_feature_maps, feature_map_dims].
    */
-  void setup_backward(OutputMatType& in,
-                      std::vector<int> const& full_dims)
+  void setup_backward(OutputMatType& in, std::vector<int> const& full_dims)
   {
     return setup_backward(in, in, full_dims);
   }
@@ -263,7 +269,8 @@ private:
       return;
 
     auto const good_plan =
-      std::find_if(cbegin(plans_), cend(plans_),
+      std::find_if(cbegin(plans_),
+                   cend(plans_),
                    [num_samples](InternalPlanType const& a) {
                      return a.num_samples_ == num_samples;
                    });
@@ -273,33 +280,26 @@ private:
     // Setup the workspace
     ComplexBufferType workspace(good_plan->worksize_,
                                 El::SyncInfoFromMatrix(out));
-    LBANN_CHECK_CUFFT(
-      cufftSetWorkArea(good_plan->plan_, workspace.data()));
+    LBANN_CHECK_CUFFT(cufftSetWorkArea(good_plan->plan_, workspace.data()));
 
     // Run the FFT
-    bool const contiguous_samples =
-      (in.Contiguous()) && (out.Contiguous());
-    if (contiguous_samples)
-    {
+    bool const contiguous_samples = (in.Contiguous()) && (out.Contiguous());
+    if (contiguous_samples) {
       ExecutorType::Execute(good_plan->plan_, in.Buffer(), out.Buffer(), dir);
     }
-    else
-    {
+    else {
       auto num_batches = in.Width();
-      for (El::Int ii = 0; ii < num_batches; ++ii)
-      {
+      for (El::Int ii = 0; ii < num_batches; ++ii) {
         ExecutorType::Execute(good_plan->plan_,
-                              in.Buffer() + ii*in.LDim(),
-                              out.Buffer() + ii*out.LDim(),
+                              in.Buffer() + ii * in.LDim(),
+                              out.Buffer() + ii * out.LDim(),
                               dir);
       }
     }
   }
 
   template <typename InMatT, typename OutMatT>
-  void setup_common(InMatT& in,
-                    OutMatT& out,
-                    std::vector<int> const& full_dims)
+  void setup_common(InMatT& in, OutMatT& out, std::vector<int> const& full_dims)
   {
     using in_data_type = typename InMatT::value_type;
     using out_data_type = typename OutMatT::value_type;
@@ -311,14 +311,14 @@ private:
       return;
 
     auto const good_plan =
-      std::find_if(cbegin(plans_), cend(plans_),
+      std::find_if(cbegin(plans_),
+                   cend(plans_),
                    [num_samples](InternalPlanType const& a) {
                      return a.num_samples_ == num_samples;
                    });
 
     // We don't have a plan for this yet; let's create one!
-    if (good_plan == cend(plans_))
-    {
+    if (good_plan == cend(plans_)) {
       PlanType plan;
       size_t workspace_size = 0ULL;
 
@@ -326,57 +326,61 @@ private:
       // certain cuFFT doesn't change this data.
       std::vector<int> full_dims_mutable(full_dims);
       LBANN_CHECK_CUFFT(cufftCreate(&plan));
-      LBANN_CHECK_CUFFT(
-        cufftSetStream(plan, SyncInfoFromMatrix(out).Stream()));
+      LBANN_CHECK_CUFFT(cufftSetStream(plan, SyncInfoFromMatrix(out).Stream()));
       // We'll handle our own workspace
       LBANN_CHECK_CUFFT(cufftSetAutoAllocation(plan, 0));
 
       auto const& input_dims = Dims::input_dims(full_dims);
       auto const& output_dims = Dims::output_dims(full_dims);
       int const num_feature_maps = full_dims.front();
-      int const feature_map_ndims = full_dims.size()-1;
-      bool const contiguous_samples =
-        (in.Contiguous()) && (out.Contiguous());
+      int const feature_map_ndims = full_dims.size() - 1;
+      bool const contiguous_samples = (in.Contiguous()) && (out.Contiguous());
 
       if (feature_map_ndims > 3 || feature_map_ndims == 0)
         LBANN_ERROR("Only 1-, 2-, and 3-D FFTs are supported in cuFFT.");
 
-      int const input_feature_map_size
-        = get_linear_size(feature_map_ndims, input_dims.data() + 1);
-      int const output_feature_map_size
-        = get_linear_size(feature_map_ndims, output_dims.data() + 1);
+      int const input_feature_map_size =
+        get_linear_size(feature_map_ndims, input_dims.data() + 1);
+      int const output_feature_map_size =
+        get_linear_size(feature_map_ndims, output_dims.data() + 1);
 
       // Handle the easy case. In this case, all the FFTs to be done
       // are contiguous in memory. Super! Let's just set it up to do
       // them all as one big batch.
-      if (contiguous_samples)
-      {
-        int const num_transforms = num_samples*num_feature_maps;
-        LBANN_CHECK_CUFFT(
-          cufftMakePlanMany(
-            plan, feature_map_ndims, full_dims_mutable.data()+1,
-            nullptr, 1, input_feature_map_size,
-            nullptr, 1, output_feature_map_size,
-            ExecutorType::transform_type,
-            num_transforms,
-            &workspace_size));
+      if (contiguous_samples) {
+        int const num_transforms = num_samples * num_feature_maps;
+        LBANN_CHECK_CUFFT(cufftMakePlanMany(plan,
+                                            feature_map_ndims,
+                                            full_dims_mutable.data() + 1,
+                                            nullptr,
+                                            1,
+                                            input_feature_map_size,
+                                            nullptr,
+                                            1,
+                                            output_feature_map_size,
+                                            ExecutorType::transform_type,
+                                            num_transforms,
+                                            &workspace_size));
       }
-      else
-      {
+      else {
         // In this case, we apply the FFT to each sample, and, come
         // execution time, we will loop over the samples. (An
         // alternative might pick whether to loop over samples or
         // channels, whichever is fewer in number. However, this is a
         // book-keeping headache.)
         int const num_transforms = num_feature_maps;
-        LBANN_CHECK_CUFFT(
-          cufftMakePlanMany(
-            plan, feature_map_ndims, full_dims_mutable.data()+1,
-            nullptr, 1, input_feature_map_size,
-            nullptr, 1, output_feature_map_size,
-            ExecutorType::transform_type,
-            num_transforms,
-            &workspace_size));
+        LBANN_CHECK_CUFFT(cufftMakePlanMany(plan,
+                                            feature_map_ndims,
+                                            full_dims_mutable.data() + 1,
+                                            nullptr,
+                                            1,
+                                            input_feature_map_size,
+                                            nullptr,
+                                            1,
+                                            output_feature_map_size,
+                                            ExecutorType::transform_type,
+                                            num_transforms,
+                                            &workspace_size));
       }
 
       if (plan == 0)
@@ -392,8 +396,8 @@ private:
   // going to be fine.
   std::vector<InternalPlanType> plans_;
 
-};// class cuFFTWrapper
+}; // class cuFFTWrapper
 
-}// namespace cufft
-}// namespace lbann
+} // namespace cufft
+} // namespace lbann
 #endif // LBANN_UTILS_CUFFT_WRAPPER_HPP_

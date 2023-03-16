@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,13 +26,12 @@
 #ifndef __STACK_PROFILER_HPP__
 #define __STACK_PROFILER_HPP__
 
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cxxabi.h>
 #include <dlfcn.h>
 #include <iostream>
-#include <cstdlib>
-#include <cstdio>
-#include <cxxabi.h>
-
+#include <string.h>
 
 namespace lbann {
 
@@ -41,9 +40,11 @@ namespace lbann {
  *  stack traces and timing
  */
 
-class stack_profiler {
-public :
-  static stack_profiler * get() __attribute__((no_instrument_function)) {
+class stack_profiler
+{
+public:
+  static stack_profiler* get() __attribute__((no_instrument_function))
+  {
     return s_instance;
   }
 
@@ -54,25 +55,23 @@ public :
 
   void print() __attribute__((no_instrument_function));
 
-private :
+private:
   stack_profiler() __attribute__((no_instrument_function));
   ~stack_profiler() __attribute__((no_instrument_function));
-  stack_profiler(const stack_profiler &) {}
+  stack_profiler(const stack_profiler&) {}
   stack_profiler& operator=(const stack_profiler&) { return *this; }
 
-  static stack_profiler *s_instance;
+  static stack_profiler* s_instance;
 
   bool m_full_stack_trace;
 
-  int m_thread_id ;
+  int m_thread_id;
 
   // This variable is unused, causing a certain clangy compiler to complain
-  //Dl_info m_info;
-
+  // Dl_info m_info;
 };
 
-} //namespace lbann
-
+} // namespace lbann
 
 #if 0
 /**

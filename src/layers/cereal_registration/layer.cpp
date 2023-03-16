@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,14 +28,13 @@
 #include "lbann/layers/distconv_adapter.hpp"
 #endif // LBANN_HAS_DISTCONV
 #include "lbann/utils/serialize.hpp"
-#include <lbann/layers/layer.hpp>
 #include "lbann/weights/weights.hpp"
+#include <lbann/layers/layer.hpp>
 
 namespace lbann {
 
 template <typename ArchiveT>
-void
-Layer::serialize(ArchiveT& ar)
+void Layer::serialize(ArchiveT& ar)
 {
   ar(CEREAL_NVP(m_expected_num_parent_layers),
      CEREAL_NVP(m_expected_num_child_layers),

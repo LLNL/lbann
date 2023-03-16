@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,20 +29,20 @@
 
 #include "lbann/data_readers/data_reader.hpp"
 
-#define LBANN_ASSERT_MSG_HAS_FIELD(MSG, FIELD)                          \
-  do {                                                                  \
-    if (!MSG.has_##FIELD()) {                                           \
-      LBANN_ERROR("No field \"" #FIELD "\" in the given message:\n{\n", \
-                  MSG.DebugString(), "\n}\n");                          \
-    }                                                                   \
-  }                                                                     \
-  while(false)
+#define LBANN_ASSERT_MSG_HAS_FIELD(MSG, FIELD)                                 \
+  do {                                                                         \
+    if (!MSG.has_##FIELD()) {                                                  \
+      LBANN_ERROR("No field \"" #FIELD "\" in the given message:\n{\n",        \
+                  MSG.DebugString(),                                           \
+                  "\n}\n");                                                    \
+    }                                                                          \
+  } while (false)
 
 // Forward declaration of protobuf classes
 namespace lbann_data {
 class LbannPB;
 class Trainer;
-}
+} // namespace lbann_data
 
 namespace lbann {
 
@@ -59,15 +59,15 @@ namespace lbann {
     <model name>_t<ID>_<basename>.<extension> @endverbatim
  */
 void customize_data_readers_sample_list(const lbann_comm& comm,
-                                       ::lbann_data::LbannPB& p);
+                                        ::lbann_data::LbannPB& p);
 
 /** @brief instantiates one or more generic_data_readers and inserts
  *         them in &data_readers
  */
 void init_data_readers(
-  lbann_comm *comm,
+  lbann_comm* comm,
   const ::lbann_data::LbannPB& p,
-  std::map<execution_mode, generic_data_reader *>& data_readers);
+  std::map<execution_mode, generic_data_reader*>& data_readers);
 
 /** @brief adjusts the number of parallel data readers */
 void set_num_parallel_readers(const lbann_comm& comm, ::lbann_data::LbannPB& p);
@@ -84,19 +84,17 @@ void print_parameters(const lbann_comm& comm,
 
 /** @brief prints prototext file, cmd line, etc to file */
 void save_session(const lbann_comm& comm,
-                  const int argc, char * const* argv,
+                  const int argc,
+                  char* const* argv,
                   ::lbann_data::LbannPB& p);
 
 /** @brief Read prototext from a file into a protobuf message. */
-void read_prototext_file(
-  const std::string& fn,
-  ::lbann_data::LbannPB& pb,
-  const bool master);
+void read_prototext_file(const std::string& fn,
+                         ::lbann_data::LbannPB& pb,
+                         const bool master);
 
 /** @brief Write a protobuf message into a prototext file. */
-bool write_prototext_file(
-  const std::string& fn,
-  ::lbann_data::LbannPB& pb);
+bool write_prototext_file(const std::string& fn, ::lbann_data::LbannPB& pb);
 
 /** @brief Trim leading and trailing whitespace from a string. */
 std::string trim(std::string const& str);
@@ -105,9 +103,11 @@ std::string trim(std::string const& str);
 namespace details {
 
 template <typename T>
-std::vector<T> parse_list_impl(std::string const& str) {
+std::vector<T> parse_list_impl(std::string const& str)
+{
 #ifdef LBANN_HAS_GPU_FP16
-  using ParseType = typename std::conditional<std::is_same<T, fp16>::value, float, T>::type;
+  using ParseType =
+    typename std::conditional<std::is_same<T, fp16>::value, float, T>::type;
 #else
   using ParseType = T;
 #endif
@@ -122,16 +122,18 @@ std::vector<T> parse_list_impl(std::string const& str) {
 }
 
 template <typename T>
-std::set<T> parse_set_impl(std::string const& str) {
+std::set<T> parse_set_impl(std::string const& str)
+{
 #ifdef LBANN_HAS_GPU_FP16
-  using ParseType = typename std::conditional<std::is_same<T, fp16>::value, float, T>::type;
+  using ParseType =
+    typename std::conditional<std::is_same<T, fp16>::value, float, T>::type;
 #else
   using ParseType = T;
 #endif
   ParseType entry;
   std::set<T> set;
   std::istringstream iss(str);
-  while(iss.good()) {
+  while (iss.good()) {
     iss >> entry;
     set.emplace(std::move(entry));
   }
@@ -145,11 +147,12 @@ std::set<T> parse_set_impl(std::string const& str) {
 // guess that this will result in a logic error further down the
 // codepath, but we shouldn't count on it.
 
-}// namespace details
+} // namespace details
 
 /** @brief Parse a space-separated list. */
 template <typename T = std::string>
-std::vector<T> parse_list(std::string const& str) {
+std::vector<T> parse_list(std::string const& str)
+{
   auto trim_str = trim(str);
   if (trim_str.size())
     return details::parse_list_impl<T>(trim_str);
@@ -158,7 +161,8 @@ std::vector<T> parse_list(std::string const& str) {
 
 /** @brief Parse a space-separated set. */
 template <typename T = std::string>
-std::set<T> parse_set(std::string const& str) {
+std::set<T> parse_set(std::string const& str)
+{
   auto trim_str = trim(str);
   if (trim_str.size())
     return details::parse_set_impl<T>(trim_str);

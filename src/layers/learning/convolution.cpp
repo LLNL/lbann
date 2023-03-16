@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -230,25 +230,24 @@ void convolution_layer<TensorDataType, Layout, Device>::fill_onnx_node(
 #endif // LBANN_HAS_ONNX
 
 template <typename T, data_layout L, El::Device D>
-void convolution_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void convolution_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_convolution();
   msg->set_num_dims(this->get_conv_dims().size());
   msg->set_out_channels(this->m_output_channels);
   protobuf::assign_to_repeated(*msg->mutable_kernel_size(),
                                this->get_kernel_dims());
-  protobuf::assign_to_repeated(*msg->mutable_stride(),
-                               this->get_strides());
-  protobuf::assign_to_repeated(*msg->mutable_padding(),
-                               this->get_pads());
+  protobuf::assign_to_repeated(*msg->mutable_stride(), this->get_strides());
+  protobuf::assign_to_repeated(*msg->mutable_padding(), this->get_pads());
   msg->mutable_groups()->set_value(this->m_groups);
   auto const has_bias = (this->num_weights() > 1UL);
   msg->mutable_has_bias()->set_value(has_bias);
-  protobuf::assign_to_repeated(*msg->mutable_dilation(),
-                               this->get_dilations());
+  protobuf::assign_to_repeated(*msg->mutable_dilation(), this->get_dilations());
 #ifdef LBANN_HAS_DNN_LIB
-  msg->set_conv_tensor_op_mode(dnn_lib::convert_to_proto_math_type(
-                                 this->m_convolution_math_type));
+  msg->set_conv_tensor_op_mode(
+    dnn_lib::convert_to_proto_math_type(this->m_convolution_math_type));
 #endif // LBANN_HAS_DNN_LIB
 }
 

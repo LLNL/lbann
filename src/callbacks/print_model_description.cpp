@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,17 +26,17 @@
 
 #include "lbann/callbacks/print_model_description.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/utils/serialize.hpp"
 #include "lbann/proto/callbacks.pb.h"
+#include "lbann/utils/serialize.hpp"
 
 namespace lbann {
 namespace callback {
 
 template <class Archive>
-void print_model_description::serialize(Archive & ar) {
-  ar(::cereal::make_nvp(
-       "BaseCallback",
-       ::cereal::base_class<callback_base>(this)));
+void print_model_description::serialize(Archive& ar)
+{
+  ar(::cereal::make_nvp("BaseCallback",
+                        ::cereal::base_class<callback_base>(this)));
 }
 
 void print_model_description::write_specific_proto(
@@ -45,17 +45,17 @@ void print_model_description::write_specific_proto(
   proto.mutable_print_model_description();
 }
 
-void print_model_description::on_setup_end(model *m) {
+void print_model_description::on_setup_end(model* m)
+{
   if (m->get_comm()->am_world_master()) {
-    std::cout << "\n"
-              << m->get_description()
-              << std::endl;
+    std::cout << "\n" << m->get_description() << std::endl;
   }
 }
 
-std::unique_ptr<callback_base>
-build_print_model_description_callback_from_pbuf(
-  const google::protobuf::Message&, const std::shared_ptr<lbann_summary>&) {
+std::unique_ptr<callback_base> build_print_model_description_callback_from_pbuf(
+  const google::protobuf::Message&,
+  const std::shared_ptr<lbann_summary>&)
+{
   return std::make_unique<print_model_description>();
 }
 

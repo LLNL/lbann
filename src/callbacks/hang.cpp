@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,8 +25,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/hang.hpp"
-#include "lbann/utils/serialize.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
 
@@ -34,10 +34,10 @@ namespace lbann {
 namespace callback {
 
 template <class Archive>
-void hang::serialize(Archive & ar) {
-  ar(::cereal::make_nvp(
-       "BaseCallback",
-       ::cereal::base_class<callback_base>(this)),
+void hang::serialize(Archive& ar)
+{
+  ar(::cereal::make_nvp("BaseCallback",
+                        ::cereal::base_class<callback_base>(this)),
      CEREAL_NVP(m_rank_to_hang));
 }
 
@@ -51,27 +51,30 @@ void hang::setup(model* m)
 {
   if (m->get_comm()->am_world_master()) {
     if (m_rank_to_hang == -1) {
-      std::cout << "*** HANGING EVERY RANK IN HANG CALLBACK ***"
-                << std::endl;
-    } else {
+      std::cout << "*** HANGING EVERY RANK IN HANG CALLBACK ***" << std::endl;
+    }
+    else {
       std::cout << "*** HANGING RANK " << m_rank_to_hang
                 << " IN HANG CALLBACK ***" << std::endl;
     }
   }
 }
 
-void hang::on_train_begin(model* m) {
+void hang::on_train_begin(model* m)
+{
   if (m_rank_to_hang == -1 ||
       m_rank_to_hang == m->get_comm()->get_rank_in_world()) {
     // Set this flag to false with your debugger to resume execution.
     volatile bool lbann_hang = true;
-    while (lbann_hang) {}
+    while (lbann_hang) {
+    }
   }
 }
 
 std::unique_ptr<callback_base>
-build_hang_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, std::shared_ptr<lbann_summary> const&) {
+build_hang_callback_from_pbuf(const google::protobuf::Message& proto_msg,
+                              std::shared_ptr<lbann_summary> const&)
+{
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackHang&>(proto_msg);
   return std::make_unique<hang>(params.rank());

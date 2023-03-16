@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,7 +30,6 @@
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/weights/weights.hpp"
 
-
 namespace lbann {
 namespace callback {
 
@@ -39,17 +38,19 @@ namespace callback {
  *  The model size is output into a user-provided weights object,
  *  which is expected to have one entry.
  */
-class compute_model_size : public callback_base {
+class compute_model_size : public callback_base
+{
 public:
-
   /**
    *  @param batch_interval Number of training mini-batch steps
    *  @param output_name   To hold computed value
    */
-  compute_model_size(std::string output_name,
-               El::Int batch_interval = 1);
+  compute_model_size(std::string output_name, El::Int batch_interval = 1);
 
-  compute_model_size* copy() const override { return new compute_model_size(*this); }
+  compute_model_size* copy() const override
+  {
+    return new compute_model_size(*this);
+  }
   std::string name() const override { return "compute model size"; }
 
   void setup(model* m) override;
@@ -59,7 +60,8 @@ public:
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
@@ -70,7 +72,7 @@ private:
   friend class cereal::access;
   compute_model_size();
 
-   /*
+  /*
    *  output_name.
    */
   std::string m_output_name;
@@ -78,13 +80,12 @@ private:
   weights* m_output;
   /** Compute model size. */
   void compute_size(model& m);
-
 };
 
 // Builder function
-std::unique_ptr<callback_base>
-build_compute_model_size_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+std::unique_ptr<callback_base> build_compute_model_size_callback_from_pbuf(
+  const google::protobuf::Message&,
+  std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann

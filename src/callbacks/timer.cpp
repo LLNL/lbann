@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,13 +24,13 @@
 // permissions and limitations under the license.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/timer.hpp"
-#include "lbann/utils/timer.hpp"
+#include "lbann/comm_impl.hpp"
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/summary_impl.hpp"
+#include "lbann/utils/timer.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
 
@@ -40,40 +40,46 @@ namespace lbann {
 namespace callback {
 
 template <class Archive>
-void timer::serialize(Archive & ar) {
-  ar(::cereal::make_nvp(
-       "BaseCallback",
-       ::cereal::base_class<callback_base>(this)),
+void timer::serialize(Archive& ar)
+{
+  ar(::cereal::make_nvp("BaseCallback",
+                        ::cereal::base_class<callback_base>(this)),
      CEREAL_NVP(m_start_times),
      CEREAL_NVP(m_batch_start_times),
      CEREAL_NVP(m_batch_times));
   /// @todo Consider what to do with m_summarizer (preferably remove)
 }
 
-void timer::batch_timing_begin(const model& m) {
+void timer::batch_timing_begin(const model& m)
+{
   auto const mode = m.get_execution_context().get_execution_mode();
   m_batch_start_times[mode] = get_time();
 }
 
-void timer::batch_timing_end(const model& m) {
+void timer::batch_timing_end(const model& m)
+{
   const auto& c = m.get_execution_context();
   const auto& mode = c.get_execution_mode();
   const auto& batch_time = get_time() - m_batch_start_times[mode];
   m_batch_times[mode].push_back(batch_time);
   if (m_summarizer != nullptr) {
-    m_summarizer->reduce_scalar("minibatch_time", batch_time, c.get_step()-1);
-    m_summarizer->reduce_scalar_all("minibatch_time", batch_time, c.get_step()-1);
+    m_summarizer->reduce_scalar("minibatch_time", batch_time, c.get_step() - 1);
+    m_summarizer->reduce_scalar_all("minibatch_time",
+                                    batch_time,
+                                    c.get_step() - 1);
   }
 }
 
-void timer::timing_begin(const model& m) {
+void timer::timing_begin(const model& m)
+{
   const auto& c = m.get_execution_context();
   const auto& mode = c.get_execution_mode();
   m_start_times[mode] = get_time();
   m_batch_times[mode].clear();
 }
 
-void timer::timing_end(model& m) {
+void timer::timing_end(model& m)
+{
   const auto& c = static_cast<SGDExecutionContext&>(m.get_execution_context());
   constexpr EvalType zero = 0;
 
@@ -90,24 +96,20 @@ void timer::timing_end(model& m) {
   EvalType batch_time_median = std::nan("");
   EvalType batch_time_stdev = std::nan("");
   if (num_batches > 0) {
-    batch_time_mean = std::accumulate(batch_times.begin(),
-                                      batch_times.end(),
-                                      zero) / num_batches;
-    batch_time_min = *std::min_element(batch_times.begin(),
-                                       batch_times.end());
-    batch_time_max = *std::max_element(batch_times.begin(),
-                                       batch_times.end());
-    std::vector<EvalType> sorted_times(batch_times.begin(),
-                                       batch_times.end());
-    std::sort(sorted_times.begin(),
-              sorted_times.end());
-    if(num_batches%2==0)
-    {
-      batch_time_median = sorted_times[num_batches/2];
+    batch_time_mean =
+      std::accumulate(batch_times.begin(), batch_times.end(), zero) /
+      num_batches;
+    batch_time_min = *std::min_element(batch_times.begin(), batch_times.end());
+    batch_time_max = *std::max_element(batch_times.begin(), batch_times.end());
+    std::vector<EvalType> sorted_times(batch_times.begin(), batch_times.end());
+    std::sort(sorted_times.begin(), sorted_times.end());
+    if (num_batches % 2 == 0) {
+      batch_time_median = sorted_times[num_batches / 2];
     }
-    else
-    {
-      batch_time_median = (sorted_times[(num_batches-1)/2] + sorted_times[num_batches/2] ) / 2;
+    else {
+      batch_time_median =
+        (sorted_times[(num_batches - 1) / 2] + sorted_times[num_batches / 2]) /
+        2;
     }
   }
   if (num_batches > 1) {
@@ -122,9 +124,9 @@ void timer::timing_end(model& m) {
 
   // Get string for execution mode
   std::string mode_string;
-  switch(mode) {
+  switch (mode) {
   case execution_mode::training:
-    mode_string = "training epoch " + std::to_string(c.get_epoch()-1);
+    mode_string = "training epoch " + std::to_string(c.get_epoch() - 1);
     break;
   case execution_mode::validation:
     mode_string = "validation";
@@ -149,7 +151,7 @@ void timer::timing_end(model& m) {
       arg_parser.get<bool>(LBANN_OPTION_LTFB_ALLOW_GLOBAL_STATISTICS);
     std::stringstream report;
 
-    if(allow_global_statistics) {
+    if (allow_global_statistics) {
       // Gather timing results in world master
       std::vector<EvalType> run_time_list(num_trainers);
       std::vector<EvalType> mean_list(num_trainers);
@@ -162,7 +164,8 @@ void timer::timing_end(model& m) {
         comm.intertrainer_gather(batch_time_min, min_list);
         comm.intertrainer_gather(batch_time_max, max_list);
         comm.intertrainer_gather(batch_time_stdev, stdev_list);
-      } else {
+      }
+      else {
         const auto& world_master = comm.get_intertrainer_master();
         comm.intertrainer_gather(run_time, world_master);
         comm.intertrainer_gather(batch_time_mean, world_master);
@@ -171,73 +174,83 @@ void timer::timing_end(model& m) {
         comm.intertrainer_gather(batch_time_stdev, world_master);
       }
 
-
       // Print results
       if (comm.am_world_master()) {
         for (El::Int i = 0; i < num_trainers; ++i) {
-          std::cout << m.get_name() << " (instance "<< i << ") " << mode_string << " "
-                    << "run time : " << run_time_list[i] << "s"
-                    << std::endl;
+          std::cout << m.get_name() << " (instance " << i << ") " << mode_string
+                    << " "
+                    << "run time : " << run_time_list[i] << "s" << std::endl;
         }
         for (El::Int i = 0; i < num_trainers; ++i) {
-          std::cout << m.get_name() << " (instance " << i << ") " << mode_string << " "
+          std::cout << m.get_name() << " (instance " << i << ") " << mode_string
+                    << " "
                     << "mini-batch time statistics : ";
           if (std::isnan(mean_list[i])) {
             std::cout << "N/A";
-          } else {
+          }
+          else {
             std::cout << mean_list[i] << "s";
           }
           std::cout << " mean, ";
-          std::cout << batch_time_median<< "s median, ";
+          std::cout << batch_time_median << "s median, ";
           if (std::isnan(max_list[i])) {
             std::cout << "N/A";
-          } else {
+          }
+          else {
             std::cout << max_list[i] << "s";
           }
           std::cout << " max, ";
           if (std::isnan(min_list[i])) {
             std::cout << "N/A";
-          } else {
+          }
+          else {
             std::cout << min_list[i] << "s";
           }
           std::cout << " min, ";
           if (std::isnan(stdev_list[i])) {
             std::cout << "N/A";
-          } else {
+          }
+          else {
             std::cout << stdev_list[i] << "s";
           }
           std::cout << " stdev" << std::endl;
         }
       }
-    }else {
+    }
+    else {
       // Print results for each trainer
-      report << m.get_name() << " (instance "<< comm.get_trainer_rank() << ") " << mode_string << " "
-                << "run time : " << run_time << "s"
-                << std::endl;
-      report << m.get_name() << " (instance " << comm.get_trainer_rank() << ") " << mode_string << " "
-                << "mini-batch time statistics : ";
+      report << m.get_name() << " (instance " << comm.get_trainer_rank() << ") "
+             << mode_string << " "
+             << "run time : " << run_time << "s" << std::endl;
+      report << m.get_name() << " (instance " << comm.get_trainer_rank() << ") "
+             << mode_string << " "
+             << "mini-batch time statistics : ";
       if (std::isnan(batch_time_mean)) {
         report << "N/A";
-      } else {
+      }
+      else {
         report << batch_time_mean << "s";
       }
       report << " mean, ";
-      report << batch_time_median<< "s median, ";
+      report << batch_time_median << "s median, ";
       if (std::isnan(batch_time_max)) {
         report << "N/A";
-      } else {
+      }
+      else {
         report << batch_time_max << "s";
       }
       report << " max, ";
       if (std::isnan(batch_time_min)) {
         report << "N/A";
-      } else {
+      }
+      else {
         report << batch_time_min << "s";
       }
       report << " min, ";
       if (std::isnan(batch_time_stdev)) {
         report << "N/A";
-      } else {
+      }
+      else {
         report << batch_time_stdev << "s";
       }
       report << " stdev" << std::endl;
@@ -245,7 +258,6 @@ void timer::timing_end(model& m) {
       std::cout << report.str() << std::flush;
     }
   }
-
 }
 
 void timer::write_specific_proto(lbann_data::Callback& proto) const
@@ -254,8 +266,9 @@ void timer::write_specific_proto(lbann_data::Callback& proto) const
 }
 
 std::unique_ptr<callback_base>
-build_timer_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const& summarizer) {
+build_timer_callback_from_pbuf(const google::protobuf::Message&,
+                               std::shared_ptr<lbann_summary> const& summarizer)
+{
   return std::make_unique<timer>(summarizer);
 }
 

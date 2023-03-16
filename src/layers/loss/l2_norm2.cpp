@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,7 +33,8 @@ namespace {
 
 template <typename TensorDataType>
 void local_fp_cpu(const El::AbstractMatrix<TensorDataType>& local_input,
-                  El::AbstractMatrix<TensorDataType>& local_contribution) {
+                  El::AbstractMatrix<TensorDataType>& local_contribution)
+{
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_input.Width(); ++col) {
     TensorDataType sum = El::TypeTraits<TensorDataType>::Zero();
@@ -46,9 +47,11 @@ void local_fp_cpu(const El::AbstractMatrix<TensorDataType>& local_input,
 }
 
 template <typename TensorDataType>
-void local_bp_cpu(const El::AbstractMatrix<TensorDataType>& local_input,
-                  const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
-                  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
+void local_bp_cpu(
+  const El::AbstractMatrix<TensorDataType>& local_input,
+  const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input)
+{
   auto const width = local_input.Width();
   auto const height = local_input.Height();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
@@ -65,23 +68,24 @@ void local_bp_cpu(const El::AbstractMatrix<TensorDataType>& local_input,
 } // namespace
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void l2_norm2_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
-  local_fp_cpu(this->get_local_prev_activations(),
-               this->m_workspace->Matrix());
+void l2_norm2_layer<TensorDataType, T_layout, Dev>::local_fp_compute()
+{
+  local_fp_cpu(this->get_local_prev_activations(), this->m_workspace->Matrix());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void l2_norm2_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
+void l2_norm2_layer<TensorDataType, T_layout, Dev>::local_bp_compute()
+{
   local_bp_cpu(this->get_local_prev_activations(),
                this->m_workspace->LockedMatrix(),
                this->get_local_error_signals());
 }
 
-#define PROTO(T)                                      \
-  template class l2_norm2_layer<                      \
-    T, data_layout::DATA_PARALLEL, El::Device::CPU>;  \
-  template class l2_norm2_layer<                      \
-    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  template class l2_norm2_layer<T,                                             \
+                                data_layout::DATA_PARALLEL,                    \
+                                El::Device::CPU>;                              \
+  template class l2_norm2_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

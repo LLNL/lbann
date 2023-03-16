@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,16 +26,16 @@
 
 #include "Catch2BasicSupport.hpp"
 
-#include "TestHelpers.hpp"
 #include "MPITestHelpers.hpp"
+#include "TestHelpers.hpp"
 
 #include <lbann/base.hpp>
 #include <lbann/optimizers/sgd.hpp>
+#include <lbann/utils/memory.hpp>
+#include <lbann/utils/serialize.hpp>
 #include <lbann/weights/data_type_weights.hpp>
 #include <lbann/weights/weights.hpp>
 #include <lbann/weights/weights_proxy.hpp>
-#include <lbann/utils/memory.hpp>
-#include <lbann/utils/serialize.hpp>
 
 // Some convenience typedefs
 
@@ -61,11 +61,10 @@ auto make_weights(lbann::lbann_comm& comm, size_t height, size_t width)
   T const value = El::To<T>(1.3);
   DataTypeWeights<T> out(comm);
   out.set_dims({height}, {width});
-  out.set_initializer(
-    std::make_unique<ConstantInitializer<T>>(value));
+  out.set_initializer(std::make_unique<ConstantInitializer<T>>(value));
   return out;
 }
-}// namespace <>
+} // namespace
 
 template <typename T>
 auto make_weights_ptr(lbann::lbann_comm& comm, size_t height, size_t width)
@@ -73,8 +72,7 @@ auto make_weights_ptr(lbann::lbann_comm& comm, size_t height, size_t width)
   T const value = El::To<T>(1.3);
   auto out = std::make_unique<DataTypeWeights<T>>(comm);
   out->set_dims({height}, {width});
-  out->set_initializer(
-    std::make_unique<ConstantInitializer<T>>(value));
+  out->set_initializer(std::make_unique<ConstantInitializer<T>>(value));
   return out;
 }
 
@@ -95,23 +93,19 @@ TEST_CASE("Serializing weights", "[mpi][weights][serialize]")
   size_t const weights_height = 3 * size_of_world;
   size_t const weights_width = 2 * size_of_world;
 
-  auto dtw_src = make_weights<DataType>(world_comm,
-                                        weights_height,
-                                        weights_width);
+  auto dtw_src =
+    make_weights<DataType>(world_comm, weights_height, weights_width);
   auto dtw_tgt = make_weights<DataType>(world_comm);
-  std::unique_ptr<DataTypeWeights<DataType>>
-    dtw_src_ptr_init = make_weights_ptr<DataType>(world_comm,
-                                                  weights_height,
-                                                  weights_width);
+  std::unique_ptr<DataTypeWeights<DataType>> dtw_src_ptr_init =
+    make_weights_ptr<DataType>(world_comm, weights_height, weights_width);
 
   dtw_src.set_optimizer(std::make_unique<SGD<DataType>>(1.f, 2.f, true));
   dtw_src.setup();
   dtw_src_ptr_init->set_optimizer(
     std::make_unique<SGD<DataType>>(3.f, 4.f, false));
   dtw_src_ptr_init->setup();
-  std::unique_ptr<lbann::weights>
-    dtw_src_ptr = std::move(dtw_src_ptr_init),
-    dtw_tgt_ptr;
+  std::unique_ptr<lbann::weights> dtw_src_ptr = std::move(dtw_src_ptr_init),
+                                  dtw_tgt_ptr;
 
 #ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
   SECTION("Binary archive")

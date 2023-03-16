@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,14 +24,14 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/perturb_adam.hpp"
+#include "lbann/comm_impl.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/random_number_generators.hpp"
 #include "lbann/utils/serialize.hpp"
-#include "lbann/utils/protobuf.hpp"
 #include "lbann/weights/weights.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
@@ -60,17 +60,16 @@ perturb_adam::perturb_adam(DataType learning_rate_factor,
     m_beta2_factor(beta2_factor),
     m_eps_factor(eps_factor),
     m_perturb_during_training(perturb_during_training),
-    m_weights_names(std::move(weights_names)) {}
-
-perturb_adam::perturb_adam()
-  : perturb_adam(0, 0, 0, 0, false, 0)
+    m_weights_names(std::move(weights_names))
 {}
 
+perturb_adam::perturb_adam() : perturb_adam(0, 0, 0, 0, false, 0) {}
+
 template <class Archive>
-void perturb_adam::serialize(Archive & ar) {
-  ar(::cereal::make_nvp(
-       "BaseCallback",
-       ::cereal::base_class<callback_base>(this)),
+void perturb_adam::serialize(Archive& ar)
+{
+  ar(::cereal::make_nvp("BaseCallback",
+                        ::cereal::base_class<callback_base>(this)),
      CEREAL_NVP(m_learning_rate_factor),
      CEREAL_NVP(m_beta1_factor),
      CEREAL_NVP(m_beta2_factor),
@@ -91,48 +90,52 @@ void perturb_adam::write_specific_proto(lbann_data::Callback& proto) const
   msg->set_weights(protobuf::to_space_sep_string(m_weights_names));
 }
 
-void perturb_adam::setup(model* m) {
-  perturb(*m);
-}
+void perturb_adam::setup(model* m) { perturb(*m); }
 
-void perturb_adam::on_batch_begin(model* m) {
+void perturb_adam::on_batch_begin(model* m)
+{
   const auto& c = m->get_execution_context();
   if (m_perturb_during_training && c.get_step() > 0) {
     perturb(*m);
   }
 }
 
-void perturb_adam::perturb(model& m) const {
+void perturb_adam::perturb(model& m) const
+{
   auto* comm = m.get_comm();
   for (auto* w : m.get_weights()) {
     if (w == nullptr) {
-      LBANN_ERROR("callback \"", name(), "\" "
+      LBANN_ERROR("callback \"",
+                  name(),
+                  "\" "
                   "got a weights pointer that is a null pointer");
     }
-    if (m_weights_names.empty()
-        || m_weights_names.count(w->get_name()) > 0) {
+    if (m_weights_names.empty() || m_weights_names.count(w->get_name()) > 0) {
 
       // Check if weights has Adam optimizer
       auto* opt = dynamic_cast<adam<DataType>*>(w->get_optimizer());
       if (!m_weights_names.empty() && opt == nullptr) {
         auto* opt_ = w->get_optimizer();
-        LBANN_ERROR(
-          "callback \"", name(), "\" "
-          "expected weights \"", w->get_name(), "\" "
-          "to have an Adam optimizer, but found ",
-          (opt_ ? opt_->get_type() : "no optimizer"));
+        LBANN_ERROR("callback \"",
+                    name(),
+                    "\" "
+                    "expected weights \"",
+                    w->get_name(),
+                    "\" "
+                    "to have an Adam optimizer, but found ",
+                    (opt_ ? opt_->get_type() : "no optimizer"));
       }
 
       // Perturb Adam optimizer
       if (opt) {
         perturb(*comm, *opt);
       }
-
     }
   }
 }
 
-void perturb_adam::perturb(lbann_comm& comm, adam<DataType>& opt) const {
+void perturb_adam::perturb(lbann_comm& comm, adam<DataType>& opt) const
+{
 
   // Perturb hyperparameters on master process
   std::vector<DataType> hyperparameters(4);
@@ -144,7 +147,8 @@ void perturb_adam::perturb(lbann_comm& comm, adam<DataType>& opt) const {
     constexpr DataType zero = 0;
     constexpr DataType one = 1;
     constexpr DataType min_val = std::numeric_limits<DataType>::min();
-    constexpr DataType half_epsilon = std::numeric_limits<DataType>::epsilon() / 2;
+    constexpr DataType half_epsilon =
+      std::numeric_limits<DataType>::epsilon() / 2;
 
     // RNG
     auto& gen = get_generator();
@@ -185,25 +189,24 @@ void perturb_adam::perturb(lbann_comm& comm, adam<DataType>& opt) const {
       eps = std::exp(log_val);
     }
     hyperparameters[3] = eps;
-
   }
 
   // Communicate hyperparameters from master processes
   comm.trainer_broadcast(comm.get_trainer_master(),
-                       hyperparameters.data(),
-                       hyperparameters.size());
+                         hyperparameters.data(),
+                         hyperparameters.size());
 
   // Update hyperparameters
   opt.set_learning_rate(hyperparameters[0]);
   opt.m_beta1 = hyperparameters[1];
   opt.m_beta2 = hyperparameters[2];
   opt.m_eps = hyperparameters[3];
-
 }
 
-std::unique_ptr<callback_base>
-build_perturb_adam_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+std::unique_ptr<callback_base> build_perturb_adam_callback_from_pbuf(
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackPerturbAdam&>(proto_msg);
   return std::make_unique<perturb_adam>(

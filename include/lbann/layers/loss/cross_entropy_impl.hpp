@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,45 +37,48 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void cross_entropy_layer<TensorDataType, T_layout, Dev>::setup_dims(DataReaderMetaData& dr_metadata) {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-    this->set_output_dims({1});
+void cross_entropy_layer<TensorDataType, T_layout, Dev>::setup_dims(
+  DataReaderMetaData& dr_metadata)
+{
+  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  this->set_output_dims({1});
 
 #ifdef LBANN_HAS_DISTCONV
-    // In the current implementation of cross entropy in Distconv, we
-    // do not use the reshape layer and just assumes both inputs have
-    // the matching shape. Therefore, the following check on the input
-    // dimensions would fail. We could address this by either 1)
-    // implementing the reshape layer, or 2) giving a proper shape to
-    // the ground-truth data.
-    //
-    if (this->distconv_enabled()) {
-      return;
-    }
+  // In the current implementation of cross entropy in Distconv, we
+  // do not use the reshape layer and just assumes both inputs have
+  // the matching shape. Therefore, the following check on the input
+  // dimensions would fail. We could address this by either 1)
+  // implementing the reshape layer, or 2) giving a proper shape to
+  // the ground-truth data.
+  //
+  if (this->distconv_enabled()) {
+    return;
+  }
 #endif
 
-    // Check that input dimensions match
-    if (this->get_input_dims(0) != this->get_input_dims(1)) {
-      const auto& parents = this->get_parent_layers();
-      std::stringstream err;
-      err << get_type() << " layer \"" << this->get_name() << "\" "
-          << "has input tensors with different dimensions (";
-      for (int i = 0; i < this->get_num_parents(); ++i) {
-        const auto& dims = this->get_input_dims(i);
-        err << (i > 0 ? ", " : "")
-            << "layer \"" << parents[i]->get_name() << "\" outputs ";
-        for (size_t j = 0; j < dims.size(); ++j) {
-          err << (j > 0 ? " x " : "") << dims[j];
-        }
+  // Check that input dimensions match
+  if (this->get_input_dims(0) != this->get_input_dims(1)) {
+    const auto& parents = this->get_parent_layers();
+    std::stringstream err;
+    err << get_type() << " layer \"" << this->get_name() << "\" "
+        << "has input tensors with different dimensions (";
+    for (int i = 0; i < this->get_num_parents(); ++i) {
+      const auto& dims = this->get_input_dims(i);
+      err << (i > 0 ? ", " : "") << "layer \"" << parents[i]->get_name()
+          << "\" outputs ";
+      for (size_t j = 0; j < dims.size(); ++j) {
+        err << (j > 0 ? " x " : "") << dims[j];
       }
-      err << ")";
-      LBANN_ERROR(err.str());
     }
-
+    err << ")";
+    LBANN_ERROR(err.str());
   }
+}
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void cross_entropy_layer<TensorDataType, T_layout, Dev>::setup_data(size_t max_mini_batch_size) {
+void cross_entropy_layer<TensorDataType, T_layout, Dev>::setup_data(
+  size_t max_mini_batch_size)
+{
   data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
   // Initialize workspace
@@ -100,7 +103,8 @@ void cross_entropy_layer<TensorDataType, T_layout, Dev>::setup_data(size_t max_m
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void cross_entropy_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+void cross_entropy_layer<TensorDataType, T_layout, Dev>::fp_compute()
+{
 
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
@@ -164,7 +168,9 @@ void cross_entropy_layer<TensorDataType, T_layout, Dev>::bp_compute()
 }
 
 template <typename T, data_layout L, El::Device D>
-void cross_entropy_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) const {
+void cross_entropy_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_cross_entropy();
   msg->set_use_labels(m_use_labels);
@@ -172,10 +178,10 @@ void cross_entropy_layer<T,L,D>::write_specific_proto(lbann_data::Layer& proto) 
 
 #ifdef LBANN_HAS_ONNX
 template <typename T, data_layout L, El::Device D>
-void cross_entropy_layer<T, L, D>::fill_onnx_node(
-  onnx::GraphProto& graph) const {
+void cross_entropy_layer<T, L, D>::fill_onnx_node(onnx::GraphProto& graph) const
+{
   auto const parents = this->get_parent_layers();
-  //z = Log(input=x)
+  // z = Log(input=x)
   auto* log = graph.add_node();
   size_t idx = parents[0]->find_child_layer_index(*this);
   log->add_input(parents[0]->get_name() + "_" + std::to_string(idx));
@@ -185,7 +191,7 @@ void cross_entropy_layer<T, L, D>::fill_onnx_node(
   log->set_domain("");
   log->set_doc_string("Log node for Cross Entropy Layer");
 
-  //z = Mul(A=y, B=z)
+  // z = Mul(A=y, B=z)
   auto* mul = graph.add_node();
   idx = parents[1]->find_child_layer_index(*this);
   mul->add_input(parents[1]->get_name() + "_" + std::to_string(idx));
@@ -196,15 +202,14 @@ void cross_entropy_layer<T, L, D>::fill_onnx_node(
   mul->set_domain("");
   mul->set_doc_string("Multiply node for Cross Entropy Layer");
 
-  //z = Reshape(data=z, shape=[0,-1])
+  // z = Reshape(data=z, shape=[0,-1])
   auto* shape = graph.add_initializer();
   shape->set_name(this->get_name() + "_mul_shape");
   shape->set_data_type(onnx::TensorProto::INT64);
   shape->add_dims(2);
   shape->add_int64_data(0);
   shape->add_int64_data(-1);
-  shape->set_doc_string(this->get_name() +
-                        " shape to reshape multiply");
+  shape->set_doc_string(this->get_name() + " shape to reshape multiply");
 
   auto* reshape = graph.add_node();
   reshape->add_input(mul->output(0));
@@ -215,7 +220,7 @@ void cross_entropy_layer<T, L, D>::fill_onnx_node(
   reshape->set_domain("");
   reshape->set_doc_string("Reshape muultiply result for Cross Entropy Layer");
 
-  //z = ReduceSum(data=z, axes=-1)
+  // z = ReduceSum(data=z, axes=-1)
 
   auto* axes = graph.add_initializer();
   axes->set_name(this->get_name() + "_reducesum_axes");
@@ -235,35 +240,43 @@ void cross_entropy_layer<T, L, D>::fill_onnx_node(
   reduce_sum->set_op_type("ReduceSum");
   reduce_sum->set_domain("");
   reduce_sum->set_doc_string("ReduceSum node for Cross Entropy Layer");
-
 }
-#endif //LBANN_HAS_ONNX
+#endif // LBANN_HAS_ONNX
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 const cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>&
-cross_entropy_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const {
-  return dynamic_cast<const cross_entropy_distconv_adapter<
-    TensorDataType, T_layout, Dev>&>(data_type_layer<TensorDataType>::get_distconv_adapter());
+cross_entropy_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const
+{
+  return dynamic_cast<
+    const cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+    data_type_layer<TensorDataType>::get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>&
-cross_entropy_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() {
-  return const_cast<cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      static_cast<const cross_entropy_layer<TensorDataType, T_layout, Dev>&>(*this).get_distconv_adapter());
+cross_entropy_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter()
+{
+  return const_cast<
+    cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+    static_cast<const cross_entropy_layer<TensorDataType, T_layout, Dev>&>(
+      *this)
+      .get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 dc::Shape cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>::
-get_prev_activations_shape(int index) const {
+  get_prev_activations_shape(int index) const
+{
   // Assumes both of the two input tensors have the equal shape.
-  return data_type_distconv_adapter<TensorDataType>::get_prev_activations_shape(0);
+  return data_type_distconv_adapter<TensorDataType>::get_prev_activations_shape(
+    0);
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 dc::Shape cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>::
-get_activations_shape(int output_index) const {
+  get_activations_shape(int output_index) const
+{
   // NOTE: LBANN matrix is a 2-D matrix, while Distconv keeps the
   // original spatial and channel dimensions, so
   // get_output_tensor_shape() doesn't work here.
@@ -276,7 +289,8 @@ get_activations_shape(int output_index) const {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 dc::Shape cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>::
-get_activations_local_shape(int index) const {
+  get_activations_local_shape(int index) const
+{
   assert_eq(index, 0);
   auto input_shape = this->get_prev_activations().get_local_shape();
   for (int i = 0; i < input_shape.length() - 1; ++i) {
@@ -287,12 +301,13 @@ get_activations_local_shape(int index) const {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>::
-setup_distributions(tensor_overlap_constraints &constraints) {
-  data_type_distconv_adapter<TensorDataType>::setup_distributions(
-      constraints);
+  setup_distributions(tensor_overlap_constraints& constraints)
+{
+  data_type_distconv_adapter<TensorDataType>::setup_distributions(constraints);
   // Output tensors share all dimensions except for the sample dimension
   auto activations_split = this->get_activations_dist().get_split_shape();
-  auto prev_error_signals_split = this->get_prev_error_signals_dist().get_split_shape();
+  auto prev_error_signals_split =
+    this->get_prev_error_signals_dist().get_split_shape();
   for (int i = 0; i < activations_split.length() - 1; ++i) {
     activations_split[i] = 1;
     prev_error_signals_split[i] = 1;
@@ -300,22 +315,22 @@ setup_distributions(tensor_overlap_constraints &constraints) {
   this->get_activations_dist().set_split_shape(activations_split);
   this->get_prev_error_signals_dist().set_split_shape(prev_error_signals_split);
 
-  for (auto &d: this->m_prev_activations_dists) {
+  for (auto& d : this->m_prev_activations_dists) {
     d.clear_overlap();
     constraints.mark_updated(d);
     constraints.mark_invariant(d);
   }
-  for (auto &d: this->m_activations_dists) {
+  for (auto& d : this->m_activations_dists) {
     d.clear_overlap();
     constraints.mark_updated(d);
     constraints.mark_invariant(d);
   }
-  for (auto &d: this->m_prev_error_signals_dists) {
+  for (auto& d : this->m_prev_error_signals_dists) {
     d.clear_overlap();
     constraints.mark_updated(d);
     constraints.mark_invariant(d);
   }
-  for (auto &d: this->m_error_signals_dists) {
+  for (auto& d : this->m_error_signals_dists) {
     d.clear_overlap();
     constraints.mark_updated(d);
     constraints.mark_invariant(d);
@@ -324,8 +339,10 @@ setup_distributions(tensor_overlap_constraints &constraints) {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
-    size_t workspace_capacity) {
-  m_cross_entropy = std::make_unique<dc::CrossEntropy>(dc::get_backend(), m_use_labels);
+  size_t workspace_capacity)
+{
+  m_cross_entropy =
+    std::make_unique<dc::CrossEntropy>(dc::get_backend(), m_use_labels);
   m_cross_entropy->setup(this->get_prev_activations(0),
                          this->get_prev_activations(1),
                          this->get_activations(0));

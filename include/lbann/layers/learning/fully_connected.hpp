@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -53,7 +53,8 @@ namespace lbann {
  *  channel-wise fully-connected layer.
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class fully_connected_layer : public data_type_layer<TensorDataType> {
+class fully_connected_layer : public data_type_layer<TensorDataType>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -70,13 +71,11 @@ public:
   ///@}
 
 public:
-
   /** @todo Accept a vector for output_size */
-  fully_connected_layer(
-    int output_size,
-    bool transpose = false,
-    WeightsType* weight = nullptr,
-    bool has_bias = true);
+  fully_connected_layer(int output_size,
+                        bool transpose = false,
+                        WeightsType* weight = nullptr,
+                        bool has_bias = true);
 
   fully_connected_layer(const fully_connected_layer& other);
 
@@ -84,7 +83,8 @@ public:
 
   ~fully_connected_layer() override;
 
-  fully_connected_layer* copy() const override {
+  fully_connected_layer* copy() const override
+  {
     return new fully_connected_layer(*this);
   }
 
@@ -94,7 +94,7 @@ public:
 
 #ifdef LBANN_HAS_ONNX
   void fill_onnx_node(onnx::GraphProto& graph) const override;
-#endif //LBANN_HAS_ONNX
+#endif // LBANN_HAS_ONNX
 
   description get_description() const override;
 
@@ -107,7 +107,6 @@ public:
   ///@}
 
 protected:
-
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
@@ -120,7 +119,6 @@ protected:
   void bp_compute() override;
 
 private:
-
   /** Scaling factor for bias term.
    *  If the scaling factor is zero, bias is not applied.
    */
@@ -136,8 +134,10 @@ private:
   bool m_transpose;
 
   /** Deallocate distributed matrices. */
-  void deallocate_matrices() {
-    if (m_bias_gradient != nullptr) delete m_bias_gradient;
+  void deallocate_matrices()
+  {
+    if (m_bias_gradient != nullptr)
+      delete m_bias_gradient;
   }
 
   template <typename U>
@@ -151,9 +151,13 @@ LBANN_DEFINE_LAYER_BUILDER(fully_connected);
 
 #ifndef LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE
 
-#define PROTO_DEVICE(T, Device) \
-  extern template class fully_connected_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  extern template class fully_connected_layer<T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class fully_connected_layer<T,                               \
+                                              data_layout::DATA_PARALLEL,      \
+                                              Device>;                         \
+  extern template class fully_connected_layer<T,                               \
+                                              data_layout::MODEL_PARALLEL,     \
+                                              Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

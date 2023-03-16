@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -34,49 +34,62 @@
 #include <sstream>
 
 // Macro to throw an LBANN exception
-#define LBANN_ERROR(...)                                        \
-  do {                                                          \
-    const int rank_LBANN_ERROR = lbann::get_rank_in_world();    \
-    throw ::lbann::exception(                                   \
-      ::lbann::build_string(                                    \
-        "LBANN error",                                          \
-        (rank_LBANN_ERROR >= 0                                  \
-         ? " on rank " + std::to_string(rank_LBANN_ERROR)       \
-         : std::string()),                                      \
-        " (", __FILE__, ":", __LINE__, "): ", __VA_ARGS__));    \
+#define LBANN_ERROR(...)                                                       \
+  do {                                                                         \
+    const int rank_LBANN_ERROR = lbann::get_rank_in_world();                   \
+    throw ::lbann::exception(::lbann::build_string(                            \
+      "LBANN error",                                                           \
+      (rank_LBANN_ERROR >= 0 ? " on rank " + std::to_string(rank_LBANN_ERROR)  \
+                             : std::string()),                                 \
+      " (",                                                                    \
+      __FILE__,                                                                \
+      ":",                                                                     \
+      __LINE__,                                                                \
+      "): ",                                                                   \
+      __VA_ARGS__));                                                           \
   } while (0)
 
 // Macro to print a warning to standard error stream.
-#define LBANN_WARNING(...)                                      \
-  do {                                                          \
-    const int rank_LBANN_WARNING = lbann::get_rank_in_world();  \
-    std::cerr << lbann::build_string(                           \
-      "LBANN warning",                                          \
-      (rank_LBANN_WARNING >= 0                                  \
-       ? " on rank " + std::to_string(rank_LBANN_WARNING)       \
-       : std::string()),                                        \
-      " (", __FILE__, ":", __LINE__, "): ", __VA_ARGS__)        \
-              << std::endl;                                     \
+#define LBANN_WARNING(...)                                                     \
+  do {                                                                         \
+    const int rank_LBANN_WARNING = lbann::get_rank_in_world();                 \
+    std::cerr << lbann::build_string(                                          \
+                   "LBANN warning",                                            \
+                   (rank_LBANN_WARNING >= 0                                    \
+                      ? " on rank " + std::to_string(rank_LBANN_WARNING)       \
+                      : std::string()),                                        \
+                   " (",                                                       \
+                   __FILE__,                                                   \
+                   ":",                                                        \
+                   __LINE__,                                                   \
+                   "): ",                                                      \
+                   __VA_ARGS__)                                                \
+              << std::endl;                                                    \
   } while (0)
 
 // Macro to print a message to standard cout stream.
-#define LBANN_MSG(...)                                          \
-  do {                                                          \
-    const int rank_LBANN_MSG = lbann::get_rank_in_world();      \
-    if(rank_LBANN_MSG == 0) {                                   \
-      std::cout << lbann::build_string(                         \
-      "LBANN message",                                          \
-      (rank_LBANN_MSG >= 0                                      \
-       ? " on rank " + std::to_string(rank_LBANN_MSG)           \
-       : std::string()),                                        \
-      " (", __FILE__, ":", __LINE__, "): ", __VA_ARGS__)        \
-              << std::endl;                                     \
-    }                                                           \
+#define LBANN_MSG(...)                                                         \
+  do {                                                                         \
+    const int rank_LBANN_MSG = lbann::get_rank_in_world();                     \
+    if (rank_LBANN_MSG == 0) {                                                 \
+      std::cout << lbann::build_string(                                        \
+                     "LBANN message",                                          \
+                     (rank_LBANN_MSG >= 0                                      \
+                        ? " on rank " + std::to_string(rank_LBANN_MSG)         \
+                        : std::string()),                                      \
+                     " (",                                                     \
+                     __FILE__,                                                 \
+                     ":",                                                      \
+                     __LINE__,                                                 \
+                     "): ",                                                    \
+                     __VA_ARGS__)                                              \
+                << std::endl;                                                  \
+    }                                                                          \
   } while (0)
 
-#define LBANN_ASSERT(cond)                              \
-  if (!(cond))                                          \
-    LBANN_ERROR("The assertion " #cond " failed.")
+#define LBANN_ASSERT(cond)                                                     \
+  if (!(cond))                                                                 \
+  LBANN_ERROR("The assertion " #cond " failed.")
 
 #ifdef LBANN_DEBUG
 #define LBANN_ASSERT_DEBUG(cond) LBANN_ASSERT(cond)
@@ -84,9 +97,9 @@
 #define LBANN_ASSERT_DEBUG(cond)
 #endif
 
-#define LBANN_ASSERT_WARNING(cond)                      \
-  if (!(cond))                                          \
-    LBANN_WARNING("The assertion " #cond " failed.")
+#define LBANN_ASSERT_WARNING(cond)                                             \
+  if (!(cond))                                                                 \
+  LBANN_WARNING("The assertion " #cond " failed.")
 
 namespace lbann {
 
@@ -95,7 +108,8 @@ namespace lbann {
  *
  *  A stack trace is recorded when the exception is constructed.
  */
-class exception : public std::exception {
+class exception : public std::exception
+{
 public:
   /** @brief Default constructor.
    *
@@ -133,10 +147,11 @@ using lbann_exception = exception;
  *  @param[in] args The things to be stringified.
  */
 template <typename... Args>
-std::string build_string(Args&&... args) {
+std::string build_string(Args&&... args)
+{
   std::ostringstream oss;
-  int dummy[] = { (oss << args, 0)... };
-  (void) dummy; // silence compiler warnings
+  int dummy[] = {(oss << args, 0)...};
+  (void)dummy; // silence compiler warnings
   return oss.str();
 }
 

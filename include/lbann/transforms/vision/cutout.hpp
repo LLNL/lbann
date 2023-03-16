@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -48,15 +48,17 @@ namespace transform {
  *
  * Normalization about 0 should be applied after applying cutout.
  */
-class cutout : public transform {
+class cutout : public transform
+{
 public:
   /**
    * Cutout with a given number of squares of a given size.
    * @param num_holes Number of squares to mask out (must be positive).
    * @param length Length of a side of the square (must be positive).
    */
-  cutout(size_t num_holes, size_t length) :
-    transform(), m_num_holes(num_holes), m_length(length) {
+  cutout(size_t num_holes, size_t length)
+    : transform(), m_num_holes(num_holes), m_length(length)
+  {
     if (num_holes == 0) {
       LBANN_ERROR("num_holes must be positive, got 0");
     }
@@ -69,7 +71,8 @@ public:
 
   std::string get_type() const override { return "cutout"; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data,
+             std::vector<size_t>& dims) override;
 
 private:
   /** Number of squares that will be masked out. */
@@ -81,7 +84,7 @@ private:
 std::unique_ptr<transform>
 build_cutout_transform_from_pbuf(google::protobuf::Message const&);
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_CUTOUT_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_CUTOUT_HPP_INCLUDED
