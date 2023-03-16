@@ -103,8 +103,6 @@ unit tests:
     - echo "Testing $(which lbann)"
     - export OMP_NUM_THREADS=10
     - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
-#    - echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
-#    - export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
     - cd ci_test/unit_tests
     - flux proxy ${FLUX_JOB_ID} python3 -m pytest -s -vv --durations=0 --junitxml=results.xml
   artifacts:
@@ -127,8 +125,6 @@ integration tests:
     - echo "Testing $(which lbann)"
     - export OMP_NUM_THREADS=10
     - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
-#    - echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
-#    - export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
     - cd ci_test/integration_tests
     - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
     - echo "python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml"
