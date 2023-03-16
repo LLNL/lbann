@@ -10,7 +10,6 @@ import pytest
 import shutil
 import subprocess
 from filecmp import cmp
-from lbann.contrib.lc.systems import *
 
 def check_list(substrings, strings):
     errors = []
@@ -61,6 +60,10 @@ def get_command(cluster,
                 return_tuple=False,
                 skip_no_exe=True,
                 weekly=False):
+    # Load LBANN Python frontend
+    import lbann.contrib.lc.systems
+    from lbann.contrib.lc.systems import procs_per_node
+
     # Check parameters for black-listed characters like semi-colons that
     # would terminate the command and allow for an extra command
     blacklist = [';', '--']
