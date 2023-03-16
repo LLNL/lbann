@@ -72,6 +72,7 @@ echo ${SPACK_ENV_CMD} | tee -a ${LOG}
 ${SPACK_ENV_CMD}
 LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
 SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
+echo "BVE HERE THE SPACK BUILD DIR IS ${SPACK_BUILD_DIR}" | tee -a ${LOG}
 SPACK_LOAD_CMD="spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}"
 echo ${SPACK_LOAD_CMD} | tee -a ${LOG}
 ${SPACK_LOAD_CMD}
