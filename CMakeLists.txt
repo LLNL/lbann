@@ -167,6 +167,9 @@ option(LBANN_WITH_ONNX
 # Use deterministic GPU algorithms and layer operations
 option(LBANN_DETERMINISTIC
   "Use deterministic algorithms as much as possible." OFF)
+if (LBANN_DETERMINISTIC)
+  set(LBANN_HAS_DETERMINISTIC TRUE)
+endif (LBANN_DETERMINISTIC)
 
 option(LBANN_DEBUG_PRINT_SUBTARGETS
   "Turn on debugging output of internal target properties." OFF)
@@ -987,6 +990,7 @@ append_str_tf(_str
   LBANN_HAS_CUDNN
   LBANN_HAS_CUTENSOR
   LBANN_HAS_CUTT
+  LBANN_HAS_DETERMINISTIC
   LBANN_HAS_DIHYDROGEN
   LBANN_HAS_DISTCONV
   LBANN_HAS_DOXYGEN

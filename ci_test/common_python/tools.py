@@ -60,6 +60,10 @@ def get_command(cluster,
                 return_tuple=False,
                 skip_no_exe=True,
                 weekly=False):
+    # Load LBANN Python frontend
+    import lbann.contrib.lc.systems
+    from lbann.contrib.lc.systems import procs_per_node
+
     # Check parameters for black-listed characters like semi-colons that
     # would terminate the command and allow for an extra command
     blacklist = [';', '--']
@@ -276,10 +280,13 @@ def get_command(cluster,
             option_resources_per_host, option_tasks_per_resource)
 
     elif scheduler == 'flux':
+        # Check to see if we are already in a flux allocation
+        flux_depth = subprocess.check_output("flux uptime | grep depth | awk -F, '{print $3}' | awk '{print $2}'",
+                                             shell=True, universal_newlines=True).rstrip()
         # Create allocate command
         command_allocate = ''
         # Allocate nodes only if we don't already have an allocation.
-        if os.getenv('FLUX_JOB_ID') is None:
+        if os.getenv('FLUX_JOB_ID') is None and flux_depth == 0:
             print('Allocating flux nodes.')
             command_allocate = 'flux mini alloc'
             option_num_nodes = ''
@@ -313,13 +320,23 @@ def get_command(cluster,
             space = ' '
         command_run = '{s}flux mini run --time={t}'.format(
             s=space, t=time_limit)
+        option_num_nodes = ''
+        if num_nodes is not None:
+            # --nodes=<minnodes[-maxnodes]> =>
+            # Request that a minimum of minnodes nodes be allocated to this
+            # job. A maximum node count may also be specified with
+            # maxnodes.
+            option_num_nodes = ' --nodes=%d' % num_nodes
         option_num_processes = ''
         if num_processes is not None:
             # --ntasks => Specify  the  number of tasks to run.
             # Number of processes to run => MPI Rank
             option_num_processes = ' --ntasks=%d' % num_processes
+            # If the num_nodes option wasn't set, force it based on the num_processes
+            if option_num_nodes == '':
+                option_num_nodes = ' --nodes=%d' % math.ceil(num_processes / procs_per_node())
         command_options = ' --exclusive -o gpu-affinity=per-task -o cpu-affinity=per-task'
-        command_run = '%s%s%s' % (command_run, option_num_processes, command_options)
+        command_run = '%s%s%s%s' % (command_run, option_num_nodes, option_num_processes, command_options)
 
     else:
         raise Exception('Unsupported Scheduler %s' % scheduler)
@@ -748,7 +765,7 @@ def create_tests(setup_func,
 
         if req_num_nodes:
             kwargs['nodes'] = req_num_nodes
-        
+
         # Configure kwargs to LBANN launcher
         _kwargs = copy.deepcopy(kwargs)
         if 'work_dir' not in _kwargs:

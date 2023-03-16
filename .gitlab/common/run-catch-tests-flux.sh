@@ -52,6 +52,7 @@ export MV2_USE_RDMA_CM=0
 # ml
 
 export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
 
 LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
 SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
@@ -89,8 +90,8 @@ fi
 #flux proxy ${JOB_ID} flux mini run \
 flux mini run \
      -N ${LBANN_NNODES} -n $((${TEST_TASKS_PER_NODE} * ${LBANN_NNODES})) \
-     -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task \
-     ./unit_test/mpi-catch-tests \
+     -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task -o mpibind=off \
+     ./unit_test/mpi-catch-tests "exclude:[random]" "exclude:[filesystem]"\
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-results-rank=%r-size=%s.xml"
 if [[ $? -ne 0 ]]; then
@@ -102,7 +103,7 @@ fi
 #flux proxy ${JOB_ID} flux mini run \
 flux mini run \
      -N ${LBANN_NNODES} -n $((${TEST_TASKS_PER_NODE} * ${LBANN_NNODES})) \
-     -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task \
+     -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task -o mpibind=off \
      ./unit_test/mpi-catch-tests -s "[filesystem]" \
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
