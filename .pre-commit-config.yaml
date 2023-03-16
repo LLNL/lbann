@@ -15,6 +15,6 @@ repos:
         name: clang-format
         entry: clang-format -i
         language: system
-        types_or: [c++, c, cuda, proto]
+        types_or: [c++, c, cuda]
         args: ["-style=file"]
         require_serial: false
