@@ -52,7 +52,7 @@ allocate lc resources:
     - export FLUX_F58_FORCE_ASCII=t
     - jobid=$(flux mini batch -N ${LBANN_NNODES} -g 1 -t ${TEST_TIME} --job-name=${JOB_NAME} --wrap sleep inf)
     - export JOB_ID=$jobid
-    - echo "I was able to allocate job ${JOB_NAME} with id ${JOB_ID}"
+#    - echo "I was able to allocate job ${JOB_NAME} with id ${JOB_ID}"
   timeout: 6h
 
 # Build LBANN and establish the Spack environment for this pipeline.
