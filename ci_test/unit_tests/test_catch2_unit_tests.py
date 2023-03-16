@@ -6,6 +6,13 @@ import os, re
 import subprocess as sp
 
 def hack_find_spack_build_dir(basedir):
+    if not os.getenv('SPACK_BUILD_DIR') is None:
+        build_dir = os.getenv('SPACK_BUILD_DIR')
+        print(f'I have found the spack build dir in {SPACK_BUILD_DIR}')
+        with os.scandir(basedir) as it:
+            for entry in it:
+                if entry.is_dir() and build_dir == entry.name:
+                    return entry.path
     with os.scandir(basedir) as it:
         for entry in it:
             if entry.is_dir() and re.match(r'spack-.*', entry.name):
