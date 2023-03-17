@@ -70,6 +70,8 @@ SPACK_ARCH_TARGET=$(spack arch -t)
 SPACK_ENV_CMD="spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}"
 echo ${SPACK_ENV_CMD} | tee -a ${LOG}
 ${SPACK_ENV_CMD}
+LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
+export SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
 SPACK_LOAD_CMD="spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}"
 echo ${SPACK_LOAD_CMD} | tee -a ${LOG}
 ${SPACK_LOAD_CMD}
