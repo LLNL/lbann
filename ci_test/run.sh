@@ -78,9 +78,9 @@ ${SPACK_LOAD_CMD}
 echo "Testing $(which lbann)"
 cd ..
 
-These tests are "allowed" to fail inside the script. That is, the
-unit tests should be run even if these fail. The status is cached
-for now.
+# These tests are "allowed" to fail inside the script. That is, the
+# unit tests should be run even if these fail. The status is cached
+# for now.
 echo "Task: Integration Tests"
 cd integration_tests
 if [ ${WEEKLY} -ne 0 ]; then
