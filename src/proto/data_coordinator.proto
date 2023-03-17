@@ -34,13 +34,14 @@ import "datatype.proto";
 
 message TransformDataField {
   string data_field = 1;
-  string execution_phase = 2; // train, validation, test, tournament
+  string execution_phase = 2;           // train, validation, test, tournament
   repeated Transform transforms = 600;  // Ordered list of transforms to apply.
 }
 
 message DataCoordinator {
   DataType datatype = 1;
-  string io_buffer = 2;         // Options: "partitioned" (default)
+  string io_buffer = 2;  // Options: "partitioned" (default)
 
-  repeated TransformDataField transforms = 600;  // Ordered list of transforms to apply.
+  repeated TransformDataField transforms =
+      600;  // Ordered list of transforms to apply.
 }

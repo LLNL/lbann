@@ -53,16 +53,15 @@ message Model {
   string data_layout = 6;
 
   int64 num_epochs = 4;
-  int64 super_steps = 121; //multiple steps/epochs currently use in GAN
-  int64 num_batches = 122; //multiple batches/sub epoch
+  int64 super_steps = 121;  // multiple steps/epochs currently use in GAN
+  int64 num_batches = 122;  // multiple batches/sub epoch
   int64 evaluation_frequency = 54;
 
-
-  SubGraphCommunication subgraph_communication = 13;  //Subgrid communication flag
+  SubGraphCommunication subgraph_communication =
+      13;  // Subgrid communication flag
   bool enable_subgraph_topology = 27;
-  int64 subgraph_parent_grid_resources = 29; //Num resources for parent grid (0: use all resources)
-
-
+  int64 subgraph_parent_grid_resources =
+      29;  // Num resources for parent grid (0: use all resources)
 
   bool disable_cuda = 8;
 

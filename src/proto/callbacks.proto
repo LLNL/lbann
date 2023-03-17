@@ -59,7 +59,8 @@ message Callback {
     CallbackLTFB ltfb = 24;
     CallbackDebugIO debug_io = 25;
     CallbackMinibatchSchedule minibatch_schedule = 26;
-    CallbackOptimizerwiseAdaptiveLearningRate optimizerwise_adaptive_learning_rate = 27;
+    CallbackOptimizerwiseAdaptiveLearningRate
+        optimizerwise_adaptive_learning_rate = 27;
     CallbackCheckpoint checkpoint = 28;
     CallbackSaveModel save_model = 29;
     CallbackPolyLearningRate poly_learning_rate = 30;
@@ -90,44 +91,46 @@ message Callback {
   message CallbackLTFB {
     int64 batch_interval = 1;
     string metric = 2;
-    string weights = 3;       // default: all weights
+    string weights = 3;  // default: all weights
     bool low_score_wins = 4;
-    string communication_algorithm = 5;   // default: "sendrecv_weights"
+    string communication_algorithm = 5;  // default: "sendrecv_weights"
     bool exchange_hyperparameters = 6;
     string checkpoint_basedir = 7;
   }
 
   message CallbackStepLearningRate {
-    string weights = 1; //default: all weights
+    string weights = 1;  // default: all weights
     int64 step = 2;
     double amt = 3;
   }
 
   message CallbackSetLearningRate {
-    string weights = 1; //default: all weights
+    string weights = 1;  // default: all weights
     int64 step = 2;
     double val = 3;
   }
 
   message CallbackCustomLearningRate {
-    //don't know how to support this, since it takes an std::function as an argument
+    // don't know how to support this, since it takes an std::function as an
+    // argument
   }
 
   message CallbackAdaptiveLearningRate {
-    string weights = 1; //default: all weights
+    string weights = 1;  // default: all weights
     int64 patience = 2;
     double amt = 3;
   }
 
   message CallbackSaveImages {
-    string layers       = 1; // Layer outputs to save as images
-    string image_format = 2; // Image format (e.g. jpg, png, pgm)
-    string image_prefix = 3; // Prefix for saved image files
+    string layers = 1;        // Layer outputs to save as images
+    string image_format = 2;  // Image format (e.g. jpg, png, pgm)
+    string image_prefix = 3;  // Prefix for saved image files
   }
 
   message CallbackPrint {
-    int64 interval = 1; //default in lbann_callback_print.hpp is 1
-    bool  print_global_stat_only = 2; //useful in large scale multi-trainer, default is false
+    int64 interval = 1;  // default in lbann_callback_print.hpp is 1
+    bool print_global_stat_only =
+        2;  // useful in large scale multi-trainer, default is false
   }
 
   message CallbackProfiler {
@@ -135,12 +138,11 @@ message Callback {
     bool skip_init = 2;
   }
 
-  message CallbackTimer {
-  }
+  message CallbackTimer {}
 
   message CallbackSummary {
-    int64 batch_interval = 2; //default in lbann_callback_summary.hpp is 1
-    int64 mat_interval = 3; //default in lbann_callback_summary.hpp is 25
+    int64 batch_interval = 2;  // default in lbann_callback_summary.hpp is 1
+    int64 mat_interval = 3;    // default in lbann_callback_summary.hpp is 25
   }
 
   /** @brief Dump weights to files.
@@ -155,18 +157,19 @@ message Callback {
    *  on each process' local data.
    */
   message CallbackDumpWeights {
-    string directory = 1;       // Directory for weight files
-    int64  epoch_interval = 2;  // Frequency for weight dumping
-                                // (default: after each training epoch)
-    string format = 3;          // Options: text (default), binary, distributed_binary
+    string directory = 1;      // Directory for weight files
+    int64 epoch_interval = 2;  // Frequency for weight dumping
+                               // (default: after each training epoch)
+    string format = 3;  // Options: text (default), binary, distributed_binary
   }
 
   message CallbackDumpOutputs {
-    string layers = 1;          // Default: all layers
-    string execution_modes = 2; // Default: all modes
-    int64 batch_interval = 3;   // Frequency for output dumping (default: all steps)
-    string directory = 4;       // Directory for output files
-    string format = 5;          // Options: csv, tsv, npy, npz (default: csv)
+    string layers = 1;           // Default: all layers
+    string execution_modes = 2;  // Default: all modes
+    int64 batch_interval =
+        3;                 // Frequency for output dumping (default: all steps)
+    string directory = 4;  // Directory for output files
+    string format = 5;     // Options: csv, tsv, npy, npz (default: csv)
   }
 
   message CallbackDumpErrorSignals {
@@ -184,7 +187,7 @@ message Callback {
   }
 
   message CallbackDispIOStats {
-    string layers = 1; //e.g: "2 4 5"; use "10000" to apply to all layers
+    string layers = 1;  // e.g: "2 4 5"; use "10000" to apply to all layers
   }
 
   message CallbackImComm {
@@ -193,7 +196,7 @@ message Callback {
   }
 
   message CallbackDebug {
-    string phase = 1; //should be called "modes"
+    string phase = 1;  // should be called "modes"
   }
 
   message CallbackDebugIO {
@@ -201,14 +204,11 @@ message Callback {
     int32 lvl = 2;
   }
 
-  message CallbackCheckSmall {
-  }
+  message CallbackCheckSmall {}
 
-  message CallbackCheckNaN {
-  }
+  message CallbackCheckNaN {}
 
-  message CallbackCheckDataset {
-  }
+  message CallbackCheckDataset {}
 
   message CallbackHang {
     int64 rank = 1;
@@ -261,16 +261,16 @@ message Callback {
   message CallbackCheckGradients {
     double step_size = 1;
     bool verbose = 2;
-    bool error_on_failure = 3; // Throw error if gradient check fails
-    string execution_modes = 4; // Default: all modes
+    bool error_on_failure = 3;   // Throw error if gradient check fails
+    string execution_modes = 4;  // Default: all modes
   }
 
   message CallbackCheckMetric {
     string metric = 1;
     double lower_bound = 2;
     double upper_bound = 3;
-    bool error_on_failure = 4;  // Throw error if metric check fails
-    string execution_modes = 5; // Default: all modes
+    bool error_on_failure = 4;   // Throw error if metric check fails
+    string execution_modes = 5;  // Default: all modes
   }
 
   message CallbackCheckpoint {
@@ -284,7 +284,6 @@ message Callback {
     int64 ckpt_dist_steps = 7;
   }
 
-
   message CallbackSaveModel {
     string dir = 1;
     string extension = 2;
@@ -292,17 +291,16 @@ message Callback {
   }
 
   message CallbackLoadModel {
-    string dirs = 1;  //director(ies) to load pretrained model(s)
+    string dirs = 1;  // director(ies) to load pretrained model(s)
     string extension = 2;
   }
 
   message CallbackReplaceWeights {
-    string source_layers = 1; //set of layers to copy weights from
-    string destination_layers = 2;  //set of layers to copy weights to
+    string source_layers = 1;       // set of layers to copy weights from
+    string destination_layers = 2;  // set of layers to copy weights to
     int64 batch_interval = 3;
   }
-  message CallbackGPUMemoryUsage {
-  }
+  message CallbackGPUMemoryUsage {}
 
   message CallbackSyncLayers {
     bool sync_gpus = 1;
@@ -311,31 +309,38 @@ message Callback {
   }
 
   message CallbackConfusionMatrix {
-    string prediction = 1; // Prediction layer
-    string label = 2;      // Label layer
-    string prefix = 3;     // Prefix for output files
+    string prediction = 1;  // Prediction layer
+    string label = 2;       // Label layer
+    string prefix = 3;      // Prefix for output files
   }
 
   message CallbackPerturbAdam {
-    float learning_rate_factor = 1;   // Learning rate perturbation (in log space)
-    float beta1_factor = 2;           // beta1 perturbation (in log space)
-    float beta2_factor = 3;           // beta2 perturbation (in log space)
-    float eps_factor = 4;             // eps perturbation (in log space)
-    bool perturb_during_training = 5; // Whether to periodically perturb during training
-    int64 batch_interval = 6;         // Frequency of perturbation if perturb_during_training is true
-    string weights = 7;               // Weights with Adam optimizer
+    float learning_rate_factor =
+        1;                   // Learning rate perturbation (in log space)
+    float beta1_factor = 2;  // beta1 perturbation (in log space)
+    float beta2_factor = 3;  // beta2 perturbation (in log space)
+    float eps_factor = 4;    // eps perturbation (in log space)
+    bool perturb_during_training =
+        5;  // Whether to periodically perturb during training
+    int64 batch_interval =
+        6;  // Frequency of perturbation if perturb_during_training is true
+    string weights = 7;  // Weights with Adam optimizer
   }
 
   message CallbackPerturbDropout {
-    float keep_dropout_factor = 1; //Keep dropout prob perturbation (in log space)
-    string layers = 2; // dropout layers to perturb keep prob, all dropout layers by default
+    float keep_dropout_factor =
+        1;              // Keep dropout prob perturbation (in log space)
+    string layers = 2;  // dropout layers to perturb keep prob, all dropout
+                        // layers by default
   }
 
   message CallbackSaveTopKModels {
-    string dir = 1;  //directory to save model
-    int32  k = 2;    //number of (top) models to save
-    string metric = 3; //metrics to use in evaluating models
-    bool  ascending_ordering = 4; //whether to sort metrics per model in ascending order, descending order is default
+    string dir = 1;     // directory to save model
+    int32 k = 2;        // number of (top) models to save
+    string metric = 3;  // metrics to use in evaluating models
+    bool ascending_ordering =
+        4;  // whether to sort metrics per model in
+            // ascending order, descending order is default
   }
 
   message CallbackMixup {
@@ -343,8 +348,7 @@ message Callback {
     float alpha = 2;
   }
 
-  message CallbackCheckInit {
-  }
+  message CallbackCheckInit {}
 
   message CallbackEarlyStopping {
     int64 patience = 1;
@@ -359,8 +363,7 @@ message Callback {
   // Message is printed when the model has finished setup. The
   // description includes information on the model's layers, weights,
   // and callbacks.
-  message CallbackPrintModelDescription {
-  }
+  message CallbackPrintModelDescription {}
 
   /** @brief Set values in a weights object at a given training step */
   message CallbackSetWeightsValue {
@@ -370,19 +373,17 @@ message Callback {
   }
 
   message CallbackSummarizeImages {
-
     message SelectionStrategy {
-
       oneof strategy_type {
         CategoricalAccuracyStrategy categorical_accuracy = 1;
         TrackSampleIDsStrategy track_sample_ids = 2;
       }
 
       message CategoricalAccuracyStrategy {
-        enum MatchType{
-          NOMATCH = 0;//NOMATCH = dump failed categorization
-          MATCH = 1;//MATCH = dump successful categorization
-          ALL = 2;//ALL = dump all
+        enum MatchType {
+          NOMATCH = 0;  // NOMATCH = dump failed categorization
+          MATCH = 1;    // MATCH = dump successful categorization
+          ALL = 2;      // ALL = dump all
         }
         string accuracy_layer_name = 1;
         MatchType match_type = 2;
@@ -394,23 +395,26 @@ message Callback {
         uint64 num_tracked_images = 2;
       }
 
-    }// message SelectionStrategy
+    }  // message SelectionStrategy
 
     SelectionStrategy selection_strategy = 1;
     string image_source_layer_name = 2;
     uint64 epoch_interval = 3;
-  }// message CallbackSummarizeImages
+  }  // message CallbackSummarizeImages
 
   message CallbackDumpModelGraph {
-    string basename = 1; // default: "model.dot"
+    string basename = 1;  // default: "model.dot"
     bool print = 2;
   }
 
   message CallbackPerturbLearningRate {
-    float learning_rate_factor = 1;   // Learning rate perturbation (in log space)
-    bool perturb_during_training = 2; // Whether to periodically perturb during training (default: False)
-    int64 batch_interval = 3;         // Frequency of perturbation if perturb_during_training is true
-    string weights = 4;               // Optimizer weights with lr to perturb (default: All)
+    float learning_rate_factor =
+        1;  // Learning rate perturbation (in log space)
+    bool perturb_during_training =
+        2;  // Whether to periodically perturb during training (default: False)
+    int64 batch_interval =
+        3;  // Frequency of perturbation if perturb_during_training is true
+    string weights = 4;  // Optimizer weights with lr to perturb (default: All)
   }
 
   message CallbackComputeModelSize {
@@ -419,24 +423,25 @@ message Callback {
   }
 
   message CallbackPerturbWeights {
-    float upper = 1; // Upper bound for weight value
-    float lower = 2; // Lower bound for weight value
-    float scale = 3; // Scale of normal distribution N(1,0)
-    float perturb_probability = 4; // Probability of perturbing the weight
+    float upper = 1;                // Upper bound for weight value
+    float lower = 2;                // Lower bound for weight value
+    float scale = 3;                // Scale of normal distribution N(1,0)
+    float perturb_probability = 4;  // Probability of perturbing the weight
     string output_name = 5;
     int64 batch_interval = 6;
   }
 
   /** @brief Export trained model in onnx format */
   message CallbackExportOnnx {
-    string output_filename = 1; // name of onnx output file
-    string debug_string_filename = 2; // print debug string to file
+    string output_filename = 1;        // name of onnx output file
+    string debug_string_filename = 2;  // print debug string to file
   }
 
   message CallbackAlternateUpdates {
-    string layers_1 = 1; // first set of layers to be trained
+    string layers_1 = 1;  // first set of layers to be trained
     string layers_2 = 2;  // second set of layers to be trained
-    int64 iters_1 = 3; // number of training iterations for first set of layers
-    int64 iters_2 = 4; // number of training iterations for second set of layers
+    int64 iters_1 = 3;  // number of training iterations for first set of layers
+    int64 iters_2 =
+        4;  // number of training iterations for second set of layers
   }
 }

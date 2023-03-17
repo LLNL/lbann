@@ -36,16 +36,14 @@ enum MyEnum {
   TWO = 2;
 }
 
-message SimpleMesg
-{
+message SimpleMesg {
   int32 my_int32 = 1;
   float my_float = 2;
   string my_string = 3;
   MyEnum my_enum = 4;
 }
 
-message HasAOneofField
-{
+message HasAOneofField {
   oneof my_oneof {
     uint64 my_uint64 = 1;
     int32 my_int32 = 2;
@@ -55,8 +53,7 @@ message HasAOneofField
   bool another_field = 10;
 }
 
-message HasRepeatedPODFields
-{
+message HasRepeatedPODFields {
   repeated float my_floats = 1;
   repeated double my_doubles = 2;
   repeated uint32 my_uint32s = 3;
@@ -64,14 +61,12 @@ message HasRepeatedPODFields
   repeated MyEnum my_enums = 5;
 }
 
-message HasRepeatedPtrFields
-{
+message HasRepeatedPtrFields {
   repeated SimpleMesg my_simple_msgs = 1;
   repeated string my_strings = 2;
 }
 
-message HasAnyField
-{
+message HasAnyField {
   google.protobuf.Any my_any = 1;
   int32 my_non_any = 2;
 }
