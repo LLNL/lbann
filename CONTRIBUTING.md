@@ -8,17 +8,6 @@ Please follow the guidelines below for more information.
 If you have not added yourself to the authors list in 
 [CONTRIBUTORS](https://github.com/LLNL/lbann/blob/develop/CONTRIBUTORS), please do so in the appropriate place.
 
-## Setting up the repository
-
-After cloning LBANN, se
-Install `pre-commit` via the [instructions](https://pre-commit.com/#install) and set it up on the repository as follows:
-
-```sh
-/path/to/lbann $ pre-commit install
-```
-
-Make sure you have `clang-format` installed for C/C++ formatting and `yapf` for Python formatting.
-
 ## git guidelines
 
 When ready for review and merge, Pull Requests must match the latest `develop` branch commit.
@@ -32,3 +21,16 @@ adaptations, see the [coding style README](https://github.com/LLNL/lbann/blob/de
 
 For Python code, we follow the [Google coding style](https://google.github.io/styleguide/pyguide.html) guidelines,
 but allow some exceptions to create layers in the LBANN Python frontend.
+
+## Setting up automatic formatting
+
+To enforce file formatting at every commit, you can use the pre-commit hook provided in the repository.
+Make a symbolic link from `.git/hooks/pre-commit` to our script by running the following command
+**from the root of your git repository**:
+
+```sh
+user@/path/to/lbann$ ln -s ../../scripts/pre-commit-hook.sh .git/hooks/pre-commit
+```
+
+Make sure you have `clang-format` installed for C/C++ formatting. If you do not have it installed in the path,
+you may override it by setting the `$CLANG_FORMAT` environment variable to its path.
