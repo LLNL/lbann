@@ -6,17 +6,19 @@ import os, re
 import subprocess as sp
 
 def hack_find_spack_build_dir(basedir):
-    if not os.getenv('SPACK_BUILD_DIR') is None:
+    if os.getenv('SPACK_BUILD_DIR', default=None):
         build_dir = os.getenv('SPACK_BUILD_DIR')
         print(f'I have found the spack build dir in {SPACK_BUILD_DIR}')
+        return basedir + build_dir
+        # with os.scandir(basedir) as it:
+        #     for entry in it:
+        #         if entry.is_dir() and build_dir == entry.name:
+        #             return entry.path
+    else:
         with os.scandir(basedir) as it:
             for entry in it:
-                if entry.is_dir() and build_dir == entry.name:
+                if entry.is_dir() and re.match(r'spack-.*', entry.name):
                     return entry.path
-    with os.scandir(basedir) as it:
-        for entry in it:
-            if entry.is_dir() and re.match(r'spack-.*', entry.name):
-                return entry.path
 
 def get_system_seq_launch(cluster):
     if cluster in ['lassen', 'ray']:
