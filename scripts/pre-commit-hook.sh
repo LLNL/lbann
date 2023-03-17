@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-CLANG_FORMAT="${CLANG_FORMAT:-clang-format}"
+CLANG_FORMAT="${CLANG_FORMAT:-$(which clang-format)}"
 
 # Test for modified files
 echo -n "Testing modified files... "
@@ -11,7 +11,7 @@ if [ "$files" == "" ]; then
 fi
 
 if ! [ -x "$CLANG_FORMAT" ]; then
-    echo "clang-format not found. Either install it or set the CLANG_FORMAT environment variable to its path"
+    echo "clang-format not found (CLANG_FORMAT=${CLANG_FORMAT}). Either install it or set the CLANG_FORMAT environment variable to its path"
     exit 1
 fi
 
