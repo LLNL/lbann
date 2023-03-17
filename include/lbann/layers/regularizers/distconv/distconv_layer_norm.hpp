@@ -31,7 +31,7 @@
 
 namespace distconv {
 template <typename Backend, typename DataType>
-class LayerNorm
+class LayerNormalization
 {
   using LocaleMPI = tensor::LocaleMPI;
 
