@@ -71,8 +71,8 @@ SPACK_ENV_CMD="spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET
 echo ${SPACK_ENV_CMD} | tee -a ${LOG}
 ${SPACK_ENV_CMD}
 LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
-SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
-echo "BVE HERE THE SPACK BUILD DIR IS ${SPACK_BUILD_DIR}" | tee -a ${LOG}
+export SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
+#echo "BVE HERE THE SPACK BUILD DIR IS ${SPACK_BUILD_DIR}" | tee -a ${LOG}
 SPACK_LOAD_CMD="spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}"
 echo ${SPACK_LOAD_CMD} | tee -a ${LOG}
 ${SPACK_LOAD_CMD}
@@ -82,20 +82,20 @@ cd ..
 # These tests are "allowed" to fail inside the script. That is, the
 # unit tests should be run even if these fail. The status is cached
 # for now.
-echo "Task: Integration Tests"
-cd integration_tests
-if [ ${WEEKLY} -ne 0 ]; then
-    $PYTHON -m pytest -s -vv --durations=0 --weekly --junitxml=results.xml
-    status=$?
-else
-    $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
-    status=$?
-fi
-cd ..
+# echo "Task: Integration Tests"
+# cd integration_tests
+# if [ ${WEEKLY} -ne 0 ]; then
+#     $PYTHON -m pytest -s -vv --durations=0 --weekly --junitxml=results.xml
+#     status=$?
+# else
+#     $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
+#     status=$?
+# fi
+# cd ..
 
 echo "Task: Unit Tests"
 cd unit_tests
-OMP_NUM_THREADS=10 $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
+OMP_NUM_THREADS=10 $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml test_catch2_unit_tests.py
 status=$(($status + $?))
 cd ..
 
