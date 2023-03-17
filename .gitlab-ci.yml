@@ -31,11 +31,28 @@
 stages:
   - run-all-clusters
 
+catalyst testing:
+  stage: run-all-clusters
+  variables:
+    WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
+  trigger:
+    strategy: depend
+    include: .gitlab/catalyst/pipeline.yml
+
 corona testing:
   stage: run-all-clusters
   variables:
     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
-    WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
+  trigger:
+    strategy: depend
+    include: .gitlab/corona/pipeline.yml
+
+corona distconv testing:
+  stage: run-all-clusters
+  variables:
+    JOB_NAME: ${CI_PROJECT_NAME}_${CI_PIPELINE_ID}_distconv
+    WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
+    SPACK_SPECS: "+rocm +distconv"
   trigger:
     strategy: depend
     include: .gitlab/corona/pipeline.yml
@@ -44,16 +61,24 @@ lassen testing:
   stage: run-all-clusters
   variables:
     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
-    WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
   trigger:
     strategy: depend
     include: .gitlab/lassen/pipeline.yml
+
+lassen distconv testing:
+  stage: run-all-clusters
+  variables:
+    JOB_NAME: ${CI_PROJECT_NAME}_${CI_PIPELINE_ID}_distconv
+    SPACK_SPECS: "+cuda +distconv +nvshmem +fft"
+    WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
+  trigger:
+    strategy: depend
+    include: .gitlab/lassen/multi_stage_pipeline.yml
 
 pascal testing:
   stage: run-all-clusters
   variables:
     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
-    WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
   trigger:
     strategy: depend
     include: .gitlab/pascal/pipeline.yml
@@ -63,16 +88,34 @@ pascal compiler testing:
   variables:
     SPACK_SPECS: "%gcc@10.3.1 +cuda +half +fft"
     BUILD_SCRIPT_OPTIONS: "--no-default-mirrors"
-    WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
   trigger:
     strategy: depend
     include: .gitlab/pascal/pipeline_compiler_tests.yml
+
+pascal distconv testing:
+  stage: run-all-clusters
+  variables:
+    JOB_NAME: ${CI_PROJECT_NAME}_${CI_PIPELINE_ID}_distconv
+    SPACK_SPECS: "%gcc@10.3.1 +cuda +distconv +fft"
+    BUILD_SCRIPT_OPTIONS: "--no-default-mirrors"
+  trigger:
+    strategy: depend
+    include: .gitlab/pascal/pipeline.yml
 
 tioga testing:
   stage: run-all-clusters
   variables:
     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
-    WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
+  trigger:
+    strategy: depend
+    include: .gitlab/tioga/pipeline.yml
+
+tioga distconv testing:
+  stage: run-all-clusters
+  variables:
+    JOB_NAME: ${CI_PROJECT_NAME}_${CI_PIPELINE_ID}_distconv
+    WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
+    SPACK_SPECS: "+rocm +distconv"
   trigger:
     strategy: depend
     include: .gitlab/tioga/pipeline.yml

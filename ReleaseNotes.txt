@@ -156,6 +156,8 @@ Build system:
    significantly decreases the startup time of running a CI job
  - Enforce consistent GPU targets in Spack environment
  - Switched from Bamboo to GitLab CI framework
+ - Added support for a moduler GitLab CI script on Lassen
+ - Added CI pipelines for +distconv and +nvshmem where appropriate
 
 Bug fixes:
  - Fixed GPU kernels that launched with more blocks than allowed
