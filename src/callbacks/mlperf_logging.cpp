@@ -30,8 +30,12 @@
 #include "lbann/metrics/metric.hpp"
 #include "lbann/weights/weights.hpp"
 #include "lbann/trainers/trainer.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
+#include "lbann/optimizers/optimizer.hpp"
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #include <fstream>
 #include <iostream>
@@ -44,7 +48,6 @@ namespace lbann {
 namespace callback {
 
 namespace {
-
 void print_value(std::ostringstream& os, int value)
 {
   os << value;
@@ -93,6 +96,16 @@ int get_num_nodes()
 }
 }// namespace
 
+void mlperf_logging::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_mlperf_logging();
+  msg->set_sub_benchmark(m_sub_benchmark);
+  msg->set_sub_org(m_sub_org);
+  msg->set_sub_division(m_sub_division);
+  msg->set_sub_status(m_sub_status);
+  msg->set_sub_platform(m_sub_platform);
+}
+
 template <typename T>
 void mlperf_logging::print(std::ostringstream& os,
                            mlperf_logging::event_type et, std::string key,
@@ -117,7 +130,7 @@ void mlperf_logging::print(std::ostringstream& os,
   else
     os << ", " << "\"epoch_num\": " << epoch << "}}";
 
-  m_logger.get()->info(os.str());
+  m_logger.get().info(os.str());
   os.flush();
 }
 

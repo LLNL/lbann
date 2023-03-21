@@ -32,6 +32,10 @@
 #include "lbann/callbacks/callback.hpp"
 #include <h2/utils/Logger.hpp>
 
+namespace lbann_data {
+class Callback;
+}
+
 namespace lbann {
 namespace callback {
 
@@ -111,6 +115,8 @@ public:
 
 private:
 
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /** @brief Populate log with mlperf event type.
    *  @param ostringstream os Stores log string.
    *  @param event_type et Type of mlperf style event.
@@ -134,7 +140,7 @@ private:
   /* @brief name of output file. Default = results.txt */
   //std::string m_output_filename;
   /* @brief DiHydrogen logger */
-  h2::Logger m_logger{"mlperf_logger", "stdout", ":::MLLOG"};
+  mutable h2::Logger m_logger{"mlperf_logger", "stdout", ":::MLLOG"};
 
 
 }; // class mlperf_logging
