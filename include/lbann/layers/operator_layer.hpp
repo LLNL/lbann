@@ -81,6 +81,10 @@ public:
   data_layout get_data_layout() const final;
   El::Device get_device_allocation() const final;
 
+#ifdef LBANN_HAS_ONNX
+  void fill_onnx_node(onnx::GraphProto& graph) const override;
+#endif // LBANN_HAS_ONNX
+
   void fp_compute() final;
   void bp_compute() final;
 

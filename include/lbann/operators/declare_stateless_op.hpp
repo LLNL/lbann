@@ -32,6 +32,16 @@
 
 #include "lbann/proto/operators.pb.h"
 
+#ifdef LBANN_HAS_ONNX
+#define ADD_GET_ONNX_NODES_API()                                               \
+  std::vector<onnx::NodeProto> get_onnx_nodes() const final                    \
+  {                                                                            \
+    return get_onnx_nodes_impl(*this);                                         \
+  }
+#else
+#define ADD_GET_ONNX_NODES_API()
+#endif // LBANN_HAS_ONNX
+
 // These are all single-type operators.
 
 #define LBANN_DECLARE_STATELESS_OPERATOR(OP_NAME, OP_STRING)                   \
@@ -64,6 +74,7 @@
       ar(::cereal::make_nvp("Operator",                                        \
                             ::cereal::base_class<OperatorType>(this)));        \
     }                                                                          \
+    ADD_GET_ONNX_NODES_API()                                                   \
     void fp_compute(std::vector<ConstInputTensorType> const& inputs,           \
                     std::vector<OutputTensorType> const& outputs) const final; \
     void bp_compute(                                                           \
@@ -113,6 +124,7 @@
       ar(::cereal::make_nvp("ElementwiseOperator",                             \
                             ::cereal::base_class<OperatorType>(this)));        \
     }                                                                          \
+    ADD_GET_ONNX_NODES_API()                                                   \
                                                                                \
   private:                                                                     \
     void                                                                       \
@@ -128,6 +140,21 @@
     }                                                                          \
     void do_fill_description(description&) const final                         \
     {}                                                                         \
-  }
+  };
 
+namespace lbann {
+
+#ifdef LBANN_HAS_ONNX
+// Overloads of this function are used to implement the functions in
+// the macro template above.
+template <typename OperatorT>
+std::vector<onnx::NodeProto> get_onnx_nodes_impl(OperatorT const& op)
+{
+  // The default assumption is that we don't know how to represent
+  // this operator in ONNX terms yet.
+  return {};
+}
+#endif // LBANN_HAS_ONNX
+
+} // namespace lbann
 #endif // LBANN_INCLUDE_LBANN_OPERATORS_DECLARE_STATELESS_OP_HPP_INCLUDED

@@ -29,34 +29,57 @@
 
 #include "lbann/operators/declare_stateless_op.hpp"
 
+#ifdef LBANN_HAS_ONNX
+#define LBANN_DECLARE_STATELESS_EWISE_ONNX_OP(OP_NAME,                         \
+                                              OP_STRING,                       \
+                                              OP_ONNX_NAME)                    \
+  LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(OP_NAME, OP_STRING);            \
+  template <typename T, El::Device D>                                          \
+  std::vector<onnx::NodeProto> get_onnx_nodes_impl(                            \
+    OP_NAME##Operator<T, D> const& op)                                         \
+  {                                                                            \
+    std::vector<onnx::NodeProto> nodes(1UL);                                   \
+    nodes.front().set_op_type(OP_ONNX_NAME);                                   \
+    return nodes;                                                              \
+  }
+#else
+#define LBANN_DECLARE_STATELESS_EWISE_ONNX_OP(OP_NAME,                         \
+                                              OP_STRING,                       \
+                                              OP_ONNX_NAME)                    \
+  LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(OP_NAME, OP_STRING)
+#endif // LBANN_HAS_ONNX
+
 namespace lbann {
 
 // Arithmetic operations
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Add, "add");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Subtract, "subtract");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Multiply, "multiply");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Divide, "divide");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Mod, "modulo");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Pow, "power");
+LBANN_DECLARE_STATELESS_EWISE_ONNX_OP(Add, "add", "Add")
+LBANN_DECLARE_STATELESS_EWISE_ONNX_OP(Subtract, "subtract", "Sub")
+LBANN_DECLARE_STATELESS_EWISE_ONNX_OP(Multiply, "multiply", "Mul")
+LBANN_DECLARE_STATELESS_EWISE_ONNX_OP(Divide, "divide", "Div")
+LBANN_DECLARE_STATELESS_EWISE_ONNX_OP(Mod, "modulo", "Mod")
+LBANN_DECLARE_STATELESS_EWISE_ONNX_OP(Pow, "power", "Pow")
 LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(SafeDivide, "safe divide");
 LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(SquaredDifference,
                                              "squared difference");
 
 // Comparison operations
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Max, "maximum");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Min, "minimum");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Equal, "equal");
+LBANN_DECLARE_STATELESS_EWISE_ONNX_OP(Max, "maximum", "Max")
+LBANN_DECLARE_STATELESS_EWISE_ONNX_OP(Min, "minimum", "Min")
+LBANN_DECLARE_STATELESS_EWISE_ONNX_OP(Equal, "equal", "Equal")
 LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(NotEqual, "not equal");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Less, "less than");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(LessEqual, "less than or equal");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Greater, "greater than");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(GreaterEqual,
-                                             "greater than or equal");
+LBANN_DECLARE_STATELESS_EWISE_ONNX_OP(Less, "less than", "Less")
+LBANN_DECLARE_STATELESS_EWISE_ONNX_OP(LessEqual,
+                                      "less than or equal",
+                                      "LessOrEqual")
+LBANN_DECLARE_STATELESS_EWISE_ONNX_OP(Greater, "greater than", "Greater")
+LBANN_DECLARE_STATELESS_EWISE_ONNX_OP(GreaterEqual,
+                                      "greater than or equal",
+                                      "GreaterOrEqual")
 
 // Logical operations
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(LogicalAnd, "logical and");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(LogicalOr, "logical or");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(LogicalXor, "logical xor");
+LBANN_DECLARE_STATELESS_EWISE_ONNX_OP(LogicalAnd, "logical and", "And")
+LBANN_DECLARE_STATELESS_EWISE_ONNX_OP(LogicalOr, "logical or", "Or")
+LBANN_DECLARE_STATELESS_EWISE_ONNX_OP(LogicalXor, "logical xor", "Xor")
 
 } // namespace lbann
 
