@@ -33,7 +33,7 @@
 #include "lbann/utils/cloneable.hpp"
 
 #ifdef LBANN_HAS_ONNX
-#include <onnx/onnx-ml.pb.h>
+#include <onnx/onnx_pb.h>
 #endif // LBANN_HAS_ONNX
 
 
@@ -163,6 +163,7 @@ LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(GreaterEqualConstant,
 LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(GreaterConstant,
                                             "greater than constant");
 
+#ifdef LBANN_HAS_ONNX
 inline onnx::NodeProto get_constant_node(float val)
 {
   onnx::NodeProto const_node;
@@ -307,6 +308,7 @@ get_onnx_nodes_impl(GreaterEqualConstantOperator<T, D> const op)
   nodes.back().set_op_type("PreConstant");
   return nodes;
 }
+#endif // LBANN_HAS_ONNX
 
 } // namespace lbann
 #endif // LBANN_INCLUDE_LBANN_OPERATORS_BINARY_WITH_CONSTANT_HPP_INCLUDED

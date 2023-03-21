@@ -140,7 +140,7 @@
     }                                                                          \
     void do_fill_description(description&) const final                         \
     {}                                                                         \
-  }
+  };
 
 namespace lbann {
 
