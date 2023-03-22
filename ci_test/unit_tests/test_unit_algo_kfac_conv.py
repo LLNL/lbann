@@ -45,10 +45,6 @@ def setup_experiment(lbann, weekly):
         lbann (module): Module for LBANN Python frontend
 
     """
-    if True :
-        message = f'{os.path.basename(__file__)} Metric checking is failing on all systems - disable test'
-        print('Skip - ' + message)
-        pytest.skip(message)
     trainer = construct_trainer(lbann)
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
@@ -99,6 +95,12 @@ def construct_model(lbann):
     dw = np.matmul(dy.T, x)
     dw = np.linalg.solve(A.T, dw.T).T
     dw = np.linalg.solve(G, dw)
+
+    # Gradient Clipping
+    w_grads_scaling = np.dot(dw.reshape(-1),dw.reshape(-1))
+    w_grads_scaling_factor = min(1.0, math.sqrt(0.001/w_grads_scaling))
+    dw = dw * w_grads_scaling_factor
+
     w_next = w - dw
 
     # ------------------------------------------
