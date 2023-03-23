@@ -34,7 +34,9 @@ namespace {
 template <typename TensorDataType>
 void local_fp_cpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
                   const El::AbstractMatrix<TensorDataType>& local_ground_truth,
-                  El::AbstractMatrix<TensorDataType>& local_contribution)
+                  El::AbstractMatrix<TensorDataType>& local_contribution,
+                  const bool& use_labels,
+                  const int& spatial_sample_size)
 {
 
   // Useful constants
@@ -47,7 +49,17 @@ void local_fp_cpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
   for (El::Int col = 0; col < local_width; ++col) {
     TensorDataType sum = zero;
     for (El::Int row = 0; row < local_height; ++row) {
-      const auto& xhat = local_ground_truth(row, col);
+
+      TensorDataType xhat;
+      if (use_labels) {
+        const auto channel = row / spatial_sample_size;
+        const auto offset = row % spatial_sample_size;
+        const int truth_label = local_ground_truth(offset, col);
+        xhat = TensorDataType(truth_label == channel ? 1. : 0.);
+      }
+      else {
+        xhat = local_ground_truth(row, col);
+      }
       if (xhat > zero) {
         const auto& x = local_prediction(row, col);
 #ifdef LBANN_DEBUG
@@ -68,7 +80,9 @@ void local_bp_cpu(
   const El::AbstractMatrix<TensorDataType>& local_ground_truth,
   const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
   El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
-  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth)
+  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth,
+  const bool& use_labels,
+  const int& spatial_sample_size)
 {
 
   // Useful constants
@@ -80,13 +94,24 @@ void local_bp_cpu(
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
-      const auto& x = local_prediction(row, col);
-      const auto& xhat = local_ground_truth(row, col);
+
       const auto& dy = local_gradient_wrt_output(0, col);
       auto& dx = local_gradient_wrt_prediction(row, col);
-      auto& dxhat = local_gradient_wrt_ground_truth(row, col);
+      const auto& x = local_prediction(row, col);
+      TensorDataType xhat;
+      if (use_labels) {
+        // Ignore dxhat when use_labels is enabled
+        const auto channel = row / spatial_sample_size;
+        const auto offset = row % spatial_sample_size;
+        const int truth_label = local_ground_truth(offset, col);
+        xhat = TensorDataType(truth_label == channel ? 1. : 0.);
+      }
+      else {
+        xhat = local_ground_truth(row, col);
+        auto& dxhat = local_gradient_wrt_ground_truth(row, col);
+        dxhat = -dy * std::log(x);
+      }
       dx = (xhat > zero) ? -dy * xhat / x : zero;
-      dxhat = -dy * std::log(x);
     }
   }
 }
@@ -96,19 +121,37 @@ void local_bp_cpu(
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_fp_compute()
 {
+  const auto& input_dims = this->get_input_dims(0);
+  // Only used if m_use_labels is true
+  const auto& spatial_sample_size = std::accumulate(input_dims.begin() + 1,
+                                                    input_dims.end(),
+                                                    1,
+                                                    std::multiplies<size_t>());
+
   local_fp_cpu(this->get_local_prev_activations(0),
                this->get_local_prev_activations(1),
-               this->m_workspace->Matrix());
+               this->m_workspace->Matrix(),
+               this->m_use_labels,
+               spatial_sample_size);
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_bp_compute()
 {
+  const auto& input_dims = this->get_input_dims(0);
+  // Only used if m_use_labels is true
+  const auto& spatial_sample_size = std::accumulate(input_dims.begin() + 1,
+                                                    input_dims.end(),
+                                                    1,
+                                                    std::multiplies<size_t>());
+
   local_bp_cpu(this->get_local_prev_activations(0),
                this->get_local_prev_activations(1),
                this->m_workspace->LockedMatrix(),
                this->get_local_error_signals(0),
-               this->get_local_error_signals(1));
+               this->get_local_error_signals(1),
+               this->m_use_labels,
+               spatial_sample_size);
 }
 
 #define PROTO(T)                                                               \

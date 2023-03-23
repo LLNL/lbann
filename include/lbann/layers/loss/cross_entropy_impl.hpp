@@ -56,22 +56,102 @@ void cross_entropy_layer<TensorDataType, T_layout, Dev>::setup_dims(
   }
 #endif
 
-  // Check that input dimensions match
-  if (this->get_input_dims(0) != this->get_input_dims(1)) {
+  if (m_use_labels) {
     const auto& parents = this->get_parent_layers();
-    std::stringstream err;
-    err << get_type() << " layer \"" << this->get_name() << "\" "
-        << "has input tensors with different dimensions (";
-    for (int i = 0; i < this->get_num_parents(); ++i) {
-      const auto& dims = this->get_input_dims(i);
-      err << (i > 0 ? ", " : "") << "layer \"" << parents[i]->get_name()
-          << "\" outputs ";
-      for (size_t j = 0; j < dims.size(); ++j) {
-        err << (j > 0 ? " x " : "") << dims[j];
-      }
+
+    if (T_layout == data_layout::MODEL_PARALLEL) {
+      std::stringstream err;
+      err
+        << get_type() << " layer \"" << this->get_name() << "\" "
+        << "only supports use_labels is not supported in model parallel layout"
+        << " (for now)";
+      LBANN_ERROR(err.str());
     }
-    err << ")";
-    LBANN_ERROR(err.str());
+
+    const auto& predictions_dims = this->get_input_dims(0);
+    const auto& labels_dims = this->get_input_dims(1);
+    // Check if the first dimension is 1 for the labels tensor
+    if (labels_dims[0] != 1) {
+      std::stringstream err;
+      err << get_type() << " layer \"" << this->get_name() << "\" "
+          << "expects the 0-th dimension of the tensor to be 1 when use labels "
+          << "is enabled. Found tensor with shape (";
+
+      // TODO: Put this loop in util as it's used frequently to
+      // print layer dimensions
+      for (size_t j = 0; j < labels_dims.size(); ++j) {
+        err << (j > 0 ? " x " : "") << labels_dims[j];
+      }
+      err << ")";
+      LBANN_ERROR(err.str());
+    }
+
+    // Check if the number of dimensions match for predictions and labels
+    // tensors
+
+    if (predictions_dims.size() != labels_dims.size() ||
+        predictions_dims.size() < 2) {
+      std::stringstream err;
+      err << get_type() << " layer \"" << this->get_name() << "\" "
+          << "expects both input tensors to have the same number of dimensions "
+          << "and have >2 dimensions when use_lables is enabled. "
+          << "Found tensors with shape (";
+
+      // TODO: Put this loop in util as it's used frequently to
+      // print layer dimensions
+      for (int i = 0; i < this->get_num_parents(); ++i) {
+        const auto& dims = this->get_input_dims(i);
+        err << (i > 0 ? ", " : "") << "layer \"" << parents[i]->get_name()
+            << "\" outputs ";
+        for (size_t j = 0; j < dims.size(); ++j) {
+          err << (j > 0 ? " x " : "") << dims[j];
+        }
+      }
+      err << ")";
+      LBANN_ERROR(err.str());
+    }
+    // Check if all spatial dimensions match for predictions and labels
+    // tensors
+    if (!std::equal(predictions_dims.begin() + 1,
+                    predictions_dims.end(),
+                    labels_dims.begin() + 1)) {
+      std::stringstream err;
+      err << get_type() << " layer \"" << this->get_name() << "\" "
+          << "expects both input tensors to have the same shape after the 0-th"
+          << "dimesion when use_lables is enabled. Found tensors with shape (";
+
+      // TODO: Put this loop in util as it's used frequently to
+      // print layer dimensions
+      for (int i = 0; i < this->get_num_parents(); ++i) {
+        const auto& dims = this->get_input_dims(i);
+        err << (i > 0 ? ", " : "") << "layer \"" << parents[i]->get_name()
+            << "\" outputs ";
+        for (size_t j = 0; j < dims.size(); ++j) {
+          err << (j > 0 ? " x " : "") << dims[j];
+        }
+      }
+      err << ")";
+      LBANN_ERROR(err.str());
+    }
+  }
+  else {
+    // Check that input dimensions match
+    if (this->get_input_dims(0) != this->get_input_dims(1)) {
+      const auto& parents = this->get_parent_layers();
+      std::stringstream err;
+      err << get_type() << " layer \"" << this->get_name() << "\" "
+          << "has input tensors with different dimensions (";
+      for (int i = 0; i < this->get_num_parents(); ++i) {
+        const auto& dims = this->get_input_dims(i);
+        err << (i > 0 ? ", " : "") << "layer \"" << parents[i]->get_name()
+            << "\" outputs ";
+        for (size_t j = 0; j < dims.size(); ++j) {
+          err << (j > 0 ? " x " : "") << dims[j];
+        }
+      }
+      err << ")";
+      LBANN_ERROR(err.str());
+    }
   }
 }
 
@@ -111,17 +191,7 @@ void cross_entropy_layer<TensorDataType, T_layout, Dev>::fp_compute()
     fp_compute_distconv();
     return;
   }
-  else {
-    if (m_use_labels) {
-      LBANN_ERROR(
-        "Cross-entropy layers without Distconv don't support use_labels.");
-    }
-  }
-#else  // LBANN_HAS_DISTCONV
-  if (m_use_labels) {
-    LBANN_ERROR(
-      "Cross-entropy layers without Distconv don't support use_labels.");
-  }
+
 #endif // LBANN_HAS_DISTCONV
 
   // Initialize workspace
@@ -144,17 +214,6 @@ void cross_entropy_layer<TensorDataType, T_layout, Dev>::bp_compute()
   if (this->distconv_enabled()) {
     bp_compute_distconv();
     return;
-  }
-  else {
-    if (m_use_labels) {
-      LBANN_ERROR(
-        "Cross-entropy layers without Distconv don't support use_labels.");
-    }
-  }
-#else  // LBANN_HAS_DISTCONV
-  if (m_use_labels) {
-    LBANN_ERROR(
-      "Cross-entropy layers without Distconv don't support use_labels.");
   }
 #endif // LBANN_HAS_DISTCONV
 

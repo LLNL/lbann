@@ -25,38 +25,55 @@ import tools
 #   L'''' = O( xhat^2 * log(x) / x^4 )
 # We have x >= 0.25 to make sure the fourth derivative does not get
 # too big and mess up the error bounds.
-np.random.seed(201910143)
+
+np.random.seed(202303102)
+SAMPLE_SPATIAL_SIZE = 4**3
+NUM_CHANNELS = 3
+NUM_SAMPLES = 23
 _samples = np.random.uniform(low=0.25,
                              high=1,
-                             size=(23,2,7)).astype(np.float32)
+                             size=(NUM_SAMPLES, 2*NUM_CHANNELS, SAMPLE_SPATIAL_SIZE)).astype(np.float32)
+_labels = np.random.randint(NUM_CHANNELS, size=(NUM_SAMPLES, 1, SAMPLE_SPATIAL_SIZE)).astype(np.float32)
+
 
 # Sample access functions
 def get_sample(index):
-    return _samples[index].reshape(-1)
+    return np.concatenate([_samples[index].reshape(-1),
+                           _labels[index].reshape(-1)])
 def num_samples():
-    return _samples.shape[0]
+    return NUM_SAMPLES
 def sample_dims():
-    return (2*_samples.shape[-1],)
+    return (2*(_samples.shape[-1] * _samples.shape[-2]) + _labels.shape[-1],)
+
 
 # ==============================================
 # NumPy cross entropy
 # ==============================================
 
-def numpy_cross_entropy(x, xhat):
-    """Cross entropy between two distributions, computed with NumPy
+def numpy_cross_entropy(x, xhat, rescale=1):
+    """Cross entropy between a distribution and ground truth labels, 
+       computed with NumPy
 
     The computation is performed with 64-bit floats.
 
     Args:
         x: Estimated distribution
-        xhat: True distribution
+        xhat: Labels of the true distribution
 
     """
     if x.dtype is not np.float64:
         x = x.astype(np.float64)
     if xhat.dtype is not np.float64:
         xhat = xhat.astype(np.float64)
-    return -np.inner(xhat, np.log(x))
+    
+    x = x.flatten()
+    xhat = xhat.flatten()
+    loss = 0
+    for j in range(SAMPLE_SPATIAL_SIZE):
+        correct_channel = xhat[j]
+        offset = int((correct_channel * SAMPLE_SPATIAL_SIZE) + j)
+        loss += np.log(x[offset])
+    return -loss * rescale
 
 # ==============================================
 # Setup LBANN experiment
@@ -87,7 +104,11 @@ def construct_model(lbann):
     # Input data
     # Note: Sum with weights layers so that gradient checking will
     # verify that error signals are correct.
-    slice_size = _samples.shape[-1]
+    slice_size = NUM_CHANNELS * SAMPLE_SPATIAL_SIZE
+    label_slice = 2 * slice_size
+    label_only_slice = label_slice + SAMPLE_SPATIAL_SIZE
+    RESCALE_CONST = 1e-3 
+     
     x0_weights = lbann.Weights(optimizer=lbann.SGD(),
                                initializer=lbann.ConstantInitializer(value=0.0),
                                name='input0_weights')
@@ -95,13 +116,16 @@ def construct_model(lbann):
                                initializer=lbann.ConstantInitializer(value=0.0),
                                name='input1_weights')
     x_slice = lbann.Slice(lbann.Input(data_field='samples'),
-                          slice_points=[0, slice_size, 2*slice_size])
+                          slice_points=[0, slice_size, label_slice, label_only_slice])
     x0 = lbann.Sum(x_slice,
                    lbann.WeightsLayer(weights=x0_weights, dims=[slice_size]))
     x1 = lbann.Sum(x_slice,
                    lbann.WeightsLayer(weights=x1_weights, dims=[slice_size]))
+    x2 = lbann.Reshape(lbann.Identity(x_slice), dims=[SAMPLE_SPATIAL_SIZE])
+    
     x0_lbann = x0
     x1_lbann = x1
+    x2_lbann = x2
 
     # Objects for LBANN model
     obj = []
@@ -116,6 +140,8 @@ def construct_model(lbann):
     x0 = x0_lbann
     x1 = x1_lbann
     y = lbann.CrossEntropy(x0, x1, data_layout='data_parallel')
+    # Rescale the output so the objective isn't too high
+    y = lbann.Scale(y, constant=RESCALE_CONST)
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
@@ -125,8 +151,103 @@ def construct_model(lbann):
     for i in range(num_samples()):
         x = get_sample(i).astype(np.float64)
         x0 = x[:slice_size]
-        x1 = x[slice_size:]
-        y = -np.inner(x1, np.log(x0))
+        x1 = x[slice_size:2 * slice_size]
+        y = -np.inner(x1, np.log(x0)) * RESCALE_CONST
+        z = tools.numpy_l2norm2(y)
+        vals.append(z)
+    val = np.mean(vals)
+    tol = 8 * val * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
+        lower_bound=val-tol,
+        upper_bound=val+tol,
+        error_on_failure=True,
+        execution_modes='test'))
+
+    # ------------------------------------------
+    # Data-parallel layout (2D labels-only)
+    # ------------------------------------------
+
+    sample_shape_2d = [NUM_CHANNELS,
+                       int(np.sqrt(SAMPLE_SPATIAL_SIZE)),
+                       int(np.sqrt(SAMPLE_SPATIAL_SIZE))]
+    
+    label_shape_2d = [1,
+                      int(np.sqrt(SAMPLE_SPATIAL_SIZE)),
+                      int(np.sqrt(SAMPLE_SPATIAL_SIZE))]
+    
+    # LBANN implementation
+    x0 = x0_lbann
+    x1 = x2_lbann
+
+    x0 = lbann.Reshape(x0, dims=sample_shape_2d)
+    x1 = lbann.Reshape(x1, dims=label_shape_2d)
+
+    y = lbann.CrossEntropy(x0, x1, data_layout='data_parallel', use_labels=True, 
+                           name="2d_output")
+    # Rescale the output so the objective isn't too high
+    y = lbann.Scale(y, constant=RESCALE_CONST)    
+    z = lbann.L2Norm2(y)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='data-parallel layout 2D'))
+
+    # NumPy implementation
+    vals = []
+    for i in range(num_samples()):
+        x = get_sample(i).astype(np.float64)
+        x0 = x[:slice_size]
+        x1 = x[2 * slice_size:]
+        y = numpy_cross_entropy(x0, x1, rescale=RESCALE_CONST)
+        z = tools.numpy_l2norm2(y)
+        vals.append(z)
+    val = np.mean(vals)
+    tol = 8 * val * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
+        lower_bound=val-tol,
+        upper_bound=val+tol,
+        error_on_failure=True,
+        execution_modes='test'))
+
+    # ------------------------------------------
+    # Data-parallel layout (3D labels-only)
+    # ------------------------------------------
+
+    # We expect the same exact results as the 2D case.
+    # This unit test is to make sure the usually expected
+    # sample dimensions are well supported and the dimensionality
+    # check is working correctly. 
+
+    sample_shape_3d = [NUM_CHANNELS,
+                       int(np.cbrt(SAMPLE_SPATIAL_SIZE)),
+                       int(np.cbrt(SAMPLE_SPATIAL_SIZE)),
+                       int(np.cbrt(SAMPLE_SPATIAL_SIZE))]
+    
+    label_shape_3d = [1,
+                      int(np.cbrt(SAMPLE_SPATIAL_SIZE)),
+                      int(np.cbrt(SAMPLE_SPATIAL_SIZE)),
+                      int(np.cbrt(SAMPLE_SPATIAL_SIZE))]
+    # LBANN implementation
+    x0 = x0_lbann
+    x1 = x2_lbann
+
+    x0 = lbann.Reshape(x0, dims=sample_shape_3d)
+    x1 = lbann.Reshape(x1, dims=label_shape_3d)
+
+    y = lbann.CrossEntropy(x0, x1, data_layout='data_parallel', use_labels=True)
+    # Rescale the output so the objective isn't too high
+    y = lbann.Scale(y, constant=RESCALE_CONST)
+    z = lbann.L2Norm2(y)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='data-parallel layout 3D'))
+
+    # NumPy implementation
+    vals = []
+    for i in range(num_samples()):
+        x = get_sample(i).astype(np.float64)
+        x0 = x[:slice_size]
+        x1 = x[2 * slice_size:]
+        y = numpy_cross_entropy(x0, x1, rescale=RESCALE_CONST)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -146,6 +267,8 @@ def construct_model(lbann):
     x0 = x0_lbann
     x1 = x1_lbann
     y = lbann.CrossEntropy(x0, x1, data_layout='model_parallel')
+    # Rescale the output so the objective isn't too high
+    y = lbann.Scale(y, constant=RESCALE_CONST)
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='model-parallel layout'))
@@ -155,8 +278,8 @@ def construct_model(lbann):
     for i in range(num_samples()):
         x = get_sample(i).astype(np.float64)
         x0 = x[:slice_size]
-        x1 = x[slice_size:]
-        y = -np.inner(x1, np.log(x0))
+        x1 = x[slice_size:2 * slice_size]
+        y = -np.inner(x1, np.log(x0)) * RESCALE_CONST
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
