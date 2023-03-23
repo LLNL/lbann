@@ -26,13 +26,15 @@
 
 #ifndef LBANN_LAYERS_TRANSFORM_DISTCONV_GATHER
 #define LBANN_LAYERS_TRANSFORM_DISTCONV_GATHER
+
+#include "lbann/utils/distconv.hpp"
+
+#if defined(LBANN_HAS_NVSHMEM) && defined(LBANN_HAS_DISTCONV)
+
 #include "distconv/base.hpp"
 #include "distconv/tensor/tensor.hpp"
 #include "distconv/tensor/tensor_mpi.hpp"
 #include "lbann/layers/transform/distconv/distconv_nvshmem_vector_addressing.hpp"
-#include "lbann/utils/distconv.hpp"
-
-#if defined(LBANN_HAS_NVSHMEM) && defined(LBANN_HAS_DISTCONV)
 
 namespace distconv {
 template <typename Backend, typename DataType>
