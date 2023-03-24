@@ -158,7 +158,7 @@ TopKCategoricalAccuracy
 ----------------------------------------
 
 The :python:`TopKCategoricalAccuracy` layer requires two inputs, which
-are respectively interpreted as prediction  scores and as a one-hot
+are respectively interpreted as prediction scores and as a one-hot
 label vector. The output is one if the corresponding label matches one
 of the top-k prediction scores and is otherwise zero. Ties in the
 top-k prediction scores are broken in favor of entries with smaller
