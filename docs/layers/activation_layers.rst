@@ -28,7 +28,9 @@ ________________________________________
 Elu
 ----------------------------------------
 
-Exponential linear unit
+The :python:`Elu` layer is similar to :python:`Relu` but with negative
+values that cause the mean of the :python:`Elu` activation function to
+shift toward 0.
 
 .. math::
 
@@ -59,7 +61,7 @@ ________________________________________
 Identity
 ----------------------------------------
 
-Output the input tensor
+The :python:`Identity` layer outputs the input tensor.
 
 This layer is very cheap since it just involves setting up tensor
 views.
@@ -76,6 +78,10 @@ ________________________________________
 ----------------------------------------
 LeakyRelu
 ----------------------------------------
+
+:python:`LeakyRelu` modifies the :python:`Relu` function to allow for
+        a small, non-zero gradient when the unit is saturated and not
+        active.
 
 .. math::
 
@@ -106,7 +112,7 @@ ________________________________________
 LogSoftmax
 ----------------------------------------
 
-Logarithm of softmax function
+:python:`LogSoftmax` is the logarithm of the softmax function.
 
 .. math::
 
@@ -125,7 +131,8 @@ ________________________________________
 Relu
 ----------------------------------------
 
-Rectified linear unit
+The :python:`Relu` layer outputs input directly if positive, otherwise
+outputs zero.
 
 .. math::
 
@@ -143,6 +150,9 @@ ________________________________________
 ----------------------------------------
 Softmax
 ----------------------------------------
+
+The :python:`Softmax` layer turns a vector of K real values into a
+vector of K real values that sum to 1.
 
 .. math::
 

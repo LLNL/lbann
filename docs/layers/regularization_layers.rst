@@ -29,7 +29,8 @@ ________________________________________
 BatchNormalization
 ----------------------------------------
 
-Channel-wise batch normalization
+The :python:`BatchNormalization` layer performs channel-wise batch
+normalization.
 
 Each input channel is normalized across the mini-batch to have zero
 mean and unit standard deviation. Learned scaling factors and biases
@@ -94,7 +95,7 @@ ________________________________________
 Dropout
 ----------------------------------------
 
-Probabilistically drop tensor entries
+The :python:`Dropout` layer probabilistically drops tensor entries.
 
 The values are multiplied by 1/(keep probability) at training time. Keep
 probabilities of 0.5 for fully-connected layers and 0.8 for input
@@ -124,7 +125,8 @@ ________________________________________
 EntrywiseBatchNormalization
 ----------------------------------------
 
-Entry-wise batch normalization
+The :python:`EntrywiseBatchNormalization` layer performs entry-wise
+batch normalization.
 
 Each input entry is normalized across the mini-batch to have zero mean
 and unit standard deviation. This uses the standard approach of
@@ -167,7 +169,8 @@ ________________________________________
 InstanceNorm
 ----------------------------------------
 
-Normalize over data channels
+The :python:`InstanceNorm` layer normalizes data samples over data
+channels.
 
 Each channel within a data sample is normalized to have zero mean and
 unit standard deviation. See:
@@ -200,7 +203,7 @@ ________________________________________
 LayerNorm
 ----------------------------------------
 
-Normalize over data samples
+The :python:`LayerNorm` layer normalizes data samples.
 
 Each data sample is normalized to have zero mean and unit standard
 deviation. See:
@@ -231,6 +234,9 @@ ________________________________________
 LocalResponseNormalization
 ----------------------------------------
 
+The :python:`LocalResponseNormalization` layer normalizes values
+within a local neighborhood.
+
 See:
 
 Alex Krizhevsky, Ilya Sutskever, and Geoffrey E. Hinton. "ImageNet
@@ -258,7 +264,8 @@ ________________________________________
 SeluDropout
 ----------------------------------------
 
-Scaled dropout for use with SELU activations.
+The :python:`SeluDropout` layer is a scaled dropout for use with SELU
+activations.
 
 A default keep probability of 0.95 is recommended. See:
 

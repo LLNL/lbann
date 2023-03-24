@@ -49,6 +49,12 @@ Users are advised to view `the Doxygen API Documentation
    layers
 
 .. toctree::
+   :maxdepth: 2
+   :caption: LBANN Operators
+
+   operators
+
+.. toctree::
    :maxdepth: 1
    :caption: Data Ingestion
 

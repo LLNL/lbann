@@ -80,10 +80,10 @@ ________________________________________
 IdentityZero
 ----------------------------------------
 
-The IdentityZero layer is an output tensor filled with either zeros or
-ones depending on if the layer is frozen or not. This is useful for
-more complex training setups like GANs, where you want to reuse the
-computational graph but switch loss functions.
+The :python:`IdentityZero` layer is an output tensor filled with
+either zeros or ones depending on if the layer is frozen or not. This
+is useful for more complex training setups like GANs, where you want
+to reuse the computational graph but switch loss functions.
 
 Arguments:
 
@@ -103,9 +103,9 @@ ________________________________________
 Bernoulli
 ----------------------------------------
 
-The Bernoulli layer is a random tensor with a Bernoulli distribution.
-Randomness is only applied during training. The tensor is filled with
-zeros during evaluation.
+The :python:`Bernoulli` layer is a random tensor with a Bernoulli
+distribution. Randomness is only applied during training. The tensor
+is filled with zeros during evaluation.
 
 Arguments:
 
@@ -128,7 +128,7 @@ ________________________________________
 Concatenation
 ----------------------------------------
 
-The Concatenation layer concatenates tensors along specified
+The :python:`Concatenation` layer concatenates tensors along specified
 dimensions. All input tensors must have identical dimensions, except
 for the concatenation dimension.
 
@@ -147,7 +147,8 @@ ________________________________________
 Constant
 ----------------------------------------
 
-The Constant layer is an output tensor filled with a single value.
+The :python:`Constant` layer is an output tensor filled with a single
+value.
 
 Arguments:
 
@@ -170,12 +171,12 @@ ________________________________________
 Crop
 ----------------------------------------
 
-The Crop layer extracts a crop from a tensor at a position. It expects
-two input tensors: an :math:`N` -D data tensor and a 1D position vector
-with :math:`N` entries. The position vector should be normalized so
-that values are in :math:`[0,1]` . For images in CHW format, a position
-of (0,0,0) corresponds to the red-top-left corner and (1,1,1) to the
-blue-bottom-right corner.
+The :python:`Crop` layer extracts a crop from a tensor at a
+position. It expects two input tensors: an :math:`N` -D data tensor
+and a 1D position vector with :math:`N` entries. The position vector
+should be normalized so that values are in :math:`[0,1]` . For images
+in CHW format, a position of (0,0,0) corresponds to the red-top-left
+corner and (1,1,1) to the blue-bottom-right corner.
 
 Arguments:
 
@@ -195,8 +196,9 @@ ________________________________________
 Cross_Grid_Sum
 ----------------------------------------
 
-The Cross Grid Sum layer adds tensors over multiple sub-grids. This is
-experimental functionality for use with sub-grid parallelism.
+The :python:`Cross_Grid_Sum` layer adds tensors over multiple
+sub-grids. This is experimental functionality for use with sub-grid
+parallelism.
 
 Arguments: None
 
@@ -211,9 +213,9 @@ ________________________________________
 Cross_Grid_Sum_Slice
 ----------------------------------------
 
-The Cross Grid Sum Slice layer adds tensors over multiple sub-grids
-and slices. This is experimental functionality for use with sub-grid
-parallelism.
+The :python:`Cross_Grid_Sum_Slice` layer adds tensors over multiple
+sub-grids and slices. This is experimental functionality for use with
+sub-grid parallelism.
 
 Arguments: None
 
@@ -228,9 +230,9 @@ ________________________________________
 Dummy
 ----------------------------------------
 
-The Dummy layer is a placeholder layer with no child layers. Rarely
-needed by users. This layer is used internally to handle cases where a
-layer has no child layers.
+The :python:`Dummy` layer is a placeholder layer with no child
+layers. Rarely needed by users. This layer is used internally to
+handle cases where a layer has no child layers.
 
 Arguments: None
 
@@ -245,9 +247,9 @@ ________________________________________
 Evaluation
 ----------------------------------------
 
-The Evaluation layer is an interface with objective function and
-metrics. Rarely needed by users. Evaluation layers are automatically
-created when needed in the compute graph.
+The :python:`Evaluation` layer is an interface with objective function
+and metrics. Rarely needed by users. Evaluation layers are
+automatically created when needed in the compute graph.
 
 Arguments: None
 
@@ -262,9 +264,9 @@ ________________________________________
 Gather
 ----------------------------------------
 
-The Gather layer gathers values from specified tensor indices. Expects
-two input tensors: an :math:`N` -D data tensor and a 1D index
-vector. For 1D data:
+The :python:`Gather` layer gathers values from specified tensor
+indices. Expects two input tensors: an :math:`N` -D data tensor and a
+1D index vector. For 1D data:
 
 .. math::
 
@@ -303,7 +305,8 @@ ________________________________________
 Gaussian
 ----------------------------------------
 
-A random tensor with Gaussian/normal distribution.
+The :python:`Gaussian` layer is a random tensor with Gaussian/normal
+distribution.
 
 Arguments:
 
@@ -335,7 +338,7 @@ ________________________________________
 Hadamard
 ----------------------------------------
 
-Entry-wise tensor product
+The :python:`Hadamard` layer is an entry-wise tensor product.
 
 Arguments: None
 
@@ -350,10 +353,11 @@ ________________________________________
 InTopK
 ----------------------------------------
 
-The InTopK layer is a one-hot vector indicating top-k entries. Output
-tensor has same dimensions as input tensor. Output entries
-corresponding to the top-k input entries are set to one and the rest
-to zero. Ties are broken in favor of entries with smaller indices.
+The :python:`InTopK` layer is a one-hot vector indicating top-k
+entries. Output tensor has same dimensions as input tensor. Output
+entries corresponding to the top-k input entries are set to one and
+the rest to zero. Ties are broken in favor of entries with smaller
+indices.
 
 Arguments:
 
@@ -370,8 +374,8 @@ ________________________________________
 Pooling
 ----------------------------------------
 
-The Pooling layer traverses the spatial dimensions of a data tensor
-with a sliding window and applies a reduction operation.
+The :python:`Pooling` layer traverses the spatial dimensions of a data
+tensor with a sliding window and applies a reduction operation.
 
 Arguments:
 
@@ -447,7 +451,7 @@ ________________________________________
 Reduction
 ----------------------------------------
 
-The Reduction layer reduces a tensor to a scalar.
+The :python:`Reduction` layer reduces a tensor to a scalar.
 
 Arguments:
 
@@ -468,7 +472,7 @@ ________________________________________
 Reshape
 ----------------------------------------
 
-The Reshape layer reinterprets a tensor with new dimensions.
+The :python:`Reshape` layer reinterprets a tensor with new dimensions.
 
 The input and output tensors must have the same number of
 entries. This layer is very cheap since it just involves setting up
@@ -498,9 +502,9 @@ ________________________________________
 Scatter
 ----------------------------------------
 
-The Scatter layer scatters values to specified tensor indices. Expects
-two input tensors: an :math:`N` -D data tensor and a 1D index
-vector. For 1D data:
+The :python:`Scatter` layer scatters values to specified tensor
+indices. Expects two input tensors: an :math:`N` -D data tensor and a
+1D index vector. For 1D data:
 
 .. math::
 
@@ -546,9 +550,9 @@ ________________________________________
 Slice
 ----------------------------------------
 
-The Slice layer slices a tensor along a specified dimension. The tensor
-is split along one dimension at user-specified points, and each child
-layer recieves one piece.
+The :python:`Slice` layer slices a tensor along a specified
+dimension. The tensor is split along one dimension at user-specified
+points, and each child layer recieves one piece.
 
 Arguments:
 
@@ -578,7 +582,7 @@ ________________________________________
 Sort
 ----------------------------------------
 
-The Sort layer sorts tensor entries.
+The :python:`Sort` layer sorts tensor entries.
 
 Arguments:
 
@@ -595,7 +599,8 @@ ________________________________________
 Split
 ----------------------------------------
 
-The Split layer outputs the input tensor to multiple child layers
+The :python:`Split` layer outputs the input tensor to multiple child
+layers.
 
 Rarely needed by users. This layer is used internally to handle cases
 where a layer outputs the same tensor to multiple child layers. From a
@@ -617,7 +622,8 @@ ________________________________________
 StopGradient
 ----------------------------------------
 
-The StopGradient layer blocks error signals during back propagation
+The :python:`StopGradient` layer blocks error signals during back
+propagation.
 
 The output is identical to the input, but the back propagation output
 (i.e. the error signal) is always zero. Compare with the stop_gradient
@@ -638,7 +644,8 @@ ________________________________________
 Sum
 ----------------------------------------
 
-Element-wise sum of each of the input tensors.
+The :python:`Sum` layer calculates the element-wise sum of each of the
+input tensors.
 
 Arguments: None
 
@@ -653,8 +660,8 @@ ________________________________________
 Tessellate
 ----------------------------------------
 
-The Tessallate layer repeats a tensor until it matches specified
-dimensions.
+The :python:`Tessallate` layer repeats a tensor until it matches
+specified dimensions.
 
 The output tensor dimensions do not need to be integer multiples of
 the input dimensions. Compare with the NumPy ``tile`` function.
@@ -694,7 +701,8 @@ ________________________________________
 Uniform
 ----------------------------------------
 
-The Uniform layer is a random tensor with a uniform distribution.
+The :python:`Uniform` layer is a random tensor with a uniform
+distribution.
 
 Arguments:
 
@@ -726,8 +734,8 @@ ________________________________________
 Unpooling
 ----------------------------------------
 
-The Unpooling layer is the transpose of the pooling layer. It is
-required that the pooling layer be set as the hint layer.
+The :python:`Unpooling` layer is the transpose of the pooling
+layer. It is required that the pooling layer be set as the hint layer.
 
 .. warning::
    This has not been well maintained and is probably broken.
@@ -756,7 +764,7 @@ ________________________________________
 WeightedSum
 ----------------------------------------
 
-The WeightedSum layer adds tensors with scaling factors.
+The :python:`WeightedSum` layer adds tensors with scaling factors.
 
 Arguments:
 
@@ -774,8 +782,8 @@ ________________________________________
 WeightsLayer
 ----------------------------------------
 
-The WeightsLayer outputs values from a weights tensor. Interfaces with
-a ``weights`` object.
+The :python:`WeightsLayer` outputs values from a weights
+tensor. Interfaces with a ``weights`` object.
 
 Arguments:
 
@@ -796,7 +804,7 @@ ________________________________________
 CategoricalRandom (Deprecated)
 ----------------------------------------
 
-The CategoricalRandom layer is deprecated.
+The :python:`CategoricalRandom` layer is deprecated.
 
 Arguments: None
 
@@ -811,7 +819,7 @@ ________________________________________
 DiscreteRandom (Deprecated)
 ----------------------------------------
 
-The DiscreteRandom layer is deprecated.
+The :python:`DiscreteRandom` layer is deprecated.
 
 Arguments:
 
