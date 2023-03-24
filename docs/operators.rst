@@ -280,8 +280,6 @@ ________________________________________________
 BinaryCrossEntropy
 ------------------------------------------------
 
-FIXME: Is this right?
-
 Apply the BinaryCrossEntropy operator entrywise.
 
 Compare each predicted probability to actual class value, either 0
@@ -300,9 +298,13 @@ ________________________________________________
 BooleanAccuracy
 ------------------------------------------------
 
-FIXME: What do the boolean operators do?
-
 Apply the BooleanAccuracy operator entrywise.
+
+Applies the function:
+
+.. math::
+
+   \text{BooleanAccuracy}(x1,x2) = (x1 >= 0.5) == (x2 >= 0.5)
 
 :ref:`Back to Top<operators>`
 
