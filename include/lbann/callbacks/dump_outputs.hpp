@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -51,9 +51,9 @@ namespace callback {
  *
  *  CNPY is required to export to NumPy file formats (npy and npz).
  */
-class dump_outputs : public callback_base {
+class dump_outputs : public callback_base
+{
 public:
-
   /** @brief Construct a callback to dump outputs.
    *
    *  @param layer_names    Names of layers with output dumps
@@ -67,37 +67,33 @@ public:
    *  @param file_format    Output file format. Options are csv, tsv,
    *                        npy, npz (default: csv).
    */
-  dump_outputs(
-    std::set<std::string> layer_names,// = std::set<std::string>(),
-    std::set<execution_mode> modes, // = std::set<std::string>(),
-    El::Int batch_interval = 0,
-    std::string directory = "",
-    std::string file_format = "");
+  dump_outputs(std::set<std::string> layer_names, // = std::set<std::string>(),
+               std::set<execution_mode> modes,    // = std::set<std::string>(),
+               El::Int batch_interval = 0,
+               std::string directory = "",
+               std::string file_format = "");
 
-  dump_outputs* copy() const override {
-    return new dump_outputs(*this);
-  }
+  dump_outputs* copy() const override { return new dump_outputs(*this); }
   std::string name() const override { return "dump outputs"; }
 
-  void on_forward_prop_end(model* m, Layer* l) override {
+  void on_forward_prop_end(model* m, Layer* l) override
+  {
     do_dump_outputs(*m, *l);
   }
-  void on_evaluate_forward_prop_end(model* m, Layer* l) override {
-    const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
-    if(c.get_step() % m_batch_interval == 0) {
-      do_dump_outputs(*m, *l);
-    }
-  }
+  void on_evaluate_forward_prop_end(model* m, Layer* l) override;
 
   /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
 private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
 
   friend class cereal::access;
   dump_outputs();
@@ -124,13 +120,12 @@ private:
    *  @details Returns immediately if an output dump is not needed.
    */
   void do_dump_outputs(const model& m, const Layer& l);
-
 };
 
 // Builder function
 std::unique_ptr<callback_base>
-build_dump_outputs_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_dump_outputs_callback_from_pbuf(const google::protobuf::Message&,
+                                      std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,19 +24,18 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <catch2/catch.hpp>
+#include "Catch2BasicSupport.hpp"
 
 #include "MPITestHelpers.hpp"
 
-#include <lbann/base.hpp>
-#include <lbann/weights/data_type_weights.hpp>
-#include <lbann/weights/weights.hpp>
-#include <lbann/weights/weights_proxy.hpp>
-#include <lbann/utils/memory.hpp>
 #include <h2/meta/Core.hpp>
 #include <h2/meta/TypeList.hpp>
 #include <h2/patterns/multimethods/SwitchDispatcher.hpp>
-
+#include <lbann/base.hpp>
+#include <lbann/utils/memory.hpp>
+#include <lbann/weights/data_type_weights.hpp>
+#include <lbann/weights/weights.hpp>
+#include <lbann/weights/weights_proxy.hpp>
 
 // Some convenience typedefs
 
@@ -85,7 +84,7 @@ get_local_values(lbann::WeightsProxy<T> const& proxy)
 {
   return proxy.values().LockedMatrix();
 }
-}
+} // namespace
 
 // Test to make sure I understand how weights need to be setup.
 TEST_CASE("Basic weights tests", "[mpi][weights]")
@@ -117,16 +116,14 @@ TEST_CASE("Basic weights tests", "[mpi][weights]")
   SECTION("Setup with constant initializer.")
   {
     DataType const value = El::To<DataType>(1.3);
-    REQUIRE_NOTHROW(
-      dtw.set_initializer(
-        lbann::make_unique<ConstantInitializer<DataType>>(value)));
+    REQUIRE_NOTHROW(dtw.set_initializer(
+      std::make_unique<ConstantInitializer<DataType>>(value)));
     REQUIRE_NOTHROW(dtw.setup());
     CHECK(count_differing_values(value, get_local_values(dtw)) == 0UL);
 
-    CHECK(dtw.get_values().Height()
-          == El::To<El::Int>(dtw.get_matrix_height()));
-    CHECK(dtw.get_values().Width()
-          == El::To<El::Int>(dtw.get_matrix_width()));
+    CHECK(dtw.get_values().Height() ==
+          El::To<El::Int>(dtw.get_matrix_height()));
+    CHECK(dtw.get_values().Width() == El::To<El::Int>(dtw.get_matrix_width()));
   }
 }
 
@@ -170,7 +167,8 @@ TEST_CASE("Empty WeightsProxy tests.", "[mpi][weights][proxy]")
   }
 }
 
-TEMPLATE_TEST_CASE("Weights proxy tests.", "[mpi][weights][proxy]",
+TEMPLATE_TEST_CASE("Weights proxy tests.",
+                   "[mpi][weights][proxy]",
                    (MasterProxyPair<float, float>),
                    (MasterProxyPair<double, float>))
 {
@@ -190,9 +188,8 @@ TEMPLATE_TEST_CASE("Weights proxy tests.", "[mpi][weights][proxy]",
   // Create and set the initializer; using a constant initializer
   // here. This must be done at the master data type.
   MasterDataType const value = El::To<MasterDataType>(5.17);
-  REQUIRE_NOTHROW(
-    dtw->set_initializer(
-      lbann::make_unique<ConstantInitializer<MasterDataType>>(value)));
+  REQUIRE_NOTHROW(dtw->set_initializer(
+    std::make_unique<ConstantInitializer<MasterDataType>>(value)));
 
   // Set the size for the weights.
   REQUIRE_NOTHROW(dtw->set_dims({weights_height}, {weights_width}));
@@ -209,17 +206,14 @@ TEMPLATE_TEST_CASE("Weights proxy tests.", "[mpi][weights][proxy]",
     REQUIRE(!proxy.empty());
 
     // At this point, the proxy should have the right size.
-    CHECK(proxy.values().Height()
-          == El::To<El::Int>(dtw->get_matrix_height()));
-    CHECK(proxy.values().Width()
-          == El::To<El::Int>(dtw->get_matrix_width()));
+    CHECK(proxy.values().Height() == El::To<El::Int>(dtw->get_matrix_height()));
+    CHECK(proxy.values().Width() == El::To<El::Int>(dtw->get_matrix_width()));
 
     REQUIRE_NOTHROW(proxy.synchronize_with_master());
 
     // At this point, the proxy should have the right values.
     auto const dt_value = El::To<DataType>(value);
     CHECK(count_differing_values(dt_value, get_local_values(proxy)) == 0);
-
   }
 
   // This SECTION uses `double` since we don't independently test the
@@ -297,9 +291,9 @@ TEMPLATE_TEST_CASE("Weights proxy tests.", "[mpi][weights][proxy]",
     CHECK(&proxy_default.master_weights() == dtw.get());
 
     // At this point, the proxy_default should have the right size.
-    CHECK(proxy_default.values().Height()
-          == El::To<El::Int>(dtw->get_matrix_height()));
-    CHECK(proxy_default.values().Width()
-          == El::To<El::Int>(dtw->get_matrix_width()));
+    CHECK(proxy_default.values().Height() ==
+          El::To<El::Int>(dtw->get_matrix_height()));
+    CHECK(proxy_default.values().Width() ==
+          El::To<El::Int>(dtw->get_matrix_width()));
   }
 }

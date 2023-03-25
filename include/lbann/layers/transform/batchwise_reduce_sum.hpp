@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -38,12 +38,13 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class batchwise_reduce_sum_layer : public data_type_layer<TensorDataType> {
+class batchwise_reduce_sum_layer : public data_type_layer<TensorDataType>
+{
 public:
-
   batchwise_reduce_sum_layer();
   batchwise_reduce_sum_layer(const batchwise_reduce_sum_layer& other) = default;
-  batchwise_reduce_sum_layer& operator=(const batchwise_reduce_sum_layer& other) = default;
+  batchwise_reduce_sum_layer&
+  operator=(const batchwise_reduce_sum_layer& other) = default;
 
   batchwise_reduce_sum_layer* copy() const override;
 
@@ -60,22 +61,24 @@ public:
   El::Device get_device_allocation() const override;
 
 protected:
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 
   void fp_compute() override;
   void bp_compute() override;
-
 };
 
-LBANN_DEFINE_LAYER_BUILDER(batchwise_reduce_sum);
-
 #ifndef LBANN_BATCHWISE_REDUCE_SUM_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device)                         \
-  extern template class batchwise_reduce_sum_layer<     \
-    T, data_layout::DATA_PARALLEL, Device>;             \
-  extern template class batchwise_reduce_sum_layer<     \
-    T, data_layout::MODEL_PARALLEL, Device>;
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class batchwise_reduce_sum_layer<T,                          \
+                                                   data_layout::DATA_PARALLEL, \
+                                                   Device>;                    \
+  extern template class batchwise_reduce_sum_layer<                            \
+    T,                                                                         \
+    data_layout::MODEL_PARALLEL,                                               \
+    Device>;
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
 #endif // LBANN_BATCHWISE_REDUCE_SUM_LAYER_INSTANTIATE

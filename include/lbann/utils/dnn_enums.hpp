@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,8 +26,7 @@
 #ifndef LBANN_UTILS_DNN_ENUMS_HPP
 #define LBANN_UTILS_DNN_ENUMS_HPP
 
-namespace lbann
-{
+namespace lbann {
 
 /** @brief Which forward convolution algorithm to use. */
 enum class fwd_conv_alg
@@ -40,7 +39,7 @@ enum class fwd_conv_alg
   FFT_TILING,
   WINOGRAD,
   WINOGRAD_NONFUSED,
-};// enum class fwd_conv_alg
+}; // enum class fwd_conv_alg
 
 /** @brief Which backward convolution algorithm to use. */
 enum class bwd_data_conv_alg
@@ -51,7 +50,8 @@ enum class bwd_data_conv_alg
   FFT_TILING,
   WINOGRAD,
   WINOGRAD_NONFUSED,
-};// enum class bwd_conv_alg
+  IMPLICIT_GEMM,
+}; // enum class bwd_conv_alg
 
 /** @brief Which backward convolution filter algorithm to use. */
 enum class bwd_filter_conv_alg
@@ -63,7 +63,8 @@ enum class bwd_filter_conv_alg
   WINOGRAD,
   WINOGRAD_NONFUSED,
   FFT_TILING,
-};// enum class bwd_conv_filter
+  IMPLICIT_GEMM,
+}; // enum class bwd_conv_filter
 
 /** @brief Internal LBANN names for supported LRN layer modes.  */
 // Only one implemented in cudnn currently:
@@ -71,7 +72,7 @@ enum class bwd_filter_conv_alg
 enum class lrn_mode
 {
   CROSS_CHANNEL_DIM1,
-};// enum class lrn_mode
+}; // enum class lrn_mode
 
 /** @brief Which pooling mode to use. */
 enum class pooling_mode
@@ -103,7 +104,7 @@ enum class softmax_mode
    *  slices along the sample and channel dimensions.
    */
   CHANNEL
-};// enum class softmax_mode
+}; // enum class softmax_mode
 
 /** @brief Internal LBANN names for supported softmax algorithms. */
 enum class softmax_alg
@@ -111,7 +112,7 @@ enum class softmax_alg
   FAST,
   ACCURATE,
   LOG,
-};// enum class softmax_alg
+}; // enum class softmax_alg
 
-}// namespace lbann
+} // namespace lbann
 #endif // LBANN_UTILS_DNN_ENUMS_HPP

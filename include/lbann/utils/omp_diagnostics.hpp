@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,12 +30,12 @@
 
 namespace lbann {
 int get_num_pus();
-int get_affinity(uint8_t *cpus, uint8_t *count);
-void th_print_affinity(int rank, int np, char *host);
-void print_affinity(int rank, int np, char *host);
-int get_env_var(const char *id);
+int get_affinity(uint8_t* cpus, uint8_t* count);
+void th_print_affinity(int rank, int np, char* host);
+void print_affinity(int rank, int np, char* host);
+int get_env_var(const char* id);
 int get_sleep_sec();
-void print_affinity_subset(int rank, int np, char *host);
+void print_affinity_subset(int rank, int np, char* host);
 void display_omp_setup();
 } // namespace lbann
 #endif // LBANN_OMP_DIAGNOSTICS_HPP

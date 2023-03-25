@@ -3,10 +3,6 @@ import lbann
 import lbann.modules
 from lbann.util import make_iterable
 
-def str_list(l):
-    """Convert an iterable object to a space-separated string."""
-    return ' '.join(str(i) for i in make_iterable(l))
-
 class GRUModule(lbann.modules.Module):
 
     global_count = 0  # Static counter, used for default names
@@ -55,7 +51,7 @@ class GRUModule(lbann.modules.Module):
         # Default initial hidden state
         self.zeros = lbann.Constant(
             value=0,
-            num_neurons=str_list([num_layers, hidden_size]),
+            num_neurons=[num_layers, hidden_size],
             name=f'{self.name}_zeros',
             device=self.device,
             datatype=self.datatype,
@@ -86,7 +82,7 @@ class MolWAE(lbann.modules.Module):
 
     global_count = 0  # Static counter, used for default names
 
-    def __init__(self, input_feature_dims,dictionary_size, embedding_size, 
+    def __init__(self, input_feature_dims,dictionary_size, embedding_size,
                  ignore_label,zdim= 512, gmean=0.0, gstd=1.0,save_output=False, name=None):
         """Initialize Molecular WAE.
 
@@ -137,10 +133,24 @@ class MolWAE(lbann.modules.Module):
             w.datatype = self.weights_datatype
 
         #Decoder
-        self.decoder_rnn = gru(
+        self.decoder_rnn1 = gru(
             hidden_size=512,
-            num_layers=3,
-            name=self.name+'_decoder_rnn',
+            num_layers=1,
+            name=self.name+'_decoder_rnn1',
+            datatype=self.datatype,
+            weights_datatype=self.weights_datatype,
+        )
+        self.decoder_rnn2 = gru(
+            hidden_size=512,
+            num_layers=1,
+            name=self.name+'_decoder_rnn2',
+            datatype=self.datatype,
+            weights_datatype=self.weights_datatype,
+        )
+        self.decoder_rnn3 = gru(
+            hidden_size=512,
+            num_layers=1,
+            name=self.name+'_decoder_rnn3',
             datatype=self.datatype,
             weights_datatype=self.weights_datatype,
         )
@@ -178,7 +188,7 @@ class MolWAE(lbann.modules.Module):
         :return: float, recon component of loss
         """
 
-        x = lbann.Slice(x, slice_points=str_list([0, self.input_feature_dims]))
+        x = lbann.Slice(x, slice_points=[0, self.input_feature_dims])
         x = lbann.Identity(x)
         x_emb = lbann.Embedding(
             x,
@@ -190,7 +200,7 @@ class MolWAE(lbann.modules.Module):
 
         # Encoder: x -> z, kl_loss
         z_sample = self.forward_encoder(x_emb)
-        
+
         eps = lbann.Gaussian(mean=self.gmean, stdev=self.gstd,hint_layer=z_sample)
         z_sample = lbann.Add([z_sample, eps])
 
@@ -204,15 +214,15 @@ class MolWAE(lbann.modules.Module):
         recon_loss = lbann.Identity(recon_loss, device='CPU')
 
         z_prior = lbann.Tessellate(
-            lbann.Reshape(z, dims=str_list([1, self.zdim])),
-            dims=str_list([self.input_feature_dims, self.zdim]),
+            lbann.Reshape(z, dims=[1, self.zdim]),
+            dims=[self.input_feature_dims, self.zdim],
         )
 
         d_real = self.discriminator0(lbann.Concatenation([x_emb,z_prior],axis=1))
 
         z_sample0 = lbann.Tessellate(
-            lbann.Reshape(z_sample, dims=str_list([1, self.zdim])),
-            dims=str_list([self.input_feature_dims, self.zdim]),
+            lbann.Reshape(z_sample, dims=[1, self.zdim]),
+            dims=[self.input_feature_dims, self.zdim],
         )
         y_z_sample = lbann.Concatenation([x_emb,z_sample0],axis=1)
 
@@ -234,8 +244,8 @@ class MolWAE(lbann.modules.Module):
 
         h = lbann.Slice(
             h,
-            slice_points=str_list([self.input_feature_dims-1,
-                                   self.input_feature_dims]),
+            slice_points=[self.input_feature_dims-1,
+                          self.input_feature_dims],
             axis=0,
         )
         h = lbann.Identity(h)
@@ -254,18 +264,20 @@ class MolWAE(lbann.modules.Module):
         # z_0 = z.unsqueeze(1).repeat(1, x_emb.size(1), 1)
         # x_input = torch.cat([x_emb, z_0], dim=-1)
         z_0 = lbann.Tessellate(
-            lbann.Reshape(z, dims=str_list([1, self.zdim])),
-            dims=str_list([self.input_feature_dims, self.zdim]),
+            lbann.Reshape(z, dims=[1, self.zdim]),
+            dims=[self.input_feature_dims, self.zdim],
         )
         x_input = lbann.Concatenation(x_emb, z_0, axis=1)
 
         h_0 = self.decoder_lat(z)
         # h_0 = h_0.unsqueeze(0).repeat(self.decoder_rnn.num_layers, 1, 1)
-        h_0 = lbann.Reshape(h_0, dims=str_list([1, 512]))
-        h_0 = lbann.Tessellate(h_0, dims=str_list((3, 512)))
+        h_0 = lbann.Reshape(h_0, dims=[1, 512])
+        # h_0 = lbann.Tessellate(h_0, dims=[3, 512])
 
         # output, _ = self.decoder_rnn(x_input, h_0)
-        output = self.decoder_rnn(x_input, h_0)
+        x_input = self.decoder_rnn1(x_input, h_0)
+        x_input = self.decoder_rnn2(x_input, h_0)
+        output = self.decoder_rnn3(x_input, h_0)
 
         # y = self.decoder_fc(output)
         y = lbann.ChannelwiseFullyConnected(
@@ -289,14 +301,14 @@ class MolWAE(lbann.modules.Module):
                     stack.append(parent)
                     in_stack[parent] = True
         print("WAE save output? ", self.save_output)
-        # Find argmax 
+        # Find argmax
         if(self.save_output):
           y_slice = lbann.Slice(
               y,
               axis=0,
-              slice_points=str_list(range(self.input_feature_dims+1)),
+              slice_points=range(self.input_feature_dims+1),
           )
-          y_slice = [lbann.Reshape(y_slice, dims='-1') for _ in range(self.input_feature_dims)]
+          y_slice = [lbann.Reshape(y_slice, dims=[-1]) for _ in range(self.input_feature_dims)]
           arg_max = [lbann.Argmax(yi, device='CPU') for yi in y_slice]
 
           return y, arg_max
@@ -309,14 +321,14 @@ class MolWAE(lbann.modules.Module):
         y = lbann.Slice(
             y,
             axis=0,
-            slice_points=str_list([0, self.input_feature_dims-1]),
+            slice_points=[0, self.input_feature_dims-1],
         )
         y = lbann.Identity(y)
 
         # x[:, 1:]
         x = lbann.Slice(
             x,
-            slice_points=str_list([1, self.input_feature_dims]),
+            slice_points=[1, self.input_feature_dims],
         )
         x = lbann.Identity(x)
 
@@ -336,11 +348,11 @@ class MolWAE(lbann.modules.Module):
             for row in range(self.input_feature_dims-1)
         ]
         offsets = lbann.Weights(
-            initializer=lbann.ValueInitializer(values=str_list(offsets)),
+            initializer=lbann.ValueInitializer(values=offsets),
             optimizer=lbann.NoOptimizer(),
         )
         offsets = lbann.WeightsLayer(
-            dims=str_list([self.input_feature_dims-1]),
+            dims=[self.input_feature_dims-1],
             weights=offsets,
         )
         y_inds = lbann.Add(x, offsets)
@@ -376,14 +388,14 @@ class MolWAE(lbann.modules.Module):
         )
         z = lbann.Log(z)
         z = lbann.MatMul(
-            lbann.Reshape(keep_mask, dims=str_list([1, -1])),
+            lbann.Reshape(keep_mask, dims=[1, -1]),
             z,
         )
-        z = lbann.Reshape(z, dims=str_list([1]))
+        z = lbann.Reshape(z, dims=[1])
 
         # Compute cross entropy
         recon_loss = lbann.Gather(
-            lbann.Reshape(y, dims=str_list([-1])),
+            lbann.Reshape(y, dims=[-1]),
             y_inds,
         )
         recon_loss = lbann.Reduction(recon_loss, mode='sum')
@@ -395,13 +407,13 @@ class MolWAE(lbann.modules.Module):
     def constant(self, value, dims=[], datatype=None, hint_layer=None):
         return lbann.Constant(
             value=value,
-            num_neurons=str_list(dims),
+            num_neurons=dims,
             datatype=datatype,
             hint_layer=hint_layer,
         )
 
     def discriminator0(self,input):
         return self.d0_fc2(self.d0_fc1(self.d0_fc0(input)))
-        
+
     def discriminator1(self,input):
         return self.d1_fc2(self.d1_fc1(self.d1_fc0(input)))

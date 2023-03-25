@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,15 +27,16 @@
 #ifndef LBANN_METRIC_LAYER_METRIC_HPP
 #define LBANN_METRIC_LAYER_METRIC_HPP
 
-#include "lbann/metrics/metric.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
+#include "lbann/metrics/metric.hpp"
 
 namespace lbann {
 
-class layer_metric : public metric {
+class layer_metric : public metric
+{
 
- public:
-  layer_metric(lbann_comm *comm = nullptr,
+public:
+  layer_metric(lbann_comm* comm = nullptr,
                std::string name = "",
                std::string unit = "");
   layer_metric(const layer_metric& other) = default;
@@ -48,7 +49,8 @@ class layer_metric : public metric {
   std::string get_unit() const override { return m_unit; }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar );
+  template <class Archive>
+  void serialize(Archive& ar);
 
   /** Set corresponding layer. */
   void set_layer(ViewingLayerPtr l);
@@ -62,7 +64,7 @@ class layer_metric : public metric {
   /** Set list of pointers to layers. */
   void set_layer_pointers(std::vector<ViewingLayerPtr> layers) override;
 
-    /** Save metric state to checkpoint. */
+  /** Save metric state to checkpoint. */
   bool save_to_checkpoint_shared(persist& p) override;
   /** Load metric state from checkpoint. */
   bool load_from_checkpoint_shared(persist& p) override;
@@ -70,8 +72,7 @@ class layer_metric : public metric {
   bool save_to_checkpoint_distributed(persist& p) override;
   bool load_from_checkpoint_distributed(persist& p) override;
 
- protected:
-
+protected:
   void setup(model& m) override;
   EvalType evaluate(execution_mode mode, int mini_batch_size) override;
 
@@ -80,13 +81,9 @@ class layer_metric : public metric {
    *  overridden.
    */
   EvalType evaluate_compute(const AbsDistMat& prediction,
-                            const AbsDistMat& ground_truth) override {
-    LBANN_ERROR("This function should not be called");
-    return EvalType(0);
-  }
+                            const AbsDistMat& ground_truth) override;
 
- private:
-
+private:
   /** Descriptive name for metric. */
   std::string m_name;
   /** Metric unit.
@@ -97,10 +94,9 @@ class layer_metric : public metric {
   ViewingLayerPtr m_layer;
 
   /** Get corresponding evaluation layer. */
-  /*abstract_evaluation_*/Layer& get_evaluation_layer();
-
+  /*abstract_evaluation_*/ Layer& get_evaluation_layer();
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_METRIC_LAYER_METRIC_HPP
+#endif // LBANN_METRIC_LAYER_METRIC_HPP

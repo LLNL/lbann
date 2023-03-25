@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,20 +25,25 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/to_lbann_layout.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
 namespace lbann {
 namespace transform {
 
-void to_lbann_layout::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
-  auto dst = CPUMat(utils::get_linearized_size(dims), 1);
+void to_lbann_layout::apply(utils::type_erased_matrix& data,
+                            std::vector<size_t>& dims)
+{
+  auto dst = CPUMat(get_linear_size(dims), 1);
   apply(data, dst, dims);
   data.emplace<DataType>(std::move(dst));
 }
 
-void to_lbann_layout::apply(utils::type_erased_matrix& data, CPUMat& out,
-                            std::vector<size_t>& dims) {
+void to_lbann_layout::apply(utils::type_erased_matrix& data,
+                            CPUMat& out,
+                            std::vector<size_t>& dims)
+{
   cv::Mat src = utils::get_opencv_mat(data, dims);
   if (!src.isContinuous()) {
     // This should not occur, but just in case.
@@ -48,7 +53,7 @@ void to_lbann_layout::apply(utils::type_erased_matrix& data, CPUMat& out,
     LBANN_ERROR("ToLBANNLayout does not support non-contiguous destination.");
   }
   const uint8_t* __restrict__ src_buf = src.ptr();
-  const size_t out_size = utils::get_linearized_size(dims);
+  const size_t out_size = get_linear_size(dims);
   if (static_cast<size_t>(out.Height() * out.Width()) != out_size) {
     LBANN_ERROR("Transform output does not have sufficient space.");
   }
@@ -58,29 +63,31 @@ void to_lbann_layout::apply(utils::type_erased_matrix& data, CPUMat& out,
     // Greyscale.
     for (size_t row = 0; row < dims[1]; ++row) {
       for (size_t col = 0; col < dims[2]; ++col) {
-        dst_buf[row + col*dims[1]] = src_buf[row*dims[2] + col] * scale;
+        dst_buf[row + col * dims[1]] = src_buf[row * dims[2] + col] * scale;
       }
     }
-  } else {
+  }
+  else {
     // RGB/three-channel.
     const size_t size = dims[1] * dims[2];
     for (size_t row = 0; row < dims[1]; ++row) {
       for (size_t col = 0; col < dims[2]; ++col) {
         // Multiply by 3 because there are three channels.
-        const size_t src_base = 3*(row*dims[2] + col);
-        const size_t dst_base = row + col*dims[1];
+        const size_t src_base = 3 * (row * dims[2] + col);
+        const size_t dst_base = row + col * dims[1];
         dst_buf[dst_base] = src_buf[src_base] * scale;
         dst_buf[dst_base + size] = src_buf[src_base + 1] * scale;
-        dst_buf[dst_base + 2*size] = src_buf[src_base + 2] * scale;
+        dst_buf[dst_base + 2 * size] = src_buf[src_base + 2] * scale;
       }
     }
   }
 }
 
 std::unique_ptr<transform>
-build_to_lbann_layout_transform_from_pbuf(google::protobuf::Message const&) {
-  return make_unique<to_lbann_layout>();
+build_to_lbann_layout_transform_from_pbuf(google::protobuf::Message const&)
+{
+  return std::make_unique<to_lbann_layout>();
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

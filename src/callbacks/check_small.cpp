@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,17 +25,22 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/check_small.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/serialize.hpp"
+
+#include "lbann/proto/callbacks.pb.h"
 
 namespace lbann {
 namespace callback {
 namespace {
 template <typename TensorDataType>
-bool is_good(const El::AbstractDistMatrix<TensorDataType>& m) {
-  static const TensorDataType threshold
-    = El::Sqrt(std::numeric_limits<TensorDataType>::min());
+bool is_good(const El::AbstractDistMatrix<TensorDataType>& m)
+{
+  static const TensorDataType threshold =
+    El::Sqrt(std::numeric_limits<TensorDataType>::min());
 
   const auto& local_mat = m.LockedMatrix();
   const El::Int height = local_mat.Height();
@@ -44,65 +49,94 @@ bool is_good(const El::AbstractDistMatrix<TensorDataType>& m) {
     for (El::Int row = 0; row < height; ++row) {
       const auto val = std::abs(local_mat(row, col));
       if (val > TensorDataType(0) && val <= threshold) {
-        std::cout << "Found small value " << val
-                  << " at (" << row << "," << col << ")!" << std::endl;
+        std::cout << "Found small value " << val << " at (" << row << "," << col
+                  << ")!" << std::endl;
         return false;
       }
     }
   }
   return true;
 }
-}// namespace <anon>
+} // namespace
 
 template <class Archive>
-void check_small::serialize(Archive & ar) {
-  ar(::cereal::make_nvp(
-       "BaseCallback",
-       ::cereal::base_class<callback_base>(this)));
+void check_small::serialize(Archive& ar)
+{
+  ar(::cereal::make_nvp("BaseCallback",
+                        ::cereal::base_class<callback_base>(this)));
 }
 
-void check_small::on_forward_prop_end(model *m, Layer *l) {
+void check_small::write_specific_proto(lbann_data::Callback& proto) const
+{
+  proto.mutable_check_small();
+}
+
+void check_small::on_forward_prop_end(model* m, Layer* l)
+{
   const auto& c = m->get_execution_context();
   auto& dtl = dynamic_cast<data_type_layer<DataType>&>(*l);
   const auto& acts = dtl.get_activations();
   if (!is_good(acts)) {
-    LBANN_ERROR(name(), ": "
-                "[", std::to_string(m->get_comm()->get_rank_in_world()), "]: "
-                "error in activations of ", l->get_name(), " "
-                "(step=", std::to_string(c.get_step()), ")");
+    LBANN_ERROR(name(),
+                ": "
+                "[",
+                std::to_string(m->get_comm()->get_rank_in_world()),
+                "]: "
+                "error in activations of ",
+                l->get_name(),
+                " "
+                "(step=",
+                std::to_string(c.get_step()),
+                ")");
   }
 }
 
-void check_small::on_backward_prop_end(model *m) {
+void check_small::on_backward_prop_end(model* m)
+{
   const auto& c = m->get_execution_context();
-  for (weights *w : m->get_weights()) {
+  for (weights* w : m->get_weights()) {
     auto& dtw = dynamic_cast<data_type_weights<DataType>&>(*w);
     auto* opt = dtw.get_optimizer();
     if (opt != nullptr && !is_good(opt->get_gradient())) {
-      LBANN_ERROR(name(), ": "
-                  "[", std::to_string(m->get_comm()->get_rank_in_world()), "]: "
-                  "error in weights gradient of ", dtw.get_name(), " "
-                  "(step=", std::to_string(c.get_step()), ")");
+      LBANN_ERROR(name(),
+                  ": "
+                  "[",
+                  std::to_string(m->get_comm()->get_rank_in_world()),
+                  "]: "
+                  "error in weights gradient of ",
+                  dtw.get_name(),
+                  " "
+                  "(step=",
+                  std::to_string(c.get_step()),
+                  ")");
     }
   }
 }
 
-void check_small::on_batch_end(model *m) {
+void check_small::on_batch_end(model* m)
+{
   const auto& c = m->get_execution_context();
-  for (weights *w : m->get_weights()) {
+  for (weights* w : m->get_weights()) {
     auto& dtw = dynamic_cast<data_type_weights<DataType>&>(*w);
     if (!is_good(dtw.get_values())) {
-      LBANN_ERROR(name(), ": "
-                  "[", std::to_string(m->get_comm()->get_rank_in_world()), "]: "
-                  "error in weights of ", w->get_name(), " "
-                  "(step=", std::to_string(c.get_step()-1), ")");
+      LBANN_ERROR(name(),
+                  ": "
+                  "[",
+                  std::to_string(m->get_comm()->get_rank_in_world()),
+                  "]: "
+                  "error in weights of ",
+                  w->get_name(),
+                  " "
+                  "(step=",
+                  std::to_string(c.get_step() - 1),
+                  ")");
     }
   }
 }
-
 
 } // namespace callback
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::check_small
+#define LBANN_CLASS_LIBNAME callback_check_small
 #include <lbann/macros/register_class_with_cereal.hpp>

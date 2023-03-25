@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,9 +29,10 @@
 
 #include "lbann/base.hpp"
 #ifdef LBANN_HAS_NVSHMEM
-#include "lbann/utils/gpu/helpers.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 #include <mpi.h>
+#define NVSHMEM_USE_NCCL
 #include <nvshmem.h>
 #include <nvshmemx.h>
 
@@ -57,7 +58,7 @@ bool is_active() noexcept;
  *  exception if it has already been finalized. This is _not_
  *  thread-safe.
  */
-void initialize(MPI_Comm comm=MPI_COMM_WORLD);
+void initialize(MPI_Comm comm = MPI_COMM_WORLD);
 
 /** @brief Finalize NVSHMEM library.
  *
@@ -70,14 +71,14 @@ void finalize();
  *
  *  Initializes NVSHMEM if needed.
  */
-template <typename T=void>
+template <typename T = void>
 T* malloc(size_t size);
 
 /** @brief Resize GPU buffer on the NVSHMEM symmetric heap.
  *
  *  Initializes NVSHMEM if needed.
  */
-template <typename T=void>
+template <typename T = void>
 T* realloc(T* ptr, size_t size);
 
 } // namespace nvshmem
@@ -91,7 +92,8 @@ namespace lbann {
 namespace nvshmem {
 
 template <typename T>
-T* malloc(size_t size) {
+T* malloc(size_t size)
+{
   initialize();
   if (size == 0) {
     return nullptr;
@@ -99,16 +101,18 @@ T* malloc(size_t size) {
   CHECK_CUDA(cudaDeviceSynchronize());
   auto* ptr = nvshmem_malloc(size * sizeof(T));
   if (ptr == nullptr) {
-    LBANN_ERROR(
-      "NVSHMEM failed to allocate a GPU buffer ",
-      "from the symmetric heap ",
-      "(requested ",size," B)");
+    LBANN_ERROR("NVSHMEM failed to allocate a GPU buffer ",
+                "from the symmetric heap ",
+                "(requested ",
+                size,
+                " B)");
   }
   return reinterpret_cast<T*>(ptr);
 }
 
 template <typename T>
-T* realloc(T* ptr, size_t size) {
+T* realloc(T* ptr, size_t size)
+{
   initialize();
 
   /// @todo Use nvshmem_realloc once it's supported
@@ -116,7 +120,6 @@ T* realloc(T* ptr, size_t size) {
     nvshmem_free(ptr);
   }
   return malloc<T>(size);
-
 }
 
 } // namespace nvshmem

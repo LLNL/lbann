@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,7 +32,7 @@
 #ifdef LBANN_HAS_DISTCONV
 
 #include "El.hpp"
-#include "lbann/comm.hpp"
+#include "lbann/comm_nb_request.hpp"
 #include <vector>
 
 #ifdef LBANN_DEBUG
@@ -40,20 +40,32 @@
 #endif
 
 #include "distconv/distconv.hpp"
-#include "distconv/tensor/tensor_mpi_cuda.hpp"
+#include "distconv/dnn_backend/backend.hpp"
+#include "distconv/tensor/algorithms.hpp"
 #include "distconv/tensor/shuffle_mpi.hpp"
 #include "distconv/tensor/shuffle_mpi_cuda.hpp"
 #include "distconv/tensor/shuffle_mpi_cuda_al.hpp"
-#include "distconv/tensor/algorithms.hpp"
+#include "distconv/tensor/tensor_mpi_cuda.hpp"
 #include "distconv/util/util.hpp"
 #ifdef DISTCONV_HAS_P2P
-#include "p2p/p2p.hpp"
-#include "distconv/tensor/shuffle_mpi_cuda_p2p.hpp"
 #include "distconv/tensor/shuffle_mpi_cuda_hybrid.hpp"
+#include "distconv/tensor/shuffle_mpi_cuda_p2p.hpp"
+#include "p2p/p2p.hpp"
 #endif // DISTCONV_HAS_P2P
 
 namespace lbann {
 
+inline auto default_hydrogen_stream()
+{
+#if H2_HAS_CUDA
+  return hydrogen::cuda::GetDefaultStream();
+#elif H2_HAS_ROCM
+  return hydrogen::rocm::GetDefaultStream();
+#endif
+}
+
+// Forward Declarations
+class lbann_comm;
 class Layer;
 
 namespace dc {
@@ -75,26 +87,31 @@ using LocaleMPI = ::distconv::tensor::LocaleMPI;
 using AbsTensor = ::distconv::tensor::AbstractTensor;
 
 template <typename TensorDataType>
-using TensorHost = ::distconv::tensor::Tensor<
-  TensorDataType, LocaleMPI, ::distconv::tensor::BaseAllocator>;
+using TensorHost = ::distconv::tensor::
+  Tensor<TensorDataType, LocaleMPI, ::distconv::tensor::BaseAllocator>;
 
 template <typename TensorDataType>
-using TensorDev = ::distconv::tensor::Tensor<
-  TensorDataType, LocaleMPI, ::distconv::tensor::CUDAAllocator>;
+using TensorDev = ::distconv::tensor::
+  Tensor<TensorDataType, LocaleMPI, ::distconv::tensor::CUDAAllocator>;
 
 template <typename TensorDataType>
-using TensorHostShuffler = ::distconv::tensor::TensorMPIShuffler<
-  TensorDataType, ::distconv::tensor::BaseAllocator>;
+using TensorHostShuffler =
+  ::distconv::tensor::TensorMPIShuffler<TensorDataType,
+                                        ::distconv::tensor::BaseAllocator>;
 
 template <typename TensorDataType>
-using TensorShuffler = ::distconv::tensor::TensorMPICUDAShuffler<TensorDataType>;
+using TensorShuffler =
+  ::distconv::tensor::TensorMPICUDAShuffler<TensorDataType>;
 template <typename TensorDataType>
-using TensorShufflerAL = ::distconv::tensor::TensorMPICUDAShufflerAL<TensorDataType>;
+using TensorShufflerAL =
+  ::distconv::tensor::TensorMPICUDAShufflerAL<TensorDataType>;
 #ifdef DISTCONV_HAS_P2P
 template <typename TensorDataType>
-using TensorShufflerP2P = ::distconv::tensor::TensorMPICUDAShufflerP2P<TensorDataType>;
+using TensorShufflerP2P =
+  ::distconv::tensor::TensorMPICUDAShufflerP2P<TensorDataType>;
 template <typename TensorDataType>
-using TensorShufflerHybrid = ::distconv::tensor::TensorMPICUDAShufflerHybrid<TensorDataType>;
+using TensorShufflerHybrid =
+  ::distconv::tensor::TensorMPICUDAShufflerHybrid<TensorDataType>;
 #endif // DISTCONV_HAS_P2P
 
 // Debug printing functions
@@ -108,21 +125,12 @@ using MPIRootPrintStreamInfo = ::distconv::util::MPIRootPrintStreamInfo;
 using MPIRootPrintStreamWaning = ::distconv::util::MPIRootPrintStreamWarning;
 
 // Distconv layer classes
-using Backend = ::distconv::cudnn::BackendCUDNN;
-using ReLU = ::distconv::ReLU<Backend>;
-using LeakyReLU = ::distconv::LeakyReLU<Backend>;
-template <typename TensorDataType>
-using Convolution = ::distconv::Convolution<Backend, TensorDataType>;
-template <typename TensorDataType>
-using Pooling = ::distconv::Pooling<Backend, TensorDataType>;
-template <typename TensorDataType>
-using BatchNormalization = ::distconv::BatchNormalization<Backend, TensorDataType>;
-using Softmax = ::distconv::Softmax<Backend>;
-using CrossEntropy = ::distconv::CrossEntropy<Backend>;
-using MeanSquaredError = ::distconv::MeanSquaredError<Backend>;
+using Backend = ::distconv::BackendDNNLib;
+using AlCommType = typename decltype(std::declval<Backend>()
+                                       .get_al_mpi_cuda_comm())::element_type;
 
-using ::distconv::get_sample_dim;
 using ::distconv::get_channel_dim;
+using ::distconv::get_sample_dim;
 
 int get_strided_mpi_rank(MPI_Comm comm);
 MPI_Comm get_strided_mpi_comm(MPI_Comm comm);
@@ -197,51 +205,54 @@ bool is_cosmoflow_parallel_io_enabled();
 #ifdef DISTCONV_HAS_P2P
 /** Get p2p handle
  */
-p2p::P2P &get_p2p();
+p2p::P2P& get_p2p();
 #endif // DISTCONV_HAS_P2P
 
 /** Get Aluminum host-transfer backend
  */
-Al::hosttransfer_backend::comm_type &get_hosttransfer();
+AlCommType& get_hosttransfer();
 
 /** Get Distconv backend handle.
  */
-Backend &get_backend();
+Backend& get_backend();
 
 /** Return a HaloExchangeMethod
  */
 ::distconv::HaloExchangeMethod get_halo_exchange_method();
 
 template <typename TensorDataType>
-TensorShuffler<TensorDataType> *get_tensor_shuffler(const TensorDev<TensorDataType> &src,
-                                                    const TensorDev<TensorDataType> &dst);
+TensorShuffler<TensorDataType>*
+get_tensor_shuffler(const TensorDev<TensorDataType>& src,
+                    const TensorDev<TensorDataType>& dst);
 
-MPI_Comm get_input_comm(const lbann_comm &comm);
+MPI_Comm get_input_comm(const lbann_comm& comm);
 
 /** Return the MPI rank when reading input dataset
  */
-int get_input_rank(const lbann_comm &comm);
+int get_input_rank(const lbann_comm& comm);
 
 /** Return Dist for data-parallel Hydrogen matrices
  */
 Dist get_hydrogen_data_parallel_distribution(int num_dims);
 
 template <typename Tensor>
-void dump_tensor(const Tensor &t, const std::string &path) {
+void dump_tensor(const Tensor& t, const std::string& path)
+{
   dc::MPIPrintStreamDebug() << "Dumping tensor to " << path;
-  cudaDeviceSynchronize();
+  h2::gpu::sync();
   distconv::dump_tensor(t, path, true);
 }
 
 size_t get_workspace_capacity();
 
-int get_num_dims(const Layer &layer);
-int get_num_spatial_dims(const Layer &layer);
+int get_num_dims(const Layer& layer);
+int get_num_spatial_dims(const Layer& layer);
 
 #ifndef LBANN_UTILS_DISTCONV_INSTANTIATE
-#define PROTO(T)                                                \
-  extern template TensorShuffler<T> *get_tensor_shuffler<T>(    \
-      const TensorDev<T> &, const TensorDev<T> &);
+#define PROTO(T)                                                               \
+  extern template TensorShuffler<T>* get_tensor_shuffler<T>(                   \
+    const TensorDev<T>&,                                                       \
+    const TensorDev<T>&);
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

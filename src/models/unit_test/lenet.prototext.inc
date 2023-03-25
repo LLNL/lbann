@@ -1,3 +1,29 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+
 std::string const model_prototext = R"ptext(
 model {
   objective_function {
@@ -15,38 +41,36 @@ model {
   }
   num_epochs: 20
   layer {
-    name: "layer1"
-    children: "layer2 layer3"
+    name: "image"
+    data_layout: "data_parallel"
     input {
-      target_mode: "classification"
+      data_field: "samples"
     }
   }
+
   layer {
-    name: "layer3"
-    parents: "layer1"
-    children: "layer16 layer17"
-    identity {
-    }
-  }
-  layer {
-    name: "layer2"
-    parents: "layer1"
-    children: "layer4"
-    identity {
+    name: "label"
+    data_layout: "data_parallel"
+    input {
+      data_field: "labels"
     }
   }
   layer {
     name: "layer4"
-    parents: "layer2"
+    parents: "image"
     children: "layer5"
     convolution {
       num_dims: 2
-      num_output_channels: 6
-      num_groups: 1
-      conv_dims_i: 5
-      conv_strides_i: 1
-      conv_dilations_i: 1
-      has_bias: true
+      out_channels: 6
+      kernel_size: 5
+      stride: 1
+      dilation: 1
+      groups {
+        value: 1
+      }
+      has_bias {
+        value: true
+      }
     }
   }
   layer {
@@ -73,12 +97,16 @@ model {
     children: "layer8"
     convolution {
       num_dims: 2
-      num_output_channels: 16
-      num_groups: 1
-      conv_dims_i: 5
-      conv_strides_i: 1
-      conv_dilations_i: 1
-      has_bias: true
+      out_channels: 16
+      kernel_size: 5
+      stride: 1
+      dilation: 1
+      groups {
+        value: 1
+      }
+      has_bias {
+        value: true
+      }
     }
   }
   layer {
@@ -143,19 +171,22 @@ model {
   layer {
     name: "layer15"
     parents: "layer14"
-    children: "layer16 layer17"
+    children: "layer16"
+    children: "layer17"
     softmax {
     }
   }
   layer {
     name: "layer17"
-    parents: "layer15 layer3"
+    parents: "layer15"
+    parents: "label"
     categorical_accuracy {
     }
   }
   layer {
     name: "layer16"
-    parents: "layer15 layer3"
+    parents: "layer15"
+    parents: "label"
     cross_entropy {
     }
   }

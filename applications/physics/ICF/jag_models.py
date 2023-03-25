@@ -1,71 +1,74 @@
 import lbann
-import lbann.modules.base
+import jag_network_architectures
 
+def list2str(l):
+    return ' '.join(l)
 
-class WAE(lbann.modules.Module):
+def construct_jag_wae_model(y_dim,
+                            z_dim,
+#                            mcf,
+#                            useCNN,
+#                            dump_models,
+#                            ltfb_batch_interval,
+                            num_epochs
+                            ):
+    """Construct LBANN model.
 
-    global_count = 0  # Static counter, used for default names
+    JAG Wasserstein autoencoder  model
 
-    def __init__(self, encoder_out_dim, decoder_out_dim, name=None):
-       self.instance = 0
-       self.name = (name if name
-                     else 'wae{0}'.format(WAE.global_count))
+    """
+    import lbann
 
-       fc = lbann.modules.FullyConnectedModule
-       disc_neurons = [128,64,1]
-       encoder_neurons = [32,256,128]
-       decoder_neurons = [64,128,256]
-       
-       #Encoder
-       self.enc_fc0 = fc(encoder_neurons[0],activation=lbann.Elu,name=self.name+'_enc_fc0')
-       self.enc_fc1 = fc(encoder_neurons[1],activation=lbann.Tanh,name=self.name+'_enc_fc1')
-       self.enc_fc2 = fc(encoder_neurons[2],activation=lbann.Tanh,name=self.name+'_enc_fc2')
-       self.enc_out = fc(encoder_out_dim,name='enc_out')
-       
-       #Decoder
-       self.dec_fc0 = fc(decoder_neurons[0],activation=lbann.Elu,name=self.name+'_dec_fc0')
-       self.dec_fc1 = fc(decoder_neurons[1],activation=lbann.Tanh,name=self.name+'_dec_fc1')
-       self.dec_fc2 = fc(decoder_neurons[2],activation=lbann.Tanh,name=self.name+'_dec_fc2')
-       self.dec_out = fc(decoder_out_dim,name='pred_y')
-       
-       #Discriminator1
-       self.d0_fc0 = fc(disc_neurons[0],activation=lbann.Relu,name=self.name+'_disc0_fc0')
-       self.d0_fc1 = fc(disc_neurons[1],activation=lbann.Relu,name=self.name+'_disc0_fc1')
-       self.d0_fc2 = fc(disc_neurons[2],name=self.name+'_disc0_fc2')
+    # Layer graph
+    input = lbann.Input(data_field='samples',name='inp_data')
+    # data is 64*64*4 images + 15 scalar + 5 param
+    inp_slice = lbann.Slice(input, axis=0, slice_points=[0, 16399, 16404],name='inp_slice')
+    gt_y = lbann.Identity(inp_slice,name='gt_y')
+    gt_x = lbann.Identity(inp_slice, name='gt_x') #param not used
 
-       #Discriminator2
-       #stacked_discriminator, this will be frozen, no optimizer, 
-       #layer has to be named for replace layer callback 
-       self.d1_fc0 = fc(disc_neurons[0],activation=lbann.Relu,name=self.name+'_disc1_fc0')
-       self.d1_fc1 = fc(disc_neurons[1],activation=lbann.Relu,name=self.name+'_disc1_fc1')
-       self.d1_fc2 = fc(disc_neurons[2],name=self.name+'_disc1_fc2')
- 
+    zero  = lbann.Constant(value=0.0,num_neurons=[1],name='zero')
+    one  = lbann.Constant(value=1.0,num_neurons=[1],name='one')
 
-    def forward(self, z, y):
-    
-        z_sample = self.forward_encoder(y)
+    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=20)
+    d1_real, d1_fake, d_adv, pred_y  = jag_network_architectures.WAE(z_dim,y_dim)(z,gt_y)
 
-        y_recon = self.forward_decoder(z_sample)
+    d1_real_bce = lbann.SigmoidBinaryCrossEntropy([d1_real,one],name='d1_real_bce')
+    d1_fake_bce = lbann.SigmoidBinaryCrossEntropy([d1_fake,zero],name='d1_fake_bce')
+    d_adv_bce = lbann.SigmoidBinaryCrossEntropy([d_adv,one],name='d_adv_bce')
 
-        #d real/fake share weights, shared weights is copied to d_adv 
-        #(through replace weight callback) and freeze
-        d_real = self.forward_discriminator0(lbann.Concatenation([y,z],axis=0))  
-        y_z_sample = lbann.Concatenation([y,z_sample],axis=0)
-        d_fake = self.forward_discriminator0(lbann.StopGradient(y_z_sample)) 
-        d_adv = self.forward_discriminator1(y_z_sample) #freeze
+    img_loss = lbann.MeanSquaredError([pred_y,gt_y])
+    rec_error = lbann.L2Norm2(lbann.WeightedSum([pred_y,gt_y], scaling_factors=[1, -1]))
 
-        return d_real, d_fake, d_adv,y_recon
+    layers = list(lbann.traverse_layer_graph(input))
+    # Setup objective function
+    weights = set()
+    src_layers = []
+    dst_layers = []
+    for l in layers:
+      if(l.weights and "disc0" in l.name and "instance1" in l.name):
+        src_layers.append(l.name)
+      #freeze weights in disc2
+      if(l.weights and "disc1" in l.name):
+        dst_layers.append(l.name)
+        for idx in range(len(l.weights)):
+          l.weights[idx].optimizer = lbann.NoOptimizer()
+      weights.update(l.weights)
+    l2_reg = lbann.L2WeightRegularization(weights=weights, scale=1e-4)
+    d_adv_bce = lbann.LayerTerm(d_adv_bce,scale=0.01)
+    obj = lbann.ObjectiveFunction([d1_real_bce,d1_fake_bce,d_adv_bce,img_loss,rec_error,l2_reg])
+    # Initialize check metric callback
+    metrics = [lbann.Metric(img_loss, name='recon_error')]
 
-    def forward_encoder(self,y):
-        bn = lbann.BatchNormalization
-        return self.enc_out(bn(self.enc_fc2(bn(self.enc_fc1(bn(self.enc_fc0(y),epsilon=1e-3)
-                               ),epsilon=1e-3)),epsilon=1e-3))
+    callbacks = [lbann.CallbackPrint(),
+                 lbann.CallbackTimer(),
+                 lbann.CallbackReplaceWeights(source_layers=list2str(src_layers),
+                                      destination_layers=list2str(dst_layers),
+                                      batch_interval=2)]
 
-    def forward_decoder(self,z):
-        return self.dec_out(self.dec_fc2(self.dec_fc1(self.dec_fc0(z))))
-
-    def forward_discriminator0(self,input):
-        return self.d0_fc2(self.d0_fc1(self.d0_fc0(input)))
-        
-    def forward_discriminator1(self,input):
-        return self.d1_fc2(self.d1_fc1(self.d1_fc0(input)))
+    # Construct model
+    return lbann.Model(num_epochs,
+                       weights=weights,
+                       layers=layers,
+                       metrics=metrics,
+                       objective_function=obj,
+                       callbacks=callbacks)

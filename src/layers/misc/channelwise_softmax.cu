@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,18 +32,19 @@ namespace lbann {
 
 namespace {
 
-using Size3 = gpu_lib::array<size_t,3>;
+using Size3 = gpu_lib::array<size_t, 3>;
 
 /** @brief Max functor */
 template <class T>
-struct max_op {
-  __device__ __forceinline__
-  DataType operator()(const T& x1, const T& x2) const {
+struct max_op
+{
+  __device__ __forceinline__ DataType operator()(const T& x1, const T& x2) const
+  {
     return gpu_lib::max(x1, x2);
   }
 };
 
-} // namespace <anon>
+} // namespace
 
 // =========================================================
 // Forward prop
@@ -64,12 +65,12 @@ namespace {
  *  maxvals: vals_dims[0] x vals_dims[1] x (vals_dims[2] / bdimx)
  */
 template <typename TensorDataType, size_t bdimx>
-__global__ void fp_max_kernel(
-  Size3 vals_dims,
-  const TensorDataType* __restrict__ vals_buffer,
-  Size3 vals_strides,
-  TensorDataType* __restrict__ maxvals_buffer,
-  Size3 maxvals_strides) {
+__global__ void fp_max_kernel(Size3 vals_dims,
+                              const TensorDataType* __restrict__ vals_buffer,
+                              Size3 vals_strides,
+                              TensorDataType* __restrict__ maxvals_buffer,
+                              Size3 maxvals_strides)
+{
 
   // Indices and dimensions
   constexpr size_t bdimy = 1;
@@ -89,24 +90,25 @@ __global__ void fp_max_kernel(
       // Find largest value for each thread
       TensorDataType maxval{-gpu_lib::infinity<TensorDataType>()};
       for (size_t i = gidx; i < vals_dims[2]; i += nthreadsx) {
-        const auto& val = vals_buffer[k * vals_strides[0]
-                                      + j * vals_strides[1]
-                                      + i * vals_strides[2]];
+        const auto& val =
+          vals_buffer[k * vals_strides[0] + j * vals_strides[1] +
+                      i * vals_strides[2]];
         maxval = gpu_lib::max(maxval, val);
       }
 
       // Find largest value for each block
-      maxval = gpu_lib::block_reduce<bdimx,bdimy,bdimz,TensorDataType,max_op<TensorDataType>>(maxval);
+      maxval = gpu_lib::block_reduce<bdimx,
+                                     bdimy,
+                                     bdimz,
+                                     TensorDataType,
+                                     max_op<TensorDataType>>(maxval);
       if (tid == 0) {
-        const auto& pos = (k * maxvals_strides[0]
-                           + j * maxvals_strides[1]
-                           + bidx * maxvals_strides[2]);
+        const auto& pos = (k * maxvals_strides[0] + j * maxvals_strides[1] +
+                           bidx * maxvals_strides[2]);
         maxvals_buffer[pos] = maxval;
       }
-
     }
   }
-
 }
 
 /** Compute softmax denominator.
@@ -121,12 +123,12 @@ __global__ void fp_max_kernel(
  *  input_dims[0] x input_dims[1].
  */
 template <typename TensorDataType, size_t bdimx>
-__global__ void fp_denom_kernel(
-  Size3 input_dims,
-  const TensorDataType* __restrict__ input_buffer,
-  Size3 input_strides,
-  const TensorDataType* __restrict__ shifts,
-  TensorDataType* __restrict__ denoms) {
+__global__ void fp_denom_kernel(Size3 input_dims,
+                                const TensorDataType* __restrict__ input_buffer,
+                                Size3 input_strides,
+                                const TensorDataType* __restrict__ shifts,
+                                TensorDataType* __restrict__ denoms)
+{
 
   // Indices and dimensions
   constexpr size_t bdimy = 1;
@@ -143,24 +145,22 @@ __global__ void fp_denom_kernel(
     for (size_t j = gidy; j < input_dims[1]; j += nthreadsy) {
 
       // Compute contribution from each thread
-      const auto& shift = shifts[j + k*input_dims[1]];
+      const auto& shift = shifts[j + k * input_dims[1]];
       TensorDataType denom{0.};
       for (size_t i = gidx; i < input_dims[2]; i += nthreadsx) {
-        const auto& x = input_buffer[k * input_strides[0]
-                                     + j * input_strides[1]
-                                     + i * input_strides[2]];
-        denom += gpu_lib::exp(x-shift);
+        const auto& x =
+          input_buffer[k * input_strides[0] + j * input_strides[1] +
+                       i * input_strides[2]];
+        denom += gpu_lib::exp(x - shift);
       }
 
       // Compute contribution from each block
-      denom = gpu_lib::block_reduce<bdimx,bdimy,bdimz>(denom);
+      denom = gpu_lib::block_reduce<bdimx, bdimy, bdimz>(denom);
       if (tid == 0) {
-        gpu_lib::atomic_add(&denoms[j+k*input_dims[1]], denom);
+        gpu_lib::atomic_add(&denoms[j + k * input_dims[1]], denom);
       }
-
     }
   }
-
 }
 
 /** Compute softmax.
@@ -169,20 +169,22 @@ __global__ void fp_denom_kernel(
  *
  *  Block dimensions: bdimx x bdimy x bdimz
  *
- *  Grid dimensions: (input_dims[2] / bdimx) x (input_dims[1] / bdimy) x (input_dims[0] / bdimz)
+ *  Grid dimensions: (input_dims[2] / bdimx) x (input_dims[1] / bdimy) x
+ * (input_dims[0] / bdimz)
  *
  *  shifts and denoms are fully-packed 2D tensors with dimensions of
  *  input_dims[0] x input_dims[1].
  */
 template <typename TensorDataType>
-__global__ void fp_output_kernel(
-  Size3 input_dims,
-  const TensorDataType* __restrict__ input_buffer,
-  Size3 input_strides,
-  TensorDataType* __restrict__ output_buffer,
-  Size3 output_strides,
-  const TensorDataType* __restrict__ shifts,
-  const TensorDataType* __restrict__ denoms) {
+__global__ void
+fp_output_kernel(Size3 input_dims,
+                 const TensorDataType* __restrict__ input_buffer,
+                 Size3 input_strides,
+                 TensorDataType* __restrict__ output_buffer,
+                 Size3 output_strides,
+                 const TensorDataType* __restrict__ shifts,
+                 const TensorDataType* __restrict__ denoms)
+{
 
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
@@ -192,20 +194,18 @@ __global__ void fp_output_kernel(
   const size_t nthreadsz = blockDim.z * gridDim.z;
   for (size_t k = gidz; k < input_dims[0]; k += nthreadsz) {
     for (size_t j = gidy; j < input_dims[1]; j += nthreadsy) {
-      const auto& shift = shifts[j + k*input_dims[1]];
-      const auto& denom = denoms[j + k*input_dims[1]];
+      const auto& shift = shifts[j + k * input_dims[1]];
+      const auto& denom = denoms[j + k * input_dims[1]];
       for (size_t i = gidx; i < input_dims[2]; i += nthreadsx) {
-        const auto& x = input_buffer[k * input_strides[0]
-                                     + j * input_strides[1]
-                                     + i * input_strides[2]];
-        auto& y = output_buffer[k * output_strides[0]
-                                + j * output_strides[1]
-                                + i * output_strides[2]];
-        y = gpu_lib::exp(x-shift) / denom;
+        const auto& x =
+          input_buffer[k * input_strides[0] + j * input_strides[1] +
+                       i * input_strides[2]];
+        auto& y = output_buffer[k * output_strides[0] + j * output_strides[1] +
+                                i * output_strides[2]];
+        y = gpu_lib::exp(x - shift) / denom;
       }
     }
   }
-
 }
 
 /** @brief Forward prop */
@@ -213,7 +213,8 @@ template <typename TensorDataType>
 void fp_impl(size_t num_channels,
              size_t channel_size,
              const El::AbstractDistMatrix<TensorDataType>& input,
-             El::AbstractDistMatrix<TensorDataType>& output) {
+             El::AbstractDistMatrix<TensorDataType>& output)
+{
 
   // Local matrices
   using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
@@ -236,10 +237,14 @@ void fp_impl(size_t num_channels,
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
+    gpu_lib::clip_grid_dims(grid_dims);
     LocalMat maxvals(grid_dims.x * num_channels, local_mini_batch_size);
     hydrogen::gpu::LaunchKernel(
       fp_max_kernel<TensorDataType, block_size>,
-      grid_dims, block_dims, 0, multisync,
+      grid_dims,
+      block_dims,
+      0,
+      multisync,
       Size3{local_mini_batch_size, num_channels, channel_size},
       local_input.LockedBuffer(),
       Size3{static_cast<size_t>(local_input.LDim()), channel_size, 1},
@@ -252,7 +257,10 @@ void fp_impl(size_t num_channels,
       maxvals.Resize(grid_dims.x * num_channels, local_mini_batch_size);
       hydrogen::gpu::LaunchKernel(
         fp_max_kernel<TensorDataType, block_size>,
-        grid_dims, block_dims, 0, multisync,
+        grid_dims,
+        block_dims,
+        0,
+        multisync,
         Size3{local_mini_batch_size, num_channels, prev_dim},
         prev_maxvals.LockedBuffer(),
         Size3{static_cast<size_t>(prev_maxvals.LDim()), prev_dim, 1},
@@ -272,9 +280,13 @@ void fp_impl(size_t num_channels,
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
+    gpu_lib::clip_grid_dims(grid_dims);
     hydrogen::gpu::LaunchKernel(
       fp_denom_kernel<TensorDataType, block_size>,
-      grid_dims, block_dims, 0, multisync,
+      grid_dims,
+      block_dims,
+      0,
+      multisync,
       Size3{local_mini_batch_size, num_channels, channel_size},
       local_input.LockedBuffer(),
       Size3{static_cast<size_t>(local_input.LDim()), channel_size, 1},
@@ -290,9 +302,13 @@ void fp_impl(size_t num_channels,
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
+    gpu_lib::clip_grid_dims(grid_dims);
     hydrogen::gpu::LaunchKernel(
       fp_output_kernel<TensorDataType>,
-      grid_dims, block_dims, 0, multisync,
+      grid_dims,
+      block_dims,
+      0,
+      multisync,
       Size3{local_mini_batch_size, num_channels, channel_size},
       local_input.LockedBuffer(),
       Size3{static_cast<size_t>(local_input.LDim()), channel_size, 1},
@@ -301,13 +317,13 @@ void fp_impl(size_t num_channels,
       local_shifts.LockedBuffer(),
       local_denoms.LockedBuffer());
   }
-
 }
 
-} // namespace <anon>
+} // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void channelwise_softmax_layer<TensorDataType,Layout,Device>::fp_compute() {
+void channelwise_softmax_layer<TensorDataType, Layout, Device>::fp_compute()
+{
   const size_t num_channels = this->get_output_dims().front();
   const size_t channel_size = this->get_output_size() / num_channels;
   fp_impl(num_channels,
@@ -332,13 +348,14 @@ namespace {
  *  output_dims[0] x output_dims[1].
  */
 template <typename TensorDataType, size_t bdimx>
-__global__ void bp_y_dot_dy_kernel(
-  Size3 output_dims,
-  const TensorDataType* __restrict__ output_buffer,
-  Size3 output_strides,
-  const TensorDataType* __restrict__ output_grad_buffer,
-  Size3 output_grad_strides,
-  TensorDataType* __restrict__ y_dot_dy) {
+__global__ void
+bp_y_dot_dy_kernel(Size3 output_dims,
+                   const TensorDataType* __restrict__ output_buffer,
+                   Size3 output_strides,
+                   const TensorDataType* __restrict__ output_grad_buffer,
+                   Size3 output_grad_strides,
+                   TensorDataType* __restrict__ y_dot_dy)
+{
 
   // Indices and dimensions
   constexpr size_t bdimy = 1;
@@ -357,24 +374,22 @@ __global__ void bp_y_dot_dy_kernel(
       // Compute contribution from each thread
       TensorDataType _y_dot_dy{0.};
       for (size_t i = gidx; i < output_dims[2]; i += nthreadsx) {
-        const auto& y = output_buffer[k * output_strides[0]
-                                      + j * output_strides[1]
-                                      + i * output_strides[2]];
-        const auto& dy = output_grad_buffer[k * output_grad_strides[0]
-                                            + j * output_grad_strides[1]
-                                            + i * output_grad_strides[2]];
+        const auto& y =
+          output_buffer[k * output_strides[0] + j * output_strides[1] +
+                        i * output_strides[2]];
+        const auto& dy = output_grad_buffer[k * output_grad_strides[0] +
+                                            j * output_grad_strides[1] +
+                                            i * output_grad_strides[2]];
         _y_dot_dy += y * dy;
       }
 
       // Compute contribution from each block
-      _y_dot_dy = gpu_lib::block_reduce<bdimx,bdimy,bdimz>(_y_dot_dy);
+      _y_dot_dy = gpu_lib::block_reduce<bdimx, bdimy, bdimz>(_y_dot_dy);
       if (tid == 0) {
-        gpu_lib::atomic_add(&y_dot_dy[j+k*output_dims[1]], _y_dot_dy);
+        gpu_lib::atomic_add(&y_dot_dy[j + k * output_dims[1]], _y_dot_dy);
       }
-
     }
   }
-
 }
 
 /** Compute gradient w.r.t. input.
@@ -383,21 +398,23 @@ __global__ void bp_y_dot_dy_kernel(
  *
  *  Block dimensions: bdimx x bdimy x bdimz
  *
- *  Grid dimensions: (output_dims[2] / bdimx) x (output_dims[1] / bdimy) x (output_dims[0] / bdimz)
+ *  Grid dimensions: (output_dims[2] / bdimx) x (output_dims[1] / bdimy) x
+ * (output_dims[0] / bdimz)
  *
  *  y_dot_dy is a fully-packed 2D tensor with dimensions of
  *  output_dims[0] x output_dims[1].
  */
 template <typename TensorDataType>
-__global__ void bp_input_grad_kernel(
-  Size3 output_dims,
-  const TensorDataType* __restrict__ output_buffer,
-  Size3 output_strides,
-  const TensorDataType* __restrict__ output_grad_buffer,
-  Size3 output_grad_strides,
-  TensorDataType* __restrict__ input_grad_buffer,
-  Size3 input_grad_strides,
-  const TensorDataType* __restrict__ y_dot_dy) {
+__global__ void
+bp_input_grad_kernel(Size3 output_dims,
+                     const TensorDataType* __restrict__ output_buffer,
+                     Size3 output_strides,
+                     const TensorDataType* __restrict__ output_grad_buffer,
+                     Size3 output_grad_strides,
+                     TensorDataType* __restrict__ input_grad_buffer,
+                     Size3 input_grad_strides,
+                     const TensorDataType* __restrict__ y_dot_dy)
+{
 
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
@@ -407,22 +424,21 @@ __global__ void bp_input_grad_kernel(
   const size_t nthreadsz = blockDim.z * gridDim.z;
   for (size_t k = gidz; k < output_dims[0]; k += nthreadsz) {
     for (size_t j = gidy; j < output_dims[1]; j += nthreadsy) {
-      const auto& _y_dot_dy = y_dot_dy[j + k*output_dims[1]];
+      const auto& _y_dot_dy = y_dot_dy[j + k * output_dims[1]];
       for (size_t i = gidx; i < output_dims[2]; i += nthreadsx) {
-        const auto& y = output_buffer[k * output_strides[0]
-                                      + j * output_strides[1]
-                                      + i * output_strides[2]];
-        const auto& dy = output_grad_buffer[k * output_grad_strides[0]
-                                            + j * output_grad_strides[1]
-                                            + i * output_grad_strides[2]];
-        auto& dx = input_grad_buffer[k * input_grad_strides[0]
-                                     + j * input_grad_strides[1]
-                                     + i * input_grad_strides[2]];
+        const auto& y =
+          output_buffer[k * output_strides[0] + j * output_strides[1] +
+                        i * output_strides[2]];
+        const auto& dy = output_grad_buffer[k * output_grad_strides[0] +
+                                            j * output_grad_strides[1] +
+                                            i * output_grad_strides[2]];
+        auto& dx = input_grad_buffer[k * input_grad_strides[0] +
+                                     j * input_grad_strides[1] +
+                                     i * input_grad_strides[2]];
         dx = y * (dy - _y_dot_dy);
       }
     }
   }
-
 }
 
 /** @brief Backprop */
@@ -431,12 +447,15 @@ void bp_impl(size_t num_channels,
              size_t channel_size,
              const El::AbstractDistMatrix<TensorDataType>& output,
              const El::AbstractDistMatrix<TensorDataType>& output_grad,
-             El::AbstractDistMatrix<TensorDataType>& input_grad) {
+             El::AbstractDistMatrix<TensorDataType>& input_grad)
+{
 
   // Local matrices
   using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
-  const auto& local_output = dynamic_cast<const LocalMat&>(output.LockedMatrix());
-  const auto& local_output_grad = dynamic_cast<const LocalMat&>(output_grad.LockedMatrix());
+  const auto& local_output =
+    dynamic_cast<const LocalMat&>(output.LockedMatrix());
+  const auto& local_output_grad =
+    dynamic_cast<const LocalMat&>(output_grad.LockedMatrix());
   auto& local_input_grad = dynamic_cast<LocalMat&>(input_grad.Matrix());
 
   // Dimensions
@@ -458,9 +477,13 @@ void bp_impl(size_t num_channels,
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
+    gpu_lib::clip_grid_dims(grid_dims);
     hydrogen::gpu::LaunchKernel(
       bp_y_dot_dy_kernel<TensorDataType, block_size>,
-      grid_dims, block_dims, 0, multisync,
+      grid_dims,
+      block_dims,
+      0,
+      multisync,
       Size3{local_mini_batch_size, num_channels, channel_size},
       local_output.LockedBuffer(),
       Size3{static_cast<size_t>(local_output.LDim()), channel_size, 1},
@@ -477,9 +500,13 @@ void bp_impl(size_t num_channels,
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
+    gpu_lib::clip_grid_dims(grid_dims);
     hydrogen::gpu::LaunchKernel(
       bp_input_grad_kernel<TensorDataType>,
-      grid_dims, block_dims, 0, multisync,
+      grid_dims,
+      block_dims,
+      0,
+      multisync,
       Size3{local_mini_batch_size, num_channels, channel_size},
       local_output.LockedBuffer(),
       Size3{static_cast<size_t>(local_output.LDim()), channel_size, 1},
@@ -489,13 +516,13 @@ void bp_impl(size_t num_channels,
       Size3{static_cast<size_t>(local_input_grad.LDim()), channel_size, 1},
       local_y_dot_dy.LockedBuffer());
   }
-
 }
 
-} // namespace <anon>
+} // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void channelwise_softmax_layer<TensorDataType,Layout,Device>::bp_compute() {
+void channelwise_softmax_layer<TensorDataType, Layout, Device>::bp_compute()
+{
   const size_t num_channels = this->get_output_dims().front();
   const size_t channel_size = this->get_output_size() / num_channels;
   bp_impl(num_channels,
@@ -509,9 +536,10 @@ void channelwise_softmax_layer<TensorDataType,Layout,Device>::bp_compute() {
 // Explicit template instantiation
 // =========================================================
 
-#define PROTO(T)                                        \
-  template class channelwise_softmax_layer<             \
-    T, data_layout::DATA_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                                                               \
+  template class channelwise_softmax_layer<T,                                  \
+                                           data_layout::DATA_PARALLEL,         \
+                                           El::Device::GPU>;
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,26 +29,29 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 
-#include <optimizers.pb.h>
+#include "lbann/proto/optimizers.pb.h"
 
 namespace lbann {
 
 template <typename TensorDataType>
-hypergradient_adam<TensorDataType>::hypergradient_adam(TensorDataType init_learning_rate,
-                                                       TensorDataType hyper_learning_rate,
-                                                       TensorDataType beta1,
-                                                       TensorDataType beta2,
-                                                       TensorDataType eps)
+hypergradient_adam<TensorDataType>::hypergradient_adam(
+  TensorDataType init_learning_rate,
+  TensorDataType hyper_learning_rate,
+  TensorDataType beta1,
+  TensorDataType beta2,
+  TensorDataType eps)
   : BaseType(init_learning_rate),
     m_hyper_learning_rate(hyper_learning_rate),
     m_beta1(beta1),
     m_beta2(beta2),
     m_eps(eps),
     m_current_beta1(1.),
-    m_current_beta2(1.) {}
+    m_current_beta2(1.)
+{}
 
 template <typename TensorDataType>
-hypergradient_adam<TensorDataType>::hypergradient_adam(const hypergradient_adam& other)
+hypergradient_adam<TensorDataType>::hypergradient_adam(
+  const hypergradient_adam& other)
   : BaseType(other),
     m_hyper_learning_rate(other.m_hyper_learning_rate),
     m_beta1(other.m_beta1),
@@ -58,11 +61,15 @@ hypergradient_adam<TensorDataType>::hypergradient_adam(const hypergradient_adam&
     m_current_beta2(other.m_current_beta2),
     m_moment1(other.m_moment1 ? other.m_moment1->Copy() : nullptr),
     m_moment2(other.m_moment2 ? other.m_moment2->Copy() : nullptr),
-    m_old_gradient(other.m_old_gradient ?
-                   other.m_old_gradient->Copy() : nullptr) {}
+    m_old_gradient(other.m_old_gradient ? other.m_old_gradient->Copy()
+                                        : nullptr)
+{}
 
 template <typename TensorDataType>
-hypergradient_adam<TensorDataType>& hypergradient_adam<TensorDataType>::operator=(const hypergradient_adam<TensorDataType>& other) {
+hypergradient_adam<TensorDataType>&
+hypergradient_adam<TensorDataType>::operator=(
+  const hypergradient_adam<TensorDataType>& other)
+{
   OptimizerType::operator=(other);
   m_hyper_learning_rate = other.m_hyper_learning_rate;
   m_beta1 = other.m_beta1;
@@ -72,13 +79,14 @@ hypergradient_adam<TensorDataType>& hypergradient_adam<TensorDataType>::operator
   m_current_beta2 = other.m_current_beta2;
   m_moment1.reset(other.m_moment1 ? other.m_moment1->Copy() : nullptr);
   m_moment2.reset(other.m_moment2 ? other.m_moment2->Copy() : nullptr);
-  m_old_gradient.reset(other.m_old_gradient ?
-                       other.m_old_gradient->Copy() : nullptr);
+  m_old_gradient.reset(other.m_old_gradient ? other.m_old_gradient->Copy()
+                                            : nullptr);
   return *this;
 }
 
 template <typename TensorDataType>
-description hypergradient_adam<TensorDataType>::get_description() const {
+description hypergradient_adam<TensorDataType>::get_description() const
+{
   auto desc = OptimizerType::get_description();
   desc.add("Hypergradient learning rate", m_hyper_learning_rate);
   desc.add("beta1", m_beta1);
@@ -88,7 +96,8 @@ description hypergradient_adam<TensorDataType>::get_description() const {
 }
 
 template <typename TensorDataType>
-void hypergradient_adam<TensorDataType>::setup(WeightsType* w) {
+void hypergradient_adam<TensorDataType>::setup(WeightsType* w)
+{
   OptimizerType::setup(w);
   const auto& gradient = this->get_gradient();
   m_moment1.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
@@ -100,8 +109,22 @@ void hypergradient_adam<TensorDataType>::setup(WeightsType* w) {
 }
 
 template <typename TensorDataType>
-void hypergradient_adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
-                                                      const AbsDistMatrixType& gradient) {
+void hypergradient_adam<TensorDataType>::write_proto(
+  lbann_data::Optimizer& proto) const
+{
+  auto* opt = proto.mutable_hypergradient_adam();
+  opt->set_init_learning_rate(this->get_learning_rate());
+  opt->set_hyper_learning_rate(m_hyper_learning_rate);
+  opt->set_beta1(m_beta1);
+  opt->set_beta2(m_beta2);
+  opt->set_eps(m_eps);
+}
+
+template <typename TensorDataType>
+void hypergradient_adam<TensorDataType>::step_compute(
+  AbsDistMatrixType& values,
+  const AbsDistMatrixType& gradient)
+{
   if (values.GetLocalDevice() != El::Device::CPU) {
     LBANN_ERROR("hypergradient Adam is only supported on CPU");
   }
@@ -109,8 +132,9 @@ void hypergradient_adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
   // Precompute the bias correction.
   m_current_beta1 *= m_beta1;
   m_current_beta2 *= m_beta2;
-  const TensorDataType correction = El::Sqrt(TensorDataType(1.) - m_current_beta2) /
-                              (TensorDataType(1.) - m_current_beta1);
+  const TensorDataType correction =
+    El::Sqrt(TensorDataType(1.) - m_current_beta2) /
+    (TensorDataType(1.) - m_current_beta1);
 
   // Get local matrix data
   const size_t local_height = values.LocalHeight();
@@ -128,35 +152,34 @@ void hypergradient_adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
 
   // Compute the learning rate update.
   TensorDataType lr_update = El::Dot(gradient, *m_old_gradient);
-  auto learning_rate = this->get_learning_rate();
-  learning_rate += m_hyper_learning_rate * lr_update;
+  auto const learning_rate = El::To<TensorDataType>(this->get_learning_rate()) +
+                             m_hyper_learning_rate * lr_update;
   this->set_learning_rate(learning_rate);
 
   // Hypergradient Adam step
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (size_t col = 0; col < local_width; ++col) {
     for (size_t row = 0; row < local_height; ++row) {
-      auto& x = values_buffer[row+col*values_ldim];
-      const auto g = gradient_buffer[row+col*gradient_ldim] + m_eps;
-      auto& m1 = moment1_buffer[row+col*moment1_ldim];
-      auto& m2 = moment2_buffer[row+col*moment2_ldim];
-      auto& old_c = old_gradient_buffer[row+col*old_gradient_ldim];
+      auto& x = values_buffer[row + col * values_ldim];
+      const auto g = gradient_buffer[row + col * gradient_ldim] + m_eps;
+      auto& m1 = moment1_buffer[row + col * moment1_ldim];
+      auto& m2 = moment2_buffer[row + col * moment2_ldim];
+      auto& old_c = old_gradient_buffer[row + col * old_gradient_ldim];
       m1 = m_beta1 * m1 + (TensorDataType(1.) - m_beta1) * g;
       m2 = m_beta2 * m2 + (TensorDataType(1.) - m_beta2) * g * g;
       old_c = correction * m1 / (El::Sqrt(m2) + m_eps);
       x -= learning_rate * old_c;
     }
   }
-
 }
 
 template <typename TensorDataType>
-std::unique_ptr<optimizer>
-build_hypergradient_adam_optimizer_from_pbuf(
-  google::protobuf::Message const& msg) {
+std::unique_ptr<optimizer> build_hypergradient_adam_optimizer_from_pbuf(
+  google::protobuf::Message const& msg)
+{
   const auto& params =
     dynamic_cast<lbann_data::Optimizer::HypergradientAdam const&>(msg);
-  return make_unique<hypergradient_adam<TensorDataType>>(
+  return std::make_unique<hypergradient_adam<TensorDataType>>(
     TensorDataType(params.init_learning_rate()),
     TensorDataType(params.hyper_learning_rate()),
     TensorDataType(params.beta1()),
@@ -164,17 +187,17 @@ build_hypergradient_adam_optimizer_from_pbuf(
     TensorDataType(params.eps()));
 }
 
-#define PROTO(T)                                    \
-  template class hypergradient_adam<T>;             \
-  template std::unique_ptr<optimizer>               \
-  build_hypergradient_adam_optimizer_from_pbuf<T>(  \
+#define PROTO(T)                                                               \
+  template class hypergradient_adam<T>;                                        \
+  template std::unique_ptr<optimizer>                                          \
+  build_hypergradient_adam_optimizer_from_pbuf<T>(                             \
     google::protobuf::Message const&)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
-}  // namespace lbann
+} // namespace lbann
 
 #define LBANN_CLASS_NAME hypergradient_adam
 #include <lbann/macros/register_template_class_with_cereal.hpp>

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,13 +25,40 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/comm_impl.hpp"
-#include "lbann/optimizers/optimizer.hpp"
+#include "lbann/optimizers/optimizer_impl.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/timer.hpp"
 
 namespace lbann {
 
-std::string to_string(optimizer_gradient_status status) {
+void optimizer::clear_gradient()
+{
+  for (auto& g : gradients_) {
+    if (g.second->get_status() ==
+        optimizer_gradient_status::allreduce_started) {
+      g.second->complete_allreduce(*m_comm);
+    }
+    g.second->clear();
+  }
+  this->get_gradient_sources().clear();
+}
+
+void optimizer::start_gradient_allreduce()
+{
+  for (auto& grad_mgr : gradients_) {
+    grad_mgr.second->start_allreduce(*m_comm);
+  }
+}
+
+void optimizer::finish_gradient_allreduce()
+{
+  for (auto& grad_mgr : gradients_) {
+    grad_mgr.second->complete_allreduce(*m_comm);
+  }
+}
+
+std::string to_string(optimizer_gradient_status status)
+{
   switch (status) {
   case optimizer_gradient_status::ready:
     return "ready";
@@ -46,21 +73,22 @@ std::string to_string(optimizer_gradient_status status) {
   }
 }
 
-optimizer::optimizer()
-  : m_comm(nullptr) {}
+optimizer::optimizer() : m_comm(nullptr) {}
 
 optimizer::optimizer(const optimizer& other)
   : m_comm(other.m_comm),
     m_gradient_sources(other.m_gradient_sources),
     m_gradient_status(other.m_gradient_status),
-    m_step_time(other.m_step_time) {
+    m_step_time(other.m_step_time)
+{
   if (m_gradient_status == optimizer_gradient_status::allreduce_started) {
     LBANN_ERROR("attempted to copy optimizer while a "
                 "gradient allreduce is in progress");
   }
 }
 
-optimizer& optimizer::operator=(const optimizer& other) {
+optimizer& optimizer::operator=(const optimizer& other)
+{
   m_comm = other.m_comm;
   m_gradient_sources = other.m_gradient_sources;
   m_gradient_status = other.m_gradient_status;
@@ -73,26 +101,31 @@ optimizer& optimizer::operator=(const optimizer& other) {
 }
 
 template <class Archive>
-void optimizer::serialize(Archive & ar) {
+void optimizer::serialize(Archive& ar)
+{
   // Do not save the optimizer's step time
 }
 
-description optimizer::get_description() const {
+description optimizer::get_description() const
+{
   description desc(get_type() + " optimizer");
   return desc;
 }
 
-El::Int optimizer::get_num_gradient_sources() const {
+El::Int optimizer::get_num_gradient_sources() const
+{
   return m_gradient_sources.size();
 }
 
-void optimizer::add_gradient_source(const void* source) {
+void optimizer::add_gradient_source(const void* source)
+{
   if (source != nullptr) {
     m_gradient_sources.insert(source);
   }
 }
 
-void optimizer::remove_gradient_source(const void* source) {
+void optimizer::remove_gradient_source(const void* source)
+{
   m_gradient_sources.erase(nullptr);
   m_gradient_sources.erase(source);
   if (get_gradient_sources().empty()) {

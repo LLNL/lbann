@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,33 +29,32 @@
 
 #include <string>
 
-namespace lbann
-{
-namespace cufft
-{
+namespace lbann {
+namespace cufft {
 
 std::string value_as_string(cufftResult_t r)
 {
-#define CUFFT_VALUE_AS_STRING_CASE(VAL) \
-  case VAL: return #VAL
+#define CUFFT_VALUE_AS_STRING_CASE(VAL)                                        \
+  case VAL:                                                                    \
+    return #VAL
   switch (r) {
-    CUFFT_VALUE_AS_STRING_CASE(CUFFT_SUCCESS       );
-    CUFFT_VALUE_AS_STRING_CASE(CUFFT_INVALID_PLAN  );
-    CUFFT_VALUE_AS_STRING_CASE(CUFFT_ALLOC_FAILED  );
-    CUFFT_VALUE_AS_STRING_CASE(CUFFT_INVALID_TYPE  );
-    CUFFT_VALUE_AS_STRING_CASE(CUFFT_INVALID_VALUE );
+    CUFFT_VALUE_AS_STRING_CASE(CUFFT_SUCCESS);
+    CUFFT_VALUE_AS_STRING_CASE(CUFFT_INVALID_PLAN);
+    CUFFT_VALUE_AS_STRING_CASE(CUFFT_ALLOC_FAILED);
+    CUFFT_VALUE_AS_STRING_CASE(CUFFT_INVALID_TYPE);
+    CUFFT_VALUE_AS_STRING_CASE(CUFFT_INVALID_VALUE);
     CUFFT_VALUE_AS_STRING_CASE(CUFFT_INTERNAL_ERROR);
-    CUFFT_VALUE_AS_STRING_CASE(CUFFT_EXEC_FAILED   );
-    CUFFT_VALUE_AS_STRING_CASE(CUFFT_SETUP_FAILED  );
-    CUFFT_VALUE_AS_STRING_CASE(CUFFT_INVALID_SIZE  );
+    CUFFT_VALUE_AS_STRING_CASE(CUFFT_EXEC_FAILED);
+    CUFFT_VALUE_AS_STRING_CASE(CUFFT_SETUP_FAILED);
+    CUFFT_VALUE_AS_STRING_CASE(CUFFT_INVALID_SIZE);
     CUFFT_VALUE_AS_STRING_CASE(CUFFT_UNALIGNED_DATA);
     CUFFT_VALUE_AS_STRING_CASE(CUFFT_INCOMPLETE_PARAMETER_LIST);
     CUFFT_VALUE_AS_STRING_CASE(CUFFT_INVALID_DEVICE);
-    CUFFT_VALUE_AS_STRING_CASE(CUFFT_PARSE_ERROR   );
-    CUFFT_VALUE_AS_STRING_CASE(CUFFT_NO_WORKSPACE  );
+    CUFFT_VALUE_AS_STRING_CASE(CUFFT_PARSE_ERROR);
+    CUFFT_VALUE_AS_STRING_CASE(CUFFT_NO_WORKSPACE);
     CUFFT_VALUE_AS_STRING_CASE(CUFFT_NOT_IMPLEMENTED);
-    CUFFT_VALUE_AS_STRING_CASE(CUFFT_LICENSE_ERROR );
-    CUFFT_VALUE_AS_STRING_CASE(CUFFT_NOT_SUPPORTED );
+    CUFFT_VALUE_AS_STRING_CASE(CUFFT_LICENSE_ERROR);
+    CUFFT_VALUE_AS_STRING_CASE(CUFFT_NOT_SUPPORTED);
   default:
     LBANN_ERROR("Unknown cufftResult_t value.");
   }
@@ -66,23 +65,23 @@ std::string value_as_string(cufftResult_t r)
 std::string result_string(cufftResult_t r)
 {
   switch (r) {
-  case CUFFT_SUCCESS       :
+  case CUFFT_SUCCESS:
     return "The cuFFT operation was successful";
-  case CUFFT_INVALID_PLAN  :
+  case CUFFT_INVALID_PLAN:
     return "cuFFT was passed an invalid plan handle";
-  case CUFFT_ALLOC_FAILED  :
+  case CUFFT_ALLOC_FAILED:
     return "cuFFT failed to allocate GPU or CPU memory";
-  case CUFFT_INVALID_TYPE  :
+  case CUFFT_INVALID_TYPE:
     return "No longer used (value=CUFFT_INVALID_TYPE)";
-  case CUFFT_INVALID_VALUE :
+  case CUFFT_INVALID_VALUE:
     return "User specified an invalid pointer or parameter";
   case CUFFT_INTERNAL_ERROR:
     return "Driver or internal cuFFT library error";
-  case CUFFT_EXEC_FAILED   :
+  case CUFFT_EXEC_FAILED:
     return "Failed to execute an FFT on the GPU";
-  case CUFFT_SETUP_FAILED  :
+  case CUFFT_SETUP_FAILED:
     return "The cuFFT library failed to initialize";
-  case CUFFT_INVALID_SIZE  :
+  case CUFFT_INVALID_SIZE:
     return "User specified an invalid transform size";
   case CUFFT_UNALIGNED_DATA:
     return "No longer used (value=CUFFT_UNALIGNED_DATA)";
@@ -90,20 +89,20 @@ std::string result_string(cufftResult_t r)
     return "Missing parameters in call";
   case CUFFT_INVALID_DEVICE:
     return "Execution of a plan was on different GPU than plan creation";
-  case CUFFT_PARSE_ERROR   :
+  case CUFFT_PARSE_ERROR:
     return "Internal plan database error";
-  case CUFFT_NO_WORKSPACE  :
+  case CUFFT_NO_WORKSPACE:
     return "No workspace has been provided prior to plan execution";
   case CUFFT_NOT_IMPLEMENTED:
     return "Function does not implement functionality for parameters given.";
-  case CUFFT_LICENSE_ERROR :
+  case CUFFT_LICENSE_ERROR:
     return "Used in previous versions.";
-  case CUFFT_NOT_SUPPORTED :
+  case CUFFT_NOT_SUPPORTED:
     return "Operation is not supported for parameters given.";
   default:
     LBANN_ERROR("Unknown cufftResult_t value.");
   }
   return "";
 }
-}// namespace cufft
-}// namespace lbann
+} // namespace cufft
+} // namespace lbann

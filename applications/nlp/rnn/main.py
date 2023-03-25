@@ -13,7 +13,6 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 root_dir = os.path.dirname(current_dir)
 sys.path.append(root_dir)
 import dataset
-from utils import str_list
 
 # ----------------------------------
 # Options
@@ -45,9 +44,9 @@ vocab_size = dataset.corpus.vocab_size
 sequence_length = dataset.sample_dims()[0]
 
 # Input is a sequence of token IDs
-input_ = lbann.Identity(lbann.Input())
+input_ = lbann.Input(data_field='samples')
 input_slice = lbann.Slice(input_,
-                          slice_points=str_list(range(sequence_length+1)))
+                          slice_points=range(sequence_length+1))
 tokens_list = [lbann.Identity(input_slice) for _ in range(sequence_length)]
 
 # Get sequence of embedding vectors
@@ -56,14 +55,14 @@ embeddings = lbann.Embedding(input_,
                              embedding_dim=args.latent_dim)
 embeddings_slice = lbann.Slice(embeddings,
                                axis=0,
-                               slice_points=str_list(range(sequence_length+1)))
-embeddings_list = [lbann.Reshape(embeddings_slice, dims='-1')
+                               slice_points=range(sequence_length+1))
+embeddings_list = [lbann.Reshape(embeddings_slice, dims=[-1])
                    for _ in range(sequence_length)]
 
 # Layer modules
 lstm = lbann.modules.LSTMCell(args.latent_dim)
-lstm_state = [lbann.Constant(value=0, num_neurons=str_list(args.latent_dim)),
-              lbann.Constant(value=0, num_neurons=str_list(args.latent_dim))]
+lstm_state = [lbann.Constant(value=0, num_neurons=args.latent_dim),
+              lbann.Constant(value=0, num_neurons=args.latent_dim)]
 pred_fc = lbann.modules.FullyConnectedModule(vocab_size,
                                              data_layout='model_parallel')
 

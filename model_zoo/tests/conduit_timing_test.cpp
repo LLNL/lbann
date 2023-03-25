@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -77,8 +77,8 @@ int main(int argc, char *argv[]) {
   bool master = comm->am_world_master();
   int np = comm->get_procs_in_world();
 
-  options *opts = options::get();
-  opts->init(argc, argv);
+  auto& arg_parser = global_argument_parser();
+  arg_parser.parse(arc, argv);
 
   if (argc == 1 || np != 1) {
     if (master) {
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
     return EXIT_SUCCESS;
   }
 
-  const std::string input_fn = opts->get_string("filelist");
+  const std::string input_fn = arg_parser.get<std::string>(LBANN_OPTION_FILELIST);
   std::vector<std::string> filenames;
   read_filelist(comm, input_fn, filenames);
 

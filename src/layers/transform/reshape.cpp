@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,13 +26,25 @@
 
 #define LBANN_RESHAPE_LAYER_INSTANTIATE
 #include "lbann/layers/transform/reshape.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/proto/layers.pb.h"
+#include "lbann/utils/protobuf.hpp"
 
 namespace lbann {
 
-#define PROTO_DEVICE(T, Device) \
-  template class reshape_layer<T, data_layout::DATA_PARALLEL, Device>; \
+template <typename T, data_layout L, El::Device D>
+void reshape_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_reshape();
+  protobuf::assign_to_repeated(*msg->mutable_dims(), this->get_output_dims());
+}
+
+#define PROTO_DEVICE(T, Device)                                                \
+  template class reshape_layer<T, data_layout::DATA_PARALLEL, Device>;         \
   template class reshape_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

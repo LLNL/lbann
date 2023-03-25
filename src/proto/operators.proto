@@ -1,0 +1,184 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+
+syntax = "proto3";
+
+package lbann_data;
+
+import "google/protobuf/any.proto";
+
+import "datatype.proto";
+
+message Operator {
+  DataType input_datatype = 1;
+  DataType output_datatype = 2;
+  DeviceAllocation device_allocation = 3;
+
+  google.protobuf.Any parameters = 4;
+}
+
+/// @name Unary math layers.
+/// @{
+
+message ClampOperator {
+  double min = 1;
+  double max = 2;
+}
+
+message LogicalNotOperator {}
+message AbsOperator {}
+message NegativeOperator {}
+message SignOperator {}
+message RoundOperator {}
+message CeilOperator {}
+message FloorOperator {}
+message ReciprocalOperator {}
+message SquareOperator {}
+message SqrtOperator {}
+message RsqrtOperator {}
+message SafeReciprocalOperator {}
+message ExpOperator {}
+message Expm1Operator {}
+message LogOperator {}
+message Log1pOperator {}
+message CosOperator {}
+message SinOperator {}
+message TanOperator {}
+message AcosOperator {}
+message AsinOperator {}
+message AtanOperator {}
+message CoshOperator {}
+message SinhOperator {}
+message TanhOperator {}
+message AcoshOperator {}
+message AsinhOperator {}
+message AtanhOperator {}
+message ErfOperator {}
+message ErfInvOperator {}
+
+/// @}
+/// @name Binary math layers.
+/// @{
+
+message AddOperator {}
+message SubtractOperator {}
+message MultiplyOperator {}
+message DivideOperator {}
+message ModOperator {}
+message PowOperator {}
+message SafeDivideOperator {}
+message SquaredDifferenceOperator {}
+message MaxOperator {}
+message MinOperator {}
+message EqualOperator {}
+message NotEqualOperator {}
+message LessOperator {}
+message LessEqualOperator {}
+message GreaterOperator {}
+message GreaterEqualOperator {}
+message LogicalAndOperator {}
+message LogicalOrOperator {}
+message LogicalXorOperator {}
+
+/// @}
+/** @name Binary-with-constant Operators */
+/// @{
+message AddConstantOperator {
+  double constant = 1;
+}
+message ScaleOperator {
+  double constant = 1;
+}
+message SubtractConstantOperator {
+  double constant = 1;
+}
+message ConstantSubtractOperator {
+  double constant = 1;
+}
+message MaxConstantOperator {
+  double constant = 1;
+}
+message MinConstantOperator {
+  double constant = 1;
+}
+message NotEqualConstantOperator {
+  double constant = 1;
+}
+message EqualConstantOperator {
+  double constant = 1;
+}
+message LessEqualConstantOperator {
+  double constant = 1;
+}
+message LessConstantOperator {
+  double constant = 1;
+}
+message GreaterEqualConstantOperator {
+  double constant = 1;
+}
+message GreaterConstantOperator {
+  double constant = 1;
+}
+
+/// @}
+/** @name Activation Operators */
+/// @{
+message LogSigmoidOperator {}
+
+/** @brief Logarithm of softmax function.
+ *
+ *  @f[ \log \text{softmax}(x)_i = x_i - \log \sum_j e^{x_j} @f]
+ */
+message LogSoftmaxOperator {}
+
+message SeluOperator {}
+message SigmoidOperator {}
+
+message SoftplusOperator {}
+message SoftsignOperator {}
+
+// message ReluOperator {}
+
+/**
+ *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
+ */
+// message SoftmaxOperator {
+//   enum SoftmaxMode {
+//     INSTANCE = 0;
+//     CHANNEL = 1;
+//   }
+//   SoftmaxMode softmax_mode = 1;
+// }
+
+///@}
+/** @brief Loss operators */
+///@{
+message BinaryCrossEntropyOperator {}
+message SigmoidBinaryCrossEntropyOperator {}
+message BooleanAccuracyOperator {}
+message BooleanFalseNegativeOperator {}
+message BooleanFalsePositiveOperator {}
+///@}

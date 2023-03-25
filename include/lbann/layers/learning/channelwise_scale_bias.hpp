@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,11 +29,13 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/proto/layers.pb.h"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
-/** @brief Apply scale and bias to tensor channels.
+/** @brief Apply per-channel scale and bias
  *
  *  The input tensor is sliced along the first tensor dimension (the
  *  "channel" dimension, assuming image data in CHW format) and scale
@@ -52,12 +54,15 @@ namespace lbann {
  *  column correspond to scale terms and the second column to bias
  *  terms.
  */
-template <typename TensorDataType, data_layout Layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class channelwise_scale_bias_layer : public data_type_layer<TensorDataType> {
+class channelwise_scale_bias_layer : public data_type_layer<TensorDataType>
+{
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "channelwise_mean_layer only supports "
                 "data-parallel data layout");
+
 public:
   /** @name Public Types */
   ///@{
@@ -74,13 +79,13 @@ public:
   ///@}
 
 public:
-
-  channelwise_scale_bias_layer(lbann_comm *comm=nullptr);
+  channelwise_scale_bias_layer(lbann_comm* comm = nullptr);
   channelwise_scale_bias_layer(const channelwise_scale_bias_layer& other);
-  channelwise_scale_bias_layer& operator=(
-    const channelwise_scale_bias_layer& other);
+  channelwise_scale_bias_layer&
+  operator=(const channelwise_scale_bias_layer& other);
 
-  channelwise_scale_bias_layer* copy() const override {
+  channelwise_scale_bias_layer* copy() const override
+  {
     return new channelwise_scale_bias_layer(*this);
   }
 
@@ -88,7 +93,6 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  void setup_matrices(const El::Grid& grid) override;
   void setup_data(size_t max_mini_batch_size) override;
 
   /** @name Serialization */
@@ -100,54 +104,55 @@ public:
   ///@}
 
 protected:
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   void fp_compute() override;
   void bp_compute() override;
 
 private:
-
   /** @brief Objective function gradient w.r.t. weights. */
   std::unique_ptr<AbsDistMatrixType> m_weights_gradient;
-
 };
 
 // Implementation
+
+template <typename T, data_layout L, El::Device D>
+void channelwise_scale_bias_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_channelwise_scale_bias();
+}
+
 template <typename TensorDataType, data_layout Layout, El::Device Dev>
-channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
-::channelwise_scale_bias_layer(lbann_comm *comm)
+channelwise_scale_bias_layer<TensorDataType, Layout, Dev>::
+  channelwise_scale_bias_layer(lbann_comm* comm)
   : data_type_layer<TensorDataType>(comm)
 {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Dev>
-channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
-::channelwise_scale_bias_layer(const channelwise_scale_bias_layer& other)
+channelwise_scale_bias_layer<TensorDataType, Layout, Dev>::
+  channelwise_scale_bias_layer(const channelwise_scale_bias_layer& other)
   : data_type_layer<TensorDataType>(other),
-    m_weights_gradient(other.m_weights_gradient
-                       ? other.m_weights_gradient->Copy()
-                       : nullptr)
+    m_weights_gradient(
+      other.m_weights_gradient ? other.m_weights_gradient->Copy() : nullptr)
 {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Dev>
-auto channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
-::operator=(const channelwise_scale_bias_layer& other)
-  -> channelwise_scale_bias_layer& {
+auto channelwise_scale_bias_layer<TensorDataType, Layout, Dev>::operator=(
+  const channelwise_scale_bias_layer& other) -> channelwise_scale_bias_layer&
+{
   data_type_layer<TensorDataType>::operator=(other);
-  m_weights_gradient.reset(other.m_weights_gradient
-                           ? other.m_weights_gradient->Copy()
-                           : nullptr);
+  m_weights_gradient.reset(
+    other.m_weights_gradient ? other.m_weights_gradient->Copy() : nullptr);
   return *this;
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Dev>
-void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
-::setup_matrices(const El::Grid& grid) {
-  data_type_layer<TensorDataType>::setup_matrices(grid);
-  m_weights_gradient.reset(new StarMatDT<TensorDataType, Dev>(grid));
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Dev>
-void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
-::setup_data(size_t max_mini_batch_size) {
+void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>::setup_data(
+  size_t max_mini_batch_size)
+{
   data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
   const El::Int num_channels = this->get_output_dims()[0];
 
@@ -155,11 +160,12 @@ void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
   // Note: Scale is initialized to 1 and bias to 0
   if (!this->has_weights()) {
     auto w = std::make_shared<WeightsType>(*this->get_comm());
-    std::vector<TensorDataType> vals(2*num_channels,
+    std::vector<TensorDataType> vals(2 * num_channels,
                                      El::TypeTraits<TensorDataType>::Zero());
-    std::fill(vals.begin(), vals.begin()+num_channels,
+    std::fill(vals.begin(),
+              vals.begin() + num_channels,
               El::TypeTraits<TensorDataType>::One());
-    auto init = make_unique<value_initializer<TensorDataType>>(vals);
+    auto init = std::make_unique<value_initializer<TensorDataType>>(vals);
     auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_weights");
     w->set_initializer(std::move(init));
@@ -169,9 +175,14 @@ void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
   }
   if (this->num_weights() != 1) {
     LBANN_ERROR("attempted to setup ",
-                this->get_type()," layer \"",this->get_name(),"\" ",
+                this->get_type(),
+                " layer \"",
+                this->get_name(),
+                "\" ",
                 "with an invalid number of weights ",
-                "(expected 1, found ",this->num_weights(),")");
+                "(expected 1, found ",
+                this->num_weights(),
+                ")");
   }
 
   // Setup weights
@@ -182,6 +193,7 @@ void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
   this->get_weights(0).set_matrix_distribution(dist);
 
   // Setup gradient w.r.t. weights
+  m_weights_gradient.reset(AbsDistMatrixType::Instantiate(dist));
   m_weights_gradient->AlignWith(dist);
   m_weights_gradient->Resize(num_channels, 2);
 }
@@ -190,14 +202,16 @@ LBANN_DEFINE_LAYER_BUILDER(channelwise_scale_bias);
 
 #ifndef LBANN_CHANNELWISE_SCALE_BIAS_LAYER_INSTANTIATE
 
-#define PROTO_DEVICE(T, Device) \
-  extern template class channelwise_scale_bias_layer<T, data_layout::DATA_PARALLEL, Device>;
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class channelwise_scale_bias_layer<                          \
+    T,                                                                         \
+    data_layout::DATA_PARALLEL,                                                \
+    Device>;
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
 
 #endif // LBANN_CHANNELWISE_SCALE_BIAS_LAYER_INSTANTIATE
-
 
 } // namespace lbann
 

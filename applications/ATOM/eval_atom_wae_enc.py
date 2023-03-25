@@ -13,10 +13,6 @@ import models.wae as molwae
 import lbann
 import lbann.contrib.launcher
 import lbann.modules
-from lbann.util import str_list
-
-def list2str(l):
-    return ' '.join(l)
 
 lbann_exe = abspath(lbann.lbann_exe())
 lbann_exe = join(dirname(lbann_exe), 'lbann_inf')
@@ -63,8 +59,6 @@ def construct_lc_launcher_args():
     parser.add_argument("--num-samples", type=int, default=None)
     parser.add_argument("--num-io-threads", type=int, default=11)
     parser.add_argument("--vocab", default=None)
-    parser.add_argument("--delimiter", default="c")
-    parser.add_argument("--no-header", type=bool, default=True)
 
     # these are specific to the Trainer object
     parser.add_argument(
@@ -116,9 +110,9 @@ def construct_model(run_args):
     save_output = False
 
     print("save output? ", save_output, "out dir ",  run_args.dump_outputs_dir)
-    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=str(run_args.z_dim))
+    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=[run_args.z_dim])
 
-    x = lbann.Slice(input_, slice_points=str_list([0, input_feature_dims]))
+    x = lbann.Slice(input_, slice_points=[0, input_feature_dims])
     x = lbann.Identity(x)
     waemodel = molwae.MolWAE(input_feature_dims,
                            dictionary_size,
@@ -253,7 +247,7 @@ def main():
     #  import torch
     #  torch.save(run_args, "{}/{}_config.pt".format(experiment_dir, run_args.job_name))
 
-    m_lbann_args=f"--load_model_weights_dir_is_complete --load_model_weights_dir={run_args.dump_model_dir} --vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}"
+    m_lbann_args=f"--load_model_weights_dir_is_complete --load_model_weights_dir={run_args.dump_model_dir} --vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads}"
     if(run_args.data_reader_prototext):
       m_lbann_args = " ".join((m_lbann_args, " --use_data_store --preload_data_store "))
     if(run_args.procs_per_trainer):

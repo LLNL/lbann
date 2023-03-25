@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,15 +25,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/adjust_brightness.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
-#include <transforms.pb.h>
+#include "lbann/proto/transforms.pb.h"
 
 namespace lbann {
 namespace transform {
 
-void adjust_brightness::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+void adjust_brightness::apply(utils::type_erased_matrix& data,
+                              std::vector<size_t>& dims)
+{
   // Adjusting the brightness is simply scaling by a constant value
   // taking care to saturate.
   cv::Mat src = utils::get_opencv_mat(data, dims);
@@ -42,17 +45,19 @@ void adjust_brightness::apply(utils::type_erased_matrix& data, std::vector<size_
     LBANN_ERROR("Do not support non-contiguous OpenCV matrices.");
   }
   uint8_t* __restrict__ src_buf = src.ptr();
-  const size_t size = utils::get_linearized_size(dims);
+  const size_t size = get_linear_size(dims);
   for (size_t i = 0; i < size; ++i) {
-    src_buf[i] = cv::saturate_cast<uint8_t>(src_buf[i]*m_factor);
+    src_buf[i] = cv::saturate_cast<uint8_t>(src_buf[i] * m_factor);
   }
 }
 
-std::unique_ptr<transform>
-build_adjust_brightness_transform_from_pbuf(google::protobuf::Message const& msg) {
-  auto const& params = dynamic_cast<lbann_data::Transform::AdjustBrightness const&>(msg);
-  return make_unique<adjust_brightness>(params.factor());
+std::unique_ptr<transform> build_adjust_brightness_transform_from_pbuf(
+  google::protobuf::Message const& msg)
+{
+  auto const& params =
+    dynamic_cast<lbann_data::Transform::AdjustBrightness const&>(msg);
+  return std::make_unique<adjust_brightness>(params.factor());
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

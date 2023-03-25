@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,7 +29,6 @@ syntax = "proto3";
 package lbann_data;
 
 message ObjectiveFunction {
-
   message LayerTerm {
     double scale_factor = 1;
     string layer = 2;
@@ -37,7 +36,8 @@ message ObjectiveFunction {
 
   message L2WeightRegularization {
     double scale_factor = 1;
-    string weights = 2;   // If empty, L2 regularization is applied to all weights
+    repeated string weights = 2;
+    // If no weights listed, L2 regularization is applied to all weights
   }
 
   repeated LayerTerm layer_term = 1;

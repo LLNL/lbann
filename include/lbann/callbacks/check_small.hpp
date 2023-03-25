@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -42,40 +42,43 @@ namespace callback {
  * smallest floating point value.
  * This will kill the rank if such values are discovered.
  */
-class check_small : public callback_base {
- public:
-  using callback_base::on_forward_prop_end;
+class check_small : public callback_base
+{
+public:
   using callback_base::on_backward_prop_end;
+  using callback_base::on_forward_prop_end;
 
   check_small() = default;
   check_small(const check_small&) = default;
   check_small& operator=(const check_small&) = default;
-  check_small* copy() const override {
-    return new check_small(*this);
-  }
+  check_small* copy() const override { return new check_small(*this); }
   /** Check that activations are good. */
-  void on_forward_prop_end(model *m, Layer *l) override;
+  void on_forward_prop_end(model* m, Layer* l) override;
   /** Check that gradients are good. */
-  void on_backward_prop_end(model *m) override;
+  void on_backward_prop_end(model* m) override;
   /** Check that weights are good. */
-  void on_batch_end(model *m) override;
+  void on_batch_end(model* m) override;
   std::string name() const override { return "check_small"; }
 
   /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
+private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
 };
 
 // Builder function
-LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
-  check_small, build_check_small_callback_from_pbuf)
+LBANN_ADD_DEFAULT_CALLBACK_BUILDER(check_small,
+                                   build_check_small_callback_from_pbuf)
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_CHECK_SMALL_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_CHECK_SMALL_HPP_INCLUDED

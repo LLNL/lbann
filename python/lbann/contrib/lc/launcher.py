@@ -46,6 +46,12 @@ def make_batch_script(
         if key not in environment:
             environment[key] = os.getenv(key, default)
 
+    def prepend_environment_path(key, prefix):
+        if key not in environment:
+            environment[key] = prefix + ":" + os.getenv(key)
+        else:
+            environment[key] = prefix + ":" + environment[key]
+
     # Setup GPU bindings
     # Note: Each Hydrogen process is assigned to the GPU index that
     # matches its node communicator rank. This is not compatible with
@@ -53,8 +59,7 @@ def make_batch_script(
     # can't use an exclusive GPU compute mode since processes may
     # touch the wrong GPU while figuring out ownership.
     if scheduler == 'slurm' and has_gpu(system):
-        launcher_args.extend(['--mpibind=off',
-                              '--nvidia_compute_mode=default'])
+        launcher_args.extend(['--mpibind=off'])
 
     # Optimized thread affinity for Pascal
     # Note: Both GPUs are on socket 0, so we only use cores on that
@@ -78,6 +83,20 @@ def make_batch_script(
     # present in MVAPICH2-2.3rc2.
     set_environment('MV2_USE_RDMA_CM', 0)
 
+    # Bugfix for pascal as of 9/21/22
+    # set_environment('MV2_USE_ALIGNED_ALLOC', 1) # Not necessary because we don't allocate from multiple threads
+    set_environment('MV2_HOMOGENEOUS_CLUSTER', 1)
+    set_environment('MV2_USE_THREAD_WARNING', 0)
+
+    # Optimizations for Tioga
+    if system in ('tioga'):
+        #set_environment('NCCL_SOCKET_IFNAME', 'hsi')
+        set_environment('MIOPEN_DEBUG_DISABLE_FIND_DB', '1')
+        set_environment('MIOPEN_DISABLE_CACHE', '1')
+        prepend_environment_path('LD_LIBRARY_PATH', os.getenv('CRAY_LD_LIBRARY_PATH'))
+        if os.getenv('ROCM_PATH') is not None:
+            prepend_environment_path('LD_LIBRARY_PATH', os.path.join(os.getenv('ROCM_PATH'), 'llvm', 'lib'))
+
     # Optimizations for Sierra-like systems
     if system in ('sierra', 'lassen', 'rzansel'):
 
@@ -93,6 +112,7 @@ def make_batch_script(
         set_environment('OMP_NUM_THREADS', cores_per_proc)
         if scheduler == 'lsf':
             launcher_args.append('--bind packed:{}'.format(cores_per_proc))
+            launcher_args.append('--smpiargs="-gpu"')
 
         # Hack to enable process forking
         # Note: InfiniBand is known to experience hangs if an MPI
@@ -113,6 +133,8 @@ def make_batch_script(
 
         # Configure NVSHMEM to load Spectrum MPI
         set_environment('NVSHMEM_MPI_LIB_NAME', 'libmpi_ibm.so')
+
+
 
     return lbann.launcher.make_batch_script(
         procs_per_node=procs_per_node,

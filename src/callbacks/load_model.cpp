@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,14 +28,18 @@
 
 #include "lbann/callbacks/load_model.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/execution_algorithms/training_algorithm.hpp"
-#include "lbann/weights/data_type_weights.hpp"
-#include "lbann/models/directed_acyclic_graph.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
-#include <callbacks.pb.h>
-#include <model.pb.h>
+#include "lbann/proto/callbacks.pb.h"
+#include "lbann/proto/model.pb.h"
 
 #include <cstdlib>
 #include <fstream>
@@ -52,84 +56,77 @@ auto make_weights_map(std::vector<weights*> const& weights_list)
   return weights_map;
 }
 
-void load_weights_from_checkpoint(model& m,
-                                  std::string const& model_ckpt_file)
+void load_weights_from_checkpoint(model& m, std::string const& model_ckpt_file)
 {
   auto comm = m.get_comm();
   // TODO: Logging API
-  if(comm->am_trainer_master()) {
+  if (comm->am_trainer_master()) {
     std::cout << "Restoring from " << model_ckpt_file << std::endl;
   }
 
   // Create a temporary model
-  directed_acyclic_graph_model dagm(comm, nullptr, nullptr);
+  model tmp_model(comm, nullptr, nullptr);
   {
     std::ifstream ifs(model_ckpt_file);
     RootedBinaryInputArchive ar(ifs, comm->get_trainer_grid());
-    ar(dagm);
+    ar(tmp_model);
   }
 
   // Loop through the weights in this model and attempt to restore
   // their values from the temporary model's weights with the same
   // name.
-  auto dagm_weights_map = make_weights_map(dagm.get_weights());
+  auto tmp_weights_map = make_weights_map(tmp_model.get_weights());
   auto const model_weights = m.get_weights();
-  for (auto* w : model_weights)
-  {
-    auto dagm_w_iter = dagm_weights_map.find(w->get_name());
-    if (dagm_w_iter != dagm_weights_map.end())
-    {
-      auto* dagm_w = dagm_w_iter->second;
-      w->steal_values(*dagm_w);
+  for (auto* w : model_weights) {
+    auto tmp_w_iter = tmp_weights_map.find(w->get_name());
+    if (tmp_w_iter != tmp_weights_map.end()) {
+      auto* tmp_w = tmp_w_iter->second;
+      w->steal_values(*tmp_w);
       // TODO: Replace with logging API
       if (comm->am_trainer_master()) {
         std::cout << "Restored weights \"" << w->get_name() << "\" "
-                  << "from checkpointed model."
-                  << std::endl;
+                  << "from checkpointed model." << std::endl;
       }
     }
-    else
-    {
+    else {
       // TODO: Replace with logging API
       if (comm->am_trainer_master()) {
-        std::cout << "Could not load weights with name \""
-                  << w->get_name() << "\". Not found in checkpoint."
-                  << std::endl;
+        std::cout << "Could not load weights with name \"" << w->get_name()
+                  << "\". Not found in checkpoint." << std::endl;
       }
     }
   }
 }
 
-void load_weights_from_files(model& m,
-                             std::string const& ckpt_dir)
+void load_weights_from_files(model& m, std::string const& ckpt_dir)
 {
   auto const model_weights = m.get_weights();
-  for (weights * w : model_weights)
-  {
+  for (weights* w : model_weights) {
     // create weight file name to match to weight list entry
     auto* dtw = dynamic_cast<data_type_weights<DataType>*>(w);
     LBANN_ASSERT(dtw);
 
     auto const file = file::join_path(ckpt_dir,
-                                      build_string(
-                                        "model_weights_", w->get_name(), "_",
-                                        dtw->get_values().Height(), "x",
-                                        dtw->get_values().Width(), ".bin"));
-    if (file::file_exists(file))
-    {
+                                      build_string("model_weights_",
+                                                   w->get_name(),
+                                                   "_",
+                                                   dtw->get_values().Height(),
+                                                   "x",
+                                                   dtw->get_values().Width(),
+                                                   ".bin"));
+    if (file::file_exists(file)) {
       // TODO: Replace with logging API
       if (m.get_comm()->am_trainer_master()) {
         std::cout << "Loading: " << file << std::endl;
       }
       El::Read(dtw->get_values(), file, El::BINARY, true);
     }
-    else
-    {
+    else {
       // TODO: Replace with logging API
       if (m.get_comm()->am_trainer_master()) {
-        std::cout << "Could not load weights with name \""
-                  << w->get_name() << "\". Expected file not found ("
-                  << file << ")." << std::endl;
+        std::cout << "Could not load weights with name \"" << w->get_name()
+                  << "\". Expected file not found (" << file << ")."
+                  << std::endl;
       }
     }
   }
@@ -167,52 +164,59 @@ bool load_model_weights(const std::string& ckpt_dir, model& m)
     load_weights_from_files(m, active_ckpt_dir);
   return true;
 }
-}// namespace <anon>
+} // namespace
 
 namespace callback {
 
 template <class Archive>
-void load_model::serialize(Archive & ar) {
+void load_model::serialize(Archive& ar)
+{
   ar(cereal::base_class<callback_base>(this),
      CEREAL_NVP(m_dirs),
      CEREAL_NVP(m_extension),
      CEREAL_NVP(m_loaded));
 }
 
-void load_model::on_train_begin(model *m) {
-  if(!m_loaded) {
+void load_model::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_load_model();
+  msg->set_dirs(protobuf::to_space_sep_string(m_dirs));
+  msg->set_extension(m_extension);
+}
+void load_model::on_train_begin(model* m)
+{
+  if (!m_loaded) {
     for (const auto& d : m_dirs) {
       m_loaded = load_model_weights(d, *m);
-      if(!m_loaded)
+      if (!m_loaded)
         LBANN_ERROR("Unable to reload model on train begin");
     }
   }
 }
 
-void load_model::on_test_begin(model *m) {
-  if(!m_loaded) {
+void load_model::on_test_begin(model* m)
+{
+  if (!m_loaded) {
     for (const auto& d : m_dirs) {
       m_loaded = load_model_weights(d, *m);
-      if(!m_loaded)
+      if (!m_loaded)
         LBANN_ERROR("Unable to reload model on test begin");
     }
   }
 }
 
-
 std::unique_ptr<callback_base>
-build_load_model_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+build_load_model_callback_from_pbuf(const google::protobuf::Message& proto_msg,
+                                    const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackLoadModel&>(proto_msg);
-  if(params.extension().size() != 0) {
-    return make_unique<load_model>(
-      parse_list<std::string>(params.dirs()),
-      params.extension());
+  if (params.extension().size() != 0) {
+    return std::make_unique<load_model>(parse_list<std::string>(params.dirs()),
+                                        params.extension());
   }
   else {
-    return make_unique<load_model>(
-      parse_list<std::string>(params.dirs()));
+    return std::make_unique<load_model>(parse_list<std::string>(params.dirs()));
   }
 }
 
@@ -220,4 +224,5 @@ build_load_model_callback_from_pbuf(
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::load_model
+#define LBANN_CLASS_LIBNAME callback_load_model
 #include <lbann/macros/register_class_with_cereal.hpp>

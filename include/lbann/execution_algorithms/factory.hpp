@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,19 +27,14 @@
 #define LBANN_EXECUTION_ALGORITHMS_FACTORY_HPP_INCLUDED
 
 #include "lbann/execution_algorithms/training_algorithm.hpp"
-#include "lbann/execution_contexts/execution_context.hpp"
-#include "lbann/proto/helpers.hpp"
 #include "lbann/utils/factory.hpp"
 #include "lbann/utils/factory_error_policies.hpp"
 #include "lbann/utils/make_abstract.hpp"
-
-#include <h2/meta/typelist/TypeList.hpp>
 
 #include <google/protobuf/message.h>
 
 #include <memory>
 #include <string>
-#include <unordered_map>
 
 namespace lbann {
 
@@ -47,10 +42,9 @@ namespace lbann {
  *         messages.
  */
 using TrainingAlgorithmFactory = generic_factory<
-  training_algorithm,
+  TrainingAlgorithm,
   std::string,
-  proto::generate_builder_type<training_algorithm,
-                               google::protobuf::Message const&>>;
+  generate_builder_type<TrainingAlgorithm, google::protobuf::Message const&>>;
 
 /** @brief The builder type used to create a new training algorithm.
  */
@@ -69,15 +63,13 @@ void register_new_training_algorithm(TrainingAlgorithmKey key,
 
 } // namespace lbann
 
-/** @brief Get the factory for a given key from the default factory
- *         factory.
- *  @param[in] key The identifier for the training algorithm.
- *  @return The abstract factory that can build components of the
- *          requested training algorithm.
+/** @brief Create a new training_algorithm instance.
+ *  @param[in] params A protobuf message describing the algorithm.
+ *  @return A newly-constructed training algorithm.
  */
 template <>
-std::unique_ptr<lbann::training_algorithm>
-lbann::make_abstract<lbann::training_algorithm>(
+std::unique_ptr<lbann::TrainingAlgorithm>
+lbann::make_abstract<lbann::TrainingAlgorithm>(
   google::protobuf::Message const& params);
 
 #endif // LBANN_EXECUTION_ALGORITHMS_FACTORY_HPP_INCLUDED

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,12 +26,48 @@
 
 #define LBANN_ARGMAX_LAYER_INSTANTIATE
 #include "lbann/layers/misc/argmax.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/proto/layers.pb.h"
+#include "lbann/utils/exception.hpp"
+
 #include <algorithm>
 
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void argmax_layer<TensorDataType, Layout, Device>::fp_compute() {
+void argmax_layer<TensorDataType, Layout, Device>::setup_dims(
+  DataReaderMetaData& dr_metadata)
+{
+  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  this->set_output_dims({1});
+
+  // Make sure input tensor is 1-D
+  const auto input_dims = this->get_input_dims();
+  if (input_dims.size() != 1) {
+    LBANN_ERROR(get_type(),
+                " layer \"",
+                this->get_name(),
+                "\" ",
+                "expects a 1-D input tensor, ",
+                "but parent layer \"",
+                this->get_parent_layer().get_name(),
+                "\" ",
+                "outputs a ",
+                input_dims.size(),
+                "-D tensor");
+  }
+}
+
+template <typename T, data_layout L, El::Device D>
+void argmax_layer<T, L, D>::write_specific_proto(lbann_data::Layer& proto) const
+{
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_argmax();
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void argmax_layer<TensorDataType, Layout, Device>::fp_compute()
+{
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
   const auto& local_input =
     dynamic_cast<const CPUMatType&>(this->get_local_prev_activations());
@@ -41,14 +77,13 @@ void argmax_layer<TensorDataType, Layout, Device>::fp_compute() {
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const auto buf_start = local_input.LockedBuffer(0, col);
-    const auto buf_max = std::max_element(buf_start,
-                                          buf_start+local_height);
+    const auto buf_max = std::max_element(buf_start, buf_start + local_height);
     const auto max_ind = std::distance(buf_start, buf_max);
     local_output(0, col) = static_cast<TensorDataType>(max_ind);
   }
 }
 
-#define PROTO(T)                     \
+#define PROTO(T)                                                               \
   template class argmax_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF

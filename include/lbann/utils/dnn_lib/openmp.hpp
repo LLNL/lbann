@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -47,10 +47,15 @@ struct openmp_backend
   /** @struct unnecessary
    *  Type indicating an unnecessary, i.e., placeholder, type.
    */
-  struct unnecessary {};
+  struct unnecessary
+  {
+  };
 
   template <typename T>
-  static auto data_type() { return unnecessary{}; }
+  static auto data_type()
+  {
+    return unnecessary{};
+  }
 
   class TensorDescriptor
   {
@@ -71,7 +76,6 @@ struct openmp_backend
     using dnnTensorFormat_t = unnecessary;
 
   public:
-
     /** @name Lifecycle management */
     ///@{
     /** @brief Construct an empty descriptor. */
@@ -112,10 +116,8 @@ struct openmp_backend
      *  Creates DNN library object if needed.
      */
     template <typename DimT>
-    void set(
-      dnnDataType_t,
-      std::vector<DimT> const&,
-      std::vector<DimT> const& = {})
+    void
+    set(dnnDataType_t, std::vector<DimT> const&, std::vector<DimT> const& = {})
     {}
 
     /** @brief Configure DNN library object
@@ -123,79 +125,72 @@ struct openmp_backend
      *  Creates DNN library object if needed.
      */
     template <typename... IntTs>
-    void set(
-      dnnDataType_t,
-      IntTs...)
+    void set(dnnDataType_t, IntTs...)
     {}
 #if !(defined LBANN_HAS_CUDNN)
     // This function is required for API compatibility.
-    void set(
-      dnnDataType_t /*data_type*/,
-      dnnTensorFormat_t /*format*/,
-      std::vector<int> const& /*dims*/)
+    void set(dnnDataType_t /*data_type*/,
+             dnnTensorFormat_t /*format*/,
+             std::vector<int> const& /*dims*/)
     {}
 #endif // !LBANN_HAS_CUDNN
 
-  };// class TensorDescriptor
+  }; // class TensorDescriptor
 
   template <typename DataT, typename ScalarT>
-  static void softmax_forward(
-    ScalarT const& alpha_in,
-    TensorDescriptor const& xDesc,
-    El::Matrix<DataT, device> const& x,
-    ScalarT const& beta_in,
-    TensorDescriptor const& yDesc,
-    El::Matrix<DataT, device>& y,
-    El::SyncInfo<device> const& si,
-    softmax_mode mode,
-    softmax_alg alg = softmax_alg::ACCURATE);
+  static void softmax_forward(ScalarT const& alpha_in,
+                              TensorDescriptor const& xDesc,
+                              El::Matrix<DataT, device> const& x,
+                              ScalarT const& beta_in,
+                              TensorDescriptor const& yDesc,
+                              El::Matrix<DataT, device>& y,
+                              El::SyncInfo<device> const& si,
+                              softmax_mode mode,
+                              softmax_alg alg = softmax_alg::ACCURATE);
 
   template <typename DataT, typename ScalarT>
-  static void logsoftmax_forward(
-    ScalarT const& alpha_in,
-    TensorDescriptor const& xDesc,
-    El::Matrix<DataT, device> const& x,
-    ScalarT const& beta_in,
-    TensorDescriptor const& yDesc,
-    El::Matrix<DataT, device>& y,
-    El::SyncInfo<device> const& si,
-    softmax_mode mode)
+  static void logsoftmax_forward(ScalarT const& alpha_in,
+                                 TensorDescriptor const& xDesc,
+                                 El::Matrix<DataT, device> const& x,
+                                 ScalarT const& beta_in,
+                                 TensorDescriptor const& yDesc,
+                                 El::Matrix<DataT, device>& y,
+                                 El::SyncInfo<device> const& si,
+                                 softmax_mode mode)
   {
     LBANN_ERROR("Not yet implemented.");
   }
 
   template <typename DataT, typename ScalarT>
-  static void softmax_backward(
-    ScalarT const& alpha_in,
-    TensorDescriptor const& yDesc,
-    El::Matrix<DataT, device> const& y,
-    TensorDescriptor const& dyDesc,
-    El::Matrix<DataT, device> const& dy,
-    ScalarT const& beta_in,
-    TensorDescriptor const& dxDesc,
-    El::Matrix<DataT, device>& dx,
-    El::SyncInfo<device> const& si,
-    softmax_mode mode,
-    softmax_alg alg = softmax_alg::ACCURATE);
+  static void softmax_backward(ScalarT const& alpha_in,
+                               TensorDescriptor const& yDesc,
+                               El::Matrix<DataT, device> const& y,
+                               TensorDescriptor const& dyDesc,
+                               El::Matrix<DataT, device> const& dy,
+                               ScalarT const& beta_in,
+                               TensorDescriptor const& dxDesc,
+                               El::Matrix<DataT, device>& dx,
+                               El::SyncInfo<device> const& si,
+                               softmax_mode mode,
+                               softmax_alg alg = softmax_alg::ACCURATE);
 
   template <typename DataT, typename ScalarT>
-  static void logsoftmax_backward(
-    ScalarT const& alpha_in,
-    TensorDescriptor const& yDesc,
-    El::Matrix<DataT, device> const& y,
-    TensorDescriptor const& dyDesc,
-    El::Matrix<DataT, device> const& dy,
-    ScalarT const& beta_in,
-    TensorDescriptor const& dxDesc,
-    El::Matrix<DataT, device>& dx,
-    El::SyncInfo<device> const& si,
-    softmax_mode mode,
-    softmax_alg alg = softmax_alg::ACCURATE)
+  static void logsoftmax_backward(ScalarT const& alpha_in,
+                                  TensorDescriptor const& yDesc,
+                                  El::Matrix<DataT, device> const& y,
+                                  TensorDescriptor const& dyDesc,
+                                  El::Matrix<DataT, device> const& dy,
+                                  ScalarT const& beta_in,
+                                  TensorDescriptor const& dxDesc,
+                                  El::Matrix<DataT, device>& dx,
+                                  El::SyncInfo<device> const& si,
+                                  softmax_mode mode,
+                                  softmax_alg alg = softmax_alg::ACCURATE)
   {
     LBANN_ERROR("Not yet implemented.");
   }
 
-};// struct openmp_backend
+}; // struct openmp_backend
 
 } // namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_OPENMP_HPP

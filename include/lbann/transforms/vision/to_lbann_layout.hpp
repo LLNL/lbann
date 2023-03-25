@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -39,7 +39,8 @@ namespace transform {
  * Currently only supports converting from OpenCV layouts.
  * This will also rescale data from [0, 255] to [0, 1].
  */
-class to_lbann_layout : public transform {
+class to_lbann_layout : public transform
+{
 public:
   transform* copy() const override { return new to_lbann_layout(*this); }
 
@@ -47,16 +48,18 @@ public:
 
   bool supports_non_inplace() const override { return true; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data,
+             std::vector<size_t>& dims) override;
 
-  void apply(utils::type_erased_matrix& data, CPUMat& out,
+  void apply(utils::type_erased_matrix& data,
+             CPUMat& out,
              std::vector<size_t>& dims) override;
 };
 
 std::unique_ptr<transform>
 build_to_lbann_layout_transform_from_pbuf(google::protobuf::Message const&);
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_TO_LBANN_LAYOUT_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_TO_LBANN_LAYOUT_HPP_INCLUDED

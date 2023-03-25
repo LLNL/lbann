@@ -1,7 +1,6 @@
 import numpy as np
 import lbann
 import lbann.modules
-from lbann.util import str_list
 
 class RadialProfile(lbann.modules.Module):
     """Compute average pixel value w.r.t. distance from image center.
@@ -51,24 +50,24 @@ class RadialProfile(lbann.modules.Module):
         scales_vals = r_counts_recip * dims[0]
 
         # Construct LBANN layer graph
-        image = lbann.Reshape(image, dims=str_list([np.prod(dims)]))
+        image = lbann.Reshape(image, dims=[np.prod(dims)])
         inds = lbann.WeightsLayer(
             weights=lbann.Weights(
-                lbann.ValueInitializer(values=str_list(inds_vals)),
+                lbann.ValueInitializer(values=inds_vals),
                 optimizer=lbann.NoOptimizer(),
             ),
-            dims=str_list([len(inds_vals)]),
+            dims=[len(inds_vals)],
         )
-        r_sums = lbann.Scatter(image, inds, dims=str_list([dims[0]*max_r]))
+        r_sums = lbann.Scatter(image, inds, dims=[dims[0]*max_r])
         scales = lbann.WeightsLayer(
             weights=lbann.Weights(
-                lbann.ValueInitializer(values=str_list(scales_vals)),
+                lbann.ValueInitializer(values=scales_vals),
                 optimizer=lbann.NoOptimizer(),
             ),
-            dims=str_list([len(scales_vals)]),
+            dims=[len(scales_vals)],
         )
         r_means = lbann.Multiply(scales, r_sums)
-        return lbann.Reshape(r_means, dims=str_list([dims[0], max_r]))
+        return lbann.Reshape(r_means, dims=[dims[0], max_r])
 
     def _find_radial_bins(self, dims, max_r):
         """Bin tensor positions based on distance from center.
@@ -145,20 +144,20 @@ if __name__ == "__main__":
     # Radial profile
     x = lbann.WeightsLayer(
         weights=lbann.Weights(
-            lbann.ValueInitializer(values=str_list(image.flatten())),
+            lbann.ValueInitializer(values=image.flatten()),
         ),
-        dims=str_list(image.shape),
+        dims=image.shape,
     )
     max_r = image.shape[-1] // 2
     rprof = RadialProfile()(x, image.shape, max_r)
-    rprof_slice = lbann.Slice(rprof, slice_points=str_list([0,1,2,3]))
+    rprof_slice = lbann.Slice(rprof, slice_points=[0,1,2,3])
     red = lbann.Identity(rprof_slice, name='red')
     green = lbann.Identity(rprof_slice, name='green')
     blue = lbann.Identity(rprof_slice, name='blue')
 
     # Construct model
     callbacks = [
-        lbann.CallbackDumpOutputs(layers=str_list(['red', 'green', 'blue'])),
+        lbann.CallbackDumpOutputs(layers=['red', 'green', 'blue']),
     ]
     model = lbann.Model(
         epochs=0,

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -87,6 +87,10 @@ message Transform {
     string means = 1;
     string stddevs = 2;
   }
+  // Pad an image on all sides with 0 value.
+  message Pad {
+    uint64 pad = 1;
+  }
   // Apply a random affine transform.
   message RandomAffine {
     float rotate_min = 1;
@@ -124,7 +128,8 @@ message Transform {
     uint64 height = 1;
     uint64 width = 2;
   }
-  // Resize to height x width then crop to crop_height x crop_width at the center.
+  // Resize to height x width then crop to crop_height x crop_width at the
+  // center.
   message ResizedCenterCrop {
     uint64 height = 1;
     uint64 width = 2;
@@ -132,7 +137,7 @@ message Transform {
     uint64 crop_width = 4;
   }
   // Convert from an image to LBANN data.
-  message ToLBANNLayout { }
+  message ToLBANNLayout {}
   // Vertical flip with probability p.
   message VerticalFlip {
     float p = 1;
@@ -153,7 +158,8 @@ message Transform {
     RandomAffine random_affine = 105;
     RandomCrop random_crop = 106;
     RandomResizedCrop random_resized_crop = 107;
-    RandomResizedCropWithFixedAspectRatio random_resized_crop_with_fixed_aspect_ratio = 108;
+    RandomResizedCropWithFixedAspectRatio
+        random_resized_crop_with_fixed_aspect_ratio = 108;
     Resize resize = 109;
     ResizedCenterCrop resized_center_crop = 110;
     ToLBANNLayout to_lbann_layout = 111;
@@ -163,5 +169,6 @@ message Transform {
     AdjustSaturation adjust_saturation = 115;
     ColorJitter color_jitter = 116;
     Cutout cutout = 117;
+    Pad pad = 118;
   }
 }

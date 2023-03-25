@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,6 +28,9 @@
 #define LBANN_LAYERS_IMAGE_BILINEAR_RESIZE_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/proto/layers.pb.h"
 
 namespace lbann {
 
@@ -37,16 +40,18 @@ namespace lbann {
  *  not propagated during backprop.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class bilinear_resize_layer : public data_type_layer<TensorDataType> {
+class bilinear_resize_layer : public data_type_layer<TensorDataType>
+{
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "bilinear_resize_layer only supports DATA_PARALLEL");
+
 public:
+  bilinear_resize_layer(lbann_comm* comm, El::Int height, El::Int width)
+    : data_type_layer<TensorDataType>(comm), m_height(height), m_width(width)
+  {}
 
-  bilinear_resize_layer(lbann_comm *comm, El::Int height, El::Int width)
-    : data_type_layer<TensorDataType>(comm), m_height(height), m_width(width) {
-  }
-
-  bilinear_resize_layer* copy() const override {
+  bilinear_resize_layer* copy() const override
+  {
     return new bilinear_resize_layer(*this);
   }
 
@@ -65,50 +70,15 @@ public:
   void fp_compute() override;
 
 protected:
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  bilinear_resize_layer()
-    : bilinear_resize_layer(nullptr, 1, 1)
-  {}
+  bilinear_resize_layer() : bilinear_resize_layer(nullptr, 1, 1) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-
-    // Get input dimensions
-    auto dims = this->get_input_dims();
-    const auto& num_dims = dims.size();
-
-    // Check that dimensions are valid
-    std::stringstream err;
-    if (num_dims < 2) {
-      err << get_type() << " layer \"" << this->get_name() << "\" "
-          << "expects input with at least two dimensions, "
-          << "but input dimensions are ";
-      for (size_t i = 0; i < num_dims; ++i) {
-        err << (i > 0 ? " x " : "") << dims[i];
-      }
-      LBANN_ERROR(err.str());
-    } else if (m_height <= 0) {
-      err << get_type() << " layer \"" << this->get_name() << "\" "
-          << "attempted to resize with "
-          << "negative height (" << m_height << ")";
-      LBANN_ERROR(err.str());
-    } else if (m_width <= 0) {
-      err << get_type() << " layer \"" << this->get_name() << "\" "
-          << "attempted to resize with "
-          << "negative width (" << m_width << ")";
-      LBANN_ERROR(err.str());
-    }
-
-    // Resize output tensor
-    dims[num_dims-2] = m_height;
-    dims[num_dims-1] = m_width;
-    this->set_output_dims(dims);
-
-  }
+  void setup_dims(DataReaderMetaData& dr_metadata) override;
 
 private:
-
   /** Output image height.
    *  Data is assumed to be in CHW format.
    */
@@ -117,12 +87,23 @@ private:
    *  Data is assumed to be in CHW format.
    */
   El::Int m_width;
-
 };
 
+template <typename T, data_layout L, El::Device D>
+void bilinear_resize_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_bilinear_resize();
+  msg->set_height(m_height);
+  msg->set_width(m_width);
+}
+
 #ifndef LBANN_BILINEAR_RESIZE_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class bilinear_resize_layer<T, data_layout::DATA_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class bilinear_resize_layer<T,                               \
+                                              data_layout::DATA_PARALLEL,      \
+                                              Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

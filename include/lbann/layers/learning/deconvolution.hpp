@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -39,49 +39,57 @@ class imcomm;
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class deconvolution_distconv_adapter: public base_convolution_adapter<TensorDataType, Device> {
- public:
-  using TensorDevType = typename base_convolution_adapter<TensorDataType, Device>::TensorDevType;
+class deconvolution_distconv_adapter
+  : public base_convolution_adapter<TensorDataType, Device>
+{
+public:
+  using TensorDevType =
+    typename base_convolution_adapter<TensorDataType, Device>::TensorDevType;
 
-  deconvolution_distconv_adapter(Layer& layer): base_convolution_adapter<TensorDataType, Device>(layer) {}
+  deconvolution_distconv_adapter(Layer& layer)
+    : base_convolution_adapter<TensorDataType, Device>(layer)
+  {}
   virtual ~deconvolution_distconv_adapter() = default;
 
-  void setup_distributions(tensor_overlap_constraints &constraints) override;
+  void setup_distributions(tensor_overlap_constraints& constraints) override;
   void setup_layer(size_t workspace_capacity) override;
-  dc::Shape get_activations_local_shape(int index=0) const override;
+  dc::Shape get_activations_local_shape(int index = 0) const override;
 };
 #endif // LBANN_HAS_DISTCONV
 
-/** @brief Transpose of the convolution layer. */
-template <typename TensorDataType, data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
-class deconvolution_layer : public base_convolution_layer<TensorDataType, Device> {
+/** @brief Convolution transpose
+ *
+ *  This operation is the transpose of standard deep learning
+ *  convolution.
+ *
+ *  Pedantic comments: this operation is commonly called
+ *  "deconvolution" in the deep learning community, but it is not a
+ *  true deconvolution. Also, the "convolution" operation commonly
+ *  used in the deep learning is actually cross-correlation.
+ */
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class deconvolution_layer
+  : public base_convolution_layer<TensorDataType, Device>
+{
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "deconvolution layer only supports DATA_PARALLEL");
-private:
 
+private:
   friend class callback::imcomm;
 
 public:
-
-  deconvolution_layer(int num_data_dims,
-                      int num_output_channels,
-                      int conv_dim,
-                      int pad,
-                      int stride,
-                      int dilation,
-                      int groups,
-                      bool has_bias = true);
-
   deconvolution_layer(int num_data_dims,
                       int num_output_channels,
                       std::vector<int> conv_dims,
                       std::vector<int> pads,
                       std::vector<int> strides,
                       std::vector<int> dilations,
+                      std::vector<int> output_pads,
                       int groups,
-                      bool has_bias = true);
+                      bool has_bias);
 
-  deconvolution_layer* copy() const override {
+  deconvolution_layer* copy() const override
+  {
     return new deconvolution_layer(*this);
   }
 
@@ -102,6 +110,8 @@ public:
   ///@}
 
 protected:
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
   deconvolution_layer();
@@ -112,16 +122,29 @@ protected:
 
 #ifdef LBANN_HAS_DISTCONV
   friend class deconvolution_distconv_adapter<TensorDataType, Layout, Device>;
- protected:
+
+protected:
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
   bool is_distconv_supported() const override;
 #endif // LBANN_HAS_DISTCONV
+
+private:
+  /** @brief Padding for output tensor
+   *  @details The output tensor size is ambiguous when the
+   *  convolution is strided. If this is not set, then we will
+   *  output the smallest valid output tensor.
+   */
+  std::vector<int> m_output_pads;
 };
+
+LBANN_DEFINE_LAYER_BUILDER(deconvolution);
 
 #ifndef LBANN_DECONVOLUTION_LAYER_INSTANTIATE
 
-#define PROTO_DEVICE(T, Device) \
-  extern template class deconvolution_layer<T, data_layout::DATA_PARALLEL, Device>;
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class deconvolution_layer<T,                                 \
+                                            data_layout::DATA_PARALLEL,        \
+                                            Device>;
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

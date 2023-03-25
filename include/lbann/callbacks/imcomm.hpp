@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,10 +29,10 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_IMCOMM_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_IMCOMM_HPP_INCLUDED
 
-#include <vector>
-#include <unordered_set>
-#include <unordered_map>
 #include "lbann/callbacks/callback.hpp"
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 namespace lbann {
 
@@ -45,13 +45,15 @@ namespace callback {
  * @brief Support inter-model communication after each mini-batch to
  *        synchronize gradient updates.
  */
-class imcomm : public callback_base {
- public:
+class imcomm : public callback_base
+{
+public:
   using callback_base::on_backward_prop_end;
 
-  enum comm_type {
-    NONE=0,  /** Do no gradient updates. */
-    NORMAL,  /** Simply sum gradient updates. */
+  enum comm_type
+  {
+    NONE = 0, /** Do no gradient updates. */
+    NORMAL,   /** Simply sum gradient updates. */
   };
 
   /**
@@ -61,39 +63,43 @@ class imcomm : public callback_base {
          const std::shared_ptr<lbann_summary>& summarizer = nullptr);
   imcomm(const imcomm&) = default;
   imcomm& operator=(const imcomm&) = default;
-  imcomm* copy() const override {
-    return new imcomm(*this);
-  }
+  imcomm* copy() const override { return new imcomm(*this); }
   /**
-   * @brief Convenience initialization to do one update type for specific weights.
+   * @brief Convenience initialization to do one update type for specific
+   * weights.
    *
    * @details Implies no inter-model updates for other weights.
    */
-  imcomm(comm_type ct, std::unordered_set<weights *> weights_list,
+  imcomm(comm_type ct,
+         std::unordered_set<weights*> weights_list,
          const std::shared_ptr<lbann_summary>& summarizer = nullptr);
 
   /** @brief Choose comm type ct for weights. */
-  void set_weights_comm(weights *w, comm_type ct);
+  void set_weights_comm(weights* w, comm_type ct);
 
   /** @brief Do initialization for this model. */
-  void setup(model *m) override;
+  void setup(model* m) override;
 
   /** @brief Make sure all models have the same weights. */
-  void on_train_begin(model *m) override;
+  void on_train_begin(model* m) override;
 
   /** @brief Do inter-model gradient updates. */
-  void on_backward_prop_end(model *m) override;
+  void on_backward_prop_end(model* m) override;
 
   std::string name() const override { return "imcomm"; }
 
- private:
+private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /** @brief Summarize relevant statistics. */
   template <typename T>
   void do_summary(model const& m, data_type_weights<T>& w, EvalType im_time);
 
- private:
+private:
   /** @brief Parameters for a given set of weights. */
-  struct imcomm_params {
+  struct imcomm_params
+  {
     /** @brief Type of communication done. */
     comm_type ct = NONE;
   };
@@ -102,7 +108,7 @@ class imcomm : public callback_base {
   comm_type m_default_ct;
 
   /** @brief Per-weights parameters. */
-  std::unordered_map<weights *, imcomm_params> m_weights_params;
+  std::unordered_map<weights*, imcomm_params> m_weights_params;
 
   /** @brief @brief lbann_summary */
   std::shared_ptr<lbann_summary> m_summarizer = nullptr;
@@ -113,10 +119,10 @@ std::string get_comm_type_name(typename imcomm::comm_type m);
 
 // Builder function
 std::unique_ptr<callback_base>
-build_imcomm_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_imcomm_callback_from_pbuf(const google::protobuf::Message&,
+                                std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_IMCOMM_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_IMCOMM_HPP_INCLUDED

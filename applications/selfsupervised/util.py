@@ -2,10 +2,6 @@ import os
 import os.path
 import datetime
 
-def str_list(l):
-    """Convert iterable to a space-separated string."""
-    return ' '.join([str(i) for i in l])
-
 def make_experiment_dir(job_name=None):
     if job_name is None:
         job_name = 'lbann_siamese'

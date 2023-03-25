@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -44,8 +44,9 @@ namespace lbann {
  * See:
  *     https://www.cs.toronto.edu/~kriz/cifar.html
  */
-class cifar10_reader : public image_data_reader {
- public:
+class cifar10_reader : public image_data_reader
+{
+public:
   cifar10_reader(bool shuffle = true);
   cifar10_reader(const cifar10_reader&) = default;
   cifar10_reader& operator=(const cifar10_reader&) = default;
@@ -54,19 +55,20 @@ class cifar10_reader : public image_data_reader {
 
   cifar10_reader* copy() const override { return new cifar10_reader(*this); }
 
-  std::string get_type() const override {
-    return "cifar10_reader";
-  }
+  std::string get_type() const override { return "cifar10_reader"; }
 
-  void set_input_params(const int, const int, const int, const int) override { set_defaults(); }
+  void set_input_params(const int, const int, const int, const int) override
+  {
+    set_defaults();
+  }
   void load() override;
 
- protected:
+protected:
   void set_defaults() override;
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
 
- private:
+private:
   /**
    * Loaded image data.
    * This will be stored in "OpenCV" format for ease of preprocessing.
@@ -76,6 +78,6 @@ class cifar10_reader : public image_data_reader {
   std::vector<uint8_t> m_labels;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_DATA_READER_CIFAR10_HPP
+#endif // LBANN_DATA_READER_CIFAR10_HPP

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,9 +27,9 @@
 #ifndef LBANN_OPTIMIZERS_ADAM_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_ADAM_HPP_INCLUDED
 
-#include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/io/persist.hpp"
-#include <optimizers.pb.h>
+#include "lbann/optimizers/data_type_optimizer.hpp"
+#include "lbann/proto/optimizers.pb.h"
 
 namespace lbann {
 namespace callback {
@@ -44,10 +44,12 @@ class perturb_adam;
  *  optimization." arXiv preprint arXiv:1412.6980 (2014).
  */
 template <typename TensorDataType>
-class adam : public Cloneable<adam<TensorDataType>,
-                              data_type_optimizer<TensorDataType>> {
-  using BaseType = Cloneable<adam<TensorDataType>,
-                             data_type_optimizer<TensorDataType>>;
+class adam
+  : public Cloneable<adam<TensorDataType>, data_type_optimizer<TensorDataType>>
+{
+  using BaseType =
+    Cloneable<adam<TensorDataType>, data_type_optimizer<TensorDataType>>;
+
 public:
   /** @name Public Types */
   ///@{
@@ -64,7 +66,6 @@ public:
   ///@}
 
 public:
-
   /** @name Life cycle functions */
   ///@{
 
@@ -77,7 +78,8 @@ public:
   ~adam() = default;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
@@ -123,7 +125,10 @@ public:
   /** beta1 ^ iteration.
    *  @todo This probably shouldn't be exposed.
    */
-  void set_current_beta1(TensorDataType current_beta1) { m_current_beta1 = current_beta1; }
+  void set_current_beta1(TensorDataType current_beta1)
+  {
+    m_current_beta1 = current_beta1;
+  }
   /** beta2 ^ iteration.
    *  @todo This probably shouldn't be exposed.
    */
@@ -131,7 +136,10 @@ public:
   /** beta2 ^ iteration.
    *  @todo This probably shouldn't be exposed.
    */
-  void set_current_beta2(TensorDataType current_beta2) { m_current_beta2 = current_beta2; }
+  void set_current_beta2(TensorDataType current_beta2)
+  {
+    m_current_beta2 = current_beta2;
+  }
 
   ///@}
 
@@ -143,8 +151,10 @@ public:
 
   ///@}
 
-protected:
+  /** Add optimizer data to prototext */
+  void write_proto(lbann_data::Optimizer& opt) const final;
 
+protected:
   friend cereal::access;
 
   /** @brief Default constructor.
@@ -163,7 +173,6 @@ protected:
                     const AbsDistMatrixType& gradient) override;
 
 private:
-
   /** Update factor for first moment estimate. */
   TensorDataType m_beta1;
   /** Update factor for second moment estimate. */
@@ -183,20 +192,20 @@ private:
   friend class callback::perturb_adam;
 
   /** CPU implementation of optimization step. */
-  void step_compute_cpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient,
+  void step_compute_cpu(AbsDistMatrixType& values,
+                        const AbsDistMatrixType& gradient,
                         const TensorDataType& correction);
 #ifdef LBANN_HAS_GPU
   /** GPU implementation of optimization step. */
-  void step_compute_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient,
+  void step_compute_gpu(AbsDistMatrixType& values,
+                        const AbsDistMatrixType& gradient,
                         const TensorDataType& correction);
 #endif // LBANN_HAS_GPU
-
 };
 
 template <typename TensorDataType>
 std::unique_ptr<optimizer>
-build_adam_optimizer_from_pbuf(
-  google::protobuf::Message const&);
+build_adam_optimizer_from_pbuf(google::protobuf::Message const&);
 
 } // namespace lbann
 

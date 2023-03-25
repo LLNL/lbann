@@ -75,24 +75,19 @@ model {
   ###################################################
 
   layer {
-    name: "data"
-    children: "image label"
-    data_layout: "data_parallel"
-    input {
-      target_mode: "classification"
-    }
-  }
-  layer {
-    parents: "data"
     name: "image"
     data_layout: "data_parallel"
-    split {}
+    input {
+      data_field: "samples"
+    }
   }
+
   layer {
-    parents: "data"
     name: "label"
     data_layout: "data_parallel"
-    split {}
+    input {
+      data_field: "labels"
+    }
   }
 
   layer {
@@ -101,11 +96,13 @@ model {
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 20
-      conv_dims_i: 5
-      conv_pads_i: 0
-      conv_strides_i: 1
-      has_bias: true
+      out_channels: 20
+      kernel_size: 5
+      padding: 0
+      stride: 1
+      has_bias {
+        value: true
+      }
     }
   }
 
@@ -128,11 +125,13 @@ model {
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 50
-      conv_dims_i: 5
-      conv_pads_i: 0
-      conv_strides_i: 1
-      has_bias: true
+      out_channels: 50
+      kernel_size: 5
+      padding: 0
+      stride: 1
+      has_bias {
+        value: true
+      }
     }
   }
 
@@ -184,14 +183,16 @@ model {
   }
 
   layer {
-    parents: "prob label"
+    parents: "prob"
+    parents: "label"
     name: "cross_entropy"
     data_layout: "data_parallel"
     cross_entropy {}
   }
 
   layer {
-    parents: "prob label"
+    parents: "prob"
+    parents: "label"
     name: "accuracy"
     data_layout: "data_parallel"
     categorical_accuracy {}

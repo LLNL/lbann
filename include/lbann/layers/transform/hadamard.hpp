@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,20 +27,21 @@
 #ifndef LBANN_LAYER_HADAMARD_HPP_INCLUDED
 #define LBANN_LAYER_HADAMARD_HPP_INCLUDED
 
-#include <vector>
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
+#include <vector>
 
 namespace lbann {
 
-/** @brief Entry-wise tensor product. */
+/** @brief Entry-wise tensor product */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class hadamard_layer : public data_type_layer<TensorDataType> {
+class hadamard_layer : public data_type_layer<TensorDataType>
+{
 public:
-
-  hadamard_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {
+  hadamard_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm)
+  {
     this->m_expected_num_parent_layers = -1; // No limit on parents
   }
 
@@ -59,14 +60,14 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
 protected:
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  hadamard_layer()
-    : hadamard_layer(nullptr)
-  {}
+  hadamard_layer() : hadamard_layer(nullptr) {}
 
-
-  void setup_pointers() override {
+  void setup_pointers() override
+  {
     data_type_layer<TensorDataType>::setup_pointers();
     if (this->get_num_parents() < 1) {
       std::stringstream err;
@@ -76,7 +77,8 @@ protected:
     }
   }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
 
@@ -90,8 +92,8 @@ protected:
             << "has input tensors with incompatible dimensions (";
         for (int j = 0; j < this->get_num_parents(); ++j) {
           const auto& dims = this->get_input_dims(j);
-          err << (j > 0 ? ", " : "")
-              << "layer \"" << parents[j]->get_name() << "\" outputs ";
+          err << (j > 0 ? ", " : "") << "layer \"" << parents[j]->get_name()
+              << "\" outputs ";
           for (size_t k = 0; k < dims.size(); ++k) {
             err << (k > 0 ? " x " : "") << dims[k];
           }
@@ -100,14 +102,18 @@ protected:
         LBANN_ERROR(err.str());
       }
     }
-
   }
 
-  void fp_compute() override {
+  void fp_compute() override
+  {
     auto& output = this->get_activations();
     switch (this->get_num_parents()) {
-    case 0: El::Fill(output, El::TypeTraits<TensorDataType>::One()); break;
-    case 1: El::LockedView(output, this->get_prev_activations()); break;
+    case 0:
+      El::Fill(output, El::TypeTraits<TensorDataType>::One());
+      break;
+    case 1:
+      El::LockedView(output, this->get_prev_activations());
+      break;
     default:
       El::Hadamard(this->get_prev_activations(0),
                    this->get_prev_activations(1),
@@ -118,11 +124,13 @@ protected:
     }
   }
 
-  void bp_compute() override {
+  void bp_compute() override
+  {
     const int num_parents = this->get_num_parents();
     const auto& gradient_wrt_output = this->get_prev_error_signals();
     switch (num_parents) {
-    case 0: break;
+    case 0:
+      break;
     case 1:
       El::LockedView(this->get_error_signals(), gradient_wrt_output);
       break;
@@ -140,13 +148,10 @@ protected:
       }
     }
   }
-
 };
 
-LBANN_DEFINE_LAYER_BUILDER(hadamard);
-
 #ifndef LBANN_HADAMARD_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
+#define PROTO_DEVICE(T, Device)                                                \
   extern template class hadamard_layer<T, data_layout::DATA_PARALLEL, Device>; \
   extern template class hadamard_layer<T, data_layout::MODEL_PARALLEL, Device>
 

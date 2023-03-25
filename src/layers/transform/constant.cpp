@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,29 +27,47 @@
 #define LBANN_CONSTANT_LAYER_INSTANTIATE
 #include "lbann/layers/transform/constant.hpp"
 
-#include <lbann/proto/proto_common.hpp>
-#include <lbann.pb.h>
+// LBANN_ASSERT_MSG_HAS_FIELD
+#include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/protobuf.hpp"
+
+#include "lbann/proto/layers.pb.h"
+#include "lbann/proto/lbann.pb.h"
 
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_constant_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const& proto_layer)
+std::unique_ptr<Layer>
+build_constant_layer_from_pbuf(lbann_comm* comm,
+                               lbann_data::Layer const& proto_layer)
 {
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, constant);
   using LayerType = constant_layer<TensorDataType, Layout, Device>;
 
   const auto& params = proto_layer.constant();
-  const auto& dims = parse_list<int>(params.num_neurons());
-  return lbann::make_unique<LayerType>(
-    comm, El::To<TensorDataType>(params.value()), dims);
+  return std::make_unique<LayerType>(
+    comm,
+    El::To<TensorDataType>(params.value()),
+    protobuf::to_vector<int>(params.num_neurons()));
 }
 
-#define PROTO_DEVICE(T, Device) \
-  template class constant_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class constant_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+template <typename T, data_layout L, El::Device D>
+void constant_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_constant();
+  msg->set_value(m_value);
+  protobuf::assign_to_repeated(*msg->mutable_num_neurons(),
+                               this->get_output_dims());
+}
+
+#define PROTO_DEVICE(T, Device)                                                \
+  template class constant_layer<T, data_layout::DATA_PARALLEL, Device>;        \
+  template class constant_layer<T, data_layout::MODEL_PARALLEL, Device>;       \
   LBANN_LAYER_BUILDER_ETI(constant, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

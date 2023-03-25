@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,13 +28,17 @@
 #define LBANN_LAYERS_TRANSFORM_TESSELLATE_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/proto/layers.pb.h"
+#include "lbann/utils/protobuf.hpp"
 
 namespace lbann {
 
-/** @brief Repeat a tensor until it matches specified dimensions.
+/** @brief Repeat a tensor until it matches specified dimensions
  *
  *  The output dimensions do not need to be integer multiples of the
- *  input dimensions.
+ *  input dimensions. Compare with the NumPy @c tile function.
  *
  *  As an example, tessellating a @f$ 2 \times 2 @f$ matrix into a
  *  @f$ 3 \times 4 @f$ matrix looks like the following:
@@ -50,17 +54,12 @@ namespace lbann {
  *      1 & 2 & 1 & 2
  *    \end{bmatrix}
  *  @f]
- *
- *  Formally, suppose we tessellate an input tensor @f$ X @f$ with
- *  dimensions @f$d_1 \times\cdots\times d_n@f$ to obtain an output
- *  tensor @f$ Y @f$ with dimensions @f$e_1 \times\cdots\times
- *  e_n@f$. Then, denoting the modulo operator with @f$ \% @f$,
- *  @f[ Y_{i_1,\cdots,i_n} = X_{i_1\% d_1,\cdots,i_n\% d_n} @f]
  */
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class tessellate_layer : public data_type_layer<TensorDataType> {
+class tessellate_layer : public data_type_layer<TensorDataType>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -74,22 +73,27 @@ public:
   ///@}
 
 public:
-
-  tessellate_layer(lbann_comm *comm, std::vector<int> dims = {})
-    : data_type_layer<TensorDataType>(comm) {
+  tessellate_layer(lbann_comm* comm, std::vector<int> dims = {})
+    : data_type_layer<TensorDataType>(comm)
+  {
     this->set_output_dims(dims);
   }
 
   tessellate_layer(const tessellate_layer& other)
     : data_type_layer<TensorDataType>(other),
-      m_input_v(other.m_input_v ? other.m_input_v->Copy() : nullptr) {}
-  tessellate_layer& operator=(const tessellate_layer& other) {
+      m_input_v(other.m_input_v ? other.m_input_v->Copy() : nullptr)
+  {}
+  tessellate_layer& operator=(const tessellate_layer& other)
+  {
     data_type_layer<TensorDataType>::operator=(other);
     m_input_v.reset(other.m_input_v ? other.m_input_v->Copy() : nullptr);
     return *this;
   }
 
-  tessellate_layer* copy() const override { return new tessellate_layer(*this); }
+  tessellate_layer* copy() const override
+  {
+    return new tessellate_layer(*this);
+  }
 
   /** @name Serialization */
   ///@{
@@ -103,7 +107,8 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     std::stringstream err;
 
@@ -134,30 +139,35 @@ public:
       err << " tensor, but tessellation is currently only supported "
           << "with 3 dimensions or less";
     }
-
   }
 
-  void setup_matrices(const El::Grid& grid) override {
-    data_type_layer<TensorDataType>::setup_matrices(grid);
+  void setup_data(size_t max_mini_batch_size) override
+  {
+    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
     auto dist_data = this->get_prev_activations().DistData();
     dist_data.colDist = El::STAR;
     m_input_v.reset(AbsDistMatrixType::Instantiate(dist_data));
   }
 
 protected:
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  tessellate_layer()
-    : tessellate_layer(nullptr)
-  {}
+  tessellate_layer() : tessellate_layer(nullptr) {}
 
-  void fp_compute() override {
+  void fp_compute() override
+  {
 
     // Get input and output dimensions
     auto input_dims = this->get_input_dims();
     auto output_dims = this->get_output_dims();
-    while (input_dims.size() < 3) { input_dims.insert(input_dims.begin(), 1); }
-    while (output_dims.size() < 3) { output_dims.insert(output_dims.begin(), 1); }
+    while (input_dims.size() < 3) {
+      input_dims.insert(input_dims.begin(), 1);
+    }
+    while (output_dims.size() < 3) {
+      output_dims.insert(output_dims.begin(), 1);
+    }
 
     // Get input and output data
     auto& output = this->get_activations();
@@ -166,7 +176,8 @@ protected:
     m_input_v->AlignWith(output);
     if (m_input_v->DistData() == input.DistData()) {
       El::LockedView(*m_input_v, input);
-    } else {
+    }
+    else {
       El::Copy(input, *m_input_v);
     }
     const auto& local_input = m_input_v->LockedMatrix();
@@ -177,16 +188,20 @@ protected:
       LBANN_ERROR("tessellate layer currently only supports 3D tensors");
     }
     fp_compute_3d(input_dims, output_dims, local_input, output);
-
   }
 
-  void bp_compute() override {
+  void bp_compute() override
+  {
 
     // Get input and output dimensions
     auto input_dims = this->get_input_dims();
     auto output_dims = this->get_output_dims();
-    while (input_dims.size() < 3) { input_dims.insert(input_dims.begin(), 1); }
-    while (output_dims.size() < 3) { output_dims.insert(output_dims.begin(), 1); }
+    while (input_dims.size() < 3) {
+      input_dims.insert(input_dims.begin(), 1);
+    }
+    while (output_dims.size() < 3) {
+      output_dims.insert(output_dims.begin(), 1);
+    }
 
     // Get input and output data
     const auto& gradient_wrt_output = this->get_prev_error_signals();
@@ -195,7 +210,8 @@ protected:
     m_input_v->AlignWith(gradient_wrt_output);
     if (m_input_v->DistData() == gradient_wrt_input.DistData()) {
       El::View(*m_input_v, gradient_wrt_input);
-    } else {
+    }
+    else {
       m_input_v->Resize(gradient_wrt_input.Height(),
                         gradient_wrt_input.Width());
     }
@@ -203,19 +219,19 @@ protected:
 
     // Apply back prop with local data
     /// @todo Support >3 dimensions
-    bp_compute_3d(input_dims, output_dims,
-                  gradient_wrt_output, local_gradient_wrt_input);
+    bp_compute_3d(input_dims,
+                  output_dims,
+                  gradient_wrt_output,
+                  local_gradient_wrt_input);
 
     // Accumulate local error signals, if needed
     if (m_input_v->DistData() != gradient_wrt_input.DistData()) {
       this->get_comm()->allreduce(*m_input_v, m_input_v->RedundantComm());
       El::Copy(*m_input_v, gradient_wrt_input);
     }
-
   }
 
 private:
-
   /** View into input tensor. */
   std::unique_ptr<AbsDistMatrixType> m_input_v;
 
@@ -236,12 +252,22 @@ private:
                      const std::vector<int>& output_dims,
                      const AbsDistMatrixType& gradient_wrt_output,
                      AbsMatrixType& gradient_wrt_input);
-
 };
 
+template <typename T, data_layout L, El::Device D>
+void tessellate_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_tessellate();
+  protobuf::assign_to_repeated(*msg->mutable_dims(), this->get_output_dims());
+}
+
 #ifndef LBANN_TESSELLATE_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class tessellate_layer<T, data_layout::DATA_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class tessellate_layer<T,                                    \
+                                         data_layout::DATA_PARALLEL,           \
+                                         Device>;                              \
   extern template class tessellate_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"

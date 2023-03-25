@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-/** @brief Placeholder layer.
+/** @brief Placeholder layer with no child layers
  *
  *  Does no computation and is primarily intended as a placeholder for
  *  unused layer outputs.
@@ -39,9 +39,11 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class dummy_layer : public data_type_layer<TensorDataType> {
+class dummy_layer : public data_type_layer<TensorDataType>
+{
 public:
-  dummy_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {
+  dummy_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm)
+  {
     this->m_expected_num_child_layers = 0;
   }
   dummy_layer* copy() const override { return new dummy_layer(*this); }
@@ -57,21 +59,24 @@ public:
   std::string get_type() const override { return "dummy"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+
+#ifdef LBANN_HAS_ONNX
+  void fill_onnx_node(onnx::GraphProto& graph) const override {}
+#endif // LBANN_HAS_ONNX
+
 protected:
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  dummy_layer()
-    : dummy_layer(nullptr)
-  {}
+  dummy_layer() : dummy_layer(nullptr) {}
 
   void fp_compute() override {}
 };
 
-LBANN_DEFINE_LAYER_BUILDER(dummy);
-
 #ifndef LBANN_DUMMY_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class dummy_layer<T, data_layout::DATA_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class dummy_layer<T, data_layout::DATA_PARALLEL, Device>;    \
   extern template class dummy_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"

@@ -98,11 +98,11 @@ into system install packages (e.g. MPI).
          LBANN_EXTRAS="-p py-torch@1.7.1 -p py-numpy" \
          /bin/bash -c "$(curl -fsSL https://github.com/LLNL/lbann/raw/develop/scripts/.build_lbann_as_user.sh)"
 
-2. Once this is done, you can load LBANN:
+2. Once this is done, you can load LBANN by activating the spack environment:
 
    .. code-block:: bash
 
-      spack load lbann@<version>
+      spack env activate -p lbann-user-broadwell
 
 .. _install_lbann_as_user:
 
@@ -299,6 +299,66 @@ in a LBANN Spack environment compatible approach:
        spack env activate -p lbann-<label>-<arch>
        spack module lmod refresh --delete-tree
        spack module tcl refresh --delete-tree
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Using Python packages with LBANN
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The LBANN toolkit engages with Python and Python packages in two key
+ways.  The first of which is that LBANN has a Python Front-End (PFE)
+that use Python to create a model for the LBANN executable as well as
+launch jobs.  The second aspect is that LBANN has a Python data reader
+that can execute Python code to process data.  To use a common Python
+installation with both LBANN as well as the any external Python
+packages the user can either use Spack to build everything or to use
+PIP to install Python-only requirements.
+
+1. [Spack Option] If the user wants to ensure that all aspects of the
+   LBANN + Python packages should work together they can be all added
+   to the same Spack environment and compiled together.  The
+   `build_lbann.sh` script can make this easier with the following
+   command line options:
+
+   .. code-block:: console
+
+        <path to lbann repo>/scripts/build_lbann.sh <options>
+                    -e scripts/common_spack_packages/ci_spack_packages.sh
+                    -- <variants>
+
+or
+
+   .. code-block:: console
+
+        <path to lbann repo>/scripts/build_lbann.sh <options>
+                    -e applications/ATOM/external_packages_atom.sh
+                    -- <variants>
+or
+
+   .. code-block:: console
+
+        <path to lbann repo>/scripts/build_lbann.sh <options>
+                    -p py-numpy
+                    -- <variants>
+
+2.  A second option is to install additonal Python packages via Pip.
+    To ensure that this is done with the correct version of Python
+    that LBANN was built with, activate the spack environment:
+
+   .. code-block:: console
+
+        spack env activate -p <name of environment>
+        <path to lbann repo>/scripts/build_lbann.sh <options>
+                    --pip <requirements.txt>
+                    -- <variants>
+
+Regardless of the approach that is used, certain Python packages work
+best when compiled with the same compiler (and C++ library) as LBANN,
+specifically NumPy.  So by default the `build_lbann.sh` script will
+install NumPy along with the LBANN in the same environment.
+
+   .. warning:: Note that beyond using Spack for NumPy, mixing the
+                installation of Python extra packages via Spack and
+                Pip is definitely an expert-mode activity (YMMV).
 
 ------------------------------
 Advanced build methods

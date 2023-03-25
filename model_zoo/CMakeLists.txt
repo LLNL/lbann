@@ -1,33 +1,37 @@
+# This executable has to be given a different target name since the
+# library target name is "lbann".
+add_executable(lbann-bin lbann.cpp)
+target_link_libraries(lbann-bin lbann)
+set_target_properties(lbann-bin
+  PROPERTIES
+  OUTPUT_NAME lbann
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# Parallel Tests
-add_executable( lbann-bin lbann.cpp )
-target_link_libraries(lbann-bin lbann )
-set_target_properties(lbann-bin PROPERTIES OUTPUT_NAME lbann)
+set(LBANN_EXE_TGTS lbann-bin)
 
-add_executable( lbann-help lbann_help.cpp )
-target_link_libraries(lbann-help lbann )
+set(EXE_SRCS
+  lbann_help.cpp
+  lbann_gan.cpp
+  lbann_cycgan.cpp
+  lbann_aecycgan.cpp
+  lbann_inf.cpp)
+foreach (_src IN LISTS EXE_SRCS)
+  get_filename_component(TGT_NAME "${_src}" NAME_WE)
+  string(REPLACE "_" "-" TGT_NAME "${TGT_NAME}")
 
-#this can be done simler - quick copy/paste hack //d hysom
-add_executable( lbann-gan-bin lbann_gan.cpp )
-target_link_libraries(lbann-gan-bin lbann )
-set_target_properties(lbann-gan-bin PROPERTIES OUTPUT_NAME lbann_gan)
+  add_executable(${TGT_NAME} "${_src}")
+  target_link_libraries(${TGT_NAME} lbann)
+  set_target_properties(${TGT_NAME}
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-add_executable( lbann-cycgan-bin lbann_cycgan.cpp )
-target_link_libraries(lbann-cycgan-bin lbann )
-set_target_properties(lbann-cycgan-bin PROPERTIES OUTPUT_NAME lbann_cycgan)
-
-add_executable( lbann-aecycgan-bin lbann_aecycgan.cpp )
-target_link_libraries(lbann-aecycgan-bin lbann )
-set_target_properties(lbann-aecycgan-bin PROPERTIES OUTPUT_NAME lbann_aecycgan)
-
-add_executable( lbann-inf-bin lbann_inf.cpp )
-target_link_libraries(lbann-inf-bin lbann )
-set_target_properties(lbann-inf-bin PROPERTIES OUTPUT_NAME lbann_inf)
+  list(APPEND LBANN_EXE_TGTS ${TGT_NAME})
+endforeach ()
 
 # Install the binaries
 install(
-  TARGETS lbann-bin lbann-gan-bin lbann-cycgan-bin lbann-aecycgan-bin
-  lbann-help lbann-inf-bin
+  TARGETS lbann-bin lbann-gan lbann-cycgan lbann-aecycgan
+  lbann-help lbann-inf
   EXPORT LBANNTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

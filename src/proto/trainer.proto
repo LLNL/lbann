@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,14 +28,13 @@ syntax = "proto3";
 
 package lbann_data;
 
-import "datatype.proto";
-
 import "callbacks.proto";
 
 import "training_algorithm.proto";
 
-message Trainer {
+import "data_coordinator.proto";
 
+message Trainer {
   // Unique identifier
   string name = 1;
 
@@ -44,7 +43,7 @@ message Trainer {
   // These threads are typically used to perform data ingestion in the
   // background.
   int64 num_parallel_readers = 3;
-  bool  serialize_io = 101;
+  bool serialize_io = 101;
 
   repeated Callback callback = 20;
   int64 mini_batch_size = 12;
@@ -53,7 +52,8 @@ message Trainer {
   // Advanced options
   // -------------------------------
 
-  // If false, trainers will have their trainer rank mixed into their random seed.
+  // If false, trainers will have their trainer rank mixed into their random
+  // seed.
   bool random_init_trainers_identically = 4;
 
   // Set a random seed for the entire trainer
@@ -63,11 +63,6 @@ message Trainer {
   int64 hydrogen_block_size = 100;
 
   DataCoordinator data_coordinator = 200;
-
-  message DataCoordinator {
-    DataType datatype = 1;
-    string io_buffer = 2;         // Options: "partitioned" (default)
-  }
 
   TrainingAlgorithm training_algorithm = 300;
 }

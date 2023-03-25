@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -40,13 +40,13 @@ namespace callback {
  * Attach to the hung ranks and set the hang flag to false with a debugger to
  * proceed.
  */
-class hang : public callback_base {
- public:
+class hang : public callback_base
+{
+public:
   /**
    * @param rank_to_hang The rank to hang; -1 for every rank (default).
    */
-  hang(int rank_to_hang = -1) :
-    m_rank_to_hang(rank_to_hang) {}
+  hang(int rank_to_hang = -1) : m_rank_to_hang(rank_to_hang) {}
   hang(const hang&) = default;
   hang& operator=(const hang&) = default;
   hang* copy() const override { return new hang(*this); }
@@ -54,35 +54,32 @@ class hang : public callback_base {
   void setup(model* m) override;
 
   /// Hang on train begin.
-  void on_train_begin(model* m) override {
-    if (m_rank_to_hang == -1 ||
-        m_rank_to_hang == m->get_comm()->get_rank_in_world()) {
-      // Set this flag to false with your debugger to resume execution.
-      volatile bool lbann_hang = true;
-      while (lbann_hang) {}
-    }
-  }
+  void on_train_begin(model* m) override;
   std::string name() const override { return "hang"; }
 
   /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
- private:
+private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /// The rank that will hang; -1 for every rank.
   int m_rank_to_hang;
 };
 
 // Builder function
 std::unique_ptr<callback_base>
-build_hang_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_hang_callback_from_pbuf(const google::protobuf::Message&,
+                              std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_HANG_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_HANG_HPP_INCLUDED

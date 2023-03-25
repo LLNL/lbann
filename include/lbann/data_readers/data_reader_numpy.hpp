@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -23,7 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_numpy .hpp .cpp - generic_data_reader class for numpy dataset
+// lbann_data_reader_numpy .hpp .cpp - generic_data_reader class for numpy
+// dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_NUMPY_HPP
@@ -41,8 +42,9 @@ namespace lbann {
  * This supports fetching labels, but only from the last column. (This can be
  * relaxed if necessary.) Ditto responses.
  */
-class numpy_reader : public generic_data_reader {
- public:
+class numpy_reader : public generic_data_reader
+{
+public:
   numpy_reader(bool shuffle = true);
   // These need to be explicit because of some issue with the cnpy copy
   // constructor/assignment operator not linking correctly otherwise.
@@ -52,25 +54,24 @@ class numpy_reader : public generic_data_reader {
 
   numpy_reader* copy() const override { return new numpy_reader(*this); }
 
-  std::string get_type() const override {
-    return "numpy_reader";
-  }
+  std::string get_type() const override { return "numpy_reader"; }
 
   void load() override;
 
   int get_num_labels() const override { return m_num_labels; }
   int get_linearized_data_size() const override { return m_num_features; }
   int get_linearized_label_size() const override { return m_num_labels; }
-  const std::vector<int> get_data_dims() const override {
-    std::vector<int> dims(m_data.shape.begin() + 1,
-                          m_data.shape.end());
-    if (m_supported_input_types.at(input_data_type::LABELS) || m_supported_input_types.at(input_data_type::RESPONSES)) {
+  const std::vector<int> get_data_dims() const override
+  {
+    std::vector<int> dims(m_data.shape.begin() + 1, m_data.shape.end());
+    if (m_supported_input_types.at(INPUT_DATA_TYPE_LABELS) ||
+        m_supported_input_types.at(INPUT_DATA_TYPE_RESPONSES)) {
       dims.back() -= 1;
     }
     return dims;
   }
 
- protected:
+protected:
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
@@ -89,6 +90,6 @@ class numpy_reader : public generic_data_reader {
   cnpy::NpyArray m_data;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_DATA_READER_NUMPY_HPP
+#endif // LBANN_DATA_READER_NUMPY_HPP

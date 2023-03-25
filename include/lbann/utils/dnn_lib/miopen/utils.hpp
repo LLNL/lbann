@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,24 +26,20 @@
 #ifndef LBANN_UTILS_DNN_LIB_MIOPEN_UTILS_HPP_
 #define LBANN_UTILS_DNN_LIB_MIOPEN_UTILS_HPP_
 
-namespace lbann
-{
+namespace lbann {
 #if defined LBANN_HAS_MIOPEN
-namespace dnn_lib
-{
+namespace dnn_lib {
 
 using namespace miopen;
 
-namespace internal
-{
+namespace internal {
 
 // Simple RAII class that sets the stream on creation, caches the old
 // stream, and restores it on the way out.
 class StreamManager
 {
 public:
-  StreamManager(miopenHandle_t handle, hipStream_t stream)
-    : handle_(handle)
+  StreamManager(miopenHandle_t handle, hipStream_t stream) : handle_(handle)
   {
     CHECK_MIOPEN(miopenGetStream(handle_, &old_stream_));
     CHECK_MIOPEN(miopenSetStream(handle_, stream));
@@ -57,8 +53,7 @@ public:
     }
     catch (std::exception const& e) {
       std::cerr << "Caught error in ~dnn_lib::StreamManager().\n\n  e.what(): "
-                << e.what() << "\n\nCalling std::terminate()."
-                << std::endl;
+                << e.what() << "\n\nCalling std::terminate()." << std::endl;
       std::terminate();
     }
   }
@@ -73,13 +68,14 @@ public:
   StreamManager& operator=(StreamManager&& other) = delete;
 
   miopenHandle_t get() const noexcept { return handle_; }
+
 private:
   miopenHandle_t handle_;
   hipStream_t old_stream_;
-};// struct StreamManager
+}; // struct StreamManager
 
-inline StreamManager make_default_handle_manager(
-  El::SyncInfo<El::Device::GPU> const& si)
+inline StreamManager
+make_default_handle_manager(El::SyncInfo<El::Device::GPU> const& si)
 {
   return StreamManager(get_handle(), si.Stream());
 }

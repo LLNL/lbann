@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,18 +25,21 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/vertical_flip.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
-#include <transforms.pb.h>
+#include "lbann/proto/transforms.pb.h"
 
 namespace lbann {
 namespace transform {
 
-void vertical_flip::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+void vertical_flip::apply(utils::type_erased_matrix& data,
+                          std::vector<size_t>& dims)
+{
   if (transform::get_bool_random(m_p)) {
     cv::Mat src = utils::get_opencv_mat(data, dims);
-    auto dst_real = El::Matrix<uint8_t>(utils::get_linearized_size(dims), 1);
+    auto dst_real = El::Matrix<uint8_t>(get_linear_size(dims), 1);
     cv::Mat dst = utils::get_opencv_mat(dst_real, dims);
     cv::flip(src, dst, 0);
     data.emplace<uint8_t>(std::move(dst_real));
@@ -44,10 +47,12 @@ void vertical_flip::apply(utils::type_erased_matrix& data, std::vector<size_t>& 
 }
 
 std::unique_ptr<transform>
-build_vertical_flip_transform_from_pbuf(google::protobuf::Message const& msg) {
-  auto const& params = dynamic_cast<lbann_data::Transform::VerticalFlip const&>(msg);
-  return make_unique<vertical_flip>(params.p());
+build_vertical_flip_transform_from_pbuf(google::protobuf::Message const& msg)
+{
+  auto const& params =
+    dynamic_cast<lbann_data::Transform::VerticalFlip const&>(msg);
+  return std::make_unique<vertical_flip>(params.p());
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

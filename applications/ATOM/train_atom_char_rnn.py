@@ -12,8 +12,6 @@ import torch
 import lbann
 import lbann.contrib.launcher
 import lbann.modules
-from lbann.util import str_list
-
 
 def construct_lc_launcher_args():
 
@@ -53,8 +51,6 @@ def construct_lc_launcher_args():
     parser.add_argument("--num-samples", type=int, default=None)
     parser.add_argument("--num-io-threads", type=int, default=11)
     parser.add_argument("--vocab", default=None)
-    parser.add_argument("--delimiter", default="c")
-    parser.add_argument("--no-header", type=bool, default=True)
 
     # these are specific to the Trainer object
     parser.add_argument(
@@ -111,12 +107,12 @@ def construct_model(run_args):
     data_layout = "data_parallel"
 
     # Layer graph
-    _input = lbann.Input(name="inp_tensor", target_mode="N/A")
+    _input = lbann.Input(name="inp_tensor", data_field='samples')
     print(sequence_length)
     x_slice = lbann.Slice(
         _input,
         axis=0,
-        slice_points=str_list(range(sequence_length + 1)),
+        slice_points=range(sequence_length + 1),
         name="inp_slice",
     )
 
@@ -139,7 +135,7 @@ def construct_model(run_args):
 
     last_output = lbann.Constant(
         value=0.0,
-        num_neurons="{}".format(run_args.hidden),
+        num_neurons=run_args.hidden,
         data_layout=data_layout,
         name="lstm_init_output",
     )
@@ -168,7 +164,7 @@ def construct_model(run_args):
         ce = lbann.CrossEntropy([y_soft, gt], name="loss_" + str(i))
         # mask padding in input
         pad_mask = lbann.NotEqual(
-            [idl[i], lbann.Constant(value=pad_index, num_neurons="1")],
+            [idl[i], lbann.Constant(value=pad_index, num_neurons=1)],
         )
         ce_mask = lbann.Multiply([pad_mask, ce], name="loss_mask_" + str(i))
         loss.append(lbann.LayerTerm(ce_mask, scale=1 / (sequence_length - 1)))
@@ -294,7 +290,7 @@ def main():
         procs_per_node=ppn,
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,
-        lbann_args=f"--procs_per_trainer={run_args.procs_per_trainer} --vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}",
+        lbann_args=f"--procs_per_trainer={run_args.procs_per_trainer} --vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads}",
     )
 
     print("LBANN launcher status:\n" + str(status))

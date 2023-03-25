@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,45 +25,55 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/execution_algorithms/sgd_training_algorithm.hpp"
+
 #include "lbann/base.hpp"
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/trainers/trainer.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/timer_map.hpp"
 
-#include <training_algorithm.pb.h>
+#include "lbann/proto/training_algorithm.pb.h"
 
-#include <cstddef>
-#include <limits>
+#include <iostream>
+#include <memory>
+#include <string>
 
 namespace lbann {
 
-sgd_training_algorithm::sgd_training_algorithm(
-  sgd_training_algorithm const& other)
-  : BaseType(other.get_name()),
-    m_stopping_criteria{other.m_stopping_criteria->clone()}
+SGDTrainingAlgorithm::SGDTrainingAlgorithm(
+  std::string name,
+  std::unique_ptr<SGDTerminationCriteria> stop,
+  bool suppress_timer)
+  : TrainingAlgorithm{std::move(name)},
+    m_timers{"<default>"},
+    m_stopping_criteria{std::move(stop)},
+    m_validation_context{execution_mode::validation, 1UL},
+    m_validation_epochs{1UL},
+    m_suppress_timer{suppress_timer}
 {}
-
-sgd_training_algorithm&
-sgd_training_algorithm::operator=(sgd_training_algorithm const& other)
-{
-  BaseType::operator=(other);
-  m_stopping_criteria = other.m_stopping_criteria->clone();
-  return *this;
-}
 
 ////////////////////////////////////////////////////////////
 // Evaluation and training
 ////////////////////////////////////////////////////////////
 
-void sgd_training_algorithm::apply(execution_context& context,
-                                   model& model,
-                                   data_coordinator& dc,
-                                   execution_mode mode)
+void SGDTrainingAlgorithm::apply(ExecutionContext& context,
+                                 model& model,
+                                 data_coordinator& dc,
+                                 execution_mode mode)
 {
-  sgd_execution_context& sgd_context =
-    dynamic_cast<sgd_execution_context&>(context);
-  const sgd_termination_criteria& sgd_term = *m_stopping_criteria;
+  m_timers = TimerMap{build_string("SGD::",
+                                   this->get_name(),
+                                   " (trainer:",
+                                   get_trainer().get_comm()->get_trainer_rank(),
+                                   ")")};
+  SGDExecutionContext& sgd_context =
+    dynamic_cast<SGDExecutionContext&>(context);
+  const SGDTerminationCriteria& sgd_term = *m_stopping_criteria;
   switch (mode) {
   case execution_mode::training:
     train(sgd_context, model, dc, sgd_term);
@@ -74,22 +84,33 @@ void sgd_training_algorithm::apply(execution_context& context,
     evaluate(sgd_context, model, dc, mode, sgd_term);
     break;
   default:
-    LBANN_ERROR(std::string{} + "Illegal mode: " + to_string(mode));
+    LBANN_ERROR("Illegal mode: ", to_string(mode));
   }
+  if (!m_suppress_timer && model.get_comm()->am_trainer_master())
+    m_timers.print(std::cout);
 }
 
-void sgd_training_algorithm::train(sgd_execution_context& c,
-                                   model& model,
-                                   data_coordinator& dc,
-                                   sgd_termination_criteria const& term)
+void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
+                                 model& model,
+                                 data_coordinator& dc,
+                                 SGDTerminationCriteria const& term)
 {
+  ScopeTimer train_timer(m_timers, "train()");
+
+  auto& evaluation_context = m_validation_context;
+  auto& num_validation_epochs = m_validation_epochs;
+  evaluation_context.set_current_mini_batch_size(
+    dc.get_mini_batch_size(execution_mode::validation));
+  evaluation_context.set_effective_mini_batch_size(
+    dc.get_mini_batch_size(execution_mode::validation));
+
   // Initialize some state so it knows we're training now.
   c.set_execution_mode(execution_mode::training);
   model.reset_mode(c, execution_mode::training);
   dc.reset_mode(c);
 
   // Run callbacks.
-  do_train_begin_cbs(model);
+  do_train_begin_cbs(model, ScopeTimer{train_timer, "train_begin callbacks"});
 
   // Start iterating
   bool is_start_of_epoch = true;
@@ -101,17 +122,21 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
       model.reset_mode(c, execution_mode::training);
       model.reset_epoch_statistics(execution_mode::training);
       dc.reset_mode(c);
-      do_epoch_begin_cbs(model);
+      do_epoch_begin_cbs(model,
+                         ScopeTimer{train_timer, "epoch_begin callbacks"});
       is_start_of_epoch = false;
     }
 
     // Train a mini batch. Returns "true" if the data_coordinator
     // detects the end of an epoch.
-    if (train_mini_batch(c, model, dc)) {
+    if (train_mini_batch(c,
+                         model,
+                         dc,
+                         ScopeTimer{train_timer, "train minibatch"})) {
       // Finalize epoch
       c.inc_epoch();
       model.reconcile_weight_values();
-      do_epoch_end_cbs(model);
+      do_epoch_end_cbs(model, ScopeTimer{train_timer, "epoch_end callbacks"});
 
       // Evaluate on validation set
       //
@@ -120,21 +145,18 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
       // "evaluation policy" or something of that nature, ideally with
       // its own context that we needn't know about.
       if (dc.is_execution_mode_valid(execution_mode::validation)) {
-        sgd_execution_context evaluation_context(
-          execution_mode::validation,
-          dc.get_mini_batch_size(execution_mode::validation));
-        // FIXME (trb 05/05/2021): This hacks around a bad assumption
-        // in the data store.
-        size_t num_validation_epochs = 1UL;
-        if (c.get_epoch() > 1UL) {
-          evaluation_context.inc_epoch();
-          ++num_validation_epochs;
-        }
         evaluate(evaluation_context,
                  model,
                  dc,
                  execution_mode::validation,
-                 epoch_termination_criteria(num_validation_epochs));
+                 EpochTerminationCriteria(num_validation_epochs));
+        ++num_validation_epochs;
+
+        // FIXME (trb 06/07/21): The early stopping callback is part
+        // of the evaluation callbacks but it's meant to affect
+        // training. This fixes a bug in which the training context
+        // was meant to stop but was never properly told.
+        c.set_early_stop(evaluation_context.get_early_stop());
       }
 
       // Trigger new epoch stuff next iteration (if there is one).
@@ -146,7 +168,7 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
   // Reset the model back to the training execution context prior to
   // end of training callbacks
   model.reset_mode(c, execution_mode::training);
-  do_train_end_cbs(model);
+  do_train_end_cbs(model, ScopeTimer{train_timer, "train_end callbacks"});
 }
 
 ////////////////////////////////////////////////////////////
@@ -154,13 +176,16 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
 ////////////////////////////////////////////////////////////
 
 // Returns "true" if the data_coordinator detects the end of an epoch.
-bool sgd_training_algorithm::train_mini_batch(sgd_execution_context& c,
-                                              model& model,
-                                              data_coordinator& dc)
+bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
+                                            model& model,
+                                            data_coordinator& dc,
+                                            ScopeTimer timer)
 {
   model.reset_mode(c, execution_mode::training);
   dc.reset_mode(c);
-  do_batch_begin_cbs(model, execution_mode::training);
+  do_batch_begin_cbs(model,
+                     execution_mode::training,
+                     ScopeTimer{timer, "batch_begin callbacks"});
 
   bool finished = false;
 
@@ -174,7 +199,11 @@ bool sgd_training_algorithm::train_mini_batch(sgd_execution_context& c,
 #endif
       // Forward prop step
       model.clear_gradients();
-      model.forward_prop(execution_mode::training);
+      {
+        ScopeTimer _{timer, "forward prop*"};
+        model.forward_prop(execution_mode::training);
+      }
+
       // check if the data coordinator has finished the epoch and kickoff
       // background I/O
       finished = dc.epoch_complete(execution_mode::training);
@@ -186,7 +215,10 @@ bool sgd_training_algorithm::train_mini_batch(sgd_execution_context& c,
 
       // Backward prop step
       model.get_objective_function()->differentiate();
-      model.backward_prop();
+      {
+        ScopeTimer _{timer, "back prop*"};
+        model.backward_prop();
+      }
       model.get_objective_function()->compute_weight_regularization();
 
       // Finish evaluation.
@@ -205,16 +237,21 @@ bool sgd_training_algorithm::train_mini_batch(sgd_execution_context& c,
 #endif
 
   c.inc_step();
-  do_batch_end_cbs(model, execution_mode::training);
+  do_batch_end_cbs(model,
+                   execution_mode::training,
+                   ScopeTimer{timer, "batch_end callbacks"});
   return finished;
 }
 
-void sgd_training_algorithm::evaluate(sgd_execution_context& c,
-                                      model& model,
-                                      data_coordinator& dc,
-                                      execution_mode mode,
-                                      sgd_termination_criteria const& term)
+void SGDTrainingAlgorithm::evaluate(SGDExecutionContext& c,
+                                    model& model,
+                                    data_coordinator& dc,
+                                    execution_mode mode,
+                                    SGDTerminationCriteria const& term)
 {
+  ScopeTimer eval_timer{m_timers,
+                        build_string("evaluate(", to_string(mode), ")")};
+
   /// @todo BVE FIXME this state needs to be set for inference-only
   /// workflows -- however, if the model will bail due to a lack of a
   /// valid mode, the state of the data coordinator is not
@@ -233,22 +270,31 @@ void sgd_training_algorithm::evaluate(sgd_execution_context& c,
   }
 
   // Evaluate on all mini-batches
-  do_evaluate_begin_cbs(model, mode);
+  do_evaluate_begin_cbs(model,
+                        mode,
+                        ScopeTimer{eval_timer, "eval_begin callbacks"});
   while (!term(c)) {
-    if (evaluate_mini_batch(c, model, dc, mode))
+    if (evaluate_mini_batch(c,
+                            model,
+                            dc,
+                            mode,
+                            ScopeTimer{eval_timer, "eval minibatch"}))
       c.inc_epoch();
   }
-  do_evaluate_end_cbs(model, mode);
+  do_evaluate_end_cbs(model,
+                      mode,
+                      ScopeTimer{eval_timer, "eval_end callbacks"});
 }
 
-bool sgd_training_algorithm::evaluate_mini_batch(sgd_execution_context& c,
-                                                 model& model,
-                                                 data_coordinator& dc,
-                                                 execution_mode mode)
+bool SGDTrainingAlgorithm::evaluate_mini_batch(SGDExecutionContext& c,
+                                               model& model,
+                                               data_coordinator& dc,
+                                               execution_mode mode,
+                                               ScopeTimer timer)
 {
   model.reset_mode(c, mode);
   dc.reset_mode(c);
-  do_batch_begin_cbs(model, mode);
+  do_batch_begin_cbs(model, mode, ScopeTimer{timer, "batch_begin callbacks"});
   dc.fetch_data(mode);
   model.forward_prop(mode);
   // check if the data coordinator has finished the epoch and kickoff
@@ -264,30 +310,37 @@ bool sgd_training_algorithm::evaluate_mini_batch(sgd_execution_context& c,
   model.evaluate_metrics(mode, c.get_current_mini_batch_size());
   model.update_layers();
   c.inc_step();
-  do_batch_end_cbs(model, mode);
+  do_batch_end_cbs(model, mode, ScopeTimer{timer, "batch_end callbacks"});
   return finished;
+}
+
+std::unique_ptr<SGDExecutionContext>
+SGDTrainingAlgorithm::get_new_execution_context() const
+{
+  return to_unique_ptr(this->do_get_new_execution_context());
 }
 
 ////////////////////////////////////////////////////////////
 // Callbacks
 ////////////////////////////////////////////////////////////
 
-void sgd_training_algorithm::do_train_begin_cbs(model& model)
+void SGDTrainingAlgorithm::do_train_begin_cbs(model& model, ScopeTimer timer)
 {
   for (const auto& cb : model.get_callbacks()) {
     cb->on_train_begin(&model);
   }
 }
 
-void sgd_training_algorithm::do_train_end_cbs(model& model)
+void SGDTrainingAlgorithm::do_train_end_cbs(model& model, ScopeTimer timer)
 {
   for (const auto& cb : model.get_callbacks()) {
     cb->on_train_end(&model);
   }
 }
 
-void sgd_training_algorithm::do_evaluate_begin_cbs(model& model,
-                                                   execution_mode mode)
+void SGDTrainingAlgorithm::do_evaluate_begin_cbs(model& model,
+                                                 execution_mode mode,
+                                                 ScopeTimer timer)
 {
   for (const auto& cb : model.get_callbacks()) {
     switch (mode) {
@@ -306,8 +359,9 @@ void sgd_training_algorithm::do_evaluate_begin_cbs(model& model,
   }
 }
 
-void sgd_training_algorithm::do_evaluate_end_cbs(model& model,
-                                                 execution_mode mode)
+void SGDTrainingAlgorithm::do_evaluate_end_cbs(model& model,
+                                               execution_mode mode,
+                                               ScopeTimer timer)
 {
   for (const auto& cb : model.get_callbacks()) {
     switch (mode) {
@@ -326,25 +380,26 @@ void sgd_training_algorithm::do_evaluate_end_cbs(model& model,
   }
 }
 
-void sgd_training_algorithm::do_epoch_begin_cbs(model& model)
+void SGDTrainingAlgorithm::do_epoch_begin_cbs(model& model, ScopeTimer timer)
 {
   for (const auto& cb : model.get_callbacks()) {
     cb->on_epoch_begin(&model);
   }
 }
 
-void sgd_training_algorithm::do_epoch_end_cbs(model& model)
+void SGDTrainingAlgorithm::do_epoch_end_cbs(model& model, ScopeTimer timer)
 {
   for (const auto& cb : model.get_callbacks()) {
     cb->on_epoch_end(&model);
   }
 }
 
-void sgd_training_algorithm::do_batch_begin_cbs(model& model,
-                                                execution_mode mode)
+void SGDTrainingAlgorithm::do_batch_begin_cbs(model& model,
+                                              execution_mode mode,
+                                              ScopeTimer timer)
 {
-  sgd_execution_context& c =
-    static_cast<sgd_execution_context&>(model.get_execution_context());
+  SGDExecutionContext& c =
+    static_cast<SGDExecutionContext&>(model.get_execution_context());
 
   for (const auto& cb : model.get_callbacks()) {
     switch (mode) {
@@ -364,10 +419,12 @@ void sgd_training_algorithm::do_batch_begin_cbs(model& model,
   }
 }
 
-void sgd_training_algorithm::do_batch_end_cbs(model& model, execution_mode mode)
+void SGDTrainingAlgorithm::do_batch_end_cbs(model& model,
+                                            execution_mode mode,
+                                            ScopeTimer timer)
 {
-  sgd_execution_context& c =
-    static_cast<sgd_execution_context&>(model.get_execution_context());
+  SGDExecutionContext& c =
+    static_cast<SGDExecutionContext&>(model.get_execution_context());
 
   for (const auto& cb : model.get_callbacks()) {
     switch (mode) {
@@ -387,18 +444,55 @@ void sgd_training_algorithm::do_batch_end_cbs(model& model, execution_mode mode)
   }
 }
 
-std::string sgd_training_algorithm::get_type() const { return "sgd"; }
+std::string SGDTrainingAlgorithm::get_type() const { return "sgd"; }
 
-sgd_execution_context*
-sgd_training_algorithm::do_get_new_execution_context() const
+SGDExecutionContext* SGDTrainingAlgorithm::do_get_new_execution_context() const
 {
-  return new sgd_execution_context(execution_mode::invalid, 0);
+  return new SGDExecutionContext(execution_mode::invalid, 0);
 }
 } // namespace lbann
 
+namespace {
+using TermCriteria = lbann_data::SGD::TerminationCriteria;
+using StoppingCriteriaFactory = lbann::generic_factory<
+  lbann::SGDTerminationCriteria,
+  int,
+  lbann::generate_builder_type<lbann::SGDTerminationCriteria,
+                               TermCriteria const&>>;
+
+StoppingCriteriaFactory make_factory()
+{
+  using namespace lbann;
+  using namespace std;
+  StoppingCriteriaFactory factory;
+  factory.register_builder(TermCriteria::kMaxBatches,
+                           [](TermCriteria const& msg) {
+                             return make_unique<BatchTerminationCriteria>(
+                               msg.max_batches());
+                           });
+  factory.register_builder(TermCriteria::kMaxEpochs,
+                           [](TermCriteria const& msg) {
+                             return make_unique<EpochTerminationCriteria>(
+                               msg.max_epochs());
+                           });
+  factory.register_builder(TermCriteria::kMaxSeconds,
+                           [](TermCriteria const& msg) {
+                             return make_unique<SecondsTerminationCriteria>(
+                               msg.max_seconds());
+                           });
+  return factory;
+}
+
+StoppingCriteriaFactory& term_criteria_factory()
+{
+  static StoppingCriteriaFactory factory = make_factory();
+  return factory;
+}
+
+} // namespace
 template <>
-std::unique_ptr<lbann::sgd_training_algorithm>
-lbann::make<lbann::sgd_training_algorithm>(
+std::unique_ptr<lbann::SGDTrainingAlgorithm>
+lbann::make<lbann::SGDTrainingAlgorithm>(
   google::protobuf::Message const& msg_in)
 {
   auto const& params =
@@ -408,24 +502,11 @@ lbann::make<lbann::sgd_training_algorithm>(
   LBANN_ASSERT(params.parameters().UnpackTo(&sgd_params));
 
   auto const& stopping_criteria = sgd_params.stopping_criteria();
-  std::unique_ptr<lbann::sgd_termination_criteria> stopping;
-  switch (stopping_criteria.criterion_case()) {
-  case lbann_data::SGD::TerminationCriteria::kMaxBatches:
-    stopping = lbann::make_unique<lbann::batch_termination_criteria>(
-      stopping_criteria.max_batches());
-    break;
-  case lbann_data::SGD::TerminationCriteria::kMaxEpochs:
-    stopping = lbann::make_unique<lbann::epoch_termination_criteria>(
-      stopping_criteria.max_epochs());
-    break;
-  case lbann_data::SGD::TerminationCriteria::kMaxSeconds:
-    stopping = lbann::make_unique<lbann::seconds_termination_criteria>(
-      stopping_criteria.max_seconds());
-    //LBANN_ERROR("Time-based training not yet supported in SGD.");
-    break;
-  default:
-    LBANN_ERROR("No stopping criteria specified.");
-  }
-  return make_unique<sgd_training_algorithm>(params.name(),
-                                             std::move(stopping));
+  auto stopping =
+    term_criteria_factory().create_object(stopping_criteria.criterion_case(),
+                                          stopping_criteria);
+  return std::make_unique<SGDTrainingAlgorithm>(
+    params.name(),
+    std::move(stopping),
+    sgd_params.suppress_timer_output());
 }

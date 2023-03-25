@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,29 +28,41 @@
 #define LBANN_OBJECTIVE_FUNCTION_TERM_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-#include "lbann/layers/layer.hpp"
-#include "lbann/weights/weights.hpp"
+
+// Forward-declare protobuf classes
+namespace lbann_data {
+class ObjectiveFunction;
+}
 
 namespace lbann {
 
-/** Abstract class for objective function terms. */
-class objective_function_term {
- public:
+// Forward declarations
+class Layer;
+using ViewingLayerPtr = std::weak_ptr<Layer>;
+class model;
+class weights;
+using ViewingWeightsPtr = std::weak_ptr<weights>;
 
+/** Abstract class for objective function terms. */
+class objective_function_term
+{
+public:
   /** Default constructor. */
   objective_function_term(EvalType scale_factor = EvalType(1));
 
   /** Copy constructor. */
   objective_function_term(const objective_function_term& other) = default;
   /** Copy assignment operator. */
-  objective_function_term& operator=(const objective_function_term& other) = default;
+  objective_function_term&
+  operator=(const objective_function_term& other) = default;
   /** Destructor. */
   virtual ~objective_function_term() = default;
   /** Copy function. */
   virtual objective_function_term* copy() const = 0;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar );
+  template <class Archive>
+  void serialize(Archive& ar);
 
   /** Get the name of the objective function term. */
   virtual std::string name() const = 0;
@@ -87,8 +99,11 @@ class objective_function_term {
   /** Set list of pointers to weights. */
   void set_weights_pointers(std::vector<ViewingWeightsPtr> w);
 
- protected:
+  /** Add Objective function data to prototext */
+  virtual void
+  write_specific_proto(lbann_data::ObjectiveFunction& proto) const = 0;
 
+protected:
   /** Scaling factor for objective function term. */
   EvalType m_scale_factor;
 
@@ -100,11 +115,9 @@ class objective_function_term {
   /** Get LBANN communicator. */
   lbann_comm& get_comm() { return *m_comm; }
 
- private:
-
+private:
   /** LBANN communicator. */
   lbann_comm* m_comm;
-
 };
 
 } // namespace lbann

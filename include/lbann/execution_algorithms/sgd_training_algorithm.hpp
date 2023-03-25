@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,39 +28,37 @@
 #define LBANN_SGD_TRAINING_ALGORITHM_HPP
 
 #include "lbann/base.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/execution_algorithms/factory.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/execution_algorithms/training_algorithm.hpp"
-#include "lbann/execution_contexts/execution_context.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/utils/cloneable.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/timer_map.hpp"
+
 #include <google/protobuf/message.h>
+
 #include <memory>
 
 namespace lbann {
 
 /** @brief Base class for LBANN SGD-family training algorithms. */
-class sgd_training_algorithm
-  : public Cloneable<sgd_training_algorithm, training_algorithm>
+class SGDTrainingAlgorithm : public TrainingAlgorithm
 {
-  using BaseType = Cloneable<sgd_training_algorithm, training_algorithm>;
-
 public:
   /** @brief Construct with a name. */
-  sgd_training_algorithm(std::string name,
-                         std::unique_ptr<sgd_termination_criteria> stop)
-    : BaseType{std::move(name)},
-      m_stopping_criteria{std::move(stop)}
-  {}
+  SGDTrainingAlgorithm(std::string name,
+                       std::unique_ptr<SGDTerminationCriteria> stop,
+                       bool suppress_timer_output);
 
-  sgd_training_algorithm(const sgd_training_algorithm& other);
-  sgd_training_algorithm&
-  operator=(const sgd_training_algorithm& other);
+  SGDTrainingAlgorithm(const SGDTrainingAlgorithm& other) = delete;
+  SGDTrainingAlgorithm& operator=(const SGDTrainingAlgorithm& other) = delete;
 
-  sgd_training_algorithm(sgd_training_algorithm&& other) = default;
-  sgd_training_algorithm& operator=(sgd_training_algorithm&& other) = default;
+  SGDTrainingAlgorithm(SGDTrainingAlgorithm&& other) = default;
+  SGDTrainingAlgorithm& operator=(SGDTrainingAlgorithm&& other) = default;
 
-  virtual ~sgd_training_algorithm() = default;
+  virtual ~SGDTrainingAlgorithm() = default;
   /** Copy training_algorithm. */
   //  virtual sgd_training_algorithm* copy() const = default;
 
@@ -72,23 +70,23 @@ public:
 
   /** Apply the training algorithm to the model with the provided
       context and execution mode */
-  void apply(execution_context& c,
+  void apply(ExecutionContext& c,
              model& model,
              data_coordinator& dc,
              execution_mode mode) override;
 
   /** Train a model using an iterative SGD solver. */
-  void train(sgd_execution_context& c,
+  void train(SGDExecutionContext& c,
              model& model,
              data_coordinator& dc,
-             sgd_termination_criteria const& term);
+             SGDTerminationCriteria const& term);
 
   /** Evaluate a model using the forward pass of an SGD solver. */
-  void evaluate(sgd_execution_context& c,
+  void evaluate(SGDExecutionContext& c,
                 model& model,
                 data_coordinator& dc,
                 execution_mode mode,
-                sgd_termination_criteria const& term);
+                SGDTerminationCriteria const& term);
 
   /** @brief Get a default-initialized execution context.
    *  @note This method participates in the
@@ -96,55 +94,68 @@ public:
    *        it hides the base-class method to give the illusion of a
    *        covariant return.
    */
-  std::unique_ptr<sgd_execution_context>
-  get_new_execution_context() const
-  {
-    return to_unique_ptr(this->do_get_new_execution_context());
-  }
+  std::unique_ptr<SGDExecutionContext> get_new_execution_context() const;
 
 protected:
   /** Train model on one step / mini-batch of an SGD forward pass */
-  virtual bool train_mini_batch(sgd_execution_context& c,
-                                model& model,
-                                data_coordinator& dc);
+  bool train_mini_batch(SGDExecutionContext& c,
+                        model& model,
+                        data_coordinator& dc,
+                        ScopeTimer timer);
 
   /** Evaluate model on one step / mini-batch of an SGD forward pass */
-  virtual bool evaluate_mini_batch(sgd_execution_context& c,
-                                   model& model,
-                                   data_coordinator& dc,
-                                   execution_mode mode);
+  bool evaluate_mini_batch(SGDExecutionContext& c,
+                           model& model,
+                           data_coordinator& dc,
+                           execution_mode mode,
+                           ScopeTimer timer);
 
   ////////////////////////////////////////////////////////////
   // Callbacks
   ////////////////////////////////////////////////////////////
 
   /** Execute callbacks at start of training. */
-  virtual void do_train_begin_cbs(model& model);
+  void do_train_begin_cbs(model& model, ScopeTimer timer);
   /** Execute callbacks at end of training. */
-  virtual void do_train_end_cbs(model& model);
+  void do_train_end_cbs(model& model, ScopeTimer timer);
   /** Execute callbacks at start of evaluation. */
-  virtual void do_evaluate_begin_cbs(model& model, execution_mode mode);
+  void
+  do_evaluate_begin_cbs(model& model, execution_mode mode, ScopeTimer timer);
   /** Execute callbacks at end of evaluation. */
-  virtual void do_evaluate_end_cbs(model& model, execution_mode mode);
+  void do_evaluate_end_cbs(model& model, execution_mode mode, ScopeTimer timer);
   /** Execute callbacks at start of epoch. */
-  virtual void do_epoch_begin_cbs(model& model);
+  void do_epoch_begin_cbs(model& model, ScopeTimer timer);
   /** Execute callbacks at end of epoch. */
-  virtual void do_epoch_end_cbs(model& model);
+  void do_epoch_end_cbs(model& model, ScopeTimer timer);
   /** Execute callbacks at start of mini-batch. */
-  virtual void do_batch_begin_cbs(model& model, execution_mode mode);
+  void do_batch_begin_cbs(model& model, execution_mode mode, ScopeTimer timer);
   /** Execute callbacks at end of mini-batch. */
-  virtual void do_batch_end_cbs(model& model, execution_mode mode);
+  void do_batch_end_cbs(model& model, execution_mode mode, ScopeTimer timer);
 
-  sgd_execution_context*
-  do_get_new_execution_context() const override;
+  SGDExecutionContext* do_get_new_execution_context() const override;
 
 private:
-  std::unique_ptr<sgd_termination_criteria> m_stopping_criteria;
+  TimerMap m_timers;
+  std::unique_ptr<SGDTerminationCriteria> m_stopping_criteria;
+
+  // FIXME (trb 07/20/21): This is a hack. These aren't actually
+  // copyable objects (it wouldn't make sense), so when the training
+  // algorithm is copied, these are reset to defaults. "In the
+  // future", we'll externalize validation and this won't be an issue.
+  SGDExecutionContext m_validation_context;
+  size_t m_validation_epochs;
+
+  /** @brief Suppress timer output.
+   *  @deprecated This is a temporary way to disable timer
+   *              output. This will be more configurable in the
+   *              future.
+   */
+  bool m_suppress_timer = false;
 };
 
 template <>
-std::unique_ptr<sgd_training_algorithm>
-make<sgd_training_algorithm>(google::protobuf::Message const& params);
+std::unique_ptr<SGDTrainingAlgorithm>
+make<SGDTrainingAlgorithm>(google::protobuf::Message const& params);
 
 } // namespace lbann
 

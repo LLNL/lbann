@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,13 +29,29 @@
 
 #include <lbann_config.hpp>
 
+#include "lbann/base.hpp"
+
+#include <complex>
+#include <string>
+#include <typeinfo>
+
 namespace lbann {
+namespace details {
+std::string get_type_name(std::type_info const&);
+}
 
 template <typename T>
-std::string TypeName();
+std::string TypeName()
+{
+  return details::get_type_name(typeid(T));
+}
 
-#define ADD_TYPENAME_INST(Type)                                     \
-  template <> inline std::string TypeName<Type>() { return #Type; }
+#define ADD_TYPENAME_INST(Type)                                                \
+  template <>                                                                  \
+  inline std::string TypeName<Type>()                                          \
+  {                                                                            \
+    return #Type;                                                              \
+  }
 
 ADD_TYPENAME_INST(float)
 ADD_TYPENAME_INST(double)

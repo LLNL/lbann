@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,33 +31,40 @@
 
 #include "lbann/base.hpp"
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
-#include "lbann/utils/random_number_generators.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
-#include "lbann/utils/exception.hpp"
-#include "lbann/comm.hpp"
 #include "lbann/io/file_io.hpp"
-#include "lbann/io/persist.hpp"
-#include "lbann/utils/options.hpp"
 #include "lbann/transforms/transform_pipeline.hpp"
-#include "lbann/utils/distconv.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/options.hpp"
+#include "lbann/utils/random_number_generators.hpp"
 
-#include <cassert>
 #include <algorithm>
+#include <cassert>
 #include <string>
-#include <vector>
 #include <unistd.h>
 #include <unordered_set>
+#include <vector>
 
-#define NOT_IMPLEMENTED(n) { \
-  std::stringstream s; \
-  s << "the method " << n << " has not been implemented"; \
-  throw lbann_exception(s.str()); }
+// Forward-declare Conduit nodes.
+namespace conduit {
+class Node;
+}
+
+#define NOT_IMPLEMENTED(n)                                                     \
+  {                                                                            \
+    std::stringstream s;                                                       \
+    s << "the method " << n << " has not been implemented";                    \
+    throw lbann_exception(s.str());                                            \
+  }
 
 namespace lbann {
 
+// Forward declarations
+class Layer;
 class data_store_conduit;
 class thread_pool;
 class trainer;
+class persist;
 
 /**
  * A data reader manages reading in data in a particular format.
@@ -65,70 +72,70 @@ class trainer;
  * classes should implement load and the appropriate subset of fetch_datum,
  * fetch_label, and fetch_response.
  */
-class generic_data_reader {
- public:
-  using unused_index_map_t = std::map<execution_mode,std::vector<int>>;
-
- #define JAG_NOOP_VOID if (m_jag_partitioned) { return; }
- #define JAG_NOOP_INT if (m_jag_partitioned) { return 0; }
+class generic_data_reader
+{
+public:
+  using unused_index_map_t = std::map<execution_mode, std::vector<int>>;
 
   /**
    * ctor
    */
-  generic_data_reader(bool shuffle = true) :
-    m_verbose(options::get()->get_bool("verbose")),
-    m_data_store(nullptr),
-    m_comm(nullptr),
-    m_mini_batch_size(0), m_current_pos(0),
-    m_stride_to_next_mini_batch(0), m_base_offset(0), m_model_offset(0),
-    m_sample_stride(1), m_iteration_stride(1),
-    m_last_mini_batch_size(0),
-    m_stride_to_last_mini_batch(0),
-    m_reset_mini_batch_index(0),
-    m_loaded_mini_batch_idx(0),
-    m_current_mini_batch_idx(0),
-    m_num_iterations_per_epoch(0), m_global_mini_batch_size(0),
-    m_global_last_mini_batch_size(0),
-    m_world_master_mini_batch_adjustment(0),
-    m_num_parallel_readers(0), m_rank_in_model(0),
-    m_max_files_to_load(0),
-    m_file_dir(""), m_data_sample_list(""), m_data_fn(""), m_label_fn(""),
-    m_shuffle(shuffle), m_absolute_sample_count(0),
-    m_use_percent(1.0),
-    m_master(false),
-    m_gan_labelling(false), //default, not GAN
-    m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
-    m_io_thread_pool(nullptr),
-    m_jag_partitioned(false),
-    m_keep_sample_order(false),
-    m_trainer(nullptr),
-    m_issue_warning(true)
+  generic_data_reader(bool shuffle = true)
+    : m_verbose(global_argument_parser().get<bool>(LBANN_OPTION_VERBOSE)),
+      m_data_store(nullptr),
+      m_comm(nullptr),
+      m_mini_batch_size(0),
+      m_current_pos(0),
+      m_stride_to_next_mini_batch(0),
+      m_base_offset(0),
+      m_model_offset(0),
+      m_sample_stride(1),
+      m_iteration_stride(1),
+      m_last_mini_batch_size(0),
+      m_stride_to_last_mini_batch(0),
+      m_reset_mini_batch_index(0),
+      m_loaded_mini_batch_idx(0),
+      m_current_mini_batch_idx(0),
+      m_num_iterations_per_epoch(0),
+      m_global_mini_batch_size(0),
+      m_global_last_mini_batch_size(0),
+      m_world_master_mini_batch_adjustment(0),
+      m_num_parallel_readers(0),
+      m_max_files_to_load(0),
+      m_file_dir(""),
+      m_data_sample_list(""),
+      m_data_fn(""),
+      m_label_fn(""),
+      m_shuffle(shuffle),
+      m_absolute_sample_count(0),
+      m_use_percent(1.0),
+      m_gan_labelling(false), // default, not GAN
+      m_gan_label_value(
+        0), // If GAN, default for fake label, discriminator model
+      m_io_thread_pool(nullptr),
+      m_keep_sample_order(false),
+      m_issue_warning(true)
   {
     // By default only support fetching input samples
-    for(auto i : input_data_type_iterator()) {
-      m_supported_input_types[i] = false;
-    }
-    m_supported_input_types[input_data_type::SAMPLES] = true;
+    m_supported_input_types[INPUT_DATA_TYPE_SAMPLES] = true;
   }
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
 
-  virtual ~generic_data_reader() {}
+  virtual ~generic_data_reader();
   virtual generic_data_reader* copy() const = 0;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar );
+  template <class Archive>
+  void serialize(Archive& ar);
 
   /// set the comm object
-  void set_comm(lbann_comm *comm) {
-    m_comm = comm;
-    set_master(comm->am_world_master());
-  }
+  void set_comm(lbann_comm* comm) { m_comm = comm; }
 
   /// returns a (possibly nullptr) to comm
-  lbann_comm * get_comm() const {
-    return m_comm;
-  }
+  lbann_comm* get_comm() const { return m_comm; }
+
+  virtual bool has_conduit_output() { return false; }
 
   // These non-virtual methods are used to specify where data is, how much to
   // load, etc.
@@ -147,9 +154,7 @@ class generic_data_reader {
    * for some data readers (jag_conduit) we load from multiple files;
    * for testing we want to be able to restrict that number
    */
-  void set_max_files_to_load(size_t n) {
-    m_max_files_to_load = n;
-  }
+  void set_max_files_to_load(size_t n) { m_max_files_to_load = n; }
 
   /**
    * Returns the base directory for your data.
@@ -224,14 +229,16 @@ class generic_data_reader {
    * Set shuffled indices; primary use is for testing
    * and reproducibility
    */
-  void set_shuffled_indices(const std::vector<int> &indices) {
+  void set_shuffled_indices(const std::vector<int>& indices)
+  {
     m_shuffled_indices = indices;
   }
 
   /**
    * Returns the shuffled indices; primary use is for testing.
    */
-  const std::vector<int> & get_shuffled_indices() const {
+  const std::vector<int>& get_shuffled_indices() const
+  {
     return m_shuffled_indices;
   }
 
@@ -259,6 +266,7 @@ class generic_data_reader {
 
   /**
    * Sets the percentage of the dataset to be used for validation.
+   * @param m The execution mode.
    * @param s The percentage used, in the range [0, 1].
    */
   virtual void set_execution_mode_split_percent(execution_mode m, double s);
@@ -272,9 +280,7 @@ class generic_data_reader {
   /**
    * Get the role for this dataset.
    */
-  std::string get_role() const {
-    return m_role;
-  }
+  std::string get_role() const { return m_role; }
 
   /**
    * Load the dataset.
@@ -290,27 +296,63 @@ class generic_data_reader {
    * If the base offset is not specified set it to 0
    * If the stride is not specified set it to batch size
    */
-  virtual void setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool);
+  virtual void setup(int num_io_threads,
+                     observer_ptr<thread_pool> io_thread_pool);
 
   /** Return this data_reader's type */
   virtual std::string get_type() const = 0;
 
-  /** @brief Fetch a mini-batch worth of data, including samples, labels, responses (as appropriate) */
-  int fetch(std::map<input_data_type, CPUMat*>& input_buffers, El::Matrix<El::Int>& indices_fetched);
-  /// Fetch this mini-batch's samples into X.
-  virtual int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched);
-  /// Fetch this mini-batch's labels into Y.
-  virtual int fetch_labels(CPUMat& Y);
-  /// Fetch this mini-batch's responses into Y.
-  virtual int fetch_responses(CPUMat& Y);
+  /** @brief Fetch a mini-batch worth of data, including samples, labels,
+   * responses (as appropriate) */
+  int fetch(std::map<data_field_type, CPUMat*>& input_buffers,
+            El::Matrix<El::Int>& indices_fetched,
+            size_t mb_size);
 
-  virtual bool has_labels() const { return m_supported_input_types.at(input_data_type::LABELS); }
-  virtual bool has_responses() const { return m_supported_input_types.at(input_data_type::RESPONSES); }
+  int fetch(std::vector<conduit::Node>& samples,
+            El::Matrix<El::Int>& indices_fetched,
+            size_t mb_size);
+
+  /** @brief Check to see if the data reader supports this specific data field
+   */
+  virtual bool has_data_field(data_field_type data_field) const
+  {
+    if (m_supported_input_types.find(data_field) !=
+        m_supported_input_types.end()) {
+      return m_supported_input_types.at(data_field);
+    }
+    else {
+      return false;
+    }
+  }
+
+  virtual bool has_labels() const
+  {
+    return has_data_field(INPUT_DATA_TYPE_LABELS);
+  }
+  virtual bool has_responses() const
+  {
+    return has_data_field(INPUT_DATA_TYPE_RESPONSES);
+  }
+
+  /// Whether or not a data reader has a data field
+  void set_has_data_field(data_field_type const data_field, const bool b)
+  {
+    m_supported_input_types[data_field] = b;
+  }
 
   /// Whether or not a data reader has labels
-  virtual void set_has_labels(const bool b) { m_supported_input_types[input_data_type::LABELS] = b; }
+  virtual void set_has_labels(const bool b)
+  {
+    m_supported_input_types[INPUT_DATA_TYPE_LABELS] = b;
+  }
   /// Whether or not a data reader has a response field
-  virtual void set_has_responses(const bool b) { m_supported_input_types[input_data_type::RESPONSES] = b; }
+  virtual void set_has_responses(const bool b)
+  {
+    m_supported_input_types[INPUT_DATA_TYPE_RESPONSES] = b;
+  }
+
+  void start_data_store_mini_batch_exchange();
+  void finish_data_store_mini_batch_exchange();
 
   /**
    * During the network's update phase, the data reader will
@@ -329,70 +371,57 @@ class generic_data_reader {
    */
 
   /// Return the number of labels (classes) in this dataset.
-  virtual int get_num_labels() const {
-    return 0;
-  }
+  virtual int get_num_labels() const { return 0; }
   /// Return the number of responses in this dataset.
-  virtual int get_num_responses() const {
-    return 1;
-  }
+  virtual int get_num_responses() const { return 1; }
   /// Get the linearized size (i.e. number of elements) in a sample.
-  virtual int get_linearized_data_size() const {
-    return 0;
-  }
+  virtual int get_linearized_data_size() const { return 0; }
   /// Get the linearized size (i.e. number of elements) in a label.
-  virtual int get_linearized_label_size() const {
-    return 0;
-  }
+  virtual int get_linearized_label_size() const { return 0; }
   /// Get the linearized size (i.e. number of elements) in a response.
-  virtual int get_linearized_response_size() const {
-    return 1;
-  }
+  virtual int get_linearized_response_size() const { return 1; }
   /// get the linearized size of what is identified by desc.
-  virtual int get_linearized_size(const std::string& desc) const {
-    if (desc == "data") {
-      return get_linearized_data_size();
-    } else if (desc == "label") {
-      return get_linearized_label_size();
-    } else if (desc == "response") {
-      return get_linearized_response_size();
-    }
-    return 0;
-  }
+  virtual int get_linearized_size(data_field_type const& data_field) const;
+
   /// Get the dimensions of the data.
-  virtual const std::vector<int> get_data_dims() const {
+  virtual const std::vector<int> get_data_dims() const
+  {
     return std::vector<int>(0);
   }
 
-  virtual std::vector<El::Int> get_slice_points(const slice_points_mode var_category,
-                                                bool& is_supported) {
+  virtual std::vector<El::Int>
+  get_slice_points(const slice_points_mode var_category, bool& is_supported)
+  {
     is_supported = false;
     return {};
   }
 
   /// True if the data reader's current position is valid.
-  virtual bool position_valid() const {
+  virtual bool position_valid() const
+  {
     return (m_current_pos < get_num_data());
   }
-  /// True if the data reader's current position is not valid but within # ranks per model
-  /// of the end of the data set (e.g. it is a rank with no valid data on the last iteration)
-  virtual bool position_is_overrun() const {
+  /// True if the data reader's current position is not valid but within # ranks
+  /// per model of the end of the data set (e.g. it is a rank with no valid data
+  /// on the last iteration)
+  virtual bool position_is_overrun() const
+  {
     int end_pos = (int)m_shuffled_indices.size();
-    return (m_current_pos >= end_pos && (m_current_pos - end_pos) < m_comm->get_procs_per_trainer());
+    return (m_current_pos >= end_pos &&
+            (m_current_pos - end_pos) < m_comm->get_procs_per_trainer());
   }
   /// True if the data reader is at the start of an epoch.
-  bool at_new_epoch() const {
+  bool at_new_epoch() const
+  {
     /// Note that data readers can start at a non-zero index if there
     /// are parallel data readers in a model
-    return ((m_loaded_mini_batch_idx == m_reset_mini_batch_index)
-            && (m_current_mini_batch_idx == 0));
+    return ((m_loaded_mini_batch_idx == m_reset_mini_batch_index) &&
+            (m_current_mini_batch_idx == 0));
   }
   /// Set the mini batch size
   void set_mini_batch_size(const int s);
   /// Get the mini batch size
-  int get_mini_batch_size() const {
-    return m_mini_batch_size;
-  }
+  int get_mini_batch_size() const { return m_mini_batch_size; }
   /// Get the loaded mini-batch size
   int get_loaded_mini_batch_size() const;
   /// Get the current mini-batch size.
@@ -402,198 +431,126 @@ class generic_data_reader {
   /// Get the current mini-batch size.
   int get_current_world_master_mini_batch_adjustment(int model_rank) const;
   /// Return the full mini_batch_size.
-  int get_mini_batch_max() const {
-    return m_mini_batch_size;
-  }
+  int get_mini_batch_max() const { return m_mini_batch_size; }
   /// Set the mini batch size across all models (global)
-  void set_global_mini_batch_size(const int s) {
-    JAG_NOOP_VOID
-    m_global_mini_batch_size = s;
-  }
+  void set_global_mini_batch_size(const int s) { m_global_mini_batch_size = s; }
   /// Return the mini_batch_size across all models (global)
-  int get_global_mini_batch_size() const {
-    return m_global_mini_batch_size;
-  }
+  int get_global_mini_batch_size() const { return m_global_mini_batch_size; }
   /// Set the mini batch stride
-  void set_stride_to_next_mini_batch(const int s) {
-    JAG_NOOP_VOID
+  void set_stride_to_next_mini_batch(const int s)
+  {
     m_stride_to_next_mini_batch = s;
   }
   /// Return the mini batch stride.
-  int get_stride_to_next_mini_batch() const {
+  int get_stride_to_next_mini_batch() const
+  {
     return m_stride_to_next_mini_batch;
   }
   /// Set the sample stride
-  void set_sample_stride(const int s) {
-    JAG_NOOP_VOID
-    m_sample_stride = s;
-  }
+  void set_sample_stride(const int s) { m_sample_stride = s; }
   /// Return the sample stride.
-  int get_sample_stride() const {
-    return m_sample_stride;
-  }
+  int get_sample_stride() const { return m_sample_stride; }
   /// Set the iteration stride
-  void set_iteration_stride(const int s) {
-    m_iteration_stride = s;
-  }
+  void set_iteration_stride(const int s) { m_iteration_stride = s; }
   /// Return the iteration stride.
-  int get_iteration_stride() const {
-    return m_iteration_stride;
-  }
+  int get_iteration_stride() const { return m_iteration_stride; }
   /// Return the base offset.
-  virtual void set_base_offset(const int s) {
-    JAG_NOOP_VOID
-    m_base_offset = s;
-  }
+  virtual void set_base_offset(const int s) { m_base_offset = s; }
   /// Return the base offset.
-  int get_base_offset() const {
-    return m_base_offset;
-  }
+  int get_base_offset() const { return m_base_offset; }
   /// Set the model offset
-  void set_model_offset(const int s) {
-    JAG_NOOP_VOID
-    m_model_offset = s;
-  }
+  void set_model_offset(const int s) { m_model_offset = s; }
   /// Return the model offset.
-  int get_model_offset() const {
-    return m_model_offset;
-  }
+  int get_model_offset() const { return m_model_offset; }
   /// Set the last mini batch size
-  void set_last_mini_batch_size(const int s) {
-    JAG_NOOP_VOID
-    m_last_mini_batch_size = s;
-  }
+  void set_last_mini_batch_size(const int s) { m_last_mini_batch_size = s; }
   /// Return the last mini batch size
-  int get_last_mini_batch_size() const {
-    return m_last_mini_batch_size;
-  }
+  int get_last_mini_batch_size() const { return m_last_mini_batch_size; }
   /// Set the last mini batch size across all models (global)
-  void set_global_last_mini_batch_size(const int s) {
-    JAG_NOOP_VOID
+  void set_global_last_mini_batch_size(const int s)
+  {
     m_global_last_mini_batch_size = s;
   }
   /// Return the last mini batch size across all models (global)
-  int get_global_last_mini_batch_size() const {
+  int get_global_last_mini_batch_size() const
+  {
     return m_global_last_mini_batch_size;
   }
   /// Set the world master mini batch adjustment (global)
-  void set_world_master_mini_batch_adjustment(const int s) {
-    JAG_NOOP_VOID
+  void set_world_master_mini_batch_adjustment(const int s)
+  {
     m_world_master_mini_batch_adjustment = s;
   }
   /// Return the world master mini batch adjustment (global)
-  int get_world_master_mini_batch_adjustment() const {
+  int get_world_master_mini_batch_adjustment() const
+  {
     return m_world_master_mini_batch_adjustment;
   }
   /// Set the last mini batch stride
-  void set_stride_to_last_mini_batch(const int s) {
-    JAG_NOOP_VOID
+  void set_stride_to_last_mini_batch(const int s)
+  {
     m_stride_to_last_mini_batch = s;
   }
   /// Return the last mini batch stride
-  int get_stride_to_last_mini_batch() const {
+  int get_stride_to_last_mini_batch() const
+  {
     return m_stride_to_last_mini_batch;
   }
   /// Set the number of parallel readers per model
-  void set_num_parallel_readers(const int s) {
-    m_num_parallel_readers = s;
-  }
+  void set_num_parallel_readers(const int s) { m_num_parallel_readers = s; }
   /// Return the number of parallel readers per model
-  int get_num_parallel_readers() const {
-    return m_num_parallel_readers;
-  }
+  int get_num_parallel_readers() const { return m_num_parallel_readers; }
   /// Set the starting mini-batch index for the epoch
-  virtual void set_reset_mini_batch_index(const int s) {
+  virtual void set_reset_mini_batch_index(const int s)
+  {
     m_reset_mini_batch_index = s;
   }
   /// Return the starting mini-batch index for the epoch
-  int get_reset_mini_batch_index() const {
-    return m_reset_mini_batch_index;
-  }
+  int get_reset_mini_batch_index() const { return m_reset_mini_batch_index; }
   /// Return the current mini-batch index for the epoch
-  int get_loaded_mini_batch_index() const {
-    return m_loaded_mini_batch_idx;
-  }
+  int get_loaded_mini_batch_index() const { return m_loaded_mini_batch_idx; }
   /// Return the current mini-batch index for the epoch
-  int get_current_mini_batch_index() const {
-    return m_current_mini_batch_idx;
-  }
+  int get_current_mini_batch_index() const { return m_current_mini_batch_idx; }
   /// Set the current position based on the base and model offsets
-  void set_initial_position() {
+  void set_initial_position()
+  {
     m_current_pos = m_base_offset + m_model_offset;
     m_loaded_mini_batch_idx = m_reset_mini_batch_index;
     m_current_mini_batch_idx = 0;
   }
   /// Get the current position in the data reader.
-  int get_position() const {
-    return m_current_pos;
-  }
+  int get_position() const { return m_current_pos; }
   /// Get the next position in the data reader.
   int get_next_position() const;
   /// Get a pointer to the start of the shuffled indices.
-  int *get_indices() {
-    return &m_shuffled_indices[0];
-  }
+  int* get_indices() { return &m_shuffled_indices[0]; }
   /// Get the number of samples in this dataset.
-  virtual int get_num_data() const {
-    return (int)m_shuffled_indices.size();
-  }
+  virtual int get_num_data() const { return (int)m_shuffled_indices.size(); }
   /// Get the number of unused samples in this dataset.
-  int get_num_unused_data(execution_mode m) const {
-    if(m_unused_indices.count(m)) {
-      return (int)m_unused_indices.at(m).size();
-    }else {
-      LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
-    }
-  }
+  int get_num_unused_data(execution_mode m) const;
+
   /// Get a pointer to the start of the unused sample indices.
-  int *get_unused_data(execution_mode m) {
-    if(m_unused_indices.count(m)) {
-      return &(m_unused_indices[m][0]);
-    }else {
-      LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
-    }
-  }
-  const std::vector<int>& get_unused_indices(execution_mode m) {
-    if(m_unused_indices.count(m)) {
-      return m_unused_indices.at(m);
-    }else {
-      LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
-    }
-  }
+  int* get_unused_data(execution_mode m);
+
+  const std::vector<int>& get_unused_indices(execution_mode m);
+
   /// Set the number of iterations in each epoch.
-  void set_num_iterations_per_epoch(int num_iterations_per_epoch) {
-    m_num_iterations_per_epoch = num_iterations_per_epoch;  /// @todo BVE FIXME merge this with alternate approach
+  void set_num_iterations_per_epoch(int num_iterations_per_epoch)
+  {
+    m_num_iterations_per_epoch =
+      num_iterations_per_epoch; /// @todo BVE FIXME merge this with alternate
+                                /// approach
   }
   /// Get the number of iterations in each epoch.
-  int get_num_iterations_per_epoch() const {
-    return m_num_iterations_per_epoch;  /// @todo BVE FIXME merge this with alternate approach
+  int get_num_iterations_per_epoch() const
+  {
+    return m_num_iterations_per_epoch; /// @todo BVE FIXME merge this with
+                                       /// alternate approach
   }
 
-  /// Return the index of the current iteration step in the epoch (also the mini-batch index)
-  int get_current_step_in_epoch() const {
-    return  m_current_mini_batch_idx;
-  }
-
-  /// only the master may write to cerr or cout; primarily for use in debugging during development
-  virtual void set_master(bool m) {
-    m_master = m;
-  }
-
-  /// only the master may write to cerr or cout; primarily for use in debugging during development
-  bool is_master() const {
-    return m_master;
-  }
-
-  /// Allow the reader to know where it is in the model hierarchy
-  virtual void set_rank(int rank) {
-    m_rank_in_model = rank;
-  }
-
-  /// Allow the reader to know where it is in the model hierarchy
-  int get_rank() const {
-    return m_rank_in_model;
-  }
+  /// Return the index of the current iteration step in the epoch (also the
+  /// mini-batch index)
+  int get_current_step_in_epoch() const { return m_current_mini_batch_idx; }
 
   /**
    * Optionally resizes the shuffled indices based on the data reader
@@ -616,34 +573,32 @@ class generic_data_reader {
    */
   virtual void use_unused_index_set(execution_mode m);
 
-  /// Does the data reader have a unqiue sample list per model
+  /// Does the data reader have a unique sample list per model
   virtual bool has_list_per_model() const { return false; }
-  /// Does the data reader have a unqiue sample list per trainer
+  /// Does the data reader have a unique sample list per trainer
   virtual bool has_list_per_trainer() const { return false; }
 
-
-  /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
+  /** \brief Given directory to store checkpoint files, write state to file and
+   * add to number of bytes written */
   bool save_to_checkpoint_shared(persist& p, execution_mode mode);
 
-  /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
+  /** \brief Given directory to store checkpoint files, read state from file and
+   * add to number of bytes read */
   bool load_from_checkpoint_shared(persist& p, execution_mode mode);
 
   bool save_to_checkpoint_distributed(persist& p, execution_mode mode);
 
-  /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
+  /** \brief Given directory to store checkpoint files, read state from file and
+   * add to number of bytes read */
   bool load_from_checkpoint_distributed(persist& p, execution_mode mode);
 
   /// returns a const ref to the data store
-  virtual const data_store_conduit& get_data_store() const {
-    if (m_data_store == nullptr) {
-      LBANN_ERROR("m_data_store is nullptr");
-    }
-    return *m_data_store;
-  }
+  const data_store_conduit& get_data_store() const;
 
-  data_store_conduit* get_data_store_ptr() const {
-    return m_data_store;
-  }
+  /// returns a non-const ref to the data store
+  data_store_conduit& get_data_store();
+
+  data_store_conduit* get_data_store_ptr() const { return m_data_store; }
 
   /// sets up a data_store; this is called from build_model_from_prototext()
   /// in utils/lbann_library.cpp. This is a bit awkward: would like to call it
@@ -655,31 +610,29 @@ class generic_data_reader {
 
   virtual void preload_data_store();
 
-  void set_gan_labelling(bool has_gan_labelling) {
-     m_gan_labelling = has_gan_labelling;
+  void set_gan_labelling(bool has_gan_labelling)
+  {
+    m_gan_labelling = has_gan_labelling;
   }
-  void set_gan_label_value(int gan_label_value) { m_gan_label_value = gan_label_value; }
+  void set_gan_label_value(int gan_label_value)
+  {
+    m_gan_label_value = gan_label_value;
+  }
 
   /// support of data store functionality
-  void set_data_store(data_store_conduit *g);
+  void set_data_store(data_store_conduit* g);
 
   virtual bool data_store_active() const;
 
   virtual bool priming_data_store() const;
-
-  void set_trainer(trainer *t) { m_trainer = t; }
-
-  trainer& get_trainer() const {
-    if(m_trainer == nullptr) { LBANN_ERROR("get_trainer called with nullptr"); }
-    return *m_trainer;
-  }
 
   /// experimental; used to ensure all readers for jag_conduit_hdf5
   /// have identical shuffled indices
   virtual void post_update() {}
 
   /** Set the transform pipeline this data reader will use. */
-  void set_transform_pipeline(transform::transform_pipeline&& tp) {
+  void set_transform_pipeline(transform::transform_pipeline&& tp)
+  {
     m_transform_pipeline = std::move(tp);
   }
 
@@ -691,8 +644,7 @@ class generic_data_reader {
   virtual bool is_tensor_shuffle_required() const { return true; }
 #endif // LBANN_HAS_DISTCONV
 
- protected:
-
+protected:
   bool m_verbose = false;
 
   // For use with conduit when samples are corrupt.
@@ -717,11 +669,49 @@ class generic_data_reader {
    */
   double get_execution_mode_split_percent(execution_mode m) const;
 
-  data_store_conduit *m_data_store;
+  data_store_conduit* m_data_store;
 
-  lbann_comm *m_comm;
+  lbann_comm* m_comm;
 
-  virtual bool fetch_data_block(CPUMat& X, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched);
+  virtual bool
+  fetch_data_block(std::map<data_field_type, CPUMat*>& input_buffers,
+                   El::Int block_offset,
+                   El::Int block_stride,
+                   El::Int mb_size,
+                   El::Matrix<El::Int>& indices_fetched);
+
+  bool fetch_data_block_conduit(std::vector<conduit::Node>& samples,
+                                El::Int block_offset,
+                                El::Int block_stride,
+                                El::Int mb_size,
+                                El::Matrix<El::Int>& indices_fetched);
+
+  /** @brief Called by fetch_data, fetch_label, fetch_response
+   *
+   * Fetch data from a single data field into a matrix.
+   * @param data_field The name of the data field.  May be one of the commonly
+   *        used (samples, labels, responses) or any data_field that exists
+   *        within an HDF5 experiment schema, Python DR schema, or synthetic
+   *        data reader
+   * @param Y The matrix to load data into.
+   * @param data_id The index of the datum to fetch.
+   * @param mb_idx The index within the mini-batch.
+   *
+   */
+  virtual bool fetch_data_field(data_field_type data_field,
+                                CPUMat& Y,
+                                int data_id,
+                                int mb_idx)
+  {
+    NOT_IMPLEMENTED("fetch_data_field");
+    return false;
+  }
+
+  virtual bool fetch_conduit_node(conduit::Node& sample, int data_id)
+  {
+    NOT_IMPLEMENTED("fetch_conduit_node");
+    return false;
+  }
 
   /**
    * Fetch a single sample into a matrix.
@@ -729,7 +719,8 @@ class generic_data_reader {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+  virtual bool fetch_datum(CPUMat& X, int data_id, int mb_idx)
+  {
     NOT_IMPLEMENTED("fetch_dataum");
     return false;
   }
@@ -740,7 +731,8 @@ class generic_data_reader {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_label(CPUMat& Y, int data_id, int mb_idx) {
+  virtual bool fetch_label(CPUMat& Y, int data_id, int mb_idx)
+  {
     NOT_IMPLEMENTED("fetch_label");
     return false;
   }
@@ -751,38 +743,53 @@ class generic_data_reader {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_response(CPUMat& Y, int data_id, int mb_idx) {
+  virtual bool fetch_response(CPUMat& Y, int data_id, int mb_idx)
+  {
     NOT_IMPLEMENTED("fetch_response");
     return false;
   }
 
   /**
+   * Create a matrix view of a single column selected by mini-batch index.
+   * @param X The matrix to load data into.
+   * @param mb_idx The index within the mini-batch.
+   * @return Single column view of the input matrix
+   */
+  inline CPUMat create_datum_view(CPUMat& X, const int mb_idx)
+  {
+    return El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
+  }
+
+  /**
    * Called before fetch_datum/label/response to allow initialization.
    */
-  virtual void preprocess_data_source(int tid) {};
+  virtual void preprocess_data_source(int tid){};
   /**
    * Called after fetch_datum/label/response to allow initialization.
    */
-  virtual void postprocess_data_source(int tid) {};
+  virtual void postprocess_data_source(int tid){};
 
   /// Shuffle indices (uses the data_seq_generator)
   virtual void shuffle_indices();
   /// Shuffle indices and profide a random number generator
   virtual void shuffle_indices(rng_gen& gen);
 
+public:
   int m_mini_batch_size;
   int m_current_pos;
-  /// Batch Stride is typically batch_size, but may be a multiple of batch size if there are multiple readers
+  /// Batch Stride is typically batch_size, but may be a multiple of batch size
+  /// if there are multiple readers
   int m_stride_to_next_mini_batch;
   /// If there are multiple instances of the reader,
   /// then it may not reset to zero
   int m_base_offset;
   /// If there are multiple models with multiple instances of the reader,
   /// each model's set of readers may not reset to zero
-  /// Provide a set of size, strides, and thresholds to handle the last mini batch of a dataset
+  /// Provide a set of size, strides, and thresholds to handle the last mini
+  /// batch of a dataset
   int m_model_offset;
-  /// Sample stride is used when a mini-batch is finely interleaved across a DATA_PARALELL
-  /// distribution.
+  /// Sample stride is used when a mini-batch is finely interleaved across a
+  /// DATA_PARALELL distribution.
   int m_sample_stride;
   /// Stride used by parallel data readers within the model
   int m_iteration_stride;
@@ -797,9 +804,11 @@ class generic_data_reader {
   int m_reset_mini_batch_index;
   /// The index of the current mini-batch that has been loaded
   int m_loaded_mini_batch_idx;
-  /// The index of the current mini-batch that is being processed (train/test/validate)
+  /// The index of the current mini-batch that is being processed
+  /// (train/test/validate)
   int m_current_mini_batch_idx;
-  int m_num_iterations_per_epoch; /// How many iterations all readers will execute
+  int
+    m_num_iterations_per_epoch; /// How many iterations all readers will execute
 
   int m_global_mini_batch_size;
   int m_global_last_mini_batch_size;
@@ -807,7 +816,6 @@ class generic_data_reader {
 
   int m_num_parallel_readers; /// How many parallel readers are being used
 
-  int m_rank_in_model;  /// What is the rank of the data reader within a given model
   size_t m_max_files_to_load;
   std::string m_file_dir;
   std::string m_local_file_dir;
@@ -820,8 +828,6 @@ class generic_data_reader {
   double m_use_percent;
   int m_first_n;
   std::string m_role;
-
-  bool m_master;
 
   /** @brief Print the return values from various get_X methods to file
    *
@@ -840,45 +846,36 @@ class generic_data_reader {
   friend class data_reader_merge_features;
   friend class data_reader_merge_samples;
 
+  void set_use_data_store(bool s) { m_use_data_store = s; }
+
 private:
+  virtual void do_preload_data_store(); // Throws: "Not implemented."
 
-  virtual void do_preload_data_store() {
-    LBANN_ERROR("Not implemented.");
-  }
+protected:
+  bool m_use_data_store = false;
 
- protected :
   /** @brief Holds a true value for each input data type that is supported.
    *  Use an ordered map so that checkpoints are stable. */
-  std::map<input_data_type, bool> m_supported_input_types;
+  std::map<data_field_type, bool> m_supported_input_types;
 
-  //var to support GAN
-  bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
-  int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0
-
-  std::vector<std::vector<char>> m_thread_buffer;
+  // var to support GAN
+  bool m_gan_labelling; // boolean flag of whether its GAN binary label, default
+                        // is false
+  int m_gan_label_value; // zero(0) or 1 label value for discriminator, default
+                         // is 0
 
   observer_ptr<thread_pool> m_io_thread_pool;
-
-  /// special handling for 1B jag; each reader
-  /// owns a unique subset of the data
-  bool m_jag_partitioned;
 
   /** Whether to keep the order of loaded samples same as it is in the
    *  file to make testing and validation easier */
   bool m_keep_sample_order;
 
-  /// called by fetch_data a single time if m_jag_partitioned = true;
-  /// this sets various member variables (num_iterations, m_reset_mini_batch_index,
-  /// etc.
-  void set_jag_variables(int mb_size);
-  trainer *m_trainer;
-
   /** Transform pipeline for preprocessing data. */
   transform::transform_pipeline m_transform_pipeline;
 
-  /// for use with data_store: issue a warning a single time if m_data_store != nullptr,
-  /// but we're not retrieving a conduit::Node from the store. This typically occurs
-  /// during the test phase
+  /// for use with data_store: issue a warning a single time if m_data_store !=
+  /// nullptr, but we're not retrieving a conduit::Node from the store. This
+  /// typically occurs during the test phase
   bool m_issue_warning;
 
   /// throws exception if get_absolute_sample_count() and
@@ -886,17 +883,24 @@ private:
   void error_check_counts() const;
 };
 
-template<typename T>
-inline void set_minibatch_item(Mat& M, const int mb_idx, const T* const ptr, const size_t count) {
+template <typename T>
+inline void set_minibatch_item(Mat& M,
+                               const int mb_idx,
+                               const T* const ptr,
+                               const size_t count)
+{
   if ((count > 0u) && (ptr == nullptr)) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+    throw lbann_exception(std::string{} + __FILE__ + " " +
+                          std::to_string(__LINE__) +
                           " :: attempt to dereference a nullptr ");
   }
   for (size_t i = 0u; i < count; ++i) {
-    M.Set(static_cast<El::Int>(i), static_cast<El::Int>(mb_idx), static_cast<DataType>(ptr[i]));
+    M.Set(static_cast<El::Int>(i),
+          static_cast<El::Int>(mb_idx),
+          static_cast<DataType>(ptr[i]));
   }
 }
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_DATA_READER_HPP
+#endif // LBANN_DATA_READER_HPP

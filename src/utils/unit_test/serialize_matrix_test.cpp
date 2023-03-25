@@ -1,15 +1,39 @@
-#include <catch2/catch.hpp>
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+#include "Catch2BasicSupport.hpp"
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 #include <lbann/base.hpp>
 #include <lbann/utils/serialize.hpp>
-#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
-using MatrixTypes =
-  h2::meta::TL<
-  El::Matrix<float, El::Device::CPU>
+using MatrixTypes = h2::meta::TL<El::Matrix<float, El::Device::CPU>
 #ifdef LBANN_HAS_GPU
-  , El::Matrix<float, El::Device::GPU>
+                                 ,
+                                 El::Matrix<float, El::Device::GPU>
 #endif
-  >;
+                                 >;
 
 TEMPLATE_LIST_TEST_CASE("Matrix serialization",
                         "[serialize][utils][matrix][seq]",
@@ -17,7 +41,7 @@ TEMPLATE_LIST_TEST_CASE("Matrix serialization",
 {
   using MatrixType = TestType;
   std::stringstream ss;
-  MatrixType mat(13,17), mat_restore;
+  MatrixType mat(13, 17), mat_restore;
 
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
   SECTION("XML archive")
@@ -55,10 +79,8 @@ TEMPLATE_LIST_TEST_CASE("Matrix serialization",
 
     CHECK(mat.Height() == mat_restore.Height());
     CHECK(mat.Width() == mat_restore.Width());
-    for (El::Int col = 0; col < mat.Width(); ++col)
-    {
-      for (El::Int row = 0; row < mat.Height(); ++row)
-      {
+    for (El::Int col = 0; col < mat.Width(); ++col) {
+      for (El::Int row = 0; row < mat.Height(); ++row) {
         INFO("(Row,Col) = (" << row << "," << col << ")");
         CHECK(mat.Get(row, col) == mat_restore.Get(row, col));
       }
@@ -81,15 +103,12 @@ TEMPLATE_LIST_TEST_CASE("Matrix serialization",
 
     CHECK(mat_noncontig.Height() == mat_restore.Height());
     CHECK(mat_noncontig.Width() == mat_restore.Width());
-    for (El::Int col = 0; col < mat_noncontig.Width(); ++col)
-    {
-      for (El::Int row = 0; row < mat_noncontig.Height(); ++row)
-      {
+    for (El::Int col = 0; col < mat_noncontig.Width(); ++col) {
+      for (El::Int row = 0; row < mat_noncontig.Height(); ++row) {
         INFO("(Row,Col) = (" << row << "," << col << ")");
         CHECK(mat_noncontig.Get(row, col) == mat_restore.Get(row, col));
       }
     }
-
   }
 #endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 
@@ -136,7 +155,7 @@ TEMPLATE_LIST_TEST_CASE("Matrix smart-pointer-to-concrete serialization",
       CHECK_NOTHROW(iarchive(mat_restore));
     }
 
-    REQUIRE((check_valid_ptr) mat_restore);
+    REQUIRE((check_valid_ptr)mat_restore);
     CHECK(mat->Height() == mat_restore->Height());
     CHECK(mat->Width() == mat_restore->Width());
   }
@@ -157,10 +176,8 @@ TEMPLATE_LIST_TEST_CASE("Matrix smart-pointer-to-concrete serialization",
 
     CHECK(mat->Height() == mat_restore->Height());
     CHECK(mat->Width() == mat_restore->Width());
-    for (El::Int col = 0; col < mat->Width(); ++col)
-    {
-      for (El::Int row = 0; row < mat->Height(); ++row)
-      {
+    for (El::Int col = 0; col < mat->Width(); ++col) {
+      for (El::Int row = 0; row < mat->Height(); ++row) {
         INFO("(Row,Col) = (" << row << "," << col << ")");
         CHECK(mat->Get(row, col) == mat_restore->Get(row, col));
       }

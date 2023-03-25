@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,12 +32,10 @@
 
 #include "utils.hpp"
 
-namespace lbann
-{
+namespace lbann {
 
 #ifdef LBANN_HAS_CUDNN
-namespace dnn_lib
-{
+namespace dnn_lib {
 
 using namespace cudnn;
 
@@ -82,11 +80,15 @@ void pooling_forward(PoolingDescriptor const& poolingDesc,
                      El::AbstractMatrix<TensorDataType>& y,
                      El::Matrix<TensorDataType, El::Device::GPU>& workSpace)
 {
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
-                                     gpu::get_sync_info(x));
+  auto multisync =
+    El::MakeMultiSync(gpu::get_sync_info(y), gpu::get_sync_info(x));
   pooling_forward(poolingDesc,
-                  alpha_in, xDesc, x,
-                  beta_in, yDesc, y,
+                  alpha_in,
+                  xDesc,
+                  x,
+                  beta_in,
+                  yDesc,
+                  y,
                   workSpace,
                   multisync);
 }
@@ -143,13 +145,21 @@ void pooling_backward(PoolingDescriptor const& poolingDesc,
                                      gpu::get_sync_info(dy),
                                      gpu::get_sync_info(y));
   pooling_backward(poolingDesc,
-                   alpha_in, yDesc, y, dyDesc, dy,
-                   xDesc, x, beta_in, dxDesc, dx,
+                   alpha_in,
+                   yDesc,
+                   y,
+                   dyDesc,
+                   dy,
+                   xDesc,
+                   x,
+                   beta_in,
+                   dxDesc,
+                   dx,
                    workSpace,
                    multisync);
 }
 
-}// namespace dnn_lib
+} // namespace dnn_lib
 #endif // LBANN_HAS_CUDNN
-}// namespace lbann
+} // namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_CUDNN_POOLING_HPP_

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,33 +27,30 @@
 #ifndef LBANN_LAYERS_TRANSFORM_SLICE_HPP_INCLUDED
 #define LBANN_LAYERS_TRANSFORM_SLICE_HPP_INCLUDED
 
-#include "lbann/layers/data_type_layer.hpp"
-#include "lbann/utils/exception.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
+#include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/proto/layers.pb.h"
 #include "lbann/trainers/trainer.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 namespace lbann {
 
-/** @brief Slice tensor along a specified dimension.
+/** @brief Slice tensor along a specified dimension
  *
- *  Suppose we slice a @f$ D_1 \times\cdots\times D_n @f$ input tensor
- *  along the dimension @f$ k @f$. We specify slice points
- *  @f$ s_1,\cdots,s_\ell @f$, which are strictly increasing and have
- *  @f$ s_1 = 0 @f$ and @f$ s_\ell=D_k @f$. The @f$ i @f$th output
- *  tensor is then a
- *  @f$ D_1 \times\cdots
- *    \times D_{i-1}\times (s_i - s_{i-1}) \times D_{i+1} \times
- *    \cdots\times D_n @f$
- *  tensor.
+ *  The tensor is split along one dimension at user-specified points,
+ *  and each child layer recieves one piece.
  */
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class slice_layer : public data_type_layer<TensorDataType> {
+class slice_layer : public data_type_layer<TensorDataType>
+{
 public:
-
-  slice_layer(lbann_comm *comm);
+  slice_layer(lbann_comm* comm);
   slice_layer(const slice_layer& other) = default;
   slice_layer& operator=(const slice_layer& other) = default;
 
@@ -73,26 +70,29 @@ public:
 
   description get_description() const override;
 
-  void setup_slice_points(size_t slice_dim,
-                          std::vector<size_t> slice_points) {
+  void setup_slice_points(size_t slice_dim, std::vector<size_t> slice_points)
+  {
     m_slice_dim = slice_dim;
     m_slice_points = std::move(slice_points);
   }
 
   void setup_slice_points(size_t slice_dim,
                           bool set_slice_points_from_data_reader,
-                          const slice_points_mode var_category) {
+                          const slice_points_mode var_category)
+  {
     m_slice_dim = slice_dim;
     m_set_slice_points_from_data_reader = set_slice_points_from_data_reader;
     m_var_category = var_category;
   }
 
 protected:
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
+  El::SyncInfo<Device> syncSubGridCommunication = El::SyncInfo<Device>();
 
   friend class cereal::access;
-  slice_layer()
-    : slice_layer(nullptr)
-  {}
+  slice_layer() : slice_layer(nullptr) {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 
@@ -100,9 +100,10 @@ protected:
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
   void fp_compute() override;
   void bp_compute() override;
+  void fp_compute_subgrid();
+  void bp_compute_subgrid();
 
 private:
-
   /** Tensor dimension to slice. */
   size_t m_slice_dim;
   /** Slice points for each child layer. */
@@ -128,48 +129,64 @@ private:
 #endif // LBANN_HAS_GPU
 
   template <typename U, El::Device D>
-  friend void fp_setup_outputs_impl(slice_layer<U,Layout,D>&);
+  friend void fp_setup_outputs_impl(slice_layer<U, Layout, D>&);
   template <typename U>
-  friend void fp_compute_impl(slice_layer<U,Layout,Device>&);
+  friend void fp_compute_impl(slice_layer<U, Layout, Device>&);
   template <typename U>
-  friend void bp_compute_impl(slice_layer<U,Layout,Device>&);
-
+  friend void bp_compute_impl(slice_layer<U, Layout, Device>&);
 };
 
 // =========================================================
 // Implementation
 // =========================================================
 
+template <typename T, data_layout L, El::Device D>
+void slice_layer<T, L, D>::write_specific_proto(lbann_data::Layer& proto) const
+{
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_slice();
+  msg->set_axis(m_slice_dim);
+  protobuf::assign_to_repeated(*msg->mutable_slice_points(), m_slice_points);
+}
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-slice_layer<TensorDataType,Layout,Device>::slice_layer(lbann_comm *comm)
+slice_layer<TensorDataType, Layout, Device>::slice_layer(lbann_comm* comm)
   : data_type_layer<TensorDataType>(comm),
-  m_set_slice_points_from_data_reader(false),
-  m_var_category(slice_points_mode::NA) {
+    m_set_slice_points_from_data_reader(false),
+    m_var_category(slice_points_mode::NA)
+{
   this->m_expected_num_child_layers = -1; // No limit on children
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-slice_layer<TensorDataType,Layout,Device>* slice_layer<TensorDataType,Layout,Device>::copy() const {
+slice_layer<TensorDataType, Layout, Device>*
+slice_layer<TensorDataType, Layout, Device>::copy() const
+{
   return new slice_layer(*this);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::string slice_layer<TensorDataType,Layout,Device>::get_type() const {
+std::string slice_layer<TensorDataType, Layout, Device>::get_type() const
+{
   return "slice";
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-data_layout slice_layer<TensorDataType,Layout,Device>::get_data_layout() const {
+data_layout slice_layer<TensorDataType, Layout, Device>::get_data_layout() const
+{
   return Layout;
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-El::Device slice_layer<TensorDataType,Layout,Device>::get_device_allocation() const {
+El::Device
+slice_layer<TensorDataType, Layout, Device>::get_device_allocation() const
+{
   return Device;
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-description slice_layer<TensorDataType,Layout,Device>::get_description() const {
+description slice_layer<TensorDataType, Layout, Device>::get_description() const
+{
   auto desc = data_type_layer<TensorDataType>::get_description();
   desc.add("Slice dimension", m_slice_dim);
   std::ostringstream ss;
@@ -181,15 +198,16 @@ description slice_layer<TensorDataType,Layout,Device>::get_description() const {
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void slice_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& dr_metadata) {
+void slice_layer<TensorDataType, Layout, Device>::setup_dims(
+  DataReaderMetaData& dr_metadata)
+{
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
   // Setup the slice points if they are to be established by the data reader
-  if(m_set_slice_points_from_data_reader) {
+  if (m_set_slice_points_from_data_reader) {
     std::vector<size_t> slice_points;
     std::string slice_point_method_name = "'get_slice_points_from_reader'";
-    for (auto& slice_point
-           : dr_metadata.slice_points[m_var_category]) {
+    for (auto& slice_point : dr_metadata.slice_points[m_var_category]) {
       slice_points.push_back(slice_point);
     }
 
@@ -208,109 +226,243 @@ void slice_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& d
     err << this->get_type() << " layer \"" << this->get_name() << "\" "
         << "is slicing along dimension " << m_slice_dim << ", "
         << "but it has a " << input_dims.size() << "-D input tensor "
-        << "(parent layer \"" << this->get_parent_layers()[0]->get_name() << "\" "
+        << "(parent layer \"" << this->get_parent_layers()[0]->get_name()
+        << "\" "
         << "outputs with dimensions ";
-    for (size_t d=0; d<input_dims.size(); ++d) {
-      err << (d>0 ? " x " : "") << input_dims[d];
+    for (size_t d = 0; d < input_dims.size(); ++d) {
+      err << (d > 0 ? " x " : "") << input_dims[d];
     }
     err << ")";
     LBANN_ERROR(err.str());
   }
   if (m_slice_points.size() <= num_outputs) {
-    LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
-                "has ",num_outputs," children, "
-                "but only ",m_slice_points.size()," slice points");
+    LBANN_ERROR(this->get_type(),
+                " layer \"",
+                this->get_name(),
+                "\" ",
+                "has ",
+                num_outputs,
+                " children, "
+                "but only ",
+                m_slice_points.size(),
+                " slice points");
   }
   if (!std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
-    LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
+    LBANN_ERROR(this->get_type(),
+                " layer \"",
+                this->get_name(),
+                "\" ",
                 "has unsorted slice points");
   }
   if (m_slice_points.back() > static_cast<size_t>(input_dims[m_slice_dim])) {
-    LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
-                "has a slice point of ",m_slice_points.back(),", ",
+    LBANN_ERROR(this->get_type(),
+                " layer \"",
+                this->get_name(),
+                "\" ",
+                "has a slice point of ",
+                m_slice_points.back(),
+                ", ",
                 "which is outside the expected range "
-                "[0 ",input_dims[m_slice_dim],"]");
+                "[0 ",
+                input_dims[m_slice_dim],
+                "]");
   }
 
   // Model-parallel implementation only supports flat data
   if (Layout == data_layout::MODEL_PARALLEL && input_dims.size() != 1) {
-    LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
-                "attempted to slice along dimension ",m_slice_dim,", ",
+    LBANN_ERROR(this->get_type(),
+                " layer \"",
+                this->get_name(),
+                "\" ",
+                "attempted to slice along dimension ",
+                m_slice_dim,
+                ", ",
                 "but model-parallel slice layer only supports flat data");
   }
 
   // Set output tensor dimensions
   auto output_dims = input_dims;
   for (size_t i = 0; i < num_outputs; ++i) {
-    output_dims[m_slice_dim] = m_slice_points[i+1] - m_slice_points[i];
+    output_dims[m_slice_dim] = m_slice_points[i + 1] - m_slice_points[i];
     this->set_output_dims(output_dims, i);
   }
-
 }
 
 template <typename TensorDataType, El::Device Device>
 void fp_setup_outputs_impl(
-  slice_layer<TensorDataType,data_layout::MODEL_PARALLEL,Device>& l) {
+  slice_layer<TensorDataType, data_layout::MODEL_PARALLEL, Device>& l)
+{
 
   // Slice Elemental matrices
   // Note: Assume each mini-batch sample is flat.
   const size_t num_outputs = l.get_num_children();
   const auto& input = l.get_prev_activations();
   size_t offset = l.m_slice_points.front();
-  for (size_t j=0; j<num_outputs; ++j) {
+  for (size_t j = 0; j < num_outputs; ++j) {
     auto& output = l.get_activations(j);
     const auto& output_size = l.get_output_size(j);
-    El::LockedView(output, input,
-                   El::IR(offset, offset+output_size), El::ALL);
+    El::LockedView(output,
+                   input,
+                   El::IR(offset, offset + output_size),
+                   El::ALL);
     offset += output_size;
   }
-
 }
 
 template <typename TensorDataType, El::Device Device>
 void fp_setup_outputs_impl(
-  slice_layer<TensorDataType,data_layout::DATA_PARALLEL,Device>& l) {
+  slice_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>& l)
+{
 
   const size_t num_outputs = l.get_num_children();
   const auto& input = l.get_prev_activations();
-  for (size_t j=0; j<num_outputs; ++j) {
+  for (size_t j = 0; j < num_outputs; ++j) {
     auto& output = l.get_activations(j);
-    output.AlignWith(input);
+    // output.AlignWith(input);
     output.Resize(l.get_output_size(j), input.Width());
   }
-
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void slice_layer<TensorDataType,Layout,Device>::fp_setup_outputs(El::Int mini_batch_size) {
+void slice_layer<TensorDataType, Layout, Device>::fp_setup_outputs(
+  El::Int mini_batch_size)
+{
   fp_setup_outputs_impl(*this);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void slice_layer<TensorDataType,Layout,Device>::fp_compute() {
-  fp_compute_impl(*this);
+void slice_layer<TensorDataType, Layout, Device>::fp_compute_subgrid()
+{
+  const auto& input_dims = this->get_input_dims();
+  const size_t num_dims = input_dims.size();
+  if (num_dims > 3) {
+    LBANN_ERROR(this->get_type(),
+                " layer \"",
+                this->get_name(),
+                "\" ",
+                "is operating on ",
+                num_dims,
+                "-D tensors, ",
+                "but only 3-D tensors are currently supported");
+  }
+
+  const int split_dim = input_dims[this->m_slice_dim];
+
+  if (this->m_slice_dim != num_dims - 1) {
+    LBANN_ERROR(this->get_type(),
+                " layer \"",
+                this->get_name(),
+                "\" ",
+                "has axis ",
+                this->m_slice_dim,
+                " However, ",
+                "Subgrpah parallelism is supported when split axis is the last "
+                "dimension");
+  }
+  const auto& input = this->get_prev_activations();
+
+  auto const* ptr_input = dynamic_cast<
+    El::
+      DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Device> const*>(
+    &input);
+
+  if (this->get_communication_flag() == COLL_OPT) {
+    El::copy::TranslateBetweenGridsScatter<TensorDataType, Device, Device>(
+      *ptr_input,
+      this->get_all_activations(),
+      split_dim,
+      this->get_subgrid_comm(),
+      syncSubGridCommunication,
+      3);
+  }
+  else if (this->get_communication_flag() == COLL) {
+    El::copy::TranslateBetweenGridsScatter<TensorDataType, Device, Device>(
+      *ptr_input,
+      this->get_all_activations(),
+      split_dim,
+      this->get_subgrid_comm(),
+      syncSubGridCommunication,
+      2);
+  }
+  else {
+    El::copy::TranslateBetweenGridsScatter<TensorDataType, Device, Device>(
+      *ptr_input,
+      this->get_all_activations(),
+      split_dim,
+      this->get_subgrid_comm(),
+      syncSubGridCommunication,
+      1);
+  }
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void slice_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
+void slice_layer<TensorDataType, Layout, Device>::fp_compute()
+{
+  const auto& input_dims = this->get_input_dims();
+  const size_t num_dims = input_dims.size();
+
+  if (this->m_slice_dim == num_dims - 1 &&
+      this->get_parallel_strategy().enable_subgraph == true) {
+    fp_compute_subgrid();
+  }
+  else {
+    fp_compute_impl(*this);
+  }
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void slice_layer<TensorDataType, Layout, Device>::bp_compute_subgrid()
+{
+  const auto& input_dims = this->get_input_dims();
+
+  const int split_dim =
+    int(input_dims[this->m_slice_dim] / this->get_num_children());
+
+  auto& input_grad = this->get_error_signals();
+
+  auto* ptr_input_grad = dynamic_cast<
+    El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Device>*>(
+    &input_grad);
+
+  El::copy::TranslateBetweenGridsGather<TensorDataType, Device, Device>(
+    *ptr_input_grad,
+    this->get_all_prev_error_signals(),
+    split_dim,
+    this->get_subgrid_comm(),
+    syncSubGridCommunication);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void slice_layer<TensorDataType, Layout, Device>::bp_setup_gradient_wrt_inputs(
+  El::Int mini_batch_size)
+{
   const auto& output0_grad = this->get_prev_error_signals(0);
   auto& input_grad = this->get_error_signals();
   input_grad.Empty(false);
-  input_grad.AlignWith(output0_grad);
+  input_grad.Resize(this->get_input_size(), output0_grad.Width());
   El::Zeros(input_grad, this->get_input_size(), output0_grad.Width());
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void slice_layer<TensorDataType,Layout,Device>::bp_compute() {
-  bp_compute_impl(*this);
+void slice_layer<TensorDataType, Layout, Device>::bp_compute()
+{
+
+  const auto& input_dims = this->get_input_dims();
+  const size_t num_dims = input_dims.size();
+
+  if (this->m_slice_dim == num_dims - 1 &&
+      this->get_parallel_strategy().enable_subgraph == true) {
+    bp_compute_subgrid();
+  }
+  else {
+    bp_compute_impl(*this);
+  }
 }
 
 #ifndef LBANN_SLICE_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device)             \
-  extern template class slice_layer<        \
-    T, data_layout::DATA_PARALLEL, Device>; \
-  extern template class slice_layer<        \
-    T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class slice_layer<T, data_layout::DATA_PARALLEL, Device>;    \
+  extern template class slice_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

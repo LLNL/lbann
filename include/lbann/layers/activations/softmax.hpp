@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,13 +28,19 @@
 #define LBANN_LAYERS_ACTIVATIONS_SOFTMAX_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/utils/distconv.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/dnn_enums.hpp"
 #if defined LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/dnn_lib/softmax.hpp"
 #endif // defined LBANN_HAS_DNN_LIB
+#include "lbann/proto/layers.pb.h"
 #include "lbann/utils/dnn_lib/softmax.hpp"
+
+#ifdef LBANN_HAS_DISTCONV
+#include "distconv/dnn_backend/softmax.hpp"
+#include "lbann/utils/distconv.hpp"
+#endif
 
 // Threshold outputs to a minimum value.
 
@@ -48,15 +54,25 @@
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class softmax_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
- public:
-  using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+namespace dc {
+using Backend = ::distconv::BackendDNNLib;
+using Softmax = ::distconv::Softmax<Backend>;
+} // namespace dc
 
-  softmax_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class softmax_distconv_adapter
+  : public data_type_distconv_adapter<TensorDataType>
+{
+public:
+  using TensorDevType =
+    typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+
+  softmax_distconv_adapter(Layer& layer)
+    : data_type_distconv_adapter<TensorDataType>(layer)
+  {}
   virtual ~softmax_distconv_adapter() = default;
 
-  void setup_distributions(tensor_overlap_constraints &constraints) override;
+  void setup_distributions(tensor_overlap_constraints& constraints) override;
   void setup_layer(size_t workspace_capacity) override;
 
   std::unique_ptr<dc::Softmax> m_softmax;
@@ -67,7 +83,8 @@ class softmax_distconv_adapter: public data_type_distconv_adapter<TensorDataType
  *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class softmax_layer : public data_type_layer<TensorDataType> {
+class softmax_layer : public data_type_layer<TensorDataType>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -78,16 +95,15 @@ public:
   ///@}
 
 public:
-
-  softmax_layer(lbann_comm *comm,
-                softmax_mode mode)
+  softmax_layer(lbann_comm* comm, softmax_mode mode)
     : data_type_layer<TensorDataType>(comm),
       m_mode(mode)
 #ifdef LBANN_HAS_DNN_LIB
-    , m_tensors_dnn_desc(this)
+      ,
+      m_tensors_dnn_desc(this)
 #endif // LBANN_HAS_DNN_LIB
   {
-    if(mode == softmax_mode::INVALID) {
+    if (mode == softmax_mode::INVALID) {
       LBANN_ERROR("invalid softmax mode");
     }
   }
@@ -95,10 +111,10 @@ public:
   softmax_layer(const softmax_layer& other)
     : data_type_layer<TensorDataType>(other),
       m_mode(other.m_mode),
-      m_workspace(other.m_workspace ?
-                  other.m_workspace->Copy() : nullptr)
+      m_workspace(other.m_workspace ? other.m_workspace->Copy() : nullptr)
 #ifdef LBANN_HAS_DNN_LIB
-    , m_tensors_dnn_desc(other.m_tensors_dnn_desc)
+      ,
+      m_tensors_dnn_desc(other.m_tensors_dnn_desc)
 #endif // LBANN_HAS_DNN_LIB
   {
 #ifdef LBANN_HAS_DNN_LIB
@@ -113,13 +129,19 @@ public:
   data_layout get_data_layout() const final { return Layout; }
   El::Device get_device_allocation() const final { return Device; }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) final {
+#ifdef LBANN_HAS_ONNX
+  std::string get_onnx_op_type() const override { return "Softmax"; }
+#endif // LBANN_HAS_ONNX
+
+  void setup_dims(DataReaderMetaData& dr_metadata) final
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 
-  void setup_matrices(const El::Grid& grid) final {
-    data_type_layer<TensorDataType>::setup_matrices(grid);
+  void setup_data(size_t max_mini_batch_size) override
+  {
+    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
     auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
     m_workspace.reset(AbsDistMatrixType::Instantiate(dist));
@@ -132,24 +154,6 @@ public:
     if (!m_tensors_dnn_desc.get_layer())
       m_tensors_dnn_desc.set_layer(this);
 #endif // LBANN_HAS_DNN_LIB
-
-  }
-
-  void fp_setup_outputs(El::Int mini_batch_size) final {
-    data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
-    // The data parallel implementations do not use a workspace. Thus,
-    // we only need to allocate a workspace when we are in model
-    // parallel mode.
-    if constexpr (Layout == data_layout::MODEL_PARALLEL)
-    {
-      const auto& dist_data = this->get_prev_activations().DistData();
-      m_workspace->Empty(false);
-      m_workspace->AlignWith(dist_data);
-      m_workspace->Resize(1, mini_batch_size);
-    }
-
-    // Setup the descriptors
-    this->setup_fp_dnn_descriptors();
   }
 
   void fp_compute() final;
@@ -168,11 +172,15 @@ public:
 
   ///@}
 
+protected:
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
 private:
   /** @name DNN library stuff */
   ///@{
 
-  //using dnn_backend = dnn_lib::get_backend<Device>;
+  // using dnn_backend = dnn_lib::get_backend<Device>;
 #ifdef LBANN_HAS_ONEDNN_CPU
   using dnn_backend = onednn_backend<Device>;
 #else
@@ -180,13 +188,22 @@ private:
 #endif
   using dnnTensorDescriptor = typename dnn_backend::TensorDescriptor;
 
+  /** @brief Descriptor for local input tensor
+   *  @details Only used for data-parallel, CPU implementation.
+   */
   dnnTensorDescriptor input_descriptor_;
+  /** @brief Descriptor for local output tensor
+   *  @details Only used for data-parallel, CPU implementation.
+   */
   dnnTensorDescriptor output_descriptor_;
+  /** @brief Descriptor for local input gradient tensor
+   *  @details Only used for data-parallel, CPU implementation.
+   */
   dnnTensorDescriptor grad_wrt_input_descriptor_;
+  /** @brief Descriptor for local output gradient tensor
+   *  @details Only used for data-parallel, CPU implementation.
+   */
   dnnTensorDescriptor grad_wrt_output_descriptor_;
-
-  void setup_fp_dnn_descriptors();
-  void setup_bp_dnn_descriptors();
 
   ///@}
 
@@ -196,98 +213,49 @@ private:
   /** Softmax mode. */
   softmax_mode m_mode;
 
-  /** Workspace for column-wise reductions. */
+  /** @brief Workspace for column-wise reductions
+   *
+   *  Only used for model-parallel implementation.
+   */
   std::unique_ptr<AbsDistMatrixType> m_workspace;
 
 #ifdef LBANN_HAS_DNN_LIB
   /** Tensor DNN library descriptors. */
-  dnn_lib::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_dnn_desc;
+  dnn_lib::data_parallel_layer_tensor_manager<TensorDataType>
+    m_tensors_dnn_desc;
 #endif // LBANN_HAS_DNN_LIB
 
 // Minimum output value to avoid denormalized floats
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
-  TensorDataType threshold_val = static_cast<TensorDataType>(El::Sqrt(std::numeric_limits<TensorDataType>::min()));
+  TensorDataType threshold_val = static_cast<TensorDataType>(
+    El::Sqrt(std::numeric_limits<TensorDataType>::min()));
 #else
   TensorDataType threshold_val = El::TypeTraits<TensorDataType>::Zero();
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
 
 #ifdef LBANN_HAS_DISTCONV
   friend class softmax_distconv_adapter<TensorDataType, Layout, Device>;
- protected:
-  bool is_distconv_supported() const final {
+
+protected:
+  bool is_distconv_supported() const final
+  {
     return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) final {
-    this->get_distconv_adapter_ptr() = make_unique<softmax_distconv_adapter<
-      TensorDataType, Layout, Device>>(*this);
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) final
+  {
+    this->get_distconv_adapter_ptr() = std::make_unique<
+      softmax_distconv_adapter<TensorDataType, Layout, Device>>(*this);
   }
-  softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() final;
-  const softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() const final;
+  softmax_distconv_adapter<TensorDataType, Layout, Device>&
+  get_distconv_adapter() final;
+  const softmax_distconv_adapter<TensorDataType, Layout, Device>&
+  get_distconv_adapter() const final;
 #endif // LBANN_HAS_DISTCONV
 };
 
-#ifdef LBANN_HAS_DISTCONV
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-softmax_distconv_adapter<TensorDataType, T_layout, Dev>&
-softmax_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() {
-  return const_cast<softmax_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      static_cast<const softmax_layer<TensorDataType, T_layout, Dev>&>(*this).get_distconv_adapter());
-}
-
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-const softmax_distconv_adapter<TensorDataType, T_layout, Dev>&
-softmax_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const {
-  return dynamic_cast<const softmax_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      data_type_layer<TensorDataType>::get_distconv_adapter());
-}
-
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void softmax_distconv_adapter<TensorDataType, T_layout, Dev>::
-setup_distributions(tensor_overlap_constraints &constraints) {
-  data_type_distconv_adapter<TensorDataType>::setup_distributions(
-      constraints);
-  // No overlap supported yet
-  for (auto &d: this->m_prev_activations_dists) {
-    d.clear_overlap();
-    constraints.mark_updated(d);
-    constraints.mark_invariant(d);
-  }
-  for (auto &d: this->m_activations_dists) {
-    d.clear_overlap();
-    constraints.mark_updated(d);
-    constraints.mark_invariant(d);
-  }
-  for (auto &d: this->m_prev_error_signals_dists) {
-    d.clear_overlap();
-    constraints.mark_updated(d);
-    constraints.mark_invariant(d);
-  }
-  for (auto &d: this->m_error_signals_dists) {
-    d.clear_overlap();
-    constraints.mark_updated(d);
-    constraints.mark_invariant(d);
-  }
-}
-
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void softmax_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
-    size_t workspace_capacity) {
-  auto &l = dynamic_cast<softmax_layer<TensorDataType, T_layout, Dev>&>(
-      this->layer());
-  m_softmax = make_unique<dc::Softmax>(dc::get_backend());
-  auto mode = l.m_mode == softmax_mode::INSTANCE ?
-                          ::distconv::SoftmaxMode::INSTANCE :
-      ::distconv::SoftmaxMode::CHANNEL;
-  m_softmax->setup(this->get_prev_activations(), mode);
-}
-#endif // LBANN_HAS_DISTCONV
-
-
-LBANN_DEFINE_LAYER_BUILDER(softmax);
-
 #ifndef LBANN_SOFTMAX_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class softmax_layer<T, data_layout::DATA_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class softmax_layer<T, data_layout::DATA_PARALLEL, Device>;  \
   extern template class softmax_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"

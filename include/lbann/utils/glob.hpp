@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,10 +27,10 @@
 #ifndef LBANN_UTILS_GLOB_HPP
 #define LBANN_UTILS_GLOB_HPP
 
-#include <glob.h>
-#include <vector>
-#include <string>
 #include "lbann/utils/exception.hpp"
+#include <glob.h>
+#include <string>
+#include <vector>
 
 namespace lbann {
 
@@ -39,14 +39,16 @@ namespace lbann {
  * the shell.
  * Note this does not do tilde expansion.
  */
-inline std::vector<std::string> glob(const std::string& pattern) {
+inline std::vector<std::string> glob(const std::string& pattern)
+{
   glob_t pglob;
   int r = glob(pattern.c_str(), 0, nullptr, &pglob);
   if (r != 0) {
     // Either an error or no match.
     if (r == GLOB_NOMATCH) {
       return {};
-    } else {
+    }
+    else {
       throw lbann_exception("glob error");
     }
   }
@@ -58,6 +60,6 @@ inline std::vector<std::string> glob(const std::string& pattern) {
   return results;
 }
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_UTILS_GLOB_HPP
+#endif // LBANN_UTILS_GLOB_HPP

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,7 +29,7 @@
 #include "lbann/utils/protobuf_utils.hpp"
 #include "lbann/proto/proto_common.hpp"
 
-#include <lbann.pb.h> // Actually use LbannPB here
+#include "lbann/proto/lbann.pb.h" // Actually use LbannPB here
 
 /**
  * all methods in protobuf_utils are static
@@ -39,102 +39,107 @@ namespace lbann {
 namespace protobuf_utils {
 
 std::vector<prototext_fn_triple>
-parse_prototext_filenames_from_command_line(
-               const bool master,
-               const int argc,
-               char * const argv[],
-               const int trainer_rank) {
+parse_prototext_filenames_from_command_line(const bool master,
+                                            const int trainer_rank)
+{
+  auto& arg_parser = global_argument_parser();
   std::vector<std::string> models;
   std::vector<std::string> optimizers;
   std::vector<std::string> readers;
   std::vector<std::string> data_set_metadata;
   bool single_file_load = false;
-  for (int k=1; k<argc; k++) {
-    std::string s(argv[k]);
-    if (s[0] != '-' or s[1] != '-') {
-      LBANN_ERROR("badly formed cmd line param; must begin with '--': ", s);
-    }
-    if (s.find(',') != std::string::npos) {
-      LBANN_ERROR(" badly formed param; contains ','; ", s, 
-          "; possibly you left out '{' or '}' or both");
-    }
 
-    size_t equal_sign = s.find("=");
-    if (equal_sign != std::string::npos) {
-      std::string which = s.substr(2, equal_sign-2);
-      std::string fn = s.substr(equal_sign+1);
-      //check if trainer is append to filename string
+  std::string params[] = {LBANN_OPTION_PROTOTEXT,
+                          LBANN_OPTION_MODEL,
+                          LBANN_OPTION_READER,
+                          LBANN_OPTION_METADATA,
+                          LBANN_OPTION_OPTIMIZER};
+  for (auto& which : params) {
+    std::string fn = arg_parser.get<std::string>(which);
+    if (fn != "") {
       size_t t_pos = fn.find("trainer");
-      if(t_pos != std::string::npos) {
-         //append appropriate trainer id to prototext filename
-         std::string fname = fn.substr(0,t_pos+7)+ std::to_string(trainer_rank);
-         fn = fname;
+      if (t_pos != std::string::npos) {
+        // append appropriate trainer id to prototext filename
+        std::string fname =
+          fn.substr(0, t_pos + 7) + std::to_string(trainer_rank);
+        fn = fname;
       }
-      if (which == "prototext") {
+      if (which == LBANN_OPTION_PROTOTEXT) {
         models.push_back(fn);
         single_file_load = true;
       }
-      if (which == "model") {
+      if (which == LBANN_OPTION_MODEL) {
         models.push_back(fn);
       }
-      if (which == "reader") {
+      if (which == LBANN_OPTION_READER) {
         readers.push_back(fn);
       }
-      if (which == "metadata") {
+      if (which == LBANN_OPTION_METADATA) {
         data_set_metadata.push_back(fn);
       }
-      if (which == "optimizer") {
+      if (which == LBANN_OPTION_OPTIMIZER) {
         optimizers.push_back(fn);
       }
     }
   }
 
-  if(!single_file_load) {
+  if (!single_file_load) {
     size_t n = models.size();
-    if (! (optimizers.size() == 1 || optimizers.size() == n)) {
+    if (!(optimizers.size() == 1 || optimizers.size() == n)) {
       LBANN_ERROR(
-        "you specified ", n, " model filenames, and ", optimizers.size(), 
-        " optimizer filenames; you must specify either one or ", 
-       n, " optimizer filenames");
+        "you specified ",
+        n,
+        " model filenames, and ",
+        optimizers.size(),
+        " optimizer filenames; you must specify 1 optimizer filenames");
     }
-    if (! (readers.size() == 1 || readers.size() == n)) {
-      LBANN_ERROR(
-        "you specified ", n, " model filenames, and ", readers.size(),
-        " reader filenames; you must specify either one or ", n,
-        " reader filenames");
+    if (!(readers.size() == 1 || readers.size() == n)) {
+      LBANN_ERROR("you specified ",
+                  n,
+                  " model filenames, and ",
+                  readers.size(),
+                  " reader filenames; you must specify 1 reader filenames");
     }
-
-    if (! (data_set_metadata.size() == 0 || data_set_metadata.size() == 1 || data_set_metadata.size() == n)) {
-      LBANN_ERROR(
-        "you specified ", n, " model filenames, and ", data_set_metadata.size(),
-        " data set metadata filenames; you must specify either zero, one, or ",
-        n, " data set metadata filenames");
+    if (!(data_set_metadata.size() == 0 || data_set_metadata.size() == 1 ||
+          data_set_metadata.size() == n)) {
+      LBANN_ERROR("you specified ",
+                  n,
+                  " model filenames, and ",
+                  data_set_metadata.size(),
+                  " data set metadata filenames; you must specify 1 data set "
+                  "metadata filenames");
     }
   }
 
   std::vector<prototext_fn_triple> names;
-  for (size_t i=0; i<models.size(); i++) {
+  for (size_t i = 0; i < models.size(); i++) {
     prototext_fn_triple t;
     t.model = models[i];
     if (readers.size() == 0) {
       t.reader = "none";
-    }else if (readers.size() == 1) {
+    }
+    else if (readers.size() == 1) {
       t.reader = readers[0];
-    } else {
+    }
+    else {
       t.reader = readers[i];
     }
     if (data_set_metadata.size() == 0) {
       t.data_set_metadata = "none";
-    }else if (data_set_metadata.size() == 1) {
+    }
+    else if (data_set_metadata.size() == 1) {
       t.data_set_metadata = data_set_metadata[0];
-    } else {
+    }
+    else {
       t.data_set_metadata = data_set_metadata[i];
     }
     if (optimizers.size() == 0) {
       t.optimizer = "none";
-    }else if (optimizers.size() == 1) {
+    }
+    else if (optimizers.size() == 1) {
       t.optimizer = optimizers[0];
-    } else {
+    }
+    else {
       t.optimizer = optimizers[i];
     }
     names.push_back(t);
@@ -143,13 +148,12 @@ parse_prototext_filenames_from_command_line(
 }
 
 std::vector<std::unique_ptr<lbann_data::LbannPB>>
-read_in_prototext_files(
-  const bool master,
-  const std::vector<prototext_fn_triple> &names)
+read_in_prototext_files(const bool master,
+                        const std::vector<prototext_fn_triple>& names)
 {
   std::vector<std::unique_ptr<lbann_data::LbannPB>> models_out;
   for (auto const& t : names) {
-    auto pb = make_unique<lbann_data::LbannPB>();
+    auto pb = std::make_unique<lbann_data::LbannPB>();
     if (t.model != "none")
       read_prototext_file(t.model, *pb, master);
     if (t.reader != "none") {
@@ -173,15 +177,12 @@ read_in_prototext_files(
 }
 
 std::vector<std::unique_ptr<lbann_data::LbannPB>>
-load_prototext(
-  const bool master,
-  const int argc,
-  char* const argv[],
-  const int trainer_rank)
+load_prototext(const bool master, const int trainer_rank)
 {
-  auto names = parse_prototext_filenames_from_command_line(master, argc, argv, trainer_rank);
+  auto names =
+    parse_prototext_filenames_from_command_line(master, trainer_rank);
   auto models_out = read_in_prototext_files(master, names);
-  if (models_out.size() == 0 && master) {
+  if (models_out.size() == 0) {
     LBANN_ERROR("Failed to load any prototext files");
   }
   verify_prototext(master, models_out);
@@ -190,37 +191,43 @@ load_prototext(
 
 void verify_prototext(
   const bool master,
-  const std::vector<std::unique_ptr<lbann_data::LbannPB>> &models) {
+  const std::vector<std::unique_ptr<lbann_data::LbannPB>>& models)
+{
   std::stringstream err;
   if (master) {
-    std::cout << "protobuf_utils::verify_prototext; starting verify for " << models.size() << " models\n";
+    std::cout << "protobuf_utils::verify_prototext; starting verify for "
+              << models.size() << " models\n";
   }
-  for (size_t j=0; j<models.size(); j++) {
+  for (size_t j = 0; j < models.size(); j++) {
     bool is_good = true;
-    lbann_data::LbannPB *t = models[j].get();
-    if (! t->has_data_reader()) {
+    lbann_data::LbannPB* t = models[j].get();
+    if (!t->has_data_reader()) {
       is_good = false;
       err << "model #" << j << " is missing data_reader\n";
-    } else {
-      if (t->data_reader().requires_data_set_metadata() && (! t->has_data_set_metadata())) {
+    }
+    else {
+      if (t->data_reader().requires_data_set_metadata() &&
+          (!t->has_data_set_metadata())) {
         is_good = false;
-        err << "model #" << j << " is missing metadata (cmd line flag: --metadata=<string>)\n";
+        err << "model #" << j
+            << " is missing metadata (cmd line flag: --metadata=<string>)\n";
       }
     }
-    if (! t->has_model()) {
+    if (!t->has_model()) {
       is_good = false;
       err << "model #" << j << " is missing model\n";
     }
-    if (! t->has_optimizer()) {
+    if (!t->has_optimizer()) {
       is_good = false;
       err << "model #" << j << " is missing optimizer\n";
     }
 
-    if (! is_good) {
-      LBANN_ERROR("please check your command line and/or prototext files:\n", err.str());
+    if (!is_good) {
+      LBANN_ERROR("please check your command line and/or prototext files:\n",
+                  err.str());
     }
   }
 }
 
-}// namespace protobuf_utils
-}// namespace lbann
+} // namespace protobuf_utils
+} // namespace lbann

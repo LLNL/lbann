@@ -186,6 +186,39 @@ class LTFB(TrainingAlgorithm):
         params.local_training_algorithm.CopyFrom(self.local_algo.export_proto())
         return params
 
+class MutationStrategy:
+    """The strategy for mutation after a tournament in LTFB.
+       
+       When a trainer loses in a LTFB tournament, the winning model is 
+       copied over to it and this mutation strategy is applied to the
+       copied model to explore a new model. This is relevant to neural
+       architecture search (NAS).
+    """
+
+    def __init__(self, strategy: str = "null_mutation"):
+        self.strategy = strategy
+
+    def export_proto(self):
+        """Get a protobuf representation of this object."""
+
+        MutationStrategyMsg = AlgoProto.MutationStrategy
+        msg = MutationStrategyMsg()
+        if self.strategy == "null_mutation":
+            NullMutationMsg = MutationStrategyMsg.NullMutation
+            msg.null_mutation.CopyFrom(NullMutationMsg())
+        elif self.strategy == "replace_activation":
+            ReplaceActivationMsg = MutationStrategyMsg.ReplaceActivation
+            msg.replace_activation.CopyFrom(ReplaceActivationMsg())
+        elif self.strategy == "replace_convolution":
+            ReplaceConvolutionMsg = MutationStrategyMsg.ReplaceConvolution
+            msg.replace_convolution.CopyFrom(ReplaceConvolutionMsg())
+        elif self.strategy == "hybrid_mutation":
+            HybridMutationMsg = MutationStrategyMsg.HybridMutation
+            msg.hybrid_mutation.CopyFrom(HybridMutationMsg())
+        else:
+            raise ValueError("Unknown Strategy")
+        return msg
+
 class RandomPairwiseExchange(MetaLearningStrategy):
     """The classic LTFB pairwise tourament metalearning strategy.
 
@@ -209,14 +242,14 @@ class RandomPairwiseExchange(MetaLearningStrategy):
 
     """
 
-    # Fake an enum, maybe?
+#Fake an enum, maybe ?
     class MetricStrategy:
         LOWER_IS_BETTER: int = 0
         HIGHER_IS_BETTER: int = 1
 
-    # This is supposed to go away. I don't want to make it any more
-    # visible than this. In the same vein, I don't want more "class"
-    # stuff for the different strategies.
+#This is supposed to go away.I don't want to make it any more
+#visible than this.In the same vein, I don't want more "class"
+#stuff for the different strategies.
     class ExchangeStrategy:
         """The algorithm for exchanging model data in RandomPairwiseExchange.
 
@@ -271,7 +304,7 @@ class RandomPairwiseExchange(MetaLearningStrategy):
                   checkpoint files. Only applies to "checkpoint_file".
             """
             self.strategy = strategy
-            self.exchange_hyperparams = exchange_hyperparameters
+            self.exchange_hyperparameters = exchange_hyperparameters
             self.weights_names = make_iterable(weights_names)
             self.checkpoint_dir = checkpoint_dir
 
@@ -297,7 +330,8 @@ class RandomPairwiseExchange(MetaLearningStrategy):
 
     def __init__(self,
                  metric_strategies: dict[str,int] = {},
-                 exchange_strategy = ExchangeStrategy()):
+                 exchange_strategy = ExchangeStrategy(),
+                 mutation_strategy = MutationStrategy()):
         """Construct a new RandomPairwiseExchange metalearning strategy.
 
         Args:
@@ -306,10 +340,13 @@ class RandomPairwiseExchange(MetaLearningStrategy):
               with respect to this metric
             exchange_strategy:
               The algorithm used for exchanging models.
+            mutation_strategy:
+              The algorithm used for mutating models.
         """
 
         self.metric_strategies = metric_strategies
         self.exchange_strategy = exchange_strategy
+        self.mutation_strategy = mutation_strategy
 
     def export_proto(self):
         """Get a protobuf representation of this object."""
@@ -319,4 +356,121 @@ class RandomPairwiseExchange(MetaLearningStrategy):
             msg.metric_name_strategy_map[key] = value
 
         msg.exchange_strategy.CopyFrom(self.exchange_strategy.export_proto())
+        msg.mutation_strategy.CopyFrom(self.mutation_strategy.export_proto())
         return msg
+
+class TruncationSelectionExchange(MetaLearningStrategy):
+    """Truncation selection  metalearning strategy.
+
+    Rank all trainers in a population of trainers 
+    Ranking is done using specified metric strategy
+    Models/topologies/training hyperparameters of any 
+    trainer at ranking below truncation_k are replaced 
+    with that of a trainer from top of the ranking list. 
+
+    """
+
+#Fake an enum, maybe ?
+    class MetricStrategy:
+        LOWER_IS_BETTER: int = 0
+        HIGHER_IS_BETTER: int = 1
+
+
+    def __init__(self,
+                 metric_strategies: dict[str,int] = {},
+                 truncation_k = 0):
+        """Construct a new TruncationSelectionExchange metalearning strategy.
+
+        Args:
+            metric_strategies:
+              Map from metric name to the criterion for picking a winner
+              with respect to this metric
+            truncation_k:
+              Partitions ranking list to top(winners)/bottom(losers)
+        """
+
+        self.metric_strategies = metric_strategies
+        self.truncation_k = truncation_k
+
+    def export_proto(self):
+        """Get a protobuf representation of this object."""
+
+        msg = AlgoProto.TruncationSelectionExchange()
+        for key, value in self.metric_strategies.items():
+            msg.metric_name_strategy_map[key] = value
+        msg.truncation_k = self.truncation_k
+        return msg
+
+class RegularizedEvolution(MetaLearningStrategy):
+    """ This is a meta-learning strategy in population-based training.
+        A sample of trainers is chosen from a population in every tournament.
+        The best trainer is chosen from that sample according to an evaluation metric.
+        Then the model from that best trainer is mutated and replaces the oldest model.
+    """
+
+    class MetricStrategy:
+        LOWER_IS_BETTER: int = 0
+        HIGHER_IS_BETTER: int = 1
+
+    def __init__(self,
+                 metric_name,
+                 metric_strategy,
+                 mutation_strategy = MutationStrategy(),
+                 sample_size = 0):
+        
+        self.metric_name = metric_name
+        self.metric_strategy = metric_strategy
+        self.mutation_strategy = mutation_strategy
+        self.sample_size = sample_size
+
+    def export_proto(self):
+        """Get a protobuf representation of this object."""
+
+        msg = AlgoProto.RegularizedEvolution()
+
+        msg.metric_name = self.metric_name
+        msg.metric_strategy = self.metric_strategy
+        msg.mutation_strategy.CopyFrom(self.mutation_strategy.export_proto())
+        msg.sample_size = self.sample_size
+        return msg 
+
+class KFAC(TrainingAlgorithm):
+    """Kronecker-Factored Approximate Curvature algorithm.
+
+    Applies second-order information to improve the quality of
+    gradients in SGD-like optimizers.
+
+    """
+
+    def __init__(
+            self,
+            name: str,
+            first_order_optimizer: BatchedIterativeOptimizer,
+            **kfac_args,
+    ):
+        """Construct a new KFAC algorithm.
+
+        Args:
+            name:
+              A user-defined name to identify this object in logs.
+            first_order_optimizer:
+              The SGD-like algorithm to apply.
+
+            **kfac_args:
+              See the KFAC message in
+              lbann/src/proto/training_algorithm.proto for list of
+              kwargs.
+
+        """
+        self.name = name
+        self.first_order_optimizer = first_order_optimizer
+        self.kfac_args = kfac_args
+
+    def do_export_proto(self):
+        """Get a protobuf representation of this object."""
+        params = AlgoProto.KFAC()
+        first_order_optimizer_proto = self.first_order_optimizer.export_proto()
+        first_order_optimizer_proto.parameters.Unpack(params.sgd)
+        for key, value in self.kfac_args.items():
+            setattr(params, key, value)
+        return params

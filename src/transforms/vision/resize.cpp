@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,20 +25,22 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/resize.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
-#include <transforms.pb.h>
+#include "lbann/proto/transforms.pb.h"
 
 #include <opencv2/imgproc.hpp>
 
 namespace lbann {
 namespace transform {
 
-void resize::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+void resize::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims)
+{
   cv::Mat src = utils::get_opencv_mat(data, dims);
   std::vector<size_t> new_dims = {dims[0], m_h, m_w};
-  auto dst_real = El::Matrix<uint8_t>(utils::get_linearized_size(new_dims), 1);
+  auto dst_real = El::Matrix<uint8_t>(get_linear_size(new_dims), 1);
   cv::Mat dst = utils::get_opencv_mat(dst_real, new_dims);
   cv::resize(src, dst, dst.size(), 0, 0, cv::INTER_LINEAR);
   data.emplace<uint8_t>(std::move(dst_real));
@@ -46,10 +48,11 @@ void resize::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
 }
 
 std::unique_ptr<transform>
-build_resize_transform_from_pbuf(google::protobuf::Message const& msg) {
+build_resize_transform_from_pbuf(google::protobuf::Message const& msg)
+{
   auto const& params = dynamic_cast<lbann_data::Transform::Resize const&>(msg);
-  return make_unique<resize>(params.height(), params.width());
+  return std::make_unique<resize>(params.height(), params.width());
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

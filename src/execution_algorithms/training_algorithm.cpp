@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,24 +29,25 @@
 #include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/callbacks/load_model.hpp"
 #include "lbann/callbacks/save_model.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/models/model.hpp"
 #include <string>
 
 namespace lbann {
 
-training_algorithm::training_algorithm(std::string name)
-  : m_name{std::move(name)}
+TrainingAlgorithm::TrainingAlgorithm(std::string name) : m_name{std::move(name)}
 {}
 
-std::string const& training_algorithm::get_name() const noexcept
+std::string const& TrainingAlgorithm::get_name() const noexcept
 {
   return m_name;
 }
 
-void training_algorithm::setup_models(
+void TrainingAlgorithm::setup_models(
   std::vector<observer_ptr<model>> const& models,
   size_t max_mini_batch_size,
-  DataReaderMetaData& dr_metadata)
+  DataReaderMetaData& dr_metadata,
+  const std::vector<El::Grid*>& grids)
 {
   for (observer_ptr<model> const& m : models) {
     // Set up callbacks
@@ -59,7 +60,7 @@ void training_algorithm::setup_models(
       }
     }
     // Setup models
-    m->setup(max_mini_batch_size, dr_metadata);
+    m->setup(max_mini_batch_size, dr_metadata, grids);
   }
 }
 

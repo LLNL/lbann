@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -39,17 +39,17 @@
 #include "cuda.hpp"
 namespace lbann {
 namespace gpu_lib {
-  using namespace cuda;
-}// namespace gpu_lib
-}// namespace lbann
+using namespace cuda;
+} // namespace gpu_lib
+} // namespace lbann
 #elif defined LBANN_HAS_ROCM
 
 #include "rocm.hpp"
 namespace lbann {
 namespace gpu_lib {
-  using namespace rocm;
-}// namespace gpu_lib
-}// namespace lbann
+using namespace rocm;
+} // namespace gpu_lib
+} // namespace lbann
 #endif // LBANN_HAS_CUDA
 
 // Include gpu arch-independent stuff

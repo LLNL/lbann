@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -41,7 +41,7 @@ namespace file {
  *  if needed and synchronizes all other trainer ranks to ensure they
  *  see a consistent state of the file system.
  */
-  void trainer_master_make_directory(const std::string& path, lbann_comm* comm);
+void trainer_master_make_directory(const std::string& path, lbann_comm* comm);
 
 } // namespace file
 

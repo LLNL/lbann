@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,42 +24,59 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <algorithm>
 #include "lbann/callbacks/mixup.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/beta.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/serialize.hpp"
+#include <algorithm>
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #include <unordered_set>
 
 namespace lbann {
 namespace callback {
 
-mixup::mixup()
-  : mixup({}, 0)
-{}
+mixup::mixup(std::unordered_set<std::string> layers, float alpha)
+  : callback_base(), m_layers(layers), m_alpha(alpha)
+{
+  if (alpha < 0.0f) {
+    LBANN_ERROR("Mixup alpha must be non-negative.");
+  }
+}
+
+mixup::mixup() : mixup({}, 0) {}
 
 template <class Archive>
-void mixup::serialize(Archive & ar) {
-  ar(::cereal::make_nvp(
-       "BaseCallback",
-       ::cereal::base_class<callback_base>(this)),
+void mixup::serialize(Archive& ar)
+{
+  ar(::cereal::make_nvp("BaseCallback",
+                        ::cereal::base_class<callback_base>(this)),
      CEREAL_NVP(m_layers),
      CEREAL_NVP(m_alpha));
 }
 
-void mixup::on_forward_prop_end(model *m, Layer *l) {
+void mixup::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_mixup();
+  msg->set_layers(protobuf::to_space_sep_string(m_layers));
+  msg->set_alpha(m_alpha);
+}
+
+void mixup::on_forward_prop_end(model* m, Layer* l)
+{
   if (!m_layers.count(l->get_name())) {
     return;
   }
   const auto& c =
-    dynamic_cast<const sgd_execution_context&>(m->get_execution_context());
+    dynamic_cast<const SGDExecutionContext&>(m->get_execution_context());
   if (c.get_execution_mode() != execution_mode::training) {
-    return;  // No mixup outside of training.
+    return; // No mixup outside of training.
   }
 
   auto* dtl = dynamic_cast<data_type_layer<DataType>*>(l);
@@ -107,27 +124,29 @@ void mixup::on_forward_prop_end(model *m, Layer *l) {
     const DataType* __restrict__ y2_buf = labels.LockedBuffer(0, j);
     DataType* __restrict__ y = labels_orig.Buffer(0, i);
     for (El::Int k = 0; k < samples_height; ++k) {
-      x[k] = lambda*x1_buf[k] + lambda_sub*x2_buf[k];
+      x[k] = lambda * x1_buf[k] + lambda_sub * x2_buf[k];
     }
     for (El::Int k = 0; k < labels_height; ++k) {
-      y[k] = lambda*y1_buf[k] + lambda_sub*y2_buf[k];
+      y[k] = lambda * y1_buf[k] + lambda_sub * y2_buf[k];
     }
   }
 }
 
 std::unique_ptr<callback_base>
-build_mixup_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+build_mixup_callback_from_pbuf(const google::protobuf::Message& proto_msg,
+                               const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackMixup&>(proto_msg);
   const auto& layers_list = parse_list<std::string>(params.layers());
   std::unordered_set<std::string> layers(layers_list.begin(),
                                          layers_list.end());
-  return make_unique<mixup>(layers, params.alpha());
+  return std::make_unique<mixup>(layers, params.alpha());
 }
 
 } // namespace callback
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::mixup
+#define LBANN_CLASS_LIBNAME callback_mixup
 #include <lbann/macros/register_class_with_cereal.hpp>

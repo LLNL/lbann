@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,23 +28,25 @@
 #define LBANN_LAYERS_MISC_ONE_HOT_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+
+#include "lbann/proto/layers.pb.h"
 
 namespace lbann {
 
 /** @brief Convert index to a one-hot vector
  *
- *  Expects a scalar input tensor and outputs a 1-D output tensor with
- *  @c size entries. The input is interpreted as an index, and output
- *  entries are one if they correspond to that index and zero
- *  otherwise. If the input is outside @f$[0,\text{size})@f$, then the
- *  output is all zeros.
+ *  Expects a scalar input tensor and outputs a 1D tensor. The input
+ *  is interpreted as an index, and output entries are one if they
+ *  correspond to that index and zero otherwise. Out-of-range indices
+ *  are ignored.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class one_hot_layer : public data_type_layer<TensorDataType> {
+class one_hot_layer : public data_type_layer<TensorDataType>
+{
 public:
-
-  one_hot_layer(size_t size)
-    : data_type_layer<TensorDataType>(nullptr) {
+  one_hot_layer(size_t size) : data_type_layer<TensorDataType>(nullptr)
+  {
     this->set_output_dims({static_cast<int>(size)});
   }
   one_hot_layer* copy() const override { return new one_hot_layer(*this); }
@@ -62,41 +64,30 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
 protected:
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  one_hot_layer()
-    : one_hot_layer(0)
-  {}
+  one_hot_layer() : one_hot_layer(0) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-
-    // Make sure input tensor is scalar
-    if (this->get_input_size() != 1) {
-      const auto input_dims = this->get_input_dims();
-      std::ostringstream dim_ss;
-      for (size_t i = 0; i < input_dims.size(); ++i) {
-        dim_ss << (i > 0 ? "x" : "") << input_dims[i];
-      }
-      LBANN_ERROR(get_type()," layer \"",this->get_name(),"\" ",
-                  "received an input tensor with invalid dimensions ",
-                  "(expected 1, got ",dim_ss.str(),")");
-    }
-
-  }
+  void setup_dims(DataReaderMetaData& dr_metadata) override;
 
   void fp_compute() override;
-
 };
 
-LBANN_DEFINE_LAYER_BUILDER(one_hot);
+template <typename T, data_layout L, El::Device D>
+void one_hot_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_one_hot();
+  msg->set_size(this->get_output_dims()[0]);
+}
 
 #ifndef LBANN_ONE_HOT_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device)                 \
-  extern template class one_hot_layer<          \
-    T, data_layout::DATA_PARALLEL, Device>;     \
-  extern template class one_hot_layer<          \
-    T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class one_hot_layer<T, data_layout::DATA_PARALLEL, Device>;  \
+  extern template class one_hot_layer<T, data_layout::MODEL_PARALLEL, Device>
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
 #endif // LBANN_ONE_HOT_LAYER_INSTANTIATE

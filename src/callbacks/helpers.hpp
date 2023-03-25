@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,20 +32,21 @@
 namespace lbann {
 namespace {
 template <typename T>
-std::vector<T*> select_things_by_name(
-  std::vector<T*> const& things,
-  std::vector<std::string> const& thing_names) {
+std::vector<T*>
+select_things_by_name(std::vector<T*> const& things,
+                      std::vector<std::string> const& thing_names)
+{
 
   std::vector<T*> out_things;
   for (auto const& name : thing_names) {
-    auto it = std::find_if(
-      things.begin(), things.end(),
-      [&name](const T* t) { return t->get_name() == name; });
+    auto it = std::find_if(things.begin(), things.end(), [&name](const T* t) {
+      return t->get_name() == name;
+    });
     if (it != things.end())
       out_things.push_back(*it);
     else
-      LBANN_ERROR(std::string("Requested thing \"") + name
-                  + "\" does not exist in the list of things.");
+      LBANN_ERROR(std::string("Requested thing \"") + name +
+                  "\" does not exist in the list of things.");
   }
   return out_things;
 }

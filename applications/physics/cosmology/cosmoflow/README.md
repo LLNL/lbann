@@ -17,5 +17,5 @@ Each HDF5 file represents a single data sample, and contains two different HDF5 
 * `unitPar` that is a 1D array with the same data type as `volume`
 
 ## How to Train
-Run `python3 ./cosmoflow.py`.
-See `python3 ./cosmoflow.py --help` for more options.
+Run `python3 ./train_cosmoflow.py`.
+See `python3 ./train_cosmoflow.py --help` for more options.

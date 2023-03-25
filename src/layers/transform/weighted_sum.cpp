@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,27 +27,43 @@
 #define LBANN_WEIGHTED_SUM_LAYER_INSTANTIATE
 #include "lbann/layers/transform/weighted_sum.hpp"
 
-#include <lbann/proto/proto_common.hpp>
-#include <lbann.pb.h>
+#include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/protobuf.hpp"
+
+#include "lbann/proto/layers.pb.h"
+#include "lbann/proto/lbann.pb.h"
 
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_weighted_sum_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const& proto_layer)
+std::unique_ptr<Layer>
+build_weighted_sum_layer_from_pbuf(lbann_comm* comm,
+                                   lbann_data::Layer const& proto_layer)
 {
   using LayerType = weighted_sum_layer<TensorDataType, Layout, Device>;
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, weighted_sum);
   const auto& params = proto_layer.weighted_sum();
-  const auto& scaling_factors = parse_list<DataType>(params.scaling_factors());
-  return lbann::make_unique<LayerType>(comm, scaling_factors);
+  const auto& scaling_factors =
+    protobuf::to_vector<DataType>(params.scaling_factors());
+  return std::make_unique<LayerType>(comm, scaling_factors);
 }
 
-#define PROTO_DEVICE(T, Device) \
-  template class weighted_sum_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class weighted_sum_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+template <typename T, data_layout L, El::Device D>
+void weighted_sum_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_weighted_sum();
+  protobuf::assign_to_repeated(*msg->mutable_scaling_factors(),
+                               m_scaling_factors);
+}
+
+#define PROTO_DEVICE(T, Device)                                                \
+  template class weighted_sum_layer<T, data_layout::DATA_PARALLEL, Device>;    \
+  template class weighted_sum_layer<T, data_layout::MODEL_PARALLEL, Device>;   \
   LBANN_LAYER_BUILDER_ETI(weighted_sum, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

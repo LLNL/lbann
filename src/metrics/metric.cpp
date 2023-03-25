@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,17 +32,19 @@
 namespace lbann {
 
 template <class Archive>
-void metric_statistics::serialize( Archive & ar ) {
-  ar(CEREAL_NVP(m_sum),
-     CEREAL_NVP(m_num_samples));
+void metric_statistics::serialize(Archive& ar)
+{
+  ar(CEREAL_NVP(m_sum), CEREAL_NVP(m_num_samples));
 }
 
-void metric_statistics::add_value(EvalType total_value, int num_samples) {
+void metric_statistics::add_value(EvalType total_value, int num_samples)
+{
   m_sum += total_value;
   m_num_samples += num_samples;
 }
 
-EvalType metric_statistics::get_mean() const {
+EvalType metric_statistics::get_mean() const
+{
   if (m_num_samples == 0) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -52,21 +54,24 @@ EvalType metric_statistics::get_mean() const {
   return m_sum / m_num_samples;
 }
 
-void metric_statistics::reset() {
+void metric_statistics::reset()
+{
   m_sum = 0.0;
   m_num_samples = 0;
 }
 
-metric::metric(lbann_comm *comm) : m_comm(comm) {}
+metric::metric(lbann_comm* comm) : m_comm(comm) {}
 
 template <class Archive>
-void metric::serialize( Archive & ar ) {
+void metric::serialize(Archive& ar)
+{
   ar(CEREAL_NVP(m_statistics));
 }
 
-EvalType metric::get_mean_value(execution_mode mode) const {
-  if (m_statistics.count(mode) == 0
-      || m_statistics.at(mode).get_num_samples() == 0) {
+EvalType metric::get_mean_value(execution_mode mode) const
+{
+  if (m_statistics.count(mode) == 0 ||
+      m_statistics.at(mode).get_num_samples() == 0) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "attempted to get mean metric value with no samples for statistics";
@@ -75,19 +80,20 @@ EvalType metric::get_mean_value(execution_mode mode) const {
   return m_statistics.at(mode).get_mean();
 }
 
-int metric::get_statistics_num_samples(execution_mode mode) const {
+int metric::get_statistics_num_samples(execution_mode mode) const
+{
   if (m_statistics.count(mode) == 0) {
     return 0;
-  } else {
+  }
+  else {
     return m_statistics.at(mode).get_num_samples();
   }
 }
 
-std::vector<ViewingLayerPtr> metric::get_layer_pointers() const {
-  return {};
-}
+std::vector<ViewingLayerPtr> metric::get_layer_pointers() const { return {}; }
 
-void metric::set_layer_pointers(std::vector<ViewingLayerPtr> layers) {
+void metric::set_layer_pointers(std::vector<ViewingLayerPtr> layers)
+{
   if (!layers.empty()) {
     std::stringstream err;
     err << "attempted to set layer pointers for "
@@ -98,7 +104,7 @@ void metric::set_layer_pointers(std::vector<ViewingLayerPtr> layers) {
   }
 }
 
-}  // namespace lbann
+} // namespace lbann
 
 #define LBANN_SKIP_CEREAL_REGISTRATION
 #define LBANN_CLASS_NAME metric

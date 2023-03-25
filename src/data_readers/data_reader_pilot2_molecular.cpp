@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -23,7 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// data_reader_pilot2_molecular .hpp .cpp - data reader for Pilot 2 molecular data
+// data_reader_pilot2_molecular .hpp .cpp - data reader for Pilot 2 molecular
+// data
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
@@ -31,11 +32,16 @@
 
 namespace lbann {
 
-pilot2_molecular_reader::pilot2_molecular_reader(
-  int num_neighbors, int max_neighborhood, bool shuffle) :
-  generic_data_reader(shuffle), m_num_neighbors(num_neighbors), m_max_neighborhood(max_neighborhood) {}
+pilot2_molecular_reader::pilot2_molecular_reader(int num_neighbors,
+                                                 int max_neighborhood,
+                                                 bool shuffle)
+  : generic_data_reader(shuffle),
+    m_num_neighbors(num_neighbors),
+    m_max_neighborhood(max_neighborhood)
+{}
 
-void pilot2_molecular_reader::load() {
+void pilot2_molecular_reader::load()
+{
   // support for data store functionality: when not using data store, all procs
   // load the data; when using data store, only one does so
   bool is_mine = true;
@@ -58,14 +64,14 @@ void pilot2_molecular_reader::load() {
     cnpy::npz_t dict = cnpy::npz_load(infile);
     // Verify we have features and neighbors.
     if (dict.count("features") != 1) {
-      throw lbann_exception(
-        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-        " pilot2_molecular::load() - no features");
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) +
+                            " pilot2_molecular::load() - no features");
     }
     if (dict.count("neighbors") != 1) {
-      throw lbann_exception(
-        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-        " pilot2_molecular::load() - no neighbors");
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) +
+                            " pilot2_molecular::load() - no neighbors");
     }
     m_features = dict["features"];
     m_neighbors = dict["neighbors"];
@@ -99,9 +105,10 @@ void pilot2_molecular_reader::load() {
     m_num_samples = m_features.shape[0] * m_features.shape[1];
     m_num_samples_per_frame = m_features.shape[1];
     // The first two dimensions are the frame and the sample, so skip.
-    m_num_features = std::accumulate(
-      m_features.shape.begin() + 2, m_features.shape.end(), (unsigned) 1,
-      std::multiplies<unsigned>());
+    m_num_features = std::accumulate(m_features.shape.begin() + 2,
+                                     m_features.shape.end(),
+                                     (unsigned)1,
+                                     std::multiplies<unsigned>());
 
     m_word_size = m_neighbors.word_size;
 
@@ -119,8 +126,8 @@ void pilot2_molecular_reader::load() {
   select_subset_of_data();
 }
 
-bool pilot2_molecular_reader::fetch_datum(
-  CPUMat& X, int data_id, int mb_idx) {
+bool pilot2_molecular_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx)
+{
 
   const int frame = get_frame(data_id);
   // Fetch the actual molecule.
@@ -132,24 +139,29 @@ bool pilot2_molecular_reader::fetch_datum(
     frame * m_num_samples_per_frame * (2 * m_max_neighborhood);
   const int intra_frame_data_id = data_id - frame * m_num_samples_per_frame;
   if (m_neighbors.word_size == 4) {
-    float *neighbor_data = m_neighbors.data<float>() +
-      neighbor_frame_offset + intra_frame_data_id * (2 * m_max_neighborhood);
+    float* neighbor_data = m_neighbors.data<float>() + neighbor_frame_offset +
+                           intra_frame_data_id * (2 * m_max_neighborhood);
     // Start at 1 to skip self.
     for (int i = 1; i < m_num_neighbors + 1; ++i) {
       int neighbor_id = neighbor_data[i];
       if (neighbor_id != -1) {
-        fetch_molecule(X, neighbor_id + frame * m_num_samples_per_frame, i,
+        fetch_molecule(X,
+                       neighbor_id + frame * m_num_samples_per_frame,
+                       i,
                        mb_idx);
       }
     }
-  } else if (m_neighbors.word_size == 8) {
-    double *neighbor_data = m_neighbors.data<double>() +
-      neighbor_frame_offset + intra_frame_data_id * (2 * m_max_neighborhood);
+  }
+  else if (m_neighbors.word_size == 8) {
+    double* neighbor_data = m_neighbors.data<double>() + neighbor_frame_offset +
+                            intra_frame_data_id * (2 * m_max_neighborhood);
     // Start at 1 to skip self.
     for (int i = 1; i < m_num_neighbors + 1; ++i) {
       int neighbor_id = neighbor_data[i];
       if (neighbor_id != -1) {
-        fetch_molecule(X, neighbor_id + frame * m_num_samples_per_frame, i,
+        fetch_molecule(X,
+                       neighbor_id + frame * m_num_samples_per_frame,
+                       i,
                        mb_idx);
       }
     }
@@ -157,25 +169,29 @@ bool pilot2_molecular_reader::fetch_datum(
   return true;
 }
 
-void pilot2_molecular_reader::fetch_molecule(CPUMat& X, int data_id, int idx,
-                                             int mb_idx) {
+void pilot2_molecular_reader::fetch_molecule(CPUMat& X,
+                                             int data_id,
+                                             int idx,
+                                             int mb_idx)
+{
   const int frame = get_frame(data_id);
   // Compute the offset in features for this frame.
   const int frame_offset = frame * m_num_features * m_num_samples_per_frame;
   const int intra_frame_data_id = data_id - frame * m_num_samples_per_frame;
   if (m_features.word_size == 4) {
-    float *data = m_features.data<float>() + frame_offset +
-      intra_frame_data_id * m_num_features;
+    float* data = m_features.data<float>() + frame_offset +
+                  intra_frame_data_id * m_num_features;
     for (int i = 0; i < m_num_features; ++i) {
       X(m_num_features * idx + i, mb_idx) = scale_data<float>(i, data[i]);
     }
-  } else if (m_features.word_size == 8) {
-    double *data = m_features.data<double>() + frame_offset +
-      intra_frame_data_id * m_num_features;
+  }
+  else if (m_features.word_size == 8) {
+    double* data = m_features.data<double>() + frame_offset +
+                   intra_frame_data_id * m_num_features;
     for (int i = 0; i < m_num_features; ++i) {
       X(m_num_features * idx + i, mb_idx) = scale_data<double>(i, data[i]);
     }
   }
 }
 
-}  // namespace lbann
+} // namespace lbann

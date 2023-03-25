@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_LEAKY_RELU_LAYER_INSTANTIATE
-#include "lbann/layers/activations/leaky_relu.hpp"
+#include "lbann/layers/activations/leaky_relu_impl.hpp"
 
 namespace lbann {
 
@@ -35,7 +35,8 @@ namespace {
 template <typename TensorDataType>
 void local_fp(TensorDataType negative_slope,
               const El::AbstractMatrix<TensorDataType>& input,
-              El::AbstractMatrix<TensorDataType>& output) {
+              El::AbstractMatrix<TensorDataType>& output)
+{
   const auto& height = input.Height();
   const auto& width = input.Width();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
@@ -53,7 +54,8 @@ template <typename TensorDataType>
 void local_bp(TensorDataType negative_slope,
               const El::AbstractMatrix<TensorDataType>& input,
               const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
-              El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
+              El::AbstractMatrix<TensorDataType>& gradient_wrt_input)
+{
   const auto& height = input.Height();
   const auto& width = input.Width();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
@@ -62,7 +64,8 @@ void local_bp(TensorDataType negative_slope,
       const auto& x = input(row, col);
       const auto& dy = gradient_wrt_output(row, col);
       auto& dx = gradient_wrt_input(row, col);
-      dx = (x > El::TypeTraits<TensorDataType>::Zero()) ? dy : negative_slope * dy;
+      dx =
+        (x > El::TypeTraits<TensorDataType>::Zero()) ? dy : negative_slope * dy;
     }
   }
 }
@@ -70,23 +73,29 @@ void local_bp(TensorDataType negative_slope,
 } // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void leaky_relu_layer<TensorDataType, Layout, Device>::fp_compute() {
+void leaky_relu_layer<TensorDataType, Layout, Device>::fp_compute()
+{
   local_fp(this->m_negative_slope,
            this->get_local_prev_activations(),
            this->get_local_activations());
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute() {
+void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute()
+{
   local_bp<TensorDataType>(this->m_negative_slope,
                            this->get_local_prev_activations(),
                            this->get_local_prev_error_signals(),
                            this->get_local_error_signals());
 }
 
-#define PROTO(T)                                      \
-  template class leaky_relu_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
-  template class leaky_relu_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  template class leaky_relu_layer<T,                                           \
+                                  data_layout::DATA_PARALLEL,                  \
+                                  El::Device::CPU>;                            \
+  template class leaky_relu_layer<T,                                           \
+                                  data_layout::MODEL_PARALLEL,                 \
+                                  El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

@@ -101,15 +101,14 @@ else:
         width=args.width)
 
 # Construct layer graph
-input_ = lbann.Input(target_mode='classification')
-images = lbann.Identity(input_)
-labels = lbann.Identity(input_)
+images = lbann.Input(data_field='samples')
+labels = lbann.Input(data_field='labels')
 preds = resnet(images)
 probs = lbann.Softmax(preds)
 cross_entropy = lbann.CrossEntropy(probs, labels)
 top1 = lbann.CategoricalAccuracy(probs, labels)
 top5 = lbann.TopKCategoricalAccuracy(probs, labels, k=5)
-layers = list(lbann.traverse_layer_graph(input_))
+layers = list(lbann.traverse_layer_graph([images, labels]))
 
 # Setup tensor core operations (just to demonstrate enum usage)
 tensor_ops_mode = lbann.ConvTensorOpsMode.NO_TENSOR_OPS
@@ -155,4 +154,5 @@ trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size, random_seed=args.r
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 lbann.contrib.launcher.run(trainer, model, data_reader, opt,
                            job_name=args.job_name,
+                           lbann_args=" --use_data_store --preload_data_store --node_sizes_vary",
                            **kwargs)

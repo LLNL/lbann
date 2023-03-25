@@ -1,11 +1,36 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
 #ifndef LBANN_UTILS_THREADS_THREAD_POOL_HPP_INCLUDED
 #define LBANN_UTILS_THREADS_THREAD_POOL_HPP_INCLUDED
 
 #include "lbann_config.hpp"
 
+#include "lbann/utils/exception.hpp"
 #include "thread_safe_queue.hpp"
 #include "type_erased_function.hpp"
-#include "lbann/utils/exception.hpp"
 
 #if defined(LBANN_TOPO_AWARE)
 #include <hwloc.h>
@@ -23,7 +48,8 @@
 
 namespace lbann {
 
-class thread_pool {
+class thread_pool
+{
 public:
   using thread_container_type = std::vector<std::thread>;
   using size_type = typename thread_container_type::size_type;
@@ -37,7 +63,12 @@ private:
     /** @brief Grab container reference */
     thread_joiner(thread_container_type& threads) : threads_(threads) {}
     /** @brief Destructor: safely shut all threads down */
-    ~thread_joiner() { for (auto& t : threads_) if (t.joinable()) t.join(); }
+    ~thread_joiner()
+    {
+      for (auto& t : threads_)
+        if (t.joinable())
+          t.join();
+    }
     /** @brief Thread container reference */
     thread_container_type& threads_;
   };
@@ -55,10 +86,7 @@ public:
   thread_pool(size_type max_threads);
 
   /** @brief Destroy the threadpool */
-  ~thread_pool() {
-    all_work_done_ = true;
-    global_work_queue_.wake_all(true);
-  }
+  ~thread_pool() { reap_threads(); }
 
   /** @brief Launch the threads */
   void launch_threads(size_type num_threads);
@@ -97,7 +125,8 @@ public:
   }
 
   /** @brief Wait for all of the jobs in a work group to finish */
-  bool finish_work_group() {
+  bool finish_work_group()
+  {
     std::string error_message;
     for (auto& f : m_work_group) {
       bool valid = f.get();
@@ -106,7 +135,9 @@ public:
       }
     }
     m_work_group.clear();
-    if (!error_message.empty()) { LBANN_ERROR(error_message); }
+    if (!error_message.empty()) {
+      LBANN_ERROR(error_message);
+    }
     return true;
   }
 
@@ -123,10 +154,11 @@ private:
   /** @brief The task executed by each thread */
   void do_thread_work_();
 #if defined(LBANN_TOPO_AWARE)
-  void do_thread_work_pinned_thread_(int tid, hwloc_topology_t topo, hwloc_cpuset_t cpuset);
+  void do_thread_work_pinned_thread_(int tid,
+                                     hwloc_topology_t topo,
+                                     hwloc_cpuset_t cpuset);
 #endif // LBANN_TOPO_AWARE
 private:
-
   /** @brief Container holding the threads */
   thread_container_type threads_;
 
@@ -147,7 +179,7 @@ private:
 
   int m_threads_offset;
 
-};// class thread_pool
+}; // class thread_pool
 
-}// namespace lbann
+} // namespace lbann
 #endif /* LBANN_UTILS_THREADS_THREAD_POOL_HPP_INCLUDED */

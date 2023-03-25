@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -54,7 +54,7 @@ std::string get();
  */
 void register_signal_handler(std::string file_base = "");
 
-} //namespace stack_trace
-} //namespace lbann
+} // namespace stack_trace
+} // namespace lbann
 
 #endif // LBANN_UTILS_STACK_TRACE_HPP_INCLUDED

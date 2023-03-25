@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,7 +30,8 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
-void layer_norm_layer<TensorDataType,Layout,Device>::serialize(ArchiveT& ar) {
+void layer_norm_layer<TensorDataType, Layout, Device>::serialize(ArchiveT& ar)
+{
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",
                         ::cereal::base_class<DataTypeLayer>(this)),
@@ -43,22 +44,25 @@ void layer_norm_layer<TensorDataType,Layout,Device>::serialize(ArchiveT& ar) {
 // registration manually.
 #include "lbann/macros/common_cereal_registration.hpp"
 #define LBANN_COMMA ,
-#define PROTO_DEVICE(T, D)                                              \
-  LBANN_ADD_ALL_SERIALIZE_ETI(                                          \
-    ::lbann::layer_norm_layer<T,::lbann::data_layout::DATA_PARALLEL,D>); \
-  CEREAL_REGISTER_TYPE_WITH_NAME(                                       \
-    ::lbann::layer_norm_layer<T LBANN_COMMA ::lbann::data_layout::DATA_PARALLEL LBANN_COMMA D>, \
+#define PROTO_DEVICE(T, D)                                                     \
+  LBANN_ADD_ALL_SERIALIZE_ETI(                                                 \
+    ::lbann::layer_norm_layer<T, ::lbann::data_layout::DATA_PARALLEL, D>);     \
+  CEREAL_REGISTER_TYPE_WITH_NAME(                                              \
+    ::lbann::layer_norm_layer<                                                 \
+      T LBANN_COMMA ::lbann::data_layout::DATA_PARALLEL LBANN_COMMA D>,        \
     "layer_norm_layer(" #T ",DATA_PARALLEL," #D ")")
 
-#define PROTO_CPU(T) PROTO_DEVICE(T,El::Device::CPU)
+#define PROTO_CPU(T) PROTO_DEVICE(T, El::Device::CPU)
 #ifdef LBANN_HAS_GPU
-#define PROTO_GPU(T) PROTO_DEVICE(T,El::Device::GPU)
+#define PROTO_GPU(T) PROTO_DEVICE(T, El::Device::GPU)
 #else
 #define PROTO_GPU(T)
 #endif
 
-#define PROTO(T) \
-  PROTO_CPU(T);  \
+#define PROTO(T)                                                               \
+  PROTO_CPU(T);                                                                \
   PROTO_GPU(T)
 
 #include "lbann/macros/instantiate.hpp"
+
+CEREAL_REGISTER_DYNAMIC_INIT(layer_norm_layer);

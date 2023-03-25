@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,17 +30,20 @@
 // LBANN dependencies
 #include "lbann/base.hpp"
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/execution_algorithms/sgd_training_algorithm.hpp"
 #include "lbann/execution_algorithms/training_algorithm.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/io/persist.hpp"
 #include "lbann/io/persist_impl.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/serialize.hpp"
 
 // LBANN proto
-#include <lbann.pb.h>
+#include "lbann/proto/lbann.pb.h"
 
 // STL
 #include <functional>
@@ -56,7 +59,7 @@ namespace lbann {
 trainer::trainer(lbann_comm* comm,
                  std::unique_ptr<data_coordinator> dc,
                  size_t mini_batch_size,
-                 std::unique_ptr<training_algorithm> alg)
+                 std::unique_ptr<TrainingAlgorithm> alg)
   : m_data_coordinator{std::move(dc)},
     m_training_alg{std::move(alg)},
     m_comm{comm},
@@ -70,7 +73,8 @@ trainer::trainer(lbann_comm* comm,
 
 trainer::~trainer() {}
 
-template <class Archive> void trainer::serialize(Archive& ar)
+template <class Archive>
+void trainer::serialize(Archive& ar)
 {
   ar(CEREAL_NVP(m_persist),
      CEREAL_NVP(m_max_mini_batch_size),
@@ -115,9 +119,6 @@ void trainer::setup(std::unique_ptr<thread_pool> io_thread_pool,
   // layer depends on having a properly initialized thread pool)
   m_io_thread_pool = std::move(io_thread_pool);
 
-  for (auto d : data_readers) {
-    d.second->set_trainer(this);
-  }
   m_data_coordinator.get()->setup(*m_io_thread_pool.get(),
                                   get_max_mini_batch_size(),
                                   data_readers);
@@ -131,19 +132,19 @@ void trainer::setup(std::unique_ptr<thread_pool> io_thread_pool,
 /// Check if there is already an execution context for the model in this mode,
 /// if not create one
 trainer::execution_context_key_pair_t
-trainer::check_and_build_execution_context(training_algorithm& alg,
+trainer::check_and_build_execution_context(TrainingAlgorithm& alg,
                                            observer_ptr<model> model,
                                            execution_mode mode)
 {
   auto key = std::make_pair(model, mode);
   if (m_model_execution_context.count(key) == 0) {
     /// Create a execution context for each model and execution mode
-    std::unique_ptr<execution_context> context;
-    if (dynamic_cast<observer_ptr<sgd_training_algorithm>>(&alg) != nullptr) {
+    std::unique_ptr<ExecutionContext> context;
+    if (dynamic_cast<observer_ptr<SGDTrainingAlgorithm>>(&alg) != nullptr) {
       /// @todo BVE FIXME Figure out how to get a good mini-batch size
       /// in here
       context =
-        make_unique<sgd_execution_context>(mode, get_max_mini_batch_size());
+        std::make_unique<SGDExecutionContext>(mode, get_max_mini_batch_size());
     }
     else {
       LBANN_ERROR("Unknown execution algorithm type.");
@@ -156,18 +157,18 @@ trainer::check_and_build_execution_context(training_algorithm& alg,
 /// Check if there is already an execution context for the model in this mode,
 /// if not create one
 trainer::execution_context_key_pair_t
-trainer::check_and_build_execution_context(execution_context& c,
+trainer::check_and_build_execution_context(ExecutionContext& c,
                                            model& model,
                                            execution_mode mode)
 {
   auto key = std::make_pair(&model, mode);
   if (m_model_execution_context.count(key) == 0) {
-    std::unique_ptr<execution_context> context;
+    std::unique_ptr<ExecutionContext> context;
     //    observer_ptr<training_algorithm> alg = const_cast
-    if (dynamic_cast<observer_ptr</*const */ sgd_execution_context>>(&c) !=
+    if (dynamic_cast<observer_ptr</*const */ SGDExecutionContext>>(&c) !=
         nullptr) {
       context =
-        make_unique<sgd_execution_context>(mode, get_max_mini_batch_size());
+        std::make_unique<SGDExecutionContext>(mode, get_max_mini_batch_size());
     }
     else {
       LBANN_ERROR("Unknown execution context type");
@@ -177,21 +178,33 @@ trainer::check_and_build_execution_context(execution_context& c,
   return key;
 }
 
-execution_context& trainer::get_execution_context(observer_ptr<model> model,
-                                                  execution_mode mode)
+ExecutionContext& trainer::get_execution_context(observer_ptr<model> model,
+                                                 execution_mode mode)
 {
   auto key = std::make_pair(model, mode);
   return get_execution_context(key);
 }
 
-execution_context&
+ExecutionContext&
 trainer::get_execution_context(execution_context_key_pair_t key)
 {
   if (m_model_execution_context.count(key) == 0) {
     LBANN_ERROR("No execution context for this model / mode pair");
   }
-  return static_cast<sgd_execution_context&>(
+  return static_cast<SGDExecutionContext&>(
     *(m_model_execution_context[key].get()));
+}
+
+bool trainer::execution_context_valid(model& m,
+                                      execution_mode mode) const noexcept
+{
+  return execution_context_valid(std::make_pair(&m, mode));
+}
+
+bool trainer::execution_context_valid(
+  execution_context_key_pair_t key) const noexcept
+{
+  return (m_model_execution_context.count(key) != 0);
 }
 
 void trainer::delete_execution_context(execution_context_key_pair_t key)
@@ -207,7 +220,7 @@ void trainer::delete_execution_context(execution_context_key_pair_t key)
 /// @todo BVE FIXME seems like there is a bug here about mapping
 /// execution contexts to the right model
 void trainer::for_each_execution_context(
-  std::function<void(observer_ptr<execution_context>)> fn)
+  std::function<void(observer_ptr<ExecutionContext>)> fn)
 {
   for (auto&& c : m_model_execution_context) {
     // auto&& model = c.first.first;
@@ -228,17 +241,23 @@ void trainer::train(observer_ptr<model> model,
   // FIXME (trb 04/22/21): This is a temporary fix to support old PFE
   // model descriptions.
   if (!m_training_alg) {
-    std::unique_ptr<sgd_termination_criteria> stopping;
+    std::unique_ptr<SGDTerminationCriteria> stopping;
     if (num_epochs)
-      stopping = make_unique<epoch_termination_criteria>(num_epochs);
+      stopping = std::make_unique<EpochTerminationCriteria>(num_epochs);
     else
-      stopping = make_unique<batch_termination_criteria>(num_batches);
+      stopping = std::make_unique<BatchTerminationCriteria>(num_batches);
 
-    m_training_alg = std::make_unique<sgd_training_algorithm>(
-      "sgd_train", std::move(stopping));
+    m_training_alg =
+      std::make_unique<SGDTrainingAlgorithm>("sgd_train",
+                                             std::move(stopping),
+                                             /*suppress_timer=*/false);
   }
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
-  m_training_alg->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
+  m_training_alg->setup_models({model},
+                               get_max_mini_batch_size(),
+                               dr_metadata,
+                               get_grids());
+
   // FIXME (trb 04/27/2021): This is a hack to support the current
   // checkpoint/restart mechanisms. This needs to be refactored to be
   // agnostic to the training algorithm. At this time, only SGD is
@@ -266,17 +285,48 @@ void trainer::evaluate(observer_ptr<model> model,
                        execution_mode mode,
                        El::Int num_batches)
 {
-  auto sgd = make_unique<sgd_training_algorithm>(
+  auto sgd = std::make_unique<SGDTrainingAlgorithm>(
     "sgd_evaluate",
-    make_unique<epoch_termination_criteria>(/*num_epochs=*/1UL));
+    std::make_unique<EpochTerminationCriteria>(/*num_epochs=*/1UL),
+    /*suppress_timer=*/true);
   auto ctxt = sgd->get_new_execution_context();
   ctxt->set_execution_mode(mode);
   model->reset_mode(*ctxt, execution_mode::invalid);
 
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
-  sgd->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
-  sgd->evaluate(*ctxt, *model, get_data_coordinator(), mode,
-                epoch_termination_criteria(/*num_epochs=*/1UL));
+  sgd->setup_models({model},
+                    get_max_mini_batch_size(),
+                    dr_metadata,
+                    get_grids());
+
+  if (m_comm->get_grid_type() == GridType::NO_GRID or
+      m_comm->get_grid_type() == GridType::PRIMARY_GRID) {
+    sgd->evaluate(*ctxt,
+                  *model,
+                  get_data_coordinator(),
+                  mode,
+                  EpochTerminationCriteria(/*num_epochs=*/1UL));
+  }
+}
+
+// =============================================
+// Sub-grid management
+// =============================================
+
+std::vector<El::Grid*> trainer::get_grids() const
+{
+  std::vector<El::Grid*> grids;
+  grids.reserve(m_grids.size() + 1);
+  grids.push_back(&get_comm()->get_trainer_grid());
+  for (const auto& g : m_grids) {
+    grids.push_back(g.get());
+  }
+  return grids;
+}
+
+void trainer::add_grid(std::unique_ptr<El::Grid> g)
+{
+  m_grids.emplace_back(std::move(g));
 }
 
 // =============================================
@@ -285,7 +335,7 @@ void trainer::evaluate(observer_ptr<model> model,
 
 bool trainer::save_to_checkpoint_shared()
 {
-  for_each_execution_context([this](observer_ptr<execution_context> ctx) {
+  for_each_execution_context([this](observer_ptr<ExecutionContext> ctx) {
     ctx->save_to_checkpoint_shared(this->get_persist_obj());
   });
   save_rng_to_checkpoint_shared(get_persist_obj(), m_comm);
@@ -325,7 +375,7 @@ bool trainer::load_from_checkpoint_shared(persist& p)
   return get_data_coordinator().load_from_checkpoint_shared(p);
 }
 
-bool trainer::load_from_checkpoint_shared(model& m, execution_context& c)
+bool trainer::load_from_checkpoint_shared(model& m, ExecutionContext& c)
 {
   // Reload the RNG once the trainer and all of the  models are setup
   // to avoid spurious turns of the RNGs
@@ -347,7 +397,7 @@ bool trainer::load_from_checkpoint_shared(model& m, execution_context& c)
       else {
         key = check_and_build_execution_context(c, m, mode);
         auto& evaluation_context =
-          static_cast<sgd_execution_context&>(get_execution_context(key));
+          static_cast<SGDExecutionContext&>(get_execution_context(key));
         evaluation_context.load_from_checkpoint_shared(get_persist_obj());
       }
     }
@@ -371,7 +421,7 @@ bool trainer::load_from_checkpoint_shared(model& m, execution_context& c)
 
 bool trainer::save_to_checkpoint_distributed()
 {
-  for_each_execution_context([this](observer_ptr<execution_context> ctx) {
+  for_each_execution_context([this](observer_ptr<ExecutionContext> ctx) {
     ctx->save_to_checkpoint_distributed(this->get_persist_obj());
   });
   save_rng_to_checkpoint_distributed(get_persist_obj(), m_comm);
@@ -391,7 +441,7 @@ bool trainer::load_from_checkpoint_distributed(persist& p)
   return get_data_coordinator().load_from_checkpoint_distributed(p);
 }
 
-bool trainer::load_from_checkpoint_distributed(model& m, execution_context& c)
+bool trainer::load_from_checkpoint_distributed(model& m, ExecutionContext& c)
 {
   load_rng_from_checkpoint(get_persist_obj(), m_comm);
 
@@ -412,7 +462,7 @@ bool trainer::load_from_checkpoint_distributed(model& m, execution_context& c)
       else {
         key = check_and_build_execution_context(c, m, mode);
         auto& evaluation_context =
-          static_cast<sgd_execution_context&>(get_execution_context(key));
+          static_cast<SGDExecutionContext&>(get_execution_context(key));
         evaluation_context.load_from_checkpoint_distributed(get_persist_obj());
       }
     }

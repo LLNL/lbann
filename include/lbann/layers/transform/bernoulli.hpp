@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,23 +33,25 @@
 
 namespace lbann {
 
-/** @brief Random values with Bernoulli distribution.
+/** @brief Random tensor with Bernoulli distribution.
  *
- *  During validation and testing, outputs are all zero.
+ *  Randomness is only applied during training. The tensor is filled
+ *  with zeros during evaluation.
  */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class bernoulli_layer : public data_type_layer<TensorDataType> {
+class bernoulli_layer : public data_type_layer<TensorDataType>
+{
 public:
-
   using ProbabilityType = double;
 
 public:
-  bernoulli_layer(lbann_comm *comm,
+  bernoulli_layer(lbann_comm* comm,
                   std::vector<int> dims,
                   ProbabilityType prob = 0.5)
-    : data_type_layer<TensorDataType>(comm), m_prob(prob) {
+    : data_type_layer<TensorDataType>(comm), m_prob(prob)
+  {
     this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
   }
@@ -67,41 +69,33 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  description get_description() const override {
+  description get_description() const override
+  {
     auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Probability", m_prob);
     return desc;
   }
 
 protected:
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  bernoulli_layer()
-    : bernoulli_layer(nullptr, { 1 }, 0.5 )
-  {}
+  bernoulli_layer() : bernoulli_layer(nullptr, {1}, 0.5) {}
 
-  void fp_compute() override {
-    auto& output = this->get_activations();
-    if (this->m_model->get_execution_context().get_execution_mode() == execution_mode::training) {
-      bernoulli_fill(output, output.Height(), output.Width(), m_prob);
-    } else {
-      El::Zero(output);
-    }
-  }
+  void fp_compute() override;
 
 private:
-
   /** Probability of outputting 1. */
   ProbabilityType m_prob;
-
 };
-
-LBANN_DEFINE_LAYER_BUILDER(bernoulli);
 
 #ifndef LBANN_BERNOULLI_LAYER_INSTANTIATE
 
-#define PROTO_DEVICE(T, Device) \
-  extern template class bernoulli_layer<T, data_layout::DATA_PARALLEL, Device>;  \
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class bernoulli_layer<T,                                     \
+                                        data_layout::DATA_PARALLEL,            \
+                                        Device>;                               \
   extern template class bernoulli_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"

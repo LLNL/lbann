@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,12 +27,18 @@
 #ifndef LBANN_OBJECTIVE_FUNCTIONS_WEIGHT_REGULARIZATION_L2_WEIGHT_REGULARIZATION_HPP_INCLUDED
 #define LBANN_OBJECTIVE_FUNCTIONS_WEIGHT_REGULARIZATION_L2_WEIGHT_REGULARIZATION_HPP_INCLUDED
 
+#include "lbann/comm_nb_request.hpp"
 #include "lbann/objective_functions/objective_function_term.hpp"
+#ifdef LBANN_HAS_GPU
+#include "lbann/utils/gpu/helpers.hpp"
+#endif // LBANN_HAS_GPU
 
 namespace lbann {
 
-template <typename> class data_type_optimizer;
-template <typename> class data_type_weights;
+template <typename>
+class data_type_optimizer;
+template <typename>
+class data_type_weights;
 
 /** @class l2_weight_regularization
  *  @brief Apply L2 regularization to a set of weights.
@@ -41,7 +47,8 @@ template <typename> class data_type_weights;
  *  @f[ L2(w) = \frac{1}{2} \sum\limits_{i} w(i)^2 @f]
  *  Note the @f$ 1/2 @f$ scaling factor.
  */
-class l2_weight_regularization : public objective_function_term {
+class l2_weight_regularization : public objective_function_term
+{
 public:
   using AccumulateDataType = DataType;
 
@@ -59,7 +66,10 @@ public:
    *                        @f$ \text{scale\_factor} \times \sum L2(w_i) @f$
    */
   l2_weight_regularization(EvalType scale_factor = 1);
-  l2_weight_regularization* copy() const override { return new l2_weight_regularization(*this); }
+  l2_weight_regularization* copy() const override
+  {
+    return new l2_weight_regularization(*this);
+  }
 
   /** Archive for checkpoint and restart */
   template <typename ArchiveT>
@@ -77,7 +87,7 @@ public:
    *
    *  @todo Come up with a better function name in the base class.
    */
-  void differentiate() override {};
+  void differentiate() override{};
 
   /** Compute the gradient w.r.t. the weights.
    *
@@ -86,6 +96,8 @@ public:
   void compute_weight_regularization() override;
 
 private:
+  /** @brief Add objective function data to prototext */
+  void write_specific_proto(lbann_data::ObjectiveFunction& proto) const final;
 
   /** Contributions to evaluated value. */
   std::map<El::Device, CPUMatType> m_contributions;
@@ -106,7 +118,6 @@ private:
   template <El::Device Device>
   static void accumulate_contribution(const DMatType<Device>& vals,
                                       DMatType<Device>& contribution);
-
 };
 
 } // namespace lbann

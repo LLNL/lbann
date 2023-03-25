@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,13 +27,19 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/learning_rate.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/trainers/trainer.hpp"
+#include "lbann/utils/protobuf.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 
 #include "callback_helpers.hpp"
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #include <algorithm>
 #include <cmath> // std::pow
@@ -51,11 +57,12 @@ float learning_rate::m_cur_global_lr = 0.0f;
 
 learning_rate::learning_rate() {}
 
-learning_rate::learning_rate(
-  std::vector<std::string> weights_names)
-  : m_weights_names(std::move(weights_names)) {}
+learning_rate::learning_rate(std::vector<std::string> weights_names)
+  : m_weights_names(std::move(weights_names))
+{}
 
-void learning_rate::setup(model *m) {
+void learning_rate::setup(model* m)
+{
 
   // Add all weights if list of weights is not initialized
   std::vector<weights*> weights_list =
@@ -66,32 +73,31 @@ void learning_rate::setup(model *m) {
 
   // Remove weights that are not being optimized
   std::unordered_set<weights*>().swap(m_weights);
-  for (weights *w : weights_list) {
+  for (weights* w : weights_list) {
     if (w->has_optimizer()) {
       m_weights.insert(w);
       // Initialize the global learning rate, exactly once.
       if (m_cur_global_lr == 0.0f) {
-        m_cur_global_lr =
-          dynamic_cast<data_type_optimizer<DataType>*>(w->get_optimizer())->get_learning_rate();
+        m_cur_global_lr = w->get_optimizer()->get_learning_rate();
       }
     }
   }
-
 }
 
-void learning_rate::on_epoch_end(model *m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+void learning_rate::on_epoch_end(model* m)
+{
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   const float new_lr = global_schedule(m);
   const float old_global_lr = m_cur_global_lr;
   m_cur_global_lr = new_lr;
-  lbann_comm *comm = m->get_comm();
+  lbann_comm* comm = m->get_comm();
   if (comm->am_trainer_master() && new_lr != old_global_lr) {
     std::cout << "Model " << comm->get_trainer_rank() << ": "
-              << "changing global learning rate to " << new_lr
-              << " at epoch " << c.get_epoch() << std::endl;
+              << "changing global learning rate to " << new_lr << " at epoch "
+              << c.get_epoch() << std::endl;
   }
   for (weights* w : this->get_weights()) {
-    auto *opt = dynamic_cast<data_type_optimizer<DataType>*>(w->get_optimizer());
+    auto* opt = w->get_optimizer();
     const float old_lr = opt->get_learning_rate();
     if (old_lr != new_lr) {
       opt->set_learning_rate(new_lr);
@@ -99,9 +105,10 @@ void learning_rate::on_epoch_end(model *m) {
   }
 }
 
-void learning_rate::on_backward_prop_end(model *m) {
-  for (weights *w : this->get_weights()) {
-    auto &opt = dynamic_cast<data_type_optimizer<DataType>&>(*w->get_optimizer());
+void learning_rate::on_backward_prop_end(model* m)
+{
+  for (weights* w : this->get_weights()) {
+    auto& opt = *w->get_optimizer();
     const float old_lr = opt.get_learning_rate();
     const float new_lr = optimizer_schedule(m, opt);
     if (old_lr != new_lr) {
@@ -110,40 +117,83 @@ void learning_rate::on_backward_prop_end(model *m) {
   }
 }
 
-float learning_rate::optimizer_schedule(model *m, optimizer &opt) {
-  return dynamic_cast<data_type_optimizer<DataType>&>(opt).get_learning_rate();
+float learning_rate::optimizer_schedule(model* m, optimizer& opt)
+{
+  return opt.get_learning_rate();
 }
 
-step_learning_rate::step_learning_rate(
-  size_t step, float amt) :
-  learning_rate(), m_step(step), m_amt(amt) {}
+step_learning_rate::step_learning_rate(size_t step, float amt)
+  : learning_rate(), m_step(step), m_amt(amt)
+{}
 
-step_learning_rate::step_learning_rate(
-  size_t step, float amt, std::vector<std::string> weights_names) :
-  learning_rate(std::move(weights_names)),
-  m_step(step), m_amt(amt) {}
+step_learning_rate::step_learning_rate(size_t step,
+                                       float amt,
+                                       std::vector<std::string> weights_names)
+  : learning_rate(std::move(weights_names)), m_step(step), m_amt(amt)
+{}
 
-float step_learning_rate::global_schedule(model *m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+float step_learning_rate::global_schedule(model* m)
+{
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   if (c.get_epoch() % m_step == 0) {
     return step_learning_rate::get_current_global_learning_rate() * m_amt;
-  } else {
+  }
+  else {
     return step_learning_rate::get_current_global_learning_rate();
   }
 }
 
-adaptive_learning_rate::adaptive_learning_rate(
-  size_t patience, float amt) :
-  adaptive_learning_rate(patience, amt,
-                                        std::vector<std::string>()) {}
+void step_learning_rate::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_step_learning_rate();
+  msg->set_weights(protobuf::to_space_sep_string(this->get_weights_names()));
+  msg->set_step(m_step);
+  msg->set_amt(m_amt);
+}
+
+set_learning_rate::set_learning_rate(size_t step, float val)
+  : learning_rate(), m_step(step), m_val(val)
+{}
+
+set_learning_rate::set_learning_rate(size_t step,
+                                     float val,
+                                     std::vector<std::string> weights_names)
+  : learning_rate(std::move(weights_names)), m_step(step), m_val(val)
+{}
+
+float set_learning_rate::global_schedule(model* m)
+{
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
+  if (c.get_epoch() == m_step) {
+    return m_val;
+  }
+  else {
+    return set_learning_rate::get_current_global_learning_rate();
+  }
+}
+
+void set_learning_rate::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_set_learning_rate();
+  msg->set_weights(protobuf::to_space_sep_string(this->get_weights_names()));
+  msg->set_step(m_step);
+  msg->set_val(m_val);
+}
+
+adaptive_learning_rate::adaptive_learning_rate(size_t patience, float amt)
+  : adaptive_learning_rate(patience, amt, std::vector<std::string>())
+{}
 
 adaptive_learning_rate::adaptive_learning_rate(
-  size_t patience, float amt, std::vector<std::string> weights_list) :
-  learning_rate(std::move(weights_list)),
-  m_patience(patience), m_amt(amt) {}
+  size_t patience,
+  float amt,
+  std::vector<std::string> weights_list)
+  : learning_rate(std::move(weights_list)), m_patience(patience), m_amt(amt)
+{}
 
-float adaptive_learning_rate::global_schedule(model *m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+float adaptive_learning_rate::global_schedule(model* m)
+{
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   // Determine behavior the first time this is called in an epoch
   if (m_cur_epoch != c.get_epoch()) {
     m_cur_epoch = c.get_epoch();
@@ -154,12 +204,14 @@ float adaptive_learning_rate::global_schedule(model *m) {
       m_last_score = score;
       m_wait = 0;
       m_adjust_learning_rate = false;
-    } else if (m_wait >= m_patience) {
+    }
+    else if (m_wait >= m_patience) {
       // Adjust learning rate if patience has been exceeded
       m_last_score = score;
       m_wait = 0;
       m_adjust_learning_rate = true;
-    } else {
+    }
+    else {
       // Otherwise increment wait counter
       m_wait++;
       m_adjust_learning_rate = false;
@@ -169,58 +221,98 @@ float adaptive_learning_rate::global_schedule(model *m) {
   // Adjust learning rate if needed
   if (m_adjust_learning_rate) {
     return adaptive_learning_rate::get_current_global_learning_rate() * m_amt;
-  } else {
+  }
+  else {
     return adaptive_learning_rate::get_current_global_learning_rate();
   }
 }
 
-drop_fixed_learning_rate::drop_fixed_learning_rate(
-  std::vector<size_t> drop_epochs, float amt) :
-  drop_fixed_learning_rate(std::move(drop_epochs), amt,
-                                          std::vector<std::string>()) {}
+void adaptive_learning_rate::write_specific_proto(
+  lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_adaptive_learning_rate();
+  msg->set_weights(protobuf::to_space_sep_string(this->get_weights_names()));
+  msg->set_patience(m_patience);
+  msg->set_amt(m_amt);
+}
 
 drop_fixed_learning_rate::drop_fixed_learning_rate(
-  std::vector<size_t> drop_epochs, float amt, std::vector<std::string> weights_names) :
-  learning_rate(std::move(weights_names)),
-  m_amt(amt), m_drop_epochs(std::move(drop_epochs)) {
+  std::vector<size_t> drop_epochs,
+  float amt)
+  : drop_fixed_learning_rate(std::move(drop_epochs),
+                             amt,
+                             std::vector<std::string>())
+{}
+
+drop_fixed_learning_rate::drop_fixed_learning_rate(
+  std::vector<size_t> drop_epochs,
+  float amt,
+  std::vector<std::string> weights_names)
+  : learning_rate(std::move(weights_names)),
+    m_amt(amt),
+    m_drop_epochs(std::move(drop_epochs))
+{
   // Sort in reverse order.
   std::sort(m_drop_epochs.rbegin(), m_drop_epochs.rend());
 }
 
-float drop_fixed_learning_rate::global_schedule(model* m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+void drop_fixed_learning_rate::write_specific_proto(
+  lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_drop_fixed_learning_rate();
+  msg->set_weights(protobuf::to_space_sep_string(this->get_weights_names()));
+  protobuf::assign_to_repeated(*msg->mutable_drop_epoch(), m_drop_epochs);
+  msg->set_amt(m_amt);
+}
+
+float drop_fixed_learning_rate::global_schedule(model* m)
+{
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   // Delete last drop epoch if we have already passed it
-  while (!m_drop_epochs.empty()
-         && c.get_epoch() > m_drop_epochs.back()) {
+  while (!m_drop_epochs.empty() && c.get_epoch() > m_drop_epochs.back()) {
     m_drop_epochs.pop_back();
   }
 
   // Adjust learning rate if at a drop epoch
   if (!m_drop_epochs.empty() && c.get_epoch() == m_drop_epochs.back()) {
     return drop_fixed_learning_rate::get_current_global_learning_rate() * m_amt;
-  } else {
+  }
+  else {
     return drop_fixed_learning_rate::get_current_global_learning_rate();
   }
 }
 
-linear_growth_learning_rate::linear_growth_learning_rate(
-  float target, size_t num_epochs) :
-  linear_growth_learning_rate(target, num_epochs, 0,
-                                             std::vector<std::string>()) {}
+linear_growth_learning_rate::linear_growth_learning_rate(float target,
+                                                         size_t num_epochs)
+  : linear_growth_learning_rate(target,
+                                num_epochs,
+                                0,
+                                std::vector<std::string>())
+{}
+
+linear_growth_learning_rate::linear_growth_learning_rate(float target,
+                                                         size_t num_epochs,
+                                                         size_t delay)
+  : linear_growth_learning_rate(target,
+                                num_epochs,
+                                delay,
+                                std::vector<std::string>())
+{}
 
 linear_growth_learning_rate::linear_growth_learning_rate(
-  float target, size_t num_epochs, size_t delay) :
-  linear_growth_learning_rate(target, num_epochs, delay,
-                                             std::vector<std::string>()) {}
+  float target,
+  size_t num_epochs,
+  size_t delay,
+  std::vector<std::string> weights_names)
+  : learning_rate(std::move(weights_names)),
+    m_target(target),
+    m_inc(0),
+    m_num_epochs(num_epochs),
+    m_delay(delay)
+{}
 
-linear_growth_learning_rate::linear_growth_learning_rate(
-  float target, size_t num_epochs, size_t delay,
-  std::vector<std::string> weights_names) :
-  learning_rate(std::move(weights_names)),
-  m_target(target), m_inc(0),
-  m_num_epochs(num_epochs), m_delay(delay) {}
-
-void linear_growth_learning_rate::setup(model *m) {
+void linear_growth_learning_rate::setup(model* m)
+{
   learning_rate::setup(m);
   // Compute the learning rate increase.
   if (!this->get_weights().empty()) {
@@ -230,16 +322,29 @@ void linear_growth_learning_rate::setup(model *m) {
   }
 }
 
-float linear_growth_learning_rate::global_schedule(model *m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+float linear_growth_learning_rate::global_schedule(model* m)
+{
+  const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   if (c.get_epoch() < m_delay) {
     return linear_growth_learning_rate::get_current_global_learning_rate();
-  } else if (c.get_epoch() <= m_num_epochs + m_delay) {
+  }
+  else if (c.get_epoch() <= m_num_epochs + m_delay) {
     int num_left = m_num_epochs + m_delay - c.get_epoch();
-    return m_base_lr + m_inc*(m_num_epochs - num_left);
-  } else {
+    return m_base_lr + m_inc * (m_num_epochs - num_left);
+  }
+  else {
     return linear_growth_learning_rate::get_current_global_learning_rate();
   }
+}
+
+void linear_growth_learning_rate::write_specific_proto(
+  lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_linear_growth_learning_rate();
+  msg->set_weights(protobuf::to_space_sep_string(this->get_weights_names()));
+  msg->set_target(m_target);
+  msg->set_num_epochs(m_num_epochs);
+  msg->set_delay(m_delay);
 }
 
 /**
@@ -248,97 +353,151 @@ float linear_growth_learning_rate::global_schedule(model *m) {
  * In case that max_iter is set to 0, it is calculated from the number of
  * epochs (n_epochs). n_epochs is not used otherwise.
  */
-poly_learning_rate::poly_learning_rate(
-  double p, size_t n_epochs, size_t max_iter)
+poly_learning_rate::poly_learning_rate(double p,
+                                       size_t n_epochs,
+                                       size_t max_iter)
   : learning_rate(std::vector<std::string>()),
-    m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
-    m_end_lr(0.0f),
-    m_lr(1.0f), m_last_epoch_lr(1.0f) {}
+    m_p(p),
+    m_num_epochs(n_epochs),
+    m_max_iter(max_iter),
+    m_start_lr(0.0f),
+    m_end_lr(0.0f)
+{}
 
-poly_learning_rate::poly_learning_rate(
-  double p, size_t n_epochs, size_t max_iter, double end_lr,  std::vector<std::string> weights_names)
+poly_learning_rate::poly_learning_rate(double p,
+                                       size_t n_epochs,
+                                       size_t max_iter,
+                                       double end_lr,
+                                       std::vector<std::string> weights_names)
   : learning_rate(std::move(weights_names)),
-    m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
-    m_end_lr(end_lr),
-    m_lr(1.0f), m_last_epoch_lr(1.0f) {}
+    m_p(p),
+    m_num_epochs(n_epochs),
+    m_max_iter(max_iter),
+    m_start_lr(0.0f),
+    m_end_lr(end_lr)
+{}
 
 /**
  * Check if the maximum number of iterations is set. If not, compute it by the
  * number of epochs and the number of iterations per epoch.
  */
-void poly_learning_rate::setup(model *m) {
+void poly_learning_rate::setup(model* m)
+{
   learning_rate::setup(m);
+  m_start_lr = get_current_global_learning_rate();
   if (m_max_iter == 0ull) {
     data_coordinator& dc = get_trainer().get_data_coordinator();
-    m_max_iter = m_num_epochs * dc.get_num_iterations_per_epoch(execution_mode::training);
+    m_max_iter =
+      m_num_epochs * dc.get_num_iterations_per_epoch(execution_mode::training);
   }
 }
 
 /**
  * Keep the record of the learning rate at the end of the current epoch.
  */
-float poly_learning_rate::global_schedule(model *m) {
-  const float scale = m_lr / m_last_epoch_lr;
-  m_last_epoch_lr = m_lr;
-  return (poly_learning_rate::get_current_global_learning_rate() - m_end_lr) * scale + m_end_lr;
+float poly_learning_rate::global_schedule(model* m)
+{
+  const auto& c =
+    static_cast<const SGDExecutionContext&>(m->get_execution_context());
+  const size_t iter = std::min(c.get_step(), m_max_iter);
+  const float scale = static_cast<float>(
+    std::pow(static_cast<double>(m_max_iter - iter) / m_max_iter, m_p));
+  return (m_start_lr - m_end_lr) * scale + m_end_lr;
 }
 
 /**
  * Compute the learning rate for the next iteration.
  */
-float poly_learning_rate::optimizer_schedule(model *m, optimizer &opt) {
-  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
-  const size_t cur_iter = c.get_step();
-  if (m_max_iter > cur_iter) {
-    m_lr = static_cast<float>(std::pow(static_cast<double>(m_max_iter - cur_iter)/m_max_iter, m_p));
-  }
-  const float scale = m_lr / m_last_epoch_lr;
-  return (poly_learning_rate::get_current_global_learning_rate() - m_end_lr) * scale + m_end_lr;
+float poly_learning_rate::optimizer_schedule(model* m, optimizer& opt)
+{
+  const auto& c =
+    static_cast<const SGDExecutionContext&>(m->get_execution_context());
+  const size_t iter = std::min(c.get_step(), m_max_iter);
+  const float scale = static_cast<float>(
+    std::pow(static_cast<double>(m_max_iter - iter) / m_max_iter, m_p));
+  return (m_start_lr - m_end_lr) * scale + m_end_lr;
 }
 
-optimizerwise_adaptive_learning_rate::
-optimizerwise_adaptive_learning_rate(
-  float scale) :
-  optimizerwise_adaptive_learning_rate(
-    scale,
-    std::vector<std::string>()) {}
+void poly_learning_rate::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_poly_learning_rate();
+  msg->set_weights(protobuf::to_space_sep_string(this->get_weights_names()));
+  msg->set_power(m_p);
+  msg->set_num_epochs(m_num_epochs);
+  msg->set_max_iter(m_max_iter);
+  msg->set_end_lr(m_end_lr);
+}
 
-optimizerwise_adaptive_learning_rate::
-optimizerwise_adaptive_learning_rate(
-  float scale, std::vector<std::string> weights_names) :
-  learning_rate(std::move(weights_names)), m_scale(scale) {}
+optimizerwise_adaptive_learning_rate::optimizerwise_adaptive_learning_rate(
+  float scale)
+  : optimizerwise_adaptive_learning_rate(scale, std::vector<std::string>())
+{}
 
-float optimizerwise_adaptive_learning_rate::optimizer_schedule(
-  model *m, optimizer &opt) {
+optimizerwise_adaptive_learning_rate::optimizerwise_adaptive_learning_rate(
+  float scale,
+  std::vector<std::string> weights_names)
+  : learning_rate(std::move(weights_names)), m_scale(scale)
+{}
+
+float optimizerwise_adaptive_learning_rate::optimizer_schedule(model* m,
+                                                               optimizer& opt)
+{
   auto& dto = dynamic_cast<data_type_optimizer<DataType>&>(opt);
   DataType param_norm = El::Nrm2(dto.get_weights().get_values());
   DataType param_grad_norm = El::Nrm2(dto.get_gradient());
   if (param_norm > DataType(0) && param_grad_norm > DataType(0)) {
     // TODO: Should incorporate weight decay, etc. here.
-    return optimizerwise_adaptive_learning_rate::get_current_global_learning_rate()
-      * m_scale * param_norm / param_grad_norm;
-  } else {
+    return optimizerwise_adaptive_learning_rate::
+             get_current_global_learning_rate() *
+           m_scale * param_norm / param_grad_norm;
+  }
+  else {
     return dto.get_learning_rate();
   }
 }
 
-std::unique_ptr<callback_base>
-build_step_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+void optimizerwise_adaptive_learning_rate::write_specific_proto(
+  lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_optimizerwise_adaptive_learning_rate();
+  msg->set_weights(protobuf::to_space_sep_string(this->get_weights_names()));
+  msg->set_scale(m_scale);
+}
+
+std::unique_ptr<callback_base> build_step_learning_rate_callback_from_pbuf(
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
-    dynamic_cast<const lbann_data::Callback::CallbackStepLearningRate&>(proto_msg);
-  return make_unique<step_learning_rate>(
+    dynamic_cast<const lbann_data::Callback::CallbackStepLearningRate&>(
+      proto_msg);
+  return std::make_unique<step_learning_rate>(
     params.step(),
     params.amt(),
     parse_list<std::string>(params.weights()));
 }
 
-std::unique_ptr<callback_base>
-build_adaptive_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+std::unique_ptr<callback_base> build_set_learning_rate_callback_from_pbuf(
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
-    dynamic_cast<const lbann_data::Callback::CallbackAdaptiveLearningRate&>(proto_msg);
-  return make_unique<adaptive_learning_rate>(
+    dynamic_cast<const lbann_data::Callback::CallbackSetLearningRate&>(
+      proto_msg);
+  return std::make_unique<set_learning_rate>(
+    params.step(),
+    params.val(),
+    parse_list<std::string>(params.weights()));
+}
+
+std::unique_ptr<callback_base> build_adaptive_learning_rate_callback_from_pbuf(
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>&)
+{
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackAdaptiveLearningRate&>(
+      proto_msg);
+  return std::make_unique<adaptive_learning_rate>(
     params.patience(),
     params.amt(),
     parse_list<std::string>(params.weights()));
@@ -346,14 +505,17 @@ build_adaptive_learning_rate_callback_from_pbuf(
 
 std::unique_ptr<callback_base>
 build_drop_fixed_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
-    dynamic_cast<const lbann_data::Callback::CallbackDropFixedLearningRate&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackDropFixedLearningRate&>(
+      proto_msg);
   std::vector<size_t> drop_epochs;
   for (int i = 0; i < params.drop_epoch_size(); ++i) {
     drop_epochs.push_back(params.drop_epoch(i));
   }
-  return make_unique<drop_fixed_learning_rate>(
+  return std::make_unique<drop_fixed_learning_rate>(
     std::move(drop_epochs),
     params.amt(),
     parse_list<std::string>(params.weights()));
@@ -361,33 +523,41 @@ build_drop_fixed_learning_rate_callback_from_pbuf(
 
 std::unique_ptr<callback_base>
 build_linear_growth_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg,const std::shared_ptr<lbann_summary>&) {
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>&)
+{
   using MsgType = lbann_data::Callback::CallbackLinearGrowthLearningRate;
   using CallbackType = linear_growth_learning_rate;
-  const auto& params =
-    dynamic_cast<const MsgType&>(proto_msg);
-  return make_unique<CallbackType>(params.target(),
-                                   params.num_epochs(),
-                                   params.delay(),
-                                   parse_list<std::string>(params.weights()));
+  const auto& params = dynamic_cast<const MsgType&>(proto_msg);
+  return std::make_unique<CallbackType>(
+    params.target(),
+    params.num_epochs(),
+    params.delay(),
+    parse_list<std::string>(params.weights()));
 }
 
 std::unique_ptr<callback_base>
 build_optimizerwise_adaptive_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg,const std::shared_ptr<lbann_summary>&) {
-  using MsgType = lbann_data::Callback::CallbackOptimizerwiseAdaptiveLearningRate;
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>&)
+{
+  using MsgType =
+    lbann_data::Callback::CallbackOptimizerwiseAdaptiveLearningRate;
   using CallbackType = optimizerwise_adaptive_learning_rate;
   const auto& params = dynamic_cast<const MsgType&>(proto_msg);
-  return make_unique<CallbackType>(params.scale(),
-                                   parse_list<std::string>(params.weights()));
+  return std::make_unique<CallbackType>(
+    params.scale(),
+    parse_list<std::string>(params.weights()));
 }
 
-std::unique_ptr<callback_base>
-build_poly_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+std::unique_ptr<callback_base> build_poly_learning_rate_callback_from_pbuf(
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
-    dynamic_cast<const lbann_data::Callback::CallbackPolyLearningRate&>(proto_msg);
-  return make_unique<poly_learning_rate>(
+    dynamic_cast<const lbann_data::Callback::CallbackPolyLearningRate&>(
+      proto_msg);
+  return std::make_unique<poly_learning_rate>(
     params.power(),
     params.num_epochs(),
     params.max_iter(),

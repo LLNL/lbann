@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,17 +33,21 @@ namespace lbann {
 namespace transform {
 
 /** Scale and Translate data by a constant pair of constants. */
-class scale_and_translate : public transform {
+class scale_and_translate : public transform
+{
 public:
   /** Scale_And_Translate all data by scale_and_translate_val. */
   scale_and_translate(float scale_val, float translate_val)
-    : transform(), m_scale(scale_val), m_translate(translate_val) {}
+    : transform(), m_scale(scale_val), m_translate(translate_val)
+  {}
 
   transform* copy() const override { return new scale_and_translate(*this); }
 
   std::string get_type() const override { return "scale"; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data,
+             std::vector<size_t>& dims) override;
+
 private:
   /** Amount to scale data by. */
   float m_scale;
@@ -51,7 +55,7 @@ private:
   float m_translate;
 };
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_SCALE_AND_TRANSLATE_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_SCALE_AND_TRANSLATE_HPP_INCLUDED

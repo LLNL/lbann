@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,11 +37,12 @@ message DataReader {
 }
 
 message Reader {
-  string name = 1; //mnist, nci, nci_regression, numpy, imagenet, synthetic, merge_samples
-  string role = 3; //train, validation, test, tournament
+  string name = 1;  // mnist, nci, nci_regression, numpy, imagenet, synthetic,
+                    // merge_samples
+  string role = 3;  // train, validation, test, tournament
   bool shuffle = 4;
   string data_filedir = 5;
-  string data_local_filedir = 50; //to support data_store
+  string data_local_filedir = 50;  // to support data_store
   string data_filename = 6;
   string label_filename = 7;
   string sample_list = 8;
@@ -51,15 +52,18 @@ message Reader {
   int64 first_n = 200;
   double percent_of_data_to_use = 12;
 
-  //for GAN model
+  // for SMILES data reader
+  string metadata_filename = 13;
+
+  // for GAN model
   bool gan_labelling = 201;
   int32 gan_label_value = 202;
 
-  int32 num_labels = 99; //for imagenet and synthetic
-  int64 num_samples = 100; //only for synthetic
-  string synth_dimensions = 101; //only for synthetic
-  string synth_response_dimensions = 115; //only for synthetic
-  //csv attributes
+  int32 num_labels = 99;                   // for imagenet and synthetic
+  int64 num_samples = 100;                 // only for synthetic
+  string synth_dimensions = 101;           // only for synthetic
+  string synth_response_dimensions = 115;  // only for synthetic
+  // csv attributes
   string separator = 102;
   int32 skip_cols = 103;
   int32 skip_rows = 104;
@@ -68,20 +72,23 @@ message Reader {
   int32 response_col = 107;
   bool disable_labels = 108;
   bool disable_responses = 109;
-  string format = 110; // numpy, csv
+  bool enable_labels = 99108;
+  bool enable_responses = 99109;
+  string format = 110;  // numpy, csv
   string data_file_pattern = 111;
-  int64 num_neighbors = 112; // pilot2_molecular_reader
-  int64 max_neighborhood = 113; // pilot2_molecular_reader
-  int32 num_image_srcs = 114; // data_reader_multi_images
-  float scaling_factor_int16 = 116; // for numpy_npz_reader with int16 data
+  int64 num_neighbors = 112;         // pilot2_molecular_reader
+  int64 max_neighborhood = 113;      // pilot2_molecular_reader
+  int32 num_image_srcs = 114;        // data_reader_multi_images
+  float scaling_factor_int16 = 116;  // for numpy_npz_reader with int16 data
 
   int32 max_files_to_load = 1000;
 
   //------------- start of only for sample lists ------------------
   bool sample_list_per_trainer = 400;
-  bool sample_list_per_model   = 401;
-  // For testing and validation, keep the loaded sample order same as that in the file
-  bool sample_list_keep_order  = 402;
+  bool sample_list_per_model = 401;
+  // For testing and validation, keep the loaded sample order same as that in
+  // the file
+  bool sample_list_keep_order = 402;
   //------------- end of only for sample lists ------------------
 
   PythonDataReader python = 501;
@@ -90,13 +97,17 @@ message Reader {
   repeated Transform transforms = 600;  // Ordered list of transforms to apply.
 
   //------------- start of only for HDF5 data reader ------------------
-  string hdf5_key_data      = 700;
-  string hdf5_key_labels    = 701;
+  string hdf5_key_data = 700;
+  string hdf5_key_labels = 701;
   string hdf5_key_responses = 702;
   bool hdf5_hyperslab_labels = 703;
   int32 num_responses = 704;
   //------------- end of only for HDF5 data reader ------------------
 
+  //-------- start of only for new (generalized) HDF5 data reader -------------
+  string data_schema_filename = 800;
+  string experiment_schema_filename = 801;
+  //-------- end of only for new (generalized) HDF5 data reader -------------
 }
 
 message PythonDataReader {
@@ -104,7 +115,8 @@ message PythonDataReader {
   string module_dir = 2;            // Directory containing Python module
   string sample_function = 3;       // Function that gets data sample
   string num_samples_function = 4;  // Function that gets number of data samples
-  string sample_dims_function = 5;  // Function that gets dimensions of data sample
+  string sample_dims_function =
+      5;  // Function that gets dimensions of data sample
 }
 
 message Node2VecDataReader {
@@ -141,10 +153,10 @@ message DataSetMetaData {
     repeated JagKeyPrefixFilter jag_input_prefix_filters = 96;
 
     enum JAG_Data {
-      Undefined  = 0;
-      JAG_Image  = 1;
+      Undefined = 0;
+      JAG_Image = 1;
       JAG_Scalar = 2;
-      JAG_Input  = 3;
+      JAG_Input = 3;
     }
     message JAGDataSlice {
       repeated JAG_Data pieces = 1;

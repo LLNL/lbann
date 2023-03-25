@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -34,4 +34,4 @@
 #pragma warning disable 2196
 #endif
 
-#endif  // LBANN_UTILS_COMPILER_CONTROL_HPP_INCLUDED
+#endif // LBANN_UTILS_COMPILER_CONTROL_HPP_INCLUDED

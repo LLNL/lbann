@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,33 +27,38 @@
 #ifndef LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
 #define LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
 
+#include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/data_coordinator/buffered_data_coordinator.hpp"
-#include "lbann/utils/exception.hpp"
 #include "lbann/utils/distconv.hpp"
-#include "lbann/models/model.hpp"
+
+#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
-template <typename TensorDataType,
-          data_layout T_layout, El::Device Dev>
-class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
- public:
-  using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class input_distconv_adapter : public data_type_distconv_adapter<TensorDataType>
+{
+public:
+  using TensorDevType =
+    typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
   using TensorHost = dc::TensorHost<TensorDataType>;
   using TensorHostShuffler = dc::TensorHostShuffler<TensorDataType>;
 
-  input_distconv_adapter(Layer& layer, const bool shuffle_required);
+  input_distconv_adapter(Layer& layer,
+                         data_field_type data_field,
+                         const bool shuffle_required);
   virtual ~input_distconv_adapter() = default;
 
-  TensorHostShuffler &get_shuffler(const TensorHost &src, const TensorHost &dst,
-                                   int mat_idx);
+  void setup_layer(size_t workspace_capacity) override;
+
+  TensorHostShuffler& get_shuffler(const TensorHost& src,
+                                   const TensorHost& dst);
   void setup_fp_tensors() override;
   std::unique_ptr<TensorDevType> setup_activations_i(int index) const override;
   dc::Shape get_activations_local_shape(int index) const override;
-  dc::Shape get_activations_shape(int index) const;
-  void setup_shuffler_buffers(const TensorHost &src, const TensorHost &dst);
+  dc::Shape get_activations_shape(int index) const override;
+  void setup_shuffler_buffers(const TensorHost& src, const TensorHost& dst);
 
   // No bp tensors needed for this layer.
   void setup_prev_error_signals() override {}
@@ -68,33 +73,37 @@ class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
   // Nothing to do here as everything is done in fp_compute_distconv.
   void fp_setup(El::Int mini_batch_size) override {}
   void fp_compute();
-  bool is_input_processed(size_t index) const;
 
- private:
-  std::vector<bool> m_is_input_processed;
-  std::vector<std::unique_ptr<TensorHost>> m_original_host_tensors;
-  std::vector<std::unique_ptr<TensorHost>> m_host_tensors;
+private:
+  /// @brief Data field accessed by corresponding input layer
+  data_field_type m_data_field;
+
+  bool m_is_input_processed;
+  std::unique_ptr<TensorHost> m_original_host_tensor;
+  std::unique_ptr<TensorHost> m_host_tensor;
 
   const bool m_shuffle_required;
-  std::vector<std::array<std::unique_ptr<TensorHostShuffler>, 4>> m_shufflers;
+  std::array<std::unique_ptr<TensorHostShuffler>, 4> m_shufflers;
   std::unique_ptr<TensorDataType> m_shuffler_src_buf;
   size_t m_shuffler_src_buf_size = 0;
   std::unique_ptr<TensorDataType> m_shuffler_dst_buf;
   size_t m_shuffler_dst_buf_size = 0;
 
   // TODO: Use pinned memory pool
-  TensorDataType *m_copy_pinned_buffer = nullptr;
+  TensorDataType* m_copy_pinned_buffer = nullptr;
 };
 #endif // LBANN_HAS_DISTCONV
 
-/** @brief Interface with data reader. */
+/** @brief Interface with data reader */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class input_layer : public data_type_layer<TensorDataType> {
+class input_layer : public data_type_layer<TensorDataType>
+{
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "input layer only supports DATA_PARALLEL data layout");
- public:
+
+public:
   /** @name Public Types */
   ///@{
 
@@ -102,39 +111,33 @@ class input_layer : public data_type_layer<TensorDataType> {
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
   ///@}
- public:
-
+public:
   /// @todo make the map and vector references
-  input_layer(lbann_comm *comm,
-              data_reader_target_mode dr_mode = data_reader_target_mode::NA)
-    : data_type_layer<TensorDataType>(comm),
-    m_data_reader_mode(dr_mode) {
+  input_layer(lbann_comm* comm, std::string const data_field = "")
+    : data_type_layer<TensorDataType>(comm), m_data_field(data_field)
+  {
 
     // Input layers have no parents
     this->m_expected_num_parent_layers = 0;
-    if(dr_mode == data_reader_target_mode::NA) {
-      this->m_expected_num_child_layers = 1;
-    }else {
-      // Input layers output a sample and target, which could be the
-      // original value, categorical label, or regression value
-      this->m_expected_num_child_layers = 2;
-    }
+    this->m_expected_num_child_layers = 1;
   }
 
   input_layer(const input_layer&) = default;
   input_layer& operator=(const input_layer&) = default;
-  input_layer* copy() const override {
-    return new input_layer(*this);
-  }
+  input_layer* copy() const override { return new input_layer(*this); }
 
   std::string get_type() const override { return "input"; }
+
+#ifdef LBANN_HAS_ONNX
+  void fill_onnx_node(onnx::GraphProto& graph) const override;
+#endif // LBANN_HAS_ONNX
+
   // description get_description() const override {
   //   auto desc = io_layer<TensorDataType>::get_description();
   //   return desc;
   // }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
-
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 
@@ -147,14 +150,16 @@ class input_layer : public data_type_layer<TensorDataType> {
 
   void fp_compute() override;
 
+  /** @brief Places samples in input tensors
+   *  @param samples Distributed Matrix of samples
+   */
+  void set_samples(const El::AbstractDistMatrix<TensorDataType>& samples);
+
   /**
    * Get the dimensions of the underlying data.
    */
-  std::vector<int> get_data_dims(DataReaderMetaData& dr_metadata, int child_index = 0) const;
-
-  bool is_for_regression() const {
-    return (m_data_reader_mode == data_reader_target_mode::REGRESSION);
-  }
+  std::vector<int> get_data_dims(DataReaderMetaData& dr_metadata,
+                                 int child_index = 0) const;
 
   /** @name Serialization */
   ///@{
@@ -163,41 +168,55 @@ class input_layer : public data_type_layer<TensorDataType> {
   void serialize(ArchiveT& ar);
 
   ///@}
- protected:
-  data_reader_target_mode m_data_reader_mode;
 
- private:
+protected:
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
+private:
   friend cereal::access;
-  input_layer()
-    : input_layer(nullptr, data_reader_target_mode::NA)
-  {}
+  input_layer() : input_layer(nullptr) {}
+
+  // This is to track if samples are loaded with set_samples(), if so the
+  // fp_compute() sample loading is no longer necessary
+  bool m_samples_loaded = false;
+
+  data_field_type m_data_field;
 
 #ifdef LBANN_HAS_DISTCONV
- public:
+public:
   /** @brief Extensions for distributed convolutions */
-///{@
-  using distconv_adapter_type = input_distconv_adapter<TensorDataType, T_layout, Dev>;
+  ///{@
+  using distconv_adapter_type =
+    input_distconv_adapter<TensorDataType, T_layout, Dev>;
   friend distconv_adapter_type;
- protected:
-  bool is_distconv_supported() const override {
+
+protected:
+  bool is_distconv_supported() const override
+  {
     return Dev == El::Device::CPU && T_layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
-    this->get_distconv_adapter_ptr() = make_unique<distconv_adapter_type>(
-        *this, dr_metadata.shuffle_required);
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override
+  {
+    this->get_distconv_adapter_ptr() =
+      std::make_unique<distconv_adapter_type>(*this,
+                                              m_data_field,
+                                              dr_metadata.shuffle_required);
   }
   distconv_adapter_type& get_distconv_adapter() override;
   const distconv_adapter_type& get_distconv_adapter() const override;
   bool keep_original_outputs(int index) const override;
+  bool keep_original_gradient_wrt_outputs(int index) const override;
 ///@}
 #endif // LBANN_HAS_DISTCONV
 };
 
+LBANN_DEFINE_LAYER_BUILDER(input);
+
 #ifndef LBANN_INPUT_LAYER_INSTANTIATE
 
-#define PROTO_DEVICE(T, Device)         \
-  extern template class input_layer<    \
-    T, data_layout::DATA_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class input_layer<T, data_layout::DATA_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
@@ -206,4 +225,4 @@ class input_layer : public data_type_layer<TensorDataType> {
 
 } // namespace lbann
 
-#endif  // LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
+#endif // LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED

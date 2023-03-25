@@ -7,7 +7,7 @@ Original neural network model and training hyperparameters are described in [MOS
 
 ### How to install LBANN for this application
 ```bash
-/bin/bash -c "$(curl -fsSL https://github.com/LLNL/lbann/raw/develop/applications/ATOM/build_lbann_atom_user.sh)
+/bin/bash -c "$(curl -fsSL https://github.com/LLNL/lbann/raw/develop/applications/ATOM/build_lbann_atom_user.sh)"
 ```
 
 ### How to train

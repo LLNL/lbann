@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,13 +27,13 @@
 #ifndef LBANN_UTILS_BETA_HPP
 #define LBANN_UTILS_BETA_HPP
 
-#include <random>
-#include <ostream>
-#include <istream>
 #include <cmath>
+#include <istream>
+#include <ostream>
+#include <random>
 
-#include "lbann/utils/random.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/random.hpp"
 
 namespace lbann {
 
@@ -48,16 +48,19 @@ namespace lbann {
  * for more details.
  */
 template <typename RealType = double>
-class beta_distribution {
+class beta_distribution
+{
 public:
   using result_type = RealType;
 
-  class param_type {
+  class param_type
+  {
   public:
     using distribution_type = beta_distribution;
 
-    explicit param_type(RealType param_a, RealType param_b) :
-      m_a(param_a), m_b(param_b) {
+    explicit param_type(RealType param_a, RealType param_b)
+      : m_a(param_a), m_b(param_b)
+    {
       if (param_a <= RealType(0) || param_b <= RealType(0)) {
         LBANN_ERROR("Beta distribution parameters must be positive");
       }
@@ -66,20 +69,25 @@ public:
     constexpr RealType a() const { return m_a; }
     constexpr RealType b() const { return m_b; }
 
-    bool operator==(const param_type& other) const {
+    bool operator==(const param_type& other) const
+    {
       return m_a == other.m_a && m_b == other.m_b;
     }
-    bool operator!=(const param_type& other) const {
+    bool operator!=(const param_type& other) const
+    {
       return m_a != other.m_a || m_b != other.m_b;
     }
+
   private:
     RealType m_a, m_b;
   };
 
-  explicit beta_distribution(RealType a, RealType b) :
-    m_params(a, b), m_gamma_a(a), m_gamma_b(b) {}
-  explicit beta_distribution(const param_type& p) :
-    m_params(p), m_gamma_a(p.a()), m_gamma_b(p.b()) {}
+  explicit beta_distribution(RealType a, RealType b)
+    : m_params(a, b), m_gamma_a(a), m_gamma_b(b)
+  {}
+  explicit beta_distribution(const param_type& p)
+    : m_params(p), m_gamma_a(p.a()), m_gamma_b(p.b())
+  {}
 
   result_type a() const { return m_params.a(); }
   result_type b() const { return m_params.b(); }
@@ -87,28 +95,33 @@ public:
   void reset() {}
 
   param_type param() const { return m_params; }
-  void param(const param_type& p) {
+  void param(const param_type& p)
+  {
     m_params = p;
     m_gamma_a = gamma_dist(p.a());
     m_gamma_b = gamma_dist(p.b());
   }
 
   template <typename Generator>
-  result_type operator()(Generator& g) {
+  result_type operator()(Generator& g)
+  {
     return generate(g);
   }
   template <typename Generator>
-  result_type operator()(Generator& g, const param_type& p) {
+  result_type operator()(Generator& g, const param_type& p)
+  {
     return generate(g, p);
   }
 
   result_type min() const { return result_type(0); }
   result_type max() const { return result_type(1); }
 
-  bool operator==(const beta_distribution<result_type>& other) const {
+  bool operator==(const beta_distribution<result_type>& other) const
+  {
     return param() == other.param();
   }
-  bool operator!=(const beta_distribution<result_type>& other) const {
+  bool operator!=(const beta_distribution<result_type>& other) const
+  {
     return param() != other.param();
   }
 
@@ -120,19 +133,23 @@ private:
 
   // Generator for when we use the distribution's parameters.
   template <typename Generator>
-  result_type generate(Generator& g) {
+  result_type generate(Generator& g)
+  {
     if (a() <= result_type(1) && b() <= result_type(1)) {
       return generate_johnk(g, m_params.a(), m_params.b());
-    } else {
+    }
+    else {
       return generate_gamma(g, m_gamma_a, m_gamma_b);
     }
   }
   // Generator for when we use specified parameters.
   template <typename Generator>
-  result_type generate(Generator& g, const param_type& p) {
+  result_type generate(Generator& g, const param_type& p)
+  {
     if (p.a() <= result_type(1) && p.b() <= result_type(1)) {
       return generate_johnk(g, p.a(), p.b());
-    } else {
+    }
+    else {
       gamma_dist gamma_a(p.a()), gamma_b(p.b());
       return generate_gamma(g, gamma_a, gamma_b);
     }
@@ -166,7 +183,8 @@ private:
    * unicode support.
    */
   template <typename Generator>
-  result_type generate_johnk(Generator& g, result_type a, result_type b) {
+  result_type generate_johnk(Generator& g, result_type a, result_type b)
+  {
     while (true) {
       const result_type U = random_uniform<result_type>(g);
       const result_type V = random_uniform<result_type>(g);
@@ -176,7 +194,8 @@ private:
       if (XplusY <= result_type(1.0)) {
         if (XplusY > result_type(0)) {
           return X / XplusY;
-        } else if (U != result_type(0) && V != result_type(0)) {
+        }
+        else if (U != result_type(0) && V != result_type(0)) {
           // Work with logs instead if a/b is too small.
           result_type logX = std::log(U) / a;
           result_type logY = std::log(V) / b;
@@ -196,8 +215,9 @@ private:
    * for details.
    */
   template <typename Generator>
-  result_type generate_gamma(Generator& g, gamma_dist& gamma_a,
-                             gamma_dist& gamma_b) {
+  result_type
+  generate_gamma(Generator& g, gamma_dist& gamma_a, gamma_dist& gamma_b)
+  {
     const result_type Ga = gamma_a(g);
     const result_type Gb = gamma_b(g);
     return Ga / (Ga + Gb);
@@ -206,28 +226,28 @@ private:
 
 template <typename CharT, typename RealType>
 std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os,
-                                      const beta_distribution<RealType>& d) {
+                                      const beta_distribution<RealType>& d)
+{
   os << "~Beta(" << d.a() << "," << d.b() << ")";
   return os;
 }
 
 template <typename CharT, typename RealType>
 std::basic_istream<CharT>& operator>>(std::basic_istream<CharT>& is,
-                                      beta_distribution<RealType>& d) {
+                                      beta_distribution<RealType>& d)
+{
   std::string s;
   RealType a, b;
-  if (std::getline(is, s, '(') && s == "~Beta"
-      && is >> a
-      && is.get() == ','
-      && is >> b
-      && is.get() == ')') {
+  if (std::getline(is, s, '(') && s == "~Beta" && is >> a && is.get() == ',' &&
+      is >> b && is.get() == ')') {
     d = beta_distribution<RealType>(a, b);
-  } else {
+  }
+  else {
     is.setstate(std::ios::failbit);
   }
   return is;
 }
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_UTILS_BETA_HPP
+#endif // LBANN_UTILS_BETA_HPP

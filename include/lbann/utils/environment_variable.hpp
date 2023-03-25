@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,10 +31,8 @@
 
 #include <string>
 
-namespace lbann
-{
-namespace utils
-{
+namespace lbann {
+namespace utils {
 
 /** @brief Access environment variables using getenv. */
 class GetEnvAccessor
@@ -47,11 +45,10 @@ public:
  *
  *  Values are acquired lazily. The only maintained state is the name.
  */
-template <typename AccessPolicy=GetEnvAccessor>
+template <typename AccessPolicy = GetEnvAccessor>
 class EnvVariable
 {
 public:
-
   /** @name Constructors */
   ///@{
 
@@ -98,36 +95,29 @@ using ENV = EnvVariable<>;
 // Implementation
 
 template <typename AccessPolicy>
-inline
-EnvVariable<AccessPolicy>::
-EnvVariable(std::string const& var_name)
+inline EnvVariable<AccessPolicy>::EnvVariable(std::string const& var_name)
   : name_{var_name}
 {}
 
 template <typename AccessPolicy>
-inline
-EnvVariable<AccessPolicy>::
-EnvVariable(std::string&& var_name)
+inline EnvVariable<AccessPolicy>::EnvVariable(std::string&& var_name)
   : name_{std::move(var_name)}
 {}
 
 template <typename AccessPolicy>
-inline bool
-EnvVariable<AccessPolicy>::exists() const
+inline bool EnvVariable<AccessPolicy>::exists() const
 {
   return raw_value().size() > 0;
 }
 
 template <typename AccessPolicy>
-inline std::string const&
-EnvVariable<AccessPolicy>::name() const noexcept
+inline std::string const& EnvVariable<AccessPolicy>::name() const noexcept
 {
   return name_;
 }
 
 template <typename AccessPolicy>
-inline std::string
-EnvVariable<AccessPolicy>::raw_value() const
+inline std::string EnvVariable<AccessPolicy>::raw_value() const
 {
   AccessPolicy access;
   return access.get(name_);
@@ -140,6 +130,6 @@ T EnvVariable<AccessPolicy>::value() const
   return from_string<T>(raw_value());
 }
 
-}// namespace utils
-}// namespace lbann
+} // namespace utils
+} // namespace lbann
 #endif /* LBANN_UTILS_ENVIRONMENT_VARIABLE_HPP_INCLUDED */

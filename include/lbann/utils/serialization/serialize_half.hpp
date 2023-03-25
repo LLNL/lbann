@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -53,14 +53,16 @@ namespace cereal {
 
 /** @brief Save a GPU half-precision value. */
 template <typename OutputArchiveT>
-void save(OutputArchiveT& archive, __half const& value) {
+void save(OutputArchiveT& archive, __half const& value)
+{
   float x = value;
   archive(x);
 }
 
 /** @brief Load a GPU half-precision value. */
 template <typename InputArchiveT>
-void load(InputArchiveT& archive, __half& value) {
+void load(InputArchiveT& archive, __half& value)
+{
   float x = 0.f;
   archive(x);
   value = x;
@@ -90,16 +92,16 @@ inline void save(XMLOutputArchive&, half_float::half const&) = delete;
 inline void load(XMLInputArchive&, half_float::half&) = delete;
 
 /** @brief Save this half-precision value as a float for XML */
-float save_minimal(XMLOutputArchive const&,
-                   half_float::half const&) noexcept;
+float save_minimal(XMLOutputArchive const&, half_float::half const&) noexcept;
 
 /** @brief Load this half-precision value as a float from XML */
-void load_minimal(
-  XMLInputArchive const&, half_float::half&, float const&) noexcept;
+void load_minimal(XMLInputArchive const&,
+                  half_float::half&,
+                  float const&) noexcept;
 
 ///@}
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 #endif // LBANN_HAS_HALF
-}// namespace cereal
+} // namespace cereal
 
 #endif // LBANN_UTILS_SERIALIZATION_SERIALIZE_HALF_HPP_INCLUDED

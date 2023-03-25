@@ -40,6 +40,28 @@ Users are advised to view `the Doxygen API Documentation
    callbacks
    data_transforms
    execution_algorithms
+   hyperparameter_tuning
+
+.. toctree::
+   :maxdepth: 2
+   :caption: LBANN Layers
+
+   layers
+
+.. toctree::
+   :maxdepth: 2
+   :caption: LBANN Operators
+
+   operators
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Data Ingestion
+
+   data_ingestion
+   data_ingestion/sample_lists
+   data_ingestion/hdf5_data_reader
+   data_ingestion/hdf5_generate_schema_and_sample_list
 
 .. toctree::
    :maxdepth: 1
@@ -52,7 +74,7 @@ Users are advised to view `the Doxygen API Documentation
    :caption: Developer Documentation
 
    lbann
-   lbann/lbann
+   lbann-api
    style_guide
    continuous_integration
    documentation_building

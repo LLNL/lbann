@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,9 +29,9 @@
 #ifndef LBANN_CALLBACKS_EARLY_STOPPING_HPP_INCLUDED
 #define LBANN_CALLBACKS_EARLY_STOPPING_HPP_INCLUDED
 
-#include <unordered_set>
-#include <unordered_map>
 #include "lbann/callbacks/callback.hpp"
+#include <unordered_map>
+#include <unordered_set>
 
 namespace lbann {
 namespace callback {
@@ -39,31 +39,32 @@ namespace callback {
 /**
  * Stop training after validation error stops improving.
  */
-class early_stopping : public callback_base {
- public:
+class early_stopping : public callback_base
+{
+public:
   /**
    * Continue training until score has not improved for patience epochs.
    */
   early_stopping(int64_t patience);
   early_stopping(const early_stopping&) = default;
-  early_stopping& operator=(
-    const early_stopping&) = default;
-  early_stopping* copy() const override {
-    return new early_stopping(*this);
-  }
+  early_stopping& operator=(const early_stopping&) = default;
+  early_stopping* copy() const override { return new early_stopping(*this); }
   /** Update validation score and check for early stopping. */
-  void on_validation_end(model *m) override;
+  void on_validation_end(model* m) override;
   std::string name() const override { return "early stopping"; }
 
   /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
- private:
+private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
 
   friend class cereal::access;
   early_stopping();
@@ -78,10 +79,10 @@ class early_stopping : public callback_base {
 
 // Builder function
 std::unique_ptr<callback_base>
-build_early_stopping_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_early_stopping_callback_from_pbuf(const google::protobuf::Message&,
+                                        std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_EARLY_STOPPING_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_EARLY_STOPPING_HPP_INCLUDED

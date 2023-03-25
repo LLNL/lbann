@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,10 +29,10 @@
 #ifndef LBANN_SUMMARY_HPP_INCLUDED
 #define LBANN_SUMMARY_HPP_INCLUDED
 
-#include <string>
-#include <vector>
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
+#include <string>
+#include <vector>
 
 #ifdef LBANN_HAS_TBINF
 #include "TBinf.hpp"
@@ -61,29 +61,37 @@ using BiggerOf = typename std::conditional<(sizeof(T) > sizeof(U)), T, U>::type;
  * @note WHEN YOU UPDATE THE PUBLIC API HERE, REMEMBER TO UPDATE THE KLUDGE FOR
  * NON-TENSORBOARD BUILDS BELOW!
  */
-class lbann_summary {
+class lbann_summary
+{
 public:
-
   /**
    * Create a new summary manager.
    * @param logdir The directory to output events to.
    * @param comm Communicator to use.
    */
-  lbann_summary(std::string logdir, lbann_comm *comm);
+  lbann_summary(std::string logdir, lbann_comm* comm);
   ~lbann_summary();
 
   /** Report the mean of mat. */
   template <typename TensorDataType>
-  void reduce_mean(const std::string tag, const El::AbstractDistMatrix<TensorDataType>& mat, int step);
+  void reduce_mean(const std::string tag,
+                   const El::AbstractDistMatrix<TensorDataType>& mat,
+                   int step);
   /** Report the minimum value of mat. */
   template <typename TensorDataType>
-  void reduce_min(const std::string tag, const El::AbstractDistMatrix<TensorDataType>& mat, int step);
+  void reduce_min(const std::string tag,
+                  const El::AbstractDistMatrix<TensorDataType>& mat,
+                  int step);
   /** Report the maximum value of mat. */
   template <typename TensorDataType>
-  void reduce_max(const std::string tag, const El::AbstractDistMatrix<TensorDataType>& mat, int step);
+  void reduce_max(const std::string tag,
+                  const El::AbstractDistMatrix<TensorDataType>& mat,
+                  int step);
   /** Report the standard deviation of mat. */
   template <typename TensorDataType>
-  void reduce_stdev(const std::string tag, const El::AbstractDistMatrix<TensorDataType>& mat, int step);
+  void reduce_stdev(const std::string tag,
+                    const El::AbstractDistMatrix<TensorDataType>& mat,
+                    int step);
   /** Report a scalar from each model (only meaningful on model masters). */
   template <typename TensorDataType>
   void reduce_scalar(const std::string tag, TensorDataType s, int step);
@@ -95,10 +103,14 @@ public:
   void reduce_scalar_all(const std::string tag, TensorDataType s, int step);
   /** Report a histogram of the values in mat. */
   template <typename TensorDataType>
-  void reduce_histogram(const std::string tag, const El::AbstractDistMatrix<TensorDataType>& mat, int step);
+  void reduce_histogram(const std::string tag,
+                        const El::AbstractDistMatrix<TensorDataType>& mat,
+                        int step);
   /** Report the (squared) 2-norm of mat. */
   template <typename TensorDataType>
-  void reduce_2norm(const std::string tag, const El::AbstractDistMatrix<TensorDataType>& mat, int step);
+  void reduce_2norm(const std::string tag,
+                    const El::AbstractDistMatrix<TensorDataType>& mat,
+                    int step);
   void report_image(std::string const& /*tag*/,
                     std::string const& /*img_format*/,
                     CPUMat const& /*image*/,
@@ -111,17 +123,22 @@ public:
    */
   void flush();
 
- private:
-  lbann_comm *m_comm;
-  TBinf::SummaryWriter *m_sw;
+private:
+  lbann_comm* m_comm;
+  TBinf::SummaryWriter* m_sw;
 
   /** Represent a pending summary operation.
-    * Note that TensorBoard takes scalars as floats
-    */
-  struct pending_op {
-    pending_op(const std::string tag_, int step_, float local_,
-               float local2_ = 0.0f, int num_ = 0) :
-      tag(tag_), step(step_), local(local_), local2(local2_), num(num_) {}
+   * Note that TensorBoard takes scalars as floats
+   */
+  struct pending_op
+  {
+    pending_op(const std::string tag_,
+               int step_,
+               float local_,
+               float local2_ = 0.0f,
+               int num_ = 0)
+      : tag(tag_), step(step_), local(local_), local2(local2_), num(num_)
+    {}
     /** Associated tag. */
     const std::string tag;
     /** Global step. */
@@ -134,15 +151,27 @@ public:
     int num;
   };
   /** Represent a pending histogram operation.
-    * Note that TensorBoard takes histograms as double
-    */
-  struct pending_histogram {
-    pending_histogram(const std::string tag_, int step_,
+   * Note that TensorBoard takes histograms as double
+   */
+  struct pending_histogram
+  {
+    pending_histogram(const std::string tag_,
+                      int step_,
                       std::vector<double> buckets_,
-                      double min_, double max_, double num_,
-                      double sum_, double sqsum_) :
-      tag(tag_), step(step_), buckets(buckets_), min(min_), max(max_),
-      num(num_), sum(sum_), sqsum(sqsum_) {}
+                      double min_,
+                      double max_,
+                      double num_,
+                      double sum_,
+                      double sqsum_)
+      : tag(tag_),
+        step(step_),
+        buckets(buckets_),
+        min(min_),
+        max(max_),
+        num(num_),
+        sum(sum_),
+        sqsum(sqsum_)
+    {}
     /** Associated tag. */
     const std::string tag;
     /** Global step. */
@@ -199,19 +228,25 @@ public:
 
   /** Compute the sum of elements in mat. */
   template <typename TensorDataType>
-  auto local_sum(const El::AbstractMatrix<TensorDataType>& mat) const -> BiggerOf<TensorDataType, float>;
+  auto local_sum(const El::AbstractMatrix<TensorDataType>& mat) const
+    -> BiggerOf<TensorDataType, float>;
   /** Compute the sum of square of elements in mat. */
   template <typename TensorDataType, typename AccumT>
-  void local_sum_sqsum(const El::AbstractMatrix<TensorDataType>& mat, AccumT& sum, AccumT& sqsum) const;
+  void local_sum_sqsum(const El::AbstractMatrix<TensorDataType>& mat,
+                       AccumT& sum,
+                       AccumT& sqsum) const;
   /** Compute the minimum element in mat. */
   template <typename TensorDataType>
-  auto local_min(const El::AbstractMatrix<TensorDataType>& mat) const -> BiggerOf<TensorDataType, float>;
+  auto local_min(const El::AbstractMatrix<TensorDataType>& mat) const
+    -> BiggerOf<TensorDataType, float>;
   /** Compute the maximum element in mat. */
   template <typename TensorDataType>
-  auto local_max(const El::AbstractMatrix<TensorDataType>& mat) const -> BiggerOf<TensorDataType, float>;
+  auto local_max(const El::AbstractMatrix<TensorDataType>& mat) const
+    -> BiggerOf<TensorDataType, float>;
   /** Compute the element-wise L2 norm of mat. */
   template <typename TensorDataType>
-  auto local_2norm(const El::AbstractMatrix<TensorDataType>& mat) const -> BiggerOf<TensorDataType, float>;
+  auto local_2norm(const El::AbstractMatrix<TensorDataType>& mat) const
+    -> BiggerOf<TensorDataType, float>;
   /** Prepend "model<model>/" to tag. */
   std::string prepend_model(const std::string tag, int model) const;
   /** Gather and write out a scalar summary for each model. */
@@ -224,9 +259,10 @@ public:
 #else
 
 /** Dummy class when TBinf is not present. */
-class lbann_summary {
- public:
-  lbann_summary(std::string logdir, lbann_comm *comm) {}
+class lbann_summary
+{
+public:
+  lbann_summary(std::string logdir, lbann_comm* comm) {}
 
   void report_image(std::string const& tag,
                     std::string const& img_format,
@@ -236,28 +272,49 @@ class lbann_summary {
   {}
 
   template <typename TensorDataType>
-  void reduce_mean(const std::string tag, const El::AbstractDistMatrix<TensorDataType>& mat, int step) {}
+  void reduce_mean(const std::string tag,
+                   const El::AbstractDistMatrix<TensorDataType>& mat,
+                   int step)
+  {}
   template <typename TensorDataType>
-  void reduce_min(const std::string tag, const El::AbstractDistMatrix<TensorDataType>& mat, int step) {}
+  void reduce_min(const std::string tag,
+                  const El::AbstractDistMatrix<TensorDataType>& mat,
+                  int step)
+  {}
   template <typename TensorDataType>
-  void reduce_max(const std::string tag, const El::AbstractDistMatrix<TensorDataType>& mat, int step) {}
+  void reduce_max(const std::string tag,
+                  const El::AbstractDistMatrix<TensorDataType>& mat,
+                  int step)
+  {}
   template <typename TensorDataType>
-  void reduce_stdev(const std::string tag, const El::AbstractDistMatrix<TensorDataType>& mat, int step) {}
+  void reduce_stdev(const std::string tag,
+                    const El::AbstractDistMatrix<TensorDataType>& mat,
+                    int step)
+  {}
   template <typename TensorDataType>
-  void reduce_scalar(const std::string tag, TensorDataType s, int step) {}
+  void reduce_scalar(const std::string tag, TensorDataType s, int step)
+  {}
   template <typename TensorDataType>
-  void sum_reduce_scalar(const std::string tag, TensorDataType s, int step) {}
+  void sum_reduce_scalar(const std::string tag, TensorDataType s, int step)
+  {}
   template <typename TensorDataType>
-  void reduce_scalar_all(const std::string tag, TensorDataType s, int step) {}
+  void reduce_scalar_all(const std::string tag, TensorDataType s, int step)
+  {}
   template <typename TensorDataType>
-  void reduce_histogram(const std::string tag, const El::AbstractDistMatrix<TensorDataType>& mat, int step) {}
+  void reduce_histogram(const std::string tag,
+                        const El::AbstractDistMatrix<TensorDataType>& mat,
+                        int step)
+  {}
   template <typename TensorDataType>
-  void reduce_2norm(const std::string tag, const El::AbstractDistMatrix<TensorDataType>& mat, int step) {}
+  void reduce_2norm(const std::string tag,
+                    const El::AbstractDistMatrix<TensorDataType>& mat,
+                    int step)
+  {}
   void flush() {}
 };
 
-#endif  // LBANN_HAS_TBINF
+#endif // LBANN_HAS_TBINF
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_SUMMARY_HPP_INCLUDED
+#endif // LBANN_SUMMARY_HPP_INCLUDED

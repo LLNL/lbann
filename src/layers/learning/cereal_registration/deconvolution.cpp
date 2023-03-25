@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,13 +30,13 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
-void
-deconvolution_layer<TensorDataType,Layout,Device>
-::serialize(ArchiveT& ar)
+void deconvolution_layer<TensorDataType, Layout, Device>::serialize(
+  ArchiveT& ar)
 {
   using BaseConvolutionLayer = base_convolution_layer<TensorDataType, Device>;
   ar(::cereal::make_nvp("BaseConvolutionLayer",
-                        ::cereal::base_class<BaseConvolutionLayer>(this)));
+                        ::cereal::base_class<BaseConvolutionLayer>(this)),
+     CEREAL_NVP(m_output_pads));
 }
 
 } // namespace lbann

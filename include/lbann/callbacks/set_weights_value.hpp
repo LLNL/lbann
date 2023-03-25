@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -39,8 +39,9 @@ namespace callback {
  *  @todo Support weights with arbitrary data types. Currently only
  *  floats are supported.
  */
-class set_weights_value : public callback_base {
- public:
+class set_weights_value : public callback_base
+{
+public:
   /**
    *  @param weights_name Name of weights object
    *  @param value Value to set weights
@@ -53,17 +54,20 @@ class set_weights_value : public callback_base {
   set_weights_value* copy() const override;
   std::string name() const override;
 
-  void on_batch_begin(model *m) override;
+  void on_batch_begin(model* m) override;
 
   /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
- private:
+private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
 
   friend class cereal::access;
   set_weights_value();
@@ -74,15 +78,14 @@ class set_weights_value : public callback_base {
   double m_value;
   /** @brief Mini-batch step at which to set weights value. */
   size_t m_step;
-
 };
 
 // Builder function
-std::unique_ptr<callback_base>
-build_set_weights_value_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+std::unique_ptr<callback_base> build_set_weights_value_callback_from_pbuf(
+  const google::protobuf::Message&,
+  std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_SET_WEIGHTS_VALUE_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_SET_WEIGHTS_VALUE_HPP_INCLUDED

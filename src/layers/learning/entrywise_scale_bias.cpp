@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,21 +26,22 @@
 
 #define LBANN_ENTRYWISE_SCALE_BIAS_LAYER_INSTANTIATE
 #include "lbann/layers/learning/entrywise_scale_bias.hpp"
+#include "lbann/optimizers/optimizer_impl.hpp"
 
 namespace lbann {
 
 namespace {
 
 template <typename TensorDataType>
-void fp_impl(const El::Matrix<TensorDataType, El::Device::CPU>& local_input,
-             El::Matrix<TensorDataType, El::Device::CPU>& local_output,
-             El::Matrix<TensorDataType, El::Device::CPU> const& local_scale_bias) {
+void fp_impl(
+  const El::Matrix<TensorDataType, El::Device::CPU>& local_input,
+  El::Matrix<TensorDataType, El::Device::CPU>& local_output,
+  El::Matrix<TensorDataType, El::Device::CPU> const& local_scale_bias)
+{
 
   // Local matrices
-  const auto local_scale = El::LockedView(local_scale_bias,
-                                          El::ALL, El::IR(0));
-  const auto local_bias = El::LockedView(local_scale_bias,
-                                         El::ALL, El::IR(1));
+  const auto local_scale = El::LockedView(local_scale_bias, El::ALL, El::IR(0));
+  const auto local_bias = El::LockedView(local_scale_bias, El::ALL, El::IR(1));
 
   // Apply entry-wise scale and bias
   const El::Int local_height = local_input.Height();
@@ -55,7 +56,6 @@ void fp_impl(const El::Matrix<TensorDataType, El::Device::CPU>& local_input,
       y = a * x + b;
     }
   }
-
 }
 
 template <typename TensorDataType>
@@ -64,19 +64,19 @@ void bp_impl(
   const El::Matrix<TensorDataType, El::Device::CPU>& local_gradient_wrt_output,
   El::Matrix<TensorDataType, El::Device::CPU>& local_gradient_wrt_input,
   El::Matrix<TensorDataType, El::Device::CPU> const& local_scale_bias,
-  El::AbstractDistMatrix<TensorDataType>& gradient_wrt_scale_bias) {
+  El::AbstractDistMatrix<TensorDataType>& gradient_wrt_scale_bias)
+{
 
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
-  auto& local_gradient_wrt_scale_bias
-    = dynamic_cast<CPUMatType&>(gradient_wrt_scale_bias.Matrix());
-  const auto local_scale = El::LockedView(local_scale_bias,
-                                          El::ALL, El::IR(0));
-  auto local_gradient_wrt_scale = El::View(local_gradient_wrt_scale_bias,
-                                           El::ALL, El::IR(0));
-  auto local_gradient_wrt_bias = El::View(local_gradient_wrt_scale_bias,
-                                          El::ALL, El::IR(1));
+  auto& local_gradient_wrt_scale_bias =
+    dynamic_cast<CPUMatType&>(gradient_wrt_scale_bias.Matrix());
+  const auto local_scale = El::LockedView(local_scale_bias, El::ALL, El::IR(0));
+  auto local_gradient_wrt_scale =
+    El::View(local_gradient_wrt_scale_bias, El::ALL, El::IR(0));
+  auto local_gradient_wrt_bias =
+    El::View(local_gradient_wrt_scale_bias, El::ALL, El::IR(1));
 
   // Dimensions
   const El::Int local_height = local_input.Height();
@@ -107,30 +107,32 @@ void bp_impl(
         db += dy;
       }
     }
-
   }
-
 }
 
 } // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::fp_compute() {
+void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::fp_compute()
+{
   using LocalMatType = El::Matrix<TensorDataType, Device>;
-  fp_impl(dynamic_cast<LocalMatType const&>(this->get_local_prev_activations()),
-          dynamic_cast<LocalMatType&>(this->get_local_activations()),
-          dynamic_cast<LocalMatType const&>(this->weights_values(0).LockedMatrix()));
+  fp_impl(
+    dynamic_cast<LocalMatType const&>(this->get_local_prev_activations()),
+    dynamic_cast<LocalMatType&>(this->get_local_activations()),
+    dynamic_cast<LocalMatType const&>(this->weights_values(0).LockedMatrix()));
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::bp_compute() {
+void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::bp_compute()
+{
   using LocalMatType = El::Matrix<TensorDataType, Device>;
 
-  bp_impl(dynamic_cast<LocalMatType const&>(this->get_local_prev_activations()),
-          dynamic_cast<LocalMatType const&>(this->get_local_prev_error_signals()),
-          dynamic_cast<LocalMatType&>(this->get_local_error_signals()),
-          dynamic_cast<LocalMatType const&>(this->weights_values(0).LockedMatrix()),
-          *this->m_weights_gradient);
+  bp_impl(
+    dynamic_cast<LocalMatType const&>(this->get_local_prev_activations()),
+    dynamic_cast<LocalMatType const&>(this->get_local_prev_error_signals()),
+    dynamic_cast<LocalMatType&>(this->get_local_error_signals()),
+    dynamic_cast<LocalMatType const&>(this->weights_values(0).LockedMatrix()),
+    *this->m_weights_gradient);
 
   // Update optimizer with gradient
   auto* opt = this->get_weights(0).get_optimizer();
@@ -143,11 +145,13 @@ void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::bp_compute() {
 
 LBANN_LAYER_DEFAULT_BUILDER(entrywise_scale_bias)
 
-#define PROTO(T)                                                        \
-  template class entrywise_scale_bias_layer<                            \
-    T, data_layout::DATA_PARALLEL, El::Device::CPU>;                    \
-  template class entrywise_scale_bias_layer<                            \
-    T, data_layout::MODEL_PARALLEL, El::Device::CPU>;                   \
+#define PROTO(T)                                                               \
+  template class entrywise_scale_bias_layer<T,                                 \
+                                            data_layout::DATA_PARALLEL,        \
+                                            El::Device::CPU>;                  \
+  template class entrywise_scale_bias_layer<T,                                 \
+                                            data_layout::MODEL_PARALLEL,       \
+                                            El::Device::CPU>;                  \
   LBANN_LAYER_BUILDER_ETI(entrywise_scale_bias, T, El::Device::CPU)
 
 #define LBANN_INSTANTIATE_CPU_HALF

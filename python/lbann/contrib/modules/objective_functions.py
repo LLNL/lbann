@@ -27,7 +27,7 @@ class GeometricDistributionNegativeLogLikelihood(lbann.modules.Module):
         ones = p.Constant(hint_layer=pred, value=1.0)
         term1 = lbann.Multiply([label, lbann.Log(lbann.Subtract([ones, pred]))])
         term2 = lbann.Log(pred)
-        full = lbann.WeightedSum([term1, term2], scaling_factors='-1.0 -1.0')
+        full = lbann.WeightedSum([term1, term2], scaling_factors=[-1.0, -1.0])
         return lbann.Reduction(full)
 
 class PoissonDistributionNegativeLogLikelihood(lbann.modules.Module):
@@ -41,7 +41,7 @@ class PoissonDistributionNegativeLogLikelihood(lbann.modules.Module):
         term1 = pred
         term2 = lbann.Multiply([label, lbann.Log(pred)])
         term3 = lbann.LogGamma(lbann.Add([label, ones]))
-        full = lbann.WeightedSum([term1, term2, term3], scaling_factors='1.0 -1.0 1.0')
+        full = lbann.WeightedSum([term1, term2, term3], scaling_factors=[1.0, -1.0, 1.0])
         return lbann.Reduction(full)
 
 class PolyaDistributionNegativeLogLikelihood(lbann.modules.Module):
@@ -59,7 +59,7 @@ class PolyaDistributionNegativeLogLikelihood(lbann.modules.Module):
                                   lbann.LogGamma(lbann.Sum([count, alpha_sum])),
                                   lgamma_alpha_level_count,
                                   lgamma_alpha_sum],
-                                 scaling_factors='-1.0 1.0 -1.0 1.0')
+                                 scaling_factors=[-1.0, 1.0, -1.0, 1.0])
 
 class GroupLasso(lbann.modules.Module):
     def __init__(self, weights, height, width):
@@ -67,8 +67,8 @@ class GroupLasso(lbann.modules.Module):
         self.height = height
         self.width = width
     def forward(self, _):
-        w = lbann.WeightsLayer(weights=self.weights, dims='%d %d'.format(self.width, self.height))
-        slice = lbann.Slice(w, axis=0, slice_points=' '.join(range(self.width+1)))
+        w = lbann.WeightsLayer(weights=self.weights, dims=[self.width, self.height])
+        slice = lbann.Slice(w, axis=0, slice_points=range(self.width+1))
         cols = []
         for _ in range(self.width):
             cols.append(lbann.Sqrt(lbann.L2Norm2(slice)))
@@ -79,5 +79,5 @@ class L1WeightRegularization(lbann.modules.Module):
         self.weights = weights
         self.dims = dims
     def forward(self, _):
-        w = lbann.WeightsLayer(weights=self.weights, dims=' '.join(self.dims))
+        w = lbann.WeightsLayer(weights=self.weights, dims=self.dims)
         return lbann.L1Norm(w)

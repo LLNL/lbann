@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,18 +28,21 @@
 #define LBANN_LAYERS_ACTIVATIONS_LOG_SOFTMAX_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #if defined LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #endif // LBANN_HAS_DNN_LIB
+#include "lbann/proto/layers.pb.h"
 
 namespace lbann {
 
-/** @brief Logarithm of softmax function.
+/** @brief Logarithm of softmax function
  *
  *  @f[ \log \text{softmax}(x)_i = x_i - \log \sum_j e^{x_j} @f]
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class log_softmax_layer : public data_type_layer<TensorDataType> {
+class log_softmax_layer : public data_type_layer<TensorDataType>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -51,19 +54,20 @@ public:
 
 public:
   log_softmax_layer() : log_softmax_layer(nullptr) {}
-  log_softmax_layer(lbann_comm *comm)
+  log_softmax_layer(lbann_comm* comm)
     : data_type_layer<TensorDataType>(comm)
 #ifdef LBANN_HAS_DNN_LIB
-    , m_tensors_dnn_desc(this)
+      ,
+      m_tensors_dnn_desc(this)
 #endif // LBANN_HAS_DNN_LIB
   {}
 
   log_softmax_layer(const log_softmax_layer& other)
     : data_type_layer<TensorDataType>(other),
-      m_workspace(other.m_workspace ?
-                  other.m_workspace->Copy() : nullptr)
+      m_workspace(other.m_workspace ? other.m_workspace->Copy() : nullptr)
 #ifdef LBANN_HAS_DNN_LIB
-    , m_tensors_dnn_desc(other.m_tensors_dnn_desc)
+      ,
+      m_tensors_dnn_desc(other.m_tensors_dnn_desc)
 #endif // LBANN_HAS_DNN_LIB
   {
 #ifdef LBANN_HAS_DNN_LIB
@@ -71,10 +75,10 @@ public:
 #endif // LBANN_HAS_DNN_LIB
   }
 
-  log_softmax_layer& operator=(const log_softmax_layer& other) {
+  log_softmax_layer& operator=(const log_softmax_layer& other)
+  {
     data_type_layer<TensorDataType>::operator=(other);
-    m_workspace.reset(other.m_workspace ?
-                      other.m_workspace->Copy() : nullptr);
+    m_workspace.reset(other.m_workspace ? other.m_workspace->Copy() : nullptr);
 #ifdef LBANN_HAS_DNN_LIB
     m_tensors_dnn_desc = other.m_tensors_dnn_desc;
     m_tensors_dnn_desc.set_layer(this);
@@ -84,18 +88,23 @@ public:
 
   ~log_softmax_layer() = default;
 
-  log_softmax_layer* copy() const override { return new log_softmax_layer(*this); }
+  log_softmax_layer* copy() const override
+  {
+    return new log_softmax_layer(*this);
+  }
   std::string get_type() const override { return "log softmax"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 
-  void setup_matrices(const El::Grid& grid) override {
-    data_type_layer<TensorDataType>::setup_matrices(grid);
+  void setup_data(size_t max_mini_batch_size) override
+  {
+    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
     auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
     m_workspace.reset(AbsDistMatrixType::Instantiate(dist));
@@ -104,14 +113,6 @@ public:
       m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
     }
 #endif // HYDROGEN_HAVE_CUB
-  }
-
-  void fp_setup_outputs(El::Int mini_batch_size) override {
-    data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
-    const auto& dist_data = this->get_prev_activations().DistData();
-    m_workspace->Empty(false);
-    m_workspace->AlignWith(dist_data);
-    m_workspace->Resize(1, mini_batch_size);
   }
 
   void fp_compute() override;
@@ -130,22 +131,37 @@ public:
 
   ///@}
 
-private:
+protected:
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
+private:
   /** Workspace for column-wise reductions. */
   std::unique_ptr<AbsDistMatrixType> m_workspace;
 
 #ifdef LBANN_HAS_DNN_LIB
   /** Tensor DNN library descriptors. */
-  dnn_lib::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_dnn_desc;
+  dnn_lib::data_parallel_layer_tensor_manager<TensorDataType>
+    m_tensors_dnn_desc;
 #endif // LBANN_HAS_DNN_LIB
-
 };
 
+template <typename T, data_layout L, El::Device D>
+void log_softmax_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_log_softmax();
+}
+
 #ifndef LBANN_LOG_SOFTMAX_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class log_softmax_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  extern template class log_softmax_layer<T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class log_softmax_layer<T,                                   \
+                                          data_layout::DATA_PARALLEL,          \
+                                          Device>;                             \
+  extern template class log_softmax_layer<T,                                   \
+                                          data_layout::MODEL_PARALLEL,         \
+                                          Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

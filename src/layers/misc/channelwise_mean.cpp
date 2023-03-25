@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,10 +27,15 @@
 #define LBANN_CHANNELWISE_MEAN_LAYER_INSTANTIATE
 #include "lbann/layers/misc/channelwise_mean.hpp"
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#endif // LBANN_HAS_DISTCONV
+
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void channelwise_mean_layer<TensorDataType, Layout, Device>::fp_compute() {
+void channelwise_mean_layer<TensorDataType, Layout, Device>::fp_compute()
+{
 
   // Local matrices
   const auto& local_input = this->get_local_prev_activations();
@@ -43,7 +48,8 @@ void channelwise_mean_layer<TensorDataType, Layout, Device>::fp_compute() {
   const El::Int num_channels = input_dims[0];
   const El::Int channel_size = std::accumulate(input_dims.begin() + 1,
                                                input_dims.end(),
-                                               1, std::multiplies<int>());
+                                               1,
+                                               std::multiplies<int>());
   const auto& local_width = local_input.Width();
 
   // Compute channel-wise mean
@@ -57,11 +63,11 @@ void channelwise_mean_layer<TensorDataType, Layout, Device>::fp_compute() {
       local_output(channel, col) = sum / channel_size;
     }
   }
-
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void channelwise_mean_layer<TensorDataType, Layout, Device>::bp_compute() {
+void channelwise_mean_layer<TensorDataType, Layout, Device>::bp_compute()
+{
 
   // Local matrices
   const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
@@ -74,7 +80,8 @@ void channelwise_mean_layer<TensorDataType, Layout, Device>::bp_compute() {
   const El::Int num_channels = input_dims[0];
   const El::Int channel_size = std::accumulate(input_dims.begin() + 1,
                                                input_dims.end(),
-                                               1, std::multiplies<int>());
+                                               1,
+                                               std::multiplies<int>());
   const auto& local_width = local_gradient_wrt_input.Width();
 
   // Compute gradients
@@ -88,11 +95,12 @@ void channelwise_mean_layer<TensorDataType, Layout, Device>::bp_compute() {
       }
     }
   }
-
 }
 
-#define PROTO(T)                     \
-  template class channelwise_mean_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  template class channelwise_mean_layer<T,                                     \
+                                        data_layout::DATA_PARALLEL,            \
+                                        El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

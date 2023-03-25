@@ -23,9 +23,6 @@ parser.add_argument(
     '--num-classes', action='store', default=1000, type=int,
     help='number of ImageNet classes (default: 1000)', metavar='NUM')
 lbann.contrib.args.add_optimizer_arguments(parser)
-parser.add_argument(
-    '--setup_only', action='store_true',
-    help='setup LBANN experiment without running it')
 args = parser.parse_args()
 
 # Due to a data reader limitation, the actual model realization must be
@@ -33,15 +30,14 @@ args = parser.parse_args()
 imagenet_labels = 1000
 
 # Construct layer graph
-input_ = lbann.Input(target_mode='classification')
-images = lbann.Identity(input_)
-labels = lbann.Identity(input_)
+images = lbann.Input(data_field='samples')
+labels = lbann.Input(data_field='labels')
 preds = lbann.models.AlexNet(imagenet_labels)(images)
 probs = lbann.Softmax(preds)
 cross_entropy = lbann.CrossEntropy(probs, labels)
 top1 = lbann.CategoricalAccuracy(probs, labels)
 top5 = lbann.TopKCategoricalAccuracy(probs, labels, k=5)
-layers = list(lbann.traverse_layer_graph(input_))
+layers = list(lbann.traverse_layer_graph([images, labels]))
 
 # Setup objective function
 weights = set()
@@ -77,5 +73,4 @@ trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 lbann.contrib.launcher.run(trainer, model, data_reader, opt,
                            job_name=args.job_name,
-                           setup_only=args.setup_only,
                            **kwargs)

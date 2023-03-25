@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,7 +29,7 @@
 #include <lbann/utils/serialization/serialize_matrices_impl.hpp>
 
 #ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
-#define ETI_BINARY_SAVELOAD(TYPE)                                      \
+#define ETI_BINARY_SAVELOAD(TYPE)                                              \
   template void El::load(cereal::BinaryInputArchive&,                          \
                          El::AbstractDistMatrix<TYPE>&);                       \
   template void El::save(cereal::BinaryOutputArchive&,                         \
@@ -39,7 +39,7 @@
 #endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 
 #ifdef LBANN_HAS_CEREAL_JSON_ARCHIVES // Not yet supported
-#define ETI_JSON_SAVELOAD(TYPE)                                        \
+#define ETI_JSON_SAVELOAD(TYPE)                                                \
   template void El::load(cereal::JSONInputArchive&,                            \
                          El::AbstractDistMatrix<TYPE>&);                       \
   template void El::save(cereal::JSONOutputArchive&,                           \
@@ -49,7 +49,7 @@
 #endif // LBANN_HAS_CEREAL_JSON_ARCHIVES
 
 #ifdef LBANN_HAS_CEREAL_PORTABLE_BINARY_ARCHIVES // Not yet supported
-#define ETI_PORTABLEBINARY_SAVELOAD(TYPE)                              \
+#define ETI_PORTABLEBINARY_SAVELOAD(TYPE)                                      \
   template void El::load(cereal::PortableBinaryInputArchive&,                  \
                          El::AbstractDistMatrix<TYPE>&);                       \
   template void El::save(cereal::PortableBinaryOutputArchive&,                 \
@@ -59,7 +59,7 @@
 #endif // LBANN_HAS_CEREAL_PORTABLE_BINARY_ARCHIVES
 
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
-#define ETI_XML_SAVELOAD(TYPE)                                         \
+#define ETI_XML_SAVELOAD(TYPE)                                                 \
   template void El::load(cereal::XMLInputArchive&,                             \
                          El::AbstractDistMatrix<TYPE>&);                       \
   template void El::save(cereal::XMLOutputArchive&,                            \

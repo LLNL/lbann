@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -38,9 +38,9 @@ namespace callback {
  *
  *  Goes through the dropout layers in a model and perturbs keep probability
  */
-class perturb_dropout : public callback_base {
+class perturb_dropout : public callback_base
+{
 public:
-
   /** @param keep_prob_factor   Standard deviation of learning rate
    *                                perturbation (in log space).
    *  @param layer_names  Names of layers with dropout keep prob to perturb. If
@@ -48,8 +48,7 @@ public:
    *                        perturbed.
    */
   perturb_dropout(EvalType keep_prob_factor,
-                              std::set<std::string> layer_names
-                              = std::set<std::string>());
+                  std::set<std::string> layer_names = std::set<std::string>());
   perturb_dropout* copy() const override { return new perturb_dropout(*this); }
   std::string name() const override { return "perturb dropout"; }
 
@@ -59,11 +58,14 @@ public:
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
 private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
 
   friend class cereal::access;
   perturb_dropout();
@@ -85,13 +87,12 @@ private:
 
   /** Perturb dropout keep prob in model. */
   void perturb(model& m);
-
 };
 
 // Builder function
 std::unique_ptr<callback_base>
-build_perturb_dropout_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_perturb_dropout_callback_from_pbuf(const google::protobuf::Message&,
+                                         std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann

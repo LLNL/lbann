@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,31 +28,39 @@
 #define LBANN_LAYER_SUM_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/utils/exception.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/proto/lbann.pb.h"
 #include "lbann/utils/distconv.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class sum_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
- public:
-  using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
-  sum_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
+class sum_distconv_adapter : public data_type_distconv_adapter<TensorDataType>
+{
+public:
+  using TensorDevType =
+    typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+  sum_distconv_adapter(Layer& layer)
+    : data_type_distconv_adapter<TensorDataType>(layer)
+  {}
   virtual ~sum_distconv_adapter() = default;
-  std::unique_ptr<TensorDevType> setup_error_signals_i(int index) const override;
+  std::unique_ptr<TensorDevType>
+  setup_error_signals_i(int index) const override;
   void fp_compute();
 };
 #endif // LBANN_HAS_DISTCONV
 
+/** @brief Add multiple tensors */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class sum_layer : public data_type_layer<TensorDataType> {
+class sum_layer : public data_type_layer<TensorDataType>
+{
 public:
-
-  sum_layer(lbann_comm *comm)
-    : data_type_layer<TensorDataType>(comm) {
+  sum_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm)
+  {
     this->m_expected_num_parent_layers = -1; // No limit on parents
   }
 
@@ -71,13 +79,16 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
 protected:
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
+
+  El::SyncInfo<Dev> syncSubGridCommunication = El::SyncInfo<Dev>();
 
   friend class cereal::access;
-  sum_layer()
-    : sum_layer(nullptr)
-  {}
+  sum_layer() : sum_layer(nullptr) {}
 
-  void setup_pointers() override {
+  void setup_pointers() override
+  {
     data_type_layer<TensorDataType>::setup_pointers();
     if (this->get_num_parents() < 1) {
       std::stringstream err;
@@ -87,7 +98,8 @@ protected:
     }
   }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
 
@@ -101,8 +113,8 @@ protected:
             << "has input tensors with incompatible dimensions (";
         for (int j = 0; j < this->get_num_parents(); ++j) {
           const auto& dims = this->get_input_dims(j);
-          err << (j > 0 ? ", " : "")
-              << "layer \"" << parents[j]->get_name() << "\" outputs ";
+          err << (j > 0 ? ", " : "") << "layer \"" << parents[j]->get_name()
+              << "\" outputs ";
           for (size_t k = 0; k < dims.size(); ++k) {
             err << (k > 0 ? " x " : "") << dims[k];
           }
@@ -111,10 +123,10 @@ protected:
         LBANN_ERROR(err.str());
       }
     }
-
   }
 
-  void fp_compute() override {
+  void fp_compute() override
+  {
 #ifdef LBANN_HAS_DISTCONV
     if (this->distconv_enabled()) {
       get_distconv_adapter().fp_compute();
@@ -122,16 +134,171 @@ protected:
     }
 #endif // LBANN_HAS_DISTCONV
     auto& output = this->get_activations();
-    El::Copy(this->get_prev_activations(0), output);
-    for (int i = 1; i < this->get_num_parents(); ++i) {
-      El::Axpy(DataType(1), this->get_prev_activations(i), output);
+    auto parents = this->get_parent_layers();
+
+    if (this->is_subgraph_parallelism_enabled() &&
+        this->get_parallel_strategy().enable_subgraph == true) {
+      auto subgrid_tags = (*this->m_parent_tags);
+      int tag = 0;
+
+      std::vector<bool> is_initialized_tensor(this->m_num_spliting_groups,
+                                              false);
+
+      // Copy data internally with same branch tag
+      for (int i = 0; i < this->get_num_parents(); ++i) {
+        tag = subgrid_tags[i];
+
+        if (is_initialized_tensor[tag]) {
+
+          if (this->get_prev_activations(i).Participating()) {
+            El::Axpy(DataType(1),
+                     this->get_prev_activations(i),
+                     this->get_branch_tag_input(tag));
+          }
+        }
+        else {
+          if (this->get_prev_activations(i).Participating()) {
+            El::Copy(this->get_prev_activations(i),
+                     this->get_branch_tag_input(tag));
+            is_initialized_tensor[tag] = true;
+          }
+        }
+      }
+
+      // copy and add data from reduced gradients from same branch
+
+      if (this->get_communication_flag() == COLL_OPT)
+      // If vector is enabled copy data using allreduce operation from
+      // aggregated subgrids to the output
+      {
+        auto* ptr_output = dynamic_cast<
+          El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
+          &output);
+
+        El::copy::TranslateBetweenGridsAllreduce<TensorDataType, Dev, Dev>(
+          *ptr_output,
+          this->get_branch_tag_input_vector(),
+          this->get_subgrid_comm(),
+          syncSubGridCommunication,
+          1);
+      }
+      else if (this->get_communication_flag() == COLL) {
+        auto* ptr_output = dynamic_cast<
+          El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
+          &output);
+
+        El::copy::TranslateBetweenGridsAllreduce<TensorDataType, Dev, Dev>(
+          *ptr_output,
+          this->get_branch_tag_input_vector());
+      }
+      else {
+        if (this->get_num_parents() > 0) {
+          El::Copy(this->get_branch_tag_input(0), output);
+        }
+        else {
+          El::Zero(output);
+        }
+
+        for (int i = 1; i < this->m_num_spliting_groups; i++) {
+
+          El::Copy(this->get_branch_tag_input(i), this->get_temp_grad());
+          El::Axpy(DataType(1), this->get_temp_grad(), output);
+        }
+      }
+    } // if subgraph parallelism is enabled
+    else {
+      El::Copy(this->get_prev_activations(0), output);
+      for (int i = 1; i < this->get_num_parents(); ++i) {
+        El::Axpy(DataType(1), this->get_prev_activations(i), output);
+      }
     }
   }
 
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
+  void fp_setup_outputs(El::Int mini_batch_size) override
+  {
+
+    if (this->get_num_children() < 1) {
+      return;
+    }
+    // Determine distributed matrix alignment
+    const bool align_outputs = this->get_num_parents() > 0;
+    const auto& alignment_dist =
+      (align_outputs ? this->get_prev_activations().DistData()
+                     : this->get_activations().DistData());
+
+    // Initialize output tensors
+    for (int i = 0; i < this->get_num_children(); ++i) {
+#ifdef LBANN_HAS_DISTCONV
+      if (!this->keep_original_outputs(i))
+        continue;
+#endif // LBANN_HAS_DISTCONV
+
+      auto& output = this->get_activations(i);
+      output.Empty(false);
+      if (align_outputs &&
+          this->get_parallel_strategy().enable_subgraph == false) {
+        output.AlignWith(alignment_dist);
+      }
+      output.Resize(this->get_output_size(i), mini_batch_size);
+    }
+  }
+
+  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override
+  {
+    int tag = 0;
     const auto& gradient_wrt_output = this->get_prev_error_signals();
-    for (int i = 0; i < this->get_num_parents(); ++i) {
-      El::LockedView(this->get_error_signals(i), gradient_wrt_output);
+
+    if (this->is_subgraph_parallelism_enabled() &&
+        this->get_parallel_strategy().enable_subgraph == true) {
+      auto subgrid_tags = (*this->m_parent_tags);
+
+      if (this->get_communication_flag() == COLL_OPT)
+      // If vector copy is enable, broadcast the gradients from parent grid to
+      // multiple subgrids
+      {
+        auto const* ptr_gradient =
+          dynamic_cast<El::DistMatrix<TensorDataType,
+                                      El::STAR,
+                                      El::VC,
+                                      El::ELEMENT,
+                                      Dev> const*>(&gradient_wrt_output);
+        El::copy::TranslateBetweenGridsBroadcast<TensorDataType, Dev, Dev>(
+          *ptr_gradient,
+          this->get_branch_tag_input_vector(),
+          this->get_subgrid_comm(),
+          syncSubGridCommunication);
+      }
+      else if (this->get_communication_flag() == COLL) {
+        auto const* ptr_gradient =
+          dynamic_cast<El::DistMatrix<TensorDataType,
+                                      El::STAR,
+                                      El::VC,
+                                      El::ELEMENT,
+                                      Dev> const*>(&gradient_wrt_output);
+        El::copy::TranslateBetweenGridsBroadcast<TensorDataType, Dev, Dev>(
+          *ptr_gradient,
+          this->get_branch_tag_input_vector());
+      }
+      else {
+        for (int i = 0; i < this->m_num_spliting_groups; i++) {
+
+          El::Copy(gradient_wrt_output, this->get_branch_tag_input(i));
+        }
+
+      } // end vector copy condition
+
+      for (int i = 0; i < this->get_num_parents(); ++i) {
+        tag = subgrid_tags[i];
+
+        El::LockedView(this->get_error_signals(i),
+                       this->get_branch_tag_input(tag));
+      }
+    }
+    else {
+      for (int i = 0; i < this->get_num_parents(); ++i) {
+
+        El::LockedView(this->get_error_signals(i), gradient_wrt_output);
+      }
     }
   }
 
@@ -139,53 +306,76 @@ protected:
 
 #ifdef LBANN_HAS_DISTCONV
   friend class sum_distconv_adapter<TensorDataType, T_layout, Dev>;
- protected:
-  bool is_distconv_supported() const override {
+
+protected:
+  bool is_distconv_supported() const override
+  {
     return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
-    this->get_distconv_adapter_ptr() = make_unique<sum_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override
+  {
+    this->get_distconv_adapter_ptr() =
+      std::make_unique<sum_distconv_adapter<TensorDataType, T_layout, Dev>>(
+        *this);
   }
-  sum_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() override;
-  const sum_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() const override;
+  sum_distconv_adapter<TensorDataType, T_layout, Dev>&
+  get_distconv_adapter() override;
+  const sum_distconv_adapter<TensorDataType, T_layout, Dev>&
+  get_distconv_adapter() const override;
 #endif // LBANN_HAS_DISTCONV
 };
+
+template <typename T, data_layout L, El::Device D>
+void sum_layer<T, L, D>::write_specific_proto(lbann_data::Layer& proto) const
+{
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_sum();
+}
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 sum_distconv_adapter<TensorDataType, T_layout, Dev>&
-sum_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() {
+sum_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter()
+{
   return const_cast<sum_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      static_cast<const sum_layer<TensorDataType, T_layout, Dev>&>(*this).get_distconv_adapter());
+    static_cast<const sum_layer<TensorDataType, T_layout, Dev>&>(*this)
+      .get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 const sum_distconv_adapter<TensorDataType, T_layout, Dev>&
-sum_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const {
-  return dynamic_cast<const sum_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      data_type_layer<TensorDataType>::get_distconv_adapter());
+sum_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const
+{
+  return dynamic_cast<
+    const sum_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+    data_type_layer<TensorDataType>::get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-std::unique_ptr<typename sum_distconv_adapter<TensorDataType, T_layout, Dev>::TensorDevType>
-sum_distconv_adapter<TensorDataType, T_layout, Dev>::setup_error_signals_i(int index) const {
-  return make_unique<TensorDevType>(this->get_prev_error_signals(0));
+std::unique_ptr<
+  typename sum_distconv_adapter<TensorDataType, T_layout, Dev>::TensorDevType>
+sum_distconv_adapter<TensorDataType, T_layout, Dev>::setup_error_signals_i(
+  int index) const
+{
+  return std::make_unique<TensorDevType>(this->get_prev_error_signals(0));
 }
 #endif // LBANN_HAS_DISTCONV
 
-LBANN_DEFINE_LAYER_BUILDER(sum);
-
 #ifndef LBANN_SUM_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class sum_layer<T, data_layout::DATA_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class sum_layer<T, data_layout::DATA_PARALLEL, Device>;      \
   extern template class sum_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
 #ifdef LBANN_HAS_DISTCONV
-#define PROTO_DEVICE(T, Device) \
-  extern template class sum_distconv_adapter<T, data_layout::DATA_PARALLEL, Device>; \
-  extern template class sum_distconv_adapter<T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class sum_distconv_adapter<T,                                \
+                                             data_layout::DATA_PARALLEL,       \
+                                             Device>;                          \
+  extern template class sum_distconv_adapter<T,                                \
+                                             data_layout::MODEL_PARALLEL,      \
+                                             Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

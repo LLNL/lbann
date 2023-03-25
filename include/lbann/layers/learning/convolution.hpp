@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,8 +28,8 @@
 #define LBANN_LAYERS_LEARNING_CONVOLUTION_HPP_INCLUDED
 
 #include "lbann/layers/learning/base_convolution.hpp"
-#include "lbann/utils/exception.hpp"
 #include "lbann/utils/distconv.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
@@ -41,42 +41,47 @@ class imcomm;
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class convolution_distconv_adapter
-  : public base_convolution_adapter<TensorDataType, Device> {
+  : public base_convolution_adapter<TensorDataType, Device>
+{
 public:
-  using TensorDevType = typename base_convolution_adapter<TensorDataType, Device>::TensorDevType;
+  using TensorDevType =
+    typename base_convolution_adapter<TensorDataType, Device>::TensorDevType;
 
   convolution_distconv_adapter(Layer& layer)
     : base_convolution_adapter<TensorDataType, Device>(layer)
   {}
   virtual ~convolution_distconv_adapter() = default;
 
-  void setup_distributions(tensor_overlap_constraints &constraints) override;
+  void setup_distributions(tensor_overlap_constraints& constraints) override;
   void setup_layer(size_t workspace_capacity) override;
-  dc::Shape get_activations_local_shape(int index=0) const override;
+  dc::Shape get_activations_local_shape(int index = 0) const override;
 };
 #endif // LBANN_HAS_DISTCONV
 
-/** @brief Standard deep learning convolution.
+/** @brief Convolution
  *
  *  Applies convolution (more precisely, cross-correlation) to input
- *  tensors. This is primarily optimized for image data in NCHW
- *  format.
+ *  tensor. This is primarily optimized for image data in CHW format.
+ *
+ *  Two weights are required if bias is applied: a kernel tensor (in
+ *  KCHW format) and per-channel biases. Only the kernel weights are
+ *  required if bias is not applied. If weights aren't provided, the
+ *  kernel weights are initialized with He normal initialization and
+ *  the bias weights are initialized to zero.
  */
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class convolution_layer
-  : public base_convolution_layer<TensorDataType, Device> {
+class convolution_layer : public base_convolution_layer<TensorDataType, Device>
+{
 
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "convolution layer only supports DATA_PARALLEL");
 
 private:
-
   friend class callback::imcomm;
 
 public:
-
   convolution_layer(int num_data_dims,
                     int num_output_channels,
                     int conv_dim,
@@ -95,13 +100,21 @@ public:
                     int groups,
                     bool has_bias = true);
 
-  convolution_layer* copy() const override { return new convolution_layer(*this); }
+  convolution_layer* copy() const override
+  {
+    return new convolution_layer(*this);
+  }
 
   std::string get_type() const override { return "convolution"; }
 
   data_layout get_data_layout() const override { return Layout; }
 
   El::Device get_device_allocation() const override { return Device; }
+
+#ifdef LBANN_HAS_ONNX
+  std::string get_onnx_op_type() const override { return "Conv"; }
+  void fill_onnx_node(onnx::GraphProto& graph) const override;
+#endif // LBANN_HAS_ONNX
 
   /** @name Serialization */
   ///@{
@@ -112,6 +125,8 @@ public:
   ///@}
 
 protected:
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
   convolution_layer();
@@ -123,7 +138,8 @@ protected:
 
 #ifdef LBANN_HAS_DISTCONV
   friend class convolution_distconv_adapter<TensorDataType, Layout, Device>;
- protected:
+
+protected:
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
   bool is_distconv_supported() const override;
 #endif // LBANN_HAS_DISTCONV
@@ -134,8 +150,10 @@ LBANN_DEFINE_LAYER_BUILDER(convolution);
 
 #ifndef LBANN_CONVOLUTION_LAYER_INSTANTIATE
 
-#define PROTO_DEVICE(T, Device) \
-  extern template class convolution_layer<T, data_layout::DATA_PARALLEL, Device>;
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class convolution_layer<T,                                   \
+                                          data_layout::DATA_PARALLEL,          \
+                                          Device>;
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

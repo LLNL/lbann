@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,8 +26,10 @@
 #ifndef LBANN_UTILS_CLONEABLE_HPP_INCLUDED
 #define LBANN_UTILS_CLONEABLE_HPP_INCLUDED
 
+#include <h2/meta/core/SFINAE.hpp>
 #include <memory>
 #include <type_traits>
+#include <vector>
 
 /** @file
  *
@@ -65,14 +67,16 @@ struct AsVirtualBase : virtual Base
  *  function.
  */
 template <typename T>
-struct HasAbstractFunction {};
+struct HasAbstractFunction
+{
+};
 
 /** @brief Alias for HasAbstractFunction.
  *
  *  Good OO practice suggests that non-leaf classes should be abstract
  *  -- that is, have at least one unimplemented virtual
  *  function. LBANN fits this paradigm, so this alias is appropriate.
-*/
+ */
 template <typename T>
 using NonLeafClass = HasAbstractFunction<T>;
 
@@ -87,38 +91,43 @@ using NonLeafClass = HasAbstractFunction<T>;
  *  @tparam Base The base class of T.
  */
 template <typename T, typename... Base>
-class Cloneable
-  : public Base...
+class Cloneable : public Base...
 {
 public:
   /** @brief Return an exception-safe, memory-safe copy of this object. */
-  std::unique_ptr<T> clone() const {
+  std::unique_ptr<T> clone() const
+  {
     return std::unique_ptr<T>{static_cast<T*>(this->do_clone_())};
   }
+
 private:
   /** @brief Implement the covariant raw-pointer-based clone operation. */
-  virtual Cloneable* do_clone_() const override {
+  virtual Cloneable* do_clone_() const override
+  {
     return new T(static_cast<T const&>(*this));
   }
-};// class Cloneable
+}; // class Cloneable
 
 template <typename T, typename Base>
-class Cloneable<T, Base>
-  : public Base
+class Cloneable<T, Base> : public Base
 {
 public:
   /** @brief Return an exception-safe, memory-safe copy of this object. */
-  std::unique_ptr<T> clone() const {
+  std::unique_ptr<T> clone() const
+  {
     return std::unique_ptr<T>{static_cast<T*>(this->do_clone_())};
   }
+
 protected:
   using Base::Base;
+
 private:
   /** @brief Implement the covariant raw-pointer-based clone operation. */
-  virtual Cloneable* do_clone_() const override {
+  virtual Cloneable* do_clone_() const override
+  {
     return new T(static_cast<T const&>(*this));
   }
-};// class Cloneable
+}; // class Cloneable
 
 /** @brief Specialization of Cloneable to handle stand-alone classes. */
 template <typename T>
@@ -127,14 +136,14 @@ class Cloneable<T>
 public:
   virtual ~Cloneable() = default;
 
-  std::unique_ptr<T> clone() const {
+  std::unique_ptr<T> clone() const
+  {
     return std::unique_ptr<T>{static_cast<T*>(this->do_clone_())};
   }
+
 private:
-  Cloneable* do_clone_() const {
-    return new T(static_cast<T const&>(*this));
-  }
-};// class Cloneable<T>
+  Cloneable* do_clone_() const { return new T(static_cast<T const&>(*this)); }
+}; // class Cloneable<T>
 
 /** @brief Specialization of Cloneable for intermediate classes.
  *
@@ -147,27 +156,30 @@ private:
  *  ensure that the @c do_clone_() function is declared pure virtual.
  */
 template <typename T, typename... Base>
-class Cloneable<HasAbstractFunction<T>, Base...>
-  : public Base...
+class Cloneable<HasAbstractFunction<T>, Base...> : public Base...
 {
 public:
-  std::unique_ptr<T> clone() const {
+  std::unique_ptr<T> clone() const
+  {
     return std::unique_ptr<T>{static_cast<T*>(this->do_clone_())};
   }
+
 private:
   virtual Cloneable* do_clone_() const = 0;
 };
 
 template <typename T, typename Base>
-class Cloneable<HasAbstractFunction<T>, Base>
-  : public Base
+class Cloneable<HasAbstractFunction<T>, Base> : public Base
 {
 public:
-  std::unique_ptr<T> clone() const {
+  std::unique_ptr<T> clone() const
+  {
     return std::unique_ptr<T>{static_cast<T*>(this->do_clone_())};
   }
+
 protected:
   using Base::Base;
+
 private:
   virtual Cloneable* do_clone_() const = 0;
 };
@@ -179,12 +191,14 @@ class Cloneable<HasAbstractFunction<T>>
 public:
   virtual ~Cloneable() = default;
 
-  std::unique_ptr<T> clone() const {
+  std::unique_ptr<T> clone() const
+  {
     return std::unique_ptr<T>{static_cast<T*>(this->do_clone_())};
   }
+
 private:
   virtual Cloneable* do_clone_() const = 0;
-};// class Cloneable<T>
+}; // class Cloneable<T>
 
 /** @brief Predicate testing for Cloneable interface.
  *
@@ -207,7 +221,9 @@ struct IsCloneableT;
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // The obvious case; I'd be concerned if this were ever called.
 template <typename... Ts>
-struct IsCloneableT<Cloneable<Ts...>> : std::true_type {};
+struct IsCloneableT<Cloneable<Ts...>> : std::true_type
+{
+};
 
 namespace details {
 
@@ -218,17 +234,75 @@ auto has_right_clone(T const& x) -> decltype(x.clone());
 
 definitely_not_a_unique_ptr has_right_clone(...);
 
-}// namespace details
+} // namespace details
 
 template <typename T>
 struct IsCloneableT
   : std::is_same<decltype(details::has_right_clone(std::declval<T>())),
                  std::unique_ptr<T>>
-{};
+{
+};
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 template <typename T>
-constexpr bool IsCloneable_v() { return IsCloneableT<T>::value; };
+constexpr bool IsCloneable_v()
+{
+  return IsCloneableT<T>::value;
+};
 
-}// namespace lbann
+template <typename T>
+inline constexpr bool IsCloneable = IsCloneable_v<T>();
+
+template <typename T>
+struct IsCloneablePtrT : std::false_type
+{
+};
+
+template <typename T>
+struct IsCloneablePtrT<T*> : IsCloneableT<std::remove_cv_t<T>>
+{
+};
+
+template <typename T>
+struct IsCloneablePtrT<std::shared_ptr<T>> : IsCloneableT<std::remove_cv_t<T>>
+{
+};
+
+template <typename T, typename DeleterT>
+struct IsCloneablePtrT<std::unique_ptr<T, DeleterT>>
+  : IsCloneableT<std::remove_cv_t<T>>
+{
+};
+
+template <typename T>
+constexpr bool IsCloneablePtr_v()
+{
+  return IsCloneablePtrT<T>::value;
+}
+
+template <typename T>
+inline constexpr bool IsCloneablePtr = IsCloneablePtr_v<T>();
+
+/** @brief Helper metafunction for describing the top of a hierarchy
+ *         that's cloneable.
+ */
+template <typename T, typename... Bases>
+using AbstractCloneableBase = Cloneable<HasAbstractFunction<T>, Bases...>;
+
+template <typename CloneablePtrT,
+          h2::meta::EnableWhen<IsCloneablePtr<CloneablePtrT>, int> = 1>
+auto clone_all(std::vector<CloneablePtrT> const& things)
+{
+  std::vector<CloneablePtrT> cloned_things;
+  cloned_things.reserve(things.size());
+  for (auto const& t : things) {
+    if (t)
+      cloned_things.emplace_back(t->clone());
+    else
+      cloned_things.emplace_back(nullptr);
+  }
+  return cloned_things;
+}
+
+} // namespace lbann
 #endif // LBANN_UTILS_CLONEABLE_HPP_INCLUDED

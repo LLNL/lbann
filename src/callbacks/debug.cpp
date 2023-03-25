@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,12 +26,15 @@
 
 #include "lbann/callbacks/debug.hpp"
 #include "lbann/comm_impl.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
+#include "lbann/layers/layer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/memory.hpp"
-#include "lbann/weights/data_type_weights.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
-#include "callbacks.pb.h"
+#include "lbann/proto/callbacks.pb.h"
 
 namespace lbann {
 namespace callback {
@@ -39,37 +42,45 @@ namespace callback {
 namespace {
 
 /** Get human-readable string describing process rank. */
-std::string rank_string(const lbann_comm& comm) {
+std::string rank_string(const lbann_comm& comm)
+{
   std::stringstream msg;
   msg << "rank " << comm.get_rank_in_world();
   if (comm.get_num_trainers() > 1) {
-    msg << " (rank " << comm.get_rank_in_trainer()
-        << " of model " << comm.get_trainer_rank() << ")";
+    msg << " (rank " << comm.get_rank_in_trainer() << " of model "
+        << comm.get_trainer_rank() << ")";
   }
   return msg.str();
 }
 
 /** Get human-readable string describing layer. */
-std::string layer_string(const Layer& l) {
+std::string layer_string(const Layer& l)
+{
   return l.get_type() + " layer \"" + l.get_name() + "\"";
 }
 
 /** Get human-readable string describing weights and optimizer. */
 template <typename TensorDataType>
-std::string weights_string(const data_type_weights<TensorDataType>& w) {
+std::string weights_string(const data_type_weights<TensorDataType>& w)
+{
   std::stringstream msg;
   msg << "weights \"" << w.get_name() << "\" (";
   const auto* opt = w.get_optimizer();
-  if (opt == nullptr) { msg << "no"; }
-  else { msg << opt->get_type(); }
+  if (opt == nullptr) {
+    msg << "no";
+  }
+  else {
+    msg << opt->get_type();
+  }
   msg << " optimizer)";
   return msg.str();
 }
 
 /** Get human-readable string describing current batch step. */
-std::string batch_step_string(const model& m) {
+std::string batch_step_string(const model& m)
+{
   const auto& c =
-    dynamic_cast<const sgd_execution_context&>(m.get_execution_context());
+    dynamic_cast<const SGDExecutionContext&>(m.get_execution_context());
   std::stringstream msg;
   const auto& mode = c.get_execution_mode();
   msg << to_string(mode) << " batch " << c.get_step();
@@ -80,43 +91,51 @@ std::string batch_step_string(const model& m) {
 } // namespace
 
 template <class Archive>
-void debug::serialize(Archive & ar) {
-  ar(::cereal::make_nvp(
-       "BaseCallback",
-       ::cereal::base_class<callback_base>(this)),
+void debug::serialize(Archive& ar)
+{
+  ar(::cereal::make_nvp("BaseCallback",
+                        ::cereal::base_class<callback_base>(this)),
      CEREAL_NVP(m_modes));
 }
 
+void debug::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_debug();
+  std::string modes;
+  for (auto const& mode : m_modes)
+    modes += (to_string(mode) + " ");
+  msg->set_phase(modes);
+}
+
 // Status updates for batch beginnings/endings
-void debug::on_batch_begin(model *m) {
+void debug::on_batch_begin(model* m)
+{
   const auto& c = m->get_execution_context();
-  if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
+  if (m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": "
         << "starting " << batch_step_string(*m) << std::endl;
     std::cerr << msg.str();
   }
 }
-void debug::on_batch_end(model *m) {
+void debug::on_batch_end(model* m)
+{
   const auto& c = m->get_execution_context();
-  if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
+  if (m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": "
         << "ending " << batch_step_string(*m) << std::endl;
     std::cerr << msg.str();
   }
 }
-void debug::on_batch_evaluate_begin(model *m) {
-  on_batch_begin(m);
-}
-void debug::on_batch_evaluate_end(model *m) {
-  on_batch_end(m);
-}
+void debug::on_batch_evaluate_begin(model* m) { on_batch_begin(m); }
+void debug::on_batch_evaluate_end(model* m) { on_batch_end(m); }
 
 // Status updates for beginning/ending of layer forward/backward prop
-void debug::on_forward_prop_begin(model *m, Layer *l) {
+void debug::on_forward_prop_begin(model* m, Layer* l)
+{
   const auto& c = m->get_execution_context();
-  if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
+  if (m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
         << " is starting forward prop for " << batch_step_string(*m)
@@ -124,9 +143,10 @@ void debug::on_forward_prop_begin(model *m, Layer *l) {
     std::cerr << msg.str();
   }
 }
-void debug::on_forward_prop_end(model *m, Layer *l) {
+void debug::on_forward_prop_end(model* m, Layer* l)
+{
   const auto& c = m->get_execution_context();
-  if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
+  if (m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
         << " is   ending forward prop for " << batch_step_string(*m)
@@ -134,9 +154,10 @@ void debug::on_forward_prop_end(model *m, Layer *l) {
     std::cerr << msg.str();
   }
 }
-void debug::on_backward_prop_begin(model *m, Layer *l) {
+void debug::on_backward_prop_begin(model* m, Layer* l)
+{
   const auto& c = m->get_execution_context();
-  if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
+  if (m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
         << " is starting backward prop for " << batch_step_string(*m)
@@ -144,9 +165,10 @@ void debug::on_backward_prop_begin(model *m, Layer *l) {
     std::cerr << msg.str();
   }
 }
-void debug::on_backward_prop_end(model *m, Layer *l) {
+void debug::on_backward_prop_end(model* m, Layer* l)
+{
   const auto& c = m->get_execution_context();
-  if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
+  if (m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
         << " is   ending backward prop for " << batch_step_string(*m)
@@ -154,15 +176,18 @@ void debug::on_backward_prop_end(model *m, Layer *l) {
     std::cerr << msg.str();
   }
 }
-void debug::on_evaluate_forward_prop_begin(model *m, Layer *l) {
+void debug::on_evaluate_forward_prop_begin(model* m, Layer* l)
+{
   on_forward_prop_begin(m, l);
 }
-void debug::on_evaluate_forward_prop_end(model *m, Layer *l) {
+void debug::on_evaluate_forward_prop_end(model* m, Layer* l)
+{
   on_forward_prop_end(m, l);
 }
 
 // Status updates for optimization step
-void debug::on_optimize_begin(model *m, weights *w) {
+void debug::on_optimize_begin(model* m, weights* w)
+{
   auto& dtw = dynamic_cast<data_type_weights<DataType>&>(*w);
   std::stringstream msg;
   msg << rank_string(*m->get_comm()) << ": " << weights_string(dtw)
@@ -170,7 +195,8 @@ void debug::on_optimize_begin(model *m, weights *w) {
       << std::endl;
   std::cerr << msg.str();
 }
-void debug::on_optimize_end(model *m, weights *w) {
+void debug::on_optimize_end(model* m, weights* w)
+{
   auto& dtw = dynamic_cast<data_type_weights<DataType>&>(*w);
   std::stringstream msg;
   msg << rank_string(*m->get_comm()) << ": " << weights_string(dtw)
@@ -181,16 +207,17 @@ void debug::on_optimize_end(model *m, weights *w) {
 
 std::unique_ptr<callback_base>
 build_debug_callback_from_pbuf(const google::protobuf::Message& proto_msg,
-                               const std::shared_ptr<lbann_summary>&) {
+                               const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackDebug&>(proto_msg);
-  const auto& modes =
-    parse_set<execution_mode>(params.phase());
-  return make_unique<debug>(modes);
+  const auto& modes = parse_set<execution_mode>(params.phase());
+  return std::make_unique<debug>(modes);
 }
 
 } // namespace callback
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::debug
+#define LBANN_CLASS_LIBNAME callback_debug
 #include <lbann/macros/register_class_with_cereal.hpp>

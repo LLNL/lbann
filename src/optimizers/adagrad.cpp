@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,17 +31,22 @@
 namespace lbann {
 
 template <typename TensorDataType>
-adagrad<TensorDataType>::adagrad(TensorDataType learning_rate, TensorDataType eps)
-  : BaseType(learning_rate), m_eps(eps) {}
+adagrad<TensorDataType>::adagrad(TensorDataType learning_rate,
+                                 TensorDataType eps)
+  : BaseType(learning_rate), m_eps(eps)
+{}
 
 template <typename TensorDataType>
 adagrad<TensorDataType>::adagrad(const adagrad<TensorDataType>& other)
   : BaseType(other),
     m_eps(other.m_eps),
-    m_cache(other.m_cache ? other.m_cache->Copy() : nullptr) {}
+    m_cache(other.m_cache ? other.m_cache->Copy() : nullptr)
+{}
 
 template <typename TensorDataType>
-adagrad<TensorDataType>& adagrad<TensorDataType>::operator=(const adagrad<TensorDataType>& other) {
+adagrad<TensorDataType>&
+adagrad<TensorDataType>::operator=(const adagrad<TensorDataType>& other)
+{
   OptimizerType::operator=(other);
   m_eps = other.m_eps;
   m_cache.reset(other.m_cache ? other.m_cache->Copy() : nullptr);
@@ -49,14 +54,16 @@ adagrad<TensorDataType>& adagrad<TensorDataType>::operator=(const adagrad<Tensor
 }
 
 template <typename TensorDataType>
-description adagrad<TensorDataType>::get_description() const {
+description adagrad<TensorDataType>::get_description() const
+{
   auto desc = OptimizerType::get_description();
   desc.add("eps", m_eps);
   return desc;
 }
 
 template <typename TensorDataType>
-void adagrad<TensorDataType>::setup(WeightsType* w) {
+void adagrad<TensorDataType>::setup(WeightsType* w)
+{
   OptimizerType::setup(w);
   const auto& gradient = this->get_gradient();
   m_cache.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
@@ -64,12 +71,25 @@ void adagrad<TensorDataType>::setup(WeightsType* w) {
 }
 
 template <typename TensorDataType>
+void adagrad<TensorDataType>::write_proto(lbann_data::Optimizer& proto) const
+{
+  auto* opt = proto.mutable_adagrad();
+  opt->set_learn_rate(this->get_learning_rate());
+  opt->set_eps(m_eps);
+}
+
+template <typename TensorDataType>
 void adagrad<TensorDataType>::step_compute(AbsDistMatrixType& values,
-                                           const AbsDistMatrixType& gradient) {
+                                           const AbsDistMatrixType& gradient)
+{
   switch (values.GetLocalDevice()) {
-  case El::Device::CPU: step_compute_cpu(values, gradient); break;
+  case El::Device::CPU:
+    step_compute_cpu(values, gradient);
+    break;
 #ifdef LBANN_HAS_GPU
-  case El::Device::GPU: step_compute_gpu(values, gradient); break;
+  case El::Device::GPU:
+    step_compute_gpu(values, gradient);
+    break;
 #endif // LBANN_HAS_GPU
   default:
     std::ostringstream err;
@@ -80,8 +100,10 @@ void adagrad<TensorDataType>::step_compute(AbsDistMatrixType& values,
 }
 
 template <typename TensorDataType>
-void adagrad<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
-                                               const AbsDistMatrixType& gradient) {
+void adagrad<TensorDataType>::step_compute_cpu(
+  AbsDistMatrixType& values,
+  const AbsDistMatrixType& gradient)
+{
 
   // Get local matrix data
   const size_t local_height = values.LocalHeight();
@@ -94,34 +116,32 @@ void adagrad<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
   const size_t cache_ldim = m_cache->LDim();
 
   // Apply AdaGrad step
-  const auto& learning_rate = this->get_learning_rate();
+  const auto learning_rate = El::To<TensorDataType>(this->get_learning_rate());
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (size_t col = 0; col < local_width; ++col) {
     for (size_t row = 0; row < local_height; ++row) {
-      auto& x = values_buffer[row+col*values_ldim];
-      const auto& g = gradient_buffer[row+col*gradient_ldim];
-      auto& c = cache_buffer[row+col*cache_ldim];
+      auto& x = values_buffer[row + col * values_ldim];
+      const auto& g = gradient_buffer[row + col * gradient_ldim];
+      auto& c = cache_buffer[row + col * cache_ldim];
       c += g * g;
       x -= learning_rate * g / (El::Sqrt(c) + m_eps);
     }
   }
-
 }
 
 template <typename TensorDataType>
 std::unique_ptr<optimizer>
-build_adagrad_optimizer_from_pbuf(
-  google::protobuf::Message const& msg) {
-  const auto& params =
-    dynamic_cast<lbann_data::Optimizer::AdaGrad const&>(msg);
-  return make_unique<adagrad<TensorDataType>>(TensorDataType(params.learn_rate()),
-                                              TensorDataType(params.eps()));
+build_adagrad_optimizer_from_pbuf(google::protobuf::Message const& msg)
+{
+  const auto& params = dynamic_cast<lbann_data::Optimizer::AdaGrad const&>(msg);
+  return std::make_unique<adagrad<TensorDataType>>(
+    TensorDataType(params.learn_rate()),
+    TensorDataType(params.eps()));
 }
 
-#define PROTO(T)                                    \
-  template class adagrad<T>;                        \
-  template std::unique_ptr<optimizer>               \
-  build_adagrad_optimizer_from_pbuf<T>(             \
+#define PROTO(T)                                                               \
+  template class adagrad<T>;                                                   \
+  template std::unique_ptr<optimizer> build_adagrad_optimizer_from_pbuf<T>(    \
     google::protobuf::Message const&)
 
 #define LBANN_INSTANTIATE_CPU_HALF

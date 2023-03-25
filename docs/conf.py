@@ -16,22 +16,18 @@ sys.path.insert(0, os.path.abspath('../python'))
 
 import subprocess, os, runpy
 
-rebuild_doxygen = not os.path.isdir("doxy_out/xml") or not os.path.isdir("_static/doxygen/html")
+rebuild_doxygen = not os.path.isdir("_static/doxygen/html")
 
 if not os.path.isdir("_static"):
     os.makedirs("_static")
 
 if rebuild_doxygen:
-    os.makedirs("doxy_out/xml")
     subprocess.call('doxygen SourceTreeDoxyfile', shell=True)
-
-#exec(open("./BuildRSTDocs.py").read())
-runpy.run_path("BuildRSTDocs.py")
 
 # -- Project information -----------------------------------------------------
 
 project = 'LBANN'
-copyright = '2014-2019, LLNL'
+copyright = '2014-2021, LLNL'
 author = 'LBANN Dev Team'
 
 # The short X.Y version
@@ -67,7 +63,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -78,6 +74,8 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 pygments_style = 'sphinx'
 
 html_static_path = ['_static']
+
+numfig = True
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -173,4 +171,8 @@ breathe_default_project = "lbann"
 breathe_projects = {
     "lbann":"doxy_out/xml/",
 }
-extensions = [ 'breathe', 'sphinx.ext.mathjax', 'sphinx.ext.napoleon' ]
+extensions = [ 'breathe', 'sphinx.ext.mathjax', 'sphinx.ext.napoleon',
+               'sphinx.ext.todo' ]
+
+# Show todo entries in HTML docs
+todo_include_todos = True

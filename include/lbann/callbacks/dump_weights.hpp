@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -53,22 +53,22 @@ class FileFormat;
  *  format is written by using Elemental's BINARY format independently
  *  on each process' local data.
  */
-class dump_weights : public callback_base {
- public:
-  /**
+class dump_weights : public callback_base
+{
+public:
+  /** @brief Constructor
    *  @param dir Directory in which weight files will be saved.
+   *  @param epoch_interval The number of epochs between weights.
+   *  @param file_format The output file format.
    */
-  dump_weights(
-    std::string dir,
-    El::Int epoch_interval,
-    std::unique_ptr<dump_weights_internal::FileFormat> file_format);
+  dump_weights(std::string dir,
+               El::Int epoch_interval,
+               std::unique_ptr<dump_weights_internal::FileFormat> file_format);
   dump_weights(const dump_weights&);
   dump_weights& operator=(const dump_weights&);
-  dump_weights* copy() const override {
-    return new dump_weights(*this);
-  }
-  void on_train_begin(model *m) override;
-  void on_epoch_end(model *m) override;
+  dump_weights* copy() const override { return new dump_weights(*this); }
+  void on_train_begin(model* m) override;
+  void on_epoch_end(model* m) override;
   std::string name() const override { return "dump weights"; }
   void set_target_dir(const std::string& dir) { m_directory = dir; }
   const std::string& get_target_dir() { return m_directory; }
@@ -77,11 +77,14 @@ class dump_weights : public callback_base {
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
- private:
+private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
 
   friend class cereal::access;
   dump_weights();
@@ -95,15 +98,14 @@ class dump_weights : public callback_base {
 
   /// Dump weights from learning layers
   void do_dump_weights(const model& m, visitor_hook hook);
-
 };
 
 // Builder function
 std::unique_ptr<callback_base>
-build_dump_weights_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_dump_weights_callback_from_pbuf(const google::protobuf::Message&,
+                                      std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_DUMP_WEIGHTS_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_DUMP_WEIGHTS_HPP_INCLUDED

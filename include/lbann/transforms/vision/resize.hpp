@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,7 +35,8 @@ namespace lbann {
 namespace transform {
 
 /** Resize an image. */
-class resize : public transform {
+class resize : public transform
+{
 public:
   /** Resize to h x w. */
   resize(size_t h, size_t w) : transform(), m_h(h), m_w(w) {}
@@ -44,7 +45,9 @@ public:
 
   std::string get_type() const override { return "resize"; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data,
+             std::vector<size_t>& dims) override;
+
 private:
   /** Height and width of the resized image. */
   size_t m_h, m_w;
@@ -53,7 +56,7 @@ private:
 std::unique_ptr<transform>
 build_resize_transform_from_pbuf(google::protobuf::Message const&);
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_RESIZE_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_RESIZE_HPP_INCLUDED

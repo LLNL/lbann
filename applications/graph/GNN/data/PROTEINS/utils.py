@@ -5,16 +5,23 @@ import os.path
 import numpy as np 
 
 def download_url(url, save_path):
+    """Helper function to download file from url and save it 
+       on save_path
+    """
     with urllib.request.urlopen(url) as dl_file:
         with open(save_path, 'wb') as out_file:
             out_file.write(dl_file.read()) 
 
 def untar_file(data_dir, file_name):
+    """Helper function to untar file
+    """
     tar_name = os.path.join(data_dir, file_name)        
     with tarfile.open(tar_name) as tar:
             tar.extractall()
             tar.close()
 def unzip_file(file_name, data_dir=None):
+    """Helper function to unzip file
+    """
     if (data_dir is None):
         data_dir = os.path.dirname(file_name)
                 
@@ -22,6 +29,10 @@ def unzip_file(file_name, data_dir=None):
         zip_ref.extractall(data_dir)
 
 def edge_list_to_dense(elist, num_vertices = 75):
+    """ Generates an (num_vertices, num_vertices) adjacency 
+        matrix given edge list, elist
+    """
+
     adj_mat = np.zeros((num_vertices,num_vertices), dtype=np.float)
     num_edges = elist.shape[0]
     for edge in range(num_edges):
@@ -31,7 +42,6 @@ def edge_list_to_dense(elist, num_vertices = 75):
         adj_mat[source][sink] = 1.0 
         adj_mat[sink][source] = 1.0
     return adj_mat
-
 
 ########################################################
 #
@@ -68,6 +78,24 @@ def extract_adj_mat(node_slices, edge_list, max_nodes):
             removed_graphs.append(i)
             
     return adj_mat_list, removed_graphs
+def extract_coo_list(node_slices, edge_list, max_nodes):
+    source_indices_list_list = []
+    target_indices_list_list = []
+    removed_graphs = []
+
+    for i, max_node_id in enumerate(node_slices[1:]):
+        min_node_id = node_slices[i] 
+        num_nodes = max_node_id - min_node_id
+        if (num_nodes < max_nodes):
+            edge = edge_list
+            edges = edge_list[(edge_list[:,1] > min_node_id) & (edge_list[:,1] < max_node_id)]
+            edges = edges -1 - min_node_id
+            source_indices_list_list.append(edges[:,0])
+            target_indices_list_list.append(edges[:,1])
+        else:
+            removed_graphs.append(i)
+    return source_indices_list_list, target_indices_list_list, removed_graphs
+
 
 def extract_targets(graph_labels, num_classes, removed_graphs):
     graph_labels = np.array([int(x) for x in graph_labels])
@@ -84,29 +112,27 @@ def dataset_node_slices(graph_indicator_list, num_graphs):
         prev = prev + graph_indicator_list.count(str(i))
     return node_slices
 
-def TUDataset_Parser(data_dir, dataset_name, num_classes):
-        
-    adj_file = open(os.path.join(data_dir, dataset_name + '_A.txt'), 'r')
-    graph_labels_file = open(os.path.join( data_dir, dataset_name + '_graph_labels.txt'), 'r')
-    graph_ind_file = open(os.path.join( data_dir, dataset_name + '_graph_indicator.txt'), 'r')    
-    node_attr_file = open(os.path.join( data_dir, dataset_name + '_node_attributes.txt'), 'r')
-    node_labels_file = open(os.path.join( data_dir, dataset_name + '_node_labels.txt'), 'r')
+def TUDataset_Parser(data_dir,
+                     dataset_name,
+                     num_classes,
+                     max_nodes = 100,
+                     graph_format="sparse"):
 
-    graph_labels = graph_labels_file.read().rstrip().split('\n')
-    graph_ind = graph_ind_file.read().rstrip().split('\n')
-    node_attr = node_attr_file.read().rstrip().split('\n')
-    adj_list = adj_file.read().rstrip().split('\n')
-    node_labels = node_labels_file.read().rstrip().split('\n')
+    def data_extract(description):
+        with open(os.path.join(data_dir, f"{dataset_name}_{description}.txt"),'r') as _fd:
+            _data = _fd.read().rstrip().split('\n')
+        return _data
+
+    adj_list = data_extract("A")
+    graph_labels = data_extract("graph_labels")
+    graph_ind = data_extract("graph_indicator")
+    node_attr = data_extract("node_attributes")
+    node_labels = data_extract("node_labels")
 
     NUM_GRAPHS =  len(graph_labels)
     NUM_NODES = len(node_attr)
     NUM_EDGES = len(adj_list)
 
-    adj_file.close()
-    graph_labels_file.close()
-    graph_ind_file.close()
-    node_attr_file.close()
-    node_labels_file.close()
     edge_list = [] 
     for edge in adj_list:
         edge = np.array([int(x) for x in edge.split(',')])
@@ -115,12 +141,16 @@ def TUDataset_Parser(data_dir, dataset_name, num_classes):
     edge_list = np.array(edge_list)
 
     node_slices = dataset_node_slices(graph_ind, NUM_GRAPHS)
-    
-    max_nodes = 100
-    adj_mat, removed_graphs = extract_adj_mat(node_slices, edge_list, max_nodes)
     num_features = 3
     node_features = extract_node_features(node_slices, node_labels,max_nodes, num_features)
     node_features = np.array(node_features)
-    targets = extract_targets(graph_labels, num_classes, removed_graphs)
 
-    return node_features, adj_mat, targets
+    if graph_format == 'dense':
+        adj_mat, removed_graphs = extract_adj_mat(node_slices, edge_list, max_nodes)
+        targets = extract_targets(graph_labels, num_classes, removed_graphs)
+        return (node_features, adj_mat, targets)
+    else:
+        source_node_indices, target_node_inidices, removed_graphs = \
+            extract_coo_list(node_slices, edge_list, max_nodes)
+        targets = extract_targets(graph_labels, num_classes, removed_graphs)
+        return (node_features, source_node_indices, target_node_inidices, targets )

@@ -44,6 +44,14 @@ def is_olcf_center():
             and domain[-1] == 'gov')
 #    return bool(os.getenv('OLCF_MODULEPATH_ROOT'))
 
+def is_riken_center():
+    """Current system is operated by RIKEN.
+
+    Checks if the system is using a Fujitsu compiler
+
+    """
+    return bool(os.getenv('FJSVXTCLANGA'))
+
 # Detect compute center and choose launcher
 _center = 'unknown'
 launcher = lbann.launcher
@@ -65,6 +73,12 @@ elif is_olcf_center():
     if lbann.contrib.olcf.systems.is_olcf_system():
         import lbann.contrib.olcf.launcher
         launcher = lbann.contrib.olcf.launcher
+elif is_riken_center():
+    _center = 'riken'
+    import lbann.contrib.riken.systems
+    if lbann.contrib.riken.systems.is_riken_system():
+        import lbann.contrib.riken.launcher
+        launcher = lbann.contrib.riken.launcher
 
 def compute_center():
     """Name of organization that operates current system."""

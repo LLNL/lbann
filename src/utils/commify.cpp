@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,19 +25,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/commify.hpp"
-#include <sstream>
 #include <algorithm>
+#include <sstream>
 
-namespace lbann
-{
-namespace utils
-{
+namespace lbann {
+namespace utils {
 
-std::string commify(size_t n) {
+std::string commify(size_t n)
+{
   std::string s = std::to_string(n);
   std::stringstream s2;
   int c = 0;
-  for (int j = (int)s.size()-1; j>=0; j--) {
+  for (int j = (int)s.size() - 1; j >= 0; j--) {
     s2 << s[j];
     ++c;
     if (c == 3) {
@@ -52,5 +51,5 @@ std::string commify(size_t n) {
   return r;
 }
 
-}// namespace utils
-}// namespace lbann
+} // namespace utils
+} // namespace lbann

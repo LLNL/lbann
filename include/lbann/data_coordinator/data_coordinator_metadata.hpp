@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,7 +30,7 @@
 #include <El.hpp>
 
 #include "lbann/utils/enum_iterator.hpp"
-#include "lbann/utils/distconv.hpp"
+#include "lbann_config.hpp"
 
 #include <string>
 #include <unordered_map>
@@ -38,24 +38,47 @@
 
 namespace lbann {
 
+// BVE FIXME
 // NA - Not applicable, used for input layers that don't produce a second output
-enum class data_reader_target_mode {CLASSIFICATION, REGRESSION, RECONSTRUCTION, LABEL_RECONSTRUCTION, INPUT, NA};
+enum class data_reader_target_mode
+{
+  CLASSIFICATION,
+  REGRESSION,
+  RECONSTRUCTION,
+  LABEL_RECONSTRUCTION,
+  INPUT,
+  NA
+};
 std::string to_string(data_reader_target_mode m);
 /// Map from target modes to dimension maps
-using TargetModeDimMap = std::unordered_map<data_reader_target_mode, std::vector<int>>;
-using data_reader_target_mode_iterator = enum_iterator<data_reader_target_mode, data_reader_target_mode::CLASSIFICATION, data_reader_target_mode::NA>;
+using TargetModeDimMap =
+  std::unordered_map<data_reader_target_mode, std::vector<int>>;
+using data_reader_target_mode_iterator =
+  enum_iterator<data_reader_target_mode,
+                data_reader_target_mode::CLASSIFICATION,
+                data_reader_target_mode::NA>;
 
-enum class slice_points_mode {INDEPENDENT, DEPENDENT, NA};
+enum class slice_points_mode
+{
+  INDEPENDENT,
+  DEPENDENT,
+  NA
+};
 std::string to_string(const slice_points_mode m);
 slice_points_mode slice_points_mode_from_string(const std::string& m);
 /// Map from slice points modes to slice points
-using SPModeSlicePoints = std::unordered_map<slice_points_mode, std::vector<El::Int>>;
-using slice_points_mode_iterator = enum_iterator<slice_points_mode, slice_points_mode::INDEPENDENT, slice_points_mode::NA>;
+using SPModeSlicePoints =
+  std::unordered_map<slice_points_mode, std::vector<El::Int>>;
+using slice_points_mode_iterator = enum_iterator<slice_points_mode,
+                                                 slice_points_mode::INDEPENDENT,
+                                                 slice_points_mode::NA>;
 
 /// Data structure containing metadata from the data readers
-//using DataReaderMetaData = std::pair<TargetModeDimMap, TargetModeSlicePoints>;
+// using DataReaderMetaData = std::pair<TargetModeDimMap,
+// TargetModeSlicePoints>;
 
-struct DataReaderMetaData {
+struct DataReaderMetaData
+{
   TargetModeDimMap data_dims;
   SPModeSlicePoints slice_points;
 

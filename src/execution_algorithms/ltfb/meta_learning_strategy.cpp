@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,11 +25,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "lbann/execution_algorithms/ltfb/meta_learning_strategy.hpp"
 #include "lbann/execution_algorithms/ltfb/random_pairwise_exchange.hpp"
-#include "lbann/proto/helpers.hpp"
+#include "lbann/execution_algorithms/ltfb/regularized_evolution.hpp"
+#include "lbann/execution_algorithms/ltfb/truncation_selection_exchange.hpp"
 #include "lbann/utils/make_abstract.hpp"
+#include "lbann/utils/protobuf.hpp"
 
+#include "lbann/proto/training_algorithm.pb.h"
 #include <google/protobuf/message.h>
-#include <training_algorithm.pb.h>
 
 namespace {
 
@@ -39,6 +41,10 @@ lbann::ltfb::MetaLearningStrategyFactory build_default_factory()
   MetaLearningStrategyFactory factory;
   factory.register_builder("RandomPairwiseExchange",
                            lbann::make<RandomPairwiseExchange>);
+  factory.register_builder("TruncationSelectionExchange",
+                           lbann::make<TruncationSelectionExchange>);
+  factory.register_builder("RegularizedEvolution",
+                           lbann::make<RegularizedEvolution>);
   return factory;
 }
 
@@ -70,7 +76,6 @@ lbann::make_abstract<lbann::ltfb::MetaLearningStrategy>(
   google::protobuf::Message const& params)
 {
   return get_factory().create_object(
-    proto::helpers::message_type(
-      dynamic_cast<google::protobuf::Any const&>(params)),
+    protobuf::message_type(dynamic_cast<google::protobuf::Any const&>(params)),
     params);
 }

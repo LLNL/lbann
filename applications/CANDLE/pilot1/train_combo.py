@@ -24,21 +24,20 @@ def construct_model():
     import lbann
 
     # Layer graph
-    input_ = lbann.Input(target_mode='regression')
-    data = lbann.Identity(input_)
-    responses = lbann.Identity(input_)
+    data = lbann.Input(data_field='samples')
+    responses = lbann.Input(data_field='responses')
 
     pred = combo.Combo()(data)
     mse = lbann.MeanSquaredError([responses, pred])
 
     SS_res = lbann.Reduction(lbann.Square(lbann.Subtract(responses, pred)), mode='sum')
- 
+
     #SS_tot = var(x) = mean((x-mean(x))^2)
     mini_batch_size = lbann.MiniBatchSize()
     mean = lbann.Divide(lbann.BatchwiseReduceSum(responses), mini_batch_size)
     SS_tot = lbann.Divide(lbann.BatchwiseReduceSum(lbann.Square(lbann.Subtract(responses, mean))), mini_batch_size)
     eps = lbann.Constant(value=1e-07,hint_layer=SS_tot)
-    r2 = lbann.Subtract(lbann.Constant(value=1, num_neurons='1'), lbann.Divide(SS_res, lbann.Add(SS_tot,eps)))
+    r2 = lbann.Subtract(lbann.Constant(value=1, num_neurons=[1]), lbann.Divide(SS_res, lbann.Add(SS_tot,eps)))
 
     metrics = [lbann.Metric(mse, name='mse')]
     metrics.append(lbann.Metric(r2, name='r2'))
@@ -48,7 +47,7 @@ def construct_model():
 
     # Construct model
     num_epochs = 100
-    layers = list(lbann.traverse_layer_graph(input_))
+    layers = list(lbann.traverse_layer_graph([data, responses]))
     return lbann.Model(num_epochs,
                        layers=layers,
                        metrics=metrics,

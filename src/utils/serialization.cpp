@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -36,8 +36,7 @@
  *
  *  Extensions to Cereal for extra arithmetic types used by LBANN.
  */
-namespace cereal
-{
+namespace cereal {
 
 #ifdef LBANN_HAS_HALF
 #ifdef LBANN_HAS_GPU_FP16
@@ -66,7 +65,8 @@ float save_minimal(XMLOutputArchive const&,
   return val;
 }
 
-void load_minimal(XMLInputArchive const&, half_float::half& val,
+void load_minimal(XMLInputArchive const&,
+                  half_float::half& val,
                   float const& in_val) noexcept
 {
   val = in_val;
@@ -74,27 +74,18 @@ void load_minimal(XMLInputArchive const&, half_float::half& val,
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 #endif // LBANN_HAS_HALF
 
-}// namespace cereal
+} // namespace cereal
 
 #include <stack>
 
-namespace lbann
-{
-namespace utils
-{
-namespace
-{
+namespace lbann {
+namespace utils {
+namespace {
 std::stack<El::Grid const*> grid_stack_;
 
-void push_grid_(El::Grid const& g)
-{
-  grid_stack_.push(&g);
-}
+void push_grid_(El::Grid const& g) { grid_stack_.push(&g); }
 
-void pop_grid_()
-{
-  grid_stack_.pop();
-}
+void pop_grid_() { grid_stack_.pop(); }
 
 // This is done this way to ensure the warning is only emitted at most
 // once per rank per run, if and only if the default grid is actually
@@ -104,7 +95,7 @@ El::Grid const& get_default_grid_() noexcept
   El::Grid const& default_grid_ = El::Grid::Default();
   return default_grid_;
 }
-}// namespace <anon>
+} // namespace
 
 El::Grid const& get_current_grid() noexcept
 {
@@ -113,15 +104,9 @@ El::Grid const& get_current_grid() noexcept
   return *grid_stack_.top();
 }
 
-grid_manager::grid_manager(El::Grid const& g)
-{
-  push_grid_(g);
-}
+grid_manager::grid_manager(El::Grid const& g) { push_grid_(g); }
 
-grid_manager::~grid_manager()
-{
-  pop_grid_();
-}
+grid_manager::~grid_manager() { pop_grid_(); }
 
-}// namespace utils
-}// namespace lbann
+} // namespace utils
+} // namespace lbann

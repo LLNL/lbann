@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,22 +28,29 @@
 #define LBANN_WEIGHTS_HPP
 
 #include "lbann/base.hpp"
-#include "lbann/comm.hpp"
-#include "lbann/io/persist.hpp"
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/description.hpp"
 
 #include <memory>
 #include <string>
 #include <vector>
+#ifdef LBANN_HAS_ONNX
+#include <onnx/onnx_pb.h>
+#endif // LBANN_HAS_ONNX
 
 namespace lbann_data {
-class WeightsData;
+class Weights;
 }
 
 namespace lbann {
 
+namespace Al {
 // Forward declaration
+struct request;
+} // namespace Al
+
+// Forward declaration
+class lbann_comm;
 class weights;
 class weights_initializer;
 class optimizer;
@@ -90,7 +97,8 @@ using ViewingWeightsPtr = std::weak_ptr<weights>;
  *  Note that LBANN weights are similar to Tensorflow variables and
  *  Caffe parameters.
  */
-class weights : public Cloneable<HasAbstractFunction<weights>> {
+class weights : public Cloneable<HasAbstractFunction<weights>>
+{
 private:
   weights();
   // -----------------------------------------------
@@ -108,12 +116,11 @@ public:
    *  human-readable name.
    */
   void set_name(std::string name) { m_name = name; }
+
   /** Get weights name. */
   std::string get_name() const { return m_name; }
 
-  lbann_comm& get_comm() const {
-    return *m_comm;
-  }
+  lbann_comm& get_comm() const { return *m_comm; }
 
   /** Human-readable description. */
   description get_description() const;
@@ -250,21 +257,27 @@ public:
    */
   virtual void reconcile_values(Al::request& req) = 0;
 
-  virtual bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list) = 0;
+  virtual bool load_from_save(std::string const& ckpt_dir,
+                              std::vector<std::string> const& weight_list) = 0;
 
   /** Write weights to proto file */
-  virtual void write_proto(lbann_data::WeightsData* proto) const = 0;
+  virtual void write_proto(lbann_data::Weights& proto) const = 0;
 
   /** @name Serialization */
   ///@{
 
   /** @brief Serialize the weights object to the archive.
    *  @tparam ArchiveT (Inferred.) The archive type.
-   *  @param ar[in,out] The archive to which to write or from which to
+   *  @param[in,out] ar The archive to which to write or from which to
    *                    read.
    */
   template <typename ArchiveT>
   void serialize(ArchiveT& ar);
+
+#ifdef LBANN_HAS_ONNX
+  /** @brief Add serialized weights initializers to onnx graph */
+  virtual void fill_onnx_node(onnx::GraphProto& graph) const = 0;
+#endif // LBANN_HAS_ONNX
 
   ///@}
   /** @name Expert interface */
@@ -280,7 +293,7 @@ public:
    *  @pre Other weights has the same dimenions.
    *  @post Other weights objects values may be invalidated.
    *
-   *  @param[in,out] The object from which to steal values.
+   *  @param[in,out] other The object from which to steal values.
    *
    *  @throws lbann::exception If the weights objects don't have the
    *  same dimensions.
@@ -289,18 +302,18 @@ public:
 
   ///@}
 protected:
-
   weights(const weights& other) = default;
   weights& operator=(const weights& other) = default;
 
 private:
   virtual void do_augment_description_(description&) const = 0;
   virtual void do_setup_() = 0;
+
   virtual void do_set_dims_(std::vector<size_t> const& matrix_height_dims,
                             std::vector<size_t> const& matrix_width_dims) = 0;
   virtual void do_steal_values_(weights& other) = 0;
-private:
 
+private:
   /** Weights name.
    *  Each set of weights in a model should have a unique,
    *  human-readable name.
@@ -323,7 +336,6 @@ private:
 
   /** Whether weight optimization is disabled. */
   bool m_frozen;
-
 };
 
 } // namespace lbann

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,36 +37,27 @@ static_assert(false,
               "OneDNN support is enabled.");
 #endif // !defined(LBANN_HAS_ONEDNN)
 
-namespace lbann
-{
+namespace lbann {
 
 #if defined LBANN_HAS_ONEDNN
 
 template <El::Device D>
 template <typename DataT, typename ScalarT>
-void onednn_backend<D>::softmax_forward(
-  ScalarT const& alpha_in,
-  TensorDescriptor const& xDesc,
-  El::Matrix<DataT, D> const& x,
-  ScalarT const& beta_in,
-  TensorDescriptor const& yDesc,
-  El::Matrix<DataT, D>& y,
-  El::SyncInfo<D> const& si,
-  softmax_mode mode,
-  softmax_alg alg)
+void onednn_backend<D>::softmax_forward(ScalarT const& alpha_in,
+                                        TensorDescriptor const& xDesc,
+                                        El::Matrix<DataT, D> const& x,
+                                        ScalarT const& beta_in,
+                                        TensorDescriptor const& yDesc,
+                                        El::Matrix<DataT, D>& y,
+                                        El::SyncInfo<D> const& si,
+                                        softmax_mode mode,
+                                        softmax_alg alg)
 {
   // Short-circuit the function if actually looking for logsoftmax. Do
   // this first since that function will do all this same
   // error-checking, too.
   if (alg == softmax_alg::LOG)
-    return logsoftmax_forward(alpha_in,
-                              xDesc,
-                              x,
-                              beta_in,
-                              yDesc,
-                              y,
-                              si,
-                              mode);
+    return logsoftmax_forward(alpha_in, xDesc, x, beta_in, yDesc, y, si, mode);
 
   // Start the Softmax operation
 
@@ -123,9 +114,9 @@ void onednn_backend<D>::softmax_forward(
   auto softmax_prim = dnnl::softmax_forward(softmax_prim_desc);
 
   // Primitive execution.
-  softmax_prim.execute(stream,
-                       { {DNNL_ARG_SRC, xDesc.get()},
-                         {DNNL_ARG_DST, yDesc.get()} });
+  softmax_prim.execute(
+    stream,
+    {{DNNL_ARG_SRC, xDesc.get()}, {DNNL_ARG_DST, yDesc.get()}});
 
   // FIXME (trb 01/26/2021): Need to figure out how to generalize
   // this. I almost wonder if we'll want this "stream" to be absorbed
@@ -135,18 +126,17 @@ void onednn_backend<D>::softmax_forward(
 
 template <El::Device D>
 template <typename DataT, typename ScalarT>
-void onednn_backend<D>::softmax_backward(
-  ScalarT const& alpha_in,
-  TensorDescriptor const& yDesc,
-  El::Matrix<DataT, D> const& y,
-  TensorDescriptor const& dyDesc,
-  El::Matrix<DataT, D> const& dy,
-  ScalarT const& beta_in,
-  TensorDescriptor const& dxDesc,
-  El::Matrix<DataT, D>& dx,
-  El::SyncInfo<D> const& si,
-  softmax_mode mode,
-  softmax_alg alg)
+void onednn_backend<D>::softmax_backward(ScalarT const& alpha_in,
+                                         TensorDescriptor const& yDesc,
+                                         El::Matrix<DataT, D> const& y,
+                                         TensorDescriptor const& dyDesc,
+                                         El::Matrix<DataT, D> const& dy,
+                                         ScalarT const& beta_in,
+                                         TensorDescriptor const& dxDesc,
+                                         El::Matrix<DataT, D>& dx,
+                                         El::SyncInfo<D> const& si,
+                                         softmax_mode mode,
+                                         softmax_alg alg)
 {
   if (alg == softmax_alg::LOG)
     return logsoftmax_backward(alpha_in,
@@ -174,27 +164,21 @@ void onednn_backend<D>::softmax_backward(
   dxDesc.get().set_data_handle(dx.Buffer(), stream);
 
   // FIXME: HACK -- should cache from the fwd pass.
-  auto fwd_softmax_prim_desc =
-    dnnl::softmax_forward::primitive_desc(
-      { dnnl::prop_kind::forward_training,
-        yDesc.get().get_desc(),
-        softmax_axis },
-      engine);
+  auto fwd_softmax_prim_desc = dnnl::softmax_forward::primitive_desc(
+    {dnnl::prop_kind::forward_training, yDesc.get().get_desc(), softmax_axis},
+    engine);
 
-  auto softmax_prim_desc =
-    dnnl::softmax_backward::primitive_desc(
-      { dxDesc.get().get_desc(),
-        yDesc.get().get_desc(),
-        softmax_axis },
-      engine,
-      fwd_softmax_prim_desc);
+  auto softmax_prim_desc = dnnl::softmax_backward::primitive_desc(
+    {dxDesc.get().get_desc(), yDesc.get().get_desc(), softmax_axis},
+    engine,
+    fwd_softmax_prim_desc);
 
   auto softmax_prim = dnnl::softmax_backward(softmax_prim_desc);
 
   softmax_prim.execute(stream,
-                       { {DNNL_ARG_DST, yDesc.get()},
-                         {DNNL_ARG_DIFF_DST, dyDesc.get()},
-                         {DNNL_ARG_DIFF_SRC, dxDesc.get()} });
+                       {{DNNL_ARG_DST, yDesc.get()},
+                        {DNNL_ARG_DIFF_DST, dyDesc.get()},
+                        {DNNL_ARG_DIFF_SRC, dxDesc.get()}});
   stream.wait();
 }
 #endif // defined LBANN_HAS_ONEDNN

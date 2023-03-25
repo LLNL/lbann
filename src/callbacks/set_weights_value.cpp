@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,52 +25,63 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/set_weights_value.hpp"
-#include "lbann/weights/data_type_weights.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
-#include <callbacks.pb.h>
-
+#include "lbann/proto/callbacks.pb.h"
 
 namespace lbann {
 namespace callback {
 
-set_weights_value::set_weights_value(
-  std::string weights_name,
-  double value,
-  size_t step)
+set_weights_value::set_weights_value(std::string weights_name,
+                                     double value,
+                                     size_t step)
   : callback_base(),
     m_weights_name(std::move(weights_name)),
     m_value{value},
-    m_step{step} {}
-
-set_weights_value::set_weights_value()
-  : set_weights_value("", 0, 0)
+    m_step{step}
 {}
 
+set_weights_value::set_weights_value() : set_weights_value("", 0, 0) {}
+
 template <class Archive>
-void set_weights_value::serialize(Archive & ar) {
-  ar(::cereal::make_nvp(
-       "BaseCallback",
-       ::cereal::base_class<callback_base>(this)),
+void set_weights_value::serialize(Archive& ar)
+{
+  ar(::cereal::make_nvp("BaseCallback",
+                        ::cereal::base_class<callback_base>(this)),
      CEREAL_NVP(m_weights_name),
      CEREAL_NVP(m_value),
      CEREAL_NVP(m_step));
 }
 
-set_weights_value* set_weights_value::copy() const {
+void set_weights_value::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_set_weights_value();
+  msg->set_weights(m_weights_name);
+  msg->set_value(m_value);
+  msg->set_step(m_step);
+}
+
+set_weights_value* set_weights_value::copy() const
+{
   return new set_weights_value(*this);
 }
 
-std::string set_weights_value::name() const {
-  return "set weights value";
-}
+std::string set_weights_value::name() const { return "set weights value"; }
 
-void set_weights_value::on_batch_begin(model *m) {
+void set_weights_value::on_batch_begin(model* m)
+{
 
   // Check whether to set weights value at current mini-batch step
   const auto& context = m->get_execution_context();
-  if (context.get_step() != m_step) { return; }
-  if (context.get_execution_mode() != execution_mode::training) { return; }
+  if (context.get_step() != m_step) {
+    return;
+  }
+  if (context.get_execution_mode() != execution_mode::training) {
+    return;
+  }
 
   // Find weights and set value
   for (weights* w : m->get_weights()) {
@@ -78,35 +89,46 @@ void set_weights_value::on_batch_begin(model *m) {
       /// @todo Handle weights with other data types
       auto* dtw = dynamic_cast<data_type_weights<float>*>(w);
       if (dtw == nullptr) {
-        LBANN_ERROR("\"",this->name(),"\" callback ",
+        LBANN_ERROR("\"",
+                    this->name(),
+                    "\" callback ",
                     "attempted to set value of ",
-                    "weights \"",m_weights_name,"\", "
+                    "weights \"",
+                    m_weights_name,
+                    "\", "
                     "which has an invalid data type");
       }
       El::Fill(dtw->get_values(), float(m_value));
       return;
     }
-    LBANN_ERROR("\"",this->name(),"\" callback ",
+    LBANN_ERROR("\"",
+                this->name(),
+                "\" callback ",
                 "could not find ",
-                "weights \"",m_weights_name,"\", "
-                "in model \"",m->get_name(),"\"");
+                "weights \"",
+                m_weights_name,
+                "\", "
+                "in model \"",
+                m->get_name(),
+                "\"");
   }
-
 }
 
-std::unique_ptr<callback_base>
-build_set_weights_value_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+std::unique_ptr<callback_base> build_set_weights_value_callback_from_pbuf(
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
-    dynamic_cast<const lbann_data::Callback::CallbackSetWeightsValue&>(proto_msg);
-  return make_unique<set_weights_value>(
-    params.weights(),
-    params.value(),
-    params.step());
+    dynamic_cast<const lbann_data::Callback::CallbackSetWeightsValue&>(
+      proto_msg);
+  return std::make_unique<set_weights_value>(params.weights(),
+                                             params.value(),
+                                             params.step());
 }
 
 } // namespace callback
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::set_weights_value
+#define LBANN_CLASS_LIBNAME callback_set_weights_value
 #include <lbann/macros/register_class_with_cereal.hpp>

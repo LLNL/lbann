@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,47 +27,49 @@
 #include "lbann_config.hpp"
 
 #ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
-#define LBANN_ADD_BINARY_SERIALIZE_ETI(...)                             \
-  template void __VA_ARGS__::serialize(cereal::BinaryOutputArchive&);      \
-  template void __VA_ARGS__::serialize(cereal::BinaryInputArchive&);       \
-  template void __VA_ARGS__::serialize(RootedBinaryOutputArchive&);        \
+#define LBANN_ADD_BINARY_SERIALIZE_ETI(...)                                    \
+  template void __VA_ARGS__::serialize(cereal::BinaryOutputArchive&);          \
+  template void __VA_ARGS__::serialize(cereal::BinaryInputArchive&);           \
+  template void __VA_ARGS__::serialize(RootedBinaryOutputArchive&);            \
   template void __VA_ARGS__::serialize(RootedBinaryInputArchive&)
 #else
 #define LBANN_ADD_BINARY_SERIALIZE_ETI(...)
 #endif
 
 #ifdef LBANN_HAS_CEREAL_JSON_ARCHIVES
-#define LBANN_ADD_JSON_SERIALIZE_ETI(...)                               \
-  template void __VA_ARGS__::serialize(cereal::JSONOutputArchive&);        \
-  template void __VA_ARGS__::serialize(cereal::JSONInputArchive&);         \
-  template void __VA_ARGS__::serialize(RootedJSONOutputArchive&);          \
+#define LBANN_ADD_JSON_SERIALIZE_ETI(...)                                      \
+  template void __VA_ARGS__::serialize(cereal::JSONOutputArchive&);            \
+  template void __VA_ARGS__::serialize(cereal::JSONInputArchive&);             \
+  template void __VA_ARGS__::serialize(RootedJSONOutputArchive&);              \
   template void __VA_ARGS__::serialize(RootedJSONInputArchive&)
 #else
 #define LBANN_ADD_JSON_SERIALIZE_ETI(...)
 #endif
 
 #ifdef LBANN_HAS_CEREAL_PORTABLE_BINARY_ARCHIVES
-#define LBANN_ADD_PORTABLE_BINARY_SERIALIZE_ETI(...)                    \
-  template void __VA_ARGS__::serialize(cereal::PortableBinaryOutputArchive&); \
-  template void __VA_ARGS__::serialize(cereal::PortableBinaryInputArchive&); \
-  template void __VA_ARGS__::serialize(RootedPortableBinaryOutputArchive&); \
+#define LBANN_ADD_PORTABLE_BINARY_SERIALIZE_ETI(...)                           \
+  template void __VA_ARGS__::serialize(cereal::PortableBinaryOutputArchive&);  \
+  template void __VA_ARGS__::serialize(cereal::PortableBinaryInputArchive&);   \
+  template void __VA_ARGS__::serialize(RootedPortableBinaryOutputArchive&);    \
   template void __VA_ARGS__::serialize(RootedPortableBinaryInputArchive&)
 #else
 #define LBANN_ADD_PORTABLE_BINARY_SERIALIZE_ETI(...)
 #endif
 
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
-#define LBANN_ADD_XML_SERIALIZE_ETI(...)                                \
-  template void __VA_ARGS__::serialize(cereal::XMLOutputArchive&);      \
-  template void __VA_ARGS__::serialize(cereal::XMLInputArchive&);       \
-  template void __VA_ARGS__::serialize(RootedXMLOutputArchive&);        \
+#define LBANN_ADD_XML_SERIALIZE_ETI(...)                                       \
+  template void __VA_ARGS__::serialize(cereal::XMLOutputArchive&);             \
+  template void __VA_ARGS__::serialize(cereal::XMLInputArchive&);              \
+  template void __VA_ARGS__::serialize(RootedXMLOutputArchive&);               \
   template void __VA_ARGS__::serialize(RootedXMLInputArchive&)
 #else
 #define LBANN_ADD_XML_SERIALIZE_ETI(...)
 #endif
 
-#define LBANN_ADD_ALL_SERIALIZE_ETI(...)                \
-  LBANN_ADD_BINARY_SERIALIZE_ETI(__VA_ARGS__);          \
-  LBANN_ADD_JSON_SERIALIZE_ETI(__VA_ARGS__);            \
-  LBANN_ADD_PORTABLE_BINARY_SERIALIZE_ETI(__VA_ARGS__); \
+#define LBANN_ADD_ALL_SERIALIZE_ETI(...)                                       \
+  LBANN_ADD_BINARY_SERIALIZE_ETI(__VA_ARGS__);                                 \
+  LBANN_ADD_JSON_SERIALIZE_ETI(__VA_ARGS__);                                   \
+  LBANN_ADD_PORTABLE_BINARY_SERIALIZE_ETI(__VA_ARGS__);                        \
   LBANN_ADD_XML_SERIALIZE_ETI(__VA_ARGS__)
+
+#define LBANN_REGISTER_DYNAMIC_INIT(NAME) CEREAL_REGISTER_DYNAMIC_INIT(NAME)

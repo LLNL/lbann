@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,12 +25,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_SORT_LAYER_INSTANTIATE
-#include "lbann/layers/transform/sort.hpp"
+#include "lbann/layers/transform/sort_impl.hpp"
 
 namespace lbann {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void sort_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+void sort_layer<TensorDataType, T_layout, Dev>::fp_compute()
+{
 
   // Local matrices
   const auto& local_input = this->get_local_prev_activations();
@@ -52,7 +53,8 @@ void sort_layer<TensorDataType, T_layout, Dev>::fp_compute() {
         local_output(row, col) = it->first;
         local_indices(row, col) = it->second;
       }
-    } else {
+    }
+    else {
       auto&& it = sorted_list.begin();
       for (El::Int row = 0; row < local_height; ++row, ++it) {
         local_output(row, col) = it->first;
@@ -60,11 +62,11 @@ void sort_layer<TensorDataType, T_layout, Dev>::fp_compute() {
       }
     }
   }
-
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void sort_layer<TensorDataType, T_layout, Dev>::bp_compute() {
+void sort_layer<TensorDataType, T_layout, Dev>::bp_compute()
+{
 
   // Local matrices
   const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
@@ -82,10 +84,9 @@ void sort_layer<TensorDataType, T_layout, Dev>::bp_compute() {
       dx = dy;
     }
   }
-
 }
 
-#define PROTO(T)                                      \
+#define PROTO(T)                                                               \
   template class sort_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF

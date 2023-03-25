@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,24 +28,30 @@
 #define LBANN_LAYER_IN_TOP_K_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/exception.hpp"
+
+#include "lbann/proto/layers.pb.h"
 
 namespace lbann {
 
-/** @brief Indicate top-k entries.
+/** @brief One-hot vector indicating top-k entries
  *
- *  Output entries corresponding to the top-k input entries are set to
- *  one and the rest to zero. Ties are broken in favor of entries with
- *  smaller indices.
+ *  Output tensor has same dimensions as input tensor. Output entries
+ *  corresponding to the top-k input entries are set to one and the
+ *  rest to zero. Ties are broken in favor of entries with smaller
+ *  indices.
  */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class in_top_k_layer : public data_type_layer<TensorDataType> {
- public:
-
-  in_top_k_layer(lbann_comm *comm, El::Int k)
-    : data_type_layer<TensorDataType>(comm), m_k(k) {
+class in_top_k_layer : public data_type_layer<TensorDataType>
+{
+public:
+  in_top_k_layer(lbann_comm* comm, El::Int k)
+    : data_type_layer<TensorDataType>(comm), m_k(k)
+  {
     if (m_k < 0) {
       LBANN_ERROR("invalid parameter for top-k search (k=", m_k, ")");
     }
@@ -65,35 +71,44 @@ class in_top_k_layer : public data_type_layer<TensorDataType> {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  description get_description() const override {
+  description get_description() const override
+  {
     auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("k", m_k);
     return desc;
   }
 
- protected:
+protected:
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  in_top_k_layer()
-    : in_top_k_layer(nullptr, 1)
-  {}
+  in_top_k_layer() : in_top_k_layer(nullptr, 1) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 
   void fp_compute() override;
 
- private:
-
+private:
   /** Parameter for top-k search. */
   El::Int m_k;
-
 };
 
+template <typename T, data_layout L, El::Device D>
+void in_top_k_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_in_top_k();
+  msg->set_k(m_k);
+}
+
 #ifndef LBANN_IN_TOP_K_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
+#define PROTO_DEVICE(T, Device)                                                \
   extern template class in_top_k_layer<T, data_layout::DATA_PARALLEL, Device>; \
   extern template class in_top_k_layer<T, data_layout::MODEL_PARALLEL, Device>
 

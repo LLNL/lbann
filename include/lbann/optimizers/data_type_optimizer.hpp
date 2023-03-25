@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,12 +28,12 @@
 #define LBANN_OPTIMIZERS_DATA_TYPE_OPTIMIZER_HPP_INCLUDED
 
 #include "lbann/optimizers/optimizer.hpp"
+#include "lbann/utils/describable.hpp"
 
 // Forward declarations
-namespace cereal
-{
-  class access;
-}// namespace cereal
+namespace cereal {
+class access;
+} // namespace cereal
 
 namespace lbann {
 
@@ -43,9 +43,9 @@ class data_type_weights;
 
 template <typename TensorDataType>
 class data_type_optimizer
-  : public Cloneable<
-             HasAbstractFunction<data_type_optimizer<TensorDataType>>,
-             optimizer> {
+  : public Cloneable<HasAbstractFunction<data_type_optimizer<TensorDataType>>,
+                     optimizer>
+{
 
   using BaseType =
     Cloneable<HasAbstractFunction<data_type_optimizer<TensorDataType>>,
@@ -105,20 +105,19 @@ public:
   ///@}
 
   /** @brief Access the scaling factor for optimization step sizes. */
-  TensorDataType get_learning_rate() const;
+  double get_learning_rate() const final;
   /** @brief Set the scaling factor for optimization step sizes. */
-  void set_learning_rate(TensorDataType learning_rate);
+  void set_learning_rate(double learning_rate) override;
 
   /** @name Checkpointing functionality */
   ///@{
   /** @brief Archive for checkpoint and restart */
   template <class Archive>
-  void serialize(Archive & ar);
+  void serialize(Archive& ar);
 
   ///@}
 
 protected:
-
   data_type_optimizer(const data_type_optimizer& other);
   data_type_optimizer& operator=(const data_type_optimizer& other);
 
@@ -133,10 +132,9 @@ protected:
   /** @brief Get the info needed to construct a new gradient matrix.
    *  @return Tuple of height, width, and DistData.
    */
-  std::tuple<El::Int,El::Int,El::DistData> get_matrix_info() const final;
+  std::tuple<El::Int, El::Int, El::DistData> get_matrix_info() const final;
 
 private:
-
   /** @brief Weights being optimized. */
   data_type_weights<TensorDataType>* m_weights = nullptr;
 
@@ -166,12 +164,11 @@ private:
    *
    *  @todo Consider moving this to the derived classes.
    */
-  TensorDataType m_learning_rate;
+  double m_learning_rate;
 };
 
 #ifndef LBANN_DATA_TYPE_OPTIMIZER_INSTANTIATE
-#define PROTO(T)                                \
-  extern template class data_type_optimizer<T>
+#define PROTO(T) extern template class data_type_optimizer<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

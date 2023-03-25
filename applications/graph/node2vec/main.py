@@ -165,7 +165,7 @@ metrics = []
 
 # Embedding vectors, including negative sampling
 # Note: Input is sequence of vertex IDs
-input_ = lbann.Identity(lbann.Input())
+input_ = lbann.Input(data_field='samples')
 if args.embeddings == 'distributed':
     embeddings_weights = lbann.Weights(
         initializer=lbann.NormalInitializer(
@@ -201,7 +201,7 @@ else:
 embeddings_slice = lbann.Slice(
     embeddings,
     axis=0,
-    slice_points=utils.str_list([0, num_negative_samples, num_negative_samples+walk_length]),
+    slice_points=[0, num_negative_samples, num_negative_samples+walk_length],
 )
 negative_samples_embeddings = lbann.Identity(embeddings_slice)
 walk_embeddings = lbann.Identity(embeddings_slice)
@@ -218,7 +218,7 @@ negative_loss = model.skip_gram.negative_samples_loss(
     negative_samples_embeddings,
 )
 obj.append(positive_loss)
-obj.append(lbann.WeightedSum(negative_loss, scaling_factors='2'))
+obj.append(lbann.WeightedSum(negative_loss, scaling_factors=[2]))
 metrics.append(lbann.Metric(positive_loss, name='positive loss'))
 metrics.append(lbann.Metric(negative_loss, name='negative loss'))
 

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,7 +29,9 @@
 namespace lbann {
 namespace transform {
 
-void scale_and_translate::apply(utils::type_erased_matrix& data, std::vector<size_t>&) {
+void scale_and_translate::apply(utils::type_erased_matrix& data,
+                                std::vector<size_t>&)
+{
   // Currently only works on DataTypes.
   // Need to decide how to handle uint8_t matrices.
   auto& mat = data.template get<DataType>();
@@ -44,5 +46,5 @@ void scale_and_translate::apply(utils::type_erased_matrix& data, std::vector<siz
   }
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

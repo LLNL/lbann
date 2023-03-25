@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -55,8 +55,21 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize options db (this parses the command line)
-    options *opts = options::get();
-    opts->init(argc, argv);
+    auto& arg_parser = global_argument_parser();
+    construct_std_options();
+    construct_jag_options();
+    try {
+      arg_parser.parse(argc, argv);
+    }
+    catch (std::exception const& e) {
+      auto guessed_rank = guess_global_rank();
+      if (guessed_rank <= 0)
+        // Cannot call `El::ReportException` because MPI hasn't been
+        // initialized yet.
+        std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
+                  << e.what() << "\n\nProcess terminating." << std::endl;
+      std::terminate();
+    }
 
     if (argc == 1) {
       if (master) {
@@ -70,13 +83,15 @@ int main(int argc, char *argv[]) {
       return EXIT_SUCCESS;
     }
 
-    if (! (opts->has_string("filelist") && opts->has_string("output_fn") &&  opts->has_string("base_dir") )) {
+    if (arg_parser.get<std::string>(LBANN_OPTION_FILELIST) == "" ||
+        arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_FN) == "" ||
+        arg_parser.get<std::string>(LBANN_OPTION_BASE_DIR)) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: improper invocation; run with no cmd line args for proper invocation");
     }
 
-    const std::string input_fn = opts->get_string("filelist");
-    const std::string output_fn = opts->get_string("output_fn");
-    const std::string base_dir = opts->get_string("base_dir");
+    const std::string input_fn = arg_parser.get<std::string>(LBANN_OPTION_FILELIST);
+    const std::string output_fn = arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_FN);
+    const std::string base_dir = arg_parser.get<std::string>(LBANN_OPTION_BASE_DIR);
 
     int rank = comm->get_rank_in_world();
     std::stringstream ss;

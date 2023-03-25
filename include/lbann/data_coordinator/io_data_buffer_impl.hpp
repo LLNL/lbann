@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,14 +33,31 @@ namespace lbann {
 
 template <typename TensorDataType>
 template <class Archive>
-void data_buffer<TensorDataType>::serialize( Archive & ar ) {
+void data_buffer<TensorDataType>::serialize(Archive& ar)
+{
   ar(/*CEREAL_NVP(m_input_buffers)*//*,
                                   CEREAL_NVP(m_fetch_data_in_background),
      CEREAL_NVP(m_data_fetch_future),
      CEREAL_NVP(m_indices_fetched_per_mb)*/);
 }
 
-} // namespace lbann
+template <typename TensorDataType>
+void data_buffer<TensorDataType>::initialize_buffer_for_data_field(
+  data_field_type const data_field,
+  lbann_comm* comm)
+{
+  // Allocate a buffer if the data field doesn't exist
+  if (m_input_buffers.find(data_field) == m_input_buffers.end()) {
+    m_input_buffers[data_field] =
+      std::make_unique<StarVCMatDT<TensorDataType, El::Device::CPU>>(
+        comm->get_trainer_grid());
+#if defined(LBANN_HAS_GPU)
+    // Pin the memory so that we get efficient GPU data transfer
+    m_input_buffers[data_field]->Matrix().SetMemoryMode(1);
+#endif // LBANN_HAS_GPU
+  }
+}
 
+} // namespace lbann
 
 #endif // LBANN_IO_BUFFER_HPP_IMPL_INCLUDED

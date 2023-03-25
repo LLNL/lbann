@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,14 +25,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_ROWWISE_WEIGHTS_NORMS_LAYER_INSTANTIATE
-#include "lbann/layers/misc/rowwise_weights_norms.hpp"
+#include "lbann/layers/misc/rowwise_weights_norms_impl.hpp"
 
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::row_sqsums(
   const El::Matrix<TensorDataType, Device>& mat,
-  El::Matrix<TensorDataType, Device>& row_sqsums) {
+  El::Matrix<TensorDataType, Device>& row_sqsums)
+{
 
   // Matrix data
   const size_t height = mat.Height();
@@ -53,31 +54,29 @@ void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::row_sqsums(
     const size_t row_end = std::min(row_start + bsize, height);
     for (size_t col = 0; col < width; ++col) {
       for (size_t row = row_start; row < row_end; ++row) {
-        const auto& x = mat_buf[row+col*mat_ldim];
+        const auto& x = mat_buf[row + col * mat_ldim];
         auto& y = row_sqsums_buf[row];
-        y += x*x;
+        y += x * x;
       }
     }
   }
-
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::sqrt(
-  El::Matrix<TensorDataType, Device>& mat) {
-  El::EntrywiseMap(
-    mat,
-    {[](TensorDataType const& a) { return El::Sqrt(a); }});
+  El::Matrix<TensorDataType, Device>& mat)
+{
+  El::EntrywiseMap(mat, {[](TensorDataType const& a) { return El::Sqrt(a); }});
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::divide(
   El::Matrix<TensorDataType, Device>& numer,
-  const El::Matrix<TensorDataType, Device>& denom) {
+  const El::Matrix<TensorDataType, Device>& denom)
+{
 
   // Check that matrices are valid
-  if (numer.Height() != denom.Height()
-      || numer.Width() != denom.Width()) {
+  if (numer.Height() != denom.Height() || numer.Width() != denom.Width()) {
     LBANN_ERROR("numerator and denominator do not have same dims");
   }
   if (!numer.Contiguous() || !denom.Contiguous()) {
@@ -89,13 +88,12 @@ void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::divide(
   TensorDataType* __restrict__ numer_buf = numer.Buffer();
   const TensorDataType* __restrict__ denom_buf = denom.LockedBuffer();
   LBANN_OMP_PARALLEL_FOR
-  for (size_t i=0; i<size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     auto& x = numer_buf[i];
     const auto& y = denom_buf[i];
     const auto& z = x / y;
     x = std::isfinite(z) ? z : El::TypeTraits<TensorDataType>::Zero();
   }
-
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -104,13 +102,12 @@ void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::row_axpy(
   const El::Matrix<TensorDataType, Device>& a_vec,
   const El::Matrix<TensorDataType, Device>& x_mat,
   TensorDataType beta,
-  El::Matrix<TensorDataType, Device>& y_mat) {
+  El::Matrix<TensorDataType, Device>& y_mat)
+{
 
   // Check that matrices are valid
-  if (x_mat.Height() != y_mat.Height()
-      || x_mat.Width() != y_mat.Width()
-      || a_vec.Height() != y_mat.Height()
-      || a_vec.Width() != 1) {
+  if (x_mat.Height() != y_mat.Height() || x_mat.Width() != y_mat.Width() ||
+      a_vec.Height() != y_mat.Height() || a_vec.Width() != 1) {
     LBANN_ERROR("matrix dims do not match");
   }
 
@@ -128,19 +125,20 @@ void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::row_axpy(
   for (size_t col = 0; col < width; ++col) {
     for (size_t row = 0; row < height; ++row) {
       const auto& a = a_buf[row];
-      const auto& x = x_buf[row+col*x_ldim];
-      auto& y = y_buf[row+col*y_ldim];
+      const auto& x = x_buf[row + col * x_ldim];
+      auto& y = y_buf[row + col * y_ldim];
       y = alpha * a * x + beta * y;
     }
   }
-
 }
 
-#define PROTO(T)                                            \
-  template class rowwise_weights_norms_layer<               \
-    T, data_layout::DATA_PARALLEL, El::Device::CPU>;        \
-  template class rowwise_weights_norms_layer<               \
-    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  template class rowwise_weights_norms_layer<T,                                \
+                                             data_layout::DATA_PARALLEL,       \
+                                             El::Device::CPU>;                 \
+  template class rowwise_weights_norms_layer<T,                                \
+                                             data_layout::MODEL_PARALLEL,      \
+                                             El::Device::CPU>
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 

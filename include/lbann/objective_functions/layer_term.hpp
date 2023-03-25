@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,12 +27,13 @@
 #ifndef LBANN_OBJECTIVE_FUNCTION_LAYER_TERM_HPP_INCLUDED
 #define LBANN_OBJECTIVE_FUNCTION_LAYER_TERM_HPP_INCLUDED
 
-#include "lbann/objective_functions/objective_function_term.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
+#include "lbann/objective_functions/objective_function_term.hpp"
 
 namespace lbann {
 
-class layer_term : public objective_function_term {
+class layer_term : public objective_function_term
+{
 public:
   layer_term(EvalType scale_factor = EvalType(1));
   layer_term* copy() const override { return new layer_term(*this); }
@@ -53,16 +54,17 @@ public:
 
   void differentiate() override;
 
-  void compute_weight_regularization() override {};
+  void compute_weight_regularization() override{};
 
   template <typename ArchiveT>
   void serialize(ArchiveT& ar);
 
 private:
+  /** @brief Add objective function data to prototext */
+  void write_specific_proto(lbann_data::ObjectiveFunction& proto) const final;
 
   /** Get corresponding evaluation layer. */
-  /*abstract_evaluation_*/Layer& get_evaluation_layer();
-
+  /*abstract_evaluation_*/ Layer& get_evaluation_layer();
 };
 
 } // namespace lbann

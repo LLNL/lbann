@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,8 +27,9 @@
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
-#include "lbann/models/directed_acyclic_graph.hpp"
+#include "lbann/metrics/metric.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/optimizers/adam.hpp"
 #include "lbann/optimizers/sgd.hpp"
 #include "lbann/trainers/trainer.hpp"
@@ -66,8 +67,8 @@ SendRecvWeights::SendRecvWeights(std::set<std::string> const& weights_names,
 
 SendRecvWeights::SendRecvWeights(std::set<std::string>&& weights_names,
                                  bool exchange_hyperparameters)
-  : BaseType(std::move(weights_names)), exchange_hyperparams_{
-                                          exchange_hyperparameters}
+  : BaseType(std::move(weights_names)),
+    exchange_hyperparams_{exchange_hyperparameters}
 {}
 
 std::unique_ptr<model>
@@ -78,14 +79,18 @@ SendRecvWeights::get_partner_model(model const& m,
   auto& comm = *m.get_comm();
 
   // Start by copying this model, then do the exchange.
-  auto partner_model_ptr = m.copy_model();
-  auto& partner_model = *partner_model_ptr;
+  auto partner_model_ptr = std::make_unique<model>(m);
+  model& partner_model = *partner_model_ptr;
 
   // Get partner process
   const El::Int rank_in_trainer = comm.get_rank_in_trainer();
   const El::Int procs_per_trainer = comm.get_procs_per_trainer();
+
+  const bool subgrid = m.get_comm()->get_grid_type() != GridType::NO_GRID;
   const El::Int partner_rank_in_world =
-    (partner_trainer * procs_per_trainer + rank_in_trainer);
+    (partner_trainer * procs_per_trainer * (subgrid ? 2 : 1) + rank_in_trainer);
+  auto& w = comm.get_world_comm();
+  comm.intertrainer_barrier();
 
   // Exchange weights with partner
   for (auto&& w_ptr : partner_model.get_weights()) {

@@ -1,0 +1,71 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+
+const std::string vocab_txt_const = R"ptext(# 0
+% 1
+( 2
+) 3
++ 4
+- 5
+. 6
+/ 7
+0 8
+1 9
+2 10
+3 11
+4 12
+5 13
+6 14
+7 15
+8 16
+9 17
+= 18
+@ 19
+B 20
+C 21
+F 22
+H 23
+I 24
+N 25
+O 26
+P 27
+S 28
+[ 29
+\ 30
+] 31
+c 32
+e 33
+i 34
+l 35
+n 36
+o 37
+p 38
+r 39
+s 40
+<bos> 41
+<eos> 42
+<pad> 43
+<unk> 44)ptext";

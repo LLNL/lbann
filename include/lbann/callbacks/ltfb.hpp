@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -59,19 +59,16 @@ class LTFBCommunicationAlgorithm;
  *    - Can this be used to explore model architectures?
  *
  */
-class ltfb : public callback_base {
+class ltfb : public callback_base
+{
 public:
-
   /** @brief Construct the LTFB callback
    *  @param batch_interval Number of training mini-batch steps between
    *                        tournaments.
    *  @param metric_name    Metric for tournament evaluation.
-   *  @param weights_names  List of weights to exchange with partner.
-   *                        If empty, then all weights are exchanged.
-   *  @param low_score_wins Whether low-scoring or high-scoring models
-   *                        survive a tournament.
    *  @param comm_algo      Inter-trainer communication scheme.
-   *  @param summarizer     The summarizer to use for this callback
+   *  @param exchange_hyperparameters Whether to exchange hyperparameters
+   *                                  with model information.
    */
   ltfb(El::Int batch_interval,
        std::string metric_name,
@@ -82,10 +79,12 @@ public:
   ltfb* copy() const override { return new ltfb(*this); }
   std::string name() const override { return "LTFB"; }
 
-  void on_train_begin(model *m) override;
-  void on_batch_begin(model *m) override;
+  void on_train_begin(model* m) override;
+  void on_batch_begin(model* m) override;
 
 private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
 
   /** @brief Metric for tournament evaluation. */
   std::string m_metric_name;
@@ -100,8 +99,8 @@ private:
 
 // Builder function
 std::unique_ptr<callback_base>
-build_ltfb_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_ltfb_callback_from_pbuf(const google::protobuf::Message&,
+                              std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann

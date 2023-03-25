@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,8 +29,8 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 
-#include <lbann.pb.h>
-#include <reader.pb.h>
+#include "lbann/proto/lbann.pb.h"
+#include "lbann/proto/reader.pb.h"
 
 #include <string>
 
@@ -50,15 +50,19 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize options db (this parses the command line)
-    options *opts = options::get();
-    opts->init(argc, argv);
-    if (opts->has_string("h") or opts->has_string("help") or argc == 1) {
-      print_help(*comm);
+    auto& arg_parser = global_argument_parser();
+    construct_all_options();
+    arg_parser.add_flag("fn", {"--fn"}, "TODO");
+    arg_parser.parse(argc, argv);
+
+    if (arg_parser.help_requested() or argc == 1) {
+      if (master)
+        std::cout << arg_parser << std::endl;
       return EXIT_SUCCESS;
     }
 
     //read data_reader prototext file
-    if (not opts->has_string("fn")) {
+    if (arg_parser.get<std::string>("fn") == "") {
       std::cerr << __FILE__ << " " << __LINE__ << " :: "
                 << "you must run with: --fn=<string> where <string> is\n"
                 << "a data_reader prototext filePathName\n";
@@ -66,7 +70,7 @@ int main(int argc, char *argv[]) {
     }
 
     lbann_data::LbannPB pb;
-    std::string reader_fn(opts->get_string("fn").c_str());
+    std::string reader_fn = arg_parser.get<std::string>("fn");
     read_prototext_file(reader_fn.c_str(), pb, master);
     const lbann_data::DataReader & d_reader = pb.data_reader();
 
@@ -75,7 +79,7 @@ int main(int argc, char *argv[]) {
       const lbann_data::Reader& readme = d_reader.reader(j);
       if (readme.role() == "train") {
         bool shuffle = true;
-        auto reader = make_unique<mnist_reader>(shuffle);
+        auto reader = std::make_unique<mnist_reader>(shuffle);
 
         if (readme.data_filename() != "") { reader->set_data_filename( readme.data_filename() ); }
         if (readme.label_filename() != "") { reader->set_label_filename( readme.label_filename() ); }
@@ -86,7 +90,7 @@ int main(int argc, char *argv[]) {
         //test: indices should not be shuffled; same as previous, except we call
         //      shuffle(true);
         shuffle = false;
-        reader = make_unique<mnist_reader>(shuffle);
+        reader = std::make_unique<mnist_reader>(shuffle);
         if (readme.data_filename() != "") { reader->set_data_filename( readme.data_filename() ); }
         if (readme.label_filename() != "") { reader->set_label_filename( readme.label_filename() ); }
         if (readme.data_filedir() != "") { reader->set_file_dir( readme.data_filedir() ); }
@@ -96,7 +100,7 @@ int main(int argc, char *argv[]) {
 
         //test: indices should not be shuffled, due to ctor argument
         shuffle = false;
-        reader = make_unique<mnist_reader>(shuffle);
+        reader = std::make_unique<mnist_reader>(shuffle);
         if (readme.data_filename() != "") { reader->set_data_filename( readme.data_filename() ); }
         if (readme.label_filename() != "") { reader->set_label_filename( readme.label_filename() ); }
         if (readme.data_filedir() != "") { reader->set_file_dir( readme.data_filedir() ); }
@@ -105,7 +109,7 @@ int main(int argc, char *argv[]) {
 
         //test: set_shuffled_indices; indices should not be shuffled
         shuffle = true;
-        reader = make_unique<mnist_reader>(shuffle);
+        reader = std::make_unique<mnist_reader>(shuffle);
         if (readme.data_filename() != "") { reader->set_data_filename( readme.data_filename() ); }
         if (readme.label_filename() != "") { reader->set_label_filename( readme.label_filename() ); }
         if (readme.data_filedir() != "") { reader->set_file_dir( readme.data_filedir() ); }

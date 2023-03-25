@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,12 +27,12 @@
 #ifndef LBANN_PROTO_DATATYPE_HELPERS_HPP_INCLUDED
 #define LBANN_PROTO_DATATYPE_HELPERS_HPP_INCLUDED
 
-#include <model.pb.h>
+#include "lbann/base.hpp"
 
-namespace lbann
-{
-namespace proto
-{
+#include "lbann/proto/datatype.pb.h"
+
+namespace lbann {
+namespace proto {
 
 template <typename T>
 struct TypeToProtoDataType;
@@ -47,6 +47,18 @@ template <>
 struct TypeToProtoDataType<double>
 {
   static constexpr auto value = lbann_data::DOUBLE;
+};
+
+template <>
+struct TypeToProtoDataType<El::Complex<float>>
+{
+  static constexpr auto value = lbann_data::COMPLEX_FLOAT;
+};
+
+template <>
+struct TypeToProtoDataType<El::Complex<double>>
+{
+  static constexpr auto value = lbann_data::COMPLEX_DOUBLE;
 };
 
 #ifdef LBANN_HAS_HALF
@@ -65,6 +77,42 @@ struct TypeToProtoDataType<fp16>
 };
 #endif // LBANN_HAS_GPU_FP16
 
-}// namespace proto
-}// namespace lbann
+template <typename T>
+auto ProtoDataType = TypeToProtoDataType<T>::value;
+
+template <El::Device D>
+struct DeviceToProtoDevice;
+
+template <>
+struct DeviceToProtoDevice<El::Device::CPU>
+{
+  static constexpr auto value = lbann_data::CPU;
+};
+
+#ifdef LBANN_HAS_GPU
+template <>
+struct DeviceToProtoDevice<El::Device::GPU>
+{
+  static constexpr auto value = lbann_data::GPU;
+};
+#endif
+
+template <El::Device D>
+constexpr auto ProtoDevice = DeviceToProtoDevice<D>::value;
+
+inline constexpr lbann_data::DeviceAllocation
+resolve_default_device(lbann_data::DeviceAllocation in)
+{
+  constexpr auto default_device =
+#ifdef LBANN_HAS_GPU
+    ProtoDevice<El::Device::GPU>
+#else
+    ProtoDevice<El::Device::CPU>
+#endif // LBANN HAS_GPU
+    ;
+  return (in == lbann_data::DEFAULT_DEVICE ? default_device : in);
+}
+
+} // namespace proto
+} // namespace lbann
 #endif /* LBANN_PROTO_DATATYPE_HELPERS_HPP_INCLUDED */

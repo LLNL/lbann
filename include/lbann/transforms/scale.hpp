@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,7 +37,8 @@ namespace lbann {
 namespace transform {
 
 /** Scale data by a constant. */
-class scale : public transform {
+class scale : public transform
+{
 public:
   /** Scale all data by scale_val. */
   scale(float scale_val) : transform(), m_scale(scale_val) {}
@@ -46,7 +47,9 @@ public:
 
   std::string get_type() const override { return "scale"; }
 
-  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data,
+             std::vector<size_t>& dims) override;
+
 private:
   /** Amount to scale data by. */
   float m_scale;
@@ -56,7 +59,7 @@ private:
 std::unique_ptr<transform>
 build_scale_transform_from_pbuf(google::protobuf::Message const&);
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann
 
-#endif  // LBANN_TRANSFORMS_SCALE_HPP_INCLUDED
+#endif // LBANN_TRANSFORMS_SCALE_HPP_INCLUDED

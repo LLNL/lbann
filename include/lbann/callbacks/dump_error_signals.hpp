@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,42 +37,47 @@ namespace callback {
  *  dump the gradients w.r.t. inputs (the "error signals") to a
  *  human-readable ASCII file. This is slow and produces a lot of output.
  */
-class dump_error_signals : public callback_base {
- public:
-
+class dump_error_signals : public callback_base
+{
+public:
   /** Constructor.
    *  @param basename The basename for output files.
    */
   dump_error_signals(std::string basename = "")
-    : callback_base(), m_basename(basename) {}
-  dump_error_signals* copy() const override {
+    : callback_base(), m_basename(basename)
+  {}
+  dump_error_signals* copy() const override
+  {
     return new dump_error_signals(*this);
   }
   std::string name() const override { return "dump error signals"; }
 
   /** Write error signals to file after each backward prop step. */
-  void on_backward_prop_end(model *m, Layer *l) override;
+  void on_backward_prop_end(model* m, Layer* l) override;
 
   /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
- private:
+private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   /** Basename for output files. */
   std::string m_basename;
-
 };
 
 // Builder function
-std::unique_ptr<callback_base>
-build_dump_error_signals_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+std::unique_ptr<callback_base> build_dump_error_signals_callback_from_pbuf(
+  const google::protobuf::Message&,
+  std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_DUMP_ERROR_SIGNALS_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_DUMP_ERROR_SIGNALS_HPP_INCLUDED

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,7 +26,9 @@
 #ifndef LBANN_EXECUTION_ALGORITHMS_LTFB_EXECUTION_CONTEXT_HPP_INCLUDED
 #define LBANN_EXECUTION_ALGORITHMS_LTFB_EXECUTION_CONTEXT_HPP_INCLUDED
 
-#include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/utils/exception.hpp"
+
 #include <memory>
 #include <string>
 
@@ -42,16 +44,16 @@ namespace ltfb {
  *  object. My inclination is that it really doesn't matter and either
  *  would work.
  */
-class ExecutionContext final : public lbann::execution_context
+class LTFBExecutionContext final : public lbann::ExecutionContext
 {
 public:
-  ExecutionContext() = default;
-  ~ExecutionContext() = default;
+  LTFBExecutionContext() = default;
+  ~LTFBExecutionContext() = default;
 
   /** Get a "clean" execution_context of the same type. */
-  std::unique_ptr<lbann::execution_context> get_new() const override
+  std::unique_ptr<lbann::ExecutionContext> get_new() const override
   {
-    return std::make_unique<ExecutionContext>();
+    return std::make_unique<LTFBExecutionContext>();
   }
 
   /** @brief Get a string identifying the type of execution context.
@@ -70,7 +72,8 @@ public:
   ///@{
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive& ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   /** @brief Checkpoint exection_context to a shared checkpoint. */
   void save_to_checkpoint_shared(persist& p) override

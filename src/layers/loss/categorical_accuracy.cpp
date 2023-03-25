@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,9 +26,8 @@
 
 #define LBANN_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
 #include "lbann/comm_impl.hpp"
-#include "lbann/layers/loss/categorical_accuracy.hpp"
+#include "lbann/layers/loss/categorical_accuracy_impl.hpp"
 #include <limits>
-
 
 namespace lbann {
 
@@ -39,7 +38,8 @@ template <typename TensorDataType>
 void fp_cpu(lbann_comm& comm,
             const El::AbstractDistMatrix<TensorDataType>& predictions,
             const El::AbstractDistMatrix<TensorDataType>& labels,
-            El::AbstractDistMatrix<TensorDataType>& loss) {
+            El::AbstractDistMatrix<TensorDataType>& loss)
+{
 
   // Local matrices
   const auto& local_predictions = predictions.LockedMatrix();
@@ -50,7 +50,9 @@ void fp_cpu(lbann_comm& comm,
   const auto& height = predictions.Height();
   const auto& local_height = local_predictions.Height();
   const auto& local_width = local_predictions.Width();
-  if (local_width < 1) { return; }
+  if (local_width < 1) {
+    return;
+  }
 
   // Column communicator
   auto&& col_comm = predictions.ColComm();
@@ -83,21 +85,30 @@ void fp_cpu(lbann_comm& comm,
   std::vector<El::Int> gathered_prediction_inds;
   if (col_comm_size > 1) {
     if (col_comm_rank != col_comm_root) {
-      comm.gather(prediction_vals.data(), prediction_vals.size(),
-                  col_comm_root, col_comm,
+      comm.gather(prediction_vals.data(),
+                  prediction_vals.size(),
+                  col_comm_root,
+                  col_comm,
                   El::SyncInfo<El::Device::CPU>{});
-      comm.gather(prediction_inds.data(), prediction_inds.size(),
-                  col_comm_root, col_comm,
+      comm.gather(prediction_inds.data(),
+                  prediction_inds.size(),
+                  col_comm_root,
+                  col_comm,
                   El::SyncInfo<El::Device::CPU>{});
-    } else {
+    }
+    else {
       gathered_prediction_vals.resize(prediction_vals.size() * col_comm_size);
       gathered_prediction_inds.resize(prediction_inds.size() * col_comm_size);
-      comm.gather(prediction_vals.data(), prediction_vals.size(),
+      comm.gather(prediction_vals.data(),
+                  prediction_vals.size(),
                   gathered_prediction_vals.data(),
-                  col_comm, El::SyncInfo<El::Device::CPU>{});
-      comm.gather(prediction_inds.data(), prediction_inds.size(),
+                  col_comm,
+                  El::SyncInfo<El::Device::CPU>{});
+      comm.gather(prediction_inds.data(),
+                  prediction_inds.size(),
                   gathered_prediction_inds.data(),
-                  col_comm, El::SyncInfo<El::Device::CPU>{});
+                  col_comm,
+                  El::SyncInfo<El::Device::CPU>{});
     }
   }
 
@@ -126,21 +137,30 @@ void fp_cpu(lbann_comm& comm,
   std::vector<El::Int> gathered_label_inds;
   if (col_comm_size > 1) {
     if (col_comm_rank != col_comm_root) {
-      comm.gather(label_vals.data(), label_vals.size(),
-                  col_comm_root, col_comm,
+      comm.gather(label_vals.data(),
+                  label_vals.size(),
+                  col_comm_root,
+                  col_comm,
                   El::SyncInfo<El::Device::CPU>{});
-      comm.gather(label_inds.data(), label_inds.size(),
-                  col_comm_root, col_comm,
+      comm.gather(label_inds.data(),
+                  label_inds.size(),
+                  col_comm_root,
+                  col_comm,
                   El::SyncInfo<El::Device::CPU>{});
-    } else {
+    }
+    else {
       gathered_label_vals.resize(label_vals.size() * col_comm_size);
       gathered_label_inds.resize(label_inds.size() * col_comm_size);
-      comm.gather(label_vals.data(), label_vals.size(),
+      comm.gather(label_vals.data(),
+                  label_vals.size(),
                   gathered_label_vals.data(),
-                  col_comm, El::SyncInfo<El::Device::CPU>{});
-      comm.gather(label_inds.data(), label_inds.size(),
+                  col_comm,
+                  El::SyncInfo<El::Device::CPU>{});
+      comm.gather(label_inds.data(),
+                  label_inds.size(),
                   gathered_label_inds.data(),
-                  col_comm, El::SyncInfo<El::Device::CPU>{});
+                  col_comm,
+                  El::SyncInfo<El::Device::CPU>{});
     }
   }
 
@@ -190,28 +210,31 @@ void fp_cpu(lbann_comm& comm,
   if (col_comm_rank == col_comm_root) {
     LBANN_OMP_PARALLEL_FOR
     for (El::Int col = 0; col < local_width; ++col) {
-      local_loss(0, col) = (prediction_inds[col] == label_inds[col] ?
-                            El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero());
+      local_loss(0, col) = (prediction_inds[col] == label_inds[col]
+                              ? El::TypeTraits<TensorDataType>::One()
+                              : El::TypeTraits<TensorDataType>::Zero());
     }
   }
-
 }
 
 } // namespace
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void categorical_accuracy_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+void categorical_accuracy_layer<TensorDataType, T_layout, Dev>::fp_compute()
+{
   fp_cpu(*this->get_comm(),
          this->get_prev_activations(0),
          this->get_prev_activations(1),
          this->get_activations());
 }
 
-#define PROTO(T)                                      \
-  template class categorical_accuracy_layer<          \
-    T, data_layout::DATA_PARALLEL, El::Device::CPU>;  \
-  template class categorical_accuracy_layer<          \
-    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  template class categorical_accuracy_layer<T,                                 \
+                                            data_layout::DATA_PARALLEL,        \
+                                            El::Device::CPU>;                  \
+  template class categorical_accuracy_layer<T,                                 \
+                                            data_layout::MODEL_PARALLEL,       \
+                                            El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

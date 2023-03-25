@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,7 +28,6 @@
 
 #include "execution_context.hpp"
 
-#include "lbann/proto/helpers.hpp"
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/factory.hpp"
 #include "lbann/utils/make_abstract.hpp"
@@ -76,18 +75,18 @@ public:
    *  @param[in,out] dc The data coordinator for this trainer.
    */
   virtual void select_next(model& m,
-                           ltfb::ExecutionContext& ctxt,
+                           ltfb::LTFBExecutionContext& ctxt,
                            data_coordinator& dc) const = 0;
 }; // class MetaLearningStrategy
 
 /** @brief A factory for constructing MetaLearningStrategy objects from Protobuf
  *         messages.
  */
-using MetaLearningStrategyFactory = generic_factory<
-  MetaLearningStrategy,
-  std::string,
-  proto::generate_builder_type<MetaLearningStrategy,
-                               google::protobuf::Message const&>>;
+using MetaLearningStrategyFactory =
+  generic_factory<MetaLearningStrategy,
+                  std::string,
+                  generate_builder_type<MetaLearningStrategy,
+                                        google::protobuf::Message const&>>;
 
 using MetaLearningStrategyKey = MetaLearningStrategyFactory::id_type;
 using MetaLearningStrategyBuilder = MetaLearningStrategyFactory::builder_type;

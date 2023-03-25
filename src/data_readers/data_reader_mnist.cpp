@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,49 +33,58 @@
 
 namespace lbann {
 
-mnist_reader::mnist_reader(bool shuffle)
-  : image_data_reader(shuffle) {
+mnist_reader::mnist_reader(bool shuffle) : image_data_reader(shuffle)
+{
   set_defaults();
 }
 
-mnist_reader::mnist_reader()
-  : mnist_reader(true) {}
+mnist_reader::mnist_reader() : mnist_reader(true) {}
 
-void mnist_reader::set_defaults() {
+void mnist_reader::set_defaults()
+{
   m_image_width = 28;
   m_image_height = 28;
   m_image_num_channels = 1;
   set_linearized_image_size();
   m_num_labels = 10;
-  m_supported_input_types[input_data_type::LABELS] = true;
+  m_supported_input_types[INPUT_DATA_TYPE_LABELS] = true;
 }
 
-bool mnist_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+bool mnist_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx)
+{
   int pixelcount = m_image_width * m_image_height;
   std::vector<unsigned char>& tmp = m_image_data[data_id];
 
   for (int p = 0; p < pixelcount; p++) {
-    X.Set(p, mb_idx, tmp[p+1]);
+    X.Set(p, mb_idx, tmp[p + 1]);
   }
 
   auto pixel_col = X(El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
-  std::vector<size_t> dims = {
-    1ull,
-    static_cast<size_t>(m_image_height),
-    static_cast<size_t>(m_image_width)};
+  std::vector<size_t> dims = {1ull,
+                              static_cast<size_t>(m_image_height),
+                              static_cast<size_t>(m_image_width)};
   m_transform_pipeline.apply(pixel_col, dims);
   return true;
 }
 
-bool mnist_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
-  if(!m_gan_labelling) { //default
+bool mnist_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx)
+{
+  if (!m_gan_labelling) { // default
     unsigned char label = m_image_data[data_id][0];
     Y.Set(label, mb_idx, 1);
-  } else {
-    if(m_gan_label_value) Y.Set(m_gan_label_value,mb_idx,1); //fake sample is set to 1; adversarial model
-    else { //fake sample (second half of minibatch is set to 0;discriminator model
-      //mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
-      mb_idx < (get_current_mini_batch_size()/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
+  }
+  else {
+    if (m_gan_label_value)
+      Y.Set(m_gan_label_value,
+            mb_idx,
+            1); // fake sample is set to 1; adversarial model
+    else { // fake sample (second half of minibatch is set to 0;discriminator
+           // model
+      // mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) :
+      // Y.Set(m_gan_label_value,mb_idx,1);
+      mb_idx < (get_current_mini_batch_size() / 2)
+        ? Y.Set(1, mb_idx, 1)
+        : Y.Set(m_gan_label_value, mb_idx, 1);
     }
   }
   return true;
@@ -83,11 +92,14 @@ bool mnist_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
 
 //===================================================
 
-void load_mnist_data(const std::string imagepath, const std::string labelpath,
-  const int m_first_n, std::vector<std::vector<unsigned char> >& m_image_data) {
+void load_mnist_data(const std::string imagepath,
+                     const std::string labelpath,
+                     const int m_first_n,
+                     std::vector<std::vector<unsigned char>>& m_image_data)
+{
 
   // read labels
-  FILE *fplbl = fopen(labelpath.c_str(), "rb");
+  FILE* fplbl = fopen(labelpath.c_str(), "rb");
   if (!fplbl) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
@@ -101,7 +113,7 @@ void load_mnist_data(const std::string imagepath, const std::string labelpath,
   __swapEndianInt((unsigned int&)numitems1);
 
   // read images
-  FILE *fpimg = fopen(imagepath.c_str(), "rb");
+  FILE* fpimg = fopen(imagepath.c_str(), "rb");
   if (!fpimg) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
@@ -121,9 +133,9 @@ void load_mnist_data(const std::string imagepath, const std::string labelpath,
   if (numitems1 != numitems2) {
     fclose(fplbl);
     fclose(fpimg);
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: load_mnist_data: numitems1 != numitems2");
+    throw lbann_exception(std::string{} + __FILE__ + " " +
+                          std::to_string(__LINE__) +
+                          " :: load_mnist_data: numitems1 != numitems2");
   }
 
   if (m_first_n > 0) {
@@ -133,7 +145,7 @@ void load_mnist_data(const std::string imagepath, const std::string labelpath,
   // set to array
   m_image_data.resize(numitems1);
   for (int n = 0; n < numitems1; n++) {
-    m_image_data[n].resize(1+(imgwidth * imgheight));
+    m_image_data[n].resize(1 + (imgwidth * imgheight));
     fread(&m_image_data[n][0], 1, 1, fplbl);
     fread(&m_image_data[n][1], imgwidth * imgheight, 1, fpimg);
   }
@@ -141,13 +153,15 @@ void load_mnist_data(const std::string imagepath, const std::string labelpath,
   fclose(fplbl);
 }
 
-void mnist_reader::load() {
-  if (is_master()) {
+void mnist_reader::load()
+{
+  if (get_comm()->am_world_master()) {
     std::cout << "starting lbann::mnist_reader::load\n";
   }
   m_image_data.clear();
 
-  if(m_gan_labelling) m_num_labels=2;
+  if (m_gan_labelling)
+    m_num_labels = 2;
 
   const std::string FileDir = get_file_dir();
   const std::string ImageFile = get_data_filename();
@@ -157,7 +171,7 @@ void mnist_reader::load() {
   const std::string imagepath = FileDir + "/" + ImageFile;
   const std::string labelpath = FileDir + "/" + LabelFile;
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "read labels!\n";
   }
 
@@ -174,12 +188,12 @@ void mnist_reader::load() {
   for (size_t n = 0; n < m_shuffled_indices.size(); n++) {
     m_shuffled_indices[n] = n;
   }
-  if (is_master()) {
-    std::cout << "calling select_subset_of_data; m_shuffled_indices.size: " <<
-      m_shuffled_indices.size() << std::endl;
+  if (get_comm()->am_world_master()) {
+    std::cout << "calling select_subset_of_data; m_shuffled_indices.size: "
+              << m_shuffled_indices.size() << std::endl;
   }
   resize_shuffled_indices();
   select_subset_of_data();
 }
 
-}  // namespace lbann
+} // namespace lbann

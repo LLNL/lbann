@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,88 +24,81 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/utils/lbann_library.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/lbann_library.hpp"
 
-#include "lbann/proto/factories.hpp"
-#include "lbann/utils/omp_diagnostics.hpp"
-#include "lbann/utils/threads/thread_utils.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/callbacks/dump_weights.hpp"
-#include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/load_model.hpp"
+#include "lbann/callbacks/save_model.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/proto/factories.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/utils/threads/thread_utils.hpp"
 
+#include "lbann/proto/lbann.pb.h"
+#include "lbann/proto/model.pb.h"
 #include <cstdlib>
-#include <lbann.pb.h>
 #include <memory>
-#include <model.pb.h>
 
 namespace lbann {
 
-void construct_std_options() {
-  auto& arg_parser = global_argument_parser();
-  arg_parser.add_option(MAX_RNG_SEEDS_DISPLAY,
-                        {"--rng_seeds_per_trainer_to_display"},
-                        utils::ENV("LBANN_RNG_SEEDS_PER_TRAINER_TO_DISPLAY"),
-                        "Limit how many random seeds LBANN should display "
-                        "from each trainer",
-                        2);
-  arg_parser.add_option(NUM_IO_THREADS,
-                        {"--num_io_threads"},
-                        utils::ENV("LBANN_NUM_IO_THREADS"),
-                        "Number of threads available to both I/O and "
-                        "initial data transformations for each rank.",
-                        64);
-  arg_parser.add_option(NUM_TRAIN_SAMPLES,
-                        {"--num_train_samples"},
-                        utils::ENV("LBANN_NUM_TRAIN_SAMPLES"),
-                        "Set the number of training samples to ingest.",
-                        0);
-  arg_parser.add_option(NUM_VALIDATE_SAMPLES,
-                        {"--num_validate_samples"},
-                        utils::ENV("LBANN_NUM_VALIDATE_SAMPLES"),
-                        "Set the number of validate samples to ingest.",
-                        0);
-  arg_parser.add_option(NUM_TEST_SAMPLES,
-                        {"--num_test_samples"},
-                        utils::ENV("LBANN_NUM_TEST_SAMPLES"),
-                        "Set the number of testing samples to ingest.",
-                        0);
-  arg_parser.add_flag(ALLOW_GLOBAL_STATISTICS,
-                      {"--ltfb_allow_global_statistics"},
-                      utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
-                      "Allow the print_statistics callback to report "
-                      "global (inter-trainer) summary statistics.");
-  arg_parser.add_option(PROCS_PER_TRAINER,
-                        {"--procs_per_trainer"},
-                        utils::ENV("LBANN_PROCS_PER_TRAINER"),
-                        "Number of MPI ranks per LBANN trainer, "
-                        "If the field is not set (or set to 0) then "
-                        " all MPI ranks are assigned to one trainer."
-                        " The number of processes per trainer must "
-                        " evenly divide the total number of MPI ranks. "
-                        " The number of resulting trainers is "
-                        " num_procs / procs_per_trainer.",
-                        0);
-  arg_parser.add_option(TRAINER_GRID_HEIGHT,
-                        {"--trainer_grid_height"},
-                        utils::ENV("LBANN_TRAINER_GRID_HEIGHT"),
-                        "Height of 2D process grid for each trainer. "
-                        "Default grid is approximately square.",
-                        -1);
+// Creates a datareader metadata to get around the need for an actual
+// datareader in inference only mode
+auto mock_dr_metadata(std::vector<int> input_dims, std::vector<int> output_dims)
+{
+  DataReaderMetaData drmd;
+  auto& md_dims = drmd.data_dims;
+  md_dims[data_reader_target_mode::INPUT] = input_dims;
+  md_dims[data_reader_target_mode::CLASSIFICATION] = output_dims;
+  return drmd;
+}
+
+// Loads a model from checkpoint and sets up model for inference
+std::unique_ptr<model> load_inference_model(lbann_comm* lc,
+                                            std::string cp_dir,
+                                            int mbs,
+                                            std::vector<int> input_dims,
+                                            std::vector<int> output_dims)
+{
+  persist p;
+  p.open_restart(cp_dir.c_str());
+  auto m = std::make_unique<model>(lc, nullptr, nullptr);
+  m->load_from_checkpoint_shared(p);
+  p.close_restart();
+
+  // Must use a mock datareader with input and output dims for setup
+  // TODO: avoid need for datareader altogether
+  auto dr_metadata = mock_dr_metadata(input_dims, output_dims);
+  m->setup(mbs, dr_metadata, get_trainer().get_grids());
+
+  return m;
 }
 
 /// Split the MPI communicator into trainers
 /// Return the
-int allocate_trainer_resources(lbann_comm *comm) {
+int allocate_trainer_resources(lbann_comm* comm)
+{
   auto& arg_parser = global_argument_parser();
-  int procs_per_trainer = arg_parser.get<int>(PROCS_PER_TRAINER);
-  int trainer_grid_height = arg_parser.get<int>(TRAINER_GRID_HEIGHT);
+  int procs_per_trainer = arg_parser.get<int>(LBANN_OPTION_PROCS_PER_TRAINER);
+  int trainer_grid_height =
+    arg_parser.get<int>(LBANN_OPTION_TRAINER_GRID_HEIGHT);
+  int trainer_primary_grid_size =
+    arg_parser.get<int>(LBANN_OPTION_TRAINER_PRIMARY_GRID_SIZE);
+  bool trainer_create_two_models =
+    arg_parser.get<bool>(LBANN_OPTION_TRAINER_CREATE_TWO_MODELS);
+  bool trainer_async_comm_subgrid =
+    arg_parser.get<bool>(LBANN_OPTION_TRAINER_ENABLE_SUBGRID_ASYNC_COMM);
+  bool trainer_topo_aware_subgrid =
+    arg_parser.get<bool>(LBANN_OPTION_TRAINER_ENABLE_TOPO_AWARE_SUBGRID);
 
   if (procs_per_trainer == 0) {
     procs_per_trainer = comm->get_procs_in_world();
@@ -114,9 +107,17 @@ int allocate_trainer_resources(lbann_comm *comm) {
   // Set up the communicator and get the grid based on the commandline spec.
   // We do not currently support splitting different trainers in different ways,
   // as this implies different grids.
-  if (procs_per_trainer != comm->get_procs_per_trainer()
-      || trainer_grid_height != comm->get_trainer_grid().Height()) {
+  if (procs_per_trainer != comm->get_procs_per_trainer() ||
+      trainer_grid_height != comm->get_trainer_grid().Height()) {
     comm->split_trainers(procs_per_trainer, trainer_grid_height);
+  }
+
+  // Split trainer when sub-grid parallelism is enabled
+  if (trainer_primary_grid_size > 0) {
+    comm->split_trainer_grid(trainer_primary_grid_size,
+                             trainer_create_two_models,
+                             trainer_async_comm_subgrid,
+                             trainer_topo_aware_subgrid);
   }
 
   return procs_per_trainer;
@@ -130,41 +131,48 @@ void cleanup_trainer_atexit() { global_trainer_ = nullptr; }
 
 } // namespace
 
-trainer& get_trainer() {
+trainer& get_trainer()
+{
   LBANN_ASSERT(global_trainer_);
   return *global_trainer_;
 }
-trainer const& get_const_trainer() {
+trainer const& get_const_trainer()
+{
   LBANN_ASSERT(global_trainer_);
   return *global_trainer_;
 }
 
+void finalize_trainer() { global_trainer_.reset(); }
+
 /// Construct a trainer that contains a lbann comm object and threadpool
-trainer& construct_trainer(lbann_comm *comm,
+trainer& construct_trainer(lbann_comm* comm,
                            lbann_data::Trainer* pb_trainer,
-                           lbann_data::LbannPB &pb,
-                           options *opts) {
-  if (pb_trainer->num_parallel_readers() > comm->get_procs_per_trainer()) {
-    pb_trainer->set_num_parallel_readers(comm->get_procs_per_trainer());
+                           lbann_data::LbannPB& pb)
+{
+  int const procs_per_trainer = comm->get_procs_per_trainer();
+  if (pb_trainer->num_parallel_readers() > procs_per_trainer) {
+    pb_trainer->set_num_parallel_readers(procs_per_trainer);
   }
+  auto const& arg_parser = global_argument_parser();
 
   // Adjust the number of parallel readers; this may be adjusted
   // after calling split_trainers()
   // set_num_parallel_readers(*comm, pb);
 
   // Check to see if the model wants to reduce the I/O parallelism
-  bool serialized_io = false;
-  if(pb_trainer->serialize_io()) {
-    std::cout << "Trainer " << pb_trainer->name() << " serialized the I/O threads" << std::endl;
-    serialized_io = true;
+  bool const serialized_io = pb_trainer->serialize_io();
+  if (serialized_io) {
+    std::cout << "Trainer " << pb_trainer->name()
+              << " serialized the I/O threads" << std::endl;
   }
 
   // Initalize a per-trainer I/O thread pool
-  std::unique_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm, opts, serialized_io);
+  std::unique_ptr<thread_pool> io_thread_pool =
+    construct_io_thread_pool(comm, serialized_io);
 
   // Setup I/O threads
-  auto io_threads_per_process = io_thread_pool->get_num_threads();
-  auto io_threads_offset = io_thread_pool->get_threads_offset();
+  auto const io_threads_per_process = io_thread_pool->get_num_threads();
+  auto const io_threads_offset = io_thread_pool->get_threads_offset();
 
   // Set algorithmic blocksize in Hydrogen
   if (pb_trainer->hydrogen_block_size() > 0) {
@@ -190,27 +198,31 @@ trainer& construct_trainer(lbann_comm *comm,
 
   // If the checkpoint directory has been overridden reset it before
   // setting up the trainer
-  if (opts && opts->has_string("ckpt_dir")) {
+  if (arg_parser.get<std::string>(LBANN_OPTION_CKPT_DIR) != "") {
     for (auto&& c : global_trainer_->get_callbacks()) {
       {
-        auto* cb = dynamic_cast<callback::checkpoint*>(c);
-        if(cb != nullptr) {
-          cb->set_checkpoint_dir(opts->get_string("ckpt_dir"));
-          if(comm->am_trainer_master()) {
-            std::cout << "Setting the checkpoint directory to " << cb->get_checkpoint_dir() << std::endl;
+        auto* const cb = dynamic_cast<callback::checkpoint*>(c);
+        if (cb != nullptr) {
+          cb->set_checkpoint_dir(
+            arg_parser.get<std::string>(LBANN_OPTION_CKPT_DIR));
+          if (comm->am_trainer_master()) {
+            std::cout << "Setting the checkpoint directory to "
+                      << cb->get_checkpoint_dir() << std::endl;
           }
         }
       }
     }
   }
-  if (opts && opts->has_string("restart_dir")) {
+  if (arg_parser.get<std::string>(LBANN_OPTION_RESTART_DIR) != "") {
     for (auto&& c : global_trainer_->get_callbacks()) {
       {
-        auto* cb = dynamic_cast<callback::checkpoint*>(c);
-        if(cb != nullptr) {
-          cb->set_restart_dir(opts->get_string("restart_dir"));
-          if(comm->am_trainer_master()) {
-            std::cout << "Setting the restart directory to " << cb->get_restart_dir() << std::endl;
+        auto* const cb = dynamic_cast<callback::checkpoint*>(c);
+        if (cb != nullptr) {
+          cb->set_restart_dir(
+            arg_parser.get<std::string>(LBANN_OPTION_RESTART_DIR));
+          if (comm->am_trainer_master()) {
+            std::cout << "Setting the restart directory to "
+                      << cb->get_restart_dir() << std::endl;
           }
         }
       }
@@ -218,12 +230,9 @@ trainer& construct_trainer(lbann_comm *comm,
   }
 
   // Root of the random seed tree
-  int root_random_seed = lbann_default_random_seed;
-
-  // Change random seed if requested
-  if (pb_trainer->random_seed() > 0) {
-    root_random_seed = pb_trainer->random_seed();
-  }
+  int const root_random_seed =
+    (pb_trainer->random_seed() ? pb_trainer->random_seed()
+                               : lbann_default_random_seed);
 
   // Random seed used for the general RNGs
   int random_seed = root_random_seed;
@@ -234,26 +243,19 @@ trainer& construct_trainer(lbann_comm *comm,
 #ifndef LBANN_DETERMINISTIC
   if (!pb_trainer->random_init_trainers_identically()) {
     random_seed = hash_combine(random_seed, comm->get_trainer_rank());
-    // Also update the data sequence random seed
     data_seq_random_seed = random_seed;
   }
-
-  // Under normal conditions, reinitialize the random number generator so
-  // that regularization techniques (e.g. dropout) generate unique patterns
-  // on different ranks.
-  // At this point the data sequence random seed is no longer updated
-  random_seed = hash_combine(random_seed, comm->get_rank_in_world());
 #else
-  if(comm->am_world_master()) {
-    std::cout <<
-      "--------------------------------------------------------------------------------------------------------------------\n"
-      "ALERT: executing with LBANN_DETERMINISTIC flag to minimize reduce numerical variance -- performance will be degraded\n"
-      "--------------------------------------------------------------------------------------------------------------------\n";
+  if (comm->am_world_master()) {
+    std::cout << std::string(116, '-') << '\n'
+              << "ALERT: executing with LBANN_DETERMINISTIC flag to minimize "
+                 "reduce numerical variance -- performance will be degraded\n"
+              << std::string(116, '-') << std::endl;
   }
   if (!pb_trainer->random_init_trainers_identically()) {
-    if(comm->am_trainer_master()) {
-      std::cout << "WARNING: forcing 'random_init_trainers_identically' " <<
-        "due to sequential consistency" << std::endl;
+    if (comm->am_trainer_master()) {
+      std::cout << "WARNING: forcing 'random_init_trainers_identically' "
+                << "due to sequential consistency" << std::endl;
     }
   }
 #endif
@@ -262,82 +264,144 @@ trainer& construct_trainer(lbann_comm *comm,
   init_random(random_seed, io_threads_per_process);
   init_data_seq_random(data_seq_random_seed);
   init_ltfb_random(root_random_seed);
-  global_trainer_->set_random_seeds(root_random_seed, random_seed, data_seq_random_seed);
+  global_trainer_->set_random_seeds(root_random_seed,
+                                    random_seed,
+                                    data_seq_random_seed);
 
-  // Collect everyone's random seeds
-  std::vector<int> root_random_seeds(comm->get_procs_in_world());
-  comm->world_all_gather(root_random_seed, root_random_seeds);
-  std::vector<int> random_seeds(comm->get_procs_in_world());
-  comm->world_all_gather(random_seed, random_seeds);
-  std::vector<int> data_seq_random_seeds(comm->get_procs_in_world());
-  comm->world_all_gather(data_seq_random_seed, data_seq_random_seeds);
+  bool const allow_global_statistics =
+    arg_parser.get<bool>(LBANN_OPTION_ALLOW_MULTITRAINER_GLOBAL_STATISTICS);
+  bool const multitrainer_verbose =
+    arg_parser.get<bool>(LBANN_OPTION_MULTITRAINER_VERBOSE);
+  std::vector<int> root_random_seeds;
+  std::vector<int> random_seeds;
+  std::vector<int> data_seq_random_seeds;
+  if (allow_global_statistics && multitrainer_verbose) {
+    // Collect everyone's random seeds
+    root_random_seeds.resize(comm->get_procs_in_world());
+    random_seeds.resize(comm->get_procs_in_world());
+    data_seq_random_seeds.resize(comm->get_procs_in_world());
+    comm->world_all_gather(root_random_seed, root_random_seeds);
+    comm->world_all_gather(random_seed, random_seeds);
+    comm->world_all_gather(data_seq_random_seed, data_seq_random_seeds);
+  }
+  else {
+    // Collect random seeds from everyone in the trainer
+    root_random_seeds.resize(procs_per_trainer);
+    random_seeds.resize(procs_per_trainer);
+    data_seq_random_seeds.resize(procs_per_trainer);
+    comm->trainer_all_gather(root_random_seed, root_random_seeds);
+    comm->trainer_all_gather(random_seed, random_seeds);
+    comm->trainer_all_gather(data_seq_random_seed, data_seq_random_seeds);
+  }
 
-  // Update the sample lists to accomodate multi-trainer / multi-model specification
+  // Update the sample lists to accomodate multi-trainer / multi-model
+  // specification
   customize_data_readers_sample_list(*comm, pb);
 
   // Initialize data readers
   //@todo: code not in place for correctly handling image preprocessing
-  std::map<execution_mode, generic_data_reader *> data_readers;
+  std::map<execution_mode, generic_data_reader*> data_readers;
   init_data_readers(comm, pb, data_readers);
 
   global_trainer_->setup(std::move(io_thread_pool), data_readers);
 
-  if(opts->get_bool("disable_background_io_activity")) {
+  if (arg_parser.get<bool>(LBANN_OPTION_DISABLE_BACKGROUND_IO_ACTIVITY)) {
     global_trainer_->allow_background_io_activity(false);
   }
 
+  // Create sub-grids in block order
+  const int num_subgrids_block =
+    arg_parser.get<int>(LBANN_OPTION_NUM_SUBGRIDS_BLOCK_ORDER);
+  if (num_subgrids_block > 0) {
+
+    // Check sub-grid size
+    const int trainer_size = comm->get_procs_per_trainer();
+    const int subgrid_size = trainer_size / num_subgrids_block;
+    if (trainer_size != subgrid_size * num_subgrids_block) {
+      LBANN_ERROR("attempted to divide a trainer grid with ",
+                  trainer_size,
+                  " processes ",
+                  "into ",
+                  num_subgrids_block,
+                  " equally-sized sub-grids");
+    }
+
+    // Construct sub-grids
+    std::vector<int> trainer_ranks(subgrid_size);
+    for (int root_rank = 0; root_rank < trainer_size;
+         root_rank += subgrid_size) {
+      std::iota(trainer_ranks.begin(), trainer_ranks.end(), root_rank);
+      El::mpi::Comm trainer_comm;
+      El::mpi::Group trainer_group, subgrid_group;
+      El::mpi::Dup(comm->get_trainer_comm(), trainer_comm);
+      El::mpi::CommGroup(trainer_comm, trainer_group);
+      El::mpi::Incl(trainer_group,
+                    trainer_ranks.size(),
+                    trainer_ranks.data(),
+                    subgrid_group);
+      global_trainer_->add_grid(make_unique<El::Grid>(std::move(trainer_comm),
+                                                      subgrid_group,
+                                                      subgrid_size,
+                                                      El::COLUMN_MAJOR));
+      El::mpi::Free(trainer_group);
+    }
+  }
 
   // Report useful information
   if (comm->am_world_master()) {
-    print_lbann_configuration(comm,
-                              io_threads_per_process,
-                              io_threads_offset);
-    std::cout << "\n"
-              << global_trainer_->get_description()
-              << std::endl;
+    print_lbann_configuration(comm, io_threads_per_process, io_threads_offset);
+    std::cout << "\n" << global_trainer_->get_description() << std::endl;
 
     // User feedback
-    print_parameters(*comm, pb, root_random_seeds, random_seeds, data_seq_random_seeds);
+    print_parameters(*comm,
+                     pb,
+                     root_random_seeds,
+                     random_seeds,
+                     data_seq_random_seeds);
   }
 
   return *global_trainer_;
 }
 
 // Setup I/O thread pool that is shared across all models
-  std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, options *opts, bool serialized_io) {
+std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm* comm,
+                                                      bool serialized_io)
+{
   int max_io_threads = num_free_cores_per_process(comm);
-  // Allow the trainer to override the command-line option or environment variable
-  if(serialized_io) {
+  // Allow the trainer to override the command-line option or environment
+  // variable
+  if (serialized_io) {
     max_io_threads = 1;
   }
 
   auto& arg_parser = global_argument_parser();
-  int req_io_threads = arg_parser.get<int>(NUM_IO_THREADS);
+  int req_io_threads = arg_parser.get<int>(LBANN_OPTION_NUM_IO_THREADS);
   int num_io_threads = std::max(std::min(max_io_threads, req_io_threads), 1);
 
   auto io_threads_offset = free_core_offset(comm);
 
-  if(comm->am_world_master()) {
-    std::cout << "\tNum. I/O Threads: " << num_io_threads <<
-      " (Limited to # Unused Compute Cores or 1) at offset "
-      << io_threads_offset << std::endl;
+  if (comm->am_world_master()) {
+    std::cout << "\tNum. I/O Threads: " << num_io_threads
+              << " (Limited to # Unused Compute Cores or 1) at offset "
+              << io_threads_offset << std::endl;
   }
 
-  auto io_thread_pool = make_unique<thread_pool>();
+  auto io_thread_pool = std::make_unique<thread_pool>();
   io_thread_pool->launch_pinned_threads(num_io_threads, io_threads_offset);
 
   return io_thread_pool;
 }
 
 std::unique_ptr<model> build_model_from_prototext(
-  int argc, char **argv,
+  int argc,
+  char** argv,
   const lbann_data::Trainer* pb_trainer,
-  lbann_data::LbannPB &pb,
-  lbann_comm *comm,
-  options *opts,
+  lbann_data::LbannPB& pb,
+  lbann_comm* comm,
   thread_pool& io_thread_pool,
   std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
-  int training_dr_linearized_data_size) {
+  int training_dr_linearized_data_size)
+{
 
   bool master = comm->am_world_master();
   if (master) {
@@ -346,21 +410,23 @@ std::unique_ptr<model> build_model_from_prototext(
 
   std::ostringstream err;
 
-  // Save info to file; this includes the complete prototext (with any over-rides
-  // from the cmd line) and various other info
+  // Save info to file; this includes the complete prototext (with any
+  // over-rides from the cmd line) and various other info
   save_session(*comm, argc, argv, pb);
 
   // Display how the OpenMP threads are provisioned
-  if (opts->has_string("print_affinity")) {
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(LBANN_OPTION_PRINT_AFFINITY)) {
     display_omp_setup();
   }
 
   // Initalize model
-  std::unique_ptr<model> ret_model = proto::construct_model(comm,
-                                                            training_dr_linearized_data_size,
-                                                            pb.optimizer(),
-                                                            pb.trainer(),
-                                                            pb.model());
+  std::unique_ptr<model> ret_model =
+    proto::construct_model(comm,
+                           training_dr_linearized_data_size,
+                           pb.optimizer(),
+                           pb.trainer(),
+                           pb.model());
 
   // Add the trainer's callbacks to the model
   for (auto&& c : shared_callbacks) {
@@ -369,105 +435,162 @@ std::unique_ptr<model> build_model_from_prototext(
 
   // If the checkpoint directory has been overridden reset it before
   // setting up the model
-  if (opts && opts->has_string("ckpt_dir")) {
+  if (arg_parser.get<std::string>(LBANN_OPTION_CKPT_DIR) != "") {
     for (auto&& c : ret_model->get_callbacks()) {
       {
         auto* cb = dynamic_cast<callback::dump_weights*>(c);
-        if(cb != nullptr) {
-          cb->set_target_dir(opts->get_string("ckpt_dir"));
-          if(comm->am_trainer_master()) {
-            std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
+        if (cb != nullptr) {
+          cb->set_target_dir(
+            arg_parser.get<std::string>(LBANN_OPTION_CKPT_DIR));
+          if (comm->am_trainer_master()) {
+            std::cout << "Setting the dump weights directory to "
+                      << cb->get_target_dir() << std::endl;
           }
         }
       }
       {
         auto* cb = dynamic_cast<callback::save_model*>(c);
-        if(cb != nullptr) {
-          cb->set_target_dir(opts->get_string("ckpt_dir"));
-          if(comm->am_trainer_master()) {
-            std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
+        if (cb != nullptr) {
+          cb->set_target_dir(
+            arg_parser.get<std::string>(LBANN_OPTION_CKPT_DIR));
+          if (comm->am_trainer_master()) {
+            std::cout << "Setting the dump weights directory to "
+                      << cb->get_target_dir() << std::endl;
           }
         }
       }
     }
   }
 
-  if (opts && opts->has_string("load_model_weights_dir")) {
+  if (arg_parser.get<std::string>(LBANN_OPTION_LOAD_MODEL_WEIGHTS_DIR) != "") {
     callback::load_model* cb = nullptr;
     for (auto&& c : ret_model->get_callbacks()) {
       cb = dynamic_cast<callback::load_model*>(c);
-      if(cb != nullptr) {
+      if (cb != nullptr) {
         break;
       }
     }
 
     std::string active_load_model_dir;
-    std::string load_model_dir = opts->get_string("load_model_weights_dir");
-    if(opts->get_bool("load_model_weights_dir_is_complete")) {
+    std::string load_model_dir =
+      arg_parser.get<std::string>(LBANN_OPTION_LOAD_MODEL_WEIGHTS_DIR);
+    if (arg_parser.get<bool>(LBANN_OPTION_LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE)) {
       active_load_model_dir = load_model_dir;
-    }else {
-      size_t epochLast = std::numeric_limits<size_t>::max();;
-      size_t stepLast = std::numeric_limits<size_t>::max();;
+    }
+    else {
+      size_t epochLast = std::numeric_limits<size_t>::max();
+      ;
+      size_t stepLast = std::numeric_limits<size_t>::max();
+      ;
       execution_mode mode = execution_mode::invalid;
       visitor_hook hook = visitor_hook::invalid;
-      active_load_model_dir = callback::get_last_shared_checkpoint_filename("sgd", load_model_dir);
+      active_load_model_dir =
+        callback::get_last_shared_checkpoint_filename("sgd", load_model_dir);
 
       // get last epoch and step saved.
-      int success = callback::read_latest(active_load_model_dir, &hook, &mode, &epochLast, &stepLast);
-      if(!success) {
-        LBANN_ERROR("Unable to find the latest checkpoint ", active_load_model_dir);
+      int success = callback::read_latest(active_load_model_dir,
+                                          &hook,
+                                          &mode,
+                                          &epochLast,
+                                          &stepLast);
+      if (!success) {
+        LBANN_ERROR("Unable to find the latest checkpoint ",
+                    active_load_model_dir);
         return nullptr;
       }
-      active_load_model_dir = callback::get_shared_checkpoint_dirname("sgd", load_model_dir, hook, mode, epochLast, stepLast) + ret_model->get_name() + '/';
+      active_load_model_dir =
+        callback::get_shared_checkpoint_dirname("sgd",
+                                                load_model_dir,
+                                                hook,
+                                                mode,
+                                                epochLast,
+                                                stepLast) +
+        ret_model->get_name() + '/';
     }
 
-    if(cb == nullptr) {
+    if (cb == nullptr) {
       std::vector<std::string> dirs = {active_load_model_dir};
       std::unique_ptr<callback::load_model> load_model_cb =
-        make_unique<callback::load_model>(dirs);
+        std::make_unique<callback::load_model>(dirs);
       cb = load_model_cb.get();
       ret_model->add_callback(std::move(load_model_cb));
 #ifdef LBANN_DEBUG
-      if(comm->am_trainer_master()) {
-        LBANN_WARNING("command line flag --load_model_dir was provided but there was no explicit load_model callback, adding one automagically!");
+      if (comm->am_trainer_master()) {
+        LBANN_WARNING(
+          "command line flag --load_model_dir was provided but there was no "
+          "explicit load_model callback, adding one automagically!");
       }
 #endif
-    }else {
-      cb->add_dir(opts->get_string("load_model_weights_dir"));
+    }
+    else {
+      cb->add_dir(
+        arg_parser.get<std::string>(LBANN_OPTION_LOAD_MODEL_WEIGHTS_DIR));
     }
   }
 
   // restart model from checkpoint if we have one
   //@todo
-  //model->restartShared();
+  // model->restartShared();
 
   return ret_model;
 }
 
-void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int io_threads_offset) {
+void print_lbann_configuration(lbann_comm* comm,
+                               int io_threads_per_process,
+                               int io_threads_offset)
+{
   // Report hardware settings
   std::cout << "Hardware properties (for master process)" << std::endl
-            << "  Processes on node          : " << comm->get_procs_per_node() << std::endl
-            << "  Total number of processes  : " << comm->get_procs_in_world() << std::endl
-            << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl
-            << "  I/O threads per process (+offset) : " << io_threads_per_process
-            << " (+" << io_threads_offset << ")" << std::endl;
+            << "  Processes on node          : " << comm->get_procs_per_node()
+            << std::endl
+            << "  Total number of processes  : " << comm->get_procs_in_world()
+            << std::endl
+            << "  OpenMP threads per process : " << omp_get_max_threads()
+            << std::endl
+            << "  I/O threads per process (+offset) : "
+            << io_threads_per_process << " (+" << io_threads_offset << ")"
+            << std::endl
+            << "  Background I/O enabled     : "
+            << get_trainer().background_io_activity_allowed() << std::endl;
 #ifdef HYDROGEN_HAVE_GPU
-  std::cout << "  GPUs on node               : " << hydrogen::gpu::DeviceCount() << std::endl;
+  std::cout << "  GPUs on node               : " << hydrogen::gpu::DeviceCount()
+            << std::endl;
 #endif // HYDROGEN_HAVE_GPU
   std::cout << std::endl;
 
   // Report build settings
   std::cout << "Running: LLNL LBANN version: "
             << LBANN_MAKE_STR(LBANN_VERSION)
+  #ifdef LBANN_GIT_VERSION
             << " (" << LBANN_MAKE_STR(LBANN_GIT_VERSION) << ")"
+  #endif
             << std::endl;
 #ifdef HYDROGEN_VERSION
   std::cout << "         LLNL Hydrogen version: "
             << HYDROGEN_VERSION
+  #ifdef HYDROGEN_GIT_VERSION
             << " (" << HYDROGEN_GIT_VERSION << ")"
-            << std::endl << std::endl;
+  #endif
+            << std::endl;
 #endif
+#ifdef DIHYDROGEN_VERSION
+  std::cout << "         LLNL DiHydrogen version: "
+            << DIHYDROGEN_VERSION
+  #ifdef DIHYDROGEN_GIT_VERSION
+            << " (" << DIHYDROGEN_GIT_VERSION << ")"
+  #endif
+            << std::endl;
+#endif
+#ifdef AL_VERSION
+  std::cout << "         LLNL Aluminum version: "
+            << AL_VERSION
+  #ifdef AL_GIT_VERSION
+            << " (" << AL_GIT_VERSION << ")"
+  #endif
+            << std::endl;
+#endif
+  std::cout << std::endl;
+
   std::cout << "Build settings" << std::endl;
   std::cout << "  Type     : ";
 #ifdef LBANN_DEBUG
@@ -517,9 +640,12 @@ void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int
   // Report model settings
   const auto& grid = comm->get_trainer_grid();
   std::cout << "Trainer settings" << std::endl
-            << "  Trainers              : " << comm->get_num_trainers() << std::endl
-            << "  Processes per trainer : " << comm->get_procs_per_trainer() << std::endl
-            << "  Grid dimensions       : " << grid.Height() << " x " << grid.Width() << std::endl;
+            << "  Trainers              : " << comm->get_num_trainers()
+            << std::endl
+            << "  Processes per trainer : " << comm->get_procs_per_trainer()
+            << std::endl
+            << "  Grid dimensions       : " << grid.Height() << " x "
+            << grid.Width() << std::endl;
   std::cout << std::endl;
 }
 

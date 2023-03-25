@@ -1,0 +1,72 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+
+package lbann_testing;
+
+enum MyEnum {
+  ZERO = 0;
+  ONE = 1;
+  TWO = 2;
+}
+
+message SimpleMesg {
+  int32 my_int32 = 1;
+  float my_float = 2;
+  string my_string = 3;
+  MyEnum my_enum = 4;
+}
+
+message HasAOneofField {
+  oneof my_oneof {
+    uint64 my_uint64 = 1;
+    int32 my_int32 = 2;
+    string my_string = 3;
+    SimpleMesg my_simple_msg = 4;
+  }
+  bool another_field = 10;
+}
+
+message HasRepeatedPODFields {
+  repeated float my_floats = 1;
+  repeated double my_doubles = 2;
+  repeated uint32 my_uint32s = 3;
+  repeated int64 my_int64s = 4;
+  repeated MyEnum my_enums = 5;
+}
+
+message HasRepeatedPtrFields {
+  repeated SimpleMesg my_simple_msgs = 1;
+  repeated string my_strings = 2;
+}
+
+message HasAnyField {
+  google.protobuf.Any my_any = 1;
+  int32 my_non_any = 2;
+}

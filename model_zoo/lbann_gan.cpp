@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,11 +28,11 @@
 
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
-#include "lbann/utils/protobuf_utils.hpp"
 #include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/protobuf_utils.hpp"
 
-#include <lbann.pb.h>
-#include <model.pb.h>
+#include "lbann/proto/lbann.pb.h"
+#include "lbann/proto/model.pb.h"
 
 #include <cstdlib>
 
@@ -59,11 +59,12 @@ int guess_global_rank() noexcept
       return -1;
   }
 }
-}// namespace <anon>
+} // namespace
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
   auto& arg_parser = global_argument_parser();
-  construct_std_options();
+  construct_all_options();
 
   try {
     arg_parser.parse(argc, argv);
@@ -74,8 +75,7 @@ int main(int argc, char *argv[]) {
       // Cannot call `El::ReportException` because MPI hasn't been
       // initialized yet.
       std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
-                << e.what() << "\n\nProcess terminating."
-                << std::endl;
+                << e.what() << "\n\nProcess terminating." << std::endl;
     std::terminate();
   }
 
@@ -86,44 +86,55 @@ int main(int argc, char *argv[]) {
     // Split MPI into trainers
     allocate_trainer_resources(comm.get());
 
-    // Initialize options db (this parses the command line)
-    options *opts = options::get();
-    opts->init(argc, argv);
-    if (opts->has_string("h") or opts->has_string("help") or argc == 1) {
-      print_help(*comm);
+    if (arg_parser.help_requested() or argc == 1) {
+      if (master)
+        std::cout << arg_parser << std::endl;
       return EXIT_SUCCESS;
     }
 
     std::ostringstream err;
 
-    auto pbs = protobuf_utils::load_prototext(master, argc, argv);
+    auto pbs = protobuf_utils::load_prototext(master);
     // Optionally over-ride some values in the prototext for each model
-    for(size_t i = 0; i < pbs.size(); i++) {
+    for (size_t i = 0; i < pbs.size(); i++) {
       get_cmdline_overrides(*comm, *(pbs[i]));
     }
 
     lbann_data::LbannPB& pb = *(pbs[0]);
-    lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
+    lbann_data::Trainer* pb_trainer = pb.mutable_trainer();
 
     // Construct the trainer
-    auto& trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]), opts);
+    auto& trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]));
 
     thread_pool& io_thread_pool = trainer.get_io_thread_pool();
 
     int training_dr_linearized_data_size = -1;
-    auto *dr = trainer.get_data_coordinator().get_data_reader(execution_mode::training);
-    if(dr != nullptr) {
+    auto* dr =
+      trainer.get_data_coordinator().get_data_reader(execution_mode::training);
+    if (dr != nullptr) {
       training_dr_linearized_data_size = dr->get_linearized_data_size();
     }
 
-    auto model_1 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[0]), comm.get(), opts, io_thread_pool,
-                                              trainer.get_callbacks_with_ownership(),
-                                              training_dr_linearized_data_size); //discriminator model
-    std::unique_ptr<model> model_2 = nullptr; //adversarial model
+    auto model_1 = build_model_from_prototext(
+      argc,
+      argv,
+      pb_trainer,
+      *(pbs[0]),
+      comm.get(),
+      io_thread_pool,
+      trainer.get_callbacks_with_ownership(),
+      training_dr_linearized_data_size);      // discriminator model
+    std::unique_ptr<model> model_2 = nullptr; // adversarial model
     if (pbs.size() > 1) {
-      model_2 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[1]), comm.get(), opts, io_thread_pool,
-                                           trainer.get_callbacks_with_ownership(),
-                                           training_dr_linearized_data_size);
+      model_2 =
+        build_model_from_prototext(argc,
+                                   argv,
+                                   pb_trainer,
+                                   *(pbs[1]),
+                                   comm.get(),
+                                   io_thread_pool,
+                                   trainer.get_callbacks_with_ownership(),
+                                   training_dr_linearized_data_size);
     }
 
     const lbann_data::Model pb_model = pbs[0]->model();
@@ -134,35 +145,46 @@ int main(int argc, char *argv[]) {
     int super_step = 1;
     int max_super_step = pb_model.super_steps();
     while (super_step <= max_super_step) {
-      if (master)  std::cerr << "\nSTARTING train - discriminator model at step " << super_step <<"\n\n";
+      if (master)
+        std::cerr << "\nSTARTING train - discriminator model at step "
+                  << super_step << "\n\n";
       //@todo freeze generator layers in this step
-      trainer.train(model_1.get(), super_step*pb_model.num_epochs() );
+      trainer.train(model_1.get(), super_step * pb_model.num_epochs());
 
-      //Replace/copy "proxy" layer in adversarial model (model2) with its "equivalent" layer in discriminator model (model1)
+      // Replace/copy "proxy" layer in adversarial model (model2) with its
+      // "equivalent" layer in discriminator model (model1)
       //@todo freeze layers after replacement
-      for(size_t l2=0; l2 < layers2.size(); l2++) {
-        //check if a discriminator layer is a proxy
+      for (size_t l2 = 0; l2 < layers2.size(); l2++) {
+        // check if a discriminator layer is a proxy
         std::string l2_fullname = layers2[l2]->get_name();
-        if(l2_fullname.find("proxy") != std::string::npos) { //if a proxy layer
-          std::string l2_name = l2_fullname.erase(l2_fullname.length()-6);
+        if (l2_fullname.find("proxy") != std::string::npos) { // if a proxy
+                                                              // layer
+          std::string l2_name = l2_fullname.erase(l2_fullname.length() - 6);
           std::cout << "L2 Name " << l2_name << std::endl;
-          for(size_t l1=0; l1 < layers1.size(); l1++) {
-             if(l2_name == layers1[l1]->get_name()){
-               if(master) std::cout << "Replacing adversarial model (model 2) Layer " << layers1[l1]->get_name();
-               layers2[l2]->replace_weights(*layers1[l1]);
-               if(master) std::cout << " with corresponding layer " << layers2[l2]->get_name() << " in discriminator model (model1) " << std::endl;
-             }
+          for (size_t l1 = 0; l1 < layers1.size(); l1++) {
+            if (l2_name == layers1[l1]->get_name()) {
+              if (master)
+                std::cout << "Replacing adversarial model (model 2) Layer "
+                          << layers1[l1]->get_name();
+              layers2[l2]->replace_weights(*layers1[l1]);
+              if (master)
+                std::cout << " with corresponding layer "
+                          << layers2[l2]->get_name()
+                          << " in discriminator model (model1) " << std::endl;
+            }
           }
         }
       }
 
-      if (master) std::cerr << "\n STARTING train - adversarial model at step " << super_step << " \n\n";
-      trainer.train(model_2.get(), super_step*pb_model_2.num_epochs() );
+      if (master)
+        std::cerr << "\n STARTING train - adversarial model at step "
+                  << super_step << " \n\n";
+      trainer.train(model_2.get(), super_step * pb_model_2.num_epochs());
 
       super_step++;
     }
-
-  } catch (std::exception& e) {
+  }
+  catch (std::exception& e) {
     El::ReportException(e);
     // It's possible that a proper subset of ranks throw some
     // exception. But we want to tear down the whole world.

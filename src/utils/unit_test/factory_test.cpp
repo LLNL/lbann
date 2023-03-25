@@ -1,5 +1,30 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
 // Be sure to include this!
-#include <catch2/catch.hpp>
+#include "Catch2BasicSupport.hpp"
 
 // The code being tested
 #include <lbann/utils/factory.hpp>
@@ -7,14 +32,18 @@
 // Other includes
 #include <lbann/utils/memory.hpp>
 
-namespace
+namespace {
+struct widget_base
 {
-struct widget_base {
-    virtual ~widget_base() = default;
+  virtual ~widget_base() = default;
 };
-struct widget : widget_base {};
-struct gizmo : widget_base {};
-}
+struct widget : widget_base
+{
+};
+struct gizmo : widget_base
+{
+};
+} // namespace
 
 enum class generic_key
 {
@@ -23,15 +52,15 @@ enum class generic_key
   GIZMO
 };
 
-template <typename T> struct Key;
+template <typename T>
+struct Key;
 
 template <>
 struct Key<std::string>
 {
   static std::string get(generic_key key)
   {
-    switch (key)
-    {
+    switch (key) {
     case generic_key::WIDGET:
       return "widget";
     case generic_key::GIZMO:
@@ -46,19 +75,17 @@ struct Key<std::string>
 template <>
 struct Key<int>
 {
-  static int get(generic_key key) noexcept
-  {
-    return static_cast<int>(key);
-  }
+  static int get(generic_key key) noexcept { return static_cast<int>(key); }
 };
 
 // This tests factories keyed with strings and ints. BDD-style
 // nomenclature is used inside the test case.
-TEMPLATE_TEST_CASE(
-  "testing the factory class", "[factory][utilities]", std::string, int)
+TEMPLATE_TEST_CASE("testing the factory class",
+                   "[factory][utilities]",
+                   std::string,
+                   int)
 {
-  using widget_factory
-    = lbann::generic_factory<widget_base,TestType>;
+  using widget_factory = lbann::generic_factory<widget_base, TestType>;
   using key = Key<TestType>;
 
   GIVEN("an object factory")
@@ -67,19 +94,13 @@ TEMPLATE_TEST_CASE(
 
     WHEN("Two new builders are registered")
     {
-      factory.register_builder(
-        key::get(generic_key::WIDGET),[]()
-        {
-          return std::unique_ptr<widget_base>(
-            lbann::make_unique<widget>());
-        });
+      factory.register_builder(key::get(generic_key::WIDGET), []() {
+        return std::unique_ptr<widget_base>(std::make_unique<widget>());
+      });
 
-      factory.register_builder(
-        key::get(generic_key::GIZMO),[]()
-        {
-          return std::unique_ptr<widget_base>(
-            lbann::make_unique<gizmo>());
-        });
+      factory.register_builder(key::get(generic_key::GIZMO), []() {
+        return std::unique_ptr<widget_base>(std::make_unique<gizmo>());
+      });
 
       THEN("The factory knows about two builders")
       {
@@ -88,12 +109,9 @@ TEMPLATE_TEST_CASE(
       }
       AND_WHEN("A builder is added with an existing key")
       {
-        factory.register_builder(
-          key::get(generic_key::GIZMO),[]()
-          {
-            return std::unique_ptr<widget_base>(
-              lbann::make_unique<gizmo>());
-          });
+        factory.register_builder(key::get(generic_key::GIZMO), []() {
+          return std::unique_ptr<widget_base>(std::make_unique<gizmo>());
+        });
 
         THEN("The factory still knows about only two factories")
         {

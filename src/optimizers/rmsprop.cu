@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,12 +37,13 @@ __global__ void rmsprop_kernel(size_t height,
                                TensorDataType learning_rate,
                                TensorDataType decay_rate,
                                TensorDataType eps,
-                               TensorDataType * __restrict__ values,
+                               TensorDataType* __restrict__ values,
                                size_t values_ldim,
-                               const TensorDataType * __restrict__ gradient,
+                               const TensorDataType* __restrict__ gradient,
                                size_t gradient_ldim,
-                               TensorDataType * __restrict__ cache,
-                               size_t cache_ldim) {
+                               TensorDataType* __restrict__ cache,
+                               size_t cache_ldim)
+{
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t nthreads = gridDim.x * blockDim.x;
   for (size_t pos = gid; pos < height * width; pos += nthreads) {
@@ -59,8 +60,10 @@ __global__ void rmsprop_kernel(size_t height,
 } // namespace
 
 template <typename TensorDataType>
-void rmsprop<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
-                                               const AbsDistMatrixType& gradient) {
+void rmsprop<TensorDataType>::step_compute_gpu(
+  AbsDistMatrixType& values,
+  const AbsDistMatrixType& gradient)
+{
   const size_t local_height = values.LocalHeight();
   const size_t local_width = values.LocalWidth();
   const size_t local_size = local_height * local_width;
@@ -69,29 +72,37 @@ void rmsprop<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
     const size_t grid_size = (local_size + block_size - 1) / block_size;
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(values),
                                        gpu::get_sync_info(gradient));
-    hydrogen::gpu::LaunchKernel(
-      rmsprop_kernel<TensorDataType>,
-      grid_size, block_size, 0, multisync,
-      local_height, local_width,
-      this->get_learning_rate(), m_decay_rate, m_eps,
-      values.Buffer(), values.LDim(),
-      gradient.LockedBuffer(), gradient.LDim(),
-      m_cache->Buffer(), m_cache->LDim());
+    hydrogen::gpu::LaunchKernel(rmsprop_kernel<TensorDataType>,
+                                grid_size,
+                                block_size,
+                                0,
+                                multisync,
+                                local_height,
+                                local_width,
+                                this->get_learning_rate(),
+                                m_decay_rate,
+                                m_eps,
+                                values.Buffer(),
+                                values.LDim(),
+                                gradient.LockedBuffer(),
+                                gradient.LDim(),
+                                m_cache->Buffer(),
+                                m_cache->LDim());
   }
 }
 
 #ifdef LBANN_HAS_HALF
 template <>
 void rmsprop<cpu_fp16>::step_compute_gpu(AbsDistMatrixType&,
-                                         const AbsDistMatrixType&) {
+                                         const AbsDistMatrixType&)
+{
   LBANN_ERROR("Can't call this function with cpu_fp16!");
 }
 #endif // LBANN_HAS_HALF
 
-#define PROTO(T)                               \
-  template void rmsprop<T>::step_compute_gpu(  \
-    El::AbstractDistMatrix<T>&,                \
-    const El::AbstractDistMatrix<T>&)
+#define PROTO(T)                                                               \
+  template void rmsprop<T>::step_compute_gpu(El::AbstractDistMatrix<T>&,       \
+                                             const El::AbstractDistMatrix<T>&)
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"

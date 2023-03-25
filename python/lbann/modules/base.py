@@ -5,7 +5,7 @@ This also contains modules for fully-connected and convolution layers.
 """
 import abc
 import lbann
-from lbann.util import make_iterable, str_list
+from lbann.util import make_iterable
 
 
 class Module(abc.ABC):
@@ -97,7 +97,7 @@ class FullyConnectedModule(Module):
             self.weights.append(
                 lbann.Weights(initializer=lbann.HeNormalInitializer(),
                               name=self.name+'_matrix'))
-        if len(self.weights) == 1:
+        if self.bias and len(self.weights) == 1:
             self.weights.append(
                 lbann.Weights(initializer=lbann.ConstantInitializer(value=0.0),
                               name=self.name+'_bias'))
@@ -135,7 +135,7 @@ class ChannelwiseFullyConnectedModule(Module):
   """Basic block for channelwise fully-connected neural networks.
 
     Applies a dense linearity channelwise and a nonlinear activation function.
-  
+
   """
 
   global_count = 0
@@ -146,11 +146,12 @@ class ChannelwiseFullyConnectedModule(Module):
                weights=[],
                activation=None,
                transpose=False,
-               name=None):
+               name=None,
+               parallel_strategy={}):
     """Initalize channelwise fully connected module
 
     Args:
-        size (int): Size of output tensor.
+        size (int or list): Dimension of the output tensor
         bias (bool): Whether to apply bias after linearity.
         transpose (bool): Whether to apply transpose of weights
                 matrix.
@@ -160,8 +161,7 @@ class ChannelwiseFullyConnectedModule(Module):
                 matrix will be initialized with He normal
                 initialization and the bias with zeros.
         activation (type): Layer class for activation function.
-        name (str): Default name is in the form 'fcmodule<index>'.
-        data_layout (str): Data layout.
+        name (str): Default name is in the form 'channelwisefc<index>'.
         parallel_strategy (dict): Data partitioning scheme.
     """
     super().__init__()
@@ -170,6 +170,7 @@ class ChannelwiseFullyConnectedModule(Module):
     self.size = size
     self.bias = bias
     self.transpose = transpose
+    self.parallel_strategy = parallel_strategy
     self.name = (name
                  if name
                  else 'channelwisefc{0}'.format(ChannelwiseFullyConnectedModule.global_count))
@@ -184,7 +185,7 @@ class ChannelwiseFullyConnectedModule(Module):
         self.weights.append(
             lbann.Weights(initializer=lbann.HeNormalInitializer(),
                           name=self.name+'_matrix'))
-    if len(self.weights) == 1:
+    if self.bias and len(self.weights) == 1:
         self.weights.append(
             lbann.Weights(initializer=lbann.ConstantInitializer(value=0.0),
                           name=self.name+'_bias'))
@@ -206,11 +207,13 @@ class ChannelwiseFullyConnectedModule(Module):
                                         data_layout=self.data_layout,
                                         output_channel_dims=self.size,
                                         bias=self.bias,
-                                        transpose=self.transpose)
+                                        transpose=self.transpose,
+                                        parallel_strategy=self.parallel_strategy)
     if self.activation:
         return self.activation(y,
                                name=name+'_activation',
-                               data_layout=self.data_layout)
+                               data_layout=self.data_layout,
+                               parallel_strategy=self.parallel_strategy)
     else:
         return y
 
@@ -282,28 +285,28 @@ class ConvolutionModule(Module):
           raise ValueError("Invalid kernel dimensions passed to {}".format(self.name))
 
         self.stride = list(make_iterable(stride))
-        
+
         if (len(self.stride)) == 1:
           self.stride = self.stride * self.num_dims
         elif (len(self.stride)) != self.num_dims:
           raise ValueError("Invalid stride dimensions passed to {}".format(self.name))
-        
+
         self.padding = list(make_iterable(padding))
-        
+
         if (len(self.padding)) == 1:
           self.padding = self.padding * self.num_dims
         elif (len(self.stride)) != self.num_dims:
           raise ValueError("Invalid padding dimensions passed to {}".format(self.name))
-        
+
         self.dilation = list(make_iterable(dilation))
-        
+
         if (len(self.dilation)) == 1:
           self.dilation = self.dilation * self.num_dims
         elif (len(self.dilation)) != self.num_dims:
           raise ValueError("Invalid dilation dimensions passed to {}".format(self.name))
-        
+
         self.groups = groups
-        
+
         self.bias = bias
         self.weights = list(make_iterable(weights))
         self.transpose = transpose
@@ -322,7 +325,7 @@ class ConvolutionModule(Module):
             self.weights.append(
                 lbann.Weights(initializer=lbann.HeNormalInitializer(),
                               name=self.name+'_kernel'))
-        if len(self.weights) == 1:
+        if self.bias and len(self.weights) == 1:
             self.weights.append(
                 lbann.Weights(initializer=lbann.ConstantInitializer(value=0.0),
                               name=self.name+'_bias'))
@@ -347,16 +350,15 @@ class ConvolutionModule(Module):
 
         kwargs['name'] = (name+convtype if self.activation else name)
         kwargs['num_dims'] = self.num_dims
-        kwargs['num_output_channels'] = self.out_channels
+        kwargs['out_channels'] = self.out_channels
         kwargs['has_bias'] = self.bias
-        kwargs['num_groups'] = self.groups
+        kwargs['groups'] = self.groups
         kwargs['parallel_strategy'] = self.parallel_strategy
-        kwargs['has_vectors'] = True
 
-        kwargs['conv_dims'] = str_list(self.kernel_dims)
-        kwargs['conv_pads'] = str_list(self.padding)
-        kwargs['conv_dilations'] = str_list(self.dilation)
-        kwargs['conv_strides'] = str_list(self.stride)
+        kwargs['kernel_size'] = self.kernel_dims
+        kwargs['padding'] = self.padding
+        kwargs['dilation'] = self.dilation
+        kwargs['stride'] = self.stride
 
 
         if(self.transpose):

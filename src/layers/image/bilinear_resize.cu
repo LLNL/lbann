@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_BILINEAR_RESIZE_LAYER_INSTANTIATE
-#include "lbann/layers/image/bilinear_resize.hpp"
+#include "lbann/layers/image/bilinear_resize_impl.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
@@ -42,7 +42,8 @@ __global__ void fp_kernel(El::Int num_samples,
                           El::Int output_height,
                           El::Int output_width,
                           TensorDataType* __restrict__ output,
-                          El::Int output_ldim) {
+                          El::Int output_ldim)
+{
 
   // Useful constants
   const TensorDataType half = 0.5;
@@ -51,11 +52,13 @@ __global__ void fp_kernel(El::Int num_samples,
   const El::Int num_threads = blockDim.x * gridDim.x;
 
   // Stride between interpolation points
-  const auto& x_stride = TensorDataType(input_width) / TensorDataType(output_width);
-  const auto& y_stride = TensorDataType(input_height) / TensorDataType(output_height);
+  const auto& x_stride =
+    TensorDataType(input_width) / TensorDataType(output_width);
+  const auto& y_stride =
+    TensorDataType(input_height) / TensorDataType(output_height);
 
-  const auto& size = (num_samples * num_channels
-                      * output_height * output_width);
+  const auto& size =
+    (num_samples * num_channels * output_height * output_width);
   for (El::Int pos = gid; pos < size; pos += num_threads) {
 
     // Indices
@@ -71,52 +74,44 @@ __global__ void fp_kernel(El::Int num_samples,
     // Find input pixels near interpolation point
     const auto input_col = static_cast<El::Int>(gpu_lib::floor(x - half));
     const auto& input_col0 = gpu_lib::max(input_col, El::Int(0));
-    const auto& input_col1 = gpu_lib::min(input_col+1, input_width-1);
+    const auto& input_col1 = gpu_lib::min(input_col + 1, input_width - 1);
     const auto input_row = static_cast<El::Int>(gpu_lib::floor(y - half));
     const auto& input_row0 = gpu_lib::max(input_row, El::Int(0));
-    const auto& input_row1 = gpu_lib::min(input_row+1, input_height-1);
+    const auto& input_row1 = gpu_lib::min(input_row + 1, input_height - 1);
 
     // Interpolation point relative to input pixel centers
     const auto& unit_x = x - (TensorDataType(input_col) + half);
     const auto& unit_y = y - (TensorDataType(input_row) + half);
 
     // Input and output pixels
-    const auto& pixel00 = input[sample * input_ldim
-                                + channel * input_height * input_width
-                                + input_row0 * input_width
-                                + input_col0];
-    const auto& pixel01 = input[sample * input_ldim
-                                + channel * input_height * input_width
-                                + input_row0 * input_width
-                                + input_col1];
-    const auto& pixel10 = input[sample * input_ldim
-                                + channel * input_height * input_width
-                                + input_row1 * input_width
-                                + input_col0];
-    const auto& pixel11 = input[sample * input_ldim
-                                + channel * input_height * input_width
-                                + input_row1 * input_width
-                                + input_col1];
-    auto& result = output[sample * output_ldim
-                          + channel * output_height * output_width
-                          + output_row * output_width
-                          + output_col];
+    const auto& pixel00 =
+      input[sample * input_ldim + channel * input_height * input_width +
+            input_row0 * input_width + input_col0];
+    const auto& pixel01 =
+      input[sample * input_ldim + channel * input_height * input_width +
+            input_row0 * input_width + input_col1];
+    const auto& pixel10 =
+      input[sample * input_ldim + channel * input_height * input_width +
+            input_row1 * input_width + input_col0];
+    const auto& pixel11 =
+      input[sample * input_ldim + channel * input_height * input_width +
+            input_row1 * input_width + input_col1];
+    auto& result =
+      output[sample * output_ldim + channel * output_height * output_width +
+             output_row * output_width + output_col];
 
     // Bilinear interpolation
-    result = (pixel00 * (one - unit_x) * (one - unit_y)
-              + pixel01 * unit_x * (one - unit_y)
-              + pixel10 * (one - unit_x) * unit_y
-              + pixel11 * unit_x * unit_y);
-
+    result = (pixel00 * (one - unit_x) * (one - unit_y) +
+              pixel01 * unit_x * (one - unit_y) +
+              pixel10 * (one - unit_x) * unit_y + pixel11 * unit_x * unit_y);
   }
-
 }
 
-}
-
+} // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
+void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute()
+{
 
   // Matrices
   const auto& local_input = this->get_local_prev_activations();
@@ -127,11 +122,11 @@ void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
   const auto& num_dims = input_dims.size();
   const auto& num_samples = local_input.Width();
   const El::Int num_channels = std::accumulate(input_dims.begin(),
-                                               input_dims.end()-2,
+                                               input_dims.end() - 2,
                                                1,
                                                std::multiplies<int>());
-  const El::Int input_height = input_dims[num_dims-2];
-  const El::Int input_width = input_dims[num_dims-1];
+  const El::Int input_height = input_dims[num_dims - 2];
+  const El::Int input_width = input_dims[num_dims - 1];
 
   // Get GPU grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
@@ -140,8 +135,8 @@ void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
   const El::Int size = local_output.Height() * local_output.Width();
   constexpr El::Int block_dim = 256;
   El::Int grid_dim = (size + block_dim - 1) / block_dim;
-  if (sizeof(El::Int) > sizeof(uint32_t)
-      && grid_dim > std::numeric_limits<uint32_t>::max()) {
+  if (sizeof(El::Int) > sizeof(uint32_t) &&
+      grid_dim > std::numeric_limits<uint32_t>::max()) {
     grid_dim = std::numeric_limits<uint32_t>::max();
   }
 
@@ -149,20 +144,28 @@ void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
   if (grid_dim > 0) {
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_input),
                                        gpu::get_sync_info(local_output));
-    hydrogen::gpu::LaunchKernel(
-      fp_kernel<block_dim, TensorDataType>,
-      grid_dim, block_dim, 0, multisync,
-      num_samples, num_channels,
-      input_height, input_width,
-      local_input.LockedBuffer(), local_input.LDim(),
-      this->m_height, this->m_width,
-      local_output.Buffer(), local_output.LDim());
+    hydrogen::gpu::LaunchKernel(fp_kernel<block_dim, TensorDataType>,
+                                grid_dim,
+                                block_dim,
+                                0,
+                                multisync,
+                                num_samples,
+                                num_channels,
+                                input_height,
+                                input_width,
+                                local_input.LockedBuffer(),
+                                local_input.LDim(),
+                                this->m_height,
+                                this->m_width,
+                                local_output.Buffer(),
+                                local_output.LDim());
   }
-
 }
 
-#define PROTO(T)                                      \
-  template class bilinear_resize_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>
+#define PROTO(T)                                                               \
+  template class bilinear_resize_layer<T,                                      \
+                                       data_layout::DATA_PARALLEL,             \
+                                       El::Device::GPU>
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"

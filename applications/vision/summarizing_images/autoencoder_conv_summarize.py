@@ -98,21 +98,20 @@ dummy = lbann.Dummy(input_, name='labels')
 conv1 = lbann.Convolution(image,
                           name="conv1",
                           num_dims=2,
-                          num_output_channels=16,
-                          conv_dims='3 3',
-                          conv_pads='0 0',
-                          conv_strides='1 1',
-                          has_bias=True,
-                          has_vectors=True)
+                          out_channels=16,
+                          kernel_size=[3, 3],
+                          padding=[0, 0],
+                          stride=[1, 1],
+                          has_bias=True)
 
 relu1 = lbann.Relu(conv1, name="relu1")
 
 pool1 = lbann.Pooling(relu1,
                       name="pool1",
                       num_dims=2,
-                      pool_dims='2 2',
-                      pool_pads='0 0',
-                      pool_strides='1 1',
+                      pool_dims=[2, 2],
+                      pool_pads=[0, 0],
+                      pool_strides=[1, 1],
                       pool_mode="max",
                       has_vectors=True)
 
@@ -120,42 +119,40 @@ pool1 = lbann.Pooling(relu1,
 conv2 = lbann.Convolution(pool1,
                           name="conv2",
                           num_dims=2,
-                          num_output_channels=8,
-                          conv_dims='3 3',
-                          conv_pads='0 0',
-                          conv_strides='1 1',
-                          has_bias=True,
-                          has_vectors=True)
+                          out_channels=8,
+                          kernel_size=[3, 3],
+                          padding=[0, 0],
+                          stride=[1, 1],
+                          has_bias=True)
 
 relu2 = lbann.Relu(conv2, name="relu2")
 
 pool2 = lbann.Pooling(relu2,
                       name="pool2",
                       num_dims=2,
-                      pool_dims='2 2',
-                      pool_pads='0 0',
-                      pool_strides='1 1',
+                      pool_dims=[2, 2],
+                      pool_pads=[0, 0],
+                      pool_strides=[1, 1],
                       pool_mode="max",
                       has_vectors=True)
 
 conv3 = lbann.Convolution(pool2,
                           name="conv3",
                           num_dims=2,
-                          num_output_channels=8,
-                          conv_dims='3 3',
-                          conv_pads='0 0',
-                          conv_strides='1 1',
-                          has_bias=True,
-                          has_vectors=True)
+                          out_channels=8,
+                          kernel_size=[3, 3],
+                          padding=[0, 0],
+                          stride=[1, 1],
+                          has_bias=True)
 
 relu3 = lbann.Relu(conv3, name="relu3")
 
 pool3 = lbann.Pooling(relu3,
                       name="pool3",
                       num_dims=2,
-                      pool_dims='2 2',
-                      pool_pads='0 0',
-                      pool_strides='1 1',
+                      pool_dims=[2, 2],
+                      pool_pads=[0, 0],
+                      pool_strides=[1, 1],
                       pool_mode="max",
                       has_vectors=True)
 
@@ -167,12 +164,11 @@ unpool3 = lbann.Unpooling(pool3,
 deconv3 = lbann.Deconvolution(unpool3,
                               name="deconv3",
                               num_dims=2,
-                              num_output_channels=8,
-                              conv_dims='3 3',
-                              conv_pads='0 0',
-                              conv_strides='1 1',
-                              has_bias=True,
-                              has_vectors=True)
+                              out_channels=8,
+                              kernel_size=[3, 3],
+                              padding=[0, 0],
+                              stride=[1, 1],
+                              has_bias=True)
 
 relu4 = lbann.Relu(deconv3, name="relu4")
 
@@ -184,12 +180,11 @@ unpool2 = lbann.Unpooling(relu4,
 deconv2 = lbann.Deconvolution(unpool2,
                               name="deconv2",
                               num_dims=2,
-                              num_output_channels=16,
-                              conv_dims='3 3',
-                              conv_pads='0 0',
-                              conv_strides='1 1',
-                              has_bias=True,
-                              has_vectors=True)
+                              out_channels=16,
+                              kernel_size=[3, 3],
+                              padding=[0, 0],
+                              stride=[1, 1],
+                              has_bias=True)
 
 relu5 = lbann.Relu(deconv2, name="relu5")
 
@@ -201,12 +196,11 @@ unpool1 = lbann.Unpooling(relu5,
 deconv1 = lbann.Deconvolution(unpool1,
                               name="deconv1",
                               num_dims=2,
-                              num_output_channels=3,
-                              conv_dims='3 3',
-                              conv_pads='0 0',
-                              conv_strides='1 1',
-                              has_bias=True,
-                              has_vectors=True)
+                              out_channels=3,
+                              kernel_size=[3, 3],
+                              padding=[0, 0],
+                              stride=[1, 1],
+                              has_bias=True)
 
 relu6 = lbann.Relu(deconv1, name="relu6")
 

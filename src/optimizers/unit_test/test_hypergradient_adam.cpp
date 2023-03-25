@@ -1,4 +1,29 @@
-#include <catch2/catch.hpp>
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+#include "Catch2BasicSupport.hpp"
 #include <lbann/optimizers/hypergradient_adam.hpp>
 
 #include "optimizer_common.hpp"
@@ -7,13 +32,13 @@
 
 // See test_sgd.cpp for a detailed, annotated test case.
 
-namespace
-{
+namespace {
 
 template <typename TensorDataType>
 struct HypergradientAdamBuilder
 {
-  static lbann::hypergradient_adam<TensorDataType> Stateful() {
+  static lbann::hypergradient_adam<TensorDataType> Stateful()
+  {
     return lbann::hypergradient_adam<TensorDataType>(
       /*init_learning_rate=*/TensorDataType(0.0123f),
       /*hyper_learning_rate=*/TensorDataType(0.0321f),
@@ -22,7 +47,8 @@ struct HypergradientAdamBuilder
       /*eps=*/TensorDataType(0.0234f));
   }
 
-  static lbann::hypergradient_adam<TensorDataType> Default() {
+  static lbann::hypergradient_adam<TensorDataType> Default()
+  {
     return lbann::hypergradient_adam<TensorDataType>(
       /*init_learning_rate=*/TensorDataType(0.0f),
       /*hyper_learning_rate=*/TensorDataType(0.0f),
@@ -30,14 +56,13 @@ struct HypergradientAdamBuilder
       /*beta2=*/TensorDataType(0.0f),
       /*eps=*/TensorDataType(0.0f));
   }
-};// struct Hypergradient_AdamBuilder
+}; // struct Hypergradient_AdamBuilder
 
-}// namespace <anon>
+} // namespace
 
-TEMPLATE_LIST_TEST_CASE(
-  "Hypergradient Adam Optimizer serialization",
-  "[optimizer][serialize]",
-  AllArchiveTypes)
+TEMPLATE_LIST_TEST_CASE("Hypergradient Adam Optimizer serialization",
+                        "[optimizer][serialize]",
+                        AllArchiveTypes)
 {
   using ValueType = tlist::Car<TestType>;
 

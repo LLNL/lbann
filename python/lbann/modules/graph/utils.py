@@ -1,103 +1,34 @@
 import lbann
-from lbann.util import str_list
 
-class GraphVertexData:
-    def __init__(self, layers, num_features):
-        """Object to hold list of layers, where each layer represents a vertex
-           in a graph.
+def GraphExpand(features, indices, name=None):
+    """Places the features according the indices to an expanded matrix
 
-           Args:
-               layers (iterator of layers): One dimensional iterator of node 
-                                            features with N number of ndoes
-               num_features (int) : the number of features per vertex
-           
-        """
-        self.shape = (len(layers), num_features)
-        self.layers = layers
-        self.num_nodes = len(layers)
-        self.num_features = num_features
+       output[i] = features[indices[i]]
 
-    def __getitem__(self, node):
-        """Get the feature vector of the None node represented as an LBANN layer
-        
-            args: node (int): The node to retrieve the features for. 
+       Args:
+            features (Layer) : 2D matrix with shape (N, F)
+            indices (Layer): 1D matrix with shape (E)
+       returnL (Layer) of shape (E,F)
+    """
+    GraphExpand.count += 1
+    if (name is None):
+        name = f"graph_expand_{GraphExpand.count}"
+    return lbann.Gather(features, indices, axis=0, name=name)
 
-            returns: (Layer) : returns the features of the  Vertex <node> of  the graph.
-                    
-        """
-        return self.layers[node]
-    def __setitem__(self, node, feature):
-        """Set the value of the row-th layer in 
-           args: row (int):
-                 layer (Layer): 
-        """
-        self.layers[node] = feature
-    def update_num_features(self, num_features):
-        """Update the internal shapes to keep track of features
+def GraphReduce(features, indices, dims, name=None):
+    """Performs a sum-reduction of the features according the indices.
+       output[indices[i]] += features[i]
 
-        Args: 
-             num_features (int): the features per vertex
-        """
-        self.num_features = num_features 
-        self.shape = (len(self.layers), num_features)
-    def size(self, index = None):
-        """Get the size (shape) of the GraphVertexObject, where the size is represented
-           as a tuple (n,m), where n is the number of nodes and m is the number of 
-           features per node. 
+       Args:
+            features (layer) : 2D matrix with shape (E, F)
+            indices (layer): 1D matrix with shape (E)
+            dims (list of int): tuple of ints with the values (N, F)
+       returns: (layer) of shape (N, F)
+    """
+    GraphReduce.count += 1
+    if (name is None):
+        name = f"graph_reduce_{GraphReduce.count}"
+    return lbann.Scatter(features, indices, dims=dims, axis=0, name=name)
 
-           args: index (int): 0 to return the number of nodes and 1 to return the number of
-                               features. 
-           returns: (int) or (int,int): Either returns the tuple (n,m) or n or m. 
-
-        """
-        if isinstance(index,int):
-            return self.shape[index]
-        else:
-            return self.shape
-
-    def get_mat(self, cols = None):
-        """Generates a matrix representation of the graph data.
-
-           args: cols (int) 
-        """
-        
-        mat = lbann.Concatenation(self.layers)
-
-        if (cols):
-            mat = lbann.Reshape(mat, dims=str_list([self.shape[0], cols]))    
-        else:
-            mat = lbann.Reshape(mat, dims=str_list([self.shape[0], self.shape[1]]))
-
-        return mat
-   
-    def clone(self):
-        """Generates a clone of the GraphVertexData object. Results in a 
-           splitting in the DAG.
-        """
-        cloned_layers = [] 
-
-        for i,node in enumerate(self.layers):
-            temp = lbann.Split(node)
-            layers[i] = lbann.Identity(temp)
-            cloned_layers.append(lbann.Identity(temp))
-
-
-        return GraphVertexData(cloned_layers, self.num_features)
-
-
-    @classmethod
-    def matrix_to_graph(cls, mat_layer, num_vertices, num_features):
-        """Given a 2D matrix of shape (num_vertices, num_features), returns a 
-           GraphVertexData object with num_vertices number of nodes with num_features. 
-           
-        """
-
-        slice_points = str_list([i for i in range(0,num_vertices * num_features + 1, num_features)])
-        flattened_layer = lbann.Reshape(mat_layer, dims = str(num_vertices * num_features))
-        sliced_mat_layer = lbann.Slice(flattened_layer, axis = 0, slice_points = slice_points)
-
-        list_of_layers = []
-        for node in range(num_vertices):
-            temp = lbann.Identity(sliced_mat_layer)
-            list_of_layers.append(lbann.Reshape(temp, dims=str_list([1, num_features])))
-        return cls(list_of_layers, num_features)
+GraphReduce.count = 0
+GraphExpand.count = 0

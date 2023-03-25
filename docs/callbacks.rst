@@ -64,7 +64,7 @@ Profobuf (Advanced)
    callback {
      timer {
      }
-     print_atatistics {
+     print_statistics {
        batch_interval: 5
      }
      save_model {
@@ -82,9 +82,11 @@ Available Callbacks
 .. toctree::
    :maxdepth: 1
 
+   Export Onnx <callbacks/export_onnx>
    Summarize images <callbacks/summarize_images>
 
 ..
+   Alternate updates <callbacks/alternate_updates>
    Check dataset <callbacks/check_dataset>
    Check gradients <callbacks/check_gradients>
    Check init <callbacks/check_init>
@@ -125,4 +127,3 @@ Available Callbacks
    Timer <callbacks/timer>
    Variable minibatch <callbacks/variable_minibatch>
    Compute model size <callbacks/compute_model_size>
-   

@@ -5,7 +5,6 @@ from os.path import abspath, dirname, join
 import google.protobuf.text_format as txtf
 import lbann.contrib.launcher
 import lbann.contrib.args
-from lbann.util import str_list
 import datetime
 
 # ==============================================
@@ -90,9 +89,6 @@ args = parser.parse_args()
 print("Pretrained dir ", args.pretrained_dir)
 assert args.pretrained_dir, "evaluate script asssumes a pretrained MaCC model"
 
-def list2str(l):
-    return ' '.join(l)
-
 def construct_model():
     """Construct MACC surrogate model.
 
@@ -102,17 +98,17 @@ def construct_model():
     import lbann
 
     # Layer graph
-    input = lbann.Input(target_mode='N/A',name='inp_data')
+    input = lbann.Input(data_field='samples',name='inp_data')
     # data is 64*64*4 images + 15 scalar + 5 param
-    inp_slice = lbann.Slice(input, axis=0, slice_points=str_list([0,args.ydim,args.ydim+args.xdim]),name='inp_slice')
+    inp_slice = lbann.Slice(input, axis=0, slice_points=[0,args.ydim,args.ydim+args.xdim],name='inp_slice')
     gt_y = lbann.Identity(inp_slice,name='gt_y')
     gt_x = lbann.Identity(inp_slice, name='gt_x') #param not used
 
-    zero  = lbann.Constant(value=0.0,num_neurons='1',name='zero')
-    one  = lbann.Constant(value=1.0,num_neurons='1',name='one')
+    zero  = lbann.Constant(value=0.0,num_neurons=[1],name='zero')
+    one  = lbann.Constant(value=1.0,num_neurons=[1],name='one')
 
 
-    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="20")
+    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=20)
     wae = macc_models.MACCWAE(args.zdim,args.ydim,cf=args.wae_mcf,use_CNN=args.useCNN) #pretrained, freeze
     inv = macc_models.MACCInverse(args.xdim,cf=args.surrogate_mcf)
     fwd = macc_models.MACCForward(args.zdim,cf=args.surrogate_mcf)
@@ -150,8 +146,8 @@ def construct_model():
     L_cyc = lbann.Add(L_cyc_y, L_cyc_x)
 
     #loss_gen0  = L_l2_y + lamda_cyc*L_cyc
-    loss_gen0  = lbann.WeightedSum([L_l2_y,L_cyc], scaling_factors=f'1 {args.lamda_cyc}')
-    loss_gen1  = lbann.WeightedSum([L_l2_x,L_cyc_y], scaling_factors=f'1 {args.lamda_cyc}')
+    loss_gen0  = lbann.WeightedSum([L_l2_y,L_cyc], scaling_factors=[1, args.lamda_cyc])
+    loss_gen1  = lbann.WeightedSum([L_l2_x,L_cyc_y], scaling_factors=[1, args.lamda_cyc])
     #loss_gen1  =  L_l2_x + lamda_cyc*L_cyc_y
 
 

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,10 +37,15 @@ namespace lbann {
  *  the "expression" argument. Some compilers also give better type
  *  information when writing their own error messages.
  */
-template <typename T> struct False : std::false_type
+template <typename T>
+struct False : std::false_type
 {
 };
 
+/** @brief Fallback implementation of general factory function template.
+ *  @tparam BaseClass
+ *  @param[in] msg The protobuf message describing the object.
+ */
 template <class BaseClass>
 std::unique_ptr<BaseClass> make_abstract(google::protobuf::Message const& msg)
 {
@@ -49,6 +54,10 @@ std::unique_ptr<BaseClass> make_abstract(google::protobuf::Message const& msg)
   return nullptr; // silence compiler warnings
 }
 
+/** @brief Fallback implementation of general builder function template.
+ *  @tparam ConcreteClass
+ *  @param[in] msg The protobuf message describing the object.
+ */
 template <class ConcreteClass>
 std::unique_ptr<ConcreteClass> make(google::protobuf::Message const& msg)
 {

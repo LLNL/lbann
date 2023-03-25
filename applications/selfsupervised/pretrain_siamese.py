@@ -5,7 +5,6 @@ import os.path
 import google.protobuf.text_format as txtf
 import lbann
 import modules
-from util import str_list
 import patch_generator
 
 def setup(num_patches=3,
@@ -22,14 +21,14 @@ def setup(num_patches=3,
     num_labels = patch_generator.num_labels(num_patches)
 
     # Extract tensors from data sample
-    input = lbann.Input()
+    input = lbann.Input(data_field='samples')
     slice_points = [0]
     for _ in range(num_patches):
         patch_size = functools.reduce(operator.mul, patch_dims)
         slice_points.append(slice_points[-1] + patch_size)
     slice_points.append(slice_points[-1] + num_labels)
-    sample = lbann.Slice(input, slice_points=str_list(slice_points))
-    patches = [lbann.Reshape(sample, dims=str_list(patch_dims))
+    sample = lbann.Slice(input, slice_points=slice_points)
+    patches = [lbann.Reshape(sample, dims=patch_dims)
                for _ in range(num_patches)]
     labels = lbann.Identity(sample)
 

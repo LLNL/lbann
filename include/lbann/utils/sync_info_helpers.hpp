@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -36,8 +36,7 @@ namespace lbann {
 
 /** @brief Get a SyncInfo from an Matrix. */
 template <typename TensorDataType, El::Device D>
-El::SyncInfo<D> get_sync_info(
-  El::Matrix<TensorDataType, D> const& m) noexcept
+El::SyncInfo<D> get_sync_info(El::Matrix<TensorDataType, D> const& m) noexcept
 {
   return El::SyncInfoFromMatrix(m);
 }
@@ -51,10 +50,8 @@ template <typename TensorDataType,
           El::Dist ColDist,
           El::Device D>
 El::SyncInfo<D> get_sync_info(
-  El::DistMatrix<TensorDataType,
-                 RowDist, ColDist,
-                 El::ELEMENT,
-                 D> const& m) noexcept
+  El::DistMatrix<TensorDataType, RowDist, ColDist, El::ELEMENT, D> const&
+    m) noexcept
 {
   return El::SyncInfoFromMatrix(m.LockedMatrix());
 }
@@ -67,8 +64,7 @@ El::SyncInfo<D> get_sync_info(
  *           deduction, for example.
  */
 template <El::Device D, El::Device... Ds>
-inline auto force(El::MultiSync<D, Ds...> const& x)
-  -> El::SyncInfo<D> const&
+inline auto force(El::MultiSync<D, Ds...> const& x) -> El::SyncInfo<D> const&
 {
   return x;
 }

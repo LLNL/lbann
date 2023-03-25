@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,26 +28,33 @@
 #define LBANN_LAYER_CROP_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/proto/layers.pb.h"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 namespace lbann {
 
-/** @brief Crop tensor.
+/** @brief Extract crop from tensor at a position
  *
- *  Extract a crop from an @f$ N @f$-D tensor. The second input tensor
- *  is interpreted as a normalized crop position in @f$ [0,1)^N
- *  @f$. For images in CHW format, a position of (0,0,0) corresponds
- *  to the red-top-left corner and (1,1,1) to the blue-bottom-right
- *  corner. The crop size is determined at setup.
+ *  Expects two input tensors: an @f$ N @f$-D data tensor and a 1D
+ *  position vector with @f$ N @f$ entries. The position vector should
+ *  be normalized so that values are in @f$ [0,1] @f$. For images in
+ *  CHW format, a position of (0,0,0) corresponds to the red-top-left
+ *  corner and (1,1,1) to the blue-bottom-right corner.
  */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class crop_layer : public data_type_layer<TensorDataType> {
+class crop_layer : public data_type_layer<TensorDataType>
+{
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "crop layer only supports DATA_PARALLEL");
 #ifdef LBANN_HAS_GPU_FP16
-  using CompareType = typename std::conditional<std::is_same<TensorDataType, fp16>::value, float, TensorDataType>::type;
+  using CompareType =
+    typename std::conditional<std::is_same<TensorDataType, fp16>::value,
+                              float,
+                              TensorDataType>::type;
 #else
   using CompareType = TensorDataType;
 #endif
@@ -61,30 +68,26 @@ public:
   ///@}
 
 public:
-
-  crop_layer(lbann_comm *comm,
-             std::vector<int> dims)
-    : data_type_layer<TensorDataType>(nullptr) {
+  crop_layer(lbann_comm* comm, std::vector<int> dims)
+    : data_type_layer<TensorDataType>(nullptr)
+  {
     this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 2;
   }
 
   crop_layer(const crop_layer& other)
     : data_type_layer<TensorDataType>(other),
-      m_input_v(other.m_input_v ?
-                other.m_input_v->Copy() : nullptr),
-      m_output_v(other.m_output_v ?
-                 other.m_output_v->Copy() : nullptr),
-      m_crop_pos_v(other.m_crop_pos_v ?
-                   other.m_crop_pos_v->Copy() : nullptr){}
-  crop_layer& operator=(const crop_layer& other) {
+      m_input_v(other.m_input_v ? other.m_input_v->Copy() : nullptr),
+      m_output_v(other.m_output_v ? other.m_output_v->Copy() : nullptr),
+      m_crop_pos_v(other.m_crop_pos_v ? other.m_crop_pos_v->Copy() : nullptr)
+  {}
+  crop_layer& operator=(const crop_layer& other)
+  {
     data_type_layer<TensorDataType>::operator=(other);
-    m_input_v.reset(other.m_input_v ?
-                    other.m_input_v->Copy() : nullptr);
-    m_output_v.reset(other.m_output_v ?
-                     other.m_output_v->Copy() : nullptr);
-    m_crop_pos_v.reset(other.m_crop_pos_v ?
-                       other.m_crop_pos_v->Copy() : nullptr);
+    m_input_v.reset(other.m_input_v ? other.m_input_v->Copy() : nullptr);
+    m_output_v.reset(other.m_output_v ? other.m_output_v->Copy() : nullptr);
+    m_crop_pos_v.reset(other.m_crop_pos_v ? other.m_crop_pos_v->Copy()
+                                          : nullptr);
     return *this;
   }
 
@@ -102,25 +105,26 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  void setup_matrices(const El::Grid& grid) override {
-    data_type_layer<TensorDataType>::setup_matrices(grid);
+  void setup_data(size_t max_mini_batch_size) override
+  {
+    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
     const auto& input = this->get_prev_activations();
     const auto& dist = input.DistData();
     m_input_v.reset(input.Construct(input.Grid(), input.Root()));
     m_output_v.reset(input.Construct(input.Grid(), input.Root()));
 
     /// @todo Setup the input tensor with this data distribution
-    m_crop_pos_v.reset(AbsDistMatrixType::Instantiate(*dist.grid,
-                                               dist.root,
-                                               El::STAR,
-                                               dist.rowDist,
-                                               (dist.blockWidth == 1 ?
-                                                El::ELEMENT : El::BLOCK),
-                                               El::Device::CPU));
-
+    m_crop_pos_v.reset(AbsDistMatrixType::Instantiate(
+      *dist.grid,
+      dist.root,
+      El::STAR,
+      dist.rowDist,
+      (dist.blockWidth == 1 ? El::ELEMENT : El::BLOCK),
+      El::Device::CPU));
   }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     std::stringstream err;
 
@@ -130,18 +134,17 @@ public:
     const auto& output_dims = this->get_output_dims();
     if (input_dims.size() != output_dims.size()) {
       err << get_type() << " layer \"" << this->get_name() << "\" "
-          << "expects a crop input tensor with "
-          << output_dims.size() << " dimensions, "
+          << "expects a crop input tensor with " << output_dims.size()
+          << " dimensions, "
           << "but parent layer "
           << "\"" << this->get_parent_layers()[0]->get_name() << "\" "
-          << "outputs a tensor with "
-          << input_dims.size() << " dimensions";
+          << "outputs a tensor with " << input_dims.size() << " dimensions";
       LBANN_ERROR(err.str());
     }
-    if (loc_dims.size() != 1 || loc_dims[0] != (int) input_dims.size()) {
+    if (loc_dims.size() != 1 || loc_dims[0] != (int)input_dims.size()) {
       err << get_type() << " layer \"" << this->get_name() << "\" "
-          << "expects a 1D crop position tensor with "
-          << output_dims.size() << " entries, "
+          << "expects a 1D crop position tensor with " << output_dims.size()
+          << " entries, "
           << "but parent layer "
           << "\"" << this->get_parent_layers()[1]->get_name() << "\" "
           << "outputs a tensor with dimensions ";
@@ -150,27 +153,34 @@ public:
       }
       LBANN_ERROR(err.str());
     }
-
   }
 
 protected:
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  crop_layer()
-    : crop_layer(nullptr, { 1 } )
-  {}
+  crop_layer() : crop_layer(nullptr, {1}) {}
 
-  void fp_compute() override {
+  void fp_compute() override
+  {
     switch (this->get_input_dims().size()) {
-    case 3: fp_compute_3d(); break;
-    default: fp_compute_nd();
+    case 3:
+      fp_compute_3d();
+      break;
+    default:
+      fp_compute_nd();
     }
   }
 
-  void bp_compute() override {
+  void bp_compute() override
+  {
     switch (this->get_input_dims().size()) {
-    case 3: bp_compute_3d(); break;
-    default: bp_compute_nd();
+    case 3:
+      bp_compute_3d();
+      break;
+    default:
+      bp_compute_nd();
     }
   }
 
@@ -183,7 +193,8 @@ private:
   std::unique_ptr<AbsDistMatrixType> m_crop_pos_v;
 
   /** Forward prop implementation for n-dimensional tensors. */
-  void fp_compute_nd() {
+  void fp_compute_nd()
+  {
 
     // Input and output tensors
     const auto& input = this->get_prev_activations(0);
@@ -202,7 +213,8 @@ private:
     const auto& input1 = this->get_prev_activations(1);
     if (m_crop_pos_v->DistData() == input1.DistData()) {
       El::LockedView(*m_crop_pos_v, input1);
-    } else {
+    }
+    else {
       El::Copy(input1, *m_crop_pos_v);
     }
     const auto& local_crop_pos = m_crop_pos_v->LockedMatrix();
@@ -216,7 +228,8 @@ private:
       std::vector<El::Int> crop_offsets;
       for (El::Int d = 0; d < num_dims; ++d) {
         const auto& pos = local_crop_pos(d, local_col);
-        if (CompareType(pos) < CompareType(0.0) || CompareType(pos) > CompareType(1.0)) {
+        if (CompareType(pos) < CompareType(0.0) ||
+            CompareType(pos) > CompareType(1.0)) {
           std::stringstream err;
           err << "crop position not in range [0,1] (pos=(";
           for (El::Int i = 0; i < local_crop_pos.Height(); ++i) {
@@ -226,8 +239,9 @@ private:
           LBANN_ERROR(err.str());
         }
         const El::Int num_offsets = input_dims[d] - output_dims[d] + 1;
-        crop_offsets.push_back(std::min(El::Int(static_cast<CompareType>(pos) * num_offsets),
-                                        num_offsets - 1));
+        crop_offsets.push_back(
+          std::min(El::Int(static_cast<CompareType>(pos) * num_offsets),
+                   num_offsets - 1));
       }
 
       // Copy contiguous regions from input tensor to output tensor
@@ -238,8 +252,8 @@ private:
         auto input_index = output_pos[0] + crop_offsets[0];
         auto output_index = output_pos[0];
         for (El::Int d = 1; d < num_dims; ++d) {
-          input_index = (input_dims[d] * input_index
-                         + output_pos[d] + crop_offsets[d]);
+          input_index =
+            (input_dims[d] * input_index + output_pos[d] + crop_offsets[d]);
           output_index = output_dims[d] * output_index + output_pos[d];
         }
         El::LockedView(*m_input_v,
@@ -254,21 +268,19 @@ private:
 
         // Move to next contiguous region
         output_pos.back() += region_size;
-        for (El::Int d = num_dims-1; d >= 1; --d) {
+        for (El::Int d = num_dims - 1; d >= 1; --d) {
           if (output_pos[d] >= output_dims[d]) {
             output_pos[d] = 0;
-            ++output_pos[d-1];
+            ++output_pos[d - 1];
           }
         }
-
       }
-
     }
-
   }
 
   /** Backward prop implementation for n-dimensional tensors. */
-  void bp_compute_nd() {
+  void bp_compute_nd()
+  {
 
     // Clear error signals
     El::Zero(this->get_error_signals(0));
@@ -295,7 +307,8 @@ private:
       std::vector<El::Int> crop_offsets;
       for (El::Int d = 0; d < num_dims; ++d) {
         const auto& pos = local_crop_pos(d, local_col);
-        if (CompareType(pos) < CompareType(0.0) || CompareType(pos) > CompareType(1.0)) {
+        if (CompareType(pos) < CompareType(0.0) ||
+            CompareType(pos) > CompareType(1.0)) {
           std::stringstream err;
           err << "crop position not in range [0,1] (pos=(";
           for (El::Int i = 0; i < local_crop_pos.Height(); ++i) {
@@ -305,8 +318,9 @@ private:
           LBANN_ERROR(err.str());
         }
         const El::Int num_offsets = input_dims[d] - output_dims[d] + 1;
-        crop_offsets.push_back(std::min(El::Int(static_cast<CompareType>(pos) * num_offsets),
-                                        num_offsets - 1));
+        crop_offsets.push_back(
+          std::min(El::Int(static_cast<CompareType>(pos) * num_offsets),
+                   num_offsets - 1));
       }
 
       // Populate contiguous regions in gradient w.r.t. input tensor
@@ -317,8 +331,8 @@ private:
         auto input_index = output_pos[0] + crop_offsets[0];
         auto output_index = output_pos[0];
         for (El::Int d = 1; d < num_dims; ++d) {
-          input_index = (input_dims[d] * input_index
-                         + output_pos[d] + crop_offsets[d]);
+          input_index =
+            (input_dims[d] * input_index + output_pos[d] + crop_offsets[d]);
           output_index = output_dims[d] * output_index + output_pos[d];
         }
         El::LockedView(*m_output_v,
@@ -333,17 +347,14 @@ private:
 
         // Move to next contiguous region
         output_pos.back() += region_size;
-        for (El::Int d = num_dims-1; d >= 1; --d) {
+        for (El::Int d = num_dims - 1; d >= 1; --d) {
           if (output_pos[d] >= output_dims[d]) {
             output_pos[d] = 0;
-            ++output_pos[d-1];
+            ++output_pos[d - 1];
           }
         }
-
       }
-
     }
-
   }
 
   /** Forward prop implementation for 3D tensors.
@@ -354,13 +365,18 @@ private:
    *  E.g. image data.
    */
   void bp_compute_3d();
-
 };
 
-LBANN_DEFINE_LAYER_BUILDER(crop);
+template <typename T, data_layout L, El::Device D>
+void crop_layer<T, L, D>::write_specific_proto(lbann_data::Layer& proto) const
+{
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_crop();
+  protobuf::assign_to_repeated(*msg->mutable_dims(), this->get_output_dims());
+}
 
 #ifndef LBANN_CROP_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
+#define PROTO_DEVICE(T, Device)                                                \
   extern template class crop_layer<T, data_layout::DATA_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"

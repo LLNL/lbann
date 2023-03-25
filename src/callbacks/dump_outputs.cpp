@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,13 +25,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/dump_outputs.hpp"
+#include "lbann/callbacks/callback.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
+#include "lbann/layers/data_type_layer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/file_utils.hpp"
-#include "lbann/utils/trainer_file_utils.hpp"
-#include "lbann/layers/data_type_layer.hpp"
+#include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/utils/trainer_file_utils.hpp"
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #ifdef LBANN_HAS_CNPY
 #include <cnpy.h>
@@ -49,7 +53,8 @@ namespace {
  */
 void save_text(const std::string& file_name,
                std::string delimiter,
-               const CPUMat& data) {
+               const CPUMat& data)
+{
   std::ofstream fs(file_name.c_str());
   if (!fs.is_open()) {
     LBANN_ERROR("failed to open output file (" + file_name + ")");
@@ -62,11 +67,11 @@ void save_text(const std::string& file_name,
   }
 }
 
-
 /** Save NumPy binary file. */
 void save_npy(const std::string& file_name,
               const std::vector<int>& dims,
-              const CPUMat& data) {
+              const CPUMat& data)
+{
 #ifndef LBANN_HAS_CNPY
   LBANN_ERROR("CNPY not detected");
 #else
@@ -75,7 +80,9 @@ void save_npy(const std::string& file_name,
   }
   std::vector<size_t> shape;
   shape.push_back(data.Width());
-  for (const auto& d : dims) { shape.push_back(d); }
+  for (const auto& d : dims) {
+    shape.push_back(d);
+  }
   cnpy::npy_save(file_name, data.LockedBuffer(), shape);
 #endif // LBANN_HAS_CNPY
 }
@@ -84,7 +91,8 @@ void save_npy(const std::string& file_name,
 void save_npz(const std::string& file_name,
               const std::string& tensor_name,
               const std::vector<int>& dims,
-              const CPUMat& data) {
+              const CPUMat& data)
+{
 #ifndef LBANN_HAS_CNPY
   LBANN_ERROR("CNPY not detected");
 #else
@@ -93,7 +101,9 @@ void save_npz(const std::string& file_name,
   }
   std::vector<size_t> shape;
   shape.push_back(data.Width());
-  for (const auto& d : dims) { shape.push_back(d); }
+  for (const auto& d : dims) {
+    shape.push_back(d);
+  }
   cnpy::npz_save(file_name, tensor_name, data.LockedBuffer(), shape);
 #endif // LBANN_HAS_CNPY
 }
@@ -109,17 +119,24 @@ dump_outputs::dump_outputs(std::set<std::string> layer_names,
     m_layer_names(std::move(layer_names)),
     m_modes(std::move(modes)),
     m_directory(std::move(directory)),
-    m_file_format(std::move(file_format)) {
+    m_file_format(std::move(file_format))
+{
   std::stringstream err;
 
   // Initialize directory for output files
   // Note: Default directory is current working directory. Make sure
   // pathname has trailing slash.
-  if (m_directory.empty()) { m_directory = "./"; }
-  if (m_directory.back() != '/') { m_directory += "/"; }
+  if (m_directory.empty()) {
+    m_directory = "./";
+  }
+  if (m_directory.back() != '/') {
+    m_directory += "/";
+  }
 
   // Initialize file format
-  if (m_file_format.empty()) { m_file_format = "csv"; }
+  if (m_file_format.empty()) {
+    m_file_format = "csv";
+  }
 #ifndef LBANN_HAS_CNPY
   if (m_file_format == "npy" || m_file_format == "npz") {
     err << "callback \"" << this->name() << "\" attempted "
@@ -128,43 +145,46 @@ dump_outputs::dump_outputs(std::set<std::string> layer_names,
     LBANN_ERROR(err.str());
   }
 #endif // LBANN_HAS_CNPY
-  if (m_file_format != "csv" && m_file_format != "tsv"
-      && m_file_format != "npy" && m_file_format != "npz") {
+  if (m_file_format != "csv" && m_file_format != "tsv" &&
+      m_file_format != "npy" && m_file_format != "npz") {
     err << "callback \"" << this->name() << "\" attempted "
         << "to use invalid file format (" << m_file_format << ")";
     LBANN_ERROR(err.str());
   }
-
 }
 
-dump_outputs::dump_outputs()
-  : dump_outputs({}, {}, 0, "", "")
-{}
+dump_outputs::dump_outputs() : dump_outputs({}, {}, 0, "", "") {}
 
 template <class Archive>
-void dump_outputs::serialize(Archive & ar) {
-  ar(::cereal::make_nvp(
-       "BaseCallback",
-       ::cereal::base_class<callback_base>(this)),
+void dump_outputs::serialize(Archive& ar)
+{
+  ar(::cereal::make_nvp("BaseCallback",
+                        ::cereal::base_class<callback_base>(this)),
      CEREAL_NVP(m_layer_names),
      CEREAL_NVP(m_modes),
      CEREAL_NVP(m_directory),
      CEREAL_NVP(m_file_format));
 }
 
-void dump_outputs::do_dump_outputs(const model& m, const Layer& l) {
-  const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
+void dump_outputs::do_dump_outputs(const model& m, const Layer& l)
+{
+  const auto& c =
+    static_cast<const SGDExecutionContext&>(m.get_execution_context());
 
   // Get mini-batch step information
   const auto& mode = c.get_execution_mode();
 
   // Quit if output dump isn't needed
-  if (!m_modes.empty() && m_modes.count(mode) == 0) { return; }
-  if (!m_layer_names.empty()
-      && m_layer_names.count(l.get_name()) == 0) { return; }
+  if (!m_modes.empty() && m_modes.count(mode) == 0) {
+    return;
+  }
+  if (!m_layer_names.empty() && m_layer_names.count(l.get_name()) == 0) {
+    return;
+  }
 
   // Create directory
-  const std::string root_file_path = get_multi_trainer_model_path(m, m_directory);
+  const std::string root_file_path =
+    get_multi_trainer_model_path(m, m_directory);
   file::trainer_master_make_directory(root_file_path, m.get_comm());
 
   // Save layer outputs on root process
@@ -173,18 +193,19 @@ void dump_outputs::do_dump_outputs(const model& m, const Layer& l) {
     const CircMat<El::Device::CPU> circ_data(dtl.get_activations(i));
     if (circ_data.CrossRank() == circ_data.Root()) {
       const auto& data = static_cast<const CPUMat&>(circ_data.LockedMatrix());
-      const std::string file_name = (root_file_path
-                                     + c.get_state_string() + "_"
-                                     + l.get_name()
-                                     + "_output" + std::to_string(i)
-                                     + "." + m_file_format);
+      const std::string file_name =
+        (root_file_path + c.get_state_string() + "_" + l.get_name() +
+         "_output" + std::to_string(i) + "." + m_file_format);
       if (m_file_format == "csv") {
         save_text(file_name, ",", data);
-      } else if (m_file_format == "tsv") {
+      }
+      else if (m_file_format == "tsv") {
         save_text(file_name, "\t", data);
-      } else if (m_file_format == "npy") {
+      }
+      else if (m_file_format == "npy") {
         save_npy(file_name, dtl.get_output_dims(i), data);
-      } else if (m_file_format == "npz") {
+      }
+      else if (m_file_format == "npz") {
         save_npz(file_name,
                  l.get_name() + "_output" + std::to_string(i),
                  dtl.get_output_dims(i),
@@ -192,26 +213,48 @@ void dump_outputs::do_dump_outputs(const model& m, const Layer& l) {
       }
     }
   }
-
 }
 
-std::unique_ptr<callback_base>
-build_dump_outputs_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+void dump_outputs::on_evaluate_forward_prop_end(model* m, Layer* l)
+{
+  const auto& c =
+    static_cast<const SGDExecutionContext&>(m->get_execution_context());
+  if (c.get_step() % m_batch_interval == 0) {
+    do_dump_outputs(*m, *l);
+  }
+}
+
+void dump_outputs::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_dump_outputs();
+  msg->set_layers(protobuf::to_space_sep_string(m_layer_names));
+  std::string modes;
+  for (auto const& mode : m_modes)
+    modes += (to_string(mode) + " ");
+  msg->set_execution_modes(modes);
+  msg->set_batch_interval(m_batch_interval);
+  msg->set_directory(m_directory);
+  msg->set_format(m_file_format);
+}
+
+std::unique_ptr<callback_base> build_dump_outputs_callback_from_pbuf(
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackDumpOutputs&>(proto_msg);
   const auto& layer_names = parse_set<std::string>(params.layers());
-  const auto& modes =
-    parse_set<execution_mode>(params.execution_modes());
-  return make_unique<dump_outputs>(layer_names,
-                                                  modes,
-                                                  params.batch_interval(),
-                                                  params.directory(),
-                                                  params.format());
+  const auto& modes = parse_set<execution_mode>(params.execution_modes());
+  return std::make_unique<dump_outputs>(layer_names,
+                                        modes,
+                                        params.batch_interval(),
+                                        params.directory(),
+                                        params.format());
 }
 
 } // namespace callback
 } // namespace lbann
 
 #define LBANN_CLASS_NAME callback::dump_outputs
+#define LBANN_CLASS_LIBNAME callback_dump_outputs
 #include <lbann/macros/register_class_with_cereal.hpp>

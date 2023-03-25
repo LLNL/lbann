@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,30 +26,28 @@
 // lbann_proto.cpp - prototext application
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lbann/proto/proto_common.hpp>
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/lbann_library.hpp"
+#include <lbann/proto/proto_common.hpp>
 
 #include <iostream>
 
 using namespace lbann;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
   auto& arg_parser = global_argument_parser();
-  construct_std_options();
+  construct_all_options();
 
   try {
     arg_parser.parse(argc, argv);
   }
   catch (std::exception const& e) {
-    std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
-              << e.what() << "\n\nProcess terminating."
-              << std::endl;
+    std::cerr << "Error during argument parsing:\n\ne.what():\n\n  " << e.what()
+              << "\n\nProcess terminating." << std::endl;
     std::terminate();
   }
   // Output help message from the arg_parser
   std::cout << arg_parser << std::endl;
-  // Output manual help message
-  print_help(std::cerr);
   return EXIT_SUCCESS;
 }

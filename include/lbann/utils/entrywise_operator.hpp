@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -39,16 +39,19 @@ namespace lbann {
 template <template <typename> class Op, typename TensorDataType>
 void apply_entrywise_unary_operator(
   const El::AbstractMatrix<TensorDataType>& input,
-  El::AbstractMatrix<TensorDataType>& output) {
+  El::AbstractMatrix<TensorDataType>& output)
+{
   using UnaryOperator = Op<TensorDataType>;
   // Check that input and output are valid
   std::stringstream err;
   if (input.GetDevice() != El::Device::CPU) {
     LBANN_ERROR("input is not on CPU");
-  } else if (output.GetDevice() != El::Device::CPU) {
+  }
+  else if (output.GetDevice() != El::Device::CPU) {
     LBANN_ERROR("output is not on CPU");
-  } else if (input.Height() != output.Height()
-             || input.Width() != output.Width()) {
+  }
+  else if (input.Height() != output.Height() ||
+           input.Width() != output.Width()) {
     err << "input matrix dimensions "
         << "(" << input.Height() << " x " << input.Width() << ")"
         << "don't match output matrix dimensions "
@@ -66,7 +69,8 @@ void apply_entrywise_unary_operator(
       UnaryOperator op;
       output_buffer[i] = op(input_buffer[i]);
     }
-  } else {
+  }
+  else {
     auto const width = input.Width();
     auto const height = input.Height();
     LBANN_OMP_PARALLEL_FOR_COLLAPSE2
@@ -77,7 +81,6 @@ void apply_entrywise_unary_operator(
       }
     }
   }
-
 }
 
 /** Apply an entry-wise binary operator to CPU data.
@@ -88,28 +91,41 @@ template <template <typename> class Op, typename TensorDataType>
 void apply_entrywise_binary_operator(
   const El::AbstractMatrix<TensorDataType>& input1,
   const El::AbstractMatrix<TensorDataType>& input2,
-  El::AbstractMatrix<TensorDataType>& output) {
+  El::AbstractMatrix<TensorDataType>& output)
+{
   using BinaryOperator = Op<TensorDataType>;
   // Check that input and output are valid
-  if (input1.GetDevice() != El::Device::CPU
-      || input2.GetDevice() != El::Device::CPU) {
+  if (input1.GetDevice() != El::Device::CPU ||
+      input2.GetDevice() != El::Device::CPU) {
     LBANN_ERROR("input is not on CPU");
-  } else if (output.GetDevice() != El::Device::CPU) {
+  }
+  else if (output.GetDevice() != El::Device::CPU) {
     LBANN_ERROR("output is not on CPU");
-  } else if (input1.Height() != input2.Height()
-             || input1.Width() != input2.Width()
-             || input1.Height() != output.Height()
-             || input1.Width() != output.Width()) {
+  }
+  else if (input1.Height() != input2.Height() ||
+           input1.Width() != input2.Width() ||
+           input1.Height() != output.Height() ||
+           input1.Width() != output.Width()) {
     LBANN_ERROR("input matrix dimensions "
-                "(", input1.Height(), " x ", input1.Width(), ", ",
-                input2.Height(), " x ", input2.Width(), ")"
+                "(",
+                input1.Height(),
+                " x ",
+                input1.Width(),
+                ", ",
+                input2.Height(),
+                " x ",
+                input2.Width(),
+                ")"
                 "don't match output matrix dimensions "
-                "(", output.Height(), " x ", output.Width(), ")");
+                "(",
+                output.Height(),
+                " x ",
+                output.Width(),
+                ")");
   }
 
   // Apply binary operator
-  if (input1.Contiguous() && input2.Contiguous()
-      && output.Contiguous()) {
+  if (input1.Contiguous() && input2.Contiguous() && output.Contiguous()) {
     const auto* input1_buffer = input1.LockedBuffer();
     const auto* input2_buffer = input2.LockedBuffer();
     auto* output_buffer = output.Buffer();
@@ -119,7 +135,8 @@ void apply_entrywise_binary_operator(
       BinaryOperator op;
       output_buffer[i] = op(input1_buffer[i], input2_buffer[i]);
     }
-  } else {
+  }
+  else {
     auto const width = input1.Width();
     auto const height = input1.Height();
     LBANN_OMP_PARALLEL_FOR_COLLAPSE2
@@ -130,7 +147,6 @@ void apply_entrywise_binary_operator(
       }
     }
   }
-
 }
 
 /** Apply an entry-wise unary operator to CPU data.
@@ -140,18 +156,26 @@ void apply_entrywise_binary_operator(
 template <template <typename> class Op, typename TensorDataType>
 void apply_entrywise_unary_operator(
   const El::AbstractDistMatrix<TensorDataType>& input,
-  El::AbstractDistMatrix<TensorDataType>& output) {
-  if (input.Height() != output.Height()
-      || input.Width() != output.Width()) {
+  El::AbstractDistMatrix<TensorDataType>& output)
+{
+  if (input.Height() != output.Height() || input.Width() != output.Width()) {
     LBANN_ERROR("input matrix dimensions "
-                "(", input.Height(), " x ", input.Width(), ")"
+                "(",
+                input.Height(),
+                " x ",
+                input.Width(),
+                ")"
                 "don't match output matrix dimensions "
-                "(", output.Height(), " x ", output.Width(), ")");
-  } else if (input.DistData() != output.DistData()) {
+                "(",
+                output.Height(),
+                " x ",
+                output.Width(),
+                ")");
+  }
+  else if (input.DistData() != output.DistData()) {
     LBANN_ERROR("input and output matrix distributions don't match");
   }
-  apply_entrywise_unary_operator<Op>(input.LockedMatrix(),
-                                     output.Matrix());
+  apply_entrywise_unary_operator<Op>(input.LockedMatrix(), output.Matrix());
 }
 
 /** Apply an entry-wise binary operator to GPU data.
@@ -162,18 +186,29 @@ template <template <typename> class Op, typename TensorDataType>
 void apply_entrywise_binary_operator(
   const El::AbstractDistMatrix<TensorDataType>& input1,
   const El::AbstractDistMatrix<TensorDataType>& input2,
-  El::AbstractDistMatrix<TensorDataType>& output) {
-  if (input1.Height() != input2.Height()
-      || input1.Width() != input2.Width()
-      || input1.Height() != output.Height()
-      || input1.Width() != output.Width()) {
+  El::AbstractDistMatrix<TensorDataType>& output)
+{
+  if (input1.Height() != input2.Height() || input1.Width() != input2.Width() ||
+      input1.Height() != output.Height() || input1.Width() != output.Width()) {
     LBANN_ERROR("input matrix dimensions "
-                "(", input1.Height(), " x ", input1.Width(), ", ",
-                input2.Height(), " x ", input2.Width(), ")"
+                "(",
+                input1.Height(),
+                " x ",
+                input1.Width(),
+                ", ",
+                input2.Height(),
+                " x ",
+                input2.Width(),
+                ")"
                 "don't match output matrix dimensions "
-                "(", output.Height(), " x ", output.Width(), ")");
-  } else if (input1.DistData() != input2.DistData()
-             || input1.DistData() != output.DistData()) {
+                "(",
+                output.Height(),
+                " x ",
+                output.Width(),
+                ")");
+  }
+  else if (input1.DistData() != input2.DistData() ||
+           input1.DistData() != output.DistData()) {
     LBANN_ERROR("input and output matrix distributions don't match");
   }
   apply_entrywise_binary_operator<Op>(input1.LockedMatrix(),

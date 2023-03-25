@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -59,9 +59,13 @@ namespace lbann {
 #endif // #ifdef LBANN_DEBUG
 
 lbann_comm::lbann_comm(int ppm, El::mpi::Comm world)
-  : m_world_comm(std::move(world)), m_procs_per_trainer(ppm),
-    m_num_trainer_barriers(0), m_num_intertrainer_barriers(0),
-    m_num_global_barriers(0), m_bytes_sent(0), m_bytes_received(0)
+  : m_world_comm(std::move(world)),
+    m_procs_per_trainer(ppm),
+    m_num_trainer_barriers(0),
+    m_num_intertrainer_barriers(0),
+    m_num_global_barriers(0),
+    m_bytes_sent(0),
+    m_bytes_received(0)
 {
 #ifdef LBANN_HAS_ALUMINUM
   // Don't have argc/argv here, but MPI should already be init'd.
@@ -92,9 +96,7 @@ lbann_comm::~lbann_comm()
 #endif
 }
 
-void lbann_comm::split_trainers(
-  int procs_per_trainer,
-  int trainer_grid_height)
+void lbann_comm::split_trainers(int procs_per_trainer, int trainer_grid_height)
 {
   const int world_size = El::mpi::Size(get_world_comm());
   m_procs_per_trainer = procs_per_trainer;
@@ -132,10 +134,190 @@ void lbann_comm::split_trainers(
                  m_intertrainer_comm);
 
   // Initialize Elemental grid for trainer
-  m_grid = make_unique<El::Grid>(
-    m_trainer_comm.GetMPIComm(),
-    trainer_grid_height);
+  m_grid = std::make_unique<El::Grid>(m_trainer_comm.GetMPIComm(),
+                                      trainer_grid_height);
+}
 
+void lbann_comm::split_trainer_grid(int num_process_primary_grid,
+                                    bool create_two_models,
+                                    bool enable_async_comm,
+                                    bool enable_topo_aware)
+{
+  const int trainer_size = El::mpi::Size(m_trainer_comm);
+  m_create_two_models = create_two_models;
+  m_subgrid_async_progress = enable_async_comm;
+  bool enable_topology_aware = enable_topo_aware;
+  // enable_topology_aware = true;
+  std::cout << "Topoaware In comm:" << enable_topo_aware << "\n";
+
+  // If primary grid size is not given then split resources equally between
+  // primary and secondary grid
+  if (num_process_primary_grid == 0) {
+    num_process_primary_grid = trainer_size / 2;
+  }
+
+  if (num_process_primary_grid == 0) {
+    LBANN_ERROR("Procs for primary grid in a trainer cannot be zero.");
+  }
+
+  if (num_process_primary_grid == trainer_size) {
+    return;
+  }
+
+  std::cout << "Rank:" << m_rank_in_trainer << " split trainer grid\n"
+            << std::flush;
+  int num_process_secondary_grid = trainer_size - num_process_primary_grid;
+
+  int rank_in_split_comm;
+  if (enable_topology_aware == false) {
+    if (m_rank_in_trainer < num_process_primary_grid) {
+      rank_in_split_comm = m_rank_in_trainer % num_process_primary_grid;
+      m_grid_type = GridType::PRIMARY_GRID;
+      m_rank_in_trainer = rank_in_split_comm;
+      m_procs_per_trainer = num_process_primary_grid;
+    }
+    else {
+      rank_in_split_comm = (m_rank_in_trainer - num_process_primary_grid) %
+                           num_process_secondary_grid;
+      m_grid_type = GridType::SECONDARY_GRID;
+      m_rank_in_trainer = rank_in_split_comm;
+      m_procs_per_trainer = num_process_secondary_grid;
+    }
+    // Update ranks in primary and secondary grids
+    for (int rank = 0; rank < num_process_primary_grid; ++rank) {
+      m_primary_grid_ranks.push_back(rank);
+    }
+    for (int rank = num_process_primary_grid;
+         rank < num_process_primary_grid + num_process_secondary_grid;
+         ++rank) {
+      m_secondary_grid_ranks.push_back(rank);
+    }
+  }
+  else { // topology aware
+
+    // Update ranks in primary and secondary grids
+    for (int rank = 0;
+         rank < num_process_primary_grid + num_process_secondary_grid;
+         ++rank) {
+      if ((rank % 2 == 0 and rank < 2 * num_process_primary_grid) or
+          m_secondary_grid_ranks.size() == (size_t)num_process_secondary_grid)
+        m_primary_grid_ranks.push_back(rank);
+      else
+        m_secondary_grid_ranks.push_back(rank);
+    }
+    if (std::find(m_primary_grid_ranks.begin(),
+                  m_primary_grid_ranks.end(),
+                  m_rank_in_trainer) !=
+        m_primary_grid_ranks.end()) { // Primary grid
+
+      auto pos = std::find(m_primary_grid_ranks.begin(),
+                           m_primary_grid_ranks.end(),
+                           m_rank_in_trainer);
+      rank_in_split_comm = pos - m_primary_grid_ranks.begin();
+      m_grid_type = GridType::PRIMARY_GRID;
+      m_rank_in_trainer = rank_in_split_comm;
+      m_procs_per_trainer = num_process_primary_grid;
+    }
+    else {
+
+      auto pos = std::find(m_secondary_grid_ranks.begin(),
+                           m_secondary_grid_ranks.end(),
+                           m_rank_in_trainer);
+      rank_in_split_comm = pos - m_secondary_grid_ranks.begin();
+      m_grid_type = GridType::SECONDARY_GRID;
+      m_rank_in_trainer = rank_in_split_comm;
+      m_procs_per_trainer = num_process_secondary_grid;
+    }
+  }
+
+  std::cout << "Primary Grid:";
+  for (auto it = m_primary_grid_ranks.begin(); it != m_primary_grid_ranks.end();
+       it++)
+    std::cout << *it << " ";
+  std::cout << "\n";
+
+  std::cout << "Secondary Grid:";
+  for (auto it = m_secondary_grid_ranks.begin();
+       it != m_secondary_grid_ranks.end();
+       it++)
+    std::cout << *it << " ";
+  std::cout << "\n";
+
+  // Create Groups to form communicators
+  El::mpi::Group trainer_group, primary_grid_group, secondary_grid_group,
+    subset_grid_group;
+  El::mpi::CommGroup(m_trainer_comm, trainer_group);
+  El::mpi::Incl(trainer_group,
+                m_primary_grid_ranks.size(),
+                m_primary_grid_ranks.data(),
+                primary_grid_group);
+  El::mpi::Incl(trainer_group,
+                m_secondary_grid_ranks.size(),
+                m_secondary_grid_ranks.data(),
+                secondary_grid_group);
+
+  // Create communicators (one each for primary and secondary grid)
+  El::mpi::Create(m_trainer_comm, primary_grid_group, m_primary_grid_comm);
+  El::mpi::Create(m_trainer_comm, secondary_grid_group, m_secondary_grid_comm);
+
+  El::mpi::Dup(m_trainer_comm, m_combined_grid_comm);
+  if (m_create_two_models) {
+    if (m_grid_type == GridType::PRIMARY_GRID) {
+      El::mpi::Dup(m_primary_grid_comm, m_trainer_comm);
+    }
+    else {
+      El::mpi::Dup(m_secondary_grid_comm, m_trainer_comm);
+    }
+    // Initialize Elemental grid for trainer
+    m_grid = std::make_unique<El::Grid>(m_trainer_comm.GetMPIComm(), 1);
+  }
+  else {
+    if (m_grid_type == GridType::PRIMARY_GRID) {
+      El::mpi::Dup(m_primary_grid_comm, m_trainer_comm);
+    }
+    else {
+      El::mpi::Dup(m_secondary_grid_comm, m_trainer_comm);
+    }
+    // Initialize Elemental grid for trainer
+    m_grid = std::make_unique<El::Grid>(m_combined_grid_comm.GetMPIComm(),
+                                        primary_grid_group,
+                                        num_process_primary_grid,
+                                        El::COLUMN_MAJOR);
+
+    m_secondary_grid =
+      std::make_unique<El::Grid>(m_combined_grid_comm.GetMPIComm(),
+                                 secondary_grid_group,
+                                 num_process_secondary_grid,
+                                 El::COLUMN_MAJOR);
+  }
+
+  if (m_subgrid_async_progress) {
+    std::vector<int> subset_ranks;
+
+    int subset_grid_size =
+      std::min(num_process_primary_grid, num_process_secondary_grid);
+    if (num_process_primary_grid > num_process_secondary_grid) {
+      for (int i = 0; i < subset_grid_size; ++i) {
+        subset_ranks.push_back(m_primary_grid_ranks[i]);
+      }
+    }
+
+    else {
+      for (int i = 0; i < subset_grid_size; ++i) {
+        subset_ranks.push_back(m_secondary_grid_ranks[i]);
+      }
+    }
+
+    El::mpi::Incl(trainer_group,
+                  subset_ranks.size(),
+                  subset_ranks.data(),
+                  subset_grid_group);
+
+    m_subset_grid = make_unique<El::Grid>(m_combined_grid_comm.GetMPIComm(),
+                                          subset_grid_group,
+                                          subset_grid_size,
+                                          El::COLUMN_MAJOR);
+  }
 }
 
 void lbann_comm::intertrainer_sum_matrix(AbsMat& mat) const
@@ -152,7 +334,8 @@ void lbann_comm::intertrainer_sum_matrix(AbsDistMat& mat) const
 
 namespace {
 
-template <typename BackendT> struct BackendTag
+template <typename BackendT>
+struct BackendTag
 {
 };
 
@@ -186,19 +369,19 @@ void UpdateRequest(typename ::Al::NCCLBackend::req_type& req,
 }
 #endif // AL_HAS_NCCL
 
-#ifdef AL_HAS_MPI_CUDA
-auto GetRequest(Al::request& r, BackendTag<::Al::MPICUDABackend>) noexcept ->
-  typename ::Al::MPICUDABackend::req_type&
+#ifdef AL_HAS_HOST_TRANSFER
+auto GetRequest(Al::request& r, BackendTag<::Al::HostTransferBackend>) noexcept
+  -> typename ::Al::HostTransferBackend::req_type&
 {
-  return r.mpicuda_req;
+  return r.hosttransfer_req;
 }
-void UpdateRequest(typename ::Al::MPICUDABackend::req_type& req,
+void UpdateRequest(typename ::Al::HostTransferBackend::req_type& req,
                    El::SyncInfo<El::Device::GPU> const& si) noexcept
 {
   if (req)
     req->orig_stream = si.Stream();
 }
-#endif // AL_HAS_MPI_CUDA
+#endif // AL_HAS_HOST_TRANSFER
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_HAS_ALUMINUM)
 
 // The best we can do on CPU is exactly the Elemental implementation:
@@ -219,13 +402,25 @@ void allreduce_impl(El::Matrix<T, D>& m,
   return El::AllReduce(m, c, op);
 }
 
-template <typename T, El::Device D>
-void nb_allreduce_impl(El::Matrix<T, D>& m,
+template <typename T>
+void nb_allreduce_impl(El::Matrix<T, El::Device::CPU>& m,
                        const El::mpi::Comm& c,
-                       Al::request&,
+                       Al::request& req,
                        El::mpi::Op const& op)
 {
-  return El::AllReduce(m, c, op);
+  if (m.Height() == m.LDim() || m.Width() == 1) {
+    auto const count = m.Height() * m.Width();
+    MPI_Iallreduce(MPI_IN_PLACE,
+                   m.Buffer(),
+                   count,
+                   El::mpi::TypeMap<T>(),
+                   op.op,
+                   c.GetMPIComm(),
+                   &(req.raw_mpi_req));
+  }
+  else {
+    return El::AllReduce(m, c, op);
+  }
 }
 
 #if defined(LBANN_HAS_GPU) && defined(LBANN_HAS_ALUMINUM)
@@ -338,14 +533,14 @@ void nb_allreduce_impl(El::Matrix<T, El::Device::GPU>& m,
 
 #if defined(AL_HAS_NCCL)
   return nb_allreduce_aluminum(m, c, req, op, BackendTag<::Al::NCCLBackend>{});
-#elif defined(AL_HAS_MPI_CUDA)
+#elif defined(AL_HAS_HOST_TRANSFER)
   return nb_allreduce_aluminum(
     m,
     c,
     req,
     op,
-    BackendTag<::Al::MPICUDABackend>{},
-    ::Al::MPICUDABackend::allreduce_algo_type::host_transfer);
+    BackendTag<::Al::HostTransfer>{},
+    ::Al::HostTransferBackend::allreduce_algo_type::host_transfer);
 #else
   // At this point just call Elemental again
   return El::AllReduce(m, c, op);
@@ -445,13 +640,17 @@ void lbann_comm::wait(Al::request& req) const
     ::Al::Wait<::Al::NCCLBackend>(req.nccl_req);
   }
 #endif // AL_HAS_NCCL
-#ifdef AL_HAS_MPI_CUDA
-  if (req.mpicuda_req != Al::mpicuda_null_req) {
+#ifdef AL_HAS_HOST_TRANSFER
+  if (req.hosttransfer_req != Al::hosttransfer_null_req) {
     // Note this does not block the host.
-    ::Al::Wait<::Al::MPICUDABackend>(req.mpicuda_req);
+    ::Al::Wait<::Al::HostTransferBackend>(req.hosttransfer_req);
   }
-#endif // AL_HAS_MPI_CUDA
+#endif // AL_HAS_HOST_TRANSFER
 #endif // LBANN_HAS_ALUMINUM
+  if (req.raw_mpi_req != MPI_REQUEST_NULL) {
+    MPI_Wait(&(req.raw_mpi_req), MPI_STATUS_IGNORE);
+    ;
+  }
 }
 
 bool lbann_comm::test(Al::request& req) const
@@ -466,12 +665,18 @@ bool lbann_comm::test(Al::request& req) const
     req_test = req_test && ::Al::Test<::Al::NCCLBackend>(req.nccl_req);
   }
 #endif // AL_HAS_NCCL
-#ifdef AL_HAS_MPI_CUDA
-  if (req.mpicuda_req != Al::mpicuda_null_req) {
-    req_test = req_test && ::Al::Test<::Al::MPICUDABackend>(req.mpicuda_req);
+#ifdef AL_HAS_HOST_TRANSFER
+  if (req.hosttransfer_req != Al::hosttransfer_null_req) {
+    req_test =
+      req_test && ::Al::Test<::Al::HostTransferBackend>(req.hosttransfer_req);
   }
-#endif // AL_HAS_MPI_CUDA
+#endif // AL_HAS_HOST_TRANSFER
 #endif // LBANN_HAS_ALUMINUM
+  if (req.raw_mpi_req != MPI_REQUEST_NULL) {
+    int flag = 0;
+    MPI_Test(&(req.raw_mpi_req), &flag, MPI_STATUS_IGNORE);
+    req_test = flag;
+  }
   return req_test;
 }
 

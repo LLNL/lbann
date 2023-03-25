@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -55,15 +55,28 @@ int main(int argc, char *argv[]) {
   bool master = comm->am_world_master();
   const int rank = comm->get_rank_in_world();
 
-    options *opts = options::get();
-    opts->init(argc, argv);
+  auto& arg_parser = global_argument_parser();
+  construct_std_options();
+  construct_jag_options();
+  try {
+    arg_parser.parse(argc, argv);
+  }
+  catch (std::exception const& e) {
+    auto guessed_rank = guess_global_rank();
+    if (guessed_rank <= 0)
+      // Cannot call `El::ReportException` because MPI hasn't been
+      // initialized yet.
+      std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
+                << e.what() << "\n\nProcess terminating." << std::endl;
+    std::terminate();
+  }
 
     ofstream out("normalize.txt");
     if (!out) {
       LBANN_ERROR("failed to open: normalize.txt for writing");
     }
 
-    if (!(opts->has_string("filelist"))) {
+    if (arg_parser.get<std::string>(LBANN_OPTION_FILELIST) == "") {
       if (master) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist=<string>");
       }
@@ -96,9 +109,10 @@ int main(int argc, char *argv[]) {
       images_v_min[h].resize(MAGIC_NUMBER, DBL_MAX);
     }
 
-    ifstream in(opts->get_string("filelist").c_str());
+    ifstream in(arg_parser.get<std::string>(LBANN_OPTION_FILELIST).c_str());
     if (!in) {
-      LBANN_ERROR("failed to open " + opts->get_string("filelist") + " for reading");
+      LBANN_ERROR("failed to open " + arg_parser.get<std::string>(LBANN_OPTION_FILELIST) +
+                  " for reading");
     }
 
     size_t hhh = 0;

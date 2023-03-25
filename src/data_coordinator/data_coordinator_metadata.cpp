@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,8 +29,9 @@
 
 namespace lbann {
 
-std::string to_string(const data_reader_target_mode m) {
-  switch(m) {
+std::string to_string(const data_reader_target_mode m)
+{
+  switch (m) {
   case data_reader_target_mode::CLASSIFICATION:
     return "classification";
   case data_reader_target_mode::REGRESSION:
@@ -49,8 +50,9 @@ std::string to_string(const data_reader_target_mode m) {
   }
 }
 
-std::string to_string(const slice_points_mode m) {
-  switch(m) {
+std::string to_string(const slice_points_mode m)
+{
+  switch (m) {
   case slice_points_mode::INDEPENDENT:
     return "independent";
   case slice_points_mode::DEPENDENT:
@@ -63,14 +65,15 @@ std::string to_string(const slice_points_mode m) {
   }
 }
 
-slice_points_mode slice_points_mode_from_string(const std::string& str) {
-  if(str == "independent" || str == "INDEPENDENT") {
+slice_points_mode slice_points_mode_from_string(const std::string& str)
+{
+  if (str == "independent" || str == "INDEPENDENT") {
     return slice_points_mode::INDEPENDENT;
   }
-  if(str == "dependent" || str == "DEPENDENT") {
+  if (str == "dependent" || str == "DEPENDENT") {
     return slice_points_mode::DEPENDENT;
   }
-  if(str == "na" || str == "NA") {
+  if (str == "na" || str == "NA") {
     return slice_points_mode::NA;
   }
   LBANN_ERROR("Invalid slice points mode specified");

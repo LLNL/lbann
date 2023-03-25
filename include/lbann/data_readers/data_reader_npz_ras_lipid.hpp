@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,34 +25,37 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-
 #ifndef LBANN_DATA_READER_NPZ_RAS_LIPID_HPP
 #define LBANN_DATA_READER_NPZ_RAS_LIPID_HPP
 
 #include "conduit/conduit.hpp"
-#include "lbann/utils/options.hpp"
 #include "lbann/data_readers/data_reader.hpp"
-#include "conduit/conduit.hpp"
+#include "lbann/utils/options.hpp"
 #include <cnpy.h>
 #include <memory>
 
 namespace lbann {
-  /**
-   * Data reader for data stored in numpy (.npz) files that are encapsulated
-   * in conduit::Nodes
-   */
-class ras_lipid_conduit_data_reader : public generic_data_reader {
+/**
+ * Data reader for data stored in numpy (.npz) files that are encapsulated
+ * in conduit::Nodes
+ */
+class ras_lipid_conduit_data_reader : public generic_data_reader
+{
 
 public:
-
   ras_lipid_conduit_data_reader(const bool shuffle);
   ras_lipid_conduit_data_reader(const ras_lipid_conduit_data_reader&);
-  ras_lipid_conduit_data_reader& operator=(const ras_lipid_conduit_data_reader&);
+  ras_lipid_conduit_data_reader&
+  operator=(const ras_lipid_conduit_data_reader&);
   ~ras_lipid_conduit_data_reader() override {}
 
-  ras_lipid_conduit_data_reader* copy() const override { return new ras_lipid_conduit_data_reader(*this); }
+  ras_lipid_conduit_data_reader* copy() const override
+  {
+    return new ras_lipid_conduit_data_reader(*this);
+  }
 
-  std::string get_type() const override {
+  std::string get_type() const override
+  {
     return "ras_lipid_conduit_data_reader";
   }
 
@@ -60,15 +63,27 @@ public:
 
   void set_num_labels(int n) { m_num_labels = n; }
 
-  int get_linearized_data_size() const override { return m_seq_len*m_num_features; }
-  int get_linearized_label_size() const override {  return m_seq_len*m_num_labels; }
-  int get_linearized_response_size() const override { return m_num_response_features; }
-  //const std::vector<int> get_data_dims() const override {  return m_data_dims; }
-  const std::vector<int> get_data_dims() const override {  return {get_linearized_data_size()}; }
-  int get_num_labels() const override { return m_seq_len*m_num_labels; }
+  int get_linearized_data_size() const override
+  {
+    return m_seq_len * m_num_features;
+  }
+  int get_linearized_label_size() const override
+  {
+    return m_seq_len * m_num_labels;
+  }
+  int get_linearized_response_size() const override
+  {
+    return m_num_response_features;
+  }
+  // const std::vector<int> get_data_dims() const override {  return
+  // m_data_dims; }
+  const std::vector<int> get_data_dims() const override
+  {
+    return {get_linearized_data_size()};
+  }
+  int get_num_labels() const override { return m_seq_len * m_num_labels; }
 
 private:
-
   int m_num_features = 0;
   int m_num_labels = 3;
   int m_num_response_features = 0;
@@ -86,16 +101,18 @@ private:
   std::unordered_map<int, int> m_multi_sample_to_owner;
 
   std::unordered_map<std::string, std::set<int>> m_filename_to_multi_sample;
-  //std::unordered_map<std::string, std::unordered_set<int>> m_filename_to_multi_sample;
+  // std::unordered_map<std::string, std::unordered_set<int>>
+  // m_filename_to_multi_sample;
 
   std::unordered_map<int, int> m_multi_sample_id_to_first_sample;
 
-//  sample_list_t m_sample_list;
+  //  sample_list_t m_sample_list;
 
   /** @brief List of input npz filenames */
   std::vector<std::string> m_filenames;
 
-  /** @brief m_samples_per_file[j] contains the number of samples in the j-th file */
+  /** @brief m_samples_per_file[j] contains the number of samples in the j-th
+   * file */
   std::vector<int> m_samples_per_file;
 
   /** @brief Maps a data_id to the file index (in m_filenames) that
@@ -140,7 +157,8 @@ private:
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
 
-  /** @brief Populates in m_datum_shapes, m_datum_num_bytes, m_datum_word_sizes */
+  /** @brief Populates in m_datum_shapes, m_datum_num_bytes, m_datum_word_sizes
+   */
   void fill_in_metadata();
 
   /** @brief Re-build the data store's owner map
@@ -169,12 +187,15 @@ private:
   /** Print some statistics to cout */
   void print_shapes_etc();
 
-  void load_the_next_sample(conduit::Node &node, int sample_index, std::map<std::string, cnpy::NpyArray> &data);
+  void load_the_next_sample(conduit::Node& node,
+                            int sample_index,
+                            std::map<std::string, cnpy::NpyArray>& data);
 
-  void construct_multi_sample(std::vector<conduit::Node> &work, int data_id, conduit::Node &node); 
-
+  void construct_multi_sample(std::vector<conduit::Node>& work,
+                              int data_id,
+                              conduit::Node& node);
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif //LBANN_DATA_READER_NPZ_RAS_LIPID_HPP
+#endif // LBANN_DATA_READER_NPZ_RAS_LIPID_HPP

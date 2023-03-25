@@ -3,6 +3,21 @@ from lbann import model_pb2
 from lbann.util import make_iterable
 import lbann.core.layer
 import lbann.core.objective_function
+from enum import Enum
+
+class SubgraphCommunication(Enum):
+    PT2PT = 0
+    COLL = 1
+    COLL_OPT = 2
+
+def convert_to_protbuf_enums(subgraph_communication):
+    if(subgraph_communication==SubgraphCommunication.PT2PT):
+        return model_pb2.SubGraphCommunication.Value('PT2PT')
+    elif (subgraph_communication==SubgraphCommunication.COLL):
+        return model_pb2.SubGraphCommunication.Value('COLL')
+    elif (subgraph_communication==SubgraphCommunication.COLL_OPT):
+        return model_pb2.SubGraphCommunication.Value('COLL_OPT')
+
 
 class Model:
     """Neural network model."""
@@ -10,11 +25,17 @@ class Model:
     def __init__(self, epochs,
                  layers=[], weights=[], objective_function=None,
                  metrics=[], callbacks=[],
-                 summary_dir=None):
+                 name=None,
+                 summary_dir=None,
+                 subgraph_communication=SubgraphCommunication.PT2PT,
+                 subgraph_topology=False,
+                 subgraph_num_common_resources=0):
 
         # Scalar fields
         self.epochs = epochs
+        self.name = name
         self.summary_dir = summary_dir
+
         # Get connected layers
         self.layers = list(lbann.core.layer.traverse_layer_graph(layers))
 
@@ -35,12 +56,20 @@ class Model:
         # Metrics and callbacks
         self.metrics = make_iterable(metrics)
         self.callbacks = make_iterable(callbacks)
+        self.subgraph_communication = subgraph_communication
+        self.subgraph_topology = subgraph_topology
+        self.subgraph_num_common_resources = subgraph_num_common_resources
 
     def export_proto(self):
         """Construct and return a protobuf message."""
         # Initialize protobuf message
         model = model_pb2.Model()
+        if self.name is not None:
+            model.name = self.name
         model.num_epochs = self.epochs
+        model.subgraph_communication = convert_to_protbuf_enums(self.subgraph_communication)
+        model.enable_subgraph_topology = self.subgraph_topology
+        model.subgraph_parent_grid_resources = self.subgraph_num_common_resources
         if self.summary_dir is not None:
             model.summarizer.dir = self.summary_dir
         # Add model components

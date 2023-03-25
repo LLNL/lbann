@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,20 +29,20 @@
 #include "lbann/utils/dnn_enums.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
+#include "lbann/utils/profiling.hpp"
 
 #include "utils.hpp"
 
-namespace lbann
-{
+namespace lbann {
 
 #if defined LBANN_HAS_MIOPEN
-namespace dnn_lib
-{
+namespace dnn_lib {
 
 using namespace miopen;
 
 inline size_t get_dropout_states_size()
 {
+  BASIC_PROF_REGION("miopen:get_dropout_states_size");
   size_t size;
   CHECK_MIOPEN(miopenDropoutGetStatesSize(get_handle(), &size));
   return size;
@@ -50,6 +50,7 @@ inline size_t get_dropout_states_size()
 
 inline size_t get_dropout_reserve_space_size(TensorDescriptor const& xDesc)
 {
+  BASIC_PROF_REGION("miopen:get_dropout_reserve_space_size");
   size_t size;
   CHECK_MIOPEN(miopenDropoutGetReserveSpaceSize(xDesc, &size));
   return size;
@@ -64,6 +65,7 @@ void dropout_forward(DropoutDescriptor const& dropoutDesc,
                      El::AbstractMatrix<TensorDataType>& workSpace,
                      El::SyncInfo<El::Device::GPU> const& si)
 {
+  BASIC_PROF_REGION("miopen:dropout_forward");
   auto handle_manager = internal::make_default_handle_manager(si);
   CHECK_MIOPEN(
     miopenDropoutForward(handle_manager.get(),
@@ -100,6 +102,7 @@ void dropout_backward(DropoutDescriptor const& dropoutDesc,
                       El::AbstractMatrix<TensorDataType>& workSpace,
                       El::SyncInfo<El::Device::GPU> const& si)
 {
+  BASIC_PROF_REGION("miopen:dropout_backward");
   auto handle_manager = internal::make_default_handle_manager(si);
   CHECK_MIOPEN(
     miopenDropoutBackward(handle_manager.get(),
@@ -127,8 +130,8 @@ void dropout_backward(DropoutDescriptor const& dropoutDesc,
   dropout_backward(dropoutDesc, dyDesc, dy, dxDesc, dx, workSpace, multisync);
 }
 
-}// namespace dnn_lib
+} // namespace dnn_lib
 #endif // LBANN_HAS_MIOPEN
 
-}// namespace lbann
+} // namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_MIOPEN_DROPOUT_HPP_

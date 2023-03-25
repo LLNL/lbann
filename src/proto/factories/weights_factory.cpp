@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,14 +30,12 @@
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/variance_scaling_initializers.hpp"
 
-#include "lbann/proto/helpers.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/factory.hpp"
+#include "lbann/utils/protobuf.hpp"
 
-#include <weights.pb.h>
+#include "lbann/proto/weights.pb.h"
 
-namespace lbann {
-namespace proto {
 namespace {
 
 using MessageT = google::protobuf::Message;
@@ -46,9 +44,8 @@ using MessageT = google::protobuf::Message;
 using factory_type = lbann::generic_factory<
   lbann::weights_initializer,
   std::string,
-  generate_builder_type<lbann::weights_initializer,
-                        MessageT const&>,
-  default_key_error_policy>;
+  lbann::generate_builder_type<lbann::weights_initializer, MessageT const&>,
+  lbann::default_key_error_policy>;
 
 /** @brief Singleton holder for a factory.
  *
@@ -68,25 +65,27 @@ private:
   void register_default_builders()
   {
     factory_.register_builder("ConstantInitializer",
-                              build_constant_initializer_from_pbuf<T>);
+                              lbann::build_constant_initializer_from_pbuf<T>);
     factory_.register_builder("ValueInitializer",
-                              build_value_initializer_from_pbuf<T>);
+                              lbann::build_value_initializer_from_pbuf<T>);
+    factory_.register_builder("NumpyInitializer",
+                              lbann::build_numpy_initializer_from_pbuf<T>);
     factory_.register_builder("UniformInitializer",
-                              build_uniform_initializer_from_pbuf<T>);
+                              lbann::build_uniform_initializer_from_pbuf<T>);
     factory_.register_builder("NormalInitializer",
-                              build_normal_initializer_from_pbuf<T>);
+                              lbann::build_normal_initializer_from_pbuf<T>);
     factory_.register_builder("GlorotNormalInitializer",
-                              build_glorot_initializer_from_pbuf<T>);
+                              lbann::build_glorot_initializer_from_pbuf<T>);
     factory_.register_builder("GlorotUniformInitializer",
-                              build_glorot_initializer_from_pbuf<T>);
+                              lbann::build_glorot_initializer_from_pbuf<T>);
     factory_.register_builder("HeNormalInitializer",
-                              build_he_initializer_from_pbuf<T>);
+                              lbann::build_he_initializer_from_pbuf<T>);
     factory_.register_builder("HeUniformInitializer",
-                              build_he_initializer_from_pbuf<T>);
+                              lbann::build_he_initializer_from_pbuf<T>);
     factory_.register_builder("LeCunNormalInitializer",
-                              build_lecun_initializer_from_pbuf<T>);
+                              lbann::build_lecun_initializer_from_pbuf<T>);
     factory_.register_builder("LeCunUniformInitializer",
-                              build_lecun_initializer_from_pbuf<T>);
+                              lbann::build_lecun_initializer_from_pbuf<T>);
   }
 
 private:
@@ -102,52 +101,52 @@ factory_type const& get_weight_initializer_factory() noexcept
 
 /* Construct a weights initialization specified with prototext. */
 template <typename TensorDataType>
-std::unique_ptr<weights_initializer>
-construct_initializer(const lbann_data::Weights& proto_weights) {
+std::unique_ptr<lbann::weights_initializer>
+construct_initializer(const lbann_data::Weights& proto_weights)
+{
   auto const& factory = get_weight_initializer_factory<TensorDataType>();
   auto const& msg =
-    helpers::get_oneof_message(proto_weights.initializer(), "initializer_type");
+    ::lbann::protobuf::get_oneof_message(proto_weights.initializer(),
+                                         "initializer_type");
   return factory.create_object(msg.GetDescriptor()->name(), msg);
 }
 
 } // namespace
 
-std::unique_ptr<weights> construct_weights(
-  lbann_comm* comm,
-  const lbann_data::Optimizer& proto_opt,
-  const lbann_data::Weights& proto_weights) {
+std::unique_ptr<lbann::weights>
+lbann::proto::construct_weights(lbann_comm* comm,
+                                const lbann_data::Optimizer& proto_opt,
+                                const lbann_data::Weights& proto_weights)
+{
 
   if (!comm)
     LBANN_ERROR("Cannot have a null communicator.");
 
-  std::stringstream err;
-
   auto proto_datatype = proto_weights.datatype();
 
   // Instantiate weights
-  //  auto w = make_unique<data_type_weights<DataType>>(comm);
+  //  auto w = std::make_unique<data_type_weights<DataType>>(comm);
   std::unique_ptr<weights> w;
   std::unique_ptr<weights_initializer> init;
   std::unique_ptr<optimizer> opt;
 
-#define TEMPLATE_INSTANTIATION(TensorDataType)                                \
-    do {                                                                      \
-      if (proto_datatype == TypeToProtoDataType<TensorDataType>::value) {     \
-        w = make_unique<data_type_weights<TensorDataType>>(*comm);            \
-        init = (proto_weights.has_initializer()                               \
-          ? construct_initializer<TensorDataType>(proto_weights)              \
-          : nullptr);                                                         \
-        const lbann_data::Optimizer& opt_msg = (proto_weights.has_optimizer() \
-          ? proto_weights.optimizer()                                         \
-          : proto_opt);                                                       \
-        opt = (helpers::has_oneof(opt_msg, "optimizer_type")                  \
-          ? construct_optimizer<TensorDataType>(opt_msg)                      \
-          : nullptr);                                                         \
-      }                                                                       \
-    } while (0)
+#define TEMPLATE_INSTANTIATION(TensorDataType)                                 \
+  do {                                                                         \
+    if (proto_datatype == TypeToProtoDataType<TensorDataType>::value) {        \
+      w = std::make_unique<data_type_weights<TensorDataType>>(*comm);          \
+      init = (proto_weights.has_initializer()                                  \
+                ? construct_initializer<TensorDataType>(proto_weights)         \
+                : nullptr);                                                    \
+      const lbann_data::Optimizer& opt_msg =                                   \
+        (proto_weights.has_optimizer() ? proto_weights.optimizer()             \
+                                       : proto_opt);                           \
+      opt = (protobuf::has_oneof(opt_msg, "optimizer_type")                    \
+               ? construct_optimizer<TensorDataType>(opt_msg)                  \
+               : nullptr);                                                     \
+    }                                                                          \
+  } while (0)
 
-#define PROTO(T) \
-    TEMPLATE_INSTANTIATION(T)
+#define PROTO(T) TEMPLATE_INSTANTIATION(T)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
@@ -158,13 +157,15 @@ std::unique_ptr<weights> construct_weights(
 
   // Set weights name if provided
   const auto& name = proto_weights.name();
-  const auto& parsed_name = parse_list<std::string>(name);
   if (!name.empty()) {
-    if (parsed_name.empty() || parsed_name.front() != name) {
-      err << "weights name \"" << name << "\" is invalid since it "
-          << "contains whitespace";
-      LBANN_ERROR(err.str());
-    }
+    // FIXME (trb 04/15/22): I don't think this should still be an
+    // issue since weights lists in layers are now "repeated"
+    // protobuf fields and not space-separated strings. OTOH, we
+    // shouldn't allow names like "foo\vbar" or "fu\n\name".
+    if (name.find_first_of(" \n\r\t\v\f") != std::string::npos)
+      LBANN_ERROR("Weights name \"",
+                  name,
+                  "\" is invalid since it contains whitespace.");
     w->set_name(name);
   }
 
@@ -174,6 +175,3 @@ std::unique_ptr<weights> construct_weights(
 
   return w;
 }
-
-} // namespace proto
-} // namespace lbann

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,15 +35,7 @@
 #include "lbann/utils/dnn_lib/onednn.hpp"
 #endif // LBANN_HAS_ONEDNN
 
-// Supported implementations
-#ifdef LBANN_HAS_CUDNN
-#if CUDA_VERSION >= 11000 && CUDNN_VERSION >= 8004 // CUDA 11.0, cuDNN 8.0.4
-#define LBANN_GRU_LAYER_CUDNN_SUPPORTED
-#endif // CUDA_VERSION >= 11000 && CUDNN_VERSION >= 8004
-#endif // LBANN_HAS_CUDNN
-#ifdef LBANN_HAS_ONEDNN_CPU
-#define LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
-#endif // LBANN_HAS_ONEDNN_CPU
+// Supported implementations -- See lbann_config.h
 
 namespace lbann {
 
@@ -56,26 +48,25 @@ namespace lbann {
  *
  *  Uses four weights per GRU cell: "ih\_matrix" (
  *  @f$ 3 \text{hidden\_size}\times\text{input\_size} @f$ for layer 0
- *  and @f$ 3 \text{hidden\_size}\times\text{hidden\_size} for other
+ *  and @f$ 3 \text{hidden\_size}\times\text{hidden\_size} @f$ for other
  *  layers), "hh\_matrix" (
  *  @f$ 3 \text{hidden\_size}\times\text{hidden\_size} @f$ ),
  *  "ih_bias" ( @f$ 3 \text{hidden\_size} @f$ ),
  *  "hh_bias" ( @f$ 3 \text{hidden\_size} @f$ ).
  *
- *  Currently only supported on GPU. Requires at least CUDA 11.0 and
- *  cuDNN 8.0.4.
+ *  Support is experimental and requires either cuDNN (on GPU) or
+ *  oneDNN (on CPU).
  *
  *  @todo Support bidirectional RNNs
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class gru_layer
-  : public data_type_layer<TensorDataType> {
+class gru_layer : public data_type_layer<TensorDataType>
+{
 
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "GRU layer only supports data parallel layout");
 
 public:
-
   gru_layer(size_t hidden_size, size_t num_layers);
 
   gru_layer(const gru_layer& other);
@@ -86,6 +77,7 @@ public:
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
+
   description get_description() const override;
 
   /** @name Serialization */
@@ -96,10 +88,16 @@ public:
 
   ///@}
 
+  size_t get_hidden_size() const { return m_hidden_size; }
+  size_t get_num_layers() const { return m_num_layers; }
+  const hydrogen::simple_buffer<El::byte, Device>& get_reserve_space() const;
+
 protected:
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  gru_layer() : gru_layer(0,0) {}
+  gru_layer() : gru_layer(0, 0) {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void setup_data(size_t max_mini_batch_size) override;
@@ -108,7 +106,6 @@ protected:
   void bp_compute() override;
 
 private:
-
   /** @brief Size of each hidden state and output vector */
   size_t m_hidden_size;
   /** @brief Number of stacked GRU cells */
@@ -119,7 +116,8 @@ private:
   ///@{
 
   /** @brief Objects used in oneDNN CPU implementation */
-  struct OnednnCpuObjects {
+  struct OnednnCpuObjects
+  {
 
     // Typedefs
     using Backend = onednn_backend<El::Device::CPU>;
@@ -149,7 +147,6 @@ private:
     TensorDesc hh_matrix_weights_grad;
     TensorDesc bias_weights_grad;
     TensorDesc workspace;
-
   };
 
   /** @brief Storage for oneDNN CPU objects */
@@ -166,13 +163,15 @@ private:
   ///@{
 
   /** @brief Objects used in cuDNN implementation */
-  struct CudnnObjects {
+  struct CudnnObjects
+  {
 
     // Typedefs
     using ByteBuffer = hydrogen::simple_buffer<El::byte, El::Device::GPU>;
     using IntBuffer = hydrogen::simple_buffer<int32_t, El::Device::GPU>;
     using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
-    using GraphCache = std::unordered_map<size_t, std::pair<size_t, cuda::ExecutableGraph>>;
+    using GraphCache =
+      std::unordered_map<size_t, std::pair<size_t, cuda::ExecutableGraph>>;
 
     // Descriptors
     dnn_lib::RNNDescriptor rnn_desc;
@@ -205,7 +204,6 @@ private:
      *  cuda::ExecutableGraph .
      */
     GraphCache backward_prop_graph_cache;
-
   };
 
   /** @brief Storage for cuDNN objects */
@@ -218,10 +216,9 @@ private:
 #endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
   template <typename T>
-  friend void fp_compute_impl(gru_layer<T,Layout,Device>&);
+  friend void fp_compute_impl(gru_layer<T, Layout, Device>&);
   template <typename T>
-  friend void bp_compute_impl(gru_layer<T,Layout,Device>&);
-
+  friend void bp_compute_impl(gru_layer<T, Layout, Device>&);
 };
 
 // Builder function
@@ -231,19 +228,21 @@ LBANN_DEFINE_LAYER_BUILDER(gru);
 #ifndef LBANN_GRU_LAYER_INSTANTIATE
 
 #ifdef LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
-#define PROTO(T)                                        \
-  extern template class gru_layer<                      \
-    T, data_layout::DATA_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                                               \
+  extern template class gru_layer<T,                                           \
+                                  data_layout::DATA_PARALLEL,                  \
+                                  El::Device::CPU>;
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 #endif // LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
 
 #ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
-#define PROTO(T)                                        \
-  extern template class gru_layer<                      \
-    T, data_layout::DATA_PARALLEL, El::Device::GPU>;
-#define LBANN_INSTANTIATE_CPU_HALF
+#define PROTO(T)                                                               \
+  extern template class gru_layer<T,                                           \
+                                  data_layout::DATA_PARALLEL,                  \
+                                  El::Device::GPU>;
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 #endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED

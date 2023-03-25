@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,9 +27,9 @@
 #ifndef LBANN_OPTIMIZERS_SGD_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_SGD_HPP_INCLUDED
 
-#include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/io/persist.hpp"
-#include <optimizers.pb.h>
+#include "lbann/optimizers/data_type_optimizer.hpp"
+#include "lbann/proto/optimizers.pb.h"
 
 namespace lbann {
 
@@ -38,10 +38,11 @@ namespace lbann {
  *  @todo Dedicated optimizers for momentum or Nesterov SGD.
  */
 template <typename TensorDataType>
-class sgd : public Cloneable<sgd<TensorDataType>,
-                             data_type_optimizer<TensorDataType>> {
-  using BaseType = Cloneable<sgd<TensorDataType>,
-                             data_type_optimizer<TensorDataType>>;
+class sgd
+  : public Cloneable<sgd<TensorDataType>, data_type_optimizer<TensorDataType>>
+{
+  using BaseType =
+    Cloneable<sgd<TensorDataType>, data_type_optimizer<TensorDataType>>;
 
 public:
   /** @name Public Types */
@@ -59,7 +60,6 @@ public:
   ///@}
 
 public:
-
   /** @name Life cycle functions */
   ///@{
 
@@ -76,7 +76,7 @@ public:
 
   /** @brief Serialize to the archive. */
   template <class ArchiveT>
-  void serialize(ArchiveT & ar);
+  void serialize(ArchiveT& ar);
 
   ///@}
   /** @name Descriptions */
@@ -120,16 +120,15 @@ public:
 
   ///@}
 
-protected:
+  /** Add optimizer data to prototext */
+  void write_proto(lbann_data::Optimizer& opt) const final;
 
+protected:
   /** @brief Default constructor.
    *  @details This constructor exists as an implementation detail of
    *  the serialization code. It is not for general use.
    */
-  sgd()
-    : sgd(El::To<TensorDataType>(0.f),
-          El::To<TensorDataType>(0.f),
-          false)
+  sgd() : sgd(El::To<TensorDataType>(0.f), El::To<TensorDataType>(0.f), false)
   {}
 
   /** Computation for an optimization step. */
@@ -137,7 +136,6 @@ protected:
                     const AbsDistMatrixType& gradient) override;
 
 private:
-
   /** @brief Decay rate for gradient accumulation.
    *  @details A momentum of zero corresponds to vanilla SGD.
    */
@@ -150,10 +148,12 @@ private:
   std::unique_ptr<AbsDistMatrixType> m_velocity;
 
   /** CPU implementation of momentum or Nesterov step. */
-  void momentum_step_cpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
+  void momentum_step_cpu(AbsDistMatrixType& values,
+                         const AbsDistMatrixType& gradient);
 #ifdef LBANN_HAS_GPU
   /** GPU implementation of momentum or Nesterov step. */
-  void momentum_step_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
+  void momentum_step_gpu(AbsDistMatrixType& values,
+                         const AbsDistMatrixType& gradient);
 #endif // LBANN_HAS_GPU
 
   friend class cereal::access;
@@ -161,8 +161,7 @@ private:
 
 template <typename TensorDataType>
 std::unique_ptr<optimizer>
-build_sgd_optimizer_from_pbuf(
-  google::protobuf::Message const&);
+build_sgd_optimizer_from_pbuf(google::protobuf::Message const&);
 
 } // namespace lbann
 

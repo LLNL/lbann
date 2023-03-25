@@ -9,8 +9,13 @@ if sys.version_info[0] != 3:
     raise ImportError('Python 3 is required')
 
 # Try getting build-specific paths from config file
-_config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            'python_config.ini')
+if 'LBANN_PYTHON_CONFIG_FILE' in os.environ:
+    _config_file = os.environ['LBANN_PYTHON_CONFIG_FILE']
+else:
+    _config_file = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        'python_config.ini',
+    )
 _lbann_exe = None
 _lbann_has_proto_definitions = False
 if os.path.isfile(_config_file):
@@ -25,7 +30,7 @@ if os.path.isfile(_config_file):
 
 # Import Protobuf modules
 if _lbann_has_proto_definitions:
-    import lbann_pb2, callbacks_pb2, datatype_pb2, layers_pb2, metrics_pb2, model_pb2, objective_functions_pb2, optimizers_pb2, reader_pb2, weights_pb2, trainer_pb2, training_algorithm_pb2
+    import lbann_pb2, callbacks_pb2, datatype_pb2, layers_pb2, metrics_pb2, model_pb2, objective_functions_pb2, operators_pb2, optimizers_pb2, reader_pb2, weights_pb2, trainer_pb2, training_algorithm_pb2
     protobuf_modules = (
         lbann_pb2,
         callbacks_pb2,
@@ -34,6 +39,7 @@ if _lbann_has_proto_definitions:
         metrics_pb2,
         model_pb2,
         objective_functions_pb2,
+        operators_pb2,
         optimizers_pb2,
         reader_pb2,
         weights_pb2,
@@ -55,13 +61,14 @@ else:
     metrics_pb2 = None
     model_pb2 = None
     objective_functions_pb2 = None
+    operators_pb2 = None
     optimizers_pb2 = None
     reader_pb2 = None
     weights_pb2 = None
     trainer_pb2 = None
     training_algorithm_pb2 = None
     NoOptimizer = None
-    warnings.warn('THE LBANN MODULE DOES NOT HAVE PROTOBUF DEFINITIONS. THIS MODE IS NOT FUNCTIONAL FOR MOST USERS AND SHOULD ONLY BE USED TO GENERATE DOCUMENATION.')
+    warnings.warn('THE LBANN MODULE DOES NOT HAVE PROTOBUF DEFINITIONS. THIS MODE IS NOT FUNCTIONAL FOR MOST USERS AND SHOULD ONLY BE USED TO GENERATE DOCUMENTATION.')
 
 def lbann_exe():
     """LBANN executable."""
@@ -73,8 +80,11 @@ from lbann.core.layer import *
 from lbann.core.metric import *
 from lbann.core.model import *
 from lbann.core.objective_function import *
+import lbann.core.operators as ops
+from lbann.core.operator_layers import *
 from lbann.core.optimizer import *
 from lbann.core.trainer import *
 from lbann.core.training_algorithm import *
 from lbann.core.weights import *
 from lbann.launcher import run
+from lbann.lbann_features import *

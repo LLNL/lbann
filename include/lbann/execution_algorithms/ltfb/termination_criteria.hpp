@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,8 +26,8 @@
 #ifndef LBANN_EXECUTION_ALGORITHMS_LTFB_TERMINATION_CRITERIA_HPP_INCLUDED
 #define LBANN_EXECUTION_ALGORITHMS_LTFB_TERMINATION_CRITERIA_HPP_INCLUDED
 
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/execution_algorithms/ltfb/execution_context.hpp"
-#include "lbann/execution_contexts/execution_context.hpp"
 
 namespace lbann {
 namespace ltfb {
@@ -37,22 +37,23 @@ namespace ltfb {
  *
  *  An object here needs to manage
  */
-class TerminationCriteria final : public lbann::termination_criteria
+class LTFBTerminationCriteria final : public lbann::TerminationCriteria
 {
 public:
-  TerminationCriteria(size_t max_metalearning_steps)
+  LTFBTerminationCriteria(size_t max_metalearning_steps)
     : m_max_metalearning_steps{max_metalearning_steps}
   {}
-  ~TerminationCriteria() = default;
-  bool operator()(execution_context const& c) const final
+  ~LTFBTerminationCriteria() = default;
+  bool operator()(ExecutionContext const& c) const final
   {
-    return this->operator()(dynamic_cast<ExecutionContext const&>(c));
+    return this->operator()(dynamic_cast<LTFBExecutionContext const&>(c));
   }
   /** @brief Decide if the criteria are fulfilled. */
-  bool operator()(ExecutionContext const& exe_state) const noexcept
+  bool operator()(LTFBExecutionContext const& exe_state) const noexcept
   {
     return exe_state.get_step() >= m_max_metalearning_steps;
   }
+
 private:
   size_t m_max_metalearning_steps;
 }; // class TerminationCriteria

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -36,8 +36,7 @@
 #include <stdexcept>
 
 // These really belong in Elemental; let's just extend that.
-namespace El
-{
+namespace El {
 
 /** @brief Save a matrix to a text-based archive.
  *
@@ -56,7 +55,7 @@ namespace El
  *
  *  @tparam ArchiveT (Inferred) The Cereal archive type to use.
  *  @tparam T (Inferred) The data type of the matrix.
- *  @param archive The Cereal archive into which the matrix will be written.
+ *  @param ar The Cereal archive into which the matrix will be written.
  *  @param mat The matrix to serialize.
  *  @throws lbann::exception Thrown when the matrix is actually a view.
  *  @ingroup serialization
@@ -64,12 +63,13 @@ namespace El
 template <typename ArchiveT, typename T>
 void save(ArchiveT& ar, ::El::AbstractMatrix<T> const& mat);
 
-template <typename ArchiveT, typename T, ::El::Device D,
+template <typename ArchiveT,
+          typename T,
+          ::El::Device D,
           lbann::utils::WhenTextArchive<ArchiveT> = 1>
-void save(ArchiveT& ar, ::El::Matrix<T,D> const& mat);
+void save(ArchiveT& ar, ::El::Matrix<T, D> const& mat);
 
-namespace details
-{
+namespace details {
 /** @brief Save a CPU matrix to a non-text-based archive.
  *
  *  @warning It is the caller's responsibility to ensure that the
@@ -81,36 +81,38 @@ namespace details
  *
  *  @tparam ArchiveT (Inferred) The Cereal archive type to use.
  *  @tparam T (Inferred) The data type of the matrix.
- *  @param archive The Cereal archive into which the matrix will be written.
+ *  @param ar The Cereal archive into which the matrix will be written.
  *  @param mat The matrix to serialize.
  *  @throws lbann::exception Thrown when the matrix is actually a view.
  *  @ingroup serialization
  */
-template <typename ArchiveT, typename T,
+template <typename ArchiveT,
+          typename T,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
-void do_save(ArchiveT& ar,
-             ::El::Matrix<T, ::El::Device::CPU> const& mat);
+void do_save(ArchiveT& ar, ::El::Matrix<T, ::El::Device::CPU> const& mat);
 
 #ifdef LBANN_HAS_GPU
-template <typename ArchiveT, typename T,
+template <typename ArchiveT,
+          typename T,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
-void do_save(ArchiveT& ar,
-             ::El::Matrix<T, ::El::Device::GPU> const& mat);
+void do_save(ArchiveT& ar, ::El::Matrix<T, ::El::Device::GPU> const& mat);
 #endif // LBANN_HAS_GPU
-}// namespace details
+} // namespace details
 
 /** @brief Save a matrix to a binary archive. */
-template <typename ArchiveT, typename T, ::El::Device D,
+template <typename ArchiveT,
+          typename T,
+          ::El::Device D,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
 void save(ArchiveT& ar, ::El::Matrix<T, D> const& mat);
 
 // Special treatment for the rooted archive.
 template <typename ArchiveT, typename T, ::El::Device D>
 void save(lbann::RootedOutputArchiveAdaptor<ArchiveT>& ar,
-          ::El::Matrix<T,D> const& mat);
+          ::El::Matrix<T, D> const& mat);
 
-
-template <typename ArchiveT, typename T,
+template <typename ArchiveT,
+          typename T,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
 void load(ArchiveT& archive, ::El::AbstractMatrix<T>& mat);
 
@@ -132,7 +134,9 @@ void load(ArchiveT& archive, ::El::AbstractMatrix<T>& mat);
  *  @todo Perhaps it's better to throw an exception for these archives?
  *  @ingroup serialization
  */
-template <typename ArchiveT, typename T, ::El::Device D,
+template <typename ArchiveT,
+          typename T,
+          ::El::Device D,
           lbann::utils::WhenTextArchive<ArchiveT> = 1>
 void load(ArchiveT& archive, ::El::Matrix<T, D>& mat);
 
@@ -145,10 +149,10 @@ void load(ArchiveT& archive, ::El::Matrix<T, D>& mat);
  *  @throws lbann::exception The input matrix is already setup as a view.
  *  @ingroup serialization
  */
-template <typename ArchiveT, typename T,
+template <typename ArchiveT,
+          typename T,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
-void load(ArchiveT& archive,
-          ::El::Matrix<T, ::El::Device::CPU>& mat);
+void load(ArchiveT& archive, ::El::Matrix<T, ::El::Device::CPU>& mat);
 
 #if defined LBANN_HAS_GPU
 /** @brief Load a GPU Matrix from a non-text archive.
@@ -160,15 +164,15 @@ void load(ArchiveT& archive,
  *  @throws lbann::exception The input matrix is already setup as a view.
  *  @ingroup serialization
  */
-template <typename ArchiveT, typename T,
+template <typename ArchiveT,
+          typename T,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
-void load(ArchiveT& archive,
-          ::El::Matrix<T, ::El::Device::GPU>& mat);
+void load(ArchiveT& archive, ::El::Matrix<T, ::El::Device::GPU>& mat);
 #endif // defined LBANN_HAS_GPU
 
 template <typename ArchiveT, typename T, ::El::Device D>
 void load(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
-          ::El::Matrix<T,D>& mat);
+          ::El::Matrix<T, D>& mat);
 
 // DistMatrix
 
@@ -189,12 +193,13 @@ void load(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
  *
  *  @tparam ArchiveT (Inferred) The Cereal archive type to use.
  *  @tparam T (Inferred) The data type of the matrix.
- *  @param archive The Cereal archive into which the matrix will be written.
+ *  @param ar The Cereal archive into which the matrix will be written.
  *  @param mat The distributed matrix to serialize.
  *  @throws lbann::exception Thrown when the matrix is actually a view.
  *  @ingroup serialization
  */
-template <typename ArchiveT, typename T,
+template <typename ArchiveT,
+          typename T,
           lbann::utils::WhenTextArchive<ArchiveT> = 1>
 void save(ArchiveT& ar, ::El::AbstractDistMatrix<T> const& mat);
 
@@ -202,12 +207,13 @@ void save(ArchiveT& ar, ::El::AbstractDistMatrix<T> const& mat);
  *
  *  @tparam ArchiveT (Inferred) The Cereal archive type to use.
  *  @tparam T (Inferred) The data type of the matrix.
- *  @param archive The Cereal archive from which the matrix will be read.
+ *  @param ar The Cereal archive from which the matrix will be read.
  *  @param mat The target matrix to deserialize into.
  *  @throws lbann::exception The input matrix is already setup as a view.
  *  @ingroup serialization
  */
-template <typename ArchiveT, typename T,
+template <typename ArchiveT,
+          typename T,
           lbann::utils::WhenTextArchive<ArchiveT> = 1>
 void load(ArchiveT& ar, ::El::AbstractDistMatrix<T>& mat);
 
@@ -217,12 +223,14 @@ void load(ArchiveT& ar, ::El::AbstractDistMatrix<T>& mat);
  *  as well as the global height/width.
  *
  *  @tparam ArchiveT (Inferred) The Cereal archive type to use.
- *  @tparam T (Inferred) The data type of the matrix.  @param archive
- *  The Cereal archive into which the matrix will be written.  @param
- *  mat The distributed matrix to serialize.  @throws lbann::exception
- *  Thrown when the matrix is actually a view.  @ingroup serialization
+ *  @tparam T (Inferred) The data type of the matrix.
+ *  @param ar The Cereal archive into which the matrix will be written.
+ *  @param mat The distributed matrix to serialize.
+ *  @throws lbann::exception  Thrown when the matrix is actually a view.
+ *  @ingroup serialization
  */
-template <typename ArchiveT, typename T,
+template <typename ArchiveT,
+          typename T,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
 void save(ArchiveT& ar, ::El::AbstractDistMatrix<T> const& mat);
 
@@ -230,55 +238,58 @@ void save(ArchiveT& ar, ::El::AbstractDistMatrix<T> const& mat);
  *
  *  @tparam ArchiveT (Inferred) The Cereal archive type to use.
  *  @tparam T (Inferred) The data type of the matrix.
- *  @param archive The Cereal archive from which the matrix will be read.
+ *  @param ar The Cereal archive from which the matrix will be read.
  *  @param mat The target matrix to deserialize into.
  *  @throws lbann::exception The input matrix is already setup as a view.
  *  @ingroup serialization
  */
-template <typename ArchiveT, typename T,
+template <typename ArchiveT,
+          typename T,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
 void load(ArchiveT& ar, ::El::AbstractDistMatrix<T>& mat);
 
-
-template <typename ArchiveT, typename T,
+template <typename ArchiveT,
+          typename T,
           lbann::utils::WhenTextArchive<ArchiveT> = 1>
 void save(lbann::RootedOutputArchiveAdaptor<ArchiveT>& ar,
           ::El::AbstractDistMatrix<T> const& mat);
 
-template <typename ArchiveT, typename T,
+template <typename ArchiveT,
+          typename T,
           lbann::utils::WhenTextArchive<ArchiveT> = 1>
 void load(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
           ::El::AbstractDistMatrix<T>& mat);
 
-template <typename ArchiveT, typename T,
+template <typename ArchiveT,
+          typename T,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
 void save(lbann::RootedOutputArchiveAdaptor<ArchiveT>& ar,
           ::El::AbstractDistMatrix<T> const& mat);
 
-template <typename ArchiveT, typename T,
+template <typename ArchiveT,
+          typename T,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
 void load(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
           ::El::AbstractDistMatrix<T>& mat);
 
-template <typename ArchiveT, typename T,
+template <typename ArchiveT,
+          typename T,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
 void save(lbann::RootedOutputArchiveAdaptor<ArchiveT>& ar,
-          ::El::DistMatrix<T,::El::CIRC,::El::CIRC> const& mat);
+          ::El::DistMatrix<T, ::El::CIRC, ::El::CIRC> const& mat);
 
-template <typename ArchiveT, typename T,
+template <typename ArchiveT,
+          typename T,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
 void load(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
-          ::El::DistMatrix<T,::El::CIRC,::El::CIRC>& mat);
+          ::El::DistMatrix<T, ::El::CIRC, ::El::CIRC>& mat);
 
-}// namespace El
-
+} // namespace El
 
 // Dealing with smart pointers and object construction
 
-namespace lbann
-{
-namespace utils
-{
+namespace lbann {
+namespace utils {
 
 /** @brief RAII grid management.
  *
@@ -300,11 +311,10 @@ struct grid_manager
 Grid const& get_current_grid() noexcept;
 
 lbann_comm& get_current_comm() noexcept;
-}// namespace utils
-}// namespace lbann
+} // namespace utils
+} // namespace lbann
 
-namespace cereal
-{
+namespace cereal {
 
 /** @brief Construct DistMatrix object from Cereal archives. */
 template <typename DataT,
@@ -315,21 +325,19 @@ template <typename DataT,
 struct LoadAndConstruct<::El::DistMatrix<DataT, CDist, RDist, Wrap, D>>
 {
   using DistMatrixType = ::El::DistMatrix<DataT, CDist, RDist, Wrap, D>;
-  using CircMatrixType = ::El::DistMatrix<DataT,
-                                        ::El::CIRC, ::El::CIRC,
-                                        Wrap,
-                                        ::El::Device::CPU>;
+  using CircMatrixType =
+    ::El::DistMatrix<DataT, ::El::CIRC, ::El::CIRC, Wrap, ::El::Device::CPU>;
 
-  template <typename ArchiveT,
-            ::h2::meta::EnableWhen<::lbann::utils::IsBuiltinArchive<ArchiveT>, int> = 0>
-  static void load_and_construct(
-    ArchiveT & ar, cereal::construct<DistMatrixType> & construct);
+  template <
+    typename ArchiveT,
+    ::h2::meta::EnableWhen<::lbann::utils::IsBuiltinArchive<ArchiveT>, int> = 0>
+  static void load_and_construct(ArchiveT& ar,
+                                 cereal::construct<DistMatrixType>& construct);
 
   template <typename ArchiveT>
-  static void load_and_construct(
-    lbann::RootedInputArchiveAdaptor<ArchiveT> & ar,
-    cereal::construct<DistMatrixType> & construct);
-};// struct LoadAndConstruct<::El::DistMatrix<DataT, CDist, RDist, Wrap, D>>
-}// namespace cereal
+  static void load_and_construct(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
+                                 cereal::construct<DistMatrixType>& construct);
+}; // struct LoadAndConstruct<::El::DistMatrix<DataT, CDist, RDist, Wrap, D>>
+} // namespace cereal
 
 #endif // LBANN_UTILS_SERIALIZATION_SERIALIZE_MATRICES_HPP_

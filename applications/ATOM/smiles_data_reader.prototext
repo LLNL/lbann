@@ -4,9 +4,11 @@ data_reader {
     role: "train"
     shuffle: true
     percent_of_data_to_use: 1.0
-    validation_percent: 0.01
-    data_filedir: "/p/gpfs1/brainusr/datasets/atom/combo_enamine1613M_mpro_inhib"
-    data_filename: "train_enamine_all2018q1_2020q1-2_mpro_inhib_kekulized_1613mSMILES.csv"
+    validation_percent: 0.1
+    tournament_percent: 0.1
+    sample_list_per_trainer: true
+    sample_list:  "/p/vast1/lbann/datasets/atom/sample_lists/enamine1612M_mpro_inhib_kekulized/combo_enamine1612M_mpro_inhib_kekulized.sample_list"
+    metadata_filename: "/p/vast1/lbann/datasets/atom/combo_enamine1612M_mpro_inhib_kekulized.metadata"
   }
 }
 data_reader {
@@ -15,7 +17,7 @@ data_reader {
     role: "test"
     shuffle: true
     percent_of_data_to_use: 1.0
-    data_filedir: "/p/gpfs1/brainusr/datasets/atom/combo_enamine1613M_mpro_inhib"
-    data_filename: "test_enamine_all2018q1_2020q1-2_mpro_inhib_kekulized_2010kSMILES.csv"
+    sample_list:  "/p/vast1/lbann/datasets/atom/sample_lists/enamine1612M_mpro_inhib_kekulized/test_combo_enamine1612M_mpro_inhib_kekulized.sample_list"
+    metadata_filename: "/p/vast1/lbann/datasets/atom/combo_enamine1612M_mpro_inhib_kekulized.metadata"
   }
 }

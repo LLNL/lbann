@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,15 +27,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/summary.hpp"
+#include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/weights/data_type_weights.hpp"
+#include "lbann/metrics/metric.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/summary_impl.hpp"
 
-#include <callbacks.pb.h>
+#include "lbann/proto/callbacks.pb.h"
 
 #include <algorithm>
 #include <string>
@@ -45,17 +48,17 @@ namespace callback {
 
 summary::summary(const std::shared_ptr<lbann_summary>& summarizer,
                  int batch_interval,
-                 int mat_interval) :
-  callback_base(batch_interval),
-  m_summarizer(summarizer),
-  m_mat_interval(mat_interval) {}
+                 int mat_interval)
+  : callback_base(batch_interval),
+    m_summarizer(summarizer),
+    m_mat_interval(mat_interval)
+{}
 
-void summary::on_train_begin(model *m) {
-  save_histograms(m);
-}
+void summary::on_train_begin(model* m) { save_histograms(m); }
 
-void summary::on_batch_end(model *m) {
-  if(!m_summarizer){
+void summary::on_batch_end(model* m)
+{
+  if (!m_summarizer) {
     LBANN_ERROR("Summary callback failed: m_summarizer does not exist.");
   }
 
@@ -66,7 +69,7 @@ void summary::on_batch_end(model *m) {
   if (m_mat_interval > 0 && c.get_step() % m_mat_interval == 0) {
     m->summarize_matrices(*m_summarizer);
   }
-  lbann_comm *comm = m->get_comm();
+  lbann_comm* comm = m->get_comm();
   size_t bytes_sent = comm->get_bytes_sent();
   size_t bytes_received = comm->get_bytes_received();
   size_t trainer_barriers = comm->get_num_trainer_barriers();
@@ -74,19 +77,22 @@ void summary::on_batch_end(model *m) {
   size_t global_barriers = comm->get_num_global_barriers();
   comm->reset_stats_counters();
   m_summarizer->sum_reduce_scalar("bytes_sent", bytes_sent, c.get_step());
-  m_summarizer->sum_reduce_scalar("bytes_received", bytes_received,
+  m_summarizer->sum_reduce_scalar("bytes_received",
+                                  bytes_received,
                                   c.get_step());
-  m_summarizer->reduce_scalar("trainer_barriers", trainer_barriers,
+  m_summarizer->reduce_scalar("trainer_barriers",
+                              trainer_barriers,
                               c.get_step());
-  m_summarizer->reduce_scalar("intertrainer_barriers", intertrainer_barriers,
+  m_summarizer->reduce_scalar("intertrainer_barriers",
+                              intertrainer_barriers,
                               c.get_step());
-  m_summarizer->reduce_scalar("global_barriers", global_barriers,
-                              c.get_step());
+  m_summarizer->reduce_scalar("global_barriers", global_barriers, c.get_step());
   prof_region_end("summary-batch", false);
 }
 
-void summary::on_epoch_end(model *m) {
-  if(!m_summarizer){
+void summary::on_epoch_end(model* m)
+{
+  if (!m_summarizer) {
     LBANN_ERROR("Summary callback failed: m_summarizer does not exist.");
   }
 
@@ -96,8 +102,10 @@ void summary::on_epoch_end(model *m) {
     EvalType train_score = met->get_mean_value(c.get_execution_mode());
     // Replace spaces with _ for consistency.
     std::string metric_name = met->name();
-    std::transform(metric_name.begin(), metric_name.end(), metric_name.begin(),
-                   [] (char c_) { return c_ == ' ' ? '_' : c_; });
+    std::transform(metric_name.begin(),
+                   metric_name.end(),
+                   metric_name.begin(),
+                   [](char c_) { return c_ == ' ' ? '_' : c_; });
     std::string phase = "train_" + metric_name;
     m_summarizer->reduce_scalar(phase, train_score, c.get_step());
   }
@@ -106,20 +114,23 @@ void summary::on_epoch_end(model *m) {
   prof_region_end("summary-epoch", false);
 }
 
-void summary::on_test_end(model *m) {
+void summary::on_test_end(model* m)
+{
 
-  if(!m_summarizer){
+  if (!m_summarizer) {
     LBANN_ERROR("Summary callback failed: m_summarizer does not exist.");
   }
   const auto& c = m->get_execution_context();
   prof_region_begin("summary-test", prof_colors[0], false);
-  lbann_comm *comm = m->get_comm();
+  lbann_comm* comm = m->get_comm();
   for (auto&& met : m->get_metrics()) {
     EvalType test_score = met->get_mean_value(c.get_execution_mode());
     // Replace spaces with _ for consistency.
     std::string metric_name = met->name();
-    std::transform(metric_name.begin(), metric_name.end(), metric_name.begin(),
-                   [] (char c_) { return c_ == ' ' ? '_' : c_; });
+    std::transform(metric_name.begin(),
+                   metric_name.end(),
+                   metric_name.begin(),
+                   [](char c_) { return c_ == ' ' ? '_' : c_; });
     std::string phase = "test_" + metric_name;
     m_summarizer->reduce_scalar(phase, test_score, c.get_step());
   }
@@ -131,12 +142,13 @@ void summary::on_test_end(model *m) {
   prof_region_end("summary-test", false);
 }
 
-void summary::save_histograms(model *m) {
+void summary::save_histograms(model* m)
+{
   using LayerType = data_type_layer<DataType>;
   using OptimizerType = data_type_optimizer<DataType>;
   using WeightsType = data_type_weights<DataType>;
 
-  if(!m_summarizer){
+  if (!m_summarizer) {
     LBANN_ERROR("Summary callback failed: m_summarizer does not exist.");
   }
   const auto& c = m->get_execution_context();
@@ -157,7 +169,7 @@ void summary::save_histograms(model *m) {
     m_summarizer->reduce_histogram(prefix + "weights",
                                    weights.GetLocked(),
                                    c.get_step());
-    optimizer *opt = w->get_optimizer();
+    optimizer* opt = w->get_optimizer();
     if (opt != nullptr) {
       auto* dt_opt = dynamic_cast<OptimizerType*>(opt);
       AbsDistMatReadProxy<El::Device::CPU> gradients(dt_opt->get_gradient());
@@ -168,15 +180,22 @@ void summary::save_histograms(model *m) {
   }
 }
 
-std::unique_ptr<callback_base>
-build_summary_callback_from_pbuf(
+void summary::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_summary();
+  msg->set_batch_interval(m_batch_interval);
+  msg->set_mat_interval(m_mat_interval);
+}
+
+std::unique_ptr<callback_base> build_summary_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
-  const std::shared_ptr<lbann_summary>& summarizer) {
+  const std::shared_ptr<lbann_summary>& summarizer)
+{
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSummary&>(proto_msg);
-  return make_unique<summary>(summarizer,
-                              params.batch_interval(),
-                              params.mat_interval());
+  return std::make_unique<summary>(summarizer,
+                                   params.batch_interval(),
+                                   params.mat_interval());
 }
 
 } // namespace callback

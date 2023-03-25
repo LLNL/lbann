@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,51 +28,56 @@
 
 namespace El {
 
-template<typename F>
+template <typename F>
 void ColumnSum(const Matrix<F>& X, Matrix<F>& sums);
 
-template<typename F>
+template <typename F>
 void ColumnSum(const AbstractMatrix<F>& X, AbstractMatrix<F>& sums);
 
-template<typename F>
+template <typename F>
 void ColumnSum(const AbstractDistMatrix<F>& A, AbstractDistMatrix<F>& sums);
 
-template<typename F>
+template <typename F>
 void RowSum(const Matrix<F>& X, Matrix<F>& sums);
 
-template<typename F>
+template <typename F>
 void RowSum(const AbstractMatrix<F>& X, AbstractMatrix<F>& sums);
 
 template <typename F>
 void RowSum(const AbstractDistMatrix<F>& A, AbstractDistMatrix<F>& sums);
 
-#define LBANN_PROTO(F)                                           \
-  template void ColumnSum                                        \
-  ( const Matrix<F>& X, Matrix<F>& norms );                      \
-  template void RowSum                                           \
-  ( const Matrix<F>& X, Matrix<F>& norms );                      \
-  template void ColumnSum                                        \
-  ( const AbstractMatrix<F>& X, AbstractMatrix<F>& norms );      \
-  template void RowSum                                           \
-  ( const AbstractMatrix<F>& X, AbstractMatrix<F>& norms );      \
-  template void ColumnSum                                        \
-  (const AbstractDistMatrix<F>& X, AbstractDistMatrix<F>& sums); \
-  template void RowSum                                           \
-  (const AbstractDistMatrix<F>& X, AbstractDistMatrix<F>& sums); \
+template <typename F>
+void ColumnSummaryStats(const Matrix<F>& X, F& sum, F& min, F& max, F& mean);
+
+#define LBANN_PROTO(F)                                                         \
+  template void ColumnSum(const Matrix<F>& X, Matrix<F>& norms);               \
+  template void RowSum(const Matrix<F>& X, Matrix<F>& norms);                  \
+  template void ColumnSummaryStats(const Matrix<F>& X,                         \
+                                   F& sum,                                     \
+                                   F& min,                                     \
+                                   F& max,                                     \
+                                   F& mean);                                   \
+  template void ColumnSum(const AbstractMatrix<F>& X,                          \
+                          AbstractMatrix<F>& norms);                           \
+  template void RowSum(const AbstractMatrix<F>& X, AbstractMatrix<F>& norms);  \
+  template void ColumnSum(const AbstractDistMatrix<F>& X,                      \
+                          AbstractDistMatrix<F>& sums);                        \
+  template void RowSum(const AbstractDistMatrix<F>& X,                         \
+                       AbstractDistMatrix<F>& sums);
 
 /* #define EL_NO_INT_PROTO */
 /* #define EL_ENABLE_QUAD */
 /* #include "El/macros/Instantiate.h" */
 
 #ifndef LBANN_PROTO_REAL
-# define LBANN_PROTO_REAL(T) LBANN_PROTO(T)
+#define LBANN_PROTO_REAL(T) LBANN_PROTO(T)
 #endif
 
 #ifndef LBANN_PROTO_FLOAT
-# define LBANN_PROTO_FLOAT LBANN_PROTO_REAL(float)
+#define LBANN_PROTO_FLOAT LBANN_PROTO_REAL(float)
 #endif
 #ifndef LBANN_PROTO_DOUBLE
-# define LBANN_PROTO_DOUBLE LBANN_PROTO_REAL(double)
+#define LBANN_PROTO_DOUBLE LBANN_PROTO_REAL(double)
 #endif
 
 } // namespace El

@@ -1,4 +1,4 @@
 breathe
 sphinxcontrib-napoleon
-sphinx_rtd_theme
+sphinx-rtd-theme==1.0.0
 protobuf

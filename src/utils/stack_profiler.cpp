@@ -1,10 +1,35 @@
-#include "lbann/utils/options.hpp"
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
 #include "lbann/utils/stack_profiler.hpp"
 #include "lbann/utils/cyg_profile.hpp"
-#include <cxxabi.h>
+#include "lbann/utils/options.hpp"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <cxxabi.h>
 #include <dlfcn.h>
 #include <string.h>
 
@@ -17,9 +42,9 @@
  * the stack_profiler is a c++ class in the lbann namespace
  */
 
-c_hash_table * c_hash_the_hash_table = NULL;
-FILE *c_hash_fp_full_stack_trace = NULL;
-FILE *c_hash_fp_full_stack_trace_metadata = NULL;
+c_hash_table* c_hash_the_hash_table = NULL;
+FILE* c_hash_fp_full_stack_trace = NULL;
+FILE* c_hash_fp_full_stack_trace_metadata = NULL;
 int c_hash_profiling_is_turned_on = 0;
 int c_hash_thread_id;
 short c_hash_func_id = 0;
@@ -30,27 +55,30 @@ short c_hash_depth = 0;
 long c_hash_lookups = 0;
 long c_hash_collisions = 0;
 
-void c_hash_set_thread_id(int id) {
-  c_hash_thread_id = id;
-}
+void c_hash_set_thread_id(int id) { c_hash_thread_id = id; }
 
-void c_hash_create(long size) {
-  c_hash_table *h = (struct c_hash_table*) malloc(sizeof(struct c_hash_table));
+void c_hash_create(long size)
+{
+  c_hash_table* h = (struct c_hash_table*)malloc(sizeof(struct c_hash_table));
   h->size = 0;
   h->count = 0;
   h->cur_mark = 1;
   h->data = NULL;
 
-  //initial size for hash table; want this to be a power of 2
+  // initial size for hash table; want this to be a power of 2
   long sz = 16;
-  while (sz < size) { sz *= 2; }
+  while (sz < size) {
+    sz *= 2;
+  }
   // rule-of-thumb: ensure there's some padding
-  if ( (sz-size) < (.1 * sz) ) { sz *= 2.0; }
+  if ((sz - size) < (.1 * sz)) {
+    sz *= 2.0;
+  }
   h->size = sz;
 
-  //allocate and zero the hash table
-  c_hash_node *d = h->data = (c_hash_node*)malloc(sz*sizeof(c_hash_node));
-  for (int i=0; i<sz; i++) {
+  // allocate and zero the hash table
+  c_hash_node* d = h->data = (c_hash_node*)malloc(sz * sizeof(c_hash_node));
+  for (int i = 0; i < sz; i++) {
     d[i].key = 0;
     d[i].mark = 0;
     d[i].func = 0;
@@ -63,10 +91,11 @@ void c_hash_create(long size) {
 
 namespace lbann {
 
-stack_profiler * stack_profiler::s_instance = new stack_profiler;
+stack_profiler* stack_profiler::s_instance = new stack_profiler;
 
-stack_profiler::~stack_profiler() {
-  //todo: free hash table memory
+stack_profiler::~stack_profiler()
+{
+  // todo: free hash table memory
   if (c_hash_fp_full_stack_trace != NULL) {
     fclose(c_hash_fp_full_stack_trace);
   }
@@ -75,47 +104,54 @@ stack_profiler::~stack_profiler() {
   }
 }
 
-stack_profiler::stack_profiler()
-  : m_full_stack_trace(false)
-  {}
+stack_profiler::stack_profiler() : m_full_stack_trace(false) {}
 
-void stack_profiler::activate(int thread) {
+void stack_profiler::activate(int thread)
+{
   m_thread_id = thread;
   c_hash_thread_id = thread;
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
 
-  if (opts->get_bool("st_on")) {
+  if (arg_parser.get<bool>(LBANN_OPTION_ST_ON)) {
     std::cerr << "creating hash table!\n";
     c_hash_create(10000);
     c_hash_profiling_is_turned_on = 1;
-    if (opts->get_bool("st_full_trace")) {
+    if (arg_parser.get<bool>(LBANN_OPTION_ST_FULL_TRACE)) {
       m_full_stack_trace = true;
       if (m_thread_id == 0) {
         c_hash_fp_full_stack_trace = fopen("full_stack_trace.bin", "wb");
-        c_hash_fp_full_stack_trace_metadata = fopen("full_stack_trace.txt", "w");
+        c_hash_fp_full_stack_trace_metadata =
+          fopen("full_stack_trace.txt", "w");
       }
     }
-  } else {
+  }
+  else {
     c_hash_profiling_is_turned_on = 0;
   }
 }
 
-bool count_sorter (const std::pair<std::string, long> &a, const std::pair<std::string, long> &b) {
+bool count_sorter(const std::pair<std::string, long>& a,
+                  const std::pair<std::string, long>& b)
+{
   return a.second > b.second;
 }
 
-void stack_profiler::print() {
-  if (m_thread_id != 0) { return; }
-  c_hash_table *h = c_hash_the_hash_table;
+void stack_profiler::print()
+{
+  if (m_thread_id != 0) {
+    return;
+  }
+  c_hash_table* h = c_hash_the_hash_table;
   if (h == NULL) {
     return;
   }
-  std::cout << std::endl << "demangling ... num hash table entries: " << h->count << "\n";
+  std::cout << std::endl
+            << "demangling ... num hash table entries: " << h->count << "\n";
 
   std::vector<std::pair<std::string, long>> v;
-  v.reserve( h->count );
-  c_hash_node *data = h->data;
-  for (long k=0; k < h->size; k++) {
+  v.reserve(h->count);
+  c_hash_node* data = h->data;
+  for (long k = 0; k < h->size; k++) {
     if (data[k].mark == h->cur_mark) {
       v.push_back(std::make_pair(data[k].name, data[k].count));
     }
@@ -126,11 +162,10 @@ void stack_profiler::print() {
     std::cout << t.second << "  " << t.first << std::endl;
   }
 
-  std::cout << "===================================================================\n";
+  std::cout
+    << "===================================================================\n";
   std::cout << "hash table lookups:    " << c_hash_lookups << std::endl;
   std::cout << "hash table collisions: " << c_hash_collisions << std::endl;
 }
 
 } // namespace lbann
-
-

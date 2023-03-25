@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,7 +33,8 @@
 
 namespace lbann {
 
-class python_reader : public generic_data_reader {
+class python_reader : public generic_data_reader
+{
 public:
   python_reader(std::string module,
                 std::string module_dir,
@@ -46,20 +47,19 @@ public:
   ~python_reader() override;
   python_reader* copy() const override { return new python_reader(*this); }
 
-  std::string get_type() const override {
-    return "python_reader";
-  }
+  std::string get_type() const override { return "python_reader"; }
 
   const std::vector<int> get_data_dims() const override;
   int get_num_labels() const override;
   int get_linearized_data_size() const override;
   int get_linearized_label_size() const override;
 
-  void setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) override;
+  void setup(int num_io_threads,
+             observer_ptr<thread_pool> io_thread_pool) override;
   void load() override;
 
 protected:
-  bool fetch_data_block(CPUMat& X,
+  bool fetch_data_block(std::map<data_field_type, CPUMat*>& input_buffers,
                         El::Int block_offset,
                         El::Int block_stride,
                         El::Int mb_size,
@@ -67,7 +67,6 @@ protected:
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
 
 private:
-
   /** @brief Dimensions of data sample tensor. */
   std::vector<El::Int> m_sample_dims;
   /** @brief Number of data samples in data set. */
@@ -106,7 +105,6 @@ private:
    *  Points to buffer for @c m_shared_memory_array.
    */
   DataType* m_shared_memory_array_ptr = nullptr;
-
 };
 
 } // namespace lbann

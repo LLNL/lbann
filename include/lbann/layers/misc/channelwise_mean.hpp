@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,6 +28,9 @@
 #define LBANN_LAYERS_MISC_CHANNELWISE_MEAN_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/proto/layers.pb.h"
 
 namespace lbann {
 
@@ -35,21 +38,21 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class channelwise_mean_layer : public data_type_layer<TensorDataType> {
+class channelwise_mean_layer : public data_type_layer<TensorDataType>
+{
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "channelwise_mean_layer only supports "
                 "data-parallel data layout");
+
 public:
+  channelwise_mean_layer(lbann_comm* = nullptr)
+    : data_type_layer<TensorDataType>(nullptr)
+  {}
 
-  channelwise_mean_layer(lbann_comm *comm)
-    : data_type_layer<TensorDataType>(comm) {
-    if (comm->am_trainer_master()) {
-      LBANN_WARNING("channelwise_mean_layer is experimental "
-                    "and may be deprecated at any time");
-    }
+  channelwise_mean_layer* copy() const override
+  {
+    return new channelwise_mean_layer(*this);
   }
-
-  channelwise_mean_layer* copy() const override { return new channelwise_mean_layer(*this); }
 
   /** @name Serialization */
   ///@{
@@ -64,13 +67,11 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
 protected:
+  /** Add layer specific data to prototext */
+  void write_specific_proto(lbann_data::Layer& proto) const final;
 
-  friend class cereal::access;
-  channelwise_mean_layer()
-    : channelwise_mean_layer(nullptr)
-  {}
-
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     const auto& input_dims = this->get_input_dims();
     this->set_output_dims({input_dims[0]});
@@ -78,12 +79,21 @@ protected:
 
   void fp_compute() override;
   void bp_compute() override;
-
 };
 
+template <typename T, data_layout L, El::Device D>
+void channelwise_mean_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
+  proto.set_datatype(proto::ProtoDataType<T>);
+  proto.mutable_channelwise_mean();
+}
+
 #ifndef LBANN_CHANNELWISE_MEAN_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class channelwise_mean_layer<T, data_layout::DATA_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class channelwise_mean_layer<T,                              \
+                                               data_layout::DATA_PARALLEL,     \
+                                               Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

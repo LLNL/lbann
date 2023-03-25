@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,29 +27,57 @@
 #define LBANN_BERNOULLI_LAYER_INSTANTIATE
 #include "lbann/layers/transform/bernoulli.hpp"
 
-#include <lbann/proto/proto_common.hpp>
-#include <layers.pb.h>
+#include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/protobuf.hpp"
+
+#include "lbann/proto/layers.pb.h"
 
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_bernoulli_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const& proto_layer) {
-
-  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, bernoulli);
-
-  const auto& params = proto_layer.bernoulli();
-  const auto& dims = parse_list<int>(params.neuron_dims());
-  return lbann::make_unique<bernoulli_layer<TensorDataType, Layout, Device>>(
-    comm, dims, params.prob());
-
+void bernoulli_layer<TensorDataType, Layout, Device>::fp_compute()
+{
+  auto& output = this->get_activations();
+  if (this->m_model->get_execution_context().get_execution_mode() ==
+      execution_mode::training) {
+    bernoulli_fill(output, output.Height(), output.Width(), m_prob);
+  }
+  else {
+    El::Zero(output);
+  }
 }
 
-#define PROTO_DEVICE(T, Device)                                         \
-  template class bernoulli_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class bernoulli_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::unique_ptr<Layer>
+build_bernoulli_layer_from_pbuf(lbann_comm* comm,
+                                lbann_data::Layer const& proto_layer)
+{
+  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, bernoulli);
+  const auto& params = proto_layer.bernoulli();
+  return std::make_unique<bernoulli_layer<TensorDataType, Layout, Device>>(
+    comm,
+    protobuf::to_vector<int>(params.neuron_dims()),
+    params.prob());
+}
+
+template <typename T, data_layout L, El::Device D>
+void bernoulli_layer<T, L, D>::write_specific_proto(
+  lbann_data::Layer& proto) const
+{
+  proto.set_datatype(proto::ProtoDataType<T>);
+  auto* msg = proto.mutable_bernoulli();
+  msg->set_prob(m_prob);
+  protobuf::assign_to_repeated(*msg->mutable_neuron_dims(),
+                               this->get_output_dims());
+}
+
+#define PROTO_DEVICE(T, Device)                                                \
+  template class bernoulli_layer<T, data_layout::DATA_PARALLEL, Device>;       \
+  template class bernoulli_layer<T, data_layout::MODEL_PARALLEL, Device>;      \
   LBANN_LAYER_BUILDER_ETI(bernoulli, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

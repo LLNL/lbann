@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,17 +25,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/adjust_contrast.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
-#include <transforms.pb.h>
+#include "lbann/proto/transforms.pb.h"
 
 #include <opencv2/imgproc.hpp>
 
 namespace lbann {
 namespace transform {
 
-void adjust_contrast::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+void adjust_contrast::apply(utils::type_erased_matrix& data,
+                            std::vector<size_t>& dims)
+{
   // To adjust contrast, we essentially add the mean of the grayscale version
   // of the image, scaled by (1 - m_factor) to each pixel.
   cv::Mat src = utils::get_opencv_mat(data, dims);
@@ -50,16 +53,17 @@ void adjust_contrast::apply(utils::type_erased_matrix& data, std::vector<size_t>
   if (dims[0] == 1) {
     // Already grayscale, just compute the mean.
     uint64_t sum = 0;
-    const size_t size = utils::get_linearized_size(dims);
+    const size_t size = get_linear_size(dims);
     const uint8_t* __restrict__ gray_buf = src.ptr();
     for (size_t i = 0; i < size; ++i) {
       sum += gray_buf[i];
     }
     gray_mean = static_cast<uint8_t>(
       std::round(static_cast<double>(sum) / static_cast<double>(size)));
-  } else {
+  }
+  else {
     std::vector<size_t> gray_dims = {1, dims[1], dims[2]};
-    const size_t size = utils::get_linearized_size(gray_dims);
+    const size_t size = get_linear_size(gray_dims);
     auto gray_real = El::Matrix<uint8_t>(size, 1);
     cv::Mat gray = utils::get_opencv_mat(gray_real, gray_dims);
     cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
@@ -77,18 +81,20 @@ void adjust_contrast::apply(utils::type_erased_matrix& data, std::vector<size_t>
   // Mix the gray mean with the original image.
   uint8_t* __restrict__ src_buf = src.ptr();
   const float one_minus_factor = 1.0f - m_factor;
-  const size_t size = utils::get_linearized_size(dims);
+  const size_t size = get_linear_size(dims);
   for (size_t i = 0; i < size; ++i) {
-    src_buf[i] = cv::saturate_cast<uint8_t>(
-      src_buf[i]*m_factor + gray_mean*one_minus_factor);
+    src_buf[i] = cv::saturate_cast<uint8_t>(src_buf[i] * m_factor +
+                                            gray_mean * one_minus_factor);
   }
 }
 
 std::unique_ptr<transform>
-build_adjust_contrast_transform_from_pbuf(google::protobuf::Message const& msg) {
-  auto const& params = dynamic_cast<lbann_data::Transform::AdjustContrast const&>(msg);
-  return make_unique<adjust_contrast>(params.factor());
+build_adjust_contrast_transform_from_pbuf(google::protobuf::Message const& msg)
+{
+  auto const& params =
+    dynamic_cast<lbann_data::Transform::AdjustContrast const&>(msg);
+  return std::make_unique<adjust_contrast>(params.factor());
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

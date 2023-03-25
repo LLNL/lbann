@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -23,21 +23,29 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#include "Catch2BasicSupport.hpp"
+
 #include "lbann/execution_algorithms/sgd_training_algorithm.hpp"
 #include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/make_abstract.hpp"
-#include <catch2/catch.hpp>
 
 #include <exception>
 #include <google/protobuf/stubs/logging.h>
 #include <lbann/execution_algorithms/factory.hpp>
 
-#include <training_algorithm.pb.h>
+#include "lbann/proto/training_algorithm.pb.h"
 
 #include <google/protobuf/text_format.h>
 
 namespace pb = ::google::protobuf;
+
+#ifdef LBANN_USE_CATCH2_V3
+static Catch::Matchers::StringContainsMatcher Contains(std::string const& str)
+{
+  return Catch::Matchers::ContainsSubstring(str, Catch::CaseSensitive::Yes);
+}
+#endif // LBANN_USE_CATCH2_V3
 
 TEST_CASE("Parsing training algorithm prototext", "[factory][algorithm][proto]")
 {
@@ -134,17 +142,12 @@ TEST_CASE("Building training algorithm from the factory",
     algo_msg.set_name("my sgd algo");
     algo_msg.mutable_parameters()->PackFrom(sgd_msg);
 
-    auto sgd = lbann::make_abstract<lbann::training_algorithm>(algo_msg);
+    auto sgd = lbann::make_abstract<lbann::TrainingAlgorithm>(algo_msg);
 
-    REQUIRE_NOTHROW(dynamic_cast<lbann::sgd_training_algorithm const&>(*sgd));
+    REQUIRE_NOTHROW(dynamic_cast<lbann::SGDTrainingAlgorithm const&>(*sgd));
 
     REQUIRE(sgd->get_type() == "sgd");
     REQUIRE(sgd->get_name() == "my sgd algo");
-
-    // I don't really think we should have cloneable training algos, but:
-    auto sgd2 = sgd->clone();
-    REQUIRE(sgd2->get_type() == "sgd");
-    REQUIRE(sgd2->get_name() == "my sgd algo");
   }
 
   SECTION("Building with an invalid message type fails")
@@ -157,7 +160,7 @@ TEST_CASE("Building training algorithm from the factory",
     algo_msg.mutable_parameters()->PackFrom(wrong_msg_type);
 
     REQUIRE_THROWS_WITH(
-      lbann::make_abstract<lbann::training_algorithm>(algo_msg),
-      Catch::Contains("Unknown id \"TerminationCriteria\" detected"));
+      lbann::make_abstract<lbann::TrainingAlgorithm>(algo_msg),
+      Contains("Unknown id \"TerminationCriteria\" detected"));
   }
 }

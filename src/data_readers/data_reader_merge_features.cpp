@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -23,7 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// data_reader_merge_features .hpp .cpp - Merge features from multiple data readers
+// data_reader_merge_features .hpp .cpp - Merge features from multiple data
+// readers
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_merge_features.hpp"
@@ -34,56 +35,66 @@ namespace lbann {
 
 data_reader_merge_features::data_reader_merge_features(
   std::vector<generic_data_reader*> data_readers,
-  generic_data_reader *label_reader, bool shuffle) :
-  generic_compound_data_reader(data_readers, shuffle),
-  m_label_reader(label_reader) {}
+  generic_data_reader* label_reader,
+  bool shuffle)
+  : generic_compound_data_reader(data_readers, shuffle),
+    m_label_reader(label_reader)
+{}
 
 data_reader_merge_features::data_reader_merge_features(
-  const data_reader_merge_features& other) :
-  generic_compound_data_reader(other),
-  m_data_size(other.m_data_size) {
-  if(other.m_label_reader != nullptr)
+  const data_reader_merge_features& other)
+  : generic_compound_data_reader(other), m_data_size(other.m_data_size)
+{
+  if (other.m_label_reader != nullptr)
     m_label_reader = other.m_label_reader->copy();
-  else m_label_reader = nullptr;
+  else
+    m_label_reader = nullptr;
 }
 
-data_reader_merge_features& data_reader_merge_features::operator=(
-  const data_reader_merge_features& other) {
+data_reader_merge_features&
+data_reader_merge_features::operator=(const data_reader_merge_features& other)
+{
   generic_compound_data_reader::operator=(other);
   m_data_size = other.m_data_size;
   if (m_label_reader) {
     delete m_label_reader;
   }
-  if(other.m_label_reader != nullptr)
+  if (other.m_label_reader != nullptr)
     m_label_reader = other.m_label_reader->copy();
-  else m_label_reader = nullptr;
+  else
+    m_label_reader = nullptr;
   return *this;
 }
 
-data_reader_merge_features::~data_reader_merge_features() {
-  if(m_label_reader != nullptr) delete m_label_reader;
+data_reader_merge_features::~data_reader_merge_features()
+{
+  if (m_label_reader != nullptr)
+    delete m_label_reader;
 }
 
-void data_reader_merge_features::load() {
+void data_reader_merge_features::load()
+{
   // Load each data reader separately.
   for (auto&& reader : m_data_readers) {
     double tm1 = get_time();
     reader->set_comm(m_comm);
     reader->load();
     m_data_size += reader->get_linearized_data_size();
-    if (is_master()) {
-      std::cerr << "time to set up subsidiary reader: " << get_time() - tm1 << "\n";
+    if (get_comm()->am_world_master()) {
+      std::cerr << "time to set up subsidiary reader: " << get_time() - tm1
+                << "\n";
     }
   }
   // Verify the readers have the same number of samples.
   int num_samples = m_data_readers[0]->get_num_data();
   for (auto&& reader : m_data_readers) {
     if (num_samples != reader->get_num_data()) {
-      throw lbann_exception(
-        "data_reader_merge_features: data readers do not have the same amount of data");
+      throw lbann_exception("data_reader_merge_features: data readers do not "
+                            "have the same amount of data");
     }
   }
-  if(m_label_reader != nullptr) m_label_reader->load();
+  if (m_label_reader != nullptr)
+    m_label_reader->load();
   // Reset indices.
   m_shuffled_indices.resize(num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
@@ -91,30 +102,37 @@ void data_reader_merge_features::load() {
   select_subset_of_data();
 }
 
-void data_reader_merge_features::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
+void data_reader_merge_features::setup(int num_io_threads,
+                                       observer_ptr<thread_pool> io_thread_pool)
+{
   generic_compound_data_reader::setup(num_io_threads, io_thread_pool);
   for (auto&& reader : m_data_readers) {
     reader->setup(num_io_threads, io_thread_pool);
   }
 }
 
-bool data_reader_merge_features::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+bool data_reader_merge_features::fetch_datum(CPUMat& X, int data_id, int mb_idx)
+{
   int start = 0;
   for (auto&& reader : m_data_readers) {
-    auto X_view = X(El::IR(start, start + reader->get_linearized_data_size()),
-                    El::ALL);
+    auto X_view =
+      X(El::IR(start, start + reader->get_linearized_data_size()), El::ALL);
     reader->fetch_datum(X_view, data_id, mb_idx);
     start += reader->get_linearized_data_size();
   }
   return true;
 }
 
-bool data_reader_merge_features::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
+bool data_reader_merge_features::fetch_label(CPUMat& Y, int data_id, int mb_idx)
+{
   return m_label_reader->fetch_label(Y, data_id, mb_idx);
 }
 
-bool data_reader_merge_features::fetch_response(CPUMat& Y, int data_id, int mb_idx) {
+bool data_reader_merge_features::fetch_response(CPUMat& Y,
+                                                int data_id,
+                                                int mb_idx)
+{
   return m_label_reader->fetch_response(Y, data_id, mb_idx);
 }
 
-}  // namespace lbann
+} // namespace lbann
