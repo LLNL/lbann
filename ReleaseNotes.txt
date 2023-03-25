@@ -1,5 +1,32 @@
 ============================== (Pending) Release Notes: v1.00 ==============================
 C++ API:
+
+Support for new training algorithms:
+
+Support for new network structures:
+
+Support for new layers:
+
+Python front-end:
+
+Performance optimizations:
+
+Model portability & usability:
+
+Experiments & Applications:
+
+Internal features:
+
+I/O & data readers:
+
+Build system:
+
+Bug fixes:
+
+Retired features:
+
+============================== Release Notes: v0.103 ==============================
+C++ API:
  - Added ability to load models and run inference from external C++ applications
  - Added inference-only execution algorithm
 
