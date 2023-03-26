@@ -113,6 +113,9 @@ elif args.model == "cnn":
             kernel_size=5, padding=0, stride=1,
             has_bias=has_bias,
             name="conv{}".format(i+1))
+        x = lbann.BatchNormalization(
+            x, 
+            statistics_group_size=(-1 ))
         x = lbann.Relu(x)
         x = lbann.Pooling(
             x, num_dims=2,
