@@ -1136,6 +1136,39 @@ void KFAC::end_send_recv_inverse_matrices(
 
 }
 // Broadcast the variabes in sub-grid parallelism
+std::vector<El::Int> broadcast_variable_grids(
+  std::vector<int> variable,
+  lbann_comm *comm){
+
+  unsigned int size = variable.size();
+  El::Int variable_local[4];
+  El::Int recvMetaData[4];
+
+
+
+  if(comm->get_grid_type()==GridType::PRIMARY_GRID)
+  {
+    for ( unsigned int i=0; i<size; ++i)
+      variable_local[i] = variable.at(i);
+  }
+  else if (comm->get_grid_type()==GridType::SECONDARY_GRID){
+    for (unsigned int i=0; i<size; ++i)
+      variable_local[i] = 0;
+  }
+
+  if (comm->get_grid_type()==GridType::PRIMARY_GRID or
+    comm->get_grid_type()==GridType::SECONDARY_GRID)
+  {
+    El::SyncInfo<El::Device::CPU> syncGeneralCPU = El::SyncInfo<El::Device::CPU>();
+    El::mpi::AllReduce( variable_local, recvMetaData, variable.size(), 
+              El::mpi::MAX, comm->get_combined_grid_comm(),
+              syncGeneralCPU);    
+  }
+  std::vector<El::Int> recvMetaDataVector(recvMetaData, recvMetaData+size);
+  return recvMetaDataVector;
+
+}
+
 int broadcast_variable_grids(
   int variable,
   lbann_comm *comm){
@@ -1236,7 +1269,10 @@ void KFAC::on_forward_prop_end(
       const int parent_activations_size = dtl_parent.get_activations().Height();
 
       int input_size, output_size;
-      input_size = broadcast_variable_grids(parent_activations_size,
+      int num_weights=2;
+      std::vector<int> weights_height,weights_width;
+      std::vector<std::vector<El::Int>> weight_shape_vector;
+      input_size = broadcast_variable_grids(parent_activations_size, 
                                             &comm);
 
 
@@ -1248,14 +1284,54 @@ void KFAC::on_forward_prop_end(
         block = std::make_shared<kfac_block_fc_conv<Device>>(
             l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, input_size, output_size, is_conv);
       } else if(is_bn) {
+        // BN Layer
+        num_weights=2;
         output_size = broadcast_variable_grids(l_bn->get_activations().Height(), &comm);
+        
+        
+        for(unsigned int i = 0; i<num_weights; ++i){
+          const auto& weights = l_bn->get_weights(i);
+          const auto& dtw = dynamic_cast<const data_type_weights<DataType>*>(&weights);
+          auto& weight_values = dtw->get_values();
+          weights_height.push_back(weight_values.Height());
+          std::cout<<"Weight Height and Width:"<<weight_values.Height()<<" "<<weight_values.Width()<<" batchsize:"<<sgd_context.get_current_mini_batch_size()<<"\n";
+        }
+        auto weight_size = broadcast_variable_grids(weights_height, &comm);
+        std::cout<<"Weight Size:"<<weight_size.size()<<"\n";
+
         block = std::make_shared<kfac_block_bn<Device>>(
-            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, input_size, output_size);
+            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, input_size, output_size, weight_size);
       } else if(is_gru) {
+        //GRU Layer
+        num_weights=4;
+        for(unsigned int i = 0; i<num_weights; ++i){
+          const auto& weights = l_gru->get_weights(i);
+          const auto& dtw = dynamic_cast<const data_type_weights<DataType>*>(&weights);
+          auto& weight_values = dtw->get_values();
+          weights_height.push_back(weight_values.Height());
+          weights_width.push_back(weight_values.Width());
+          std::cout<<"Weight Height and Width:"<<weight_values.Height()<<" "<<weight_values.Width()<<" batchsize:"<<sgd_context.get_current_mini_batch_size()<<"\n";
+        }
+        auto weights_height_vec = broadcast_variable_grids(weights_height, &comm);
+        auto weights_width_vec = broadcast_variable_grids(weights_width, &comm);
+
+        for(unsigned int i=0; i<weights_width_vec.size();++i)
+        {
+          weight_shape_vector.push_back({weights_height_vec[i], weights_width_vec[i]});
+        }
+
+        const auto parent_h0 = l->get_parent_layers()[1];
+        const auto& dtl_parent_h0 = dynamic_cast<const data_type_layer<DataType>&>(*parent_h0);
+        const int parent_activations_size_h0 = dtl_parent_h0.get_activations().Height();
+        std::vector<int> vector_activations_size = {input_size, parent_activations_size_h0};
+
+        auto input_size_vector = broadcast_variable_grids(vector_activations_size, &comm);
+
         output_size = broadcast_variable_grids(l_gru->get_activations().Height(), &comm);
         block = std::make_shared<kfac_block_gru<Device>>(
-            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, input_size, output_size);
+            l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, input_size_vector, output_size, weight_shape_vector);
       } else if(is_cw_fc){
+        //Channelwise FC
         output_size = broadcast_variable_grids(l_cw_fc->get_activations().Height(), &comm);
         block = std::make_shared<kfac_block_channelwise_fc<Device>>(
             l, &context, layer_id, proc_rank, enable_copy_errors, enable_copy_activations, input_size, output_size);

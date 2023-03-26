@@ -1179,6 +1179,10 @@ void kfac_block_gru<Device>::start_communication_forward_end(
       auto local_activations2 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[2]));
       auto subset2 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[2]));
 
+      local_activations0->Resize(this->get_input_size_subgrid(0), this->get_current_batch_size());
+      local_activations1->Resize(this->get_input_size_subgrid(1), this->get_current_batch_size());
+      local_activations2->Resize(this->get_output_size(), this->get_current_batch_size());
+
       kfac::TranslateBetweenGridsVCAsync( *local_inputs_vc,
                                           *local_activations0,
                                           *subset0,
@@ -1199,6 +1203,7 @@ void kfac_block_gru<Device>::start_communication_forward_end(
         auto& weight_values = dtw->get_values();
         const auto weight_ptr = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&weight_values);
         auto weight_input_ptr = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&(*weight));
+        weight_input_ptr->Resize(this->get_weight_shape(iter,0), this->get_weight_shape(iter,1));
         kfac::TranslateBetweenGridsSTARAsync( *weight_ptr,
                                             *weight_input_ptr,
                                             this->m_requests_forward_end);
@@ -1208,15 +1213,33 @@ void kfac_block_gru<Device>::start_communication_forward_end(
 
     }
     else{
-      El::Copy(local_inputs,*this->m_parent_local_activations[0]);
-      El::Copy(h0,*this->m_parent_local_activations[1]);
-      El::Copy(local_outputs,*this->m_parent_local_activations[2]);
+      auto local_activations0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[0]));
+      auto local_activations1 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[1]));
+      auto local_activations2 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[2]));
+
+      const auto local_inputs_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_inputs));
+      const auto h0_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(h0));
+      const auto local_outputs_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_outputs));
+
+      local_activations0->Resize(this->get_input_size_subgrid(0), this->get_current_batch_size());
+      local_activations1->Resize(this->get_input_size_subgrid(1), this->get_current_batch_size());
+      local_activations2->Resize(this->get_output_size(), this->get_current_batch_size());
+
+      kfac::TranslateBetweenGridsVC(*local_inputs_vc,*local_activations0);
+      kfac::TranslateBetweenGridsVC(*h0_vc,*local_activations1);
+      kfac::TranslateBetweenGridsVC(*local_outputs_vc,*local_activations2);
 
       int iter = 0;
       for (auto& weight : this->m_weight_values) {
         auto& weights = this->m_layer->get_weights(iter);
         const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
-        El::Copy(dtw->get_values(),*weight);
+        auto& weight_values = dtw->get_values();
+        const auto weight_ptr = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&weight_values);
+        auto weight_input_ptr = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&(*weight));
+        weight_input_ptr->Resize(this->get_weight_shape(iter,0), this->get_weight_shape(iter,1));
+        // weight_input_ptr->Resize(weight_ptr->Height(), weight_ptr->Width());
+        
+        kfac::TranslateBetweenGridsSTARSync(*weight_ptr,*weight_input_ptr);
         iter++;
       }
 
@@ -1276,6 +1299,7 @@ void kfac_block_gru<Device>::end_communication_forward_end(
             El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[i]));
         auto subset0 = dynamic_cast<
             El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[i]));
+        local_activations0->Resize(this->get_input_size_subgrid(),this->get_current_batch_size());
         kfac::TranslateBetweenGridsVC(*subset0,
                                       *local_activations0);
 
@@ -1323,13 +1347,17 @@ void kfac_block_gru<Device>::start_communication_backward_end(
 
     if(comm->enable_subgrid_async_communication()==false)
     {
-      El::Copy(local_errors,*this->m_child_local_errors[0]);
+      const auto local_errors_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_errors));
+      auto local_errors0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_child_local_errors[0]));
+  
+      local_errors0->Resize(this->get_output_size(),this->get_current_batch_size());
+      kfac::TranslateBetweenGridsVC(*local_errors_vc,*local_errors0);
     }
     else{
       const auto local_errors_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_errors));
       auto local_errors0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_child_local_errors[0]));
       auto subset1 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[3]));
-
+      local_errors0->Resize(this->get_output_size(),this->get_current_batch_size());
       kfac::TranslateBetweenGridsVCAsync(*local_errors_vc,
                                               *local_errors0,
                                               *subset1,
@@ -1366,6 +1394,7 @@ void kfac_block_gru<Device>::end_communication_backward_end(
           El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_child_local_errors[0]));
       auto subset1 = dynamic_cast<
           El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[3]));
+      local_errors0->Resize(this->get_output_size(), this->get_current_batch_size());
       kfac::TranslateBetweenGridsVC(*subset1,
                                     *local_errors0);
     }

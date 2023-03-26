@@ -66,7 +66,8 @@ class kfac_block_bn: public kfac_block<Device> {
                 bool enable_copy_errors,
                 bool enable_copy_activations,
                 int input_size,
-                int output_size)
+                int output_size,
+                std::vector<El::Int> weight_values)
       : kfac_block<Device>(layer, context, layer_id, inverse_proc_rank, enable_copy_errors, enable_copy_activations, input_size, output_size) {
     const auto parent = layer->get_parent_layers()[0];
     const bool is_after_fc =
@@ -97,6 +98,7 @@ class kfac_block_bn: public kfac_block<Device> {
       for(auto i = input_dims.begin()+1; i != input_dims.end(); i++)
         m_spatial_prod *= *i;
     }
+    this->set_weight_height(weight_values);
   }
   kfac_block_bn(const kfac_block_bn&) = default;
   kfac_block_bn& operator=(const kfac_block_bn&) = default;
@@ -196,6 +198,20 @@ class kfac_block_bn: public kfac_block<Device> {
       int offset,
       lbann_comm *comm) override;
 
+  /** @brief Set weights height. */
+  void set_weight_height(
+      std::vector<El::Int> weight_vector)
+  {
+    for (int i = 0; i<weight_vector.size();++i)
+      m_weights_height.push_back(weight_vector.at(i));
+  }
+
+  /** @brief Set weights height. */
+  El::Int get_weight_height(int position=0)
+  {
+    return m_weights_height.at(position);
+  }
+
  private:
 
   /** @brief Information to perform its computation. **/
@@ -213,6 +229,9 @@ class kfac_block_bn: public kfac_block<Device> {
   /** @brief Inverse of the average Fisher matrix. */
   El::Matrix<DataType, Device>
   m_fisher_inverse;
+
+  /** @brief Weight height size. */
+  std::vector<El::Int> m_weights_height;
 
 };
 

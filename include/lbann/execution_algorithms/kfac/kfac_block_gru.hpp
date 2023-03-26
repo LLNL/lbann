@@ -119,13 +119,15 @@ class kfac_block_gru: public kfac_block<Device> {
                  size_t inverse_proc_rank,
                  bool enable_copy_errors,
                  bool enable_copy_activations,
-                 int input_size,
-                 int output_size)
-      : kfac_block<Device>(layer, context, layer_id, inverse_proc_rank, enable_copy_errors, enable_copy_activations, input_size, output_size) {
+                 std::vector<El::Int> input_size_vector,
+                 int output_size,
+                 std::vector<std::vector<El::Int>> weight_values)
+      : kfac_block<Device>(layer, context, layer_id, inverse_proc_rank, enable_copy_errors, enable_copy_activations, input_size_vector[0], output_size) {
 
     check_dnn_lib_spec();
 
     const auto num_layers = get_gru_layer()->get_num_layers();
+    this->set_input_size(input_size_vector);
     if(num_layers > 1) {
       std::stringstream err;
       err << "The K-FAC only supports single-layer GRU layer."
@@ -134,6 +136,7 @@ class kfac_block_gru: public kfac_block<Device> {
           << num_layers;
       LBANN_ERROR(err.str());
     }
+    this->set_weight_shape(weight_values);
 
   }
   kfac_block_gru(const kfac_block_gru&) = default;
@@ -196,6 +199,29 @@ class kfac_block_gru: public kfac_block<Device> {
       El::Matrix<DataType, Device>& workspace,
       int offset,
       lbann_comm *comm) override;
+
+  void set_input_size(std::vector<El::Int> input_size){
+    for (unsigned int i=0; i<input_size.size();++i)
+      m_input_size_vector.push_back(input_size.at(i));
+  }
+
+  El::Int get_input_size_subgrid(int iter=0){
+    return m_input_size_vector.at(iter);
+  }
+
+  /** @brief Set weights Shape. */
+  void set_weight_shape(
+      std::vector<std::vector<El::Int>> weight_vector)
+  {
+    for (int i = 0; i<weight_vector.size();++i)
+      m_weights_shape.push_back({weight_vector[i][0],weight_vector[i][1]});
+  }
+
+  /** @brief Set weights height. */
+  El::Int get_weight_shape(int position=0, int dimension=0)
+  {
+    return m_weights_shape[position][dimension];
+  }
 
   // void send_recv_weights(lbann_comm *comm);
 
@@ -317,6 +343,10 @@ class kfac_block_gru: public kfac_block<Device> {
   size_t m_reserve_space_fwd_size=0;
 
   std::vector<kfac::ReqT> m_requests_workspace;
+  std::vector<El::Int> m_input_size_vector;
+
+  /** @brief Weight height size. */
+  std::vector<std::vector<El::Int>> m_weights_shape;
 
 };
 

@@ -392,6 +392,7 @@ void kfac_block_bn<Device>::start_communication_forward_end(
         const auto weight_ptr = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&weight_values);
         auto weight_input_ptr = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&(*weight));
         El::Copy(dtw->get_values(),*weight);
+        weight_input_ptr->Resize(this->get_weight_height(iter), this->get_weight_height(iter));
         kfac::TranslateBetweenGridsSTARAsync( *weight_ptr,
                                             *weight_input_ptr,
                                             this->m_requests_forward_end);
@@ -401,13 +402,20 @@ void kfac_block_bn<Device>::start_communication_forward_end(
 
     }
     else{
-      El::Copy(local_inputs,*this->m_parent_local_activations[0]);
+      const auto local_inputs_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_inputs));
+      auto local_activations0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[0]));
+      local_activations0->Resize(this->get_input_size(), this->get_current_batch_size());
+      kfac::TranslateBetweenGridsVC(*local_inputs_vc,*local_activations0);
 
       int iter = 0;
       for (auto& weight : this->m_weight_values) {
         auto& weights = this->m_layer->get_weights(iter);
         const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
-        El::Copy(dtw->get_values(),*weight);
+        auto& weight_values = dtw->get_values();
+        const auto weight_ptr = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&weight_values);
+        auto weight_input_ptr = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&(*weight));
+        weight_input_ptr->Resize(this->get_weight_height(iter), this->get_weight_height(iter));
+        kfac::TranslateBetweenGridsSTARSync(*weight_ptr,*weight_input_ptr);
         iter++;
       }
 
@@ -459,6 +467,7 @@ void kfac_block_bn<Device>::end_communication_forward_end(
             El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[i]));
         auto subset0 = dynamic_cast<
             El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[i]));
+        local_activations0->Resize(this->get_input_size(),this->get_current_batch_size());
         kfac::TranslateBetweenGridsVC(*subset0,
                                       *local_activations0);
 
@@ -514,7 +523,10 @@ void kfac_block_bn<Device>::start_communication_backward_end(
 
     if(comm->enable_subgrid_async_communication()==false)
     {
-      El::Copy(local_errors,*this->m_child_local_errors[0]);
+      const auto local_errors_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_errors));
+      auto local_errors0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_child_local_errors[0]));
+      local_errors0->Resize(this->get_output_size(), this->get_current_batch_size());
+      kfac::TranslateBetweenGridsVC(*local_errors_vc,*local_errors0);
 
       int iter = 0;
       for (auto& gradient : this->m_weight_gradients) {
@@ -522,7 +534,13 @@ void kfac_block_bn<Device>::start_communication_backward_end(
         optimizer *optimizer = weights.get_optimizer();
         auto* dto = dynamic_cast<data_type_optimizer<DataType>*>(optimizer);
 
-        El::Copy(dto->get_gradient(),*gradient);
+        auto& gradient_values = dto->get_gradient();
+        const auto gradient_ptr = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&gradient_values);
+        auto gradient_input_ptr = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&(*gradient));
+        
+        gradient_input_ptr->Resize(this->get_weight_height(iter),this->get_weight_height(iter));
+        kfac::TranslateBetweenGridsSTARSync(*gradient_ptr,
+                                            *gradient_input_ptr);
         iter++;
       }
     }
@@ -543,6 +561,7 @@ void kfac_block_bn<Device>::start_communication_backward_end(
         auto& gradient_values = dto->get_gradient();
         const auto gradient_ptr = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&gradient_values);
         auto gradient_input_ptr = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&(*gradient));
+        gradient_input_ptr->Resize(this->get_weight_height(iter), this->get_weight_height(iter));
         kfac::TranslateBetweenGridsSTARAsync( *gradient_ptr,
                                             *gradient_input_ptr,
                                             this->m_requests_backward_end);
@@ -593,6 +612,7 @@ void kfac_block_bn<Device>::end_communication_backward_end(
           El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_child_local_errors[0]));
       auto subset1 = dynamic_cast<
           El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[1]));
+      local_errors0->Resize(this->get_output_size(),this->get_current_batch_size());
       kfac::TranslateBetweenGridsVC(*subset1,
                                     *local_errors0);
     }

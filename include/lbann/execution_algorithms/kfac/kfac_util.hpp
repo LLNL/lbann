@@ -236,6 +236,11 @@ void TranslateBetweenGridsSTARAsync
   std::vector<ReqT>& Requests);
 
 template<typename T, El::Device Device>
+void TranslateBetweenGridsSTARSync
+(const El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& A,
+  El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& B);
+
+template<typename T, El::Device Device>
 void TranslateBetweenGridsKFACAsync
 (const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,
   El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B,

@@ -639,8 +639,8 @@ void TranslateBetweenGridsVC
 (El::DistMatrix<DataType,El::STAR,El::VC,El::ELEMENT,KFACDevice> const& A,
  El::DistMatrix<DataType,El::STAR,El::VC,El::ELEMENT,KFACDevice>& B)
 {
-    int m = A.Height();
-    int n = A.Width();
+    int m = B.Height();
+    int n = B.Width();
     const int mLocA = A.LocalHeight();
     const int nLocA = A.LocalWidth();
     El::mpi::Comm const& viewingCommB = B.Grid().ViewingComm();
@@ -1193,6 +1193,85 @@ void TranslateBetweenGridsVCAsyncDirect
     }
 }
 
+
+template<typename T, El::Device Device>
+void TranslateBetweenGridsSTARSync
+(const El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& A,
+  El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& B){
+  LBANN_ERROR("TranslateBetweenGridsSTARSync function is not implemented for this configuration");
+}
+
+template<>
+void TranslateBetweenGridsSTARSync
+(const El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,KFACDevice>& A,
+  El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,KFACDevice>& B)
+{
+    const int height = B.Height();
+    const int width = B.Width();
+    B.Resize(height, width);
+
+    // Assumes that viewing comm of A and B is same
+    El::mpi::Comm const& viewingCommA = A.Grid().ViewingComm();
+    El::mpi::Comm const& viewingCommB = B.Grid().ViewingComm();
+    const int commSizeA = A.Grid().VCSize();
+    const int commSizeB = B.Grid().VCSize();
+    const bool inBGrid = B.Participating();
+    const bool inAGrid = A.Participating();
+    const int transferSize = A.Height() * A.Width();
+    El::SyncInfo<KFACDevice> syncInfoA = El::SyncInfoFromMatrix(A.LockedMatrix());
+    // BVE FIXME unused variable
+    // El::SyncInfo<KFACDevice> syncInfoB = El::SyncInfoFromMatrix(B.LockedMatrix());
+
+    if(inAGrid==inBGrid){
+        LBANN_ERROR("TranslateBetweenGridsAsync: A rank cannnot be the part of both grids or it must be the part of one grid");
+    }
+
+
+    El::mpi::Comm const& activeCommB = B.Grid().ViewingComm();
+
+
+    if(!El::mpi::Congruent(viewingCommA, viewingCommB))
+            LBANN_ERROR("communicators were not congruent");
+
+
+
+    const int rankA = A.Grid().VCRank();
+    const int rankB = B.Grid().VCRank();
+
+    // BVE FIXME unused variable
+    // BackendT::comm_type& backend_commB = activeCommB.template GetComm<BackendT>(syncInfoB);
+    BackendT::comm_type& backend_commA = activeCommB.template GetComm<BackendT>(syncInfoA);
+
+    if(inAGrid)
+    {
+      int num_sends = (int)std::ceil((float)commSizeB/(float)commSizeA);
+
+      for(int num_send = 0; num_send<num_sends; num_send++){
+        if(rankA + num_send*commSizeA < commSizeB){
+          int to_send_index = rankA + num_send*commSizeA;
+          const int sendViewingRank = B.Grid().VCToViewing(to_send_index);
+          ::Al::Send<BackendT>(
+             (DataType*)A.LockedBuffer(),
+             transferSize,
+             sendViewingRank,
+             backend_commA);
+        }
+      }
+    }
+
+    if(inBGrid)
+    {
+      int recv_index = rankB % commSizeA;
+      const int recvViewingRank = A.Grid().VCToViewing(recv_index);
+
+      ::Al::Recv<BackendT>(
+         (DataType*)B.Buffer(),
+         transferSize,
+         recvViewingRank,
+         backend_commA);
+    }
+}
+
 template<typename T, El::Device Device>
 void TranslateBetweenGridsSTARAsync
 (const El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& A,
@@ -1207,8 +1286,8 @@ void TranslateBetweenGridsSTARAsync
   El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,KFACDevice>& B,
   std::vector<ReqT>& Requests)
 {
-    const int height = A.Height();
-    const int width = A.Width();
+    const int height = B.Height();
+    const int width = B.Width();
     B.Resize(height, width);
 
     // Assumes that viewing comm of A and B is same
@@ -1613,6 +1692,9 @@ void unpack_lower_tri(
       const El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& A,    \
       El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& B,    \
       std::vector<ReqT>& Requests);                  \
+  template void TranslateBetweenGridsSTARSync(                         \
+      const El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& A,    \
+      El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& B);         \
   template void TranslateBetweenGridsVC(                         \
       const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,    \
       El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B);
