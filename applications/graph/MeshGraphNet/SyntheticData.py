@@ -34,5 +34,3 @@ def sample_dims_func():
   return (size, )
 
 
-if __name__ == '__main__':
-    print(NUM_NODES)
