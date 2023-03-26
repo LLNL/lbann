@@ -1,3 +1,8 @@
+.. role:: bash(code)
+          :language: bash
+.. role:: python(code)
+          :language: python
+
 Data Ingestion
 ==============
 
@@ -26,6 +31,14 @@ Legacy Data Readers
 
 Some of the legacy data readers are the ``MNIST``, ``ImageNet``, and
 ``CIFAR10`` data readers.
+
+.. note:: The imagenet data reader uses a path that may not be known
+          to all compute centers. If the dataset is not found
+          :python:`--data-path` may be set to the top level of the data
+          set in :code:`resnet.py`, :code:`alexnet.py`, and
+          :code:`densenet.py`. The data set is must contain
+          :code:`labels/train.txt`, :code:`labels/val.txt`,
+          :code:`train/`, and :code:`val/`.
 
 
 "New" Data Readers

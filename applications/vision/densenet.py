@@ -428,6 +428,8 @@ def get_args():
     parser.add_argument("--print-matrix-summary", dest="print_matrix_summary",
                         action="store_const",
                         const=True, default=False)
+    parser.add_argument('--data-path', action='store', default=None, type=str,
+                        help='Path to top-level imagenet directory. default: None')
     args = parser.parse_args()
     return args
 
@@ -438,7 +440,7 @@ def set_up_experiment(args,
                       labels):
     algo = lbann.BatchedIterativeOptimizer("sgd", epoch_count=args.num_epochs)
 
-    
+
     # Set up objective function
     cross_entropy = lbann.CrossEntropy([probs, labels])
     layers = list(lbann.traverse_layer_graph(input_))
@@ -472,7 +474,9 @@ def set_up_experiment(args,
                         callbacks=callbacks)
 
     # Set up data reader
-    data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes, small_testing=True)
+    data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes,
+                                                 small_testing=True,
+                                                 data_path=args.data_path)
 
     percentage = 0.001 * 2 * (args.mini_batch_size / 16) * 2
 
