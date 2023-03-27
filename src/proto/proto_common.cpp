@@ -222,9 +222,9 @@ void init_data_readers(
       LBANN_ERROR("attempted to construct numpy_npz data reader, "
                   "but LBANN is not built with CNPY");
 #endif // LBANN_HAS_CNPY
-#ifdef LBANN_HAS_DISTCONV
     }
     else if (name == "cosmoflow_hdf5" || name == "hdf5") {
+#ifdef LBANN_HAS_DISTCONV
       if (name == "cosmoflow_hdf5") {
         LBANN_WARNING("The \"cosmoflow_hdf5\" data reader is deprecated. Use "
                       "\"hdf5\" instead.");
@@ -251,6 +251,9 @@ void init_data_readers(
       const auto paths = glob(filedir + readme.data_file_pattern());
       reader_hdf5->set_hdf5_paths(paths);
       reader = reader_hdf5;
+#else
+      LBANN_ERROR("attempted to construct cosmoflow_hdf5 or hdf5 data reader, "
+                  "but LBANN is not built with Distconv");
 #endif // LBANN_HAS_DISTCONV
     }
     else if (name == "pilot2_molecular_reader") {
