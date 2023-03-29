@@ -1,9 +1,10 @@
-"""WMT 2014 dataset for English-German translation."""
+"""WMT 2016 dataset for English-German translation."""
 import os.path
 import sys
 
 import numpy as np
-import torchnlp.datasets
+from datasets import load_dataset
+from tokenizers import Tokenizer
 
 # Local imports
 current_file = os.path.realpath(__file__)
@@ -23,24 +24,19 @@ sequence_length = 64
 # Setup
 # ----------------------------------------------
 
-# Load WMT 2014 dataset
+# Load WMT 2016 dataset and tokenizer.
 data_dir = utils.paths.wmt_dir()
-dataset_train, dataset_val = torchnlp.datasets.wmt_dataset(
-    directory=data_dir,
-    train=True,
-    dev=True,
+dataset_train, dataset_val = load_dataset(
+    os.path.join(data_dir, 'wmt16.py'), 'de-en', 
+    split=('train', 'validation'),
+    cache_dir=os.path.join(data_dir, 'cache')
 )
-
-# Load token vocabulary
-token_file = os.path.join(data_dir, 'vocab.bpe.32000')
-with open(token_file, 'r', encoding='utf-8') as f:
-    tokens = f.read().splitlines()
-tokens.extend(['<unk>', '<s>', '</s>', '<pad>'])
-token_indices = dict(zip(tokens, range(len(tokens))))
-unk_index = token_indices.get('<unk>', -1)
-bos_index = token_indices.get('<s>', -1)
-eos_index = token_indices.get('</s>', -1)
-pad_index = token_indices.get('<pad>', -1)
+tokenizer = Tokenizer.from_file(
+    os.path.join(data_dir, 'tokenizer-wmt16.json')
+)
+pad_index = tokenizer.token_to_id('<pad>')
+bos_index = tokenizer.token_to_id('<s>')
+eos_index = tokenizer.token_to_id('</s>')
 
 # ----------------------------------------------
 # Tokenization
@@ -53,13 +49,7 @@ def tokenize(text):
     add BOS and EOS tokens.
 
     """
-    indices = [bos_index]
-    indices.extend(
-        token_indices.get(token, unk_index)
-        for token in text.split(' ')
-    )
-    indices.append(eos_index)
-    return indices
+    return tokenizer.encode('<s>' + text + '</s>').ids
 
 def detokenize(indices):
     """Convert token indices to string.
@@ -68,15 +58,8 @@ def detokenize(indices):
     ignored.
 
     """
-    text = ''
-    for index in indices:
-        if index == eos_index:
-            break
-        elif index in (unk_index, bos_index, pad_index):
-            continue
-        else:
-            text += f' {tokens[index]}'
-    return text
+    return tokenizer.decode(indices, skip_special_tokens=True).replace(' ##', '')
+
 
 # ----------------------------------------------
 # Sample access functions
@@ -91,7 +74,7 @@ def get_train_sample(index):
     """
 
     # Tokenize text data
-    text = dataset_train[index]
+    text = dataset_train[index]['translation']
     sample_en = tokenize(text['en'])
     sample_de = tokenize(text['de'])
 
@@ -115,7 +98,7 @@ def get_train_sample(index):
 
 def get_val_sample(index):
     """Token indices for a data sample from the validation set."""
-    text = dataset_val[index]
+    text = dataset_val[index]['translation']
     sample_en = tokenize(text['en'])
     sample_de = tokenize(text['de'])
     return sample_en, sample_de
@@ -127,4 +110,4 @@ def num_val_samples():
 def sample_dims():
     return (2*sequence_length+1,)
 def vocab_size():
-    return len(tokens)
+    return tokenizer.get_vocab_size()
