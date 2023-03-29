@@ -15,7 +15,8 @@ import sys
 import numpy as np
 import torch
 import torch.nn
-import torchnlp.metrics
+from tqdm import tqdm
+import evaluate
 
 # Local imports
 current_file = os.path.realpath(__file__)
@@ -48,6 +49,12 @@ bos_index = dataset.bos_index
 eos_index = dataset.eos_index
 pad_index = dataset.pad_index
 num_samples = dataset.num_val_samples()
+metric = evaluate.load(os.path.join(utils.paths.wmt_dir(), 'sacrebleu_metric.py'))
+
+if torch.cuda.is_available():
+    device = torch.device('cuda')
+else:
+    device = torch.device('cpu')
 
 # ----------------------------------------------
 # Evaluation data
@@ -230,7 +237,7 @@ def add_positional_encoding(x):
     for i in range(embed_dim // 2):
         pos = np.arange(sequence_length).reshape(-1,1)
         encoding[:,:,2*i+1] = np.cos(pos / 10000**(2*i/embed_dim))
-    return x + torch.from_numpy(encoding)
+    return x + torch.from_numpy(encoding).to(device)
 
 def greedy_decode(tokens_en, embedding_layer, transformer, classifier):
     """Generate sequence with transformer.
@@ -249,13 +256,13 @@ def greedy_decode(tokens_en, embedding_layer, transformer, classifier):
     # Decode German sequence
     # TODO: Only perform compute for last sequence entry
     # TODO: Detect EOS tokens and stop early
-    tokens_de = torch.full((1,tokens_en.shape[1]), bos_index, dtype=int)
+    tokens_de = torch.full((1,tokens_en.shape[1]), bos_index, dtype=int, device=device)
     for i in range(1, max_sequence_length):
         embeddings_de = embedding_layer(tokens_de)
         preds = transformer.decoder(
             add_positional_encoding(embeddings_de * np.sqrt(embed_dim)),
             memory,
-            tgt_mask=transformer.generate_square_subsequent_mask(i),
+            tgt_mask=transformer.generate_square_subsequent_mask(i).to(device),
         )
         preds = classifier(preds[-1,:,:])
         preds = preds.argmax(dim=1)
@@ -272,14 +279,14 @@ def evaluate_transformer(weights_prefix):
     """
 
     # Load model weights from file
-    embedding_layer = load_embedding_layer(weights_prefix)
-    transformer = load_transformer(weights_prefix)
-    classifier = torch.nn.Linear(embed_dim, vocab_size, bias=False)
+    embedding_layer = load_embedding_layer(weights_prefix).to(device)
+    transformer = load_transformer(weights_prefix).to(device)
+    classifier = torch.nn.Linear(embed_dim, vocab_size, bias=False).to(device)
     classifier.weight = embedding_layer.weight
 
     # Evaluate model
     bleu_scores = []
-    for batch, index_start in enumerate(range(0, num_samples, mini_batch_size)):
+    for batch, index_start in enumerate(tqdm(range(0, num_samples, mini_batch_size))):
         index_end = min(index_start+mini_batch_size, num_samples)
         indices = list(range(index_start, index_end))
         batch_size = len(indices)
@@ -287,22 +294,23 @@ def evaluate_transformer(weights_prefix):
         # Translate English sequence to German
         # TODO: Decoding with beam search
         tokens_en, true_tokens_de = get_batch(indices)
+        tokens_en = tokens_en.to(device)
         pred_tokens_de = greedy_decode(
             tokens_en,
             embedding_layer,
             transformer,
             classifier,
-        )
+        ).cpu()
 
         # Compute BLEU score
         for i in range(batch_size):
             hypothesis = dataset.detokenize(pred_tokens_de[:,i].numpy())
             reference = dataset.detokenize(true_tokens_de[:,i].numpy())
             bleu_scores.append(
-                torchnlp.metrics.get_moses_multi_bleu(
-                    [hypothesis],
-                    [reference],
-                )
+                metric.compute(
+                    predictions=[hypothesis],
+                    references=[[reference]]
+                )['score']
             )
 
     # Print results
