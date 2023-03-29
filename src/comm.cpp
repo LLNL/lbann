@@ -539,7 +539,7 @@ void nb_allreduce_impl(El::Matrix<T, El::Device::GPU>& m,
     c,
     req,
     op,
-    BackendTag<::Al::HostTransfer>{},
+    BackendTag<::Al::HostTransferBackend>{},
     ::Al::HostTransferBackend::allreduce_algo_type::host_transfer);
 #else
   // At this point just call Elemental again
