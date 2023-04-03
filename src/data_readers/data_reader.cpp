@@ -59,42 +59,11 @@ generic_data_reader::~generic_data_reader()
 template <class Archive>
 void generic_data_reader::serialize(Archive& ar)
 {
-  ar(CEREAL_NVP(m_current_mini_batch_idx),
-     CEREAL_NVP(m_current_pos),
-     CEREAL_NVP(m_shuffled_indices),
-     CEREAL_NVP(m_supported_input_types));
+  ar(CEREAL_NVP(m_supported_input_types));
 }
 
-void generic_data_reader::shuffle_indices()
+void generic_data_reader::setup(observer_ptr<thread_pool> io_thread_pool)
 {
-  shuffle_indices(get_data_seq_generator());
-}
-
-void generic_data_reader::shuffle_indices(rng_gen& gen)
-{
-  // Shuffle the data
-  if (m_shuffle) {
-    std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(), gen);
-  }
-}
-
-void generic_data_reader::setup(int num_io_threads,
-                                observer_ptr<thread_pool> io_thread_pool)
-{
-  m_base_offset = 0;
-  m_sample_stride = 1;
-  m_stride_to_next_mini_batch = 0;
-  m_stride_to_last_mini_batch = 0;
-  m_current_mini_batch_idx = 0;
-  m_num_iterations_per_epoch = 0;
-  m_global_mini_batch_size = 0;
-  m_global_last_mini_batch_size = 0;
-  m_world_master_mini_batch_adjustment = 0;
-
-  set_initial_position();
-
-  shuffle_indices();
-
   m_io_thread_pool = io_thread_pool;
 }
 
@@ -424,50 +393,6 @@ bool lbann::generic_data_reader::fetch_data_block_conduit(
   return true;
 }
 
-bool generic_data_reader::update(bool is_active_reader)
-{
-  bool reader_not_done = true; // BVE The sense of this should be fixed
-  m_current_mini_batch_idx++;
-
-  if (is_active_reader) {
-    m_current_pos = get_next_position();
-    m_loaded_mini_batch_idx += m_iteration_stride;
-  }
-  if (m_loaded_mini_batch_idx >= m_num_iterations_per_epoch) {
-    reader_not_done = false;
-  }
-  if ((size_t)m_current_pos >= m_shuffled_indices.size()) {
-    reader_not_done = false;
-  }
-  if (m_current_mini_batch_idx == m_num_iterations_per_epoch) {
-    // for working with 1B jag samples, we may not process all the data
-    if ((m_comm->get_rank_in_trainer() < m_num_parallel_readers) &&
-        (m_current_pos < (int)m_shuffled_indices.size())) {
-      throw lbann_exception(
-        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-        " :: generic data reader update error: the epoch is complete," +
-        " but not all of the data has been used -- current pos = " +
-        std::to_string(m_current_pos) + " and there are " +
-        std::to_string(m_shuffled_indices.size()) + " indices" +
-        " : iteration=" + std::to_string(m_current_mini_batch_idx) + "C [" +
-        std::to_string(m_loaded_mini_batch_idx) + "L] of " +
-        std::to_string(m_num_iterations_per_epoch) + "+" +
-        std::to_string(m_iteration_stride) + " : " +
-        " index stride=" + std::to_string(m_stride_to_next_mini_batch) + "/" +
-        std::to_string(m_stride_to_last_mini_batch));
-    }
-
-    shuffle_indices();
-    if (priming_data_store()) {
-      m_data_store->set_shuffled_indices(&m_shuffled_indices);
-    }
-
-    set_initial_position();
-  }
-
-  return reader_not_done;
-}
-
 int generic_data_reader::get_linearized_size(
   data_field_type const& data_field) const
 {
@@ -489,221 +414,6 @@ int generic_data_reader::get_linearized_size(
   return 0;
 }
 
-int generic_data_reader::get_loaded_mini_batch_size() const
-{
-  if (m_loaded_mini_batch_idx >= (m_num_iterations_per_epoch - 1)) {
-    return m_last_mini_batch_size;
-  }
-  else {
-    return m_mini_batch_size;
-  }
-}
-
-int generic_data_reader::get_current_mini_batch_size() const
-{
-  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch - 1)) {
-    return m_last_mini_batch_size + m_world_master_mini_batch_adjustment;
-  }
-  else {
-    return m_mini_batch_size;
-  }
-}
-
-int generic_data_reader::get_current_global_mini_batch_size() const
-{
-  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch - 1)) {
-    return m_global_last_mini_batch_size;
-  }
-  else {
-    return m_global_mini_batch_size;
-  }
-}
-
-/// Returns the current adjustment to the mini-batch size based on if
-/// the world master (model 0) has any extra samples
-/// Note that any rank in model 0 does not need to add in this offset
-/// since the model will already be aware of the extra samples
-int generic_data_reader::get_current_world_master_mini_batch_adjustment(
-  int model_rank) const
-{
-  if (model_rank != 0 &&
-      m_current_mini_batch_idx == (m_num_iterations_per_epoch - 1)) {
-    return m_world_master_mini_batch_adjustment;
-  }
-  else {
-    return 0;
-  }
-}
-
-int generic_data_reader::get_next_position() const
-{
-  /// If the next mini-batch for this rank is going to be the last
-  /// mini-batch, take the proper (possibly reduced) step to
-  /// setup for the last mini-batch
-  if ((m_current_mini_batch_idx + m_iteration_stride - 1) ==
-      (m_num_iterations_per_epoch - 1)) {
-    return m_current_pos + m_stride_to_last_mini_batch;
-  }
-  else {
-    return m_current_pos + m_stride_to_next_mini_batch;
-  }
-}
-
-int generic_data_reader::get_num_unused_data(execution_mode m) const
-{
-  if (m_unused_indices.count(m)) {
-    return (int)m_unused_indices.at(m).size();
-  }
-  else {
-    LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
-  }
-}
-/// Get a pointer to the start of the unused sample indices.
-int* generic_data_reader::get_unused_data(execution_mode m)
-{
-  if (m_unused_indices.count(m)) {
-    return &(m_unused_indices[m][0]);
-  }
-  else {
-    LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
-  }
-}
-const std::vector<int>&
-generic_data_reader::get_unused_indices(execution_mode m)
-{
-  if (m_unused_indices.count(m)) {
-    return m_unused_indices.at(m);
-  }
-  else {
-    LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
-  }
-}
-
-void generic_data_reader::error_check_counts() const
-{
-  size_t count = get_absolute_sample_count();
-  double use_percent = get_use_percent();
-  if (count == 1 and use_percent == 0.0) {
-    LBANN_ERROR("get_use_percent() and get_absolute_sample_count() are both "
-                "zero; exactly one must be zero");
-  }
-  if (!(count == 0 or use_percent == 0.0)) {
-    LBANN_ERROR("get_use_percent() and get_absolute_sample_count() are both "
-                "non-zero; exactly one must be zero");
-  }
-  if (count != 0) {
-    if (count > static_cast<size_t>(get_num_data())) {
-      LBANN_ERROR("absolute_sample_count=" + std::to_string(count) +
-                  " is > get_num_data=" + std::to_string(get_num_data()));
-    }
-  }
-}
-
-size_t generic_data_reader::get_num_indices_to_use() const
-{
-  error_check_counts();
-  // note: exactly one of the following is guaranteed to be non-zero
-  size_t count = get_absolute_sample_count();
-  double use_percent = get_use_percent();
-
-  size_t r = 0.;
-  if (count) {
-    r = count;
-  }
-  else if (use_percent) {
-    r = use_percent * get_num_data();
-    if (r == 0) {
-      LBANN_ERROR("get_num_indices_to_use() computed zero indices; probably: "
-                  "percent_of_data_to_use is too small WRT num_data;  "
-                  "get_absolute_sample_count: ",
-                  get_absolute_sample_count(),
-                  " use_percent: ",
-                  get_use_percent(),
-                  " num data: ",
-                  get_num_data(),
-                  " for role: ",
-                  get_role());
-    }
-  }
-  else {
-    LBANN_ERROR("it's impossible to be here");
-  }
-
-  return r;
-}
-
-void generic_data_reader::resize_shuffled_indices()
-{
-  size_t num_indices = get_num_indices_to_use();
-  shuffle_indices();
-  m_shuffled_indices.resize(num_indices);
-}
-
-void generic_data_reader::select_subset_of_data()
-{
-  // Calculate the total number of samples for subsets
-  double total_split_percent = 0.;
-  for (auto m : execution_mode_iterator()) {
-    total_split_percent += get_execution_mode_split_percent(m);
-  }
-  long total_num_data = get_num_data();
-  long total_unused = total_split_percent * total_num_data;
-  long total_used = total_num_data - total_unused;
-  auto starting_unused_offset = m_shuffled_indices.begin() + total_used;
-  for (auto m : execution_mode_iterator()) {
-    double split_percent = get_execution_mode_split_percent(m);
-
-    if (split_percent == 0.) {
-      continue;
-    }
-
-    long split = split_percent * total_num_data;
-    if (split == 0) {
-      LBANN_ERROR(to_string(m),
-                  " % of ",
-                  split_percent,
-                  " was requested, but the number of validation indices was "
-                  "computed as zero. Probably: % ",
-                  to_string(m),
-                  " requested is too small wrt num_indices (aka, num samples)");
-    }
-    if (split > 0) {
-      if (starting_unused_offset + split > m_shuffled_indices.end()) {
-        LBANN_ERROR(
-          "Split range exceeds the maximun numbrer of shuffled indices");
-      }
-      m_unused_indices[m] = std::vector<int>(starting_unused_offset,
-                                             starting_unused_offset + split);
-      starting_unused_offset += split;
-    }
-  }
-  m_shuffled_indices.resize(total_used);
-
-  if (!m_shuffle) {
-    std::sort(m_shuffled_indices.begin(), m_shuffled_indices.end());
-    for (auto m : execution_mode_iterator()) {
-      if (m_unused_indices.count(m)) {
-        std::sort(m_unused_indices[m].begin(), m_unused_indices[m].end());
-      }
-    }
-  }
-}
-
-void generic_data_reader::use_unused_index_set(execution_mode m)
-{
-  if (m_unused_indices.count(m) == 0) {
-    LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
-  }
-
-  m_shuffled_indices.swap(m_unused_indices[m]);
-  if (m_data_store != nullptr) {
-    /// Update the data store's pointer to the shuffled indices
-    m_data_store->set_shuffled_indices(&m_shuffled_indices);
-  }
-  m_unused_indices[m].clear();
-  std::vector<int>().swap(
-    m_unused_indices[m]); // Trick to force memory reallocation
-}
 
 bool generic_data_reader::save_to_checkpoint_shared(persist& p,
                                                     execution_mode mode)
@@ -863,53 +573,6 @@ std::string generic_data_reader::get_label_filename() const
   return m_label_fn;
 }
 
-void generic_data_reader::set_first_n(int n) { m_first_n = n; }
-
-void generic_data_reader::set_absolute_sample_count(size_t s)
-{
-  m_absolute_sample_count = s;
-}
-
-size_t generic_data_reader::get_absolute_sample_count() const
-{
-  return m_absolute_sample_count;
-}
-
-void generic_data_reader::set_execution_mode_split_percent(execution_mode m,
-                                                           double s)
-{
-  if (s < 0 or s > 1.0) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: set_validation_percent() - must be: s >= 0, s <= 1.0; you passed: " +
-      std::to_string(s));
-  }
-  m_execution_mode_split_percentage[m] = s;
-}
-
-double
-generic_data_reader::get_execution_mode_split_percent(execution_mode m) const
-{
-  if (m_execution_mode_split_percentage.count(m)) {
-    return m_execution_mode_split_percentage.at(m);
-  }
-  else {
-    return 0;
-  }
-}
-
-void generic_data_reader::set_use_percent(double s)
-{
-  if (s < 0 or s > 1.0) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: set_use_percent() - must be: s >= 0, s <= 1.0; you passed: " +
-      std::to_string(s));
-  }
-  m_use_percent = s;
-}
-
-double generic_data_reader::get_use_percent() const { return m_use_percent; }
 
 void generic_data_reader::instantiate_data_store()
 {
@@ -1007,13 +670,6 @@ void generic_data_reader::set_data_store(data_store_conduit* g)
   }
   m_data_store = g;
 }
-
-void generic_data_reader::set_mini_batch_size(const int s)
-{
-  m_mini_batch_size = s;
-}
-
-void generic_data_reader::set_role(std::string role) { m_role = role; }
 
 void generic_data_reader::preload_data_store()
 {
