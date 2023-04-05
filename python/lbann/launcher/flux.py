@@ -141,7 +141,7 @@ class FluxBatchScript(BatchScript):
         if job_name:
             args.append(f'--job-name={job_name}')
         if partition:
-            args.append(f'--partition={partition}')
+            args.append(f'--queue={partition}')
         if account:
             args.append(f'--account={account}')
         args.extend(make_iterable(command))
