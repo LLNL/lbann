@@ -25,7 +25,7 @@ class FluxBatchScript(BatchScript):
                  job_name=None,
                  partition=None,
                  account=None,
-                 launcher='flux mini run',
+                 launcher='flux run',
                  launcher_args=[],
                  interpreter='/bin/bash'):
         """Construct Flux batch script manager.
@@ -46,9 +46,9 @@ class FluxBatchScript(BatchScript):
             account (str, optional): Scheduler account
                 (default: none).
             launcher (str, optional): Parallel command launcher
-                (default: flux mini run).
+                (default: flux run).
             launcher_args (`Iterable` of `str`, optional):
-                Command-line arguments to flux mini run.
+                Command-line arguments to flux run.
             interpreter (str, optional): Script interpreter
                 (default: /bin/bash).
 
@@ -78,7 +78,7 @@ class FluxBatchScript(BatchScript):
                              launcher_args=None):
         """Add command to be executed in parallel.
 
-        The command is launched with flux mini run. Parallel processes are
+        The command is launched with flux run. Parallel processes are
         distributed evenly amongst the compute nodes.
 
         Args:
@@ -92,9 +92,9 @@ class FluxBatchScript(BatchScript):
             job_name (str, optional): Job name.
             partition (str, optional): Scheduler partition.
             account (str, optional): Scheduler account.
-            launcher (str, optional): flux mini run executable.
+            launcher (str, optional): flux run executable.
             launcher_args (`Iterable` of `str`s, optional):
-                Command-line arguments to flux mini run.
+                Command-line arguments to flux run.
 
         """
 
@@ -118,7 +118,7 @@ class FluxBatchScript(BatchScript):
         if launcher_args is None:
             launcher_args = self.launcher_args
 
-        # Construct flux mini run invocation
+        # Construct flux run invocation
         args = [launcher]
         args.extend(make_iterable(launcher_args))
         args.append(f'--setattr=system.cwd={work_dir}')
@@ -141,14 +141,14 @@ class FluxBatchScript(BatchScript):
         if job_name:
             args.append(f'--job-name={job_name}')
         if partition:
-            args.append(f'--partition={partition}')
+            args.append(f'--queue={partition}')
         if account:
             args.append(f'--account={account}')
         args.extend(make_iterable(command))
         self.add_command(args)
 
     def submit(self, overwrite=False):
-        """Submit batch job to Flux with flux mini batch.
+        """Submit batch job to Flux with flux batch.
 
         The script file is written before being submitted.
 
@@ -165,7 +165,7 @@ class FluxBatchScript(BatchScript):
         self.write(overwrite=overwrite)
 
         # Submit batch script and pipe output to log files
-        run_proc = subprocess.Popen(['flux mini batch', self.script_file],
+        run_proc = subprocess.Popen(['flux batch', self.script_file],
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
                                     cwd=self.work_dir)
