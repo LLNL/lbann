@@ -724,6 +724,7 @@ void model::setup(size_t max_mini_batch_size,
   setup_layer_topology();
   setup_layer_execution_order();
   if (this->is_subgraph_parallelism_enabled()) {
+    std::cout<<"Setupping Subgraph grids DEBUG\n";
     setup_subgrids();
   }
 
@@ -875,7 +876,8 @@ void model::check_subgraph_parallelism()
   const auto& layers = this->get_layers();
   const El::Int num_layers = layers.size();
   for (El::Int node = 0; node < num_layers; ++node) {
-    if (layers[node]->get_parallel_strategy().sub_branch_tag != 0) {
+    //if (layers[node]->get_parallel_strategy().grid_tag != 0) {
+    if (layers[node]->get_grid_tag() != 0) {
       this->enable_subgraph_parallelism();
       break;
     }
@@ -1593,7 +1595,7 @@ void model::setup_subgrids()
     }
   }
 
-  if (El::mpi::Rank() == 0) {
+  if (El::mpi::Rank() == 0 or true) {
     std::cout << "Number of subgrids created:" << grids.size() << "\n";
     for (auto const& pair : grids) {
       std::cout << "{" << pair.first << ": "

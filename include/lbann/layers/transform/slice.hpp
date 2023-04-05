@@ -335,6 +335,9 @@ void slice_layer<TensorDataType,Layout,Device>::fp_compute_subgrid( )
     El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(*ptr_input,this->get_all_activations(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication,1);
 
   }
+  std::cout<<"Before Activation Printing\n";
+  El::Print(*(this->get_all_activations()[0]));
+  El::mpi::Barrier();
 
 
 }

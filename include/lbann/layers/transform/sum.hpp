@@ -133,11 +133,16 @@ protected:
     auto& output = this->get_activations();
     auto parents = this->get_parent_layers();
 
+    std::cout<<"Sum Layer Subgraph Model Wide:"<<this->is_subgraph_parallelism_enabled()<<" Parallel get_parallel_strategy:"<<this->get_parallel_strategy().enable_subgraph<<"\n";
+
 
     if(this->is_subgraph_parallelism_enabled() && this->get_parallel_strategy().enable_subgraph==true)
     {
       auto subgrid_tags = (*this->m_parent_tags);
       int tag=0;
+
+      for (auto i: subgrid_tags)
+            std::cout << i << ' ';
 
       std::vector<bool> is_initialized_tensor(this->m_num_spliting_groups, false);
 
@@ -148,8 +153,10 @@ protected:
         if(is_initialized_tensor[tag])
         {
 
+
           if(this->get_prev_activations(i).Participating())
           {
+            std::cout<<"Init Subgrid SUm\n";
             El::Axpy(DataType(1), this->get_prev_activations(i),
                     this->get_branch_tag_input(tag));
           }
@@ -158,12 +165,15 @@ protected:
         {
           if(this->get_prev_activations(i).Participating())
           {
+            std::cout<<"Cont Subgrid SUm\n";
             El::Copy(this->get_prev_activations(i), this->get_branch_tag_input(tag));
             is_initialized_tensor[tag] = true;
           }
 
         }
       }
+
+      std::cout<<"Sum Subgrid middle\n";
 
       // copy and add data from reduced gradients from same branch
 
@@ -189,25 +199,32 @@ protected:
         } else {
           El::Zero(output);
         }
+        std::cout<<"Output Height:"<<output.Height()<<" width:"<<output.Width()<<"\n";
+        std::cout<<"Input0 Height:"<<this->get_branch_tag_input(0).Height()<<" width:"<<this->get_branch_tag_input(0).Width()<<"\n";
+        std::cout<<"Input1 Height:"<<this->get_branch_tag_input(1).Height()<<" width:"<<this->get_branch_tag_input(1).Width()<<"\n";
 
         for(int i = 1; i < this->m_num_spliting_groups; i++)
         {
 
           El::Copy( this->get_branch_tag_input(i), this->get_temp_grad());
+          std::cout<<"Sum Subgrid Pt2PT spliting\n";
           El::Axpy(DataType(1), this->get_temp_grad(),
                    output);
         }
 
       }
+      std::cout<<"Sum Subgrid finish\n";
     } //if subgraph parallelism is enabled
     else
     {
+      std::cout<<"Executing Sum Layer Without Subgrid\n";
       El::Copy(this->get_prev_activations(0), output);
       for (int i = 1; i < this->get_num_parents(); ++i) {
         El::Axpy(DataType(1), this->get_prev_activations(i), output);
       }
 
     }
+
 
   }
 

@@ -19,8 +19,8 @@ import tools
 
 # Data
 np.random.seed(202201182)
-_num_samples = 25
-_sample_size = 6
+_num_samples = 32
+_sample_size = 8
 _samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
 
 # Sample access functions
@@ -66,7 +66,7 @@ def construct_model(lbann):
     x = lbann.Sum(lbann.Reshape(lbann.Input(data_field='samples'),
                                 dims=_sample_size),
                   lbann.WeightsLayer(weights=x_weights,
-                                     dims=_sample_size))
+                                     dims=_sample_size), name="sum_layer")
     x_lbann = x
 
     # Objects for LBANN model
@@ -82,18 +82,21 @@ def construct_model(lbann):
     ### @todo Layers with optimized inter-grid communication
     x = lbann.Slice(
         x_lbann,
-        slice_points=[0, _sample_size//2, _sample_size])
+        slice_points=[0, _sample_size//2, _sample_size],
+        parallel_strategy = {'enable_subgraph':True}, name="slice_layer")
     x1 = lbann.Identity(
         x,
-        parallel_strategy = {'grid_tag':1})
+        parallel_strategy = {'grid_tag':1, 'sub_branch_tag':1})
     x2 = lbann.Identity(
         x,
-        parallel_strategy = {'grid_tag':2})
+        parallel_strategy = {'grid_tag':2, 'sub_branch_tag':2})
     y1 = lbann.Sin(x1)
     y2 = lbann.Cos(x2)
     y = lbann.Sum(
-        lbann.Identity(y1, parallel_strategy = {'grid_tag':0}),
-        lbann.Identity(y2, parallel_strategy = {'grid_tag':0}))
+        lbann.Identity(y1),
+        lbann.Identity(y2),
+        parallel_strategy = {'enable_subgraph':True, 'grid_tag':0, 'sub_branch_tag':0})
+        
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='obj'))
@@ -122,6 +125,12 @@ def construct_model(lbann):
     # ------------------------------------------
     # Gradient checking
     # ------------------------------------------
+    dump_outputs = lbann.CallbackDumpOutputs(layers="sum_layer",batch_interval=0,
+                                          directory="/usr/WS1/jain8/internship/2nd_order/merge/v13/lbann/ci_test/unit_tests", format="csv")
+    callbacks.append(dump_outputs)
+    dump_outputs = lbann.CallbackDumpOutputs(layers="slice_layer",batch_interval=0,
+                                          directory="/usr/WS1/jain8/internship/2nd_order/merge/v13/lbann/ci_test/unit_tests", format="csv")
+    callbacks.append(dump_outputs)
 
     callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
@@ -134,7 +143,8 @@ def construct_model(lbann):
                        layers=lbann.traverse_layer_graph(x_lbann),
                        objective_function=obj,
                        metrics=metrics,
-                       callbacks=callbacks)
+                       callbacks=callbacks,
+                       subgraph_communication=lbann.SubgraphCommunication.PT2PT)
 
 def construct_data_reader(lbann):
     """Construct Protobuf message for Python data reader.
