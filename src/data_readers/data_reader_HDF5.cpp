@@ -35,20 +35,6 @@
 namespace lbann {
 namespace {
 
-/** @brief Copy a floating point array into a new floating point array.
- *  @tparam ToType The new data type.
- *  @tparam FromType (Inferred) The old data type.
- *  @param data_in The type of the input data.
- *  @param num_elements The number of elements in the input array.
- *  @returns A clean copy of the input data with a new type.
- */
-template <typename ToType, typename FromType>
-std::vector<ToType> do_coerce(FromType const* const data_in,
-                              size_t const num_elements)
-{
-  return std::vector<ToType>{data_in, data_in + num_elements};
-}
-
 template <typename T>
 void do_normalize(T* const data,
                   double const scale,
@@ -301,7 +287,7 @@ void hdf5_data_reader::do_preload_data_store()
     }
     try {
       conduit::Node& node = m_data_store->get_empty_node(index);
-      load_sample(node, index);
+      load_sample_from_sample_list(node, index);
       m_data_store->set_preloaded_conduit_node(index, node);
     }
     catch (conduit::Error const& e) {
@@ -334,11 +320,15 @@ void hdf5_data_reader::do_preload_data_store()
 
 // Loads the fields that are specified in the user supplied schema
 void hdf5_data_reader::load_sample(conduit::Node& node,
-                                   size_t index,
+                                   hid_t file_handle,
+                                   const std::string& sample_name,
                                    bool ignore_failure)
 {
-  auto [file_handle, sample_name] = data_reader_sample_list::open_file(index);
-  // load data for the field names specified in the user's experiment-schema
+  // BVE FIXME Note that this will load an HDF5 field by field.  If the entire
+  // file is used, this will have sub-optimal performance.  It should be
+  // optimized to have a cut-through for when the experiment schema matches the
+  // data schema load data for the field names specified in the user's
+  // experiment-schema
   for (auto& [pathname, path_node] : m_useme_node_map) {
     // do not load a "packed" field, as it doesn't exist on disk!
     if (!is_composite_node(path_node)) {
@@ -354,7 +344,7 @@ void hdf5_data_reader::load_sample(conduit::Node& node,
 
       // get the new path-name (prepend the index)
       std::ostringstream ss2;
-      ss2 << LBANN_DATA_ID_STR(index) << '/' << pathname;
+      ss2 << '/' << pathname;
       const std::string new_pathname(ss2.str());
 
       // note: this will throw an exception if the child node doesn't exist
@@ -371,6 +361,17 @@ void hdf5_data_reader::load_sample(conduit::Node& node,
                                       node[new_pathname]);
       }
 
+      // check to see if there are integer types left in the sample and warn the
+      // user
+      auto dtype = node[new_pathname].dtype();
+      // https://github.com/LLNL/conduit/blob/develop/src/libs/conduit/conduit_data_type.hpp
+      if (!dtype.is_floating_point()) {
+        LBANN_MSG("Ingesting sample field ",
+                  pathname,
+                  " which has unconventional data format ",
+                  dtype.to_string());
+      }
+
       // optionally normalize
       if (metadata.has_child("scale")) {
         normalize(node, new_pathname, metadata);
@@ -383,7 +384,17 @@ void hdf5_data_reader::load_sample(conduit::Node& node,
       }
     }
   }
+}
 
+void hdf5_data_reader::load_sample_from_sample_list(conduit::Node& node,
+                                                    size_t index,
+                                                    bool ignore_failure)
+{
+  auto [file_handle, sample_name] = data_reader_sample_list::open_file(index);
+  std::ostringstream ss2;
+  ss2 << LBANN_DATA_ID_STR(index);
+  const std::string padded_index(ss2.str());
+  load_sample(node[padded_index], file_handle, sample_name, ignore_failure);
   pack(node, index);
 }
 
@@ -743,16 +754,14 @@ void hdf5_data_reader::coerce(const conduit::Node& metadata,
   conduit::Node tmp;
   conduit::relay::io::hdf5_read(file_handle, original_path, tmp);
 
-  // yay! I finally get to use a void*
-  void* vals = tmp.element_ptr(0);
-  size_t num_elements = tmp.dtype().number_of_elements();
-
-  // get data type for data from disk
-  bool from_is_float = tmp.dtype().is_float32();
-  bool from_is_double = tmp.dtype().is_float64();
-  if (!(from_is_float || from_is_double)) {
+  // https://github.com/LLNL/conduit/blob/develop/src/libs/conduit/conduit_data_type.hpp
+  if (!tmp.dtype().is_number()) {
     LBANN_ERROR(
-      "source data is not float or data; please update the data reader");
+      "source data in field ",
+      original_path,
+      " is not integer or real format; ",
+      "please update the data set or experiment schema to exclude the field: ",
+      tmp.dtype().to_string());
   }
 
   // I don't know why, but conduit includes quotes around the string,
@@ -760,25 +769,28 @@ void hdf5_data_reader::coerce(const conduit::Node& metadata,
   const std::string& cc = metadata[s_coerce_name].to_string();
   const std::string& coerce_to = cc.substr(1, cc.size() - 2);
 
-  // this is just ugly, but I don't know how to make it better; would
-  // like to have a single call to do_coerce<>
+  // Example of data coercion taken from
+  // https://github.com/LLNL/conduit/blob/develop/src/tests/conduit/t_conduit_node_to_array.cpp
+  conduit::DataType::TypeID coerced_tid;
   if (coerce_to == "float") {
-    node[new_pathname] =
-      (from_is_float
-         ? do_coerce<float>(reinterpret_cast<float*>(vals), num_elements)
-         : do_coerce<float>(reinterpret_cast<double*>(vals), num_elements));
+    coerced_tid = conduit::DataType::FLOAT32_ID;
   }
   else if (coerce_to == "double") {
-    node[new_pathname] =
-      (from_is_float
-         ? do_coerce<double>(reinterpret_cast<float*>(vals), num_elements)
-         : do_coerce<double>(reinterpret_cast<double*>(vals), num_elements));
+    coerced_tid = conduit::DataType::FLOAT64_ID;
+  }
+  else if (coerce_to == "int") {
+    coerced_tid = conduit::DataType::INT32_ID;
+  }
+  else if (coerce_to == "long" || coerce_to == "int64") {
+    coerced_tid = conduit::DataType::INT64_ID;
   }
   else {
     LBANN_ERROR("Un-implemented type requested for coercion: ",
                 coerce_to,
                 "; you need to update the data reader to support this");
   }
+  // https://github.com/LLNL/conduit/blob/develop/src/libs/conduit/conduit_node.hpp#L3263
+  tmp.to_data_type(coerced_tid, node[new_pathname]);
 }
 
 void hdf5_data_reader::repack_image(conduit::Node& node,
@@ -869,7 +881,7 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables()
 
   // must load a sample to get data sizes. Alternatively, this metadata
   // could be included in the schemas
-  load_sample(node, index);
+  load_sample_from_sample_list(node, index);
 
   return construct_linearized_size_lookup_tables(node);
 }
@@ -942,7 +954,7 @@ void hdf5_data_reader::print_metadata(std::ostream& os)
   if (m_shuffled_indices.size() != 0) {
     size_t index = random() % m_shuffled_indices.size();
     bool ignore_failure = true;
-    load_sample(populated_node, index, ignore_failure);
+    load_sample_from_sample_list(populated_node, index, ignore_failure);
 
     // get all leaves (data fields)
     get_leaves(&populated_node, leaves);

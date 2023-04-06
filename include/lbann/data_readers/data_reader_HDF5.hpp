@@ -270,8 +270,16 @@ private:
    *  coerce, pack, etc. "ignore_failure" is only used for
    *  by the call to print_metadata().
    */
-  void
-  load_sample(conduit::Node& node, size_t index, bool ignore_failure = false);
+  void load_sample(conduit::Node& node,
+                   hid_t file_handle,
+                   const std::string& sample_name,
+                   bool ignore_failure = false);
+
+  /** Finds a sample in the sample list by index and then loads it.
+   */
+  void load_sample_from_sample_list(conduit::Node& node,
+                                    size_t index,
+                                    bool ignore_failure = false);
 
   /** Performs packing, normalization, etc. Called by load_sample. */
   void pack_data(conduit::Node& node_in_out);

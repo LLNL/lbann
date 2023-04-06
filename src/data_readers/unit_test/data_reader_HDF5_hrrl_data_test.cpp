@@ -36,6 +36,8 @@
 #include <errno.h>
 #include <string.h>
 
+#include "./data_reader_common_HDF5_whiteboxtester.hpp"
+
 #include "./test_data/hdf5_hrrl_data_schema.yaml"
 #include "./test_data/hdf5_hrrl_experiment_schema.yaml"
 #include "./test_data/hdf5_hrrl_test_data_and_schema.yaml"
@@ -109,57 +111,6 @@ alpha:
     pack: "baz"
     ordering: 1
 )AurthurDent";
-
-class DataReaderHDF5WhiteboxTester
-{
-public:
-  void normalize(lbann::hdf5_data_reader& x,
-                 conduit::Node& node,
-                 const std::string& path,
-                 const conduit::Node& metadata)
-  {
-    x.normalize(node, path, metadata);
-  }
-  void repack_image(lbann::hdf5_data_reader& x,
-                    conduit::Node& node,
-                    const std::string& path,
-                    const conduit::Node& metadata)
-  {
-    x.repack_image(node, path, metadata);
-  }
-
-  void pack(lbann::hdf5_data_reader& x, conduit::Node& node, size_t index)
-  {
-    x.pack(node, index);
-  }
-
-  void parse_schemas(lbann::hdf5_data_reader& x) { return x.parse_schemas(); }
-
-  conduit::Node& get_data_schema(lbann::hdf5_data_reader& x)
-  {
-    return x.m_data_schema;
-  }
-
-  conduit::Node& get_experiment_schema(lbann::hdf5_data_reader& x)
-  {
-    return x.m_experiment_schema;
-  }
-
-  void set_data_schema(lbann::hdf5_data_reader& x, const conduit::Node& s)
-  {
-    x.set_data_schema(s);
-  }
-
-  void set_experiment_schema(lbann::hdf5_data_reader& x, const conduit::Node& s)
-  {
-    x.set_experiment_schema(s);
-  }
-
-  void print_metadata(lbann::hdf5_data_reader& x, std::ostream& os = std::cout)
-  {
-    x.print_metadata(os);
-  }
-};
 
 TEST_CASE("hdf5 data reader transform tests", "[data_reader][hdf5][hrrl]")
 {
