@@ -95,6 +95,18 @@ if __name__ == "__main__":
         '--depth-groups', action='store', type=int, default=4,
         help='the k-way partitioning of the depth dimension (default: 4)')
     parser.add_argument(
+        '--height-groups', action='store', type=int, default=1,
+        help='the k-way partitioning of the height dimension (default: 1)')
+    parser.add_argument(
+        '--width-groups', action='store', type=int, default=1,
+        help='the k-way partitioning of the width dimension (default: 1)')
+    parser.add_argument(
+        '--channel-groups', action='store', type=int, default=1,
+        help='the k-way partitioning of the channel dimension (default: 1)')
+    parser.add_argument(
+        '--filter-groups', action='store', type=int, default=1,
+        help='the k-way partitioning of the filter dimension (default: 1)')
+    parser.add_argument(
         '--sample-groups', action='store', type=int, default=1,
         help='the k-way partitioning of the sample dimension (default: 1)')
     parser.add_argument(
@@ -127,7 +139,11 @@ if __name__ == "__main__":
 
     # Set parallel_strategy
     parallel_strategy = get_parallel_strategy_args(
+        height_groups=args.height_groups,
+        width_groups=args.width_groups,
         sample_groups=args.sample_groups,
+        channel_groups=args.channel_groups,
+        filter_groups=args.filter_groups,
         depth_groups=args.depth_groups)
     model = cosmoflow_model.construct_cosmoflow_model(parallel_strategy=parallel_strategy,
                                                       local_batchnorm=args.local_batchnorm,
