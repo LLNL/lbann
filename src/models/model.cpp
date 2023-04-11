@@ -727,11 +727,14 @@ void model::setup(size_t max_mini_batch_size,
     std::cout<<"Setupping Subgraph grids DEBUG\n";
     setup_subgrids();
   }
+  std::cout<<"After Setup subgrids\n";
 
   setup_layers(max_mini_batch_size, dr_metadata, grids_);
+  std::cout<<"After Setup layers\n";
 
   // Setup weights
   setup_weights();
+  std::cout<<"After Setup weights\n";
 
   // Setup objective function
   m_objective_function->setup(*this);
@@ -756,6 +759,8 @@ void model::setup(size_t max_mini_batch_size,
   do_setup_end_cbs();
 
   m_model_is_setup = true;
+
+  std::cout<<"After Model Setup\n";
 }
 
 void model::setup_layer_topology()
@@ -1244,7 +1249,8 @@ void model::setup_subgrids()
   std::string grid_temp_index = "";
   El::mpi::Group worldGroup;
 
-  El::mpi::Comm sub_comm = El::mpi::NewWorldComm();
+  //El::mpi::Comm& sub_comm = El::mpi::NewWorldComm();
+  auto sub_comm =  m_comm->get_trainer_comm().GetMPIComm();
   El::Int commSize = El::mpi::Size(sub_comm);
 
   if (this->get_subgraph_num_parent_resources() == 0) {
@@ -1281,7 +1287,7 @@ void model::setup_subgrids()
   grids_mpi_groups[grid_global_index] =
     std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
 
-  El::mpi::CommGroup(El::mpi::NewWorldComm(), worldGroup);
+  El::mpi::CommGroup(sub_comm, worldGroup);
 
   //  Not changing the order in the index as it will create problem for layers
   //  such as concatenate and sum.
@@ -1293,7 +1299,7 @@ void model::setup_subgrids()
   std::unique_ptr<El::Grid> temp_ptr;
 
   grids[grid_global_index] =
-    std::make_shared<El::Grid>(El::mpi::NewWorldComm(),
+    std::make_shared<El::Grid>(sub_comm,
                                *grids_mpi_groups[grid_global_index],
                                masterSubGridRankOrder.size(),
                                orderGrid);
@@ -1477,7 +1483,7 @@ void model::setup_subgrids()
                           *grids_mpi_groups[grid_temp_index]);
 
             grids[grid_temp_index] =
-              std::make_shared<El::Grid>(El::mpi::NewWorldComm(),
+              std::make_shared<El::Grid>(sub_comm,
                                          *grids_mpi_groups[grid_temp_index],
                                          ranks_in_grid.size(),
                                          orderGrid);
@@ -1571,7 +1577,7 @@ void model::setup_subgrids()
                         *grids_mpi_groups[grid_temp_index]);
 
           grids[grid_temp_index] =
-            std::make_shared<El::Grid>(El::mpi::NewWorldComm(),
+            std::make_shared<El::Grid>(sub_comm,
                                        *grids_mpi_groups[grid_temp_index],
                                        ranks_in_grid.size(),
                                        orderGrid);
@@ -1598,7 +1604,7 @@ void model::setup_subgrids()
   if (El::mpi::Rank() == 0 or true) {
     std::cout << "Number of subgrids created:" << grids.size() << "\n";
     for (auto const& pair : grids) {
-      std::cout << "{" << pair.first << ": "
+      std::cout << "{" << pair.first << ": " << pair.second
                 << "}\n";
     }
   }
@@ -1668,6 +1674,7 @@ void model::setup_layers(size_t max_mini_batch_size,
 
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
+    std::cout<<"setting layer:"<<l.get_name()<<"\n";
     l.set_model(this);
     l.setup(max_mini_batch_size, dr_metadata, grids_);
     l.check_setup();
@@ -2181,10 +2188,12 @@ void model::forward_prop(execution_mode mode)
 
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
+    std::cout<<"Running Layer name:"<<l.get_name()<<"\n";
 
     if (this->is_subgraph_parallelism_enabled()) {
       if (l.get_run_layer_in_subgraph() || l.get_name() == "layer1") {
         do_layer_forward_prop_begin_cbs(mode, &l);
+        
         l.forward_prop();
         do_layer_forward_prop_end_cbs(mode, &l);
       }

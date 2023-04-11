@@ -285,6 +285,12 @@ get_temp_grad() -> OutputAbsDistMatrixType& {
 template <typename InputTensorDataType, typename OutputTensorDataType>
 auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
 get_branch_tag_input(int tag) -> InputAbsDistMatrixType& {
+  if (m_subgrid_tensors_split.size() <= tag)
+    LBANN_ERROR("Error Signal Layer Name:", this->get_name(),
+                " Layer type:", this->get_type(),
+                ". Subgrid branch tag:", tag, 
+                " is more than or equal to the split size:", m_subgrid_tensors_split.size(),
+                " or subgrid_tensors vector is not initialized properly.");
   return *m_subgrid_tensors_split[tag];
 }
 
@@ -554,7 +560,7 @@ setup_matrices(
   auto childs = get_child_layers();
   auto parents = get_parent_layers();
 
-  if((get_name().find("split")!= std::string::npos || this->get_type()=="slice")  && this->get_model()->is_subgraph_parallelism_enabled()  && this->get_parallel_strategy().enable_subgraph)
+  if((this->get_type()=="slice" || this->get_type()=="split")  && this->get_model()->is_subgraph_parallelism_enabled()  && this->get_parallel_strategy().enable_subgraph)
   {
 
     //split layer
@@ -569,12 +575,14 @@ setup_matrices(
     int count = 0;
 
     for (auto& output : m_outputs) {
-      output = output_mat_builder->MakeEmpty(*(childs[count]->get_mygrid()), 0);
+      //output = output_mat_builder->MakeEmpty(*(childs[count]->get_mygrid()), 0);
+      output = output_mat_builder->MakeEmpty(*grids[childs[count]->get_grid_tag()], 0);
       count++;
     }
     count = 0;
     for (auto& grad_wrt_output : m_gradient_wrt_outputs) {
-      grad_wrt_output = output_mat_builder->MakeEmpty(*(childs[count]->get_mygrid()), 0);
+      //grad_wrt_output = output_mat_builder->MakeEmpty(*(childs[count]->get_mygrid()), 0);
+      grad_wrt_output = output_mat_builder->MakeEmpty(*grids[childs[count]->get_grid_tag()], 0);
       count++;
     }
 
@@ -591,7 +599,7 @@ setup_matrices(
       {
         if(childs[child_index]->get_parallel_strategy().sub_branch_tag == count+1)
         {
-          subgrid_tensor = output_mat_builder->MakeEmpty(*(childs[child_index]->get_mygrid()), 0);
+          subgrid_tensor = output_mat_builder->MakeEmpty(*grids[childs[child_index]->get_grid_tag()], 0);
           count++;
           break;
         }
@@ -646,7 +654,8 @@ setup_matrices(
 
     int count = 0;
     for (auto& input : m_inputs) {
-    input = input_mat_builder->MakeEmpty(*(parents[count]->get_mygrid()), 0);
+    //input = input_mat_builder->MakeEmpty(*(parents[count]->get_mygrid()), 0);
+    input = input_mat_builder->MakeEmpty(*grids[parents[count]->get_grid_tag()], 0);
     count++;
     }
 
@@ -660,7 +669,8 @@ setup_matrices(
 
     count = 0;
     for (auto& grad_wrt_input : m_gradient_wrt_inputs) {
-    grad_wrt_input = input_mat_builder->MakeEmpty(*(parents[count]->get_mygrid()), 0);
+    //grad_wrt_input = input_mat_builder->MakeEmpty(*(parents[count]->get_mygrid()), 0);
+    grad_wrt_input = input_mat_builder->MakeEmpty(*grids[parents[count]->get_grid_tag()], 0);
     count++;
     }
 
@@ -676,7 +686,8 @@ setup_matrices(
       {
         if(subgrid_tags[parent_index] == count)
         {
-          subgrid_tensor = input_mat_builder->MakeEmpty(*(parents[parent_index]->get_mygrid()), 0);
+          //subgrid_tensor = input_mat_builder->MakeEmpty(*(parents[parent_index]->get_mygrid()), 0);
+          subgrid_tensor = input_mat_builder->MakeEmpty(*grids[parents[count]->get_grid_tag()], 0);
           count++;
           break;
         }

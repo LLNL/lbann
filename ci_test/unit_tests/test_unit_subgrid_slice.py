@@ -19,8 +19,8 @@ import tools
 
 # Data
 np.random.seed(202201182)
-_num_samples = 32
-_sample_size = 8
+_num_samples = 7
+_sample_size = 6
 _samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
 
 # Sample access functions
