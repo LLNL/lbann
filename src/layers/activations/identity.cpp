@@ -41,23 +41,6 @@ void identity_layer<T, L, D>::write_specific_proto(
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void identity_distconv_adapter<TensorDataType, Layout, Device>::
-  setup_distributions(tensor_overlap_constraints& constraints)
-{
-  data_type_distconv_adapter<TensorDataType>::setup_distributions(constraints);
-
-  auto& x = this->get_prev_activations_dist();
-  auto& y = this->get_activations_dist();
-  auto& dx = this->get_error_signals_dist();
-  auto& dy = this->get_prev_error_signals_dist();
-
-  // x == y
-  constraints.mark_equivalent(x, y);
-  // dx == dy
-  constraints.mark_equivalent(dx, dy);
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<typename identity_distconv_adapter<TensorDataType,
                                                    Layout,
                                                    Device>::TensorDevType>
@@ -65,6 +48,17 @@ identity_distconv_adapter<TensorDataType, Layout, Device>::setup_activations_i(
   int index) const
 {
   assert_eq(index, 0);
+
+  const auto& prev_activations_overlap = this->get_prev_activations_dist().get_overlap();
+  const auto& activations_overlap = this->get_activations_dist().get_overlap();
+
+  assert_eq(prev_activations_overlap.length(), activations_overlap.length());
+  for (int i = 0; i < prev_activations_overlap.length(); i++) {
+    if (prev_activations_overlap[i] != activations_overlap[i]) {
+      return data_type_distconv_adapter<TensorDataType>::setup_activations_i(index);
+    }
+  }
+
   const auto& prev_activations = this->get_prev_activations(0);
   return std::make_unique<TensorDevType>(prev_activations);
 }
@@ -77,6 +71,17 @@ identity_distconv_adapter<TensorDataType, Layout, Device>::
   setup_error_signals_i(int index) const
 {
   assert_eq(index, 0);
+
+  const auto& prev_activations_overlap = this->get_prev_activations_dist().get_overlap();
+  const auto& activations_overlap = this->get_activations_dist().get_overlap();
+
+  assert_eq(prev_activations_overlap.length(), activations_overlap.length());
+  for (int i = 0; i < prev_activations_overlap.length(); i++) {
+    if (prev_activations_overlap[i] != activations_overlap[i]) {
+      return data_type_distconv_adapter<TensorDataType>::setup_error_signals_i(index);
+    }
+  }
+
   const auto& prev_error_signals = this->get_prev_error_signals(0);
   return std::make_unique<TensorDevType>(prev_error_signals);
 }
