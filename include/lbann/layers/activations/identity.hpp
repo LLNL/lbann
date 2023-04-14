@@ -29,10 +29,16 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/distconv.hpp"
+#ifdef LBANN_HAS_DNN_LIB
+#include "lbann/utils/dnn_lib/transform_tensor.hpp"
+#include "lbann/utils/dnn_lib/helpers.hpp"
+#endif // LBANN_HAS_DNN_LIB
 
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
+namespace dc_backend = ::distconv::backend;
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class identity_distconv_adapter
   : public data_type_distconv_adapter<TensorDataType>
@@ -44,7 +50,6 @@ public:
     : data_type_distconv_adapter<TensorDataType>(layer)
   {}
   virtual ~identity_distconv_adapter() = default;
-  void setup_distributions(tensor_overlap_constraints& constraints) override;
   std::unique_ptr<TensorDevType> setup_activations_i(int index) const override;
   std::unique_ptr<TensorDevType>
   setup_error_signals_i(int index) const override;
@@ -115,8 +120,81 @@ protected:
 #endif // LBANN_HAS_DISTCONV
     El::LockedView(this->get_error_signals(), this->get_prev_error_signals());
   }
-  void fp_compute() override {}
-  void bp_compute() override {}
+  void fp_compute() override {
+#ifdef LBANN_HAS_DISTCONV
+    if (this->distconv_enabled()) {
+      auto& adapter = this->get_distconv_adapter();
+
+      if (!m_equal_overlap_set) {
+        const auto& prev_activations_overlap = adapter.get_prev_activations_dist().get_overlap();
+        const auto& activations_overlap = adapter.get_activations_dist().get_overlap();
+
+        m_equal_overlap = true;
+        assert_eq(prev_activations_overlap.length(), activations_overlap.length());
+        for (int i = 0; i < prev_activations_overlap.length(); i++) {
+          if (prev_activations_overlap[i] != activations_overlap[i]) {
+            m_equal_overlap = false;
+            m_xdesc.create();
+            m_ydesc.create();
+            m_dxdesc.create();
+            m_dydesc.create();
+            break;
+          }
+        }
+        m_equal_overlap_set = true;
+      }
+
+      if (m_equal_overlap) return;
+
+      auto& prev_activations = adapter.get_prev_activations();
+      auto& activations = adapter.get_activations();
+
+      auto xdesc = const_cast<dnn_lib::dnnTensorDescriptor_t>(m_xdesc.get());
+      auto ydesc = const_cast<dnn_lib::dnnTensorDescriptor_t>(m_ydesc.get());
+      dc_backend::setup_tensor_descriptor(xdesc, prev_activations,
+                                          prev_activations.get_local_shape());
+      dc_backend::setup_tensor_descriptor(ydesc, activations,
+                                          activations.get_local_shape());
+
+      TensorDataType alpha = 1;
+      TensorDataType beta = 0;
+      dnn_lib::transform_tensor(alpha,
+                                m_xdesc,
+                                prev_activations.get_const_base_ptr(),
+                                beta,
+                                m_ydesc,
+                                activations.get_base_ptr());
+    }
+#endif // LBANN_HAS_DISTCONV
+  }
+  void bp_compute() override {
+#ifdef LBANN_HAS_DISTCONV
+    if (this->distconv_enabled()) {
+      if (m_equal_overlap) return;
+
+      auto& adapter = this->get_distconv_adapter();
+
+      auto& prev_error_signals = adapter.get_prev_error_signals();
+      auto& error_signals = adapter.get_error_signals();
+
+      auto dxdesc = const_cast<dnn_lib::dnnTensorDescriptor_t>(m_dxdesc.get());
+      auto dydesc = const_cast<dnn_lib::dnnTensorDescriptor_t>(m_dydesc.get());
+      dc_backend::setup_tensor_descriptor(dxdesc, error_signals,
+                                          error_signals.get_local_shape());
+      dc_backend::setup_tensor_descriptor(dydesc, prev_error_signals,
+                                          prev_error_signals.get_local_shape());
+
+      TensorDataType alpha = 1;
+      TensorDataType beta = 0;
+      dnn_lib::transform_tensor(alpha,
+                                m_dydesc,
+                                prev_error_signals.get_const_base_ptr(),
+                                beta,
+                                m_dxdesc,
+                                error_signals.get_base_ptr());
+    }
+#endif // LBANN_HAS_DISTCONV
+  }
 #ifdef LBANN_HAS_DISTCONV
 protected:
   bool is_distconv_supported() const override
@@ -128,6 +206,12 @@ protected:
     this->get_distconv_adapter_ptr() = std::make_unique<
       identity_distconv_adapter<TensorDataType, Layout, Device>>(*this);
   }
+  dnn_lib::TensorDescriptor m_xdesc;
+  dnn_lib::TensorDescriptor m_ydesc;
+  dnn_lib::TensorDescriptor m_dxdesc;
+  dnn_lib::TensorDescriptor m_dydesc;
+  bool m_equal_overlap;
+  bool m_equal_overlap_set = false;
 #endif // LBANN_HAS_DISTCONV
 };
 
