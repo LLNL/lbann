@@ -41,11 +41,9 @@
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/options.hpp"
 
-// input data; each of these contain a single variable: "const std::string"
-#include "./test_data/hdf5_hrrl_data_schema.yaml"
-#include "./test_data/hdf5_hrrl_experiment_schema.yaml"
 #include "./test_data/hdf5_hrrl_reader.prototext"
 #include "./test_data/hdf5_hrrl_test.sample_list"
+#include "./test_data/hdf5_hrrl_test_data_and_schemas.yaml"
 #include "./test_data/hdf5_hrrl_train.sample_list"
 #include "./test_data/hdf5_hrrl_validate.sample_list"
 

@@ -42,10 +42,9 @@
 #include <ostream>
 #include <string.h>
 
-#include "./data_reader_common_HDF5_whiteboxtester.hpp"
+#include "./data_reader_common_HDF5_test_utils.hpp"
 
-#include "./test_data/hdf5_hrrl_experiment_schema.yaml"
-#include "./test_data/hdf5_hrrl_test_data_and_schema.yaml"
+#include "./test_data/hdf5_hrrl_test_data_and_schemas.yaml"
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 
 TEST_CASE("hdf5 data reader data field fetch tests",
@@ -64,7 +63,7 @@ TEST_CASE("hdf5 data reader data field fetch tests",
 
   // Setup the data schema for this HRRL data set
   conduit::Node& data_schema = white_box_tester.get_data_schema(*hdf5_dr);
-  data_schema.parse(hdf5_hrrl_data_schema_test, "yaml");
+  data_schema.parse(hdf5_hrrl_data_schema, "yaml");
   conduit::Node& experiment_schema =
     white_box_tester.get_experiment_schema(*hdf5_dr);
   experiment_schema.parse(hdf5_hrrl_experiment_schema, "yaml");
@@ -220,7 +219,7 @@ TEST_CASE("Data reader hdf5 conduit fetch tests",
 
   // Setup the data schema for this HRRL data set
   conduit::Node& data_schema = white_box_tester.get_data_schema(*hdf5_dr);
-  data_schema.parse(hdf5_hrrl_data_schema_test, "yaml");
+  data_schema.parse(hdf5_hrrl_data_schema, "yaml");
   conduit::Node& experiment_schema =
     white_box_tester.get_experiment_schema(*hdf5_dr);
   experiment_schema.parse(hdf5_hrrl_experiment_schema, "yaml");

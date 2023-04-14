@@ -37,10 +37,9 @@
 #include <errno.h>
 #include <string.h>
 
-#include "./data_reader_common_HDF5_whiteboxtester.hpp"
+#include "./data_reader_common_HDF5_test_utils.hpp"
 
-#include "./test_data/hdf5_c3fd_experiment_schema.yaml"
-#include "./test_data/hdf5_c3fd_test_data_and_schema.yaml"
+#include "./test_data/hdf5_c3fd_test_data_and_schemas.yaml"
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 
 TEST_CASE("HDF5 C3FD data reader file ingest tests",
@@ -82,6 +81,8 @@ TEST_CASE("HDF5 C3FD data reader file ingest tests",
     // experiment_schema.print();
     white_box_tester.parse_schemas(*hdf5_dr);
 
+    // white_box_tester.print_metadata(*hdf5_dr);
+
     conduit::Node test_node;
     white_box_tester.load_sample(*hdf5_dr,
                                  test_node[new_pathname],
@@ -96,48 +97,11 @@ TEST_CASE("HDF5 C3FD data reader file ingest tests",
     std::vector<std::string> fields = {"NodeFeatures",
                                        "EdgeFeatures",
                                        "COOList"};
-    for (auto f : fields) {
-      const std::string ref_pathname(original_path + "/" + f);
-      const std::string test_pathname(new_pathname + "/" + f);
-      // Select the metadata for a field and check any transformations performed
-      // when loading the sample
-      const std::string metadata_path = f + "/metadata";
-      conduit::Node metadata = data_schema[metadata_path];
-      // Check to make sure that each element in the transformed field are
-      // properly normalized
-      size_t num_elements = node[ref_pathname].dtype().number_of_elements();
-      // Always coerce the reference sample into double
-      conduit::Node tmp;
-      node[ref_pathname].to_data_type(conduit::DataType::FLOAT64_ID,
-                                      tmp[ref_pathname]);
-      if (num_elements > 1) {
-        for (size_t i = 0; i < num_elements; i++) {
-          // Native data type of the real fields are double
-          double check = tmp[ref_pathname].as_double_array()[i] *
-                           metadata["scale"].as_double() +
-                         metadata["bias"].as_double();
-          if (test_node[test_pathname].dtype().is_float32()) {
-            CHECK(test_node[test_pathname].as_float32_array()[i] ==
-                  Approx(float(check)));
-          }
-          else if (test_node[test_pathname].dtype().is_float64()) {
-            CHECK(test_node[test_pathname].as_double_array()[i] ==
-                  Approx(check));
-          }
-        }
-      }
-      else {
-        // Native data type of the real fields are double
-        double check =
-          tmp[ref_pathname].as_double() * metadata["scale"].as_double() +
-          metadata["bias"].as_double();
-        if (test_node[test_pathname].dtype().is_float32()) {
-          CHECK(test_node[test_pathname].as_float32() == Approx(float(check)));
-        }
-        else if (test_node[test_pathname].dtype().is_float64()) {
-          CHECK(test_node[test_pathname].as_double() == Approx(check));
-        }
-      }
-    }
+    check_node_fields(node,
+                      test_node,
+                      data_schema,
+                      fields,
+                      original_path,
+                      new_pathname);
   }
 }

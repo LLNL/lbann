@@ -24,7 +24,14 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-const std::string hdf5_hrrl_data_schema = R"AurthurDent(
+const std::string hdf5_c3fd_data_sample=R"FOO(RUN_ID:
+  000000001:
+    NodeFeatures: [0.1, 0.2, 1.1, 1.2, 2.1, 2.2, 3.1, 3.2]
+    EdgeFeatures: [0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0]
+    COOList: [0, 0, 1, 2, 3, 2, 2, 0]
+)FOO";
+
+const std::string hdf5_c3fd_data_schema = R"FOO(
 # Re, the "ordering" fields: ordering is relative and need not be unique;
 # it specifies, e.g, the order in which a set of scalars
 # would be appended to a vector.
@@ -40,43 +47,40 @@ const std::string hdf5_hrrl_data_schema = R"AurthurDent(
 # subset of values to use in an experiment
 #
 #
-Image:
+NodeFeatures:
   metadata:
-    dims: [300,300]
+    dims: [4, 2]
     channels: 1
     ordering: 0
-    scale: [1.5259021896696422e-05]
-    bias: [-1.5259021896696422e-05]
-Epmax:
+    scale: [1.0]
+    bias: [0.0]
+EdgeFeatures:
   metadata:
-    ordering: 10
-    scale: 0.1
-    bias: -1.0
-Etot:
+    dims: [8, 3]
+    channels: 1
+    ordering: 1
+    scale: [1.0]
+    bias: [0.0]
+COOList:
   metadata:
-    ordering: 20
-    scale: 0.3916485873519399
-    bias: -0.00039973613068075743
-T:
-  metadata:
-    ordering: 50
-    scale: 0.125
-    bias: -0.25
-alpha:
-  metadata:
-    ordering: 60
-    scale: 0.1
-    bias: -2.5
+    dims: [8, 2]
+    channels: 1
+    ordering: 2
+    scale: [1.0]
+    bias: [0.0]
+)FOO";
 
-N:
+const std::string hdf5_c3fd_experiment_schema = R"FOO(
+NodeFeatures:
   metadata:
-    ordering: 40
-    scale: 3.1662826662374707e-13
-    bias: -0.001001267234978943
-Xshift:
+    pack: "node_fts"
+    coerce: "float"
+EdgeFeatures:
   metadata:
-    ordering: 70
-Yshift:
+    pack: "edge_fts"
+    coerce: "float"
+COOList:
   metadata:
-    ordering: 80
-)AurthurDent";
+    pack: "coo_list"
+    coerce: "float"
+)FOO";

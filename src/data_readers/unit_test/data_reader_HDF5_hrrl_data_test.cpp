@@ -36,11 +36,9 @@
 #include <errno.h>
 #include <string.h>
 
-#include "./data_reader_common_HDF5_whiteboxtester.hpp"
+#include "./data_reader_common_HDF5_test_utils.hpp"
 
-#include "./test_data/hdf5_hrrl_data_schema.yaml"
-#include "./test_data/hdf5_hrrl_experiment_schema.yaml"
-#include "./test_data/hdf5_hrrl_test_data_and_schema.yaml"
+#include "./test_data/hdf5_hrrl_test_data_and_schemas.yaml"
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 
 // Use a different schema to create a different packing
@@ -125,7 +123,7 @@ TEST_CASE("hdf5 data reader transform tests", "[data_reader][hdf5][hrrl]")
   DataReaderHDF5WhiteboxTester white_box_tester;
 
   conduit::Node schema;
-  schema.parse(hdf5_hrrl_data_schema_test, "yaml");
+  schema.parse(hdf5_hrrl_data_schema, "yaml");
 
   SECTION("HRRL conduit node normalize")
   {
@@ -220,12 +218,12 @@ TEST_CASE("hdf5 data reader pack test", "[data_reader][hdf5][hrrl][pack]")
 
   // Setup the data schema for this HRRL data set
   conduit::Node& data_schema = white_box_tester.get_data_schema(*hdf5_dr);
-  data_schema.parse(hdf5_hrrl_data_schema_test, "yaml");
+  data_schema.parse(hdf5_hrrl_data_schema, "yaml");
 
   // For some reason this approach does not properly setup the data reader
   // conduit::Node data_schema;
   // conduit::Node experiment_schema;
-  // data_schema.parse(hdf5_hrrl_data_schema_test, "yaml");
+  // data_schema.parse(hdf5_hrrl_data_schema, "yaml");
   // experiment_schema.parse(hdf5_hrrl_experiment_schema_test, "yaml");
   // white_box_tester.set_data_schema(*hdf5_dr, data_schema);
   // white_box_tester.set_experiment_schema(*hdf5_dr, experiment_schema);

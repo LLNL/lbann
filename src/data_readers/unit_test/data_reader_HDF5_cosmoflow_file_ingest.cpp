@@ -39,62 +39,73 @@
 
 #include "./data_reader_common_HDF5_test_utils.hpp"
 
-#include "./test_data/hdf5_hrrl_test_data_and_schemas.yaml"
+#include "./test_data/hdf5_cosmoflow_test_data_and_schemas.yaml"
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 
-TEST_CASE("HDF5 HRRL data reader file ingest tests",
-          "[.filesystem][data_reader][hdf5][hrrl][file_ingest]")
+TEST_CASE("HDF5 CosmoFlow data reader file ingest tests",
+          "[.filesystem][data_reader][hdf5][cosmoflow][file_ingest]")
 {
   // initialize stuff (boilerplate)
   lbann::init_random(0, 2);
   lbann::init_data_seq_random(42);
 
-  conduit::Node node;
-  node.parse(hdf5_hrrl_data_sample, "yaml");
-  conduit::relay::io::save(node, "my_output.json");
-
   auto hdf5_dr = std::make_unique<lbann::hdf5_data_reader>();
   DataReaderHDF5WhiteboxTester white_box_tester;
 
-  SECTION("HDF5 HRRL write and then read to HDF5 file")
+  const std::string original_path = "000000001";
+  const std::string new_pathname = "000000001";
+
+  conduit::Node& data_schema = white_box_tester.get_data_schema(*hdf5_dr);
+
+  // Read in the experiment schema and setup the data reader
+  conduit::Node& experiment_schema =
+    white_box_tester.get_experiment_schema(*hdf5_dr);
+  experiment_schema.parse(hdf5_cosmoflow_experiment_schema, "yaml");
+  // experiment_schema.print();
+
+  SECTION("HDF5 CosmoFlow write and then read to HDF5 file")
   {
+    conduit::Node node;
+    node.parse(hdf5_cosmoflow_data_sample, "yaml");
+    //    conduit::relay::io::save(node, "CosmoFlow_my_output.json");
+
     // open hdf5 file and obtain a handle
-    hid_t h5_id = conduit::relay::io::hdf5_create_file("HRRL_test_sample.hdf5");
+    hid_t h5_id =
+      conduit::relay::io::hdf5_create_file("CosmoFlow_test_sample.hdf5");
     // write data
     conduit::relay::io::hdf5_write(node, h5_id);
     // close our file
     conduit::relay::io::hdf5_close_file(h5_id);
 
     hid_t h5_fid =
-      conduit::relay::io::hdf5_open_file_for_read("HRRL_test_sample.hdf5");
-    const std::string original_path = "/RUN_ID/000000334";
-    const std::string new_pathname = "000000334";
+      conduit::relay::io::hdf5_open_file_for_read("CosmoFlow_test_sample.hdf5");
 
-    // Setup the data schema for this HRRL data set
-    conduit::Node& data_schema = white_box_tester.get_data_schema(*hdf5_dr);
-    data_schema.parse(hdf5_hrrl_data_schema, "yaml");
+    // Setup the data schema for this CosmoFlow data set
+    data_schema.parse(hdf5_cosmoflow_data_schema, "yaml");
 
-    // Read in the experiment schema and setup the data reader
-    conduit::Node& experiment_schema =
-      white_box_tester.get_experiment_schema(*hdf5_dr);
-    experiment_schema.parse(hdf5_hrrl_experiment_schema, "yaml");
-    // experiment_schema.print();
+    // Parse all of the schemas
     white_box_tester.parse_schemas(*hdf5_dr);
+    //    white_box_tester.print_metadata(*hdf5_dr);
 
     conduit::Node test_node;
     white_box_tester.load_sample(*hdf5_dr,
                                  test_node[new_pathname],
                                  h5_fid,
                                  original_path);
-    conduit::relay::io::save(test_node, "tested_output.json");
+    //    conduit::relay::io::save(test_node, "CosmoFlow_tested_output.json");
 
-    // Check to see if the HRRL sample can be read via the data
+    // Load a manually transposed nodes
+    conduit::Node transposed_node;
+    transposed_node.parse(hdf5_cosmoflow_transposed_data_sample, "yaml");
+    //    conduit::relay::io::save(transposed_node,
+    //    "CosmoFlow_transposed_output.json");
+
+    // Check to see if the Cosmoflow sample can be read via the data
     // reader's load_sample method.  Note that this will coerce and
     // normalize all data fields as specified in the data set and
     // experiment schemas.
-    std::vector<std::string> fields =
-      {"Epmax", "Etot", "Image", "N", "T", "alpha"};
-    check_node_fields(node,
+    std::vector<std::string> fields = {"full", "unitPar"};
+    check_node_fields(transposed_node,
                       test_node,
                       data_schema,
                       fields,

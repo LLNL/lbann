@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __DATA_READER_TEST_COMMON_HDF5_WHITEBOXTESTER_HPP__
-#define __DATA_READER_TEST_COMMON_HDF5_WHITEBOXTESTER_HPP__
+#ifndef __DATA_READER_TEST_COMMON_HDF5_TEST_UTILS_HPP__
+#define __DATA_READER_TEST_COMMON_HDF5_TEST_UTILS_HPP__
 
 #include "lbann/data_coordinator/data_packer.hpp"
 #include "lbann/data_readers/data_reader_HDF5.hpp"
@@ -156,6 +156,7 @@ public:
   {
     return dr.get_linearized_size(data_field);
   }
+
   void construct_linearized_size_lookup_tables(lbann::hdf5_data_reader& dr,
                                                conduit::Node& node)
   {
@@ -163,4 +164,11 @@ public:
   }
 };
 
-#endif // __DATA_READER_TEST_COMMON_HDF5_WHITEBOXTESTER_HPP__
+void check_node_fields(conduit::Node const& ref_node,
+                       conduit::Node const& test_node,
+                       conduit::Node const& data_schema,
+                       std::vector<std::string> fields,
+                       const std::string original_path,
+                       const std::string new_pathname);
+
+#endif // __DATA_READER_TEST_COMMON_HDF5_TEST_UTILS_HPP__
