@@ -50,6 +50,9 @@ parser.add_argument(
 parser.add_argument(
     '--random-seed', action='store', default=0, type=int,
     help='random seed for LBANN RNGs', metavar='NUM')
+parser.add_argument(
+    '--synthetic', action='store_true', default=False,
+    help='Use synthetic data')
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 args = parser.parse_args()
 
@@ -145,14 +148,20 @@ model = lbann.Model(args.num_epochs,
 opt = lbann.contrib.args.create_optimizer(args)
 
 # Setup data reader
-data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes)
+data_reader = data.imagenet.make_data_reader(
+    num_classes=args.num_classes,
+    synthetic=args.synthetic)
 
 # Setup trainer
 trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size, random_seed=args.random_seed)
 
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
+if args.synthetic:
+    lbann_args = ""
+else:
+    lbann_args = " --use_data_store --preload_data_store --node_sizes_vary"
 lbann.contrib.launcher.run(trainer, model, data_reader, opt,
                            job_name=args.job_name,
-                           lbann_args=" --use_data_store --preload_data_store --node_sizes_vary",
+                           lbann_args=lbann_args,
                            **kwargs)
