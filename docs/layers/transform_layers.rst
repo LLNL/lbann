@@ -38,6 +38,7 @@
    :ref:`Split`, "Output the input tensor to multiple child layers"
    :ref:`StopGradient`, "Block error signals during back propagation"
    :ref:`Sum`, "Add multiple tensors"
+   :ref:`TensorPermute`, "Permute the indices of a tensor"
    :ref:`Tessellate`, "Repeat a tensor until it matches specified
    dimensions"
    :ref:`Uniform`, "Random tensor with uniform distribution"
@@ -648,6 +649,36 @@ The :python:`Sum` layer calculates the element-wise sum of each of the
 input tensors.
 
 Arguments: None
+
+:ref:`Back to Top<transform-layers>`
+
+________________________________________
+
+
+.. _TensorPermute:
+
+----------------------------------------
+TensorPermute
+----------------------------------------
+
+The :python:`TensorPermute` layer permutes the indices of a tensor, similar
+to a transposition.
+
+It expects one input tensor of order N, and a length N array of
+permuted indices [0..N-1], with respect to the input tensor
+dimensions. Therefore, passing ``axes=[0,1,2]`` for a rank-3 tensor
+will invoke a copy.
+
+At this time, only permutations are supported. Each
+index must be accounted for in the permuted array.
+
+Arguments:
+
+   :axes:
+
+      (``uint32``) Permuted tensor dimensions 
+
+      List of integers
 
 :ref:`Back to Top<transform-layers>`
 
