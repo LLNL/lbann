@@ -22,6 +22,9 @@ parser.add_argument(
 parser.add_argument(
     '--num-classes', action='store', default=1000, type=int,
     help='number of ImageNet classes (default: 1000)', metavar='NUM')
+parser.add_argument(
+    '--synthetic', action='store_true', default=False,
+    help='Use synthetic data')
 lbann.contrib.args.add_optimizer_arguments(parser)
 args = parser.parse_args()
 
@@ -64,7 +67,9 @@ model = lbann.Model(args.num_epochs,
 opt = lbann.contrib.args.create_optimizer(args)
 
 # Setup data reader
-data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes)
+data_reader = data.imagenet.make_data_reader(
+    num_classes=args.num_classes,
+    synthetic=args.synthetic)
 
 # Setup trainer
 trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
