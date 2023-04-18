@@ -8,15 +8,10 @@ import lbann
 import lbann.contrib.launcher
 
 
-def make_data_reader_imagenet(
-        num_classes: int = 1000,
-        small_testing: bool = False) -> Any:
+def make_data_reader_imagenet(num_classes: int = 1000) -> Any:
     """Load and set up the ImageNet data reader."""
     current_dir = os.path.dirname(os.path.realpath(__file__))
-    if small_testing:
-        protobuf_file = os.path.join(current_dir, 'data_reader_small.prototext')
-    else:
-        protobuf_file = os.path.join(current_dir, 'data_reader.prototext')
+    protobuf_file = os.path.join(current_dir, 'data_reader.prototext')
     message = lbann.lbann_pb2.LbannPB()
     with open(protobuf_file, 'r') as f:
         google.protobuf.text_format.Merge(f.read(), message)
@@ -76,10 +71,8 @@ def make_data_reader_synthetic(num_classes: int = 1000) -> Any:
 
 def make_data_reader(
         num_classes: int = 1000,
-        small_testing: bool = False,
         synthetic: bool = False) -> Any:
     if synthetic:
         return make_data_reader_synthetic(num_classes=num_classes)
     else:
-        return make_data_reader_imagenet(
-            num_classes=num_classes, small_testing=small_testing)
+        return make_data_reader_imagenet(num_classes=num_classes)

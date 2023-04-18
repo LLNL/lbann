@@ -472,7 +472,7 @@ def set_up_experiment(args,
                         callbacks=callbacks)
 
     # Set up data reader
-    data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes, small_testing=True)
+    data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes)
 
     percentage = 0.001 * 2 * (args.mini_batch_size / 16) * 2
 
