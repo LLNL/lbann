@@ -150,8 +150,8 @@ def augment_test_func(test_func):
 
         # Parse LBANN log file
         num_trainers = None
-        train_acc = None
-        test_acc = None
+        train_accuracy = None
+        test_accuracy = None
         mini_batch_times = []
         with open(experiment_output['stdout_log_file']) as f:
             for line in f:
@@ -162,10 +162,10 @@ def augment_test_func(test_func):
 
                 match = re.search('training epoch [0-9]+ accuracy : ([0-9.]+)', line)
                 if match:
-                    train_acc = float(match.group(1))
+                    train_accuracy = float(match.group(1))
                 match = re.search('test accuracy : ([0-9.]+)', line)
                 if match:
-                    test_acc = float(match.group(1))
+                    test_accuracy = float(match.group(1))
                 match = re.search('training epoch [0-9]+ mini-batch time statistics : ([0-9.]+)s mean', line)
                 if match:
                     mini_batch_times.append(float(match.group(1)))
@@ -175,14 +175,14 @@ def augment_test_func(test_func):
                 'output log is missing values and metrics from one or more trainers'
 
         # Check if training accuracy is within expected range
-        assert ((train_acc > targets['expected_train_accuracy_range'][0]
-                 and train_acc < targets['expected_train_accuracy_range'][1])), \
+        assert ((train_accuracy > targets['expected_train_accuracy_range'][0]
+                 and train_accuracy < targets['expected_train_accuracy_range'][1])), \
                 f"train accuracy {train_accuracy:.3f} is outside expected range " + \
                 f"[{targets['expected_train_accuracy_range'][0]:.3f},{targets['expected_train_accuracy_range'][1]:.3f}]"
 
         # Check if testing accuracy  is within expected range
-        assert ((test_acc > targets['expected_test_accuracy_range'][0]
-                 and test_acc < targets['expected_test_accuracy_range'][1])), \
+        assert ((test_accuracy > targets['expected_test_accuracy_range'][0]
+                 and test_accuracy < targets['expected_test_accuracy_range'][1])), \
                 f"test accuracy {test_accuracy:.3f} is outside expected range " + \
                 f"[{targets['expected_test_accuracy_range'][0]:.3f},{targets['expected_test_accuracy_range'][1]:.3f}]"
 
