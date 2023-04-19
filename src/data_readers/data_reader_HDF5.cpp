@@ -823,8 +823,7 @@ void hdf5_data_reader::repack_image(conduit::Node& node,
   // ==== end: sanity checking
 
   void* vals = node[path].element_ptr(0);
-  size_t n_bytes = node[path].dtype().number_of_elements() *
-                   node[path].dtype().element_bytes();
+  size_t n_elts = node[path].dtype().number_of_elements();
   int64_t n_channels = metadata[HDF5_METADATA_KEY_CHANNELS].value();
   const conduit::int64* dims = metadata[HDF5_METADATA_KEY_DIMS].as_int64_ptr();
   const int num_dims =
@@ -836,11 +835,11 @@ void hdf5_data_reader::repack_image(conduit::Node& node,
 
     if (node[path].dtype().is_float32()) {
       float* data = reinterpret_cast<float*>(vals);
-      do_repack_tensor_HWC_to_CHW(data, n_bytes, row_dim, col_dim, n_channels);
+      do_repack_tensor_HWC_to_CHW(data, n_elts, row_dim, col_dim, n_channels);
     }
     else if (node[path].dtype().is_float64()) {
       double* data = reinterpret_cast<double*>(vals);
-      do_repack_tensor_HWC_to_CHW(data, n_bytes, row_dim, col_dim, n_channels);
+      do_repack_tensor_HWC_to_CHW(data, n_elts, row_dim, col_dim, n_channels);
     }
     else {
       LBANN_ERROR(
@@ -855,7 +854,7 @@ void hdf5_data_reader::repack_image(conduit::Node& node,
     if (node[path].dtype().is_float32()) {
       float* data = reinterpret_cast<float*>(vals);
       do_repack_tensor_DHWC_to_CDHW(data,
-                                    n_bytes,
+                                    n_elts,
                                     depth_dim,
                                     height_dim,
                                     width_dim,
@@ -864,7 +863,7 @@ void hdf5_data_reader::repack_image(conduit::Node& node,
     else if (node[path].dtype().is_float64()) {
       double* data = reinterpret_cast<double*>(vals);
       do_repack_tensor_DHWC_to_CDHW(data,
-                                    n_bytes,
+                                    n_elts,
                                     depth_dim,
                                     height_dim,
                                     width_dim,
