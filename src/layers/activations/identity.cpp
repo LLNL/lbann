@@ -72,12 +72,12 @@ identity_distconv_adapter<TensorDataType, Layout, Device>::
 {
   assert_eq(index, 0);
 
-  const auto& prev_activations_overlap = this->get_prev_activations_dist().get_overlap();
-  const auto& activations_overlap = this->get_activations_dist().get_overlap();
+  const auto& prev_error_signals_overlap = this->get_prev_error_signals_dist().get_overlap();
+  const auto& error_signals_overlap = this->get_error_signals_dist().get_overlap();
 
-  assert_eq(prev_activations_overlap.length(), activations_overlap.length());
-  for (int i = 0; i < prev_activations_overlap.length(); i++) {
-    if (prev_activations_overlap[i] != activations_overlap[i]) {
+  assert_eq(prev_error_signals_overlap.length(), error_signals_overlap.length());
+  for (int i = 0; i < prev_error_signals_overlap.length(); i++) {
+    if (prev_error_signals_overlap[i] != error_signals_overlap[i]) {
       return data_type_distconv_adapter<TensorDataType>::setup_error_signals_i(index);
     }
   }
