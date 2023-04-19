@@ -208,11 +208,7 @@ TEST_CASE("Data Coordinator hdf5 conduit fetch tests",
     auto valid = hdf5_dr->fetch(samples, indices_fetched, 1);
     //    auto valid = hdf5_dr->fetch(samples, indices_fetched, 2);
 
-    // std::cout << "HEre is the sample " << valid << std::endl;
-    // samples[0].print();
 
-    // std::cout << "HEre is the ref node " << std::endl;
-    // ref_node.print();
 
     //    lbann::CPUMat X;
     // Check the primary data fields

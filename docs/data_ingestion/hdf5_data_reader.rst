@@ -194,12 +194,12 @@ keys in the metadata nodes, which we group as follows.
 
 #. Images. In addition to the *scale* and *bias* directives, images
    may contain *dims*, *channels*, and *hwc* directives. There are two
-   fields *layout* and *transpose* that describe how the channels in a
-   multi-channel image / volume are arrange. If the *layout*
-   directive is specified and it is *hwc* or *dhwc* and the
-   *transpose* field are set to either *chw* or *cdhw* then the images
+   fields, *layout* and *transpose*, that describe how the channels in a
+   multi-channel image / volume are arranged. If the *layout*
+   directive is specified, and if it is *hwc* or *dhwc*, and if the
+   *transpose* field is set to either *chw* or *cdhw*, then the images
    will be converted from a channels-last encoding to a channels-first
-   format. At present, the only transformational format we currently
+   format. At present, the only transformational format we
    support is channels-last to channels-first ("hwc -> chw" or
    "dhwc -> cdhw").
 
