@@ -242,7 +242,6 @@ TEST_CASE("Data Coordinator hdf5 conduit fetch tests",
     conduit::Node packed_ref_node;
     packed_ref_node.parse(packed_hdf5_hrrl_data_sample_id, "yaml");
 
-    // packed_ref_node.print();
     std::vector<std::string> packed_fields = {"samples", "responses"};
     for (auto& data_field : packed_fields) {
       const std::string test_pathname("000000334/" + data_field);
