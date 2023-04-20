@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include "./data_reader_common_HDF5_test_utils.hpp"
+#include "./data_reader_common_catch2.hpp"
 
 #include "./test_data/hdf5_c3fd_test_data_and_schemas.yaml"
 #include "lbann/data_readers/data_reader_HDF5.hpp"
@@ -51,22 +52,25 @@ TEST_CASE("HDF5 C3FD data reader file ingest tests",
 
   conduit::Node node;
   node.parse(hdf5_c3fd_data_sample, "yaml");
-  conduit::relay::io::save(node, "c3fd_my_output.json");
 
   auto hdf5_dr = std::make_unique<lbann::hdf5_data_reader>();
   DataReaderHDF5WhiteboxTester white_box_tester;
 
+  // create working directory
+  std::string work_dir = create_test_directory("hdf5_reader");
+
   SECTION("HDF5 C3FD write and then read to HDF5 file")
   {
     // open hdf5 file and obtain a handle
-    hid_t h5_id = conduit::relay::io::hdf5_create_file("C3FD_test_sample.hdf5");
+    hid_t h5_id =
+      conduit::relay::io::hdf5_create_file(work_dir + "/C3FD_test_sample.hdf5");
     // write data
     conduit::relay::io::hdf5_write(node, h5_id);
     // close our file
     conduit::relay::io::hdf5_close_file(h5_id);
 
-    hid_t h5_fid =
-      conduit::relay::io::hdf5_open_file_for_read("C3FD_test_sample.hdf5");
+    hid_t h5_fid = conduit::relay::io::hdf5_open_file_for_read(
+      work_dir + "/C3FD_test_sample.hdf5");
     const std::string original_path = "/RUN_ID/000000001";
     const std::string new_pathname = "000000001";
 
@@ -88,7 +92,6 @@ TEST_CASE("HDF5 C3FD data reader file ingest tests",
                                  test_node[new_pathname],
                                  h5_fid,
                                  original_path);
-    conduit::relay::io::save(test_node, "C3FD_tested_output.json");
 
     // Check to see if the HRRL sample can be read via the data
     // reader's load_sample method.  Note that this will coerce and

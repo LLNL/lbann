@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include "./data_reader_common_HDF5_test_utils.hpp"
+#include "./data_reader_common_catch2.hpp"
 
 #include "./test_data/hdf5_3D_UNet_test_data_and_schemas.yaml"
 #include "lbann/data_readers/data_reader_HDF5.hpp"
@@ -63,22 +64,24 @@ TEST_CASE("HDF5 3D UNet data reader file ingest tests",
   experiment_schema.parse(hdf5_3dunet_experiment_schema, "yaml");
   experiment_schema.print();
 
+  // create working directory
+  std::string work_dir = create_test_directory("hdf5_reader");
+
   SECTION("HDF5 3D UNet 2x2x2 write and then read to HDF5 file")
   {
     conduit::Node node;
     node.parse(hdf5_3dunet_2x2x2_data_sample, "yaml");
-    conduit::relay::io::save(node, "3DUNet_2x2x2__my_output.json");
 
     // open hdf5 file and obtain a handle
-    hid_t h5_id =
-      conduit::relay::io::hdf5_create_file("3DUNet_2x2x2_test_sample.hdf5");
+    hid_t h5_id = conduit::relay::io::hdf5_create_file(
+      work_dir + "/3DUNet_2x2x2_test_sample.hdf5");
     // write data
     conduit::relay::io::hdf5_write(node, h5_id);
     // close our file
     conduit::relay::io::hdf5_close_file(h5_id);
 
     hid_t h5_fid = conduit::relay::io::hdf5_open_file_for_read(
-      "3DUNet_2x2x2_test_sample.hdf5");
+      work_dir + "/3DUNet_2x2x2_test_sample.hdf5");
 
     // Setup the data schema for this 3d UNet data set
     data_schema.parse(hdf5_3dunet_2x2x2_data_schema, "yaml");
@@ -93,7 +96,6 @@ TEST_CASE("HDF5 3D UNet data reader file ingest tests",
                                  test_node[new_pathname],
                                  h5_fid,
                                  original_path);
-    conduit::relay::io::save(test_node, "3DUNet_2x2x2_tested_output.json");
 
     // Check to see if the 3D UNet sample can be read via the data
     // reader's load_sample method.  Note that this will coerce and
@@ -112,18 +114,17 @@ TEST_CASE("HDF5 3D UNet data reader file ingest tests",
   {
     conduit::Node node;
     node.parse(hdf5_3dunet_4x4x4_data_sample, "yaml");
-    conduit::relay::io::save(node, "3DUNet_4x4x4_my_output.json");
 
     // open hdf5 file and obtain a handle
-    hid_t h5_id =
-      conduit::relay::io::hdf5_create_file("3DUNet_4x4x4_test_sample.hdf5");
+    hid_t h5_id = conduit::relay::io::hdf5_create_file(
+      work_dir + "/3DUNet_4x4x4_test_sample.hdf5");
     // write data
     conduit::relay::io::hdf5_write(node, h5_id);
     // close our file
     conduit::relay::io::hdf5_close_file(h5_id);
 
     hid_t h5_fid = conduit::relay::io::hdf5_open_file_for_read(
-      "3DUNet_4x4x4_test_sample.hdf5");
+      work_dir + "/3DUNet_4x4x4_test_sample.hdf5");
 
     // Setup the data schema for this 3d UNet data set
     data_schema.parse(hdf5_3dunet_2x2x2_data_schema, "yaml");
@@ -138,7 +139,6 @@ TEST_CASE("HDF5 3D UNet data reader file ingest tests",
                                  test_node[new_pathname],
                                  h5_fid,
                                  original_path);
-    conduit::relay::io::save(test_node, "3DUNet_4x4x4_tested_output.json");
 
     // Check to see if the 3D UNet sample can be read via the data
     // reader's load_sample method.  Note that this will coerce and

@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include "./data_reader_common_HDF5_test_utils.hpp"
+#include "./data_reader_common_catch2.hpp"
 
 #include "./test_data/hdf5_cosmoflow_test_data_and_schemas.yaml"
 #include "lbann/data_readers/data_reader_HDF5.hpp"
@@ -63,6 +64,9 @@ TEST_CASE("HDF5 CosmoFlow data reader file ingest tests",
   experiment_schema.parse(hdf5_cosmoflow_experiment_schema, "yaml");
   // experiment_schema.print();
 
+  // create working directory
+  std::string work_dir = create_test_directory("hdf5_reader");
+
   SECTION("HDF5 CosmoFlow write and then read to HDF5 file")
   {
     conduit::Node node;
@@ -70,15 +74,15 @@ TEST_CASE("HDF5 CosmoFlow data reader file ingest tests",
     //    conduit::relay::io::save(node, "CosmoFlow_my_output.json");
 
     // open hdf5 file and obtain a handle
-    hid_t h5_id =
-      conduit::relay::io::hdf5_create_file("CosmoFlow_test_sample.hdf5");
+    hid_t h5_id = conduit::relay::io::hdf5_create_file(
+      work_dir + "/CosmoFlow_test_sample.hdf5");
     // write data
     conduit::relay::io::hdf5_write(node, h5_id);
     // close our file
     conduit::relay::io::hdf5_close_file(h5_id);
 
-    hid_t h5_fid =
-      conduit::relay::io::hdf5_open_file_for_read("CosmoFlow_test_sample.hdf5");
+    hid_t h5_fid = conduit::relay::io::hdf5_open_file_for_read(
+      work_dir + "/CosmoFlow_test_sample.hdf5");
 
     // Setup the data schema for this CosmoFlow data set
     data_schema.parse(hdf5_cosmoflow_data_schema, "yaml");
