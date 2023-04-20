@@ -65,6 +65,10 @@ class FluxBatchScript(BatchScript):
         self.launcher = launcher
         self.launcher_args = launcher_args
 
+        # Slurm defines these in the ctor, so let's do that too.
+        self.add_header_line(f'#flux --output={self.out_log_file}')
+        self.add_header_line(f'#flux --error={self.err_log_file}')
+
     def add_parallel_command(self,
                              command,
                              work_dir=None,
