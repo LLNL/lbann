@@ -133,8 +133,6 @@ class FluxBatchScript(BatchScript):
         args.append(f'-o gpu-affinity=per-task')
         args.append(f'-o cpu-affinity=per-task')
         args.append(f'-o nosetpgrp')
-        args.append(f'--output={self.out_log_file}')
-        args.append(f'--error={self.err_log_file}')
 
         if time_limit is not None:
             args.append(f'--time={_time_string(time_limit)}')
