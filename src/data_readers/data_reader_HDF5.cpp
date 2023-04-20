@@ -391,9 +391,7 @@ void hdf5_data_reader::load_sample_from_sample_list(conduit::Node& node,
                                                     bool ignore_failure)
 {
   auto [file_handle, sample_name] = data_reader_sample_list::open_file(index);
-  std::ostringstream ss2;
-  ss2 << LBANN_DATA_ID_STR(index);
-  const std::string padded_index(ss2.str());
+  const std::string padded_index = LBANN_DATA_ID_STR(index);
   load_sample(node[padded_index], file_handle, sample_name, ignore_failure);
   pack(node, index);
 }
