@@ -33,8 +33,7 @@
 #include "lbann/layers/data_type_distconv_adapter.hpp"
 #endif
 
-namespace lbann{
-
+namespace lbann {
 
 // =========================================================
 // Implementation
@@ -135,7 +134,6 @@ void layer_norm_layer<TensorDataType, Layout, Device>::setup_data(
   m_statistics_gradient.reset(AbsDistMatrixType::Instantiate(dist));
 }
 
-
 #ifdef LBANN_HAS_DISTCONV
 
 // =============================================================
@@ -174,57 +172,53 @@ layer_norm_layer<TensorDataType, Layout, Device>::get_distconv_adapter()
     layer_norm_distconv_adapter<TensorDataType, Layout, Device>&>(
     static_cast<const layer_norm_layer<TensorDataType, Layout, Device>&>(*this)
       .get_distconv_adapter());
+}
 
 // =============================================================
 // LayerNorm DistConv Adapter implementation
 // =============================================================
 
-  template <typename TensorDataType, data_layout Layout, El::Device Device>
-  void layer_norm_distconv_adapter<TensorDataType, Layout, Device>::
-    setup_distributions(tensor_overlap_constraints & constraints)
-  {
-    data_type_distconv_adapter<TensorDataType>::setup_distributions(
-      constraints);
-    // no overlap needed
-    for (auto& d : this->m_prev_activations_dists) {
-      d.clear_overlap();
-      constraints.mark_updated(d);
-      constraints.mark_invariant(d);
-    }
-    for (auto& d : this->m_activations_dists) {
-      d.clear_overlap();
-      constraints.mark_updated(d);
-      constraints.mark_invariant(d);
-    }
-    for (auto& d : this->m_prev_error_signals_dists) {
-      d.clear_overlap();
-      constraints.mark_updated(d);
-      constraints.mark_invariant(d);
-    }
-    for (auto& d : this->m_error_signals_dists) {
-      d.clear_overlap();
-      constraints.mark_updated(d);
-      constraints.mark_invariant(d);
-    }
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void layer_norm_distconv_adapter<TensorDataType, Layout, Device>::
+  setup_distributions(tensor_overlap_constraints& constraints)
+{
+  data_type_distconv_adapter<TensorDataType>::setup_distributions(constraints);
+  // no overlap needed
+  for (auto& d : this->m_prev_activations_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
   }
-
-  template <typename TensorDataType, data_layout Layout, El::Device Device>
-  void layer_norm_distconv_adapter<TensorDataType, Layout, Device>::setup_layer(
-    size_t workspace_capacity)
-  {
-    data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
-    auto& layer = dynamic_cast<
-      channelwise_fully_connected_layer<TensorDataType, Layout, Device>&>(
-      this->layer());
-    const auto max_mini_batch_size =
-      layer.get_model()->m_max_mini_batch_size_distconv;
-
-    m_layer_norm_operator =
-      make_unique<dc::LayerNormalization<TensorDataType>>(dc::get_backend(),
-                                                          layer.m_epsilon,
-                                                          max_mini_batch_size);
+  for (auto& d : this->m_activations_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
   }
+  for (auto& d : this->m_prev_error_signals_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto& d : this->m_error_signals_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+}
 
-#endif LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void layer_norm_distconv_adapter<TensorDataType, Layout, Device>::setup_layer(
+  size_t workspace_capacity)
+{
+  data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
+  auto& layer = dynamic_cast<layer_norm_layer<TensorDataType, Layout, Device>&>(
+    this->layer());
+
+  m_layer_norm_operator =
+    make_unique<dc::LayerNormalization<TensorDataType>>(dc::get_backend(),
+                                                        layer.m_epsilon);
+}
+
+#endif // LBANN_HAS_DISTCONV
 } // namespace lbann
 #endif // LBANN_LAYER_REGULARIZER_LAYER_NORM_IMPL_HPP_INCLUDED
