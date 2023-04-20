@@ -36,19 +36,20 @@
 #include <memory>
 
 #ifdef LBANN_HAS_DISTCONV
-#include "lbann/utils/distconv.hpp"
 #include "lbann/layers/data_type_distconv_adapter.hpp"
 #include "lbann/layers/regularizers/distconv/distconv_layer_norm.hpp"
+#include "lbann/utils/distconv.hpp"
 #endif // LBANN_HAS_DISTCONV
 
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
 namespace dc {
-using Shape =  ::distconv::tensor::Shape;
-using Backend= ::distconv::BackendDNNLib; 
+using Shape = ::distconv::tensor::Shape;
+using Backend = ::distconv::BackendDNNLib;
 template <typename TensorDataType>
-using LayerNormalization = ::distconv::LayerNormalization<Backend, TensorDataType>;
+using LayerNormalization =
+  ::distconv::LayerNormalization<Backend, TensorDataType>;
 } // namespace dc
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -67,12 +68,10 @@ public:
 
   void setup_distributions(tensor_overlap_constraints& constraints) override;
   void setup_layer(size_t workspace_capacity) override;
-  void setup_fp_tensors() override;
-  void setup_bp_tensors() override;
 
   void fp_compute();
   void bp_compute();
-  
+
   TensorDevType m_statistics;
   TensorDevType m_statistics_grad;
   std::unique_ptr<dc::LayerNormalization<TensorDataType>> m_layer_norm_operator;

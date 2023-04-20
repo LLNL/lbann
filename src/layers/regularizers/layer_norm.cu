@@ -25,9 +25,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_LAYER_NORM_LAYER_INSTANTIATE
+#include "layer_norm_kernels.cuh"
 #include "lbann/comm_impl.hpp"
 #include "lbann/layers/regularizers/layer_norm.hpp"
 #include "lbann/optimizers/optimizer.hpp"
+#include "lbann/layers/regularizers/layer_norm_impl.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
@@ -405,7 +407,6 @@ void bp_impl(lbann_comm& comm,
     block_dims.x = block_size;
     grid_dims.x = (local_sample_size + block_size - 1) / block_size;
     grid_dims.y = local_num_samples;
-
     auto kernel =
       ((!scale_grad && !bias_grad)
          ? bp_statistics_grad_kernel<block_size, TensorDataType, false, false>
@@ -448,28 +449,6 @@ void bp_impl(lbann_comm& comm,
                                 local_scale,
                                 scale_grad,
                                 bias_grad);
-
-    hydrogen::gpu::LaunchKernel(
-      layer_norm_bp_statistics_grad_kernel<block_size, TensorDataType>,
-      grid_dims,
-      block_dims,
-      0,
-      multisync,
-      local_num_samples,
-      local_sample_size,
-      epsilon,
-      local_input.LockedBuffer(),
-      local_input.LDim(),
-      local_output_grad.LockedBuffer(),
-      local_output_grad.LDim(),
-      local_means.LockedBuffer(),
-      local_means.LDim(),
-      local_vars.LockedBuffer(),
-      local_vars.LDim(),
-      local_means_grad.Buffer(),
-      local_means_grad.LDim(),
-      local_vars_grad.Buffer(),
-      local_vars_grad.LDim());
   }
   comm.allreduce(statistics_grad,
                  statistics_grad.RedundantComm(),
@@ -487,7 +466,6 @@ void bp_impl(lbann_comm& comm,
     block_dims.x = block_size;
     grid_dims.x = (local_sample_size + block_size - 1) / block_size;
     grid_dims.y = local_num_samples;
-
     auto kernel = (local_scale ? bp_input_grad_kernel<TensorDataType, true>
                                : bp_input_grad_kernel<TensorDataType, false>);
     hydrogen::gpu::LaunchKernel(kernel,
@@ -527,18 +505,64 @@ void bp_impl(lbann_comm& comm,
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void layer_norm_distconv_adapter<TensorDataType, Layout, Device> fp_compute()
-{}
+void layer_norm_distconv_adapter<TensorDataType, Layout, Device>::fp_compute()
+{
+  auto& l = dynamic_cast<layer_norm_layer<TensorDataType, Layout, Device>&>(
+    this->layer());
+  lbann_comm& comm = *(l.get_comm());
+
+  auto& statistics = *l.m_statistics;
+  assert0(dc::tensor::View(m_statistics, statistics.Buffer()));
+
+  using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
+  m_layer_norm_operator->calculate_forward_stats(this->get_prev_activations(),
+                                                 m_statistics);
+  comm.allreduce(statistics, statistics.RedundantComm(), El::mpi::SUM);
+  m_layer_norm_operator->apply_normalization(this->get_prev_activations(),
+                                             m_statistics,
+                                             this->get_activations());
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void layer_norm_distconv_adapter<TensorDataType, Layout, Device> bp_compute()
-{}
+void layer_norm_distconv_adapter<TensorDataType, Layout, Device>::bp_compute()
+{
+  auto& l = dynamic_cast<layer_norm_layer<TensorDataType, Layout, Device>&>(
+    this->layer());
+  lbann_comm& comm = *(l.get_comm());
+
+  auto& statistics = *l.m_statistics;
+  auto& statistics_grad = *l.m_statistics_gradient;
+  assert0(dc::tensor::View(m_statistics, statistics.Buffer()));
+  assert0(dc::tensor::View(m_statistics_grad, statistics_grad.Buffer()));
+
+  using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
+  m_layer_norm_operator->calculate_backward_stats(
+    this->get_prev_activations(),
+    this->get_prev_error_signals(),
+    m_statistics,
+    m_statistics_grad);
+  comm.allreduce(statistics_grad,
+                 statistics_grad.RedundantComm(),
+                 El::mpi::SUM);
+  m_layer_norm_operator->apply_grad(this->get_prev_activations(),
+                                    this->get_prev_error_signals(),
+                                    m_statistics,
+                                    m_statistics_grad,
+                                    this->get_error_signals());
+}
 #endif // LBANN_HAS_DISTCONV
 
 // Template instantiation
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void layer_norm_layer<TensorDataType, Layout, Device>::fp_compute()
 {
+  #ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()) {
+    this->get_distconv_adapter().fp_compute();
+    return;
+  }
+  #endif // LBANN_HAS_DISTCONV 
+
   int weight_idx = 0;
   const TensorDataType* scale_weights = nullptr;
   const TensorDataType* bias_weights = nullptr;
@@ -551,12 +575,16 @@ void layer_norm_layer<TensorDataType, Layout, Device>::fp_compute()
   El::Int norm_size, global_norm_size, num_norm, norm_stride;
   this->get_normdims(norm_size, global_norm_size, num_norm, norm_stride);
 
+<<<<<<< HEAD
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
     this->get_distconv_adapter().fp_compute();
     return;
   }
 #endif // LBANN_HAS_DISTCONV 
+=======
+
+>>>>>>> f02146109 (Updated implementation with updating statistics tensors)
   fp_impl(*this->get_comm(),
           this->m_epsilon,
           norm_size,
@@ -573,6 +601,13 @@ void layer_norm_layer<TensorDataType, Layout, Device>::fp_compute()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void layer_norm_layer<TensorDataType, Layout, Device>::bp_compute()
 {
+  #ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()) {
+    this->get_distconv_adapter().bp_compute();
+    return;
+  }
+  #endif // LBANN_HAS_DISTCONV
+  
   // Obtain optional buffers
   const TensorDataType* scale_weights = nullptr;
   TensorDataType* scale_grad = nullptr;
@@ -589,6 +624,7 @@ void layer_norm_layer<TensorDataType, Layout, Device>::bp_compute()
     bias_grad = this->m_bias_gradient->Buffer();
   }
 
+<<<<<<< HEAD
   El::Int norm_size, global_norm_size, num_norm, norm_stride;
   this->get_normdims(norm_size, global_norm_size, num_norm, norm_stride);
 
@@ -603,6 +639,8 @@ void layer_norm_layer<TensorDataType, Layout, Device>::bp_compute()
   }
 #endif // LBANN_HAS_DISTCONV
 
+=======
+>>>>>>> f02146109 (Updated implementation with updating statistics tensors)
   bp_impl(*this->get_comm(),
           this->m_epsilon,
           norm_size,

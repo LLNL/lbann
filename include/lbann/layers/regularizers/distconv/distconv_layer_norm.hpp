@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERSE_REGULARIZERS_DISTCONV_LAYER_NORM
 #define LBANN_LAYERSE_REGULARIZERS_DISTCONV_LAYER_NORM
 
-#if LBANN_HAS_DISTCONV
+#ifdef LBANN_HAS_DISTCONV
 
 namespace distconv {
 template <typename Backend, typename DataType>
@@ -39,21 +39,17 @@ class LayerNormalization
   using DCTensor = tensor::Tensor<DataType, LocaleMPI, Allocator>;
 
 public:
-  LayerNormalization(Backend& backend,
-                     Datatype epsilon,
-                     size_t max_mini_batch_size)
-    : m_backend(backend),
-      m_epsilon(epsilon),
-      m_max_mini_batch_size(max_mini_batch_size)
+  LayerNormalization(Backend& backend, DataType epsilon)
+    : m_backend(backend), m_epsilon(epsilon)
   {}
 
   template <typename Allocator>
   void calculate_forward_stats(const DCTensor<Allocator>& input,
-                               DC<Allocator>& statistics);
+                               DCTensor<Allocator>& statistics);
 
   template <typename Allocator>
   void apply_normalization(const DCTensor<Allocator>& input,
-                           const DCTensor<Allocator>& statistics,
+                           DCTensor<Allocator>& statistics,
                            DCTensor<Allocator>& output);
 
   template <typename Allocator>
@@ -74,10 +70,9 @@ protected:
 
 private:
   DataType m_epsilon;
-  size_t m_max_mini_batch_size;
 
 }; // class definition LayerNorm
 } // namespace distconv
 
-#endif // LBANN_HAS_DISTONV
-#endif // LBANN_LAYERSE_REGULARIZERS_DISTCONV_LAYER_NORM
+#endif // LBANN_HAS_DISTCONV
+#endif // LBANN_LAYERS_REGULARIZERS_DISTCONV_LAYER_NORM
