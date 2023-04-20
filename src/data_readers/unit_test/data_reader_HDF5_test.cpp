@@ -361,37 +361,33 @@ TEST_CASE("hdf5 data reader repack tests", "[data_reader][hdf5][repack]")
   lbann::init_data_seq_random(42);
 
   conduit::Node channels_first_node;
-  channels_first_node.parse(hdf5_channels_first_3x4x4x4_data_sample, "yaml");
-
-  channels_first_node.print();
+  channels_first_node.parse(hdf5_channels_first_3x4x4_data_sample, "yaml");
 
   auto hdf5_dr = std::make_unique<lbann::hdf5_data_reader>();
   DataReaderHDF5WhiteboxTester white_box_tester;
 
   conduit::Node schema;
-  schema.parse(hdf5_channels_last_4x4x4x3_data_schema, "yaml");
+  schema.parse(hdf5_channels_last_4x4x3_data_schema, "yaml");
 
   SECTION("HDF5 conduit node repack volume")
   {
     // Check to make sure that the repack_image function properly fails on the
     // a 3D volume of data
-    const std::string pathname("000000001/");
+    const std::string pathname("000000001");
     const std::string f = "volume";
-    const std::string test_pathname(pathname + f);
+    const std::string test_pathname(pathname + "/" + f);
     // Instantiate a fresh copy of the sample
     conduit::Node test_node;
-    test_node.parse(hdf5_channels_last_4x4x4x3_data_sample, "yaml");
+    test_node.parse(hdf5_channels_last_4x4x3_data_sample, "yaml");
     // Select the metadata for a field and transform the sample
     const std::string metadata_path = f + "/metadata";
     conduit::Node metadata = schema[metadata_path];
-    test_node.print();
     if (metadata.has_child("channels")) {
       white_box_tester.repack_image(*hdf5_dr,
                                     test_node,
                                     test_pathname,
                                     metadata);
     }
-    test_node.print();
     std::vector<std::string> fields = {"volume"};
     check_node_fields(channels_first_node,
                       test_node,
