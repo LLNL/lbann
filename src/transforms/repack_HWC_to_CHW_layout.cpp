@@ -58,31 +58,7 @@ void repack_HWC_to_CHW_layout::apply(utils::type_erased_matrix& data,
   DataType* __restrict__ dst_buf = out.Buffer();
   // Pack an interleave multi-channel data structure into a
   // channel-strided data structure
-  const size_t size = dims[1] * dims[2];
-  for (size_t row = 0; row < dims[1]; ++row) {
-    for (size_t col = 0; col < dims[2]; ++col) {
-      int N = dims[0];
-      // Multiply by N because there are N channels.
-      const size_t src_base = N * (row + col * dims[1]);
-      const size_t dst_base = row + col * dims[1];
-      switch (N) {
-      case 4:
-        dst_buf[dst_base + 3 * size] = src_buf[src_base + 3];
-        [[fallthrough]];
-      case 3:
-        dst_buf[dst_base + 2 * size] = src_buf[src_base + 2];
-        [[fallthrough]];
-      case 2:
-        dst_buf[dst_base + size] = src_buf[src_base + 1];
-        [[fallthrough]];
-      case 1:
-        dst_buf[dst_base] = src_buf[src_base];
-        break;
-      default:
-        LBANN_ERROR("Unsupported number of channels");
-      }
-    }
-  }
+  repack_HWC_to_CHW(src_buf, dst_buf, dims);
 }
 
 } // namespace transform

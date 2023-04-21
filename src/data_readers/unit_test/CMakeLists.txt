@@ -32,8 +32,14 @@ set_full_path(THIS_DIR_SEQ_CATCH2_TEST_FILES
 set_full_path(THIS_DIR_MPI_CATCH2_TEST_FILES
   data_reader_smiles_fetch_datum_test.cpp
   data_reader_smiles_sample_list_test.cpp
+  data_reader_HDF5_3D_UNet_file_ingest.cpp
+  data_reader_HDF5_cosmoflow_file_ingest.cpp
+  data_reader_HDF5_c3fd_file_ingest.cpp
+  data_reader_HDF5_hrrl_file_ingest.cpp
   data_reader_HDF5_hrrl_public_api.cpp
   data_reader_HDF5_test.cpp
+  data_reader_common_HDF5_test_utils.cpp
+  data_reader_common_catch2.cpp
   data_reader_HDF5_sample_list_test.cpp
   data_reader_synthetic_test_public_api.cpp
   )

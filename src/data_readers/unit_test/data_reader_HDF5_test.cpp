@@ -41,13 +41,14 @@
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/options.hpp"
 
-// input data; each of these contain a single variable: "const std::string"
-#include "./test_data/hdf5_hrrl_data_schema.yaml"
-#include "./test_data/hdf5_hrrl_experiment_schema.yaml"
+#include "./data_reader_common_HDF5_test_utils.hpp"
+
 #include "./test_data/hdf5_hrrl_reader.prototext"
 #include "./test_data/hdf5_hrrl_test.sample_list"
+#include "./test_data/hdf5_hrrl_test_data_and_schemas.yaml"
 #include "./test_data/hdf5_hrrl_train.sample_list"
 #include "./test_data/hdf5_hrrl_validate.sample_list"
+#include "./test_data/hdf5_repack_data_and_schemas.yaml"
 
 namespace pb = ::google::protobuf;
 
@@ -351,4 +352,48 @@ void alter(conduit::Node schema, lbann::hdf5_data_reader* reader)
   REQUIRE(schema_TEST[test_field_name]["metadata"].has_child("phoo"));
   int v = schema_TEST[test_field_name]["metadata"]["phoo"].value();
   REQUIRE(v == 42);
+}
+
+TEST_CASE("hdf5 data reader repack tests", "[data_reader][hdf5][repack]")
+{
+  // initialize stuff (boilerplate)
+  lbann::init_random(0, 2);
+  lbann::init_data_seq_random(42);
+
+  conduit::Node channels_first_node;
+  channels_first_node.parse(hdf5_channels_first_3x4x4_data_sample, "yaml");
+
+  auto hdf5_dr = std::make_unique<lbann::hdf5_data_reader>();
+  DataReaderHDF5WhiteboxTester white_box_tester;
+
+  conduit::Node schema;
+  schema.parse(hdf5_channels_last_4x4x3_data_schema, "yaml");
+
+  SECTION("HDF5 conduit node repack volume")
+  {
+    // Check to make sure that the repack_image function properly fails on the
+    // a 3D volume of data
+    const std::string pathname("000000001");
+    const std::string f = "volume";
+    const std::string test_pathname(pathname + "/" + f);
+    // Instantiate a fresh copy of the sample
+    conduit::Node test_node;
+    test_node.parse(hdf5_channels_last_4x4x3_data_sample, "yaml");
+    // Select the metadata for a field and transform the sample
+    const std::string metadata_path = f + "/metadata";
+    conduit::Node metadata = schema[metadata_path];
+    if (metadata.has_child("channels")) {
+      white_box_tester.repack_image(*hdf5_dr,
+                                    test_node,
+                                    test_pathname,
+                                    metadata);
+    }
+    std::vector<std::string> fields = {"volume"};
+    check_node_fields(channels_first_node,
+                      test_node,
+                      schema,
+                      fields,
+                      pathname,
+                      pathname);
+  }
 }

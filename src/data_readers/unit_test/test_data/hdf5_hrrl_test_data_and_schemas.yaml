@@ -52,7 +52,7 @@ const std::string packed_hdf5_hrrl_data_sample_id =R"FOO(000000334:
     responses: [15.2486634101312, 0.0426354341969429, 64037572840.4818, 5.34505173275895, 32.6826031770453]
 )FOO";
 
-const std::string hdf5_hrrl_data_schema_test = R"AurthurDent(
+const std::string hdf5_hrrl_data_schema = R"AurthurDent(
 # Re, the "ordering" fields: ordering is relative and need not be unique;
 # it specifies, e.g, the order in which a set of scalars
 # would be appended to a vector.
@@ -107,4 +107,26 @@ Xshift:
 Yshift:
   metadata:
     ordering: 80
+)AurthurDent";
+
+const std::string hdf5_hrrl_experiment_schema = R"AurthurDent(
+Image:
+  metadata:
+    pack: "samples"
+    coerce: "float"
+Epmax:
+  metadata:
+    pack: "responses"
+Etot:
+  metadata:
+    pack: "responses"
+N:
+  metadata:
+    pack: "responses"
+T:
+  metadata:
+    pack: "responses"
+alpha:
+  metadata:
+    pack: "responses"
 )AurthurDent";

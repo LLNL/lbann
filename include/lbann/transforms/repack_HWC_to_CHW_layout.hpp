@@ -56,6 +56,56 @@ public:
              std::vector<size_t>& dims) override;
 };
 
+template <typename T>
+void repack_HWC_to_CHW(T const* hwc_src,
+                       T* chw_dest,
+                       std::vector<size_t> const& chw_dims)
+{
+  auto const num_channels = chw_dims[0];
+  auto const img_height = chw_dims[1];
+  auto const img_width = chw_dims[2];
+  auto const img_size = img_height * img_width;
+
+  // The image is stored row-major, so the width is actually varying fastest.
+  for (size_t row = 0; row < img_height; ++row) {
+    for (size_t col = 0; col < img_width; ++col) {
+      for (size_t chan = 0; chan < num_channels; ++chan) {
+        auto const dst_offset = chan * img_size + row * img_width + col;
+        auto const src_offset =
+          row * img_width * num_channels + col * num_channels + chan;
+        chw_dest[dst_offset] = hwc_src[src_offset];
+      }
+    }
+  }
+}
+
+template <typename T>
+void repack_DHWC_to_CDHW(T const* dhwc_src,
+                         T* cdhw_dest,
+                         std::vector<size_t> const& cdhw_dims)
+{
+  auto const num_channels = cdhw_dims[0];
+  auto const img_depth = cdhw_dims[1];
+  auto const img_height = cdhw_dims[2];
+  auto const img_width = cdhw_dims[3];
+  auto const plane_size = img_height * img_width;
+  auto const volume_size = img_depth * img_height * img_width;
+  for (size_t depth = 0; depth < img_depth; ++depth) {
+    for (size_t height = 0; height < img_height; ++height) {
+      for (size_t width = 0; width < img_width; ++width) {
+        for (size_t chan = 0; chan < num_channels; ++chan) {
+          auto const dst_offset = chan * volume_size + depth * plane_size +
+                                  height * img_width + width;
+          auto const src_offset = depth * plane_size * num_channels +
+                                  height * img_width * num_channels +
+                                  width * num_channels + chan;
+          cdhw_dest[dst_offset] = dhwc_src[src_offset];
+        }
+      }
+    }
+  }
+}
+
 } // namespace transform
 } // namespace lbann
 

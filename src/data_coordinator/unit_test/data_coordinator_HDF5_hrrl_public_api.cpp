@@ -41,8 +41,7 @@
 #include <ostream>
 #include <string.h>
 
-#include "../src/data_readers/unit_test/test_data/hdf5_hrrl_experiment_schema.yaml"
-#include "../src/data_readers/unit_test/test_data/hdf5_hrrl_test_data_and_schema.yaml"
+#include "../src/data_readers/unit_test/test_data/hdf5_hrrl_test_data_and_schemas.yaml"
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 
 class DataReaderHDF5WhiteboxTester
@@ -165,7 +164,7 @@ TEST_CASE("Data Coordinator hdf5 conduit fetch tests",
 
   // Setup the data schema for this HRRL data set
   conduit::Node& data_schema = white_box_tester.get_data_schema(*hdf5_dr);
-  data_schema.parse(hdf5_hrrl_data_schema_test, "yaml");
+  data_schema.parse(hdf5_hrrl_data_schema, "yaml");
   conduit::Node& experiment_schema =
     white_box_tester.get_experiment_schema(*hdf5_dr);
   experiment_schema.parse(hdf5_hrrl_experiment_schema, "yaml");
@@ -209,11 +208,7 @@ TEST_CASE("Data Coordinator hdf5 conduit fetch tests",
     auto valid = hdf5_dr->fetch(samples, indices_fetched, 1);
     //    auto valid = hdf5_dr->fetch(samples, indices_fetched, 2);
 
-    std::cout << "HEre is the sample " << valid << std::endl;
-    samples[0].print();
 
-    std::cout << "HEre is the ref node " << std::endl;
-    ref_node.print();
 
     //    lbann::CPUMat X;
     // Check the primary data fields
@@ -247,7 +242,6 @@ TEST_CASE("Data Coordinator hdf5 conduit fetch tests",
     conduit::Node packed_ref_node;
     packed_ref_node.parse(packed_hdf5_hrrl_data_sample_id, "yaml");
 
-    packed_ref_node.print();
     std::vector<std::string> packed_fields = {"samples", "responses"};
     for (auto& data_field : packed_fields) {
       const std::string test_pathname("000000334/" + data_field);
