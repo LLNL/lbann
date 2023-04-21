@@ -65,6 +65,10 @@ class FluxBatchScript(BatchScript):
         self.launcher = launcher
         self.launcher_args = launcher_args
 
+        # Slurm defines these in the ctor, so let's do that too.
+        self.add_header_line(f'#flux --output={self.out_log_file}')
+        self.add_header_line(f'#flux --error={self.err_log_file}')
+
     def add_parallel_command(self,
                              command,
                              work_dir=None,
@@ -133,8 +137,6 @@ class FluxBatchScript(BatchScript):
         args.append(f'-o gpu-affinity=per-task')
         args.append(f'-o cpu-affinity=per-task')
         args.append(f'-o nosetpgrp')
-        args.append(f'--output={self.out_log_file}')
-        args.append(f'--error={self.err_log_file}')
 
         if time_limit is not None:
             args.append(f'--time={_time_string(time_limit)}')
