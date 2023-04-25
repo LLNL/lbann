@@ -33,7 +33,7 @@
 #include "lbann/utils/dnn_enums.hpp"
 #ifdef LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/helpers.hpp"
-#include "lbann/utils/dnn_lib/pooling.hpp"
+#include "lbann/utils/dnn_lib/upsample.hpp"
 #endif // LBANN_HAS_DNN_LIB
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/im2col.hpp"
@@ -234,7 +234,7 @@ protected:
     const auto& input_dims = this->get_input_dims();
     auto output_dims = input_dims;
     for (size_t i = 0; i < output_dims.size() - 1; ++i) {
-      output_dims[i + 1] = m_scale_factors[i] * input_dims[i = 1];
+      output_dims[i + 1] = m_scale_factors[i] * input_dims[i + 1];
     }
     this->set_output_dims(output_dims);
   }
