@@ -169,6 +169,7 @@ message Layer {
     TensorPermute permute = 77;
     IdentityZero identity_zero = 78;
     MultiDimReduction multidim_reduction = 79;
+    Upsample upsample = 80;
     CategoricalRandom categorical_random = 406;  // Deprecated
     DiscreteRandom discrete_random = 407;        // Deprecated
 
@@ -1057,6 +1058,47 @@ message Layer {
    *  otherwise.
    */
   message IdentityZero {}
+
+  /** @brief Upsample
+   *
+   *  Spatially upsamples a tensor.
+   */
+  message Upsample {
+    /** @brief Upsample operation
+     *
+     *  Options: nearest
+     */
+    string upsample_mode = 1;
+
+    /** @brief Number of spatial dimensions
+     *
+     *  The first data dimension is treated as the channel dimension,
+     *  and all others are treated as spatial dimensions (recall that
+     *  the mini-batch dimension is implicit).
+     */
+    int64 num_dims = 2;
+
+    /** @brief Whether to use vector-valued options
+     *
+     *  If true, then the pooling is configured with @c pool_dims,
+     *  @c pool_pads, @c pool_strides. Otherwise, @c pool_dims_i,
+     *  @c pool_pads_i, @c pool_strides_i.
+     */
+    bool has_vectors = 3;
+
+    /** @brief Upsampling scale factors (vector-valued)
+     *
+     *  List of integers, one for each spatial
+     *  dimension. Used when @c has_vectors is enabled.
+     */
+    repeated int64 scale_factors = 4;
+
+    /** @brief Upsampling scale factor dimension (integer-valued)
+     *
+     *  Used when @c has_vectors is disabled.
+     */
+    int64 scale_factors_i = 5;
+  }
 
   /// Deprecated
   message CategoricalRandom {}

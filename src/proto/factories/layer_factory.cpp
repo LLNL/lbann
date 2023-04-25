@@ -160,6 +160,7 @@ private:
     LBANN_REGISTER_BUILDER(Tessellate, tessellate);
     LBANN_REGISTER_BUILDER(Uniform, uniform);
     LBANN_REGISTER_BUILDER(Unpooling, unpooling);
+    LBANN_REGISTER_BUILDER(Upsample, upsample);
     LBANN_REGISTER_BUILDER(WeightedSum, weighted_sum);
     LBANN_REGISTER_BUILDER(WeightsLayer, weights);
 

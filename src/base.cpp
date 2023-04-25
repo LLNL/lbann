@@ -522,6 +522,7 @@ CEREAL_FORCE_DYNAMIC_INIT(tessellate_layer);
 CEREAL_FORCE_DYNAMIC_INIT(top_k_categorical_accuracy_layer);
 CEREAL_FORCE_DYNAMIC_INIT(uniform_layer);
 CEREAL_FORCE_DYNAMIC_INIT(unpooling_layer);
+CEREAL_FORCE_DYNAMIC_INIT(upsample_layer);
 CEREAL_FORCE_DYNAMIC_INIT(variance_layer);
 CEREAL_FORCE_DYNAMIC_INIT(weighted_sum_layer);
 CEREAL_FORCE_DYNAMIC_INIT(weights_layer);
