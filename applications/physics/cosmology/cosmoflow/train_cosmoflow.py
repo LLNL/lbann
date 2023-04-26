@@ -1,3 +1,5 @@
+from typing import Any
+
 import cosmoflow_model
 
 import argparse
@@ -49,6 +51,39 @@ def create_cosmoflow_data_reader(
     return lbann.reader_pb2.DataReader(reader=readers)
 
 
+def create_synthetic_data_reader(input_width: int, num_responses: int) -> Any:
+    """Create a synthetic data reader for CosmoFlow.
+
+    Args:
+        input_width (int): The size of each input dimension.
+        num_responses (int): The number of parameters to predict.
+    """
+    # Compute how to scale the number of samples from a base of 512^3
+    # where smaller sizes are split from that.
+    # Conservatively error out otherwise.
+    if input_width > 512 or (input_width % 2 != 0):
+        raise ValueError(f'Unsupported width {input_width} for synthetic data')
+    sample_factor = int((512 // input_width)**3)
+    num_samples = {'train': 8010,
+                   'validate': 1001,
+                   'test': 1001}
+    readers = []
+    for role in ['train', 'validate', 'test']:
+        reader = lbann.reader_pb2.Reader(
+            name='synthetic',
+            role=role,
+            shuffle=(role != 'test'),
+            validation_percent=0,
+            percent_of_data_to_use=1.0,
+            absolute_sample_count=0,
+            num_samples=num_samples[role]*sample_factor,
+            synth_dimensions=f'{num_responses} {input_width} {input_width} {input_width}',
+            synth_response_dimensions=str(num_responses)
+        )
+        readers.append(reader)
+    return lbann.reader_pb2.DataReader(reader=readers)
+
+
 if __name__ == "__main__":
     desc = ('Construct and run the CosmoFlow network on CosmoFlow dataset.'
             'Running the experiment is only supported on LC systems.')
@@ -89,6 +124,9 @@ if __name__ == "__main__":
             '--{}-dir'.format(role), action='store', type=str,
             default=default_dir,
             help='the directory of the {} dataset'.format(role))
+    parser.add_argument(
+        '--synthetic', action='store_true',
+        help='Use synthetic data')
 
     # Parallelism arguments
     parser.add_argument(
@@ -158,11 +196,15 @@ if __name__ == "__main__":
     optimizer = lbann.contrib.args.create_optimizer(args)
 
     # Setup data reader
-    data_reader = create_cosmoflow_data_reader(
-        args.train_dir,
-        args.val_dir,
-        args.test_dir,
-        num_responses=args.num_secrets)
+    if args.synthetic:
+        data_reader = create_synthetic_data_reader(
+            args.input_width, args.num_secrets)
+    else:
+        data_reader = create_cosmoflow_data_reader(
+            args.train_dir,
+            args.val_dir,
+            args.test_dir,
+            num_responses=args.num_secrets)
 
     # Setup trainer
     random_seed_arg = {'random_seed': args.random_seed} \
@@ -179,7 +221,10 @@ if __name__ == "__main__":
         environment['LBANN_KEEP_ERROR_SIGNALS'] = 0
     else:
         environment['LBANN_KEEP_ERROR_SIGNALS'] = 1
-    lbann_args = ['--use_data_store']
+    if args.synthetic:
+        lbann_args = []
+    else:
+        lbann_args = ['--use_data_store']
 
     # Run experiment
     kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
