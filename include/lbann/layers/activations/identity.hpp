@@ -156,8 +156,9 @@ protected:
       dc_backend::setup_tensor_descriptor(ydesc, activations,
                                           activations.get_local_shape());
 
-      TensorDataType alpha = 1;
-      TensorDataType beta = 0;
+      using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
+      LibScalingParamT alpha = 1;
+      LibScalingParamT beta = 0;
       dnn_lib::transform_tensor(alpha,
                                 m_xdesc,
                                 prev_activations.get_const_base_ptr(),
@@ -184,8 +185,9 @@ protected:
       dc_backend::setup_tensor_descriptor(dydesc, prev_error_signals,
                                           prev_error_signals.get_local_shape());
 
-      TensorDataType alpha = 1;
-      TensorDataType beta = 0;
+      using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
+      LibScalingParamT alpha = 1;
+      LibScalingParamT beta = 0;
       dnn_lib::transform_tensor(alpha,
                                 m_dydesc,
                                 prev_error_signals.get_const_base_ptr(),
