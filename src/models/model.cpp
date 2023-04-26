@@ -879,7 +879,7 @@ void model::check_subgraph_parallelism()
   const auto& layers = this->get_layers();
   const El::Int num_layers = layers.size();
   for (El::Int node = 0; node < num_layers; ++node) {
-    if (layers[node]->get_parallel_strategy().sub_branch_tag != 0) {
+    if (layers[node]->get_grid_tag() != 0) {
       this->enable_subgraph_parallelism();
       break;
     }

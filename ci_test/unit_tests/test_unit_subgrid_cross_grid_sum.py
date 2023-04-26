@@ -19,7 +19,7 @@ import tools
 
 # Data
 np.random.seed(202201184)
-_num_samples = 17
+_num_samples = 16
 _sample_size = 7
 _samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
 
@@ -81,19 +81,20 @@ def construct_model(lbann):
     # LBANN implementation
     ### @todo Layers with optimized inter-grid communication
     x = lbann.Identity(x_lbann)
-    y1 = lbann.Sin(x, parallel_strategy = {'grid_tag':1})
-    y2 = lbann.Cos(x, parallel_strategy = {'grid_tag':2})
+    y1 = lbann.Sin(x, parallel_strategy = {'grid_tag':1, 'sub_branch_tag':1})
+    y2 = lbann.Cos(x, parallel_strategy = {'grid_tag':2, 'sub_branch_tag':2})
     y = lbann.Sum(
         y1,
         y2,
-        parallel_strategy = {'grid_tag':0})
-    y1 = lbann.Identity(y, parallel_strategy = {'grid_tag':1})
-    y2 = lbann.Identity(y, parallel_strategy = {'grid_tag':2})
+        parallel_strategy = {'grid_tag':0, 'sub_branch_tag':0, 'enable_subgraph':True})
+    y1 = lbann.Identity(y, parallel_strategy = {'grid_tag':1, 'sub_branch_tag':1})
+    y2 = lbann.Identity(y, parallel_strategy = {'grid_tag':2, 'sub_branch_tag':2})
     y1 = lbann.Square(y1)
     y2 = lbann.Scale(y2, constant=2)
     y = lbann.Sum(
-        lbann.Identity(y1, parallel_strategy = {'grid_tag':0}),
-        lbann.Identity(y2, parallel_strategy = {'grid_tag':0}))
+        lbann.Identity(y1),
+        lbann.Identity(y2),
+        parallel_strategy = {'grid_tag':0, 'sub_branch_tag':0, 'enable_subgraph':True})
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='obj'))
