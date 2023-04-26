@@ -163,7 +163,8 @@ protected:
                                 prev_activations.get_const_base_ptr(),
                                 beta,
                                 m_ydesc,
-                                activations.get_base_ptr());
+                                activations.get_base_ptr(),
+                                dc::get_backend().get_handle());
     }
 #endif // LBANN_HAS_DISTCONV
   }
@@ -192,7 +193,8 @@ protected:
                                 prev_error_signals.get_const_base_ptr(),
                                 beta,
                                 m_dxdesc,
-                                error_signals.get_base_ptr());
+                                error_signals.get_base_ptr(),
+                                dc::get_backend().get_handle());
     }
 #endif // LBANN_HAS_DISTCONV
   }
