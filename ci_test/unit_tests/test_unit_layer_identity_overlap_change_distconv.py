@@ -114,17 +114,17 @@ def construct_model(lbann):
 
     for num_dims in [2, 3]:
         # Convolution settings
-        kernel_dims = [_sample_dims[0] if num_dims == 2 else _sample_dims_3d[0]]*2 + [3]*num_dims
+        kernel_dims = [_sample_dims[0] if num_dims == 2 else _sample_dims_3d[0]]*2 + [1]*num_dims
         strides = [1]*num_dims
-        pads = [1]*num_dims
+        pads = [0]*num_dims
         dilations = [1]*num_dims
 
         kernel = np.zeros(kernel_dims)
         for i in range(len(kernel)):
             if num_dims == 2:
-                kernel[i,i,1,1] = 1
+                kernel[i,i,0,0] = 1
             else:
-                kernel[i,i,1,1,1] = 1
+                kernel[i,i,0,0,0] = 1
 
         # Apply convolution
         kernel_weights = lbann.Weights(
@@ -152,17 +152,17 @@ def construct_model(lbann):
         
 
         # Convolution settings
-        kernel_dims = [_sample_dims[0] if num_dims == 2 else _sample_dims_3d[0]]*2 + [5]*num_dims
+        kernel_dims = [_sample_dims[0] if num_dims == 2 else _sample_dims_3d[0]]*2 + [3]*num_dims
         strides = [1]*num_dims
-        pads = [2]*num_dims
+        pads = [1]*num_dims
         dilations = [1]*num_dims
 
         kernel = np.zeros(kernel_dims)
         for i in range(len(kernel)):
             if num_dims == 2:
-                kernel[i,i,2,2] = 1
+                kernel[i,i,1,1] = 1
             else:
-                kernel[i,i,2,2,2] = 1
+                kernel[i,i,1,1,1] = 1
 
         # Apply convolution
         kernel_weights = lbann.Weights(
@@ -294,7 +294,7 @@ def augment_test_func(test_func):
                 delimiter=','
             )
 
-            assert np.allclose(in_data, out_data, rtol=1e-3)
+            assert np.allclose(in_data, out_data)
 
     # Return test function from factory function
     func.__name__ = test_name
