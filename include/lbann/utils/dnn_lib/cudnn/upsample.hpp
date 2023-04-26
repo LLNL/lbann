@@ -47,7 +47,7 @@ void upsample_nearest_forward(PoolingDescriptor const& poolingDesc,
                               ScalarParameterType const& beta_in,
                               TensorDescriptor const& yDesc,
                               TensorDataType* y,
-                              dnnHandle_t& handle)
+                              dnnHandle_t handle)
 {
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto alpha = El::To<LibScalingParamT>(alpha_in);
@@ -96,7 +96,7 @@ void upsample_nearest_backward(PoolingDescriptor const& poolingDesc,
                                ScalarParameterType const& beta_in,
                                TensorDescriptor const& dxDesc,
                                TensorDataType* dx,
-                               dnnHandle_t& handle)
+                               dnnHandle_t handle)
 {
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto alpha = El::To<LibScalingParamT>(alpha_in);

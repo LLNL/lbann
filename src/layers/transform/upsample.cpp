@@ -115,28 +115,20 @@ void upsample_layer<TensorDataType, Layout, Device>::fp_compute_dnn()
 #ifndef LBANN_HAS_DNN_LIB
   LBANN_ERROR("DNN library not detected");
 #else
-  // // Initialize GPU workspace
-  // El::Matrix<TensorDataType, El::Device::GPU> workspace;
-  // size_t workspace_size =
-  //   dnn_lib::get_upsample_ws_size(m_upsample_dnn_desc,
-  //                                m_tensors_dnn_desc.get_activations());
-  // workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
-
-  // using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
-  // const auto& local_input = this->get_local_prev_activations();
-  // auto& local_output = this->get_local_activations();
-  // if (local_input.Height() > 0 && local_input.Width() > 0) {
-  //   const auto zero = El::TypeTraits<ScalingType>::Zero();
-  //   const auto one = El::TypeTraits<ScalingType>::One();
-  //   dnn_lib::upsample_forward(m_upsample_dnn_desc,
-  //                            one,
-  //                            m_tensors_dnn_desc.get_prev_activations(),
-  //                            local_input,
-  //                            zero,
-  //                            m_tensors_dnn_desc.get_activations(),
-  //                            local_output,
-  //                            workspace);
-  // }
+  using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
+  const auto& local_input = this->get_local_prev_activations();
+  auto& local_output = this->get_local_activations();
+  if (local_input.Height() > 0 && local_input.Width() > 0) {
+    const auto zero = El::TypeTraits<ScalingType>::Zero();
+    const auto alpha = El::To<ScalingType>(get_linear_size(m_scale_factors));
+    dnn_lib::upsample_nearest_forward(m_pooling_dnn_desc,
+                                      alpha,
+                                      m_tensors_dnn_desc.get_prev_activations(),
+                                      local_input,
+                                      zero,
+                                      m_tensors_dnn_desc.get_activations(),
+                                      local_output);
+  }
 #endif // #ifndef LBANN_HAS_DNN_LIB
 }
 
@@ -147,38 +139,24 @@ void upsample_layer<TensorDataType, Layout, Device>::bp_compute_dnn()
 #ifndef LBANN_HAS_DNN_LIB
   LBANN_ERROR("DNN library not detected");
 #else
-  // // Initialize GPU workspace
-  // El::Matrix<TensorDataType, El::Device::GPU> workspace;
-  // size_t workspace_size =
-  //   dnn_lib::get_upsample_ws_size(m_upsample_dnn_desc,
-  //                                m_tensors_dnn_desc.get_activations());
-  // workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+  using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
+  const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
+  auto& local_gradient_wrt_input = this->get_local_error_signals();
+  if (local_gradient_wrt_output.Height() > 0 && local_gradient_wrt_output.Width() > 0) {
 
-  // using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
-  // const auto& local_input = this->get_local_prev_activations();
-  // const auto& local_output = this->get_local_activations();
-  // const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
-  // auto& local_gradient_wrt_input = this->get_local_error_signals();
-  // if (local_input.Height() > 0 && local_input.Width() > 0) {
+    // Useful constants
+    const auto alpha = El::To<ScalingType>(get_linear_size(m_scale_factors));
+    const auto zero = El::TypeTraits<ScalingType>::Zero();
 
-  //   // Useful constants
-  //   const auto one = El::TypeTraits<ScalingType>::One();
-  //   const auto zero = El::TypeTraits<ScalingType>::Zero();
-
-  //   // Perform backprop on GPU
-  //   dnn_lib::upsample_backward(m_upsample_dnn_desc,
-  //                             one,
-  //                             m_tensors_dnn_desc.get_activations(),
-  //                             local_output,
-  //                             m_tensors_dnn_desc.get_prev_error_signals(),
-  //                             local_gradient_wrt_output,
-  //                             m_tensors_dnn_desc.get_prev_activations(),
-  //                             local_input,
-  //                             zero,
-  //                             m_tensors_dnn_desc.get_error_signals(),
-  //                             local_gradient_wrt_input,
-  //                             workspace);
-  // }
+    // Perform backprop on GPU
+    dnn_lib::upsample_nearest_backward(m_pooling_dnn_desc,
+                                       alpha,
+                                       m_tensors_dnn_desc.get_prev_error_signals(),
+                                       local_gradient_wrt_output,
+                                       zero,
+                                       m_tensors_dnn_desc.get_error_signals(),
+                                       local_gradient_wrt_input);
+  }
 #endif // #ifndef LBANN_HAS_DNN_LIB
 }
 

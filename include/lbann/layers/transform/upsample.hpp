@@ -247,13 +247,15 @@ protected:
     LBANN_ERROR("DNN library not detected");
 #else
 
-    // // Set upsample descriptor
-    // m_upsample_dnn_desc.set(m_pool_mode,
-    //                        dnn_lib::DNN_PROPAGATE_NAN,
-    //                        m_pool_dims.size(),
-    //                        m_pool_dims.data(),
-    //                        m_pads.data(),
-    //                        m_strides.data());
+    // Set upsample descriptor
+    int ndims = m_scale_factors.size();
+    std::vector<int> padding(ndims, 0);
+    m_pooling_dnn_desc.set(pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING,
+                           dnn_lib::DNN_PROPAGATE_NAN,
+                           ndims,
+                           m_scale_factors.data(),
+                           padding.data(),
+                           m_scale_factors.data());
 
 #endif // #ifndef LBANN_HAS_DNN_LIB
   }
