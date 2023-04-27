@@ -293,7 +293,7 @@ template <typename T, El::Device D>
 void dft_abs_layer<T, D>::bp_compute()
 {
   using LocalMatT = El::Matrix<T, D>;
-  pimpl_->setup_fp(
+  pimpl_->setup_bp(
     static_cast<LocalMatT const&>(this->get_local_prev_error_signals()));
   pimpl_->do_bp_compute(
     static_cast<LocalMatT const&>(this->get_local_prev_error_signals()),
