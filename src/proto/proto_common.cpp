@@ -733,14 +733,9 @@ void read_prototext_file(const std::string& fn,
                          lbann_data::LbannPB& pb,
                          const bool master)
 {
-  std::ostringstream err;
   int fd = open(fn.c_str(), O_RDONLY);
   if (fd == -1) {
-    if (master) {
-      err << __FILE__ << " " << __LINE__ << " :: failed to open " << fn
-          << " for reading";
-      throw lbann_exception(err.str());
-    }
+    LBANN_ERROR("failed to open ", fn, " for reading");
   }
   using FIS = google::protobuf::io::FileInputStream;
   auto input = std::unique_ptr<FIS, std::function<void(FIS*)>>(
@@ -751,11 +746,17 @@ void read_prototext_file(const std::string& fn,
     });
   bool success = google::protobuf::TextFormat::Parse(input.get(), &pb);
   if (!success) {
-    if (master) {
-      err << __FILE__ << " " << __LINE__
-          << " :: failed to read or parse prototext file: " << fn << std::endl;
-      throw lbann_exception(err.str());
-    }
+    LBANN_ERROR("failed to read or parse prototext file: ", fn);
+  }
+}
+
+void read_prototext_string(const std::string& contents,
+                           lbann_data::LbannPB& pb,
+                           const bool master)
+{
+  bool success = google::protobuf::TextFormat::ParseFromString(contents, &pb);
+  if (!success) {
+    LBANN_ERROR("failed to read or parse prototext string:\n", contents);
   }
 }
 

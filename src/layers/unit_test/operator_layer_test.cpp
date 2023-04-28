@@ -183,7 +183,7 @@ TEMPLATE_LIST_TEST_CASE("OperatorLayer lifecycle",
 }
 
 TEMPLATE_LIST_TEST_CASE("Serializing operator layer with clamp operator",
-                        "[layer][operatorlayer][mpi][serialzie]",
+                        "[layer][operatorlayer][mpi][serialize]",
                         AllLayerTypes)
 {
   using LayerPtr = std::unique_ptr<lbann::Layer>;
