@@ -1022,6 +1022,11 @@ private:
   mutable bool m_distconv_enabled = false;
   mutable bool m_distconv_enabled_set = false;
   std::unique_ptr<distconv_adapter> m_dc;
+#else
+public:
+  /** @brief Indicate whether distconv is enabled. */
+  bool distconv_enabled() const { return false; }
+
 #endif // LBANN_HAS_DISTCONV
 };
 
