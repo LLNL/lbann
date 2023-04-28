@@ -997,19 +997,19 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
                    : get_activations().DistData());
 
   // Initialize output tensors
-  for (int i = 0; i < get_num_children(); ++i) {
+  if (!m_runs_inplace) {
+    for (int i = 0; i < get_num_children(); ++i) {
 #ifdef LBANN_HAS_DISTCONV
-    if (!keep_original_outputs(i))
-      continue;
+      if (!keep_original_outputs(i))
+        continue;
 #endif // LBANN_HAS_DISTCONV
-    auto& output = get_activations(i);
-    if (output.Viewing()) {
-      LBANN_ERROR(get_name(),
-                  " fp_setup_outputs should be overridden",
-                  " if it needs to handle outputs that view",
-                  " other matrices");
-    }
-    if (!m_runs_inplace) {
+      auto& output = get_activations(i);
+      if (output.Viewing()) {
+        LBANN_ERROR(get_name(),
+                    " fp_setup_outputs should be overridden",
+                    " if it needs to handle outputs that view",
+                    " other matrices");
+      }
       output.Empty(false);
       if (align_outputs) {
         output.AlignWith(alignment_dist);
@@ -1241,21 +1241,23 @@ template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::
   bp_setup_gradient_wrt_inputs(El::Int mini_batch_size)
 {
-  for (int i = 0; i < get_num_parents(); ++i) {
+  if (!m_runs_inplace) {
+    for (int i = 0; i < get_num_parents(); ++i) {
 #ifdef LBANN_HAS_DISTCONV
-    if (!keep_original_gradient_wrt_inputs(i))
-      continue;
+      if (!keep_original_gradient_wrt_inputs(i))
+        continue;
 #endif // LBANN_HAS_DISTCONV
-    auto& gradient_wrt_input = get_error_signals(i);
-    if (gradient_wrt_input.Viewing()) {
-      LBANN_ERROR(get_name(),
-                  " bp_setup_gradient_wrt_inputs should be overridden",
-                  " if it needs to handle error signals that view other",
-                  "  matrices");
+      auto& gradient_wrt_input = get_error_signals(i);
+      if (gradient_wrt_input.Viewing()) {
+        LBANN_ERROR(get_name(),
+                    " bp_setup_gradient_wrt_inputs should be overridden",
+                    " if it needs to handle error signals that view other",
+                    "  matrices");
+      }
+      gradient_wrt_input.Empty(false);
+      gradient_wrt_input.AlignWith(get_prev_activations(i));
+      gradient_wrt_input.Resize(get_input_size(i), mini_batch_size);
     }
-    gradient_wrt_input.Empty(false);
-    gradient_wrt_input.AlignWith(get_prev_activations(i));
-    gradient_wrt_input.Resize(get_input_size(i), mini_batch_size);
   }
 }
 

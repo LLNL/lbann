@@ -37,7 +37,7 @@ namespace lbann {
  *  @f[ \log(\sigma(x)) = -\log(1 + e^{-x}) @f]
  *  See https://en.wikipedia.org/wiki/Sigmoid_function.
  */
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(LogSigmoid, "log sigmoid");
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(LogSigmoid, "log sigmoid", true);
 
 /** @class lbann::selu_layer
  *  @brief Scaled exponential rectified linear unit.
@@ -56,7 +56,7 @@ LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(LogSigmoid, "log sigmoid");
  *  Hochreiter. "Self-normalizing neural networks." In Advances in
  *  Neural Information Processing Systems, pp. 971-980. 2017.
  */
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Selu, "SELU");
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Selu, "SELU", true);
 
 /** @class lbann::sigmoid_layer
  *  @brief Special case of logistic function.
@@ -64,7 +64,7 @@ LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Selu, "SELU");
  *  @f[ \sigma(x) = \frac{1}{1 + e^{-x}} @f]
  *  See https://en.wikipedia.org/wiki/Sigmoid_function.
  */
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Sigmoid, "sigmoid");
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Sigmoid, "sigmoid", true);
 // Sigmoid function output is strictly in (0,1)
 // Note: Output is in the range [eps,1-eps], where 'eps' is machine
 // epsilon. This avoids denormalized floats and helps mitigate some
@@ -77,14 +77,14 @@ LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Sigmoid, "sigmoid");
  *  @f[ \text{softplus}(x) = \log (e^x + 1) @f]
  *  See https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Softplus, "softplus");
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Softplus, "softplus", true);
 
 /** @class lbann::softsign_layer
  *  @brief Smooth approximation to sign function.
  *
  *  @f[ \text{softsign}(x) = \frac{x}{1 + |x|} @f]
  */
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Softsign, "softsign");
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Softsign, "softsign", true);
 
 } // namespace lbann
 

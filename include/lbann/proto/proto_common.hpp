@@ -93,6 +93,11 @@ void read_prototext_file(const std::string& fn,
                          ::lbann_data::LbannPB& pb,
                          const bool master);
 
+/** @brief Read prototext from a string into a protobuf message. */
+void read_prototext_string(const std::string& contents,
+                           lbann_data::LbannPB& pb,
+                           const bool master);
+
 /** @brief Write a protobuf message into a prototext file. */
 bool write_prototext_file(const std::string& fn, ::lbann_data::LbannPB& pb);
 

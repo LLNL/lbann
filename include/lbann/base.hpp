@@ -200,6 +200,16 @@ enum class matrix_format
   invalid
 };
 
+/// Backpropagation requirements from a layer or operator
+enum BackpropRequirements
+{
+  NO_REQUIREMENTS = 0,
+  ERROR_SIGNALS = 1,    // Error signals from child layers
+  PREV_ACTIVATIONS = 2, // Input activations from forward pass
+  ACTIVATIONS = 4,      // Output activations from forward pass
+  WEIGHTS = 8,          // Weights
+};
+
 /// @todo This should move to hydrogen
 std::string to_string(El::Device const& d);
 El::Device device_from_string(std::string const& str);

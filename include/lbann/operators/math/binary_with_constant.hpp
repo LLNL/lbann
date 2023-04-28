@@ -52,7 +52,9 @@
 
 // These are all single-type operators.
 
-#define LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(OP_NAME, OP_STRING)        \
+#define LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(OP_NAME,                   \
+                                                    OP_STRING,                 \
+                                                    NEEDS_PREVACTS)            \
   template <typename DataT, El::Device D>                                      \
   class OP_NAME##Operator final                                                \
     : public Cloneable<OP_NAME##Operator<DataT, D>,                            \
@@ -76,9 +78,11 @@
     OP_NAME##Operator& operator=(OP_NAME##Operator&&) = default;               \
     OP_NAME##Operator& operator=(OP_NAME##Operator const&) = default;          \
     ~OP_NAME##Operator() = default;                                            \
-    std::string get_type() const final                                         \
+    std::string get_type() const final { return OP_STRING; }                   \
+    int get_backprop_requirements() const final                                \
     {                                                                          \
-      return OP_STRING;                                                        \
+      return ((NEEDS_PREVACTS) ? (ERROR_SIGNALS | PREV_ACTIVATIONS)            \
+                               : ERROR_SIGNALS);                               \
     }                                                                          \
     template <typename ArchiveT>                                               \
     void serialize(ArchiveT& ar)                                               \
@@ -88,10 +92,7 @@
                             ::cereal::base_class<OperatorType>(this)),         \
          CEREAL_NVP(m_constant));                                              \
     }                                                                          \
-    DataT get_constant() const noexcept                                        \
-    {                                                                          \
-      return m_constant;                                                       \
-    }                                                                          \
+    DataT get_constant() const noexcept { return m_constant; }                 \
                                                                                \
   private:                                                                     \
     void                                                                       \
@@ -121,33 +122,43 @@
 namespace lbann {
 
 // x + c -- treated as commutative.
-LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(AddConstant, "add constant");
+LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(AddConstant, "add constant", false);
 
 // x + c -- treated as commutative.
-LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(Scale, "scale");
+LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(Scale, "scale", false);
 
 // x - C -- yes, could be "plus -C", but so could 7-4 be 7+-4, but
 // nobody writes that.
 LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(SubtractConstant,
-                                            "subtract constant");
+                                            "subtract constant",
+                                            false);
 // C - x -- yes, could be "negative-x plus C", but again, why write
 // -4+7 when you could just write 7-4...
 LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(ConstantSubtract,
-                                            "subtract from constant");
+                                            "subtract from constant",
+                                            false);
 
-LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(MaxConstant, "max constant");
-LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(MinConstant, "min constant");
+LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(MaxConstant, "max constant", true);
+LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(MinConstant, "min constant", true);
 
-LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(EqualConstant, "equals constant");
+LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(EqualConstant,
+                                            "equals constant",
+                                            false);
 LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(NotEqualConstant,
-                                            "not equals constant");
+                                            "not equals constant",
+                                            false);
 LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(LessEqualConstant,
-                                            "less-equals constant");
-LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(LessConstant, "less than constant");
+                                            "less-equals constant",
+                                            false);
+LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(LessConstant,
+                                            "less than constant",
+                                            false);
 LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(GreaterEqualConstant,
-                                            "greater-equals constant");
+                                            "greater-equals constant",
+                                            false);
 LBANN_DECLARE_BINARY_WITH_CONSTANT_OPERATOR(GreaterConstant,
-                                            "greater than constant");
+                                            "greater than constant",
+                                            false);
 
 } // namespace lbann
 #endif // LBANN_INCLUDE_LBANN_OPERATORS_BINARY_WITH_CONSTANT_HPP_INCLUDED

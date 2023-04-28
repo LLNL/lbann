@@ -34,49 +34,59 @@ namespace lbann {
 // These are all single-type operators.
 
 // Logical operations
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(LogicalNot, "logical not");
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(LogicalNot, "logical not", false);
 
 // Sign operations
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Negative, "negative");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Sign, "sign");
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Negative, "negative", false);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Sign, "sign", false);
 
 // Rounding operations
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Round, "round");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Ceil, "ceil");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Floor, "floor");
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Round, "round", false);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Ceil, "ceil", false);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Floor, "floor", false);
 
 // Power operations
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Reciprocal, "reciprocal");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Square, "square");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Sqrt, "square root");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Rsqrt, "reciprocal square root");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(SafeReciprocal, "safe reciprocal");
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Reciprocal, "reciprocal", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Square, "square", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Sqrt, "square root", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Rsqrt,
+                                             "reciprocal square root",
+                                             true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(SafeReciprocal,
+                                             "safe reciprocal",
+                                             true);
 
 // Exponential and logarithmic operations
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Exp, "exponential");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Expm1, "expm1");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Log, "natural logarithm");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Log1p, "log1p");
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Exp, "exponential", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Expm1, "expm1", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Log, "natural logarithm", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Log1p, "log1p", true);
 
 // Trigonometric operations
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Cos, "cosine");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Sin, "sine");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Tan, "tangent");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Acos, "arccosine");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Asin, "arcsine");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Atan, "arctangent");
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Cos, "cosine", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Sin, "sine", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Tan, "tangent", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Acos, "arccosine", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Asin, "arcsine", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Atan, "arctangent", true);
 
 // Hyperbolic operations
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Cosh, "hyperbolic cosine");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Sinh, "hyperbolic sine");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Tanh, "hyperbolic tangent");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Acosh, "hyperbolic arccosine");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Asinh, "hyperbolic arcsine");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Atanh, "hyperbolic arctangent");
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Cosh, "hyperbolic cosine", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Sinh, "hyperbolic sine", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Tanh, "hyperbolic tangent", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Acosh,
+                                             "hyperbolic arccosine",
+                                             true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Asinh, "hyperbolic arcsine", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Atanh,
+                                             "hyperbolic arctangent",
+                                             true);
 
 // Error function
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Erf, "error function");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(ErfInv, "inverse error function");
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Erf, "error function", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(ErfInv,
+                                             "inverse error function",
+                                             true);
 
 } // namespace lbann
 

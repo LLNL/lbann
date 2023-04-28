@@ -538,18 +538,25 @@ void Layer::setup_pointers()
   else {
     bool can_run_inplace = true;
 
-    // If any of the parents needs its output activations for
-    // backprop, this layer cannot run in-place.
-    for (int i = 0; i < get_num_parents(); ++i) {
-      const auto& parent = get_parent_layer(i);
-
-      int bp_requirements = parent.get_backprop_requirements();
-      if (bp_requirements & ACTIVATIONS) {
-        can_run_inplace = false;
-        break;
-      }
+    // If a layer needs its own previous activations for backprop, it cannot
+    // run in-place
+    if (this->get_backprop_requirements() & PREV_ACTIVATIONS) {
+      can_run_inplace = false;
     }
 
+    if (can_run_inplace) {
+      // If any of the parents needs its output activations for
+      // backprop, this layer cannot run in-place.
+      for (int i = 0; i < get_num_parents(); ++i) {
+        const auto& parent = get_parent_layer(i);
+
+        int bp_requirements = parent.get_backprop_requirements();
+        if (bp_requirements & ACTIVATIONS) {
+          can_run_inplace = false;
+          break;
+        }
+      }
+    }
     this->m_runs_inplace = can_run_inplace;
   }
 }

@@ -265,15 +265,6 @@ enum SubGraphCommunication
   COLL_OPT = 2
 };
 
-enum BackpropRequirements
-{
-  NO_REQUIREMENTS = 0,
-  ERROR_SIGNALS = 1,    // Error signals from child layers
-  PREV_ACTIVATIONS = 2, // Input activations from forward pass
-  ACTIVATIONS = 4,      // Output activations from forward pass
-  WEIGHTS = 8,          // Weights
-};
-
 /**
  * @brief Neural network tensor operation.
  *
