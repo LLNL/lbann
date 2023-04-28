@@ -877,9 +877,8 @@ void model::check_subgraph_parallelism()
   // Enables sub-graph parallelism if a layer has a sub-graph tag greater than
   // zero
   const auto& layers = this->get_layers();
-  const El::Int num_layers = layers.size();
-  for (El::Int node = 0; node < num_layers; ++node) {
-    if (layers[node]->get_grid_tag() != 0) {
+  for (auto const& l : layers) {
+    if (l->get_grid_tag() > 0) {
       this->enable_subgraph_parallelism();
       break;
     }
