@@ -224,6 +224,10 @@ description Layer::get_description() const
     desc.add("Frozen");
   }
 
+  if (this->m_runs_inplace) {
+    desc.add("In-place");
+  }
+
 #ifdef LBANN_HAS_DISTCONV
   if (distconv_enabled()) {
     const auto& ps = get_parallel_strategy();
@@ -524,6 +528,29 @@ void Layer::setup_pointers()
                 " (",
                 get_child_names(),
                 ")");
+  }
+
+  // Set whether this layer will run in-place
+  if (!this->can_run_inplace() || this->distconv_enabled()) {
+    // TODO (later): Support distconv-enabled layers
+    this->m_runs_inplace = false;
+  }
+  else {
+    bool can_run_inplace = true;
+
+    // If any of the parents needs its output activations for
+    // backprop, this layer cannot run in-place.
+    for (int i = 0; i < get_num_parents(); ++i) {
+      const auto& parent = get_parent_layer(i);
+
+      int bp_requirements = parent.get_backprop_requirements();
+      if (bp_requirements & ACTIVATIONS) {
+        can_run_inplace = false;
+        break;
+      }
+    }
+
+    this->m_runs_inplace = can_run_inplace;
   }
 }
 
