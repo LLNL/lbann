@@ -30,7 +30,6 @@
 #include "TestHelpers.hpp"
 
 #include <lbann/base.hpp>
-#include <lbann/layers/activations/identity.hpp>
 #include <lbann/layers/activations/relu.hpp>
 #include <lbann/layers/data_type_layer.hpp>
 #include <lbann/metrics/metric.hpp>
@@ -65,10 +64,6 @@ const std::string boilerplate_footer = R"""(
         values: 3.4
         values: -5.67
       }
-    }
-  }
-  callback {
-    print_model_description {
     }
   }
 }
@@ -109,17 +104,33 @@ const std::string one_layer = boilerplate_header + R"""(
 using unit_test::utilities::IsValidPtr;
 TEST_CASE("Simple in-place test", "[layer][inplace]")
 {
+#ifdef LBANN_HAS_GPU
+  using reluT = lbann::
+    relu_layer<float, lbann::data_layout::DATA_PARALLEL, El::Device::GPU>;
+#else
+  using reluT = lbann::
+    relu_layer<float, lbann::data_layout::DATA_PARALLEL, El::Device::CPU>;
+#endif
+
   auto my_model = setup_model(one_layer);
 
   // Get the ReLU layer and ensure it is in-place
-  const auto& relu_layer = my_model->get_layer(1);
-  REQUIRE(relu_layer.get_type() == "ReLU");
-  REQUIRE(relu_layer.runs_inplace());
+  auto const& layer = my_model->get_layer(1);
+  REQUIRE(layer.get_type() == "ReLU");
+  REQUIRE(layer.runs_inplace());
 
-  // Test the number of allocated buffers
-
-  // Run through the model (fprop/bprop) and ensure the activations and
+  // Run through the model and ensure the activations and
   // gradients are propagated correctly
+  my_model->forward_prop(lbann::execution_mode::training);
+
+  const reluT* relu = dynamic_cast<const reluT*>(&layer);
+  REQUIRE(relu != nullptr);
+
+  // Check activations
+  auto const& act = relu->get_activations();
+  CHECK(act.Get(0, 0) == 0.0f);
+  CHECK(fabs(act.Get(1, 0) - 3.4f) <= 1e-6);
+  CHECK(act.Get(2, 0) == 0.0f);
 }
 
 const std::string cannot_run_inplace = boilerplate_header + R"""(
