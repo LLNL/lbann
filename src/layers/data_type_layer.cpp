@@ -104,9 +104,15 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
   }
 
   // Setup tensors
-  const auto& c =
-    static_cast<SGDExecutionContext&>(m_model->get_execution_context());
-  const auto& mini_batch_size = c.get_current_mini_batch_size();
+  size_t mini_batch_size;
+  if (m_model->has_valid_execution_context()) {
+    const auto& c =
+      static_cast<SGDExecutionContext&>(m_model->get_execution_context());
+    mini_batch_size = c.get_current_mini_batch_size();
+  }
+  else {
+    mini_batch_size = m_model->get_max_mini_batch_size();
+  }
   fp_setup_inputs(mini_batch_size);
   fp_setup_outputs(mini_batch_size);
 
@@ -152,9 +158,15 @@ void data_type_layer<InputTensorDataType,
   const auto bp_start = get_time();
 
   // Setup tensors
-  const auto& c =
-    static_cast<SGDExecutionContext&>(m_model->get_execution_context());
-  const auto& mini_batch_size = c.get_current_mini_batch_size();
+  size_t mini_batch_size;
+  if (m_model->has_valid_execution_context()) {
+    const auto& c =
+      static_cast<SGDExecutionContext&>(m_model->get_execution_context());
+    mini_batch_size = c.get_current_mini_batch_size();
+  }
+  else {
+    mini_batch_size = m_model->get_max_mini_batch_size();
+  }
   bp_setup_gradient_wrt_inputs(mini_batch_size);
 
 #if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)

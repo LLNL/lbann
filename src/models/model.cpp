@@ -220,13 +220,9 @@ void model::serialize(Archive& ar)
     CEREAL_NVP(m_objective_function),
     CEREAL_NVP(m_metrics),
     // CEREAL_NVP(m_callbacks),
-    CEREAL_NVP(m_background_io_allowed)
-  // CEREAL_NVP(m_model_is_setup)
-#ifdef LBANN_HAS_DISTCONV
-      ,
-    CEREAL_NVP(m_max_mini_batch_size_distconv)
-#endif // LBANN_HAS_DISTCONV
-  );
+    CEREAL_NVP(m_background_io_allowed),
+    // CEREAL_NVP(m_model_is_setup),
+    CEREAL_NVP(m_max_mini_batch_size));
 
   ar.serializeDeferments();
   if constexpr (utils::IsInputArchive<Archive>)
@@ -750,8 +746,9 @@ void model::setup(size_t max_mini_batch_size,
       cb->setup(this);
   }
 
+  m_max_mini_batch_size = max_mini_batch_size;
+
 #ifdef LBANN_HAS_DISTCONV
-  m_max_mini_batch_size_distconv = max_mini_batch_size;
   setup_distconv();
 #endif
 

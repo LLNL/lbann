@@ -458,11 +458,8 @@ public:
   void do_weight_optimize_begin_cbs(weights* w);
   /** @brief Execute callbacks at the end of weight optimization. */
   void do_weight_optimize_end_cbs(weights* w);
-
-#ifdef LBANN_HAS_DISTCONV
-  /* @brief Return the maximum mini-batch size used by Distconv. */
-  size_t get_max_mini_batch_size_distconv() const noexcept;
-#endif
+  /** @brief Return the maximum mini-batch size. */
+  size_t get_max_mini_batch_size() const noexcept;
 
 private:
   friend cereal::access;
@@ -595,18 +592,16 @@ private:
 
   void ensure_input_layers_first();
 
+  /** @brief The maximum mini-batch size.
+   *  @details This should be set before setup_distconv() is called.
+   */
+  size_t m_max_mini_batch_size;
+
 #ifdef LBANN_HAS_DISTCONV
 private:
   void setup_distconv();
   void setup_distributions();
   void print_distributions() const;
-
-private:
-  /** @brief The maximum mini-batch size used by Distconv.
-   *  @details This should be set before setup_distconv() is called.
-   */
-  size_t m_max_mini_batch_size_distconv;
-
 #endif // LBANN_HAS_DISTCONV
 };     // class model
 
@@ -738,12 +733,10 @@ inline void model::set_num_resources_branch_layers(int num) noexcept
   num_resources_branch_layers = num;
 }
 
-#ifdef LBANN_HAS_DISTCONV
-inline size_t model::get_max_mini_batch_size_distconv() const noexcept
+inline size_t model::get_max_mini_batch_size() const noexcept
 {
-  return m_max_mini_batch_size_distconv;
+  return m_max_mini_batch_size;
 }
-#endif
 
 } // namespace lbann
 

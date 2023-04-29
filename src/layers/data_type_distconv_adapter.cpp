@@ -1177,7 +1177,7 @@ template <typename InputTensorDataType, typename OutputTensorDataType>
 size_t data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
   get_max_mini_batch_size() const
 {
-  return layer().get_model()->get_max_mini_batch_size_distconv();
+  return layer().get_model()->get_max_mini_batch_size();
 }
 
 #define PROTO(T) template class data_type_distconv_adapter<T>
