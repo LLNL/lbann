@@ -34,6 +34,7 @@
 
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/layers/data_type_distconv_adapter.hpp"
+namespace dc_backend = ::distconv::backend;
 #endif // LBANN_HAS_DISTCONV
 
 #include "lbann/proto/layers.pb.h"
@@ -382,95 +383,7 @@ upsample_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 bool upsample_layer<TensorDataType, T_layout, Dev>::is_distconv_supported() const
 {
-  if (Dev != El::Device::GPU || T_layout != data_layout::DATA_PARALLEL) {
-    return false;
-  }
-
-  bool cond = true;
-  for (int i = 0; i < dc::get_num_spatial_dims(*this); i++) {
-    cond &= (m_pool_dims[i] % 2 != 0) || (m_pool_dims[i] == m_strides[i]);
-  }
-  if (!cond) {
-    dc::MPIPrintStreamDebug() << "upsample: unsupported due to window shape: "
-                              << dc::util::join_xd_array(m_pool_dims);
-    return false;
-  }
-
-  for (int i = 0; i < dc::get_num_spatial_dims(*this); i++) {
-    bool odd = m_pool_dims[i] % 2;
-    if (odd) {
-      int stencil = (m_pool_dims[i] - 1) / 2;
-      if (!(m_pads[i] == 0 || m_pads[i] == stencil)) {
-        dc::MPIPrintStreamDebug()
-          << "upsample: unsupported due to padding: " << m_pads[i];
-        return false;
-      }
-      if (!(m_strides[i] == 1 || m_strides[i] == stencil + 1)) {
-        dc::MPIPrintStreamDebug() << "upsample: unsupported due to strides";
-        return false;
-      }
-    }
-    else {
-      if (m_pads[i] != 0)
-        return false;
-      if (m_pool_dims[i] != m_strides[i])
-        return false;
-    }
-  }
-
-  return true;
-}
-
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void upsample_distconv_adapter<TensorDataType, T_layout, Dev>::
-  setup_distributions(tensor_overlap_constraints& constraints)
-{
-  data_type_distconv_adapter<TensorDataType>::setup_distributions(constraints);
-  const auto& l =
-    dynamic_cast<const upsample_layer<TensorDataType, T_layout, Dev>&>(
-      this->layer());
-  dc::IntVector overlap(dc::get_num_dims(l), 0);
-  const auto& ps = l.get_parallel_strategy();
-  auto pool_dims = l.m_pool_dims;
-  std::reverse(pool_dims.begin(), pool_dims.end());
-  for (int i = 0; i < dc::get_num_spatial_dims(l); i++) {
-    int splits = 0;
-    switch (i) {
-    case 0:
-      splits = ps.width_splits;
-      break;
-    case 1:
-      splits = ps.height_splits;
-      break;
-    case 2:
-      splits = ps.depth_splits;
-      break;
-    }
-    if (splits == 1)
-      continue;
-    int ov = 0;
-    if (pool_dims[i] % 2) {
-      ov = (pool_dims[i] - 1) / 2;
-    }
-    else {
-      // no halo dependency is assumed for now
-      ov = 0;
-    }
-    overlap[i] = ov;
-  }
-  auto& prev_activations_dist = this->get_prev_activations_dist();
-  auto& activations_dist = this->get_activations_dist();
-  auto& error_signals_dist = this->get_error_signals_dist();
-  auto& prev_error_signals_dist = this->get_prev_error_signals_dist();
-  prev_activations_dist.set_overlap(overlap);
-  constraints.mark_updated(prev_activations_dist);
-  constraints.mark_invariant(prev_activations_dist);
-  // cudnnPoolingBackward requires activations and
-  // prev_error_signals must have the same stride
-  constraints.mark_equivalent(activations_dist, prev_error_signals_dist);
-  // cudnnPoolingBackward requires prev_activations and
-  // error_signals must have the same stride
-  constraints.mark_equivalent(error_signals_dist, prev_activations_dist);
+  return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -481,19 +394,12 @@ dc::Shape upsample_distconv_adapter<TensorDataType, Layout, Device>::
   const auto& layer =
     dynamic_cast<const upsample_layer<TensorDataType, Layout, Device>&>(
       this->layer());
-  auto filter_dims = layer.m_pool_dims;
-  std::reverse(std::begin(filter_dims), std::end(filter_dims));
-  auto strides = layer.m_strides;
-  std::reverse(std::begin(strides), std::end(strides));
-  const std::vector<int> dilations(dc::get_num_spatial_dims(layer), 1);
-  bool use_padding = layer.m_pads[0] != 0;
-  auto output_spatial_local_shape =
-    ::distconv::get_upsample_output_local_tensor_shape(
-      this->get_prev_activations(),
-      filter_dims,
-      strides,
-      use_padding,
-      dilations);
+  auto scale_factors = layer.m_scale_factors;
+  std::reverse(std::begin(scale_factors), std::end(scale_factors));
+  auto output_spatial_local_shape = this->get_prev_activations(index).get_local_shape();
+  for (size_t i = 0; i < scale_factors.size(); i++) {
+    output_spatial_local_shape[i] *= scale_factors[i];
+  }
   return output_spatial_local_shape;
 }
 
@@ -501,70 +407,83 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void upsample_distconv_adapter<TensorDataType, Layout, Device>::setup_layer(
   size_t workspace_capacity)
 {
+  m_xdesc.create();
+  m_ydesc.create();
+  m_dxdesc.create();
+  m_dydesc.create();
+
   auto& l =
     dynamic_cast<upsample_layer<TensorDataType, Layout, Device>&>(this->layer());
 
-  // Init the dc::Pooling layer
-  m_upsample = std::make_unique<dc::Pooling<TensorDataType>>(
-    dc::get_backend(),
-    dc::get_num_dims(l),
-    dc::get_halo_exchange_method());
-
   std::string mode;
-  switch (l.m_pool_mode) {
-  case upsample_mode::MAX:
-    mode = "MAX";
-    break;
-  case upsample_mode::MAX_DETERMINISTIC:
-    mode = "MAX";
-    break;
-  case upsample_mode::AVERAGE_COUNT_INCLUDE_PADDING:
-    mode = "AVERAGE";
-    break;
-  case upsample_mode::AVERAGE_COUNT_EXCLUDE_PADDING:
-    mode = "AVERAGE_NO_PAD";
+  switch (l.m_upsample_mode) {
+  case upsample_mode::NEAREST:
+    mode = "nearest";
     break;
   default:
     LBANN_ERROR("upsample_layer: no DISTCONV implementation for upsample mode");
   }
-
-  std::vector<int> pool_dims = l.m_pool_dims;
-  std::reverse(pool_dims.begin(), pool_dims.end());
-  std::vector<int> pads = l.m_pads;
-  std::reverse(pads.begin(), pads.end());
-  std::vector<int> strides = l.m_strides;
-  std::reverse(strides.begin(), strides.end());
-
-  m_upsample->setup(this->get_prev_activations(),
-                   this->get_activations(),
-                   this->get_error_signals(),
-                   this->get_prev_error_signals(),
-                   pool_dims,
-                   pads,
-                   strides,
-                   mode);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void upsample_distconv_adapter<TensorDataType, Layout, Device>::fp_compute(
   bool const training)
 {
-  m_upsample->forward(El::To<TensorDataType>(1),
-                     this->get_prev_activations(),
-                     El::To<TensorDataType>(0),
-                     this->get_activations(),
-                     training);
+  auto& l =
+    dynamic_cast<upsample_layer<TensorDataType, Layout, Device>&>(this->layer());
+
+  auto& prev_activations = this->get_prev_activations();
+  auto& activations = this->get_activations();
+
+  auto xdesc = const_cast<dnn_lib::dnnTensorDescriptor_t>(m_xdesc.get());
+  auto ydesc = const_cast<dnn_lib::dnnTensorDescriptor_t>(m_ydesc.get());
+  dc_backend::setup_tensor_descriptor(xdesc, prev_activations,
+                                      prev_activations.get_local_shape());
+  dc_backend::setup_tensor_descriptor(ydesc, activations,
+                                      activations.get_local_shape());
+
+  using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
+  const auto zero = El::TypeTraits<ScalingType>::Zero();
+  const auto alpha = El::To<ScalingType>(get_linear_size(l.m_scale_factors));
+  
+  dnn_lib::upsample_nearest_forward(l.m_pooling_dnn_desc,
+                                    alpha,
+                                    m_xdesc,
+                                    prev_activations.get_const_base_ptr(),
+                                    zero,
+                                    m_ydesc,
+                                    activations.get_base_ptr(),
+                                    dc::get_backend().get_handle());
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void upsample_distconv_adapter<TensorDataType, Layout, Device>::bp_compute()
 {
-  m_upsample->backward(El::To<TensorDataType>(1),
-                      this->get_activations(),
-                      this->get_prev_error_signals(),
-                      this->get_prev_activations(),
-                      El::To<TensorDataType>(0),
-                      this->get_error_signals());
+  auto& l =
+    dynamic_cast<upsample_layer<TensorDataType, Layout, Device>&>(this->layer());
+
+  auto& prev_error_signals = this->get_prev_error_signals();
+  auto& error_signals = this->get_error_signals();
+
+  auto dxdesc = const_cast<dnn_lib::dnnTensorDescriptor_t>(m_dxdesc.get());
+  auto dydesc = const_cast<dnn_lib::dnnTensorDescriptor_t>(m_dydesc.get());
+  dc_backend::setup_tensor_descriptor(dxdesc, error_signals,
+                                      error_signals.get_local_shape());
+  dc_backend::setup_tensor_descriptor(dydesc, prev_error_signals,
+                                      prev_error_signals.get_local_shape());
+
+  using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
+  const auto zero = El::TypeTraits<ScalingType>::Zero();
+  const auto alpha = El::To<ScalingType>(get_linear_size(l.m_scale_factors));
+
+  dnn_lib::upsample_nearest_backward(l.m_pooling_dnn_desc,
+                                     alpha,
+                                     m_dydesc,
+                                     prev_error_signals.get_const_base_ptr(),
+                                     zero,
+                                     m_dxdesc,
+                                     error_signals.get_base_ptr(),
+                                     dc::get_backend().get_handle());
 }
 #endif // LBANN_HAS_DISTCONV
 
