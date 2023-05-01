@@ -137,7 +137,9 @@ class FluxBatchScript(BatchScript):
         args.append(f'-o gpu-affinity=per-task')
         args.append(f'-o cpu-affinity=per-task')
         args.append(f'-o nosetpgrp')
-
+        use_this_rccl=os.getenv('LBANN_USE_THIS_RCCL')
+        if use_this_rccl is not None:
+            args.append(f'--env=LD_PRELOAD=' + use_this_rccl)
         if time_limit is not None:
             args.append(f'--time={_time_string(time_limit)}')
         if job_name:

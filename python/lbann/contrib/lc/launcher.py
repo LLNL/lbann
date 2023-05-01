@@ -96,6 +96,9 @@ def make_batch_script(
         prepend_environment_path('LD_LIBRARY_PATH', os.getenv('CRAY_LD_LIBRARY_PATH'))
         if os.getenv('ROCM_PATH') is not None:
             prepend_environment_path('LD_LIBRARY_PATH', os.path.join(os.getenv('ROCM_PATH'), 'llvm', 'lib'))
+        different_ofi_plugin = os.getenv('LBANN_USE_THIS_OFI_PLUGIN')
+        if different_ofi_plugin is not None:
+            prepend_environment_path('LD_LIBRARY_PATH', different_ofi_plugin)
 
     # Optimizations for Sierra-like systems
     if system in ('sierra', 'lassen', 'rzansel'):
