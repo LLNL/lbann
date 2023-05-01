@@ -42,7 +42,6 @@
 #include <vector>
 
 #ifdef LBANN_HAS_DISTCONV
-#include "distconv/dnn_backend/upsample.hpp"
 #include "lbann/utils/distconv.hpp"
 #endif // LBANN_HAS_DISTCONV
 
@@ -66,8 +65,6 @@ inline upsample_mode to_upsample_mode(std::string m)
 namespace dc {
 using Shape = ::distconv::tensor::Shape;
 using Backend = ::distconv::BackendDNNLib;
-template <typename TensorDataType>
-using Pooling = ::distconv::Pooling<Backend, TensorDataType>;
 } // namespace dc
 
 template <typename TensorDataType,
@@ -83,13 +80,16 @@ public:
     : data_type_distconv_adapter<TensorDataType>(layer)
   {}
   virtual ~upsample_distconv_adapter() = default;
-  void setup_distributions(tensor_overlap_constraints& constraints) override;
   dc::Shape get_activations_local_shape(int index = 0) const override;
   void setup_layer(size_t workspace_capacity) override;
   void
   fp_compute(bool training = true); // training=true for max back-compatibility.
   void bp_compute();
-  std::unique_ptr<dc::Pooling<TensorDataType>> m_upsample;
+private:
+  dnn_lib::TensorDescriptor m_xdesc;
+  dnn_lib::TensorDescriptor m_ydesc;
+  dnn_lib::TensorDescriptor m_dxdesc;
+  dnn_lib::TensorDescriptor m_dydesc;
 };
 #endif // LBANN_HAS_DISTCONV
 
@@ -106,7 +106,7 @@ class upsample_layer : public data_type_layer<TensorDataType>
                 "upsample only supports DATA_PARALLEL");
 
 private:
-  /** Pooling mode. */
+  /** Upsample mode. */
   upsample_mode m_upsample_mode;
 
   /** Output scale factors. */
@@ -197,7 +197,7 @@ public:
     auto desc = data_type_layer<TensorDataType>::get_description();
     std::stringstream ss;
 
-    // Pool mode
+    // Upsample mode
     ss.str(std::string{});
     ss.clear();
     switch (m_upsample_mode) {
@@ -209,7 +209,7 @@ public:
     }
     desc.add("Upsample mode", ss.str());
 
-    // Pool dimensions
+    // Upsample scale factors
     ss.str(std::string{});
     ss.clear();
     for (size_t i = 0; i < m_scale_factors.size(); ++i) {
