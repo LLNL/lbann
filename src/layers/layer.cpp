@@ -531,7 +531,15 @@ void Layer::setup_pointers()
   }
 
   // Set whether this layer will run in-place
-  if (!this->can_run_inplace() || this->distconv_enabled()) {
+
+  // Check for environment variable that disables this behavior
+  bool envvar_disable_inplace = false;
+  char* no_inplace = getenv("LBANN_NO_INPLACE");
+  if (no_inplace && (std::stoi(no_inplace) == 1))
+    envvar_disable_inplace = true;
+
+  if (!this->can_run_inplace() || this->distconv_enabled() ||
+      envvar_disable_inplace) {
     // TODO (later): Support distconv-enabled layers
     this->m_runs_inplace = false;
   }
