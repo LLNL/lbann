@@ -101,7 +101,6 @@ const std::string one_layer = boilerplate_header + R"""(
   }
 )""" + boilerplate_footer;
 
-using unit_test::utilities::IsValidPtr;
 TEST_CASE("Simple in-place test", "[layer][inplace]")
 {
 #ifdef LBANN_HAS_GPU
