@@ -58,6 +58,13 @@ public:
   std::string get_type() const override { return "Hadamard"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return true; }
+  int get_backprop_requirements() const override
+  {
+    if (this->get_num_parents() > 1)
+      return ERROR_SIGNALS | PREV_ACTIVATIONS;
+    return ERROR_SIGNALS;
+  }
 
 protected:
   /** Add layer specific data to prototext */

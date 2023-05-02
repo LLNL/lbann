@@ -59,6 +59,8 @@ public:
   std::string get_type() const override { return "dummy"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
 #ifdef LBANN_HAS_ONNX
   void fill_onnx_node(onnx::GraphProto& graph) const override {}

@@ -86,6 +86,8 @@ public:
   std::string get_type() const override { return "DFT Abs"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
   description get_description() const override
   {

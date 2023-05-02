@@ -52,6 +52,8 @@ public:
     return data_layout::DATA_PARALLEL;
   }
   El::Device get_device_allocation() const final { return Dev; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
 protected:
   /** Add layer specific data to prototext */
