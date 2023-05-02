@@ -200,6 +200,11 @@ protected:
   // ===========================================================
 
   /** Get previous activation tensor. */
+  InputAbsDistMatrixType& get_prev_activations(int parent_index = 0);
+  /** Get previous error signal tensor. */
+  OutputAbsDistMatrixType& get_prev_error_signals(int child_index = 0);
+
+  /** Get previous activation tensor. */
   const InputAbsDistMatrixType&
   get_prev_activations(int parent_index = 0) const;
   /** Get previous error signal tensor. */
