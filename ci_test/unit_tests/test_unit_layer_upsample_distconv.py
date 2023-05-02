@@ -100,6 +100,9 @@ for mode in ['nearest']:
         "upsample_mode": mode
     })
 
+def create_parallel_strategy(num_height_groups):
+    return {"height_groups": num_height_groups}
+
 def construct_model(lbann):
     """Construct LBANN model.
 
@@ -131,6 +134,7 @@ def construct_model(lbann):
 
     for u in upsample_configs:
         uname = u["name"].split(" ")[0]
+        num_dims = len(u['scale_factors'])
 
         # Apply upsampling
         x = x_lbann
@@ -138,11 +142,81 @@ def construct_model(lbann):
             x = lbann.Reshape(x, dims=_sample_dims_3d)
         x = lbann.Identity(x, name=f'in_{uname}')
 
+        # Convolution settings
+        kernel_dims = [_sample_dims[0] if num_dims == 2 else _sample_dims_3d[0]]*2 + [1]*num_dims
+        strides = [1]*num_dims
+        pads = [0]*num_dims
+        dilations = [1]*num_dims
+
+        kernel = np.zeros(kernel_dims)
+        for i in range(len(kernel)):
+            if num_dims == 2:
+                kernel[i,i,0,0] = 1
+            else:
+                kernel[i,i,0,0,0] = 1
+
+        # Apply convolution
+        kernel_weights = lbann.Weights(
+            optimizer=lbann.SGD(),
+            initializer=lbann.ValueInitializer(values=np.nditer(kernel)),
+            name='kernel1_{}'.format(uname)
+        )
+
+        x = lbann.Convolution(x,
+                              weights=(kernel_weights, ),
+                              num_dims=num_dims,
+                              out_channels=kernel_dims[0],
+                              kernel_size=kernel_dims[2:],
+                              stride=strides,
+                              padding=pads,
+                              dilation=dilations,
+                              has_bias=False,
+                              parallel_strategy=create_parallel_strategy(
+                                  4),
+                              name=f'conv1_{uname}')
+
         y = lbann.Upsample(x,
                            num_dims=len(u["scale_factors"]),
                            has_vectors=True,
                            scale_factors=u["scale_factors"],
-                           upsample_mode=u['upsample_mode'])
+                           upsample_mode=u['upsample_mode'],
+                           parallel_strategy=create_parallel_strategy(4),
+                           name=f'upsample_{uname}')
+        
+
+        # Convolution settings
+        kernel_dims = [_sample_dims[0] if num_dims == 2 else _sample_dims_3d[0]]*2 + [3]*num_dims
+        strides = [1]*num_dims
+        pads = [1]*num_dims
+        dilations = [1]*num_dims
+
+        kernel = np.zeros(kernel_dims)
+        for i in range(len(kernel)):
+            if num_dims == 2:
+                kernel[i,i,1,1] = 1
+            else:
+                kernel[i,i,1,1,1] = 1
+
+        # Apply convolution
+        kernel_weights = lbann.Weights(
+            optimizer=lbann.SGD(),
+            initializer=lbann.ValueInitializer(values=np.nditer(kernel)),
+            name='kernel2_{}'.format(uname)
+        )
+
+        y = lbann.Convolution(y,
+                              weights=(kernel_weights, ),
+                              num_dims=num_dims,
+                              out_channels=kernel_dims[0],
+                              kernel_size=kernel_dims[2:],
+                              stride=strides,
+                              padding=pads,
+                              dilation=dilations,
+                              has_bias=False,
+                              parallel_strategy=create_parallel_strategy(
+                                  4),
+                              name=f'conv2_{uname}')
+        
         y = lbann.Identity(y, name=f'out_{uname}')
         z = lbann.L2Norm2(y)
 
@@ -279,5 +353,7 @@ environment['LBANN_KEEP_ERROR_SIGNALS'] = 1
 # Create test functions that can interact with PyTest
 # Note: Create test name by removing ".py" from file name
 _test_name = os.path.splitext(os.path.basename(current_file))[0]
-for _test_func in tools.create_tests(setup_experiment, _test_name, skip_clusters=["catalyst"]):
+for _test_func in tools.create_tests(setup_experiment, _test_name,
+                                     skip_clusters=["catalyst"],
+                                     environment=environment):
     globals()[_test_func.__name__] = augment_test_func(_test_func)
