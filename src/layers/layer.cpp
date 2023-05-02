@@ -30,6 +30,7 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/optimizers/optimizer.hpp"
+#include "lbann/utils/options.hpp"
 #include "lbann/utils/summary_impl.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/weights/weights.hpp"
@@ -533,11 +534,9 @@ void Layer::setup_pointers()
   // Set whether this layer will run in-place
 
   // Check for environment variable that disables this behavior
-  bool envvar_disable_inplace = false;
-  char* no_inplace = getenv("LBANN_NO_INPLACE");
-  if (no_inplace && (std::stoi(no_inplace) == 1))
-    envvar_disable_inplace = true;
-
+  auto const& arg_parser = global_argument_parser();
+  bool const envvar_disable_inplace =
+    arg_parser.get<bool>(LBANN_OPTION_NO_INPLACE);
   if (!this->can_run_inplace() || this->distconv_enabled() ||
       envvar_disable_inplace) {
     // TODO (later): Support distconv-enabled layers

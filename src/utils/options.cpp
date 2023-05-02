@@ -137,6 +137,10 @@ void construct_std_options()
                       {"--init_nvshmem"},
                       utils::ENV("LBANN_INIT_NVSHMEM"),
                       "[STD] Initialize NVSHMEM when initializing LBANN");
+  arg_parser.add_flag(LBANN_OPTION_NO_INPLACE,
+                      {"--no_inplace"},
+                      utils::ENV("LBANN_NO_INPLACE"),
+                      "[STD] Disable in-place layer memory optimization");
 
   // Input options
   arg_parser.add_option(
