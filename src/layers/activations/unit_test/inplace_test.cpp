@@ -32,6 +32,7 @@
 #include <lbann/base.hpp>
 #include <lbann/layers/activations/relu.hpp>
 #include <lbann/layers/data_type_layer.hpp>
+#include <lbann/layers/transform/dummy.hpp>
 #include <lbann/metrics/metric.hpp>
 #include <lbann/objective_functions/objective_function.hpp>
 #include <lbann/proto/lbann.pb.h>
@@ -106,23 +107,31 @@ TEST_CASE("Simple in-place test", "[layer][inplace]")
 #ifdef LBANN_HAS_GPU
   using reluT = lbann::
     relu_layer<float, lbann::data_layout::DATA_PARALLEL, El::Device::GPU>;
+  using dummyT = lbann::
+    dummy_layer<float, lbann::data_layout::DATA_PARALLEL, El::Device::GPU>;
+  using MatrixT =
+    El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::GPU>;
 #else
   using reluT = lbann::
     relu_layer<float, lbann::data_layout::DATA_PARALLEL, El::Device::CPU>;
+  using dummyT = lbann::
+    dummy_layer<float, lbann::data_layout::DATA_PARALLEL, El::Device::CPU>;
+  using MatrixT =
+    El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU>;
 #endif
 
   auto my_model = setup_model(one_layer);
 
   // Get the ReLU layer and ensure it is in-place
-  auto const& layer = my_model->get_layer(1);
+  auto& layer = my_model->get_layer(1);
   REQUIRE(layer.get_type() == "ReLU");
   REQUIRE(layer.runs_inplace());
 
-  // Run through the model and ensure the activations and
-  // gradients are propagated correctly
-  my_model->forward_prop(lbann::execution_mode::training);
+  // Run through the model and ensure the activations
+  // are propagated correctly
+  REQUIRE_NOTHROW(my_model->forward_prop(lbann::execution_mode::training));
 
-  const reluT* relu = dynamic_cast<const reluT*>(&layer);
+  reluT* relu = dynamic_cast<reluT*>(&layer);
   REQUIRE(relu != nullptr);
 
   // Check activations
@@ -130,6 +139,29 @@ TEST_CASE("Simple in-place test", "[layer][inplace]")
   CHECK(act.Get(0, 0) == 0.0f);
   CHECK(fabs(act.Get(1, 0) - 3.4f) <= 1e-6);
   CHECK(act.Get(2, 0) == 0.0f);
+
+  // Run backpropagation and check gradients:
+  // Create a sample error signal
+  auto& world_comm = unit_test::utilities::current_world_comm();
+  auto& g = world_comm.get_trainer_grid();
+  auto error_signal = std::make_unique<MatrixT>(3, 1, g);
+  El::Fill(*error_signal, 9.0f);
+
+  // Set error signal on dummy layer and keep error signal for verification
+  auto& layer2 = my_model->get_layer(2);
+  dummyT* dummy = dynamic_cast<dummyT*>(&layer2);
+  REQUIRE(dummy != nullptr);
+  dummy->set_error_signal(std::move(error_signal));
+  relu->set_keep_error_signals(true);
+
+  // Run backpropagation
+  REQUIRE_NOTHROW(my_model->backward_prop());
+
+  // Check gradients for correctness
+  auto const& grads = relu->get_error_signals();
+  CHECK(grads.Get(0, 0) == 0.0f);
+  CHECK(fabs(grads.Get(1, 0) - 9.0f) <= 1e-6);
+  CHECK(grads.Get(2, 0) == 0.0f);
 }
 
 const std::string cannot_run_inplace = boilerplate_header + R"""(
