@@ -553,6 +553,11 @@ void Layer::setup_pointers()
       can_run_inplace = false;
     }
 
+    // For now, disable in-place operation for layers with multiple parents
+    // or children until behavior is well-defined. TODO (later): Support
+    if (get_num_parents() > 1 || get_num_children() > 1)
+      can_run_inplace = false;
+
     if (can_run_inplace) {
       // If any of the parents needs its output activations for
       // backprop, this layer cannot run in-place.
