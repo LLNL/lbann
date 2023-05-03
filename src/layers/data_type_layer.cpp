@@ -1204,9 +1204,12 @@ void data_type_layer<InputTensorDataType,
                      OutputTensorDataType>::clear_prev_error_signals_()
 {
   if (!m_persistent_error_signals) {
-    for (auto& es : m_gradient_wrt_outputs) {
-      if (es)
-        es->Empty(true);
+    for (int i = 0; i < (int)m_gradient_wrt_outputs.size(); ++i) {
+      // Error signal is reused in input layer
+      if (m_runs_inplace && i < this->get_num_parents())
+        continue;
+      if (m_gradient_wrt_outputs[i])
+        m_gradient_wrt_outputs[i]->Empty(true);
     }
   }
 }
@@ -1251,6 +1254,7 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
     auto& error_signal =
       ((m_runs_inplace && i < get_num_children()) ? m_gradient_wrt_outputs[i]
                                                   : m_gradient_wrt_inputs[i]);
+
     if (m_persistent_error_signals)
       attempt_view_error_signal(parent, *this, *error_signal);
     else if (error_signal->Viewing())
