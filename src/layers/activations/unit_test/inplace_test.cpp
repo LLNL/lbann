@@ -155,7 +155,7 @@ TEST_CASE("Simple in-place test", "[layer][inplace]")
   relu->set_keep_error_signals(true);
 
   // Run backpropagation
-  REQUIRE_NOTHROW(my_model->backward_prop());
+  REQUIRE_NOTHROW(my_model->backward_prop(false));
 
   // Check gradients for correctness
   auto const& grads = relu->get_error_signals();

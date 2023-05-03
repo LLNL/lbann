@@ -2200,7 +2200,7 @@ void model::forward_prop(execution_mode mode)
   do_model_forward_prop_end_cbs(mode);
 }
 
-void model::backward_prop()
+void model::backward_prop(bool compute_weight_grads_only)
 {
 
   do_model_backward_prop_begin_cbs();
@@ -2211,7 +2211,6 @@ void model::backward_prop()
     auto& l = get_layer(i);
 
     if (this->is_subgraph_parallelism_enabled()) {
-
       if (l.get_run_layer_in_subgraph()) {
         do_layer_backward_prop_begin_cbs(&l);
         l.back_prop();
@@ -2244,7 +2243,7 @@ void model::backward_prop()
     //  in parent grid leading to hang
 
     // Tim or Tom: What is your suggestation?
-    if (all_gradients_computed &&
+    if (compute_weight_grads_only && all_gradients_computed &&
         this->is_subgraph_parallelism_enabled() == false) {
       break;
     }
