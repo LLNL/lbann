@@ -54,9 +54,9 @@ static std::string to_str(::lbann::description const& d)
   return oss.str();
 }
 
-static bool equiv_desc(lbann::Layer const& l1, lbann::Layer const& l2)
+static std::string desc(lbann::Layer const& l)
 {
-  return to_str(l1.get_description()) == to_str(l2.get_description());
+  return to_str(l.get_description());
 }
 
 using unit_test::utilities::IsValidPtr;
@@ -101,8 +101,8 @@ TEMPLATE_LIST_TEST_CASE("Serializing PermuteLayers",
       CHECK(IsValidPtr(tgt_layer_ptr));
     }
 
-    CHECK(equiv_desc(src_layer, tgt_layer));
-    CHECK(equiv_desc(*src_layer_ptr, *tgt_layer_ptr));
+    CHECK(desc(src_layer) == desc(tgt_layer));
+    CHECK(desc(*src_layer_ptr) == desc(*tgt_layer_ptr));
   }
 
   SECTION("Rooted binary archive")
@@ -120,8 +120,8 @@ TEMPLATE_LIST_TEST_CASE("Serializing PermuteLayers",
       CHECK(IsValidPtr(tgt_layer_ptr));
     }
 
-    CHECK(equiv_desc(src_layer, tgt_layer));
-    CHECK(equiv_desc(*src_layer_ptr, *tgt_layer_ptr));
+    CHECK(desc(src_layer) == desc(tgt_layer));
+    CHECK(desc(*src_layer_ptr) == desc(*tgt_layer_ptr));
   }
 #endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 
@@ -141,8 +141,8 @@ TEMPLATE_LIST_TEST_CASE("Serializing PermuteLayers",
       CHECK(IsValidPtr(tgt_layer_ptr));
     }
 
-    CHECK(equiv_desc(src_layer, tgt_layer));
-    CHECK(equiv_desc(*src_layer_ptr, *tgt_layer_ptr));
+    CHECK(desc(src_layer) == desc(tgt_layer));
+    CHECK(desc(*src_layer_ptr) == desc(*tgt_layer_ptr));
   }
 
   SECTION("Rooted XML archive")
@@ -160,8 +160,8 @@ TEMPLATE_LIST_TEST_CASE("Serializing PermuteLayers",
       CHECK(IsValidPtr(tgt_layer_ptr));
     }
 
-    CHECK(equiv_desc(src_layer, tgt_layer));
-    CHECK(equiv_desc(*src_layer_ptr, *tgt_layer_ptr));
+    CHECK(desc(src_layer) == desc(tgt_layer));
+    CHECK(desc(*src_layer_ptr) == desc(*tgt_layer_ptr));
   }
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 }
