@@ -844,7 +844,7 @@ protected:
    * Value is set during graph setup (in setup_pointers) based
    * on layer traits and neighboring layers.
    */
-  bool m_runs_inplace;
+  bool m_runs_inplace = false;
 
   // -------------------------------------------------------
   // Objects for sub-grid parallelism
