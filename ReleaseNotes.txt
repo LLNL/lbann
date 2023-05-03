@@ -10,6 +10,7 @@ Support for new layers:
 Python front-end:
 
 Performance optimizations:
+ - Support in-place computations for capable layers as a memory optimization
 
 Model portability & usability:
 
