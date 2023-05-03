@@ -44,6 +44,7 @@ void Layer::serialize(ArchiveT& ar)
      cereal::make_nvp("m_child_layers", cereal::defer(m_child_layers)),
      cereal::make_nvp("m_weights", cereal::defer(m_weights)),
      CEREAL_NVP(m_output_dims_list),
+     CEREAL_NVP(m_runs_inplace),
      CEREAL_NVP(m_hint_layer));
   // Members that aren't serialized:
   //   m_model

@@ -78,6 +78,7 @@ Layer::Layer(const Layer& other)
     m_bp_compute_time(other.m_bp_compute_time),
     m_update_time(other.m_update_time),
     m_name(other.m_name),
+    m_runs_inplace(other.m_runs_inplace),
     m_parent_layers(other.m_parent_layers),
     m_child_layers(other.m_child_layers),
     m_weights(other.m_weights),
@@ -104,6 +105,7 @@ Layer& Layer::operator=(const Layer& other)
   m_weights = other.m_weights;
   m_output_dims_list = other.m_output_dims_list;
   m_hint_layer = other.m_hint_layer;
+  m_runs_inplace = other.m_runs_inplace;
 
   return *this;
 }
