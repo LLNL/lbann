@@ -65,7 +65,7 @@ public:
   std::string get_type() const override { return "identity"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
-  bool can_run_inplace() const override { return true; }
+  bool can_run_inplace() const override { return false; }
   int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
 #ifdef LBANN_HAS_ONNX
