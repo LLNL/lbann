@@ -28,11 +28,26 @@
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/layers.pb.h"
+#include "lbann/utils/tensor_impl.hpp"
 #include <lbann/utils/memory.hpp>
 
 namespace lbann {
 
 LBANN_LAYER_DEFAULT_BUILDER(dummy)
+
+template <typename T, data_layout L, El::Device D>
+void dummy_layer<T, L, D>::set_error_signal(
+  std::unique_ptr<dummy_layer<T, L, D>::AbsDistMatrixType> signal)
+{
+  this->m_error_signal = std::move(signal);
+}
+
+template <typename T, data_layout L, El::Device D>
+void dummy_layer<T, L, D>::bp_compute()
+{
+  if (this->m_error_signal)
+    do_tensor_copy(*this->m_error_signal, this->get_error_signals());
+}
 
 template <typename T, data_layout L, El::Device D>
 void dummy_layer<T, L, D>::write_specific_proto(lbann_data::Layer& proto) const
