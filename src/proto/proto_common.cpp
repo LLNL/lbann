@@ -36,6 +36,7 @@
 
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 #include "lbann/utils/options.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include "lbann/proto/lbann.pb.h"
 #include "lbann/proto/reader.pb.h"
@@ -731,7 +732,7 @@ void init_data_readers(
 
 void read_prototext_file(const std::string& fn,
                          lbann_data::LbannPB& pb,
-                         const bool master)
+                         const bool /*master*/)
 {
   int fd = open(fn.c_str(), O_RDONLY);
   if (fd == -1) {
@@ -752,12 +753,9 @@ void read_prototext_file(const std::string& fn,
 
 void read_prototext_string(const std::string& contents,
                            lbann_data::LbannPB& pb,
-                           const bool master)
+                           const bool /*master*/)
 {
-  bool success = google::protobuf::TextFormat::ParseFromString(contents, &pb);
-  if (!success) {
-    LBANN_ERROR("failed to read or parse prototext string:\n", contents);
-  }
+  lbann::protobuf::text::fill(contents, pb);
 }
 
 bool write_prototext_file(const std::string& fn, lbann_data::LbannPB& pb)

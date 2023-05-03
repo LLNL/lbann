@@ -62,7 +62,7 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
   bool can_run_inplace() const override { return false; }
-  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
+  int get_backprop_requirements() const override { return NO_REQUIREMENTS; }
 
 protected:
   /** Add layer specific data to prototext */
