@@ -702,6 +702,17 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
   this->set_grid_tag(tag);
   const El::Grid& grid = *grids[tag];
 
+  // If any of the parents reside on different subgrids, do not run in-place
+  if (this->m_runs_inplace) {
+    for (int i = 0; i < get_num_parents(); ++i) {
+      const auto& parent = get_parent_layer(i);
+      if (parent.get_grid_tag() != tag) {
+        this->m_runs_inplace = false;
+        break;
+      }
+    }
+  }
+
   auto childs = get_child_layers();
   auto parents = get_parent_layers();
 

@@ -572,26 +572,6 @@ void Layer::setup_pointers()
       }
     }
 
-    if (can_run_inplace) {
-      // If any of the parents or children reside on different subgrids,
-      // do not run in-place
-      int this_subgrid = this->get_grid_tag();
-      for (int i = 0; i < get_num_parents(); ++i) {
-        const auto& parent = get_parent_layer(i);
-        if (parent.get_grid_tag() != this_subgrid) {
-          can_run_inplace = false;
-          break;
-        }
-      }
-      for (int i = 0; i < get_num_children(); ++i) {
-        const auto& child = get_child_layer(i);
-        if (child.get_grid_tag() != this_subgrid) {
-          can_run_inplace = false;
-          break;
-        }
-      }
-    }
-
     this->m_runs_inplace = can_run_inplace;
   }
 }
