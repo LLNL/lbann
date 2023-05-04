@@ -40,6 +40,7 @@ weekly_options_and_targets = {
         'pascal': 0.25,
         'lassen': 0.10,
         'ray':    0.15,
+        'tioga':  0.25,
     }
 }
 
@@ -57,6 +58,7 @@ nightly_options_and_targets = {
         'pascal': 0.43,
         'lassen': 0.15,
         'ray':    0.23,
+        'tioga':  0.43,
     }
 }
 
