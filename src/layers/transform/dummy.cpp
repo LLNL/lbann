@@ -45,8 +45,10 @@ void dummy_layer<T, L, D>::set_error_signal(
 template <typename T, data_layout L, El::Device D>
 void dummy_layer<T, L, D>::bp_compute()
 {
-  if (this->m_error_signal)
+  data_type_layer<T, T>::bp_compute();
+  if (this->m_error_signal) {
     do_tensor_copy(*this->m_error_signal, this->get_error_signals());
+  }
 }
 
 template <typename T, data_layout L, El::Device D>
