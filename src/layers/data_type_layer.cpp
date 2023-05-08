@@ -1216,7 +1216,10 @@ void data_type_layer<InputTensorDataType,
 {
   if (!m_persistent_error_signals) {
     for (int i = 0; i < (int)m_gradient_wrt_outputs.size(); ++i) {
-      // Error signal is reused in input layer
+      // After local backprop is complete, the error signals are propagated to
+      // the parent layers and then the input error signals are cleared.
+      // Since in-place layers share the memory, clearing it would clear the
+      // reused error signals as well, so we must skip this step.
       if (m_runs_inplace && i < this->get_num_parents())
         continue;
       if (m_gradient_wrt_outputs[i])

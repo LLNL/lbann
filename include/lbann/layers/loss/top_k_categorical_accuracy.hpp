@@ -72,6 +72,8 @@ public:
   bool can_run_inplace() const override { return false; }
   int get_backprop_requirements() const override
   {
+    // Based on the backprop implementation of categorical_accuracy, we would
+    // need PREV_ACTIVATIONS here as well.
     return ERROR_SIGNALS | PREV_ACTIVATIONS;
   }
 
