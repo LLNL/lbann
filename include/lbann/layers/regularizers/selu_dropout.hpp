@@ -77,6 +77,10 @@ public:
 
   El::Device get_device_allocation() const final;
 
+  bool can_run_inplace() const override { return true; }
+
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
+
   void setup_dims(DataReaderMetaData& dr_metadata) final;
 
   void setup_data(size_t max_mini_batch_size) final;

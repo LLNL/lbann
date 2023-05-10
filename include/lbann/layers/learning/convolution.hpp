@@ -111,6 +111,13 @@ public:
 
   El::Device get_device_allocation() const override { return Device; }
 
+  bool can_run_inplace() const override { return false; }
+
+  int get_backprop_requirements() const override
+  {
+    return ERROR_SIGNALS | WEIGHTS | PREV_ACTIVATIONS;
+  }
+
 #ifdef LBANN_HAS_ONNX
   std::string get_onnx_op_type() const override { return "Conv"; }
   void fill_onnx_node(onnx::GraphProto& graph) const override;

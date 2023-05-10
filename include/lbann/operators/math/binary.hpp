@@ -32,31 +32,35 @@
 namespace lbann {
 
 // Arithmetic operations
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Add, "add");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Subtract, "subtract");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Multiply, "multiply");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Divide, "divide");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Mod, "modulo");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Pow, "power");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(SafeDivide, "safe divide");
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Add, "add", false);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Subtract, "subtract", false);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Multiply, "multiply", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Divide, "divide", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Mod, "modulo", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Pow, "power", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(SafeDivide, "safe divide", true);
 LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(SquaredDifference,
-                                             "squared difference");
+                                             "squared difference",
+                                             true);
 
 // Comparison operations
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Max, "maximum");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Min, "minimum");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Equal, "equal");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(NotEqual, "not equal");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Less, "less than");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(LessEqual, "less than or equal");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Greater, "greater than");
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Max, "maximum", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Min, "minimum", true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Equal, "equal", false);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(NotEqual, "not equal", false);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Less, "less than", false);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(LessEqual,
+                                             "less than or equal",
+                                             false);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Greater, "greater than", false);
 LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(GreaterEqual,
-                                             "greater than or equal");
+                                             "greater than or equal",
+                                             false);
 
 // Logical operations
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(LogicalAnd, "logical and");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(LogicalOr, "logical or");
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(LogicalXor, "logical xor");
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(LogicalAnd, "logical and", false);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(LogicalOr, "logical or", false);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(LogicalXor, "logical xor", false);
 
 } // namespace lbann
 

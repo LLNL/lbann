@@ -104,9 +104,15 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
   }
 
   // Setup tensors
-  const auto& c =
-    static_cast<SGDExecutionContext&>(m_model->get_execution_context());
-  const auto& mini_batch_size = c.get_current_mini_batch_size();
+  size_t mini_batch_size;
+  if (m_model->has_valid_execution_context()) {
+    const auto& c =
+      static_cast<SGDExecutionContext&>(m_model->get_execution_context());
+    mini_batch_size = c.get_current_mini_batch_size();
+  }
+  else {
+    mini_batch_size = m_model->get_max_mini_batch_size();
+  }
   fp_setup_inputs(mini_batch_size);
   fp_setup_outputs(mini_batch_size);
 
@@ -152,9 +158,15 @@ void data_type_layer<InputTensorDataType,
   const auto bp_start = get_time();
 
   // Setup tensors
-  const auto& c =
-    static_cast<SGDExecutionContext&>(m_model->get_execution_context());
-  const auto& mini_batch_size = c.get_current_mini_batch_size();
+  size_t mini_batch_size;
+  if (m_model->has_valid_execution_context()) {
+    const auto& c =
+      static_cast<SGDExecutionContext&>(m_model->get_execution_context());
+    mini_batch_size = c.get_current_mini_batch_size();
+  }
+  else {
+    mini_batch_size = m_model->get_max_mini_batch_size();
+  }
   bp_setup_gradient_wrt_inputs(mini_batch_size);
 
 #if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
@@ -200,7 +212,7 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
   // Summarize activation matrices
   const int num_children = get_num_children();
   for (int i = 0; i < num_children; ++i) {
-    OutputAbsDistMatReadProxyType<El::Device::CPU> acts(*m_outputs[i]);
+    OutputAbsDistMatReadProxyType<El::Device::CPU> acts(get_activations(i));
     std::string prefix = m_name + "/activations";
     if (num_children > 1) {
       prefix += std::to_string(i);
@@ -215,11 +227,14 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
   // Summarize error signal matrices
   const int num_parents = get_num_parents();
   for (int i = 0; i < num_parents; ++i) {
-    if (!m_gradient_wrt_inputs[i])
+    auto& error_signal_ptr =
+      ((m_runs_inplace && i < num_children) ? m_gradient_wrt_outputs[i]
+                                            : m_gradient_wrt_inputs[i]);
+    if (!error_signal_ptr)
       continue;
 
     InputAbsDistMatReadProxyType<El::Device::CPU> error_signals(
-      *m_gradient_wrt_inputs[i]);
+      *error_signal_ptr);
     std::string prefix = m_name + "/error_signals";
     if (num_parents > 1) {
       prefix += std::to_string(i);
@@ -259,6 +274,13 @@ auto data_type_layer<InputTensorDataType,
                      OutputTensorDataType>::get_activations(int child_index)
   const -> const OutputAbsDistMatrixType&
 {
+  // In-place layers use inputs for the output activations
+  // This assumes that there is a one-to-one correspondence between
+  // input and output tensors
+  if (this->m_runs_inplace && child_index < (int)m_inputs.size()) {
+    return this->get_prev_activations(child_index);
+  }
+
   if (child_index < 0 || child_index >= (int)m_outputs.size()) {
     std::stringstream err;
     err << "attempted to access invalid activation matrix "
@@ -301,6 +323,14 @@ auto data_type_layer<InputTensorDataType,
                      OutputTensorDataType>::get_error_signals(int parent_index)
   const -> const InputAbsDistMatrixType&
 {
+  // In-place layers use error signals from child layers as output signals
+  // This assumes that there is a one-to-one correspondence between
+  // input and output tensors
+  if (this->m_runs_inplace &&
+      parent_index < (int)m_gradient_wrt_outputs.size()) {
+    return this->get_prev_error_signals(parent_index);
+  }
+
   if (parent_index < 0 || parent_index >= (int)m_gradient_wrt_inputs.size()) {
     LBANN_ERROR("Attempted to access invalid error signal matrix "
                 "from ",
@@ -339,10 +369,14 @@ auto data_type_layer<InputTensorDataType,
   -> InputAbsDistMatrixType&
 {
   if (m_subgrid_tensors_split.size() <= tag)
-    LBANN_ERROR("Error Signal Layer Name:", this->get_name(),
-                " Layer type:", this->get_type(),
-                ". Subgrid branch tag:", tag, 
-                " is more than or equal to the split size:", m_subgrid_tensors_split.size(),
+    LBANN_ERROR("Error Signal Layer Name:",
+                this->get_name(),
+                " Layer type:",
+                this->get_type(),
+                ". Subgrid branch tag:",
+                tag,
+                " is more than or equal to the split size:",
+                m_subgrid_tensors_split.size(),
                 " or subgrid_tensors vector is not initialized properly.");
   return *m_subgrid_tensors_split[tag];
 }
@@ -360,6 +394,9 @@ auto data_type_layer<InputTensorDataType,
                      OutputTensorDataType>::get_all_activations()
   -> std::vector<std::unique_ptr<OutputAbsDistMatrixType>>&
 {
+  if (m_runs_inplace) {
+    LBANN_ERROR("get_all_activations is not supported for in-place layers");
+  }
   return m_outputs;
 }
 
@@ -384,6 +421,9 @@ auto data_type_layer<InputTensorDataType,
                      OutputTensorDataType>::get_all_error_signals()
   -> std::vector<std::unique_ptr<InputAbsDistMatrixType>>&
 {
+  if (m_runs_inplace) {
+    LBANN_ERROR("get_all_error_signals is not supported for in-place layers");
+  }
   return m_gradient_wrt_inputs;
 }
 
@@ -410,6 +450,26 @@ auto data_type_layer<InputTensorDataType,
     static_cast<
       const data_type_layer<InputTensorDataType, OutputTensorDataType>&>(*this)
       .get_error_signals(parent_index));
+}
+
+template <typename InputTensorDataType, typename OutputTensorDataType>
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+  get_prev_activations(int parent_index) -> InputAbsDistMatrixType&
+{
+  return const_cast<InputAbsDistMatrixType&>(
+    static_cast<
+      const data_type_layer<InputTensorDataType, OutputTensorDataType>&>(*this)
+      .get_prev_activations(parent_index));
+}
+
+template <typename InputTensorDataType, typename OutputTensorDataType>
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+  get_prev_error_signals(int child_index) -> OutputAbsDistMatrixType&
+{
+  return const_cast<OutputAbsDistMatrixType&>(
+    static_cast<
+      const data_type_layer<InputTensorDataType, OutputTensorDataType>&>(*this)
+      .get_prev_error_signals(child_index));
 }
 
 // Accessing local matrices
@@ -642,11 +702,21 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
   this->set_grid_tag(tag);
   const El::Grid& grid = *grids[tag];
 
+  // If any of the parents reside on different subgrids, do not run in-place
+  if (this->m_runs_inplace) {
+    for (int i = 0; i < get_num_parents(); ++i) {
+      const auto& parent = get_parent_layer(i);
+      if (parent.get_grid_tag() != tag) {
+        this->m_runs_inplace = false;
+        break;
+      }
+    }
+  }
+
   auto childs = get_child_layers();
   auto parents = get_parent_layers();
 
-  if ((this->get_type() == "split" ||
-       this->get_type() == "slice") &&
+  if ((this->get_type() == "split" || this->get_type() == "slice") &&
       this->get_model()->is_subgraph_parallelism_enabled() &&
       this->get_parallel_strategy().enable_subgraph) {
 
@@ -661,7 +731,8 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
     int count = 0;
 
     for (auto& output : m_outputs) {
-      output = output_mat_builder->MakeEmpty(*grids[childs[count]->get_grid_tag()], 0);
+      output =
+        output_mat_builder->MakeEmpty(*grids[childs[count]->get_grid_tag()], 0);
       count++;
     }
     count = 0;
@@ -684,9 +755,9 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
            ++child_index) {
         if (childs[child_index]->get_parallel_strategy().sub_branch_tag ==
             count + 1) {
-          subgrid_tensor =
-            output_mat_builder->MakeEmpty(*grids[childs[child_index]->get_grid_tag()],
-                                          0);
+          subgrid_tensor = output_mat_builder->MakeEmpty(
+            *grids[childs[child_index]->get_grid_tag()],
+            0);
           count++;
           break;
         }
@@ -703,14 +774,17 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
 
     int count = 0;
     for (auto& input : m_inputs) {
-      input = input_mat_builder->MakeEmpty(*grids[parents[count]->get_grid_tag()], 0);
+      input =
+        input_mat_builder->MakeEmpty(*grids[parents[count]->get_grid_tag()], 0);
       count++;
     }
 
     count = 0;
 
     for (auto& output : m_outputs) {
-      output = output_mat_builder->MakeEmpty(*grids[parents[count]->get_grid_tag()], 0);
+      output =
+        output_mat_builder->MakeEmpty(*grids[parents[count]->get_grid_tag()],
+                                      0);
       count++;
     }
     count = 0;
@@ -740,7 +814,8 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
 
     int count = 0;
     for (auto& input : m_inputs) {
-      input = input_mat_builder->MakeEmpty(*grids[parents[count]->get_grid_tag()], 0);
+      input =
+        input_mat_builder->MakeEmpty(*grids[parents[count]->get_grid_tag()], 0);
       count++;
     }
 
@@ -770,9 +845,9 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
       for (int parent_index = 0; parent_index < int(parents.size());
            ++parent_index) {
         if (subgrid_tags[parent_index] == count) {
-          subgrid_tensor =
-            input_mat_builder->MakeEmpty(*grids[parents[parent_index]->get_grid_tag()],
-                                         0);
+          subgrid_tensor = input_mat_builder->MakeEmpty(
+            *grids[parents[parent_index]->get_grid_tag()],
+            0);
           count++;
           break;
         }
@@ -889,21 +964,26 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::check_setup()
   }
 
   // Check that tensors are initialized
-  for (int i = 0; i < get_num_parents(); ++i) {
+  for (int i = 0; i < num_parents; ++i) {
     if (m_inputs[i] == nullptr) {
       err << "layer \"" << get_name() << "\" has an "
           << "uninitialized input tensor (index " << i << ")";
       LBANN_ERROR(err.str());
     }
   }
-  for (int i = 0; i < get_num_children(); ++i) {
+  for (int i = 0; i < num_children; ++i) {
+    if (m_runs_inplace && i < num_parents) {
+      // Checked above
+      continue;
+    }
+
     if (m_outputs[i] == nullptr) {
       err << "layer \"" << get_name() << "\" has an "
           << "uninitialized output tensor (index " << i << ")";
       LBANN_ERROR(err.str());
     }
   }
-  for (int i = 0; i < get_num_children(); ++i) {
+  for (int i = 0; i < num_children; ++i) {
     if (!m_gradient_wrt_outputs[i]) {
       err << "layer \"" << get_name() << "\" has an "
           << "uninitialized gradient w.r.t. output tensor "
@@ -911,7 +991,11 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::check_setup()
       LBANN_ERROR(err.str());
     }
   }
-  for (int i = 0; i < get_num_parents(); ++i) {
+  for (int i = 0; i < num_parents; ++i) {
+    if (m_runs_inplace && i < num_children) {
+      // Checked above
+      continue;
+    }
     if (!m_gradient_wrt_inputs[i]) {
       err << "layer \"" << get_name() << "\" has an "
           << "uninitialized gradient w.r.t. input tensor "
@@ -941,7 +1025,7 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
     // Initialize input tensor
     const auto& parent = get_parent_layer(i);
     const auto& parent_output = parent.get_activations(*this);
-    auto& input = *m_inputs[i];
+    auto& input = get_prev_activations(i);
     input.Empty(false);
     view_or_copy_tensor(parent_output, input);
 
@@ -976,6 +1060,10 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
 
   // Initialize output tensors
   for (int i = 0; i < get_num_children(); ++i) {
+    if (m_runs_inplace && i < get_num_parents()) {
+      continue;
+    }
+
 #ifdef LBANN_HAS_DISTCONV
     if (!keep_original_outputs(i))
       continue;
@@ -1035,10 +1123,12 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
     return;
 #endif // LBANN_HAS_DISTCONV
 
+  auto const& output = this->get_activations(layer_idx);
+
   // Check the signal size
   assert_tensor_size(signal,
                      get_output_size(layer_idx),
-                     m_outputs[layer_idx]->Width(),
+                     output.Width(),
                      m_name,
                      child.get_name());
 
@@ -1059,17 +1149,19 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
     return;
 #endif // LBANN_HAS_DISTCONV
 
+  auto& output = this->get_activations(layer_idx);
+
   // Check the signal size
   auto& signal = *signal_in;
   assert_tensor_size(signal,
                      get_output_size(layer_idx),
-                     m_outputs[layer_idx]->Width(),
+                     output.Width(),
                      m_name,
                      child.get_name());
 
   // If the distribution is OK, then we can just swap data
   // around. Otherwise, deep copy into correct distribution.
-  El::DistData expected_distdata = m_outputs[layer_idx]->DistData();
+  El::DistData expected_distdata = output.DistData();
   if (signal.DistData() == expected_distdata) {
     if (auto sig_ptr =
           dynamic_cast<OutputAbsDistMatrixType*>(signal_in.get())) {
@@ -1103,11 +1195,12 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
   if (!keep_original_gradient_wrt_outputs(layer_idx))
     return;
 #endif // LBANN_HAS_DISTCONV
+  auto const& output = this->get_activations(layer_idx);
 
   // Check the signal size
   assert_tensor_size(signal,
                      get_output_size(layer_idx),
-                     m_outputs[layer_idx]->Width(),
+                     output.Width(),
                      m_name,
                      child.get_name());
 
@@ -1122,8 +1215,16 @@ void data_type_layer<InputTensorDataType,
                      OutputTensorDataType>::clear_prev_error_signals_()
 {
   if (!m_persistent_error_signals) {
-    for (auto& es : m_gradient_wrt_outputs)
-      es->Empty(true);
+    for (int i = 0; i < (int)m_gradient_wrt_outputs.size(); ++i) {
+      // After local backprop is complete, the error signals are propagated to
+      // the parent layers and then the input error signals are cleared.
+      // Since in-place layers share the memory, clearing it would clear the
+      // reused error signals as well, so we must skip this step.
+      if (m_runs_inplace && i < this->get_num_parents())
+        continue;
+      if (m_gradient_wrt_outputs[i])
+        m_gradient_wrt_outputs[i]->Empty(true);
+    }
   }
 }
 
@@ -1164,15 +1265,16 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
     // assuming the distdata is right. Otherwise, my views and my data
     // will be released. Views must be copied and owned data can
     // either be copied or swapped out.
-    auto& error_signal = *m_gradient_wrt_inputs[i];
+    auto& error_signal =
+      ((m_runs_inplace && i < get_num_children()) ? m_gradient_wrt_outputs[i]
+                                                  : m_gradient_wrt_inputs[i]);
+
     if (m_persistent_error_signals)
-      attempt_view_error_signal(parent, *this, error_signal);
-    else if (error_signal.Viewing())
-      deep_copy_error_signal(parent, *this, error_signal);
+      attempt_view_error_signal(parent, *this, *error_signal);
+    else if (error_signal->Viewing())
+      deep_copy_error_signal(parent, *this, *error_signal);
     else
-      attempt_move_error_signal(parent,
-                                *this,
-                                std::move(m_gradient_wrt_inputs[i]));
+      attempt_move_error_signal(parent, *this, std::move(error_signal));
   }
 }
 
@@ -1182,6 +1284,10 @@ void data_type_layer<InputTensorDataType,
 {
   auto parents = get_parent_layers();
   for (int i = 0; i < get_num_parents(); ++i) {
+    if (m_runs_inplace && i < get_num_children()) {
+      continue;
+    }
+
 #ifdef LBANN_HAS_DISTCONV
     if (!keep_original_gradient_wrt_inputs(i))
       continue;
@@ -1198,7 +1304,7 @@ void data_type_layer<InputTensorDataType,
         m_gradient_wrt_inputs[i] =
           MakeMatBuilder<InputTensorDataType>(this->get_data_layout(),
                                               this->get_device_allocation())
-            ->MakeEmpty(m_inputs[i]->Grid(), 0);
+            ->MakeEmpty(get_prev_activations(i).Grid(), 0);
       }
     }
     auto& gradient_wrt_input = get_error_signals(i);
@@ -1217,6 +1323,10 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
   bp_setup_gradient_wrt_inputs(El::Int mini_batch_size)
 {
   for (int i = 0; i < get_num_parents(); ++i) {
+    if (m_runs_inplace && i < get_num_children()) {
+      continue;
+    }
+
 #ifdef LBANN_HAS_DISTCONV
     if (!keep_original_gradient_wrt_inputs(i))
       continue;

@@ -30,6 +30,7 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/optimizers/optimizer.hpp"
+#include "lbann/utils/options.hpp"
 #include "lbann/utils/summary_impl.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/weights/weights.hpp"
@@ -77,6 +78,7 @@ Layer::Layer(const Layer& other)
     m_bp_compute_time(other.m_bp_compute_time),
     m_update_time(other.m_update_time),
     m_name(other.m_name),
+    m_runs_inplace(other.m_runs_inplace),
     m_parent_layers(other.m_parent_layers),
     m_child_layers(other.m_child_layers),
     m_weights(other.m_weights),
@@ -103,6 +105,7 @@ Layer& Layer::operator=(const Layer& other)
   m_weights = other.m_weights;
   m_output_dims_list = other.m_output_dims_list;
   m_hint_layer = other.m_hint_layer;
+  m_runs_inplace = other.m_runs_inplace;
 
   return *this;
 }
@@ -222,6 +225,10 @@ description Layer::get_description() const
   // Freeze state
   if (is_frozen()) {
     desc.add("Frozen");
+  }
+
+  if (this->m_runs_inplace) {
+    desc.add("In-place");
   }
 
 #ifdef LBANN_HAS_DISTCONV
@@ -524,6 +531,48 @@ void Layer::setup_pointers()
                 " (",
                 get_child_names(),
                 ")");
+  }
+
+  // Set whether this layer will run in-place
+
+  // Check for environment variable that disables this behavior
+  auto const& arg_parser = global_argument_parser();
+  bool const envvar_disable_inplace =
+    arg_parser.get<bool>(LBANN_OPTION_NO_INPLACE);
+  if (!this->can_run_inplace() || this->distconv_enabled() ||
+      envvar_disable_inplace) {
+    // TODO (later): Support distconv-enabled layers
+    this->m_runs_inplace = false;
+  }
+  else {
+    bool can_run_inplace = true;
+
+    // If a layer needs its own previous activations for backprop, it cannot
+    // run in-place
+    if (this->get_backprop_requirements() & PREV_ACTIVATIONS) {
+      can_run_inplace = false;
+    }
+
+    // For now, disable in-place operation for layers with multiple parents
+    // or children until behavior is well-defined. TODO (later): Support
+    if (get_num_parents() > 1 || get_num_children() > 1)
+      can_run_inplace = false;
+
+    if (can_run_inplace) {
+      // If any of the parents needs its output activations for
+      // backprop, this layer cannot run in-place.
+      for (int i = 0; i < get_num_parents(); ++i) {
+        const auto& parent = get_parent_layer(i);
+
+        int bp_requirements = parent.get_backprop_requirements();
+        if (bp_requirements & ACTIVATIONS) {
+          can_run_inplace = false;
+          break;
+        }
+      }
+    }
+
+    this->m_runs_inplace = can_run_inplace;
   }
 }
 

@@ -99,6 +99,13 @@ public:
 
   El::Device get_device_allocation() const override { return Device; }
 
+  bool can_run_inplace() const override { return false; }
+
+  int get_backprop_requirements() const override
+  {
+    return ERROR_SIGNALS | WEIGHTS | PREV_ACTIVATIONS;
+  }
+
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 
   /** @name Serialization */

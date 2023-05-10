@@ -36,6 +36,7 @@
 
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 #include "lbann/utils/options.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include "lbann/proto/lbann.pb.h"
 #include "lbann/proto/reader.pb.h"
@@ -731,16 +732,11 @@ void init_data_readers(
 
 void read_prototext_file(const std::string& fn,
                          lbann_data::LbannPB& pb,
-                         const bool master)
+                         const bool /*master*/)
 {
-  std::ostringstream err;
   int fd = open(fn.c_str(), O_RDONLY);
   if (fd == -1) {
-    if (master) {
-      err << __FILE__ << " " << __LINE__ << " :: failed to open " << fn
-          << " for reading";
-      throw lbann_exception(err.str());
-    }
+    LBANN_ERROR("failed to open ", fn, " for reading");
   }
   using FIS = google::protobuf::io::FileInputStream;
   auto input = std::unique_ptr<FIS, std::function<void(FIS*)>>(
@@ -751,12 +747,15 @@ void read_prototext_file(const std::string& fn,
     });
   bool success = google::protobuf::TextFormat::Parse(input.get(), &pb);
   if (!success) {
-    if (master) {
-      err << __FILE__ << " " << __LINE__
-          << " :: failed to read or parse prototext file: " << fn << std::endl;
-      throw lbann_exception(err.str());
-    }
+    LBANN_ERROR("failed to read or parse prototext file: ", fn);
   }
+}
+
+void read_prototext_string(const std::string& contents,
+                           lbann_data::LbannPB& pb,
+                           const bool /*master*/)
+{
+  lbann::protobuf::text::fill(contents, pb);
 }
 
 bool write_prototext_file(const std::string& fn, lbann_data::LbannPB& pb)

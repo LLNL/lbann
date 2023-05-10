@@ -129,6 +129,14 @@ public:
   data_layout get_data_layout() const final { return Layout; }
   El::Device get_device_allocation() const final { return Device; }
 
+  // Softmax can run in-place (local workspace acts as an
+  // intermediate buffer)
+  bool can_run_inplace() const override { return true; }
+  int get_backprop_requirements() const override
+  {
+    return ERROR_SIGNALS | ACTIVATIONS;
+  }
+
 #ifdef LBANN_HAS_ONNX
   std::string get_onnx_op_type() const override { return "Softmax"; }
 #endif // LBANN_HAS_ONNX

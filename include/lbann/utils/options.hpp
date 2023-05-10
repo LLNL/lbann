@@ -67,6 +67,7 @@ namespace lbann {
   "Use Hydrogen's default memory mode for GPU buffers in forward prop"
 #define LBANN_OPTION_INIT_SHMEM "Initialize SHMEM when initializing LBANN"
 #define LBANN_OPTION_INIT_NVSHMEM "Initialize NVSHMEM when initializing LBANN"
+#define LBANN_OPTION_NO_INPLACE "no_inplace"
 
 // Input options
 #define LBANN_OPTION_CKPT_DIR "ckpt_dir"

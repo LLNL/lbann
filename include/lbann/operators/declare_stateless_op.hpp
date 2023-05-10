@@ -34,7 +34,7 @@
 
 // These are all single-type operators.
 
-#define LBANN_DECLARE_STATELESS_OPERATOR(OP_NAME, OP_STRING)                   \
+#define LBANN_DECLARE_STATELESS_OPERATOR(OP_NAME, OP_STRING, NEEDS_PREVACTS)   \
   template <typename DataT, El::Device D>                                      \
   class OP_NAME##Operator final                                                \
     : public Cloneable<OP_NAME##Operator<DataT, D>, Operator<DataT, DataT, D>> \
@@ -53,9 +53,11 @@
     OP_NAME##Operator& operator=(OP_NAME##Operator&&) = default;               \
     OP_NAME##Operator& operator=(OP_NAME##Operator const&) = default;          \
     ~OP_NAME##Operator() = default;                                            \
-    std::string get_type() const final                                         \
+    std::string get_type() const final { return OP_STRING; }                   \
+    int get_backprop_requirements() const final                                \
     {                                                                          \
-      return OP_STRING;                                                        \
+      return ((NEEDS_PREVACTS) ? (ERROR_SIGNALS | PREV_ACTIVATIONS)            \
+                               : ERROR_SIGNALS);                               \
     }                                                                          \
     template <typename ArchiveT>                                               \
     void serialize(ArchiveT& ar)                                               \
@@ -76,11 +78,12 @@
     {                                                                          \
       msg.mutable_parameters()->PackFrom(lbann_data::OP_NAME##Operator{});     \
     }                                                                          \
-    void do_fill_description(description&) const final                         \
-    {}                                                                         \
+    void do_fill_description(description&) const final {}                      \
   }
 
-#define LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(OP_NAME, OP_STRING)       \
+#define LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(OP_NAME,                  \
+                                                     OP_STRING,                \
+                                                     NEEDS_PREVACTS)           \
   template <typename DataT, El::Device D>                                      \
   class OP_NAME##Operator final                                                \
     : public Cloneable<OP_NAME##Operator<DataT, D>,                            \
@@ -102,9 +105,11 @@
     OP_NAME##Operator& operator=(OP_NAME##Operator&&) = default;               \
     OP_NAME##Operator& operator=(OP_NAME##Operator const&) = default;          \
     ~OP_NAME##Operator() = default;                                            \
-    std::string get_type() const final                                         \
+    std::string get_type() const final { return OP_STRING; }                   \
+    int get_backprop_requirements() const final                                \
     {                                                                          \
-      return OP_STRING;                                                        \
+      return ((NEEDS_PREVACTS) ? (ERROR_SIGNALS | PREV_ACTIVATIONS)            \
+                               : ERROR_SIGNALS);                               \
     }                                                                          \
     template <typename ArchiveT>                                               \
     void serialize(ArchiveT& ar)                                               \
@@ -126,8 +131,7 @@
     {                                                                          \
       msg.mutable_parameters()->PackFrom(lbann_data::OP_NAME##Operator{});     \
     }                                                                          \
-    void do_fill_description(description&) const final                         \
-    {}                                                                         \
+    void do_fill_description(description&) const final {}                      \
   }
 
 #endif // LBANN_INCLUDE_LBANN_OPERATORS_DECLARE_STATELESS_OP_HPP_INCLUDED

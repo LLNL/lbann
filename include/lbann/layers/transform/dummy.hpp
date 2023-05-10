@@ -42,11 +42,25 @@ template <typename TensorDataType,
 class dummy_layer : public data_type_layer<TensorDataType>
 {
 public:
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
   dummy_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm)
   {
     this->m_expected_num_child_layers = 0;
+    this->m_error_signal = nullptr;
+  }
+  dummy_layer(const dummy_layer& other) : data_type_layer<TensorDataType>(other)
+  {
+    this->m_expected_num_child_layers = other.m_expected_num_child_layers;
+    this->m_error_signal = nullptr;
   }
   dummy_layer* copy() const override { return new dummy_layer(*this); }
+
+  /** @brief Set the error signal of this layer.
+   *  Used for backpropagation testing purposes.
+   */
+  void set_error_signal(std::unique_ptr<AbsDistMatrixType> signal);
 
   /** @name Serialization */
   ///@{
@@ -59,6 +73,8 @@ public:
   std::string get_type() const override { return "dummy"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override { return NO_REQUIREMENTS; }
 
 #ifdef LBANN_HAS_ONNX
   void fill_onnx_node(onnx::GraphProto& graph) const override {}
@@ -72,6 +88,10 @@ protected:
   dummy_layer() : dummy_layer(nullptr) {}
 
   void fp_compute() override {}
+  void bp_compute() override;
+
+  /** An optional error signal to propagate backwards. Used for testing. */
+  std::unique_ptr<AbsDistMatrixType> m_error_signal;
 };
 
 #ifndef LBANN_DUMMY_LAYER_INSTANTIATE

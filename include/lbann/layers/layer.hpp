@@ -384,11 +384,24 @@ public:
   bool get_run_layer_in_subgraph() { return run_layer_in_subgraph; }
 
   /** @brief Get a string representing the layer datatype */
-
   virtual std::string get_datatype_name() const
   {
     return TypeName<DataType>();
   };
+
+  /**
+   * @brief Returns the necessary tensors for computing backpropagation
+   */
+  virtual int get_backprop_requirements() const
+  {
+    return ERROR_SIGNALS | PREV_ACTIVATIONS | ACTIVATIONS | WEIGHTS;
+  }
+
+  /**
+   * @brief If True, the computation can run in-place (feeding each
+   * input activations tensor as the corresponding output activations)
+   */
+  virtual bool can_run_inplace() const { return false; }
 
   // enable subgraph parallelism for this layer
   // to set variable for ssplit layer
@@ -656,6 +669,13 @@ public:
    */
   virtual void set_keep_error_signals(bool) = 0;
 
+  /** @brief If true, the layer will run in-place (the input
+   * and output activations point to the same tensor).
+   * Value is set during graph setup (in setup_pointers) based
+   * on layer traits and neighboring layers.
+   */
+  bool runs_inplace() const { return m_runs_inplace; }
+
   /** @name Serialization */
   ///@{
 
@@ -818,6 +838,13 @@ protected:
    *  human-readable, name.
    */
   std::string m_name;
+
+  /** @brief If true, the layer will run in-place (the input
+   * and output activations point to the same tensor).
+   * Value is set during graph setup (in setup_pointers) based
+   * on layer traits and neighboring layers.
+   */
+  bool m_runs_inplace = false;
 
   // -------------------------------------------------------
   // Objects for sub-grid parallelism

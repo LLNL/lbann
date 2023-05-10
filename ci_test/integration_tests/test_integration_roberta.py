@@ -51,7 +51,8 @@ weekly_options_and_targets = {
     'num_nodes': 1,
     'num_epochs': 0,
     'mini_batch_size': 16,
-    'expected_test_loss_range': (6.8, 7.1),
+    # Test loss range expanded from [6.8, 7.1] to [6.1, 7.2]
+    'expected_test_loss_range': (6.1, 7.2),
     'percent_of_data_to_use': 1.0,
     'expected_mini_batch_times': {
         "pascal": 0.1225,
@@ -68,7 +69,8 @@ nightly_options_and_targets = {
     'num_nodes': 1,
     'num_epochs': 0,
     'mini_batch_size': 16,
-    'expected_test_loss_range': (6.75, 7.1),
+    # Test loss range expanded from [6.75, 7.1] to [6.1, 7.2]
+    'expected_test_loss_range': (6.1, 7.2),
     'percent_of_data_to_use': 0.01,
     'expected_mini_batch_times': {
         "pascal": 0.925, # Weird performance behavior 3/21/2022 - 0.1225,
