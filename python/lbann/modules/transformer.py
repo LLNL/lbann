@@ -4,6 +4,7 @@ import lbann
 from .base import Module, FullyConnectedModule
 from lbann.util import make_iterable
 
+
 class MultiheadAttention(Module):
     """Parallel instances of scaled dot-product attention.
 
@@ -25,10 +26,7 @@ class MultiheadAttention(Module):
 
     global_count = 0  # Static counter, used for default names
 
-    def __init__(self,
-                 embed_dim,
-                 num_heads,
-                 name=None):
+    def __init__(self, embed_dim, num_heads, name=None):
         super().__init__()
         MultiheadAttention.global_count += 1
         self.instance = 0
@@ -112,7 +110,7 @@ class MultiheadAttention(Module):
         )
 
         # Slice embedding vectors for each head
-        slice_points = [self.head_dim * i for i in range(self.num_heads+1)]
+        slice_points = [self.head_dim * i for i in range(self.num_heads + 1)]
         queries_slice = lbann.Slice(
             queries_fc,
             axis=1,
@@ -145,15 +143,14 @@ class MultiheadAttention(Module):
             # Multiply queries and keys
             # Note: num_queries x num_keys
             y = lbann.MatMul(
-                q, k,
+                q,
+                k,
                 transpose_b=True,
                 name=f'{head_name}_matmul',
             )
-            y = lbann.WeightedSum(
-                y,
-                scaling_factors=1 / math.sqrt(self.head_dim),
-                name=f'{head_name}_scale',
-            )
+            y = lbann.Scale(y,
+                            constant=1 / math.sqrt(self.head_dim),
+                            name=f'{head_name}_scale')
             if mask:
                 y = lbann.Add(y, mask, name=f'{head_name}_mask')
             y = lbann.ChannelwiseSoftmax(y, name=f'{head_name}_softmax')
@@ -163,11 +160,10 @@ class MultiheadAttention(Module):
             attentions.append(lbann.MatMul(y, v, name=head_name))
 
         # Concatenate heads and apply fully-connected layer
-        attentions = lbann.Concatenation(
-            attentions,
-            axis=1,
-            name=f'{name}_heads_concat'
-        )
+        attentions = lbann.Concatenation(attentions,
+                                         axis=1,
+                                         name=f'{name}_heads_concat')
+
         outputs_fc = lbann.ChannelwiseFullyConnected(
             attentions,
             weights=self.output_weights,
