@@ -564,6 +564,26 @@ if [[ -n "${REUSE_ENV:-}" ]]; then
             fi
         fi
     fi
+
+    # Look for existing environment with the same name
+    if [[ $(spack env list | grep -e "${LBANN_ENV}$") ]]; then
+        CMD="spack env activate -p ${LBANN_ENV}"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        # Record which cmake was used to build this
+        CMAKE=$(spack build-env lbann -- which cmake)
+        # Record which ninja was used to build this
+        NINJA=$(spack build-env lbann -- which ninja)
+        # Record which python was used to build this
+        PYTHON=$(spack build-env lbann -- which python3)
+        CMD="spack env deactivate"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    else
+        CMAKE=$(which cmake)
+        NINJA=$(which ninja)
+        PYTHON=$(which python3)
+    fi
 fi
 
 # If a config file is provided skip everything
