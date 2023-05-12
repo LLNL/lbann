@@ -92,7 +92,6 @@ Options:
   ${C}--hydrogen-repo <PATH>${N}     Use a local repository for the Hydrogen library
   ${C}--dihydrogen-repo <PATH>${N}   Use a local repository for the DiHydrogen library
   ${C}--aluminum-repo <PATH>${N}     Use a local repository for the Aluminum library
-  ${C}--update-buildcache <PATH>${N} Update a buildcache defined by the Spack mirror (Expert Only)
   ${C}-u | --user <VERSION>${N}      Build from the GitHub repo -- as a "user" not developer using optional <VERSION> tag
   ${C}--allow-backend-builds${N}     Allow for builds that are not compatible with the host target architecture
   ${C}--${N}                         Pass all variants to spack after the dash dash (--)
@@ -241,15 +240,6 @@ while :; do
         --aluminum-repo)
             if [ -n "${2}" ]; then
                 ALUMINUM_PATH=${2}
-                shift
-            else
-                echo "\"${1}\" option requires a non-empty option argument" >&2
-                exit 1
-            fi
-            ;;
-        --update-buildcache)
-            if [ -n "${2}" ] && [ ${2:0:1} != "-" ]; then
-                UPDATE_BUILDCACHE=${2}
                 shift
             else
                 echo "\"${1}\" option requires a non-empty option argument" >&2
@@ -567,13 +557,6 @@ if [[ -n "${REUSE_ENV:-}" || -n "${INSTALL_DEPS:-}" ]]; then
         CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
     fi
 fi
-# if [[ -z "${CONFIG_FILE_NAME}" ]]; then
-# else
-#     if [[ -n "${REUSE_ENV:-}" ]]; then
-#         echo "Unclear what to do since these are both provided"
-#     fi
-# fi
-#exit 1
 
 # If a config file is provided skip everything
 if [[ -z "${CONFIG_FILE_NAME}" ]]; then
@@ -813,13 +796,6 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     fi
 
-    ##########################################################################################
-    # If this build is going to go to a buildcache, pad out the install tree so that it can be relocated
-    # Don't mix this with normal installtions, duplicate packages can get installed
-    if [[ -n "${UPDATE_BUILDCACHE:-}" ]]; then
-        spack config add "config:install_tree:padded_length:128"
-    fi
-
     # Add any extra packages in file EXTRAS that you want to build in conjuction with the LBANN package
     if [[ -n "${EXTRAS:-}" ]]; then
         for e in ${EXTRAS}
@@ -947,16 +923,6 @@ CMD="ml use ${LBANN_MODFILES_DIR}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-# cmake -C ../LBANN_pascal-toss_4_x86_64_ib-gcc@10.3.1.cmake -DCMAKE_INSTALL_PREFIX=install ..
-#cmake -C ../LBANN_pascal-toss_4_x86_64_ib-gcc@10.3.1.cmake -DCMAKE_INSTALL_PREFIX=../bve_install_dir ..
-# ml use ../bve_install_dir/etc/modulefiles
-# spack env activate -p --without-view lbann-cached-cmake-again-broadwell
-# spack load python
-
-# CMD="spack -d dev-build -u initconfig ${LBANN_SPEC}"
-# echo ${CMD} | tee -a ${LOG}
-# [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-
 # Install any extra Python packages via PIP if requested
 if [[ -n "${PIP_EXTRAS:-}" ]]; then
     for p in ${PIP_EXTRAS}
@@ -1017,8 +983,10 @@ echo "All details of the run are logged to ${LOG}"
 echo "##########################################################################################"
 
 if [[ -z "${USER_BUILD:-}" ]]; then
-    # Lastly, Save the log file in the build directory
-    CMD="cp ${LOG} ${LBANN_HOME}/spack-build-${LBANN_SPEC_HASH}/${LOG}"
-    echo ${CMD}
-    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
+    if [[ ! -e "${LBANN_BUILD_DIR}/${LOG}" ]]; then
+        # Lastly, Save the log file in the build directory
+        CMD="cp ${LOG} ${LBANN_BUILD_DIR}/${LOG}"
+        echo ${CMD}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
+    fi
 fi
