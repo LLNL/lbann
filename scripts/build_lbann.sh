@@ -540,9 +540,9 @@ if [[ ! -n "${SKIP_MODULES:-}" ]]; then
 fi
 
 # If there is a request to reuse the "environment" look for a config file too
-if [[ -n "${REUSE_ENV:-}" || -n "${INSTALL_DEPS:-}" ]]; then
+if [[ -n "${REUSE_ENV:-}" ]]; then
     if [[ -n "${CONFIG_FILE_NAME}" ]]; then
-        echo "Both the reuse flag (-r) or define env flag (-d) and a config file flag (-c) were provide, favor the config file: ${CONFIG_FILE_NAME}"
+        echo "Both the reuse flag (-r) and a config file flag (-c) were provide, favor the config file: ${CONFIG_FILE_NAME}"
         if [[ ! -e "${CONFIG_FILE_NAME}" || ! -r "${CONFIG_FILE_NAME}" ]]; then
             echo "Unable to find or read ${CONFIG_FILE_NAME}"
             exit 1
@@ -552,9 +552,9 @@ if [[ -n "${REUSE_ENV:-}" || -n "${INSTALL_DEPS:-}" ]]; then
         if [[ ! -z "${MATCHED_CONFIG_FILE}" ]]; then
             if [[ -e "${MATCHED_CONFIG_FILE}" && -r "${MATCHED_CONFIG_FILE}" ]]; then
                 echo "I have found and will use ${MATCHED_CONFIG_FILE}"
+                CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
             fi
         fi
-        CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
     fi
 fi
 
@@ -896,6 +896,25 @@ CMD="spack env deactivate"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
+# Now that the config file is generated set the field
+find_cmake_config_file ${LBANN_LABEL} ${CENTER_COMPILER}
+if [[ ! -z "${MATCHED_CONFIG_FILE}" ]]; then
+    if [[ -e "${MATCHED_CONFIG_FILE}" && -r "${MATCHED_CONFIG_FILE}" ]]; then
+        echo "I have found and will use ${MATCHED_CONFIG_FILE}"
+        CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
+    else
+        echo "ERROR: Unable to open the generated config file"
+        exit 1
+    fi
+else
+    echo "ERROR: Unable to find the generated config file"
+    exit 1
+fi
+
+# Record which ninja was used to build this
+spack load ninja
+NINJA=$(which ninja)
+
 fi # [[ ! -z "${CONFIG_FILE_NAME}" ]]
 
 LBANN_BUILD_DIR="${PWD}/build/lbann_${LBANN_LABEL}"
@@ -914,7 +933,7 @@ CMD="cd ${LBANN_BUILD_DIR}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-CMD="ninja install"
+CMD="${NINJA} install"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -965,7 +984,7 @@ echo "  ml use ${LBANN_MODFILES_DIR}" | tee -a ${LOG}
 echo "  ml load lbann" | tee -a ${LOG}
 echo "  lbann_pfe.sh <cmd>" | tee -a ${LOG}
 echo "To rebuild LBANN go to ${LBANN_BUILD_DIR}, and rerun:" | tee -a ${LOG}
-echo "  ninja install" | tee -a ${LOG}
+echo "  ${NINJA} install" | tee -a ${LOG}
 echo "To manipulate the dependencies you can activate the spack environment named ${LBANN_ENV} via:" | tee -a ${LOG}
 echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
 # if [[ -z "${USER_BUILD:-}" ]]; then
