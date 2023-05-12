@@ -32,7 +32,7 @@ BUILD_JOBS="-j $(($(sysctl -n hw.physicalcpu)/2+2))"
 else
 BUILD_JOBS="-j $(($(nproc)/2+2))"
 fi
-SPACK_INSTALL_ARGS=
+SPACK_INSTALL_DEPENDENCIES_ONLY=
 
 CONFIG_FILE_NAME=
 
@@ -134,7 +134,7 @@ while :; do
             INSTALL_DEPS="TRUE"
             ;;
         --dependencies-only)
-            SPACK_INSTALL_ARGS+="--only dependencies"
+            SPACK_INSTALL_DEPENDENCIES_ONLY="TRUE"
             ;;
         --dry-run)
             DRY_RUN="TRUE"
@@ -376,17 +376,24 @@ if [[ -f ${LOG} ]]; then
     [[ -z "${DRY_RUN:-}" ]] && ${CMD}
 fi
 
+LBANN_BUILD_DIR="${PWD}/build/lbann_${LBANN_LABEL}"
+LBANN_INSTALL_DIR="${PWD}/build/lbann_${LBANN_LABEL}/install"
+LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
+##########################################################################################
+
 function exit_on_failure()
 {
     local cmd="$1"
     echo -e "FAILED: ${cmd}"
     echo "##########################################################################################" | tee -a ${LOG}
-    echo "LBANN is being installed in a spack environment named ${LBANN_ENV} but an error occured, access it via:" | tee -a ${LOG}
-    echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
-    echo "To rebuild LBANN from source drop into a shell with the spack build environment setup (requires active environment):" | tee -a ${LOG}
-    echo "  spack build-env lbann -- bash" | tee -a ${LOG}
-    echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
+    echo "LBANN is being installed in ${LBANN_INSTALL_DIR}, but an error occured." | tee -a ${LOG}
+    echo "To rebuild LBANN go to ${LBANN_BUILD_DIR}, and rerun:" | tee -a ${LOG}
+    echo "  cd ${LBANN_BUILD_DIR}" | tee -a ${LOG}
     echo "  ninja install" | tee -a ${LOG}
+    echo "If the error occured in the dependencies, they are being installed in a spack environment named ${LBANN_ENV}, access it via:" | tee -a ${LOG}
+    echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
+    echo "  spack install --only dependencies" | tee -a ${LOG}
+    echo "  spack install -u initconfig lbann" | tee -a ${LOG}
     echo "##########################################################################################" | tee -a ${LOG}
     echo "All details of the run are logged to ${LOG}"
     echo "##########################################################################################"
@@ -396,18 +403,14 @@ function exit_on_failure()
 function exit_with_instructions()
 {
     echo "##########################################################################################" | tee -a ${LOG}
-    echo "LBANN is being installed in a spack environment named ${LBANN_ENV}, access it via:" | tee -a ${LOG}
+    echo "LBANN is installed in ${LBANN_INSTALL_DIR}, access it via:" | tee -a ${LOG}
+    echo "  ml use ${LBANN_MODFILES_DIR}" | tee -a ${LOG}
+    echo "  ml load lbann" | tee -a ${LOG}
+    echo "  lbann_pfe.sh <cmd>" | tee -a ${LOG}
+    echo "To rebuild LBANN go to ${LBANN_BUILD_DIR}, and rerun:" | tee -a ${LOG}
+    echo "  ${NINJA} install" | tee -a ${LOG}
+    echo "To manipulate the dependencies you can activate the spack environment named ${LBANN_ENV} via:" | tee -a ${LOG}
     echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
-    echo "To finish installing LBANN and its dependencies (requires active environment):" | tee -a ${LOG}
-    echo "  spack install" | tee -a ${LOG}
-    echo "Once the initial installation is complete, to rebuild LBANN from source drop into a shell with the spack build environment setup (requires active environment):" | tee -a ${LOG}
-    echo "  spack build-env lbann -- bash" | tee -a ${LOG}
-    echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
-    echo "  ninja install" | tee -a ${LOG}
-    echo "Once installed, to use this version of LBANN use the module system without the need for activating the environment (does not require being in an environment)" | tee -a ${LOG}
-    echo "  module load lbann/${LBANN_LABEL}-${LBANN_SPEC_HASH}" | tee -a ${LOG}
-    echo "or have spack load the module auto-magically. It is installed in a spack environment named ${LBANN_ENV}, access it via: (has to be executed from the environment)"  | tee -a ${LOG}
-    echo "  spack load lbann${AT_LBANN_LABEL} arch=${SPACK_ARCH}" | tee -a ${LOG}
     echo "##########################################################################################" | tee -a ${LOG}
     echo "All details of the run are logged to ${LOG}"
     echo "##########################################################################################"
@@ -873,25 +876,39 @@ fi
 
 ##########################################################################################
 # Actually install LBANN's dependencies from local source
-CMD="spack install --only dependencies ${BUILD_JOBS} ${SPACK_INSTALL_ARGS}"
+CMD="spack install --only dependencies ${BUILD_JOBS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+if [[ -n "${SPACK_INSTALL_DEPENDENCIES_ONLY:-}" ]]; then
+    echo "Finished installing dependencies.  Exiting..."
+    exit
+fi
 
 if [[ -n "${PKG_LIST:-}" ]]; then
     for p in ${PKG_LIST}
     do
-        CMD="spack install ${BUILD_JOBS} ${SPACK_INSTALL_ARGS} ${p}"
+        CMD="spack install ${BUILD_JOBS} ${p}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     done
 fi
 
-CMD="spack install -u initconfig ${BUILD_JOBS} ${SPACK_INSTALL_ARGS} lbann"
+CMD="spack install -u initconfig ${BUILD_JOBS} lbann"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
 # SPECIFIC_COMPILER=$(spack find --format "{prefix} {version} {name},/{hash} {compiler}" conduit | cut -f4 -d" ")
 
+# Record which ninja was used to build this
+spack load ninja
+NINJA=$(which ninja)
+
+# Record which python was used to build this
+spack load python
+PYTHON=$(which python3)
+
+# Drop out of the environment for the rest of the build
 CMD="spack env deactivate"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
@@ -911,20 +928,14 @@ else
     exit 1
 fi
 
-# Record which ninja was used to build this
-spack load ninja
-NINJA=$(which ninja)
-
 fi # [[ ! -z "${CONFIG_FILE_NAME}" ]]
 
-LBANN_BUILD_DIR="${PWD}/build/lbann_${LBANN_LABEL}"
 if [[ ! -d "${LBANN_BUILD_DIR}" ]]; then
     CMD="mkdir -p ${LBANN_BUILD_DIR}"
     echo ${CMD}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
 
-LBANN_INSTALL_DIR="${PWD}/build/lbann_${LBANN_LABEL}/install"
 CMD="cmake -C ${CONFIG_FILE_NAME} -B ${LBANN_BUILD_DIR} -DCMAKE_INSTALL_PREFIX=${LBANN_INSTALL_DIR} ."
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
@@ -937,7 +948,6 @@ CMD="${NINJA} install"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
 CMD="ml use ${LBANN_MODFILES_DIR}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
@@ -946,7 +956,7 @@ echo ${CMD} | tee -a ${LOG}
 if [[ -n "${PIP_EXTRAS:-}" ]]; then
     for p in ${PIP_EXTRAS}
     do
-        CMD="python3 -m pip install -r ${p}"
+        CMD="${PYTHON} -m pip install -r ${p}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     done
@@ -978,7 +988,6 @@ fi
 #     COMPILER_VER=$(basename $(dirname $LBANN_INSTALL_DIR))
 # fi
 echo "##########################################################################################" | tee -a ${LOG}
-CMD=""
 echo "LBANN is installed in ${LBANN_INSTALL_DIR}, access it via:" | tee -a ${LOG}
 echo "  ml use ${LBANN_MODFILES_DIR}" | tee -a ${LOG}
 echo "  ml load lbann" | tee -a ${LOG}
@@ -987,6 +996,8 @@ echo "To rebuild LBANN go to ${LBANN_BUILD_DIR}, and rerun:" | tee -a ${LOG}
 echo "  ${NINJA} install" | tee -a ${LOG}
 echo "To manipulate the dependencies you can activate the spack environment named ${LBANN_ENV} via:" | tee -a ${LOG}
 echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
+echo "To manipulate the version of python used it is:" | tee -a ${LOG}
+echo "  ${PYTHON}" | tee -a ${LOG}
 # if [[ -z "${USER_BUILD:-}" ]]; then
 #     echo "To rebuild LBANN from source drop into a shell with the spack build environment setup (requires active environment):" | tee -a ${LOG}
 #     echo "  spack build-env lbann -- bash" | tee -a ${LOG}
