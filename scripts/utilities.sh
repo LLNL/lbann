@@ -45,6 +45,8 @@ function find_cmake_config_file() {
         generic_compiler=${center_compiler//%/}
         # https://unix.stackexchange.com/questions/240418/find-latest-files
         MATCHED_CONFIG_FILE_PATH=$(find .  -maxdepth 1 -type f -name "LBANN_${HOST}_${label}-${SYS}-${generic_compiler}@*.cmake" -exec stat -c '%X %n' {} \; -print | sort -nr | awk 'NR==1,NR==1 {print $2}')
-        MATCHED_CONFIG_FILE=$(basename ${MATCHED_CONFIG_FILE_PATH})
+        if [[ -n "${MATCHED_CONFIG_FILE_PATH}" ]]; then
+            MATCHED_CONFIG_FILE=$(basename ${MATCHED_CONFIG_FILE_PATH})
+        fi
     fi
 }

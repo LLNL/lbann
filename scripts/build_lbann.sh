@@ -547,8 +547,13 @@ if [[ ! -n "${SKIP_MODULES:-}" ]]; then
     fi
 fi
 
+CMAKE=$(which cmake)
+NINJA=$(which ninja)
+PYTHON=$(which python3)
+
 # If there is a request to reuse the "environment" look for a config file too
-if [[ -n "${REUSE_ENV:-}" ]]; then
+#
+if [[ -n "${REUSE_ENV:-}" || -z "${INSTALL_DEPS:-}" ]]; then
     if [[ -n "${CONFIG_FILE_NAME}" ]]; then
         echo "Both the reuse flag (-r) and a config file flag (-c) were provide, favor the config file: ${CONFIG_FILE_NAME}"
         if [[ ! -e "${CONFIG_FILE_NAME}" || ! -r "${CONFIG_FILE_NAME}" ]]; then
@@ -566,7 +571,7 @@ if [[ -n "${REUSE_ENV:-}" ]]; then
     fi
 
     # Look for existing environment with the same name to find the build tools
-    if [[ $(spack env list | grep -e "${LBANN_ENV}$") ]]; then
+    if [[ -n "${REUSE_ENV:-}" && $(spack env list | grep -e "${LBANN_ENV}$") ]]; then
         # Briefly activate the environment to find the build tools
         CMD="spack env activate -V -p ${LBANN_ENV}"
         echo ${CMD} | tee -a ${LOG}
@@ -580,10 +585,10 @@ if [[ -n "${REUSE_ENV:-}" ]]; then
         CMD="spack env deactivate"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-    else
-        CMAKE=$(which cmake)
-        NINJA=$(which ninja)
-        PYTHON=$(which python3)
+    # else
+    #     CMAKE=$(which cmake)
+    #     NINJA=$(which ninja)
+    #     PYTHON=$(which python3)
     fi
 fi
 
