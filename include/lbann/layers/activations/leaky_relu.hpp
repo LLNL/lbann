@@ -128,7 +128,7 @@ protected:
   bool can_run_inplace() const override { return true; }
   int get_backprop_requirements() const override
   {
-    return ERROR_SIGNALS | PREV_ACTIVATIONS;
+    return ERROR_SIGNALS | ACTIVATIONS;
   }
 
 private:
