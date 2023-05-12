@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Make sure that lmod is setup correctly
+if [ -n "${LMOD_PKG}" ]; then
+    source $LMOD_PKG/init/bash
+fi
+
 ORIG_CMD="$0 $@"
 SCRIPT=${BASH_SOURCE}
 
@@ -900,13 +905,18 @@ echo ${CMD} | tee -a ${LOG}
 
 # SPECIFIC_COMPILER=$(spack find --format "{prefix} {version} {name},/{hash} {compiler}" conduit | cut -f4 -d" ")
 
+# Record which cmake was used to build this
+CMAKE=$(spack build-env lbann -- which cmake)
+
 # Record which ninja was used to build this
-spack load ninja
-NINJA=$(which ninja)
+NINJA=$(spack build-env lbann -- which ninja)
+#spack load --first ninja
+#NINJA=$(which ninja)
 
 # Record which python was used to build this
-spack load python
-PYTHON=$(which python3)
+PYTHON=$(spack build-env lbann -- which python3)
+# spack load --first python
+# PYTHON=$(which python3)
 
 # Drop out of the environment for the rest of the build
 CMD="spack env deactivate"
@@ -936,9 +946,9 @@ if [[ ! -d "${LBANN_BUILD_DIR}" ]]; then
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
 
-CMD="cmake -C ${CONFIG_FILE_NAME} -B ${LBANN_BUILD_DIR} -DCMAKE_INSTALL_PREFIX=${LBANN_INSTALL_DIR} ."
-echo ${CMD} | tee -a ${LOG}
-[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+CMAKE_CMD="${CMAKE} -C ${CONFIG_FILE_NAME} -B ${LBANN_BUILD_DIR} -DCMAKE_INSTALL_PREFIX=${LBANN_INSTALL_DIR} ."
+echo ${CMAKE_CMD} | tee -a ${LOG}
+[[ -z "${DRY_RUN:-}" ]] && { ${CMAKE_CMD} || exit_on_failure "${CMAKE_CMD}"; }
 
 CMD="cd ${LBANN_BUILD_DIR}"
 echo ${CMD} | tee -a ${LOG}
@@ -993,6 +1003,7 @@ echo "  ml use ${LBANN_MODFILES_DIR}" | tee -a ${LOG}
 echo "  ml load lbann" | tee -a ${LOG}
 echo "  lbann_pfe.sh <cmd>" | tee -a ${LOG}
 echo "To rebuild LBANN go to ${LBANN_BUILD_DIR}, and rerun:" | tee -a ${LOG}
+echo "  ${CMAKE_CMD}" | tee -a ${LOG}
 echo "  ${NINJA} install" | tee -a ${LOG}
 echo "To manipulate the dependencies you can activate the spack environment named ${LBANN_ENV} via:" | tee -a ${LOG}
 echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
