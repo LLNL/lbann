@@ -1024,6 +1024,9 @@ echo "  ml use ${LBANN_MODFILES_DIR}" | tee -a ${LOG}
 echo "  ml load lbann" | tee -a ${LOG}
 echo "  lbann_pfe.sh <cmd>" | tee -a ${LOG}
 echo "To rebuild LBANN go to ${LBANN_BUILD_DIR}, and rerun:" | tee -a ${LOG}
+if [[ -n ${MODULE_CMD} ]]; then
+    echo "  ${MODULE_CMD}" | tee -a ${LOG}
+fi
 echo "  ${CMAKE_CMD}" | tee -a ${LOG}
 echo "  ${NINJA} install" | tee -a ${LOG}
 echo "To manipulate the dependencies you can activate the spack environment named ${LBANN_ENV} via:" | tee -a ${LOG}
