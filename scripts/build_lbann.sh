@@ -34,6 +34,8 @@ BUILD_JOBS="-j $(($(nproc)/2+2))"
 fi
 SPACK_INSTALL_ARGS=
 
+CONFIG_FILE_NAME=
+
 LBANN_VARIANTS=
 CMD_LINE_VARIANTS=
 
@@ -69,6 +71,7 @@ Options:
   ${C}--clean-build${N}              Delete the local link to the build directory
   ${C}--clean-deps${N}               Forcibly uninstall Hydrogen, Aluminum, and DiHydrogen dependencies
   ${C}--configure-only${N}           Stop after adding all packages to the environment
+  ${C}-c | --config-file${N}         Ingest a CMake config file
   ${C}-d | --define-env${N}          Define (create) a Spack environment, including the lbann dependencies, for building LBANN from local source.  (This wil overwrite any existing environment of the same name)
   ${C}--dependencies-only${N}        Only install the dependencies of the top-level packages (e.g. LBANN)
   ${C}--dry-run${N}                  Dry run the commands (no effect)
@@ -118,6 +121,15 @@ while :; do
             ;;
         --configure-only)
             CONFIGURE_ONLY="TRUE"
+            ;;
+        -c|--config-file)
+            if [ -n "${2}" ]; then
+                CONFIG_FILE_NAME=${2}
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
             ;;
         -d|--define-env)
             INSTALL_DEPS="TRUE"
@@ -537,6 +549,35 @@ if [[ ! -n "${SKIP_MODULES:-}" ]]; then
     fi
 fi
 
+# If there is a request to reuse the "environment" look for a config file too
+if [[ -n "${REUSE_ENV:-}" || -n "${INSTALL_DEPS:-}" ]]; then
+    if [[ -n "${CONFIG_FILE_NAME}" ]]; then
+        echo "Both the reuse flag (-r) or define env flag (-d) and a config file flag (-c) were provide, favor the config file: ${CONFIG_FILE_NAME}"
+        if [[ ! -e "${CONFIG_FILE_NAME}" || ! -r "${CONFIG_FILE_NAME}" ]]; then
+            echo "Unable to find or read ${CONFIG_FILE_NAME}"
+            exit 1
+        fi
+    else
+        find_cmake_config_file ${LBANN_LABEL} ${CENTER_COMPILER}
+        if [[ ! -z "${MATCHED_CONFIG_FILE}" ]]; then
+            if [[ -e "${MATCHED_CONFIG_FILE}" && -r "${MATCHED_CONFIG_FILE}" ]]; then
+                echo "I have found and will use ${MATCHED_CONFIG_FILE}"
+            fi
+        fi
+        CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
+    fi
+fi
+# if [[ -z "${CONFIG_FILE_NAME}" ]]; then
+# else
+#     if [[ -n "${REUSE_ENV:-}" ]]; then
+#         echo "Unclear what to do since these are both provided"
+#     fi
+# fi
+#exit 1
+
+# If a config file is provided skip everything
+if [[ -z "${CONFIG_FILE_NAME}" ]]; then
+
 # If the user asks to resuse an environment see if it exists, if not set one up
 if [[ -n "${REUSE_ENV:-}" ]]; then
     # Check to make sure that both the -d and -r flags are not concurrently set
@@ -855,55 +896,66 @@ if [[ ! -e "${SPACK_BUILD_DIR}" && -n "${TMP_BUILD_DIR:-}" && -z "${DRY_RUN:-}" 
 fi
 
 ##########################################################################################
-# Actually install LBANN from local source
-CMD="spack install ${BUILD_JOBS} ${SPACK_INSTALL_ARGS}"
+# Actually install LBANN's dependencies from local source
+CMD="spack install --only dependencies ${BUILD_JOBS} ${SPACK_INSTALL_ARGS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-if [[ -n "${UPDATE_BUILDCACHE:-}" && -r "${UPDATE_BUILDCACHE:-}" ]]; then
-    # Make sure that all of the packages in the environment are in the mirror
-    CMD="spack mirror create -d ${UPDATE_BUILDCACHE} --all"
-    echo ${CMD} | tee -a ${LOG}
-    # Don't check the return code of the mirror create command, it will fail to install some packages
-    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
-
-    if [[ ! -e "${UPDATE_BUILDCACHE}/pubring.gpg" ]]; then
-        CMD="cp ${SPACK_ROOT}/opt/spack/gpg/pubring.gpg ${UPDATE_BUILDCACHE}/pubring.gpg"
+if [[ -n "${PKG_LIST:-}" ]]; then
+    for p in ${PKG_LIST}
+    do
+        CMD="spack install ${BUILD_JOBS} ${SPACK_INSTALL_ARGS} ${p}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-    fi
-
-    SPACK_INSTALL_ROOT=$(grep root $SPACK_ROOT/etc/spack/config.yaml | awk '{ print $2 }')
-    for ii in $(spack find --format "{prefix} {version} {name},/{hash}" |
-        grep -v -E "^(develop^master)" |
-        grep -e "${SPACK_ROOT}" -e "${SPACK_INSTALL_ROOT}" |
-        cut -f3 -d" ")
-    do
-        NAME=${ii%,*};
-        HASH=${ii#*,};
-        case ${NAME} in
-            "cuda" | "cudnn" | "ncurses" | "openssl" | "lbann")
-                echo "Skipping $ii"
-                continue
-                ;;
-        esac
-        CMD="spack buildcache check --rebuild-on-error --mirror-url file://${UPDATE_BUILDCACHE} -s ${HASH}"
-        echo -e "${NAME}:\t ${CMD}" | tee -a ${LOG}
-        if [[ -z "${DRY_RUN:-}" ]]; then
-            if ${CMD};
-            then
-                true
-            else
-                CMD="spack buildcache create -af -d ${UPDATE_BUILDCACHE} --only=package ${HASH}"
-                echo ${CMD} | tee -a ${LOG}
-                [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-            fi
-        fi
     done
-    CMD="spack buildcache update-index -d ${UPDATE_BUILDCACHE}"
-    echo ${CMD} | tee -a ${LOG}
+fi
+
+CMD="spack install -u initconfig ${BUILD_JOBS} ${SPACK_INSTALL_ARGS} lbann"
+echo ${CMD} | tee -a ${LOG}
+[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+# SPECIFIC_COMPILER=$(spack find --format "{prefix} {version} {name},/{hash} {compiler}" conduit | cut -f4 -d" ")
+
+CMD="spack env deactivate"
+echo ${CMD} | tee -a ${LOG}
+[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+fi # [[ ! -z "${CONFIG_FILE_NAME}" ]]
+
+LBANN_BUILD_DIR="${PWD}/build/lbann_${LBANN_LABEL}"
+if [[ ! -d "${LBANN_BUILD_DIR}" ]]; then
+    CMD="mkdir -p ${LBANN_BUILD_DIR}"
+    echo ${CMD}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
+
+LBANN_INSTALL_DIR="${PWD}/build/lbann_${LBANN_LABEL}/install"
+CMD="cmake -C ${CONFIG_FILE_NAME} -B ${LBANN_BUILD_DIR} -DCMAKE_INSTALL_PREFIX=${LBANN_INSTALL_DIR} ."
+echo ${CMD} | tee -a ${LOG}
+[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+CMD="cd ${LBANN_BUILD_DIR}"
+echo ${CMD} | tee -a ${LOG}
+[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+CMD="ninja install"
+echo ${CMD} | tee -a ${LOG}
+[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
+CMD="ml use ${LBANN_MODFILES_DIR}"
+echo ${CMD} | tee -a ${LOG}
+[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+# cmake -C ../LBANN_pascal-toss_4_x86_64_ib-gcc@10.3.1.cmake -DCMAKE_INSTALL_PREFIX=install ..
+#cmake -C ../LBANN_pascal-toss_4_x86_64_ib-gcc@10.3.1.cmake -DCMAKE_INSTALL_PREFIX=../bve_install_dir ..
+# ml use ../bve_install_dir/etc/modulefiles
+# spack env activate -p --without-view lbann-cached-cmake-again-broadwell
+# spack load python
+
+# CMD="spack -d dev-build -u initconfig ${LBANN_SPEC}"
+# echo ${CMD} | tee -a ${LOG}
+# [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
 # Install any extra Python packages via PIP if requested
 if [[ -n "${PIP_EXTRAS:-}" ]]; then
@@ -941,14 +993,21 @@ fi
 #     COMPILER_VER=$(basename $(dirname $LBANN_INSTALL_DIR))
 # fi
 echo "##########################################################################################" | tee -a ${LOG}
-echo "LBANN is installed in a spack environment named ${LBANN_ENV}, access it via:" | tee -a ${LOG}
+CMD=""
+echo "LBANN is installed in ${LBANN_INSTALL_DIR}, access it via:" | tee -a ${LOG}
+echo "  ml use ${LBANN_MODFILES_DIR}" | tee -a ${LOG}
+echo "  ml load lbann" | tee -a ${LOG}
+echo "  lbann_pfe.sh <cmd>" | tee -a ${LOG}
+echo "To rebuild LBANN go to ${LBANN_BUILD_DIR}, and rerun:" | tee -a ${LOG}
+echo "  ninja install" | tee -a ${LOG}
+echo "To manipulate the dependencies you can activate the spack environment named ${LBANN_ENV} via:" | tee -a ${LOG}
 echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
-if [[ -z "${USER_BUILD:-}" ]]; then
-    echo "To rebuild LBANN from source drop into a shell with the spack build environment setup (requires active environment):" | tee -a ${LOG}
-    echo "  spack build-env lbann -- bash" | tee -a ${LOG}
-    echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
-    echo "  ninja install" | tee -a ${LOG}
-fi
+# if [[ -z "${USER_BUILD:-}" ]]; then
+#     echo "To rebuild LBANN from source drop into a shell with the spack build environment setup (requires active environment):" | tee -a ${LOG}
+#     echo "  spack build-env lbann -- bash" | tee -a ${LOG}
+#     echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
+#     echo "  ninja install" | tee -a ${LOG}
+# fi
 echo "Additional Python packages for working with LBANN can be added either via PIP or by concretizing them together in spack., activate the spack environment then" | tee -a ${LOG}
 echo "To install them via PIP: 1) the spack environment (see above) and 2) issue the following command" | tee -a ${LOG}
 echo "  python3 -m pip install -r <requirements file>" | tee -a ${LOG}
