@@ -179,7 +179,7 @@ void bp_compute_distconv(
   TensorDataType negative_slope)
 {
   assert_always(Layout == data_layout::DATA_PARALLEL);
-  dc.m_leaky_relu->backward(dc.get_prev_activations(),
+  dc.m_leaky_relu->backward(dc.get_activations(),
                             dc.get_prev_error_signals(),
                             negative_slope,
                             dc.get_error_signals());
@@ -211,7 +211,7 @@ void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute()
   }
 #endif // LBANN_HAS_DISTCONV
   local_bp(this->m_negative_slope,
-           this->get_local_prev_activations(),
+           this->get_local_activations(),
            this->get_local_prev_error_signals(),
            this->get_local_error_signals());
 }
