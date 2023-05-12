@@ -565,9 +565,10 @@ if [[ -n "${REUSE_ENV:-}" ]]; then
         fi
     fi
 
-    # Look for existing environment with the same name
+    # Look for existing environment with the same name to find the build tools
     if [[ $(spack env list | grep -e "${LBANN_ENV}$") ]]; then
-        CMD="spack env activate -p ${LBANN_ENV}"
+        # Briefly activate the environment to find the build tools
+        CMD="spack env activate -V -p ${LBANN_ENV}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
         # Record which cmake was used to build this
