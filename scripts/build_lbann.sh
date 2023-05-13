@@ -381,9 +381,10 @@ if [[ -f ${LOG} ]]; then
     [[ -z "${DRY_RUN:-}" ]] && ${CMD}
 fi
 
-LBANN_BUILD_DIR="${PWD}/build/lbann_${LBANN_LABEL}"
-LBANN_INSTALL_DIR="${PWD}/build/lbann_${LBANN_LABEL}/install"
+LBANN_BUILD_DIR="${PWD}/build/lbann_${CLUSTER}_${LBANN_LABEL}"
+LBANN_INSTALL_DIR="${LBANN_BUILD_DIR}/install"
 LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
+LBANN_SETUP_FILE="${LBANN_BUILD_DIR}/LBANN_${CLUSTER}_${LBANN_LABEL}_setup_build_tools.sh"
 ##########################################################################################
 
 function exit_on_failure()
@@ -547,10 +548,6 @@ if [[ ! -n "${SKIP_MODULES:-}" ]]; then
     fi
 fi
 
-CMAKE=$(which cmake)
-NINJA=$(which ninja)
-PYTHON=$(which python3)
-
 # If there is a request to reuse the "environment" look for a config file too
 #
 if [[ -n "${REUSE_ENV:-}" || -z "${INSTALL_DEPS:-}" ]]; then
@@ -568,27 +565,6 @@ if [[ -n "${REUSE_ENV:-}" || -z "${INSTALL_DEPS:-}" ]]; then
                 CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
             fi
         fi
-    fi
-
-    # Look for existing environment with the same name to find the build tools
-    if [[ -n "${REUSE_ENV:-}" && $(spack env list | grep -e "${LBANN_ENV}$") ]]; then
-        # Briefly activate the environment to find the build tools
-        CMD="spack env activate -V -p ${LBANN_ENV}"
-        echo ${CMD} | tee -a ${LOG}
-        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-        # Record which cmake was used to build this
-        CMAKE=$(spack build-env lbann -- which cmake)
-        # Record which ninja was used to build this
-        NINJA=$(spack build-env lbann -- which ninja)
-        # Record which python was used to build this
-        PYTHON=$(spack build-env lbann -- which python3)
-        CMD="spack env deactivate"
-        echo ${CMD} | tee -a ${LOG}
-        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-    # else
-    #     CMAKE=$(which cmake)
-    #     NINJA=$(which ninja)
-    #     PYTHON=$(which python3)
     fi
 fi
 
@@ -916,6 +892,10 @@ if [[ -n "${SPACK_INSTALL_DEPENDENCIES_ONLY:-}" ]]; then
     exit
 fi
 
+
+##########################################################################################
+# Install any other packages to make sure that PYTHONPATH is properly setup
+# Install any other top level packages requested
 if [[ -n "${PKG_LIST:-}" ]]; then
     for p in ${PKG_LIST}
     do
@@ -925,6 +905,18 @@ if [[ -n "${PKG_LIST:-}" ]]; then
     done
 fi
 
+# Install any extra Python packages via PIP if requested
+if [[ -n "${PIP_EXTRAS:-}" ]]; then
+    for p in ${PIP_EXTRAS}
+    do
+        CMD="python3 -m pip install -r ${p}"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    done
+fi
+
+##########################################################################################
+# Configure but don't install LBANN using spack
 CMD="spack install -u initconfig ${BUILD_JOBS} lbann"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
@@ -932,17 +924,25 @@ echo ${CMD} | tee -a ${LOG}
 # SPECIFIC_COMPILER=$(spack find --format "{prefix} {version} {name},/{hash} {compiler}" conduit | cut -f4 -d" ")
 
 # Record which cmake was used to build this
-CMAKE=$(spack build-env lbann -- which cmake)
-
+LBANN_CMAKE=$(spack build-env lbann -- which cmake)
 # Record which ninja was used to build this
-NINJA=$(spack build-env lbann -- which ninja)
-#spack load --first ninja
-#NINJA=$(which ninja)
-
+LBANN_NINJA=$(spack build-env lbann -- which ninja)
 # Record which python was used to build this
-PYTHON=$(spack build-env lbann -- which python3)
-# spack load --first python
-# PYTHON=$(which python3)
+LBANN_PYTHON=$(spack build-env lbann -- which python3)
+LBANN_PYTHONPATH=$(spack build-env lbann -- printenv PYTHONPATH)
+
+if [[ ! -d "${LBANN_BUILD_DIR}" ]]; then
+    CMD="mkdir -p ${LBANN_BUILD_DIR}"
+    echo ${CMD}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+fi
+
+cat > ${LBANN_SETUP_FILE}<<EOF
+export LBANN_CMAKE=${LBANN_CMAKE}
+export LBANN_NINJA=${LBANN_NINJA}
+export LBANN_PYTHON=${LBANN_PYTHON}
+export LBANN_PYTHONPATH=${LBANN_PYTHONPATH}
+EOF
 
 # Drop out of the environment for the rest of the build
 CMD="spack env deactivate"
@@ -955,6 +955,12 @@ if [[ ! -z "${MATCHED_CONFIG_FILE}" ]]; then
     if [[ -e "${MATCHED_CONFIG_FILE}" && -r "${MATCHED_CONFIG_FILE}" ]]; then
         echo "I have found and will use ${MATCHED_CONFIG_FILE}"
         CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
+        if [[ ! -e "${LBANN_BUILD_DIR}/${CONFIG_FILE_NAME}" ]]; then
+            # Save the config file in the build directory
+            CMD="cp ${CONFIG_FILE_NAME} ${LBANN_BUILD_DIR}/${CONFIG_FILE_NAME}"
+            echo ${CMD}
+            [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
+        fi
     else
         echo "ERROR: Unable to open the generated config file"
         exit 1
@@ -972,7 +978,21 @@ if [[ ! -d "${LBANN_BUILD_DIR}" ]]; then
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
 
-CMAKE_CMD="${CMAKE} -C ${CONFIG_FILE_NAME} -B ${LBANN_BUILD_DIR} -DCMAKE_INSTALL_PREFIX=${LBANN_INSTALL_DIR} ."
+if [[ -e "${LBANN_SETUP_FILE}" && -r "${LBANN_SETUP_FILE}" ]]; then
+    echo "I have found and will use ${LBANN_SETUP_FILE}"
+    source ${LBANN_SETUP_FILE}
+    export PYTHONPATH=${LBANN_PYTHONPATH}:${PYTHONPATH}
+    echo ${LBANN_CMAKE}
+    echo ${LBANN_NINJA}
+    echo ${LBANN_PYTHON}
+    echo ${LBANN_PYTHONPATH}
+else
+    echo "ERROR: Unable to find the setup build tools file: ${LBANN_SETUP_FILE}"
+    echo "ERROR: Please reinstall the dependencies (-d) to recreate the file."
+    exit 1
+fi
+
+CMAKE_CMD="${LBANN_CMAKE} -C ${CONFIG_FILE_NAME} -B ${LBANN_BUILD_DIR} -DCMAKE_INSTALL_PREFIX=${LBANN_INSTALL_DIR} ."
 echo ${CMAKE_CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMAKE_CMD} || exit_on_failure "${CMAKE_CMD}"; }
 
@@ -980,23 +1000,13 @@ CMD="cd ${LBANN_BUILD_DIR}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-CMD="${NINJA} install"
+CMD="${LBANN_NINJA} install"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
 CMD="ml use ${LBANN_MODFILES_DIR}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-
-# Install any extra Python packages via PIP if requested
-if [[ -n "${PIP_EXTRAS:-}" ]]; then
-    for p in ${PIP_EXTRAS}
-    do
-        CMD="${PYTHON} -m pip install -r ${p}"
-        echo ${CMD} | tee -a ${LOG}
-        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-    done
-fi
 
 # Don't use the output of this file since it will not exist if the compilation is not successful
 # LBANN_BUILD_DIR=$(grep "PROJECT_BINARY_DIR:" ${LBANN_HOME}/spack-build-out.txt | awk '{print $2}')
@@ -1033,11 +1043,11 @@ if [[ -n ${MODULE_CMD} ]]; then
     echo "  ${MODULE_CMD}" | tee -a ${LOG}
 fi
 echo "  ${CMAKE_CMD}" | tee -a ${LOG}
-echo "  ${NINJA} install" | tee -a ${LOG}
+echo "  ${LBANN_NINJA} install" | tee -a ${LOG}
 echo "To manipulate the dependencies you can activate the spack environment named ${LBANN_ENV} via:" | tee -a ${LOG}
 echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
 echo "To manipulate the version of python used it is:" | tee -a ${LOG}
-echo "  ${PYTHON}" | tee -a ${LOG}
+echo "  ${LBANN_PYTHON}" | tee -a ${LOG}
 # if [[ -z "${USER_BUILD:-}" ]]; then
 #     echo "To rebuild LBANN from source drop into a shell with the spack build environment setup (requires active environment):" | tee -a ${LOG}
 #     echo "  spack build-env lbann -- bash" | tee -a ${LOG}
