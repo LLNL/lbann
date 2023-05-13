@@ -25,4 +25,4 @@
 ################################################################################
 #!/bin/sh
 export PYTHONPATH=@LBANN_PFE_PYTHONPATH@:${PYTHONPATH}
-@LBANN_PFE_PYTHON_EXECUTABLE@ $@
+@LBANN_PFE_PYTHON_EXECUTABLE@ "$@"
