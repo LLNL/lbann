@@ -982,10 +982,6 @@ if [[ -e "${LBANN_SETUP_FILE}" && -r "${LBANN_SETUP_FILE}" ]]; then
     echo "I have found and will use ${LBANN_SETUP_FILE}"
     source ${LBANN_SETUP_FILE}
     export PYTHONPATH=${LBANN_PYTHONPATH}:${PYTHONPATH}
-    echo ${LBANN_CMAKE}
-    echo ${LBANN_NINJA}
-    echo ${LBANN_PYTHON}
-    echo ${LBANN_PYTHONPATH}
 else
     echo "ERROR: Unable to find the setup build tools file: ${LBANN_SETUP_FILE}"
     echo "ERROR: Please reinstall the dependencies (-d) to recreate the file."
@@ -1042,6 +1038,7 @@ echo "To rebuild LBANN go to ${LBANN_BUILD_DIR}, and rerun:" | tee -a ${LOG}
 if [[ -n ${MODULE_CMD} ]]; then
     echo "  ${MODULE_CMD}" | tee -a ${LOG}
 fi
+echo "  source ${LBANN_SETUP_FILE}" | tee -a ${LOG}
 echo "  ${CMAKE_CMD}" | tee -a ${LOG}
 echo "  ${LBANN_NINJA} install" | tee -a ${LOG}
 echo "To manipulate the dependencies you can activate the spack environment named ${LBANN_ENV} via:" | tee -a ${LOG}
