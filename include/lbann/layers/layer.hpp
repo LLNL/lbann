@@ -379,6 +379,10 @@ public:
   // model wide sub graph parallelism enabled
   bool is_subgraph_parallelism_enabled() { return apply_subgraph_parallelism; }
 
+  void set_subgraph_parallelism_execution() { m_subgraph_parallelism_execution = true; }
+  // layer-level sub-graph parallelism execution
+  bool subgraph_parallelism_execution() { return m_subgraph_parallelism_execution; }
+
   void set_run_layer_in_subgraph() { run_layer_in_subgraph = true; }
 
   bool get_run_layer_in_subgraph() { return run_layer_in_subgraph; }
@@ -839,9 +843,11 @@ protected:
   /// @todo Remove
 
   SubGraphCommunication subgraph_communication_method = PT2PT;
-
+  //model-level sub-graph parallelism
   bool apply_subgraph_parallelism = false;
-
+  //Layer-level sub-graph execution
+  bool m_subgraph_parallelism_execution = false;
+  //Process-level sub-graph execution
   bool run_layer_in_subgraph = false;
 
   /** Ranks in grid for the sub-graph */

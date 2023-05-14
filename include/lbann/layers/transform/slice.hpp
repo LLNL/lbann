@@ -402,7 +402,7 @@ void slice_layer<TensorDataType, Layout, Device>::fp_compute()
   const size_t num_dims = input_dims.size();
 
   if (this->m_slice_dim == num_dims - 1 &&
-      this->get_parallel_strategy().enable_subgraph == true) {
+      this->subgraph_parallelism_execution()) {
     fp_compute_subgrid();
   }
   else {
@@ -451,7 +451,7 @@ void slice_layer<TensorDataType, Layout, Device>::bp_compute()
   const size_t num_dims = input_dims.size();
 
   if (this->m_slice_dim == num_dims - 1 &&
-      this->get_parallel_strategy().enable_subgraph == true) {
+      this->subgraph_parallelism_execution()) {
     bp_compute_subgrid();
   }
   else {

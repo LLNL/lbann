@@ -223,7 +223,6 @@ class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
 			lbann.Layer: Sequence of output vectors.
 
 		"""
-		ENABLE_SUBGRAPH = True
 		self.instance += 1
 		name = f'{self.name}_instance{self.instance}'
 
@@ -239,7 +238,7 @@ class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
 			axis=1,
 			slice_points=slice_points,
 			name=f'{name}_x_slice',
-			parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':ENABLE_SUBGRAPH}
+			parallel_strategy = {'grid_tag':0}
 		)
 
 		head = 0
@@ -253,7 +252,7 @@ class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
 					name=f'{name}_branch{head}_drop1',
 				)
 
-			x_sliced = lbann.Identity(x_slice, parallel_strategy = {'sub_branch_tag':head+1,'enable_subgraph':ENABLE_SUBGRAPH})
+			x_sliced = lbann.Identity(x_slice, parallel_strategy = {'grid_tag':head+1})
 			z = lbann.Sum(x_sliced, y, name=f'{name}_branch{head}_sum1')
 			z = lbann.InstanceNorm(z, name=f'{name}_branch{head}_norm1')
 			x = z
@@ -282,7 +281,7 @@ class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
 
 
 
-			y = lbann.Relu(grid_sum_slice, name=f'{name}_branch{head}_relu1')
+			y = lbann.Relu(grid_sum_slice, name=f'{name}_branch{head}_relu1', parallel_strategy = {'grid_tag':head+1})
 			if self.dropout_prob > 0:
 				y = lbann.Dropout(
 					y,
@@ -301,7 +300,7 @@ class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
 
 
 		for head in range(self.branches):
-			y = lbann.Identity(grid_sum_slice)
+			y = lbann.Identity(grid_sum_slice, parallel_strategy = {'grid_tag':head+1})
 
 			if self.dropout_prob > 0:
 				y = lbann.Dropout(
@@ -321,7 +320,7 @@ class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
 			attentions = lbann.Concatenation(
 					branch_outputs,
 					axis=1,
-					name=f'{name}_heads_concat',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':True}
+					name=f'{name}_heads_concat',parallel_strategy = {'grid_tag':0}
 				)
 
 
@@ -421,7 +420,6 @@ class TransformerEncoderLayerAllSubgraphInputSubGrids(lbann.modules.Module):
 			lbann.Layer: Sequence of output vectors.
 
 		"""
-		ENABLE_SUBGRAPH = True
 		self.instance += 1
 		name = f'{self.name}_instance{self.instance}'
 
@@ -473,7 +471,7 @@ class TransformerEncoderLayerAllSubgraphInputSubGrids(lbann.modules.Module):
 
 
 
-			y = lbann.Relu(grid_sum_slice, name=f'{name}_branch{head}_relu1')
+			y = lbann.Relu(grid_sum_slice, name=f'{name}_branch{head}_relu1', parallel_strategy = {'grid_tag':head+1})
 			if self.dropout_prob > 0:
 				y = lbann.Dropout(
 					y,
@@ -492,7 +490,7 @@ class TransformerEncoderLayerAllSubgraphInputSubGrids(lbann.modules.Module):
 
 
 		for head in range(self.branches):
-			y = lbann.Identity(grid_sum_slice)
+			y = lbann.Identity(grid_sum_slice, parallel_strategy = {'grid_tag':head+1})
 
 			if self.dropout_prob > 0:
 				y = lbann.Dropout(
@@ -510,7 +508,7 @@ class TransformerEncoderLayerAllSubgraphInputSubGrids(lbann.modules.Module):
 			attentions = lbann.Concatenation(
 					branch_outputs,
 					axis=1,
-					name=f'{name}_heads_concat',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':True}
+					name=f'{name}_heads_concat',parallel_strategy = {'grid_tag':0}
 				)
 
 
@@ -768,7 +766,6 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
 
 		"""
 		self.instance += 1
-		ENABLE_SUBGRAPH = True
 		name = f'{self.name}_instance{self.instance}'
 
 
@@ -782,7 +779,7 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
 			axis=1,
 			slice_points=slice_points,
 			name=f'{name}_x_slice',
-			parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':ENABLE_SUBGRAPH}
+			parallel_strategy = {'grid_tag':0}
 		)
 
 		memory_slice = lbann.Identity(memory)
@@ -792,7 +789,7 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
 			axis=1,
 			slice_points=slice_points,
 			name=f'{name}_memory_slice',
-			parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':ENABLE_SUBGRAPH}
+			parallel_strategy = {'grid_tag':0}
 		)
 
 		# Self-attention with residual connection
@@ -812,9 +809,9 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
 					name=f'{name}_branch{count}_drop1',
 				)
 
-			x_sliced = lbann.Identity(x_slice, parallel_strategy = {'sub_branch_tag':count+1,'enable_subgraph':ENABLE_SUBGRAPH})
+			x_sliced = lbann.Identity(x_slice, parallel_strategy = {'grid_tag':count+1})
 			x_sliced = lbann.Identity(x_sliced)
-			memory_sliced = lbann.Identity(memory_slice, parallel_strategy = {'sub_branch_tag':count+1,'enable_subgraph':ENABLE_SUBGRAPH})
+			memory_sliced = lbann.Identity(memory_slice, parallel_strategy = {'grid_tag':count+1})
 			memory_sliced = lbann.Identity(memory_sliced)
 			z = lbann.Sum(x_sliced, attention, name=f'{name}_branch{count}_sum1')
 			z = lbann.InstanceNorm(z, name=f'{name}_branch{count}_norm1')
@@ -855,7 +852,7 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
 		branch_outputs2 = []
 
 		for head in range(self.branches):
-			y = lbann.Identity(grid_sum_slice)
+			y = lbann.Identity(grid_sum_slice, parallel_strategy = {'grid_tag':head+1})
 
 			y = lbann.Relu(y, name=f'{name}_branch{head}_relu1')
 			if self.dropout_prob > 0:
@@ -877,7 +874,7 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
 		branch_outputs2 = []
 
 		for head in range(self.branches):
-			y = lbann.Identity(grid_sum_slice)
+			y = lbann.Identity(grid_sum_slice, parallel_strategy = {'grid_tag':head+1})
 
 			if self.dropout_prob > 0:
 				y = lbann.Dropout(
@@ -894,7 +891,7 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
 			attentions = lbann.Concatenation(
 					branch_outputs2,
 					axis=1,
-					name=f'{name}_heads_concat',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':True}
+					name=f'{name}_heads_concat',parallel_strategy = {'grid_tag':0}
 				)
 
 
@@ -1006,7 +1003,6 @@ class TransformerDecoderLayerAllSubGraphInputSubGrids(lbann.modules.Module):
 
 		"""
 		self.instance += 1
-		ENABLE_SUBGRAPH = True
 		name = f'{self.name}_instance{self.instance}'
 
 
@@ -1023,13 +1019,13 @@ class TransformerDecoderLayerAllSubGraphInputSubGrids(lbann.modules.Module):
 				axis=1,
 				slice_points=slice_points,
 				name=f'{name}_x_slice',
-				parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':ENABLE_SUBGRAPH}
+				parallel_strategy = {'grid_tag':0}
 			)
 
 			x = []
 
 			for branch in range(self.branches):
-				x_sliced = lbann.Identity(x_slice, parallel_strategy = {'sub_branch_tag':branch+1,'enable_subgraph':ENABLE_SUBGRAPH})
+				x_sliced = lbann.Identity(x_slice, parallel_strategy = {'grid_tag':branch+1})
 				x_sliced = lbann.Identity(x_sliced)
 				x.append(x_sliced)
 
@@ -1093,7 +1089,7 @@ class TransformerDecoderLayerAllSubGraphInputSubGrids(lbann.modules.Module):
 		branch_outputs2 = []
 
 		for head in range(self.branches):
-			y = lbann.Identity(grid_sum_slice)
+			y = lbann.Identity(grid_sum_slice, parallel_strategy = {'grid_tag':head+1})
 
 			y = lbann.Relu(y, name=f'{name}_branch{head}_relu1')
 			if self.dropout_prob > 0:
@@ -1115,7 +1111,7 @@ class TransformerDecoderLayerAllSubGraphInputSubGrids(lbann.modules.Module):
 		branch_outputs2 = []
 
 		for head in range(self.branches):
-			y = lbann.Identity(grid_sum_slice)
+			y = lbann.Identity(grid_sum_slice, parallel_strategy = {'grid_tag':head+1})
 
 			if self.dropout_prob > 0:
 				y = lbann.Dropout(
@@ -1132,7 +1128,7 @@ class TransformerDecoderLayerAllSubGraphInputSubGrids(lbann.modules.Module):
 			attentions = lbann.Concatenation(
 					branch_outputs2,
 					axis=1,
-					name=f'{name}_heads_concat',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':True}
+					name=f'{name}_heads_concat',parallel_strategy = {'grid_tag':0}
 				)
 
 
@@ -1475,7 +1471,7 @@ class Transformer(lbann.modules.Module):
 		if(self.branches>0):
 			for i in range(self.branches):
 				subgraph_masks[i+1] = lbann.Identity(self._subsequent_mask(target_length),name="mylayer"+str(i) ,
-									parallel_strategy = {'sub_branch_tag':i+1,'enable_subgraph':True})
+									parallel_strategy = {'grid_tag':i+1})
 				subgraph_masks[i+1] = lbann.Identity(subgraph_masks[i+1])
 
 

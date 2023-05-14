@@ -143,21 +143,21 @@ class MultiheadAttention(Module):
             axis=1,
             slice_points=slice_points,
             name=f'{name}_queries_slice',
-            parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':ENABLE_SUBGRAPH}
+            parallel_strategy = {'grid_tag':0}
         )
         keys_slice = lbann.Slice(
             keys_fc,
             axis=1,
             slice_points=slice_points,
             name=f'{name}_keys_slice',
-            parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':ENABLE_SUBGRAPH}
+            parallel_strategy = {'grid_tag':0}
         )
         values_slice = lbann.Slice(
             values_fc,
             axis=1,
             slice_points=slice_points,
             name=f'{name}_values_slice',
-            parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':ENABLE_SUBGRAPH}
+            parallel_strategy = {'grid_tag':0}
         )
 
         # Compute scaled dot-product attention for each head
@@ -172,9 +172,9 @@ class MultiheadAttention(Module):
                 if(head%int(self.num_heads/BRANCHES)==0):
                     tag+=1
 
-                q = lbann.Identity(queries_slice, parallel_strategy = {'sub_branch_tag':tag,'enable_subgraph':ENABLE_SUBGRAPH})
-                k = lbann.Identity(keys_slice, parallel_strategy = {'sub_branch_tag':tag,'enable_subgraph':ENABLE_SUBGRAPH})
-                v = lbann.Identity(values_slice, parallel_strategy = {'sub_branch_tag':tag,'enable_subgraph':ENABLE_SUBGRAPH})
+                q = lbann.Identity(queries_slice, parallel_strategy = {'grid_tag':tag})
+                k = lbann.Identity(keys_slice, parallel_strategy = {'grid_tag':tag})
+                v = lbann.Identity(values_slice, parallel_strategy = {'grid_tag':tag})
             else:
                 q = lbann.Identity(queries_slice)
                 k = lbann.Identity(keys_slice)
@@ -218,7 +218,7 @@ class MultiheadAttention(Module):
             attentions = lbann.Concatenation(
                 attentions,
                 axis=1,
-                name=f'{name}_heads_concat',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':ENABLE_SUBGRAPH}
+                name=f'{name}_heads_concat',parallel_strategy = {'grid_tag':0}
             )
         else:
             attentions = lbann.Concatenation(
@@ -381,21 +381,21 @@ class MultiheadAttentionAllSubGraph(Module):
             axis=1,
             slice_points=slice_points,
             name=f'{name}_queries_slice',
-            parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':ENABLE_SUBGRAPH}
+            parallel_strategy = {'grid_tag':0}
         )
         keys_slice = lbann.Slice(
             keys_fc,
             axis=1,
             slice_points=slice_points,
             name=f'{name}_keys_slice',
-            parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':ENABLE_SUBGRAPH}
+            parallel_strategy = {'grid_tag':0}
         )
         values_slice = lbann.Slice(
             values_fc,
             axis=1,
             slice_points=slice_points,
             name=f'{name}_values_slice',
-            parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':ENABLE_SUBGRAPH}
+            parallel_strategy = {'grid_tag':0}
         )
 
         # Compute scaled dot-product attention for each head
@@ -414,9 +414,9 @@ class MultiheadAttentionAllSubGraph(Module):
                     temp_attentions.append([])
                     tag+=1
 
-                q = lbann.Identity(queries_slice, parallel_strategy = {'sub_branch_tag':tag,'enable_subgraph':ENABLE_SUBGRAPH})
-                k = lbann.Identity(keys_slice, parallel_strategy = {'sub_branch_tag':tag,'enable_subgraph':ENABLE_SUBGRAPH})
-                v = lbann.Identity(values_slice, parallel_strategy = {'sub_branch_tag':tag,'enable_subgraph':ENABLE_SUBGRAPH})
+                q = lbann.Identity(queries_slice, parallel_strategy = {'grid_tag':tag})
+                k = lbann.Identity(keys_slice, parallel_strategy = {'grid_tag':tag})
+                v = lbann.Identity(values_slice, parallel_strategy = {'grid_tag':tag})
             else:
                 q = lbann.Identity(queries_slice)
                 k = lbann.Identity(keys_slice)
@@ -464,7 +464,7 @@ class MultiheadAttentionAllSubGraph(Module):
                 attention_single_subgrid = lbann.Concatenation(
                     temp_attention,
                     axis=1,
-                    name=f'{name}_subgrid_heads_concat{count}',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':False}
+                    name=f'{name}_subgrid_heads_concat{count}'
                 )
 
             attention_single_subgrid = lbann.ChannelwiseFullyConnected(
@@ -485,7 +485,7 @@ class MultiheadAttentionAllSubGraph(Module):
         attentions = []
 
         for head in range(self.BRANCHES):
-            attentions.append( lbann.Identity(grid_sum_slice) )
+            attentions.append( lbann.Identity(grid_sum_slice, parallel_strategy = {'grid_tag':head+1}) )
 
         return attentions
 
@@ -643,7 +643,7 @@ class MultiheadAttentionAllSubGraphInputSubGrids(Module):
         attentions = []
 
         for head in range(self.BRANCHES):
-            attentions.append( lbann.Identity(grid_sum_slice) )
+            attentions.append( lbann.Identity(grid_sum_slice, parallel_strategy = {'grid_tag':head+1}) )
 
 
         for head in range(self.BRANCHES):
@@ -676,7 +676,7 @@ class MultiheadAttentionAllSubGraphInputSubGrids(Module):
         attentions = []
 
         for head in range(self.BRANCHES):
-            attentions.append( lbann.Identity(grid_sum_slice) )
+            attentions.append( lbann.Identity(grid_sum_slice, parallel_strategy = {'grid_tag':head+1}) )
 
 
         for head in range(self.BRANCHES):
@@ -709,7 +709,7 @@ class MultiheadAttentionAllSubGraphInputSubGrids(Module):
         attentions = []
 
         for head in range(self.BRANCHES):
-            attentions.append( lbann.Identity(grid_sum_slice) )
+            attentions.append( lbann.Identity(grid_sum_slice, parallel_strategy = {'grid_tag':head+1}) )
 
 
         for head in range(self.BRANCHES):
@@ -798,7 +798,7 @@ class MultiheadAttentionAllSubGraphInputSubGrids(Module):
                 attention_single_subgrid = lbann.Concatenation(
                     temp_attention,
                     axis=1,
-                    name=f'{name}_subgrid_heads_concat{count}',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':False}
+                    name=f'{name}_subgrid_heads_concat{count}'
                 )
 
             attention_single_subgrid = lbann.ChannelwiseFullyConnected(
@@ -819,6 +819,6 @@ class MultiheadAttentionAllSubGraphInputSubGrids(Module):
         attentions = []
 
         for head in range(self.BRANCHES):
-            attentions.append( lbann.Identity(grid_sum_slice) )
+            attentions.append( lbann.Identity(grid_sum_slice, parallel_strategy = {'grid_tag':head+1}) )
 
         return attentions

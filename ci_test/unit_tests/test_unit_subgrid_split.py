@@ -82,19 +82,19 @@ def construct_model(lbann):
     ### @todo Layers with optimized inter-grid communication
     x = lbann.Split(
         x_lbann,
-        parallel_strategy = {'grid_tag':0, 'enable_subgraph':True})
+        parallel_strategy = {'grid_tag':0})
     x1 = lbann.Identity(
         x,
-        parallel_strategy = {'grid_tag':1, 'sub_branch_tag':1})
+        parallel_strategy = {'grid_tag':1})
     x2 = lbann.Identity(
         x,
-        parallel_strategy = {'grid_tag':2, 'sub_branch_tag':2})
+        parallel_strategy = {'grid_tag':2})
     y1 = lbann.Sin(x1)
     y2 = lbann.Cos(x2)
     y = lbann.Sum(
         lbann.Identity(y1),
         lbann.Identity(y2),
-        parallel_strategy = {'grid_tag':0, 'enable_subgraph':True, 'sub_branch_tag':0})
+        parallel_strategy = {'grid_tag':0})
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='obj'))

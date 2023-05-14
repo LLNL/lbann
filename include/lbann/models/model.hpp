@@ -330,6 +330,13 @@ private:
    */
   void setup_layer_execution_order();
 
+  /** @brief Set up grid tags for all layers.
+   *
+   *  Called in setup function.
+   */
+
+  void setup_layer_grid_tags(const std::vector<El::Grid*>& grids);
+
   /** @brief Set up layers.
    *
    *  Called in setup function.
@@ -372,7 +379,7 @@ private:
                                       int num_subgrids);
   void get_resources_for_input_layer(std::vector<int>& masterSubGrid,
                                      int num_subgrids);
-  void setup_subcommunicators();
+  void setup_subcommunicators(const std::vector<El::Grid*>& grids);
 
   ///@}
 

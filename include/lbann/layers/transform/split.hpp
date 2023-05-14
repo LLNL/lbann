@@ -116,7 +116,8 @@ protected:
 
     const auto& input = this->get_prev_activations();
 
-    if (this->get_parallel_strategy().enable_subgraph) {
+    if (this->subgraph_parallelism_execution()) {
+      
       // if subgraph parallelism is enabled
       auto const* ptr_input = dynamic_cast<El::DistMatrix<TensorDataType,
                                                           El::STAR,
@@ -125,7 +126,8 @@ protected:
                                                           Dev> const*>(&input);
       int tag = 0;
       auto childs = this->get_child_layers();
-
+      std::cout<<"Split get_communication_flag:"<<this->get_communication_flag()<<" Vector size:"<<this->get_branch_tag_input_vector().size()<<" child spliting group:"<<childs[0]->get_num_spliting_groups()<<"\n";
+      std::cout<<"Ptr input Width:"<<ptr_input->Width()<<" Height:"<<ptr_input->Height()<<"\n";
       if (this->get_communication_flag() == COLL_OPT) {
         El::copy::TranslateBetweenGridsBroadcast<TensorDataType, Dev, Dev>(
           *ptr_input,
@@ -140,19 +142,23 @@ protected:
       }
       else {
         for (int i = 0; i < childs[0]->get_num_spliting_groups(); i++) {
-
+          
+          this->get_branch_tag_input(i).Resize(ptr_input->Height(),mini_batch_size);
           El::Copy(input, this->get_branch_tag_input(i));
+          std::cout<<"Transferring child:"<<i<<" Height:"<<this->get_branch_tag_input(i).Width()<<" "<<mini_batch_size<<"\n";
         }
       }
+      std::cout<<"Split over1\n";
 
       for (int i = 0; i < this->get_num_children(); ++i) {
-        tag = childs[i]->get_parallel_strategy().sub_branch_tag;
+        tag = childs[i]->get_grid_tag();
 
         El::LockedView(this->get_activations(i),
                        this->get_branch_tag_input(tag - 1));
       }
+      std::cout<<"Split over2\n";
     }
-    else {
+  else {
       // If sub-graph parallelism is not enabled
       for (int i = 0; i < this->get_num_children(); ++i) {
         El::LockedView(this->get_activations(i), input);
@@ -175,7 +181,7 @@ protected:
     auto& gradient_wrt_input = this->get_error_signals();
     auto childs = this->get_child_layers();
 
-    if (this->get_parallel_strategy().enable_subgraph == true) {
+    if (this->subgraph_parallelism_execution()) {
       int tag = 0;
 
       std::vector<bool> is_initialized_tensor(
@@ -184,7 +190,7 @@ protected:
 
       // Copy data internally with same branch tag
       for (int i = 0; i < this->get_num_children(); ++i) {
-        tag = childs[i]->get_parallel_strategy().sub_branch_tag;
+        tag = childs[i]->get_grid_tag();
 
         if (is_initialized_tensor[tag - 1]) {
           El::Axpy(DataType(1),
