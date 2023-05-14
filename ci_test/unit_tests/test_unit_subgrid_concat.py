@@ -85,12 +85,12 @@ def construct_model(lbann):
     # LBANN implementation
     ### @todo Layers with optimized inter-grid communication
     x = lbann.Identity(x_lbann)
-    y1 = lbann.Sin(x, parallel_strategy = {'grid_tag':1, 'sub_branch_tag':1})
-    y2 = lbann.Cos(x, parallel_strategy = {'grid_tag':2, 'sub_branch_tag':2})
+    y1 = lbann.Sin(x, parallel_strategy = {'grid_tag':1})
+    y2 = lbann.Cos(x, parallel_strategy = {'grid_tag':2})
     y = lbann.Concatenation(
         y1,
         y2,
-        parallel_strategy = {'grid_tag':0, 'sub_branch_tag':0, 'enable_subgraph':True})
+        parallel_strategy = {'grid_tag':0})
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='obj'))
@@ -130,7 +130,8 @@ def construct_model(lbann):
                        layers=lbann.traverse_layer_graph(x_lbann),
                        objective_function=obj,
                        metrics=metrics,
-                       callbacks=callbacks)
+                       callbacks=callbacks,
+		       subgraph_communication=lbann.SubgraphCommunication.PT2PT)
 
 def construct_data_reader(lbann):
     """Construct Protobuf message for Python data reader.

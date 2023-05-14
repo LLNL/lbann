@@ -111,10 +111,31 @@ private:
 
   void fp_compute() final
   {
+    auto parents = this->get_parent_layers();
+    auto childs = this->get_child_layers();
+
+    int tag = -1;
+
+    for(int i=0; i<parents.size();i++)
+    {
+      if (this->get_activations(i).Grid().InGrid())
+        tag = i;
+    }
+
+
+
+    
+    std::cout<<"Cross grid Rank0 Width:"<<this->get_activations(0).Width()<<" Height:"<<this->get_activations(0).Height()<<"\n";
+    std::cout<<"Cross grid Rank1 Width:"<<this->get_activations(1).Width()<<" Height:"<<this->get_activations(1).Height()<<"\n";
     int const rank = El::mpi::Rank(this->get_subgrid_comm());
 
-    auto& output = this->get_activations(rank);
-    auto& input = this->get_prev_activations(rank);
+    int tag_parent = parents[rank]->get_grid_tag();
+    int tag_child = childs[rank]->get_grid_tag(); 
+
+    std::cout<<"Rank:"<<rank<<" tag Child:"<<tag_child<<" Tag Parent:"<<tag_parent<<"\n";
+
+    auto& output = this->get_activations(tag);
+    auto& input = this->get_prev_activations(tag);
     El::Copy(input, output);
 
     auto* const output_cast = dynamic_cast<
@@ -158,8 +179,43 @@ private:
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) final
   {
     int rank = El::mpi::Rank(this->get_subgrid_comm());
-    const auto& gradient_wrt_output = this->get_prev_error_signals(rank);
-    auto& gradient_wrt_input = this->get_error_signals(rank);
+    auto parents = this->get_parent_layers();
+    auto childs = this->get_child_layers();
+
+    int tag = -1;
+    int tag_parent = -1;
+    int tag_child = -1; 
+    int count =0;
+    for(int i=0; i<parents.size();i++)
+    {
+      if (this->get_error_signals(i).Grid().InGrid())
+        tag_parent = parents[i]->get_grid_tag();
+
+    }
+    tag = tag_parent-1;
+    for(int i=0; i<childs.size();i++)
+    {
+      if (this->get_prev_error_signals(i).Grid().InGrid())
+        tag_child = childs[i]->get_grid_tag();
+    }
+
+    // int tag_parent = parents[rank]->get_grid_tag();
+    // int tag_child = childs[rank]->get_grid_tag(); 
+    
+    const auto& gradient_wrt_output = this->get_prev_error_signals(tag);
+    auto& gradient_wrt_input = this->get_error_signals(tag);
+
+
+    int gradient_wrt_output_Height = gradient_wrt_output.Height();
+    int gradient_wrt_output_Width = gradient_wrt_output.Width();
+    for(int i=0; i<childs.size();i++)
+    {
+      auto* const gradient_wrt_input_cast = dynamic_cast<
+        El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
+        &this->get_error_signals(i));
+      gradient_wrt_input_cast->Resize(gradient_wrt_output_Height, gradient_wrt_output_Width);
+    }
+
     El::Copy(gradient_wrt_output, gradient_wrt_input);
 
     auto* const gradient_wrt_input_cast = dynamic_cast<

@@ -10,6 +10,7 @@ from lbann.modules.base import Module, FullyConnectedModule, ChannelwiseFullyCon
 from lbann.modules.rnn import LSTMCell, GRU, ChannelwiseGRU
 from lbann.modules.transformer import MultiheadAttention
 from lbann.modules.graph import *
+from lbann.modules.subgraph import *
 from lbann.modules.activations import Gelu, Gelu_approx, Silu
 from lbann.modules.pytorch import PytorchMatmul, PytorchLinear, PytorchLayerNorm
 from lbann.modules.transformations import Permute, Cumsum, PeriodicPadding3D, PeriodicPadding2D

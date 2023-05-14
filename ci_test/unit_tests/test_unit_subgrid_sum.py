@@ -20,7 +20,7 @@ import tools
 
 # Data
 np.random.seed(202201184)
-_num_samples = 32
+_num_samples = 11
 _sample_size = 7
 _samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
 
@@ -85,12 +85,13 @@ def construct_model(lbann):
     # LBANN implementation
     ### @todo Layers with optimized inter-grid communication
     x = lbann.Identity(x_lbann)
-    y1 = lbann.Sin(x, parallel_strategy = {'grid_tag':1, 'sub_branch_tag':1})
-    y2 = lbann.Cos(x, parallel_strategy = {'grid_tag':2, 'sub_branch_tag':2})
+    y1 = lbann.Sin(x, parallel_strategy = {'grid_tag':1}, name='sin_split')
+    y2 = lbann.Cos(x, parallel_strategy = {'grid_tag':2}, name='cos_split')
     y = lbann.Sum(
         y1,
         y2,
-        parallel_strategy = {'grid_tag':0, 'sub_branch_tag':0, 'enable_subgraph':True})
+        parallel_strategy = {'grid_tag':0},
+        name='sum')
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='obj'))

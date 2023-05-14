@@ -87,19 +87,19 @@ def construct_model(lbann):
     x = lbann.Slice(
         x_lbann,
         slice_points=[0, _sample_size//2, _sample_size],
-        parallel_strategy = {'enable_subgraph':True}, name="slice_layer")
+        parallel_strategy = {}, name="slice_layer")
     x1 = lbann.Identity(
         x,
-        parallel_strategy = {'grid_tag':1, 'sub_branch_tag':1})
+        parallel_strategy = {'grid_tag':1})
     x2 = lbann.Identity(
         x,
-        parallel_strategy = {'grid_tag':2, 'sub_branch_tag':2})
+        parallel_strategy = {'grid_tag':2})
     y1 = lbann.Sin(x1)
     y2 = lbann.Cos(x2)
     y = lbann.Sum(
         lbann.Identity(y1),
         lbann.Identity(y2),
-        parallel_strategy = {'enable_subgraph':True, 'grid_tag':0, 'sub_branch_tag':0})
+        parallel_strategy = {'grid_tag':0})
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='obj'))
@@ -140,7 +140,8 @@ def construct_model(lbann):
                        layers=lbann.traverse_layer_graph(x_lbann),
                        objective_function=obj,
                        metrics=metrics,
-                       callbacks=callbacks)
+                       callbacks=callbacks,
+                       subgraph_communication=lbann.SubgraphCommunication.COLL_OPT)
 
 def construct_data_reader(lbann):
     """Construct Protobuf message for Python data reader.
