@@ -78,9 +78,7 @@ protected:
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
     // Slice along last dimension
-    std::cout<<"Before subgridCommSize\n";
     int subgridCommSize = El::mpi::Size(this->get_subgrid_comm());
-    std::cout<<"subgridCommSize:"<<subgridCommSize<<"\n";
     const auto input_dims = this->get_input_dims();
     std::vector<int> output_dims_slice(input_dims);
     output_dims_slice.back() = int(output_dims_slice.back() / subgridCommSize);

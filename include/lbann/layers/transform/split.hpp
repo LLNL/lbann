@@ -128,8 +128,6 @@ protected:
                                                           Dev> const*>(&input);
       int tag = 0;
       auto childs = this->get_child_layers();
-      std::cout<<"Split get_communication_flag:"<<this->get_communication_flag()<<" Vector size:"<<this->get_branch_tag_input_vector().size()<<" child spliting group:"<<childs[0]->get_num_spliting_groups()<<"\n";
-      std::cout<<"Ptr input Width:"<<ptr_input->Width()<<" Height:"<<ptr_input->Height()<<"\n";
       if (this->get_communication_flag() == COLL_OPT) {
         El::copy::TranslateBetweenGridsBroadcast<TensorDataType, Dev, Dev>(
           *ptr_input,
@@ -147,18 +145,14 @@ protected:
           
           this->get_branch_tag_input(i).Resize(ptr_input->Height(),mini_batch_size);
           El::Copy(input, this->get_branch_tag_input(i));
-          std::cout<<"Transferring child:"<<i<<" Height:"<<this->get_branch_tag_input(i).Width()<<" "<<mini_batch_size<<"\n";
         }
       }
-      std::cout<<"Split over1\n";
-
       for (int i = 0; i < this->get_num_children(); ++i) {
         tag = childs[i]->get_grid_tag();
 
         El::LockedView(this->get_activations(i),
                        this->get_branch_tag_input(tag - 1));
       }
-      std::cout<<"Split over2\n";
     }
   else {
       // If sub-graph parallelism is not enabled
