@@ -212,7 +212,6 @@ while :; do
             REUSE_ENV="TRUE"
             ;;
         --tmp-build-dir)
-            CLEAN_BUILD="TRUE"
             TMP_BUILD_DIR="TRUE"
             ;;
         --spec-only)
@@ -382,10 +381,17 @@ if [[ -f ${LOG} ]]; then
 fi
 
 LBANN_BUILD_LABEL="lbann_${CLUSTER}_${LBANN_LABEL}"
-LBANN_BUILD_DIR="${PWD}/build/${LBANN_BUILD_LABEL}"
-LBANN_INSTALL_DIR="${LBANN_BUILD_DIR}/install"
+LBANN_BUILD_PARENT_DIR="${PWD}/builds/${LBANN_BUILD_LABEL}"
+LBANN_BUILD_DIR="${LBANN_BUILD_PARENT_DIR}/build"
+LBANN_INSTALL_DIR="${LBANN_BUILD_PARENT_DIR}/install"
 LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
-LBANN_SETUP_FILE="${LBANN_BUILD_DIR}/LBANN_${CLUSTER}_${LBANN_LABEL}_setup_build_tools.sh"
+LBANN_SETUP_FILE="${LBANN_BUILD_PARENT_DIR}/LBANN_${CLUSTER}_${LBANN_LABEL}_setup_build_tools.sh"
+
+if [[ ! -d "${LBANN_BUILD_PARENT_DIR}" ]]; then
+    CMD="mkdir -p ${LBANN_BUILD_PARENT_DIR}"
+    echo ${CMD}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+fi
 ##########################################################################################
 
 function exit_on_failure()
@@ -564,6 +570,12 @@ if [[ -n "${REUSE_ENV:-}" || -z "${INSTALL_DEPS:-}" ]]; then
             if [[ -e "${MATCHED_CONFIG_FILE}" && -r "${MATCHED_CONFIG_FILE}" ]]; then
                 echo "I have found and will use ${MATCHED_CONFIG_FILE}"
                 CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
+                if [[ ! -e "${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}" ]]; then
+                    # Save the config file in the build directory
+                    CMD="cp ${CONFIG_FILE_NAME} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
+                    echo ${CMD}
+                    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
+                fi
             fi
         fi
     fi
@@ -855,33 +867,6 @@ LBANN_SPEC_HASH=$(spack find -cl | grep -v "\-\-\-\-\-\-" | grep lbann${AT_LBANN
 # If the user only wants to configure the environment
 [[ ${CONFIGURE_ONLY:-} ]] && exit_with_instructions
 
-# Check to see if the link to the build directory exists and is valid
-SPACK_BUILD_DIR="spack-build-${LBANN_SPEC_HASH}"
-if [[ -L "${SPACK_BUILD_DIR}" ]]; then
-  # If the link is not valid or are told to clean it, remove the link
-  if [[ ! -d "${SPACK_BUILD_DIR}" || ! -z "${CLEAN_BUILD}" ]]; then
-      CMD="rm ${SPACK_BUILD_DIR}"
-      echo ${CMD}
-      [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-  fi
-fi
-
-# If there is a directory there and we are told to clean it, remove the directory
-if [[ -d "${SPACK_BUILD_DIR}" && ! -z "${CLEAN_BUILD}" ]]; then
-    CMD="rm -r ${SPACK_BUILD_DIR}"
-    echo ${CMD}
-    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-fi
-
-# If the spack build directory does not exist, create a tmp directory and link it
-if [[ ! -e "${LBANN_BUILD_DIR}" && -n "${TMP_BUILD_DIR:-}" && -z "${DRY_RUN:-}" ]]; then
-    tmp_dir=$(mktemp -d -t ${LBANN_BUILD_LABEL}-$(date +%Y-%m-%d-%H%M%S)-XXXXXXXXXX)
-    echo ${tmp_dir}
-    CMD="ln -s ${tmp_dir} ${LBANN_BUILD_DIR}"
-    echo ${CMD}
-    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-fi
-
 ##########################################################################################
 # Actually install LBANN's dependencies from local source
 CMD="spack install --only dependencies ${BUILD_JOBS}"
@@ -964,9 +949,9 @@ if [[ ! -z "${MATCHED_CONFIG_FILE}" ]]; then
     if [[ -e "${MATCHED_CONFIG_FILE}" && -r "${MATCHED_CONFIG_FILE}" ]]; then
         echo "I have found and will use ${MATCHED_CONFIG_FILE}"
         CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
-        if [[ ! -e "${LBANN_BUILD_DIR}/${CONFIG_FILE_NAME}" ]]; then
+        if [[ ! -e "${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}" ]]; then
             # Save the config file in the build directory
-            CMD="cp ${CONFIG_FILE_NAME} ${LBANN_BUILD_DIR}/${CONFIG_FILE_NAME}"
+            CMD="cp ${CONFIG_FILE_NAME} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
             echo ${CMD}
             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
         fi
@@ -981,10 +966,37 @@ fi
 
 fi # [[ ! -z "${CONFIG_FILE_NAME}" ]]
 
-if [[ ! -d "${LBANN_BUILD_DIR}" ]]; then
-    CMD="mkdir -p ${LBANN_BUILD_DIR}"
+# Check to see if the link to the build directory exists and is valid
+#SPACK_BUILD_DIR="spack-build-${LBANN_SPEC_HASH}"
+if [[ -L "${LBANN_BUILD_DIR}" ]]; then
+  # If the link is not valid or are told to clean it, remove the link
+  if [[ ! -d "${LBANN_BUILD_DIR}" || ! -z "${CLEAN_BUILD}" ]]; then
+      CMD="rm ${LBANN_BUILD_DIR}"
+      echo ${CMD}
+      [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+  fi
+fi
+
+# If there is a directory there and we are told to clean it, remove the directory
+if [[ -d "${LBANN_BUILD_DIR}" && ! -z "${CLEAN_BUILD}" ]]; then
+    CMD="rm -r ${LBANN_BUILD_DIR}"
     echo ${CMD}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+fi
+
+# If the spack build directory does not exist, create a directory or tmp directory and link it
+if [[ ! -d "${LBANN_BUILD_DIR}" ]]; then
+    if [[ -n "${TMP_BUILD_DIR:-}" && -z "${DRY_RUN:-}" ]]; then
+        tmp_dir=$(mktemp -d -t ${LBANN_BUILD_LABEL}-$(date +%Y-%m-%d-%H%M%S)-XXXXXXXXXX)
+        echo ${tmp_dir}
+        CMD="ln -s ${tmp_dir} ${LBANN_BUILD_DIR}"
+        echo ${CMD}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    else
+        CMD="mkdir -p ${LBANN_BUILD_DIR}"
+        echo ${CMD}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    fi
 fi
 
 if [[ -e "${LBANN_SETUP_FILE}" && -r "${LBANN_SETUP_FILE}" ]]; then

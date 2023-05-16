@@ -7,7 +7,7 @@ cd ${LBANN_DIR}/ci_test
 
 echo "${PWD}/run.sh CLUSTER=${CLUSTER}"
 
-PYTHON=python3
+PYTHON=lbann_pfe.sh
 
 WEEKLY=0
 while :; do
