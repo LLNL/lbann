@@ -19,8 +19,8 @@ import tools
 
 # Data
 np.random.seed(202201184)
-_num_samples = 10
-_sample_size = 7
+_num_samples = 16
+_sample_size = 8
 _samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
 
 # Sample access functions
@@ -81,14 +81,20 @@ def construct_model(lbann):
     # LBANN implementation
     ### @todo Layers with optimized inter-grid communication
     x = lbann.Identity(x_lbann)
-    y1 = lbann.Sin(x, parallel_strategy = {'grid_tag':1}, name='sin_split')
-    y2 = lbann.Cos(x, parallel_strategy = {'grid_tag':2}, name='cos_split')
+    y1 = lbann.Sin(x, parallel_strategy = {'grid_tag':1}, name='sin')
+    y2 = lbann.Cos(x, parallel_strategy = {'grid_tag':2}, name='cos')
+    y = lbann.Cross_Grid_Sum_Slice(
+        lbann.Identity(y1),
+        lbann.Identity(y2), name='cross_grid')
+    y1 = lbann.Identity(y, parallel_strategy = {'grid_tag':1}, name='branch1_after')
+    y2 = lbann.Identity(y, parallel_strategy = {'grid_tag':2}, name='branch2_after')
+    y1 = lbann.Square(y1, name='square')
+    y2 = lbann.Scale(y2, constant=2, name='scale')
     y = lbann.Sum(
-        y1,
-        y2,
-        parallel_strategy = {'grid_tag':0},
-        name='sum')
-    z = lbann.L2Norm2(y)
+        lbann.Identity(y1, name='before_sum1'),
+        lbann.Identity(y2, name='before_sum2'),
+        parallel_strategy = {'grid_tag':0}, name='sum')
+    z = lbann.L2Norm2(y, name='l2')
     obj.append(z)
     metrics.append(lbann.Metric(z, name='obj'))
 
@@ -100,6 +106,9 @@ def construct_model(lbann):
     for i in range(num_samples()):
         x = get_sample(i).astype(np.float64)
         y = np.sin(x) + np.cos(x)
+        y1 = y[:len(y)//2]
+        y2 = y[len(y)//2:]
+        y = y1**2 + 2*y2
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)

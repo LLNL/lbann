@@ -212,7 +212,6 @@ protected:
         El::Axpy(DataType(1), this->get_prev_activations(i), output);
       }
     }
-    std::cout<<"Sum Output Height:"<<output.Height()<<" "<<output.Width()<<"\n";
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override

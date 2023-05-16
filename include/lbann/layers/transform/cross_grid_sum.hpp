@@ -120,17 +120,10 @@ private:
         tag = i;
     }
 
-
-
-    
-    std::cout<<"Cross grid Rank0 Width:"<<this->get_activations(0).Width()<<" Height:"<<this->get_activations(0).Height()<<"\n";
-    std::cout<<"Cross grid Rank1 Width:"<<this->get_activations(1).Width()<<" Height:"<<this->get_activations(1).Height()<<"\n";
     int const rank = El::mpi::Rank(this->get_subgrid_comm());
 
     int tag_parent = parents[rank]->get_grid_tag();
     int tag_child = childs[rank]->get_grid_tag(); 
-
-    std::cout<<"Rank:"<<rank<<" tag Child:"<<tag_child<<" Tag Parent:"<<tag_parent<<"\n";
 
     auto& output = this->get_activations(tag);
     auto& input = this->get_prev_activations(tag);

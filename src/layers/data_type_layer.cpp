@@ -961,11 +961,6 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
     const auto& parent_output = parent.get_activations(*this);
     auto& input = *m_inputs[i];
     input.Empty(false);
-    if (this->is_subgraph_parallelism_enabled())
-    {
-      if (get_type()=="sum" or get_type()=="concat")
-        input.Resize(input.Width(), mini_batch_size);
-    }
     view_or_copy_tensor(parent_output, input);
 
     // Check input matrix dimensions
@@ -1084,7 +1079,6 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
 
   // Check the signal size
   auto& signal = *signal_in;
-  std::cout<<"Layer name:"<<m_name<<" RANK:"<<signal.DistData().grid->VCRank()<<" WRT Out Rank:"<<m_gradient_wrt_outputs[layer_idx]->DistData().grid->VCRank()<<"\n";
   assert_tensor_size(signal,
                      get_output_size(layer_idx),
                      m_outputs[layer_idx]->Width(),
@@ -1229,7 +1223,6 @@ void data_type_layer<InputTensorDataType,
     gradient_wrt_input.Empty(false);
     if ( (get_type() == "sum" or  get_type() == "cross_grid_sum") &&
         this->subgraph_parallelism_execution()) {
-      std::cout<<"Running for type:"<<get_type()<<"\n";
     }
     else {
       gradient_wrt_input.AlignWith(get_prev_activations(i));

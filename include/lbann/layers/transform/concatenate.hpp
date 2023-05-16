@@ -307,7 +307,6 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType, Layout, Device>::fp_setup_outputs(
   El::Int mini_batch_size)
 {
-  std::cout<<"Concat setup output\n";
 #ifdef LBANN_HAS_DISTCONV
   if (!this->keep_original_outputs(0))
     return;
@@ -325,14 +324,11 @@ void concatenate_layer<TensorDataType, Layout, Device>::fp_setup_outputs(
 
     output.Resize(this->get_output_size(), input0.Width());
   }
-  std::cout<<"Concat setup output done\n";
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType, Layout, Device>::fp_compute_subgrid()
 {
-  std::cout<<"Running Concat fp\n";
-
   const auto& input_dims = this->get_input_dims(0);
 
   int split_dim = int(input_dims[m_concat_dim]);
@@ -354,7 +350,6 @@ void concatenate_layer<TensorDataType, Layout, Device>::fp_compute_subgrid()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType, Layout, Device>::bp_compute_subgrid()
 {
-  std::cout<<"Running Concat bp\n";
   const auto& input_dims = this->get_input_dims(0);
 
   int split_dim = int(input_dims[m_concat_dim] * this->get_num_parents());
@@ -414,7 +409,6 @@ void concatenate_layer<TensorDataType, Layout, Device>::fp_compute()
   }
 
   // Perform concatenation
-  std::cout<<"FP compute Concat\n";
   if (m_concat_dim == num_dims - 1 && this->subgraph_parallelism_execution()) {
     this->fp_compute_subgrid();
   }
