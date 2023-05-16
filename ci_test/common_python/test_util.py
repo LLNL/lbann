@@ -25,7 +25,7 @@
 #
 ################################################################################
 import lbann
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import functools
 import inspect
 from typing import Any, Callable, List, Optional, Tuple, Union
@@ -82,10 +82,13 @@ def lbann_test(check_gradients=False, **decorator_kwargs):
             if check_gradients:
                 callbacks.append(
                     lbann.CallbackCheckGradients(error_on_failure=True))
+            callbacks.extend(tester.extra_callbacks)
 
+            metrics = [lbann.Metric(tester.loss, name='test')]
+            metrics.extend(tester.extra_metrics)
             model = lbann.Model(epochs=0,
                                 layers=full_graph,
-                                metrics=lbann.Metric(tester.loss, name='test'),
+                                metrics=metrics,
                                 callbacks=callbacks)
 
             # Get file
@@ -139,11 +142,21 @@ class ModelTester:
     An object that is constructed within an ``lbann_test``-wrapped unit test.
     """
 
+    # Input tensor (required for test to construct)
     input_tensor: Optional[Any] = None
-    reference: Optional[lbann.Layer] = None
-    reference_tensor: Optional[Any] = None
-    loss: Optional[lbann.Layer] = None
-    tolerance: float = 0.0
+
+    reference: Optional[lbann.Layer] = None  #: Reference LBANN node (optional)
+    reference_tensor: Optional[
+        Any] = None  #: Optional reference tensor to compare with
+
+    loss: Optional[lbann.Layer] = None  # Optional loss test
+    tolerance: float = 0.0  #: Tolerance value for loss test
+
+    # Optional additional metrics to use in test
+    extra_metrics: List[lbann.Metric] = field(default_factory=list)
+
+    # Optional additional callbacks to use in test
+    extra_callbacks: List[lbann.Callback] = field(default_factory=list)
 
     def inputs(self, tensor: Any) -> lbann.Layer:
         """
@@ -174,7 +187,7 @@ class ModelTester:
 
         self.input_tensor = all_tensors_combined
         x = lbann.Input(data_field='samples')
-        return slice_to_tensors(x, tensors)
+        return slice_to_tensors(x, *tensors)
 
     def make_reference(self, ref: Any) -> lbann.Input:
         """
