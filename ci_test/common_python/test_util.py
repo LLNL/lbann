@@ -102,14 +102,14 @@ def lbann_test(check_gradients=False, **decorator_kwargs):
                 work_dir = _get_work_dir(file)
                 os.makedirs(work_dir, exist_ok=True)
                 if tester.reference_tensor is not None:
-                    np.save(
-                        os.path.join(work_dir, 'data.npy'),
-                        np.concatenate(
-                            [tester.input_tensor, tester.reference_tensor],
-                            axis=1))
+                    flat_inp = tester.input_tensor.reshape(mini_batch_size, -1)
+                    flat_ref = tester.reference_tensor.reshape(
+                        mini_batch_size, -1)
+                    np.save(os.path.join(work_dir, 'data.npy'),
+                            np.concatenate((flat_inp, flat_ref), axis=1))
                 else:
                     np.save(os.path.join(work_dir, 'data.npy'),
-                            tester.input_tensor)
+                            tester.input_tensor.reshape(mini_batch_size, -1))
 
                 # Setup data reader
                 data_reader = lbann.reader_pb2.DataReader()
@@ -199,14 +199,22 @@ class ModelTester:
         """
         # The reference is the second part of the input "samples"
         refnode = lbann.Input(data_field='samples')
+        if self.input_tensor is None:
+            raise ValueError('Please call ``inputs`` or ``inputs_like`` prior '
+                             'to calling ``make_reference`` for correctness.')
         mbsize = self.input_tensor.shape[0]
-        refnode = lbann.Slice(
-            refnode,
-            slice_points=[
-                numel(self.input_tensor) // mbsize,
-                (numel(self.input_tensor) + numel(ref)) // mbsize
-            ],
-        )
+
+        # Obtain reference
+        refnode = lbann.Reshape(lbann.Identity(
+            lbann.Slice(
+                refnode,
+                slice_points=[
+                    numel(self.input_tensor) // mbsize,
+                    (numel(self.input_tensor) + numel(ref)) // mbsize
+                ],
+            )),
+                                dims=ref.shape[1:])
+
         # Store reference
         self.reference = refnode
         self.reference_tensor = ref

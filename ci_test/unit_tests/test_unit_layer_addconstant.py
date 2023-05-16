@@ -5,10 +5,11 @@ import pytest
 
 
 @pytest.mark.parametrize('constant', [0, 1])
-@test_util.lbann_test()
+@test_util.lbann_test(check_gradients=True)
 def test_simple(constant):
     np.random.seed(20230515)
-    x = np.random.rand(2, 2).astype(np.float32)
+    # Two samples of 2x3 tensors
+    x = np.random.rand(2, 2, 3).astype(np.float32)
     ref = x + constant
 
     tester = test_util.ModelTester()
