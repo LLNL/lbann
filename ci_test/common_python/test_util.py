@@ -281,7 +281,7 @@ def slice_to_tensors(x: lbann.Layer, *tensors) -> List[lbann.Layer]:
         slice_points.append(offset)
     lslice = lbann.Slice(x, slice_points=slice_points)
     return [
-        lbann.Reshape(lbann.Identity(lslice), dims=t.shape[1:])
+        lbann.Reshape(_ensure_bp(t, lbann.Identity(lslice)), dims=t.shape[1:])
         for t in tensors
     ]
 
@@ -307,3 +307,16 @@ def _get_work_dir(test_file: str) -> str:
         # Make sure test name is prefixed with 'test_'
         test_fname = 'test_' + test_fname
     return os.path.join(os.path.dirname(test_file), 'experiments', test_fname)
+
+
+# Ensures that backpropagation would be run through the entire model
+def _ensure_bp(tensor: Any, node: lbann.Layer) -> lbann.Sum:
+    # Note: Sum with a weights layer so that gradient checking will
+    # verify that error signals are correct.
+    x_weights = lbann.Weights(initializer=lbann.ConstantInitializer(value=0.0))
+    return lbann.Sum(
+        node,
+        lbann.WeightsLayer(
+            weights=x_weights,
+            dims=[numel(tensor) // tensor.shape[0]],
+        ))
