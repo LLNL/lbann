@@ -184,7 +184,8 @@ release allocation:
   variables:
     # Just the obvious identifier. Which specific node doesn't matter.
     SYSTEM_NAME: pascal
-    SPACK_REPO: spack_repos/spack_${SYSTEM_NAME}.git
+#    SPACK_REPO: spack_repos/spack_${SYSTEM_NAME}.git
+    SPACK_REPO: spack_repos/spack_develop.git
 
     # This is based on the assumption that each runner will only ever
     # be able to run one pipeline on a given cluster at one time.
