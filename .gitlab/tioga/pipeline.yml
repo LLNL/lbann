@@ -93,6 +93,7 @@ build and install:
     - module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/23.02.0 amd/5.4.3 craype/2.7.19 cray-libsci/23.02.1.1 PrgEnv-amd/8.3.3 cray-mpich/8.1.24 StdEnv cmake/3.24.2
     - export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
     - export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
+    - echo "${LBANN_MODFILES_DIR}"
     - ml use ${LBANN_MODFILES_DIR}
     - ml load lbann
     - echo "$(which lbann)"
