@@ -454,15 +454,25 @@ if (LBANN_HAS_ROCM)
     set(LBANN_HAS_TENSOR_PERMUTE TRUE)
   endif ()
 
+  # More hand-holding
+  get_filename_component(LBANN_ROCM_LLVM_BASE_DIR
+    "${CMAKE_HIP_COMPILER}"
+    DIRECTORY)
+  get_filename_component(LBANN_ROCM_LLVM_BASE_DIR
+    "${LBANN_ROCM_LLVM_BASE_DIR}"
+    DIRECTORY)
+
   # Clean up some paths
   list(REMOVE_ITEM
     CMAKE_HIP_IMPLICIT_LINK_DIRECTORIES
-    "${LBANN_ROCM_PATH}/lib")
+    "${LBANN_ROCM_PATH}/lib"
+    "${LBANN_ROCM_LLVM_BASE_DIR}/lib")
 
   # This shouldn't be needed, but it shouldn't hurt.
   list(REMOVE_ITEM
     CMAKE_CXX_IMPLICIT_LINK_DIRECTORIES
-    "${LBANN_ROCM_PATH}/lib")
+    "${LBANN_ROCM_PATH}/lib"
+    "${LBANN_ROCM_LLVM_BASE_DIR}/lib")
 
 endif (LBANN_HAS_ROCM)
 
