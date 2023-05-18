@@ -672,14 +672,14 @@ def assert_success(return_code, error_file_name):
     if return_code != 0:
         error_line = get_error_line(error_file_name)
         raise AssertionError(
-            'return_code={rc}\n{el}\nSee {efn}'.format(
+            '{el}\nreturn_code={rc}\nSee {efn}'.format(
                 rc=return_code, el=error_line, efn=error_file_name))
 
 
 def assert_failure(return_code, expected_error, error_file_name):
     if return_code == 0:
         raise AssertionError(
-            'return_code={rc}\nSuccess when expecting failure.\nSee {efn}'.format(
+            'Success when expecting failure. return_code={rc}\nSee {efn}'.format(
                 rc=return_code, efn=error_file_name))
     with open(error_file_name, 'r') as error_file:
         for line in error_file:
@@ -689,7 +689,7 @@ def assert_failure(return_code, expected_error, error_file_name):
     # but we didn't get the expected error.
     actual_error = get_error_line(error_file_name)
     raise AssertionError(
-        'return_code={rc}\nFailed with error different than expected.\nactual_error={ae}\nexpected_error={ee}\nSee {efn}'.format(
+        'Failed with error different than expected: actual_error={ae}, expected_error={ee}\nreturn_code={rc}\nSee {efn}'.format(
             rc=return_code, ae=actual_error, ee=expected_error,
             efn=error_file_name))
 
