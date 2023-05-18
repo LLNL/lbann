@@ -96,8 +96,8 @@ build and install:
     - export SPACK_ARCH_TARGET=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t)
     - export LBANN_BUILD_LABEL="lbann_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}"
     - export LBANN_BUILD_PARENT_DIR="${PWD}/builds/${LBANN_BUILD_LABEL}"
-    - echo "source ${CI_BUILDS_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_BUILD_LABEL}_setup_lbann_modulepath.sh"
-    - source ${CI_BUILDS_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_BUILD_LABEL}_setup_lbann_modulepath.sh
+    - echo "source LBANN_${SYSTEM_NAME}_${LBANN_BUILD_LABEL}_setup_lbann_modulepath.sh"
+    - source LBANN_${SYSTEM_NAME}_${LBANN_BUILD_LABEL}_setup_lbann_modulepath.sh
     - echo "${LBANN_BUILD_LABEL}"
     - echo "${LBANN_BUILD_PARENT_DIR}"
     - echo "${LBANN_BUILD_DIR}"
