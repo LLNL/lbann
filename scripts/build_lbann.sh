@@ -380,12 +380,13 @@ if [[ -f ${LOG} ]]; then
     [[ -z "${DRY_RUN:-}" ]] && ${CMD}
 fi
 
-export LBANN_BUILD_LABEL="lbann_${CLUSTER}_${LBANN_LABEL}"
-export LBANN_BUILD_PARENT_DIR="${PWD}/builds/${LBANN_BUILD_LABEL}"
-export LBANN_BUILD_DIR="${LBANN_BUILD_PARENT_DIR}/build"
-export LBANN_INSTALL_DIR="${LBANN_BUILD_PARENT_DIR}/install"
-export LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
-export LBANN_SETUP_FILE="${LBANN_BUILD_PARENT_DIR}/LBANN_${CLUSTER}_${LBANN_LABEL}_setup_build_tools.sh"
+LBANN_BUILD_LABEL="lbann_${CLUSTER}_${LBANN_LABEL}"
+LBANN_BUILD_PARENT_DIR="${PWD}/builds/${LBANN_BUILD_LABEL}"
+LBANN_BUILD_DIR="${LBANN_BUILD_PARENT_DIR}/build"
+LBANN_INSTALL_DIR="${LBANN_BUILD_PARENT_DIR}/install"
+LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
+LBANN_SETUP_FILE="${LBANN_BUILD_PARENT_DIR}/LBANN_${CLUSTER}_${LBANN_LABEL}_setup_build_tools.sh"
+LBANN_INSTALL_FILE="${PWD}/LBANN_${CLUSTER}_${LBANN_LABEL}_setup_lbann_modulepath.sh"
 
 if [[ ! -d "${LBANN_BUILD_PARENT_DIR}" ]]; then
     CMD="mkdir -p ${LBANN_BUILD_PARENT_DIR}"
@@ -936,7 +937,23 @@ export LBANN_PYTHON_DIR=\$(dirname ${LBANN_PYTHON})
 export PATH=\${PATH}:\${LBANN_CMAKE_DIR}:\${LBANN_NINJA_DIR}:\${LBANN_PYTHON_DIR}
 export PYTHONPATH=\${LBANN_PYTHONPATH}:\${PYTHONPATH}
 EOF
-fi
+
+cat > ${LBANN_INSTALL_FILE}<<EOF
+# Directory structure used for this build
+export LBANN_BUILD_LABEL=${LBANN_BUILD_LABEL}
+export LBANN_BUILD_PARENT_DIR=${LBANN_BUILD_PARENT_DIR}
+export LBANN_BUILD_DIR=${LBANN_BUILD_DIR}
+export LBANN_INSTALL_DIR=${LBANN_INSTALL_DIR}
+export LBANN_MODFILES_DIR=${LBANN_MODFILES_DIR}
+export LBANN_SETUP_FILE=${LBANN_SETUP_FILE}
+ml use ${LBANN_MODFILES_DIR}
+EOF
+
+# Save the setup file in the build directory
+CMD="cp ${LBANN_INSTALL_FILE} ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE}"
+echo ${CMD}
+[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
+
 
 # Drop out of the environment for the rest of the build
 CMD="spack env deactivate"

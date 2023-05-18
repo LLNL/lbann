@@ -66,6 +66,7 @@ build and install:
       - spack-build-*/spack-*.txt
       - spack-ci-env-name.sh
       - LBANN_*.cmake
+      - LBANN_*_setup_lbann_modulepath.sh
       - builds/*
       - ${RESULTS_DIR}/*
   script:
@@ -82,12 +83,12 @@ build and install:
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS}
       -p py-pip --ci-pip --
       +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
-    - echo "I just finished building and I think that my build variables are"
-    - echo "${LBANN_BUILD_LABEL}"
-    - echo "${LBANN_BUILD_PARENT_DIR}"
-    - echo "${LBANN_BUILD_DIR}"
-    - echo "${LBANN_INSTALL_DIR}"
-    - echo "${LBANN_MODFILE_DIR}"
+    # - echo "I just finished building and I think that my build variables are"
+    # - echo "${LBANN_BUILD_LABEL}"
+    # - echo "${LBANN_BUILD_PARENT_DIR}"
+    # - echo "${LBANN_BUILD_DIR}"
+    # - echo "${LBANN_INSTALL_DIR}"
+    # - echo "${LBANN_MODFILE_DIR}"
 #    - echo "I think it was installed in ${LBANN_INSTALLED_DIR}"
     - export TEST_TASKS_PER_NODE=4
     - export TEST_MPIBIND_FLAG="--mpibind=off"
@@ -95,15 +96,22 @@ build and install:
     - export SPACK_ARCH_TARGET=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t)
     - export LBANN_BUILD_LABEL="lbann_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}"
     - export LBANN_BUILD_PARENT_DIR="${PWD}/builds/${LBANN_BUILD_LABEL}"
-    - export LBANN_BUILD_DIR="${LBANN_BUILD_PARENT_DIR}/build"
-    - export LBANN_INSTALL_DIR="${LBANN_BUILD_PARENT_DIR}/install"
-    - export LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
-    - export LBANN_SETUP_FILE="${LBANN_BUILD_PARENT_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}_setup_build_tools.sh"
+    - echo "source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}_setup_lbann_modulepath.sh"
+    - source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}_setup_lbann_modulepath.sh
+    - echo "${LBANN_BUILD_LABEL}"
+    - echo "${LBANN_BUILD_PARENT_DIR}"
+    - echo "${LBANN_BUILD_DIR}"
+    - echo "${LBANN_INSTALL_DIR}"
+    - echo "${LBANN_MODFILE_DIR}"
+    # - export LBANN_BUILD_DIR="${LBANN_BUILD_PARENT_DIR}/build"
+    # - export LBANN_INSTALL_DIR="${LBANN_BUILD_PARENT_DIR}/install"
+    # - export LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
+    # - export LBANN_SETUP_FILE="${LBANN_BUILD_PARENT_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}_setup_build_tools.sh"
     - module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/23.02.0 amd/5.4.3 craype/2.7.19 cray-libsci/23.02.1.1 PrgEnv-amd/8.3.3 cray-mpich/8.1.24 StdEnv cmake/3.24.2
     - export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
     - export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
     - echo "${LBANN_MODFILES_DIR}"
-    - ml use ${LBANN_MODFILES_DIR}
+#    - ml use ${LBANN_MODFILES_DIR}
     - ml load lbann
     - echo "$(which lbann)"
     - echo "export SPACK_DEP_ENV_NAME=${SPACK_ENV_NAME}" > spack-ci-env-name.sh
@@ -244,7 +252,7 @@ release allocation:
     LBANN_CI_RUN_WEEKLY: ${LBANN_CI_RUN_WEEKLY}
 
     # Preserve any spack-build-* directories to allow for faster testing
-    GIT_CLEAN_FLAGS: -ffdx -e spack-build-* -e builds -e LBANN_*.cmake
+    GIT_CLEAN_FLAGS: -ffdx -e spack-build-* -e builds -e LBANN_*.cmake -e LBANN_*_setup_lbann_modulepath.sh
 
   tags:
     - tioga
