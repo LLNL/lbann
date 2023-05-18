@@ -65,6 +65,7 @@ build and install:
       - spack-build-*/build.ninja
       - spack-build-*/spack-*.txt
       - spack-ci-env-name.sh
+      - LBANN_*.cmake
       - builds/*
       - ${RESULTS_DIR}/*
   script:
