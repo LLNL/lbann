@@ -87,8 +87,8 @@ build and install:
     - export TEST_MPIBIND_FLAG="--mpibind=off"
     - export SPACK_ARCH=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch)
     - export SPACK_ARCH_TARGET=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t)
-    - echo "LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh"
-    - LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh
+#    - echo "source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh"
+#    - source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh
     - echo "${LBANN_BUILD_LABEL}"
     - echo "${LBANN_BUILD_PARENT_DIR}"
     - echo "${LBANN_BUILD_DIR}"
@@ -205,8 +205,8 @@ release allocation:
     - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
     - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
     - echo "BVE starting the unit or integration tests"
-    - echo "LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh"
-    - LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh
+    - echo "source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh"
+    - source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh
     - ml load lbann
     - echo "$(which lbann)"
     # - spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
@@ -246,7 +246,7 @@ release allocation:
     LBANN_CI_RUN_WEEKLY: ${LBANN_CI_RUN_WEEKLY}
 
     # Preserve any spack-build-* directories to allow for faster testing
-    GIT_CLEAN_FLAGS: -ffdx -e spack-build-* -e builds -e LBANN_*.cmake -e LBANN_*_setup_lbann_modulepath.sh
+    GIT_CLEAN_FLAGS: -ffdx -e spack-build-* -e builds -e LBANN_*.cmake -e LBANN_*_setup_module_path.sh -e LBANN_*_setup_build_tools.sh
 
   tags:
     - tioga

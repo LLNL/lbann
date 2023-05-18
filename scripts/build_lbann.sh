@@ -386,7 +386,7 @@ LBANN_BUILD_DIR="${LBANN_BUILD_PARENT_DIR}/build"
 LBANN_INSTALL_DIR="${LBANN_BUILD_PARENT_DIR}/install"
 LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
 LBANN_SETUP_FILE="${LBANN_BUILD_PARENT_DIR}/LBANN_${CLUSTER}_${LBANN_LABEL}_setup_build_tools.sh"
-LBANN_INSTALL_FILE_LABEL="LBANN_${CLUSTER}_${LBANN_LABEL}_setup_lbann_modulepath.sh"
+LBANN_INSTALL_FILE_LABEL="LBANN_${CLUSTER}_${LBANN_LABEL}_setup_module_path.sh"
 LBANN_INSTALL_FILE="${PWD}/${LBANN_INSTALL_FILE_LABEL}"
 
 if [[ ! -d "${LBANN_BUILD_PARENT_DIR}" ]]; then
@@ -927,6 +927,8 @@ if [[ -z "${DRY_RUN:-}" ]]; then
     LBANN_PYTHONPATH=$(spack build-env lbann -- printenv PYTHONPATH)
 
 cat > ${LBANN_SETUP_FILE}<<EOF
+# Modules loaded during this installation
+${MODULE_CMD}
 export LBANN_CMAKE=${LBANN_CMAKE}
 export LBANN_NINJA=${LBANN_NINJA}
 export LBANN_PYTHON=${LBANN_PYTHON}
