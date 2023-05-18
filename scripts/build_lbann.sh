@@ -939,6 +939,10 @@ export PATH=\${PATH}:\${LBANN_CMAKE_DIR}:\${LBANN_NINJA_DIR}:\${LBANN_PYTHON_DIR
 export PYTHONPATH=\${LBANN_PYTHONPATH}:\${PYTHONPATH}
 EOF
 
+CMD="chmod +x ${LBANN_SETUP_FILE}"
+echo ${CMD} | tee -a ${LOG}
+[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
+
 cat > ${LBANN_INSTALL_FILE}<<EOF
 # Modules loaded during this installation
 ${MODULE_CMD}
@@ -951,6 +955,10 @@ export LBANN_MODFILES_DIR=${LBANN_MODFILES_DIR}
 export LBANN_SETUP_FILE=${LBANN_SETUP_FILE}
 ml use ${LBANN_MODFILES_DIR}
 EOF
+
+CMD="chmod +x ${LBANN_INSTALL_FILE}"
+echo ${CMD} | tee -a ${LOG}
+[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
 fi
 
 # Save the install file in the build directory
