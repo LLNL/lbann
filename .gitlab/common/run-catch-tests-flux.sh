@@ -34,7 +34,10 @@ source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
 echo "BVE Starting catch tests from ${PWD}"
 echo "${LBANN_MODFILES_DIR}"
 echo "source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh"
-source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh
+file LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh
+file ${PWD}/LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh
+#source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh
+echo "$(which lbann)"
 ml load lbann
 echo "$(which lbann)"
 
