@@ -386,7 +386,8 @@ LBANN_BUILD_DIR="${LBANN_BUILD_PARENT_DIR}/build"
 LBANN_INSTALL_DIR="${LBANN_BUILD_PARENT_DIR}/install"
 LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
 LBANN_SETUP_FILE="${LBANN_BUILD_PARENT_DIR}/LBANN_${CLUSTER}_${LBANN_LABEL}_setup_build_tools.sh"
-LBANN_INSTALL_FILE="${PWD}/LBANN_${CLUSTER}_${LBANN_LABEL}_setup_lbann_modulepath.sh"
+LBANN_INSTALL_FILE_LABEL="LBANN_${CLUSTER}_${LBANN_LABEL}_setup_lbann_modulepath.sh"
+LBANN_INSTALL_FILE="${PWD}/${LBANN_INSTALL_FILE_LABEL}"
 
 if [[ ! -d "${LBANN_BUILD_PARENT_DIR}" ]]; then
     CMD="mkdir -p ${LBANN_BUILD_PARENT_DIR}"
@@ -948,11 +949,13 @@ export LBANN_MODFILES_DIR=${LBANN_MODFILES_DIR}
 export LBANN_SETUP_FILE=${LBANN_SETUP_FILE}
 ml use ${LBANN_MODFILES_DIR}
 EOF
+fi
 
-# Save the setup file in the build directory
-CMD="cp ${LBANN_INSTALL_FILE} ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE}"
-echo ${CMD}
-[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
+# Save the install file in the build directory
+if [[ ! -e ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL} ]]; then
+    CMD="cp ${LBANN_INSTALL_FILE} ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL}"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
 fi
 
 # Drop out of the environment for the rest of the build
@@ -969,7 +972,7 @@ if [[ ! -z "${MATCHED_CONFIG_FILE}" ]]; then
         if [[ ! -e "${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}" ]]; then
             # Save the config file in the build directory
             CMD="cp ${CONFIG_FILE_NAME} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
-            echo ${CMD}
+            echo ${CMD} | tee -a ${LOG}
             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
         fi
     else
@@ -989,7 +992,7 @@ if [[ -L "${LBANN_BUILD_DIR}" ]]; then
   # If the link is not valid or are told to clean it, remove the link
   if [[ ! -d "${LBANN_BUILD_DIR}" || ! -z "${CLEAN_BUILD}" ]]; then
       CMD="rm ${LBANN_BUILD_DIR}"
-      echo ${CMD}
+      echo ${CMD} | tee -a ${LOG}
       [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
   fi
 fi
@@ -997,7 +1000,7 @@ fi
 # If there is a directory there and we are told to clean it, remove the directory
 if [[ -d "${LBANN_BUILD_DIR}" && ! -z "${CLEAN_BUILD}" ]]; then
     CMD="rm -r ${LBANN_BUILD_DIR}"
-    echo ${CMD}
+    echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
 
@@ -1007,11 +1010,11 @@ if [[ ! -d "${LBANN_BUILD_DIR}" ]]; then
         tmp_dir=$(mktemp -d -t ${LBANN_BUILD_LABEL}-$(date +%Y-%m-%d-%H%M%S)-XXXXXXXXXX)
         echo ${tmp_dir}
         CMD="ln -s ${tmp_dir} ${LBANN_BUILD_DIR}"
-        echo ${CMD}
+        echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     else
         CMD="mkdir -p ${LBANN_BUILD_DIR}"
-        echo ${CMD}
+        echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     fi
 fi
@@ -1100,10 +1103,7 @@ if [[ -z "${USER_BUILD:-}" ]]; then
     if [[ ! -e "${LBANN_BUILD_DIR}/${LOG}" ]]; then
         # Lastly, Save the log file in the build directory
         CMD="cp ${LOG} ${LBANN_BUILD_DIR}/${LOG}"
-        echo ${CMD}
+        echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
     fi
 fi
-
-# Return the directory where this is installed
-echo "${LBANN_INSTALL_DIR}"
