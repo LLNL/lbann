@@ -87,8 +87,6 @@ build and install:
     - export TEST_MPIBIND_FLAG="--mpibind=off"
     - export SPACK_ARCH=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch)
     - export SPACK_ARCH_TARGET=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t)
-#    - export LBANN_BUILD_LABEL="lbann_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}"
-#    - export LBANN_BUILD_PARENT_DIR="${PWD}/builds/${LBANN_BUILD_LABEL}"
     - echo "source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh"
     - source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh
     - echo "${LBANN_BUILD_LABEL}"
@@ -96,10 +94,6 @@ build and install:
     - echo "${LBANN_BUILD_DIR}"
     - echo "${LBANN_INSTALL_DIR}"
     - echo "${LBANN_MODFILES_DIR}"
-    # - export LBANN_BUILD_DIR="${LBANN_BUILD_PARENT_DIR}/build"
-    # - export LBANN_INSTALL_DIR="${LBANN_BUILD_PARENT_DIR}/install"
-    # - export LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
-    # - export LBANN_SETUP_FILE="${LBANN_BUILD_PARENT_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}_setup_build_tools.sh"
     - module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/23.02.0 amd/5.4.3 craype/2.7.19 cray-libsci/23.02.1.1 PrgEnv-amd/8.3.3 cray-mpich/8.1.24 StdEnv cmake/3.24.2
     - export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
     - export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
@@ -208,8 +202,13 @@ release allocation:
   before_script:
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - source spack-ci-env-name.sh
-    - spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
-    - spack load lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
+    - echo "BVE starting the unit or integration tests"
+    - echo "source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh"
+    - source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh
+    - ml load lbann
+    - echo "$(which lbann)"
+    # - spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
+    # - spack load lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
     - export FLUX_F58_FORCE_ASCII=t
     - module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/23.02.0 amd/5.4.3 craype/2.7.19 cray-libsci/23.02.1.1 PrgEnv-amd/8.3.3 cray-mpich/8.1.24 StdEnv cmake/3.24.2
 

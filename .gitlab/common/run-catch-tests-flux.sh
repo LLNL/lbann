@@ -30,9 +30,16 @@
 # Just in case
 source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
 
+# Load the LBANN module
+echo "BVE Starting catch tests"
+echo "source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh"
+source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh
+ml load lbann
+echo "$(which lbann)"
+
 # Load up the spack environment
-spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
-spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
+#spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
+#spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
 
 # Configure the output directory
 OUTPUT_DIR=${CI_PROJECT_DIR}/${RESULTS_DIR}
@@ -54,10 +61,12 @@ export MV2_USE_RDMA_CM=0
 export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
 export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
 
-LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
-SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
+# LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
+# SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
 
-cd ${SPACK_BUILD_DIR}
+# cd ${SPACK_BUILD_DIR}
+
+cd ${LBANN_BUILD_DIR}
 
 flux resource list
 #flux proxy ${JOB_ID} flux resource list
