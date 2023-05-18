@@ -940,6 +940,8 @@ export PYTHONPATH=\${LBANN_PYTHONPATH}:\${PYTHONPATH}
 EOF
 
 cat > ${LBANN_INSTALL_FILE}<<EOF
+# Modules loaded during this installation
+${MODULE_CMD}
 # Directory structure used for this build
 export LBANN_BUILD_LABEL=${LBANN_BUILD_LABEL}
 export LBANN_BUILD_PARENT_DIR=${LBANN_BUILD_PARENT_DIR}
