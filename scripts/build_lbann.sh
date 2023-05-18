@@ -953,7 +953,7 @@ EOF
 CMD="cp ${LBANN_INSTALL_FILE} ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE}"
 echo ${CMD}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
-
+fi
 
 # Drop out of the environment for the rest of the build
 CMD="spack env deactivate"
