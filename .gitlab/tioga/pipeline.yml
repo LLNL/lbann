@@ -244,7 +244,7 @@ release allocation:
     LBANN_CI_RUN_WEEKLY: ${LBANN_CI_RUN_WEEKLY}
 
     # Preserve any spack-build-* directories to allow for faster testing
-    GIT_CLEAN_FLAGS: -ffdx -e spack-build-*
+    GIT_CLEAN_FLAGS: -ffdx -e spack-build-* -e builds -e LBANN_*.cmake
 
   tags:
     - tioga
