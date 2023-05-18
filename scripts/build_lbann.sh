@@ -1087,3 +1087,6 @@ if [[ -z "${USER_BUILD:-}" ]]; then
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
     fi
 fi
+
+# Return the directory where this is installed
+echo "${LBANN_INSTALL_DIR}"
