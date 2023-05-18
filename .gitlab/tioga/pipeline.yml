@@ -202,6 +202,7 @@ release allocation:
   before_script:
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - source spack-ci-env-name.sh
+    - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
     - echo "BVE starting the unit or integration tests"
     - echo "source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh"
     - source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh
