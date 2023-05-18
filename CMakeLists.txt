@@ -403,12 +403,23 @@ if (LBANN_HAS_CUDA)
 endif (LBANN_HAS_CUDA)
 
 if (LBANN_HAS_ROCM)
+  if (NOT LBANN_ROCM_PATH)
+    if (ROCM_PATH)
+      set(LBANN_ROCM_PATH "${ROCM_PATH}")
+    elseif (DEFINED ENV{ROCM_PATH})
+      set(LBANN_ROCM_PATH "$ENV{ROCM_PATH}")
+    else ()
+      set(LBANN_ROCM_PATH "/opt/rocm")
+    endif ()
+  endif ()
+  message(STATUS "Using LBANN_ROCM_PATH: ${LBANN_ROCM_PATH}")
+
   find_package(hip CONFIG REQUIRED)
   enable_language(HIP)
   find_package(MIOpen CONFIG REQUIRED)
 
   find_library(HSA_LIBRARY hsa-runtime64
-    HINTS ${ROCM_PATH}/hsa $ENV{ROCM_PATH}/hsa
+    HINTS ${LBANN_ROCM_PATH}/hsa ${ROCM_PATH}/hsa $ENV{ROCM_PATH}/hsa
     PATH_SUFFIXES lib lib64
     DOC "HSA runtime library"
     NO_DEFAULT_PATH)
@@ -442,6 +453,17 @@ if (LBANN_HAS_ROCM)
     list(APPEND LBANN_ROCM_LIBS cuTT::cuTT)
     set(LBANN_HAS_TENSOR_PERMUTE TRUE)
   endif ()
+
+  # Clean up some paths
+  list(REMOVE_ITEM
+    CMAKE_HIP_IMPLICIT_LINK_DIRECTORIES
+    "${LBANN_ROCM_PATH}/lib")
+
+  # This shouldn't be needed, but it shouldn't hurt.
+  list(REMOVE_ITEM
+    CMAKE_CXX_IMPLICIT_LINK_DIRECTORIES
+    "${LBANN_ROCM_PATH}/lib")
+
 endif (LBANN_HAS_ROCM)
 
 # This is used in the sample list implementation
