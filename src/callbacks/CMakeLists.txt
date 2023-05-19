@@ -52,6 +52,7 @@ set_full_path(THIS_DIR_SOURCES
   load_model.cpp
   ltfb.cpp
   mixup.cpp
+  mlperf_logging.cpp
   monitor_io.cpp
   perturb_adam.cpp
   perturb_dropout.cpp

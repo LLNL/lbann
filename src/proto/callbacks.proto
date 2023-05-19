@@ -86,7 +86,8 @@ message Callback {
     CallbackPerturbWeights perturb_weights = 52;
     CallbackExportOnnx export_onnx = 53;
     CallbackAlternateUpdates alternate_updates = 54;
-  }
+    CallbackMlperfLogging mlperf_logging = 56;
+}
 
   message CallbackLTFB {
     int64 batch_interval = 1;
@@ -433,8 +434,17 @@ message Callback {
 
   /** @brief Export trained model in onnx format */
   message CallbackExportOnnx {
-    string output_filename = 1;        // name of onnx output file
-    string debug_string_filename = 2;  // print debug string to file
+    string output_filename = 1; // Name of onnx output file
+    string debug_string_filename = 2; // Print debug string to file
+  }
+
+  /** @brief Prints mlperf compliant benchmark logs */
+  message CallbackMlperfLogging {
+    string sub_benchmark = 1; // Name of benchmark
+    string sub_org = 2; // Name of submission organization
+    string sub_division = 3; // Open or closed division
+    string sub_status = 4; // Submission status: onprem, cloud, or preview
+    string sub_platform = 5; // Submission platform/hardware
   }
 
   message CallbackAlternateUpdates {
