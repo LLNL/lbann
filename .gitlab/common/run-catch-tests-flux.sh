@@ -77,18 +77,18 @@ flux resource list
 
 #flux mini run -N1 -n1 env
 
-flux mini run --label-io -n4 -N2 -g 1 -o cpu-affinity=per-task -o gpu-affinity=per-task sh -c 'taskset -cp $$; printenv | grep VISIBLE' | sort
+flux run --label-io -n4 -N2 -g 1 -o cpu-affinity=per-task -o gpu-affinity=per-task sh -c 'taskset -cp $$; printenv | grep VISIBLE' | sort
 
-flux mini run --label-io -n4 -N2 -g 1 -o cpu-affinity=off -o gpu-affinity=per-task sh -c 'taskset -cp $$; printenv | grep VISIBLE' | sort
+flux run --label-io -n4 -N2 -g 1 -o cpu-affinity=off -o gpu-affinity=per-task sh -c 'taskset -cp $$; printenv | grep VISIBLE' | sort
 #flux proxy ${JOB_ID} flux mini run --label-io -n4 -N2 -g 1 -o cpu-affinity=per-task -o gpu-affinity=per-task sh -c 'taskset -cp $$; printenv | grep VISIBLE' | sort
 
-flux mini run -N 1 -n 1 -g 1 -t 5m rocm-smi
+flux run -N 1 -n 1 -g 1 -t 5m rocm-smi
 
      # module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2; \
      # source /g/g14/lbannusr/spack_repos/spack_corona.git/share/spack/setup-env.sh; \
      # spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}; \
 #flux proxy ${JOB_ID} flux mini run -N 1 -n 1 -g 1 -t 5m \
-flux mini run -N 1 -n 1 -g 1 -t 5m \
+flux run -N 1 -n 1 -g 1 -t 5m \
      ./unit_test/seq-catch-tests \
      -r JUnit \
      -o ${OUTPUT_DIR}/seq-catch-results.xml
@@ -101,7 +101,7 @@ fi
     #LBANN_NNODES=1
 #TEST_TASKS_PER_NODE=4
 #flux proxy ${JOB_ID} flux mini run \
-flux mini run \
+flux run \
      -N ${LBANN_NNODES} -n $((${TEST_TASKS_PER_NODE} * ${LBANN_NNODES})) \
      -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task -o mpibind=off \
      ./unit_test/mpi-catch-tests "exclude:[random]" "exclude:[filesystem]"\
@@ -114,7 +114,7 @@ fi
 #     --ntasks-per-node=$TEST_TASKS_PER_NODE \
 # ${TEST_MPIBIND_FLAG}
 #flux proxy ${JOB_ID} flux mini run \
-flux mini run \
+flux run \
      -N ${LBANN_NNODES} -n $((${TEST_TASKS_PER_NODE} * ${LBANN_NNODES})) \
      -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task -o mpibind=off \
      ./unit_test/mpi-catch-tests -s "[filesystem]" \
