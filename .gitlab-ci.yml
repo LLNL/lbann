@@ -55,13 +55,13 @@ stages:
 #     strategy: depend
 #     include: .gitlab/lassen/pipeline.yml
 
-# pascal testing:
-#   stage: run-all-clusters
-#   variables:
-#     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
-#   trigger:
-#     strategy: depend
-#     include: .gitlab/pascal/pipeline.yml
+pascal testing:
+  stage: run-all-clusters
+  variables:
+    WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
+  trigger:
+    strategy: depend
+    include: .gitlab/pascal/pipeline.yml
 
 # pascal compiler testing:
 #   stage: run-all-clusters
