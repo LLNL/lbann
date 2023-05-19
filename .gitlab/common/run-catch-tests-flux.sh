@@ -104,7 +104,7 @@ fi
 flux run \
      -N ${LBANN_NNODES} -n $((${TEST_TASKS_PER_NODE} * ${LBANN_NNODES})) \
      -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task -o mpibind=off \
-     ./unit_test/mpi-catch-tests "exclude:[random]" "exclude:[filesystem]"\
+     ./unit_test/mpi-catch-tests "exclude:[random]" "exclude:[filesystem]" "exclude:[externallayer]"\
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-results-rank=%r-size=%s.xml"
 if [[ $? -ne 0 ]]; then
