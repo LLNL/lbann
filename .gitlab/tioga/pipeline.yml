@@ -166,6 +166,8 @@ check catch2 tests:
   dependencies:
     - build and install
   script:
+    - $(find ${RESULTS_DIR} -name "catch-tests-failed.txt" -print
+    - $(find ${RESULTS_DIR} -name "catch-tests-failed.txt" -exec cat {} \;
     - ([[ $(find ${RESULTS_DIR} -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
   artifacts:
     reports:
@@ -206,9 +208,11 @@ release allocation:
 #    - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
 #    - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
     - echo "BVE starting the unit or integration tests"
+    - ml
     - echo "source ${LBANN_BUILD_PARENT_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh"
     - source ${LBANN_BUILD_PARENT_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh
     - ml load lbann
+    - ml
     - echo "$(which lbann)"
     # - spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
     # - spack load lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
