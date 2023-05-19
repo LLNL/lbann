@@ -66,7 +66,7 @@ build and install:
       - spack-build-*/spack-*.txt
       - spack-ci-env-name.sh
       - LBANN_*.cmake
-      - LBANN_*_setup_lbann_modulepath.sh
+      - LBANN_*_setup_module_path.sh
       - builds/*
       - ${RESULTS_DIR}/*
   script:
@@ -166,8 +166,8 @@ check catch2 tests:
   dependencies:
     - build and install
   script:
-    - $(find ${RESULTS_DIR} -name "catch-tests-failed.txt" -print
-    - $(find ${RESULTS_DIR} -name "catch-tests-failed.txt" -exec cat {} \;
+    - find ${RESULTS_DIR} -name "catch-tests-failed.txt" -print
+    - find ${RESULTS_DIR} -name "catch-tests-failed.txt" -exec cat {} \;
     - ([[ $(find ${RESULTS_DIR} -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
   artifacts:
     reports:
