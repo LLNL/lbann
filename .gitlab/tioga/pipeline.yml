@@ -67,7 +67,7 @@ build and install:
       - spack-ci-env-name.sh
       - LBANN_*.cmake
       - LBANN_*_setup_module_path.sh
-      - GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
+#      - GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
       - builds/${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}-${SPACK_ARCH_TARGET}*
       - ${RESULTS_DIR}/*
   script:
