@@ -69,7 +69,7 @@ build and install:
       - LBANN_*_setup_module_path.sh
 #      - GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
 #      - builds/*
-      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*
+      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/*
 #      - builds/${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}-${SPACK_ARCH_TARGET}*
       - ${RESULTS_DIR}/*
   script:
@@ -84,8 +84,8 @@ build and install:
     - echo "BVE I think that the concurrent ID is ${CI_CONCURRENT_ID} and my GL suffix are ${GITLAB_SUFFIX} and the other concurrent project id is ${CI_CONCURRENT_PROJECT_ID} and Jobi id ${CI_BUILDS_DIR} SPACK_PADDED_CONCURRENT_ID is ${SPACK_PADDED_CONCURRENT_ID} len is ${CONCURRENT_ID_LEN} and trim is ${SPACK_PADDED_TRIM}"
 #    - echo "GitLab CI/CD | Print all environment variables"
 #    - env
-    - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}
-#    - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
+#    - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}
+    - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - flux proxy ${JOB_ID} flux mini run -N 1 -t 30m ./scripts/build_lbann.sh -r
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS} --clean-build
@@ -240,16 +240,16 @@ release allocation:
 
     # This is based on the assumption that each runner will only ever
     # be able to run one pipeline on a given cluster at one time.
-#    SPACK_ENV_BASE_NAME: gitlab-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}
+    SPACK_ENV_BASE_NAME: gitlab-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}
     SPACK_PADDING: "000"
     CONCURRENT_ID_LEN: ${#CI_CONCURRENT_ID}
     SPACK_PADDED_TRIM: ${SPACK_PADDING:${CONCURRENT_ID_LEN}}
     SPACK_PADDED_CONCURRENT_ID: ${SPACK_PADDED_TRIM}${CI_CONCURRENT_ID}
 #    SPACK_PADDED_CONCURRENT_ID: "${SPACK_PADDING:${#CI_CONCURRENT_ID}}${CI_CONCURRENT_ID}"
 #    SPACK_PADDED_CONCURRENT_ID: "${SPACK_PADDING:${#CI_CONCURRENT_ID}:${#SPACK_PADDING}}${CI_CONCURRENT_ID}"
-    SPACK_ENV_BASE_NAME: gitlab-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}-${SPACK_PADDED_CONCURRENT_ID}
+#    SPACK_ENV_BASE_NAME: gitlab-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}-${SPACK_PADDED_CONCURRENT_ID}
 
-    GITLAB_SUFFIX_GLOBAL: `basename "${CI_BUILDS_DIR}"`
+#    GITLAB_SUFFIX_GLOBAL: basename "${CI_BUILDS_DIR}"
 
     # These are system-specific specs that should be forwarded to the
     # build script
