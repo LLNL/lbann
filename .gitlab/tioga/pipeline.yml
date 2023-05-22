@@ -79,11 +79,12 @@ build and install:
     - "export LBANN_NNODES=$(flux jobs -no {id}:{name}:{nnodes} | grep ${JOB_NAME} | awk -F: '{print $3}')"
     - export BUILD_TASKS=$(($(nproc) + 2))
     - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
-    - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
-    - echo "BVE I think that the concurrent ID is ${CI_CONCURRENT_ID} and my GL suffix are ${GITLAB_SUFFIX} and the other concurrent project id is ${CI_CONCURRENT_PROJECT_ID} and Jobi id ${CI_BUILDS_DIR}"
-    - echo "GitLab CI/CD | Print all environment variables"
-    - env
-    - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
+#    - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
+#    - echo "BVE I think that the concurrent ID is ${CI_CONCURRENT_ID} and my GL suffix are ${GITLAB_SUFFIX} and the other concurrent project id is ${CI_CONCURRENT_PROJECT_ID} and Jobi id ${CI_BUILDS_DIR}"
+#    - echo "GitLab CI/CD | Print all environment variables"
+#    - env
+    - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}
+#    - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - flux proxy ${JOB_ID} flux mini run -N 1 -t 30m ./scripts/build_lbann.sh -r
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS} --clean-build
@@ -238,7 +239,8 @@ release allocation:
 
     # This is based on the assumption that each runner will only ever
     # be able to run one pipeline on a given cluster at one time.
-    SPACK_ENV_BASE_NAME: gitlab-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}
+#    SPACK_ENV_BASE_NAME: gitlab-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}
+    SPACK_ENV_BASE_NAME: gitlab-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}-00${CI_CONCURRENT_ID}
 
 #    GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
 
