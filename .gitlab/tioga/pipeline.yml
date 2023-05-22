@@ -68,7 +68,7 @@ build and install:
       - LBANN_*.cmake
       - LBANN_*_setup_module_path.sh
 #      - GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
-      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*-${SPACK_ARCH_TARGET}
+      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*
 #      - builds/${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}-${SPACK_ARCH_TARGET}*
       - ${RESULTS_DIR}/*
   script:
@@ -257,7 +257,7 @@ release allocation:
     LBANN_CI_RUN_WEEKLY: ${LBANN_CI_RUN_WEEKLY}
 
     # Preserve any spack-build-* directories to allow for faster testing
-    GIT_CLEAN_FLAGS: -ffdx -e spack-build-* -e builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*-${SPACK_ARCH_TARGET} -e LBANN_*.cmake -e LBANN_*_setup_module_path.sh -e LBANN_*_setup_build_tools.sh
+    GIT_CLEAN_FLAGS: -ffdx -e spack-build-* -e builds/* -e LBANN_*.cmake -e LBANN_*_setup_module_path.sh -e LBANN_*_setup_build_tools.sh
 
   tags:
     - tioga
