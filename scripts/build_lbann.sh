@@ -691,7 +691,8 @@ if [[ -n "${USER_MIRROR:-}" ]]; then
 fi
 
 if [[ -n "${INSTALL_DEPS:-}" && -z "${SKIP_MIRRORS:-}" ]]; then
-    CMD="spack mirror add binary_mirror  https://binaries.spack.io/releases/v0.18"
+    # https://cache.spack.io/tag/develop/
+    CMD="spack mirror add spack-build-cache-develop https://binaries.spack.io/develop"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     # Tell Spack to trust the keys in the build cache
