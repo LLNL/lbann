@@ -494,6 +494,7 @@ fi
 
 GPU_VARIANTS_ARRAY=('+cuda' '+rocm')
 DEPENDENT_PACKAGES_GPU_VARIANTS=
+POSSIBLE_AWS_OFI_PLUGIN=
 for GPU_VARIANTS in ${GPU_VARIANTS_ARRAY[@]}
 do
     if [[ "${LBANN_VARIANTS}" =~ .*"${GPU_VARIANTS}".* ]]; then
@@ -506,8 +507,10 @@ do
             # For now, don't forward the amdgpu_target field to downstream packages
             # Py-Torch does not support it
             DEPENDENT_PACKAGES_GPU_VARIANTS="${GPU_VARIANTS}"
+            POSSIBLE_AWS_OFI_PLUGIN="aws-ofi-rccl"
         else
             DEPENDENT_PACKAGES_GPU_VARIANTS="${GPU_VARIANTS} ${GPU_ARCH_VARIANTS}"
+            POSSIBLE_AWS_OFI_PLUGIN="aws-ofi-nccl"
         fi
     fi
 done
@@ -573,11 +576,12 @@ if [[ -n "${REUSE_ENV:-}" || -z "${INSTALL_DEPS:-}" ]]; then
                 echo "I have found and will use ${MATCHED_CONFIG_FILE}"
                 CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
                 if [[ ! -e "${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}" ]]; then
-                    # Save the config file in the build directory
-                    CMD="cp ${CONFIG_FILE_NAME} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
-                    echo ${CMD}
-                    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
+                    echo "Overwritting exising CMake config file in ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
                 fi
+                # Save the config file in the build directory
+                CMD="cp ${CONFIG_FILE_NAME} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
+                echo ${CMD}
+                [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
             fi
         fi
     fi
@@ -759,7 +763,9 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
         [[ -z "${DRY_RUN:-}" ]] && { `spack config add packages:all:variants:"${DEPENDENT_PACKAGES_GPU_VARIANTS}"` || exit_on_failure "${CMD}"; }
     fi
 
-    CMD="spack compiler find --scope env:${LBANN_ENV} ${CENTER_COMPILER_PATHS}"
+    # Put the compilers into the SITE scope so that we can execute
+    # spack load commands later without activating the environment
+    CMD="spack compiler find --scope site ${CENTER_COMPILER_PATHS}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -863,6 +869,15 @@ fi
 
 # Get the spack hash for LBANN (Ensure that the concretize command has been run so that any impact of external packages is factored in)
 LBANN_SPEC_HASH=$(spack find -cl | grep -v "\-\-\-\-\-\-" | grep lbann${AT_LBANN_LABEL} | awk '{print $1}')
+
+# Get the spack hash for aws-ofi plugin (Ensure that the concretize command has been run so that any impact of external packages is factored in)
+if [[ -n "${POSSIBLE_AWS_OFI_PLUGIN}" ]]; then
+    AWS_OFI_PLUGIN_SPEC_HASH=$(spack find -cl | grep -v "\-\-\-\-\-\-" | grep ${POSSIBLE_AWS_OFI_PLUGIN} | awk '{print $1}')
+    if [[ -n "${AWS_OFI_PLUGIN_SPEC_HASH}" ]]; then
+        echo "LBANN built with AWS plugin ${AWS_OFI_PLUGIN_SPEC_HASH} for ${POSSIBLE_AWS_OFI_PLUGIN}"
+    fi
+fi
+
 # If SPEC_ONLY was requested bail
 [[ -z "${DRY_RUN:-}" && "${SPEC_ONLY}" == "TRUE" ]] && exit_with_instructions
 
@@ -927,8 +942,6 @@ if [[ -z "${DRY_RUN:-}" ]]; then
     LBANN_PYTHONPATH=$(spack build-env lbann -- printenv PYTHONPATH)
 
 cat > ${LBANN_SETUP_FILE}<<EOF
-# Modules loaded during this installation
-${MODULE_CMD}
 export LBANN_CMAKE=${LBANN_CMAKE}
 export LBANN_NINJA=${LBANN_NINJA}
 export LBANN_PYTHON=${LBANN_PYTHON}
@@ -946,8 +959,6 @@ echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
 
 cat > ${LBANN_INSTALL_FILE}<<EOF
-# Modules loaded during this installation
-${MODULE_CMD}
 # Directory structure used for this build
 export LBANN_BUILD_LABEL=${LBANN_BUILD_LABEL}
 export LBANN_BUILD_PARENT_DIR=${LBANN_BUILD_PARENT_DIR}
@@ -958,6 +969,25 @@ export LBANN_SETUP_FILE=${LBANN_SETUP_FILE}
 ml use ${LBANN_MODFILES_DIR}
 EOF
 
+if [[ -n "${MODULE_CMD}" ]]; then
+cat >> ${LBANN_INSTALL_FILE}<<EOF
+# Modules loaded during this installation
+${MODULE_CMD}
+EOF
+cat >> ${LBANN_SETUP_FILE}<<EOF
+# Modules loaded during this installation
+${MODULE_CMD}
+EOF
+fi
+
+if [[ -n "${AWS_OFI_PLUGIN_SPEC_HASH}" ]]; then
+cat >> ${LBANN_INSTALL_FILE}<<EOF
+# Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
+# a spack environment matches behavior inside of a runtime environment
+spack load ${POSSIBLE_AWS_OFI_PLUGIN} /${AWS_OFI_PLUGIN_SPEC_HASH}
+EOF
+fi
+
 CMD="chmod +x ${LBANN_INSTALL_FILE}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
@@ -965,10 +995,11 @@ fi
 
 # Save the install file in the build directory
 if [[ ! -e ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL} ]]; then
-    CMD="cp ${LBANN_INSTALL_FILE} ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL}"
-    echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
+    echo "Overwritting exising install file in ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL}"
 fi
+CMD="cp ${LBANN_INSTALL_FILE} ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL}"
+echo ${CMD} | tee -a ${LOG}
+[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
 
 # Drop out of the environment for the rest of the build
 CMD="spack env deactivate"
@@ -982,11 +1013,12 @@ if [[ ! -z "${MATCHED_CONFIG_FILE}" ]]; then
         echo "I have found and will use ${MATCHED_CONFIG_FILE}"
         CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
         if [[ ! -e "${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}" ]]; then
-            # Save the config file in the build directory
-            CMD="cp ${CONFIG_FILE_NAME} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
-            echo ${CMD} | tee -a ${LOG}
-            [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
+            echo "Overwritting exising CMake config file in ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
         fi
+        # Save the config file in the build directory
+        CMD="cp ${CONFIG_FILE_NAME} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
     else
         echo "ERROR: Unable to open the generated config file"
         exit 1
