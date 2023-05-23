@@ -81,6 +81,7 @@ build and install:
     - export BUILD_TASKS=$(($(nproc) + 2))
     - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
 #    - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
+    - export GITLAB_SUFFIX="${CI_BUILDS_DIR##*}"
     - echo "BVE I think that the concurrent ID is ${CI_CONCURRENT_ID} and my GL suffix are ${GITLAB_SUFFIX} and the other concurrent project id is ${CI_CONCURRENT_PROJECT_ID} and Jobi id ${CI_BUILDS_DIR} SPACK_PADDED_CONCURRENT_ID is ${SPACK_PADDED_CONCURRENT_ID} len is ${CONCURRENT_ID_LEN} and trim is ${SPACK_PADDED_TRIM}"
 #    - echo "GitLab CI/CD | Print all environment variables"
 #    - env
@@ -250,7 +251,7 @@ release allocation:
 #    SPACK_ENV_BASE_NAME: gitlab-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}-${SPACK_PADDED_CONCURRENT_ID}
 
 #    GITLAB_SUFFIX_GLOBAL: basename "${CI_BUILDS_DIR}"
-    GITLAB_SUFFIX_GLOBAL: "${CI_BUILDS_DIR##*}"
+#    GITLAB_SUFFIX_GLOBAL: "${CI_BUILDS_DIR##*}"
 
     # These are system-specific specs that should be forwarded to the
     # build script
