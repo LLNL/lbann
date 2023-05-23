@@ -250,6 +250,7 @@ release allocation:
 #    SPACK_ENV_BASE_NAME: gitlab-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}-${SPACK_PADDED_CONCURRENT_ID}
 
 #    GITLAB_SUFFIX_GLOBAL: basename "${CI_BUILDS_DIR}"
+    GITLAB_SUFFIX_GLOBAL: "${CI_BUILDS_DIR##*}"
 
     # These are system-specific specs that should be forwarded to the
     # build script
