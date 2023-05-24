@@ -601,9 +601,17 @@ data_type_distconv_adapter<InputTensorDataType,
   const
 {
   const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
+  const auto& prev_dist = this->get_prev_activations_dist();
   const auto& dist = this->get_activations_dist();
   const auto shape = get_activations_shape(index);
   const auto local_shape = get_activations_local_shape(index);
+
+  if (layer().runs_inplace() && (prev_dist == dist) 
+      && index < layer().get_num_parents()){
+    const auto& prev_activations = this->get_prev_activations(index);
+    return std::make_unique<OutputTensorDevType>(prev_activations);
+  }
+
   auto t = std::make_unique<OutputTensorDevType>(shape, loc, dist, local_shape);
   assert0(t->allocate());
   t->zero(default_hydrogen_stream());
@@ -742,9 +750,17 @@ data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
   setup_error_signals_i(int index) const
 {
   const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
+  const auto& prev_dist = this->get_prev_error_signals_dist();
   const auto& dist = this->get_error_signals_dist();
   const auto shape = get_error_signals_shape(index);
   const auto local_shape = get_error_signals_local_shape(index);
+
+  if (layer().runs_inplace() && (prev_dist == dist) 
+      && index < layer().get_num_children()){
+    const auto& prev_error_signals = this->get_prev_error_signals(index);
+    return std::make_unique<InputTensorDevType>(prev_error_signals);
+  }
+
   auto t = std::make_unique<InputTensorDevType>(shape, loc, dist, local_shape);
   assert0(t->allocate());
   t->zero(default_hydrogen_stream());
