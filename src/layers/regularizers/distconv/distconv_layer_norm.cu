@@ -181,6 +181,7 @@ void LayerNormalization<Backend, DataType>::calculate_backward_stats(
   const DCTensor<Allocator>& statistics,
   DCTensor<Allocator>& statistics_grad)
 {
+
   const auto& input_dims = input.get_local_shape();
   const auto& statistics_dims = statistics.get_local_shape();
   const auto local_num_samples = input_dims[3];
