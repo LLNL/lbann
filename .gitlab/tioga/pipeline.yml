@@ -32,6 +32,9 @@
 
 # See the Catalyst pipeline for more thorough documentation.
 
+# include:
+#   - .gitlab/common/env.yml
+
 stages:
   - allocate
   - build

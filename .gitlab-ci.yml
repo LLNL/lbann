@@ -78,4 +78,5 @@ tioga testing:
     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
   trigger:
     strategy: depend
+    include: .gitlab/common/env.yml
     include: .gitlab/tioga/pipeline.yml
