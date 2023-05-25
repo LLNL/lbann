@@ -133,9 +133,5 @@ then
     echo "Some Catch2 tests failed:${FAILED_JOBS}" > ${OUTPUT_DIR}/catch-tests-failed.txt
 fi
 
-echo "I have found the following results >>>"
-cat ${OUTPUT_DIR}/catch-tests-failed.txt
-echo "<<< EOL"
-
 # Return "success" so that the pytest-based testing can run.
 exit 0

@@ -67,25 +67,18 @@ build and install:
       - spack-ci-env-name.sh
       - LBANN_*.cmake
       - LBANN_*_setup_module_path.sh
-#      - GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
-#      - builds/*
       - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/*
-#      - builds/${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}-${SPACK_ARCH_TARGET}*
       - ${RESULTS_DIR}/*
+    exclude:
+      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/build/**/*.o
   script:
     - echo "== BUILDING LBANN =="
-    - echo "GLOBAL GITLAB SUFFIX = ${GITLAB_SUFFIX_GLOBAL}"
     - export FLUX_F58_FORCE_ASCII=t
     - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - "export LBANN_NNODES=$(flux jobs -no {id}:{name}:{nnodes} | grep ${JOB_NAME} | awk -F: '{print $3}')"
     - export BUILD_TASKS=$(($(nproc) + 2))
     - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
     - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
-#    - export GITLAB_SUFFIX="${CI_BUILDS_DIR##*/}"
-    - echo "BVE I think that the concurrent ID is ${CI_CONCURRENT_ID} and my GL suffix are ${GITLAB_SUFFIX} and the other concurrent project id is ${CI_CONCURRENT_PROJECT_ID} and Jobi id ${CI_BUILDS_DIR} SPACK_PADDED_CONCURRENT_ID is ${SPACK_PADDED_CONCURRENT_ID} len is ${CONCURRENT_ID_LEN} and trim is ${SPACK_PADDED_TRIM}"
-#    - echo "GitLab CI/CD | Print all environment variables"
-#    - env
-#    - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}
     - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - flux proxy ${JOB_ID} flux mini run -N 1 -t 30m ./scripts/build_lbann.sh -r
@@ -103,11 +96,9 @@ build and install:
     - echo "${LBANN_BUILD_DIR}"
     - echo "${LBANN_INSTALL_DIR}"
     - echo "${LBANN_MODFILES_DIR}"
-#    - module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/23.02.0 amd/5.4.3 craype/2.7.19 cray-libsci/23.02.1.1 PrgEnv-amd/8.3.3 cray-mpich/8.1.24 StdEnv cmake/3.24.2
     - export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
     - export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
     - echo "${LBANN_MODFILES_DIR}"
-#    - ml use ${LBANN_MODFILES_DIR}
     - ml load lbann
     - echo "$(which lbann)"
 #    - export LD_LIBRARY_PATH=/usr/workspace/brain/tom/tioga/rocm-5.4.3/aws-ofi-rccl/lib:${LD_LIBRARY_PATH}
@@ -115,7 +106,7 @@ build and install:
     - echo "export SPACK_ARCH=${SPACK_ARCH}" >> spack-ci-env-name.sh
     - echo "export SPACK_ARCH_TARGET=${SPACK_ARCH_TARGET}" >> spack-ci-env-name.sh
     - echo "export LBANN_BUILD_PARENT_DIR=${LBANN_BUILD_PARENT_DIR}" >> spack-ci-env-name.sh
-    - echo "export LD_LIBRARY_PATH=/usr/workspace/brain/tom/tioga/rocm-5.4.3/aws-ofi-rccl/lib:${LD_LIBRARY_PATH}" >> spack-ci-env-name.sh
+#    - echo "export LD_LIBRARY_PATH=/usr/workspace/brain/tom/tioga/rocm-5.4.3/aws-ofi-rccl/lib:${LD_LIBRARY_PATH}" >> spack-ci-env-name.sh
     - flux proxy ${JOB_ID} .gitlab/common/run-catch-tests-flux.sh
 
 # Run the Python-based unit tests.
@@ -242,16 +233,6 @@ release allocation:
     # This is based on the assumption that each runner will only ever
     # be able to run one pipeline on a given cluster at one time.
     SPACK_ENV_BASE_NAME: gitlab-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}
-    SPACK_PADDING: "000"
-    CONCURRENT_ID_LEN: ${#CI_CONCURRENT_ID}
-    SPACK_PADDED_TRIM: ${SPACK_PADDING:${CONCURRENT_ID_LEN}}
-    SPACK_PADDED_CONCURRENT_ID: ${SPACK_PADDED_TRIM}${CI_CONCURRENT_ID}
-#    SPACK_PADDED_CONCURRENT_ID: "${SPACK_PADDING:${#CI_CONCURRENT_ID}}${CI_CONCURRENT_ID}"
-#    SPACK_PADDED_CONCURRENT_ID: "${SPACK_PADDING:${#CI_CONCURRENT_ID}:${#SPACK_PADDING}}${CI_CONCURRENT_ID}"
-#    SPACK_ENV_BASE_NAME: gitlab-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}-${SPACK_PADDED_CONCURRENT_ID}
-
-#    GITLAB_SUFFIX_GLOBAL: basename "${CI_BUILDS_DIR}"
-#    GITLAB_SUFFIX_GLOBAL: "${CI_BUILDS_DIR##*}"
 
     # These are system-specific specs that should be forwarded to the
     # build script
