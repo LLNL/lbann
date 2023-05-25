@@ -45,7 +45,6 @@ stages:
 allocate lc resources:
   stage: allocate
   extends: .tioga common
-  extends: .lbann common
   variables:
     GIT_STRATEGY: none
   script:
@@ -61,7 +60,6 @@ allocate lc resources:
 # Build LBANN and establish the Spack environment for this pipeline.
 build and install:
   extends: .tioga common
-  extends: .lbann common
   stage: build
   artifacts:
     paths:
@@ -209,6 +207,8 @@ release allocation:
 
 # Variables for Tioga.
 .tioga common:
+  includes:
+    - .lbann common
   variables:
     # Just the obvious identifier. Which specific node doesn't matter.
     SYSTEM_NAME: tioga
