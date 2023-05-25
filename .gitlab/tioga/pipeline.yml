@@ -173,6 +173,7 @@ check catch2 tests:
     GIT_STRATEGY: none
   extends:
     - .tioga common
+    - .lbann
   stage: test
   dependencies:
     - build and install
@@ -188,7 +189,9 @@ check catch2 tests:
 # Switching over to reusing Spack environments for each feature branch so don't remove them immediately
 # Cleanup any build directories and spack environments older than 5 days since last use
 remove spack environment:
-  extends: .tioga common
+  extends:
+    - .tioga common
+    - .lbann
   stage: deallocate
   variables:
     GIT_STRATEGY: none
@@ -202,7 +205,9 @@ remove spack environment:
 # Free the allocation we obtained in "allocate lc resources".
 release allocation:
   stage: deallocate
-  extends: .tioga common
+  extends:
+    - .tioga common
+    - .lbann
   variables:
     GIT_STRATEGY: none
   when: always
