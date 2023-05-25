@@ -1,5 +1,5 @@
 ################################################################################
-## Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 ## Produced at the Lawrence Livermore National Laboratory.
 ## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 ## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -201,26 +201,6 @@ release allocation:
     - echo "== RELEASING RESOURCES =="
     - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - ([[ -n "${JOB_ID}" ]] && flux job cancel ${JOB_ID})
-
-# Load the spack shell integration and load the environment.
-.uses spack environment:
-  before_script:
-    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - source spack-ci-env-name.sh
-#    - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
-#    - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
-    - echo "BVE starting the unit or integration tests"
-    - ml
-    - echo "source ${LBANN_BUILD_PARENT_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh"
-    - source ${LBANN_BUILD_PARENT_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh
-    - ml load lbann
-    - ml
-    - echo "$(which lbann)"
-    # - spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
-    # - spack load lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
-    - export FLUX_F58_FORCE_ASCII=t
-#    - module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/23.02.0 amd/5.4.3 craype/2.7.19 cray-libsci/23.02.1.1 PrgEnv-amd/8.3.3 cray-mpich/8.1.24 StdEnv cmake/3.24.2
-
 
 # Variables for Tioga.
 .tioga common:
