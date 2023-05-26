@@ -32,6 +32,9 @@
 
 # See the Catalyst pipeline for more thorough documentation.
 
+include:
+  - .gitlab/common/env.yml
+
 stages:
   - allocate
   - build
@@ -41,7 +44,9 @@ stages:
 # Get LC resources.
 allocate lc resources:
   stage: allocate
-  extends: .pascal common
+  extends:
+    - .pascal common
+    - .lbann
   variables:
     GIT_STRATEGY: none
   script:
@@ -54,19 +59,23 @@ allocate lc resources:
 
 # Build LBANN and establish the Spack environment for this pipeline.
 build and install:
-  extends: .pascal common
+  extends:
+    - .pascal common
+    - .lbann
   stage: build
   artifacts:
     paths:
       - spack-*.txt
-      - spack-build-*/CMakeCache.txt
-      - spack-build-*/build.ninja
-      - spack-build-*/spack-*.txt
+      # - spack-build-*/CMakeCache.txt
+      # - spack-build-*/build.ninja
+      # - spack-build-*/spack-*.txt
       - spack-ci-env-name.sh
       - LBANN_*.cmake
       - LBANN_*_setup_module_path.sh
-      - builds/*
+      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/*
       - ${RESULTS_DIR}/*
+    exclude:
+      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/build/**/*.o
   script:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
@@ -103,6 +112,7 @@ build and install:
 unit tests:
   extends:
     - .pascal common
+    - .lbann
     - .uses spack environment
   stage: test
   dependencies:
@@ -125,6 +135,7 @@ unit tests:
 integration tests:
   extends:
     - .pascal common
+    - .lbann
     - .uses spack environment
   stage: test
   dependencies:
@@ -149,6 +160,7 @@ integration tests:
 check catch2 tests:
   extends:
     - .pascal common
+    - .lbann
   stage: test
   dependencies:
     - build and install
@@ -162,7 +174,9 @@ check catch2 tests:
 # Switching over to reusing Spack environments for each feature branch so don't remove them immediately
 # Cleanup any build directories and spack environments older than 5 days since last use
 remove spack environment:
-  extends: .pascal common
+  extends:
+    - .pascal common
+    - .lbann
   stage: deallocate
   variables:
     GIT_STRATEGY: none
@@ -176,7 +190,9 @@ remove spack environment:
 # Free the allocation we obtained in "allocate lc resources".
 release allocation:
   stage: deallocate
-  extends: .pascal common
+  extends:
+    - .pascal common
+    - .lbann
   variables:
     GIT_STRATEGY: none
   when: always
@@ -186,18 +202,18 @@ release allocation:
     - ([[ -n "${JOB_ID}" ]] && scancel ${JOB_ID})
 
 # Load the spack shell integration and load the environment.
-.uses spack environment:
-  before_script:
-    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - source spack-ci-env-name.sh
-    - ml
-    - echo "source ${LBANN_BUILD_PARENT_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh"
-    - source ${LBANN_BUILD_PARENT_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh
-    - ml load lbann
-    - ml
-    - echo "$(which lbann)"
-    # - spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
-    # - spack load lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
+# .uses spack environment:
+#   before_script:
+#     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
+#     - source spack-ci-env-name.sh
+#     - ml
+#     - echo "source ${LBANN_BUILD_PARENT_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh"
+#     - source ${LBANN_BUILD_PARENT_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh
+#     - ml load lbann
+#     - ml
+#     - echo "$(which lbann)"
+#     # - spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
+#     # - spack load lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
 
 # Variables for Pascal.
 .pascal common:
@@ -209,7 +225,7 @@ release allocation:
 
     # This is based on the assumption that each runner will only ever
     # be able to run one pipeline on a given cluster at one time.
-    SPACK_ENV_BASE_NAME: gitlab-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}
+#    SPACK_ENV_BASE_NAME: gitlab-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}
 
     # These are system-specific specs that should be forwarded to the
     # build script
@@ -217,16 +233,16 @@ release allocation:
 
     # This variable is the name used to identify the job in the Slurm
     # queue. We need this to be able to access the correct jobid.
-    JOB_NAME: ${CI_PROJECT_NAME}_${CI_PIPELINE_ID}
+#    JOB_NAME: ${CI_PROJECT_NAME}_${CI_PIPELINE_ID}
 
     # This is needed to ensure that we run as lbannusr.
-    LLNL_SERVICE_USER: lbannusr
+#    LLNL_SERVICE_USER: lbannusr
 
     # Catch2 output.
-    RESULTS_DIR: results-${CI_PIPELINE_ID}
+#    RESULTS_DIR: results-${CI_PIPELINE_ID}
 
     # Preserve any spack-build-* directories to allow for faster testing
-    GIT_CLEAN_FLAGS: -ffdx -e spack-build-* -e builds -e LBANN_*.cmake -e LBANN_*_setup_module_path.sh -e LBANN_*_setup_build_tools.sh
+#    GIT_CLEAN_FLAGS: -ffdx -e spack-build-* -e builds -e LBANN_*.cmake -e LBANN_*_setup_module_path.sh -e LBANN_*_setup_build_tools.sh
 
   tags:
     - pascal
