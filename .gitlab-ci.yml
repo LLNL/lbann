@@ -72,10 +72,10 @@ pascal testing:
 #     strategy: depend
 #     include: .gitlab/pascal/pipeline_compiler_tests.yml
 
-tioga testing:
-  stage: run-all-clusters
-  variables:
-    WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
-  trigger:
-    strategy: depend
-    include: .gitlab/tioga/pipeline.yml
+# tioga testing:
+#   stage: run-all-clusters
+#   variables:
+#     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
+#   trigger:
+#     strategy: depend
+#     include: .gitlab/tioga/pipeline.yml
