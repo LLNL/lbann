@@ -495,6 +495,7 @@ fi
 GPU_VARIANTS_ARRAY=('+cuda' '+rocm')
 DEPENDENT_PACKAGES_GPU_VARIANTS=
 POSSIBLE_AWS_OFI_PLUGIN=
+POSSIBLE_DNN_LIB=
 for GPU_VARIANTS in ${GPU_VARIANTS_ARRAY[@]}
 do
     if [[ "${LBANN_VARIANTS}" =~ .*"${GPU_VARIANTS}".* ]]; then
@@ -511,6 +512,7 @@ do
         else
             DEPENDENT_PACKAGES_GPU_VARIANTS="${GPU_VARIANTS} ${GPU_ARCH_VARIANTS}"
             POSSIBLE_AWS_OFI_PLUGIN="aws-ofi-nccl"
+            POSSIBLE_DNN_LIB="cudnn"
         fi
     fi
 done
@@ -879,6 +881,13 @@ if [[ -n "${POSSIBLE_AWS_OFI_PLUGIN}" ]]; then
     fi
 fi
 
+if [[ -n "${POSSIBLE_DNN_LIB}" ]]; then
+    DNN_LIB_SPEC_HASH=$(spack find -cl | grep -v "\-\-\-\-\-\-" | grep ${POSSIBLE_DNN_LIB} | awk '{print $1}')
+    if [[ -n "${DNN_LIB_SPEC_HASH}" ]]; then
+        echo "LBANN built with DNN library ${DNN_LIB_SPEC_HASH} for ${POSSIBLE_DNN_LIB}"
+    fi
+fi
+
 # If SPEC_ONLY was requested bail
 [[ -z "${DRY_RUN:-}" && "${SPEC_ONLY}" == "TRUE" ]] && exit_with_instructions
 
@@ -986,6 +995,14 @@ cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
 # a spack environment matches behavior inside of a runtime environment
 spack load ${POSSIBLE_AWS_OFI_PLUGIN} /${AWS_OFI_PLUGIN_SPEC_HASH}
+EOF
+fi
+
+if [[ -n "${POSSIBLE_DNN_LIB_SPEC_HASH}" ]]; then
+cat >> ${LBANN_INSTALL_FILE}<<EOF
+# Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
+# a spack environment matches behavior inside of a runtime environment
+spack load ${POSSIBLE_DNN_LIB} /${DNN_LIB_SPEC_HASH}
 EOF
 fi
 
