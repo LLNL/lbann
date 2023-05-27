@@ -277,9 +277,9 @@ set_center_specific_externals()
 cat <<EOF  >> ${yaml}
   packages:
     rdma-core:
-      buildable: False
+      buildable: false
       version:
-      - 20
+      - '20'
       externals:
       - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
@@ -289,17 +289,17 @@ EOF
 cat <<EOF  >> ${yaml}
   packages:
     essl:
-      buildable: False
+      buildable: false
       version:
-      - 6.2.1
+      - '6.2.1'
       externals:
       - spec: essl@6.2.1 arch=${spack_arch}
         modules:
         - essl/6.2.1
     rdma-core:
-      buildable: False
+      buildable: false
       version:
-      - 20
+      - '20'
       externals:
       - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
@@ -309,9 +309,9 @@ EOF
 cat <<EOF  >> ${yaml}
   packages:
     hipcub:
-      buildable: False
+      buildable: false
       version:
-      - 5.4.1
+      - '5.4.1'
       externals:
       - spec: hipcub@5.4.1 arch=${spack_arch}
         prefix: /opt/rocm-5.4.1/hipcub
@@ -320,9 +320,9 @@ cat <<EOF  >> ${yaml}
             c: /opt/rocm-5.4.1/llvm/bin/clang
             c++: /opt/rocm-5.4.1/llvm/bin/clang++
     llvm-amdgpu:
-      buildable: False
+      buildable: false
       version:
-      - 5.4.1
+      - '5.4.1'
       externals:
       - spec: llvm-amdgpu@5.4.1 arch=${spack_arch}
         prefix: /opt/rocm-5.4.1/llvm
@@ -331,17 +331,17 @@ cat <<EOF  >> ${yaml}
             c: /opt/rocm-5.4.1/llvm/bin/clang
             c++: /opt/rocm-5.4.1/llvm/bin/clang++
     openmpi:
-      buildable: False
+      buildable: false
       version:
-      - 4.1.2
+      - '4.1.2'
       externals:
       - spec: openmpi@4.1.2 arch=${spack_arch}
         modules:
         - openmpi-tce/4.1.2
     mvapich2:
-      buildable: False
+      buildable: false
       version:
-      - 2.3.6
+      - '2.3.6'
       externals:
       - spec: mvapich2@2.3.6 arch=${spack_arch}
         modules:
@@ -371,31 +371,31 @@ cat <<EOF  >> ${yaml}
       providers:
         mpi: [cray-mpich]
     hipcub:
-      buildable: False
+      buildable: false
       version:
-      - 5.4.3
+      - '5.4.3'
       externals:
       - spec: hipcub@5.4.3 arch=${spack_arch}
         prefix: /opt/rocm-5.4.3/hipcub
     llvm-amdgpu:
-      buildable: False
+      buildable: false
       version:
-      - 5.4.3
+      - '5.4.3'
       externals:
       - spec: llvm-amdgpu@5.4.3 arch=${spack_arch}
         prefix: /opt/rocm-5.4.3/llvm
     cray-libsci:
-      buildable: False
+      buildable: false
       version:
-      - 23.02.1.1
+      - '23.02.1.1'
       externals:
       - spec: cray-libsci@23.02.1.1 %rocmcc arch=${spack_arch}
         modules:
         - amd/5.4.3 PrgEnv-amd/8.3.3 cray-libsci/23.02.1.1
     cray-mpich:
-      buildable: False
+      buildable: false
       version:
-      - 8.1.24
+      - '8.1.24'
       externals:
       - spec: cray-mpich@8.1.24 %rocmcc arch=${spack_arch}
         modules:
@@ -416,9 +416,9 @@ EOF
 cat <<EOF  >> ${yaml}
   packages:
     rdma-core:
-      buildable: False
+      buildable: false
       version:
-      - 20
+      - '20'
       externals:
       - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
@@ -434,9 +434,9 @@ EOF
 cat <<EOF  >> ${yaml}
   packages:
     rdma-core:
-      buildable: False
+      buildable: false
       version:
-      - 20
+      - '20'
       externals:
       - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
@@ -449,41 +449,41 @@ cat <<EOF  >> ${yaml}
       providers:
         mpi: [cray-mpich]
     nvhpc:
-      buildable: False
+      buildable: false
       version:
-      - 21.11
+      - '21.11'
       externals:
       - spec: nvhpc@21.11 arch=${spack_arch}
         modules:
         - cudatoolkit/11.5
     cudnn:
-      buildable: False
+      buildable: false
       version:
-      - 8.3.2
+      - '8.3.2'
       externals:
       - spec: cudnn@8.3.2 arch=${spack_arch}
         modules:
         - cudnn/8.3.2
     cray-libsci:
-      buildable: False
+      buildable: false
       version:
-      - 21.08.1.2
+      - '21.08.1.2'
       externals:
       - spec: cray-libsci@21.08.1.2 arch=${spack_arch}
         modules:
         - cray-libsci/21.08.1.2
     cray-mpich:
-      buildable: False
+      buildable: false
       version:
-      - 8.1.15
+      - '8.1.15'
       externals:
       - spec: "cray-mpich@8.1.15~wrappers arch=${spack_arch}"
         modules:
         - cray-mpich/8.1.15
     nccl:
-      buildable: False
+      buildable: false
       version:
-      - 2.11.4
+      - '2.11.4'
       externals:
       - spec: nccl@2.11.4 arch=${spack_arch}
         modules:
@@ -510,7 +510,7 @@ cat <<EOF >> ${yaml}
     default:
       lmod:
         core_compilers:
-          - 'cce@13.0.0'
+        - 'cce@13.0.0'
 EOF
 }
 
