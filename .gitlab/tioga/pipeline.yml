@@ -76,8 +76,8 @@ build and install:
       - LBANN_*_setup_module_path.sh
       - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/*
       - ${RESULTS_DIR}/*
-    exclude:
-      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/build/**/*.o
+    # exclude:
+    #   - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/build/**/*.o
   script:
     - echo "== BUILDING LBANN =="
     - export FLUX_F58_FORCE_ASCII=t
@@ -190,12 +190,12 @@ remove spack environment:
   extends:
     - .tioga common
     - .lbann
-    - .cleanup old spack environment
   stage: deallocate
   variables:
     GIT_STRATEGY: none
   when: always
   script:
+    - !reference [.cleanup old spack environment, script]
     - echo "== REMOVING OLD BUILD RESOURCES =="
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +5 -name "spack-build-*" -type d -exec rm -r {} \;
