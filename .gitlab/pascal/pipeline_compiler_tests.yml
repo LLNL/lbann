@@ -32,6 +32,9 @@
 
 # See the Catalyst pipeline for more thorough documentation.
 
+include:
+  - .gitlab/common/env.yml
+
 stages:
   - allocate
   - build
@@ -118,10 +121,11 @@ remove spack environment:
     GIT_STRATEGY: none
   when: always
   script:
-    - echo "== REMOVING OLD BUILD RESOURCES =="
-    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +5 -name "spack-build-*" -type d -exec rm -r {} \;
-    - find ${HOME}/${SPACK_REPO}/var/spack/environments/ -maxdepth 1 -mtime +5 -type d -exec basename {} \; | xargs -r spack env rm --yes-to-all
+    - !reference [.cleanup old spack environment, script]
+    # - echo "== REMOVING OLD BUILD RESOURCES =="
+    # - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
+    # - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +5 -name "spack-build-*" -type d -exec rm -r {} \;
+    # - find ${HOME}/${SPACK_REPO}/var/spack/environments/ -maxdepth 1 -mtime +5 -type d -exec basename {} \; | xargs -r spack env rm --yes-to-all
 
 # Free the allocation we obtained in "allocate lc resources".
 release allocation:

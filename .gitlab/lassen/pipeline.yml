@@ -30,6 +30,9 @@
 # output is in JUnit format and parsed by the pipeline for web
 # viewing.
 
+include:
+  - .gitlab/common/env.yml
+
 stages:
   - everything
   - cleanup
