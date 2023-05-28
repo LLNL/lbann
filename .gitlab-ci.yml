@@ -28,8 +28,11 @@
 # clusters. To run testing locally, consult the README in the ci_test
 # directory.
 
-# stages:
-#   - run-all-clusters
+include:
+  - .gitlab/common/env.yml
+
+stages:
+  - run-all-clusters
 
 # catalyst testing:
 #   stage: run-all-clusters
