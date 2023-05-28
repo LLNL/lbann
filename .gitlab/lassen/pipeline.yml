@@ -47,7 +47,7 @@ stages:
 build and test everything:
   extends:
     - .lassen common
-    - .uses spack environment
+    - .lbann
   stage: everything
   script:
     - echo "== BUILDING AND TESTING LBANN =="
@@ -83,6 +83,7 @@ build and test everything:
 remove spack environment:
   extends:
     - .lassen common
+    - .lbann
     - .uses spack environment
   stage: cleanup
   variables:

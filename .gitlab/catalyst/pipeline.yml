@@ -48,7 +48,7 @@ allocate lc resources:
   stage: allocate
   extends:
     - .catalyst common
-    - .uses spack environment
+    - .lbann
   variables:
     GIT_STRATEGY: none
   script:
@@ -69,7 +69,7 @@ allocate lc resources:
 build and install:
   extends:
     - .catalyst common
-    - .uses spack environment
+    - .lbann
   stage: build
   artifacts:
     paths:
@@ -123,6 +123,7 @@ build and install:
 unit tests:
   extends:
     - .catalyst common
+    - .lbann
     - .uses spack environment
   stage: test
   dependencies:
@@ -144,6 +145,7 @@ unit tests:
 integration tests:
   extends:
     - .catalyst common
+    - .lbann
     - .uses spack environment
   stage: test
   dependencies:
@@ -178,7 +180,7 @@ integration tests:
 check catch2 tests:
   extends:
     - .catalyst common
-    - .uses spack environment
+    - .lbann
   stage: test
   dependencies:
     - build and install
@@ -194,7 +196,7 @@ check catch2 tests:
 remove spack environment:
   extends:
     - .catalyst common
-    - .uses spack environment
+    - .lbann
   stage: deallocate
   variables:
     GIT_STRATEGY: none
@@ -211,7 +213,7 @@ release allocation:
   stage: deallocate
   extends:
     - .catalyst common
-    - .uses spack environment
+    - .lbann
   variables:
     GIT_STRATEGY: none
   when: always

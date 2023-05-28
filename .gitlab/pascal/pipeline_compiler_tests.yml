@@ -46,7 +46,7 @@ allocate lc resources:
   stage: allocate
   extends:
     - .pascal common
-    - .uses spack environment
+    - .lbann
   variables:
     GIT_STRATEGY: none
   script:
@@ -58,7 +58,7 @@ allocate lc resources:
 build and install:
   extends:
     - .pascal common
-    - .uses spack environment
+    - .lbann
   stage: build
   artifacts:
     paths:
@@ -99,6 +99,7 @@ build and install:
 check catch2 tests:
   extends:
     - .pascal common
+    - .lbann
     - .uses spack environment
   stage: test
   dependencies:
@@ -115,7 +116,7 @@ check catch2 tests:
 remove spack environment:
   extends:
     - .pascal common
-    - .uses spack environment
+    - .lbann
   stage: deallocate
   variables:
     GIT_STRATEGY: none
@@ -132,7 +133,7 @@ release allocation:
   stage: deallocate
   extends:
     - .pascal common
-    - .uses spack environment
+    - .lbann
   variables:
     GIT_STRATEGY: none
   when: always

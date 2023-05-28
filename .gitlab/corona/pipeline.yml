@@ -46,7 +46,7 @@ allocate lc resources:
   stage: allocate
   extends:
     - .corona common
-    - .uses spack environment
+    - .lbann
   variables:
     GIT_STRATEGY: none
   script:
@@ -63,7 +63,7 @@ allocate lc resources:
 build and install:
   extends:
     - .corona common
-    - .uses spack environment
+    - .lbann
   stage: build
   artifacts:
     paths:
@@ -104,6 +104,7 @@ build and install:
 unit tests:
   extends:
     - .corona common
+    - .lbann
     - .uses spack environment
   stage: test
   dependencies:
@@ -126,6 +127,7 @@ unit tests:
 integration tests:
   extends:
     - .corona common
+    - .lbann
     - .uses spack environment
   stage: test
   dependencies:
@@ -152,7 +154,7 @@ check catch2 tests:
     GIT_STRATEGY: none
   extends:
     - .corona common
-    - .uses spack environment
+    - .lbann
   stage: test
   dependencies:
     - build and install
@@ -168,6 +170,7 @@ check catch2 tests:
 remove spack environment:
   extends:
     - .corona common
+    - .lbann
     - .uses spack environment
   stage: deallocate
   variables:
@@ -184,7 +187,7 @@ release allocation:
   stage: deallocate
   extends:
     - .corona common
-    - .uses spack environment
+    - .lbann
   variables:
     GIT_STRATEGY: none
   when: always
