@@ -28,9 +28,6 @@
 # clusters. To run testing locally, consult the README in the ci_test
 # directory.
 
-include:
-  - .gitlab/common/env.yml
-
 stages:
   - run-all-clusters
 
