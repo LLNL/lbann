@@ -79,11 +79,12 @@ build and install:
   script:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
-    - export BUILD_TASKS=$(($(nproc) + 2))
-    - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
-    - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
-    - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
-    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
+    - !reference [.setup_spack, script]
+    # - export BUILD_TASKS=$(($(nproc) + 2))
+    # - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
+    # - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
+    # - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
+    # - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -r
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS}
       -e ./scripts/common_spack_packages/ci_spack_packages.sh --
@@ -92,20 +93,21 @@ build and install:
     - export TEST_MPIBIND_FLAG="--mpibind=off"
     - export SPACK_ARCH=$(spack arch)
     - export SPACK_ARCH_TARGET=$(spack arch -t)
-    - echo "source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh"
-    - source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh
-    - echo "${LBANN_BUILD_LABEL}"
-    - echo "${LBANN_BUILD_PARENT_DIR}"
-    - echo "${LBANN_BUILD_DIR}"
-    - echo "${LBANN_INSTALL_DIR}"
-    - echo "${LBANN_MODFILES_DIR}"
-    - echo "${LBANN_MODFILES_DIR}"
-    - ml load lbann
-    - echo "$(which lbann)"
-    - echo "export SPACK_DEP_ENV_NAME=${SPACK_ENV_NAME}" > spack-ci-env-name.sh
-    - echo "export SPACK_ARCH=${SPACK_ARCH}" >> spack-ci-env-name.sh
-    - echo "export SPACK_ARCH_TARGET=${SPACK_ARCH_TARGET}" >> spack-ci-env-name.sh
-    - echo "export LBANN_BUILD_PARENT_DIR=${LBANN_BUILD_PARENT_DIR}" >> spack-ci-env-name.sh
+    - !reference [.setup_lbann, script]
+    # - echo "source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh"
+    # - source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh
+    # - echo "${LBANN_BUILD_LABEL}"
+    # - echo "${LBANN_BUILD_PARENT_DIR}"
+    # - echo "${LBANN_BUILD_DIR}"
+    # - echo "${LBANN_INSTALL_DIR}"
+    # - echo "${LBANN_MODFILES_DIR}"
+    # - echo "${LBANN_MODFILES_DIR}"
+    # - ml load lbann
+    # - echo "$(which lbann)"
+    # - echo "export SPACK_DEP_ENV_NAME=${SPACK_ENV_NAME}" > spack-ci-env-name.sh
+    # - echo "export SPACK_ARCH=${SPACK_ARCH}" >> spack-ci-env-name.sh
+    # - echo "export SPACK_ARCH_TARGET=${SPACK_ARCH_TARGET}" >> spack-ci-env-name.sh
+    # - echo "export LBANN_BUILD_PARENT_DIR=${LBANN_BUILD_PARENT_DIR}" >> spack-ci-env-name.sh
     - .gitlab/common/run-catch-tests.sh
 
 # Run the Python-based unit tests.

@@ -42,15 +42,18 @@ stages:
 # refactor that file. So a little up, a little down.
 
 build and test everything:
-  extends: .lassen common
+  extends:
+    - .lassen common
+    - .uses spack environment
   stage: everything
   script:
     - echo "== BUILDING AND TESTING LBANN =="
     - echo "${WITH_WEEKLY:+Running with --weekly}"
-    - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
-    - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
-    - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
-    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
+    - !reference [.setup_spack, script]
+    # - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
+    # - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
+    # - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
+    # - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "120" || echo "90")
     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
     - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
@@ -59,11 +62,14 @@ build and test everything:
     when: always
     paths:
       - spack-*.txt
-      - spack-build-*/CMakeCache.txt
-      - spack-build-*/build.ninja
-      - spack-build-*/spack-*.txt
+      # - spack-build-*/CMakeCache.txt
+      # - spack-build-*/build.ninja
+      # - spack-build-*/spack-*.txt
       - ci_test/**/*.xml
       - ci_test/compiler_tests/**/*.txt
+      - LBANN_*.cmake
+      - LBANN_*_setup_module_path.sh
+      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/*
     reports:
       junit: ci_test/**/*.xml
   timeout: 6h
@@ -72,16 +78,19 @@ build and test everything:
 # Switching over to reusing Spack environments for each feature branch so don't remove them immediately
 # Cleanup any build directories and spack environments older than 5 days since last use
 remove spack environment:
-  extends: .lassen common
+  extends:
+    - .lassen common
+    - .uses spack environment
   stage: cleanup
   variables:
     GIT_STRATEGY: none
   when: always
   script:
-    - echo "== REMOVING OLD BUILD RESOURCES =="
-    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +5 -name "spack-build-*" -type d -exec rm -r {} \;
-    - find ${HOME}/${SPACK_REPO}/var/spack/environments/ -maxdepth 1 -mtime +5 -type d -exec basename {} \; | xargs -r spack env rm --yes-to-all
+    - !reference [.cleanup old spack environment, script]
+    # - echo "== REMOVING OLD BUILD RESOURCES =="
+    # - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
+    # - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +5 -name "spack-build-*" -type d -exec rm -r {} \;
+    # - find ${HOME}/${SPACK_REPO}/var/spack/environments/ -maxdepth 1 -mtime +5 -type d -exec basename {} \; | xargs -r spack env rm --yes-to-all
 
 # Variables for Lassen. Because this test uses "test_compiler.py", we
 # don't need to specify the Spack spec or the job name.
@@ -91,20 +100,6 @@ remove spack environment:
     SYSTEM_NAME: lassen
 #    SPACK_REPO: spack_repos/spack_${SYSTEM_NAME}.git
     SPACK_REPO: spack_repos/spack_develop.git
-
-    # This is based on the assumption that each runner will only ever
-    # be able to run one pipeline on a given cluster at one time.
-    SPACK_ENV_BASE_NAME: gitlab-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}
-
-    # This is needed to ensure that we run as lbannusr.
-    LLNL_SERVICE_USER: lbannusr
-
-    # This needs to be imported here, too. Failure to do so causes
-    # problems if it's not set.
-    LBANN_CI_RUN_WEEKLY: ${LBANN_CI_RUN_WEEKLY}
-
-    # Preserve any spack-build-* directories to allow for faster testing
-    GIT_CLEAN_FLAGS: -ffdx -e spack-build-*
 
   tags:
     - lassen

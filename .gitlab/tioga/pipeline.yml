@@ -83,11 +83,12 @@ build and install:
     - export FLUX_F58_FORCE_ASCII=t
     - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - "export LBANN_NNODES=$(flux jobs -no {id}:{name}:{nnodes} | grep ${JOB_NAME} | awk -F: '{print $3}')"
-    - export BUILD_TASKS=$(($(nproc) + 2))
-    - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
-    - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
-    - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
-    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
+    - !reference [.setup_spack, script]
+    # - export BUILD_TASKS=$(($(nproc) + 2))
+    # - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
+    # - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
+    # - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
+    # - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - flux proxy ${JOB_ID} flux mini run -N 1 -t 30m ./scripts/build_lbann.sh -r
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS}
       -p py-pip --ci-pip --
@@ -177,8 +178,6 @@ check catch2 tests:
   dependencies:
     - build and install
   script:
-    - find ${RESULTS_DIR} -name "catch-tests-failed.txt" -print
-    - find ${RESULTS_DIR} -name "catch-tests-failed.txt" -exec cat {} \;
     - ([[ $(find ${RESULTS_DIR} -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
   artifacts:
     reports:

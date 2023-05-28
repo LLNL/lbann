@@ -41,7 +41,9 @@ stages:
 # Get LC resources.
 allocate lc resources:
   stage: allocate
-  extends: .corona common
+  extends:
+    - .corona common
+    - .uses spack environment
   variables:
     GIT_STRATEGY: none
   script:
@@ -56,25 +58,31 @@ allocate lc resources:
 
 # Build LBANN and establish the Spack environment for this pipeline.
 build and install:
-  extends: .corona common
+  extends:
+    - .corona common
+    - .uses spack environment
   stage: build
   artifacts:
     paths:
       - spack-*.txt
-      - spack-build-*/CMakeCache.txt
-      - spack-build-*/build.ninja
-      - spack-build-*/spack-*.txt
+      # - spack-build-*/CMakeCache.txt
+      # - spack-build-*/build.ninja
+      # - spack-build-*/spack-*.txt
       - spack-ci-env-name.sh
+      - LBANN_*.cmake
+      - LBANN_*_setup_module_path.sh
+      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/*
       - ${RESULTS_DIR}/*
   script:
     - echo "== BUILDING LBANN =="
     - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - "export LBANN_NNODES=$(flux jobs -no {id}:{name}:{nnodes} | grep ${JOB_NAME} | awk -F: '{print $3}')"
-    - export BUILD_TASKS=$(($(nproc) + 2))
-    - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
-    - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
-    - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
-    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
+    - !reference [.setup_spack, script]
+    # - export BUILD_TASKS=$(($(nproc) + 2))
+    # - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
+    # - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
+    # - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
+    # - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - flux proxy ${JOB_ID} flux mini run -N 1 -t 30m ./scripts/build_lbann.sh -r
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS}
       -p py-pip --ci-pip --
@@ -83,9 +91,10 @@ build and install:
     - export TEST_MPIBIND_FLAG="--mpibind=off"
     - export SPACK_ARCH=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch)
     - export SPACK_ARCH_TARGET=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t)
-    - echo "export SPACK_DEP_ENV_NAME=${SPACK_ENV_NAME}" > spack-ci-env-name.sh
-    - echo "export SPACK_ARCH=${SPACK_ARCH}" >> spack-ci-env-name.sh
-    - echo "export SPACK_ARCH_TARGET=${SPACK_ARCH_TARGET}" >> spack-ci-env-name.sh
+    - !reference [.setup_lbann, script]
+    # - echo "export SPACK_DEP_ENV_NAME=${SPACK_ENV_NAME}" > spack-ci-env-name.sh
+    # - echo "export SPACK_ARCH=${SPACK_ARCH}" >> spack-ci-env-name.sh
+    # - echo "export SPACK_ARCH_TARGET=${SPACK_ARCH_TARGET}" >> spack-ci-env-name.sh
     - flux proxy ${JOB_ID} .gitlab/common/run-catch-tests-flux.sh
 
 # Run the Python-based unit tests.
@@ -102,7 +111,7 @@ unit tests:
     - export OMP_NUM_THREADS=10
     - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - cd ci_test/unit_tests
-    - flux proxy ${FLUX_JOB_ID} python3 -m pytest -s -vv --durations=0 --junitxml=results.xml
+    - flux proxy ${FLUX_JOB_ID} lbann_pfe.sh -m pytest -s -vv --durations=0 --junitxml=results.xml
   artifacts:
     when: always
     paths:
@@ -126,7 +135,7 @@ integration tests:
     - cd ci_test/integration_tests
     - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
     - echo "python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml"
-    - flux proxy ${FLUX_JOB_ID} python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml
+    - flux proxy ${FLUX_JOB_ID} lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml
   artifacts:
     when: always
     paths:
@@ -140,6 +149,7 @@ check catch2 tests:
     GIT_STRATEGY: none
   extends:
     - .corona common
+    - .uses spack environment
   stage: test
   dependencies:
     - build and install
@@ -153,7 +163,9 @@ check catch2 tests:
 # Switching over to reusing Spack environments for each feature branch so don't remove them immediately
 # Cleanup any build directories and spack environments older than 5 days since last use
 remove spack environment:
-  extends: .corona common
+  extends:
+    - .corona common
+    - .uses spack environment
   stage: deallocate
   variables:
     GIT_STRATEGY: none
@@ -167,7 +179,9 @@ remove spack environment:
 # Free the allocation we obtained in "allocate lc resources".
 release allocation:
   stage: deallocate
-  extends: .corona common
+  extends:
+    - .corona common
+    - .uses spack environment
   variables:
     GIT_STRATEGY: none
   when: always
@@ -177,12 +191,12 @@ release allocation:
     - ([[ -n "${JOB_ID}" ]] && flux job cancel ${JOB_ID})
 
 # Load the spack shell integration and load the environment.
-.uses spack environment:
-  before_script:
-    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - source spack-ci-env-name.sh
-    - spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
-    - spack load lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
+# .uses spack environment:
+#   before_script:
+#     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
+#     - source spack-ci-env-name.sh
+#     - spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
+#     - spack load lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
 
 # Variables for Corona.
 .corona common:
@@ -192,30 +206,9 @@ release allocation:
 #    SPACK_REPO: spack_repos/spack_${SYSTEM_NAME}.git
     SPACK_REPO: spack_repos/spack_develop.git
 
-    # This is based on the assumption that each runner will only ever
-    # be able to run one pipeline on a given cluster at one time.
-    SPACK_ENV_BASE_NAME: gitlab-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}
-
     # These are system-specific specs that should be forwarded to the
     # build script
     SPACK_SPECS: "+rocm"
-
-    # This variable is the name used to identify the job in the Slurm
-    # queue. We need this to be able to access the correct jobid.
-    JOB_NAME: ${CI_PROJECT_NAME}_${CI_PIPELINE_ID}
-
-    # This is needed to ensure that we run as lbannusr.
-    LLNL_SERVICE_USER: lbannusr
-
-    # Catch2 output.
-    RESULTS_DIR: results-${CI_PIPELINE_ID}
-
-    # This needs to be imported here, too. Failure to do so causes
-    # problems if it's not set.
-    LBANN_CI_RUN_WEEKLY: ${LBANN_CI_RUN_WEEKLY}
-
-    # Preserve any spack-build-* directories to allow for faster testing
-    GIT_CLEAN_FLAGS: -ffdx -e spack-build-*
 
   tags:
     - corona
