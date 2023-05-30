@@ -67,6 +67,8 @@ public:
   void setup_fp_tensors() override;
   void setup_bp_tensors() override;
   void setup_layer(size_t workspace_capacity) override;
+  std::unique_ptr<TensorDevType> 
+    setup_error_signals_i(int index) const override;
 
   void fp_compute_convolution();
   void fp_apply_bias();

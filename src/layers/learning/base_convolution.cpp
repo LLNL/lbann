@@ -1321,6 +1321,20 @@ void base_convolution_adapter<TensorDataType, Device>::setup_layer(
 }
 
 template <typename TensorDataType, El::Device Device>
+std::unique_ptr<typename base_convolution_adapter<TensorDataType,
+                                                   Device>::TensorDevType>
+base_convolution_adapter<TensorDataType, Device>::
+  setup_error_signals_i(int index) const
+{
+  assert_eq(index, 0);
+  if (this->layer().get_parent_layer().get_backprop_requirements() & ACTIVATIONS) {
+    return data_type_distconv_adapter<TensorDataType>::setup_error_signals_i(0);
+  }
+  const auto& prev_activations = this->get_prev_activations(0);
+  return std::make_unique<TensorDevType>(prev_activations);
+}
+
+template <typename TensorDataType, El::Device Device>
 void base_convolution_adapter<TensorDataType, Device>::fp_compute_convolution()
 {
   auto& l = dynamic_cast<base_convolution_layer<TensorDataType, Device>&>(
