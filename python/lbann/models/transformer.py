@@ -105,6 +105,7 @@ class TransformerEncoderLayer(lbann.modules.Module):
         self.attention = lbann.modules.transformer.MultiheadAttention(
             self.embed_dim,
             num_heads,
+            self_attention=True,
             name=f'{self.name}_attention'
         )
         self.norm1 = LayerNorm(self.embed_dim, name=f'{self.name}_norm1')
@@ -224,6 +225,7 @@ class TransformerDecoderLayer(lbann.modules.Module):
         self.attention1 = lbann.modules.transformer.MultiheadAttention(
             embed_dim,
             num_heads,
+            self_attention=True,
             name=f'{self.name}_attention1'
         )
         self.attention2 = lbann.modules.transformer.MultiheadAttention(
@@ -362,6 +364,7 @@ class Transformer(lbann.modules.Module):
         Transformer.global_count += 1
         self.instance = 0
         self.hidden_size = hidden_size
+        self.num_heads = num_heads
 
         # Module name
         self.name = name
@@ -393,6 +396,7 @@ class Transformer(lbann.modules.Module):
             )
             for i in range(num_decoder_layers)
         ]
+        self.separate_heads = self.decoder[0].attention1.separate_heads
 
     def _positional_encoding(self, sequence_length):
         """Positional encodings corresponding to a sequence length.
@@ -440,13 +444,19 @@ class Transformer(lbann.modules.Module):
         # Construct mask if not in cache
         if size not in self._subsequent_mask_cache:
             vals = np.triu(np.full((size,size), -1e9), k=1)
+
+            if not self.separate_heads:
+                # Precompute mask for all heads because Add is entry-wise
+                # (potential memory usage issue)
+                vals = np.tile(vals, (self.num_heads, 1, 1))
+
             weights = lbann.Weights(
                 initializer=lbann.ValueInitializer(values=vals.flat),
                 optimizer=None,
                 name=f'{self.name}_mask{size}_weights',
             )
             self._subsequent_mask_cache[size] = lbann.WeightsLayer(
-                dims=[size, size],
+                dims=vals.shape,
                 weights=weights,
                 name=f'{self.name}_mask{size}',
             )
