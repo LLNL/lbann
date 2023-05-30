@@ -74,6 +74,8 @@ public:
   dc::Shape get_per_channel_stat_shape() const;
   dc::Dist get_per_channel_stat_dist(const dc::Dist& input_dist) const;
   void setup_layer(size_t workspace_capacity) override;
+  std::unique_ptr<TensorDevType> 
+    setup_error_signals_i(int index) const override;
   void fp_compute();
   void bp_compute();
 
