@@ -1418,11 +1418,18 @@ message Layer {
 
   /** @brief Softmax across channel dimension
    *
-   *  The input tensor is sliced along the first tensor dimension (the
-   *  "channel" dimension for image data in CHW format) and the
+   *  The input tensor is sliced along the chosen tensor dimension (by default,
+   *  the "channel" dimension for image data in CHW format) and the
    *  softmax function is computed for each slice.
    */
-  message ChannelwiseSoftmax {}
+  message ChannelwiseSoftmax {
+    /** @brief The tensor dimension to use (defaults to first) */
+    int64 dim = 1;
+
+    /** @brief If true, only performs softmax on the chosen dimension. Otherwise
+               all dimensions _but_ ``dim`` will be used. */
+    bool single_dim_mode = 2;
+  }
 
   /** @brief Embedding layer with distributed weights
    *
@@ -1573,8 +1580,8 @@ message WeightsData {
 enum Imcomm {
   DEFAULT = 0;  // add Layer to Imcomm callback if all_learning_layers = true in
                 // the CallbackImComm
-  EXCLUDE = 1;  //*do not* add Layer to Imcomm callback if all_learning_layers =
-                //true in the CallbackImComm
+  EXCLUDE = 1;  // *do not* add Layer to Imcomm callback if all_learning_layers
+                // = true in the CallbackImComm
   INCLUDE =
       2;  // add Layer to Imcomm callback regardless of whether
           // all_learning_layers in the CallbackImComm is set to true or false

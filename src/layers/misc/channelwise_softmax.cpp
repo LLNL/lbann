@@ -41,6 +41,7 @@ namespace {
 template <typename TensorDataType>
 void fp_impl(El::Int num_channels,
              El::Int channel_size,
+             El::Int channel_stride,
              const El::AbstractDistMatrix<TensorDataType>& input,
              El::AbstractDistMatrix<TensorDataType>& output)
 {
@@ -62,7 +63,7 @@ void fp_impl(El::Int num_channels,
     for (El::Int j = 0; j < num_channels; ++j) {
       auto& maxval = local_shifts(j, k);
       for (El::Int i = 0; i < channel_size; ++i) {
-        maxval = std::max(maxval, local_input(i + j * channel_size, k));
+        maxval = std::max(maxval, local_input(i + j * channel_stride, k));
       }
     }
   }
@@ -76,7 +77,7 @@ void fp_impl(El::Int num_channels,
       const auto& shift = local_shifts(j, k);
       auto& denom = local_denoms(j, k);
       for (El::Int i = 0; i < channel_size; ++i) {
-        const auto& x = local_input(i + j * channel_size, k);
+        const auto& x = local_input(i + j * channel_stride, k);
         denom += std::exp(x - shift);
       }
     }
@@ -89,8 +90,8 @@ void fp_impl(El::Int num_channels,
       const auto& shift = local_shifts(j, k);
       const auto& denom = local_denoms(j, k);
       for (El::Int i = 0; i < channel_size; ++i) {
-        const auto& x = local_input(i + j * channel_size, k);
-        auto& y = local_output(i + j * channel_size, k);
+        const auto& x = local_input(i + j * channel_stride, k);
+        auto& y = local_output(i + j * channel_stride, k);
         y = std::exp(x - shift) / denom;
       }
     }
@@ -102,10 +103,11 @@ void fp_impl(El::Int num_channels,
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void channelwise_softmax_layer<TensorDataType, Layout, Device>::fp_compute()
 {
-  const El::Int num_channels = this->get_output_dims().front();
-  const El::Int channel_size = this->get_output_size() / num_channels;
+  El::Int num_channels, channel_size, channel_stride;
+  this->get_channel_size_and_stride(channel_size, channel_stride, num_channels);
   fp_impl(num_channels,
           channel_size,
+          channel_stride,
           this->get_prev_activations(),
           this->get_activations());
 }
@@ -119,6 +121,7 @@ namespace {
 template <typename TensorDataType>
 void bp_impl(El::Int num_channels,
              El::Int channel_size,
+             El::Int channel_stride,
              const El::AbstractDistMatrix<TensorDataType>& output,
              const El::AbstractDistMatrix<TensorDataType>& output_grad,
              El::AbstractDistMatrix<TensorDataType>& input_grad)
@@ -143,8 +146,8 @@ void bp_impl(El::Int num_channels,
     for (El::Int j = 0; j < num_channels; ++j) {
       auto& y_dot_dy = local_y_dot_dy(j, k);
       for (El::Int i = 0; i < channel_size; ++i) {
-        const auto& y = local_output(i + j * channel_size, k);
-        const auto& dy = local_output_grad(i + j * channel_size, k);
+        const auto& y = local_output(i + j * channel_stride, k);
+        const auto& dy = local_output_grad(i + j * channel_stride, k);
         y_dot_dy += y * dy;
       }
     }
@@ -156,9 +159,9 @@ void bp_impl(El::Int num_channels,
     for (El::Int j = 0; j < num_channels; ++j) {
       const auto& y_dot_dy = local_y_dot_dy(j, k);
       for (El::Int i = 0; i < channel_size; ++i) {
-        const auto& y = local_output(i + j * channel_size, k);
-        const auto& dy = local_output_grad(i + j * channel_size, k);
-        auto& dx = local_input_grad(i + j * channel_size, k);
+        const auto& y = local_output(i + j * channel_stride, k);
+        const auto& dy = local_output_grad(i + j * channel_stride, k);
+        auto& dx = local_input_grad(i + j * channel_stride, k);
         dx = y * (dy - y_dot_dy);
       }
     }
@@ -170,10 +173,11 @@ void bp_impl(El::Int num_channels,
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void channelwise_softmax_layer<TensorDataType, Layout, Device>::bp_compute()
 {
-  const El::Int num_channels = this->get_output_dims().front();
-  const El::Int channel_size = this->get_output_size() / num_channels;
+  El::Int num_channels, channel_size, channel_stride;
+  this->get_channel_size_and_stride(channel_size, channel_stride, num_channels);
   bp_impl(num_channels,
           channel_size,
+          channel_stride,
           this->get_activations(),
           this->get_prev_error_signals(),
           this->get_error_signals());

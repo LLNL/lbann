@@ -97,11 +97,17 @@ ChannelwiseSoftmax
 The :python:`ChannelwiseSoftmax` layer applies the Softmax function
 across channel dimensions.
 
-The input tensor is sliced along the first tensor dimension (the
+The input tensor is sliced along the first tensor dimension (by default, the
 "channel" dimension for image data in CHW format) and the softmax
 function is computed for each slice.
 
-Arguments: None
+Arguments:
+
+   :dim: (``int64``) The tensor dimension to use (defaults to first).
+
+   :single_dim_mode: (``bool``) If true, only performs softmax on the chosen
+                     dimension. Otherwise all dimensions but ``dim`` will be
+                     used.
 
 :ref:`Back to Top<miscellaneous-layers>`
 
