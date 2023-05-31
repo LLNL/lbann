@@ -185,7 +185,8 @@ set_center_specific_spack_dependencies()
                 CENTER_COMPILER="%gcc"
 #                CENTER_COMPILER="%clang"
 #                DEPENDENTS_CENTER_COMPILER="%gcc@10.3.1"
-                CENTER_DEPENDENCIES="^mvapich2@2.3.6 ^hwloc@1.11.13"
+                # There is something weird about the python@3.9.13 on Pascal right now 5/31/2023
+                CENTER_DEPENDENCIES="^mvapich2@2.3.6 ^hwloc@1.11.13 ^python@3.9.12"
 #                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
