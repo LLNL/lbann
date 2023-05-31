@@ -7,7 +7,8 @@ cd ${LBANN_DIR}/ci_test
 
 echo "${PWD}/run.sh CLUSTER=${CLUSTER}"
 
-PYTHON=lbann_pfe.sh
+PYTHON=python3
+LBANN_PYTHON=lbann_pfe.sh
 
 WEEKLY=0
 while :; do
@@ -67,14 +68,17 @@ $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml || exit 1
 # Find the correct module to load
 SPACK_ARCH=$(spack arch)
 SPACK_ARCH_TARGET=$(spack arch -t)
-SPACK_ENV_CMD="spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}"
-echo ${SPACK_ENV_CMD} | tee -a ${LOG}
-${SPACK_ENV_CMD}
-LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
-export SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
-SPACK_LOAD_CMD="spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}"
-echo ${SPACK_LOAD_CMD} | tee -a ${LOG}
-${SPACK_LOAD_CMD}
+echo "source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh" | tee -a ${LOG}
+source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh | tee -a ${LOG}
+
+# SPACK_ENV_CMD="spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}"
+# echo ${SPACK_ENV_CMD} | tee -a ${LOG}
+# ${SPACK_ENV_CMD}
+# LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
+# export SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
+# SPACK_LOAD_CMD="spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}"
+# echo ${SPACK_LOAD_CMD} | tee -a ${LOG}
+# ${SPACK_LOAD_CMD}
 echo "Testing $(which lbann)"
 cd ..
 
@@ -84,17 +88,17 @@ cd ..
 echo "Task: Integration Tests"
 cd integration_tests
 if [ ${WEEKLY} -ne 0 ]; then
-    $PYTHON -m pytest -s -vv --durations=0 --weekly --junitxml=results.xml
+    $LBANN_PYTHON -m pytest -s -vv --durations=0 --weekly --junitxml=results.xml
     status=$?
 else
-    $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
+    $LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
     status=$?
 fi
 cd ..
 
 echo "Task: Unit Tests"
 cd unit_tests
-OMP_NUM_THREADS=10 $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
+OMP_NUM_THREADS=10 $LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
 status=$(($status + $?))
 cd ..
 
