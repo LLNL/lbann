@@ -84,9 +84,11 @@ build and install:
     - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - "export LBANN_NNODES=$(flux jobs -no {id}:{name}:{nnodes} | grep ${JOB_NAME} | awk -F: '{print $3}')"
     - !reference [.setup_spack, script]
-    - export SPACK_DEPS_FLAG=-r
-    - export SPACK_DEPS_FLAG=${WITH_CLEAN_BUILD:+-d}
-    - export CLEAN_BUILD_FLAG=${WITH_CLEAN_BUILD:+--clean-build}
+    # - export SPACK_DEPS_FLAG="-r"
+    # - export SPACK_DEPS_FLAG=${WITH_CLEAN_BUILD:+"-d"}
+    - export SPACK_DEPS_FLAG=$( [[ -z "${WITH_CLEAN_BUILD}" ]] && "-r" || "-d")
+    - echo "I think that thI set the flag to ${SPACK_DEPS_FLAG}"
+    - export CLEAN_BUILD_FLAG=${WITH_CLEAN_BUILD:+"--clean-build"}
     # - export BUILD_TASKS=$(($(nproc) + 2))
     # - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
     # - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
