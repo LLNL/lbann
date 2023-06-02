@@ -88,7 +88,7 @@ build and install:
     # - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
     # - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
     # - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh ${CLEAN_DEPS_FLAG}
+    - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh ${SPACK_DEPS_FLAG}
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS} ${CLEAN_BUILD_FLAG}
       -e ./scripts/common_spack_packages/ci_spack_packages.sh --
       +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
