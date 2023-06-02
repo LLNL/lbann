@@ -142,6 +142,9 @@ release allocation:
 #    SPACK_REPO: spack_repos/spack_${SYSTEM_NAME}.git
     SPACK_REPO: spack_repos/spack_develop.git
 
+    # Specific extensions to the SPACK_ENV_BASE_NAME
+    SPACK_ENV_BASE_NAME_EXTENSION: -gcc
+
     # These are system-specific specs that should be forwarded to the
     # build script
 #    BUILD_SCRIPT_OPTIONS: ""
