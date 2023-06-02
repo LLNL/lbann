@@ -75,13 +75,8 @@ build and install:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - !reference [.setup_spack, script]
-    # - export BUILD_TASKS=$(($(nproc) + 2))
-    # - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
-    # - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
-    # - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
-    # - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -d
-      -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS}
+    - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh ${SPACK_DEPS_FLAG}
+      -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS} ${CLEAN_BUILD_FLAG}
       -e ./scripts/common_spack_packages/ci_spack_packages.sh
       ${BUILD_SCRIPT_OPTIONS} --
       +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
@@ -90,9 +85,6 @@ build and install:
     - export SPACK_ARCH=$(spack arch)
     - export SPACK_ARCH_TARGET=$(spack arch -t)
     - !reference [.setup_lbann, script]
-    # - echo "export SPACK_DEP_ENV_NAME=${SPACK_ENV_NAME}" > spack-ci-env-name.sh
-    # - echo "export SPACK_ARCH=${SPACK_ARCH}" >> spack-ci-env-name.sh
-    # - echo "export SPACK_ARCH_TARGET=${SPACK_ARCH_TARGET}" >> spack-ci-env-name.sh
     - .gitlab/common/run-catch-tests.sh
 
 # This is a dummy job that checks the Catch2 testing.
@@ -141,14 +133,6 @@ release allocation:
     - echo "== RELEASING RESOURCES =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - ([[ -n "${JOB_ID}" ]] && scancel ${JOB_ID})
-
-# Load the spack shell integration and load the environment.
-# .uses spack environment:
-#   before_script:
-#     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-#     - source spack-ci-env-name.sh
-#     - spack env activate lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
-#     - spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
 
 # Variables for Pascal.
 .pascal common:
