@@ -86,6 +86,7 @@ build and install:
     - !reference [.setup_spack, script]
     # - export SPACK_DEPS_FLAG="-r"
     # - export SPACK_DEPS_FLAG=${WITH_CLEAN_BUILD:+"-d"}
+    # Use a bit of redirection to properly interpret the WITH_CLEAN_BUILD flag
     - export SPACK_DEPS_FLAG_TRUE=${WITH_CLEAN_BUILD:+-d}
     - export SPACK_DEPS_FLAG=${SPACK_DEPS_FLAG_TRUE:--r}
 # #    - export SPACK_DEPS_FLAG=$( [[ -z "${WITH_CLEAN_BUILD}" ]] && export SPACK_DEPS_FLAG="-r" || export SPACK_DEPS_FLAG="-d")
@@ -97,7 +98,7 @@ build and install:
     # - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
     # - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
     # - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - flux proxy ${JOB_ID} flux mini run -N 1 -t 30m ./scripts/build_lbann.sh ${SPACK_DEP_FLAG}
+    - flux proxy ${JOB_ID} flux mini run -N 1 -t 30m ./scripts/build_lbann.sh ${SPACK_DEPS_FLAG}
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS} ${CLEAN_BUILD_FLAG}
       -p py-pip --ci-pip --
       +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
