@@ -80,9 +80,9 @@ build and install:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - !reference [.setup_spack, script]
-    - export CLEAN_DEPS_FLAG=-r
-    - export CLEAN_DEPS_FLAG=${WITH_CLEAN:+-d}
-    - export CLEAN_BUILD_FLAG=${WITH_CLEAN:+--clean-build}
+    # - export CLEAN_DEPS_FLAG=-r
+    # - export CLEAN_DEPS_FLAG=${WITH_CLEAN:+-d}
+    # - export CLEAN_BUILD_FLAG=${WITH_CLEAN:+--clean-build}
     # - export BUILD_TASKS=$(($(nproc) + 2))
     # - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
     # - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
