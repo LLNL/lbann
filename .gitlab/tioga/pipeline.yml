@@ -86,7 +86,7 @@ build and install:
     - !reference [.setup_spack, script]
     # - export SPACK_DEPS_FLAG="-r"
     # - export SPACK_DEPS_FLAG=${WITH_CLEAN_BUILD:+"-d"}
-    - export SPACK_DEPS_FLAG=${${WITH_CLEAN_BUILD:+-d}:--r}
+    - export SPACK_DEPS_FLAG=${${WITH_CLEAN_BUILD:+d}:-r}
 # #    - export SPACK_DEPS_FLAG=$( [[ -z "${WITH_CLEAN_BUILD}" ]] && export SPACK_DEPS_FLAG="-r" || export SPACK_DEPS_FLAG="-d")
 #     - [[ -z "${WITH_CLEAN_BUILD}" ]] && export SPACK_DEPS_FLAG="-r" || export SPACK_DEPS_FLAG="-d"
     - echo "I think that thI set the flag to ${SPACK_DEPS_FLAG}"
