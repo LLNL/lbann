@@ -86,9 +86,11 @@ build and install:
     - !reference [.setup_spack, script]
     # - export SPACK_DEPS_FLAG="-r"
     # - export SPACK_DEPS_FLAG=${WITH_CLEAN_BUILD:+"-d"}
-    - export SPACK_DEPS_FLAG=$( [[ -z "${WITH_CLEAN_BUILD}" ]] && SPACK_DEPS_FLAG="-r" || SPACK_DEPS_FLAG="-d")
+    - export SPACK_DEPS_FLAG=${${WITH_CLEAN_BUILD:+-d}:--r}
+# #    - export SPACK_DEPS_FLAG=$( [[ -z "${WITH_CLEAN_BUILD}" ]] && export SPACK_DEPS_FLAG="-r" || export SPACK_DEPS_FLAG="-d")
+#     - [[ -z "${WITH_CLEAN_BUILD}" ]] && export SPACK_DEPS_FLAG="-r" || export SPACK_DEPS_FLAG="-d"
     - echo "I think that thI set the flag to ${SPACK_DEPS_FLAG}"
-    - export CLEAN_BUILD_FLAG=${WITH_CLEAN_BUILD:+"--clean-build"}
+    - export CLEAN_BUILD_FLAG=${WITH_CLEAN_BUILD:+--clean-build}
     # - export BUILD_TASKS=$(($(nproc) + 2))
     # - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
     # - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
