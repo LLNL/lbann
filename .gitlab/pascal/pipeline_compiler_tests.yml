@@ -80,10 +80,10 @@ build and install:
     # - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
     # - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
     # - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -r
+    - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh -d
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS}
       -e ./scripts/common_spack_packages/ci_spack_packages.sh
-      ${BUILD_SCRIPT_OPTIONS} -- 
+      ${BUILD_SCRIPT_OPTIONS} --
       +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
     - export TEST_TASKS_PER_NODE=2
     - export TEST_MPIBIND_FLAG="--mpibind=off"
@@ -161,7 +161,7 @@ release allocation:
     # These are system-specific specs that should be forwarded to the
     # build script
 #    BUILD_SCRIPT_OPTIONS: ""
-    
+
     # These are system-specific specs that should be forwarded to the
     # build script
 #    SPACK_SPECS: "+cuda +half +fft"
