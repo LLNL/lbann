@@ -397,6 +397,8 @@ class Transformer(lbann.modules.Module):
             for i in range(num_decoder_layers)
         ]
         self.separate_heads = self.decoder[0].attention1.separate_heads
+        assert all(dec.attention1.separate_heads == self.separate_heads
+                   for dec in self.decoder)
 
     def _positional_encoding(self, sequence_length):
         """Positional encodings corresponding to a sequence length.
