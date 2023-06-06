@@ -36,7 +36,7 @@ import tools
 import single_tensor_data_reader
 
 
-def lbann_test(check_gradients=False, **decorator_kwargs):
+def lbann_test(check_gradients=False, environment=None, **decorator_kwargs):
     """
     A decorator that wraps an LBANN-enabled model unit test.
     Use it before a function named ``test_*`` to run it automatically in pytest.
@@ -52,84 +52,112 @@ def lbann_test(check_gradients=False, **decorator_kwargs):
 
         @functools.wraps(f)
         def wrapped(*args, **kwargs):
-            # Call model constructor
-            tester = f(*args, **kwargs)
-
-            # Check return value
-            if not isinstance(tester, ModelTester):
-                raise ValueError('LBANN test must return a ModelTester object')
-            if tester.loss is None:
-                raise ValueError(
-                    'LBANN test did not define a loss function, '
-                    'use ``ModelTester.set_loss`` or ``set_loss_function``.')
-            if tester.input_tensor is None:
-                raise ValueError('LBANN test did not define an input, call '
-                                 '``ModelTester.inputs`` or ``inputs_like``.')
-            if (tester.reference_tensor is not None
-                    and tester.reference_tensor.shape[0] !=
-                    tester.input_tensor.shape[0]):
-                raise ValueError(
-                    'Input and reference tensors in LBANN test '
-                    'must match in the first (minibatch) dimension')
-            full_graph = lbann.traverse_layer_graph(tester.loss)
-            callbacks = []
-            callbacks.append(
-                lbann.CallbackCheckMetric(metric='test',
-                                          lower_bound=0,
-                                          upper_bound=tester.tolerance,
-                                          error_on_failure=True,
-                                          execution_modes='test'))
-            if check_gradients:
-                callbacks.append(
-                    lbann.CallbackCheckGradients(error_on_failure=True))
-            callbacks.extend(tester.extra_callbacks)
-
-            metrics = [lbann.Metric(tester.loss, name='test')]
-            metrics.extend(tester.extra_metrics)
-            model = lbann.Model(epochs=0,
-                                layers=full_graph,
-                                metrics=metrics,
-                                callbacks=callbacks)
-
-            # Get file
-            file = inspect.getfile(f)
-
-            def setup_func(lbann, weekly):
-                # Get minibatch size from tensor
-                mini_batch_size = tester.input_tensor.shape[0]
-
-                # Save combined input/reference data to file
-                work_dir = _get_work_dir(file)
-                os.makedirs(work_dir, exist_ok=True)
-                if tester.reference_tensor is not None:
-                    flat_inp = tester.input_tensor.reshape(mini_batch_size, -1)
-                    flat_ref = tester.reference_tensor.reshape(
-                        mini_batch_size, -1)
-                    np.save(os.path.join(work_dir, 'data.npy'),
-                            np.concatenate((flat_inp, flat_ref), axis=1))
+            # Collect old environment values and set temporary ones
+            nonlocal environment
+            environment = environment or {}
+            old_env = {}
+            del_env = set()
+            for k, v in environment.items():
+                if k in os.environ:
+                    old_env[k] = os.environ[k]
                 else:
-                    np.save(os.path.join(work_dir, 'data.npy'),
+                    del_env.add(k)
+                os.environ[k] = str(v)
+            ########################################################
+
+            try:
+                # Call model constructor
+                tester = f(*args, **kwargs)
+
+                # Check return value
+                if not isinstance(tester, ModelTester):
+                    raise ValueError(
+                        'LBANN test must return a ModelTester object')
+                if tester.loss is None:
+                    raise ValueError(
+                        'LBANN test did not define a loss function, '
+                        'use ``ModelTester.set_loss`` or ``set_loss_function``.'
+                    )
+                if tester.input_tensor is None:
+                    raise ValueError(
+                        'LBANN test did not define an input, call '
+                        '``ModelTester.inputs`` or ``inputs_like``.')
+                if (tester.reference_tensor is not None
+                        and tester.reference_tensor.shape[0] !=
+                        tester.input_tensor.shape[0]):
+                    raise ValueError(
+                        'Input and reference tensors in LBANN test '
+                        'must match in the first (minibatch) dimension')
+                full_graph = lbann.traverse_layer_graph(tester.loss)
+                callbacks = []
+                callbacks.append(
+                    lbann.CallbackCheckMetric(metric='test',
+                                              lower_bound=0,
+                                              upper_bound=tester.tolerance,
+                                              error_on_failure=True,
+                                              execution_modes='test'))
+                if check_gradients:
+                    callbacks.append(
+                        lbann.CallbackCheckGradients(error_on_failure=True))
+                callbacks.extend(tester.extra_callbacks)
+
+                metrics = [lbann.Metric(tester.loss, name='test')]
+                metrics.extend(tester.extra_metrics)
+                model = lbann.Model(epochs=0,
+                                    layers=full_graph,
+                                    metrics=metrics,
+                                    callbacks=callbacks)
+
+                # Get file
+                file = inspect.getfile(f)
+
+                def setup_func(lbann, weekly):
+                    # Get minibatch size from tensor
+                    mini_batch_size = tester.input_tensor.shape[0]
+
+                    # Save combined input/reference data to file
+                    work_dir = _get_work_dir(file)
+                    os.makedirs(work_dir, exist_ok=True)
+                    if tester.reference_tensor is not None:
+                        flat_inp = tester.input_tensor.reshape(
+                            mini_batch_size, -1)
+                        flat_ref = tester.reference_tensor.reshape(
+                            mini_batch_size, -1)
+                        np.save(os.path.join(work_dir, 'data.npy'),
+                                np.concatenate((flat_inp, flat_ref), axis=1))
+                    else:
+                        np.save(
+                            os.path.join(work_dir, 'data.npy'),
                             tester.input_tensor.reshape(mini_batch_size, -1))
 
-                # Setup data reader
-                data_reader = lbann.reader_pb2.DataReader()
-                data_reader.reader.extend([
-                    tools.create_python_data_reader(
-                        lbann, single_tensor_data_reader.__file__,
-                        'get_sample', 'num_samples', 'sample_dims', 'train'),
-                    tools.create_python_data_reader(
-                        lbann, single_tensor_data_reader.__file__,
-                        'get_sample', 'num_samples', 'sample_dims', 'test')
-                ])
+                    # Setup data reader
+                    data_reader = lbann.reader_pb2.DataReader()
+                    data_reader.reader.extend([
+                        tools.create_python_data_reader(
+                            lbann, single_tensor_data_reader.__file__,
+                            'get_sample', 'num_samples', 'sample_dims',
+                            'train'),
+                        tools.create_python_data_reader(
+                            lbann, single_tensor_data_reader.__file__,
+                            'get_sample', 'num_samples', 'sample_dims', 'test')
+                    ])
 
-                trainer = lbann.Trainer(mini_batch_size)
-                optimizer = lbann.NoOptimizer()
-                return trainer, model, data_reader, optimizer, None  # Don't request any specific number of nodes
+                    trainer = lbann.Trainer(mini_batch_size)
+                    optimizer = lbann.NoOptimizer()
+                    return trainer, model, data_reader, optimizer, None  # Don't request any specific number of nodes
 
-            test = tools.create_tests(setup_func, file, **decorator_kwargs)[0]
-            cluster = kwargs.get('cluster', 'unset')
-            weekly = kwargs.get('weekly', False)
-            test(cluster, weekly, False, **decorator_kwargs)
+                test = tools.create_tests(setup_func, file,
+                                          **decorator_kwargs)[0]
+                cluster = kwargs.get('cluster', 'unset')
+                weekly = kwargs.get('weekly', False)
+
+                test(cluster, weekly, False, **decorator_kwargs)
+            finally:
+                # Reset environment variables
+                for k, v in old_env.items():
+                    os.environ[k] = v
+                for k in del_env:
+                    del os.environ[k]
 
         return wrapped
 
