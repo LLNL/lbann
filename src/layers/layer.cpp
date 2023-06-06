@@ -1050,8 +1050,7 @@ bool Layer::distconv_enabled() const
 
   // Check if distconv is enabled
   const auto& ps = get_parallel_strategy();
-  ParallelStrategy default_zero_ps;
-  if (ps == default_zero_ps || ps.enable_subgraph) {
+  if (!ps.is_distconv_parallel() || ps.is_subgraph_parallel()) {
     // Distconv is disabled if no parallel strategy is defined or if
     // sub-graph parallelism is enabled
     m_distconv_enabled = false;

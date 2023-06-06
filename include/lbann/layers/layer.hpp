@@ -167,6 +167,20 @@ struct ParallelStrategy
   int sub_branch_tag = 0;
   /** percentage of parent resources to be allocated to this branch. */
   int sub_branch_resource_percentage = 0;
+
+  bool is_subgraph_parallel() const
+  {
+    return enable_subgraph || sub_branch_tag > 0 ||
+           sub_branch_resource_percentage > 0;
+  }
+
+  bool is_distconv_parallel() const
+  {
+    return depth_groups || depth_splits || height_groups || height_splits ||
+           width_groups || width_splits || channel_groups || channel_splits ||
+           filter_groups || filter_splits;
+  }
+
   bool operator==(const ParallelStrategy& ps) const
   {
     return sample_groups == ps.sample_groups &&
