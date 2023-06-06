@@ -1269,10 +1269,8 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
       ((m_runs_inplace && i < get_num_children()) ? m_gradient_wrt_outputs[i]
                                                   : m_gradient_wrt_inputs[i]);
 
-    if (m_persistent_error_signals)
+    if (m_persistent_error_signals || error_signal->Viewing())
       attempt_view_error_signal(parent, *this, *error_signal);
-    else if (error_signal->Viewing())
-      deep_copy_error_signal(parent, *this, *error_signal);
     else
       attempt_move_error_signal(parent, *this, std::move(error_signal));
   }
