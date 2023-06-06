@@ -496,6 +496,7 @@ GPU_VARIANTS_ARRAY=('+cuda' '+rocm')
 DEPENDENT_PACKAGES_GPU_VARIANTS=
 POSSIBLE_AWS_OFI_PLUGIN=
 POSSIBLE_DNN_LIB=
+POSSIBLE_NVSHMEM_LIB=
 for GPU_VARIANTS in ${GPU_VARIANTS_ARRAY[@]}
 do
     if [[ "${LBANN_VARIANTS}" =~ .*"${GPU_VARIANTS}".* ]]; then
@@ -513,6 +514,7 @@ do
             DEPENDENT_PACKAGES_GPU_VARIANTS="${GPU_VARIANTS} ${GPU_ARCH_VARIANTS}"
             POSSIBLE_AWS_OFI_PLUGIN="aws-ofi-nccl"
             POSSIBLE_DNN_LIB="cudnn"
+            POSSIBLE_NVSHMEM_LIB="nvshmem"
         fi
     fi
 done
@@ -853,7 +855,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
         done
     fi
-fi
+fi # [[ -n "${INSTALL_DEPS:-}" ]]
 
 CMD="spack solve -l ${LBANN_SPEC} ${SPACK_SOLVE_EXTRA_PACKAGES}"
 if [[ "${SPEC_ONLY}" == "TRUE" ]]; then
@@ -875,16 +877,23 @@ LBANN_SPEC_HASH=$(spack find -cl | grep -v "\-\-\-\-\-\-" | grep lbann${AT_LBANN
 
 # Get the spack hash for aws-ofi plugin (Ensure that the concretize command has been run so that any impact of external packages is factored in)
 if [[ -n "${POSSIBLE_AWS_OFI_PLUGIN}" ]]; then
-    AWS_OFI_PLUGIN_SPEC_HASH=$(spack find -cl | grep -v "\-\-\-\-\-\-" | grep ${POSSIBLE_AWS_OFI_PLUGIN} | awk '{print $1}')
+    AWS_OFI_PLUGIN_SPEC_HASH=$(spack find -cl | grep -v "\-\-\-\-\-\-" | grep "${POSSIBLE_AWS_OFI_PLUGIN}@" | awk '{print $1}')
     if [[ -n "${AWS_OFI_PLUGIN_SPEC_HASH}" ]]; then
         echo "LBANN built with AWS plugin ${AWS_OFI_PLUGIN_SPEC_HASH} for ${POSSIBLE_AWS_OFI_PLUGIN}"
     fi
 fi
 
 if [[ -n "${POSSIBLE_DNN_LIB}" ]]; then
-    DNN_LIB_SPEC_HASH=$(spack find -cl | grep -v "\-\-\-\-\-\-" | grep ${POSSIBLE_DNN_LIB} | awk '{print $1}')
+    DNN_LIB_SPEC_HASH=$(spack find -cl | grep -v "\-\-\-\-\-\-" | grep "${POSSIBLE_DNN_LIB}@" | awk '{print $1}')
     if [[ -n "${DNN_LIB_SPEC_HASH}" ]]; then
         echo "LBANN built with DNN library ${DNN_LIB_SPEC_HASH} for ${POSSIBLE_DNN_LIB}"
+    fi
+fi
+
+if [[ -n "${POSSIBLE_NVSHMEM_LIB}" ]]; then
+    NVSHMEM_LIB_SPEC_HASH=$(spack find -cl | grep -v "\-\-\-\-\-\-" | grep "${POSSIBLE_NVSHMEM_LIB}@" | awk '{print $1}')
+    if [[ -n "${NVSHMEM_LIB_SPEC_HASH}" ]]; then
+        echo "LBANN built with NVSHMEM library ${NVSHMEM_LIB_SPEC_HASH} for ${POSSIBLE_NVSHMEM_LIB}"
     fi
 fi
 
@@ -976,8 +985,23 @@ export LBANN_BUILD_DIR=${LBANN_BUILD_DIR}
 export LBANN_INSTALL_DIR=${LBANN_INSTALL_DIR}
 export LBANN_MODFILES_DIR=${LBANN_MODFILES_DIR}
 export LBANN_SETUP_FILE=${LBANN_SETUP_FILE}
-ml use ${LBANN_MODFILES_DIR}
 EOF
+
+ENV_ROOT_PKG_LIST=$(spack find -x --format "{name}")
+if [[ -n "${ENV_ROOT_PKG_LIST:-}" ]]; then
+    for p in ${ENV_ROOT_PKG_LIST}
+    do
+        PKG_PYTHONPATH=$(spack build-env ${p} -- printenv PYTHONPATH)
+if [[ -n "${PKG_PYTHONPATH}" ]]; then
+        P_ENV=$(echo "${p}" | tr '-' '_')
+cat >> ${LBANN_INSTALL_FILE}<<EOF
+# Add PYTHONPATH for top level python package: ${p}
+export ${P_ENV}_PKG_PYTHONPATH=${PKG_PYTHONPATH}
+export PYTHONPATH=\${${P_ENV}_PKG_PYTHONPATH}:\${PYTHONPATH}
+EOF
+fi
+    done
+fi
 
 if [[ -n "${MODULE_CMD}" ]]; then
 cat >> ${LBANN_INSTALL_FILE}<<EOF
@@ -990,6 +1014,11 @@ ${MODULE_CMD}
 EOF
 fi
 
+# Setup the module use path last in case the modules cmd purges the system
+cat >> ${LBANN_INSTALL_FILE}<<EOF
+ml use ${LBANN_MODFILES_DIR}
+EOF
+
 if [[ -n "${AWS_OFI_PLUGIN_SPEC_HASH}" ]]; then
 cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
@@ -998,11 +1027,19 @@ spack load ${POSSIBLE_AWS_OFI_PLUGIN} /${AWS_OFI_PLUGIN_SPEC_HASH}
 EOF
 fi
 
-if [[ -n "${POSSIBLE_DNN_LIB_SPEC_HASH}" ]]; then
+if [[ -n "${DNN_LIB_SPEC_HASH}" ]]; then
 cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
 # a spack environment matches behavior inside of a runtime environment
 spack load ${POSSIBLE_DNN_LIB} /${DNN_LIB_SPEC_HASH}
+EOF
+fi
+
+if [[ -n "${NVSHMEM_LIB_SPEC_HASH}" ]]; then
+cat >> ${LBANN_INSTALL_FILE}<<EOF
+# Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
+# a spack environment matches behavior inside of a runtime environment
+spack load ${POSSIBLE_NVSHMEM_LIB} /${NVSHMEM_LIB_SPEC_HASH}
 EOF
 fi
 
@@ -1133,6 +1170,7 @@ fi
 # fi
 echo "##########################################################################################" | tee -a ${LOG}
 echo "LBANN is installed in ${LBANN_INSTALL_DIR}, access it via:" | tee -a ${LOG}
+echo "  source ${LBANN_INSTALL_FILE}" | tee -a ${LOG}
 echo "  ml use ${LBANN_MODFILES_DIR}" | tee -a ${LOG}
 echo "  ml load lbann" | tee -a ${LOG}
 echo "  lbann_pfe.sh <cmd>" | tee -a ${LOG}
