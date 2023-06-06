@@ -992,14 +992,14 @@ if [[ -n "${ENV_ROOT_PKG_LIST:-}" ]]; then
     for p in ${ENV_ROOT_PKG_LIST}
     do
         PKG_PYTHONPATH=$(spack build-env ${p} -- printenv PYTHONPATH)
-if [[ -n "${PKG_PYTHONPATH}" ]]; then
-        P_ENV=$(echo "${p}" | tr '-' '_')
+        if [[ -n "${PKG_PYTHONPATH}" ]]; then
+            P_ENV=$(echo "${p}" | tr '-' '_')
 cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Add PYTHONPATH for top level python package: ${p}
 export ${P_ENV}_PKG_PYTHONPATH=${PKG_PYTHONPATH}
 export PYTHONPATH=\${${P_ENV}_PKG_PYTHONPATH}:\${PYTHONPATH}
 EOF
-fi
+        fi
     done
 fi
 
