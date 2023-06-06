@@ -4,8 +4,12 @@ import os
 import os.path
 import sys
 import numpy as np
-import scipy.special
 import pytest
+
+try:
+    import scipy.special
+except (ImportError, ModuleNotFoundError):
+    pytest.skip('This test requires scipy to run', allow_module_level=True)
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
