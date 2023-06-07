@@ -100,7 +100,7 @@ public:
   ///@{
 
   cuTT_PermuteImpl(ColMajorPerm perm);
-  ~cuTT_PermuteImpl() noexcept;
+  ~cuTT_PermuteImpl() noexcept = default;
   ///@}
   /** @name Read-only Accessors (for testing) */
   ///@{
@@ -183,8 +183,6 @@ private:
   ColMajorPerm m_inv_perm;
   DimsType m_input_dims;
   DimsType m_output_dims;
-  mutable std::map<El::Int, cuttHandle> m_mb_plan_map;
-  mutable cuttHandle m_sample_plan = 0U;
 }; // class cuTT_PermuteImpl
 
 inline cuTT_PermuteImpl::cuTT_PermuteImpl(ColMajorPerm perm)
@@ -192,14 +190,6 @@ inline cuTT_PermuteImpl::cuTT_PermuteImpl(ColMajorPerm perm)
 {
   LBANN_ASSERT_DEBUG(is_valid(m_perm));
   LBANN_ASSERT_DEBUG(is_valid(m_inv_perm));
-}
-
-inline cuTT_PermuteImpl::~cuTT_PermuteImpl()
-{
-  for (auto const& [_, plan] : m_mb_plan_map)
-    CHECK_CUTT(cuttDestroy(plan));
-  if (m_sample_plan)
-    CHECK_CUTT(cuttDestroy(m_sample_plan));
 }
 
 inline auto cuTT_PermuteImpl::perm() const noexcept -> ColMajorPerm const&
@@ -235,21 +225,17 @@ cuttHandle cuTT_PermuteImpl::get_mb_plan(
   LBANN_ASSERT_DEBUG(perm.size() == in_dims.size() &&
                      perm.size() == out_dims.size());
 
-  auto const mbs = in.Width();
-  if (!m_mb_plan_map.count(mbs)) {
-    std::vector<int> permutation(perm.get()), dimensions(in_dims.get());
-    permutation.push_back(static_cast<int>(perm.size()));
-    dimensions.push_back(in.Width());
-    cuttHandle plan;
-    CHECK_CUTT(cuttPlan(&plan,
-                        dimensions.size(),
-                        dimensions.data(),
-                        permutation.data(),
-                        sizeof(DataT),
-                        out.GetSyncInfo().Stream()));
-    m_mb_plan_map[mbs] = plan;
-  }
-  return m_mb_plan_map[mbs];
+  std::vector<int> permutation(perm.get()), dimensions(in_dims.get());
+  permutation.push_back(static_cast<int>(perm.size()));
+  dimensions.push_back(in.Width());
+  cuttHandle plan;
+  CHECK_CUTT(cuttPlan(&plan,
+                      dimensions.size(),
+                      dimensions.data(),
+                      permutation.data(),
+                      sizeof(DataT),
+                      out.GetSyncInfo().Stream()));
+  return plan;
 }
 
 template <typename DataT>
@@ -260,16 +246,15 @@ cuttHandle cuTT_PermuteImpl::get_sample_plan(
   El::Matrix<DataT, El::Device::GPU> const& in,
   El::Matrix<DataT, El::Device::GPU> const& out) const
 {
-  if (m_sample_plan == 0U) {
-    std::vector<int> permutation(perm.get()), dimensions(in_dims.get());
-    CHECK_CUTT(cuttPlan(&m_sample_plan,
-                        dimensions.size(),
-                        dimensions.data(),
-                        permutation.data(),
-                        sizeof(DataT),
-                        out.GetSyncInfo().Stream()));
-  }
-  return m_sample_plan;
+  std::vector<int> permutation(perm.get()), dimensions(in_dims.get());
+  cuttHandle sample_plan = 0U;
+  CHECK_CUTT(cuttPlan(&sample_plan,
+                      dimensions.size(),
+                      dimensions.data(),
+                      permutation.data(),
+                      sizeof(DataT),
+                      out.GetSyncInfo().Stream()));
+  return sample_plan;
 }
 
 template <typename DataT>
@@ -361,8 +346,6 @@ inline void cuTT_PermuteImpl::swap(cuTT_PermuteImpl& other)
   std::swap(m_inv_perm, other.m_inv_perm);
   std::swap(m_input_dims, other.m_input_dims);
   std::swap(m_output_dims, other.m_output_dims);
-  std::swap(m_mb_plan_map, other.m_mb_plan_map);
-  std::swap(m_sample_plan, other.m_sample_plan);
 }
 
 } // namespace
