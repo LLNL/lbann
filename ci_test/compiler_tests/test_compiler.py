@@ -13,6 +13,7 @@ def test_compiler_build_script(cluster, dirname):
     # Get environment variables
     ENV_NAME = os.getenv('SPACK_ENV_NAME')
 
+    print(f'I have found that the label will be ${ENV_NAME}')
     common_cmd = '%s/scripts/build_lbann.sh -r -l %s -j $(($(nproc)+2)) -e %s/scripts/common_spack_packages/ci_spack_packages.sh -- +deterministic +vision +numpy +unit_tests' % (dirname, ENV_NAME, dirname)
     if cluster in ['lassen', 'pascal', 'ray']:
         command = '%s +cuda +half +fft > %s 2> %s' % (common_cmd, output_file_name, error_file_name)

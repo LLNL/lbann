@@ -1075,11 +1075,11 @@ if [[ ! -z "${MATCHED_CONFIG_FILE}" ]]; then
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
     else
-        echo "ERROR: Unable to open the generated config file"
+        echo "ERROR: Unable to open the generated config file: ${MATCHED_CONFIG_FILE}"
         exit 1
     fi
 else
-    echo "ERROR: Unable to find the generated config file"
+    echo "ERROR: Unable to find the generated config file for: ${LBANN_LABEL} ${CENTER_COMPILER}"
     exit 1
 fi
 

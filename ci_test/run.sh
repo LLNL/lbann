@@ -61,6 +61,7 @@ echo $WEEKLY
 echo "Task: Cleaning"
 ./clean.sh
 
+echo "I think that the environment is ${SPACK_ENV_NAME}"
 echo "Task: Compiler Tests"
 cd compiler_tests
 $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml || exit 1
@@ -81,7 +82,8 @@ source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_
 # ${SPACK_LOAD_CMD}
 echo "Testing $(which lbann)"
 cd ..
-
+echo "BVE: Early stopping"
+exit 1
 # These tests are "allowed" to fail inside the script. That is, the
 # unit tests should be run even if these fail. The status is cached
 # for now.
