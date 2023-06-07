@@ -35,7 +35,7 @@ def wmt_dir(system=system()):
     if system in ('lassen', 'sierra'):
         path = '/p/gpfs1/brainusr/datasets/wmt16_en_de'
     elif system in ('pascal', 'catalyst', 'quartz', 'surface'):
-        path = '/p/lscratchh/brainusr/datasets/wmt16_en_de'
+        path = '/p/vast1/lbann/datasets/wmt16_en_de'
 
     # Default path if cached dataset isn't available
     if not path or not os.access(path, os.R_OK):

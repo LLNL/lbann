@@ -55,7 +55,9 @@ class channelwise_softmax_layer : public data_type_layer<TensorDataType>
                 "data-parallel data layout");
 
 public:
-  channelwise_softmax_layer(lbann_comm* comm);
+  channelwise_softmax_layer(lbann_comm* comm,
+                            int64_t dim,
+                            bool single_dim_mode);
 
   channelwise_softmax_layer(const channelwise_softmax_layer& other) = default;
   channelwise_softmax_layer&
@@ -84,12 +86,24 @@ protected:
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  channelwise_softmax_layer() : channelwise_softmax_layer(nullptr) {}
+  channelwise_softmax_layer() : channelwise_softmax_layer(nullptr, 0, false) {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 
   void fp_compute() override;
   void bp_compute() override;
+
+private:
+  void get_channel_size_and_stride(El::Int& channel_size,
+                                   El::Int& channel_stride,
+                                   El::Int& num_channels) const;
+
+  /** Specifies the dimension of the tensor to perform softmax on. */
+  int64_t m_dim;
+
+  /** @brief If true, only performs softmax on the chosen dimension. Otherwise
+             all dimensions but ``m_dim`` will be used. */
+  bool m_single_dim_mode;
 };
 
 // Builder function
@@ -103,13 +117,17 @@ void channelwise_softmax_layer<T, L, D>::write_specific_proto(
   lbann_data::Layer& proto) const
 {
   proto.set_datatype(proto::ProtoDataType<T>);
-  proto.mutable_channelwise_softmax();
+  auto* msg = proto.mutable_channelwise_softmax();
+  msg->set_dim(m_dim);
+  msg->set_single_dim_mode(m_single_dim_mode);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 channelwise_softmax_layer<TensorDataType, Layout, Device>::
-  channelwise_softmax_layer(lbann_comm* comm)
-  : data_type_layer<TensorDataType>(comm)
+  channelwise_softmax_layer(lbann_comm* comm, int64_t dim, bool single_dim_mode)
+  : data_type_layer<TensorDataType>(comm),
+    m_dim(dim),
+    m_single_dim_mode(single_dim_mode)
 {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -146,7 +164,71 @@ void channelwise_softmax_layer<TensorDataType, Layout, Device>::setup_dims(
   DataReaderMetaData& dr_metadata)
 {
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  int64_t dims = static_cast<int64_t>(this->get_input_dims().size());
+  if (this->m_dim < -dims || this->m_dim >= dims) {
+    LBANN_ERROR("Dimension ",
+                this->m_dim,
+                " is out of bounds for Channelwise "
+                "Softmax layer on tensor with ",
+                dims,
+                " dimensions.");
+  }
+  if (!this->m_single_dim_mode && this->m_dim != 0 && this->m_dim != -dims &&
+      this->m_dim != (dims - 1) && this->m_dim != -1) {
+    LBANN_ERROR("Channelwise softmax with all dimensions is only supported for "
+                "the first or last tensor dimensions. Got dimension ",
+                this->m_dim);
+  }
+
   this->set_output_dims(this->get_input_dims());
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void channelwise_softmax_layer<TensorDataType, Layout, Device>::
+  get_channel_size_and_stride(El::Int& channel_size,
+                              El::Int& channel_stride,
+                              El::Int& num_channels) const
+{
+  auto const& input_dims = this->get_input_dims();
+  int dims = static_cast<int>(input_dims.size());
+  int dim = this->m_dim;
+  if (dim < 0) // Handle negative dimensions
+    dim += dims;
+
+  size_t total_size = 1;
+  for (int i = 0; i < dims; ++i) {
+    total_size *= input_dims[i];
+  }
+
+  // Definitions:
+  // * Channel size: The channel size being normalized
+  // * Number of channels: The number of normalized sub-tensors
+  // * Channel stride: The number of elements to jump between two channels
+
+  // Single dimension mode: size = dim size, stride = dim stride
+  if (m_single_dim_mode) {
+    channel_size = input_dims[dim];
+    num_channels = total_size / channel_size;
+    // Assuming contiguous tensors with C stride ordering
+    channel_stride = 1;
+    for (int i = dims - 1; i >= dim; --i) {
+      channel_stride *= input_dims[i];
+    }
+  }
+  else {
+    // All other dimensions mode:
+    // size = total size / dim size
+    channel_size = total_size / input_dims[dim];
+    num_channels = input_dims[dim];
+    // -if dim = first: stride = total size / dim size (product of all other
+    // dims) -if dim = last: stride = dim size
+    if (dim == 0) { // First dimension
+      channel_stride = channel_size;
+    }
+    else { // Last dimension
+      channel_stride = 1;
+    }
+  }
 }
 
 // =========================================================
