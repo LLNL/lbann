@@ -317,6 +317,7 @@ void cuTT_PermuteImpl::do_mb_permute(
   CHECK_CUTT(cuttExecute(plan,
                          const_cast<DataT*>(in.LockedBuffer()), // UGH
                          out.Buffer()));
+  CHECK_CUTT(cuttDestroy(plan));
 }
 
 template <typename DataT>
@@ -338,6 +339,7 @@ void cuTT_PermuteImpl::do_sample_permute(
                            in_buf + sample * in_stride,
                            out_buf + sample * out_stride));
   }
+  CHECK_CUTT(cuttDestroy(plan));
 }
 
 inline void cuTT_PermuteImpl::swap(cuTT_PermuteImpl& other)
