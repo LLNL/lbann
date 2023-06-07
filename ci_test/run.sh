@@ -71,6 +71,9 @@ SPACK_ARCH=$(spack arch)
 SPACK_ARCH_TARGET=$(spack arch -t)
 echo "source ${LBANN_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh" | tee -a ${LOG}
 source ${LBANN_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh | tee -a ${LOG}
+echo "I think that the path to the module is ${LBANN_MODFILES_DIR}"
+ml
+module avail
 ml load lbann
 
 # SPACK_ENV_CMD="spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}"
