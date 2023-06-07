@@ -309,6 +309,7 @@ function uninstall_specific_versions()
 # spack repository that is checked out. It's a minimum version, so
 # more commits is fine.
 MIN_SPACK_COMMIT=eb29889f6eae9c415895f34023b84f1d72d01ef4
+# New commit should be fa9fb60df332a430ed10ce007d3a07ec90aefcb5
 
 # "spack" is just a shell function; it may not be exported to this
 # scope. Just to be sure, reload the shell integration.
@@ -381,7 +382,8 @@ if [[ -f ${LOG} ]]; then
 fi
 
 LBANN_BUILD_LABEL="lbann_${CLUSTER}_${LBANN_LABEL}"
-LBANN_BUILD_PARENT_DIR="${PWD}/builds/${LBANN_BUILD_LABEL}"
+LBANN_BUILD_PARENT_DIR="${LBANN_HOME}/builds/${LBANN_BUILD_LABEL}"
+#LBANN_BUILD_PARENT_DIR="${PWD}/builds/${LBANN_BUILD_LABEL}"
 LBANN_BUILD_DIR="${LBANN_BUILD_PARENT_DIR}/build"
 LBANN_INSTALL_DIR="${LBANN_BUILD_PARENT_DIR}/install"
 LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
@@ -574,7 +576,7 @@ if [[ -n "${REUSE_ENV:-}" || -z "${INSTALL_DEPS:-}" ]]; then
             exit 1
         fi
     else
-        find_cmake_config_file ${LBANN_LABEL} ${CENTER_COMPILER}
+        find_cmake_config_file ${LBANN_LABEL} ${CENTER_COMPILER} ${LBANN_HOME}
         if [[ ! -z "${MATCHED_CONFIG_FILE}" ]]; then
             if [[ -e "${MATCHED_CONFIG_FILE}" && -r "${MATCHED_CONFIG_FILE}" ]]; then
                 echo "I have found and will use ${MATCHED_CONFIG_FILE}"
@@ -1062,7 +1064,7 @@ echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
 # Now that the config file is generated set the field
-find_cmake_config_file ${LBANN_LABEL} ${CENTER_COMPILER}
+find_cmake_config_file ${LBANN_LABEL} ${CENTER_COMPILER} ${LBANN_HOME}
 if [[ ! -z "${MATCHED_CONFIG_FILE}" ]]; then
     if [[ -e "${MATCHED_CONFIG_FILE}" && -r "${MATCHED_CONFIG_FILE}" ]]; then
         echo "I have found and will use ${MATCHED_CONFIG_FILE}"

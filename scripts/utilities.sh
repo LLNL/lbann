@@ -31,6 +31,7 @@ function normpath() {
 function find_cmake_config_file() {
     local label="$1"
     local center_compiler="$2"
+    local lbann_home="$3"
 
     HOST=$(hostname)
     HOST=${HOST//[[:digit:]]/}
@@ -44,7 +45,7 @@ function find_cmake_config_file() {
         # Only generic family of compiler provided
         generic_compiler=${center_compiler//%/}
         # https://unix.stackexchange.com/questions/240418/find-latest-files
-        MATCHED_CONFIG_FILE_PATH=$(find .  -maxdepth 1 -type f -name "LBANN_${HOST}_${label}-${SYS}-${generic_compiler}@*.cmake" -exec stat -c '%X %n' {} \; -print | sort -nr | awk 'NR==1,NR==1 {print $2}')
+        MATCHED_CONFIG_FILE_PATH=$(find ${lbann_home} -maxdepth 1 -type f -name "LBANN_${HOST}_${label}-${SYS}-${generic_compiler}@*.cmake" -exec stat -c '%X %n' {} \; -print | sort -nr | awk 'NR==1,NR==1 {print $2}')
         if [[ -n "${MATCHED_CONFIG_FILE_PATH}" ]]; then
             MATCHED_CONFIG_FILE=$(basename ${MATCHED_CONFIG_FILE_PATH})
         fi
