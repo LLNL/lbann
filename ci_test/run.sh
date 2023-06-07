@@ -69,8 +69,9 @@ $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml || exit 1
 # Find the correct module to load
 SPACK_ARCH=$(spack arch)
 SPACK_ARCH_TARGET=$(spack arch -t)
-echo "source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh" | tee -a ${LOG}
-source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh | tee -a ${LOG}
+echo "source ${LBANN_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh" | tee -a ${LOG}
+source ${LBANN_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh | tee -a ${LOG}
+ml load lbann
 
 # SPACK_ENV_CMD="spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}"
 # echo ${SPACK_ENV_CMD} | tee -a ${LOG}
@@ -82,8 +83,8 @@ source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_
 # ${SPACK_LOAD_CMD}
 echo "Testing $(which lbann)"
 cd ..
-echo "BVE: Early stopping"
-exit 1
+#echo "BVE: Early stopping"
+#exit 1
 # These tests are "allowed" to fail inside the script. That is, the
 # unit tests should be run even if these fail. The status is cached
 # for now.
