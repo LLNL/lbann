@@ -1019,7 +1019,13 @@ def gpus_per_node(lbann):
 
 
 # Get the environment variables for Distconv.
-def get_distconv_environment():
+def get_distconv_environment(init_nvshmem=False):
     # TODO: Use the default halo exchange and shuffle method. See https://github.com/LLNL/lbann/issues/1659
-    return {"LBANN_DISTCONV_HALO_EXCHANGE": "AL",
-            "LBANN_DISTCONV_TENSOR_SHUFFLER": "AL"}
+    environment = {"LBANN_DISTCONV_HALO_EXCHANGE": "AL",
+            "LBANN_DISTCONV_TENSOR_SHUFFLER": "AL",
+            "LBANN_KEEP_ERROR_SIGNALS": "1",
+        }
+    if init_nvshmem:
+        environment["LBANN_INIT_NVSHMEM"] = 1
+
+    return environment

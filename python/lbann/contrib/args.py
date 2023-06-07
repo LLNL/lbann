@@ -65,7 +65,7 @@ def get_scheduler_kwargs(args):
     if args.setup_only: kwargs['setup_only'] = True
     return kwargs
 
-def get_distconv_environment(parallel_io=False, num_io_partitions=1):
+def get_distconv_environment(parallel_io=False, num_io_partitions=1, init_nvshmem=False):
     """Return recommended Distconv variables.
 
     Args:
@@ -74,8 +74,7 @@ def get_distconv_environment(parallel_io=False, num_io_partitions=1):
         num_io_partitions (int):
             The number of processes to read a single sample.
     """
-
-    return {
+    environment = {
         'DISTCONV_WS_CAPACITY_FACTOR': 0.8,
         'LBANN_DISTCONV_HALO_EXCHANGE': 'AL',
         'LBANN_DISTCONV_TENSOR_SHUFFLER': 'AL',
@@ -85,7 +84,12 @@ def get_distconv_environment(parallel_io=False, num_io_partitions=1):
         'LBANN_DISTCONV_RANK_STRIDE': 1,
         'LBANN_DISTCONV_COSMOFLOW_PARALLEL_IO': parallel_io,
         'LBANN_DISTCONV_NUM_IO_PARTITIONS': num_io_partitions,
+        "LBANN_KEEP_ERROR_SIGNALS": "1",
     }
+    if init_nvshmem:
+        environment["LBANN_INIT_NVSHMEM"] = 1
+
+    return environment
 
 def add_optimizer_arguments(parser, default_optimizer='momentum',
                             default_learning_rate=0.01):
