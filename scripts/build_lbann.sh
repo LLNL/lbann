@@ -1017,11 +1017,6 @@ ${MODULE_CMD}
 EOF
 fi
 
-# Setup the module use path last in case the modules cmd purges the system
-cat >> ${LBANN_INSTALL_FILE}<<EOF
-ml use ${LBANN_MODFILES_DIR}
-EOF
-
 if [[ -n "${AWS_OFI_PLUGIN_SPEC_HASH}" ]]; then
 cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
@@ -1045,6 +1040,11 @@ cat >> ${LBANN_INSTALL_FILE}<<EOF
 spack load ${POSSIBLE_NVSHMEM_LIB} /${NVSHMEM_LIB_SPEC_HASH}
 EOF
 fi
+
+# Setup the module use path last in case the modules cmd purges the system
+cat >> ${LBANN_INSTALL_FILE}<<EOF
+ml use ${LBANN_MODFILES_DIR}
+EOF
 
 CMD="chmod +x ${LBANN_INSTALL_FILE}"
 echo ${CMD} | tee -a ${LOG}
