@@ -41,6 +41,7 @@ function find_cmake_config_file() {
         # Provided compiler has a specific version
         specific_compiler=${center_compiler//%/}
         MATCHED_CONFIG_FILE="LBANN_${HOST}_${label}-${SYS}-${specific_compiler}.cmake"
+        MATCHED_CONFIG_FILE_PATH="${lbann_home}/${MATCHED_CONFIG_FILE_PATH}"
     else
         # Only generic family of compiler provided
         generic_compiler=${center_compiler//%/}
@@ -49,5 +50,12 @@ function find_cmake_config_file() {
         if [[ -n "${MATCHED_CONFIG_FILE_PATH}" ]]; then
             MATCHED_CONFIG_FILE=$(basename ${MATCHED_CONFIG_FILE_PATH})
         fi
+    fi
+    if [[ ! -z "${MATCHED_CONFIG_FILE}" ]]; then
+        if [[ ! -e "${MATCHED_CONFIG_FILE_PATH}" || ! -r "${MATCHED_CONFIG_FILE_PATH}" ]]; then
+            echo "INFO: Unable to open the generated config file: ${MATCHED_CONFIG_FILE} at ${lbann_home}"
+        fi
+    else
+        echo "INFO: Unable to find a generated config file for: ${LBANN_LABEL} ${CENTER_COMPILER} in ${lbann_home}"
     fi
 }

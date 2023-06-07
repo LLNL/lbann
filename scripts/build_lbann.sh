@@ -578,15 +578,15 @@ if [[ -n "${REUSE_ENV:-}" || -z "${INSTALL_DEPS:-}" ]]; then
         fi
     else
         find_cmake_config_file ${LBANN_LABEL} ${CENTER_COMPILER} ${LBANN_HOME}
-        if [[ ! -z "${MATCHED_CONFIG_FILE}" ]]; then
-            if [[ -e "${MATCHED_CONFIG_FILE}" && -r "${MATCHED_CONFIG_FILE}" ]]; then
-                echo "I have found and will use ${MATCHED_CONFIG_FILE}"
+        if [[ ! -z "${MATCHED_CONFIG_FILE_PATH}" ]]; then
+            if [[ -e "${MATCHED_CONFIG_FILE_PATH}" && -r "${MATCHED_CONFIG_FILE_PATH}" ]]; then
+                echo "I have found and will use ${MATCHED_CONFIG_FILE_PATH}"
                 CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
                 if [[ ! -e "${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}" ]]; then
                     echo "Overwritting exising CMake config file in ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
                 fi
                 # Save the config file in the build directory
-                CMD="cp ${CONFIG_FILE_NAME} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
+                CMD="cp ${MATCHED_CONFIG_FILE_PATH} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
                 echo ${CMD}
                 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
             fi
@@ -1066,23 +1066,23 @@ echo ${CMD} | tee -a ${LOG}
 
 # Now that the config file is generated set the field
 find_cmake_config_file ${LBANN_LABEL} ${CENTER_COMPILER} ${LBANN_HOME}
-if [[ ! -z "${MATCHED_CONFIG_FILE}" ]]; then
-    if [[ -e "${MATCHED_CONFIG_FILE}" && -r "${MATCHED_CONFIG_FILE}" ]]; then
+if [[ ! -z "${MATCHED_CONFIG_FILE_PATH}" ]]; then
+    if [[ -e "${MATCHED_CONFIG_FILE_PATH}" && -r "${MATCHED_CONFIG_FILE_PATH}" ]]; then
         echo "I have found and will use ${MATCHED_CONFIG_FILE}"
         CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
         if [[ ! -e "${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}" ]]; then
             echo "Overwritting exising CMake config file in ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
         fi
         # Save the config file in the build directory
-        CMD="cp ${CONFIG_FILE_NAME} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
+        CMD="cp ${MATCHED_CONFIG_FILE_PATH} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
     else
-        echo "ERROR: Unable to open the generated config file: ${MATCHED_CONFIG_FILE}"
+        echo "ERROR: Unable to open the generated config file: ${MATCHED_CONFIG_FILE_PATH}"
         exit 1
     fi
 else
-    echo "ERROR: Unable to find the generated config file for: ${LBANN_LABEL} ${CENTER_COMPILER}"
+    echo "ERROR: Unable to find the generated config file for: ${LBANN_LABEL} ${CENTER_COMPILER} in ${LBANN_HOME}"
     exit 1
 fi
 
