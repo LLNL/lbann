@@ -41,7 +41,7 @@ function find_cmake_config_file() {
         # Provided compiler has a specific version
         specific_compiler=${center_compiler//%/}
         MATCHED_CONFIG_FILE="LBANN_${HOST}_${label}-${SYS}-${specific_compiler}.cmake"
-        MATCHED_CONFIG_FILE_PATH="${lbann_home}/${MATCHED_CONFIG_FILE_PATH}"
+        MATCHED_CONFIG_FILE_PATH="${lbann_home}/${MATCHED_CONFIG_FILE}"
     else
         # Only generic family of compiler provided
         generic_compiler=${center_compiler//%/}
