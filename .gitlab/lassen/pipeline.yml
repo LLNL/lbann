@@ -53,10 +53,6 @@ build and test everything:
     - echo "== BUILDING AND TESTING LBANN =="
     - echo "${WITH_WEEKLY:+Running with --weekly}"
     - !reference [.setup_spack, script]
-    # - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
-    # - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
-    # - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
-    # - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "120" || echo "90")
     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
     - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
@@ -65,9 +61,6 @@ build and test everything:
     when: always
     paths:
       - spack-*.txt
-      # - spack-build-*/CMakeCache.txt
-      # - spack-build-*/build.ninja
-      # - spack-build-*/spack-*.txt
       - ci_test/**/*.xml
       - ci_test/compiler_tests/**/*.txt
       - LBANN_*.cmake
@@ -91,10 +84,6 @@ remove spack environment:
   when: always
   script:
     - !reference [.cleanup old spack environment, script]
-    # - echo "== REMOVING OLD BUILD RESOURCES =="
-    # - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    # - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +5 -name "spack-build-*" -type d -exec rm -r {} \;
-    # - find ${HOME}/${SPACK_REPO}/var/spack/environments/ -maxdepth 1 -mtime +5 -type d -exec basename {} \; | xargs -r spack env rm --yes-to-all
 
 # Variables for Lassen. Because this test uses "test_compiler.py", we
 # don't need to specify the Spack spec or the job name.

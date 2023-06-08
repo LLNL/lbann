@@ -69,27 +69,13 @@ $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml || exit 1
 # Find the correct module to load
 SPACK_ARCH=$(spack arch)
 SPACK_ARCH_TARGET=$(spack arch -t)
-printenv MODULEPATH
 echo "source ${LBANN_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh" | tee -a ${LOG}
 source ${LBANN_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh
-printenv MODULEPATH
-echo "I think that the path to the module is ${LBANN_MODFILES_DIR}"
-ml
-module avail
 ml load lbann
 
-# SPACK_ENV_CMD="spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}"
-# echo ${SPACK_ENV_CMD} | tee -a ${LOG}
-# ${SPACK_ENV_CMD}
-# LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
-# export SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
-# SPACK_LOAD_CMD="spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}"
-# echo ${SPACK_LOAD_CMD} | tee -a ${LOG}
-# ${SPACK_LOAD_CMD}
 echo "Testing $(which lbann)"
 cd ..
-#echo "BVE: Early stopping"
-#exit 1
+
 # These tests are "allowed" to fail inside the script. That is, the
 # unit tests should be run even if these fail. The status is cached
 # for now.

@@ -1043,12 +1043,7 @@ fi
 
 # Setup the module use path last in case the modules cmd purges the system
 cat >> ${LBANN_INSTALL_FILE}<<EOF
-echo "BVE about to update the model path"
-printenv MODULEPATH
 ml use ${LBANN_MODFILES_DIR}
-export MODULEPATH=\${MODULEPATH}
-echo "BVE just updated the model path"
-printenv MODULEPATH
 EOF
 
 CMD="chmod +x ${LBANN_INSTALL_FILE}"
