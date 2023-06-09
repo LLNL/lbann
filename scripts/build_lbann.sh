@@ -38,6 +38,8 @@ else
 BUILD_JOBS="-j $(($(nproc)/2+2))"
 fi
 SPACK_INSTALL_DEPENDENCIES_ONLY=
+# List of packages to install at the root level with LBANN
+SPACK_EXTRA_ROOT_PACKAGES=
 
 CONFIG_FILE_NAME=
 
@@ -839,18 +841,45 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     if [[ -n "${EXTRAS:-}" ]]; then
         for e in ${EXTRAS}
         do
+            # if [[ -z ${DEPENDENTS_CENTER_COMPILER} ]]; then
+            #     DEPENDENTS_CENTER_COMPILER=${CENTER_COMPILER}
+            # fi
             CMD="source ${e}"
             echo ${CMD} | tee -a ${LOG}
-            [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+            ${CMD}
+            echo "I think that I have extra packages ${LBANN_EXTRA_PKGS}"
+            for p in ${LBANN_EXTRA_PKGS}
+            do
+                # CMD="spack add ${p} ${DEPENDENTS_CENTER_COMPILER}"
+                # SPACK_SOLVE_EXTRA_PACKAGES="${p} ${DEPENDENTS_CENTER_COMPILER} ${SPACK_SOLVE_EXTRA_PACKAGES}"
+                SPACK_EXTRA_ROOT_PACKAGES="${p} ${SPACK_EXTRA_ROOT_PACKAGES}"
+                # echo ${CMD} | tee -a ${LOG}
+                # [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+            done
         done
     fi
 
     # Add any extra packages specified on the command line that you want to build in conjuction with the LBANN package
     if [[ -n "${PKG_LIST:-}" ]]; then
+        # if [[ -z ${DEPENDENTS_CENTER_COMPILER} ]]; then
+        #     DEPENDENTS_CENTER_COMPILER=${CENTER_COMPILER}
+        # fi
+        for p in ${PKG_LIST}
+        do
+            SPACK_EXTRA_ROOT_PACKAGES="${p} ${SPACK_EXTRA_ROOT_PACKAGES}"
+            # CMD="spack add ${p} ${DEPENDENTS_CENTER_COMPILER}"
+            # SPACK_SOLVE_EXTRA_PACKAGES="${p} ${DEPENDENTS_CENTER_COMPILER} ${SPACK_SOLVE_EXTRA_PACKAGES}"
+            # echo ${CMD} | tee -a ${LOG}
+            # [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        done
+    fi
+
+    if [[ -n "${SPACK_EXTRA_ROOT_PACKAGES:-}" ]]; then
         if [[ -z ${DEPENDENTS_CENTER_COMPILER} ]]; then
             DEPENDENTS_CENTER_COMPILER=${CENTER_COMPILER}
         fi
-        for p in ${PKG_LIST}
+        echo "I think that I have extra root packages ${SPACK_EXTRA_ROOT_PACKAGES}"
+        for p in ${SPACK_EXTRA_ROOT_PACKAGES}
         do
             CMD="spack add ${p} ${DEPENDENTS_CENTER_COMPILER}"
             SPACK_SOLVE_EXTRA_PACKAGES="${p} ${DEPENDENTS_CENTER_COMPILER} ${SPACK_SOLVE_EXTRA_PACKAGES}"
@@ -858,21 +887,22 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
         done
     fi
+
 fi # [[ -n "${INSTALL_DEPS:-}" ]]
 
-CMD="spack solve -l ${LBANN_SPEC} ${SPACK_SOLVE_EXTRA_PACKAGES}"
 if [[ "${SPEC_ONLY}" == "TRUE" ]]; then
-   echo ${CMD} | tee -a ${LOG}
-   if [[ -z "${DRY_RUN:-}" ]]; then
-       eval ${CMD} || exit_on_failure "${CMD}\nIf the error is that boostrapping failed try something like 'module load gcc/8.3.1; spack compiler add' and then rerunning"
-   fi
+    CMD="spack solve -l ${LBANN_SPEC} ${SPACK_SOLVE_EXTRA_PACKAGES}"
+    echo ${CMD} | tee -a ${LOG}
+    if [[ -z "${DRY_RUN:-}" ]]; then
+        eval ${CMD} || exit_on_failure "${CMD}\nIf the error is that boostrapping failed try something like 'module load gcc/8.3.1; spack compiler add' and then rerunning"
+    fi
 fi
 
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
-  # Try to concretize the environment and catch the return code
-  CMD="spack concretize"
-  echo ${CMD} | tee -a ${LOG}
-  [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    # Try to concretize the environment and catch the return code
+    CMD="spack concretize ${BUILD_JOBS}"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
 
 # Get the spack hash for LBANN (Ensure that the concretize command has been run so that any impact of external packages is factored in)
@@ -921,8 +951,8 @@ fi
 ##########################################################################################
 # Install any other packages to make sure that PYTHONPATH is properly setup
 # Install any other top level packages requested
-if [[ -n "${PKG_LIST:-}" ]]; then
-    for p in ${PKG_LIST}
+if [[ -n "${SPACK_EXTRA_ROOT_PACKAGES:-}" ]]; then
+    for p in ${SPACK_EXTRA_ROOT_PACKAGES}
     do
         CMD="spack install ${BUILD_JOBS} ${p}"
         echo ${CMD} | tee -a ${LOG}
@@ -1006,6 +1036,21 @@ EOF
     done
 fi
 
+# if [[ -n "${SPACK_EXTRA_ROOT_PACKAGES:-}" ]]; then
+#     for p in ${SPACK_EXTRA_ROOT_PACKAGES}
+#     do
+#         PKG_PYTHONPATH=$(spack build-env ${p} -- printenv PYTHONPATH)
+#         if [[ -n "${PKG_PYTHONPATH}" ]]; then
+#             P_ENV=$(echo "${p}" | tr '-' '_')
+# cat >> ${LBANN_INSTALL_FILE}<<EOF
+# # Add PYTHONPATH for top level python package: ${p}
+# export ${P_ENV}_PKG_PYTHONPATH=${PKG_PYTHONPATH}
+# export PYTHONPATH=\${${P_ENV}_PKG_PYTHONPATH}:\${PYTHONPATH}
+# EOF
+#         fi
+#     done
+# fi
+
 if [[ -n "${MODULE_CMD}" ]]; then
 cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Modules loaded during this installation
@@ -1043,6 +1088,7 @@ fi
 
 # Setup the module use path last in case the modules cmd purges the system
 cat >> ${LBANN_INSTALL_FILE}<<EOF
+spack env activate -p ${LBANN_ENV}
 ml use ${LBANN_MODFILES_DIR}
 EOF
 
