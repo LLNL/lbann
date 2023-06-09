@@ -363,6 +363,8 @@ void cuTT_PermuteImpl::do_mb_permute(
   El::Matrix<DataT, El::Device::GPU> const& in,
   El::Matrix<DataT, El::Device::GPU>& out) const
 {
+  auto multisync =
+    El::MakeMultiSync(El::SyncInfoFromMatrix(out), El::SyncInfoFromMatrix(in));
   auto const plan = get_mb_plan(plan_map, perm, in_dims, out_dims, in, out);
   LBANN_CHECK_CUTT(
     cuttExecute(plan, const_cast<DataT*>(in.LockedBuffer()), out.Buffer()));
@@ -377,6 +379,8 @@ void cuTT_PermuteImpl::do_sample_permute(
   El::Matrix<DataT, El::Device::GPU> const& in,
   El::Matrix<DataT, El::Device::GPU>& out) const
 {
+  auto multisync =
+    El::MakeMultiSync(El::SyncInfoFromMatrix(out), El::SyncInfoFromMatrix(in));
   if (sample_plan == 0U)
     sample_plan = get_sample_plan(perm, in_dims, out_dims, in, out);
 
