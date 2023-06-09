@@ -149,8 +149,12 @@ public:
   ///@}
 
 private:
+  using BatchSizeT = El::Int;
   using Plan = cuttHandle;
-  using PlanMap = std::unordered_map<El::Int, Plan>;
+  using PlanMap = std::unordered_map<BatchSizeT, Plan>;
+  // The key here corresponds to the minibatch size. This is chosen to
+  // be robust to variable batch sizes beyond the simple last-batch
+  // "remainder", however unlikely any other case may be.
 
 private:
   template <typename DataT>
@@ -198,8 +202,8 @@ private:
   // Plan memoization -- lazily constructed.
   mutable PlanMap m_fwd_plans;
   mutable PlanMap m_inv_plans;
-  mutable Plan m_sample_fwd_plan = 0;
-  mutable Plan m_sample_inv_plan = 0;
+  mutable Plan m_sample_fwd_plan = 0U;
+  mutable Plan m_sample_inv_plan = 0U;
 }; // class cuTT_PermuteImpl
 
 inline cuTT_PermuteImpl::cuTT_PermuteImpl(ColMajorPerm perm)
@@ -373,7 +377,7 @@ void cuTT_PermuteImpl::do_sample_permute(
   El::Matrix<DataT, El::Device::GPU> const& in,
   El::Matrix<DataT, El::Device::GPU>& out) const
 {
-  if (sample_plan == 0UL)
+  if (sample_plan == 0U)
     sample_plan = get_sample_plan(perm, in_dims, out_dims, in, out);
 
   DataT* const in_buf = const_cast<DataT*>(in.LockedBuffer());
