@@ -572,6 +572,22 @@ void Layer::setup_pointers()
       }
     }
 
+    // TODO:
+    // If any of the children is a viewing layer (Identity, Reshape, etc.),
+    // there is a bug (issue #2274) in which a layer deallocates memory too soon
+    // and deep-copying the tensors during backprop fails. THE FOLLOWING LINES
+    // SHOULD BE REMOVED AFTER NEW TENSORS ARE MERGED
+    if (can_run_inplace) {
+      for (int i = 0; i < get_num_children(); ++i) {
+        const auto& child = get_child_layer(i);
+        if (child.get_type() == "identity" || child.get_type() == "reshape" ||
+            child.get_type() == "identity_zero") {
+          can_run_inplace = false;
+          break;
+        }
+      }
+    }
+
     this->m_runs_inplace = can_run_inplace;
   }
 }
