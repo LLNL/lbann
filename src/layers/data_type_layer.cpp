@@ -228,8 +228,8 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
   const int num_parents = get_num_parents();
   for (int i = 0; i < num_parents; ++i) {
     auto& error_signal_ptr =
-      ((m_runs_inplace && i < num_children) ? m_gradient_wrt_outputs[i]
-                                            : m_gradient_wrt_inputs[i]);
+      ((m_runs_inplace && i < num_children && !distconv_enabled())
+       ? m_gradient_wrt_outputs[i] : m_gradient_wrt_inputs[i]);
     if (!error_signal_ptr)
       continue;
 
@@ -277,7 +277,8 @@ auto data_type_layer<InputTensorDataType,
   // In-place layers use inputs for the output activations
   // This assumes that there is a one-to-one correspondence between
   // input and output tensors
-  if (this->m_runs_inplace && child_index < (int)m_inputs.size()) {
+  if (this->m_runs_inplace && child_index < (int)m_inputs.size()
+      && !distconv_enabled()) {
     return this->get_prev_activations(child_index);
   }
 
@@ -327,7 +328,8 @@ auto data_type_layer<InputTensorDataType,
   // This assumes that there is a one-to-one correspondence between
   // input and output tensors
   if (this->m_runs_inplace &&
-      parent_index < (int)m_gradient_wrt_outputs.size()) {
+      parent_index < (int)m_gradient_wrt_outputs.size()
+      && !distconv_enabled()) {
     return this->get_prev_error_signals(parent_index);
   }
 
@@ -1060,14 +1062,14 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
 
   // Initialize output tensors
   for (int i = 0; i < get_num_children(); ++i) {
-    if ((m_runs_inplace && i < get_num_parents() && !distconv_enabled())
-#ifdef LBANN_HAS_DISTCONV
-        || !keep_original_outputs(i)
-#endif // LBANN_HAS_DISTCONV
-        ) {
+    if (m_runs_inplace && i < get_num_parents() && !distconv_enabled()) {
       continue;
     }
 
+#ifdef LBANN_HAS_DISTCONV
+    if (!keep_original_outputs(i))
+      continue;
+#endif // LBANN_HAS_DISTCONV
     auto& output = get_activations(i);
     if (output.Viewing()) {
       LBANN_ERROR(get_name(),
@@ -1220,7 +1222,7 @@ void data_type_layer<InputTensorDataType,
       // the parent layers and then the input error signals are cleared.
       // Since in-place layers share the memory, clearing it would clear the
       // reused error signals as well, so we must skip this step.
-      if (m_runs_inplace && i < this->get_num_parents())
+      if (m_runs_inplace && i < this->get_num_parents() && !distconv_enabled())
         continue;
       if (m_gradient_wrt_outputs[i])
         m_gradient_wrt_outputs[i]->Empty(true);
@@ -1266,8 +1268,8 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
     // will be released. Views must be copied and owned data can
     // either be copied or swapped out.
     auto& error_signal =
-      ((m_runs_inplace && i < get_num_children()) ? m_gradient_wrt_outputs[i]
-                                                  : m_gradient_wrt_inputs[i]);
+      ((m_runs_inplace && i < get_num_children() && !distconv_enabled())
+       ? m_gradient_wrt_outputs[i] : m_gradient_wrt_inputs[i]);
 
     if (m_persistent_error_signals)
       attempt_view_error_signal(parent, *this, *error_signal);
@@ -1284,7 +1286,7 @@ void data_type_layer<InputTensorDataType,
 {
   auto parents = get_parent_layers();
   for (int i = 0; i < get_num_parents(); ++i) {
-    if (m_runs_inplace && i < get_num_children()) {
+    if (m_runs_inplace && i < get_num_children() && !distconv_enabled()) {
       continue;
     }
 
@@ -1323,14 +1325,14 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
   bp_setup_gradient_wrt_inputs(El::Int mini_batch_size)
 {
   for (int i = 0; i < get_num_parents(); ++i) {
-    if ((m_runs_inplace && i < get_num_children() && !distconv_enabled())
-#ifdef LBANN_HAS_DISTCONV
-        || !keep_original_gradient_wrt_inputs(i)
-#endif // LBANN_HAS_DISTCONV
-        ) {
+    if (m_runs_inplace && i < get_num_children() && !distconv_enabled()) {
       continue;
     }
 
+#ifdef LBANN_HAS_DISTCONV
+    if (!keep_original_gradient_wrt_inputs(i))
+      continue;
+#endif // LBANN_HAS_DISTCONV
     auto& gradient_wrt_input = get_error_signals(i);
     if (gradient_wrt_input.Viewing()) {
       LBANN_ERROR(get_name(),
