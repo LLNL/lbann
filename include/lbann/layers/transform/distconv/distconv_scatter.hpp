@@ -45,9 +45,9 @@ class Scatter
 public:
   Scatter(Backend& backend) : m_backend(backend)
   {
-    m_dist_scatter = util::make_unique<tensor::ScatterNVSHMEM<DataType>>(
+    m_dist_scatter = std::make_unique<tensor::ScatterNVSHMEM<DataType>>(
       m_backend.get_stream());
-    m_dist_gather = util::make_unique<tensor::GatherNVSHMEM<DataType>>(
+    m_dist_gather = std::make_unique<tensor::GatherNVSHMEM<DataType>>(
       m_backend.get_stream());
   }
 
