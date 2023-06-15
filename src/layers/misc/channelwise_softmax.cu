@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_CHANNELWISE_SOFTMAX_LAYER_INSTANTIATE
-#include "lbann/layers/misc/channelwise_softmax.hpp"
+#include "lbann/layers/misc/channelwise_softmax_impl.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
