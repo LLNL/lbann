@@ -96,8 +96,8 @@ set_center_specific_modules()
         # Disable the StdEnv for systems in LC
         case ${spack_arch_target} in
             "power9le") # Lassen
-                MODULE_CMD_GCC="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.6.1 spectrum-mpi/rolling-release python/3.7.2 essl/6.3.0.1"
-                MODULE_CMD_CLANG="module --force unload StdEnv; module load clang/10.0.1-gcc-8.3.1 cuda/11.6.1 spectrum-mpi/rolling-release python/3.7.2 essl/6.3.0.1"
+                MODULE_CMD_GCC="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.6.1 spectrum-mpi/rolling-release python/3.7.2"
+                MODULE_CMD_CLANG="module --force unload StdEnv; module load clang/10.0.1-gcc-8.3.1 cuda/11.6.1 spectrum-mpi/rolling-release python/3.7.2"
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 MODULE_CMD_GCC="module load gcc/10.3.1-magic cuda/11.8.0 mvapich2/2.3.6 python/3.9.12"
@@ -176,8 +176,8 @@ set_center_specific_spack_dependencies()
                 CENTER_COMPILER_PATHS="/usr/tce/packages/gcc/gcc-8.3.1 /usr/tce/packages/clang/clang-10.0.1-gcc-8.3.1/"
                 CENTER_COMPILER="%gcc@8.3.1"
                 DEPENDENTS_CENTER_COMPILER="%gcc@8.3.1"
-                CENTER_DEPENDENCIES="^spectrum-mpi ^cuda@11.6.112 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
-                CENTER_BLAS_LIBRARY="blas=essl"
+                CENTER_DEPENDENCIES="^spectrum-mpi ^cuda@11.6.112 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0 ^openblas"
+                CENTER_BLAS_LIBRARY="blas=openblas"
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 # On LC the mvapich2 being used is built against HWLOC v1
@@ -289,14 +289,6 @@ EOF
             "power9le" | "power8le")
 cat <<EOF  >> ${yaml}
   packages:
-    essl:
-      buildable: false
-      version:
-      - '6.2.1'
-      externals:
-      - spec: essl@6.2.1 arch=${spack_arch}
-        modules:
-        - essl/6.2.1
     rdma-core:
       buildable: false
       version:
