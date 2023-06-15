@@ -31,7 +31,7 @@
 # viewing.
 
 include:
-  - .gitlab/common/env.yml
+  - .gitlab/common/common.yml
 
 stages:
   - everything
@@ -47,7 +47,7 @@ stages:
 build and test everything:
   extends:
     - .lassen common
-    - .lbann
+    - .lbann-base-vars
   stage: everything
   script:
     - echo "== BUILDING AND TESTING LBANN =="
@@ -76,7 +76,7 @@ build and test everything:
 remove spack environment:
   extends:
     - .lassen common
-    - .lbann
+    - .lbann-base-vars
     - .uses spack environment
   stage: cleanup
   variables:

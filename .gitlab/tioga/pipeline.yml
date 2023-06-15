@@ -33,7 +33,7 @@
 # See the Catalyst pipeline for more thorough documentation.
 
 include:
-  - .gitlab/common/env.yml
+  - .gitlab/common/common.yml
 
 stages:
   - allocate
@@ -46,7 +46,7 @@ allocate lc resources:
   stage: allocate
   extends:
     - .tioga common
-    - .lbann
+    - .lbann-base-vars
   variables:
     GIT_STRATEGY: none
   script:
@@ -63,7 +63,7 @@ allocate lc resources:
 build and install:
   extends:
     - .tioga common
-    - .lbann
+    - .lbann-base-vars
   stage: build
   artifacts:
     paths:
@@ -101,7 +101,7 @@ build and install:
 unit tests:
   extends:
     - .tioga common
-    - .lbann
+    - .lbann-base-vars
     - .uses spack environment
   stage: test
   dependencies:
@@ -126,7 +126,7 @@ unit tests:
 integration tests:
   extends:
     - .tioga common
-    - .lbann
+    - .lbann-base-vars
     - .uses spack environment
   stage: test
   dependencies:
@@ -154,7 +154,7 @@ check catch2 tests:
     GIT_STRATEGY: none
   extends:
     - .tioga common
-    - .lbann
+    - .lbann-base-vars
   stage: test
   dependencies:
     - build and install
@@ -168,7 +168,7 @@ check catch2 tests:
 remove spack environment:
   extends:
     - .tioga common
-    - .lbann
+    - .lbann-base-vars
   stage: deallocate
   variables:
     GIT_STRATEGY: none
@@ -181,7 +181,7 @@ release allocation:
   stage: deallocate
   extends:
     - .tioga common
-    - .lbann
+    - .lbann-base-vars
   variables:
     GIT_STRATEGY: none
   when: always

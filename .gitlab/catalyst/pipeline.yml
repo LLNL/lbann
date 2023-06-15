@@ -31,7 +31,7 @@
 # viewing.
 
 include:
-  - .gitlab/common/env.yml
+  - .gitlab/common/common.yml
 
 stages:
   - allocate
@@ -48,7 +48,7 @@ allocate lc resources:
   stage: allocate
   extends:
     - .catalyst common
-    - .lbann
+    - .lbann-base-vars
   variables:
     GIT_STRATEGY: none
   script:
@@ -69,14 +69,11 @@ allocate lc resources:
 build and install:
   extends:
     - .catalyst common
-    - .lbann
+    - .lbann-base-vars
   stage: build
   artifacts:
     paths:
       - spack-*.txt
-      # - spack-build-*/CMakeCache.txt
-      # - spack-build-*/build.ninja
-      # - spack-build-*/spack-*.txt
       - spack-ci-env-name.sh
       - LBANN_*.cmake
       - LBANN_*_setup_module_path.sh
@@ -116,7 +113,7 @@ build and install:
 unit tests:
   extends:
     - .catalyst common
-    - .lbann
+    - .lbann-base-vars
     - .uses spack environment
   stage: test
   dependencies:
@@ -138,7 +135,7 @@ unit tests:
 integration tests:
   extends:
     - .catalyst common
-    - .lbann
+    - .lbann-base-vars
     - .uses spack environment
   stage: test
   dependencies:
@@ -173,7 +170,7 @@ integration tests:
 check catch2 tests:
   extends:
     - .catalyst common
-    - .lbann
+    - .lbann-base-vars
   stage: test
   dependencies:
     - build and install
@@ -189,24 +186,19 @@ check catch2 tests:
 remove spack environment:
   extends:
     - .catalyst common
-    - .lbann
+    - .lbann-base-vars
+    - .cleanup old spack environment
   stage: deallocate
   variables:
     GIT_STRATEGY: none
   when: always
-  script:
-    - !reference [.cleanup old spack environment, script]
-    # - echo "== REMOVING OLD BUILD RESOURCES =="
-    # - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    # - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +5 -name "spack-build-*" -type d -exec rm -r {} \;
-    # - find ${HOME}/${SPACK_REPO}/var/spack/environments/ -maxdepth 1 -mtime +5 -type d -exec basename {} \; | xargs -r spack env rm --yes-to-all
 
 # This frees the allocation we obtained in "allocate lc resources".
 release allocation:
   stage: deallocate
   extends:
     - .catalyst common
-    - .lbann
+    - .lbann-base-vars
   variables:
     GIT_STRATEGY: none
   when: always
@@ -214,17 +206,6 @@ release allocation:
     - echo "== RELEASING RESOURCES =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - ([[ -n "${JOB_ID}" ]] && scancel ${JOB_ID})
-
-# This loads the spack shell integration and then loads the
-# environment. Since this relies on the environment for this pipeline
-# existing, it should only be used after the build stage (i.e., in
-# testing).
-# .uses spack environment:
-#   before_script:
-#     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-#     - source spack-ci-env-name.sh
-#     - spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
-#     - spack load lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
 
 # For simplicity, I have put the variables as well as the tags
 # here. The variables could just be top-level in the file (perhaps the
