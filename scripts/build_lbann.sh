@@ -408,12 +408,17 @@ function exit_on_failure()
     echo "##########################################################################################" | tee -a ${LOG}
     echo "LBANN is being installed in ${LBANN_INSTALL_DIR}, but an error occured." | tee -a ${LOG}
     echo "To rebuild LBANN go to ${LBANN_BUILD_DIR}, and rerun:" | tee -a ${LOG}
+    echo "  ml use ${LBANN_MODFILES_DIR}" | tee -a ${LOG}
     echo "  cd ${LBANN_BUILD_DIR}" | tee -a ${LOG}
     echo "  ninja install" | tee -a ${LOG}
     echo "If the error occured in the dependencies, they are being installed in a spack environment named ${LBANN_ENV}, access it via:" | tee -a ${LOG}
     echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
     echo "  spack install --only dependencies" | tee -a ${LOG}
     echo "  spack install -u initconfig lbann" | tee -a ${LOG}
+    echo "##########################################################################################" | t    echo "Once successfully built in ${LBANN_INSTALL_DIR}, access it via:" | tee -a ${LOG}
+    echo "  ml use ${LBANN_MODFILES_DIR}" | tee -a ${LOG}
+    echo "  ml load lbann" | tee -a ${LOG}
+    echo "  lbann_pfe.sh <cmd>" | tee -a ${LOG}
     echo "##########################################################################################" | tee -a ${LOG}
     echo "All details of the run are logged to ${LOG}"
     echo "##########################################################################################"
@@ -792,7 +797,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-    CMD="spack external find --scope env:${LBANN_ENV} bzip2 cuda cudnn hwloc libfabric nccl ncurses openblas perl python rccl rdma-core sqlite spectrum-mpi mvapich2 openmpi"
+    CMD="spack external find --scope env:${LBANN_ENV} bzip2 cuda cudnn hwloc libfabric nccl ncurses openblas perl python rccl rdma-core sqlite spectrum-mpi mvapich2 openmpi netlib-lapack"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
