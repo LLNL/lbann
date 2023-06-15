@@ -216,7 +216,7 @@ void Gather<Backend, DataType>::setup(
     tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator>&               \
       indices_grad);
 
-ETI(float, cudnn::BackendCUDNN)
-ETI(double, cudnn::BackendCUDNN)
+ETI(float, ::distconv::BackendDNNLib)
+ETI(double, ::distconv::BackendDNNLib)
 #undef ETI
 } // namespace distconv
