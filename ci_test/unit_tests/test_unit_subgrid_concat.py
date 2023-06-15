@@ -43,9 +43,7 @@ def setup_experiment(lbann, weekly):
         lbann (module): Module for LBANN Python frontend
 
     """
-    
-    pytest.skip('Skip - Temporarily skipping subgraph tests')
-    
+        
     mini_batch_size = num_samples() // 2
     trainer = lbann.Trainer(mini_batch_size)
     model = construct_model(lbann)
