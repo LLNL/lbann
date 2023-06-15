@@ -68,9 +68,6 @@ build and install:
   artifacts:
     paths:
       - spack-*.txt
-      # - spack-build-*/CMakeCache.txt
-      # - spack-build-*/build.ninja
-      # - spack-build-*/spack-*.txt
       - spack-ci-env-name.sh
       - LBANN_*.cmake
       - LBANN_*_setup_module_path.sh
@@ -114,7 +111,7 @@ unit tests:
     - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - cd ci_test/unit_tests
     - export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
-#    - flux proxy ${FLUX_JOB_ID} lbann_pfe.sh -m pytest -s -vv --durations=0 --junitxml=results.xml
+    - flux proxy ${FLUX_JOB_ID} lbann_pfe.sh -m pytest -s -vv --durations=0 --junitxml=results.xml
   artifacts:
     when: always
     paths:
@@ -140,7 +137,7 @@ integration tests:
     - cd ci_test/integration_tests
     - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
     - export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
-#    - flux proxy ${FLUX_JOB_ID} lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml
+    - flux proxy ${FLUX_JOB_ID} lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml
   artifacts:
     when: always
     paths:
@@ -169,12 +166,11 @@ remove spack environment:
   extends:
     - .tioga common
     - .lbann-base-vars
+    - .cleanup old spack environment
   stage: deallocate
   variables:
     GIT_STRATEGY: none
   when: always
-  script:
-    - !reference [.cleanup old spack environment, script]
 
 # Free the allocation we obtained in "allocate lc resources".
 release allocation:

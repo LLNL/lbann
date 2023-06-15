@@ -66,9 +66,6 @@ build and install:
   artifacts:
     paths:
       - spack-*.txt
-      # - spack-build-*/CMakeCache.txt
-      # - spack-build-*/build.ninja
-      # - spack-build-*/spack-*.txt
       - spack-ci-env-name.sh
       - LBANN_*.cmake
       - LBANN_*_setup_module_path.sh
@@ -106,7 +103,7 @@ unit tests:
     - export OMP_NUM_THREADS=10
     - export SLURM_JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - cd ci_test/unit_tests
-#    - lbann_pfe.sh -m pytest -s -vv --durations=0 --junitxml=results.xml
+    - lbann_pfe.sh -m pytest -s -vv --durations=0 --junitxml=results.xml
   artifacts:
     when: always
     paths:
@@ -131,7 +128,7 @@ integration tests:
     - cd ci_test/integration_tests
     - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
     - echo "lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml"
-#    - lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml
+    - lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml
   artifacts:
     when: always
     paths:
@@ -165,11 +162,6 @@ remove spack environment:
   variables:
     GIT_STRATEGY: none
   when: always
-  script:
-    - echo "== REMOVING OLD BUILD RESOURCES =="
-    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +5 -name "spack-build-*" -type d -exec rm -r {} \;
-    - find ${HOME}/${SPACK_REPO}/var/spack/environments/ -maxdepth 1 -mtime +5 -type d -exec basename {} \; | xargs -r spack env rm --yes-to-all
 
 # Free the allocation we obtained in "allocate lc resources".
 release allocation:

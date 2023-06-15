@@ -78,12 +78,11 @@ remove spack environment:
     - .lassen common
     - .lbann-base-vars
     - .uses spack environment
+    - .cleanup old spack environment
   stage: cleanup
   variables:
     GIT_STRATEGY: none
   when: always
-  script:
-    - !reference [.cleanup old spack environment, script]
 
 # Variables for Lassen. Because this test uses "test_compiler.py", we
 # don't need to specify the Spack spec or the job name.
