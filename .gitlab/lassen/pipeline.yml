@@ -64,6 +64,7 @@ build and test everything:
       - ci_test/**/*.xml
       - ci_test/compiler_tests/**/*.txt
       - LBANN_*.cmake
+      - LBANN_*_setup_build_tools.sh
       - LBANN_*_setup_module_path.sh
       - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/*
     reports:
