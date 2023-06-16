@@ -592,14 +592,20 @@ if [[ -n "${REUSE_ENV:-}" || -z "${INSTALL_DEPS:-}" ]]; then
         if [[ ! -z "${MATCHED_CONFIG_FILE_PATH}" ]]; then
             if [[ -e "${MATCHED_CONFIG_FILE_PATH}" && -r "${MATCHED_CONFIG_FILE_PATH}" ]]; then
                 echo "I have found and will use ${MATCHED_CONFIG_FILE_PATH}"
-                CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
-                if [[ ! -e "${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}" ]]; then
-                    echo "Overwritting exising CMake config file in ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
+                if [[ ! -e ${LBANN_INSTALL_FILE} ]]; then
+                    echo "I cannot find ${LBANN_INSTALL_FILE} -- recreate the CacheCMakeBuild"
+                elif [[ ! -e ${LBANN_SETUP_FILE} ]]; then
+                    echo "I cannot find ${LBANN_SETUP_FILE} -- recreate the CacheCMakeBuild"
+                else
+                    CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
+                    if [[ ! -e "${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}" ]]; then
+                        echo "Overwritting exising CMake config file in ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
+                    fi
+                    # Save the config file in the build directory
+                    CMD="cp ${MATCHED_CONFIG_FILE_PATH} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
+                    echo ${CMD}
+                    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
                 fi
-                # Save the config file in the build directory
-                CMD="cp ${MATCHED_CONFIG_FILE_PATH} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
-                echo ${CMD}
-                [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
             fi
         fi
     fi
