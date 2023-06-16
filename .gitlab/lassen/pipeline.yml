@@ -53,7 +53,7 @@ build and test everything:
     - echo "== BUILDING AND TESTING LBANN =="
     - echo "${WITH_WEEKLY:+Running with --weekly}"
     - !reference [.setup_spack, script]
-    - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "120" || echo "90")
+    - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "150" || echo "120")
     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
     - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
     - lalloc ${LBANN_NNODES} -W ${TEST_TIME} -q pbatch ci_test/run.sh ${WEEKLY_FLAG}

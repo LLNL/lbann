@@ -73,7 +73,7 @@ build and install:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - !reference [.setup_spack, script]
-    - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh ${SPACK_DEPS_FLAG}
+    - srun --jobid=${JOB_ID} -N 1 -t 45 ./scripts/build_lbann.sh ${SPACK_DEPS_FLAG}
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS} ${CLEAN_BUILD_FLAG}
       -e ./scripts/common_spack_packages/ci_spack_packages.sh
       ${BUILD_SCRIPT_OPTIONS} --
