@@ -27,9 +27,9 @@ def make_timestamped_work_dir(work_dir=None,
         work_dir = os.path.join(work_dir,
                                 '{}_{}'.format(timestamp, job_name))
         # Differentiate the work directory with a few key parameters
-        if kwargs['nodes']:
+        if 'nodes' in kwargs:
             work_dir = ('{}_n{}'.format(work_dir, kwargs['nodes']))
-        if kwargs['procs_per_node']:
+        if 'procs_per_node' in kwargs:
             work_dir = ('{}_ppn{}'.format(work_dir, kwargs['procs_per_node']))
 
         i = 1

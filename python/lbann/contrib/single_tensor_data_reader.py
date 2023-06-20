@@ -25,7 +25,8 @@
 #
 ################################################################################
 """
-Simple data reader that opens one file with one tensor. Used for unit testing.
+Simple data reader that opens one file with one tensor. Used for testing and
+evaluation.
 """
 import numpy as np
 
