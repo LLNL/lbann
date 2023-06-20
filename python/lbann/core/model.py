@@ -80,3 +80,7 @@ class Model:
         model.callback.extend([c.export_proto() for c in self.callbacks])
 
         return model
+
+    def __call__(self, *args, **kwargs):
+        from lbann.core.evaluate import evaluate  # Avoid circular imports
+        return evaluate(self, *args, **kwargs)

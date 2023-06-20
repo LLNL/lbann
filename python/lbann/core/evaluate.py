@@ -34,6 +34,7 @@ import numpy as np
 import numpy.typing as npt
 import os
 from typing import Dict, List, Optional, Tuple, Union
+import warnings
 
 
 def evaluate(
@@ -115,8 +116,15 @@ def evaluate(
 
 def _setup_data_reader(inputs: npt.NDArray, workdir: str):
     # Save inputs
-    input = inputs.reshape(inputs.shape[0], -1)
-    np.save(os.path.join(workdir, 'data.npy'), input)
+    if len(inputs.shape) == 1:  # Minibatch dimension must exist
+        inputs = inputs.reshape(1, inputs.shape[0])
+    elif len(inputs.shape) > 2:
+        warnings.warn(
+            f'{len(inputs.shape)}-dimensional tensor given, all dimensions '
+            'beyond the second one will be flattened')
+        inputs = inputs.reshape(inputs.shape[0], -1)
+
+    np.save(os.path.join(workdir, 'data.npy'), inputs)
 
     # Construct protobuf message for data reader
     file_name = os.path.realpath(single_tensor_data_reader.__file__)
