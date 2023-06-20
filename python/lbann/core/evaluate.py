@@ -73,6 +73,7 @@ def evaluate(
         kwargs['job_name'] = 'lbann_evaluate'
 
     workdir = make_timestamped_work_dir(**kwargs)
+    fmt = 'npy' if lbann.has_feature('CNPY') else 'csv'
 
     # Reset fields for evaluation
     old_epochs = model.epochs
@@ -85,6 +86,7 @@ def evaluate(
             lbann.CallbackDumpOutputs(batch_interval=1,
                                       execution_modes='test',
                                       directory=workdir,
+                                      format=fmt,
                                       layers=' '.join(outputs))
         ]
         model.metrics = []
@@ -99,7 +101,7 @@ def evaluate(
 
         #######################
         # Collect outputs
-        output_tensors = _collect_outputs(outputs, workdir, inputs.dtype)
+        output_tensors = _collect_outputs(outputs, workdir, inputs.dtype, fmt)
 
     finally:
         # Set fields back to original state
@@ -150,13 +152,17 @@ def _setup_data_reader(inputs: npt.NDArray, workdir: str):
 
 
 def _collect_outputs(output_names: List[str], workdir: str,
-                     dtype: np.dtype) -> Tuple[npt.NDArray]:
+                     dtype: np.dtype, fmt: str) -> Tuple[npt.NDArray]:
     output_dir = os.path.join(workdir, 'trainer0', 'model0')
     file_prefix = 'sgd.testing.epoch.0.step.0'
 
     outputs = []
     for name in output_names:
-        fname = os.path.join(output_dir, f'{file_prefix}_{name}_output0.csv')
-        outputs.append(np.loadtxt(fname, dtype, delimiter=','))
+        if fmt == 'csv':
+            fname = os.path.join(output_dir, f'{file_prefix}_{name}_output0.csv')
+            outputs.append(np.loadtxt(fname, dtype, delimiter=','))
+        elif fmt == 'npz' or fmt == 'npy':
+            fname = os.path.join(output_dir, f'{file_prefix}_{name}_output0.{fmt}')
+            outputs.append(np.load(fname))
 
     return tuple(outputs)

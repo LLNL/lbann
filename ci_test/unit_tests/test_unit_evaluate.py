@@ -50,3 +50,18 @@ def test_evaluate_multioutput():
     reshaped = inputarr.reshape(2, 12)
     assert np.allclose(out1, reshaped + 1)
     assert np.allclose(out3, reshaped + 3)
+
+
+def test_evaluate_multidim():
+    if not lbann.has_feature('CNPY'):
+        pytest.skip('LBANN needs to be compiled with cnpy for this test')
+
+    a = lbann.Input(data_field='samples')
+    b = lbann.Reshape(a, dims=[3, 4])
+
+    inputarr = np.random.rand(2, 3, 4)
+    outputarr = lbann.evaluate(b, inputarr)
+
+    # Test outputs
+    assert outputarr.shape == inputarr.shape
+    assert np.allclose(outputarr, inputarr)
