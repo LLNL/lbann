@@ -130,6 +130,11 @@ def _impl(x, **kwargs):
     return lbann.Cos(x)
 
 
+@register_function('torch.nn.functional.tanh')
+def _impl(x, **kwargs):
+    return lbann.Tanh(x)
+
+
 @register_function('torch.flatten')
 def flatten_impl(x, start_dim=1, end_dim=-1):
     if start_dim == 0 or end_dim == 0:

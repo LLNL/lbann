@@ -62,41 +62,6 @@ def deconvnd_layer(c: nn.ConvTranspose2d, dims: int, args, kwargs):
                                groups=c.groups)
 
 
-@register_module_weight_converter([
-    nn.Conv1d, nn.Conv2d, nn.Conv3d, nn.ConvTranspose1d, nn.ConvTranspose2d,
-    nn.ConvTranspose3d
-])
-def weights_and_biases(mod: nn.Module,
-                       layer: lbann.Layer,
-                       transpose: bool = False):
-    """
-    General nn.Module to lbann.Layer weight converter for modules that have two
-    parameters: ``weight`` and ``bias``.
-
-    :param mod: The module to convert parameters from.
-    :param layer: The layer to convert weights to.
-    :param transpose: If True, transposes the last two dimensions of the weights
-                      tensor.
-    """
-    # Obtain weights
-    weights_numpy = mod.weight.detach().cpu().numpy()
-    if transpose:
-        indices = list(range(len(weights_numpy.shape)))
-        indices[-2], indices[-1] = indices[-1], indices[-2]
-        weights_numpy = weights_numpy.transpose(indices)
-
-    if hasattr(mod, 'bias') and mod.bias is not None:
-        layer.weights = [
-            lbann.Weights(initializer=lbann.ValueInitializer(
-                values=weights_numpy.flat)),
-            lbann.Weights(initializer=lbann.ValueInitializer(
-                values=mod.bias.detach().cpu().numpy().flat))
-        ]
-    else:
-        layer.weights = lbann.Weights(initializer=lbann.ValueInitializer(
-            values=weights_numpy.flat))
-
-
 @register_module(nn.Conv1d)
 def conv1d(c: nn.Conv1d, *args, **kwargs):
     return convnd_layer(c, 1, args, kwargs)
@@ -134,6 +99,18 @@ def leaky_relu_impl(origmod: nn.LeakyReLU, *args, **kwargs):
                            negative_slope=origmod.negative_slope)
 
 
+@register_module(nn.AvgPool2d)
+def avgpool2d_impl(origmod: nn.AvgPool2d, *args, **kwargs):
+    return lbann.Pooling(*args,
+                         **kwargs,
+                         pool_mode='average',
+                         num_dims=2,
+                         has_vectors=False,
+                         pool_dims_i=origmod.kernel_size,
+                         pool_pads_i=origmod.padding,
+                         pool_strides_i=origmod.stride)
+
+
 @register_module(nn.AvgPool3d)
 def avgpool3d_impl(origmod: nn.AvgPool3d, *args, **kwargs):
     return lbann.Pooling(*args,
@@ -157,7 +134,7 @@ def linear_impl(origmod: nn.Linear, *args, **kwargs):
                                 **kwargs,
                                 num_neurons=origmod.out_features,
                                 has_bias=origmod.bias is not None,
-                                transpose=False)
+                                transpose=True)
 
 
 @register_module(nn.Flatten)
@@ -256,6 +233,49 @@ def _impl(mod: nn.AdaptiveAvgPool2d, x):
 def _impl(mod: nn.AdaptiveAvgPool3d, x):
     return aap_nd(x, 3)
 
+
+#################################################################
+# Weight conversion
+
+
+@register_module_weight_converter([
+    nn.Conv1d, nn.Conv2d, nn.Conv3d, nn.ConvTranspose1d, nn.ConvTranspose2d,
+    nn.ConvTranspose3d
+])
+@register_module_weight_converter(nn.Linear)
+def weights_and_biases(mod: nn.Module,
+                       layer: lbann.Layer,
+                       transpose: bool = False):
+    """
+    General nn.Module to lbann.Layer weight converter for modules that have two
+    parameters: ``weight`` and ``bias``.
+
+    :param mod: The module to convert parameters from.
+    :param layer: The layer to convert weights to.
+    :param transpose: If True, transposes the last two dimensions of the weights
+                      tensor.
+    """
+    # Obtain weights
+    weights_numpy = mod.weight.detach().cpu().numpy()
+    if transpose:
+        indices = list(range(len(weights_numpy.shape)))
+        indices[-2], indices[-1] = indices[-1], indices[-2]
+        weights_numpy = weights_numpy.transpose(indices)
+
+    if hasattr(mod, 'bias') and mod.bias is not None:
+        layer.weights = [
+            lbann.Weights(initializer=lbann.ValueInitializer(
+                values=weights_numpy.flat)),
+            lbann.Weights(initializer=lbann.ValueInitializer(
+                values=mod.bias.detach().cpu().numpy().flat))
+        ]
+    else:
+        layer.weights = lbann.Weights(initializer=lbann.ValueInitializer(
+            values=weights_numpy.flat))
+
+
+#################################################################
+# Shape/type inference
 
 # PyTorch Geometric
 try:

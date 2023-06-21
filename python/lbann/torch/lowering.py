@@ -163,8 +163,9 @@ def replace_fx(gm: fx.GraphModule,
                 # Convert weights
                 if with_weights:
                     if type(submodule) not in converters.module_parameters:
-                        warnings.warn('No converter found for weights of '
-                                      f'module type "{type(submodule)}"!')
+                        if len(list(submodule.parameters())) > 0:
+                            warnings.warn('No converter found for weights of '
+                                          f'module type "{type(submodule)}"!')
                     else:
                         converters.module_parameters[type(submodule)](
                             submodule, replaced[node])
@@ -318,7 +319,7 @@ def lower_single_node(gm: fx.GraphModule, node: fx.Node) -> fx.GraphModule:
     output = subgraph.node_copy(node, lambda n: value_remap[n])
 
     # Output
-    subgraph.output(output)
+    subgraph.output((output, ))
 
     # Make and lower the graph module
     subgm = fx.GraphModule(gm, subgraph)
@@ -412,6 +413,9 @@ def partial_lowering(gm: fx.GraphModule) -> fx.GraphModule:
                     )
             elif node.op == 'call_method':
                 decompose = True
+                warnings.warn(
+                    f'Lowering method "{str(node.target)}" operating '
+                    f'on object {str(node.args[0])}.')
 
         if node.op == 'call_method' and str(
                 node.target) in ('unbind', 'split'):
