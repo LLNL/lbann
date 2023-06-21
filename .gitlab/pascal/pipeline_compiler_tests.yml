@@ -64,11 +64,13 @@ build and install:
     paths:
       - spack-*.txt
       - spack-ci-env-name.sh
-      - LBANN_*.cmake
-      - LBANN_*_setup_build_tools.sh
-      - LBANN_*_setup_module_path.sh
+      - LBANN_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*-${SPACK_ARCH_TARGET}*.cmake
+      - LBANN_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*-${SPACK_ARCH_TARGET}*_setup_build_tools.sh
+      - LBANN_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*-${SPACK_ARCH_TARGET}*_setup_module_path.sh
       - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/*
       - ${RESULTS_DIR}/*
+    exclude:
+      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/build/**/*.o
   script:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")

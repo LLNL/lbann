@@ -63,10 +63,12 @@ build and test everything:
       - spack-*.txt
       - ci_test/**/*.xml
       - ci_test/compiler_tests/**/*.txt
-      - LBANN_*.cmake
-      - LBANN_*_setup_build_tools.sh
-      - LBANN_*_setup_module_path.sh
+      - LBANN_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*-${SPACK_ARCH_TARGET}*.cmake
+      - LBANN_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*-${SPACK_ARCH_TARGET}*_setup_build_tools.sh
+      - LBANN_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*-${SPACK_ARCH_TARGET}*_setup_module_path.sh
       - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/*
+    exclude:
+      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/build/**/*.o
     reports:
       junit: ci_test/**/*.xml
   timeout: 6h
