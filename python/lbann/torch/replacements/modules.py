@@ -29,7 +29,9 @@ Specific PyTorch Module converters for the LBANN PyTorch frontend.
 """
 import functools
 import lbann
-from lbann.torch.converters import register_module, register_opaque_shape_inference
+from lbann.torch.converters import (register_module,
+                                    register_module_weight_converter,
+                                    register_opaque_shape_inference)
 import torch.nn as nn
 
 
@@ -58,6 +60,46 @@ def deconvnd_layer(c: nn.ConvTranspose2d, dims: int, args, kwargs):
                                dilation=c.dilation,
                                has_bias=c.bias is not None,
                                groups=c.groups)
+
+
+@register_module_weight_converter([
+    nn.Conv1d, nn.Conv2d, nn.Conv3d, nn.ConvTranspose1d, nn.ConvTranspose2d,
+    nn.ConvTranspose3d
+])
+def weights_and_biases(mod: nn.Module,
+                       layer: lbann.Layer,
+                       transpose: bool = False):
+    """
+    General nn.Module to lbann.Layer weight converter for modules that have two
+    parameters: ``weight`` and ``bias``.
+
+    :param mod: The module to convert parameters from.
+    :param layer: The layer to convert weights to.
+    :param transpose: If True, transposes the last two dimensions of the weights
+                      tensor.
+    """
+    # Obtain weights
+    weights_numpy = mod.weight.detach().cpu().numpy()
+    if transpose:
+        indices = list(range(len(weights_numpy.shape)))
+        indices[-2], indices[-1] = indices[-1], indices[-2]
+        weights_numpy = weights_numpy.transpose(indices)
+
+    if hasattr(mod, 'bias') and mod.bias is not None:
+        layer.weights = [
+            lbann.Weights(initializer=lbann.ValueInitializer(
+                values=weights_numpy.flat)),
+            lbann.Weights(initializer=lbann.ValueInitializer(
+                values=mod.bias.detach().cpu().numpy().flat))
+        ]
+    else:
+        layer.weights = lbann.Weights(initializer=lbann.ValueInitializer(
+            values=weights_numpy.flat))
+
+
+@register_module(nn.Conv1d)
+def conv1d(c: nn.Conv1d, *args, **kwargs):
+    return convnd_layer(c, 1, args, kwargs)
 
 
 @register_module(nn.Conv2d)

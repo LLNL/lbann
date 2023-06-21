@@ -123,6 +123,40 @@ def register_module(modclass: Union[Type[nn.Module],
     return func
 
 
+def register_module_weight_converter(
+        modclass: Union[Type[nn.Module], Sequence[Type[nn.Module]]]):
+    """
+    Registers a PyTorch nn.Module (by class type) with a weight conversion
+    procedure that takes the PyTorch module and the resulting LBANN layer.
+    Internally, the function modifies the parameters (for example, transposition)
+    and fills in the ``Weights`` objects of the layers with a
+    ``ValueInitializer``.
+
+    Syntax::
+
+        @register_module_weight_converter(ClassName)
+        def replacement(mod: ClassName, layer: lbann.MatchingClass):
+            layer.weights = lbann.Weights(
+                initializer=lbann.ValueInitializer(
+                    values=mod.weights.detach().cpu().numpy().flat))
+
+
+    :param modclass: A module type or a sequence thereof whose weights will be
+                     set.
+    """
+
+    def func(f):
+        if isinstance(modclass, (list, tuple)):
+            for cls in modclass:
+                module_parameters[cls] = f
+        else:
+            module_parameters[modclass] = f
+
+        return f
+
+    return func
+
+
 def register_opaque_shape_inference(
         modclass: Union[Type[nn.Module], Sequence[Type[nn.Module]]]):
     """

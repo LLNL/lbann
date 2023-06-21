@@ -159,6 +159,16 @@ def replace_fx(gm: fx.GraphModule,
                     submodule, *repl(node.args),
                     **{k: repl(v)
                        for k, v in node.kwargs.items()})
+
+                # Convert weights
+                if with_weights:
+                    if type(submodule) not in converters.module_parameters:
+                        warnings.warn('No converter found for weights of '
+                                      f'module type "{type(submodule)}"!')
+                    else:
+                        converters.module_parameters[type(submodule)](
+                            submodule, replaced[node])
+
                 replaced[node].name = node.name
                 replaced[node].shape = node.meta['val'].shape
                 rep.add(node.stack_trace)
@@ -247,7 +257,7 @@ def replace_fx(gm: fx.GraphModule,
                         dims=attr.shape,
                         weights=lbann.Weights(
                             initializer=lbann.ValueInitializer(
-                                values=attr.detach().numpy().flat)))
+                                values=attr.detach().cpu().numpy().flat)))
                 else:
                     lbann_node = lbann.WeightsLayer(dims=attr.shape)
                 make_input = False

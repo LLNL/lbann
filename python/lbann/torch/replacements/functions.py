@@ -64,6 +64,8 @@ def add(x, y, **kwargs):
         return lbann.AddConstant(x, constant=y)
     if isinstance(x, (int, float)):
         return lbann.AddConstant(y, constant=x)
+    if x == y:
+        return lbann.Scale(x, constant=2)
 
     return lbann.Add(x, y)
 
@@ -76,6 +78,12 @@ def sub(x, y, **kwargs):
         return lbann.SubtractConstant(x, constant=y)
     if isinstance(x, (int, float)):
         return lbann.ConstantSubtract(y, constant=x)
+    if x == y:
+        shp = x.shape
+        cst = lbann.Constant(value=0,
+                             num_neurons=functools.reduce(
+                                 lambda a, b: a * b, shp[1:], 1))
+        return lbann.Reshape(cst, dims=shp[1:])
 
     return lbann.Subtract(x, y)
 
@@ -88,6 +96,8 @@ def mul(x, y, **kwargs):
         return lbann.Scale(x, constant=y)
     if isinstance(x, (int, float)):
         return lbann.Scale(y, constant=x)
+    if x == y:
+        return lbann.Square(x)
 
     return lbann.Multiply(x, y)
 
@@ -100,6 +110,12 @@ def div(x, y, **kwargs):
         return lbann.Scale(x, constant=1 / y)
     if isinstance(x, (int, float)):
         return lbann.Scale(lbann.Reciprocal(y), constant=x)
+    if x == y:
+        shp = x.shape
+        cst = lbann.Constant(value=1,
+                             num_neurons=functools.reduce(
+                                 lambda a, b: a * b, shp[1:], 1))
+        return lbann.Reshape(cst, dims=shp[1:])
 
     return lbann.Divide(x, y)
 
