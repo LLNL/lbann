@@ -12,7 +12,7 @@ class CosmoFlow(nn.Module):
 
         def convbnactpool(in_channels, out_channels, kernel_size=3, padding=1, stride=1, pool=True):
             layers = []
-            layers.append(nn.Conv3d(in_channels, out_channels, kernel_size, stride, padding))
+            layers.append(nn.Conv3d(in_channels, out_channels, kernel_size, stride, padding, bias=False))
             if batchnorm:
                 layers.append(nn.BatchNorm3d(out_channels, momentum=1e-3))
             layers.append(Activation())
