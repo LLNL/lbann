@@ -54,7 +54,7 @@ allocate lc resources:
   script:
     - echo "== ACQUIRING SLURM RESOURCES =="
     - echo "${WITH_WEEKLY:+Running with --weekly}"
-    - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "150" || echo "120")
+    - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "120" || echo "90")
     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
     - salloc --exclusive -N ${LBANN_NNODES} -p pbatch -t ${TEST_TIME} --no-shell -J ${JOB_NAME}
   timeout: 6h
@@ -84,7 +84,7 @@ build and install:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - !reference [.setup_spack, script]
-    - srun --jobid=${JOB_ID} -N 1 -t 45 ./scripts/build_lbann.sh ${SPACK_DEPS_FLAG}
+    - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh ${SPACK_DEPS_FLAG}
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS} ${CLEAN_BUILD_FLAG}
       -p py-pip --ci-pip --
       +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
