@@ -54,6 +54,7 @@ from typing import Any, Callable, List, Optional, Union
 def compile(module_or_function: Union[nn.Module, Callable[..., Any]],
             *sample_args,
             trace: bool = False,
+            with_weights: bool = True,
             **sample_kwargs) -> List[lbann.Layer]:
     """
     Compiles the given PyTorch module or function into an LBANN graph.
@@ -68,6 +69,9 @@ def compile(module_or_function: Union[nn.Module, Callable[..., Any]],
     :param trace: If False (default), compiles the function statically (e.g.,
                   supporting conditions). Otherwise, traces through the function
                   in order to construct the LBANN graph.
+    :param with_weights: If True (default), also stores the parameters of
+                         the given model as constant initializers of the LBANN
+                         graph's weights.
     :param sample_kwargs: Named arguments to pass in for compilation. Note that
                           this is necessary to compile ahead-of-time (without
                           tracing).
@@ -78,19 +82,23 @@ def compile(module_or_function: Union[nn.Module, Callable[..., Any]],
                          'compilation')
 
     if trace:
-        return _trace(module_or_function, sample_args, sample_kwargs)
+        return _trace(module_or_function, sample_args, sample_kwargs,
+                      with_weights)
 
     cmod = lazy_compile(module_or_function)
     return cmod(*tuple(sample_kwargs.values()))
 
 
-def _trace(f, example_args, example_kwargs) -> List[lbann.Layer]:
+def _trace(f, example_args, example_kwargs, with_weights) -> List[lbann.Layer]:
     """
     Traces through a function or Module to obtain an LBANN graph.
 
     :param f: Function or module to trace.
     :param example_args: Positional arguments to pass in for tracing.
     :param example_kwargs: Keyword arguments to pass in for tracing.
+    :param with_weights: If True (default), also stores the parameters of
+                         the traced model as constant initializers of the LBANN
+                         graph's weights.
     :return: An LBANN graph given as a list of Layers.
     """
     converters.load_replacements()
@@ -109,7 +117,7 @@ def _trace(f, example_args, example_kwargs) -> List[lbann.Layer]:
         input_vals = [example_kwargs[k] for k in input_names]
         g = fx.symbolic_trace(f, input_names=input_names)
         try:
-            lowering.dynamo_callback(input_names, g, input_vals)
+            lowering.dynamo_callback(input_names, with_weights, g, input_vals)
         except LBANNGraph as ex:
             return ex.graph
     else:
@@ -118,7 +126,7 @@ def _trace(f, example_args, example_kwargs) -> List[lbann.Layer]:
         fxf = proxy_tensor.make_fx(f, tracing_mode='real')
         g = fxf(*example_args, *tuple(example_kwargs.values()))
         try:
-            lowering.dynamo_callback([], g, example_args)
+            lowering.dynamo_callback([], with_weights, g, example_args)
         except LBANNGraph as ex:
             return ex.graph
 
@@ -146,7 +154,8 @@ def _get_module_argnames(f: Union[nn.Module, Callable[..., Any]]) -> List[str]:
     return _get_argnames(f)
 
 
-def lazy_compile(module_or_function: Union[nn.Module, Callable[..., Any]]):
+def lazy_compile(module_or_function: Union[nn.Module, Callable[..., Any]],
+                 with_weights: bool = True):
     """
     Compile a Python function with PyTorch to an LBANN graph lazily. This means
     that whenever the decorated function is called, an LBANN graph will be
@@ -154,9 +163,9 @@ def lazy_compile(module_or_function: Union[nn.Module, Callable[..., Any]]):
 
     :param module_or_function: ``torch.nn.Module`` or function to mark for
                                compilation.
-    :param argnames: A list of strings representing the argument names. If not
-                     given, tries to automatically obtain them from the
-                     function's signature.
+    :param with_weights: If True (default), also stores the parameters of
+                         the given model as constant initializers of the LBANN
+                         graph's weights.
     """
     converters.load_replacements()
 
@@ -168,7 +177,8 @@ def lazy_compile(module_or_function: Union[nn.Module, Callable[..., Any]]):
         print('Replaced opaque operators on the module tree:',
               opaque.count_replaced_submodules(f))
 
-    f = dynamo.optimize(functools.partial(lowering.dynamo_callback, argnames),
+    f = dynamo.optimize(functools.partial(lowering.dynamo_callback, argnames,
+                                          with_weights),
                         nopython=True)(f)
 
     @functools.wraps(f)

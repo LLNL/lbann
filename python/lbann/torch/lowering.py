@@ -41,7 +41,8 @@ from typing import Any, Dict, List, Optional
 import warnings
 
 
-def dynamo_callback(input_names: List[str], graph_module: fx.GraphModule,
+def dynamo_callback(input_names: List[str], with_weights: bool,
+                    graph_module: fx.GraphModule,
                     example_inputs: List[torch.Tensor]) -> helpers.LBANNGraph:
     """
     Entry point into the LBANN frontend from the PyTorch Dynamo interface.
@@ -51,6 +52,9 @@ def dynamo_callback(input_names: List[str], graph_module: fx.GraphModule,
     around the PyTorch framework expecting certain (callable) return values.
 
     :param input_names: Names of the parameters to use as inputs.
+    :param with_weights: If True (default), also stores the parameters of
+                         the given graph as constant initializers of the LBANN
+                         graph's weights.
     :param graph_module: Dynamo-compiled FX graph module.
     :param example_inputs: Example input tensors fed at compile time (used for
                            shape and type inference).
@@ -61,7 +65,7 @@ def dynamo_callback(input_names: List[str], graph_module: fx.GraphModule,
     # graph_module.graph.print_tabular()
 
     # Call internal function that parses the graph
-    _, inputs, _ = replace_fx(graph_module, example_inputs)
+    _, inputs, _ = replace_fx(graph_module, example_inputs, with_weights)
 
     # Reconstruct LBANN graph and exit with original graph
     if not input_names:
@@ -75,6 +79,7 @@ def dynamo_callback(input_names: List[str], graph_module: fx.GraphModule,
 
 def replace_fx(gm: fx.GraphModule,
                example_inputs: List[torch.Tensor],
+               with_weights: bool,
                replaced: Optional[Dict[fx.Node, lbann.Layer]] = None,
                subgraph: bool = False):
     """
@@ -89,6 +94,9 @@ def replace_fx(gm: fx.GraphModule,
     :param gm: The graph module to convert.
     :param example_inputs: Example input tensors fed at compile time (used for
                            shape and type inference).
+    :param with_weights: If True (default), also stores the parameters of
+                         the given graph as constant initializers of the LBANN
+                         graph's weights.
     :param replaced: Internal field used for recursive parsing. Maintains
                      a dictionary of already-performed replacements.
     :param subgraph: Internal field used for recursive parsing. Set to True if
@@ -222,13 +230,38 @@ def replace_fx(gm: fx.GraphModule,
                 replaced[user].shape = user.meta['val'].shape
 
         elif node.op == "placeholder" and not subgraph:
-            replaced[node] = lbann.Input(data_field='samples')
+            lbann_node = lbann.Input(data_field='samples')
+            # If shape is more than two-dimensional, add a Reshape node
+            if len(node.meta['val'].shape) > 2:
+                lbann_node = lbann.Reshape(lbann_node,
+                                           dims=node.meta['val'].shape[1:])
+            replaced[node] = lbann_node
             inputs.append(replaced[node])
             replaced[node].shape = node.meta['val'].shape
         elif node.op == "get_attr" and not subgraph:
-            replaced[node] = lbann.Input(data_field='samples')
-            inputs.append(replaced[node])
+            # Could be a parameter
+            attr = _fetch_attr(gm, node.target)
+            if isinstance(attr, torch.nn.Parameter):  # Setup Weights layer
+                if with_weights:
+                    lbann_node = lbann.WeightsLayer(
+                        dims=attr.shape,
+                        weights=lbann.Weights(
+                            initializer=lbann.ValueInitializer(
+                                values=attr.detach().numpy().flat)))
+                else:
+                    lbann_node = lbann.WeightsLayer(dims=attr.shape)
+                make_input = False
+            else:  # Unknown, assume input
+                lbann_node = lbann.Input(data_field='samples')
+                if len(node.meta['val'].shape) > 2:
+                    lbann_node = lbann.Reshape(lbann_node,
+                                               dims=node.meta['val'].shape)
+                make_input = True
+
+            replaced[node] = lbann_node
             replaced[node].shape = node.meta['val'].shape
+            if make_input:
+                inputs.append(replaced[node])
         elif node.op == "output":
             outputs = repl(node.args)
 
