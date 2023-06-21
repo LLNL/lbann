@@ -68,6 +68,7 @@
 # Load the spack shell integration and load the environment.
 .uses spack environment:
   before_script:
+    - export SPACK_USER_CACHE_PATH=${SPACK_USER_CACHE_PATH}
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - source spack-ci-env-name.sh
     - echo "source ${LBANN_BUILD_PARENT_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh"
