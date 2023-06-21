@@ -58,8 +58,7 @@ def test_simple_module():
     # Compile and run graph with numpy
     inp = np.random.rand(20, 20).astype(np.float32)
     ref = inp * inp + 5
-    out = lbann.evaluate(
-        g, inp, extra_callbacks=[lbann.CallbackPrintModelDescription()])
+    out = lbann.evaluate(g, inp)
 
     # Test correctness
     assert np.allclose(out, ref)
@@ -85,10 +84,7 @@ def test_module_with_parameters():
 
     # Compile and run LBANN graph
     g = lbann.torch.compile(mod, x=inp)
-    out = lbann.evaluate(
-        g,
-        inp.numpy(),
-        extra_callbacks=[lbann.CallbackPrintModelDescription()])
+    out = lbann.evaluate(g, inp.numpy())
 
     # Test correctness
     assert torch.allclose(ref, torch.tensor(out))
@@ -113,8 +109,7 @@ def test_module_with_parameters_custom():
     # Compile and run graph with numpy
     inp = np.random.rand(1, 20).astype(np.float32)
     ref = inp * mod.p.detach().numpy()
-    out = lbann.evaluate(
-        g, inp, extra_callbacks=[lbann.CallbackPrintModelDescription()])
+    out = lbann.evaluate(g, inp)
 
     # Test correctness
     assert np.allclose(out, ref)
