@@ -164,7 +164,7 @@ def lazy_compile(module_or_function: Union[nn.Module, Callable[..., Any]]):
 
     f = module_or_function
     if isinstance(f, nn.Module):
-        f = opaque.wrap_modules(f)
+        f = opaque.wrap_opaque_modules(f)
         print('Replaced opaque operators on the module tree:',
               opaque.count_replaced_submodules(f))
 

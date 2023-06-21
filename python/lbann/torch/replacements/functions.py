@@ -105,6 +105,16 @@ def div(x, y, **kwargs):
     return lbann.Divide(x, y)
 
 
+@register_function('torch.sin')
+def _impl(x, **kwargs):
+    return lbann.Sin(x)
+
+
+@register_function('torch.cos')
+def _impl(x, **kwargs):
+    return lbann.Cos(x)
+
+
 @register_function('torch.flatten')
 def flatten_impl(x, start_dim=1, end_dim=-1):
     if start_dim == 0 or end_dim == 0:
