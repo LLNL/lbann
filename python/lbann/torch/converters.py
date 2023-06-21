@@ -63,25 +63,31 @@ opaque_shape_inference: Dict[Type[nn.Module],
 
 def load_replacements():
     """
-    Populates the replacement dictionaries
+    Populates the replacement dictionaries in this module.
     """
     # Import modules to populate the above dictionaries
     from lbann.torch.replacements import functions, modules
 
 
-def register_function(layername: str):
+def register_function(name: str):
     """
-    
+    Registers a PyTorch function (by name) with a replacement that returns an
+    LBANN Layer object (potentially corresponding to a subgraph). The decorator
+    can be repeated to register multiple functions to the same
+    replacement.
+
     Syntax::
     
-        @register_function("")
+        @register_function("torch.cos")
         def replacement():
             return lbann.MatchingClass(...)
 
+
+    :param name: The function's name to replace.
     """
 
     def func(f):
-        functions[layername] = f
+        functions[name] = f
         return f
 
     return func
@@ -90,13 +96,19 @@ def register_function(layername: str):
 def register_module(modclass: Union[Type[nn.Module],
                                     Sequence[Type[nn.Module]]]):
     """
-    
+    Registers a PyTorch nn.Module (by class type) with a replacement that
+    returns an LBANN Layer object (potentially corresponding to a subgraph).
+    The decorator can be repeated to register multiple modules to the same
+    replacement.
+
     Syntax::
     
         @register_module(ClassName)
         def replacement(mod: ClassName):
             return lbann.MatchingClass(...)
 
+
+    :param modclass: A module type or a sequence thereof to be replaced.
     """
 
     def func(f):
@@ -114,6 +126,15 @@ def register_module(modclass: Union[Type[nn.Module],
 def register_opaque_shape_inference(
         modclass: Union[Type[nn.Module], Sequence[Type[nn.Module]]]):
     """
+    Registers a PyTorch nn.Module (by class type) with a type/shape inference
+    function that returns the output tensor's characteristics. This is used
+    for modules that PyTorch Dynamo cannot parse directly. The return type
+    is a 3-tuple of the tensor's data type, shape, and device object. 
+    The decorator can be repeated to register multiple modules to the same
+    type/shape inference function.
+
+    Assumes one output for the given module.
+
 
     Syntax::
 
@@ -121,6 +142,9 @@ def register_opaque_shape_inference(
         def infer(mod: GCNConv, *args, **kwargs):
             return dtype, shape, device
 
+
+    :param modclass: A module type or a sequence thereof, whose shape will be
+                     inferred by the decorated function.
     """
 
     def func(f):

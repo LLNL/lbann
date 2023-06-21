@@ -57,7 +57,6 @@ def unsqueeze(x, dim):
 
 
 @register_function('<built-in function add>')  # operator.add
-# TODO: Ensure this works properly!
 @register_function('<built-in function iadd>')  # operator.iadd
 @register_function('aten.add.Tensor')
 def add(x, y, **kwargs):
