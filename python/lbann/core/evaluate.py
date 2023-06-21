@@ -41,6 +41,7 @@ def evaluate(
     model: Union[lbann.Model, List[lbann.Layer]],
     inputs: npt.NDArray,
     outputs: Optional[List[str]] = None,
+    extra_callbacks: Optional[List[lbann.Callback]] = None,
     **kwargs,
 ) -> Union[npt.NDArray, Tuple[npt.NDArray]]:
     """
@@ -52,6 +53,8 @@ def evaluate(
                    to the ``lbann.Input`` with the ``samples`` data field.
     :param outputs: An optional list of layer names to output as the return
                     value. If not given, returns all layers without children.
+    :param extra_callbacks: If given, uses additional callbacks in the evaluated
+                            model.
     :param kwargs: Additional keyword arguments to pass onto ``lbann.run``
     :return: Output tensor or tensors of the LBANN model.
     """
@@ -68,6 +71,8 @@ def evaluate(
     # Obtain outputs if not given
     if not outputs:
         outputs = [l.name for l in model.layers if not l.children]
+
+    extra_callbacks = extra_callbacks or []
     #####################
     if 'job_name' not in kwargs:
         kwargs['job_name'] = 'lbann_evaluate'
@@ -88,7 +93,7 @@ def evaluate(
                                       directory=workdir,
                                       format=fmt,
                                       layers=' '.join(outputs))
-        ]
+        ] + extra_callbacks
         model.metrics = []
 
         data_reader = _setup_data_reader(inputs, workdir)
@@ -151,18 +156,20 @@ def _setup_data_reader(inputs: npt.NDArray, workdir: str):
     return data_reader
 
 
-def _collect_outputs(output_names: List[str], workdir: str,
-                     dtype: np.dtype, fmt: str) -> Tuple[npt.NDArray]:
+def _collect_outputs(output_names: List[str], workdir: str, dtype: np.dtype,
+                     fmt: str) -> Tuple[npt.NDArray]:
     output_dir = os.path.join(workdir, 'trainer0', 'model0')
     file_prefix = 'sgd.testing.epoch.0.step.0'
 
     outputs = []
     for name in output_names:
         if fmt == 'csv':
-            fname = os.path.join(output_dir, f'{file_prefix}_{name}_output0.csv')
+            fname = os.path.join(output_dir,
+                                 f'{file_prefix}_{name}_output0.csv')
             outputs.append(np.loadtxt(fname, dtype, delimiter=','))
         elif fmt == 'npz' or fmt == 'npy':
-            fname = os.path.join(output_dir, f'{file_prefix}_{name}_output0.{fmt}')
+            fname = os.path.join(output_dir,
+                                 f'{file_prefix}_{name}_output0.{fmt}')
             outputs.append(np.load(fname))
 
     return tuple(outputs)
