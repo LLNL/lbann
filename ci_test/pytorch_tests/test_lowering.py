@@ -35,11 +35,6 @@ def test_swish():
     inp = torch.randn(1, 20)
     ref = mod(inp)
 
-    print('Input:')
-    print(inp)
-    print('Reference:')
-    print(ref)
-
     # Expect a warning
     with pytest.warns(UserWarning,
                       match='Could not find replacement for module'):
@@ -49,8 +44,5 @@ def test_swish():
         g,
         inp.detach().numpy(),
         extra_callbacks=[lbann.CallbackPrintModelDescription()])
-    
-    print('Output:')
-    print(out)
 
     assert torch.allclose(ref, torch.tensor(out))

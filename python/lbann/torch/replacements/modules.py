@@ -252,7 +252,7 @@ def weights_and_biases(mod: nn.Module,
 
     :param mod: The module to convert parameters from.
     :param layer: The layer to convert weights to.
-    :param transpose: If True, transposes the last two dimensions of the weights
+    :param transpose: If True, transposes the last two dimensions of the weight
                       tensor.
     """
     # Obtain weights
@@ -270,8 +270,10 @@ def weights_and_biases(mod: nn.Module,
                 values=mod.bias.detach().cpu().numpy().flat))
         ]
     else:
-        layer.weights = lbann.Weights(initializer=lbann.ValueInitializer(
-            values=weights_numpy.flat))
+        layer.weights = [
+            lbann.Weights(initializer=lbann.ValueInitializer(
+                values=weights_numpy.flat))
+        ]
 
 
 #################################################################
