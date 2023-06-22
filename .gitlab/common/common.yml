@@ -114,3 +114,22 @@
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +5 -name "spack-build-*" -type d -exec rm -r {} \;
     - find ${HOME}/${SPACK_REPO}/var/spack/environments/ -maxdepth 1 -mtime +5 -type d -exec basename {} \; | xargs -r spack env rm --yes-to-all
+
+.lbann-artifacts:
+  artifacts:
+    paths:
+      - spack-*.txt
+      - spack-ci-env-name.sh
+      - LBANN_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*.cmake
+      - LBANN_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*_setup_build_tools.sh
+      - LBANN_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*_setup_module_path.sh
+#      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/*
+      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/install/*
+      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/*.sh
+      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/*.cmake
+      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/build/CMakeCache.txt
+      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/build/build.ninja
+      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/build/unit_test/*
+      - ${RESULTS_DIR}/*
+    exclude:
+      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/build/**/*.o
