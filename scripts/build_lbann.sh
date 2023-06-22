@@ -417,7 +417,8 @@ function exit_on_failure()
     echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
     echo "  spack install --only dependencies" | tee -a ${LOG}
     echo "  spack install -u initconfig lbann" | tee -a ${LOG}
-    echo "##########################################################################################" | t    echo "Once successfully built in ${LBANN_INSTALL_DIR}, access it via:" | tee -a ${LOG}
+    echo "##########################################################################################" | tee -a ${LOG}
+    echo "Once successfully built in ${LBANN_INSTALL_DIR}, access it via:" | tee -a ${LOG}
     echo "  ml use ${LBANN_MODFILES_DIR}" | tee -a ${LOG}
     echo "  ml load lbann" | tee -a ${LOG}
     echo "  lbann_pfe.sh <cmd>" | tee -a ${LOG}
@@ -595,14 +596,21 @@ if [[ -n "${REUSE_ENV:-}" || -z "${INSTALL_DEPS:-}" ]]; then
                 elif [[ ! -e ${LBANN_SETUP_FILE} ]]; then
                     echo "I cannot find ${LBANN_SETUP_FILE} -- recreate the CacheCMakeBuild"
                 else
-                    CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
-                    if [[ ! -e "${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}" ]]; then
-                        echo "Overwritting exising CMake config file in ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
+                    # Until the implicit requirement to activate the environment later is resolved, look for existing environment with the same name
+                    if [[ ! $(spack env list | grep -e "${LBANN_ENV}$") ]]; then
+                        echo "Spack environment ${LBANN_ENV} does not exists... Ignore the cached CMake file and creating the environment (as if -d flag was thrown)"
+                        INSTALL_DEPS="TRUE"
+                        REUSE_ENV=""
+                    else
+                        CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
+                        if [[ ! -e "${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}" ]]; then
+                            echo "Overwritting exising CMake config file in ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
+                        fi
+                        # Save the config file in the build directory
+                        CMD="cp ${MATCHED_CONFIG_FILE_PATH} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
+                        echo ${CMD}
+                        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
                     fi
-                    # Save the config file in the build directory
-                    CMD="cp ${MATCHED_CONFIG_FILE_PATH} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
-                    echo ${CMD}
-                    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
                 fi
             fi
         fi
@@ -1110,6 +1118,7 @@ fi
 
 # Setup the module use path last in case the modules cmd purges the system
 cat >> ${LBANN_INSTALL_FILE}<<EOF
+# Temporarily activate the environment - Do until new workflow is smoothed out.
 spack env activate -p ${LBANN_ENV}
 ml use ${LBANN_MODFILES_DIR}
 EOF

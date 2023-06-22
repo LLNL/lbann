@@ -29,10 +29,6 @@
 # Just in case
 source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
 
-# Load up the spack environment
-SPACK_ARCH=$(spack arch)
-SPACK_ARCH_TARGET=$(spack arch -t)
-
 cd ${LBANN_BUILD_DIR}
 
 # Configure the output directory
