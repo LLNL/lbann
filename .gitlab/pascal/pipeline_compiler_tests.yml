@@ -61,17 +61,6 @@ build and install:
     - .lbann-base-vars
     - .lbann-artifacts
   stage: build
-  # artifacts:
-  #   paths:
-  #     - spack-*.txt
-  #     - spack-ci-env-name.sh
-  #     - LBANN_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*.cmake
-  #     - LBANN_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*_setup_build_tools.sh
-  #     - LBANN_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*_setup_module_path.sh
-  #     - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/*
-  #     - ${RESULTS_DIR}/*
-  #   exclude:
-  #     - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/build/**/*.o
   script:
     - echo "== BUILDING LBANN =="
     - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
