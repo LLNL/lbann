@@ -191,12 +191,12 @@ def clone(x, **kwargs):
 
 @register_function('aten.clamp_min.default')
 def clamp_min(x, clampval):
-    return lbann.Clamp(x, min=clampval)
+    return lbann.MaxConstant(x, constant=clampval)
 
 
 @register_function('aten.clamp_max.default')
 def clamp_max(x, clampval):
-    return lbann.Clamp(x, max=clampval)
+    return lbann.MinConstant(x, constant=clampval)
 
 
 @register_function('aten.tanh.default')
