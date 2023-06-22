@@ -64,6 +64,9 @@
 
     # Preserve any spack-build-* directories to allow for faster testing
     GIT_CLEAN_FLAGS: -ffdx -e spack-build-* -e builds/* -e LBANN_*.cmake -e LBANN_*_setup_module_path.sh -e LBANN_*_setup_build_tools.sh
+  before_script:
+    - export SPACK_USER_CACHE_PATH=${SPACK_USER_CACHE_PATH}
+    - echo "SPACK_USER_CACHE_PATH=${SPACK_USER_CACHE_PATH}"
 
 # Load the spack shell integration and load the environment.
 .uses spack environment:
