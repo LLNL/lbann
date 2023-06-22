@@ -243,6 +243,8 @@ def _impl(mod: nn.AdaptiveAvgPool3d, x):
     nn.ConvTranspose3d
 ])
 @register_module_weight_converter(nn.Linear)
+@register_module_weight_converter(
+    [nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d])
 def weights_and_biases(mod: nn.Module,
                        layer: lbann.Layer,
                        transpose: bool = False):
@@ -255,25 +257,27 @@ def weights_and_biases(mod: nn.Module,
     :param transpose: If True, transposes the last two dimensions of the weight
                       tensor.
     """
-    # Obtain weights
-    weights_numpy = mod.weight.detach().cpu().numpy()
-    if transpose:
-        indices = list(range(len(weights_numpy.shape)))
-        indices[-2], indices[-1] = indices[-1], indices[-2]
-        weights_numpy = weights_numpy.transpose(indices)
+    params = []
 
+    # Obtain and transpose weights
+    if hasattr(mod, 'weight') and mod.weight is not None:
+        weights_numpy = mod.weight.detach().cpu().numpy()
+        if transpose:
+            indices = list(range(len(weights_numpy.shape)))
+            indices[-2], indices[-1] = indices[-1], indices[-2]
+            weights_numpy = weights_numpy.transpose(indices)
+        params.append(
+            lbann.Weights(initializer=lbann.ValueInitializer(
+                values=weights_numpy.flat)))
+
+    # Obtain bias
     if hasattr(mod, 'bias') and mod.bias is not None:
-        layer.weights = [
+        params.append(
             lbann.Weights(initializer=lbann.ValueInitializer(
-                values=weights_numpy.flat)),
-            lbann.Weights(initializer=lbann.ValueInitializer(
-                values=mod.bias.detach().cpu().numpy().flat))
-        ]
-    else:
-        layer.weights = [
-            lbann.Weights(initializer=lbann.ValueInitializer(
-                values=weights_numpy.flat))
-        ]
+                values=mod.bias.detach().cpu().numpy().flat)))
+
+    if params:
+        layer.weights = params
 
 
 #################################################################
