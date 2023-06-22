@@ -449,6 +449,17 @@ class Max(Operator):
         params = OpProto.MaxOperator()
         return params
 
+class MaxConstant(Operator):
+    """Perform entrywise max of input tensor against a constant."""
+    def __init__(self, constant: float = 0.0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.constant = constant
+
+    def do_export_proto(self):
+        params = OpProto.MaxConstantOperator()
+        params.constant = self.constant
+        return params
+
 class Min(Operator):
     """Apply the Min operator entrywise."""
     def __init__(self, *args, **kwargs):
@@ -456,6 +467,17 @@ class Min(Operator):
 
     def do_export_proto(self):
         params = OpProto.MinOperator()
+        return params
+
+class MinConstant(Operator):
+    """Perform entrywise min of input tensor against a constant."""
+    def __init__(self, constant: float = 0.0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.constant = constant
+
+    def do_export_proto(self):
+        params = OpProto.MinConstantOperator()
+        params.constant = self.constant
         return params
 
 class Mod(Operator):
