@@ -1014,7 +1014,7 @@ if [[ -z "${DRY_RUN:-}" ]]; then
     LBANN_PYTHON=$(spack build-env lbann -- which python3)
     LBANN_PYTHONPATH=$(spack build-env lbann -- printenv PYTHONPATH)
 
-cat > ${LBANN_SETUP_FILE}<<EOF
+    cat > ${LBANN_SETUP_FILE}<<EOF
 export LBANN_CMAKE=${LBANN_CMAKE}
 export LBANN_NINJA=${LBANN_NINJA}
 export LBANN_PYTHON=${LBANN_PYTHON}
@@ -1027,20 +1027,19 @@ export PATH=\${PATH}:\${LBANN_CMAKE_DIR}:\${LBANN_NINJA_DIR}:\${LBANN_PYTHON_DIR
 export PYTHONPATH=\${LBANN_PYTHONPATH}:\${PYTHONPATH}
 EOF
 
-CMD="chmod +x ${LBANN_SETUP_FILE}"
-echo ${CMD} | tee -a ${LOG}
-[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
+    CMD="chmod +x ${LBANN_SETUP_FILE}"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
 
-# Save the setup file in the build directory
-if [[ ! -e ${LBANN_BUILD_PARENT_DIR}/${LBANN_SETUP_FILE_LABEL} ]]; then
-    echo "Overwritting exising install file in ${LBANN_BUILD_PARENT_DIR}/${LBANN_SETUP_FILE_LABEL}"
-fi
-CMD="cp ${LBANN_INSTALL_FILE} ${LBANN_BUILD_PARENT_DIR}/${LBANN_SETUP_FILE_LABEL}"
-echo ${CMD} | tee -a ${LOG}
-[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
+    # Save the setup file in the build directory
+    if [[ ! -e ${LBANN_BUILD_PARENT_DIR}/${LBANN_SETUP_FILE_LABEL} ]]; then
+        echo "Overwritting exising install file in ${LBANN_BUILD_PARENT_DIR}/${LBANN_SETUP_FILE_LABEL}"
+    fi
+    CMD="cp ${LBANN_INSTALL_FILE} ${LBANN_BUILD_PARENT_DIR}/${LBANN_SETUP_FILE_LABEL}"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
 
-
-cat > ${LBANN_INSTALL_FILE}<<EOF
+    cat > ${LBANN_INSTALL_FILE}<<EOF
 # Directory structure used for this build
 export LBANN_BUILD_LABEL=${LBANN_BUILD_LABEL}
 export LBANN_BUILD_PARENT_DIR=${LBANN_BUILD_PARENT_DIR}
@@ -1050,21 +1049,21 @@ export LBANN_MODFILES_DIR=${LBANN_MODFILES_DIR}
 export LBANN_SETUP_FILE=${LBANN_SETUP_FILE}
 EOF
 
-ENV_ROOT_PKG_LIST=$(spack find -x --format "{name}")
-if [[ -n "${ENV_ROOT_PKG_LIST:-}" ]]; then
-    for p in ${ENV_ROOT_PKG_LIST}
-    do
-        PKG_PYTHONPATH=$(spack build-env ${p} -- printenv PYTHONPATH)
-        if [[ -n "${PKG_PYTHONPATH}" ]]; then
-            P_ENV=$(echo "${p}" | tr '-' '_')
-cat >> ${LBANN_INSTALL_FILE}<<EOF
+    ENV_ROOT_PKG_LIST=$(spack find -x --format "{name}")
+    if [[ -n "${ENV_ROOT_PKG_LIST:-}" ]]; then
+        for p in ${ENV_ROOT_PKG_LIST}
+        do
+            PKG_PYTHONPATH=$(spack build-env ${p} -- printenv PYTHONPATH)
+            if [[ -n "${PKG_PYTHONPATH}" ]]; then
+                P_ENV=$(echo "${p}" | tr '-' '_')
+                cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Add PYTHONPATH for top level python package: ${p}
 export ${P_ENV}_PKG_PYTHONPATH=${PKG_PYTHONPATH}
 export PYTHONPATH=\${${P_ENV}_PKG_PYTHONPATH}:\${PYTHONPATH}
 EOF
-        fi
-    done
-fi
+            fi
+        done
+    fi
 
 # if [[ -n "${SPACK_EXTRA_ROOT_PACKAGES:-}" ]]; then
 #     for p in ${SPACK_EXTRA_ROOT_PACKAGES}
@@ -1081,51 +1080,51 @@ fi
 #     done
 # fi
 
-if [[ -n "${MODULE_CMD}" ]]; then
-cat >> ${LBANN_INSTALL_FILE}<<EOF
+    if [[ -n "${MODULE_CMD}" ]]; then
+        cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Modules loaded during this installation
 ${MODULE_CMD}
 EOF
-cat >> ${LBANN_SETUP_FILE}<<EOF
+        cat >> ${LBANN_SETUP_FILE}<<EOF
 # Modules loaded during this installation
 ${MODULE_CMD}
 EOF
-fi
+    fi
 
-if [[ -n "${AWS_OFI_PLUGIN_SPEC_HASH}" ]]; then
-cat >> ${LBANN_INSTALL_FILE}<<EOF
+    if [[ -n "${AWS_OFI_PLUGIN_SPEC_HASH}" ]]; then
+        cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
 # a spack environment matches behavior inside of a runtime environment
 spack load ${POSSIBLE_AWS_OFI_PLUGIN} /${AWS_OFI_PLUGIN_SPEC_HASH}
 EOF
-fi
+    fi
 
-if [[ -n "${DNN_LIB_SPEC_HASH}" ]]; then
-cat >> ${LBANN_INSTALL_FILE}<<EOF
+    if [[ -n "${DNN_LIB_SPEC_HASH}" ]]; then
+        cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
 # a spack environment matches behavior inside of a runtime environment
 spack load ${POSSIBLE_DNN_LIB} /${DNN_LIB_SPEC_HASH}
 EOF
-fi
+    fi
 
-if [[ -n "${NVSHMEM_LIB_SPEC_HASH}" ]]; then
-cat >> ${LBANN_INSTALL_FILE}<<EOF
+    if [[ -n "${NVSHMEM_LIB_SPEC_HASH}" ]]; then
+        cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
 # a spack environment matches behavior inside of a runtime environment
 spack load ${POSSIBLE_NVSHMEM_LIB} /${NVSHMEM_LIB_SPEC_HASH}
 EOF
-fi
+    fi
 
-# Setup the module use path last in case the modules cmd purges the system
-cat >> ${LBANN_INSTALL_FILE}<<EOF
+    # Setup the module use path last in case the modules cmd purges the system
+    cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Temporarily activate the environment - Do until new workflow is smoothed out.
 spack env activate -p ${LBANN_ENV}
 ml use ${LBANN_MODFILES_DIR}
 EOF
 
-CMD="chmod +x ${LBANN_INSTALL_FILE}"
-echo ${CMD} | tee -a ${LOG}
-[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
+    CMD="chmod +x ${LBANN_INSTALL_FILE}"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
 fi
 
 # Save the install file in the build directory
