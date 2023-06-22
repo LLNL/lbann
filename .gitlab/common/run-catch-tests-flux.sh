@@ -56,13 +56,11 @@ export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
 
 cd ${LBANN_BUILD_DIR}
 
-#flux resource list
 
 flux run --label-io -n4 -N2 -g 1 -o cpu-affinity=per-task -o gpu-affinity=per-task sh -c 'taskset -cp $$; printenv | grep VISIBLE' | sort
 
 flux run --label-io -n4 -N2 -g 1 -o cpu-affinity=off -o gpu-affinity=per-task sh -c 'taskset -cp $$; printenv | grep VISIBLE' | sort
 
-#flux run -N 1 -n 1 -g 1 -t 5m rocm-smi
 
 flux run -N 1 -n 1 -g 1 -t 5m \
      ./unit_test/seq-catch-tests \

@@ -1121,7 +1121,7 @@ fi
 
 # Save the install file in the build directory
 if [[ ! -e ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL} ]]; then
-    echo "Overwritting exising install file in ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL}"
+    echo "Overwriting exising install file in ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL}"
 fi
 CMD="cp ${LBANN_INSTALL_FILE} ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL}"
 echo ${CMD} | tee -a ${LOG}
