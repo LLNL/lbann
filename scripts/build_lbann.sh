@@ -385,16 +385,13 @@ fi
 
 LBANN_BUILD_LABEL="lbann_${CLUSTER}_${LBANN_LABEL}"
 LBANN_BUILD_PARENT_DIR="${LBANN_HOME}/builds/${LBANN_BUILD_LABEL}"
-#LBANN_BUILD_PARENT_DIR="${PWD}/builds/${LBANN_BUILD_LABEL}"
 LBANN_BUILD_DIR="${LBANN_BUILD_PARENT_DIR}/build"
 LBANN_INSTALL_DIR="${LBANN_BUILD_PARENT_DIR}/install"
 LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
 LBANN_SETUP_FILE_LABEL="LBANN_${CLUSTER}_${LBANN_LABEL}_setup_build_tools.sh"
 LBANN_SETUP_FILE="${LBANN_HOME}/${LBANN_SETUP_FILE_LABEL}"
-#LBANN_SETUP_FILE="${LBANN_BUILD_PARENT_DIR}/LBANN_${CLUSTER}_${LBANN_LABEL}_setup_build_tools.sh"
 LBANN_INSTALL_FILE_LABEL="LBANN_${CLUSTER}_${LBANN_LABEL}_setup_module_path.sh"
 LBANN_INSTALL_FILE="${LBANN_HOME}/${LBANN_INSTALL_FILE_LABEL}"
-#LBANN_INSTALL_FILE="${PWD}/${LBANN_INSTALL_FILE_LABEL}"
 
 if [[ ! -d "${LBANN_BUILD_PARENT_DIR}" ]]; then
     CMD="mkdir -p ${LBANN_BUILD_PARENT_DIR}"
@@ -862,36 +859,22 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     if [[ -n "${EXTRAS:-}" ]]; then
         for e in ${EXTRAS}
         do
-            # if [[ -z ${DEPENDENTS_CENTER_COMPILER} ]]; then
-            #     DEPENDENTS_CENTER_COMPILER=${CENTER_COMPILER}
-            # fi
             CMD="source ${e}"
             echo ${CMD} | tee -a ${LOG}
             ${CMD}
             echo "I think that I have extra packages ${LBANN_EXTRA_PKGS}"
             for p in ${LBANN_EXTRA_PKGS}
             do
-                # CMD="spack add ${p} ${DEPENDENTS_CENTER_COMPILER}"
-                # SPACK_SOLVE_EXTRA_PACKAGES="${p} ${DEPENDENTS_CENTER_COMPILER} ${SPACK_SOLVE_EXTRA_PACKAGES}"
                 SPACK_EXTRA_ROOT_PACKAGES="${p} ${SPACK_EXTRA_ROOT_PACKAGES}"
-                # echo ${CMD} | tee -a ${LOG}
-                # [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
             done
         done
     fi
 
     # Add any extra packages specified on the command line that you want to build in conjuction with the LBANN package
     if [[ -n "${PKG_LIST:-}" ]]; then
-        # if [[ -z ${DEPENDENTS_CENTER_COMPILER} ]]; then
-        #     DEPENDENTS_CENTER_COMPILER=${CENTER_COMPILER}
-        # fi
         for p in ${PKG_LIST}
         do
             SPACK_EXTRA_ROOT_PACKAGES="${p} ${SPACK_EXTRA_ROOT_PACKAGES}"
-            # CMD="spack add ${p} ${DEPENDENTS_CENTER_COMPILER}"
-            # SPACK_SOLVE_EXTRA_PACKAGES="${p} ${DEPENDENTS_CENTER_COMPILER} ${SPACK_SOLVE_EXTRA_PACKAGES}"
-            # echo ${CMD} | tee -a ${LOG}
-            # [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
         done
     fi
 
@@ -997,7 +980,6 @@ CMD="spack install -u initconfig ${BUILD_JOBS} lbann"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-# SPECIFIC_COMPILER=$(spack find --format "{prefix} {version} {name},/{hash} {compiler}" conduit | cut -f4 -d" ")
 
 if [[ ! -d "${LBANN_BUILD_DIR}" ]]; then
     CMD="mkdir -p ${LBANN_BUILD_DIR}"
@@ -1165,7 +1147,6 @@ fi
 fi # [[ ! -z "${CONFIG_FILE_NAME}" ]]
 
 # Check to see if the link to the build directory exists and is valid
-#SPACK_BUILD_DIR="spack-build-${LBANN_SPEC_HASH}"
 if [[ -L "${LBANN_BUILD_DIR}" ]]; then
   # If the link is not valid or are told to clean it, remove the link
   if [[ ! -d "${LBANN_BUILD_DIR}" || ! -z "${CLEAN_BUILD}" ]]; then
@@ -1264,12 +1245,6 @@ echo "To manipulate the dependencies you can activate the spack environment name
 echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
 echo "To manipulate the version of python used it is:" | tee -a ${LOG}
 echo "  ${LBANN_PYTHON}" | tee -a ${LOG}
-# if [[ -z "${USER_BUILD:-}" ]]; then
-#     echo "To rebuild LBANN from source drop into a shell with the spack build environment setup (requires active environment):" | tee -a ${LOG}
-#     echo "  spack build-env lbann -- bash" | tee -a ${LOG}
-#     echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
-#     echo "  ninja install" | tee -a ${LOG}
-# fi
 echo "Additional Python packages for working with LBANN can be added either via PIP or by concretizing them together in spack., activate the spack environment then" | tee -a ${LOG}
 echo "To install them via PIP: 1) the spack environment (see above) and 2) issue the following command" | tee -a ${LOG}
 echo "  python3 -m pip install -r <requirements file>" | tee -a ${LOG}
