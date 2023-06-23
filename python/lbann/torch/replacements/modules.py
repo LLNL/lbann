@@ -180,7 +180,10 @@ def ln_impl(mod: nn.LayerNorm, x, *args, **kwargs):
 
 @register_module([nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d])
 def bn_impl(mod: nn.BatchNorm2d, x, *args, **kwargs):
-    return lbann.BatchNormalization(x, decay=1 - mod.momentum, epsilon=mod.eps)
+    return lbann.BatchNormalization(x,
+                                    decay=1 - mod.momentum,
+                                    epsilon=mod.eps,
+                                    no_bessel_correction=True)
 
 
 def make_vector(val, dims):

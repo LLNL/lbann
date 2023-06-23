@@ -38,7 +38,8 @@ void batch_normalization_layer<TensorDataType, Layout, Device>::serialize(
                         ::cereal::base_class<DataTypeLayer>(this)),
      CEREAL_NVP(m_decay),
      CEREAL_NVP(m_epsilon),
-     CEREAL_NVP(m_statistics_group_size));
+     CEREAL_NVP(m_statistics_group_size),
+     CEREAL_NVP(m_bessel_correction));
 }
 
 } // namespace lbann

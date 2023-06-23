@@ -1,5 +1,5 @@
 """
-Tests a reference implementation of CosmoFlow with the LBANN PyTorch frontend.
+Tests a reference implementation of ResNet with the LBANN PyTorch frontend.
 """
 import pytest
 import math
@@ -44,11 +44,7 @@ def test_batchnorm():
     # training=True is required to evaluate batch normalization
     outputs = lbann.evaluate(g, x.detach().numpy(), training=True)
 
-    # Loose tolerance to account for differences in implementations
-    assert torch.allclose(reference,
-                          torch.tensor(outputs),
-                          atol=1e-1,
-                          rtol=1e-1)
+    assert torch.allclose(reference, torch.tensor(outputs))
 
 
 def test_resnet_34():
@@ -63,6 +59,9 @@ def test_resnet_34():
     g = lbann.torch.compile(mod, x=x)
     outputs = lbann.evaluate(g, x.detach().numpy(), training=True)
 
-    # Using loose tolerance to account for full model differences in operator
-    # implementations and determinism
-    assert torch.allclose(reference, torch.tensor(outputs), atol=1e1, rtol=1.0)
+    # Using loose tolerance to account for full model differences, operator
+    # implementations, and determinism
+    assert torch.allclose(reference,
+                          torch.tensor(outputs),
+                          atol=1e-2,
+                          rtol=1e-2)

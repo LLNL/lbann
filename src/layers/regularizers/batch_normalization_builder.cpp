@@ -69,18 +69,21 @@ std::unique_ptr<lbann::Layer> lbann::build_batch_normalization_layer_from_pbuf(
     // Set defaults if not given.
     auto const decay = params.decay() == 0.0 ? 0.9 : params.decay();
     auto const epsilon = params.epsilon() == 0.0 ? 1e-5 : params.epsilon();
+    auto const bessel = params.no_bessel_correction() ? false : true;
     if constexpr (std::is_same_v<T, float>)
       return std::make_unique<
         batch_normalization_layer<float, data_layout::DATA_PARALLEL, D>>(
         decay,
         epsilon,
-        statistics_group_size);
+        statistics_group_size,
+        bessel);
     else
       return std::make_unique<
         batch_normalization_layer<double, data_layout::DATA_PARALLEL, D>>(
         decay,
         epsilon,
-        statistics_group_size);
+        statistics_group_size,
+        bessel);
   }
   else {
     LBANN_ERROR("batch normalization layer is only supported for \"float\" and "
