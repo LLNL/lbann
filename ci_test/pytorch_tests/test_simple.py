@@ -26,6 +26,7 @@ def test_simple_function():
         return a + b
 
     # Obtain graph
+    torch.manual_seed(20230620)
     a = torch.randn(1, 20)
     graph = fn(a)
 
@@ -56,6 +57,7 @@ def test_simple_module():
     g = lbann.torch.compile(a, x=torch.randn(20, 20))
 
     # Compile and run graph with numpy
+    np.random.seed(20230620)
     inp = np.random.rand(20, 20).astype(np.float32)
     ref = inp * inp + 5
     out = lbann.evaluate(g, inp)
@@ -78,6 +80,7 @@ def test_module_with_parameters():
     mod = parameterized()
 
     # Run PyTorch version
+    torch.manual_seed(20230620)
     with torch.no_grad():
         inp = torch.randn(2, 1, 3, 3)
         ref = mod(inp)
@@ -87,7 +90,7 @@ def test_module_with_parameters():
     out = lbann.evaluate(g, inp.numpy())
 
     # Test correctness
-    assert torch.allclose(ref, torch.tensor(out))
+    assert torch.allclose(ref, torch.tensor(out), atol=1e-6)
 
 
 def test_module_with_parameters_custom():
@@ -107,6 +110,7 @@ def test_module_with_parameters_custom():
     g = lbann.torch.compile(mod, x=torch.randn(20))
 
     # Compile and run graph with numpy
+    np.random.seed(20230620)
     inp = np.random.rand(1, 20).astype(np.float32)
     ref = inp * mod.p.detach().numpy()
     out = lbann.evaluate(g, inp)

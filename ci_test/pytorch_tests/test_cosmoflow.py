@@ -27,6 +27,8 @@ from model import CosmoFlow
 
 
 def test_cosmoflow():
+    torch.manual_seed(20230621)
+
     mod = CosmoFlow().cuda()
     x = torch.randn(1, 4, 128, 128, 128).cuda()
     reference = mod(x)

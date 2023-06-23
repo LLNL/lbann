@@ -69,6 +69,7 @@ class LeNet5(nn.Module):
 
 
 def test_lenet_eval():
+    torch.manual_seed(20230621)
     B = 8
     mod = LeNet5()
 
@@ -83,6 +84,7 @@ def test_lenet_eval():
 
 
 def test_lenet_train():
+    torch.manual_seed(20230621)
     B = 8
     mod = LeNet5()
 

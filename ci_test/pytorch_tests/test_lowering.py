@@ -21,6 +21,7 @@ def test_swish():
     """
     An activation function that LBANN does not have an equivalent of.
     """
+    torch.manual_seed(20230620)
 
     class testmodule(nn.Module):
 
