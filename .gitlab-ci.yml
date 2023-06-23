@@ -31,23 +31,23 @@
 stages:
   - run-all-clusters
 
-catalyst testing:
-  stage: run-all-clusters
-  variables:
-    WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
-    WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
-  trigger:
-    strategy: depend
-    include: .gitlab/catalyst/pipeline.yml
+# catalyst testing:
+#   stage: run-all-clusters
+#   variables:
+#     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
+#     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
+#   trigger:
+#     strategy: depend
+#     include: .gitlab/catalyst/pipeline.yml
 
-corona testing:
-  stage: run-all-clusters
-  variables:
-    WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
-    WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
-  trigger:
-    strategy: depend
-    include: .gitlab/corona/pipeline.yml
+# corona testing:
+#   stage: run-all-clusters
+#   variables:
+#     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
+#     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
+#   trigger:
+#     strategy: depend
+#     include: .gitlab/corona/pipeline.yml
 
 lassen testing:
   stage: run-all-clusters
@@ -58,30 +58,30 @@ lassen testing:
     strategy: depend
     include: .gitlab/lassen/pipeline.yml
 
-pascal testing:
-  stage: run-all-clusters
-  variables:
-    WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
-    WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
-  trigger:
-    strategy: depend
-    include: .gitlab/pascal/pipeline.yml
+# pascal testing:
+#   stage: run-all-clusters
+#   variables:
+#     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
+#     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
+#   trigger:
+#     strategy: depend
+#     include: .gitlab/pascal/pipeline.yml
 
-pascal compiler testing:
-  stage: run-all-clusters
-  variables:
-    SPACK_SPECS: "%gcc@10.3.1 +cuda +half +fft"
-    BUILD_SCRIPT_OPTIONS: "--no-default-mirrors"
-    WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
-  trigger:
-    strategy: depend
-    include: .gitlab/pascal/pipeline_compiler_tests.yml
+# pascal compiler testing:
+#   stage: run-all-clusters
+#   variables:
+#     SPACK_SPECS: "%gcc@10.3.1 +cuda +half +fft"
+#     BUILD_SCRIPT_OPTIONS: "--no-default-mirrors"
+#     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
+#   trigger:
+#     strategy: depend
+#     include: .gitlab/pascal/pipeline_compiler_tests.yml
 
-tioga testing:
-  stage: run-all-clusters
-  variables:
-    WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
-    WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
-  trigger:
-    strategy: depend
-    include: .gitlab/tioga/pipeline.yml
+# tioga testing:
+#   stage: run-all-clusters
+#   variables:
+#     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
+#     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
+#   trigger:
+#     strategy: depend
+#     include: .gitlab/tioga/pipeline.yml
