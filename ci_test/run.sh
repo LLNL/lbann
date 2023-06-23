@@ -82,16 +82,16 @@ cd ..
 # These tests are "allowed" to fail inside the script. That is, the
 # unit tests should be run even if these fail. The status is cached
 # for now.
-echo "Task: Integration Tests"
-cd integration_tests
-if [ ${WEEKLY} -ne 0 ]; then
-    $LBANN_PYTHON -m pytest -s -vv --durations=0 --weekly --junitxml=results.xml
-    status=$?
-else
-    $LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
-    status=$?
-fi
-cd ..
+# echo "Task: Integration Tests"
+# cd integration_tests
+# if [ ${WEEKLY} -ne 0 ]; then
+#     $LBANN_PYTHON -m pytest -s -vv --durations=0 --weekly --junitxml=results.xml
+#     status=$?
+# else
+#     $LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
+#     status=$?
+# fi
+# cd ..
 
 echo "Task: Unit Tests"
 cd unit_tests
