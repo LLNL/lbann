@@ -32,6 +32,7 @@ import lbann
 from lbann.torch.converters import (register_module,
                                     register_module_weight_converter,
                                     register_opaque_shape_inference)
+import torch
 import torch.nn as nn
 
 
@@ -238,13 +239,23 @@ def _impl(mod: nn.AdaptiveAvgPool3d, x):
 # Weight conversion
 
 
+def _as_weights(scalar_or_array) -> lbann.Weights:
+    if hasattr(scalar_or_array, 'shape'):  # Tensor
+        if isinstance(scalar_or_array, nn.Parameter):
+            scalar_or_array = scalar_or_array.detach().cpu().numpy()
+        if isinstance(scalar_or_array, torch.Tensor):
+            scalar_or_array = scalar_or_array.detach().cpu().numpy()
+        return lbann.Weights(initializer=lbann.ValueInitializer(
+            values=scalar_or_array.flat))
+    return lbann.Weights(initializer=lbann.ValueInitializer(
+        values=[scalar_or_array]))  # Assuming scalar
+
+
 @register_module_weight_converter([
     nn.Conv1d, nn.Conv2d, nn.Conv3d, nn.ConvTranspose1d, nn.ConvTranspose2d,
     nn.ConvTranspose3d
 ])
 @register_module_weight_converter(nn.Linear)
-@register_module_weight_converter(
-    [nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d])
 def weights_and_biases(mod: nn.Module,
                        layer: lbann.Layer,
                        transpose: bool = False):
@@ -266,18 +277,34 @@ def weights_and_biases(mod: nn.Module,
             indices = list(range(len(weights_numpy.shape)))
             indices[-2], indices[-1] = indices[-1], indices[-2]
             weights_numpy = weights_numpy.transpose(indices)
-        params.append(
-            lbann.Weights(initializer=lbann.ValueInitializer(
-                values=weights_numpy.flat)))
+        params.append(_as_weights(weights_numpy))
 
     # Obtain bias
     if hasattr(mod, 'bias') and mod.bias is not None:
-        params.append(
-            lbann.Weights(initializer=lbann.ValueInitializer(
-                values=mod.bias.detach().cpu().numpy().flat)))
+        params.append(_as_weights(mod.bias))
 
     if params:
         layer.weights = params
+
+
+@register_module_weight_converter(
+    [nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d])
+def batch_norm_weights(mod: nn.BatchNorm2d, layer: lbann.BatchNormalization):
+    if mod.affine:  # Scaling and addition
+        weights = [mod.weight, mod.bias]
+    else:
+        weights = [
+            torch.ones(mod.num_features).detach().cpu().numpy(),
+            torch.zeros(mod.num_features).detach().cpu().numpy(),
+        ]
+
+    if mod.track_running_stats:
+        # TODO(later): mod.num_batches_tracked is unused
+        weights.extend([mod.running_mean, mod.running_var])
+    else:
+        weights.extend([0, 1])
+
+    layer.weights = [_as_weights(w) for w in weights]
 
 
 #################################################################
