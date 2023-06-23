@@ -36,7 +36,7 @@ import tools
 import single_tensor_data_reader
 
 
-def lbann_test(check_gradients=False, **decorator_kwargs):
+def lbann_test(check_gradients=False, train=False, **decorator_kwargs):
     """
     A decorator that wraps an LBANN-enabled model unit test.
     Use it before a function named ``test_*`` to run it automatically in pytest.
@@ -78,7 +78,7 @@ def lbann_test(check_gradients=False, **decorator_kwargs):
                                           lower_bound=0,
                                           upper_bound=tester.tolerance,
                                           error_on_failure=True,
-                                          execution_modes='test'))
+                                          execution_modes='train' if train else 'test'))
             if check_gradients:
                 callbacks.append(
                     lbann.CallbackCheckGradients(error_on_failure=True))
@@ -86,7 +86,7 @@ def lbann_test(check_gradients=False, **decorator_kwargs):
 
             metrics = [lbann.Metric(tester.loss, name='test')]
             metrics.extend(tester.extra_metrics)
-            model = lbann.Model(epochs=0,
+            model = lbann.Model(epochs=1 if train else 0,
                                 layers=full_graph,
                                 metrics=metrics,
                                 callbacks=callbacks)
@@ -116,11 +116,14 @@ def lbann_test(check_gradients=False, **decorator_kwargs):
                 data_reader.reader.extend([
                     tools.create_python_data_reader(
                         lbann, single_tensor_data_reader.__file__,
-                        'get_sample', 'num_samples', 'sample_dims', 'train'),
-                    tools.create_python_data_reader(
-                        lbann, single_tensor_data_reader.__file__,
-                        'get_sample', 'num_samples', 'sample_dims', 'test')
+                        'get_sample', 'num_samples', 'sample_dims', 'train')
                 ])
+                if not train:
+                    data_reader.reader.extend([
+                        tools.create_python_data_reader(
+                            lbann, single_tensor_data_reader.__file__,
+                            'get_sample', 'num_samples', 'sample_dims', 'test')
+                    ])
 
                 trainer = lbann.Trainer(mini_batch_size)
                 optimizer = lbann.NoOptimizer()
@@ -129,7 +132,7 @@ def lbann_test(check_gradients=False, **decorator_kwargs):
             test = tools.create_tests(setup_func, file, **decorator_kwargs)[0]
             cluster = kwargs.get('cluster', 'unset')
             weekly = kwargs.get('weekly', False)
-            test(cluster, weekly, False, **decorator_kwargs)
+            test(cluster, weekly, False)
 
         return wrapped
 
