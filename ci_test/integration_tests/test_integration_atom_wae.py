@@ -234,13 +234,13 @@ def augment_test_func(test_func):
         mini_batch_times = []
         with open(experiment_output['stdout_log_file']) as f:
             for line in f:
-                match = re.search('training epoch [0-9]+ recon : ([0-9.]+)', line)
+                match = re.search('training epoch [0-9]+ recon : ([-0-9.]+)', line)
                 if match:
                     train_recon = float(match.group(1))
-                match = re.search('test recon : ([0-9.]+)', line)
+                match = re.search('test recon : ([-0-9.]+)', line)
                 if match:
                     test_recon = float(match.group(1))
-                match = re.search('training epoch [0-9]+ mini-batch time statistics : ([0-9.]+)s mean', line)
+                match = re.search('training epoch [0-9]+ mini-batch time statistics : ([-0-9.]+)s mean', line)
                 if match:
                     mini_batch_times.append(float(match.group(1)))
 
