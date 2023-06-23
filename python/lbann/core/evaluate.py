@@ -42,6 +42,7 @@ def evaluate(
     inputs: npt.NDArray,
     outputs: Optional[List[str]] = None,
     extra_callbacks: Optional[List[lbann.Callback]] = None,
+    training: bool = False,
     **kwargs,
 ) -> Union[npt.NDArray, Tuple[npt.NDArray]]:
     """
@@ -55,6 +56,8 @@ def evaluate(
                     value. If not given, returns all layers without children.
     :param extra_callbacks: If given, uses additional callbacks in the evaluated
                             model.
+    :param training: If True, evaluates in training mode. Otherwise, evaluates
+                     in testing mode.
     :param kwargs: Additional keyword arguments to pass onto ``lbann.run``
     :return: Output tensor or tensors of the LBANN model.
     """
@@ -86,17 +89,18 @@ def evaluate(
     old_metrics = model.metrics
 
     try:
-        model.epochs = 0
+        model.epochs = 1 if training else 0
         model.callbacks = [
-            lbann.CallbackDumpOutputs(batch_interval=1,
-                                      execution_modes='test',
-                                      directory=workdir,
-                                      format=fmt,
-                                      layers=' '.join(outputs))
+            lbann.CallbackDumpOutputs(
+                batch_interval=1,
+                execution_modes='train' if training else 'test',
+                directory=workdir,
+                format=fmt,
+                layers=' '.join(outputs))
         ] + extra_callbacks
         model.metrics = []
 
-        data_reader = _setup_data_reader(inputs, workdir)
+        data_reader = _setup_data_reader(inputs, workdir, training)
         trainer = lbann.Trainer(inputs.shape[0])
 
         ########################
@@ -106,7 +110,8 @@ def evaluate(
 
         #######################
         # Collect outputs
-        output_tensors = _collect_outputs(outputs, workdir, inputs.dtype, fmt)
+        output_tensors = _collect_outputs(outputs, workdir, inputs.dtype, fmt,
+                                          training)
 
     finally:
         # Set fields back to original state
@@ -121,7 +126,7 @@ def evaluate(
     return output_tensors
 
 
-def _setup_data_reader(inputs: npt.NDArray, workdir: str):
+def _setup_data_reader(inputs: npt.NDArray, workdir: str, training: bool):
     # Save inputs
     if len(inputs.shape) == 1:  # Minibatch dimension must exist
         inputs = inputs.reshape(1, inputs.shape[0])
@@ -147,19 +152,27 @@ def _setup_data_reader(inputs: npt.NDArray, workdir: str):
     reader.python.sample_function = 'get_sample'
     reader.python.num_samples_function = 'num_samples'
     reader.python.sample_dims_function = 'sample_dims'
-    train_reader = copy.deepcopy(reader)
-    train_reader.role = 'train'
 
     data_reader = lbann.reader_pb2.DataReader()
-    data_reader.reader.extend([train_reader, reader])
+
+    if training:
+        reader.role = 'train'
+        data_reader.reader.extend([reader])
+    else:
+        train_reader = copy.deepcopy(reader)
+        train_reader.role = 'train'
+        data_reader.reader.extend([train_reader, reader])
 
     return data_reader
 
 
 def _collect_outputs(output_names: List[str], workdir: str, dtype: np.dtype,
-                     fmt: str) -> Tuple[npt.NDArray]:
+                     fmt: str, training: bool) -> Tuple[npt.NDArray]:
     output_dir = os.path.join(workdir, 'trainer0', 'model0')
-    file_prefix = 'sgd.testing.epoch.0.step.0'
+    if training:
+        file_prefix = 'sgd.training.epoch.0.step.0'
+    else:
+        file_prefix = 'sgd.testing.epoch.0.step.0'
 
     outputs = []
     for name in output_names:
