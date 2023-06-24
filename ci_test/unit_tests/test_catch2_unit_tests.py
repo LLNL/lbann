@@ -9,13 +9,13 @@ import subprocess as sp
 def hack_find_spack_build_dir(basedir):
     if os.getenv('LBANN_BUILD_DIR', default=None):
         build_dir = os.getenv('LBANN_BUILD_DIR')
-        return basedir + '/' + build_dir
+        return build_dir
     else:
         build_dir = basedir + '/builds'
-        with os.scandir(basedir) as it:
+        with os.scandir(build_dir) as it:
             for entry in it:
                 if entry.is_dir() and re.match(r'lbann_.*', entry.name):
-                    return entry.path
+                    return entry.path + '/build'
 
 def get_system_seq_launch(cluster):
     if cluster in ['lassen', 'ray']:
