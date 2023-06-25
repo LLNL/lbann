@@ -1327,7 +1327,9 @@ base_convolution_adapter<TensorDataType, Device>::
   setup_error_signals_i(int index) const
 {
   assert_eq(index, 0);
-  if (this->layer().get_parent_layer().get_backprop_requirements() & ACTIVATIONS) {
+  auto& parent_layer = this->layer().get_parent_layer();
+  if (parent_layer.get_backprop_requirements() & ACTIVATIONS
+      || parent_layer.get_type() == "identity") {
     return data_type_distconv_adapter<TensorDataType>::setup_error_signals_i(0);
   }
   const auto& prev_activations = this->get_prev_activations(0);
@@ -1368,11 +1370,21 @@ void base_convolution_adapter<TensorDataType,
   auto& l = dynamic_cast<base_convolution_layer<TensorDataType, Device>&>(
     this->layer());
   assert0(dc::tensor::View(*m_kernel, l.weights_values(0).LockedBuffer()));
+  TensorDataType x;
+  cudaDeviceSynchronize();
+  cudaMemcpy(&x, this->get_prev_activations().get_base_ptr(), sizeof(TensorDataType), cudaMemcpyDeviceToHost);
+  std::string rank = std::getenv("OMPI_COMM_WORLD_RANK");
+  std::cerr << rank << " PA: " << x << std::endl;
   m_conv->backward_data(El::To<TensorDataType>(1),
                         *m_kernel,
                         this->get_prev_error_signals(),
                         El::To<TensorDataType>(0),
                         this->get_error_signals());
+
+  cudaDeviceSynchronize();
+  cudaMemcpy(&x, this->get_error_signals().get_base_ptr(), sizeof(TensorDataType), cudaMemcpyDeviceToHost);
+  std::cerr << rank << " E: " << x << std::endl;
+  std::cerr << this->layer().get_name() << " " << this->get_prev_activations().get_buffer() << " " << this->get_error_signals().get_buffer() << std::endl;
 }
 
 template <typename TensorDataType, El::Device Device>
