@@ -79,7 +79,14 @@ def lbann_test(check_gradients=False, train=False, **decorator_kwargs):
                                           upper_bound=tester.tolerance,
                                           error_on_failure=True,
                                           execution_modes='train' if train else 'test'))
+            
+            obj_func = None
             if check_gradients:
+                if tester.check_gradients_tensor is None:
+                    raise ValueError(
+                        'LBANN test did not set a tensor for checking gradients, '
+                        'use ``ModelTester.set_check_gradients_tensor``.')
+                obj_func = tester.check_gradients_tensor
                 callbacks.append(
                     lbann.CallbackCheckGradients(error_on_failure=True))
             callbacks.extend(tester.extra_callbacks)
@@ -88,6 +95,7 @@ def lbann_test(check_gradients=False, train=False, **decorator_kwargs):
             metrics.extend(tester.extra_metrics)
             model = lbann.Model(epochs=1 if train else 0,
                                 layers=full_graph,
+                                objective_function=obj_func,
                                 metrics=metrics,
                                 callbacks=callbacks)
 
@@ -126,7 +134,7 @@ def lbann_test(check_gradients=False, train=False, **decorator_kwargs):
                     ])
 
                 trainer = lbann.Trainer(mini_batch_size)
-                optimizer = lbann.NoOptimizer()
+                optimizer = lbann.SGD(learn_rate=0)
                 return trainer, model, data_reader, optimizer, None  # Don't request any specific number of nodes
 
             test = tools.create_tests(setup_func, file, **decorator_kwargs)[0]
@@ -151,6 +159,10 @@ class ModelTester:
     reference: Optional[lbann.Layer] = None  #: Reference LBANN node (optional)
     reference_tensor: Optional[
         Any] = None  #: Optional reference tensor to compare with
+    
+    # Tensor that will be used as the model objective function when checking
+    # gradients. Required if check_gradients is True in tester. 
+    check_gradients_tensor: Optional[lbann.Layer] = None
 
     loss: Optional[lbann.Layer] = None  # Optional loss test
     tolerance: float = 0.0  #: Tolerance value for loss test
@@ -222,6 +234,14 @@ class ModelTester:
         self.reference = refnode
         self.reference_tensor = ref
         return self.reference
+    
+    def set_check_gradients_tensor(self, tensor: lbann.Layer):
+        """
+        Sets the tensor to be used as the objective function when running the
+        check gradients callback. When provided a non-scalar tensor, the
+        objective function is the mean of the tensor.
+        """
+        self.check_gradients_tensor = lbann.Reduction(tensor, mode='mean')
 
     def set_loss_function(self,
                           func: Callable[[lbann.Layer, lbann.Layer],
