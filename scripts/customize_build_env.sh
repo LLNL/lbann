@@ -96,8 +96,8 @@ set_center_specific_modules()
         # Disable the StdEnv for systems in LC
         case ${spack_arch_target} in
             "power9le") # Lassen
-                MODULE_CMD_GCC="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.6.1 spectrum-mpi/rolling-release python/3.7.2"
-                MODULE_CMD_CLANG="module --force unload StdEnv; module load clang/10.0.1-gcc-8.3.1 cuda/11.6.1 spectrum-mpi/rolling-release python/3.7.2"
+                MODULE_CMD_GCC="module load gcc/8.3.1 cuda/11.6.1 spectrum-mpi/rolling-release python/3.7.2"
+                MODULE_CMD_CLANG="module load clang/10.0.1-gcc-8.3.1 cuda/11.6.1 spectrum-mpi/rolling-release python/3.7.2"
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 MODULE_CMD_GCC="module load gcc/10.3.1-magic cuda/11.8.0 mvapich2/2.3.6 python/3.9.12"
@@ -105,7 +105,7 @@ set_center_specific_modules()
                 MODULE_CMD_CLANG="module load gcc/10.3.1-magic cuda/11.8.0 mvapich2/2.3.6 python/3.9.12"
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
-                MODULE_CMD="module --force unload StdEnv; module load gcc/10.2.1 mvapich2/2.3.6 python/3.7.2"
+                MODULE_CMD="module load gcc/10.2.1 mvapich2/2.3.6 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
                 MODULE_CMD="module load StdEnv gcc-tce/10.3.1 cmake/3.23.1 openmpi-tce/4.1.2 rocm/5.4.1"
