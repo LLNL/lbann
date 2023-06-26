@@ -28,11 +28,12 @@ def test_simple(num_dims):
 
     # Test layer
     ps = {'height_groups': tools.gpus_per_node(lbann)}
-    x = lbann.Identity(x, parallel_strategy=ps, name=f'identity_{num_dims}d')
     y = lbann.BatchNormalization(
         x,
         parallel_strategy=ps,
         name=f'batchnorm_{num_dims}d'
     )
+    y = lbann.Identity(y)
     tester.set_loss(lbann.MeanSquaredError(y, ref), tolerance=5e-7)
+    tester.set_check_gradients_tensor(lbann.Square(y))
     return tester

@@ -41,7 +41,6 @@ def test_simple(num_dims):
         name=f'kernel_{num_dims}d'
     )
     ps = {'height_groups': tools.gpus_per_node(lbann)}
-    x = lbann.Identity(x, parallel_strategy=ps, name=f'identity_{num_dims}d')
     y = lbann.Convolution(
         x,
         weights=(kernel_weights,),
@@ -55,5 +54,7 @@ def test_simple(num_dims):
         parallel_strategy=ps,
         name=f'conv_{num_dims}d'
     )
+    y = lbann.Identity(y)
     tester.set_loss(lbann.MeanSquaredError(y, ref))
+    tester.set_check_gradients_tensor(lbann.Square(y))
     return tester
