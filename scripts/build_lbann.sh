@@ -904,7 +904,7 @@ fi
 
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
     # Try to concretize the environment and catch the return code
-    CMD="spack -d concretize ${BUILD_JOBS}"
+    CMD="spack concretize ${BUILD_JOBS}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
