@@ -8,7 +8,17 @@ from torch.cuda.amp import autocast, GradScaler
 
 
 class Trainer:
-    def __init__(self, model, optimizer, train_dataloader, eval_dataloader, num_epochs, device, enable_amp=False, scheduler=None):
+    def __init__(
+        self,
+        model,
+        optimizer,
+        train_dataloader,
+        eval_dataloader,
+        num_epochs,
+        device,
+        enable_amp=False,
+        scheduler=None,
+    ):
         self.model = model
         self.optimizer = optimizer
         self.train_dataloader = train_dataloader
@@ -20,7 +30,7 @@ class Trainer:
         self.enable_amp = enable_amp
         self.scaler = GradScaler(enabled=self.enable_amp)
         self.scheduler = scheduler
-    
+
     def train_step(self, x, y):
         self.optimizer.zero_grad()
         with autocast(enabled=self.enable_amp):
@@ -35,19 +45,19 @@ class Trainer:
 
         iter = self.train_dataloader
         if self.rank == 0:
-            iter = tqdm(self.train_dataloader, desc=f'Epoch {self.epoch}')
+            iter = tqdm(self.train_dataloader, desc=f"Epoch {self.epoch}")
         for x, y in iter:
             self.train_step(x.to(self.device), y.to(self.device))
         if self.scheduler is not None:
             self.scheduler.step()
-    
+
     def train(self):
         for self.epoch in range(self.num_epochs):
             self.train_epoch()
             mse = self.eval()
             if self.rank == 0:
-                print(f'Epoch {self.epoch} Validation MSE: {mse}')
-    
+                print(f"Epoch {self.epoch} Validation MSE: {mse}")
+
     @torch.no_grad()
     def eval(self):
         self.model.eval()
@@ -56,10 +66,15 @@ class Trainer:
         count = 0
         with autocast(enabled=self.enable_amp):
             for x, y in self.eval_dataloader:
-                score += (self.model(x.to(self.device)) - y.to(self.device)).square().mean(dim=-1).sum()
+                score += (
+                    (self.model(x.to(self.device)) - y.to(self.device))
+                    .square()
+                    .mean(dim=-1)
+                    .sum()
+                )
                 count += len(y)
         count = torch.tensor(count).to(self.device)
-        
+
         dist.all_reduce(score, ReduceOp.SUM)
         dist.all_reduce(count, ReduceOp.SUM)
         score /= count

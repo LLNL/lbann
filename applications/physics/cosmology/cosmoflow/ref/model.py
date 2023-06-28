@@ -2,23 +2,26 @@ import torch
 import torch.nn as nn
 import math
 
+
 class CosmoFlow(nn.Module):
     def __init__(self, input_width=128, batchnorm=False, dropout_rate=0.5):
         super().__init__()
 
         assert input_width in [128, 256, 512]
-        
+
         Activation = lambda: nn.LeakyReLU(0.3)
 
         def convbnactpool(in_channels, out_channels):
             layers = []
-            layers.append(nn.Conv3d(
-                in_channels,
-                out_channels,
-                kernel_size=3,
-                padding=1,
-                bias=(not batchnorm)
-            ))
+            layers.append(
+                nn.Conv3d(
+                    in_channels,
+                    out_channels,
+                    kernel_size=3,
+                    padding=1,
+                    bias=(not batchnorm),
+                )
+            )
             if batchnorm:
                 layers.append(nn.BatchNorm3d(out_channels, momentum=1e-2))
             layers.append(Activation())
@@ -54,7 +57,7 @@ class CosmoFlow(nn.Module):
                 nn.init.kaiming_normal_(module.weight, a=0.3)
                 if module.bias is not None:
                     nn.init.zeros_(module.bias)
-        
+
         self.apply(initialize_weights)
 
     def forward(self, x):
