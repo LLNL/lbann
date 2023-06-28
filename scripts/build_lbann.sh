@@ -1009,18 +1009,6 @@ export PATH=\${PATH}:\${LBANN_CMAKE_DIR}:\${LBANN_NINJA_DIR}:\${LBANN_PYTHON_DIR
 export PYTHONPATH=\${LBANN_PYTHONPATH}:\${PYTHONPATH}
 EOF
 
-    CMD="chmod +x ${LBANN_SETUP_FILE}"
-    echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
-
-    # Save the setup file in the build directory
-    if [[ ! -e ${LBANN_BUILD_PARENT_DIR}/${LBANN_SETUP_FILE_LABEL} ]]; then
-        echo "Overwritting exising install file in ${LBANN_BUILD_PARENT_DIR}/${LBANN_SETUP_FILE_LABEL}"
-    fi
-    CMD="cp ${LBANN_INSTALL_FILE} ${LBANN_BUILD_PARENT_DIR}/${LBANN_SETUP_FILE_LABEL}"
-    echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
-
     cat > ${LBANN_INSTALL_FILE}<<EOF
 # Directory structure used for this build
 export LBANN_BUILD_LABEL=${LBANN_BUILD_LABEL}
@@ -1104,10 +1092,22 @@ spack env activate -p ${LBANN_ENV}
 ml use ${LBANN_MODFILES_DIR}
 EOF
 
+    CMD="chmod +x ${LBANN_SETUP_FILE}"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
+
     CMD="chmod +x ${LBANN_INSTALL_FILE}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
 fi
+
+# Save the setup file in the build directory
+if [[ ! -e ${LBANN_BUILD_PARENT_DIR}/${LBANN_SETUP_FILE_LABEL} ]]; then
+    echo "Overwritting exising setup file in ${LBANN_BUILD_PARENT_DIR}/${LBANN_SETUP_FILE_LABEL}"
+fi
+CMD="cp ${LBANN_SETUP_FILE} ${LBANN_BUILD_PARENT_DIR}/${LBANN_SETUP_FILE_LABEL}"
+echo ${CMD} | tee -a ${LOG}
+[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
 
 # Save the install file in the build directory
 if [[ ! -e ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL} ]]; then
