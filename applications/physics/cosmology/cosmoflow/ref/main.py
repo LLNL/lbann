@@ -50,8 +50,20 @@ train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, num_wor
 eval_dataloader = DataLoader(eval_dataset, batch_size=args.batch_size, num_workers=4, pin_memory=True)
 
 model = CosmoFlow(args.input_width, args.use_batchnorm).to(device)
+model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 model = DDP(model, device_ids=[device])
-optimizer = torch.optim.Adam(model.parameters(), args.learning_rate)
+optimizer = torch.optim.SGD(model.parameters(), args.learning_rate)
 
-trainer = Trainer(model, optimizer, train_dataloader, eval_dataloader, args.num_epochs, device, args.enable_amp)
+def lr_lambda(epoch):
+    if epoch < 4:
+        return 1e-2 + (1 - 1e-2) * epoch / 4
+    elif epoch >= 64:
+        return 0.125
+    elif epoch >= 32:
+        return 0.25
+    else:
+        return 1
+scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
+
+trainer = Trainer(model, optimizer, train_dataloader, eval_dataloader, args.num_epochs, device, args.enable_amp, scheduler)
 trainer.train()

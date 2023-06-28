@@ -8,7 +8,7 @@ from torch.cuda.amp import autocast, GradScaler
 
 
 class Trainer:
-    def __init__(self, model, optimizer, train_dataloader, eval_dataloader, num_epochs, device, enable_amp=False):
+    def __init__(self, model, optimizer, train_dataloader, eval_dataloader, num_epochs, device, enable_amp=False, scheduler=None):
         self.model = model
         self.optimizer = optimizer
         self.train_dataloader = train_dataloader
@@ -19,6 +19,7 @@ class Trainer:
         self.rank = dist.get_rank()
         self.enable_amp = enable_amp
         self.scaler = GradScaler(enabled=self.enable_amp)
+        self.scheduler = scheduler
     
     def train_step(self, x, y):
         self.optimizer.zero_grad()
@@ -37,6 +38,8 @@ class Trainer:
             iter = tqdm(self.train_dataloader, desc=f'Epoch {self.epoch}')
         for x, y in iter:
             self.train_step(x.to(self.device), y.to(self.device))
+        if self.scheduler is not None:
+            self.scheduler.step()
     
     def train(self):
         for self.epoch in range(self.num_epochs):
