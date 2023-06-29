@@ -870,11 +870,11 @@ protected:
   /// @todo Remove
 
   SubGraphCommunication subgraph_communication_method = PT2PT;
-  //model-level sub-graph parallelism
+  // Model-level sub-graph parallelism
   bool apply_subgraph_parallelism = false;
-  //Layer-level sub-graph execution
+  // Layer-level sub-graph execution
   bool m_subgraph_parallelism_execution = false;
-  //Process-level sub-graph execution
+  // Process-level sub-graph execution
   bool run_layer_in_subgraph = false;
 
   /** Ranks in grid for the sub-graph */

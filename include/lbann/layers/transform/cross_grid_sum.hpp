@@ -173,7 +173,7 @@ private:
   {
     int rank = El::mpi::Rank(this->get_subgrid_comm());
     auto parents = this->get_parent_layers();
-    auto childs = this->get_child_layers();
+    auto children = this->get_child_layers();
 
     int tag = -1;
     int tag_parent = -1;
@@ -186,14 +186,11 @@ private:
 
     }
     tag = tag_parent-1;
-    for(int i=0; i<childs.size();i++)
+    for(int i=0; i<children.size();i++)
     {
       if (this->get_prev_error_signals(i).Grid().InGrid())
-        tag_child = childs[i]->get_grid_tag();
+        tag_child = children[i]->get_grid_tag();
     }
-
-    // int tag_parent = parents[rank]->get_grid_tag();
-    // int tag_child = childs[rank]->get_grid_tag(); 
     
     const auto& gradient_wrt_output = this->get_prev_error_signals(tag);
     auto& gradient_wrt_input = this->get_error_signals(tag);
@@ -201,7 +198,7 @@ private:
 
     int gradient_wrt_output_Height = gradient_wrt_output.Height();
     int gradient_wrt_output_Width = gradient_wrt_output.Width();
-    for(int i=0; i<childs.size();i++)
+    for(int i=0; i<children.size();i++)
     {
       auto* const gradient_wrt_input_cast = dynamic_cast<
         El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(

@@ -669,38 +669,6 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
   m_temp_grad.resize(1);
   m_subgrid_tensors_split.resize(1);
 
-  // Choose process grid to distribute matrices over
-  // int tag = this->get_grid_tag();
-  // if (tag < 0) {
-  //   // Use tag from parent layers if they are all the same. Otherwise
-  //   // use tag 0.
-  //   for (int i = 0; i < this->get_num_parents(); ++i) {
-  //     auto parent_tag = this->get_parent_layer(i).get_grid_tag();
-  //     if (i == 0) {
-  //       tag = parent_tag;
-  //     }
-  //     if (tag != parent_tag) {
-  //       tag = -1;
-  //       break;
-  //     }
-  //   }
-  //   if (tag < 0) {
-  //     tag = 0;
-  //   }
-  // }
-  // if (tag < 0 || tag >= static_cast<int>(grids.size())) {
-  //   LBANN_ERROR("attempted to initialize ",
-  //               this->get_type(),
-  //               " layer \"",
-  //               this->get_name(),
-  //               "\" ",
-  //               "on invalid grid ",
-  //               "(grid tag ",
-  //               tag,
-  //               ", ",
-  //               grids.size(),
-  //               " grids available)");
-  // }
   int tag = this->get_grid_tag();
   // this->reset_mygrid(grids[tag]);
   const El::Grid& grid = *grids[tag];
@@ -852,16 +820,6 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
             input_mat_builder->MakeEmpty(*grids[count],
                                          0);
       count++;
-      // for (int parent_index = 0; parent_index < int(parents.size());
-      //      ++parent_index) {
-      //   if (parents[parent_index]->get_grid_tag() - 1 == count) {
-      //     subgrid_tensor =
-      //       input_mat_builder->MakeEmpty(*grids[count],
-      //                                    0);
-      //     count++;
-      //     break;
-      //   }
-      // }
     }
   }
   else {

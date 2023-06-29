@@ -18,7 +18,7 @@ import tools
 # the functions below to ingest data.
 
 # Data
-np.random.seed(202201184)
+np.random.seed(202306284)
 _num_samples = 16
 _sample_size = 7
 _samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)

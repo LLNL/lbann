@@ -1551,12 +1551,6 @@ message ParallelStrategy {
    */
   google.protobuf.Int64Value grid_tag = 21;
 
-  /// @todo Remove
-  /// int64 sub_branch_tag = 15;
-  /// @todo Remove
-  /// int64 sub_branch_resource_percentage = 16;
-  /// @todo Remove
-  /// bool enable_subgraph = 17;
 }
 
 // =============================================

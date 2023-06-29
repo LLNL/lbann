@@ -139,7 +139,6 @@ protected:
     const auto& parents = this->get_parent_layers();
 
     if (this->subgraph_parallelism_execution()) {
-      // auto subgrid_tags = (*this->m_parent_tags);
       int tag = 0;
 
       std::vector<bool> is_initialized_tensor(this->m_num_spliting_groups,
@@ -147,7 +146,6 @@ protected:
 
       // Copy data internally with same branch tag
       for (int i = 0; i < this->get_num_parents(); ++i) {
-        // tag = subgrid_tags[i];
         tag = parents[i]->get_grid_tag() - 1;
 
         if (is_initialized_tensor[tag]) {
@@ -252,7 +250,6 @@ protected:
     const auto& gradient_wrt_output = this->get_prev_error_signals();
 
     if (this->subgraph_parallelism_execution()) {
-      // auto subgrid_tags = (*this->m_parent_tags);
 
       if (this->get_communication_flag() == COLL_OPT)
       // If vector copy is enable, broadcast the gradients from parent grid to

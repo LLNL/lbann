@@ -187,7 +187,6 @@ void softmax_layer<TensorDataType, Layout, Device>::fp_compute()
                       *this->m_workspace,
                       this->threshold_val,
                       this->m_mode);
-  std::cout<<"softmax Height:"<<this->get_prev_activations().Height()<<" Width:"<<this->get_prev_activations().Width()<<"\n";
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

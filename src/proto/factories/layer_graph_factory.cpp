@@ -192,10 +192,6 @@ construct_layer_graph(lbann_comm* comm,
     ps.replications = proto_layer.parallel_strategy().replications();
     ps.depth_groups = proto_layer.parallel_strategy().depth_groups();
     ps.depth_splits = proto_layer.parallel_strategy().depth_splits();
-    // ps.enable_subgraph = proto_layer.parallel_strategy().enable_subgraph();
-    // ps.sub_branch_tag = proto_layer.parallel_strategy().sub_branch_tag();
-    // ps.sub_branch_resource_percentage =
-    //   proto_layer.parallel_strategy().sub_branch_resource_percentage();
 
     // Check that layer has been constructed
     if (l == nullptr)

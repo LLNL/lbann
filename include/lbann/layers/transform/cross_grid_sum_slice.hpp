@@ -163,7 +163,7 @@ protected:
 
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override
   {
-    auto childs = this->get_child_layers();
+    auto children = this->get_child_layers();
     auto const subgrid_comm_rank = El::mpi::Rank(this->get_subgrid_comm());
     auto const subgrid_comm_size = El::mpi::Size(this->get_subgrid_comm());
     const auto input_dims = this->get_input_dims();
@@ -205,8 +205,7 @@ protected:
     El::Transpose(temp_output, transposed_output);
     transposed_output.Resize(mloc * subgrid_comm_size, nloc);
 
-    // gradient_wrt_input_cast->Resize(this->get_input_size(), mini_batch_size);
-    for(int i=0; i<childs.size();i++)
+    for(int i=0; i<children.size();i++)
     {
       auto* const gradient_wrt_input_cast_layer = dynamic_cast<
         El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
