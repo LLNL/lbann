@@ -62,7 +62,7 @@ class CosmoFlow(nn.Module):
 
     def forward(self, x):
         with torch.no_grad():
-            x = torch.log(1 + x)
+            x = torch.log1p(x)
         x = self.conv_layers(x)
         x = torch.flatten(x, 1)
         x = self.lin_layers(x)
