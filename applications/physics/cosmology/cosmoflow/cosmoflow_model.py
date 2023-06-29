@@ -65,6 +65,14 @@ def construct_cosmoflow_model(parallel_strategy,
             execution_modes='test'
         ),
         lbann.CallbackProfiler(skip_init=True)]
+    base_lr = 1e-3
+    for i in range(5):
+        fac = 1e-2 + (1 - 1e-2) * i / 4
+        callbacks.append(lbann.CallbackSetLearningRate(step=i, val=fac * base_lr))
+    callbacks += [
+        lbann.CallbackSetLearningRate(step=32, val=0.25 * base_lr),
+        lbann.CallbackSetLearningRate(step=64, val=0.125 * base_lr),
+    ]
     # # TODO: Use polynomial learning rate decay (https://github.com/LLNL/lbann/issues/1581)
     # callbacks.append(lbann.CallbackPolyLearningRate(
     #     power=1.0,
