@@ -90,8 +90,6 @@ private:
   bool m_sync;
   /** Whether to skip initial iterations. */
   bool m_skip_init;
-
-
 };
 
 // Builder function

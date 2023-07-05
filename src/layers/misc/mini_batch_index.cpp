@@ -96,17 +96,11 @@ void mini_batch_index_layer<T, L, D>::fp_compute()
   else {
     local_output_v.Resize(1, local_width);
   }
-#ifdef LBANN_HAS_CALIPER
-    CALI_MARK_BEGIN("populate_matrix");
-#endif
   // Populate matrix on CPU
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     local_output_v(0, col) = El::To<T>(output.GlobalCol(col));
   }
-#ifdef LBANN_HAS_CALIPER
-    CALI_MARK_END("populate_matrix");
-#endif
   // Copy result from CPU if needed
   if (!local_output_v.Viewing()) {
     El::Copy(local_output_v, local_output);

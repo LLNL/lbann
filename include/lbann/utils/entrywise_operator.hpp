@@ -93,7 +93,6 @@ void apply_entrywise_binary_operator(
   const El::AbstractMatrix<TensorDataType>& input2,
   El::AbstractMatrix<TensorDataType>& output)
 {
-
   using BinaryOperator = Op<TensorDataType>;
   // Check that input and output are valid
   if (input1.GetDevice() != El::Device::CPU ||

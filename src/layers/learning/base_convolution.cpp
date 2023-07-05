@@ -806,7 +806,6 @@ template <typename TensorDataType, El::Device Device>
 void base_convolution_layer<TensorDataType, Device>::apply_convolution_im2col(
   bool during_forward_prop)
 {
-
   // Local matrices
   const auto& local_kernel = this->weights_values(0).LockedMatrix();
   const auto& local_input =
@@ -965,6 +964,7 @@ template <typename TensorDataType, El::Device Device>
 void base_convolution_layer<TensorDataType, Device>::compute_gradients_im2col(
   bool using_transposed_convolution)
 {
+
   // Local matrices
   const DMatDT<Device>& local_input = this->get_local_prev_activations();
   const DMatDT<Device>& local_gradient_wrt_output =
@@ -1177,7 +1177,6 @@ base_convolution_layer<TensorDataType, Device>::get_backward_filter_algo_dnn(
   size_t ws_size,
   TensorDataType* ws)
 {
-
   if (m_bwd_filter_dnn_algos.count(local_mini_batch_size) == 0) {
 #ifdef LBANN_DETERMINISTIC
     bool deterministic = true;
@@ -1336,7 +1335,6 @@ void base_convolution_adapter<TensorDataType, Device>::fp_compute_convolution()
 template <typename TensorDataType, El::Device Device>
 void base_convolution_adapter<TensorDataType, Device>::fp_apply_bias()
 {
-
   auto& l = dynamic_cast<base_convolution_layer<TensorDataType, Device>&>(
     this->layer());
   if (l.m_bias_scaling_factor == El::To<TensorDataType>(0))

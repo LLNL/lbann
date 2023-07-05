@@ -720,7 +720,6 @@ void entrywise_batch_normalization_layer<TensorDataType, T_layout, Dev>::
   LBANN_CALIPER_MARK_SCOPE("entrywise_batch_normalization_layer::bp_compute");
   const auto mode =
     this->get_model()->get_execution_context().get_execution_mode();
-  const auto mode = this->get_model()->get_execution_context().get_execution_mode();
   bp_impl(*this->get_comm(),
           this->m_epsilon,
           mode == execution_mode::training,

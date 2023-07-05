@@ -68,7 +68,6 @@ void local_bp_cpu(
 } // namespace
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-<<<<<<< HEAD
 void l2_norm2_layer<TensorDataType, T_layout, Dev>::local_fp_compute()
 {
   LBANN_CALIPER_MARK_SCOPE("l2_norm2_layer::fp_compute");

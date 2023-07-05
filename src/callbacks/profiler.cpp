@@ -42,7 +42,6 @@
 #include "nvToolsExtCudaRt.h"
 #endif
 
-
 #include <algorithm>
 #include <string>
 
@@ -55,12 +54,10 @@ profiler::profiler(bool sync, bool skip_init)
 #ifdef LBANN_NVPROF
   nvtxNameCudaStreamA(hydrogen::cuda::GetDefaultStream(), "Hydrogen");
 #endif
-
   if (!m_skip_init) {
     prof_start();
   }
 }
-
 
 template <class Archive>
 void profiler::serialize(Archive& ar)
