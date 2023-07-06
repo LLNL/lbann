@@ -26,7 +26,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "lbann_config.hpp"
 #include "lbann/utils/serialize.hpp"
-#include <callbacks.pb.h>
+
+#include "lbann/proto/callbacks.pb.h"
 
 #include <algorithm>
 #include <string>
@@ -92,7 +93,7 @@ profiler_caliper::profiler_caliper(bool skip_init,bool autotune, int tuned_omp_t
       string path_version_short = s[0] + "-" + s[1];
       cout << "Compiler path version short: " << path_version_short << "\n";
       adiak::value("Compiler_path_version",path_version_short.c_str());
-    } 
+    }
   }
 
   adiak::value("compiler_flags", cc.compiler_flags);
@@ -283,6 +284,3 @@ build_profiler_caliper_callback_from_pbuf(
 #define LBANN_CLASS_LIBNAME callback_profiler_caliper
 #include <lbann/macros/register_class_with_cereal.hpp>
 #endif
-
-
-
