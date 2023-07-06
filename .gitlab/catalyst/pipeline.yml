@@ -214,7 +214,7 @@ release allocation:
 
     # These are system-specific specs that should be forwarded to the
     # build script
-    SPACK_SPECS: "+onednn +half +fft"
+    SPACK_SPECS: "+half +fft"
 
   tags:
     - catalyst
