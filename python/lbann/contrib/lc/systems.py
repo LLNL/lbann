@@ -24,7 +24,6 @@ _system_params = {
     'rzvernal': SystemParams(64, 8, 'flux'),
     'sierra':   SystemParams(44, 4, 'lsf'),
     'tioga':    SystemParams(64, 8, 'flux'),
-    'rzvernal': SystemParams(64, 8, 'flux'),
 }
 
 # Detect system
