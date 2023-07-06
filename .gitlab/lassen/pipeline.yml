@@ -86,7 +86,6 @@ remove spack environment:
   extends:
     - .lassen common
     - .lbann-base-vars
-    - .uses spack environment
     - .cleanup old spack environment
   stage: cleanup
   variables:

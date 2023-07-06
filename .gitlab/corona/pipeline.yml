@@ -153,7 +153,6 @@ remove spack environment:
   extends:
     - .corona common
     - .lbann-base-vars
-    - .uses spack environment
     - .cleanup old spack environment
   stage: deallocate
   variables:
