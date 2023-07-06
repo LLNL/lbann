@@ -100,7 +100,9 @@ class profiler_caliper : public callback_base {
   ///@}
 
  private:
-  
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
   struct manager_wrapper {
     cali::ConfigManager manager;
     bool started = false;

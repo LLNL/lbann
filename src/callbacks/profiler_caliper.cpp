@@ -25,7 +25,11 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #include "lbann_config.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/callbacks/profiler_caliper.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/weights/weights.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
 
@@ -33,8 +37,6 @@
 #include <string>
 #include <vector>
 #include <regex>
-
-#include "lbann/callbacks/profiler_caliper.hpp"
 
 namespace lbann {
 namespace callback {
@@ -135,6 +137,12 @@ void profiler_caliper::serialize(Archive & ar) {
        "BaseCallback",
        ::cereal::base_class<callback_base>(this)),
      CEREAL_NVP(m_skip_init));
+}
+
+void profiler_caliper::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_profiler();
+  msg->set_skip_init(m_skip_init);
 }
 
 void profiler_caliper::on_epoch_begin(model *m) {
