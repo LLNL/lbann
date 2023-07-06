@@ -86,7 +86,7 @@ message Callback {
     CallbackPerturbWeights perturb_weights = 52;
     CallbackExportOnnx export_onnx = 53;
     CallbackAlternateUpdates alternate_updates = 54;
-    CallbackProfilerCaliper profiler_caliper = 55;
+    CallbackProfilerCaliper profiler_caliper = 56;
   }
 
   message CallbackLTFB {
