@@ -69,22 +69,10 @@ void fp_impl(lbann_comm& comm,
   }
 
   // Compute sums
-<<<<<<< HEAD
   El::Zeros(local_workspace, 2 * num_channels, local_mini_batch_size);
   auto local_sums = El::View(local_workspace, El::IR(0, num_channels), El::ALL);
   auto local_sqsums =
     El::View(local_workspace, El::IR(num_channels, 2 * num_channels), El::ALL);
-=======
-  El::Zeros(local_workspace, 2*num_channels, local_mini_batch_size);
-  auto local_sums = El::View(local_workspace,
-                             El::IR(0, num_channels),
-                             El::ALL);
-  auto local_sqsums = El::View(local_workspace,
-                               El::IR(num_channels, 2*num_channels),
-                               El::ALL);
-
-
->>>>>>> 48d0878c1 (initial Caliper support/annotation)
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int k = 0; k < local_mini_batch_size; ++k) {
     for (El::Int j = 0; j < num_channels; ++j) {
