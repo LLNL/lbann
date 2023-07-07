@@ -112,6 +112,9 @@ if __name__ == "__main__":
         '--num-secrets', action='store', default=4, type=int,
         help='number of secrets (default: 4)')
     parser.add_argument(
+        '--mlperf', action='store_true',
+        help='Use MLPerf HPC compliant model')
+    parser.add_argument(
         '--use-batchnorm', action='store_true',
         help='Use batch normalization layers')
     parser.add_argument(
@@ -164,7 +167,7 @@ if __name__ == "__main__":
 
     lbann.contrib.args.add_optimizer_arguments(
         parser,
-        default_optimizer="adam",
+        default_optimizer="sgd",
         default_learning_rate=0.001,
     )
     args = parser.parse_args()
@@ -190,10 +193,12 @@ if __name__ == "__main__":
                                                       use_batchnorm=args.use_batchnorm,
                                                       num_epochs=args.num_epochs,
                                                       depth_splits_pooling_id = args.depth_splits_pooling_id,
-                                                      gather_dropout_id = args.gather_dropout_id)
+                                                      gather_dropout_id = args.gather_dropout_id,
+                                                      learning_rate=args.optimizer_learning_rate)
 
     # Setup optimizer
     optimizer = lbann.contrib.args.create_optimizer(args)
+    optimizer.learning_rate *= 1e-2
 
     # Setup data reader
     if args.synthetic:

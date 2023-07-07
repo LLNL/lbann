@@ -37,6 +37,8 @@ class CosmoFlow(lm.Module):
             use_bn (bool): Whether or not batch normalization layers are used.
             bn_statistics_group_size (int): The number of samples
                 for each batch-normalization group.
+            mlperf (bool): Whether or not to use the MLPerf HPC compliant 
+                model.
         """
 
         CosmoFlow.global_count += 1

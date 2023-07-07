@@ -45,6 +45,9 @@ parser.add_argument(
 parser.add_argument(
     "--enable-amp", action="store_true", help="Use automatic mixed precision"
 )
+parser.add_argument(
+    "--mlperf", action="store_true", help="Use MLPerf HPC compliant model"
+)
 
 args = parser.parse_args()
 
@@ -72,7 +75,7 @@ eval_dataloader = DataLoader(
     eval_dataset, batch_size=args.batch_size, num_workers=4, pin_memory=True
 )
 
-model = CosmoFlow(args.input_width, args.use_batchnorm).to(device)
+model = CosmoFlow(args.input_width, args.use_batchnorm, mlperf=args.mlperf).to(device)
 model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 model = DDP(model, device_ids=[device])
 optimizer = torch.optim.SGD(model.parameters(), args.learning_rate)

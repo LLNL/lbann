@@ -9,7 +9,8 @@ def construct_cosmoflow_model(parallel_strategy,
                               use_batchnorm,
                               num_epochs,
                               depth_splits_pooling_id,
-                              gather_dropout_id):
+                              gather_dropout_id,
+                              learning_rate):
 
     # Construct layer graph
     universes = lbann.Input(data_field='samples')
@@ -65,13 +66,12 @@ def construct_cosmoflow_model(parallel_strategy,
             execution_modes='test'
         ),
         lbann.CallbackProfiler(skip_init=True)]
-    base_lr = 1e-3
     for i in range(5):
         fac = 1e-2 + (1 - 1e-2) * i / 4
-        callbacks.append(lbann.CallbackSetLearningRate(step=i, val=fac * base_lr))
+        callbacks.append(lbann.CallbackSetLearningRate(step=i, val=fac * learning_rate))
     callbacks += [
-        lbann.CallbackSetLearningRate(step=32, val=0.25 * base_lr),
-        lbann.CallbackSetLearningRate(step=64, val=0.125 * base_lr),
+        lbann.CallbackSetLearningRate(step=32, val=0.25 * learning_rate),
+        lbann.CallbackSetLearningRate(step=64, val=0.125 * learning_rate),
     ]
     # # TODO: Use polynomial learning rate decay (https://github.com/LLNL/lbann/issues/1581)
     # callbacks.append(lbann.CallbackPolyLearningRate(
