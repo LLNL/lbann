@@ -716,42 +716,42 @@ if [[ -n "${USER_MIRROR:-}" ]]; then
     MIRRORS="${MIRRORS:-} ${USER_MIRROR}"
 fi
 
-# if [[ -n "${INSTALL_DEPS:-}" && -z "${SKIP_MIRRORS:-}" ]]; then
-#     # https://cache.spack.io/tag/develop/
-#     CMD="spack mirror add spack-build-cache-develop https://binaries.spack.io/develop"
-#     echo ${CMD} | tee -a ${LOG}
-#     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-#     # Tell Spack to trust the keys in the build cache
-#     CMD="spack buildcache keys --install --trust"
-#     echo ${CMD} | tee -a ${LOG}
-#     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-# fi
+if [[ -n "${INSTALL_DEPS:-}" && -z "${SKIP_MIRRORS:-}" ]]; then
+    # https://cache.spack.io/tag/develop/
+    CMD="spack mirror add spack-build-cache-develop https://binaries.spack.io/develop"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    # Tell Spack to trust the keys in the build cache
+    CMD="spack buildcache keys --install --trust"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+fi
 
-# if [[ -n "${INSTALL_DEPS:-}" && -n "${MIRRORS:-}" ]]; then
-#     i=0
-#     for MIRROR in ${MIRRORS}
-#     do
-#         if [[ -r "${MIRROR:-}" ]]; then
-#             CMD="spack mirror add lbann${i} ${MIRROR}"
-#             echo ${CMD} | tee -a ${LOG}
-#             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-#             i=$((${i}+1))
+if [[ -n "${INSTALL_DEPS:-}" && -n "${MIRRORS:-}" ]]; then
+    i=0
+    for MIRROR in ${MIRRORS}
+    do
+        if [[ -r "${MIRROR:-}" ]]; then
+            CMD="spack mirror add lbann${i} ${MIRROR}"
+            echo ${CMD} | tee -a ${LOG}
+            [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+            i=$((${i}+1))
 
-#             # Tell Spack to trust the keys in the build cache
-#             CMD="spack buildcache keys --install --trust"
-#             echo ${CMD} | tee -a ${LOG}
-#             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+            # Tell Spack to trust the keys in the build cache
+            CMD="spack buildcache keys --install --trust"
+            echo ${CMD} | tee -a ${LOG}
+            [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-#             # Manually force Spack to trust the keys in the build cache - this is a hack until
-#             # https://github.com/spack/spack/issues/23186 is fixed
-#             if [[ -e "${MIRROR}/build_cache/_pgp/B180FE4A5ECF4C02D21E6A67F13D1FBB0E55F96F.pub" ]]; then
-#                 CMD="spack gpg trust ${MIRROR}/build_cache/_pgp/B180FE4A5ECF4C02D21E6A67F13D1FBB0E55F96F.pub"
-#                 echo ${CMD} | tee -a ${LOG}
-#                 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-#             fi
-#         fi
-#     done
-# fi
+            # Manually force Spack to trust the keys in the build cache - this is a hack until
+            # https://github.com/spack/spack/issues/23186 is fixed
+            if [[ -e "${MIRROR}/build_cache/_pgp/B180FE4A5ECF4C02D21E6A67F13D1FBB0E55F96F.pub" ]]; then
+                CMD="spack gpg trust ${MIRROR}/build_cache/_pgp/B180FE4A5ECF4C02D21E6A67F13D1FBB0E55F96F.pub"
+                echo ${CMD} | tee -a ${LOG}
+                [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+            fi
+        fi
+    done
+fi
 
 ##########################################################################################
 # Establish the spec for LBANN
