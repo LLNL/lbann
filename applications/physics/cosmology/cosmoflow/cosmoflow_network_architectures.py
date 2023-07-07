@@ -25,7 +25,8 @@ class CosmoFlow(lm.Module):
                  output_size,
                  name=None,
                  use_bn=False,
-                 bn_statistics_group_size=None):
+                 bn_statistics_group_size=None,
+                 mlperf=False):
         """Initialize CosmFlow.
 
         Args:
@@ -44,12 +45,20 @@ class CosmoFlow(lm.Module):
                      else 'cosmoflow_module{0}'.format(CosmoFlow.global_count))
         self.input_width = input_width
         self.use_bn = use_bn
+        self.mlperf = mlperf
+
+        if self.mlperf:
+            base_channels = 32
+            max_channels = 512
+        else:
+            base_channels = 16
+            max_channels = 256
 
         assert self.input_width in [128, 256, 512]
         num_conv_layers = int(math.log2(self.input_width)) - 2
         self.cp_params = []
         for i in range(num_conv_layers):
-            out_channels = min(16 * 2**i, 256)
+            out_channels = min(base_channels * 2**i, max_channels)
             self.cp_params += [
                 {"type": "conv", "out_channels": out_channels},
                 {"type": "pool"}
@@ -102,21 +111,23 @@ class CosmoFlow(lm.Module):
     def forward(self, x):
         self.instance += 1
 
-        x = lbann.Log1p(x)
+        x = lbann.Log1p(x, name=f'{self.name}_input_norm_instance{self.instance}')
 
         def create_pooling(x, i):
-            return lbann.Pooling(
-                x, num_dims=3, has_vectors=False,
-                pool_dims_i=2, pool_pads_i=0, pool_strides_i=2,
-                pool_mode='max',
-                name='{0}_pool{1}_instance{2}'.format(
-                    self.name, i, self.instance))
-            # return lbann.Pooling(
-            #     x, num_dims=3, has_vectors=False,
-            #     pool_dims_i=3, pool_pads_i=1, pool_strides_i=2,
-            #     pool_mode='average',
-            #     name='{0}_pool{1}_instance{2}'.format(
-            #         self.name, i, self.instance))
+            if self.mlperf:
+                return lbann.Pooling(
+                    x, num_dims=3, has_vectors=False,
+                    pool_dims_i=2, pool_pads_i=0, pool_strides_i=2,
+                    pool_mode='max',
+                    name='{0}_pool{1}_instance{2}'.format(
+                        self.name, i, self.instance))
+            else:
+                return lbann.Pooling(
+                    x, num_dims=3, has_vectors=False,
+                    pool_dims_i=3, pool_pads_i=1, pool_strides_i=2,
+                    pool_mode='average',
+                    name='{0}_pool{1}_instance{2}'.format(
+                        self.name, i, self.instance))
         
         def create_act(x, i):
             return lbann.LeakyRelu(
