@@ -32,7 +32,7 @@ source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
 
 # Load the LBANN module
 ml load lbann
-echo "$(which lbann)"
+echo "Using LBANN binary: $(which lbann)"
 
 # Configure the output directory
 OUTPUT_DIR=${CI_PROJECT_DIR}/${RESULTS_DIR}
