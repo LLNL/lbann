@@ -198,7 +198,7 @@ if __name__ == "__main__":
 
     # Setup optimizer
     optimizer = lbann.contrib.args.create_optimizer(args)
-    optimizer.learning_rate *= 1e-2
+    optimizer.learn_rate *= 1e-2
 
     # Setup data reader
     if args.synthetic:
