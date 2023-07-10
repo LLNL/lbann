@@ -105,7 +105,7 @@ set_center_specific_modules()
                 MODULE_CMD_CLANG="module load gcc/10.3.1-magic cuda/11.8.0 mvapich2/2.3.7 python/3.9.12"
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
-                MODULE_CMD="module load gcc/10.2.1 mvapich2/2.3.7 python/3.7.2"
+                MODULE_CMD="module load gcc/10.2.1 mvapich2/2.3.6 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
                 MODULE_CMD="module load StdEnv gcc-tce/10.3.1 cmake/3.23.1 openmpi-tce/4.1.2 rocm/5.6.0"
@@ -193,7 +193,7 @@ set_center_specific_spack_dependencies()
             "ivybridge" | "cascadelake") # Catalyst, Ruby
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_COMPILER="%gcc"
-                CENTER_DEPENDENCIES="^mvapich2@2.3.7 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
+                CENTER_DEPENDENCIES="^mvapich2@2.3.6 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
