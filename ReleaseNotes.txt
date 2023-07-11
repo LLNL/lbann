@@ -21,6 +21,9 @@ Internal features:
 I/O & data readers:
 
 Build system:
+ - Updated build script to use CachedCMakeProject mode, which should
+   simplfy the overall workflow
+
 
 Bug fixes:
 

@@ -96,24 +96,25 @@ set_center_specific_modules()
         # Disable the StdEnv for systems in LC
         case ${spack_arch_target} in
             "power9le") # Lassen
-                MODULE_CMD_GCC="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.6.1 spectrum-mpi/rolling-release python/3.7.2 essl/6.3.0.1"
-                MODULE_CMD_CLANG="module --force unload StdEnv; module load clang/10.0.1-gcc-8.3.1 cuda/11.6.1 spectrum-mpi/rolling-release python/3.7.2 essl/6.3.0.1"
+                MODULE_CMD_GCC="module load gcc/8.3.1 cuda/11.6.1 spectrum-mpi/rolling-release python/3.7.2"
+                MODULE_CMD_CLANG="module load clang/10.0.1-gcc-8.3.1 cuda/11.6.1 spectrum-mpi/rolling-release python/3.7.2"
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
-                MODULE_CMD_GCC="module load gcc/10.3.1-magic cuda/11.8.0 mvapich2/2.3.6 python/3.9.12"
+                MODULE_CMD_GCC="module load gcc/10.3.1-magic cuda/11.8.0 mvapich2/2.3.7 python/3.9.12"
                 # Note that clang is installed in /usr/workspace/brain/tom/pascal/llvm/latest/ and it is version 17.0.0
-                MODULE_CMD_CLANG="module load gcc/10.3.1-magic cuda/11.8.0 mvapich2/2.3.6 python/3.9.12"
+                MODULE_CMD_CLANG="module load gcc/10.3.1-magic cuda/11.8.0 mvapich2/2.3.7 python/3.9.12"
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
-                MODULE_CMD="module --force unload StdEnv; module load gcc/10.2.1 mvapich2/2.3.6 python/3.7.2"
+                MODULE_CMD="module load gcc/10.2.1 mvapich2/2.3.6 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
-                MODULE_CMD="module load StdEnv gcc-tce/10.3.1 cmake/3.23.1 openmpi-tce/4.1.2 rocm/5.4.1"
+                MODULE_CMD="module load StdEnv gcc-tce/10.3.1 cmake/3.23.1 openmpi-tce/4.1.2 rocm/5.6.0"
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
             "zen3") # Tioga, RZVernal
-#                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.09.0 amd/5.4.3 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-amd/8.3.3 StdEnv cmake/3.23.1"
-                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/23.02.0 amd/5.4.3 craype/2.7.19 cray-libsci/23.02.1.1 PrgEnv-amd/8.3.3 cray-mpich/8.1.24 StdEnv cmake/3.24.2"
+#                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.09.0 amd/5.6.0 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-amd/8.4.0 StdEnv cmake/3.23.1"
+                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.0 perftools-base/23.05.0 amd/5.6.0 craype/2.7.21 cray-libsci/23.05.1.4 PrgEnv-amd/8.4.0 cray-mpich/8.1.26 StdEnv cmake/3.24.2"
+#                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/23.02.0 amd/5.6.0 craype/2.7.19 cray-libsci/23.02.1.1 PrgEnv-amd/8.4.0 cray-mpich/8.1.26 StdEnv cmake/3.24.2"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -134,7 +135,7 @@ set_center_specific_modules()
                 MODULE_CMD="module purge; module load cgpu modules/3.2.11.4 gcc/8.3.0 cuda/11.1.1 openmpi/4.0.3 cmake/3.18.2"
                 ;;
             "zen3") # Perlmutter
-		MODULE_CMD="module load PrgEnv-cray/8.3.3 craype-x86-milan libfabric/1.11.0.4.116 craype-network-ofi cmake/3.22.0 cce/13.0.2 craype/2.7.15 cray-mpich/8.1.15 cray-libsci/21.08.1.2 nccl/2.11.4 cudnn/8.3.2 cray-python/3.9.7.1 craype-accel-host cudatoolkit/11.5"
+		MODULE_CMD="module load PrgEnv-cray/8.4.0 craype-x86-milan libfabric/1.11.0.4.116 craype-network-ofi cmake/3.22.0 cce/13.0.2 craype/2.7.15 cray-mpich/8.1.15 cray-libsci/21.08.1.2 nccl/2.11.4 cudnn/8.3.2 cray-python/3.9.7.1 craype-accel-host cudatoolkit/11.5"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -176,8 +177,8 @@ set_center_specific_spack_dependencies()
                 CENTER_COMPILER_PATHS="/usr/tce/packages/gcc/gcc-8.3.1 /usr/tce/packages/clang/clang-10.0.1-gcc-8.3.1/"
                 CENTER_COMPILER="%gcc@8.3.1"
                 DEPENDENTS_CENTER_COMPILER="%gcc@8.3.1"
-                CENTER_DEPENDENCIES="^spectrum-mpi ^cuda@11.6.112 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
-                CENTER_BLAS_LIBRARY="blas=essl"
+                CENTER_DEPENDENCIES="^spectrum-mpi ^cuda@11.6.112 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0 ^openblas ^nccl@2.16.2-1"
+                CENTER_BLAS_LIBRARY="blas=openblas"
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 # On LC the mvapich2 being used is built against HWLOC v1
@@ -185,7 +186,8 @@ set_center_specific_spack_dependencies()
                 CENTER_COMPILER="%gcc"
 #                CENTER_COMPILER="%clang"
 #                DEPENDENTS_CENTER_COMPILER="%gcc@10.3.1"
-                CENTER_DEPENDENCIES="^mvapich2@2.3.6 ^hwloc@1.11.13"
+                # There is something weird about the python@3.9.13 on Pascal right now 5/31/2023
+                CENTER_DEPENDENCIES="^mvapich2@2.3.7 ^hwloc@1.11.13 ^python@3.9.12"
 #                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
@@ -195,16 +197,16 @@ set_center_specific_spack_dependencies()
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_COMPILER="%rocmcc@5.4.1"
-                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.4.1 ^python@3.9.12"
+                CENTER_COMPILER="%rocmcc@5.6.0"
+                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.6.0 ^python@3.9.12 ^protobuf@3.21.12"
                 CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
                 ;;
             "zen3") # Tioga, RZVernal
-                CENTER_COMPILER="%rocmcc@5.4.3"
-                CENTER_DEPENDENCIES="^cray-mpich@8.1.24 ^hip@5.4.3 ^python@3.9.12"
+                CENTER_COMPILER="%rocmcc@5.6.0"
+                CENTER_DEPENDENCIES="^cray-mpich@8.1.26 ^hip@5.6.0 ^python@3.9.12 ^protobuf@3.21.12"
                 CENTER_BLAS_LIBRARY="blas=libsci"
                 # Override the conduit variants for the cray compilers
-                CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis~blt_find_mpi"
+                CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis"
                 CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
                 ;;
             *)
@@ -277,9 +279,9 @@ set_center_specific_externals()
 cat <<EOF  >> ${yaml}
   packages:
     rdma-core:
-      buildable: False
+      buildable: false
       version:
-      - 20
+      - '20'
       externals:
       - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
@@ -288,18 +290,10 @@ EOF
             "power9le" | "power8le")
 cat <<EOF  >> ${yaml}
   packages:
-    essl:
-      buildable: False
-      version:
-      - 6.2.1
-      externals:
-      - spec: essl@6.2.1 arch=${spack_arch}
-        modules:
-        - essl/6.2.1
     rdma-core:
-      buildable: False
+      buildable: false
       version:
-      - 20
+      - '20'
       externals:
       - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
@@ -309,97 +303,97 @@ EOF
 cat <<EOF  >> ${yaml}
   packages:
     hipcub:
-      buildable: False
+      buildable: false
       version:
-      - 5.4.1
+      - '5.6.0'
       externals:
-      - spec: hipcub@5.4.1 arch=${spack_arch}
-        prefix: /opt/rocm-5.4.1/hipcub
+      - spec: hipcub@5.6.0 arch=${spack_arch}
+        prefix: /opt/rocm-5.6.0/hipcub
         extra_attributes:
           compilers:
-            c: /opt/rocm-5.4.1/llvm/bin/clang
-            c++: /opt/rocm-5.4.1/llvm/bin/clang++
+            c: /opt/rocm-5.6.0/llvm/bin/clang
+            c++: /opt/rocm-5.6.0/llvm/bin/clang++
     llvm-amdgpu:
-      buildable: False
+      buildable: false
       version:
-      - 5.4.1
+      - '5.6.0'
       externals:
-      - spec: llvm-amdgpu@5.4.1 arch=${spack_arch}
-        prefix: /opt/rocm-5.4.1/llvm
+      - spec: llvm-amdgpu@5.6.0 arch=${spack_arch}
+        prefix: /opt/rocm-5.6.0/llvm
         extra_attributes:
           compilers:
-            c: /opt/rocm-5.4.1/llvm/bin/clang
-            c++: /opt/rocm-5.4.1/llvm/bin/clang++
+            c: /opt/rocm-5.6.0/llvm/bin/clang
+            c++: /opt/rocm-5.6.0/llvm/bin/clang++
     openmpi:
-      buildable: False
+      buildable: false
       version:
-      - 4.1.2
+      - '4.1.2'
       externals:
       - spec: openmpi@4.1.2 arch=${spack_arch}
         modules:
         - openmpi-tce/4.1.2
     mvapich2:
-      buildable: False
+      buildable: false
       version:
-      - 2.3.6
+      - '2.3.7'
       externals:
-      - spec: mvapich2@2.3.6 arch=${spack_arch}
+      - spec: mvapich2@2.3.7 arch=${spack_arch}
         modules:
-        - mvapich2-tce/2.3.6
+        - mvapich2-tce/2.3.7
 EOF
                 ;;
             "zen3")
 cat <<EOF  >> ${yaml}
-  compilers:
-  - compiler:
-      spec: rocmcc@5.4.3
-      paths:
-        cc: cc
-        cxx: CC
-        f77: ftn
-        fc: ftn
-      flags: {}
-      operating_system: rhel8
-      target: any
-      modules:
-      - PrgEnv-amd
-      - amd/5.4.3
-      environment: {}
-      extra_rpaths: []
+  # compilers:
+  # - compiler:
+  #     spec: rocmcc@5.6.0
+  #     paths:
+  #       cc: cc
+  #       cxx: CC
+  #       f77: ftn
+  #       fc: ftn
+  #     flags: {}
+  #     operating_system: rhel8
+  #     target: any
+  #     modules:
+  #     - PrgEnv-amd
+  #     - amd/5.6.0
+  #     environment: {}
+  #     extra_rpaths: []
   packages:
     all:
       providers:
         mpi: [cray-mpich]
     hipcub:
-      buildable: False
+      buildable: false
       version:
-      - 5.4.3
+      - '5.6.0'
       externals:
-      - spec: hipcub@5.4.3 arch=${spack_arch}
-        prefix: /opt/rocm-5.4.3/hipcub
+      - spec: hipcub@5.6.0 arch=${spack_arch}
+        prefix: /opt/rocm-5.6.0/hipcub
     llvm-amdgpu:
-      buildable: False
+      buildable: false
       version:
-      - 5.4.3
+      - '5.6.0'
       externals:
-      - spec: llvm-amdgpu@5.4.3 arch=${spack_arch}
-        prefix: /opt/rocm-5.4.3/llvm
+      - spec: llvm-amdgpu@5.6.0 arch=${spack_arch}
+        prefix: /opt/rocm-5.6.0/llvm
     cray-libsci:
-      buildable: False
+      buildable: false
       version:
-      - 23.02.1.1
+      - '23.05.1.4'
       externals:
-      - spec: cray-libsci@23.02.1.1 %rocmcc arch=${spack_arch}
+      - spec: cray-libsci@23.05.1.4 %rocmcc arch=${spack_arch}
         modules:
-        - amd/5.4.3 PrgEnv-amd/8.3.3 cray-libsci/23.02.1.1
+        - amd/5.6.0 PrgEnv-amd/8.4.0 cray-libsci/23.05.1.4
     cray-mpich:
-      buildable: False
+      buildable: false
       version:
-      - 8.1.24
+      - '8.1.26'
       externals:
-      - spec: cray-mpich@8.1.24 %rocmcc arch=${spack_arch}
+      - spec: cray-mpich@8.1.26 %rocmcc arch=${spack_arch}
         modules:
-        - amd/5.4.3 PrgEnv-amd/8.3.3 cray-mpich/8.1.24
+        - amd/5.6.0 PrgEnv-amd/8.4.0 cray-mpich/8.1.26
       # - spec: cray-mpich@8.1.24 +wrappers %cc arch=${spack_arch}
       #   prefix: /opt/cray/pe/mpich/8.1.24/ofi/crayclang/10.0/
       # - spec: cray-mpich@8.1.24 +wrappers %rocmcc arch=${spack_arch}
@@ -416,9 +410,9 @@ EOF
 cat <<EOF  >> ${yaml}
   packages:
     rdma-core:
-      buildable: False
+      buildable: false
       version:
-      - 20
+      - '20'
       externals:
       - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
@@ -434,9 +428,9 @@ EOF
 cat <<EOF  >> ${yaml}
   packages:
     rdma-core:
-      buildable: False
+      buildable: false
       version:
-      - 20
+      - '20'
       externals:
       - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
@@ -449,41 +443,41 @@ cat <<EOF  >> ${yaml}
       providers:
         mpi: [cray-mpich]
     nvhpc:
-      buildable: False
+      buildable: false
       version:
-      - 21.11
+      - '21.11'
       externals:
       - spec: nvhpc@21.11 arch=${spack_arch}
         modules:
         - cudatoolkit/11.5
     cudnn:
-      buildable: False
+      buildable: false
       version:
-      - 8.3.2
+      - '8.3.2'
       externals:
       - spec: cudnn@8.3.2 arch=${spack_arch}
         modules:
         - cudnn/8.3.2
     cray-libsci:
-      buildable: False
+      buildable: false
       version:
-      - 21.08.1.2
+      - '21.08.1.2'
       externals:
       - spec: cray-libsci@21.08.1.2 arch=${spack_arch}
         modules:
         - cray-libsci/21.08.1.2
     cray-mpich:
-      buildable: False
+      buildable: false
       version:
-      - 8.1.15
+      - '8.1.15'
       externals:
       - spec: "cray-mpich@8.1.15~wrappers arch=${spack_arch}"
         modules:
         - cray-mpich/8.1.15
     nccl:
-      buildable: False
+      buildable: false
       version:
-      - 2.11.4
+      - '2.11.4'
       externals:
       - spec: nccl@2.11.4 arch=${spack_arch}
         modules:
@@ -510,7 +504,7 @@ cat <<EOF >> ${yaml}
     default:
       lmod:
         core_compilers:
-          - 'cce@13.0.0'
+        - 'cce@13.0.0'
 EOF
 }
 

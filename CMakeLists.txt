@@ -1,5 +1,5 @@
 ################################################################################
-## Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 ## Produced at the Lawrence Livermore National Laboratory.
 ## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 ## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -538,6 +538,18 @@ if (LBANN_WITH_PYTHON_FRONTEND OR LBANN_WITH_EMBEDDED_PYTHON)
     "Relative path from PYTHON_INSTALL_PREFIX to the python package install")
 
 endif (LBANN_WITH_PYTHON_FRONTEND OR LBANN_WITH_EMBEDDED_PYTHON)
+
+if (LBANN_WITH_PYTHON_FRONTEND)
+  set(LBANN_PFE_PYTHON_EXECUTABLE "${Python_EXECUTABLE}" CACHE FILEPATH "")
+  set(LBANN_PFE_PYTHONPATH "" CACHE STRING "")
+  configure_file(
+    "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_pfe.sh.in"
+    "${CMAKE_BINARY_DIR}/lbann_pfe.sh"
+    @ONLY)
+  install(
+    PROGRAMS "${PROJECT_BINARY_DIR}/lbann_pfe.sh"
+    DESTINATION "${CMAKE_INSTALL_BINDIR}")
+endif ()
 
 if (LBANN_WITH_VTUNE)
   find_package(VTune MODULE)

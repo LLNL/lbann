@@ -89,7 +89,7 @@ def make_batch_script(
     set_environment('MV2_USE_THREAD_WARNING', 0)
 
     # Optimizations for Tioga
-    if system in ('tioga'):
+    if system in ('tioga', 'rzvernal'):
         #set_environment('NCCL_SOCKET_IFNAME', 'hsi')
         set_environment('MIOPEN_DEBUG_DISABLE_FIND_DB', '1')
         set_environment('MIOPEN_DISABLE_CACHE', '1')
@@ -99,6 +99,23 @@ def make_batch_script(
         different_ofi_plugin = os.getenv('LBANN_USE_THIS_OFI_PLUGIN')
         if different_ofi_plugin is not None:
             prepend_environment_path('LD_LIBRARY_PATH', different_ofi_plugin)
+
+    # Optimizations for Corona
+    if system in ('corona'):
+        # Hack to enable process forking
+        # Note: InfiniBand is known to experience hangs if an MPI
+        # process is forked (see
+        # https://www.open-mpi.org/faq/?category=openfabrics#ofa-fork).
+        # Setting IBV_FORK_SAFE seems to fix this issue, but it may
+        # hurt performance (see
+        # https://linux.die.net/man/3/ibv_fork_init).
+        set_environment('IBV_FORK_SAFE', 1)
+
+        #set_environment('NCCL_SOCKET_IFNAME', 'hsi')
+        set_environment('MIOPEN_DEBUG_DISABLE_FIND_DB', '1')
+        set_environment('MIOPEN_DISABLE_CACHE', '1')
+        if os.getenv('ROCM_PATH') is not None:
+            prepend_environment_path('LD_LIBRARY_PATH', os.path.join(os.getenv('ROCM_PATH'), 'llvm', 'lib'))
 
     # Optimizations for Sierra-like systems
     if system in ('sierra', 'lassen', 'rzansel'):

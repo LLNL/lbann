@@ -5,15 +5,17 @@ import pytest
 import os, re
 import subprocess as sp
 
+# BVE this should work for now, but needs to be cleaned up more
 def hack_find_spack_build_dir(basedir):
-    if os.getenv('SPACK_BUILD_DIR', default=None):
-        build_dir = os.getenv('SPACK_BUILD_DIR')
-        return basedir + '/' + build_dir
+    if os.getenv('LBANN_BUILD_DIR', default=None):
+        build_dir = os.getenv('LBANN_BUILD_DIR')
+        return build_dir
     else:
-        with os.scandir(basedir) as it:
+        build_dir = basedir + '/builds'
+        with os.scandir(build_dir) as it:
             for entry in it:
-                if entry.is_dir() and re.match(r'spack-.*', entry.name):
-                    return entry.path
+                if entry.is_dir() and re.match(r'lbann_.*', entry.name):
+                    return entry.path + '/build'
 
 def get_system_seq_launch(cluster):
     if cluster in ['lassen', 'ray']:
