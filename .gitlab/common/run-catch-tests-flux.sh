@@ -47,10 +47,6 @@ export MV2_USE_RDMA_CM=0
 #export OMPI_MCA_btl=^openib
 #export OMPI_MCA_osc=ucx
 
-# ml
-# module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2
-# ml
-
 export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
 export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
 
