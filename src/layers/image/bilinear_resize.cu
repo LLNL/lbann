@@ -113,7 +113,6 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute()
 {
 
-  LBANN_CALIPER_MARK_SCOPE("bilinear_resize_layer::fp_compute");
   // Matrices
   const auto& local_input = this->get_local_prev_activations();
   auto& local_output = this->get_local_activations();

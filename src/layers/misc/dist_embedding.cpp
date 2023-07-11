@@ -119,7 +119,6 @@ void dist_embedding_layer<TensorDataType, Layout, Device>::
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void dist_embedding_layer<TensorDataType, Layout, Device>::fp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("dist_embedding_layer::fp_compute");
   // Data matrices
   // Note: Make sure to get original weight values since they are in
   // NVSHMEM buffer.
@@ -226,7 +225,6 @@ void dist_embedding_layer<TensorDataType, Layout, Device>::fp_compute()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void dist_embedding_layer<TensorDataType, Layout, Device>::bp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("dist_embedding_layer::bp_compute");
 
   // Data matrices
   const auto& input = this->get_prev_activations();

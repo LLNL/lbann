@@ -183,7 +183,6 @@ bp_compute_3d_kernel(El::Int input_dimx,
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void crop_layer<TensorDataType, T_layout, Dev>::fp_compute_3d()
 {
-  LBANN_CALIPER_MARK_SCOPE("crop_layer::fp_compute");
 
   // Local matrices
   const auto& local_input = this->get_local_prev_activations(0);
@@ -230,7 +229,6 @@ void crop_layer<TensorDataType, T_layout, Dev>::fp_compute_3d()
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void crop_layer<TensorDataType, T_layout, Dev>::bp_compute_3d()
 {
-  LBANN_CALIPER_MARK_SCOPE("crop_layer::bp_compute");
 
   // Clear error signals
   El::Zero(this->get_error_signals(0));

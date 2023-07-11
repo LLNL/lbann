@@ -227,7 +227,6 @@ void local_bp_gpu(
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_fp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("cross_entropy_layer::fp_compute");
   const auto& input_dims = this->get_input_dims(0);
   // Only used if m_use_labels is true
   const auto& spatial_sample_size = std::accumulate(input_dims.begin() + 1,
@@ -245,7 +244,6 @@ void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_fp_compute()
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_bp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("cross_entropy_layer::bp_compute");
   const auto& input_dims = this->get_input_dims(0);
   // Only used if m_use_labels is true
   const auto& spatial_sample_size = std::accumulate(input_dims.begin() + 1,

@@ -338,7 +338,6 @@ void fp_gpu(lbann_comm& comm,
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void in_top_k_layer<TensorDataType, T_layout, Dev>::fp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("in_top_k_layer::fp_compute");
   fp_gpu(*this->get_comm(),
          this->m_k,
          this->get_prev_activations(),

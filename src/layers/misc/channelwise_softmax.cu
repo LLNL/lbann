@@ -325,7 +325,6 @@ void fp_impl(size_t num_channels,
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void channelwise_softmax_layer<TensorDataType, Layout, Device>::fp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("channelwise_softmax_layer::fp_compute");
   El::Int num_channels, channel_size, channel_stride;
   this->get_channel_size_and_stride(channel_size, channel_stride, num_channels);
   fp_impl(num_channels,
@@ -527,7 +526,6 @@ void bp_impl(size_t num_channels,
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void channelwise_softmax_layer<TensorDataType, Layout, Device>::bp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("channelwise_softmax_layer::bp_compute");
   El::Int num_channels, channel_size, channel_stride;
   this->get_channel_size_and_stride(channel_size, channel_stride, num_channels);
   bp_impl(num_channels,

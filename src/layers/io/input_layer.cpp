@@ -153,7 +153,6 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void input_layer<TensorDataType, T_layout, Dev>::fp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("input_layer::fp_compute");
   if (!this->m_samples_loaded) {
     execution_mode const mode =
       this->m_model->get_execution_context().get_execution_mode();

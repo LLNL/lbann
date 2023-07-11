@@ -157,7 +157,6 @@ void bp_model_parallel(
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void softmax_layer<TensorDataType, Layout, Device>::fp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("softmax_layer::fp_compute");
   if constexpr (Layout == data_layout::DATA_PARALLEL) {
     const auto& local_input =
       dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU> const&>(
@@ -193,7 +192,6 @@ void softmax_layer<TensorDataType, Layout, Device>::fp_compute()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void softmax_layer<TensorDataType, Layout, Device>::bp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("softmax_layer::bp_compute");
   if constexpr (Layout == data_layout::DATA_PARALLEL) {
     auto const& local_output =
       dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU> const&>(

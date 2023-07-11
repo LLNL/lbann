@@ -33,7 +33,6 @@ namespace lbann {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void embedding_layer<TensorDataType, Layout, Device>::fp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("embedding_layer::fp_compute");
   using MatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local data
@@ -68,7 +67,6 @@ void embedding_layer<TensorDataType, Layout, Device>::fp_compute()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void embedding_layer<TensorDataType, Layout, Device>::bp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("embedding_layer::bp_compute");
   using MatType = El::Matrix<TensorDataType, El::Device::CPU>;
   const TensorDataType one = El::TypeTraits<TensorDataType>::One();
 

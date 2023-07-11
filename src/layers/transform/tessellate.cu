@@ -137,7 +137,6 @@ void tessellate_layer<TensorDataType, T_layout, Dev>::fp_compute_3d(
   const El::AbstractMatrix<TensorDataType>& input,
   El::AbstractDistMatrix<TensorDataType>& output)
 {
-  LBANN_CALIPER_MARK_SCOPE("tessellate_layer::fp_compute");
   auto& local_output = output.Matrix();
   if (!local_output.IsEmpty()) {
     auto multisync =
@@ -177,7 +176,6 @@ void tessellate_layer<TensorDataType, T_layout, Dev>::bp_compute_3d(
   const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
   El::AbstractMatrix<TensorDataType>& gradient_wrt_input)
 {
-  LBANN_CALIPER_MARK_SCOPE("tessellate_layer::bp_compute");
   const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
   El::Zero(gradient_wrt_input);
   if (!local_gradient_wrt_output.IsEmpty()) {

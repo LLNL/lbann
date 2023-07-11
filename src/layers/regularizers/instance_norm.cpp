@@ -116,7 +116,6 @@ void fp_impl(lbann_comm& comm,
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void instance_norm_layer<TensorDataType, Layout, Device>::fp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("instance_norm_layer::fp_compute");
   const El::Int num_channels = this->get_output_dims().front();
   const El::Int channel_size = this->get_output_size() / num_channels;
   fp_impl(*this->get_comm(),
@@ -236,7 +235,6 @@ void bp_impl(lbann_comm& comm,
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void instance_norm_layer<TensorDataType, Layout, Device>::bp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("instance_norm_layer::bp_compute");
   const El::Int num_channels = this->get_output_dims().front();
   const El::Int channel_size = this->get_output_size() / num_channels;
   bp_impl(*this->get_comm(),

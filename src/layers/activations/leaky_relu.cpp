@@ -75,7 +75,6 @@ void local_bp(TensorDataType negative_slope,
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void leaky_relu_layer<TensorDataType, Layout, Device>::fp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("leaky_relu_layer::fp_compute");
   local_fp(this->m_negative_slope,
            this->get_local_prev_activations(),
            this->get_local_activations());
@@ -84,7 +83,6 @@ void leaky_relu_layer<TensorDataType, Layout, Device>::fp_compute()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("leaky_relu_layer::bp_compute");
   local_bp<TensorDataType>(this->m_negative_slope,
                            this->get_local_activations(),
                            this->get_local_prev_error_signals(),

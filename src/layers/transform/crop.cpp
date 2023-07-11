@@ -32,14 +32,12 @@ namespace lbann {
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void crop_layer<TensorDataType, T_layout, Dev>::fp_compute_3d()
 {
-  LBANN_CALIPER_MARK_SCOPE("crop_layer::fp_compute");
   this->fp_compute_nd();
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void crop_layer<TensorDataType, T_layout, Dev>::bp_compute_3d()
 {
-  LBANN_CALIPER_MARK_SCOPE("crop_layer::bp_compute");
   this->bp_compute_nd();
 }
 

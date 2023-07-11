@@ -87,10 +87,6 @@ data_type_layer<InputTensorDataType, OutputTensorDataType>::operator=(
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
 {
-  //std::string mark = this->get_type() + "_layer::fp_compute";
-  //std::cerr << "data_type_layer:" << mark << std::endl;
-  //(void)mark; // quiet unused when we don't have caliper
-  //LBANN_CALIPER_MARK_SCOPE(mark.c_str());
   const auto fp_start = get_time();
 
   // Setup weights proxies
@@ -133,10 +129,17 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
 #endif // LBANN_HAS_DISTCONV
 
   // Apply layer's compute function
-  const auto fp_compute_start = get_time();
-  fp_compute();
-  m_fp_compute_time += get_time() - fp_compute_start;
-
+  {
+    // This bit is preprocessed out since the LBANN_CALIPER macro
+    // won't help us out here.
+#ifdef LBANN_HAS_CALIPER
+    auto const scope_name = this->get_type() + "_layer::fp_compute";
+    LBANN_CALIPER_MARK_SCOPE(scope_name.c_str());
+#endif
+    const auto fp_compute_start = get_time();
+    fp_compute();
+    m_fp_compute_time += get_time() - fp_compute_start;
+  }
 #ifdef LBANN_HAS_DISTCONV
   if (distconv_enabled())
     get_distconv_adapter().fp_postprocess();
@@ -159,9 +162,6 @@ template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType,
                      OutputTensorDataType>::back_prop_impl_()
 {
-  //std::string mark = this->get_type() + "_layer::bp_compute";
-  //(void)mark; // quiet unused when we don't have caliper
-  //LBANN_CALIPER_MARK_SCOPE(mark.c_str());
   const auto bp_start = get_time();
 
   // Setup tensors
@@ -189,10 +189,17 @@ void data_type_layer<InputTensorDataType,
 #endif // LBANN_HAS_DISTCONV
 
   // Backprop the compute function.
-  const auto bp_compute_start = get_time();
-  bp_compute();
-  m_bp_compute_time += get_time() - bp_compute_start;
-
+  {
+    // This bit is preprocessed out since the LBANN_CALIPER macro
+    // won't help us out here.
+#ifdef LBANN_HAS_CALIPER
+    auto const scope_name = this->get_type() + "_layer::bp_compute";
+    LBANN_CALIPER_MARK_SCOPE(scope_name.c_str());
+#endif
+    const auto bp_compute_start = get_time();
+    bp_compute();
+    m_bp_compute_time += get_time() - bp_compute_start;
+  }
 #ifdef LBANN_HAS_DISTCONV
   if (distconv_enabled())
     get_distconv_adapter().bp_postprocess();

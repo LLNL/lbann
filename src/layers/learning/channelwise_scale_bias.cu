@@ -183,7 +183,6 @@ bp_kernel(size_t num_channels,
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::fp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("channelwise_scale_bias_layer::fp_compute");
   using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
 
   // Local matrices
@@ -238,7 +237,6 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::fp_compute()
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("channelwise_scale_bias_layer::bp_compute");
   using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
 
   // Local matrices

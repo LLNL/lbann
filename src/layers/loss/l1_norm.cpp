@@ -78,14 +78,12 @@ void local_bp_cpu(
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void l1_norm_layer<TensorDataType, T_layout, Dev>::local_fp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("l1_norm_layer::fp_compute");
   local_fp_cpu(this->get_local_prev_activations(), this->m_workspace->Matrix());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void l1_norm_layer<TensorDataType, T_layout, Dev>::local_bp_compute()
 {
-  LBANN_CALIPER_MARK_SCOPE("l1_norm_layer::bp_compute");
   local_bp_cpu(this->get_local_prev_activations(),
                this->m_workspace->LockedMatrix(),
                this->get_local_error_signals());
