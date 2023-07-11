@@ -641,6 +641,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
   fp_compute()
 {
+
 #ifdef LBANN_HAS_DISTCONV
   // We are guaranteed to have
   if (this->distconv_enabled()) {

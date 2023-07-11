@@ -53,6 +53,7 @@ void fp_impl(lbann_comm& comm,
              El::AbstractDistMatrix<TensorDataType>& output,
              El::Matrix<TensorDataType, El::Device::CPU>& local_workspace)
 {
+
   // Local matrices
   using LocalMat = El::Matrix<TensorDataType, El::Device::CPU>;
   const auto& local_input = dynamic_cast<const LocalMat&>(input.LockedMatrix());
@@ -179,7 +180,6 @@ void bp_impl(lbann_comm& comm,
                                   El::IR(num_channels, 2 * num_channels),
                                   El::ALL);
   const TensorDataType mean_scale = 1. / channel_size;
-
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int k = 0; k < local_mini_batch_size; ++k) {
     for (El::Int j = 0; j < num_channels; ++j) {

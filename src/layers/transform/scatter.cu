@@ -176,6 +176,7 @@ __global__ void gather3d_kernel(const T* __restrict__ indices,
 // =============================================================
 // Scatter member functions
 // =============================================================
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void scatter_layer<TensorDataType, Layout, Device>::fp_compute()
 {

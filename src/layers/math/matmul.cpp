@@ -165,6 +165,7 @@ void fp_compute_impl(
   bool transpose_input0,
   bool transpose_input1)
 {
+
   // Local data
   using LocalMat = El::Matrix<TensorDataType, El::Device::CPU>;
   const auto& local_input0 =

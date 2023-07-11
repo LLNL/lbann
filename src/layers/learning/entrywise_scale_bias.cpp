@@ -38,6 +38,7 @@ void fp_impl(
   El::Matrix<TensorDataType, El::Device::CPU>& local_output,
   El::Matrix<TensorDataType, El::Device::CPU> const& local_scale_bias)
 {
+
   // Local matrices
   const auto local_scale = El::LockedView(local_scale_bias, El::ALL, El::IR(0));
   const auto local_bias = El::LockedView(local_scale_bias, El::ALL, El::IR(1));
@@ -65,6 +66,7 @@ void bp_impl(
   El::Matrix<TensorDataType, El::Device::CPU> const& local_scale_bias,
   El::AbstractDistMatrix<TensorDataType>& gradient_wrt_scale_bias)
 {
+
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices

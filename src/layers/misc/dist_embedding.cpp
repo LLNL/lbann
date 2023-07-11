@@ -119,6 +119,7 @@ void dist_embedding_layer<TensorDataType, Layout, Device>::
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void dist_embedding_layer<TensorDataType, Layout, Device>::fp_compute()
 {
+
   // Data matrices
   // Note: Make sure to get original weight values since they are in
   // NVSHMEM buffer.

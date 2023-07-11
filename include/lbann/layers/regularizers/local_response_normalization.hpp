@@ -280,6 +280,7 @@ private:
   /// CPU implementation of forward propagation
   void fp_compute_cpu()
   {
+
     // Local matrices
     const auto& local_input = this->get_local_prev_activations();
     auto& local_output = this->get_local_activations();

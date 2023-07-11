@@ -806,6 +806,7 @@ template <typename TensorDataType, El::Device Device>
 void base_convolution_layer<TensorDataType, Device>::apply_convolution_im2col(
   bool during_forward_prop)
 {
+
   // Local matrices
   const auto& local_kernel = this->weights_values(0).LockedMatrix();
   const auto& local_input =
@@ -930,6 +931,7 @@ void base_convolution_layer<TensorDataType, Device>::
 template <typename TensorDataType, El::Device Device>
 void base_convolution_layer<TensorDataType, Device>::apply_bias_cpu()
 {
+
   // Return immediately if there is no bias
   if (m_bias_scaling_factor == El::TypeTraits<ScalingType>::Zero())
     return;
@@ -1141,7 +1143,6 @@ base_convolution_layer<TensorDataType, Device>::get_backward_data_algo_dnn(
   size_t ws_size,
   TensorDataType* ws)
 {
-
   if (m_bwd_data_dnn_algos.count(local_mini_batch_size) == 0) {
 #ifdef LBANN_DETERMINISTIC
     bool deterministic = true;

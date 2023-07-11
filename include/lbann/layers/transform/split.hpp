@@ -115,6 +115,7 @@ protected:
 
   void fp_setup_outputs(El::Int mini_batch_size) override
   {
+
     const auto& input = this->get_prev_activations();
 
     if (this->get_parallel_strategy().enable_subgraph) {
