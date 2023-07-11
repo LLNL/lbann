@@ -877,7 +877,7 @@ fi
 
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
     # Try to concretize the environment and catch the return code
-    CMD="spack concretize ${BUILD_JOBS}"
+    CMD="spack concretize --reuse ${BUILD_JOBS}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
@@ -915,7 +915,7 @@ fi
 
 ##########################################################################################
 # Actually install LBANN's dependencies from local source
-CMD="spack install --only dependencies ${BUILD_JOBS}"
+CMD="spack install --reuse --only dependencies ${BUILD_JOBS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -931,7 +931,7 @@ fi
 if [[ -n "${SPACK_EXTRA_ROOT_PACKAGES:-}" ]]; then
     for p in ${SPACK_EXTRA_ROOT_PACKAGES}
     do
-        CMD="spack install ${BUILD_JOBS} ${p}"
+        CMD="spack install --reuse ${BUILD_JOBS} ${p}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     done
@@ -949,7 +949,7 @@ fi
 
 ##########################################################################################
 # Configure but don't install LBANN using spack
-CMD="spack install -u initconfig ${BUILD_JOBS} lbann"
+CMD="spack install --reuse -u initconfig ${BUILD_JOBS} lbann"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
