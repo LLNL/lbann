@@ -28,7 +28,6 @@
 #define LBANN_LAYERS_LAYER_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-#include "lbann/utils/profiling.hpp"
 #include "lbann/utils/typename.hpp"
 #include <string>
 #include <vector>

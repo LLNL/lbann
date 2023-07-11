@@ -25,8 +25,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/statistics.hpp"
+
 #include "lbann/comm_impl.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/profiling.hpp"
 
 namespace lbann {
 

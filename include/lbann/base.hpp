@@ -36,7 +36,6 @@
 #include "lbann/utils/cyg_profile.hpp"
 #include "lbann/utils/enum_iterator.hpp"
 #include "lbann/utils/file_utils.hpp"
-#include "lbann/utils/profiling.hpp"
 
 // Support for OpenMP macros
 #include "lbann/utils/omp_pragma.hpp"

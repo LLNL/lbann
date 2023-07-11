@@ -28,6 +28,7 @@
 #include "lbann/optimizers/hypergradient_adam_impl.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/profiling.hpp"
 
 #include "lbann/proto/optimizers.pb.h"
 

@@ -30,8 +30,10 @@
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/optimizers/optimizer_impl.hpp"
 #include "lbann/proto/objective_functions.pb.h"
+#include "lbann/utils/profiling.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/weights/data_type_weights.hpp"
+
 #include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 namespace lbann {

@@ -24,12 +24,15 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <omp.h>
 #define LBANN_RANDOM_INSTANTIATE
 #include "lbann/io/file_io.hpp"
 #include "lbann/utils/hash.hpp"
+#include "lbann/utils/profiling.hpp"
 #include "lbann/utils/random.hpp"
+
 #include <thread>
+
+#include <omp.h>
 
 namespace lbann {
 

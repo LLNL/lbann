@@ -30,6 +30,7 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/profiling.hpp"
 #include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/random.hpp"
 

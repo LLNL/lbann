@@ -35,6 +35,7 @@
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/profiling.hpp"
 #include "lbann/utils/timer_map.hpp"
 
 #include "lbann/proto/training_algorithm.pb.h"

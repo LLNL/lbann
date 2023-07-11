@@ -27,6 +27,7 @@
 #define LBANN_SRC_OPERATORS_MATH_COMMON_HPP_INCLUDED
 
 #include "lbann/base.hpp"
+#include "lbann/utils/profiling.hpp"
 
 namespace lbann {
 namespace internal {

@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/optimizers/sgd.hpp"
+#include "lbann/utils/profiling.hpp"
 
 namespace lbann {
 

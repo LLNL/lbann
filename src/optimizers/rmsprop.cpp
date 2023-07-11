@@ -27,6 +27,7 @@
 #include "lbann/optimizers/rmsprop_impl.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/profiling.hpp"
 
 namespace lbann {
 

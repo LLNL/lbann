@@ -31,7 +31,6 @@
 #include "lbann/utils/gpu/helpers.hpp"
 
 #include "lbann/utils/dnn_lib/openmp.hpp"
-#include "lbann/utils/profiling.hpp"
 
 namespace lbann {
 

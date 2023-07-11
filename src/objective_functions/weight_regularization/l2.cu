@@ -28,6 +28,7 @@
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
 
 #include "lbann/utils/gpu/helpers.hpp"
+#include "lbann/utils/profiling.hpp"
 
 namespace lbann {
 

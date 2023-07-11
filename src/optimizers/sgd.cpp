@@ -29,6 +29,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/options.hpp"
+#include "lbann/utils/profiling.hpp"
 
 namespace lbann {
 

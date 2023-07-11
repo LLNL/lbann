@@ -26,6 +26,7 @@
 
 #include "lbann/optimizers/adagrad.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
+#include "lbann/utils/profiling.hpp"
 
 namespace lbann {
 
