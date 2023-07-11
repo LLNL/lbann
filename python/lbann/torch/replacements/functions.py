@@ -292,6 +292,16 @@ def full(size, fill_value, **kwargs):
     return lbann.Constant(value=fill_value, num_neurons=size)
 
 
+@register_function('torch.ones')
+def ones(size, **kwargs):
+    return full(size, 1, **kwargs)
+
+
+@register_function('torch.zeros')
+def zeros(size, **kwargs):
+    return full(size, 0, **kwargs)
+
+
 @register_function('torch.addmm')
 def addmm(input, mat1, mat2, *, beta=1, alpha=1):
     rhs = lbann.Scale(lbann.MatMul(mat1, mat2), constant=alpha)
