@@ -32,117 +32,91 @@
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 
 #ifdef LBANN_HAS_CALIPER
-#include <caliper/cali.h>
 #include <caliper/cali-manager.h>
-#include <caliper/cali_macros.h>
-#include <adiak.hpp>
-#include "adiak_config.hpp"
-#endif
-
+#endif // LBANN_HAS_CALIPER
 
 namespace lbann {
 namespace callback {
 
 #ifdef LBANN_HAS_CALIPER
 
-/**
- */
-class profiler_caliper : public callback_base {
- public:
-  profiler_caliper(bool skip_init = true, bool autotune=false, int tuned_omp_threads=0);
+class profiler_caliper : public callback_base
+{
+public:
+  profiler_caliper(bool skip_init = true);
   profiler_caliper(const profiler_caliper&) = default;
-  profiler_caliper& operator=(const profiler_caliper&) = default;
-  profiler_caliper* copy() const override {
+  ~profiler_caliper();
+
+  profiler_caliper* copy() const override
+  {
     return new profiler_caliper(*this);
   }
-  ~profiler_caliper();
-  void on_epoch_begin(model *m) override;
-  void on_epoch_end(model *m) override;
-  void on_validation_begin(model *m) override;
-  void on_validation_end(model *m) override;
-  void on_test_begin(model *m) override;
-  void on_test_end(model *m) override;
-  void on_batch_begin(model *m) override;
-  void on_batch_end(model *m) override;
-  void on_batch_evaluate_begin(model *m) override;
-  void on_batch_evaluate_end(model *m) override;
-  void on_forward_prop_begin(model *m) override;
-  void on_forward_prop_end(model *m) override;
-  void on_evaluate_forward_prop_begin(model *m) override;
-  void on_evaluate_forward_prop_end(model *m) override;
-  void on_backward_prop_begin(model *m) override;
-  void on_backward_prop_end(model *m) override;
-  void on_forward_prop_begin(model *m, Layer *l) override;
-  void on_forward_prop_end(model *m, Layer *l) override;
-  void on_evaluate_forward_prop_begin(model *m, Layer *l) override;
-  void on_evaluate_forward_prop_end(model *m, Layer *l) override;
-  void on_backward_prop_begin(model *m, Layer *l) override;
-  void on_backward_prop_end(model *m, Layer *l) override;
-  void on_optimize_begin(model *m) override;
-  void on_optimize_end(model *m) override;
-  void on_optimize_begin(model *m, weights *w) override;
-  void on_optimize_end(model *m, weights *w) override;
+
+  void on_epoch_begin(model* m) override;
+  void on_epoch_end(model* m) override;
+  void on_validation_begin(model* m) override;
+  void on_validation_end(model* m) override;
+  void on_test_begin(model* m) override;
+  void on_test_end(model* m) override;
+  void on_batch_begin(model* m) override;
+  void on_batch_end(model* m) override;
+  void on_batch_evaluate_begin(model* m) override;
+  void on_batch_evaluate_end(model* m) override;
+  void on_forward_prop_begin(model* m) override;
+  void on_forward_prop_end(model* m) override;
+  void on_evaluate_forward_prop_begin(model* m) override;
+  void on_evaluate_forward_prop_end(model* m) override;
+  void on_backward_prop_begin(model* m) override;
+  void on_backward_prop_end(model* m) override;
+  void on_forward_prop_begin(model* m, Layer* l) override;
+  void on_forward_prop_end(model* m, Layer* l) override;
+  void on_evaluate_forward_prop_begin(model* m, Layer* l) override;
+  void on_evaluate_forward_prop_end(model* m, Layer* l) override;
+  void on_backward_prop_begin(model* m, Layer* l) override;
+  void on_backward_prop_end(model* m, Layer* l) override;
+  void on_optimize_begin(model* m) override;
+  void on_optimize_end(model* m) override;
+  void on_optimize_begin(model* m, weights* w) override;
+  void on_optimize_end(model* m, weights* w) override;
   std::string name() const override { return "profiler_caliper"; }
-
-  void start() {  // used during skip_init logic
-    m_manager.start();
-  }
-
-  static bool s_autotune;
-  static int s_tuned_omp_threads;
 
   /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
- private:
+private:
+  void start_profiling();
+
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
-  struct manager_wrapper {
+  struct manager_wrapper
+  {
+    manager_wrapper();
+    ~manager_wrapper();
+    void start();
     cali::ConfigManager manager;
     bool started = false;
-    manager_wrapper() {
-      std::cout << "Caliper spot adding profile" << std::endl;
-      std::string profile="spot(output=lbann.cali)";
-      manager.add(profile.c_str());
-    }
-    ~manager_wrapper() {
-      if(started) {
-        std::cout << "Caliper spot stop\n" << std::endl;
-        manager.stop();
-        manager.flush();
-      }
-    }
-    void start() {
-      if(!started) {
-        std::cout << "Caliper spot start\n" << std::endl;
-        manager.start();
-        started = true;
-      }
-    }
-
-  };
-
+  }; // struct manager_wrapper
   manager_wrapper m_manager;
 
   /** Whether to skip initial iterations. */
-  bool m_skip_init;  // default is to skip first epoch
+  bool m_skip_init; // default is to skip first epoch
 };
 
 #endif // ifdef LBANN_HAS_CALIPER
 
 // Builder function
-std::unique_ptr<callback_base>
-build_profiler_caliper_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+std::unique_ptr<callback_base> build_profiler_caliper_callback_from_pbuf(
+  const google::protobuf::Message&,
+  std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-
-#endif  // LBANN_CALLBACKS_PROFILER_CALIPER_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_PROFILER_CALIPER_HPP_INCLUDED

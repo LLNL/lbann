@@ -30,21 +30,19 @@
 
 #ifdef LBANN_HAS_CALIPER
 #include <caliper/cali.h>
-#include <caliper/cali-manager.h>
 #include <caliper/cali_macros.h>
-#include <adiak.hpp>
 
 #define LBANN_CALIPER_MARK_SCOPE(x) \
-  CALI_CXX_MARK_SCOPE(x);
+  CALI_CXX_MARK_SCOPE(x)
 
 #define LBANN_CALIPER_MARK_FUNCTION \
-  CALI_CXX_MARK_FUNCTION;
+  CALI_CXX_MARK_FUNCTION
 
 #define LBANN_CALIPER_MARK_BEGIN(x) \
-  CALI_MARK_BEGIN(x);
+  CALI_MARK_BEGIN(x)
 
 #define LBANN_CALIPER_MARK_END(x) \
-  CALI_MARK_END(x);
+  CALI_MARK_END(x)
 
 #else
 #define LBANN_CALIPER_MARK_SCOPE(x) ((void)0)

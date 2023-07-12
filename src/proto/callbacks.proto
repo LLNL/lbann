@@ -448,8 +448,6 @@ message Callback {
 
   message CallbackProfilerCaliper {
     bool skip_init = 1;
-    bool autotune = 2;
-    uint64 tuned_omp_threads = 3;
   }
 
 }
