@@ -29,11 +29,6 @@
 #include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/exception.hpp"
 
-#ifdef LBANN_HAS_CALIPER
-// pick up profiler_caliper statics to autotune or set nthreads in im2col
-#include "lbann/callbacks/profiler_caliper.hpp"
-#endif
-
 namespace lbann {
 
 template <typename TensorDataType>
@@ -122,7 +117,7 @@ void im2col(const CPUMatDT<TensorDataType>& im,
               window_strides[0]);
     return;
   }
-  printf("Not optimized 1x1 or 2d\n");
+
   // Iterate through col matrix columns
   LBANN_OMP_PARALLEL_FOR
   for (int col_col = 0; col_col < col_width; ++col_col) {
@@ -423,48 +418,6 @@ void im2col_1x1(const TensorDataType* __restrict__ input_buffer,
   El::Transpose(input_matrix, output_matrix);
 }
 
-#define IM2COL_2D_LOOP() \
-  for(int offset_y = 0; offset_y < offset_num_y; ++offset_y) { \
-    for(int offset_x = 0; offset_x < offset_num_x; ++offset_x) { \
-      for(int channel = 0; channel < num_channels; ++channel) { \
-        for(int window_pos_y = 0; \
-            window_pos_y < window_dim_y; \
-            ++window_pos_y) { \
-          for(int window_pos_x = 0; \
-              window_pos_x < window_dim_x; \
-              ++window_pos_x) { \
-              \
-            /* Get input entry */ \
-            const int offset_pos_y = offset_start_y + offset_y * offset_stride_y; \
-            const int offset_pos_x = offset_start_x + offset_x * offset_stride_x; \
-            const int input_pos_y = offset_pos_y + window_pos_y; \
-            const int input_pos_x = offset_pos_x + window_pos_x; \
-            const int input_index = (input_pos_x \
-                                     + input_pos_y * input_dim_x \
-                                     + channel * input_dim_x * input_dim_y); \
-            const bool input_pos_valid = (0 <= input_pos_y \
-                                          && input_pos_y < input_dim_y \
-                                          && 0 <= input_pos_x \
-                                          && input_pos_x < input_dim_x); \
-            \
-            /* Get output entry */ \
-            const int output_row = (window_pos_x \
-                                    + window_pos_y * window_dim_x \
-                                    + channel * window_dim_x * window_dim_y); \
-            const int output_col = offset_x + offset_y * offset_num_x; \
-            const int output_index = output_row + output_col * output_height; \
-            \
-            /* Copy input entry to output entry if valid */ \
-            output_buffer[output_index] \
-              = input_pos_valid ? input_buffer[input_index] : TensorDataType(0.); \
-            \
-          } \
-        } \
-      } \
-    } \
-  }
-
-
 template <typename TensorDataType>
 void im2col_2d(const TensorDataType* __restrict__ input_buffer,
                TensorDataType* __restrict__ output_buffer,
@@ -490,87 +443,43 @@ void im2col_2d(const TensorDataType* __restrict__ input_buffer,
     (offset_end_y - offset_start_y + offset_stride_y - 1) / offset_stride_y;
   const int output_height = num_channels * window_dim_x * window_dim_y;
 
-#ifdef LBANN_HAS_CALIPER
+  // Iterate through output matrix entries
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE5
+  for (int offset_y = 0; offset_y < offset_num_y; ++offset_y) {
+    for (int offset_x = 0; offset_x < offset_num_x; ++offset_x) {
+      for (int channel = 0; channel < num_channels; ++channel) {
+        for (int window_pos_y = 0; window_pos_y < window_dim_y;
+             ++window_pos_y) {
+          for (int window_pos_x = 0; window_pos_x < window_dim_x;
+               ++window_pos_x) {
 
-  if(callback::profiler_caliper::s_autotune) {
-    cali::RegionProfile rp;
-    std::vector<int> nthreads_to_test = {2,3,4};  // test down to these small number of threads by default
-    double prev_time = 0.0;
-    double curr_time = 0.0;
+            // Get input entry
+            const int offset_pos_y =
+              offset_start_y + offset_y * offset_stride_y;
+            const int offset_pos_x =
+              offset_start_x + offset_x * offset_stride_x;
+            const int input_pos_y = offset_pos_y + window_pos_y;
+            const int input_pos_x = offset_pos_x + window_pos_x;
+            const int input_index = (input_pos_x + input_pos_y * input_dim_x +
+                                     channel * input_dim_x * input_dim_y);
+            const bool input_pos_valid =
+              (0 <= input_pos_y && input_pos_y < input_dim_y &&
+               0 <= input_pos_x && input_pos_x < input_dim_x);
 
-    std::vector<std::tuple<int,double>> measure;
+            // Get output entry
+            const int output_row = (window_pos_x + window_pos_y * window_dim_x +
+                                    channel * window_dim_x * window_dim_y);
+            const int output_col = offset_x + offset_y * offset_num_x;
+            const int output_index = output_row + output_col * output_height;
 
-    //override OMP_NUM_THREADS to Num Processing Units
-    hwloc_topology_t topo;
-    hwloc_topology_init(&topo);
-    hwloc_topology_load(topo);
-    //max threads via topo Processing Units (PU)
-    unsigned int nbthreads = hwloc_get_nbobjs_by_type(topo,HWLOC_OBJ_PU);
-    fprintf(stderr,"max threads via hwloc is %d\n",nbthreads);
-    while(nbthreads > 4) {
-      nthreads_to_test.push_back(nbthreads);
-      nbthreads /= 2;
-    }
-    //omp_set_num_threads(nbthreads);
-    omp_set_dynamic(0);
-
-    for(int n : nthreads_to_test) {
-      omp_set_num_threads(n);
-      rp.start();
-      CALI_MARK_BEGIN("im2col_2d");
-      for(int i=0; i<100000; ++i) {
-        #pragma omp parallel for schedule(static)
-        IM2COL_2D_LOOP();
+            // Copy input entry to output entry if valid
+            output_buffer[output_index] =
+              input_pos_valid ? input_buffer[input_index] : TensorDataType(0.);
+          }
+        }
       }
-
-      CALI_MARK_END("im2col_2d");
-      rp.stop();
-
-      {
-        std::map<std::string, double> region_times;
-        double total_time;
-
-        std::tie(region_times, std::ignore, total_time) =
-            rp.exclusive_region_times();
-        curr_time = region_times["im2col_2d"] ;
-
-        double mtime = curr_time - prev_time;
-
-        std::cerr << "im2col_2d_time: threads=" << n << " time:" << mtime << std::endl;
-        prev_time = curr_time;
-        measure.emplace_back(n,mtime);
-      }
-
-    } // for nthreads
-    auto min_tuple = std::min_element(measure.begin(),measure.end(),
-        [](const std::tuple<int,double> &x,
-           const std::tuple<int,double> &y) {
-           return std::get<1>(x) < std::get<1>(y);
-           });
-    int tuned_threads = std::get<0>(*min_tuple);
-    std::cerr << "tuned threads: " << tuned_threads << std::endl;
-    callback::profiler_caliper::s_autotune=false;
-    //set max threads to tuned value
-    omp_set_num_threads(tuned_threads);
-    auto s = std::to_string(tuned_threads);
-    adiak::value("im2col_threads",s.c_str());
-  } //if autotune
-
-  // override based on reading in im2col_threads in driving script
-  if(callback::profiler_caliper::s_tuned_omp_threads > 0) {
-    static bool set_once = true;
-    if(set_once) {
-      omp_set_num_threads(callback::profiler_caliper::s_tuned_omp_threads);
-      std::cerr << "user provided tuned threads:" << callback::profiler_caliper::s_tuned_omp_threads << std::endl;
-      set_once = false;
     }
   }
-
-#endif
-
-  // Iterate through output matrix entries
-  LBANN_OMP_PARALLEL_FOR
-  IM2COL_2D_LOOP();
 }
 
 template <typename TensorDataType>
