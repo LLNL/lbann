@@ -539,8 +539,7 @@ void Layer::setup_pointers()
   auto const& arg_parser = global_argument_parser();
   bool const envvar_disable_inplace =
     arg_parser.get<bool>(LBANN_OPTION_NO_INPLACE);
-  if (!this->can_run_inplace() || this->distconv_enabled() ||
-      envvar_disable_inplace) {
+  if (!this->can_run_inplace() || envvar_disable_inplace) {
     // TODO (later): Support distconv-enabled layers
     this->m_runs_inplace = false;
   }
