@@ -444,5 +444,4 @@ message Callback {
     int64 iters_2 =
         4;  // number of training iterations for second set of layers
   }
-
 }

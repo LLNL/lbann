@@ -74,6 +74,5 @@ set_full_path(THIS_DIR_HEADERS
 if(LBANN_HAS_ONNX)
   list(APPEND THIS_DIR_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/export_onnx.hpp)
 endif ()
-
 # Propagate the files up the tree
 set(HEADERS "${HEADERS}" "${THIS_DIR_HEADERS}" PARENT_SCOPE)
