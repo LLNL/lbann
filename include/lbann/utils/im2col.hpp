@@ -29,12 +29,6 @@
 
 #include "lbann/base.hpp"
 
-#ifdef LBANN_HAS_CALIPER
-#include <caliper/cali.h>
-#include <caliper/RegionProfile.h>
-#include <hwloc.h>
-#endif
-
 namespace lbann {
 
 /// Rearrange image blocks into matrix columns
