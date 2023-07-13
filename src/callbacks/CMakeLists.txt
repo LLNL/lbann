@@ -60,7 +60,6 @@ set_full_path(THIS_DIR_SOURCES
   print_model_description.cpp
   print_statistics.cpp
   profiler.cpp
-  profiler_caliper.cpp
   replace_weights.cpp
   save_images.cpp
   save_model.cpp
