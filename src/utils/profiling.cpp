@@ -184,7 +184,8 @@ void do_adiak_init()
                                                 {201307, "4.0"},
                                                 {201511, "4.5"},
                                                 {201811, "5.0"},
-                                                {202011, "5.1"}};
+                                                {202011, "5.1"},
+                                                {202111, "5.2"}};
   adiak::value("omp_version", map.at(_OPENMP));
   adiak::value("omp_max_threads", omp_get_max_threads());
 #endif

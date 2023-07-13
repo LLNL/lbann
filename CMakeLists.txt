@@ -563,17 +563,12 @@ endif (LBANN_WITH_VTUNE)
 if (LBANN_WITH_CALIPER)
   find_package(caliper REQUIRED)
   find_package(adiak REQUIRED)
-  if(caliper_FOUND AND adiak_FOUND)
-    set(LBANN_HAS_CALIPER TRUE)
-    message(STATUS "LBANN_WITH_CALIPER")
-    configure_file(
-      "${CMAKE_SOURCE_DIR}/cmake/configure_files/adiak_config.hpp.in"
-      "${CMAKE_BINARY_DIR}/adiak_config.hpp"
-      @ONLY)
-  else ()
-    set(LBANN_HAS_CALIPER FALSE)
-    set(LBANN_WITH_CALIPER OFF)
-  endif (caliper_FOUND AND adiak_FOUND)
+  set(LBANN_HAS_CALIPER TRUE)
+  message(STATUS "LBANN_WITH_CALIPER")
+  configure_file(
+    "${CMAKE_SOURCE_DIR}/cmake/configure_files/adiak_config.hpp.in"
+    "${CMAKE_BINARY_DIR}/adiak_config.hpp"
+    @ONLY)
 endif (LBANN_WITH_CALIPER)
 
 if (LBANN_WITH_CUDA AND LBANN_WITH_NVPROF)
@@ -742,11 +737,6 @@ if(LBANN_HAS_CALIPER)
     target_link_libraries(lbann PUBLIC adiak::adiak)
   endif ()
   target_link_libraries(lbann PUBLIC caliper)
-endif ()
-
-if (LBANN_HAS_NVSHMEM)
-  set_property(TARGET lbann PROPERTY CUDA_SEPARABLE_COMPILATION ON)
-  target_link_libraries(lbann PUBLIC NVSHMEM::NVSHMEM)
 endif ()
 
 if (LBANN_EXPLICIT_LIBDL)
