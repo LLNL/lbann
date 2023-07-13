@@ -144,14 +144,35 @@ void do_adiak_init()
   else if (build_type == "relwithdebinfo")
     adiak::value("compiler_flags_relwithdebinfo",
                  cc.compiler_flags_relwithdebinfo);
-  else if (!strcmp(cc.cmake_build_type, "debug"))
+  else if (build_type == "debug")
     adiak::value("compiler_flags_debug", cc.compiler_flags_debug);
 
-  if (strlen(cc.cuda_compiler_version) > 0) {
+#ifdef LBANN_HAS_CUDA
+  if (strlen(cc.cuda_compiler) > 0) {
+    adiak::value("cuda_compiler", cc.cuda_compiler);
     adiak::value("cuda_compiler_version", cc.cuda_compiler_version);
     adiak::value("cuda_flags", cc.cuda_flags);
-    adiak::value("cuda_flags_release", cc.cuda_flags_release);
+    if (build_type == "release")
+      adiak::value("cuda_flags_release", cc.cuda_flags_release);
+    else if (build_type == "relwithdebinfo")
+      adiak::value("cuda_flags_relwithdebinfo", cc.cuda_flags_relwithdebinfo);
+    else if (build_type == "debug")
+      adiak::value("cuda_flags_debug", cc.cuda_flags_debug);
   }
+#endif // LBANN_HAS_CUDA
+#ifdef LBANN_HAS_ROCM
+  if (strlen(cc.hip_compiler) > 0) {
+    adiak::value("hip_compiler", cc.hip_compiler);
+    adiak::value("hip_compiler_version", cc.hip_compiler_version);
+    adiak::value("hip_flags", cc.hip_flags);
+    if (build_type == "release")
+      adiak::value("hip_flags_release", cc.hip_flags_release);
+    else if (build_type == "relwithdebinfo")
+      adiak::value("hip_flags_relwithdebinfo", cc.hip_flags_relwithdebinfo);
+    else if (build_type == "debug")
+      adiak::value("hip_flags_debug", cc.hip_flags_debug);
+  }
+#endif // LBANN_HAS_ROCM
 
   // Openmp section
   // todo get lib : e.g libomp,libiomp5,libgomp etc  : parse adiak::libraries

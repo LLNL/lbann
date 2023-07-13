@@ -27,6 +27,8 @@
 #ifndef LBANN_ADIAK_CONFIG_HPP
 #define LBANN_ADIAK_CONFIG_HPP
 
+#include <lbann_config.hpp>
+
 namespace lbann {
 
 struct adiak_configuration
@@ -42,6 +44,8 @@ struct adiak_configuration
   constexpr static const char* compiler_flags_relwithdebinfo =
     "@CMAKE_CXX_FLAGS_RELWITHDEBINFO@";
   constexpr static const char* compiler_flags_debug = "@CMAKE_CXX_FLAGS_DEBUG@";
+#ifdef LBANN_HAS_CUDA
+  constexpr static const char* cuda_compiler = "@CMAKE_CUDA_COMPILER@";
   constexpr static const char* cuda_compiler_version =
     "@CMAKE_CUDA_COMPILER_VERSION@";
   constexpr static const char* cuda_flags = "@CMAKE_CUDA_FLAGS@";
@@ -50,6 +54,18 @@ struct adiak_configuration
   constexpr static const char* cuda_flags_relwithdebinfo =
     "@CMAKE_CUDA_FLAGS_RELWITHDEBINFO@";
   constexpr static const char* cuda_flags_debug = "@CMAKE_CUDA_FLAGS_DEBUG@";
+#endif // LBANN_HAS_CUDA
+#ifdef LBANN_HAS_ROCM
+  constexpr static const char* hip_compiler = "@CMAKE_HIP_COMPILER@";
+  constexpr static const char* hip_compiler_version =
+    "@CMAKE_HIP_COMPILER_VERSION@";
+  constexpr static const char* hip_flags = "@CMAKE_HIP_FLAGS@";
+  constexpr static const char* hip_flags_release =
+    "@CMAKE_HIP_FLAGS_RELEASE@";
+  constexpr static const char* hip_flags_relwithdebinfo =
+    "@CMAKE_HIP_FLAGS_RELWITHDEBINFO@";
+  constexpr static const char* hip_flags_debug = "@CMAKE_HIP_FLAGS_DEBUG@";
+#endif // LBANN_HAS_ROCM
 }; // struct adiak_configuration
 } // namespace lbann
 
