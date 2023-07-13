@@ -42,9 +42,25 @@
 #endif
 
 #if defined(LBANN_HAS_ROCTRACER)
-#include <roctracer_ext.h>
-#include <roctx.h>
+#include <roctracer/roctracer_ext.h>
+#include <roctracer/roctx.h>
 #endif
+
+#ifdef LBANN_HAS_CALIPER
+#include <adiak.hpp>
+#include <caliper/cali.h>
+#include <caliper/cali-manager.h>
+
+#include "adiak_config.hpp"
+#include <algorithm>
+#include <regex>
+#include <string>
+#include <vector>
+
+#if defined(_OPENMP)
+#include <omp.h>
+#endif // defined(_OPENMP)
+#endif // LBANN_HAS_CALIPER
 
 namespace {
 bool profiling_started = false;
@@ -52,7 +68,140 @@ bool profiling_started = false;
 
 namespace lbann {
 
-#if defined(LBANN_SCOREP)
+// If Caliper is available, it is used unilaterally. If it were
+// composed with other annotation APIs (nvtx, roctx, etc), one could
+// end up with double marked regions. Instead, ensure that Caliper has
+// been configured with these tools and access them via Caliper.
+#if defined(LBANN_HAS_CALIPER)
+namespace {
+std::vector<std::string> split(std::string const str,
+                               std::string const regex_str)
+{
+  std::regex regexz(regex_str);
+  std::vector<std::string> list(
+    std::sregex_token_iterator(str.begin(), str.end(), regexz, -1),
+    std::sregex_token_iterator());
+  return list;
+}
+
+std::string as_lowercase(std::string str)
+{
+  std::transform(cbegin(str),
+                 cend(str),
+                 begin(str),
+                 [](unsigned char c) { return ::tolower(c); });
+  return str;
+}
+
+// FIXME (trb): There's potentially a good amount of other metadata
+// that might be outside the scope of this "profiling" file. This
+// might be better factored out of here and managed independently of
+// caliper-based profiling. E.g., much of this information would be
+// useful if it were managed by the LBANN executable and dropped in
+// the working directory as a general artifact of the run.
+void do_adiak_init()
+{
+  struct adiak_configuration const cc;
+  adiak::init(NULL);
+  adiak::user();
+  adiak::launchdate();
+  adiak::libraries();
+  adiak::cmdline();
+  adiak::clustername();
+  adiak::jobsize();
+  adiak::hostlist();
+  adiak::numhosts();
+  adiak::walltime();
+  adiak::value("lbann_git_version", cc.lbann_git_version);
+  adiak::value("cmake_build_type", cc.cmake_build_type);
+
+  // Compiler information:
+  auto const tokens = split(cc.compiler, "/");
+  auto const tsize = tokens.size();
+  std::string const compiler_exec = tokens.back();
+  std::string const compiler = compiler_exec + "-" + cc.compiler_version;
+  adiak::value("compiler", compiler);
+
+  adiak::value("compiler_path", cc.compiler);
+  adiak::value("compiler_version", cc.compiler_version);
+  // FIXME: How robust is this?? Seems like "not very" to me.
+  if (tsize >= 4) {
+    // pickup path version <compiler-version-hash|date>/mpispec/bin/exec
+    std::string const path_version = tokens[tsize - 4];
+    std::cout << "Compiler path version: " << path_version << "\n";
+    auto const s = split(path_version, "-");
+    if (s.size() >= 2) {
+      std::string const path_version_short = s[0] + "-" + s[1];
+      adiak::value("compiler_path_version", path_version_short);
+    }
+  }
+
+  // Flag information
+  auto const build_type = as_lowercase(cc.cmake_build_type);
+  adiak::value("compiler_flags", cc.compiler_flags);
+  if (build_type == "release")
+    adiak::value("compiler_flags_release", cc.compiler_flags_release);
+  else if (build_type == "relwithdebinfo")
+    adiak::value("compiler_flags_relwithdebinfo",
+                 cc.compiler_flags_relwithdebinfo);
+  else if (!strcmp(cc.cmake_build_type, "debug"))
+    adiak::value("compiler_flags_debug", cc.compiler_flags_debug);
+
+  if (strlen(cc.cuda_compiler_version) > 0) {
+    adiak::value("cuda_compiler_version", cc.cuda_compiler_version);
+    adiak::value("cuda_flags", cc.cuda_flags);
+    adiak::value("cuda_flags_release", cc.cuda_flags_release);
+  }
+
+  // Openmp section
+  // todo get lib : e.g libomp,libiomp5,libgomp etc  : parse adiak::libraries
+  // via tool callback note version map only goes to 5.1; revise as needed
+#if defined(_OPENMP)
+  std::unordered_map<unsigned, std::string> map{{200505, "2.5"},
+                                                {200805, "3.0"},
+                                                {201107, "3.1"},
+                                                {201307, "4.0"},
+                                                {201511, "4.5"},
+                                                {201811, "5.0"},
+                                                {202011, "5.1"}};
+  adiak::value("omp_version", map.at(_OPENMP));
+  adiak::value("omp_max_threads", omp_get_max_threads());
+#endif
+}
+void do_adiak_finalize() {
+  adiak::fini();
+}
+
+cali::ConfigManager cali_mgr;
+}// namespace
+void prof_start()
+{
+  do_adiak_init();
+
+  // FIXME: Should this be configurable?
+  cali_mgr.add("spot(output=lbann.cali)");
+  cali_mgr.start();
+
+  profiling_started = true;
+}
+void prof_stop()
+{
+  cali_mgr.stop();
+  cali_mgr.flush();
+  do_adiak_finalize();
+  profiling_started = false;
+}
+void prof_region_begin(const char* s, int, bool)
+{
+  if (!profiling_started) return;
+  cali_begin_region(s);
+}
+void prof_region_end(const char* s, bool)
+{
+  if (!profiling_started) return;
+  cali_end_region(s);
+}
+#elif defined(LBANN_SCOREP)
 void prof_start()
 {
   profiling_started = true;
