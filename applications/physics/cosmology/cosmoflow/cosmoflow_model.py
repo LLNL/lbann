@@ -8,9 +8,8 @@ def construct_cosmoflow_model(parallel_strategy,
                               num_secrets,
                               use_batchnorm,
                               num_epochs,
-                              depth_splits_pooling_id,
-                              gather_dropout_id,
-                              learning_rate):
+                              learning_rate,
+                              min_distconv_width):
 
     # Construct layer graph
     universes = lbann.Input(data_field='samples')
@@ -27,29 +26,16 @@ def construct_cosmoflow_model(parallel_strategy,
 
     # Set parallel_strategy
     if parallel_strategy is not None:
-        pooling_id = 0
-        dropout_id = 0
-        depth_groups = parallel_strategy['depth_groups']
-        for i, layer in enumerate(layers):
+        depth_groups = int(parallel_strategy['depth_groups'])
+        min_distconv_width = max(depth_groups, min_distconv_width)
+        last_distconv_layer = int(math.log2(input_width)
+                                  - math.log2(min_distconv_width) + 1)
+        for layer in layers:
             if layer == secrets:
                 continue
 
-            layer_name = layer.__class__.__name__
-            if layer_name == 'Pooling':
-                pooling_id += 1
-
-                if depth_splits_pooling_id is None:
-                    assert 2**math.log2(depth_groups) == depth_groups
-                    depth_splits_pooling_id = 5-(math.log2(depth_groups)-2)
-
-                if pooling_id == depth_splits_pooling_id:
-                    parallel_strategy = dict(parallel_strategy.items())
-                    parallel_strategy['depth_splits'] = 1
-
-            elif layer_name == 'Dropout':
-                dropout_id += 1
-                if dropout_id == gather_dropout_id:
-                    break
+            if f'pool{last_distconv_layer}' in layer.name or 'fc' in layer.name:
+                break
 
             layer.parallel_strategy = parallel_strategy
 
@@ -65,11 +51,8 @@ def construct_cosmoflow_model(parallel_strategy,
             layers=' '.join([preds.name, secrets.name]),
             execution_modes='test'
         ),
-        lbann.CallbackProfiler(skip_init=True)]
-    for i in range(5):
-        fac = 1e-2 + (1 - 1e-2) * i / 4
-        callbacks.append(lbann.CallbackSetLearningRate(step=i, val=fac * learning_rate))
-    callbacks += [
+        lbann.CallbackProfiler(skip_init=True),
+        lbann.CallbackLinearGrowthLearningRate(target=learning_rate, num_epochs=5),
         lbann.CallbackSetLearningRate(step=32, val=0.25 * learning_rate),
         lbann.CallbackSetLearningRate(step=64, val=0.125 * learning_rate),
     ]

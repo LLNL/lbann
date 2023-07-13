@@ -3,6 +3,7 @@ import lbann.models
 import lbann.modules as lm
 import numpy as np
 import math
+from functools import partial
 
 class CosmoFlow(lm.Module):
     """The CosmoFlow neural network.
@@ -73,7 +74,7 @@ class CosmoFlow(lm.Module):
                 p["stride"] = 1
 
         # Create convolutional blocks
-        activation = lbann.LeakyRelu
+        activation = partial(lbann.LeakyRelu, negative_slope=0.3)
         for i, param in enumerate(filter(lambda x: x["type"] == "conv", self.cp_params)):
             conv_name ="conv"+str(i+1)
             conv_weights = [lbann.Weights(
@@ -91,7 +92,7 @@ class CosmoFlow(lm.Module):
                 bn_statistics_group_size=bn_statistics_group_size,
                 bn_zero_init=False,
                 name=self.name+"_"+conv_name,
-                activation=lbann.LeakyRelu)
+                activation=activation)
             setattr(self, conv_name, conv)
 
         # Create fully-connected layers
@@ -104,6 +105,7 @@ class CosmoFlow(lm.Module):
             fc_name = "fc"+str(i+1)
             fc = lm.FullyConnectedModule(
                 **param,
+                activation=activation if i < len(fc_params)-1 else None,
                 name=self.name+"_"+fc_name,
                 weights=[lbann.Weights(initializer=lbann.HeNormalInitializer()),
                          lbann.Weights(initializer=lbann.ConstantInitializer(value=0))],
@@ -130,17 +132,11 @@ class CosmoFlow(lm.Module):
                     pool_mode='average',
                     name='{0}_pool{1}_instance{2}'.format(
                         self.name, i, self.instance))
-        
-        def create_act(x, i):
-            return lbann.LeakyRelu(
-                x, negative_slope=0.3,
-                name='{0}_act{1}_instance{2}'.format(
-                    self.name, i, self.instance))
 
         def create_dropout(x, i):
             return lbann.Dropout(
                 x, keep_prob=0.5,
-                name='{0}_drop{1}_instance{2}'.format(
+                name='{0}_fc_drop{1}_instance{2}'.format(
                     self.name, i, self.instance))
 
         # Convolutional blocks
@@ -157,8 +153,7 @@ class CosmoFlow(lm.Module):
 
         # Fully-connected layers
         for i in range(3):
-            if i > 1:
-                x = create_act(x, i)
+            if i > 0:
                 x = create_dropout(x, i)
             x = getattr(self, "fc{}".format(i+1))(x)
 

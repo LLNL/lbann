@@ -151,11 +151,8 @@ if __name__ == "__main__":
         '--sample-groups', action='store', type=int, default=1,
         help='the k-way partitioning of the sample dimension (default: 1)')
     parser.add_argument(
-        '--depth-splits-pooling-id', action='store', type=int, default=None,
-        help='the number of pooling layers from which depth_split is set (default: None)')
-    parser.add_argument(
-        '--gather-dropout-id', action='store', type=int, default=1,
-        help='the number of dropout layers from which the network is gathered (default: 1)')
+        '--min-distconv-width', action='store', type=int, default=None,
+        help='the minimum spatial size for which distconv is enabled (default: depth groups)')
 
     parser.add_argument(
         '--dynamically-reclaim-error-signals', action='store_true',
