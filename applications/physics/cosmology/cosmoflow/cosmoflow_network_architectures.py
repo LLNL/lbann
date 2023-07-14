@@ -105,7 +105,6 @@ class CosmoFlow(lm.Module):
             fc_name = "fc"+str(i+1)
             fc = lm.FullyConnectedModule(
                 **param,
-                activation=activation if i < len(fc_params)-1 else None,
                 name=self.name+"_"+fc_name,
                 weights=[lbann.Weights(initializer=lbann.HeNormalInitializer()),
                          lbann.Weights(initializer=lbann.ConstantInitializer(value=0))],
@@ -132,6 +131,12 @@ class CosmoFlow(lm.Module):
                     pool_mode='average',
                     name='{0}_pool{1}_instance{2}'.format(
                         self.name, i, self.instance))
+            
+        def create_act(x, i):
+            return lbann.LeakyRelu(
+                x, negative_slope=0.3,
+                name='{0}_fc_act{1}_instance{2}'.format(
+                    self.name, i, self.instance))
 
         def create_dropout(x, i):
             return lbann.Dropout(
@@ -154,6 +159,7 @@ class CosmoFlow(lm.Module):
         # Fully-connected layers
         for i in range(3):
             if i > 0:
+                x = create_act(x, i)
                 x = create_dropout(x, i)
             x = getattr(self, "fc{}".format(i+1))(x)
 

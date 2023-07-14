@@ -189,9 +189,8 @@ if __name__ == "__main__":
                                                       num_secrets=args.num_secrets,
                                                       use_batchnorm=args.use_batchnorm,
                                                       num_epochs=args.num_epochs,
-                                                      depth_splits_pooling_id = args.depth_splits_pooling_id,
-                                                      gather_dropout_id = args.gather_dropout_id,
-                                                      learning_rate=args.optimizer_learning_rate)
+                                                      learning_rate=args.optimizer_learning_rate,
+                                                      min_distconv_width=args.min_distconv_width)
 
     # Setup optimizer
     optimizer = lbann.contrib.args.create_optimizer(args)
