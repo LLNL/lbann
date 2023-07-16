@@ -851,9 +851,7 @@ void model::setup_subgrid_layers_run_condition()
   const auto& layers = this->get_layers();
   const El::Int num_layers = layers.size();
   for (El::Int node = 0; node < num_layers; ++node) {
-    if(layers[node]->get_type() == "cross_grid_sum"){
-      layers[node]->set_subgraph_parallelism_execution();
-    }
+    // Special case when split/slice and concatenate/sum need sub-graph parallelism execution
     if(layers[node]->get_type() == "split" ||
        layers[node]->get_type() == "slice"){
 

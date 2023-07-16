@@ -870,6 +870,10 @@ protected:
   /// @todo Remove
 
   SubGraphCommunication subgraph_communication_method = PT2PT;
+
+  // Model-level: Is subgraph parallelism enabled for this Model?
+  // Layer-level: Does this layer need subgraph execution (like split and sum layers)
+  // Process-level: Does this layer exist in the given process (For e.g. some layers will only run on a subset of processes defined by grid tag)
   // Model-level sub-graph parallelism
   bool apply_subgraph_parallelism = false;
   // Layer-level sub-graph execution

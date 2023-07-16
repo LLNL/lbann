@@ -40,6 +40,7 @@ public:
   {
     this->m_expected_num_parent_layers = -1; // No limit on parents
     this->m_expected_num_child_layers = -1;  // No limit on children
+    this->set_subgraph_parallelism_execution();
   }
 
   cross_grid_sum_layer* copy() const final
@@ -131,22 +132,22 @@ private:
     auto& input = this->get_prev_activations(tag);
     El::Copy(input, output);
 
-    auto* const output_cast = dynamic_cast<
-      El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
-      &output);
+    auto& output_cast = dynamic_cast<
+      El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>&>(
+      output);
 
     auto const syncInfoOutput =
-      El::SyncInfoFromMatrix(output_cast->LockedMatrix());
+      El::SyncInfoFromMatrix(output_cast.LockedMatrix());
 
-    const El::Int mloc = output_cast->LocalHeight();
-    const El::Int nloc = output_cast->LocalWidth();
+    const El::Int mloc = output_cast.LocalHeight();
+    const El::Int nloc = output_cast.LocalWidth();
 
     El::Matrix<TensorDataType, Dev> temp_output(mloc, nloc);
 
-    El::Copy(output_cast->LockedMatrix(), temp_output);
+    El::Copy(output_cast.LockedMatrix(), temp_output);
 
     El::mpi::AllReduce(temp_output.Buffer(),
-                       output_cast->Buffer(),
+                       output_cast.Buffer(),
                        mloc * nloc,
                        El::mpi::SUM,
                        this->get_subgrid_comm(),
@@ -200,24 +201,24 @@ private:
     int gradient_wrt_output_Width = gradient_wrt_output.Width();
     for(int i=0; i<children.size();i++)
     {
-      auto* const gradient_wrt_input_cast = dynamic_cast<
-        El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
-        &this->get_error_signals(i));
-      gradient_wrt_input_cast->Resize(gradient_wrt_output_Height, gradient_wrt_output_Width);
+      auto& gradient_wrt_input_cast = dynamic_cast<
+        El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>&>(
+        this->get_error_signals(i));
+      gradient_wrt_input_cast.Resize(gradient_wrt_output_Height, gradient_wrt_output_Width);
     }
 
     El::Copy(gradient_wrt_output, gradient_wrt_input);
 
-    auto* const gradient_wrt_input_cast = dynamic_cast<
-      El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
-      &gradient_wrt_input);
+    auto& gradient_wrt_input_cast = dynamic_cast<
+      El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>&>(
+      gradient_wrt_input);
 
-    const El::Int mloc = gradient_wrt_input_cast->LocalHeight();
-    const El::Int nloc = gradient_wrt_input_cast->LocalWidth();
+    const El::Int mloc = gradient_wrt_input_cast.LocalHeight();
+    const El::Int nloc = gradient_wrt_input_cast.LocalWidth();
 
     El::Matrix<TensorDataType, Dev> temp_output(mloc, nloc);
 
-    El::Copy(gradient_wrt_input_cast->LockedMatrix(), temp_output);
+    El::Copy(gradient_wrt_input_cast.LockedMatrix(), temp_output);
 
     El::AllReduce(gradient_wrt_input, this->get_subgrid_comm(), El::mpi::SUM);
   }

@@ -96,12 +96,12 @@ protected:
     auto& input = this->get_prev_activations(subgrid_comm_rank);
     // El::Copy(input, output);
 
-    auto* const output_cast = dynamic_cast<
-      El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
-      &output);
+    auto& output_cast = dynamic_cast<
+      El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>&>(
+      output);
 
     auto const sync_info_output =
-      El::SyncInfoFromMatrix(output_cast->LockedMatrix());
+      El::SyncInfoFromMatrix(output_cast.LockedMatrix());
 
     const El::Int mloc = input.LocalHeight();
     const El::Int nloc = input.LocalWidth();
@@ -139,7 +139,7 @@ protected:
       after_allreduce.LockedBuffer(last_dim_index, 0),
       1,
       last_dim,
-      output_cast->Buffer(),
+      output_cast.Buffer(),
       1,
       (last_dim / subgrid_comm_size),
       sync_info_output);
@@ -175,14 +175,14 @@ protected:
 
     using MatrixType =
       El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>;
-    auto const* const gradient_wrt_output_cast =
-      dynamic_cast<const MatrixType*>(&gradient_wrt_output);
+    auto& gradient_wrt_output_cast =
+      dynamic_cast<const MatrixType&>(gradient_wrt_output);
 
-    auto* const gradient_wrt_input_cast =
-      dynamic_cast<MatrixType*>(&input_grad);
+    auto& gradient_wrt_input_cast =
+      dynamic_cast<MatrixType&>(input_grad);
 
-    int mloc = gradient_wrt_output_cast->LocalHeight();
-    int nloc = gradient_wrt_output_cast->LocalWidth();
+    int mloc = gradient_wrt_output_cast.LocalHeight();
+    int nloc = gradient_wrt_output_cast.LocalWidth();
     int per_grid_last_dim = last_dim / subgrid_comm_size;
 
     El::Matrix<TensorDataType, Dev> temp_input(nloc, mloc),
@@ -190,7 +190,7 @@ protected:
       transposed(nloc * (mloc / per_grid_last_dim), per_grid_last_dim),
       transposed_output(last_dim, nloc * (mloc / per_grid_last_dim));
 
-    El::Copy(gradient_wrt_output_cast->LockedMatrix(), temp_input);
+    El::Copy(gradient_wrt_output_cast.LockedMatrix(), temp_input);
     temp_input.Resize(per_grid_last_dim, nloc * (mloc / per_grid_last_dim));
 
     El::Transpose(temp_input, transposed);
@@ -207,12 +207,12 @@ protected:
 
     for(int i=0; i<children.size();i++)
     {
-      auto* const gradient_wrt_input_cast_layer = dynamic_cast<
-        El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
-        &this->get_error_signals(i));
-      gradient_wrt_input_cast_layer->Resize(this->get_input_size(), mini_batch_size);
+      auto& gradient_wrt_input_cast_layer = dynamic_cast<
+        MatrixType&>(
+        this->get_error_signals(i));
+      gradient_wrt_input_cast_layer.Resize(this->get_input_size(), mini_batch_size);
     }
-    El::Copy(transposed_output, gradient_wrt_input_cast->Matrix());
+    El::Copy(transposed_output, gradient_wrt_input_cast.Matrix());
   }
 
   void bp_compute() final {}
