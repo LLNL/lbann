@@ -1550,7 +1550,6 @@ message ParallelStrategy {
    *  or negative, the process grid is chosen based on heuristics.
    */
   google.protobuf.Int64Value grid_tag = 21;
-
 }
 
 // =============================================

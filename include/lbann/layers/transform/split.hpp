@@ -119,7 +119,7 @@ protected:
     const auto& input = this->get_prev_activations();
 
     if (this->subgraph_parallelism_execution()) {
-      
+
       // if subgraph parallelism is enabled
       auto const* ptr_input = dynamic_cast<El::DistMatrix<TensorDataType,
                                                           El::STAR,
@@ -142,8 +142,9 @@ protected:
       }
       else {
         for (int i = 0; i < childs[0]->get_num_spliting_groups(); i++) {
-          
-          this->get_branch_tag_input(i).Resize(ptr_input->Height(),mini_batch_size);
+
+          this->get_branch_tag_input(i).Resize(ptr_input->Height(),
+                                               mini_batch_size);
           El::Copy(input, this->get_branch_tag_input(i));
         }
       }
@@ -154,7 +155,7 @@ protected:
                        this->get_branch_tag_input(tag - 1));
       }
     }
-  else {
+    else {
       // If sub-graph parallelism is not enabled
       for (int i = 0; i < this->get_num_children(); ++i) {
         El::LockedView(this->get_activations(i), input);

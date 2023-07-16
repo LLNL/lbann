@@ -178,8 +178,7 @@ protected:
     auto& gradient_wrt_output_cast =
       dynamic_cast<const MatrixType&>(gradient_wrt_output);
 
-    auto& gradient_wrt_input_cast =
-      dynamic_cast<MatrixType&>(input_grad);
+    auto& gradient_wrt_input_cast = dynamic_cast<MatrixType&>(input_grad);
 
     int mloc = gradient_wrt_output_cast.LocalHeight();
     int nloc = gradient_wrt_output_cast.LocalWidth();
@@ -205,12 +204,11 @@ protected:
     El::Transpose(temp_output, transposed_output);
     transposed_output.Resize(mloc * subgrid_comm_size, nloc);
 
-    for(int i=0; i<children.size();i++)
-    {
-      auto& gradient_wrt_input_cast_layer = dynamic_cast<
-        MatrixType&>(
-        this->get_error_signals(i));
-      gradient_wrt_input_cast_layer.Resize(this->get_input_size(), mini_batch_size);
+    for (int i = 0; i < children.size(); i++) {
+      auto& gradient_wrt_input_cast_layer =
+        dynamic_cast<MatrixType&>(this->get_error_signals(i));
+      gradient_wrt_input_cast_layer.Resize(this->get_input_size(),
+                                           mini_batch_size);
     }
     El::Copy(transposed_output, gradient_wrt_input_cast.Matrix());
   }

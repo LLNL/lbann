@@ -379,9 +379,15 @@ public:
   // model wide sub graph parallelism enabled
   bool is_subgraph_parallelism_enabled() { return apply_subgraph_parallelism; }
 
-  void set_subgraph_parallelism_execution() { m_subgraph_parallelism_execution = true; }
+  void set_subgraph_parallelism_execution()
+  {
+    m_subgraph_parallelism_execution = true;
+  }
   // layer-level sub-graph parallelism execution
-  bool subgraph_parallelism_execution() { return m_subgraph_parallelism_execution; }
+  bool subgraph_parallelism_execution()
+  {
+    return m_subgraph_parallelism_execution;
+  }
 
   void set_run_layer_in_subgraph() { run_layer_in_subgraph = true; }
 
@@ -872,8 +878,9 @@ protected:
   SubGraphCommunication subgraph_communication_method = PT2PT;
 
   // Model-level: Is subgraph parallelism enabled for this Model?
-  // Layer-level: Does this layer need subgraph execution (like split and sum layers)
-  // Process-level: Does this layer exist in the given process (For e.g. some layers will only run on a subset of processes defined by grid tag)
+  // Layer-level: Does this layer need subgraph execution (like split and sum
+  // layers) Process-level: Does this layer exist in the given process (For e.g.
+  // some layers will only run on a subset of processes defined by grid tag)
   // Model-level sub-graph parallelism
   bool apply_subgraph_parallelism = false;
   // Layer-level sub-graph execution

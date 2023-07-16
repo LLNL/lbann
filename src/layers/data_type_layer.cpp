@@ -229,7 +229,8 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
   for (int i = 0; i < num_parents; ++i) {
     auto& error_signal_ptr =
       ((m_runs_inplace && i < num_children && !distconv_enabled())
-       ? m_gradient_wrt_outputs[i] : m_gradient_wrt_inputs[i]);
+         ? m_gradient_wrt_outputs[i]
+         : m_gradient_wrt_inputs[i]);
     if (!error_signal_ptr)
       continue;
 
@@ -277,8 +278,8 @@ auto data_type_layer<InputTensorDataType,
   // In-place layers use inputs for the output activations
   // This assumes that there is a one-to-one correspondence between
   // input and output tensors
-  if (this->m_runs_inplace && child_index < (int)m_inputs.size()
-      && !distconv_enabled()) {
+  if (this->m_runs_inplace && child_index < (int)m_inputs.size() &&
+      !distconv_enabled()) {
     return this->get_prev_activations(child_index);
   }
 
@@ -328,8 +329,8 @@ auto data_type_layer<InputTensorDataType,
   // This assumes that there is a one-to-one correspondence between
   // input and output tensors
   if (this->m_runs_inplace &&
-      parent_index < (int)m_gradient_wrt_outputs.size()
-      && !distconv_enabled()) {
+      parent_index < (int)m_gradient_wrt_outputs.size() &&
+      !distconv_enabled()) {
     return this->get_prev_error_signals(parent_index);
   }
 
@@ -690,8 +691,7 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
   auto childs = get_child_layers();
   auto parents = get_parent_layers();
 
-  if ((this->get_type() == "split" ||
-       this->get_type() == "slice") &&
+  if ((this->get_type() == "split" || this->get_type() == "slice") &&
       this->get_model()->is_subgraph_parallelism_enabled() &&
       this->subgraph_parallelism_execution()) {
 
@@ -728,8 +728,7 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
     for (auto& subgrid_tensor : m_subgrid_tensors_split) {
       for (int child_index = 0; child_index < int(childs.size());
            ++child_index) {
-        if (childs[child_index]->get_grid_tag() ==
-            count + 1) {
+        if (childs[child_index]->get_grid_tag() == count + 1) {
           subgrid_tensor = output_mat_builder->MakeEmpty(
             *grids[childs[child_index]->get_grid_tag()],
             0);
@@ -757,7 +756,8 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
     count = 0;
 
     for (auto& output : m_outputs) {
-      output = output_mat_builder->MakeEmpty(*grids[childs[count]->get_grid_tag()], 0);
+      output =
+        output_mat_builder->MakeEmpty(*grids[childs[count]->get_grid_tag()], 0);
       count++;
     }
     count = 0;
@@ -816,9 +816,7 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
 
     count = 1;
     for (auto& subgrid_tensor : m_subgrid_tensors_split) {
-      subgrid_tensor =
-            input_mat_builder->MakeEmpty(*grids[count],
-                                         0);
+      subgrid_tensor = input_mat_builder->MakeEmpty(*grids[count], 0);
       count++;
     }
   }
@@ -1235,7 +1233,8 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
     // either be copied or swapped out.
     auto& error_signal =
       ((m_runs_inplace && i < get_num_children() && !distconv_enabled())
-       ? m_gradient_wrt_outputs[i] : m_gradient_wrt_inputs[i]);
+         ? m_gradient_wrt_outputs[i]
+         : m_gradient_wrt_inputs[i]);
 
     if (m_persistent_error_signals)
       attempt_view_error_signal(parent, *this, *error_signal);
@@ -1261,8 +1260,7 @@ void data_type_layer<InputTensorDataType,
       continue;
 #endif // LBANN_HAS_DISTCONV
     if (!m_gradient_wrt_inputs[i]) {
-      if (get_type() == "sum" &&
-          this->subgraph_parallelism_execution()) {
+      if (get_type() == "sum" && this->subgraph_parallelism_execution()) {
         m_gradient_wrt_inputs[i] =
           MakeMatBuilder<InputTensorDataType>(this->get_data_layout(),
                                               this->get_device_allocation())
@@ -1277,7 +1275,7 @@ void data_type_layer<InputTensorDataType,
     }
     auto& gradient_wrt_input = get_error_signals(i);
     gradient_wrt_input.Empty(false);
-    if ( (get_type() == "sum" or  get_type() == "cross_grid_sum") &&
+    if ((get_type() == "sum" or get_type() == "cross_grid_sum") &&
         this->subgraph_parallelism_execution()) {
     }
     else {

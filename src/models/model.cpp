@@ -724,14 +724,13 @@ void model::setup(size_t max_mini_batch_size,
   setup_layer_topology();
   setup_layer_execution_order();
   setup_layer_grid_tags(grids_);
-  
+
   if (this->is_subgraph_parallelism_enabled()) {
-  	for (auto& layer: this->get_layers())
-  		layer->set_num_spliting_groups(grids_.size()-1);
+    for (auto& layer : this->get_layers())
+      layer->set_num_spliting_groups(grids_.size() - 1);
 
     setup_subgrid_layers_run_condition();
     setup_subcommunicators(grids_);
-    
   }
 
   setup_layers(max_mini_batch_size, dr_metadata, grids_);
@@ -832,7 +831,6 @@ void model::setup_layer_topology()
   add_split_layers(layer_names);
 }
 
-
 void model::check_subgraph_parallelism()
 {
   // Enables sub-graph parallelism if a layer has a sub-graph tag greater than
@@ -851,29 +849,26 @@ void model::setup_subgrid_layers_run_condition()
   const auto& layers = this->get_layers();
   const El::Int num_layers = layers.size();
   for (El::Int node = 0; node < num_layers; ++node) {
-    // Special case when split/slice and concatenate/sum need sub-graph parallelism execution
-    if(layers[node]->get_type() == "split" ||
-       layers[node]->get_type() == "slice"){
+    // Special case when split/slice and concatenate/sum need sub-graph
+    // parallelism execution
+    if (layers[node]->get_type() == "split" ||
+        layers[node]->get_type() == "slice") {
 
       const std::vector<const Layer*>& childs =
-         layers[node]->get_child_layers();
+        layers[node]->get_child_layers();
 
-      if(childs[0]->get_grid_tag() != layers[node]->get_grid_tag())
+      if (childs[0]->get_grid_tag() != layers[node]->get_grid_tag())
         layers[node]->set_subgraph_parallelism_execution();
-
     }
-    if(layers[node]->get_type() == "concatenate" ||
-       layers[node]->get_type() == "sum"){
+    if (layers[node]->get_type() == "concatenate" ||
+        layers[node]->get_type() == "sum") {
       const std::vector<const Layer*>& parents =
-         layers[node]->get_parent_layers();
-      if(parents[0]->get_grid_tag() != layers[node]->get_grid_tag())
+        layers[node]->get_parent_layers();
+      if (parents[0]->get_grid_tag() != layers[node]->get_grid_tag())
         layers[node]->set_subgraph_parallelism_execution();
     }
-
-
   }
 }
-
 
 void model::get_subgrids_order(std::vector<int>& ranks_order, int num_branches)
 {
@@ -914,8 +909,6 @@ void model::get_subgrids_order(std::vector<int>& ranks_order, int num_branches)
     }
   }
 }
-
-
 
 void model::setup_subcommunicators(const std::vector<El::Grid*>& grids)
 {
@@ -974,7 +967,6 @@ void model::setup_subcommunicators(const std::vector<El::Grid*>& grids)
   }
 }
 
-
 void model::setup_layer_execution_order()
 {
   // Construct layer graph
@@ -1004,11 +996,9 @@ void model::setup_layer_execution_order()
   ensure_input_layers_first();
 }
 
-
 void model::setup_layer_grid_tags(const std::vector<El::Grid*>& grids)
 {
-  for (auto& layer: this->get_layers())
-  {
+  for (auto& layer : this->get_layers()) {
     // Choose process grid to distribute matrices over
     int tag = layer->get_grid_tag();
     if (tag < 0) {

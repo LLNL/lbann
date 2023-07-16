@@ -8,7 +8,7 @@ import numpy as np
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
-sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
+sys.path.insert(0, os.path.join(os.path.dirname(current_dir), "common_python"))
 import tools
 
 # ==============================================
@@ -21,19 +21,26 @@ import tools
 np.random.seed(202306284)
 _num_samples = 16
 _sample_size = 7
-_samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
+_samples = np.random.normal(size=(_num_samples, _sample_size)).astype(np.float32)
+
 
 # Sample access functions
 def get_sample(index):
-    return _samples[index,:]
+    return _samples[index, :]
+
+
 def num_samples():
     return _num_samples
+
+
 def sample_dims():
     return (_sample_size,)
+
 
 # ==============================================
 # Setup LBANN experiment
 # ==============================================
+
 
 def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
@@ -47,7 +54,14 @@ def setup_experiment(lbann, weekly):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
-    return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
+    return (
+        trainer,
+        model,
+        data_reader,
+        optimizer,
+        None,
+    )  # Don't request any specific number of nodes
+
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -60,13 +74,15 @@ def construct_model(lbann):
     # Input data
     # Note: Sum with a weights layer so that gradient checking will
     # verify that error signals are correct.
-    x_weights = lbann.Weights(optimizer=lbann.SGD(),
-                              initializer=lbann.ConstantInitializer(value=0.0),
-                              name='input_weights')
-    x = lbann.Sum(lbann.Reshape(lbann.Input(data_field='samples'),
-                                dims=_sample_size),
-                  lbann.WeightsLayer(weights=x_weights,
-                                     dims=_sample_size))
+    x_weights = lbann.Weights(
+        optimizer=lbann.SGD(),
+        initializer=lbann.ConstantInitializer(value=0.0),
+        name="input_weights",
+    )
+    x = lbann.Sum(
+        lbann.Reshape(lbann.Input(data_field="samples"), dims=_sample_size),
+        lbann.WeightsLayer(weights=x_weights, dims=_sample_size),
+    )
     x_lbann = x
 
     # Objects for LBANN model
@@ -81,22 +97,22 @@ def construct_model(lbann):
     # LBANN implementation
     ### @todo Layers with optimized inter-grid communication
     x = lbann.Identity(x_lbann)
-    y1 = lbann.Sin(x, parallel_strategy = {'grid_tag':1}, name='sin')
-    y2 = lbann.Cos(x, parallel_strategy = {'grid_tag':2}, name='cos')
-    y = lbann.Cross_Grid_Sum(
-        lbann.Identity(y1),
-        lbann.Identity(y2), name='cross_grid')
-    y1 = lbann.Identity(y, parallel_strategy = {'grid_tag':1}, name='branch1_after')
-    y2 = lbann.Identity(y, parallel_strategy = {'grid_tag':2}, name='branch2_after')
-    y1 = lbann.Square(y1, name='square')
-    y2 = lbann.Scale(y2, constant=2, name='scale')
+    y1 = lbann.Sin(x, parallel_strategy={"grid_tag": 1}, name="sin")
+    y2 = lbann.Cos(x, parallel_strategy={"grid_tag": 2}, name="cos")
+    y = lbann.Cross_Grid_Sum(lbann.Identity(y1), lbann.Identity(y2), name="cross_grid")
+    y1 = lbann.Identity(y, parallel_strategy={"grid_tag": 1}, name="branch1_after")
+    y2 = lbann.Identity(y, parallel_strategy={"grid_tag": 2}, name="branch2_after")
+    y1 = lbann.Square(y1, name="square")
+    y2 = lbann.Scale(y2, constant=2, name="scale")
     y = lbann.Sum(
-        lbann.Identity(y1, name='before_sum1'),
-        lbann.Identity(y2, name='before_sum2'),
-        parallel_strategy = {'grid_tag':0}, name='sum')
-    z = lbann.L2Norm2(y, name='l2')
+        lbann.Identity(y1, name="before_sum1"),
+        lbann.Identity(y2, name="before_sum2"),
+        parallel_strategy={"grid_tag": 0},
+        name="sum",
+    )
+    z = lbann.L2Norm2(y, name="l2")
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='obj'))
+    metrics.append(lbann.Metric(z, name="obj"))
 
     # ------------------------------------------
     # NumPy implementation
@@ -106,17 +122,20 @@ def construct_model(lbann):
     for i in range(num_samples()):
         x = get_sample(i).astype(np.float64)
         y = np.sin(x) + np.cos(x)
-        y = y**2 + 2*y
+        y = y**2 + 2 * y
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
-    callbacks.append(lbann.CallbackCheckMetric(
-        metric=metrics[-1].name,
-        lower_bound=val-tol,
-        upper_bound=val+tol,
-        error_on_failure=True,
-        execution_modes='test'))
+    callbacks.append(
+        lbann.CallbackCheckMetric(
+            metric=metrics[-1].name,
+            lower_bound=val - tol,
+            upper_bound=val + tol,
+            error_on_failure=True,
+            execution_modes="test",
+        )
+    )
 
     # ------------------------------------------
     # Gradient checking
@@ -129,11 +148,14 @@ def construct_model(lbann):
     # ------------------------------------------
 
     num_epochs = 0
-    return lbann.Model(num_epochs,
-                       layers=lbann.traverse_layer_graph(x_lbann),
-                       objective_function=obj,
-                       metrics=metrics,
-                       callbacks=callbacks)
+    return lbann.Model(
+        num_epochs,
+        layers=lbann.traverse_layer_graph(x_lbann),
+        objective_function=obj,
+        metrics=metrics,
+        callbacks=callbacks,
+    )
+
 
 def construct_data_reader(lbann):
     """Construct Protobuf message for Python data reader.
@@ -149,27 +171,22 @@ def construct_data_reader(lbann):
     # Note: The training data reader should be removed when
     # https://github.com/LLNL/lbann/issues/1098 is resolved.
     message = lbann.reader_pb2.DataReader()
-    message.reader.extend([
-        tools.create_python_data_reader(
-            lbann,
-            current_file,
-            'get_sample',
-            'num_samples',
-            'sample_dims',
-            'train'
-        )
-    ])
-    message.reader.extend([
-        tools.create_python_data_reader(
-            lbann,
-            current_file,
-            'get_sample',
-            'num_samples',
-            'sample_dims',
-            'test'
-        )
-    ])
+    message.reader.extend(
+        [
+            tools.create_python_data_reader(
+                lbann, current_file, "get_sample", "num_samples", "sample_dims", "train"
+            )
+        ]
+    )
+    message.reader.extend(
+        [
+            tools.create_python_data_reader(
+                lbann, current_file, "get_sample", "num_samples", "sample_dims", "test"
+            )
+        ]
+    )
     return message
+
 
 # ==============================================
 # Setup PyTest
@@ -177,7 +194,6 @@ def construct_data_reader(lbann):
 
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(
-        setup_experiment,
-        __file__,
-        environment={'LBANN_NUM_SUBGRIDS': 2}):
+    setup_experiment, __file__, environment={"LBANN_NUM_SUBGRIDS": 2}
+):
     globals()[_test_func.__name__] = _test_func

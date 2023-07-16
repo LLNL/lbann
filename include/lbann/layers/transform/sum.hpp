@@ -235,8 +235,7 @@ protected:
 
       auto& output = this->get_activations(i);
       output.Empty(false);
-      if (align_outputs &&
-          this->subgraph_parallelism_execution() == false) {
+      if (align_outputs && this->subgraph_parallelism_execution() == false) {
         output.AlignWith(alignment_dist);
       }
       output.Resize(this->get_output_size(i), mini_batch_size);
