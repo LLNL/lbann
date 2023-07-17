@@ -49,3 +49,34 @@ def save_prototext(filename, binary=False, **kwargs):
             f.write(
                 google.protobuf.text_format.MessageToString(
                     message, use_index_order=True).encode())
+
+
+def text2bin(infile: str, outfile: str):
+    """
+    Converts a .prototext file to a .protobin file.
+    """
+    # Read file
+    with open(infile, 'rb') as f:
+        message = google.protobuf.text_format.Parse(f.read(),
+                                                    lbann_pb2.LbannPB())
+
+    # Write file
+    with open(outfile, 'wb') as f:
+        f.write(message.SerializeToString())
+
+
+def bin2text(infile: str, outfile: str):
+    """
+    Converts a .prototext file to a .protobin file.
+    """
+    message = lbann_pb2.LbannPB()
+
+    # Read file
+    with open(infile, 'rb') as f:
+        message.ParseFromString(f.read())
+
+    # Write file
+    with open(outfile, 'wb') as f:
+        f.write(
+            google.protobuf.text_format.MessageToString(
+                message, use_index_order=True).encode())
