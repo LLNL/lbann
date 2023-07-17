@@ -131,6 +131,14 @@ def dropout_impl(mod: nn.Dropout, *args, **kwargs):
 
 @register_module(nn.Linear)
 def linear_impl(origmod: nn.Linear, *args, **kwargs):
+    # Batched matrix multiplication corresponds to channelwise fully-connected
+    if len(args[0].shape) > 2:
+        return lbann.ChannelwiseFullyConnected(
+            *args,
+            **kwargs,
+            output_channel_dims=origmod.out_features,
+            bias=origmod.bias is not None,
+            transpose=True)
     return lbann.FullyConnected(*args,
                                 **kwargs,
                                 num_neurons=origmod.out_features,
@@ -241,6 +249,7 @@ def _impl(mod: nn.AdaptiveAvgPool3d, x):
 @register_module(nn.Tanh)
 def _impl(mod: nn.Tanh, x):
     return lbann.Tanh(x)
+
 
 #################################################################
 # Weight conversion
