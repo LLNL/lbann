@@ -734,21 +734,10 @@ void read_prototext_file(const std::string& fn,
                          lbann_data::LbannPB& pb,
                          const bool /*master*/)
 {
-  int fd = open(fn.c_str(), O_RDONLY);
-  if (fd == -1) {
-    LBANN_ERROR("failed to open ", fn, " for reading");
-  }
-  using FIS = google::protobuf::io::FileInputStream;
-  auto input = std::unique_ptr<FIS, std::function<void(FIS*)>>(
-    new google::protobuf::io::FileInputStream(fd),
-    [](FIS* x) {
-      x->Close();
-      delete x;
-    });
-  bool success = google::protobuf::TextFormat::Parse(input.get(), &pb);
-  if (!success) {
-    LBANN_ERROR("failed to read or parse prototext file: ", fn);
-  }
+  if (fn.rfind("protobin") != std::string::npos)
+    lbann::protobuf::load(fn, pb);
+  else
+    lbann::protobuf::text::load(fn, pb);
 }
 
 void read_prototext_string(const std::string& contents,
