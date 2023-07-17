@@ -78,7 +78,7 @@ def test_lenet_eval():
     reference = mod(inputs)
 
     g = lbann.torch.compile(mod, x=torch.rand(B, 1, 28, 28))
-    outputs = lbann.evaluate(g, inputs)
+    outputs = lbann.evaluate(g, inputs.numpy())
 
     assert torch.allclose(reference, torch.tensor(outputs))
 
@@ -121,3 +121,7 @@ def test_lenet_train():
                                data_reader,
                                opt,
                                job_name='lenet_pytorch_test')
+
+
+if __name__ == '__main__':
+    test_lenet_eval()
