@@ -34,7 +34,7 @@ def test_cosmoflow():
     reference = mod(x)
 
     g = lbann.torch.compile(mod, x=x)
-    outputs = lbann.evaluate(g, x.detach().cpu().numpy())
+    outputs = lbann.evaluate(g, x.detach().cpu().numpy(), binary_protobuf=True)
 
     # Using loose tolerance values due to running a full network on 128^3 inputs
     assert torch.allclose(reference.cpu(),
