@@ -47,6 +47,12 @@ def reshape(x, new_shape, **kwargs):
 
 @register_function('aten.slice.Tensor')
 def _slice(x, dim, start, end):
+    if start == 0 and end > x.shape[dim]:
+        return x
+
+    # Clamp to end of tensor
+    end = min(end, x.shape[dim])
+
     return lbann.Slice(x, axis=dim, slice_points=[start, end])
 
 
