@@ -238,6 +238,10 @@ def _impl(mod: nn.AdaptiveAvgPool3d, x):
     return aap_nd(x, 3)
 
 
+@register_module(nn.Tanh)
+def _impl(mod: nn.Tanh, x):
+    return lbann.Tanh(x)
+
 #################################################################
 # Weight conversion
 
@@ -308,6 +312,11 @@ def batch_norm_weights(mod: nn.BatchNorm2d, layer: lbann.BatchNormalization):
         weights.extend([0, 1])
 
     layer.weights = [_as_weights(w) for w in weights]
+
+
+@register_module_weight_converter(nn.Embedding)
+def embedding_impl(mod: nn.Embedding, layer: lbann.Embedding):
+    layer.weights = [_as_weights(mod.weight)]
 
 
 #################################################################
