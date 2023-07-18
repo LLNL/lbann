@@ -30,6 +30,7 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/profiling.hpp"
 #include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/random.hpp"
 
@@ -76,6 +77,7 @@ void constant_initializer<TensorDataType>::write_proto(
 template <typename TensorDataType>
 void value_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix)
 {
+  LBANN_CALIPER_MARK_SCOPE("value_initializer::fill");
 
   // Check that number of values matches weights matrix
   if (matrix.Height() * matrix.Width() != (El::Int)m_values.size()) {

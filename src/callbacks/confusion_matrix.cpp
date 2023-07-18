@@ -29,6 +29,7 @@
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/utils/profiling.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
 
@@ -175,6 +176,7 @@ void confusion_matrix::reset_counts(const model& m)
 
 void confusion_matrix::update_counts(const model& m)
 {
+  LBANN_CALIPER_MARK_FUNCTION;
   constexpr DataType zero = 0;
 
   // Get predictions

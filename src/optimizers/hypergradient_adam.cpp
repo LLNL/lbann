@@ -28,6 +28,7 @@
 #include "lbann/optimizers/hypergradient_adam_impl.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/profiling.hpp"
 
 #include "lbann/proto/optimizers.pb.h"
 
@@ -125,6 +126,7 @@ void hypergradient_adam<TensorDataType>::step_compute(
   AbsDistMatrixType& values,
   const AbsDistMatrixType& gradient)
 {
+  LBANN_CALIPER_MARK_SCOPE("hypergradient_adam::step_compute");
   if (values.GetLocalDevice() != El::Device::CPU) {
     LBANN_ERROR("hypergradient Adam is only supported on CPU");
   }

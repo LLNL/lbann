@@ -27,6 +27,7 @@
 #define LBANN_SRC_OPERATORS_MATH_COMMON_HPP_INCLUDED
 
 #include "lbann/base.hpp"
+#include "lbann/utils/profiling.hpp"
 
 namespace lbann {
 namespace internal {
@@ -92,6 +93,7 @@ void apply_binary_backprop_operator(
   El::Matrix<DataT, El::Device::CPU>& dx2,
   F f)
 {
+  LBANN_CALIPER_MARK_FUNCTION;
   if (x1.Contiguous() && x2.Contiguous() && dy.Contiguous() &&
       dx1.Contiguous() && dx2.Contiguous()) {
     const auto* x1_buffer = x1.LockedBuffer();

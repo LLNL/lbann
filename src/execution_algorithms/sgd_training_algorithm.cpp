@@ -35,6 +35,7 @@
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/profiling.hpp"
 #include "lbann/utils/timer_map.hpp"
 
 #include "lbann/proto/training_algorithm.pb.h"
@@ -181,6 +182,7 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
                                             data_coordinator& dc,
                                             ScopeTimer timer)
 {
+  LBANN_CALIPER_MARK_FUNCTION;
   model.reset_mode(c, execution_mode::training);
   dc.reset_mode(c);
   do_batch_begin_cbs(model,

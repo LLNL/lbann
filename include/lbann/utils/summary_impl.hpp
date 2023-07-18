@@ -28,6 +28,7 @@
 #define LBANN_SUMMARY_IMPL_HPP_INCLUDED
 
 #include "lbann/utils/summary.hpp"
+#include "lbann/utils/profiling.hpp"
 
 namespace lbann {
 
@@ -225,6 +226,7 @@ inline auto
 lbann_summary::local_sum(const El::AbstractMatrix<TensorDataType>& mat) const
   -> BiggerOf<TensorDataType, float>
 {
+  LBANN_CALIPER_MARK_FUNCTION;
   // Note there are more numerically stable ways to compute a sum.
   const El::Int height = mat.Height();
   const El::Int width = mat.Width();
@@ -256,6 +258,7 @@ lbann_summary::local_sum_sqsum(const El::AbstractMatrix<TensorDataType>& mat,
                                AccumT& sum,
                                AccumT& sqsum) const
 {
+  LBANN_CALIPER_MARK_FUNCTION;
   // Note there are more numerically stable ways to compute a sum.
   const El::Int height = mat.Height();
   const El::Int width = mat.Width();
@@ -289,6 +292,7 @@ inline auto
 lbann_summary::local_min(const El::AbstractMatrix<TensorDataType>& mat) const
   -> BiggerOf<TensorDataType, float>
 {
+  LBANN_CALIPER_MARK_FUNCTION;
   const El::Int height = mat.Height();
   const El::Int width = mat.Width();
   const El::Int ldim = mat.LDim();
@@ -318,6 +322,7 @@ inline auto
 lbann_summary::local_max(const El::AbstractMatrix<TensorDataType>& mat) const
   -> BiggerOf<TensorDataType, float>
 {
+  LBANN_CALIPER_MARK_FUNCTION;
   const El::Int height = mat.Height();
   const El::Int width = mat.Width();
   const El::Int ldim = mat.LDim();
@@ -347,6 +352,7 @@ inline auto
 lbann_summary::local_2norm(const El::AbstractMatrix<TensorDataType>& mat) const
   -> BiggerOf<TensorDataType, float>
 {
+  LBANN_CALIPER_MARK_FUNCTION;
   // Note there are more numerically stable ways to compute this.
   const El::Int height = mat.Height();
   const El::Int width = mat.Width();

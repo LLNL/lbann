@@ -32,6 +32,7 @@
 #include "lbann/utils/file_utils.hpp" // pad()
 #include "lbann/utils/jag_utils.hpp" // read_filelist(..) TODO should be move to file_utils
 #include "lbann/utils/lbann_library.hpp"
+#include "lbann/utils/profiling.hpp"
 #include "lbann/utils/timer.hpp"
 #include <unordered_set>
 
@@ -289,6 +290,7 @@ bool numpy_npz_conduit_reader::load_numpy_npz_from_file(
 
 bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx)
 {
+  LBANN_CALIPER_MARK_SCOPE("numpy_npz_conduit_reader::fetch_datum");
   Mat X_v = El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
   conduit::Node node;
   if (data_store_active()) {

@@ -30,8 +30,10 @@
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/optimizers/optimizer_impl.hpp"
 #include "lbann/proto/objective_functions.pb.h"
+#include "lbann/utils/profiling.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/weights/data_type_weights.hpp"
+
 #include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 namespace lbann {
@@ -41,6 +43,7 @@ void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(
   const CPUMatType& vals,
   CPUMatType& contribution)
 {
+  LBANN_CALIPER_MARK_FUNCTION;
   auto& sqsum = contribution(0, 0);
   if (!vals.IsEmpty()) {
     if (vals.Contiguous()) {

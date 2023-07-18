@@ -27,6 +27,7 @@
 #include "lbann/optimizers/rmsprop_impl.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/profiling.hpp"
 
 namespace lbann {
 
@@ -109,6 +110,7 @@ void rmsprop<TensorDataType>::step_compute_cpu(
   AbsDistMatrixType& values,
   const AbsDistMatrixType& gradient)
 {
+  LBANN_CALIPER_MARK_SCOPE("rmsprop::step_compute");
 
   // Get local matrix data
   const size_t local_height = values.LocalHeight();

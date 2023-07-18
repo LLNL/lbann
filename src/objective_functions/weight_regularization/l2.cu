@@ -28,6 +28,7 @@
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
 
 #include "lbann/utils/gpu/helpers.hpp"
+#include "lbann/utils/profiling.hpp"
 
 namespace lbann {
 
@@ -79,6 +80,7 @@ void l2_weight_regularization::accumulate_contribution<El::Device::GPU>(
   const El::Matrix<AccumulateDataType, El::Device::GPU>& vals,
   El::Matrix<AccumulateDataType, El::Device::GPU>& contribution)
 {
+  LBANN_CALIPER_MARK_FUNCTION;
 
   if (!vals.IsEmpty()) {
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(contribution),
