@@ -42,6 +42,9 @@ def _full(shape, value, **kwargs):
 
 @register_function('aten.view.default')
 def reshape(x, new_shape, **kwargs):
+    if x.shape[0] != new_shape[0]:
+        raise NotImplementedError(
+            'Views that reshape the minibatch dimension are unsupported')
     return lbann.Reshape(x, dims=new_shape[1:])
 
 
