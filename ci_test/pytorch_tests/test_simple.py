@@ -67,6 +67,7 @@ def test_simple_module():
 
 
 def test_module_with_parameters():
+    torch.manual_seed(20230620)
 
     class parameterized(nn.Module):
 
@@ -80,7 +81,6 @@ def test_module_with_parameters():
     mod = parameterized()
 
     # Run PyTorch version
-    torch.manual_seed(20230620)
     with torch.no_grad():
         inp = torch.randn(2, 1, 3, 3)
         ref = mod(inp)
@@ -90,10 +90,12 @@ def test_module_with_parameters():
     out = lbann.evaluate(g, inp.numpy())
 
     # Test correctness
-    assert torch.allclose(ref, torch.tensor(out), atol=1e-6)
+    as_torch = torch.tensor(out).reshape(ref.shape)
+    assert torch.allclose(ref, as_torch, atol=1e-6)
 
 
 def test_module_with_parameters_custom():
+    torch.manual_seed(20230620)
 
     class parameterized(nn.Module):
 
