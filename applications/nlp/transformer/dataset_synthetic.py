@@ -3,9 +3,6 @@ import os.path
 import sys
 
 import numpy as np
-import torchvision
-from torchvision import transforms
-# import torchnlp.datasets
 from torch.utils.data import DataLoader
 # Local imports
 current_file = os.path.realpath(__file__)
@@ -25,10 +22,6 @@ sequence_length = 64
 # Setup
 # ----------------------------------------------
 
-# train_dataset = torchvision.datasets.FakeData(size = 4500966, image_size=(2, 16, 2), transform=transforms.ToTensor())
-# # train_dataset = np.random.rand(4500966, 2*sequence_length)
-# train_loader = DataLoader(train_dataset, batch_size=len(train_dataset))
-# train_dataset = next(iter(train_loader))[0].numpy()
 pad_index = 0
 
 # ----------------------------------------------
