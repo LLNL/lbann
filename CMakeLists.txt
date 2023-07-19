@@ -721,7 +721,6 @@ target_link_libraries(lbann PUBLIC
   ${CONDUIT_LIBRARIES}
   ${CNPY_LIBRARIES}
   ${CLARA_LIBRARIES}
-  ${LBANN_PYTHON_LIBS}
   protobuf::libprotobuf
   ${CEREAL_LIBRARIES}
   ZSTR::ZSTR)
@@ -762,7 +761,8 @@ target_link_libraries(lbann PUBLIC
   ${LBANN_CUDA_LIBS}
   ${LBANN_ROCM_LIBS}
   ${LBANN_DNNL_LIBS}
-  ZLIB::ZLIB)
+  ZLIB::ZLIB
+  ${LBANN_PYTHON_LIBS})
 
 # Ensure that MPI flags are passed to the HIP compiler on Cray platforms
 get_target_property(LBANN_MPI_CXX_INCL_DIRS
