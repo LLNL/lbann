@@ -59,6 +59,7 @@ set_full_path(THIS_DIR_HEADERS
   print_model_description.hpp
   print_statistics.hpp
   profiler.hpp
+  progress_bar.hpp
   replace_weights.hpp
   save_images.hpp
   save_model.hpp
