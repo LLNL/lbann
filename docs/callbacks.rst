@@ -84,6 +84,7 @@ Available Callbacks
 
    Export Onnx <callbacks/export_onnx>
    Summarize images <callbacks/summarize_images>
+   Print progress bar <callback/progress_bar>
 
 ..
    Alternate updates <callbacks/alternate_updates>
