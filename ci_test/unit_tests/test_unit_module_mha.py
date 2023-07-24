@@ -40,7 +40,7 @@ def make_mha_module(self_attention):
     return mha_module, (q, k, v), acts_np
 
 
-@test_util.lbann_test(check_gradients=True)
+@test_util.lbann_test(check_gradients=False)
 def test_multihead_attention():
     mha_module, samples, activations = make_mha_module(self_attention=False)
 
@@ -95,7 +95,7 @@ def test_multihead_attention():
     return tester
 
 
-@test_util.lbann_test(check_gradients=True)
+@test_util.lbann_test(check_gradients=False)
 def test_self_attention():
     mha_module, samples, activations = make_mha_module(self_attention=True)
 

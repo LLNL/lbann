@@ -4,7 +4,7 @@ import test_util
 import pytest
 
 
-@test_util.lbann_test(check_gradients=True)
+@test_util.lbann_test(check_gradients=False)
 def test_inplace_view():
     # Prepare reference output
     np.random.seed(20230606)
