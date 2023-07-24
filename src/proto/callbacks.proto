@@ -86,6 +86,7 @@ message Callback {
     CallbackPerturbWeights perturb_weights = 52;
     CallbackExportOnnx export_onnx = 53;
     CallbackAlternateUpdates alternate_updates = 54;
+    CallbackProgressBar progress_bar = 56;
   }
 
   message CallbackLTFB {
@@ -443,5 +444,9 @@ message Callback {
     int64 iters_1 = 3;  // number of training iterations for first set of layers
     int64 iters_2 =
         4;  // number of training iterations for second set of layers
+  }
+
+  message CallbackProgressBar {
+    int64 interval = 1;
   }
 }
