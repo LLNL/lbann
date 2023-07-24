@@ -33,10 +33,10 @@
 #include "lbann/proto/callbacks.pb.h"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/utils/timer.hpp"
 
 #include <iomanip>
 #include <iostream>
-#include <omp.h> // Simple way to get the current time with omp_wtime
 
 static inline void print_progress(int iteration, int total, double avg_time)
 {
@@ -109,11 +109,11 @@ void progress_bar::on_forward_prop_begin(model* m)
 
     // Gather first batch of statistics
     if (m_current_iteration == 0) {
-      m_last_time = omp_get_wtime();
+      m_last_time = ::lbann::get_time();
       m_moving_avg_time.fill(0.0);
     }
     else {
-      double cur_time = omp_get_wtime();
+      double cur_time = ::lbann::get_time();
       double interval = cur_time - m_last_time;
       m_last_time = cur_time;
       m_moving_avg_time[m_current_iteration %
