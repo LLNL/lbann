@@ -15,7 +15,6 @@ import sys
 import numpy as np
 import torch
 import torch.nn
-from tqdm import tqdm
 import evaluate
 
 # Local imports
@@ -291,7 +290,7 @@ def evaluate_transformer(weights_prefix):
 
     # Evaluate model
     bleu_scores = []
-    for batch, index_start in enumerate(tqdm(range(0, num_samples, mini_batch_size))):
+    for batch, index_start in enumerate(range(0, num_samples, mini_batch_size)):
         index_end = min(index_start+mini_batch_size, num_samples)
         indices = list(range(index_start, index_end))
         batch_size = len(indices)
