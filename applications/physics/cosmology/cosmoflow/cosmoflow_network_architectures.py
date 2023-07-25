@@ -97,8 +97,8 @@ class CosmoFlow(lm.Module):
 
         # Create fully-connected layers
         fc_params = [
-            {"size": 128},
-            {"size": 64},
+            {"size": 128 if mlperf else 2048},
+            {"size": 64 if mlperf else 256},
             {"size": output_size},
         ]
         for i, param in enumerate(fc_params):

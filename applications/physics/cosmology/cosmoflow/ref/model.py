@@ -58,9 +58,14 @@ class CosmoFlow(nn.Module):
             return layers
 
         self.lin_layers = []
-        self.lin_layers += linactdrop(max_channels * 4**3, 128)
-        self.lin_layers += linactdrop(128, 64)
-        self.lin_layers += linactdrop(64, 4, actdrop=False)
+        if mlperf:
+            self.lin_layers += linactdrop(max_channels * 4**3, 128)
+            self.lin_layers += linactdrop(128, 64)
+            self.lin_layers += linactdrop(64, 4, actdrop=False)
+        else:
+            self.lin_layers += linactdrop(max_channels * 4**3, 2048)
+            self.lin_layers += linactdrop(2048, 256)
+            self.lin_layers += linactdrop(256, 4, actdrop=False)
         self.lin_layers = nn.Sequential(*self.lin_layers)
 
         def initialize_weights(module):
