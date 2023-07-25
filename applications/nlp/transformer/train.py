@@ -270,6 +270,11 @@ def make_batch_script(trainer_params, model_params, script_params, args):
         )
     )
 
+    # Print a progress bar
+    model.callbacks.append(
+        lbann.CallbackProgressBar()
+    )
+
     kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 
     # lbann.contrib.launcher.run(trainer, model, reader, opt,

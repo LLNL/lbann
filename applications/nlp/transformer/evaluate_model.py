@@ -15,7 +15,7 @@ import sys
 import numpy as np
 import torch
 import torch.nn
-import torchnlp.metrics
+import evaluate
 
 # Local imports
 current_file = os.path.realpath(__file__)
@@ -48,6 +48,12 @@ bos_index = dataset.bos_index
 eos_index = dataset.eos_index
 pad_index = dataset.pad_index
 num_samples = dataset.num_val_samples()
+metric = evaluate.load(os.path.join(utils.paths.wmt_dir(), 'sacrebleu_metric.py'))
+
+if torch.cuda.is_available():
+    device = torch.device('cuda')
+else:
+    device = torch.device('cpu')
 
 # ----------------------------------------------
 # Evaluation data
@@ -92,6 +98,16 @@ def get_batch(indices):
 # ----------------------------------------------
 # Load model from file
 # ----------------------------------------------
+
+def load_weight(weight_file):
+    """Create a PyTorch tensor object with weights from LBANN.
+
+    Weight file is assumed to have been created by the "dump weights"
+    callback in LBANN.
+
+    """
+    data = np.loadtxt(weight_file, dtype=np.float32)
+    return torch.tensor(data)
 
 def load_parameter(weight_file):
     """Create a PyTorch Parameter object with weights from LBANN.
@@ -149,14 +165,9 @@ def load_transformer(weights_prefix):
 
         # Load weights for self-attention
         attention = layer.self_attn
-        attention._qkv_same_embed_dim = False
         prefix = f'{weights_prefix}/transformer_encoder{i}_attention'
-        attention.q_proj_weight = load_parameter(f'{prefix}_query_matrix.txt')
-        attention.q_proj_bias = load_parameter(f'{prefix}_query_bias.txt')
-        attention.k_proj_weight = load_parameter(f'{prefix}_key_matrix.txt')
-        attention.k_proj_bias = load_parameter(f'{prefix}_key_bias.txt')
-        attention.v_proj_weight = load_parameter(f'{prefix}_value_matrix.txt')
-        attention.v_proj_bias = load_parameter(f'{prefix}_value_bias.txt')
+        attention.in_proj_weight  = load_parameter(f'{prefix}_qkv_matrix.txt')
+        attention.in_proj_bias = load_parameter(f'{prefix}_qkv_bias.txt')
         attention.out_proj_weight = load_parameter(f'{prefix}_output_matrix.txt')
         attention.out_proj_bias = load_parameter(f'{prefix}_output_bias.txt')
 
@@ -176,29 +187,29 @@ def load_transformer(weights_prefix):
 
         # Load weights for self-attention
         attention = layer.self_attn
-        attention._qkv_same_embed_dim = False
         prefix = f'{weights_prefix}/transformer_decoder{i}_attention1'
-        attention.q_proj_weight = load_parameter(f'{prefix}_query_matrix.txt')
-        attention.q_proj_bias = load_parameter(f'{prefix}_query_bias.txt')
-        attention.k_proj_weight = load_parameter(f'{prefix}_key_matrix.txt')
-        attention.k_proj_bias = load_parameter(f'{prefix}_key_bias.txt')
-        attention.v_proj_weight = load_parameter(f'{prefix}_value_matrix.txt')
-        attention.v_proj_bias = load_parameter(f'{prefix}_value_bias.txt')
+        attention.in_proj_weight = load_parameter(f'{prefix}_qkv_matrix.txt')
+        attention.in_proj_bias = load_parameter(f'{prefix}_qkv_bias.txt')
         attention.out_proj_weight = load_parameter(f'{prefix}_output_matrix.txt')
         attention.out_proj_bias = load_parameter(f'{prefix}_output_bias.txt')
 
         # Load weights for attention with memory
         attention = layer.multihead_attn
-        attention._qkv_same_embed_dim = False
         prefix = f'{weights_prefix}/transformer_decoder{i}_attention2'
-        attention.q_proj_weight = load_parameter(f'{prefix}_query_matrix.txt')
-        attention.q_proj_bias = load_parameter(f'{prefix}_query_bias.txt')
-        attention.k_proj_weight = load_parameter(f'{prefix}_key_matrix.txt')
-        attention.k_proj_bias = load_parameter(f'{prefix}_key_bias.txt')
-        attention.v_proj_weight = load_parameter(f'{prefix}_value_matrix.txt')
-        attention.v_proj_bias = load_parameter(f'{prefix}_value_bias.txt')
+        q_proj_weight = load_parameter(f'{prefix}_query_matrix.txt')
+        q_proj_bias = load_parameter(f'{prefix}_query_bias.txt')
+        k_proj_weight = load_parameter(f'{prefix}_key_matrix.txt')
+        k_proj_bias = load_parameter(f'{prefix}_key_bias.txt')
+        v_proj_weight = load_parameter(f'{prefix}_value_matrix.txt')
+        v_proj_bias = load_parameter(f'{prefix}_value_bias.txt')
         attention.out_proj_weight = load_parameter(f'{prefix}_output_matrix.txt')
         attention.out_proj_bias = load_parameter(f'{prefix}_output_bias.txt')
+        attention.in_proj_weight = torch.nn.Parameter(
+            torch.cat((q_proj_weight, k_proj_weight, v_proj_weight)),
+            requires_grad=False)
+        attention.in_proj_bias = torch.nn.Parameter(
+            torch.cat((q_proj_bias, k_proj_bias, v_proj_bias)),
+            requires_grad=False)
 
         # Load weights for feedforward network
         prefix = f'{weights_prefix}/transformer_decoder{i}'
@@ -230,7 +241,7 @@ def add_positional_encoding(x):
     for i in range(embed_dim // 2):
         pos = np.arange(sequence_length).reshape(-1,1)
         encoding[:,:,2*i+1] = np.cos(pos / 10000**(2*i/embed_dim))
-    return x + torch.from_numpy(encoding)
+    return x + torch.from_numpy(encoding).to(device)
 
 def greedy_decode(tokens_en, embedding_layer, transformer, classifier):
     """Generate sequence with transformer.
@@ -249,13 +260,13 @@ def greedy_decode(tokens_en, embedding_layer, transformer, classifier):
     # Decode German sequence
     # TODO: Only perform compute for last sequence entry
     # TODO: Detect EOS tokens and stop early
-    tokens_de = torch.full((1,tokens_en.shape[1]), bos_index, dtype=int)
+    tokens_de = torch.full((1,tokens_en.shape[1]), bos_index, dtype=int, device=device)
     for i in range(1, max_sequence_length):
         embeddings_de = embedding_layer(tokens_de)
         preds = transformer.decoder(
             add_positional_encoding(embeddings_de * np.sqrt(embed_dim)),
             memory,
-            tgt_mask=transformer.generate_square_subsequent_mask(i),
+            tgt_mask=transformer.generate_square_subsequent_mask(i).to(device),
         )
         preds = classifier(preds[-1,:,:])
         preds = preds.argmax(dim=1)
@@ -272,9 +283,9 @@ def evaluate_transformer(weights_prefix):
     """
 
     # Load model weights from file
-    embedding_layer = load_embedding_layer(weights_prefix)
-    transformer = load_transformer(weights_prefix)
-    classifier = torch.nn.Linear(embed_dim, vocab_size, bias=False)
+    embedding_layer = load_embedding_layer(weights_prefix).to(device)
+    transformer = load_transformer(weights_prefix).to(device)
+    classifier = torch.nn.Linear(embed_dim, vocab_size, bias=False).to(device)
     classifier.weight = embedding_layer.weight
 
     # Evaluate model
@@ -287,22 +298,23 @@ def evaluate_transformer(weights_prefix):
         # Translate English sequence to German
         # TODO: Decoding with beam search
         tokens_en, true_tokens_de = get_batch(indices)
+        tokens_en = tokens_en.to(device)
         pred_tokens_de = greedy_decode(
             tokens_en,
             embedding_layer,
             transformer,
             classifier,
-        )
+        ).cpu()
 
         # Compute BLEU score
         for i in range(batch_size):
             hypothesis = dataset.detokenize(pred_tokens_de[:,i].numpy())
             reference = dataset.detokenize(true_tokens_de[:,i].numpy())
             bleu_scores.append(
-                torchnlp.metrics.get_moses_multi_bleu(
-                    [hypothesis],
-                    [reference],
-                )
+                metric.compute(
+                    predictions=[hypothesis],
+                    references=[[reference]]
+                )['score']
             )
 
     # Print results

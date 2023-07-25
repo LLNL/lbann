@@ -5,6 +5,7 @@ import math
 import os
 import os.path
 import sys
+from glob import glob
 
 import lbann
 import lbann.contrib.args
@@ -14,7 +15,7 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 root_dir = os.path.dirname(current_dir)
 sys.path.append(root_dir)
 import train
-import evaluate
+import evaluate_model
 import utils.paths
 
 # ----------------------------------------------
@@ -156,17 +157,16 @@ train_script = train.make_batch_script(
     script_params=script_params,
     args=args
 )
-weights_prefix = os.path.join(
-    work_dir,
-    'weights',
-    f'model0-epoch{args.num_epochs-1}',
-)
-train_script.add_command(
-    f'# python3 {utils.paths.root_dir()}/transformer/evaluate.py {weights_prefix}'
-)
 train_script.run(overwrite=True)
 
 # ----------------------------------------------
 # Evaluate
 # ----------------------------------------------
-evaluate.evaluate_transformer(weights_prefix)
+weights_prefix = glob(os.path.join(
+    work_dir,
+    'weights',
+    'trainer0',
+    f'*epoch.{args.num_epochs}*',
+    'model0'
+))[0]
+evaluate_model.evaluate_transformer(weights_prefix)

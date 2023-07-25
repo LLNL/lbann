@@ -9,14 +9,10 @@ models.
 
 - PyTorch
 
-- Transformers: NLP library for TensorFlow and PyTorch. Install with:
+- HuggingFace Datasets, Evaluate, Tokenizers, Transformers
+
+- SacreBLEU
 
 ```bash
-pip3 install transformers
-```
-
-- PyTorch-NLP: PyTorch utilities for NLP applications. Install with:
-
-```bash
-pip3 install pytorch-nlp
+pip3 install evaluate datasets tokenizers transformers sacrebleu
 ```
