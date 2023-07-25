@@ -100,6 +100,16 @@ def get_batch(indices):
 # Load model from file
 # ----------------------------------------------
 
+def load_weight(weight_file):
+    """Create a PyTorch tensor object with weights from LBANN.
+
+    Weight file is assumed to have been created by the "dump weights"
+    callback in LBANN.
+
+    """
+    data = np.loadtxt(weight_file, dtype=np.float32)
+    return torch.tensor(data)
+
 def load_parameter(weight_file):
     """Create a PyTorch Parameter object with weights from LBANN.
 
@@ -156,14 +166,9 @@ def load_transformer(weights_prefix):
 
         # Load weights for self-attention
         attention = layer.self_attn
-        attention._qkv_same_embed_dim = False
         prefix = f'{weights_prefix}/transformer_encoder{i}_attention'
-        attention.q_proj_weight = load_parameter(f'{prefix}_query_matrix.txt')
-        attention.q_proj_bias = load_parameter(f'{prefix}_query_bias.txt')
-        attention.k_proj_weight = load_parameter(f'{prefix}_key_matrix.txt')
-        attention.k_proj_bias = load_parameter(f'{prefix}_key_bias.txt')
-        attention.v_proj_weight = load_parameter(f'{prefix}_value_matrix.txt')
-        attention.v_proj_bias = load_parameter(f'{prefix}_value_bias.txt')
+        attention.in_proj_weight  = load_parameter(f'{prefix}_qkv_matrix.txt')
+        attention.in_proj_bias = load_parameter(f'{prefix}_qkv_bias.txt')
         attention.out_proj_weight = load_parameter(f'{prefix}_output_matrix.txt')
         attention.out_proj_bias = load_parameter(f'{prefix}_output_bias.txt')
 
@@ -183,29 +188,29 @@ def load_transformer(weights_prefix):
 
         # Load weights for self-attention
         attention = layer.self_attn
-        attention._qkv_same_embed_dim = False
         prefix = f'{weights_prefix}/transformer_decoder{i}_attention1'
-        attention.q_proj_weight = load_parameter(f'{prefix}_query_matrix.txt')
-        attention.q_proj_bias = load_parameter(f'{prefix}_query_bias.txt')
-        attention.k_proj_weight = load_parameter(f'{prefix}_key_matrix.txt')
-        attention.k_proj_bias = load_parameter(f'{prefix}_key_bias.txt')
-        attention.v_proj_weight = load_parameter(f'{prefix}_value_matrix.txt')
-        attention.v_proj_bias = load_parameter(f'{prefix}_value_bias.txt')
+        attention.in_proj_weight = load_parameter(f'{prefix}_qkv_matrix.txt')
+        attention.in_proj_bias = load_parameter(f'{prefix}_qkv_bias.txt')
         attention.out_proj_weight = load_parameter(f'{prefix}_output_matrix.txt')
         attention.out_proj_bias = load_parameter(f'{prefix}_output_bias.txt')
 
         # Load weights for attention with memory
         attention = layer.multihead_attn
-        attention._qkv_same_embed_dim = False
         prefix = f'{weights_prefix}/transformer_decoder{i}_attention2'
-        attention.q_proj_weight = load_parameter(f'{prefix}_query_matrix.txt')
-        attention.q_proj_bias = load_parameter(f'{prefix}_query_bias.txt')
-        attention.k_proj_weight = load_parameter(f'{prefix}_key_matrix.txt')
-        attention.k_proj_bias = load_parameter(f'{prefix}_key_bias.txt')
-        attention.v_proj_weight = load_parameter(f'{prefix}_value_matrix.txt')
-        attention.v_proj_bias = load_parameter(f'{prefix}_value_bias.txt')
+        q_proj_weight = load_parameter(f'{prefix}_query_matrix.txt')
+        q_proj_bias = load_parameter(f'{prefix}_query_bias.txt')
+        k_proj_weight = load_parameter(f'{prefix}_key_matrix.txt')
+        k_proj_bias = load_parameter(f'{prefix}_key_bias.txt')
+        v_proj_weight = load_parameter(f'{prefix}_value_matrix.txt')
+        v_proj_bias = load_parameter(f'{prefix}_value_bias.txt')
         attention.out_proj_weight = load_parameter(f'{prefix}_output_matrix.txt')
         attention.out_proj_bias = load_parameter(f'{prefix}_output_bias.txt')
+        attention.in_proj_weight = torch.nn.Parameter(
+            torch.cat((q_proj_weight, k_proj_weight, v_proj_weight)),
+            requires_grad=False)
+        attention.in_proj_bias = torch.nn.Parameter(
+            torch.cat((q_proj_bias, k_proj_bias, v_proj_bias)),
+            requires_grad=False)
 
         # Load weights for feedforward network
         prefix = f'{weights_prefix}/transformer_decoder{i}'
