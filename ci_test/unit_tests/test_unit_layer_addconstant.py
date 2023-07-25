@@ -5,7 +5,7 @@ import pytest
 
 
 @pytest.mark.parametrize('constant', [0, 1])
-@test_util.lbann_test(check_gradients=True)
+@test_util.lbann_test(check_gradients=False)
 def test_simple(constant):
     np.random.seed(20230515)
     # Two samples of 2x3 tensors

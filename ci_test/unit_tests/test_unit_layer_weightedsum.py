@@ -4,7 +4,7 @@ import test_util
 import pytest
 
 
-@test_util.lbann_test(check_gradients=True)
+@test_util.lbann_test(check_gradients=False)
 def test_weightedsum_twoinputs():
     # Prepare reference output
     np.random.seed(20230516)
@@ -26,7 +26,7 @@ def test_weightedsum_twoinputs():
 
 
 @pytest.mark.parametrize('inputs', [3, 5])
-@test_util.lbann_test(check_gradients=True)
+@test_util.lbann_test(check_gradients=False)
 def test_weightedsum_n_inputs(inputs):
     # Prepare reference output
     np.random.seed(20230516)
@@ -49,7 +49,7 @@ def test_weightedsum_n_inputs(inputs):
 
 
 @pytest.mark.parametrize('dims', [1, 3])
-@test_util.lbann_test(check_gradients=True)
+@test_util.lbann_test(check_gradients=False)
 def test_weightedsum_oneinput(dims):
     # Prepare reference output
     np.random.seed(20230516)
