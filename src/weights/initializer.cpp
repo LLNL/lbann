@@ -336,6 +336,14 @@ build_value_initializer_from_pbuf(google::protobuf::Message const& msg)
 {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::ValueInitializer const&>(msg);
+  if (params.values().size() > 0 && params.values_d().size() > 0) {
+    LBANN_ERROR("A value initializer must contain either single-precision "
+                "values or double-precision values (in values_d), not both.");
+  }
+  if (params.values_d().size() > 0)
+    return std::make_unique<value_initializer<TensorDataType>>(
+      protobuf::to_vector<TensorDataType>(params.values_d()));
+
   return std::make_unique<value_initializer<TensorDataType>>(
     protobuf::to_vector<TensorDataType>(params.values()));
 }
