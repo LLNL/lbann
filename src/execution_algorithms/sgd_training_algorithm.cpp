@@ -206,10 +206,6 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
         model.forward_prop(execution_mode::training);
       }
 
-      // check if the data coordinator has finished the epoch and kickoff
-      // background I/O
-      finished = dc.epoch_complete(execution_mode::training);
-
       // Result is not needed until the end of the mini-batch.
       model.get_objective_function()->start_evaluation(
         execution_mode::training,
@@ -233,6 +229,10 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
       // Update step
       model.update_weights();
       model.update_layers();
+
+      // check if the data coordinator has finished the epoch and kickoff
+      // background I/O
+      finished = dc.epoch_complete(execution_mode::training);
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
     }
   }
