@@ -47,12 +47,6 @@
 #include <utility>
 #include <vector>
 
-// Asynchronous memory transfers for input data
-// Note: This introduces a race condition. It is possible for the
-// input data to be modified by another layer before it is used by
-// this layer.
-// #define ASYNC_INPUT_MEMORY_TRANSFER
-
 namespace lbann {
 
 Layer::Layer() : m_frozen(false)

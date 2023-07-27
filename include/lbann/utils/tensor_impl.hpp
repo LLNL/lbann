@@ -39,16 +39,16 @@ template <typename TDT>
 void do_tensor_copy(const BaseDistMat& src, El::AbstractDistMatrix<TDT>& tgt)
 {
   bool copy_async = false;
-#if defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
+#if defined(LBANN_HAS_GPU)
   auto src_dist_data = src.DistData();
   auto tgt_dist_data = tgt.DistData();
   // Asynchronously copy CPU data to GPU data if they are otherwise aligned
-  if ((src.dist_data.device == El::Device::CPU) &&
+  if ((src_dist_data.device == El::Device::CPU) &&
       (tgt_dist_data.device == El::Device::GPU)) {
     src_dist_data.device = El::Device::GPU;
     copy_async = (src_dist_data == tgt_dist_data);
   }
-#endif // defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
+#endif // defined(LBANN_HAS_GPU)
   if (copy_async) {
     El::CopyAsync(src, tgt);
   }
