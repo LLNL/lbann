@@ -191,6 +191,10 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
 
   bool finished = false;
 
+#ifdef LBANN_HAS_GPU
+      m_data_prefetch_sync_event.synchronize();
+#endif // LBANN_HAS_GPU
+
   dc.fetch_data(execution_mode::training);
 
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
@@ -206,6 +210,10 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
         model.forward_prop(execution_mode::training);
       }
 
+#ifdef LBANN_HAS_GPU
+      m_data_prefetch_sync_event.record(El::SyncInfo<El::Device::GPU>{}.Stream());
+#endif // LBANN_HAS_GPU
+
       // Result is not needed until the end of the mini-batch.
       model.get_objective_function()->start_evaluation(
         execution_mode::training,
@@ -219,6 +227,10 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
       }
       model.get_objective_function()->compute_weight_regularization();
 
+      // check if the data coordinator has finished the epoch and kickoff
+      // background I/O
+      finished = dc.epoch_complete(execution_mode::training);
+
       // Finish evaluation.
       model.get_objective_function()->finish_evaluation(
         execution_mode::training,
@@ -229,10 +241,6 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
       // Update step
       model.update_weights();
       model.update_layers();
-
-      // check if the data coordinator has finished the epoch and kickoff
-      // background I/O
-      finished = dc.epoch_complete(execution_mode::training);
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
     }
   }

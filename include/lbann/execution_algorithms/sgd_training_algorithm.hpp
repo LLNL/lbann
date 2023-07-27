@@ -36,6 +36,9 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/timer_map.hpp"
+#ifdef LBANN_HAS_GPU
+#include "lbann/utils/gpu/helpers.hpp"
+#endif // LBANN_HAS_GPU
 
 #include <google/protobuf/message.h>
 
@@ -151,6 +154,10 @@ private:
    *              future.
    */
   bool m_suppress_timer = false;
+
+#ifdef LBANN_HAS_GPU
+  gpu_lib::event_wrapper m_data_prefetch_sync_event;
+#endif // LBANN_HAS_GPU
 };
 
 template <>
