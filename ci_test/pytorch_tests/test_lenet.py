@@ -125,3 +125,4 @@ def test_lenet_train():
 
 if __name__ == '__main__':
     test_lenet_eval()
+    test_lenet_train()
