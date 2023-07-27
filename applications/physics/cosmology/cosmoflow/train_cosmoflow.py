@@ -190,7 +190,8 @@ if __name__ == "__main__":
                                                       use_batchnorm=args.use_batchnorm,
                                                       num_epochs=args.num_epochs,
                                                       learning_rate=args.optimizer_learning_rate,
-                                                      min_distconv_width=args.min_distconv_width)
+                                                      min_distconv_width=args.min_distconv_width,
+                                                      mlperf=args.mlperf)
 
     # Setup optimizer
     optimizer = lbann.contrib.args.create_optimizer(args)

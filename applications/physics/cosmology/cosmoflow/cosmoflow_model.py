@@ -9,7 +9,8 @@ def construct_cosmoflow_model(parallel_strategy,
                               use_batchnorm,
                               num_epochs,
                               learning_rate,
-                              min_distconv_width):
+                              min_distconv_width,
+                              mlperf):
 
     # Construct layer graph
     universes = lbann.Input(data_field='samples')
@@ -19,7 +20,8 @@ def construct_cosmoflow_model(parallel_strategy,
         input_width=input_width,
         output_size=num_secrets,
         use_bn=use_batchnorm,
-        bn_statistics_group_size=statistics_group_size)(universes)
+        bn_statistics_group_size=statistics_group_size,
+        mlperf=mlperf)(universes)
     mse = lbann.MeanSquaredError([preds, secrets])
     obj = lbann.ObjectiveFunction([mse])
     layers = list(lbann.traverse_layer_graph([universes, secrets]))
@@ -27,7 +29,10 @@ def construct_cosmoflow_model(parallel_strategy,
     # Set parallel_strategy
     if parallel_strategy is not None:
         depth_groups = int(parallel_strategy['depth_groups'])
-        min_distconv_width = max(depth_groups, min_distconv_width)
+        if min_distconv_width is None:
+            min_distconv_width = depth_groups
+        else:
+            min_distconv_width = max(depth_groups, min_distconv_width)
         last_distconv_layer = int(math.log2(input_width)
                                   - math.log2(min_distconv_width) + 1)
         for layer in layers:
