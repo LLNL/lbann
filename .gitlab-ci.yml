@@ -31,15 +31,6 @@
 stages:
   - run-all-clusters
 
-catalyst testing:
-  stage: run-all-clusters
-  variables:
-    WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
-    WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
-  trigger:
-    strategy: depend
-    include: .gitlab/catalyst/pipeline.yml
-
 corona testing:
   stage: run-all-clusters
   variables:
