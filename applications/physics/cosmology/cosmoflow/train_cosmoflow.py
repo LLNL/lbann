@@ -133,6 +133,9 @@ if __name__ == "__main__":
 
     # Parallelism arguments
     parser.add_argument(
+        '--use-distconv', action='store_true',
+        help='Enable distconv spatial parallelism.')
+    parser.add_argument(
         '--depth-groups', action='store', type=int, default=4,
         help='the k-way partitioning of the depth dimension (default: 4)')
     parser.add_argument(
@@ -176,13 +179,15 @@ if __name__ == "__main__":
         print(f'Increasing mini_batch size to {args.mini_batch_size}')
 
     # Set parallel_strategy
-    parallel_strategy = get_parallel_strategy_args(
-        height_groups=args.height_groups,
-        width_groups=args.width_groups,
-        sample_groups=args.sample_groups,
-        channel_groups=args.channel_groups,
-        filter_groups=args.filter_groups,
-        depth_groups=args.depth_groups)
+    parallel_strategy = None
+    if args.use_distconv:
+        parallel_strategy = get_parallel_strategy_args(
+            height_groups=args.height_groups,
+            width_groups=args.width_groups,
+            sample_groups=args.sample_groups,
+            channel_groups=args.channel_groups,
+            filter_groups=args.filter_groups,
+            depth_groups=args.depth_groups)
     model = cosmoflow_model.construct_cosmoflow_model(parallel_strategy=parallel_strategy,
                                                       local_batchnorm=args.local_batchnorm,
                                                       input_width=args.input_width,
