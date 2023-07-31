@@ -172,15 +172,15 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    if args.mini_batch_size * args.depth_groups < args.nodes * args.procs_per_node:
-        print('WARNING the number of samples per mini-batch and depth group (partitions per sample)'
-              ' is too small for the number of processes per trainer. Increasing the mini-batch size')
-        args.mini_batch_size = int((args.nodes * args.procs_per_node) / args.depth_groups)
-        print(f'Increasing mini_batch size to {args.mini_batch_size}')
-
     # Set parallel_strategy
     parallel_strategy = None
     if args.use_distconv:
+        if args.mini_batch_size * args.depth_groups < args.nodes * args.procs_per_node:
+            print('WARNING the number of samples per mini-batch and depth group (partitions per sample)'
+                ' is too small for the number of processes per trainer. Increasing the mini-batch size')
+            args.mini_batch_size = int((args.nodes * args.procs_per_node) / args.depth_groups)
+            print(f'Increasing mini_batch size to {args.mini_batch_size}')
+
         parallel_strategy = get_parallel_strategy_args(
             height_groups=args.height_groups,
             width_groups=args.width_groups,
@@ -188,6 +188,7 @@ if __name__ == "__main__":
             channel_groups=args.channel_groups,
             filter_groups=args.filter_groups,
             depth_groups=args.depth_groups)
+    
     model = cosmoflow_model.construct_cosmoflow_model(parallel_strategy=parallel_strategy,
                                                       local_batchnorm=args.local_batchnorm,
                                                       input_width=args.input_width,
