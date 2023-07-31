@@ -77,6 +77,7 @@ set_full_path(THIS_DIR_SOURCES
   safe_divide.cpp
   safe_reciprocal.cpp
   scale.cpp
+  select.cpp
   sign.cpp
   sin.cpp
   sinh.cpp

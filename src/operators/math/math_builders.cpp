@@ -91,6 +91,7 @@ LBANN_ABS_OP_COMPLEX_ETI(El::Device::GPU);
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(rsqrt, T, D);                         \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(safe_divide, T, D);                   \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(safe_reciprocal, T, D);               \
+  LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(select, T, D);                        \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(scale, T, D);                         \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(sign, T, D);                          \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(sin, T, D);                           \

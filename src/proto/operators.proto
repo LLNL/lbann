@@ -104,6 +104,18 @@ message LogicalOrOperator {}
 message LogicalXorOperator {}
 
 /// @}
+/** @name Predication Operators */
+/// @{
+message SelectOperator {
+  double value = 1;
+  bool constant_if_true = 2;
+  bool constant_if_false = 3;
+  double value_if_true = 4;
+  double value_if_false = 5;
+  double epsilon = 6;
+}
+
+/// @}
 /** @name Binary-with-constant Operators */
 /// @{
 message AddConstantOperator {

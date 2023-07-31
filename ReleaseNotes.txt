@@ -6,6 +6,7 @@ Support for new training algorithms:
 Support for new network structures:
 
 Support for new layers:
+  - Select operator (set tensor value based on predicate)
 
 Python front-end:
 

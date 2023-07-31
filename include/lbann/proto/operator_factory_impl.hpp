@@ -108,6 +108,7 @@ OperatorFactory<InT, OutT, D> build_default_factory()
     LBANN_REGISTER_BUILDER(SafeDivide, safe_divide);
     LBANN_REGISTER_BUILDER(SafeReciprocal, safe_reciprocal);
     LBANN_REGISTER_BUILDER(Scale, scale);
+    LBANN_REGISTER_BUILDER(Select, select);
     LBANN_REGISTER_BUILDER(Selu, selu);
     LBANN_REGISTER_BUILDER(Sigmoid, sigmoid);
     LBANN_REGISTER_BUILDER(SigmoidBinaryCrossEntropy,

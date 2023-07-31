@@ -32,6 +32,7 @@
 #include "lbann/operators/math/binary.hpp"
 #include "lbann/operators/math/binary_with_constant.hpp"
 #include "lbann/operators/math/clamp.hpp"
+#include "lbann/operators/math/select.hpp"
 #include "lbann/operators/math/unary.hpp"
 
 #include "lbann/proto/datatype_helpers.hpp"
@@ -53,6 +54,21 @@ lbann::build_abs_operator(lbann_data::Operator const& op)
 {
   details::AssertConsistentTypeParameters<DataT, El::Base<DataT>, D>(op);
   return std::make_unique<AbsOperator<DataT, D>>();
+}
+
+template <typename DataT, El::Device D>
+std::unique_ptr<lbann::Operator<DataT, DataT, D>>
+lbann::build_select_operator(lbann_data::Operator const& op)
+{
+  details::AssertConsistentTypeParameters<DataT, DataT, D>(op);
+  lbann_data::SelectOperator params;
+  LBANN_ASSERT(op.parameters().UnpackTo(&params));
+  return std::make_unique<SelectOperator<DataT, D>>(params.value(),
+                                                    params.constant_if_true(),
+                                                    params.constant_if_false(),
+                                                    params.value_if_true(),
+                                                    params.value_if_false(),
+                                                    params.epsilon());
 }
 
 #define LBANN_DEFINE_BIN_WITH_CONSTANT_BUILDER(OP_NAME, OP_LOWER_NAME)         \
