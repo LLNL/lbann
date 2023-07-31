@@ -193,7 +193,7 @@ void SelectOperator<DataT, D>::bp_compute_local(
   if (!m_constant_if_false && !m_constant_if_true) {
     LBANN_ASSERT_DEBUG(inputs.size() == 3);
     LBANN_ASSERT_DEBUG(gradient_wrt_inputs.size() == 3);
-    internal::apply_trinary_backprop_operator(
+    internal::apply_ternary_backprop_operator(
       inputs[0].data(),
       inputs[1].data(),
       inputs[2].data(),

@@ -119,7 +119,7 @@ void apply_binary_backprop_operator(
   }
 }
 
-/** @brief A trinary entrywise map c <- f(a,b,c).
+/** @brief A ternary entrywise map c <- f(a,b,c).
  */
 template <typename S, typename T, typename U, typename R, typename F>
 void EntrywiseZipInto(El::Matrix<S, El::Device::CPU> const& A,
@@ -170,16 +170,16 @@ void EntrywiseZipInto(El::Matrix<S, El::Device::CPU> const& A,
   }
 }
 
-/** Apply a trinary backprop operator to CPU data.
+/** Apply a ternary backprop operator to CPU data.
  *  The input and output data must be on CPU and must have the same
- *  dimensions. Given a trinary function \f$ y = f(x_1,x_2,x_3) \f$, the
- *  corresponding TrinaryBackPropOperator is a 6-ary function with the
+ *  dimensions. Given a ternary function \f$ y = f(x_1,x_2,x_3) \f$, the
+ *  corresponding TernaryBackPropOperator is a 6-ary function with the
  *  arguments \f$ x_1 \f$, \f$ x_2 \f$, \f$ x_3 \f$, \f$ dL/dy \f$, \f$
  * dL/dx_1\f$, \f$ dL/dx_2 \f$, \f$ dL/dx_3 \f$. The last three arguments should
- * be overwritten when the TrinaryBackPropOperator is called.
+ * be overwritten when the TernaryBackPropOperator is called.
  */
 template <typename DataT, typename F>
-void apply_trinary_backprop_operator(
+void apply_ternary_backprop_operator(
   El::Matrix<DataT, El::Device::CPU> const& x1,
   El::Matrix<DataT, El::Device::CPU> const& x2,
   El::Matrix<DataT, El::Device::CPU> const& x3,

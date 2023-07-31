@@ -186,25 +186,25 @@ __global__ void entrywise_zip_into_kernel_naive(
     }
 }
 
-/** CUDA kernel to apply a trinary backprop operator. */
+/** CUDA kernel to apply a ternary backprop operator. */
 template <typename DataT, typename F>
 __global__
-void trinary_backprop_operator_kernel(El::Int height, El::Int width,
-                                     DataT const* const __restrict__ x1,
-                                     El::Int x1_ldim,
-                                     DataT const* const __restrict__ x2,
-                                     El::Int x2_ldim,
-                                     DataT const* const __restrict__ x3,
-                                     El::Int x3_ldim,
-                                     DataT const* const __restrict__ dy,
-                                     El::Int dy_ldim,
-                                     DataT* const __restrict__ dx1,
-                                     El::Int dx1_ldim,
-                                     DataT* const __restrict__ dx2,
-                                     El::Int dx2_ldim,
-                                     DataT* const __restrict__ dx3,
-                                     El::Int dx3_ldim,
-                                     F func)
+void ternary_backprop_operator_kernel(El::Int height, El::Int width,
+                                      DataT const* const __restrict__ x1,
+                                      El::Int x1_ldim,
+                                      DataT const* const __restrict__ x2,
+                                      El::Int x2_ldim,
+                                      DataT const* const __restrict__ x3,
+                                      El::Int x3_ldim,
+                                      DataT const* const __restrict__ dy,
+                                      El::Int dy_ldim,
+                                      DataT* const __restrict__ dx1,
+                                      El::Int dx1_ldim,
+                                      DataT* const __restrict__ dx2,
+                                      El::Int dx2_ldim,
+                                      DataT* const __restrict__ dx3,
+                                      El::Int dx3_ldim,
+                                      F func)
 {
   El::Int const gid = threadIdx.x + blockIdx.x * blockDim.x;
   El::Int const size = height * width;
@@ -403,16 +403,16 @@ void EntrywiseZipInto(El::Matrix<S, El::Device::GPU> const& A,
 }
 
 
-/** Apply a trinary backprop operator to GPU data.
+/** Apply a ternary backprop operator to GPU data.
  *  The input and output data must be on GPU and must have the same
- *  dimensions. Given a trinary function \f$ y = f(x_1,x_2,x_3) \f$, the
+ *  dimensions. Given a ternary function \f$ y = f(x_1,x_2,x_3) \f$, the
  *  corresponding BinaryBackPropOperator is a 5-ary function with the
  *  arguments \f$ x_1 \f$, \f$ x_2 \f$, \f$ x_3 \f$, \f$ dL/dy \f$, \f$ dL/dx_1\f$,
  *  \f$ dL/dx_2 \f$, \f$ dL/dx_3 \f$. The last three arguments should be overwritten when
  *  the BinaryBackPropOperator is called.
  */
 template <typename DataT, typename F>
-void apply_trinary_backprop_operator(El::Matrix<DataT, El::Device::GPU> const& x1,
+void apply_ternary_backprop_operator(El::Matrix<DataT, El::Device::GPU> const& x1,
                                     El::Matrix<DataT, El::Device::GPU> const& x2,
                                     El::Matrix<DataT, El::Device::GPU> const& x3,
                                     El::Matrix<DataT, El::Device::GPU> const& dy,
@@ -443,7 +443,7 @@ void apply_trinary_backprop_operator(El::Matrix<DataT, El::Device::GPU> const& x
                                        gpu::get_sync_info(x2),
                                        gpu::get_sync_info(x1));
     hydrogen::gpu::LaunchKernel(
-      kernel::trinary_backprop_operator_kernel<DataT, F>,
+      kernel::ternary_backprop_operator_kernel<DataT, F>,
       grid_dim, block_dim, 0, multisync,
       height, width,
       x1.LockedBuffer(), x1.LDim(),
