@@ -98,8 +98,8 @@ public:
   DataT get_epsilon() { return m_epsilon; }
   bool is_true_case_constant() { return m_constant_if_true; }
   bool is_false_case_constant() { return m_constant_if_false; }
-  bool get_constant_true_case() { return m_value_if_true; }
-  bool get_constant_false_case() { return m_value_if_false; }
+  DataT get_constant_true_case() { return m_value_if_true; }
+  DataT get_constant_false_case() { return m_value_if_false; }
 
 private:
   void fp_compute_local(std::vector<ConstLocalInputTensorType> inputs,
