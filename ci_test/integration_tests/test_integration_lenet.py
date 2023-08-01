@@ -61,7 +61,7 @@ def setup_experiment(lbann, weekly):
 
     data_reader = data.mnist.make_data_reader(lbann)
     # No validation set
-    data_reader.reader[0].validation_percent = 0
+    data_reader.reader[0].validation_fraction = 0
 
     optimizer = lbann.SGD(learn_rate=0.01, momentum=0.9)
     return trainer, model, data_reader, optimizer, num_nodes

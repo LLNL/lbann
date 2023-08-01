@@ -3,9 +3,9 @@ data_reader {
     name: "smiles"
     role: "train"
     shuffle: true
-    percent_of_data_to_use: 1.0
-    validation_percent: 0.1
-    tournament_percent: 0.1
+    fraction_of_data_to_use: 1.0
+    validation_fraction: 0.1
+    tournament_fraction: 0.1
     sample_list_per_trainer: true
     sample_list:  "/p/vast1/lbann/datasets/atom/sample_lists/enamine1612M_mpro_inhib_kekulized/combo_enamine1612M_mpro_inhib_kekulized.sample_list"
     metadata_filename: "/p/vast1/lbann/datasets/atom/combo_enamine1612M_mpro_inhib_kekulized.metadata"
@@ -16,7 +16,7 @@ data_reader {
     name: "smiles"
     role: "test"
     shuffle: true
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
     sample_list:  "/p/vast1/lbann/datasets/atom/sample_lists/enamine1612M_mpro_inhib_kekulized/test_combo_enamine1612M_mpro_inhib_kekulized.sample_list"
     metadata_filename: "/p/vast1/lbann/datasets/atom/combo_enamine1612M_mpro_inhib_kekulized.metadata"
   }

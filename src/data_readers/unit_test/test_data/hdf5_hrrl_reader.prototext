@@ -30,9 +30,9 @@ data_reader {
     name: "hdf5_data_reader"
     role: "train"
     sample_list: "WORK_DIR/hdf5_hrrl_train.sample_list"
-    validation_percent: 0.1
-    tournament_percent: 0.1
-    percent_of_data_to_use: 1.0
+    validation_fraction: 0.1
+    tournament_fraction: 0.1
+    fraction_of_data_to_use: 1.0
     enable_responses: true
     data_schema_filename: "WORK_DIR/hdf5_hrrl_data_schema.yaml"
     experiment_schema_filename: "WORK_DIR/hdf5_hrrl_experiment_schema.yaml"
@@ -41,9 +41,9 @@ data_reader {
     name: "hdf5_data_reader"
     role: "test"
     sample_list: "WORK_DIR/hdf5_hrrl_test.sample_list"
-    validation_percent: 0.1
-    tournament_percent: 0.1
-    percent_of_data_to_use: 1.0
+    validation_fraction: 0.1
+    tournament_fraction: 0.1
+    fraction_of_data_to_use: 1.0
     enable_responses: true
     data_schema_filename: "WORK_DIR/hdf5_hrrl_data_schema.yaml"
     experiment_schema_filename: "WORK_DIR/hdf5_hrrl_experiment_schema.yaml"

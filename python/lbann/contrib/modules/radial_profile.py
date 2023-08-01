@@ -136,7 +136,7 @@ if __name__ == "__main__":
         _reader.num_samples = 1
         _reader.num_labels = 1
         _reader.synth_dimensions = '1'
-        _reader.percent_of_data_to_use = 1.0
+        _reader.fraction_of_data_to_use = 1.0
     add_data_reader('train')
     add_data_reader('test')
     input_ = lbann.Input()

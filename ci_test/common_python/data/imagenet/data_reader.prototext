@@ -6,9 +6,9 @@ data_reader {
     data_filedir: "/p/gpfs1/brainusr/datasets/ILSVRC2012/original/train/"
     data_filename: "/p/gpfs1/brainusr/datasets/ILSVRC2012/original/labels/train.txt"
     label_filename: ""
-    validation_percent: 0.0
+    validation_fraction: 0.0
     absolute_sample_count: 0
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
     num_labels: 1000
 
     transforms {
@@ -41,7 +41,7 @@ data_reader {
     data_filename: "/p/gpfs1/brainusr/datasets/ILSVRC2012/original/labels/val.txt"
     label_filename: ""
     absolute_sample_count: 0
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
     num_labels: 1000
 
     transforms {

@@ -55,7 +55,7 @@ weekly_options_and_targets = {
     'mini_batch_size': 128,
     'expected_train_range': (0.42, 0.44),
     'expected_test_range': (0.48, 0.50),
-    'percent_of_data_to_use': 0.1,
+    'fraction_of_data_to_use': 0.1,
     'expected_mini_batch_times': {
         'lassen':   0.0530066,
         'pascal':   0.044,
@@ -71,7 +71,7 @@ nightly_options_and_targets = {
     'mini_batch_size': 128,
     'expected_train_range': (0.42, 0.44),
     'expected_test_range': (0.48, 0.50),
-    'percent_of_data_to_use': 0.01,
+    'fraction_of_data_to_use': 0.01,
     'expected_mini_batch_times': {
         'lassen':   0.0530066,
         'pascal':   0.044,
@@ -82,7 +82,7 @@ nightly_options_and_targets = {
 # Setup LBANN experiment
 # ==============================================
 
-def make_data_reader(lbann, percent_of_data_to_use):
+def make_data_reader(lbann, fraction_of_data_to_use):
     """Make Protobuf message for HRRL  data reader.
 
     """
@@ -95,7 +95,7 @@ def make_data_reader(lbann, percent_of_data_to_use):
     message = message.data_reader
 
     # Use less training data for the integration test
-    message.reader[0].percent_of_data_to_use = percent_of_data_to_use
+    message.reader[0].fraction_of_data_to_use = fraction_of_data_to_use
 
     # Set paths
     return message
@@ -138,7 +138,7 @@ def setup_experiment(lbann, weekly):
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0001,beta1=0.9,beta2=0.99,eps=1e-8)
     # Load data reader from prototext
-    data_reader = make_data_reader(lbann, options['percent_of_data_to_use'])
+    data_reader = make_data_reader(lbann, options['fraction_of_data_to_use'])
 
     return trainer, model, data_reader, opt, options['num_nodes']
 

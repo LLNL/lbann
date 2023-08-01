@@ -4,8 +4,8 @@ data_reader {
     role: "train"
     shuffle: true
     data_filename: "/p/lustre2/brainusr/datasets/jag/jag100K1vw_train.npy"
-    validation_percent: 0.1
-    percent_of_data_to_use: 1.0
+    validation_fraction: 0.1
+    fraction_of_data_to_use: 1.0
     disable_responses: true 
     disable_labels: true
   }

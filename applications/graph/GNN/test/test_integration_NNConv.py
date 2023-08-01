@@ -73,7 +73,7 @@ def setup_experiment(lbann):
                       NUM_OUT_FEATURES,
                       num_epochs)
     reader = LSC_PPQM4M.make_data_reader("LSC_100K",
-                                         validation_percent=0)
+                                         validation_fraction=0)
     
 
     optimizer = lbann.Adam(learn_rate=0.01, beta1=0.9, beta2=0.99, eps=1e-8 )

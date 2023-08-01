@@ -39,7 +39,7 @@ def get_command(cluster,
                 data_filename_test_default=None,
                 data_reader_name=None,
                 data_reader_path=None,
-                data_reader_percent=None,
+                data_reader_fraction=None,
                 exit_after_setup=False,
                 metadata=None,
                 mini_batch_size=None,
@@ -77,7 +77,7 @@ def get_command(cluster,
         data_filedir_default, data_filedir_train_default,
         data_filename_train_default, data_filedir_test_default,
         data_filename_test_default, data_reader_name, data_reader_path,
-        data_reader_percent, exit_after_setup, metadata, mini_batch_size,
+        data_reader_fraction, exit_after_setup, metadata, mini_batch_size,
         model_folder, model_name, model_path, num_epochs, optimizer_name,
         optimizer_path, processes_per_model, restart_dir,
         # Error/Output Redirect
@@ -352,7 +352,7 @@ def get_command(cluster,
     option_data_filedir_test = ''
     option_data_filename_test = ''
     option_data_reader = ''
-    option_data_reader_percent = ''
+    option_data_reader_fraction = ''
     option_exit_after_setup = ''
     option_metadata = ''
     option_mini_batch_size = ''
@@ -507,25 +507,25 @@ def get_command(cluster,
                  '_test_default] is set, but neither data_reader_name or'
                  ' data_reader_path are.'))
         # else: no conflicts
-    if data_reader_percent != "prototext":
-        if data_reader_percent is not None:
+    if data_reader_fraction != "prototext":
+        if data_reader_fraction is not None:
 
-            # If data_reader_percent is not None, then it will override `weekly`.
+            # If data_reader_fraction is not None, then it will override `weekly`.
             # If it is None however, we choose its value based on `weekly`.
             try:
-                data_reader_percent = float(data_reader_percent)
+                data_reader_fraction = float(data_reader_fraction)
 
             except ValueError:
                 lbann_errors.append(
-                    'data_reader_percent={d} is not a float.'.format(
-                        d=data_reader_percent))
+                    'data_reader_fraction={d} is not a float.'.format(
+                        d=data_reader_fraction))
         elif weekly:
-            data_reader_percent = 1.00
+            data_reader_fraction = 1.00
         else:
             # Nightly
-            data_reader_percent = 0.10
-        option_data_reader_percent = ' --data_reader_percent={d}'.format(
-            d=data_reader_percent)
+            data_reader_fraction = 0.10
+        option_data_reader_fraction = ' --data_reader_fraction={d}'.format(
+            d=data_reader_fraction)
     # else: use the data reader's value
     if exit_after_setup:
         option_exit_after_setup = ' --exit_after_setup'
@@ -591,7 +591,7 @@ def get_command(cluster,
                 'sample_list_test',
                 'label_filename_train',
                 'label_filename_test',
-                # 'data_reader_percent',
+                # 'data_reader_fraction',
                 'share_testing_data_readers',
 
                 # Callbacks:
@@ -622,7 +622,7 @@ def get_command(cluster,
         option_data_filedir,
         option_data_filedir_train, option_data_filename_train,
         option_data_filedir_test, option_data_filename_test,
-        option_data_reader, option_data_reader_percent,
+        option_data_reader, option_data_reader_fraction,
         option_exit_after_setup, option_metadata, option_mini_batch_size,
         option_model, option_num_epochs, option_optimizer,
         option_processes_per_model, option_restart_dir, extra_options)
@@ -851,7 +851,7 @@ def create_python_data_reader(lbann,
     reader.name = 'python'
     reader.role = execution_mode
     reader.shuffle = False
-    reader.percent_of_data_to_use = 1.0
+    reader.fraction_of_data_to_use = 1.0
     reader.python.module = module_name
     reader.python.module_dir = dir_name
     reader.python.sample_function = sample_function_name

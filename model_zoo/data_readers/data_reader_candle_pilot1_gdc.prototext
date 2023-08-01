@@ -4,9 +4,9 @@ data_reader {
     role: "train"
     shuffle: true
     data_filename: "/p/lscratchh/brainusr/datasets/cancer/pilot1/GDCdata/X_traindata_norm.npy"
-    validation_percent: 0
+    validation_fraction: 0
     absolute_sample_count: 0
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
     disable_labels: true
     disable_responses: true
 
@@ -17,9 +17,9 @@ data_reader {
     role: "test"
     shuffle: true
     data_filename: "/p/lscratchh/brainusr/datasets/cancer/pilot1/GDCdata/X_valdata_norm.npy"
-    validation_percent: 0
+    validation_fraction: 0
     absolute_sample_count: 0
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
     disable_labels: true
     disable_responses: true
 

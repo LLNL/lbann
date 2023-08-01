@@ -133,7 +133,7 @@ namespace lbann {
 #define LBANN_OPTION_DATA_FILENAME_TEST "data_filename_test"
 #define LBANN_OPTION_DATA_FILENAME_TRAIN "data_filename_train"
 #define LBANN_OPTION_DATA_FILENAME_VALIDATE "data_filename_validate"
-#define LBANN_OPTION_DATA_READER_PERCENT "data_reader_percent"
+#define LBANN_OPTION_DATA_READER_FRACTION "data_reader_fraction"
 #define LBANN_OPTION_LABEL_FILENAME_TEST "label_filename_test"
 #define LBANN_OPTION_LABEL_FILENAME_TRAIN "label_filename_train"
 #define LBANN_OPTION_LABEL_FILENAME_VALIDATE "label_filename_validate"

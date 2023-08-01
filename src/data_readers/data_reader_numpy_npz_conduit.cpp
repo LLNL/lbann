@@ -136,13 +136,13 @@ void numpy_npz_conduit_reader::do_preload_data_store()
       << m_shuffled_indices.size() << std::endl;
 
   size_t count = get_absolute_sample_count();
-  double use_percent = get_use_percent();
-  if (count != 0 || use_percent != 1) {
+  double use_fraction = get_use_fraction();
+  if (count != 0 || use_fraction != 1) {
     LBANN_ERROR("numpy_npz_conduit_reader currently assumes you are using 100% "
                 "of the data set; you specified get_absolute_sample_count() = ",
                 count,
-                " and get_use_percent() = ",
-                use_percent,
+                " and get_use_fraction() = ",
+                use_fraction,
                 "; please ask Dave Hysom to modify the code, if you want to "
                 "use less than 100%");
   }

@@ -53,7 +53,7 @@ weekly_options_and_targets = {
     'mini_batch_size': 128,
     'expected_train_pc_range': (7.7, 7.9),
     'expected_test_pc_range': (8.0, 8.2),
-    'percent_of_data_to_use': 0.1,
+    'fraction_of_data_to_use': 0.1,
     'expected_mini_batch_times': {
         'lassen':   0.0530066,
         'pascal':   0.044,
@@ -78,7 +78,7 @@ nightly_options_and_targets = {
     'expected_train_mse_range': (0.273, 0.290),
     'expected_test_mse_range': (0.118, 0.120),
 #    'expected_test_mse_range': (2.96, 2.97),
-    'percent_of_data_to_use': 1.0,
+    'fraction_of_data_to_use': 1.0,
     'expected_mini_batch_times': {
         'lassen':   0.0229,
         'pascal':   0.044,
@@ -90,7 +90,7 @@ nightly_options_and_targets = {
 # Setup LBANN experiment
 # ==============================================
 
-def make_data_reader(lbann, percent_of_data_to_use):
+def make_data_reader(lbann, fraction_of_data_to_use):
     """Create a data reader for CosmoFlow.
 
     Args:
@@ -119,9 +119,9 @@ def make_data_reader(lbann, percent_of_data_to_use):
         reader = lbann.reader_pb2.Reader(
             name="hdf5",
             shuffle=(reader_arg["role"] != "test"),
-            validation_percent=0,
+            validation_fraction=0,
             absolute_sample_count=0,
-            percent_of_data_to_use=1.0,
+            fraction_of_data_to_use=1.0,
             disable_labels=True,
             disable_responses=False,
             scaling_factor_int16=1.0,
@@ -183,7 +183,7 @@ def setup_experiment(lbann, weekly):
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.001,beta1=0.9,beta2=0.99,eps=1e-8)
     # Load data reader from prototext
-    data_reader = make_data_reader(lbann, options['percent_of_data_to_use'])
+    data_reader = make_data_reader(lbann, options['fraction_of_data_to_use'])
 
     return trainer, model, data_reader, opt, options['num_nodes']
 

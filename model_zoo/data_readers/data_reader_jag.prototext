@@ -18,10 +18,10 @@ data_reader {
     sample_list_per_trainer: false
     sample_list_per_model: false
 
-    validation_percent: 0
+    validation_fraction: 0
     absolute_sample_count: 0
     #Use 1000 of 100K samples
-    percent_of_data_to_use: 0.001
+    fraction_of_data_to_use: 0.001
     disable_responses: true
     disable_labels: true
 
@@ -37,9 +37,9 @@ data_reader {
     sample_list_per_trainer: false
     sample_list_per_model: false
 
-    validation_percent: 0
+    validation_fraction: 0
     absolute_sample_count: 0
-    percent_of_data_to_use: 0.005
+    fraction_of_data_to_use: 0.005
     disable_responses: true
     disable_labels: true
 

@@ -7,9 +7,9 @@ data_reader {
     num_samples: 10000
     synth_dimensions: "1 128 128 128"
     synth_response_dimensions: "3"
-    validation_percent: 0.01
+    validation_fraction: 0.01
     absolute_sample_count: 0
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
     disable_responses: false
   }
 
@@ -21,7 +21,7 @@ data_reader {
     synth_dimensions: "1 128 128 128"
     synth_response_dimensions: "3"
     absolute_sample_count: 0
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
     disable_responses: false
   }
 }

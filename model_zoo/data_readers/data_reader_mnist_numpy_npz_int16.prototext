@@ -4,9 +4,9 @@ data_reader {
     role: "train"
     shuffle: true
     data_filedir: "/p/lscratchh/brainusr/datasets/MNIST/numpy/train_int16.npz"
-    validation_percent: 0.1
+    validation_fraction: 0.1
     absolute_sample_count: 0
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
     disable_responses: true
     num_labels: 10
     scaling_factor_int16: 0.000030518509476 # 1 / 0x7FFF
@@ -23,7 +23,7 @@ data_reader {
     shuffle: true
     data_filedir: "/p/lscratchh/brainusr/datasets/MNIST/numpy/test_int16.npz"
     absolute_sample_count: 0
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
     disable_responses: true
     num_labels: 10
     scaling_factor_int16: 0.000030518509476 # 1 / 0x7FFF

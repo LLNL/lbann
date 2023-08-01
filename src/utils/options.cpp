@@ -397,9 +397,9 @@ void construct_datareader_options()
                         {"--data_filename_validate"},
                         "[DATAREADER] Sets the filename for validation data",
                         "");
-  arg_parser.add_option(LBANN_OPTION_DATA_READER_PERCENT,
-                        {"--data_reader_percent"},
-                        "[DATAREADER] Sets the percent of total samples to use",
+  arg_parser.add_option(LBANN_OPTION_DATA_READER_FRACTION,
+                        {"--data_reader_fraction"},
+                        "[DATAREADER] Sets the fraction of total samples to use",
                         (float)-1);
   arg_parser.add_option(
     LBANN_OPTION_LABEL_FILENAME_TEST,

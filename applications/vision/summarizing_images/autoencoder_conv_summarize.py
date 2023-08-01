@@ -71,9 +71,9 @@ parser.add_argument(
     '--dataset', action='store', default='imagenet', type=str,
     help='dataset to use; \"cifar10\" or \"imagenet\"')
 parser.add_argument(
-    '--data-reader-percent', action='store',
+    '--data-reader-fraction', action='store',
     default=1.0, type=float,
-    help='the percent of the data to use (default: 1.0)', metavar='NUM')
+    help='the fraction of the data to use (default: 1.0)', metavar='NUM')
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 args = parser.parse_args()
 
@@ -268,7 +268,7 @@ trainer = lbann.Trainer(random_seed=args.random_seed, mini_batch_size=args.mini_
 
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
-kwargs['lbann_args'] = '--data_reader_percent='+str(args.data_reader_percent)+' --disable_cuda=1'
+kwargs['lbann_args'] = '--data_reader_fraction='+str(args.data_reader_fraction)+' --disable_cuda=1'
 
 lbann.contrib.launcher.run(trainer, model, data_reader, opt,
                            job_name=args.job_name,

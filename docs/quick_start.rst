@@ -244,8 +244,8 @@ directory.  The :code:`data_read.prototext` file contains the following:
             data_filedir: "mnist_data"
             data_filename: "train-images-idx3-ubyte"
             label_filename: "train-labels-idx1-ubyte"
-            validation_percent: 0.1
-            percent_of_data_to_use: 1.0
+            validation_fraction: 0.1
+            fraction_of_data_to_use: 1.0
             transforms {
               scale {
                 scale: 0.003921568627  # 1/255

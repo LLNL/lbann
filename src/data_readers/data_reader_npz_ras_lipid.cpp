@@ -99,9 +99,9 @@ void ras_lipid_conduit_data_reader::load()
   if (count) {
     LBANN_ERROR("You cannot use absolute sample count with this data reader");
   }
-  double use_percent = get_use_percent();
-  if (use_percent != 1) {
-    LBANN_ERROR("use_percent for < 1.0 is not yet implemented; please contact "
+  double use_fraction = get_use_fraction();
+  if (use_fraction != 1) {
+    LBANN_ERROR("use_fraction for < 1.0 is not yet implemented; please contact "
                 "Dave Hysom");
   }
 

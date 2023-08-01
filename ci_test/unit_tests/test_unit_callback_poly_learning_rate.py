@@ -88,7 +88,7 @@ def construct_data_reader(lbann):
     _reader.role = 'train'
     _reader.num_samples = 2
     _reader.synth_dimensions = '1'
-    _reader.percent_of_data_to_use = 1.0
+    _reader.fraction_of_data_to_use = 1.0
     return message
 
 # ==============================================

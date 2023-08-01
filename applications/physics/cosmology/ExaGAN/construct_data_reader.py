@@ -22,8 +22,8 @@ def construct_python_data_reader():
     data_reader.name = 'python'
     data_reader.role = 'train'
     data_reader.shuffle = True
-    data_reader.percent_of_data_to_use = 1.0
-    data_reader.validation_percent = 0.2
+    data_reader.fraction_of_data_to_use = 1.0
+    data_reader.validation_fraction = 0.2
     data_reader.python.module = 'dataset3D'
     data_reader.python.module_dir = module_dir
     data_reader.python.sample_function = 'get_sample'
@@ -61,9 +61,9 @@ def create_hdf5_data_reader(
         reader = lbann.reader_pb2.Reader(
             name="hdf5",
             shuffle=(reader_arg["role"] != "test"),
-            validation_percent=0,
+            validation_fraction=0,
             absolute_sample_count=0,
-            percent_of_data_to_use=1.0,
+            fraction_of_data_to_use=1.0,
             disable_labels=True,
             disable_responses=True,
             scaling_factor_int16=1.0,

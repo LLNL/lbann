@@ -15,7 +15,7 @@ def make_online_data_reader(
     _reader.name = 'node2vec'
     _reader.role = 'train'
     _reader.shuffle = True
-    _reader.percent_of_data_to_use = 1.0
+    _reader.fraction_of_data_to_use = 1.0
     _reader.node2vec.graph_file = graph_file
     _reader.node2vec.epoch_size = epoch_size
     _reader.node2vec.walk_length = walk_length
@@ -32,7 +32,7 @@ def make_offline_data_reader():
     _reader.name = 'python'
     _reader.role = 'train'
     _reader.shuffle = True
-    _reader.percent_of_data_to_use = 1.0
+    _reader.fraction_of_data_to_use = 1.0
     _reader.python.module = 'offline_walks'
     _reader.python.module_dir = os.path.dirname(os.path.realpath(__file__))
     _reader.python.sample_function = 'get_sample'

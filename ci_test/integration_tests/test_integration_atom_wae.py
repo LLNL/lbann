@@ -35,7 +35,7 @@ weekly_options_and_targets = {
     'mini_batch_size': 512,
     'expected_train_recon_range': (0.500, 0.555),
     'expected_test_recon_range': (0.500, 0.525),
-    'percent_of_data_to_use': 1.0,
+    'fraction_of_data_to_use': 1.0,
     'expected_mini_batch_times': {
         'lassen':   0.20,
         'pascal':   0.365,
@@ -52,7 +52,7 @@ nightly_options_and_targets = {
     'mini_batch_size': 512,
     'expected_train_recon_range': (1.14, 1.21), # BVE Changed from 1.16 on 9/21/22
     'expected_test_recon_range': (1.10, 1.15), # BVE Changed from 1.11 on 9/22/22
-    'percent_of_data_to_use': 0.01,
+    'fraction_of_data_to_use': 0.01,
     'expected_mini_batch_times': {
         'lassen':   0.20,
         'pascal':   0.460,
@@ -98,7 +98,7 @@ def setup_experiment(lbann, weekly):
     data_reader = data.atom.make_data_reader(lbann)
 
     # Use less training data for the integration test
-    data_reader.reader[0].percent_of_data_to_use = options['percent_of_data_to_use']
+    data_reader.reader[0].fraction_of_data_to_use = options['fraction_of_data_to_use']
 
     opt = lbann.Adam(learn_rate=3e-4, beta1=0.9, beta2=0.99, eps=1e-8)
     return trainer, model, data_reader, opt, options['num_nodes']

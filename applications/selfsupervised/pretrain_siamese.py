@@ -111,7 +111,7 @@ def make_data_reader(num_patches):
     data_reader.name = 'python'
     data_reader.role = 'train'
     data_reader.shuffle = True
-    data_reader.percent_of_data_to_use = 1.0
+    data_reader.fraction_of_data_to_use = 1.0
     data_reader.python.module = 'patch_generator'
     data_reader.python.module_dir = os.path.dirname(os.path.realpath(__file__))
     data_reader.python.num_samples_function = 'num_samples'
