@@ -884,14 +884,14 @@ void generic_data_reader::set_execution_mode_split_fraction(execution_mode m,
       " :: set_validation_fraction() - must be: s >= 0, s <= 1.0; you passed: " +
       std::to_string(s));
   }
-  m_execution_mode_split_fractionage[m] = s;
+  m_execution_mode_split_fraction[m] = s;
 }
 
 double
 generic_data_reader::get_execution_mode_split_fraction(execution_mode m) const
 {
-  if (m_execution_mode_split_fractionage.count(m)) {
-    return m_execution_mode_split_fractionage.at(m);
+  if (m_execution_mode_split_fraction.count(m)) {
+    return m_execution_mode_split_fraction.at(m);
   }
   else {
     return 0;

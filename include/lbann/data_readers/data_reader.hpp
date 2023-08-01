@@ -824,7 +824,7 @@ public:
   std::string m_label_fn;
   bool m_shuffle;
   size_t m_absolute_sample_count;
-  std::map<execution_mode, double> m_execution_mode_split_fractionage;
+  std::map<execution_mode, double> m_execution_mode_split_fraction;
   double m_use_fraction;
   int m_first_n;
   std::string m_role;
