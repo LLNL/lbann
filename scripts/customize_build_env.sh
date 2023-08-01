@@ -294,6 +294,7 @@ set_center_specific_externals()
     local spack_arch_target="$2"
     local spack_arch="$3"
     local yaml="$4"
+    local module_dir="$5"
 
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
@@ -586,10 +587,30 @@ EOF
 cat <<EOF >> ${yaml}
   modules:
     default:
+      enable::
+        - lmod
       lmod:
+        all:
+          autoload: direct
         core_compilers:
         - 'cce@13.0.0'
+    lbann_lmod_modules:
+      roots:
+        lmod: ${module_dir}
+      arch_folder: false
+      lmod:
+        all:
+          autoload: direct
 EOF
+    if [[ ${CENTER_COMPILER} ]]; then
+        CORE_COMPILER=$(echo "${CENTER_COMPILER}" | tr -d '%')
+        echo "I htink that I have a center compiler ${CENTER_COMPILER} and I will replace it with a coore compiler ${CORE_COMPILER}"
+cat <<EOF >> ${yaml}
+        core_compilers:
+        - '${CORE_COMPILER}'
+EOF
+    fi
+
 }
 
 cleanup_clang_compilers()

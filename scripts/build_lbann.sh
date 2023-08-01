@@ -753,7 +753,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
 
     # See if there are any center-specific externals
     SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
-    CMD="set_center_specific_externals ${CENTER} ${SPACK_ARCH_TARGET} ${SPACK_ARCH} ${SPACK_ENV_YAML_FILE}"
+    CMD="set_center_specific_externals ${CENTER} ${SPACK_ARCH_TARGET} ${SPACK_ARCH} ${SPACK_ENV_YAML_FILE} ${LBANN_MODFILES_DIR}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -990,19 +990,36 @@ export LBANN_BUILD_DIR=${LBANN_BUILD_DIR}
 export LBANN_INSTALL_DIR=${LBANN_INSTALL_DIR}
 export LBANN_MODFILES_DIR=${LBANN_MODFILES_DIR}
 export LBANN_SETUP_FILE=${LBANN_SETUP_FILE}
+module use ${LBANN_MODFILES_DIR}/Core
 EOF
+
+    if [[ -n "${MODULE_CMD}" ]]; then
+        cat >> ${LBANN_INSTALL_FILE}<<EOF
+# Modules loaded during this installation
+${MODULE_CMD}
+EOF
+        cat >> ${LBANN_SETUP_FILE}<<EOF
+# Modules loaded during this installation
+${MODULE_CMD}
+EOF
+    fi
 
     ENV_ROOT_PKG_LIST=$(spack find -x --format "{name}")
     if [[ -n "${ENV_ROOT_PKG_LIST:-}" ]]; then
         for p in ${ENV_ROOT_PKG_LIST}
         do
+            # Load the modules for any top level packages
+            cat >> ${LBANN_INSTALL_FILE}<<EOF
+# Add PYTHONPATH for top level python package: ${p}
+module try-load ${p}
+EOF
             PKG_PYTHONPATH=$(spack build-env ${p} -- printenv PYTHONPATH)
             if [[ -n "${PKG_PYTHONPATH}" ]]; then
                 P_ENV=$(echo "${p}" | tr '-' '_')
                 cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Add PYTHONPATH for top level python package: ${p}
-export ${P_ENV}_PKG_PYTHONPATH=${PKG_PYTHONPATH}
-export PYTHONPATH=\${${P_ENV}_PKG_PYTHONPATH}:\${PYTHONPATH}
+#export ${P_ENV}_PKG_PYTHONPATH=${PKG_PYTHONPATH}
+#export PYTHONPATH=\${${P_ENV}_PKG_PYTHONPATH}:\${PYTHONPATH}
 EOF
             fi
         done
@@ -1023,22 +1040,16 @@ EOF
 #     done
 # fi
 
-    if [[ -n "${MODULE_CMD}" ]]; then
-        cat >> ${LBANN_INSTALL_FILE}<<EOF
+    cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Modules loaded during this installation
-${MODULE_CMD}
+module try-load aluminum hydrogen dyhydrogen
 EOF
-        cat >> ${LBANN_SETUP_FILE}<<EOF
-# Modules loaded during this installation
-${MODULE_CMD}
-EOF
-    fi
 
     if [[ -n "${AWS_OFI_PLUGIN_SPEC_HASH}" ]]; then
         cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
 # a spack environment matches behavior inside of a runtime environment
-spack load ${POSSIBLE_AWS_OFI_PLUGIN} /${AWS_OFI_PLUGIN_SPEC_HASH}
+#spack load ${POSSIBLE_AWS_OFI_PLUGIN} /${AWS_OFI_PLUGIN_SPEC_HASH}
 EOF
     fi
 
@@ -1046,7 +1057,7 @@ EOF
         cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
 # a spack environment matches behavior inside of a runtime environment
-spack load ${POSSIBLE_DNN_LIB} /${DNN_LIB_SPEC_HASH}
+#spack load ${POSSIBLE_DNN_LIB} /${DNN_LIB_SPEC_HASH}
 EOF
     fi
 
@@ -1054,16 +1065,22 @@ EOF
         cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
 # a spack environment matches behavior inside of a runtime environment
-spack load ${POSSIBLE_NVSHMEM_LIB} /${NVSHMEM_LIB_SPEC_HASH}
+#spack load ${POSSIBLE_NVSHMEM_LIB} /${NVSHMEM_LIB_SPEC_HASH}
 EOF
     fi
 
     # Setup the module use path last in case the modules cmd purges the system
     cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Temporarily activate the environment - Do until new workflow is smoothed out.
-spack env activate -p ${LBANN_ENV}
+#spack env activate -p ${LBANN_ENV}
 ml use ${LBANN_MODFILES_DIR}
 EOF
+
+if [[ "${CENTER_COMPILER}" =~ .*"%clang".* ]]; then
+#ml use ${LBANN_MODFILES_DIR}/
+    # If the compiler is clang use the LLD fast linker
+    CENTER_LINKER_FLAGS="+lld"
+fi
 
     CMD="chmod +x ${LBANN_SETUP_FILE}"
     echo ${CMD} | tee -a ${LOG}
@@ -1090,10 +1107,28 @@ CMD="cp ${LBANN_INSTALL_FILE} ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LAB
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
 
+##########################################################################################
+# Create and setup the module files for all of the dependencies
+# spack module lmod -n lbann_lmod_modules  refresh
+CMD="spack module lmod -n lbann_lmod_modules refresh --delete-tree --upstream-modules -y"
+echo ${CMD} | tee -a ${LOG}
+[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+# CMD="module use $SPACK_ROOT/share/spack/lmod/${SPACK_ARCH}"
+# echo ${CMD} | tee -a ${LOG}
+# [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+CMD="module use ${LBANN_MODFILES_DIR}/Core"
+echo ${CMD} | tee -a ${LOG}
+[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+##########################################################################################
+
+##########################################################################################
 # Drop out of the environment for the rest of the build
 CMD="spack env deactivate"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+##########################################################################################
 
 # Now that the config file is generated set the field
 find_cmake_config_file ${LBANN_LABEL} ${CENTER_COMPILER} ${LBANN_HOME}
@@ -1188,6 +1223,9 @@ if [[ -z "${USER_BUILD:-}" ]]; then
     fi
 fi
 
+# spack module lmod -n lbann_lmod_modules  refresh
+# module use $SPACK_ROOT/share/spack/lmod/${SPACK_ARCH}
+
 ##########################################################################################
 # Once LBANN is installed deactivate the environment and try to find the package to get the
 # installed path
@@ -1205,6 +1243,7 @@ echo "##########################################################################
 echo "LBANN is installed in ${LBANN_INSTALL_DIR}, access it via:" | tee -a ${LOG}
 echo "  source ${LBANN_INSTALL_FILE}" | tee -a ${LOG}
 echo "  ml use ${LBANN_MODFILES_DIR}" | tee -a ${LOG}
+echo "  ml use ${LBANN_MODFILES_DIR}/Core" | tee -a ${LOG}
 echo "  ml load lbann" | tee -a ${LOG}
 echo "  lbann_pfe.sh <cmd>" | tee -a ${LOG}
 echo "To rebuild LBANN go to ${LBANN_BUILD_DIR}, and rerun:" | tee -a ${LOG}
