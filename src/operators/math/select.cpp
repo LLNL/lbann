@@ -43,7 +43,7 @@ struct SelectImpl
                    DataT const& iftrue,
                    DataT const& iffalse) const noexcept
   {
-    bool istrue = fabs(predicate - m_value) < m_epsilon;
+    bool istrue = std::fabs(predicate - m_value) < m_epsilon;
     return istrue ? iftrue : iffalse;
   }
   void operator()(DataT const& predicate,
@@ -54,7 +54,7 @@ struct SelectImpl
                   DataT& diftrue,
                   DataT& diffalse) const noexcept
   {
-    bool istrue = fabs(predicate - m_value) < m_epsilon;
+    bool istrue = std::fabs(predicate - m_value) < m_epsilon;
     diftrue = istrue ? dy : El::TypeTraits<DataT>::Zero();
     diffalse = istrue ? El::TypeTraits<DataT>::Zero() : dy;
     dpredicate = El::TypeTraits<DataT>::Zero();
@@ -73,7 +73,7 @@ struct SelectImplIfTrue
 
   DataT operator()(DataT const& predicate, DataT const& iffalse) const noexcept
   {
-    bool istrue = fabs(predicate - m_value) < m_epsilon;
+    bool istrue = std::fabs(predicate - m_value) < m_epsilon;
     return istrue ? m_iftrue : iffalse;
   }
   void operator()(DataT const& predicate,
@@ -82,7 +82,7 @@ struct SelectImplIfTrue
                   DataT& dpredicate,
                   DataT& diffalse) const noexcept
   {
-    bool istrue = fabs(predicate - m_value) < m_epsilon;
+    bool istrue = std::fabs(predicate - m_value) < m_epsilon;
     diffalse = istrue ? El::TypeTraits<DataT>::Zero() : dy;
     dpredicate = El::TypeTraits<DataT>::Zero();
   }
@@ -100,7 +100,7 @@ struct SelectImplIfFalse
 
   DataT operator()(DataT const& predicate, DataT const& iftrue) const noexcept
   {
-    bool istrue = fabs(predicate - m_value) < m_epsilon;
+    bool istrue = std::fabs(predicate - m_value) < m_epsilon;
     return istrue ? iftrue : m_iffalse;
   }
   void operator()(DataT const& predicate,
@@ -109,7 +109,7 @@ struct SelectImplIfFalse
                   DataT& dpredicate,
                   DataT& diftrue) const noexcept
   {
-    bool istrue = fabs(predicate - m_value) < m_epsilon;
+    bool istrue = std::fabs(predicate - m_value) < m_epsilon;
     diftrue = istrue ? dy : El::TypeTraits<DataT>::Zero();
     dpredicate = El::TypeTraits<DataT>::Zero();
   }
@@ -128,7 +128,7 @@ struct SelectImplConstant
 
   DataT operator()(DataT const& predicate) const noexcept
   {
-    bool istrue = fabs(predicate - m_value) < m_epsilon;
+    bool istrue = std::fabs(predicate - m_value) < m_epsilon;
     return istrue ? m_iftrue : m_iffalse;
   }
   DataT operator()(DataT const& predicate, DataT const& dy) const noexcept

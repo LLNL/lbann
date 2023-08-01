@@ -44,7 +44,7 @@ struct SelectImpl
                                      DataT const& iftrue,
                                      DataT const& iffalse) const noexcept
   {
-    bool istrue = fabs(predicate - m_value) < m_epsilon;
+    bool istrue = gpu_lib::abs(predicate - m_value) < m_epsilon;
     return istrue ? iftrue : iffalse;
   }
   inline __device__ void operator()(DataT const& predicate,
@@ -55,7 +55,7 @@ struct SelectImpl
                                     DataT& diftrue,
                                     DataT& diffalse) const noexcept
   {
-    bool istrue = fabs(predicate - m_value) < m_epsilon;
+    bool istrue = gpu_lib::abs(predicate - m_value) < m_epsilon;
     diftrue = istrue ? dy : DataT(0.0);
     diffalse = istrue ? DataT(0.0) : dy;
     dpredicate = DataT(0.0);
@@ -75,7 +75,7 @@ struct SelectImplIfTrue
   inline __device__ DataT operator()(DataT const& predicate,
                                      DataT const& iffalse) const noexcept
   {
-    bool istrue = fabs(predicate - m_value) < m_epsilon;
+    bool istrue = gpu_lib::abs(predicate - m_value) < m_epsilon;
     return istrue ? m_iftrue : iffalse;
   }
   inline __device__ void operator()(DataT const& predicate,
@@ -84,7 +84,7 @@ struct SelectImplIfTrue
                                     DataT& dpredicate,
                                     DataT& diffalse) const noexcept
   {
-    bool istrue = fabs(predicate - m_value) < m_epsilon;
+    bool istrue = gpu_lib::abs(predicate - m_value) < m_epsilon;
     diffalse = istrue ? DataT(0.0) : dy;
     dpredicate = DataT(0.0);
   }
@@ -103,7 +103,7 @@ struct SelectImplIfFalse
   inline __device__ DataT operator()(DataT const& predicate,
                                      DataT const& iftrue) const noexcept
   {
-    bool istrue = fabs(predicate - m_value) < m_epsilon;
+    bool istrue = gpu_lib::abs(predicate - m_value) < m_epsilon;
     return istrue ? iftrue : m_iffalse;
   }
   inline __device__ void operator()(DataT const& predicate,
@@ -112,7 +112,7 @@ struct SelectImplIfFalse
                                     DataT& dpredicate,
                                     DataT& diftrue) const noexcept
   {
-    bool istrue = fabs(predicate - m_value) < m_epsilon;
+    bool istrue = gpu_lib::abs(predicate - m_value) < m_epsilon;
     diftrue = istrue ? dy : DataT(0.0);
     dpredicate = DataT(0.0);
   }
@@ -131,7 +131,7 @@ struct SelectImplConstant
 
   inline __device__ DataT operator()(DataT const& predicate) const noexcept
   {
-    bool istrue = fabs(predicate - m_value) < m_epsilon;
+    bool istrue = gpu_lib::abs(predicate - m_value) < m_epsilon;
     return istrue ? m_iftrue : m_iffalse;
   }
   inline __device__ DataT operator()(DataT const& predicate,
