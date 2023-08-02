@@ -1109,6 +1109,20 @@ if (NOT (LBANN_MODULEFILE_NAME MATCHES ".+\.lua"))
     CACHE STRING "" FORCE)
 endif ()
 
+if (LBANN_WRITE_DEPENDENT_MODULES)
+  list(LENGTH LBANN_WRITE_DEPENDENT_MODULES nmodules_)
+  if (nmodules_ LESS_EQUAL 1)
+    set(DEP_MODULES "aluminum" "hydrogen" "dihydrogen")
+  else ()
+    set(DEP_MODULES "${LBANN_WRITE_DEPENDENT_MODULES}")
+  endif ()
+  string(REPLACE ";" "\", \"" DEP_MOD_STR "${DEP_MODULES}")
+  string(CONCAT LBANN_EXTRA_MODULE_LOADS
+    "load(\"" "${DEP_MOD_STR}" "\")\n")
+else ()
+  set(LBANN_EXTRA_MODULE_LOADS "")
+endif ()
+
 configure_file(
   "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_module.lua.in"
   "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
