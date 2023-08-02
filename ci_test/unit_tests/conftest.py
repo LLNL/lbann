@@ -18,7 +18,7 @@ def pytest_addoption(parser):
                      help='--weekly specifies that the test should ONLY be run weekly, not nightly. Default False')
     # For local testing only
     parser.addoption('--data-reader-fraction', action='store', default=None,
-                     help='--data-reader-fraction=<fraction of dataset to be used>. Default None. Note that 1.0 is 100%.')
+                     help='--data-reader-fraction=<fraction of dataset to be used>. Default None.')
 
 
 @pytest.fixture
