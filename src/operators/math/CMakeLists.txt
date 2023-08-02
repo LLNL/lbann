@@ -32,6 +32,7 @@ set_full_path(THIS_DIR_SOURCES
   binary_with_constant.cpp
   clamp.cpp
   math_builders.cpp
+  select.cpp
   unary.cpp
   )
 
@@ -44,6 +45,7 @@ if (LBANN_HAS_GPU)
     binary.cu
     binary_with_constant.cu
     clamp.cu
+    select.cu
     unary.cu
     )
 endif ()

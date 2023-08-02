@@ -30,6 +30,7 @@ set_full_path(THIS_DIR_HEADERS
   clamp.hpp
   math_builders.hpp
   math_builders_impl.hpp
+  select.hpp
   unary.hpp
   )
 

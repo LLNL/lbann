@@ -94,7 +94,7 @@ void cross_entropy_layer<TensorDataType, T_layout, Dev>::setup_dims(
       std::stringstream err;
       err << get_type() << " layer \"" << this->get_name() << "\" "
           << "expects both input tensors to have the same number of dimensions "
-          << "and have >2 dimensions when use_lables is enabled. "
+          << "and have >2 dimensions when use_labels is enabled. "
           << "Found tensors with shape (";
 
       // TODO: Put this loop in util as it's used frequently to
@@ -117,8 +117,8 @@ void cross_entropy_layer<TensorDataType, T_layout, Dev>::setup_dims(
                     labels_dims.begin() + 1)) {
       std::stringstream err;
       err << get_type() << " layer \"" << this->get_name() << "\" "
-          << "expects both input tensors to have the same shape after the 0-th"
-          << "dimesion when use_lables is enabled. Found tensors with shape (";
+          << "expects both input tensors to have the same shape after the 0-th "
+          << "dimesion when use_labels is enabled. Found tensors with shape (";
 
       // TODO: Put this loop in util as it's used frequently to
       // print layer dimensions
