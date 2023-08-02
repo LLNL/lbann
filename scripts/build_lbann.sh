@@ -994,17 +994,17 @@ module use ${LBANN_MODFILES_DIR}/Core
 EOF
 
     if [[ -n "${MODULE_CMD}" ]]; then
-        cat >> ${LBANN_INSTALL_FILE}<<EOF
-# Modules loaded during this installation
-${MODULE_CMD}
-EOF
+#         cat >> ${LBANN_INSTALL_FILE}<<EOF
+# # Modules loaded during this installation
+# ${MODULE_CMD}
+# EOF
         cat >> ${LBANN_SETUP_FILE}<<EOF
 # Modules loaded during this installation
 ${MODULE_CMD}
 EOF
     fi
 
-    ENV_ROOT_PKG_LIST=$(spack find -x --format "{name}")
+    ENV_ROOT_PKG_LIST=$(spack find -x --format "{name}/{version}-{hash:7}")
     if [[ -n "${ENV_ROOT_PKG_LIST:-}" ]]; then
         for p in ${ENV_ROOT_PKG_LIST}
         do
@@ -1013,15 +1013,15 @@ EOF
 # Add PYTHONPATH for top level python package: ${p}
 module try-load ${p}
 EOF
-            PKG_PYTHONPATH=$(spack build-env ${p} -- printenv PYTHONPATH)
-            if [[ -n "${PKG_PYTHONPATH}" ]]; then
-                P_ENV=$(echo "${p}" | tr '-' '_')
-                cat >> ${LBANN_INSTALL_FILE}<<EOF
-# Add PYTHONPATH for top level python package: ${p}
-#export ${P_ENV}_PKG_PYTHONPATH=${PKG_PYTHONPATH}
-#export PYTHONPATH=\${${P_ENV}_PKG_PYTHONPATH}:\${PYTHONPATH}
-EOF
-            fi
+#             PKG_PYTHONPATH=$(spack build-env ${p} -- printenv PYTHONPATH)
+#             if [[ -n "${PKG_PYTHONPATH}" ]]; then
+#                 P_ENV=$(echo "${p}" | tr '-' '_')
+#                 cat >> ${LBANN_INSTALL_FILE}<<EOF
+# # Add PYTHONPATH for top level python package: ${p}
+# #export ${P_ENV}_PKG_PYTHONPATH=${PKG_PYTHONPATH}
+# #export PYTHONPATH=\${${P_ENV}_PKG_PYTHONPATH}:\${PYTHONPATH}
+# EOF
+#             fi
         done
     fi
 
@@ -1040,9 +1040,13 @@ EOF
 #     done
 # fi
 
+    ALUMINUM_PKG=$(spack find --format "{name}/{version}-{hash:7}" aluminum)
+    HYDROGEN_PKG=$(spack find --format "{name}/{version}-{hash:7}" hydrogen)
+    DIHYDROGEN_PKG=$(spack find --format "{name}/{version}-{hash:7}" dihydrogen)
+
     cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Modules loaded during this installation
-module try-load aluminum hydrogen dyhydrogen
+module try-load ${ALUMINUM_PKG} ${HYDROGEN_PKG} ${DIHYDROGEN_PKG}
 EOF
 
     if [[ -n "${AWS_OFI_PLUGIN_SPEC_HASH}" ]]; then
@@ -1252,6 +1256,7 @@ if [[ -n ${MODULE_CMD} ]]; then
 fi
 echo "  source ${LBANN_SETUP_FILE}" | tee -a ${LOG}
 echo "  ${CMAKE_CMD}" | tee -a ${LOG}
+echo "  cd ${LBANN_BUILD_PARENT_DIR}" | tee -a ${LOG}
 echo "  ${LBANN_NINJA} install" | tee -a ${LOG}
 echo "To manipulate the dependencies you can activate the spack environment named ${LBANN_ENV} via:" | tee -a ${LOG}
 echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
