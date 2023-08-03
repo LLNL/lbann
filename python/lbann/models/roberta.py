@@ -16,6 +16,7 @@ ACT2FN = {
 }
 
 
+
 def create_position_ids_from_input_ids(
     input_ids, input_shape, padding_idx, past_key_values_length=0
 ):
@@ -57,7 +58,6 @@ def _load_pretrained_weights(
     if len(weights) == 1:
         weights = weights[0]
     return weights
-
 
 class RobertaEmbeddings(lbann.modules.Module):
     def __init__(self, config, name, load_weights=True):
@@ -627,3 +627,91 @@ class RoBERTa(lbann.modules.Module):
             return pooled_output
         else:
             return encoder_output
+
+class RobertaLMHead(lbann.modules.Module):
+    """Roberta Head for masked language modeling."""
+
+    def __init__(self, config, name,load_weights=True):
+        self.config = config
+
+        # A custom directory can be passed instead of True/False
+        if isinstance(load_weights, str):
+            if not os.path.isdir(load_weights):
+                raise ValueError(f"Path to pretrained weights does not exist: {load_weights}")
+
+        self.input_shape = config.input_shape + (config.hidden_size,)
+        self.hidden_size = config.hidden_size
+        self.vocab_size = config.vocab_size
+        self.hidden_dropout_prob = config.hidden_dropout_prob
+        self.layer_norm_eps = config.layer_norm_eps
+        self.name = name
+        self.load_weights = load_weights
+        if isinstance(config.hidden_act, str):
+            self.intermediate_act_fn = ACT2FN[config.hidden_act]
+        else:
+            self.intermediate_act_fn = config.hidden_act
+        
+    def forward(self, input_tensor):
+        
+        #x = self.dense(features)
+        hidden_states, hidden_shape = lbann.modules.PytorchLinear(
+            input_tensor,
+            self.input_shape,
+            self.hidden_size,
+            weights=_load_pretrained_weights(
+                ".".join((self.name, "dense.weight")),
+                ".".join((self.name, "dense.bias")),
+                load_weights=self.load_weights,
+            ),
+            name=".".join((self.name, "dense")),
+            return_dims=True,
+        )
+        
+        #x = gelu(x)
+        hidden_states = self.intermediate_act_fn(hidden_states)
+
+        #x = self.layer_norm(x)
+        hidden_states = lbann.modules.PytorchLayerNorm(
+            lbann.Add(hidden_states, input_tensor),
+            self.layer_norm_eps,
+            hidden_shape,
+            weights=_load_pretrained_weights(
+                ".".join((self.name, "layer_norm.weightbias")),
+                load_weights=self.load_weights,
+            ),
+            name=".".join((self.name, "layer_norm")),
+        )
+
+        #x = self.decoder(x)
+        hidden_states, hidden_shape = lbann.modules.PytorchLinear(
+            input_tensor,
+            hidden_shape,
+            self.vocab_size,
+            weights=_load_pretrained_weights(
+                ".".join((self.name, "decoder.weight")),
+                ".".join((self.name, "decoder.bias")),
+                load_weights=self.load_weights,
+            ),
+            name=".".join((self.name, "decoder")),
+            return_dims=True,
+        )
+
+        return hidden_states
+
+class RoBERTaMLM(lbann.modules.Module):
+    def __init__(self, config, load_weights=True):
+
+        # A custom directory can be passed instead of True/False
+        if isinstance(load_weights, str):
+            if not os.path.isdir(load_weights):
+                raise ValueError(f"Path to pretrained weights does not exist: {load_weights}")        
+                
+        self.roberta = RoBERTa(config, add_pooling_layer=False, load_weights=load_weights)
+        self.lm_head = RobertaLMHead(config, "lm_head",load_weights=load_weights)
+        
+    def forward(self,input_ids):
+            
+        output = self.roberta(input_ids)
+        output = self.lm_head(output)
+    
+        return output
