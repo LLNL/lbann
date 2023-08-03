@@ -604,7 +604,6 @@ cat <<EOF >> ${yaml}
 EOF
     if [[ ${CENTER_COMPILER} ]]; then
         CORE_COMPILER=$(echo "${CENTER_COMPILER}" | tr -d '%')
-        echo "I htink that I have a center compiler ${CENTER_COMPILER} and I will replace it with a coore compiler ${CORE_COMPILER}"
 cat <<EOF >> ${yaml}
         core_compilers:
         - '${CORE_COMPILER}'
