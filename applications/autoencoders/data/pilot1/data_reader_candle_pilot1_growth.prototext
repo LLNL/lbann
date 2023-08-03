@@ -10,9 +10,9 @@ data_reader {
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     #label_col: 6
-    num_labels: 2 
+    num_labels: 2
     separator: '\t'
-    disable_labels: true 
+    disable_labels: true
   }
   reader {
     name: "merge_features"
@@ -22,9 +22,9 @@ data_reader {
     data_file_pattern: "/p/lscratchf/allen99/anlftp/ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3.v2/logcon4/growth1.test.LC.NCI_H226.csv.X.1"
     label_filename: "/p/lscratchf/allen99/anlftp/ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3.v2/logcon4/growth1.test.LC.NCI_H226.csv.y.2"
     absolute_sample_count: 0
-    num_labels: 2 
+    num_labels: 2
     percent_of_data_to_use: 1.0
     separator: '\t'
-    disable_labels: true 
+    disable_labels: true
   }
 }

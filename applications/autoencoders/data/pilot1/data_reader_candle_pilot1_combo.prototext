@@ -10,7 +10,7 @@ data_reader {
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     separator: ','
-    disable_responses: false 
+    disable_responses: false
     disable_labels: true
   }
   reader {
@@ -23,7 +23,7 @@ data_reader {
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     separator: ','
-    disable_responses: false 
+    disable_responses: false
     disable_labels: true
   }
 }
