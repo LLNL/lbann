@@ -1004,6 +1004,10 @@ ${MODULE_CMD}
 EOF
     fi
 
+# Build a list of modules that LBANN should load
+LBANN_WRITE_DEPENDENT_MODULEPATH="${LBANN_MODFILES_DIR}/Core"
+LBANN_DEPENDENT_MODULES=
+
     ENV_ROOT_PKG_LIST=$(spack find -x --format "{name}/{version}-{hash:7}")
     if [[ -n "${ENV_ROOT_PKG_LIST:-}" ]]; then
         for p in ${ENV_ROOT_PKG_LIST}
@@ -1013,6 +1017,11 @@ EOF
 # Add PYTHONPATH for top level python package: ${p}
 module try-load ${p}
 EOF
+            if [[ -z "${LBANN_DEPENDENT_MODULES:-}" ]]; then
+                LBANN_DEPENDENT_MODULES="${p}"
+            else
+                LBANN_DEPENDENT_MODULES="${p};${LBANN_DEPENDENT_MODULES}"
+            fi
 #             PKG_PYTHONPATH=$(spack build-env ${p} -- printenv PYTHONPATH)
 #             if [[ -n "${PKG_PYTHONPATH}" ]]; then
 #                 P_ENV=$(echo "${p}" | tr '-' '_')
@@ -1043,6 +1052,7 @@ EOF
     ALUMINUM_PKG=$(spack find --format "{name}/{version}-{hash:7}" aluminum)
     HYDROGEN_PKG=$(spack find --format "{name}/{version}-{hash:7}" hydrogen)
     DIHYDROGEN_PKG=$(spack find --format "{name}/{version}-{hash:7}" dihydrogen)
+    LBANN_DEPENDENT_MODULES="${ALUMINUM_PKG};${HYDROGEN_PKG};${DIHYDROGEN_PKG};${LBANN_DEPENDENT_MODULES}"
 
     cat >> ${LBANN_INSTALL_FILE}<<EOF
 # Modules loaded during this installation
@@ -1199,7 +1209,7 @@ else
     exit 1
 fi
 
-CMAKE_CMD="${LBANN_CMAKE} -C ${LBANN_HOME}/${CONFIG_FILE_NAME} -B ${LBANN_BUILD_DIR} -DCMAKE_INSTALL_PREFIX=${LBANN_INSTALL_DIR} ${LBANN_HOME}"
+CMAKE_CMD="${LBANN_CMAKE} -C ${LBANN_HOME}/${CONFIG_FILE_NAME} -B ${LBANN_BUILD_DIR} -DCMAKE_INSTALL_PREFIX=${LBANN_INSTALL_DIR} -DLBANN_WRITE_DEPENDENT_MODULEPATH=${LBANN_WRITE_DEPENDENT_MODULEPATH} -DLBANN_WRITE_DEPENDENT_MODULES=${LBANN_DEPENDENT_MODULES} ${LBANN_HOME}"
 echo ${CMAKE_CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMAKE_CMD} || exit_on_failure "${CMAKE_CMD}"; }
 
