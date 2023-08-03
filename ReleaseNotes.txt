@@ -20,6 +20,7 @@ Experiments & Applications:
 Internal features:
 
 I/O & data readers:
+ - Renamed percent_of_data_to_use more accurately to fraction_of_data_to_use.
 
 Build system:
  - Updated build script to use CachedCMakeProject mode, which should

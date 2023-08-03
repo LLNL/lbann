@@ -73,8 +73,8 @@ parser.add_argument(
     '--index-list-test', action='store', default='t2_index.txt', type=str,
     help='index list (default index.txt)', metavar='NAME')
 parser.add_argument(
-    '--percent-of-data-to-use', action='store', default=0.01, type=float,
-    help='percent of data to use (default: 0.01)', metavar='NUM')
+    '--fraction-of-data-to-use', action='store', default=0.01, type=float,
+    help='fraction of data to use (default: 0.01)', metavar='NUM')
 parser.add_argument(
     '--dump-outputs', action='store', default='dump_outs', type=str,
     help='dump outputs dir (default: jobdir/dump_outs)', metavar='NAME')

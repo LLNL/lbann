@@ -5,8 +5,8 @@ data_reader {
     shuffle: true
     data_filedir: "/p/lscratchh/brainusr/datasets/CUB_200_2011/basic_set_256x256/"
     data_filename: "/p/lscratchh/brainusr/datasets/CUB_200_2011_list/train_list.txt"
-    validation_percent: 0.0
-    percent_of_data_to_use: 1.0
+    validation_fraction: 0.0
+    fraction_of_data_to_use: 1.0
     num_labels: 200
 
     transforms {
@@ -38,7 +38,7 @@ data_reader {
     shuffle: true
     data_filedir: "/p/lscratchh/brainusr/datasets/CUB_200_2011/basic_set_256x256/"
     data_filename: "/p/lscratchh/brainusr/datasets/CUB_200_2011_list/test_list.txt"
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
     num_labels: 200
 
     transforms {

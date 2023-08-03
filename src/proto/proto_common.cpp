@@ -71,7 +71,7 @@ void init_data_readers(
 
   // A separate explicit validation/tournament set is created only if a reader
   // with role "validate/tournament" is found in the list of data readers.
-  // Otherwise, a validation set is created as a percentage of data from the
+  // Otherwise, a validation set is created as a fraction of data from the
   // train set.
   bool separate_validation = false;
   bool separate_tournament = false;
@@ -342,7 +342,7 @@ void init_data_readers(
           reader_csv->set_skip_rows(readme.skip_rows());
           reader_csv->set_has_header(readme.has_header());
           reader_csv->set_absolute_sample_count(readme.absolute_sample_count());
-          reader_csv->set_use_percent(readme.percent_of_data_to_use());
+          reader_csv->set_use_fraction(readme.fraction_of_data_to_use());
           reader_csv->set_first_n(readme.first_n());
           npy_readers.push_back(reader_csv);
         }
@@ -495,7 +495,7 @@ void init_data_readers(
     }
 
     reader->set_absolute_sample_count(readme.absolute_sample_count());
-    reader->set_use_percent(readme.percent_of_data_to_use());
+    reader->set_use_fraction(readme.fraction_of_data_to_use());
     reader->set_first_n(readme.first_n());
 
     reader->set_gan_labelling(readme.gan_labelling());
@@ -517,10 +517,10 @@ void init_data_readers(
       reader->set_role("error");
     }
     if (readme.role() == "train") {
-      reader->set_execution_mode_split_percent(execution_mode::validation,
-                                               readme.validation_percent());
-      reader->set_execution_mode_split_percent(execution_mode::tournament,
-                                               readme.tournament_percent());
+      reader->set_execution_mode_split_fraction(execution_mode::validation,
+                                               readme.validation_fraction());
+      reader->set_execution_mode_split_fraction(execution_mode::tournament,
+                                               readme.tournament_fraction());
     }
 
     reader->load();
@@ -529,26 +529,26 @@ void init_data_readers(
       data_readers[execution_mode::training] = reader;
     }
     else if (readme.role() == "test") {
-      // While the default validation_percent is 0.0, this line is added to be
+      // While the default validation_fraction is 0.0, this line is added to be
       // consistent with the case of "train"
-      reader->set_execution_mode_split_percent(execution_mode::validation, 0.);
+      reader->set_execution_mode_split_fraction(execution_mode::validation, 0.);
       data_readers[execution_mode::testing] = reader;
     }
     else if (readme.role() == "validate") {
-      reader->set_execution_mode_split_percent(execution_mode::validation, 0.);
+      reader->set_execution_mode_split_fraction(execution_mode::validation, 0.);
       data_readers[execution_mode::validation] = reader;
     }
     else if (readme.role() == "tournament") {
-      reader->set_execution_mode_split_percent(execution_mode::tournament, 0.);
+      reader->set_execution_mode_split_fraction(execution_mode::tournament, 0.);
       data_readers[execution_mode::tournament] = reader;
     }
 
     if (readme.role() == "train") {
       for (auto m : execution_mode_iterator()) {
         if ((m == execution_mode::validation &&
-             readme.validation_percent() > 0. && !separate_validation) ||
+             readme.validation_fraction() > 0. && !separate_validation) ||
             (m == execution_mode::tournament &&
-             readme.tournament_percent() > 0. && !separate_tournament)) {
+             readme.tournament_fraction() > 0. && !separate_tournament)) {
           generic_data_reader* split_reader = nullptr;
 
           if (name == "mnist") {
@@ -681,14 +681,14 @@ void init_data_readers(
           if (master) {
             size_t num_train = reader->get_num_data();
             size_t num_split = split_reader->get_num_data();
-            double validate_percent =
+            double validate_fraction =
               ((double)num_split / (double)(num_train + num_split)) * 100.0;
-            double train_percent =
+            double train_fraction =
               ((double)num_train / (double)(num_train + num_split)) * 100.0;
-            std::cout << "Training using " << train_percent
+            std::cout << "Training using " << train_fraction
                       << "% of the training data set, which is "
                       << reader->get_num_data() << " samples." << std::endl
-                      << to_string(m) << " training using " << validate_percent
+                      << to_string(m) << " training using " << validate_fraction
                       << "% of the training data set, which is "
                       << split_reader->get_num_data() << " samples.";
             std::cout << std::endl;
@@ -860,21 +860,21 @@ void set_data_readers_sample_list(const std::string& which,
   }
 }
 
-void set_data_readers_percent(lbann_data::LbannPB& p)
+void set_data_readers_fraction(lbann_data::LbannPB& p)
 {
   auto& arg_parser = global_argument_parser();
-  double percent = arg_parser.get<float>(LBANN_OPTION_DATA_READER_PERCENT);
-  if (percent <= 0 || percent > 1.0) {
+  double fraction = arg_parser.get<float>(LBANN_OPTION_DATA_READER_FRACTION);
+  if (fraction <= 0 || fraction > 1.0) {
     std::ostringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
-        << " --data_reader_percent=<float> must be > 0 and <= 1.0";
+        << " --data_reader_fraction=<float> must be > 0 and <= 1.0";
     throw lbann_exception(err.str());
   }
   lbann_data::DataReader* readers = p.mutable_data_reader();
   int size = readers->reader_size();
   for (int j = 0; j < size; j++) {
     lbann_data::Reader* r = readers->mutable_reader(j);
-    r->set_percent_of_data_to_use(percent);
+    r->set_fraction_of_data_to_use(fraction);
   }
 }
 
@@ -924,7 +924,7 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
     for (int j = 0; j < size; j++) {
       int n = arg_parser.get<int>(LBANN_OPTION_ABSOLUTE_SAMPLE_COUNT);
       lbann_data::Reader* readme = d_reader->mutable_reader(j);
-      readme->set_percent_of_data_to_use(0.0);
+      readme->set_fraction_of_data_to_use(0.0);
       readme->set_absolute_sample_count(n);
     }
   }
@@ -958,8 +958,8 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   if (arg_parser.get<std::string>(LBANN_OPTION_SAMPLE_LIST_TEST) != "") {
     set_data_readers_sample_list("test", p);
   }
-  if (arg_parser.get<float>(LBANN_OPTION_DATA_READER_PERCENT) != -1.0) {
-    set_data_readers_percent(p);
+  if (arg_parser.get<float>(LBANN_OPTION_DATA_READER_FRACTION) != -1.0) {
+    set_data_readers_fraction(p);
   }
   if (arg_parser.get<bool>(LBANN_OPTION_NO_IM_COMM)) {
     int sz = model->callback_size();

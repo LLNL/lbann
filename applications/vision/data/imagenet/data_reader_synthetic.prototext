@@ -6,9 +6,9 @@ data_reader {
     num_samples: 1281167
     num_labels: 1000
     synth_dimensions: "3 224 224"
-    validation_percent: 0.0
+    validation_fraction: 0.0
     absolute_sample_count: 0
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
   }
 
   reader {
@@ -19,6 +19,6 @@ data_reader {
     num_labels: 1000
     synth_dimensions: "3 224 224"
     absolute_sample_count: 0
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
   }
 }

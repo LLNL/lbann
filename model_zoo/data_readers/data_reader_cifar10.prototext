@@ -4,9 +4,9 @@ data_reader {
     role: "train"
     shuffle: true
     data_filedir: "/p/lscratchh/brainusr/datasets/cifar10-bin/"
-    validation_percent: 0.1
+    validation_fraction: 0.1
     absolute_sample_count: 0
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
 
     transforms {
       horizontal_flip {
@@ -26,7 +26,7 @@ data_reader {
     shuffle: true
     data_filedir: "/p/lscratchh/brainusr/datasets/cifar10-bin/"
     absolute_sample_count: 0
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
 
     transforms {
       horizontal_flip {

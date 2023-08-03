@@ -3,8 +3,8 @@ data_reader {
     name: "hdf5_data_reader"
     role: "train"
     sample_list: "/p/vast1/lbann/datasets/exagan/cGANc128/hdf5_format/inclusive.sample_list"
-    validation_percent: 0.1
-    percent_of_data_to_use: 1.0
+    validation_fraction: 0.1
+    fraction_of_data_to_use: 1.0
     data_schema_filename: "/p/vast1/lbann/datasets/exagan/cGANc128/hdf5_format/data_schema.yaml"
     enable_responses: true
   }

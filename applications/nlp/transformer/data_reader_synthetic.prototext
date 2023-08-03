@@ -6,9 +6,9 @@ data_reader {
     num_samples: 10000
     synth_dimensions: "129"
     num_labels: 1
-    validation_percent: 0.0
+    validation_fraction: 0.0
     absolute_sample_count: 0
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
   }
   reader {
     name: "synthetic"
@@ -18,6 +18,6 @@ data_reader {
     synth_dimensions: "129"
     num_labels: 1
     absolute_sample_count: 0
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
   }
 }

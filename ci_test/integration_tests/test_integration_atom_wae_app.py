@@ -43,7 +43,7 @@ weekly_options_and_targets = {
     'num_decoder_layers': 3,
     'expected_train_recon_range': (0.95, 0.97),
     'expected_test_recon_range': (0.925, 0.94),
-    'percent_of_data_to_use': 0.01,
+    'fraction_of_data_to_use': 0.01,
     'expected_mini_batch_times': {
         'lassen':   0.157,
         'pascal':   0.468, # BVE increase value from 0.365, 11/7/22
@@ -61,7 +61,7 @@ nightly_options_and_targets = {
     'num_decoder_layers': 3,
     'expected_train_recon_range': (0.95, 0.97),
     'expected_test_recon_range': (0.925, 0.94),
-    'percent_of_data_to_use': 0.01,
+    'fraction_of_data_to_use': 0.01,
     'expected_mini_batch_times': {
         'lassen':   0.157,
         'pascal':   0.365,
@@ -129,7 +129,7 @@ def setup_experiment(lbann, weekly):
     import data.atom
     data_reader = data.atom.make_data_reader(lbann)
     # Use less training data for the integration test
-    data_reader.reader[0].percent_of_data_to_use = options['percent_of_data_to_use']
+    data_reader.reader[0].fraction_of_data_to_use = options['fraction_of_data_to_use']
 
     opt = lbann.Adam(learn_rate=3e-4, beta1=0.9, beta2=0.99, eps=1e-8)
     return trainer, model, data_reader, opt, options['num_nodes']

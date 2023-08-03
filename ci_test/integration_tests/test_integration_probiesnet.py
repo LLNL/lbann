@@ -33,7 +33,7 @@ weekly_options_and_targets = {
     'mini_batch_size': 32,
     'expected_train_pc_range': (0.89, 0.92),
     'expected_test_pc_range': (0.90, 0.931),
-    'percent_of_data_to_use': 1.0,
+    'fraction_of_data_to_use': 1.0,
     'expected_mini_batch_times': {
         'lassen':   0.0069, # Old as of 3/21/2022 0.0051,
         'pascal':   0.2267, # Old as of 3/21/2022 0.0146,
@@ -49,7 +49,7 @@ nightly_options_and_targets = {
     'mini_batch_size': 32,
     'expected_train_pc_range': (0.57, 0.601), # BVE changed from 0.60 on 3/9/23 - BVE changed from 0.59 on 9/21/22
     'expected_test_pc_range': (0.66, 0.68),
-    'percent_of_data_to_use': 0.01,
+    'fraction_of_data_to_use': 0.01,
     'expected_mini_batch_times': {
         'lassen':   0.0069,
         'pascal':   0.0386, # BVE changed from 0.172, on 9/21/22
@@ -62,7 +62,7 @@ nightly_options_and_targets = {
 # Setup LBANN experiment
 # ==============================================
 
-def make_data_reader(lbann, percent_of_data_to_use):
+def make_data_reader(lbann, fraction_of_data_to_use):
     """Make Protobuf message for HRRL  data reader.
 
     """
@@ -77,7 +77,7 @@ def make_data_reader(lbann, percent_of_data_to_use):
         google.protobuf.text_format.Merge(f.read(), message)
     message = message.data_reader
 
-    message.reader[0].percent_of_data_to_use = percent_of_data_to_use
+    message.reader[0].fraction_of_data_to_use = fraction_of_data_to_use
 
     # Set paths
     return message
@@ -102,7 +102,7 @@ def setup_experiment(lbann, weekly):
     trainer = lbann.Trainer(mini_batch_size=options['mini_batch_size'])
     model = construct_model(lbann, options['num_epochs'])
 
-    data_reader = make_data_reader(lbann, options['percent_of_data_to_use'])
+    data_reader = make_data_reader(lbann, options['fraction_of_data_to_use'])
 
     opt = lbann.Adam(learn_rate=0.0002,beta1=0.9,beta2=0.99,eps=1e-8)
     return trainer, model, data_reader, opt, options['num_nodes']

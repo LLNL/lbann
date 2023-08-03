@@ -128,11 +128,11 @@ def construct_data_reader(lbann):
     # Set location of MNIST data
     for reader in message.reader:
         reader.data_filedir = lbann.contrib.lc.paths.mnist_dir()
-        reader.percent_of_data_to_use = lenet_fraction
+        reader.fraction_of_data_to_use = lenet_fraction
 
 
     # Validation set
-    message.reader[0].validation_percent = 0.1
+    message.reader[0].validation_fraction = 0.1
 
     return message
 

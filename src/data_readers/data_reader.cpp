@@ -582,13 +582,13 @@ generic_data_reader::get_unused_indices(execution_mode m)
 void generic_data_reader::error_check_counts() const
 {
   size_t count = get_absolute_sample_count();
-  double use_percent = get_use_percent();
-  if (count == 1 and use_percent == 0.0) {
-    LBANN_ERROR("get_use_percent() and get_absolute_sample_count() are both "
+  double use_fraction = get_use_fraction();
+  if (count == 1 and use_fraction == 0.0) {
+    LBANN_ERROR("get_use_fraction() and get_absolute_sample_count() are both "
                 "zero; exactly one must be zero");
   }
-  if (!(count == 0 or use_percent == 0.0)) {
-    LBANN_ERROR("get_use_percent() and get_absolute_sample_count() are both "
+  if (!(count == 0 or use_fraction == 0.0)) {
+    LBANN_ERROR("get_use_fraction() and get_absolute_sample_count() are both "
                 "non-zero; exactly one must be zero");
   }
   if (count != 0) {
@@ -604,21 +604,21 @@ size_t generic_data_reader::get_num_indices_to_use() const
   error_check_counts();
   // note: exactly one of the following is guaranteed to be non-zero
   size_t count = get_absolute_sample_count();
-  double use_percent = get_use_percent();
+  double use_fraction = get_use_fraction();
 
   size_t r = 0.;
   if (count) {
     r = count;
   }
-  else if (use_percent) {
-    r = use_percent * get_num_data();
+  else if (use_fraction) {
+    r = use_fraction * get_num_data();
     if (r == 0) {
       LBANN_ERROR("get_num_indices_to_use() computed zero indices; probably: "
-                  "percent_of_data_to_use is too small WRT num_data;  "
+                  "fraction_of_data_to_use is too small WRT num_data;  "
                   "get_absolute_sample_count: ",
                   get_absolute_sample_count(),
-                  " use_percent: ",
-                  get_use_percent(),
+                  " use_fraction: ",
+                  get_use_fraction(),
                   " num data: ",
                   get_num_data(),
                   " for role: ",
@@ -642,26 +642,26 @@ void generic_data_reader::resize_shuffled_indices()
 void generic_data_reader::select_subset_of_data()
 {
   // Calculate the total number of samples for subsets
-  double total_split_percent = 0.;
+  double total_split_fraction = 0.;
   for (auto m : execution_mode_iterator()) {
-    total_split_percent += get_execution_mode_split_percent(m);
+    total_split_fraction += get_execution_mode_split_fraction(m);
   }
   long total_num_data = get_num_data();
-  long total_unused = total_split_percent * total_num_data;
+  long total_unused = total_split_fraction * total_num_data;
   long total_used = total_num_data - total_unused;
   auto starting_unused_offset = m_shuffled_indices.begin() + total_used;
   for (auto m : execution_mode_iterator()) {
-    double split_percent = get_execution_mode_split_percent(m);
+    double split_fraction = get_execution_mode_split_fraction(m);
 
-    if (split_percent == 0.) {
+    if (split_fraction == 0.) {
       continue;
     }
 
-    long split = split_percent * total_num_data;
+    long split = split_fraction * total_num_data;
     if (split == 0) {
       LBANN_ERROR(to_string(m),
                   " % of ",
-                  split_percent,
+                  split_fraction,
                   " was requested, but the number of validation indices was "
                   "computed as zero. Probably: % ",
                   to_string(m),
@@ -875,41 +875,41 @@ size_t generic_data_reader::get_absolute_sample_count() const
   return m_absolute_sample_count;
 }
 
-void generic_data_reader::set_execution_mode_split_percent(execution_mode m,
+void generic_data_reader::set_execution_mode_split_fraction(execution_mode m,
                                                            double s)
 {
   if (s < 0 or s > 1.0) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: set_validation_percent() - must be: s >= 0, s <= 1.0; you passed: " +
+      " :: set_validation_fraction() - must be: s >= 0, s <= 1.0; you passed: " +
       std::to_string(s));
   }
-  m_execution_mode_split_percentage[m] = s;
+  m_execution_mode_split_fraction[m] = s;
 }
 
 double
-generic_data_reader::get_execution_mode_split_percent(execution_mode m) const
+generic_data_reader::get_execution_mode_split_fraction(execution_mode m) const
 {
-  if (m_execution_mode_split_percentage.count(m)) {
-    return m_execution_mode_split_percentage.at(m);
+  if (m_execution_mode_split_fraction.count(m)) {
+    return m_execution_mode_split_fraction.at(m);
   }
   else {
     return 0;
   }
 }
 
-void generic_data_reader::set_use_percent(double s)
+void generic_data_reader::set_use_fraction(double s)
 {
   if (s < 0 or s > 1.0) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: set_use_percent() - must be: s >= 0, s <= 1.0; you passed: " +
+      " :: set_use_fraction() - must be: s >= 0, s <= 1.0; you passed: " +
       std::to_string(s));
   }
-  m_use_percent = s;
+  m_use_fraction = s;
 }
 
-double generic_data_reader::get_use_percent() const { return m_use_percent; }
+double generic_data_reader::get_use_fraction() const { return m_use_fraction; }
 
 void generic_data_reader::instantiate_data_store()
 {
@@ -1070,10 +1070,10 @@ void generic_data_reader::print_get_methods(const std::string filename)
   out << "get_num_data " << get_num_data() << std::endl;
   out << "get_absolute_sample_count" << get_absolute_sample_count()
       << std::endl;
-  out << "get_use_percent " << get_use_percent() << std::endl;
+  out << "get_use_fraction " << get_use_fraction() << std::endl;
   for (auto m : execution_mode_iterator()) {
-    out << "get_execution_mode_split_percent[" << to_string(m) << "] "
-        << get_execution_mode_split_percent(m) << std::endl;
+    out << "get_execution_mode_split_fraction[" << to_string(m) << "] "
+        << get_execution_mode_split_fraction(m) << std::endl;
   }
   out.close();
 }

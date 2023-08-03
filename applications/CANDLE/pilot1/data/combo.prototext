@@ -6,8 +6,8 @@ data_reader {
     shuffle: true
     data_file_pattern: "/p/gpfs1/brainusr/datasets/cancer/pilot1/lm_genes/combo_x_train_lmg.*.txt"
     label_filename: "/p/gpfs1/brainusr/datasets/cancer/pilot1/lm_genes/combo_y_train_lmg.txt"
-    validation_percent: 0.2
-    percent_of_data_to_use: 1.0
+    validation_fraction: 0.2
+    fraction_of_data_to_use: 1.0
     separator: ','
     disable_responses: false 
     disable_labels: true
@@ -19,7 +19,7 @@ data_reader {
     shuffle: false
     data_file_pattern: "/p/gpfs1/brainusr/datasets/cancer/pilot1/lm_genes/combo_x_val_lmg.*.txt"
     label_filename: "/p/gpfs1/brainusr/datasets/cancer/pilot1/lm_genes/combo_y_val_lmg.txt"
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
     separator: ','
     disable_responses: false 
     disable_labels: true

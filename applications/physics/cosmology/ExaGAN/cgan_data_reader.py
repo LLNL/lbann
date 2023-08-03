@@ -20,8 +20,8 @@ def construct_python_data_reader():
     data_reader.name = 'python'
     data_reader.role = 'train'
     data_reader.shuffle = True
-    data_reader.percent_of_data_to_use = 1.0
-    data_reader.validation_percent = 0.2
+    data_reader.fraction_of_data_to_use = 1.0
+    data_reader.validation_fraction = 0.2
     data_reader.python.module = 'dataset_CGAN'
     data_reader.python.module_dir = module_dir
     data_reader.python.sample_function = 'get_sample'
@@ -33,7 +33,7 @@ def construct_python_data_reader():
     val_data_reader.name = 'python'
     val_data_reader.role = 'test'
     val_data_reader.shuffle = False
-    val_data_reader.percent_of_data_to_use = 1.0
+    val_data_reader.fraction_of_data_to_use = 1.0
     val_data_reader.python.module = 'dataset_CGAN' #use for inference/interpolation
     val_data_reader.python.module_dir = module_dir
     val_data_reader.python.sample_function = 'get_test_sample'

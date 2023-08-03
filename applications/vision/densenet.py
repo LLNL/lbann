@@ -474,12 +474,12 @@ def set_up_experiment(args,
     # Set up data reader
     data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes)
 
-    percentage = 0.001 * 2 * (args.mini_batch_size / 16) * 2
+    fraction = 0.001 * 2 * (args.mini_batch_size / 16) * 2
 
-    if (percentage > 1):
-        data_reader.reader[0].percent_of_data_to_use = 1.0
+    if (fraction > 1):
+        data_reader.reader[0].fraction_of_data_to_use = 1.0
     else:
-        data_reader.reader[0].percent_of_data_to_use = percentage
+        data_reader.reader[0].fraction_of_data_to_use = fraction
 
     # Set up optimizer
     if args.optimizer == 'sgd':

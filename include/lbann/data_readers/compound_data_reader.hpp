@@ -81,13 +81,13 @@ public:
   //************************************************************************
   /// Apply operations to subsidiary data readers
   //************************************************************************
-  void set_execution_mode_split_percent(execution_mode m, double s) override
+  void set_execution_mode_split_fraction(execution_mode m, double s) override
   {
-    generic_data_reader::set_execution_mode_split_percent(m, s);
-    /// Don't propagate the validation percentage to subsidiary readers
-    /// The percentage is applied at the top level
+    generic_data_reader::set_execution_mode_split_fraction(m, s);
+    /// Don't propagate the validation fraction to subsidiary readers
+    /// The fraction is applied at the top level
     for (auto&& reader : m_data_readers) {
-      reader->set_execution_mode_split_percent(m, 0);
+      reader->set_execution_mode_split_fraction(m, 0);
     }
   }
 

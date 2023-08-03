@@ -6,7 +6,7 @@ data_reader {
     data_filedir: "/p/lscratchh/brainusr/ILSVRC2012/original/train/"
     data_filename: "/p/lscratchh/brainusr/ILSVRC2012/labels/train.txt"
     #data_filename: "/p/lscratchh/brainusr/ILSVRC2012/labels/train_c0-9.txt"
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
     num_labels: 1000
 
     transforms {

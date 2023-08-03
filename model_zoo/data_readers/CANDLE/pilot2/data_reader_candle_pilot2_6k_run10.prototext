@@ -5,9 +5,9 @@ data_reader {
     role: "train"
     shuffle: true
     data_file_pattern: "/p/lscratchh/brainusr/datasets/cancer/pilot2/6k_run10_25us.35fs-DPPC.10-DOPC.70-CHOL.20.dir/*.npz"
-    validation_percent: 0.1
+    validation_fraction: 0.1
     absolute_sample_count: 0
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
     disable_labels: true
     disable_responses: true
     num_neighbors: 10
@@ -18,9 +18,9 @@ data_reader {
     role: "test"
     shuffle: true
     data_filename: "/p/lscratchh/brainusr/datasets/cancer/pilot2/6k_run10_25us.35fs-DPPC.10-DOPC.70-CHOL.20.dir/6k_run10_25us.35fs-DPPC.10-DOPC.70-CHOL.20_chunk_01_outof_72.npz"
-    validation_percent: 1.0
+    validation_fraction: 1.0
     absolute_sample_count: 0
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
     disable_labels: true
     disable_responses: true
     num_neighbors: 10

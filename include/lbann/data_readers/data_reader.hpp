@@ -108,7 +108,7 @@ public:
       m_label_fn(""),
       m_shuffle(shuffle),
       m_absolute_sample_count(0),
-      m_use_percent(1.0),
+      m_use_fraction(1.0),
       m_gan_labelling(false), // default, not GAN
       m_gan_label_value(
         0), // If GAN, default for fake label, discriminator model
@@ -244,9 +244,9 @@ public:
 
   /**
    * Read the first 'n' samples. If nonzero, this over-rides
-   * set_absolute_sample_count, set_use_percent. The intent
+   * set_absolute_sample_count, set_use_fraction. The intent
    * is to use this for testing. A problem with set_absolute_sample_count
-   * and set_use_percent is that the entire data set is read in, then
+   * and set_use_fraction is that the entire data set is read in, then
    * a subset is selected
    */
   void set_first_n(int n);
@@ -258,18 +258,18 @@ public:
   void set_absolute_sample_count(size_t s);
 
   /**
-   * Set the percentage of the data set to use for training and validation or
+   * Set the fraction of the data set to use for training and validation or
    * testing.
-   * @param s The percentage used, in the range [0, 1].
+   * @param s The fraction used, in the range [0, 1].
    */
-  void set_use_percent(double s);
+  void set_use_fraction(double s);
 
   /**
-   * Sets the percentage of the dataset to be used for validation.
+   * Sets the fraction of the dataset to be used for validation.
    * @param m The execution mode.
-   * @param s The percentage used, in the range [0, 1].
+   * @param s The fraction used, in the range [0, 1].
    */
-  virtual void set_execution_mode_split_percent(execution_mode m, double s);
+  virtual void set_execution_mode_split_fraction(execution_mode m, double s);
 
   /**
    * Set an idenifier for the dataset.
@@ -554,7 +554,7 @@ public:
 
   /**
    * Optionally resizes the shuffled indices based on the data reader
-   * prototext settings: absolute_sample_count, percent_of_data_to_use.
+   * prototext settings: absolute_sample_count, fraction_of_data_to_use.
    * (dah - this was formerly part of select_subset_of_data)
    */
   void resize_shuffled_indices();
@@ -562,8 +562,8 @@ public:
   /**
    * Select the appropriate subset of data for the additional
    * execution modes such as validation or tournament  set based on
-   * the data reader prototext setting: validation_percent or
-   * tournament_percent
+   * the data reader prototext setting: validation_fraction or
+   * tournament_fraction
    */
   void select_subset_of_data();
 
@@ -657,17 +657,17 @@ protected:
   size_t get_absolute_sample_count() const;
 
   /**
-   * Returns the percent of the dataset to be used for training or testing.
+   * Returns the fraction of the dataset to be used for training or testing.
    * If training, this is the total for training and validation. Throws if
-   * set_use_percent was not called.
+   * set_use_fraction was not called.
    */
-  double get_use_percent() const;
+  double get_use_fraction() const;
 
   /**
-   * Return the percent of the dataset to be used for
+   * Return the fraction of the dataset to be used for
    * other execution modes such as validation or tournament.
    */
-  double get_execution_mode_split_percent(execution_mode m) const;
+  double get_execution_mode_split_fraction(execution_mode m) const;
 
   data_store_conduit* m_data_store;
 
@@ -824,8 +824,8 @@ public:
   std::string m_label_fn;
   bool m_shuffle;
   size_t m_absolute_sample_count;
-  std::map<execution_mode, double> m_execution_mode_split_percentage;
-  double m_use_percent;
+  std::map<execution_mode, double> m_execution_mode_split_fraction;
+  double m_use_fraction;
   int m_first_n;
   std::string m_role;
 
@@ -879,7 +879,7 @@ protected:
   bool m_issue_warning;
 
   /// throws exception if get_absolute_sample_count() and
-  /// get_use_percent() are incorrect
+  /// get_use_fraction() are incorrect
   void error_check_counts() const;
 };
 

@@ -35,7 +35,7 @@ weekly_options_and_targets = {
     'mini_batch_size': 256,
     'expected_train_accuracy_range': (45, 50),
     'expected_test_accuracy_range': (40, 55),
-    'percent_of_data_to_use': imagenet_fraction,
+    'fraction_of_data_to_use': imagenet_fraction,
     'expected_mini_batch_times': {
         'pascal': 0.25,
         'lassen': 0.10,
@@ -53,7 +53,7 @@ nightly_options_and_targets = {
     'mini_batch_size': 256,
     'expected_train_accuracy_range': (3, 4.1),
     'expected_test_accuracy_range': (1.5, 2.1),
-    'percent_of_data_to_use': imagenet_fraction * 0.01,
+    'fraction_of_data_to_use': imagenet_fraction * 0.01,
     'expected_mini_batch_times': {
         'pascal': 0.43,
         'lassen': 0.15,
@@ -87,7 +87,7 @@ def setup_experiment(lbann, weekly):
     # Setup data reader
     data_reader = data.imagenet.make_data_reader(lbann, num_classes=1000)
     # We train on a subset of ImageNet
-    data_reader.reader[0].percent_of_data_to_use = options['percent_of_data_to_use']
+    data_reader.reader[0].fraction_of_data_to_use = options['fraction_of_data_to_use']
     # Only evaluate on ImageNet validation set at end of training
     data_reader.reader[1].role = 'test'
 

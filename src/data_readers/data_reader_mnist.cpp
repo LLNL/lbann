@@ -178,7 +178,7 @@ void mnist_reader::load()
   load_mnist_data(imagepath, labelpath, m_first_n, m_image_data);
 
   if (m_first_n > 0) {
-    set_use_percent(1.0);
+    set_use_fraction(1.0);
     set_absolute_sample_count(0u);
   }
 

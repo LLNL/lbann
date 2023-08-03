@@ -87,7 +87,7 @@ args = parser.parse_args()
 # ----------------------------------
 
 # Setup data reader
-data_reader = data.mnist.make_data_reader(validation_percent=0)
+data_reader = data.mnist.make_data_reader(validation_fraction=0)
 num_classes = 10
 
 # Input data

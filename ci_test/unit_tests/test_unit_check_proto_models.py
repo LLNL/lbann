@@ -6,7 +6,7 @@ import os
 
 
 def skeleton_models(cluster, dir_name,
-                    weekly, data_reader_percent):
+                    weekly, data_reader_fraction):
     opt = 'sgd'
     node_count = 1
     time_limit = 1
@@ -80,7 +80,7 @@ def skeleton_models(cluster, dir_name,
                         data_filename_test_default=data_filename_test_default,
                         data_reader_name=data_reader_name,
                         data_reader_path=data_reader_path,
-                        data_reader_percent=data_reader_percent,
+                        data_reader_fraction=data_reader_fraction,
                         exit_after_setup=True, model_path=model_path,
                         optimizer_name=opt,
                         output_file_name=output_file_name,
@@ -105,5 +105,5 @@ def skeleton_models(cluster, dir_name,
 
 
 # Run with python3 -m pytest -s test_unit_check_proto_models.py -k 'test_unit_models'
-def test_unit_models(cluster, dirname, weekly, data_reader_percent):
-    skeleton_models(cluster, dirname, weekly, data_reader_percent)
+def test_unit_models(cluster, dirname, weekly, data_reader_fraction):
+    skeleton_models(cluster, dirname, weekly, data_reader_fraction)
