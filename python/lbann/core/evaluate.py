@@ -146,7 +146,7 @@ def _setup_data_reader(inputs: npt.NDArray, workdir: str, training: bool):
     reader.name = 'python'
     reader.role = 'test'
     reader.shuffle = False
-    reader.percent_of_data_to_use = 1.0
+    reader.fraction_of_data_to_use = 1.0
     reader.python.module = module_name
     reader.python.module_dir = dir_name
     reader.python.sample_function = 'get_sample'
