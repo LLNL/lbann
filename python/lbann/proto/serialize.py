@@ -4,11 +4,13 @@ import google.protobuf.text_format
 import google.protobuf.message
 from lbann import lbann_pb2, NoOptimizer
 
-def save_prototext(filename, **kwargs):
+
+def save_prototext(filename, binary=False, **kwargs):
     """Save a prototext file.
 
     LbannPB fields (e.g. `model`, `data_reader`, `optimizer`) are
-    accepted via `kwargs`.
+    accepted via `kwargs`. The `binary` field saves the experiment file as
+    a protobuf binary message, rather than as a text format.
 
     """
 
@@ -41,5 +43,40 @@ def save_prototext(filename, **kwargs):
 
     # Write to file
     with open(filename, 'wb') as f:
-        f.write(google.protobuf.text_format.MessageToString(
-            message, use_index_order=True).encode())
+        if binary:
+            f.write(message.SerializeToString())
+        else:
+            f.write(
+                google.protobuf.text_format.MessageToString(
+                    message, use_index_order=True).encode())
+
+
+def text2bin(infile: str, outfile: str):
+    """
+    Converts a .prototext file to a .protobin file.
+    """
+    # Read file
+    with open(infile, 'rb') as f:
+        message = google.protobuf.text_format.Parse(f.read(),
+                                                    lbann_pb2.LbannPB())
+
+    # Write file
+    with open(outfile, 'wb') as f:
+        f.write(message.SerializeToString())
+
+
+def bin2text(infile: str, outfile: str):
+    """
+    Converts a .prototext file to a .protobin file.
+    """
+    message = lbann_pb2.LbannPB()
+
+    # Read file
+    with open(infile, 'rb') as f:
+        message.ParseFromString(f.read())
+
+    # Write file
+    with open(outfile, 'wb') as f:
+        f.write(
+            google.protobuf.text_format.MessageToString(
+                message, use_index_order=True).encode())

@@ -25,33 +25,28 @@
 #
 ################################################################################
 """
-Simple data reader that opens one file with one tensor. Used for unit testing.
+Entry point for protobin-to-prototext converter.
 """
-import numpy as np
 
-# Lazy-load tensor
-tensor = None
+import argparse
 
-
-def lazy_load():
-    # This file operates under the assumption that the working directory is set
-    # to a specific experiment.
-    global tensor
-    if tensor is None:
-        tensor = np.load('data.npy')
-        assert len(tensor.shape) == 2
+from lbann.proto.serialize import bin2text
 
 
-def get_sample(idx):
-    lazy_load()
-    return tensor[idx]
+def main():
+    argparser = argparse.ArgumentParser(
+        description="Convert LBANN protobin files to prototext")
+    argparser.add_argument('infile', type=str, help="Input .protobin file")
+    argparser.add_argument(
+        '--outfile',
+        '-o',
+        type=str,
+        default='experiment.prototext',
+        help='Output file, defaults to experiment.prototext')
+    args = argparser.parse_args()
+
+    bin2text(args.infile, args.outfile)
 
 
-def num_samples():
-    lazy_load()
-    return tensor.shape[0]
-
-
-def sample_dims():
-    lazy_load()
-    return (tensor.shape[1], )
+if __name__ == '__main__':
+    main()

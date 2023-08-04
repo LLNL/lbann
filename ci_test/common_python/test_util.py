@@ -33,7 +33,7 @@ import numpy as np
 import os
 import re
 import tools
-import single_tensor_data_reader
+import lbann.contrib.single_tensor_data_reader as single_tensor_data_reader
 
 
 def lbann_test(check_gradients=False, train=False, **decorator_kwargs):

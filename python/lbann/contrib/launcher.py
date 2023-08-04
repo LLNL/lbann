@@ -8,6 +8,7 @@ from lbann.util import make_iterable, nvprof_command
 # Detect the current compute center
 # ==============================================
 
+
 def is_lc_center():
     """Current system is operated by Livermore Computing at Lawrence
     Livermore National Laboratory.
@@ -16,9 +17,8 @@ def is_lc_center():
 
     """
     domain = socket.getfqdn().split('.')
-    return (len(domain) > 2
-            and domain[-2] == 'llnl'
-            and domain[-1] == 'gov')
+    return (len(domain) > 2 and domain[-2] == 'llnl' and domain[-1] == 'gov')
+
 
 def is_nersc_center():
     """Current system is operated by the National Energy Research
@@ -30,6 +30,7 @@ def is_nersc_center():
     """
     return bool(os.getenv('NERSC_HOST'))
 
+
 def is_olcf_center():
     """Current system is operated by the Oak Ridge Leadership
     Computing Facility at Oak Ridge National Laboratory.
@@ -39,10 +40,11 @@ def is_olcf_center():
 
     """
     domain = socket.getfqdn().split('.')
-    return (len(domain) > 2
-            and domain[-2] == 'ornl'
-            and domain[-1] == 'gov')
+    return (len(domain) > 2 and domain[-2] == 'ornl' and domain[-1] == 'gov')
+
+
 #    return bool(os.getenv('OLCF_MODULEPATH_ROOT'))
+
 
 def is_riken_center():
     """Current system is operated by RIKEN.
@@ -51,6 +53,7 @@ def is_riken_center():
 
     """
     return bool(os.getenv('FJSVXTCLANGA'))
+
 
 # Detect compute center and choose launcher
 _center = 'unknown'
@@ -80,13 +83,16 @@ elif is_riken_center():
         import lbann.contrib.riken.launcher
         launcher = lbann.contrib.riken.launcher
 
+
 def compute_center():
     """Name of organization that operates current system."""
     return _center
 
+
 # ==============================================
 # Launcher functions
 # ==============================================
+
 
 def run(
     trainer,
@@ -99,9 +105,10 @@ def run(
     overwrite_script=False,
     setup_only=False,
     batch_job=False,
-    proto_file_name='experiment.prototext',
+    proto_file_name=None,
     nvprof=False,
     nvprof_output_name=None,
+    binary_protobuf=False,
     *args,
     **kwargs,
 ):
@@ -119,20 +126,26 @@ def run(
     # Batch script prints start time
     script.add_command('echo "Started at $(date)"')
 
+    # Set default file name and extension
+    if proto_file_name is None:
+        proto_file_name = ('experiment.protobin'
+                           if binary_protobuf else 'experiment.prototext')
+
     # Batch script invokes LBANN
     lbann_command = [lbann_exe]
     if nvprof:
         lbann_command = nvprof_command(
             work_dir=script.work_dir,
-            output_name=nvprof_output_name)+lbann_command
+            output_name=nvprof_output_name) + lbann_command
     lbann_command.extend(make_iterable(lbann_args))
-    prototext_file = os.path.join(script.work_dir, proto_file_name)
-    lbann.proto.save_prototext(prototext_file,
+    proto_file = os.path.join(script.work_dir, proto_file_name)
+    lbann.proto.save_prototext(proto_file,
+                               binary=binary_protobuf,
                                trainer=trainer,
                                model=model,
                                data_reader=data_reader,
                                optimizer=optimizer)
-    lbann_command.append('--prototext={}'.format(prototext_file))
+    lbann_command.append('--prototext={}'.format(proto_file))
     if procs_per_trainer is not None:
         lbann_command.append(f'--procs_per_trainer={procs_per_trainer}')
     script.add_parallel_command(lbann_command)
@@ -151,6 +164,7 @@ def run(
     else:
         status = script.run(overwrite=overwrite_script)
     return status
+
 
 def make_batch_script(*args, **kwargs):
     """Construct batch script manager with system-specific optimizations.

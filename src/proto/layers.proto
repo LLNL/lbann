@@ -459,9 +459,20 @@ message Layer {
      */
     int64 statistics_group_size = 6;
 
+    /** @brief Disable Bessel's correction to the batch normalization
+     * denominator.
+     *
+     *  Default: false
+     *
+     *  Bessel's correction makes the layer more statistically robust;
+     *  disabling it, however, makes the layer compatible with PyTorch's
+     *  implementation.
+     */
+    bool no_bessel_correction = 7;
+
     /// Deprecated and unused
     double scale_init = 2;
-    /// Deprecated and unsued
+    /// Deprecated and unused
     double bias_init = 3;
     /// Deprecated
     string stats_aggregation = 5;
