@@ -9,6 +9,8 @@ Support for new layers:
   - Select operator (set tensor value based on predicate)
 
 Python front-end:
+ - Support for PyTorch Module conversion to LBANN graphs (requires PyTorch 2.0
+   or newer, compiled with PyTorch Dynamo)
 
 Performance optimizations:
  - Support in-place computations for capable layers as a memory optimization
