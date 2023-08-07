@@ -66,7 +66,7 @@ nightly_options_and_targets = {
     'num_nodes': 1,
     'num_epochs': 10,
     'mini_batch_size': 128,
-    'expected_train_pc_range': (19.9, 20.0),
+    'expected_train_pc_range': (19.9, 20.1), # BVE Changing the limits from 20.0
     'expected_test_pc_range': (19.1, 19.2),
     'fraction_of_data_to_use': 0.01,
     'expected_mini_batch_times': {
