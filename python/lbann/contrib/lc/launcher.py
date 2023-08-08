@@ -110,6 +110,10 @@ def make_batch_script(
         # hurt performance (see
         # https://linux.die.net/man/3/ibv_fork_init).
         set_environment('IBV_FORK_SAFE', 1)
+        # If you are *absolutely sure* that your application will successfully
+        # and correctly survive a call to fork(), you may disable this warning
+        # by setting the mpi_warn_on_fork MCA parameter to 0.
+        set_environment('OMPI_MCA_mpi_warn_on_fork', 0)
 
         #set_environment('NCCL_SOCKET_IFNAME', 'hsi')
         set_environment('MIOPEN_DEBUG_DISABLE_FIND_DB', '1')
