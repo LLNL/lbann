@@ -157,7 +157,10 @@ __global__ void fp_denom_kernel(Size3 input_dims,
       // Compute contribution from each block
       denom = gpu_lib::block_reduce<bdimx, bdimy, bdimz>(denom);
       if (tid == 0) {
-        gpu_lib::atomic_add(&denoms[j + k * input_dims[1]], denom);
+        if (gridDim.x > 1)
+          gpu_lib::atomic_add(&denoms[j + k * input_dims[1]], denom);
+        else
+          denoms[j + k * input_dims[1]] = denom;
       }
     }
   }
@@ -278,7 +281,16 @@ void fp_impl(size_t num_channels,
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
-    grid_dims.x = (channel_size + block_size - 1) / block_size;
+
+    // Simple heuristic to switch between atomic softmax denominator vs.
+    // sequentially accumulating, block-reducing
+    int sequential_sum_batch = (channel_size + block_size - 1) / block_size;
+    // The below threshold value has nothing to do with block size
+    if (sequential_sum_batch < 256)
+      grid_dims.x = 1;
+    else
+      grid_dims.x = sequential_sum_batch;
+
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
     gpu_lib::clip_grid_dims(grid_dims);
