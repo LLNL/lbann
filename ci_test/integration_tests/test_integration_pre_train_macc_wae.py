@@ -221,5 +221,6 @@ m_lbann_args=f"--use_data_store --preload_data_store --metadata={metadata_protot
 for _test_func in tools.create_tests(setup_experiment,
                                      __file__,
                                      lbann_args=[m_lbann_args],
+                                     time_limit=2,
                                      procs_per_node=procs_per_node):
     globals()[_test_func.__name__] = augment_test_func(_test_func)

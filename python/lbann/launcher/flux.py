@@ -5,13 +5,13 @@ import subprocess
 from lbann.util import make_iterable
 from .batch_script import BatchScript
 
-def _time_string(minutes):
-    """Time D-hh:mm:ss format."""
-    minutes = max(minutes, 0)
-    seconds = int(round((minutes % 1) * 60))
-    hours, minutes = divmod(int(minutes), 60)
-    days, hours = divmod(hours, 24)
-    return f'{days}-{hours:02}:{minutes:02}:{seconds:02}'
+# def _time_string(minutes):
+#     """Time D-hh:mm:ss format."""
+#     minutes = max(minutes, 0)
+#     seconds = int(round((minutes % 1) * 60))
+#     hours, minutes = divmod(int(minutes), 60)
+#     days, hours = divmod(hours, 24)
+#     return f'{days}-{hours:02}:{minutes:02}:{seconds:02}'
 
 class FluxBatchScript(BatchScript):
     """Utility class to write Flux batch scripts."""
@@ -141,7 +141,8 @@ class FluxBatchScript(BatchScript):
         if use_this_rccl is not None:
             args.append(f'--env=LD_PRELOAD=' + use_this_rccl)
         if time_limit is not None:
-            args.append(f'--time={_time_string(time_limit)}')
+            args.append(f'--time={time_limit}m')
+#            args.append(f'--time={_time_string(time_limit)}')
         if job_name:
             args.append(f'--job-name={job_name}')
         if partition:

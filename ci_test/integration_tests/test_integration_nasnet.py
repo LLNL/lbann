@@ -214,5 +214,6 @@ m_lbann_args=f"--procs_per_trainer={proc_per_trainer} --generate_multi_proto"
 for _test_func in tools.create_tests(setup_experiment,
                                      __file__,
                                      proto_file_name=proto_file,
+                                     time_limit=10,
                                      lbann_args=[m_lbann_args]):
     globals()[_test_func.__name__] = augment_test_func(_test_func)
