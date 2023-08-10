@@ -789,7 +789,7 @@ def create_tests(setup_func,
 
         # Set a default time limit for tests
         if 'time_limit' not in _kwargs:
-            _kwargs['time_limit'] = '1'
+            _kwargs['time_limit'] = 1
 
         # Run LBANN
         work_dir = _kwargs['work_dir']
