@@ -142,7 +142,6 @@ class FluxBatchScript(BatchScript):
             args.append(f'--env=LD_PRELOAD=' + use_this_rccl)
         if time_limit is not None:
             args.append(f'--time={time_limit}m')
-#            args.append(f'--time={_time_string(time_limit)}')
         if job_name:
             args.append(f'--job-name={job_name}')
         if partition:
