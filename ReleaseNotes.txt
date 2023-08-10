@@ -27,7 +27,7 @@ I/O & data readers:
 Build system:
  - Updated build script to use CachedCMakeProject mode, which should
    simplfy the overall workflow
-
+ - Set a default time limit for CI tests to avoid unnecessary stalls
 
 Bug fixes:
 
