@@ -104,7 +104,7 @@ def make_model(
 
     # Construct model
     metrics = []
-    callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer(), lbann.CallbackProfiler()]
+    callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer()]
     return lbann.Model(
         num_epochs,
         layers=lbann.traverse_layer_graph(input_),
@@ -219,9 +219,13 @@ def make_batch_script(trainer_params, model_params, script_params, args):
         )
 
     # Print a progress bar
-    model.callbacks.append(
-        lbann.CallbackProgressBar()
-    )
+    if args.progress:
+        model.callbacks.append(
+            lbann.CallbackProgressBar()
+        )
+
+    if args.profiling:
+        model.callbacks.append(lbann.CallbackProfiler())
 
     kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 
