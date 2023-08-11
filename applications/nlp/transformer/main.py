@@ -186,6 +186,14 @@ parser.add_argument('--synthetic',
                     action='store_true',
                     help='Use synthetic data')
 
+parser.add_argument('--progress',
+                    action='store_true',
+                    help='Print progress bar')
+
+parser.add_argument('--profiling',
+                    action='store_true',
+                    help='Instrument the run for profiling')
+
 parser.add_argument('--dataset-fraction',
                     action='store',
                     default=1.0,
