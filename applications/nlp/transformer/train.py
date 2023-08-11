@@ -7,21 +7,6 @@ import lbann.models
 import lbann.contrib.launcher
 
 
-import dataset
-import google.protobuf.text_format
-
-# ----------------------------------------------
-# Options
-# ----------------------------------------------
-
-# Dataset properties
-vocab_size = dataset.vocab_size()
-sequence_length = dataset.sequence_length
-pad_index = dataset.pad_index
-# vocab_size = 37008
-# sequence_length = 64
-# pad_index = 37007
-
 
 DAMPING_PARAM_NAMES = ["act", "err", "bn_act", "bn_err"]
 
@@ -34,8 +19,10 @@ def make_model(
     num_epochs,
     embed_dim,
     num_heads,
-    label_smoothing,
-    num_layers
+    num_layers,
+    vocab_size,
+    sequence_length,
+    pad_index,
 ):
 
     # Embedding weights
@@ -99,53 +86,25 @@ def make_model(
         name="prediction_layer"
     )
     preds = lbann.ChannelwiseSoftmax(preds)
-    preds = lbann.Slice(preds, axis=0, slice_points=range(sequence_length))
-    preds = [lbann.Identity(preds) for _ in range(sequence_length-1)]
+    preds = lbann.TensorPermute(preds, axes=[1, 0])
 
-    # Count number of non-pad tokens
+    # Compute labels
     label_tokens = lbann.Identity(lbann.Slice(
         input_,
         slice_points=[sequence_length+1, 2*sequence_length],
     ))
-    pads = lbann.Constant(value=pad_index, num_neurons=sequence_length-1)
-    is_not_pad = lbann.NotEqual(label_tokens, pads)
-    num_not_pad = lbann.Reduction(is_not_pad, mode='sum')
+    labels = lbann.Reshape(label_tokens, dims=[1, sequence_length - 1])
 
-    # Cross entropy loss with label smoothing
-    label_tokens = lbann.Slice(
-        label_tokens,
-        slice_points=range(sequence_length),
-    )
-    label_tokens = [lbann.Identity(label_tokens) for _ in range(sequence_length-1)]
-    if label_smoothing > 0:
-        uniform_label = lbann.Constant(
-            value=1/vocab_size,
-            num_neurons=[1, vocab_size]
-        )
-    loss = []
-    for i in range(sequence_length-1):
-        label = lbann.OneHot(label_tokens[i], size=vocab_size)
-        label = lbann.Reshape(label, dims=[1, vocab_size])
-        if label_smoothing > 0:
-            label = lbann.WeightedSum(
-                label,
-                uniform_label,
-                scaling_factors=[1-label_smoothing, label_smoothing],
-            )
-        loss.append(lbann.CrossEntropy(preds[i], label))
-    loss = lbann.Concatenation(loss)
+    # Filter out output predictions that are in padding from cross-entropy by
+    # using values that will never contribute to the cross-entropy loss
+    labels = lbann.Select(labels, lbann.Identity(labels), value=pad_index, if_false=(vocab_size + 1))
 
-    # Average cross entropy over non-pad tokens
-    loss_scales = lbann.Divide(
-        is_not_pad,
-        lbann.Tessellate(num_not_pad, hint_layer=is_not_pad),
-    )
-    loss = lbann.Multiply(loss, loss_scales)
-    loss = lbann.Reduction(loss, mode='sum')
+    # Compute cross-entropy
+    loss = lbann.CrossEntropy(preds, labels, use_labels=True)
 
     # Construct model
     metrics = []
-    callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer()]
+    callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer(), lbann.CallbackProfiler()]
     return lbann.Model(
         num_epochs,
         layers=lbann.traverse_layer_graph(input_),
@@ -158,38 +117,19 @@ def make_model(
 # Data reader
 # ----------------------------------------------
 
-def make_data_reader():
+def make_data_reader(synthetic, fraction):
     reader = lbann.reader_pb2.DataReader()
     _reader = reader.reader.add()
     _reader.name = 'python'
     _reader.role = 'train'
     _reader.shuffle = True
-    _reader.fraction_of_data_to_use = 1.0
-    _reader.python.module = 'dataset'
+    _reader.fraction_of_data_to_use = fraction
+    _reader.python.module = 'dataset_synthetic' if synthetic else 'dataset'
     _reader.python.module_dir = os.path.dirname(os.path.realpath(__file__))
     _reader.python.sample_function = 'get_train_sample'
     _reader.python.num_samples_function = 'num_train_samples'
     _reader.python.sample_dims_function = 'sample_dims'
     return reader
-
-def make_data_reader_synthetic(mini_batch_size):
-    data_dir = os.path.dirname(os.path.realpath(__file__))
-
-    # Load Protobuf message from file
-    protobuf_file = os.path.join(data_dir, 'data_reader_synthetic.prototext')
-    message = lbann.lbann_pb2.LbannPB()
-    with open(protobuf_file, 'r') as f:
-        google.protobuf.text_format.Merge(f.read(), message)
-    message = message.data_reader
-
-    # Set paths
-    for reader in message.reader:
-        reader.data_filedir = data_dir
-        reader.num_samples = 1000 * mini_batch_size
-
-
-
-    return message
 
 # ----------------------------------------------
 # Batch script
@@ -224,17 +164,24 @@ def make_batch_script(trainer_params, model_params, script_params, args):
         kfac_args["use_eigen_decomposition"] = args.use_eigen
         kfac_args["kfac_use_interval"] = args.kfac_sgd_mix
 
-        print(args.kfac_sgd_mix)
-
-        if args.disBN:
-            kfac_args["disable_layers"]=bn_layers
         algo = lbann.KFAC("kfac", algo, **kfac_args)
 
     # Create LBANN objects
     trainer = lbann.Trainer(mini_batch_size=trainer_params['mini_batch_size'], training_algo=algo)
-    model = make_model(**model_params)
-    reader = make_data_reader()
-    # reader = make_data_reader_synthetic(trainer_params['mini_batch_size'])
+
+    # Import dataset
+    if args.synthetic:
+        import dataset_synthetic as dataset
+    else:
+        import dataset
+
+    # Dataset properties
+    vocab_size = dataset.vocab_size()
+    sequence_length = dataset.sequence_length
+    pad_index = dataset.pad_index
+
+    model = make_model(vocab_size=vocab_size, sequence_length=sequence_length, pad_index=pad_index, **model_params)
+    reader = make_data_reader(args.synthetic, args.dataset_fraction)
 
     # Optimizer with learning rate schedule
     # Note: Rough approximation of
@@ -254,21 +201,22 @@ def make_batch_script(trainer_params, model_params, script_params, args):
         )
     )
 
-    # Checkpoint after every epoch
-    trainer.callbacks.append(
-        lbann.CallbackCheckpoint(
-            checkpoint_dir=os.path.join(script_params['work_dir'], 'checkpoint'),
-            checkpoint_epochs=1,
+    if args.checkpoint:
+        # Checkpoint after every epoch
+        trainer.callbacks.append(
+            lbann.CallbackCheckpoint(
+                checkpoint_dir=os.path.join(script_params['work_dir'], 'checkpoint'),
+                checkpoint_epochs=1,
+            )
         )
-    )
 
-    #Dump weights after every epoch
-    model.callbacks.append(
-        lbann.CallbackDumpWeights(
-            directory=os.path.join(script_params['work_dir'], 'weights'),
-            epoch_interval=1,
+        # Dump weights after every epoch
+        model.callbacks.append(
+            lbann.CallbackDumpWeights(
+                directory=os.path.join(script_params['work_dir'], 'weights'),
+                epoch_interval=1,
+            )
         )
-    )
 
     # Print a progress bar
     model.callbacks.append(
