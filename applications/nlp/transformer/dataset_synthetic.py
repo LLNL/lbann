@@ -43,7 +43,7 @@ def get_val_sample(index):
 
 
 def num_train_samples():
-    return 1000
+    return 100000
 
 
 def num_val_samples():
