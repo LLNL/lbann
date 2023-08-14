@@ -279,5 +279,6 @@ m_lbann_args=f"--vocab={vocab_loc['vast']} --sequence_length=100 --use_data_stor
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment,
                                      __file__,
+                                     time_limit=4,
                                      lbann_args=[m_lbann_args]):
     globals()[_test_func.__name__] = augment_test_func(_test_func)

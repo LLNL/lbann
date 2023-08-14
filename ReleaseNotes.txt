@@ -20,6 +20,8 @@ Model portability & usability:
 Experiments & Applications:
 
 Internal features:
+ - Fixed a bug where in-place layers sometimes attached a locked view
+   of a matrix to a mutable view.
 
 I/O & data readers:
  - Renamed percent_of_data_to_use more accurately to fraction_of_data_to_use.
@@ -27,7 +29,7 @@ I/O & data readers:
 Build system:
  - Updated build script to use CachedCMakeProject mode, which should
    simplfy the overall workflow
-
+ - Set a default time limit for CI tests to avoid unnecessary stalls
 
 Bug fixes:
 

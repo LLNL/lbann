@@ -152,11 +152,16 @@ void utils::details::do_tensor_copy_between_grids(
 
 template <typename TDT>
 void view_or_copy_tensor(const BaseDistMat& src,
-                         El::AbstractDistMatrix<TDT>& tgt)
+                         El::AbstractDistMatrix<TDT>& tgt,
+                         bool locked_view)
 {
 
   if (src.DistData() == tgt.DistData()) {
-    El::LockedView(tgt, dynamic_cast<const El::AbstractDistMatrix<TDT>&>(src));
+    if (locked_view) {
+      El::LockedView(tgt, dynamic_cast<const El::AbstractDistMatrix<TDT>&>(src));
+    } else {
+      El::View(tgt, dynamic_cast<El::AbstractDistMatrix<TDT>&>(const_cast<BaseDistMat&>(src)));
+    }
   }
   else {
     do_tensor_copy(src, tgt);

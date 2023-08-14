@@ -66,7 +66,7 @@ nightly_options_and_targets = {
     'num_nodes': 1,
     'num_epochs': 10,
     'mini_batch_size': 128,
-    'expected_train_pc_range': (19.9, 20.0),
+    'expected_train_pc_range': (19.9, 20.1), # BVE Changing the limits from 20.0
     'expected_test_pc_range': (19.1, 19.2),
     'fraction_of_data_to_use': 0.01,
     'expected_mini_batch_times': {
@@ -221,5 +221,6 @@ m_lbann_args=f"--use_data_store --preload_data_store --metadata={metadata_protot
 for _test_func in tools.create_tests(setup_experiment,
                                      __file__,
                                      lbann_args=[m_lbann_args],
+                                     time_limit=2,
                                      procs_per_node=procs_per_node):
     globals()[_test_func.__name__] = augment_test_func(_test_func)

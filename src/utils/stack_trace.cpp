@@ -149,25 +149,33 @@ void handle_signal(int const signal)
 
   // Print error message and stack trace to standard error
   std::ostringstream oss;
-  oss << "Caught " << signal_description(signal);
-  if (rank >= 0) {
-    oss << " on rank " << rank;
-  }
-
-  // Hack to use the exception machinery to generate the stack trace
-  // report... I. um. really?
-  exception const e{oss.str()};
-  e.print_report(std::cerr);
-
-  // Print error message and stack trace to file
-  if (!stack_trace_file_base.empty()) {
-    std::ostringstream{stack_trace_file_base, std::ios_base::ate}.swap(oss);
+  if (signal == SIGALRM) {
+    std::cerr << "Pedal faster, you got caught snoozing by the " << signal_description(signal);
     if (rank >= 0) {
-      oss << "_rank" << rank;
+      std::cerr << " on rank " << rank;
     }
-    oss << ".txt";
-    std::ofstream fs(oss.str());
-    e.print_report(fs);
+    std::cerr << std::endl;
+  } else {
+    oss << "Caught " << signal_description(signal);
+    if (rank >= 0) {
+      oss << " on rank " << rank;
+    }
+
+    // Hack to use the exception machinery to generate the stack trace
+    // report... I. um. really?
+    exception const e{oss.str()};
+    e.print_report(std::cerr);
+
+    // Print error message and stack trace to file
+    if (!stack_trace_file_base.empty()) {
+      std::ostringstream{stack_trace_file_base, std::ios_base::ate}.swap(oss);
+      if (rank >= 0) {
+        oss << "_rank" << rank;
+      }
+      oss << ".txt";
+      std::ofstream fs(oss.str());
+      e.print_report(fs);
+    }
   }
 
   // Terminate program

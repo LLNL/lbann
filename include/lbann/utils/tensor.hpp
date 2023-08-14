@@ -50,7 +50,8 @@ void do_tensor_copy(const BaseDistMat& src, El::AbstractDistMatrix<TDT>& tgt);
 /// to target.
 template <typename TDT>
 void view_or_copy_tensor(const BaseDistMat& src,
-                         El::AbstractDistMatrix<TDT>& tgt);
+                         El::AbstractDistMatrix<TDT>& tgt,
+                         bool locked_view = true);
 
 namespace utils {
 namespace details {

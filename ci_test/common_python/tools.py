@@ -787,6 +787,10 @@ def create_tests(setup_func,
         if 'overwrite_script' not in _kwargs:
             _kwargs['overwrite_script'] = True
 
+        # Set a default time limit for tests
+        if 'time_limit' not in _kwargs:
+            _kwargs['time_limit'] = 2
+
         # Run LBANN
         work_dir = _kwargs['work_dir']
         stdout_log_file = os.path.join(work_dir, 'out.log')

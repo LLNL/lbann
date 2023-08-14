@@ -1044,7 +1044,7 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
     const auto& parent_output = parent.get_activations(*this);
     auto& input = get_prev_activations(i);
     input.Empty(false);
-    view_or_copy_tensor(parent_output, input);
+    view_or_copy_tensor(parent_output, input, !m_runs_inplace);
 
     // Check input matrix dimensions
     const auto& height = get_input_size(i);
@@ -1152,7 +1152,7 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
   // If the distributions are compatible, we can just view
   // things. Otherwise, deep-copy the data.
   auto& prev_error_sig = *m_gradient_wrt_outputs[layer_idx];
-  view_or_copy_tensor(signal, prev_error_sig);
+  view_or_copy_tensor(signal, prev_error_sig, !m_runs_inplace);
 }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
