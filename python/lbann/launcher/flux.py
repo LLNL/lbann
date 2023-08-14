@@ -5,13 +5,6 @@ import subprocess
 from lbann.util import make_iterable
 from .batch_script import BatchScript
 
-# def _time_string(minutes):
-#     """Time D-hh:mm:ss format."""
-#     minutes = max(minutes, 0)
-#     seconds = int(round((minutes % 1) * 60))
-#     hours, minutes = divmod(int(minutes), 60)
-#     days, hours = divmod(hours, 24)
-#     return f'{days}-{hours:02}:{minutes:02}:{seconds:02}'
 
 class FluxBatchScript(BatchScript):
     """Utility class to write Flux batch scripts."""
