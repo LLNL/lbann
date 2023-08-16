@@ -114,9 +114,9 @@ void fp_impl(lbann_comm& comm,
       auto& y = local_output(j, i);
       TensorDataType result = (x - mean) * inv_stdev;
       if (local_scale)
-        result *= local_scale[i];
+        result *= local_scale[j];
       if (local_bias)
-        result += local_bias[i];
+        result += local_bias[j];
       y = result;
     }
   }
@@ -185,11 +185,14 @@ void bp_impl(lbann_comm& comm,
       const auto& x = local_input(j, i);
       auto dy = local_output_grad(j, i);
 
-      if (bias_grad)
-        bias_grad[i] = dy;
+      if (bias_grad) {
+        LBANN_OMP_ATOMIC
+        bias_grad[j] += dy;
+      }
       if (scale_grad) {
-        scale_grad[i] = dy * (x - mean) * inv_stdev;
-        dy *= local_scale[i];
+        LBANN_OMP_ATOMIC
+        scale_grad[j] += dy * (x - mean) * inv_stdev;
+        dy *= local_scale[j];
       }
 
       dmean += dy;
@@ -220,7 +223,7 @@ void bp_impl(lbann_comm& comm,
       auto& dx = local_input_grad(j, i);
 
       if (local_scale)
-        dy *= local_scale[i];
+        dy *= local_scale[j];
 
       dx = (dy * inv_stdev + dmean / sample_size +
             dvar * (x - mean) * 2 / sample_size);
@@ -258,12 +261,19 @@ void layer_norm_layer<TensorDataType, Layout, Device>::bp_compute()
 {
   // Obtain optional buffers
   const TensorDataType* scale_weights = nullptr;
-  TensorDataType* scale_grad =
-    m_scale ? this->m_scale_gradient->Buffer() : nullptr;
-  TensorDataType* bias_grad =
-    m_bias ? this->m_bias_gradient->Buffer() : nullptr;
-  if (m_scale)
+  TensorDataType* scale_grad = nullptr;
+  TensorDataType* bias_grad = nullptr;
+
+  if (m_scale) {
     scale_weights = this->weights_values(0).LockedMatrix().LockedBuffer();
+    El::Zero(*this->m_scale_gradient);
+    scale_grad = this->m_scale_gradient->Buffer();
+  }
+
+  if (m_bias) {
+    El::Zero(*this->m_bias_gradient);
+    bias_grad = this->m_bias_gradient->Buffer();
+  }
 
   // Compute backpropagation
   bp_impl(*this->get_comm(),

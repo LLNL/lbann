@@ -174,9 +174,9 @@ __global__ void fp_output_kernel(size_t local_num_samples,
       auto& y = output[i * output_ldim + j];
       auto result = (x - mean) * inv_stdev;
       if constexpr (HAS_SCALE)
-        result *= scale[i * output_ldim + j];
+        result *= scale[j];
       if constexpr (HAS_BIAS)
-        result += bias[i * output_ldim + j];
+        result += bias[j];
       y = result;
     }
   }
@@ -362,11 +362,11 @@ bp_statistics_grad_kernel(size_t local_num_samples,
       const auto& x = input[i * input_ldim + j];
       auto dy = output_grad[i * output_grad_ldim + j];
       if constexpr (HAS_BIAS)
-        bias_grad[i * output_grad_ldim + j] = dy;
+        gpu_lib::atomic_add(bias_grad + j, dy);
 
       if constexpr (HAS_SCALE) {
-        scale_grad[i * output_grad_ldim + j] = dy * (x - mean) * inv_stdev;
-        dy *= scale[i * output_grad_ldim + j];
+        gpu_lib::atomic_add(scale_grad + j, dy * (x - mean) * inv_stdev);
+        dy *= scale[j];
       }
 
       sums.first += dy;
@@ -434,7 +434,7 @@ bp_input_grad_kernel(unsigned long long sample_size,
       auto dy = output_grad[i * output_grad_ldim + j];
 
       if constexpr (HAS_SCALE) {
-        const auto& lscale = scale[i * output_grad_ldim + j];
+        const auto& lscale = scale[j];
         dy *= lscale;
       }
 
@@ -622,12 +622,19 @@ void layer_norm_layer<TensorDataType, Layout, Device>::bp_compute()
 {
   // Obtain optional buffers
   const TensorDataType* scale_weights = nullptr;
-  TensorDataType* scale_grad =
-    m_scale ? this->m_scale_gradient->Buffer() : nullptr;
-  TensorDataType* bias_grad =
-    m_bias ? this->m_bias_gradient->Buffer() : nullptr;
-  if (m_scale)
+  TensorDataType* scale_grad = nullptr;
+  TensorDataType* bias_grad = nullptr;
+
+  if (m_scale) {
     scale_weights = this->weights_values(0).LockedMatrix().LockedBuffer();
+    El::Zero(*this->m_scale_gradient);
+    scale_grad = this->m_scale_gradient->Buffer();
+  }
+
+  if (m_bias) {
+    El::Zero(*this->m_bias_gradient);
+    bias_grad = this->m_bias_gradient->Buffer();
+  }
 
   // Compute backpropagation
   bp_impl(*this->get_comm(),
