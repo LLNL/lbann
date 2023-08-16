@@ -276,6 +276,11 @@ void layer_norm_layer<TensorDataType, Layout, Device>::setup_data(
 
   // Setup default weights if not given
   int weight_idx = 0;
+
+  // Replicate weights across minibatch
+  dist = this->get_prev_activations().DistData();
+  dist.rowDist = El::STAR;
+
   if (m_scale) {
     if (!this->has_weights(weight_idx)) {
       auto w = std::make_shared<WeightsType>(*this->get_comm());
