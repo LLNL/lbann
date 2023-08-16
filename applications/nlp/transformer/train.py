@@ -23,6 +23,7 @@ def make_model(
     vocab_size,
     sequence_length,
     pad_index,
+    dropout
 ):
 
     # Embedding weights
@@ -67,6 +68,7 @@ def make_model(
     transformer = lbann.models.Transformer(
         hidden_size=embed_dim,
         num_heads=num_heads,
+        dropout=dropout,
         name='transformer',
         num_encoder_layers=num_layers,
         num_decoder_layers=num_layers
