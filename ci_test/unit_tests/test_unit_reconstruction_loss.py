@@ -29,6 +29,7 @@ def skeleton_jag_reconstruction_loss(cluster, dir_name,
     tools.assert_success(return_code, error_file_name)
 
 # Run with python3 -m pytest -s test_unit_ridge_regression.py -k 'test_unit_jag_reconstruction_loss'
+@pytest.mark.skip  # Skipping JAG test due to `get_command` function misusing flux
 def test_unit_jag_reconstruction_loss(cluster, dirname,
                                       weekly, data_reader_fraction):
     skeleton_jag_reconstruction_loss(cluster, dirname,
