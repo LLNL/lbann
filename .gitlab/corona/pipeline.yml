@@ -141,7 +141,7 @@ check catch2 tests:
   dependencies:
     - build and install
   script:
-    - find ${RESULTS_DIR} -name "catch-tests-failed.txt" | cat
+    - find ${RESULTS_DIR} -name "catch-tests-failed.txt" | xargs cat
     - ([[ $(find ${RESULTS_DIR} -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
   artifacts:
     reports:
