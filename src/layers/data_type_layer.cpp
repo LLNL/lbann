@@ -243,7 +243,8 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
   for (int i = 0; i < num_parents; ++i) {
     auto& error_signal_ptr =
       ((m_runs_inplace && i < num_children && !distconv_enabled())
-       ? m_gradient_wrt_outputs[i] : m_gradient_wrt_inputs[i]);
+         ? m_gradient_wrt_outputs[i]
+         : m_gradient_wrt_inputs[i]);
     if (!error_signal_ptr)
       continue;
 
@@ -291,8 +292,8 @@ auto data_type_layer<InputTensorDataType,
   // In-place layers use inputs for the output activations
   // This assumes that there is a one-to-one correspondence between
   // input and output tensors
-  if (this->m_runs_inplace && child_index < (int)m_inputs.size()
-      && !distconv_enabled()) {
+  if (this->m_runs_inplace && child_index < (int)m_inputs.size() &&
+      !distconv_enabled()) {
     return this->get_prev_activations(child_index);
   }
 
@@ -342,8 +343,8 @@ auto data_type_layer<InputTensorDataType,
   // This assumes that there is a one-to-one correspondence between
   // input and output tensors
   if (this->m_runs_inplace &&
-      parent_index < (int)m_gradient_wrt_outputs.size()
-      && !distconv_enabled()) {
+      parent_index < (int)m_gradient_wrt_outputs.size() &&
+      !distconv_enabled()) {
     return this->get_prev_error_signals(parent_index);
   }
 
@@ -384,7 +385,7 @@ auto data_type_layer<InputTensorDataType,
                      OutputTensorDataType>::get_branch_tag_input(int tag)
   -> InputAbsDistMatrixType&
 {
-  if (m_subgrid_tensors_split.size() <= tag)
+  if (static_cast<int>(m_subgrid_tensors_split.size()) <= tag)
     LBANN_ERROR("Error Signal Layer Name:",
                 this->get_name(),
                 " Layer type:",
@@ -1284,7 +1285,8 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
     // either be copied or swapped out.
     auto& error_signal =
       ((m_runs_inplace && i < get_num_children() && !distconv_enabled())
-       ? m_gradient_wrt_outputs[i] : m_gradient_wrt_inputs[i]);
+         ? m_gradient_wrt_outputs[i]
+         : m_gradient_wrt_inputs[i]);
 
     if (m_persistent_error_signals)
       attempt_view_error_signal(parent, *this, *error_signal);

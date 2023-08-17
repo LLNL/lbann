@@ -407,13 +407,11 @@ void kfac_block_bn<Device>::start_communication_forward_end(lbann_comm* comm)
         }
       }
 
-      int iter = 0;
       for (auto& weight : this->m_weight_values) {
         weight = make_unique<
           El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(
           comm->get_secondary_grid(),
           0);
-        iter++;
       }
     }
 
@@ -581,13 +579,11 @@ void kfac_block_bn<Device>::start_communication_backward_end(lbann_comm* comm)
         }
       }
       // Initialize gradients
-      int iter = 0;
       for (auto& gradient : this->m_weight_gradients) {
         gradient = make_unique<
           El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(
           comm->get_secondary_grid(),
           0);
-        iter++;
       }
     }
 
