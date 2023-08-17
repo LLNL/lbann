@@ -243,7 +243,7 @@ while :; do
                 exit 1
             fi
             ;;
-        --aluminum-repo)
+        --aluminum-repo|--aluminium-repo)
             if [ -n "${2}" ]; then
                 ALUMINUM_PATH=${2}
                 shift
