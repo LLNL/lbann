@@ -224,7 +224,7 @@ if __name__ == "__main__":
 
     # Runtime parameters/arguments
     environment = lbann.contrib.args.get_distconv_environment(
-        num_io_partitions=args.depth_groups)
+        num_io_partitions=args.depth_groups if args.use_distconv else 1)
     if args.dynamically_reclaim_error_signals:
         environment['LBANN_KEEP_ERROR_SIGNALS'] = 0
     else:
