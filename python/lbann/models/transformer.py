@@ -24,6 +24,7 @@ class LayerNorm(lbann.modules.Module):
             self,
             normalized_shape,
             name=None,
+            builtin=True
     ):
         super().__init__()
         LayerNorm.global_count += 1
@@ -31,18 +32,22 @@ class LayerNorm(lbann.modules.Module):
         self.name = (name
                      if name
                      else f'layernorm{LayerNorm.global_count}')
+        self.builtin = builtin
 
-        # Initialize weights
-        self.weight = lbann.Weights(
-            initializer=lbann.ConstantInitializer(value=1),
-            name=f'{self.name}_weight',
-        )
-        self.bias = lbann.Weights(
-            initializer=lbann.ConstantInitializer(value=0),
-            name=f'{self.name}_bias',
-        )
+        if not self.builtin:
+            # Initialize weights
+            self.weight = lbann.Weights(
+                initializer=lbann.ConstantInitializer(value=1),
+                name=f'{self.name}_weight',
+            )
+            self.bias = lbann.Weights(
+                initializer=lbann.ConstantInitializer(value=0),
+                name=f'{self.name}_bias',
+            )
 
     def forward(self, x):
+        if self.builtin:
+            return lbann.LayerNorm(x, scale=True, bias=True, name=self.name)
 
         # Normalization
         x = lbann.InstanceNorm(x)

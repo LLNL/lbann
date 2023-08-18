@@ -69,6 +69,13 @@ parser.add_argument('--num-layers',
                     help='Number of encoder and decoder layers (default: 6)',
                     metavar='NUM')
 
+parser.add_argument(
+    "--model-dropout",
+    type=float,
+    default=0.1,
+    help="Dropout ratio in transformer model. 0 disables dropout (default: 0.1)"
+)
+
 # KFAC configs
 parser.add_argument("--kfac",
                     dest="kfac",
@@ -239,6 +246,7 @@ model_params = {
     'embed_dim': args.embed_dim,
     'num_heads': args.num_attention_heads,
     'num_layers': args.num_layers,
+    'dropout': args.model_dropout,
 }
 script_params = lbann.contrib.args.get_scheduler_kwargs(args)
 script_params['work_dir'] = work_dir

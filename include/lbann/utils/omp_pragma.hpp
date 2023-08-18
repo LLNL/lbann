@@ -76,6 +76,7 @@
 #define LBANN_OMP_PARALLEL_ARGS(arg) _Pragma(LBANN_OMP_PARALLEL_TEXT(arg))
 
 #define LBANN_OMP_PARALLEL _Pragma("omp parallel")
+#define LBANN_OMP_ATOMIC _Pragma("omp atomic")
 #define OMP_CRITICAL _Pragma("omp critical")
 
 #else // LBANN_DETERMINISTIC
@@ -92,6 +93,7 @@
 #define LBANN_OMP_PARALLEL_TEXT(arg)
 #define LBANN_OMP_PARALLEL_ARGS(arg)
 #define LBANN_OMP_PARALLEL
+#define LBANN_OMP_ATOMIC
 #define OMP_CRITICAL
 
 #endif // LBANN_DETERMINISTIC

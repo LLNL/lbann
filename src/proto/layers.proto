@@ -574,6 +574,16 @@ message Layer {
      *  @details Default: 1e-5
      */
     google.protobuf.DoubleValue epsilon = 1;
+
+    /**
+     * Apply an elementwise learned scaling factor after normalization
+     */
+    bool scale = 2;
+
+    /**
+     * Apply an elementwise learned bias after normalization
+     */
+    bool bias = 3;
   }
 
   /** @brief Normalize over data channels
