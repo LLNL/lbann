@@ -10,7 +10,8 @@ def construct_cosmoflow_model(parallel_strategy,
                               num_epochs,
                               learning_rate,
                               min_distconv_width,
-                              mlperf):
+                              mlperf,
+                              transform_input):
 
     # Construct layer graph
     universes = lbann.Input(data_field='samples')
@@ -21,7 +22,8 @@ def construct_cosmoflow_model(parallel_strategy,
         output_size=num_secrets,
         use_bn=use_batchnorm,
         bn_statistics_group_size=statistics_group_size,
-        mlperf=mlperf)(universes)
+        mlperf=mlperf,
+        transform_input=transform_input)(universes)
     mse = lbann.MeanSquaredError([preds, secrets])
     obj = lbann.ObjectiveFunction([mse])
     layers = list(lbann.traverse_layer_graph([universes, secrets]))
