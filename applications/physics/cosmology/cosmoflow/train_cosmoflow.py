@@ -130,6 +130,9 @@ if __name__ == "__main__":
     parser.add_argument(
         '--synthetic', action='store_true',
         help='Use synthetic data')
+    parser.add_argument(
+        '--transform-input', action='store_true',
+        help='Apply log1p transformation to model inputs')
 
     # Parallelism arguments
     parser.add_argument(
@@ -197,7 +200,8 @@ if __name__ == "__main__":
                                                       num_epochs=args.num_epochs,
                                                       learning_rate=args.optimizer_learning_rate,
                                                       min_distconv_width=args.min_distconv_width,
-                                                      mlperf=args.mlperf)
+                                                      mlperf=args.mlperf,
+                                                      transform_input=args.transform_input)
 
     # Setup optimizer
     optimizer = lbann.contrib.args.create_optimizer(args)

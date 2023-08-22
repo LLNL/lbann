@@ -27,7 +27,8 @@ class CosmoFlow(lm.Module):
                  name=None,
                  use_bn=False,
                  bn_statistics_group_size=None,
-                 mlperf=False):
+                 mlperf=False,
+                 transform_input=False):
         """Initialize CosmFlow.
 
         Args:
@@ -40,6 +41,8 @@ class CosmoFlow(lm.Module):
                 for each batch-normalization group.
             mlperf (bool): Whether or not to use the MLPerf HPC compliant 
                 model.
+            transform_input (bool): Whether or not to apply log1p
+                transformation to model inputs.
         """
 
         CosmoFlow.global_count += 1
@@ -49,6 +52,7 @@ class CosmoFlow(lm.Module):
         self.input_width = input_width
         self.use_bn = use_bn
         self.mlperf = mlperf
+        self.transform_input = transform_input
 
         if self.mlperf:
             base_channels = 32
@@ -114,7 +118,8 @@ class CosmoFlow(lm.Module):
     def forward(self, x):
         self.instance += 1
 
-        x = lbann.Log1p(x, name=f'{self.name}_input_norm_instance{self.instance}')
+        if self.transform_input:
+            x = lbann.Log1p(x, name=f'{self.name}_input_transform_instance{self.instance}')
 
         def create_pooling(x, i):
             if self.mlperf:
