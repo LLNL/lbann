@@ -671,7 +671,6 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
   m_subgrid_tensors_split.resize(1);
 
   int tag = this->get_grid_tag();
-  // this->reset_mygrid(grids[tag]);
   const El::Grid& grid = *grids[tag];
 
   // If any of the parents reside on different subgrids, do not run in-place
@@ -812,7 +811,6 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
       temp_grad = output_mat_builder->MakeEmpty(grid, 0);
     }
 
-    // auto subgrid_tags = *(this->m_parent_tags);
 
     count = 1;
     for (auto& subgrid_tensor : m_subgrid_tensors_split) {
