@@ -325,6 +325,14 @@ void convolution_distconv_adapter<TensorDataType, T_layout, Dev>::
   error_signals_dist.set_overlap(overlap);
   constraints.mark_updated(error_signals_dist);
   constraints.mark_invariant(error_signals_dist);
+  // For the memory optimization that reuses prev_activations as error_signals,
+  // set the overlap of the activations to be the same as prev_error_signals.
+  // This ensures that a child layer can take advantage of this optimization.
+  // Note that the overlap is not marked as invariant so that the optimization
+  // can be disabled if the overlap needs to be changed.
+  auto& activations_dist = this->get_activations_dist();
+  activations_dist.set_overlap(overlap);
+  constraints.mark_updated(activations_dist);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
