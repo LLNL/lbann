@@ -243,7 +243,8 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
   for (int i = 0; i < num_parents; ++i) {
     auto& error_signal_ptr =
       ((m_runs_inplace && i < num_children && !distconv_enabled())
-       ? m_gradient_wrt_outputs[i] : m_gradient_wrt_inputs[i]);
+         ? m_gradient_wrt_outputs[i]
+         : m_gradient_wrt_inputs[i]);
     if (!error_signal_ptr)
       continue;
 
@@ -291,8 +292,8 @@ auto data_type_layer<InputTensorDataType,
   // In-place layers use inputs for the output activations
   // This assumes that there is a one-to-one correspondence between
   // input and output tensors
-  if (this->m_runs_inplace && child_index < (int)m_inputs.size()
-      && !distconv_enabled()) {
+  if (this->m_runs_inplace && child_index < (int)m_inputs.size() &&
+      !distconv_enabled()) {
     return this->get_prev_activations(child_index);
   }
 
@@ -342,8 +343,8 @@ auto data_type_layer<InputTensorDataType,
   // This assumes that there is a one-to-one correspondence between
   // input and output tensors
   if (this->m_runs_inplace &&
-      parent_index < (int)m_gradient_wrt_outputs.size()
-      && !distconv_enabled()) {
+      parent_index < (int)m_gradient_wrt_outputs.size() &&
+      !distconv_enabled()) {
     return this->get_prev_error_signals(parent_index);
   }
 
@@ -684,39 +685,7 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
   m_temp_grad.resize(1);
   m_subgrid_tensors_split.resize(1);
 
-  // Choose process grid to distribute matrices over
   int tag = this->get_grid_tag();
-  if (tag < 0) {
-    // Use tag from parent layers if they are all the same. Otherwise
-    // use tag 0.
-    for (int i = 0; i < this->get_num_parents(); ++i) {
-      auto parent_tag = this->get_parent_layer(i).get_grid_tag();
-      if (i == 0) {
-        tag = parent_tag;
-      }
-      if (tag != parent_tag) {
-        tag = -1;
-        break;
-      }
-    }
-    if (tag < 0) {
-      tag = 0;
-    }
-  }
-  if (tag < 0 || tag >= static_cast<int>(grids.size())) {
-    LBANN_ERROR("attempted to initialize ",
-                this->get_type(),
-                " layer \"",
-                this->get_name(),
-                "\" ",
-                "on invalid grid ",
-                "(grid tag ",
-                tag,
-                ", ",
-                grids.size(),
-                " grids available)");
-  }
-  this->set_grid_tag(tag);
   const El::Grid& grid = *grids[tag];
 
   // If any of the parents reside on different subgrids, do not run in-place
@@ -730,12 +699,15 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
     }
   }
 
+  if (grid.InGrid())
+    this->set_run_layer_in_subgraph();
+
   auto childs = get_child_layers();
   auto parents = get_parent_layers();
 
   if ((this->get_type() == "split" || this->get_type() == "slice") &&
       this->get_model()->is_subgraph_parallelism_enabled() &&
-      this->get_parallel_strategy().enable_subgraph) {
+      this->subgraph_parallelism_execution()) {
 
     // split layer
     m_subgrid_tensors_split.clear();
@@ -770,8 +742,7 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
     for (auto& subgrid_tensor : m_subgrid_tensors_split) {
       for (int child_index = 0; child_index < int(childs.size());
            ++child_index) {
-        if (childs[child_index]->get_parallel_strategy().sub_branch_tag ==
-            count + 1) {
+        if (childs[child_index]->get_grid_tag() == count + 1) {
           subgrid_tensor = output_mat_builder->MakeEmpty(
             *grids[childs[child_index]->get_grid_tag()],
             0);
@@ -800,8 +771,7 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
 
     for (auto& output : m_outputs) {
       output =
-        output_mat_builder->MakeEmpty(*grids[parents[count]->get_grid_tag()],
-                                      0);
+        output_mat_builder->MakeEmpty(*grids[childs[count]->get_grid_tag()], 0);
       count++;
     }
     count = 0;
@@ -824,8 +794,9 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
   }
   else if ((get_type() == "sum" || this->get_type() == "concatenate") &&
            this->get_model()->is_subgraph_parallelism_enabled() &&
-           this->get_parallel_strategy().enable_subgraph == true) {
+           this->subgraph_parallelism_execution()) {
     // sum layer
+
     m_subgrid_tensors_split.clear();
     m_subgrid_tensors_split.resize(this->get_num_spliting_groups());
 
@@ -855,20 +826,11 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
       temp_grad = output_mat_builder->MakeEmpty(grid, 0);
     }
 
-    auto subgrid_tags = *(this->m_parent_tags);
 
-    count = 0;
+    count = 1;
     for (auto& subgrid_tensor : m_subgrid_tensors_split) {
-      for (int parent_index = 0; parent_index < int(parents.size());
-           ++parent_index) {
-        if (subgrid_tags[parent_index] == count) {
-          subgrid_tensor = input_mat_builder->MakeEmpty(
-            *grids[parents[parent_index]->get_grid_tag()],
-            0);
-          count++;
-          break;
-        }
-      }
+      subgrid_tensor = input_mat_builder->MakeEmpty(*grids[count], 0);
+      count++;
     }
   }
   else {
@@ -1284,7 +1246,8 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
     // either be copied or swapped out.
     auto& error_signal =
       ((m_runs_inplace && i < get_num_children() && !distconv_enabled())
-       ? m_gradient_wrt_outputs[i] : m_gradient_wrt_inputs[i]);
+         ? m_gradient_wrt_outputs[i]
+         : m_gradient_wrt_inputs[i]);
 
     if (m_persistent_error_signals)
       attempt_view_error_signal(parent, *this, *error_signal);
@@ -1310,8 +1273,7 @@ void data_type_layer<InputTensorDataType,
       continue;
 #endif // LBANN_HAS_DISTCONV
     if (!m_gradient_wrt_inputs[i]) {
-      if (get_type() == "sum" &&
-          this->get_parallel_strategy().enable_subgraph == true) {
+      if (get_type() == "sum" && this->subgraph_parallelism_execution()) {
         m_gradient_wrt_inputs[i] =
           MakeMatBuilder<InputTensorDataType>(this->get_data_layout(),
                                               this->get_device_allocation())
@@ -1326,8 +1288,8 @@ void data_type_layer<InputTensorDataType,
     }
     auto& gradient_wrt_input = get_error_signals(i);
     gradient_wrt_input.Empty(false);
-    if (get_type() == "sum" &&
-        this->get_parallel_strategy().enable_subgraph == true) {
+    if ((get_type() == "sum" or get_type() == "cross_grid_sum") &&
+        this->subgraph_parallelism_execution()) {
     }
     else {
       gradient_wrt_input.AlignWith(get_prev_activations(i));
