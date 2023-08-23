@@ -55,10 +55,9 @@ allocate lc resources:
     - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "150m" || echo "120m")
     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
     - export FLUX_F58_FORCE_ASCII=t
-    - jobid=$(timeout 1 flux --parent alloc -N ${LBANN_NNODES} -g 1 -t ${TEST_TIME} --job-name=${JOB_NAME} --bg)
-    - if [ "$?" -eq "124" ]]; then curl --request POST --header "PRIVATE-TOKEN: $MY_TOKEN" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/pipelines/$CI_PIPELINE_ID/cancel"; fi
+    - jobid=$(flux --parent alloc -N ${LBANN_NNODES} -g 1 -t ${TEST_TIME} --job-name=${JOB_NAME} --bg)
     - export JOB_ID=$jobid
-  timeout: 3h
+  timeout: 6h
 
 # Build LBANN and establish the Spack environment for this pipeline.
 build and install:
@@ -76,7 +75,7 @@ build and install:
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS} ${CLEAN_BUILD_FLAG}
       -p py-pip --ci-pip --
       +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
-    - export TEST_TASKS_PER_NODE=1
+    - export TEST_TASKS_PER_NODE=4
     - export TEST_MPIBIND_FLAG="--mpibind=off"
     - export SPACK_ARCH=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch)
     - export SPACK_ARCH_TARGET=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t)
