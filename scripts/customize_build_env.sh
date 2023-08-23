@@ -232,7 +232,7 @@ set_center_specific_spack_dependencies()
                 ;;
             "zen3") # Frontier, Crusher
                 CENTER_COMPILER="%rocmcc@5.5.1"
-                CENTER_DEPENDENCIES="^cray-mpich@8.1.26 ^hip@5.5.1 ^python@3.9.13"
+                CENTER_DEPENDENCIES="^cray-mpich@8.1.26 ^hip@5.5.1 ^python@3.9.13 ^protobuf@3.21.12"
 #                CENTER_DEPENDENCIES="^cray-mpich@8.1.26 ^hip@5.5.1 ^python@3.9.12 ^aluminum@1.4.0: +ofi_libfabric_plugin"
                 CENTER_BLAS_LIBRARY="blas=openblas"
 #                CENTER_BLAS_LIBRARY="blas=libsci"
