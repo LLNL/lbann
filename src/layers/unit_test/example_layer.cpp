@@ -115,12 +115,12 @@ private:
                local_input.Height());
 #ifdef LBANN_HAS_GPU
     else if constexpr (Device == El::Device::GPU)
-      gpuMemcpyAsync(local_output.Buffer(),
-                     local_input.LockedBuffer(),
-                     sizeof(TensorDataType) * local_input.Width() *
-                       local_input.Height(),
-                     gpuMemcpyDeviceToDevice,
-                     to_native_stream(multisync));
+      static_cast<void>(gpuMemcpyAsync(
+        local_output.Buffer(),
+        local_input.LockedBuffer(),
+        sizeof(TensorDataType) * local_input.Width() * local_input.Height(),
+        gpuMemcpyDeviceToDevice,
+        to_native_stream(multisync)));
 #endif // LBANN_HAS_GPU
   }
 
@@ -141,12 +141,12 @@ private:
                local_input.Height());
 #ifdef LBANN_HAS_GPU
     else if constexpr (Device == El::Device::GPU)
-      gpuMemcpyAsync(local_output.Buffer(),
-                     local_input.LockedBuffer(),
-                     sizeof(TensorDataType) * local_input.Width() *
-                       local_input.Height(),
-                     gpuMemcpyDeviceToDevice,
-                     to_native_stream(multisync));
+      static_cast<void>(gpuMemcpyAsync(
+        local_output.Buffer(),
+        local_input.LockedBuffer(),
+        sizeof(TensorDataType) * local_input.Width() * local_input.Height(),
+        gpuMemcpyDeviceToDevice,
+        to_native_stream(multisync)));
 #endif // LBANN_HAS_GPU
   }
 };

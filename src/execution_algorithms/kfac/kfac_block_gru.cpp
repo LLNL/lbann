@@ -1379,13 +1379,11 @@ void kfac_block_gru<Device>::start_communication_forward_end(lbann_comm* comm)
         }
       }
 
-      int iter = 0;
       for (auto& weight : this->m_weight_values) {
         weight = std::make_unique<
           El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(
           comm->get_secondary_grid(),
           0);
-        iter++;
       }
     }
 
@@ -1722,13 +1720,11 @@ void kfac_block_gru<Device>::initialize_activations_and_errors(
             0);
       }
 
-      int iter = 0;
       for (auto& weight : this->m_weight_values) {
         weight = std::make_unique<
           El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(
           comm->get_secondary_grid(),
           0);
-        iter++;
       }
     }
 

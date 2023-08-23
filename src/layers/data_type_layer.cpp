@@ -385,7 +385,7 @@ auto data_type_layer<InputTensorDataType,
                      OutputTensorDataType>::get_branch_tag_input(int tag)
   -> InputAbsDistMatrixType&
 {
-  if (m_subgrid_tensors_split.size() <= tag)
+  if (static_cast<int>(m_subgrid_tensors_split.size()) <= tag)
     LBANN_ERROR("Error Signal Layer Name:",
                 this->get_name(),
                 " Layer type:",

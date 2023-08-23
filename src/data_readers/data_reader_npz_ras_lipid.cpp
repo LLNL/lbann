@@ -428,9 +428,7 @@ void ras_lipid_conduit_data_reader::get_samples_per_file()
   int me = m_comm->get_rank_in_trainer();
   int np = m_comm->get_procs_per_trainer();
   std::vector<int> work;
-  int x = 0;
   for (size_t j = me; j < m_filenames.size(); j += np) {
-    ++x;
     std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(m_filenames[j]);
     size_t n = 0;
     for (const auto& t2 : a) {

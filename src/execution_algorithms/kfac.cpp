@@ -1714,7 +1714,7 @@ void KFAC::on_backward_prop_end(ExeContextType& context, model& model)
   }
 
   if (is_first_step) {
-    int kfac_inverse_size = 0;
+    // int kfac_inverse_size = 0;
     for (auto& block : context.m_blocks) {
       for (auto& info : block->get_internal_matrix_info()) {
         std::ostringstream oss;
@@ -1725,7 +1725,8 @@ void KFAC::on_backward_prop_end(ExeContextType& context, model& model)
         std::cout << oss.str();
         if (std::get<0>(info).find("inverse_A") != std::string::npos or
             std::get<0>(info).find("inverse_A") != std::string::npos or true) {
-          kfac_inverse_size += (int)std::get<1>(info) * (int)std::get<2>(info);
+          // kfac_inverse_size += (int)std::get<1>(info) *
+          // (int)std::get<2>(info);
         }
       }
     }
