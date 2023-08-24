@@ -367,22 +367,22 @@ EOF
                 ;;
             "zen3")
 cat <<EOF  >> ${yaml}
-  # compilers:
-  # - compiler:
-  #     spec: rocmcc@5.6.0
-  #     paths:
-  #       cc: cc
-  #       cxx: CC
-  #       f77: ftn
-  #       fc: ftn
-  #     flags: {}
-  #     operating_system: rhel8
-  #     target: any
-  #     modules:
-  #     - PrgEnv-amd
-  #     - amd/5.6.0
-  #     environment: {}
-  #     extra_rpaths: []
+  compilers:
+  - compiler:
+      spec: rocmcc@5.6.0
+      paths:
+        cc: cc
+        cxx: CC
+        f77: ftn
+        fc: ftn
+      flags: {}
+      operating_system: rhel8
+      target: any
+      modules:
+      - PrgEnv-amd
+      - amd/5.6.0
+      environment: {}
+      extra_rpaths: []
   packages:
     all:
       providers:
