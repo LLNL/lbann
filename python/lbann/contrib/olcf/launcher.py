@@ -92,6 +92,18 @@ def make_batch_script(
         # Configure NVSHMEM to load Spectrum MPI
         set_environment('NVSHMEM_MPI_LIB_NAME', 'libmpi_ibm.so')
 
+    # Optimizations for Frontier and Crusher
+    if system in ('frontier', 'crusher'):
+        #set_environment('NCCL_SOCKET_IFNAME', 'hsi')
+        set_environment('MIOPEN_DEBUG_DISABLE_FIND_DB', '1')
+        set_environment('MIOPEN_DISABLE_CACHE', '1')
+        prepend_environment_path('LD_LIBRARY_PATH', os.getenv('CRAY_LD_LIBRARY_PATH'))
+        if os.getenv('ROCM_PATH') is not None:
+            prepend_environment_path('LD_LIBRARY_PATH', os.path.join(os.getenv('ROCM_PATH'), 'llvm', 'lib'))
+        different_ofi_plugin = os.getenv('LBANN_USE_THIS_OFI_PLUGIN')
+        if different_ofi_plugin is not None:
+            prepend_environment_path('LD_LIBRARY_PATH', different_ofi_plugin)
+
     return lbann.launcher.make_batch_script(
         procs_per_node=procs_per_node,
         scheduler=scheduler,
