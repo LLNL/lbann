@@ -1008,6 +1008,8 @@ EOF
 LBANN_WRITE_DEPENDENT_MODULEPATH="${LBANN_MODFILES_DIR}/Core"
 LBANN_DEPENDENT_MODULES=
 
+echo "BVE FOOBAR: I am looking to add modules."
+
     ENV_ROOT_PKG_LIST=$(spack find -x --format "{name}/{version}-{hash:7}")
     if [[ -n "${ENV_ROOT_PKG_LIST:-}" ]]; then
         for p in ${ENV_ROOT_PKG_LIST}
@@ -1017,37 +1019,88 @@ LBANN_DEPENDENT_MODULES=
 # Add PYTHONPATH for top level python package: ${p}
 module try-load ${p}
 EOF
-            if [[ -z "${LBANN_DEPENDENT_MODULES:-}" ]]; then
-                LBANN_DEPENDENT_MODULES="${p}"
-            else
-                LBANN_DEPENDENT_MODULES="${p};${LBANN_DEPENDENT_MODULES}"
-            fi
-#             PKG_PYTHONPATH=$(spack build-env ${p} -- printenv PYTHONPATH)
-#             if [[ -n "${PKG_PYTHONPATH}" ]]; then
-#                 P_ENV=$(echo "${p}" | tr '-' '_')
-#                 cat >> ${LBANN_INSTALL_FILE}<<EOF
-# # Add PYTHONPATH for top level python package: ${p}
-# #export ${P_ENV}_PKG_PYTHONPATH=${PKG_PYTHONPATH}
-# #export PYTHONPATH=\${${P_ENV}_PKG_PYTHONPATH}:\${PYTHONPATH}
-# EOF
-#             fi
+            update_LBANN_DEPENDENT_MODULES_field ${p}
         done
     fi
 
-# if [[ -n "${SPACK_EXTRA_ROOT_PACKAGES:-}" ]]; then
-#     for p in ${SPACK_EXTRA_ROOT_PACKAGES}
-#     do
-#         PKG_PYTHONPATH=$(spack build-env ${p} -- printenv PYTHONPATH)
-#         if [[ -n "${PKG_PYTHONPATH}" ]]; then
-#             P_ENV=$(echo "${p}" | tr '-' '_')
-# cat >> ${LBANN_INSTALL_FILE}<<EOF
-# # Add PYTHONPATH for top level python package: ${p}
-# export ${P_ENV}_PKG_PYTHONPATH=${PKG_PYTHONPATH}
-# export PYTHONPATH=\${${P_ENV}_PKG_PYTHONPATH}:\${PYTHONPATH}
-# EOF
-#         fi
-#     done
-# fi
+    # Find any installed python packages so that they get their modules loaded
+    # to ensure that PYTHONPATH is properly setup
+    DEP_PYTHON_PKG_LIST=$(spack find --format "{name}/{version}-{hash:7}" | grep "py-" )
+    if [[ -n "${DEP_PYTHON_PKG_LIST:-}" ]]; then
+        for p in ${DEP_PYTHON_PKG_LIST}
+        do
+            update_LBANN_DEPENDENT_MODULES_field ${p}
+        done
+    fi
+
+    # FOUND_PYTHON_HASHES=$(spack find -cl | grep -v "\-\-\-\-\-\-" | grep python | awk '{print $1}')
+    # FIRST_PYTHON_HASH=
+    # if [[ -n "${DEP_PYTHON_PKG_LIST:-}" ]]; then
+    #     for p in ${DEP_PYTHON_PKG_LIST}
+    #     do
+    #         if [[ -z "${FIRST_PYTHON_HASH:-}" ]]; then
+    #             FIRST_PYTHON_HASH="${p}"
+    #         else
+    #             echo "WARNING: Found multiple python packages installed in the spack environment"
+    #         fi            
+    #     done
+    # fi
+    
+    # Check for python
+    DEP_PYTHON_PKG_LIST=$(spack find --format "{name}/{version}-{hash:7}" | grep "python" )
+    if [[ -n "${DEP_PYTHON_PKG_LIST:-}" ]]; then
+        for p in ${DEP_PYTHON_PKG_LIST}
+        do
+            update_LBANN_DEPENDENT_MODULES_field ${p}
+        done
+    fi
+
+   
+#     # Find any other installed packages that extend python so that they get their modules loaded
+#     # to ensure that PYTHONPATH is properly setup
+# #    DEP_PYTHON_PKG_LIST=$(spack find --format "{name}/{version}-{hash:7}" )
+#     DEP_PYTHON_PKG_LIST=$(spack find --format "{name}" )
+#     if [[ -n "${DEP_PYTHON_PKG_LIST:-}" ]]; then
+#         for p in ${DEP_PYTHON_PKG_LIST}
+#         do
+#             echo "I am going to poke at package ${p}"
+#             PKG_PYTHONPATH=$(spack build-env ${p} -- printenv PYTHONPATH)
+#             if [[ -n "${PKG_PYTHONPATH}" ]]; then
+#                 EXTRA_MODULE=$(spack find --format "{name}/{version}-{hash:7}" ${p})
+#                 echo "I am going to add module ${EXTRA_MODULE}" 
+# #                 P_ENV=$(echo "${p}" | tr '-' '_')
+# #                 cat >> ${LBANN_INSTALL_FILE}<<EOF
+# # # Add PYTHONPATH for top level python package: ${p}
+# # #export ${P_ENV}_PKG_PYTHONPATH=${PKG_PYTHONPATH}
+# # #export PYTHONPATH=\${${P_ENV}_PKG_PYTHONPATH}:\${PYTHONPATH}
+# # EOF
+#             fi
+    
+#             if [[ -z "${LBANN_DEPENDENT_MODULES:-}" ]]; then
+#                 LBANN_DEPENDENT_MODULES="${EXTRA_MOUDLE}"
+#             else
+#                 LBANN_DEPENDENT_MODULES="${EXTRA_MODULE};${LBANN_DEPENDENT_MODULES}"
+#             fi
+#         done
+#     fi
+
+# Get the spack hash for aws-ofi plugin (Ensure that the concretize command has been run so that any impact of external packages is factored in)
+if [[ -n "${POSSIBLE_AWS_OFI_PLUGIN}" ]]; then
+    AWS_OFI_PLUGIN_PKG=$(spack find --format "{name}/{version}-{hash:7}" ${POSSIBLE_AWS_OFI_PLUGIN})
+    update_LBANN_DEPENDENT_MODULES_field ${AWS_OFI_PLUGIN_PKG}
+fi
+
+if [[ -n "${POSSIBLE_DNN_LIB}" ]]; then
+    POSSIBLE_DNN_LIB_PKG=$(spack find --format "{name}/{version}-{hash:7}" ${POSSIBLE_DNN_LIB})
+    update_LBANN_DEPENDENT_MODULES_field ${POSSIBLE_DNN_LIB_PKG}
+fi
+
+if [[ -n "${POSSIBLE_NVSHMEM_LIB}" ]]; then
+    POSSIBLE_NVSHMEM_LIB_PKG=$(spack find --format "{name}/{version}-{hash:7}" ${POSSIBLE_NVSHMEM_LIB})
+    update_LBANN_DEPENDENT_MODULES_field ${POSSIBLE_NVSHMEM_LIB_PKG}
+fi
+
+echo "WARNING: I think that the new dep modules is now ${LBANN_DEPENDENT_MODULES}"
 
     ALUMINUM_PKG=$(spack find --format "{name}/{version}-{hash:7}" aluminum)
     HYDROGEN_PKG=$(spack find --format "{name}/{version}-{hash:7}" hydrogen)

@@ -59,3 +59,18 @@ function find_cmake_config_file() {
         echo "INFO: Unable to find a generated config file for: ${LBANN_LABEL} ${CENTER_COMPILER} in ${lbann_home}"
     fi
 }
+
+function update_LBANN_DEPENDENT_MODULES_field() {
+    local p="$1"
+
+    if [[ (! "${LBANN_DEPENDENT_MODULES:-}" =~ .*"${p}".*) ]]; then
+        echo "INFO: Adding package ${p} to ${LBANN_DEPENDENT_MODULES}"
+        if [[ -z "${LBANN_DEPENDENT_MODULES:-}" ]]; then
+            LBANN_DEPENDENT_MODULES="${p}"
+        else
+            LBANN_DEPENDENT_MODULES="${p};${LBANN_DEPENDENT_MODULES}"
+        fi
+    else
+        echo "WARNING: Skipping package ${p} which is already in ${LBANN_DEPENDENT_MODULES}"
+    fi
+}
