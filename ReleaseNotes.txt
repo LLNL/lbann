@@ -14,6 +14,11 @@ Python front-end:
 
 Performance optimizations:
  - Support in-place computations for capable layers as a memory optimization
+ - Allow distconv-enabled convolution and batchnorm layers to reuse their
+   input activations as error signals as a memory optimization if the parent
+   layer does not need its activations in the backward pass. This optimization
+   can be disabled by setting the environment variable
+   DISTCONV_DISABLE_MEM_OPT=1.
 
 Model portability & usability:
 

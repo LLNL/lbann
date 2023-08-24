@@ -1329,7 +1329,10 @@ base_convolution_adapter<TensorDataType, Device>::
   assert_eq(index, 0);
   auto& parent_layer = this->layer().get_parent_layer();
   if (parent_layer.get_backprop_requirements() & ACTIVATIONS
-      || parent_layer.get_type() == "identity") {
+      || parent_layer.get_type() == "identity"
+      || this->get_prev_activations_dist() != this->get_error_signals_dist()
+      || std::getenv("DISTCONV_DISABLE_MEM_OPT")
+      ) {
     return data_type_distconv_adapter<TensorDataType>::setup_error_signals_i(0);
   }
   const auto& prev_activations = this->get_prev_activations(0);
