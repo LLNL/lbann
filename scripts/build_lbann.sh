@@ -389,8 +389,8 @@ LBANN_INSTALL_DIR="${LBANN_BUILD_PARENT_DIR}/install"
 LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
 LBANN_SETUP_FILE_LABEL="LBANN_${CLUSTER}_${LBANN_LABEL}_setup_build_tools.sh"
 LBANN_SETUP_FILE="${LBANN_HOME}/${LBANN_SETUP_FILE_LABEL}"
-LBANN_INSTALL_FILE_LABEL="LBANN_${CLUSTER}_${LBANN_LABEL}_setup_module_path.sh"
-LBANN_INSTALL_FILE="${LBANN_HOME}/${LBANN_INSTALL_FILE_LABEL}"
+# LBANN_INSTALL_FILE_LABEL="LBANN_${CLUSTER}_${LBANN_LABEL}_setup_module_path.sh"
+# LBANN_INSTALL_FILE="${LBANN_HOME}/${LBANN_INSTALL_FILE_LABEL}"
 
 if [[ ! -d "${LBANN_BUILD_PARENT_DIR}" ]]; then
     CMD="mkdir -p ${LBANN_BUILD_PARENT_DIR}"
@@ -587,9 +587,9 @@ if [[ -n "${REUSE_ENV:-}" || -z "${INSTALL_DEPS:-}" ]]; then
         if [[ ! -z "${MATCHED_CONFIG_FILE_PATH}" ]]; then
             if [[ -e "${MATCHED_CONFIG_FILE_PATH}" && -r "${MATCHED_CONFIG_FILE_PATH}" ]]; then
                 echo "I have found and will use ${MATCHED_CONFIG_FILE_PATH}"
-                if [[ ! -e ${LBANN_INSTALL_FILE} ]]; then
-                    echo "I cannot find ${LBANN_INSTALL_FILE} -- recreate the CacheCMakeBuild"
-                elif [[ ! -e ${LBANN_SETUP_FILE} ]]; then
+                # if [[ ! -e ${LBANN_INSTALL_FILE} ]]; then
+                #     echo "I cannot find ${LBANN_INSTALL_FILE} -- recreate the CacheCMakeBuild"
+                if [[ ! -e ${LBANN_SETUP_FILE} ]]; then
                     echo "I cannot find ${LBANN_SETUP_FILE} -- recreate the CacheCMakeBuild"
                 else
                     # Until the implicit requirement to activate the environment later is resolved, look for existing environment with the same name
@@ -982,16 +982,16 @@ export PATH=\${PATH}:\${LBANN_CMAKE_DIR}:\${LBANN_NINJA_DIR}:\${LBANN_PYTHON_DIR
 export PYTHONPATH=\${LBANN_PYTHONPATH}:\${PYTHONPATH}
 EOF
 
-    cat > ${LBANN_INSTALL_FILE}<<EOF
-# Directory structure used for this build
-export LBANN_BUILD_LABEL=${LBANN_BUILD_LABEL}
-export LBANN_BUILD_PARENT_DIR=${LBANN_BUILD_PARENT_DIR}
-export LBANN_BUILD_DIR=${LBANN_BUILD_DIR}
-export LBANN_INSTALL_DIR=${LBANN_INSTALL_DIR}
-export LBANN_MODFILES_DIR=${LBANN_MODFILES_DIR}
-export LBANN_SETUP_FILE=${LBANN_SETUP_FILE}
-module use ${LBANN_MODFILES_DIR}/Core
-EOF
+#     cat > ${LBANN_INSTALL_FILE}<<EOF
+# # Directory structure used for this build
+# export LBANN_BUILD_LABEL=${LBANN_BUILD_LABEL}
+# export LBANN_BUILD_PARENT_DIR=${LBANN_BUILD_PARENT_DIR}
+# export LBANN_BUILD_DIR=${LBANN_BUILD_DIR}
+# export LBANN_INSTALL_DIR=${LBANN_INSTALL_DIR}
+# export LBANN_MODFILES_DIR=${LBANN_MODFILES_DIR}
+# export LBANN_SETUP_FILE=${LBANN_SETUP_FILE}
+# module use ${LBANN_MODFILES_DIR}/Core
+# EOF
 
     if [[ -n "${MODULE_CMD}" ]]; then
 #         cat >> ${LBANN_INSTALL_FILE}<<EOF
@@ -1014,11 +1014,11 @@ echo "BVE FOOBAR: I am looking to add modules."
     if [[ -n "${ENV_ROOT_PKG_LIST:-}" ]]; then
         for p in ${ENV_ROOT_PKG_LIST}
         do
-            # Load the modules for any top level packages
-            cat >> ${LBANN_INSTALL_FILE}<<EOF
-# Add PYTHONPATH for top level python package: ${p}
-module try-load ${p}
-EOF
+#             # Load the modules for any top level packages
+#             cat >> ${LBANN_INSTALL_FILE}<<EOF
+# # Add PYTHONPATH for top level python package: ${p}
+# module try-load ${p}
+# EOF
             update_LBANN_DEPENDENT_MODULES_field ${p}
         done
     fi
@@ -1100,48 +1100,48 @@ if [[ -n "${POSSIBLE_NVSHMEM_LIB}" ]]; then
     update_LBANN_DEPENDENT_MODULES_field ${POSSIBLE_NVSHMEM_LIB_PKG}
 fi
 
-echo "WARNING: I think that the new dep modules is now ${LBANN_DEPENDENT_MODULES}"
+# echo "WARNING: I think that the new dep modules is now ${LBANN_DEPENDENT_MODULES}"
 
     ALUMINUM_PKG=$(spack find --format "{name}/{version}-{hash:7}" aluminum)
     HYDROGEN_PKG=$(spack find --format "{name}/{version}-{hash:7}" hydrogen)
     DIHYDROGEN_PKG=$(spack find --format "{name}/{version}-{hash:7}" dihydrogen)
     LBANN_DEPENDENT_MODULES="${ALUMINUM_PKG};${HYDROGEN_PKG};${DIHYDROGEN_PKG};${LBANN_DEPENDENT_MODULES}"
 
-    cat >> ${LBANN_INSTALL_FILE}<<EOF
-# Modules loaded during this installation
-module try-load ${ALUMINUM_PKG} ${HYDROGEN_PKG} ${DIHYDROGEN_PKG}
-EOF
+#     cat >> ${LBANN_INSTALL_FILE}<<EOF
+# # Modules loaded during this installation
+# module try-load ${ALUMINUM_PKG} ${HYDROGEN_PKG} ${DIHYDROGEN_PKG}
+# EOF
 
-    if [[ -n "${AWS_OFI_PLUGIN_SPEC_HASH}" ]]; then
-        cat >> ${LBANN_INSTALL_FILE}<<EOF
-# Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
-# a spack environment matches behavior inside of a runtime environment
-#spack load ${POSSIBLE_AWS_OFI_PLUGIN} /${AWS_OFI_PLUGIN_SPEC_HASH}
-EOF
-    fi
+#     if [[ -n "${AWS_OFI_PLUGIN_SPEC_HASH}" ]]; then
+#         cat >> ${LBANN_INSTALL_FILE}<<EOF
+# # Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
+# # a spack environment matches behavior inside of a runtime environment
+# #spack load ${POSSIBLE_AWS_OFI_PLUGIN} /${AWS_OFI_PLUGIN_SPEC_HASH}
+# EOF
+#     fi
 
-    if [[ -n "${DNN_LIB_SPEC_HASH}" ]]; then
-        cat >> ${LBANN_INSTALL_FILE}<<EOF
-# Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
-# a spack environment matches behavior inside of a runtime environment
-#spack load ${POSSIBLE_DNN_LIB} /${DNN_LIB_SPEC_HASH}
-EOF
-    fi
+#     if [[ -n "${DNN_LIB_SPEC_HASH}" ]]; then
+#         cat >> ${LBANN_INSTALL_FILE}<<EOF
+# # Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
+# # a spack environment matches behavior inside of a runtime environment
+# #spack load ${POSSIBLE_DNN_LIB} /${DNN_LIB_SPEC_HASH}
+# EOF
+#     fi
 
-    if [[ -n "${NVSHMEM_LIB_SPEC_HASH}" ]]; then
-        cat >> ${LBANN_INSTALL_FILE}<<EOF
-# Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
-# a spack environment matches behavior inside of a runtime environment
-#spack load ${POSSIBLE_NVSHMEM_LIB} /${NVSHMEM_LIB_SPEC_HASH}
-EOF
-    fi
+#     if [[ -n "${NVSHMEM_LIB_SPEC_HASH}" ]]; then
+#         cat >> ${LBANN_INSTALL_FILE}<<EOF
+# # Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
+# # a spack environment matches behavior inside of a runtime environment
+# #spack load ${POSSIBLE_NVSHMEM_LIB} /${NVSHMEM_LIB_SPEC_HASH}
+# EOF
+#     fi
 
-    # Setup the module use path last in case the modules cmd purges the system
-    cat >> ${LBANN_INSTALL_FILE}<<EOF
-# Temporarily activate the environment - Do until new workflow is smoothed out.
-#spack env activate -p ${LBANN_ENV}
-ml use ${LBANN_MODFILES_DIR}
-EOF
+#     # Setup the module use path last in case the modules cmd purges the system
+#     cat >> ${LBANN_INSTALL_FILE}<<EOF
+# # Temporarily activate the environment - Do until new workflow is smoothed out.
+# #spack env activate -p ${LBANN_ENV}
+# ml use ${LBANN_MODFILES_DIR}
+# EOF
 
 if [[ "${CENTER_COMPILER}" =~ .*"%clang".* ]]; then
 #ml use ${LBANN_MODFILES_DIR}/
@@ -1153,9 +1153,9 @@ fi
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
 
-    CMD="chmod +x ${LBANN_INSTALL_FILE}"
-    echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
+    # CMD="chmod +x ${LBANN_INSTALL_FILE}"
+    # echo ${CMD} | tee -a ${LOG}
+    # [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
 fi
 
 # Save the setup file in the build directory
@@ -1166,13 +1166,13 @@ CMD="cp ${LBANN_SETUP_FILE} ${LBANN_BUILD_PARENT_DIR}/${LBANN_SETUP_FILE_LABEL}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
 
-# Save the install file in the build directory
-if [[ ! -e ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL} ]]; then
-    echo "Overwriting exising install file in ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL}"
-fi
-CMD="cp ${LBANN_INSTALL_FILE} ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL}"
-echo ${CMD} | tee -a ${LOG}
-[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
+# # Save the install file in the build directory
+# if [[ ! -e ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL} ]]; then
+#     echo "Overwriting exising install file in ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL}"
+# fi
+# CMD="cp ${LBANN_INSTALL_FILE} ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL}"
+# echo ${CMD} | tee -a ${LOG}
+# [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
 
 ##########################################################################################
 # Create and setup the module files for all of the dependencies
@@ -1308,11 +1308,11 @@ fi
 # fi
 echo "##########################################################################################" | tee -a ${LOG}
 echo "LBANN is installed in ${LBANN_INSTALL_DIR}, access it via:" | tee -a ${LOG}
-echo "  source ${LBANN_INSTALL_FILE}" | tee -a ${LOG}
+#echo "  source ${LBANN_INSTALL_FILE}" | tee -a ${LOG}
 echo "  ml use ${LBANN_MODFILES_DIR}" | tee -a ${LOG}
-echo "  ml use ${LBANN_MODFILES_DIR}/Core" | tee -a ${LOG}
+#echo "  ml use ${LBANN_MODFILES_DIR}/Core" | tee -a ${LOG}
 echo "  ml load lbann" | tee -a ${LOG}
-echo "  lbann_pfe.sh <cmd>" | tee -a ${LOG}
+echo "  python3 <cmd>" | tee -a ${LOG}
 echo "To rebuild LBANN go to ${LBANN_BUILD_DIR}, and rerun:" | tee -a ${LOG}
 if [[ -n ${MODULE_CMD} ]]; then
     echo "  ${MODULE_CMD}" | tee -a ${LOG}
