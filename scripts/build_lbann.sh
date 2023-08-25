@@ -1088,17 +1088,23 @@ echo "BVE FOOBAR: I am looking to add modules."
 # Get the spack hash for aws-ofi plugin (Ensure that the concretize command has been run so that any impact of external packages is factored in)
 if [[ -n "${POSSIBLE_AWS_OFI_PLUGIN}" ]]; then
     AWS_OFI_PLUGIN_PKG=$(spack find --format "{name}/{version}-{hash:7}" ${POSSIBLE_AWS_OFI_PLUGIN})
-    update_LBANN_DEPENDENT_MODULES_field ${AWS_OFI_PLUGIN_PKG}
+    if [[ $? == 0 ]]; then
+        update_LBANN_DEPENDENT_MODULES_field ${AWS_OFI_PLUGIN_PKG}
+    fi
 fi
 
 if [[ -n "${POSSIBLE_DNN_LIB}" ]]; then
     POSSIBLE_DNN_LIB_PKG=$(spack find --format "{name}/{version}-{hash:7}" ${POSSIBLE_DNN_LIB})
-    update_LBANN_DEPENDENT_MODULES_field ${POSSIBLE_DNN_LIB_PKG}
+    if [[ $? == 0 ]]; then
+        update_LBANN_DEPENDENT_MODULES_field ${POSSIBLE_DNN_LIB_PKG}
+    fi
 fi
 
 if [[ -n "${POSSIBLE_NVSHMEM_LIB}" ]]; then
     POSSIBLE_NVSHMEM_LIB_PKG=$(spack find --format "{name}/{version}-{hash:7}" ${POSSIBLE_NVSHMEM_LIB})
-    update_LBANN_DEPENDENT_MODULES_field ${POSSIBLE_NVSHMEM_LIB_PKG}
+    if [[ $? == 0 ]]; then
+        update_LBANN_DEPENDENT_MODULES_field ${POSSIBLE_NVSHMEM_LIB_PKG}
+    fi
 fi
 
 # echo "WARNING: I think that the new dep modules is now ${LBANN_DEPENDENT_MODULES}"
