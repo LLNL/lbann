@@ -310,7 +310,8 @@ function uninstall_specific_versions()
 # This should be a commit hash (NOT a tag) that needs to exist in the
 # spack repository that is checked out. It's a minimum version, so
 # more commits is fine.
-MIN_SPACK_COMMIT=e79f275bc90fe3ba8a93bc28bd4565dd4903a351
+MIN_SPACK_COMMIT=8cd9497522939222dc304ee3708fd3154154f67b
+#MIN_SPACK_COMMIT=e79f275bc90fe3ba8a93bc28bd4565dd4903a351
 
 # "spack" is just a shell function; it may not be exported to this
 # scope. Just to be sure, reload the shell integration.
@@ -1042,10 +1043,10 @@ echo "BVE FOOBAR: I am looking to add modules."
     #             FIRST_PYTHON_HASH="${p}"
     #         else
     #             echo "WARNING: Found multiple python packages installed in the spack environment"
-    #         fi            
+    #         fi
     #     done
     # fi
-    
+
     # Check for python
     DEP_PYTHON_PKG_LIST=$(spack find --format "{name}/{version}-{hash:7}" | grep "python" )
     if [[ -n "${DEP_PYTHON_PKG_LIST:-}" ]]; then
@@ -1055,7 +1056,7 @@ echo "BVE FOOBAR: I am looking to add modules."
         done
     fi
 
-   
+
 #     # Find any other installed packages that extend python so that they get their modules loaded
 #     # to ensure that PYTHONPATH is properly setup
 # #    DEP_PYTHON_PKG_LIST=$(spack find --format "{name}/{version}-{hash:7}" )
@@ -1067,7 +1068,7 @@ echo "BVE FOOBAR: I am looking to add modules."
 #             PKG_PYTHONPATH=$(spack build-env ${p} -- printenv PYTHONPATH)
 #             if [[ -n "${PKG_PYTHONPATH}" ]]; then
 #                 EXTRA_MODULE=$(spack find --format "{name}/{version}-{hash:7}" ${p})
-#                 echo "I am going to add module ${EXTRA_MODULE}" 
+#                 echo "I am going to add module ${EXTRA_MODULE}"
 # #                 P_ENV=$(echo "${p}" | tr '-' '_')
 # #                 cat >> ${LBANN_INSTALL_FILE}<<EOF
 # # # Add PYTHONPATH for top level python package: ${p}
@@ -1075,7 +1076,7 @@ echo "BVE FOOBAR: I am looking to add modules."
 # # #export PYTHONPATH=\${${P_ENV}_PKG_PYTHONPATH}:\${PYTHONPATH}
 # # EOF
 #             fi
-    
+
 #             if [[ -z "${LBANN_DEPENDENT_MODULES:-}" ]]; then
 #                 LBANN_DEPENDENT_MODULES="${EXTRA_MOUDLE}"
 #             else
