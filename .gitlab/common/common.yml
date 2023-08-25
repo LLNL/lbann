@@ -92,6 +92,7 @@
     - export SPACK_DEPS_FLAG_TRUE=${WITH_CLEAN_BUILD:+-d}
     - export SPACK_DEPS_FLAG=${SPACK_DEPS_FLAG_TRUE:--r}
     - export CLEAN_BUILD_FLAG=${WITH_CLEAN_BUILD:+--clean-build}
+    - export SPACK_ARCH_TARGET=$(spack arch -t)
     - export LBANN_BUILD_LABEL="lbann_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}"
     - export LBANN_BUILD_PARENT_DIR="${CI_PROJECT_DIR}/builds/${LBANN_BUILD_LABEL}"
     - export LBANN_BUILD_DIR="${LBANN_BUILD_PARENT_DIR}/build"
