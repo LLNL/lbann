@@ -62,18 +62,20 @@ echo "Task: Cleaning"
 ./clean.sh
 
 echo "Discovered Spack environment: ${SPACK_ENV_NAME}"
+echo "Discovered installed module file: ${LBANN_MODFILES_DIR}"
 echo "Task: Compiler Tests"
 cd compiler_tests
 $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml || exit 1
 
 # Find the correct module to load
-SPACK_ARCH=$(spack arch)
-SPACK_ARCH_TARGET=$(spack arch -t)
-SPACK_ENV_CMD="spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}"
-echo ${SPACK_ENV_CMD} | tee -a ${LOG}
-${SPACK_ENV_CMD}
-echo "source ${LBANN_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh" | tee -a ${LOG}
-source ${LBANN_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh
+# SPACK_ARCH=$(spack arch)
+# SPACK_ARCH_TARGET=$(spack arch -t)
+# SPACK_ENV_CMD="spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}"
+# echo ${SPACK_ENV_CMD} | tee -a ${LOG}
+# ${SPACK_ENV_CMD}
+# echo "source ${LBANN_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh" | tee -a ${LOG}
+# source ${LBANN_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh
+ml use ${LBANN_MODFILES_DIR}
 ml load lbann
 
 echo "Testing $(which lbann)"
