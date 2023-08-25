@@ -93,7 +93,7 @@
     - export SPACK_DEPS_FLAG=${SPACK_DEPS_FLAG_TRUE:--r}
     - export CLEAN_BUILD_FLAG=${WITH_CLEAN_BUILD:+--clean-build}
     - export LBANN_BUILD_LABEL="lbann_${SYSTEM_NAME}_${SPACK_ENV_NAME}"
-    - export LBANN_BUILD_PARENT_DIR="${HOME}/${SPACK_REPO}/builds/${LBANN_BUILD_LABEL}"
+    - export LBANN_BUILD_PARENT_DIR="${CI_BUILDS_DIR}/builds/${LBANN_BUILD_LABEL}"
     - export LBANN_BUILD_DIR="${LBANN_BUILD_PARENT_DIR}/build"
     - export LBANN_INSTALL_DIR="${LBANN_BUILD_PARENT_DIR}/install"
     - export LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
