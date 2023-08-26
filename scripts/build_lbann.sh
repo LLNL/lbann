@@ -311,7 +311,6 @@ function uninstall_specific_versions()
 # spack repository that is checked out. It's a minimum version, so
 # more commits is fine.
 MIN_SPACK_COMMIT=8cd9497522939222dc304ee3708fd3154154f67b
-#MIN_SPACK_COMMIT=e79f275bc90fe3ba8a93bc28bd4565dd4903a351
 
 # "spack" is just a shell function; it may not be exported to this
 # scope. Just to be sure, reload the shell integration.
@@ -390,8 +389,6 @@ LBANN_INSTALL_DIR="${LBANN_BUILD_PARENT_DIR}/install"
 LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
 LBANN_SETUP_FILE_LABEL="LBANN_${CLUSTER}_${LBANN_LABEL}_setup_build_tools.sh"
 LBANN_SETUP_FILE="${LBANN_HOME}/${LBANN_SETUP_FILE_LABEL}"
-# LBANN_INSTALL_FILE_LABEL="LBANN_${CLUSTER}_${LBANN_LABEL}_setup_module_path.sh"
-# LBANN_INSTALL_FILE="${LBANN_HOME}/${LBANN_INSTALL_FILE_LABEL}"
 
 if [[ ! -d "${LBANN_BUILD_PARENT_DIR}" ]]; then
     CMD="mkdir -p ${LBANN_BUILD_PARENT_DIR}"
@@ -983,22 +980,7 @@ export PATH=\${PATH}:\${LBANN_CMAKE_DIR}:\${LBANN_NINJA_DIR}:\${LBANN_PYTHON_DIR
 export PYTHONPATH=\${LBANN_PYTHONPATH}:\${PYTHONPATH}
 EOF
 
-#     cat > ${LBANN_INSTALL_FILE}<<EOF
-# # Directory structure used for this build
-# export LBANN_BUILD_LABEL=${LBANN_BUILD_LABEL}
-# export LBANN_BUILD_PARENT_DIR=${LBANN_BUILD_PARENT_DIR}
-# export LBANN_BUILD_DIR=${LBANN_BUILD_DIR}
-# export LBANN_INSTALL_DIR=${LBANN_INSTALL_DIR}
-# export LBANN_MODFILES_DIR=${LBANN_MODFILES_DIR}
-# export LBANN_SETUP_FILE=${LBANN_SETUP_FILE}
-# module use ${LBANN_MODFILES_DIR}/Core
-# EOF
-
     if [[ -n "${MODULE_CMD}" ]]; then
-#         cat >> ${LBANN_INSTALL_FILE}<<EOF
-# # Modules loaded during this installation
-# ${MODULE_CMD}
-# EOF
         cat >> ${LBANN_SETUP_FILE}<<EOF
 # Modules loaded during this installation
 ${MODULE_CMD}
@@ -1009,17 +991,11 @@ EOF
 LBANN_WRITE_DEPENDENT_MODULEPATH="${LBANN_MODFILES_DIR}/Core"
 LBANN_DEPENDENT_MODULES=
 
-echo "BVE FOOBAR: I am looking to add modules."
 
     ENV_ROOT_PKG_LIST=$(spack find -x --format "{name}/{version}-{hash:7}")
     if [[ -n "${ENV_ROOT_PKG_LIST:-}" ]]; then
         for p in ${ENV_ROOT_PKG_LIST}
         do
-#             # Load the modules for any top level packages
-#             cat >> ${LBANN_INSTALL_FILE}<<EOF
-# # Add PYTHONPATH for top level python package: ${p}
-# module try-load ${p}
-# EOF
             update_LBANN_DEPENDENT_MODULES_field ${p}
         done
     fi
@@ -1056,35 +1032,6 @@ echo "BVE FOOBAR: I am looking to add modules."
         done
     fi
 
-
-#     # Find any other installed packages that extend python so that they get their modules loaded
-#     # to ensure that PYTHONPATH is properly setup
-# #    DEP_PYTHON_PKG_LIST=$(spack find --format "{name}/{version}-{hash:7}" )
-#     DEP_PYTHON_PKG_LIST=$(spack find --format "{name}" )
-#     if [[ -n "${DEP_PYTHON_PKG_LIST:-}" ]]; then
-#         for p in ${DEP_PYTHON_PKG_LIST}
-#         do
-#             echo "I am going to poke at package ${p}"
-#             PKG_PYTHONPATH=$(spack build-env ${p} -- printenv PYTHONPATH)
-#             if [[ -n "${PKG_PYTHONPATH}" ]]; then
-#                 EXTRA_MODULE=$(spack find --format "{name}/{version}-{hash:7}" ${p})
-#                 echo "I am going to add module ${EXTRA_MODULE}"
-# #                 P_ENV=$(echo "${p}" | tr '-' '_')
-# #                 cat >> ${LBANN_INSTALL_FILE}<<EOF
-# # # Add PYTHONPATH for top level python package: ${p}
-# # #export ${P_ENV}_PKG_PYTHONPATH=${PKG_PYTHONPATH}
-# # #export PYTHONPATH=\${${P_ENV}_PKG_PYTHONPATH}:\${PYTHONPATH}
-# # EOF
-#             fi
-
-#             if [[ -z "${LBANN_DEPENDENT_MODULES:-}" ]]; then
-#                 LBANN_DEPENDENT_MODULES="${EXTRA_MOUDLE}"
-#             else
-#                 LBANN_DEPENDENT_MODULES="${EXTRA_MODULE};${LBANN_DEPENDENT_MODULES}"
-#             fi
-#         done
-#     fi
-
 # Get the spack hash for aws-ofi plugin (Ensure that the concretize command has been run so that any impact of external packages is factored in)
 if [[ -n "${POSSIBLE_AWS_OFI_PLUGIN}" ]]; then
     AWS_OFI_PLUGIN_PKG=$(spack find --format "{name}/{version}-{hash:7}" ${POSSIBLE_AWS_OFI_PLUGIN})
@@ -1107,51 +1054,12 @@ if [[ -n "${POSSIBLE_NVSHMEM_LIB}" ]]; then
     fi
 fi
 
-# echo "WARNING: I think that the new dep modules is now ${LBANN_DEPENDENT_MODULES}"
-
     ALUMINUM_PKG=$(spack find --format "{name}/{version}-{hash:7}" aluminum)
     HYDROGEN_PKG=$(spack find --format "{name}/{version}-{hash:7}" hydrogen)
     DIHYDROGEN_PKG=$(spack find --format "{name}/{version}-{hash:7}" dihydrogen)
     LBANN_DEPENDENT_MODULES="${ALUMINUM_PKG};${HYDROGEN_PKG};${DIHYDROGEN_PKG};${LBANN_DEPENDENT_MODULES}"
 
-#     cat >> ${LBANN_INSTALL_FILE}<<EOF
-# # Modules loaded during this installation
-# module try-load ${ALUMINUM_PKG} ${HYDROGEN_PKG} ${DIHYDROGEN_PKG}
-# EOF
-
-#     if [[ -n "${AWS_OFI_PLUGIN_SPEC_HASH}" ]]; then
-#         cat >> ${LBANN_INSTALL_FILE}<<EOF
-# # Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
-# # a spack environment matches behavior inside of a runtime environment
-# #spack load ${POSSIBLE_AWS_OFI_PLUGIN} /${AWS_OFI_PLUGIN_SPEC_HASH}
-# EOF
-#     fi
-
-#     if [[ -n "${DNN_LIB_SPEC_HASH}" ]]; then
-#         cat >> ${LBANN_INSTALL_FILE}<<EOF
-# # Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
-# # a spack environment matches behavior inside of a runtime environment
-# #spack load ${POSSIBLE_DNN_LIB} /${DNN_LIB_SPEC_HASH}
-# EOF
-#     fi
-
-#     if [[ -n "${NVSHMEM_LIB_SPEC_HASH}" ]]; then
-#         cat >> ${LBANN_INSTALL_FILE}<<EOF
-# # Key spack pacakges that have to be loaded at runtime to ensure behavior outside of
-# # a spack environment matches behavior inside of a runtime environment
-# #spack load ${POSSIBLE_NVSHMEM_LIB} /${NVSHMEM_LIB_SPEC_HASH}
-# EOF
-#     fi
-
-#     # Setup the module use path last in case the modules cmd purges the system
-#     cat >> ${LBANN_INSTALL_FILE}<<EOF
-# # Temporarily activate the environment - Do until new workflow is smoothed out.
-# #spack env activate -p ${LBANN_ENV}
-# ml use ${LBANN_MODFILES_DIR}
-# EOF
-
 if [[ "${CENTER_COMPILER}" =~ .*"%clang".* ]]; then
-#ml use ${LBANN_MODFILES_DIR}/
     # If the compiler is clang use the LLD fast linker
     CENTER_LINKER_FLAGS="+lld"
 fi
@@ -1159,10 +1067,6 @@ fi
     CMD="chmod +x ${LBANN_SETUP_FILE}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
-
-    # CMD="chmod +x ${LBANN_INSTALL_FILE}"
-    # echo ${CMD} | tee -a ${LOG}
-    # [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
 fi
 
 # Save the setup file in the build directory
@@ -1172,14 +1076,6 @@ fi
 CMD="cp ${LBANN_SETUP_FILE} ${LBANN_BUILD_PARENT_DIR}/${LBANN_SETUP_FILE_LABEL}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
-
-# # Save the install file in the build directory
-# if [[ ! -e ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL} ]]; then
-#     echo "Overwriting exising install file in ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL}"
-# fi
-# CMD="cp ${LBANN_INSTALL_FILE} ${LBANN_BUILD_PARENT_DIR}/${LBANN_INSTALL_FILE_LABEL}"
-# echo ${CMD} | tee -a ${LOG}
-# [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
 
 ##########################################################################################
 # Create and setup the module files for all of the dependencies

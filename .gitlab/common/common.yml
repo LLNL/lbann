@@ -64,7 +64,6 @@
 
     # Preserve any spack-build-* directories to allow for faster testing
     GIT_CLEAN_FLAGS: -ffdx -e spack-build-* -e builds/* -e LBANN_*.cmake -e LBANN_*_setup_build_tools.sh
-#    GIT_CLEAN_FLAGS: -ffdx -e spack-build-* -e builds/* -e LBANN_*.cmake -e LBANN_*_setup_module_path.sh -e LBANN_*_setup_build_tools.sh
   before_script:
     - export SPACK_USER_CACHE_PATH=${SPACK_USER_CACHE_PATH}
     - echo "SPACK_USER_CACHE_PATH=${SPACK_USER_CACHE_PATH}"
@@ -75,8 +74,6 @@
     - export SPACK_USER_CACHE_PATH=${SPACK_USER_CACHE_PATH}
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - source spack-ci-env-name.sh
-#    - echo "source ${LBANN_BUILD_PARENT_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh"
-#    - source ${LBANN_BUILD_PARENT_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh
     - ml use ${LBANN_MODFILES_DIR}
     - ml load lbann
     - echo "$(which lbann)"
@@ -102,8 +99,6 @@
 
 .setup_lbann:
   script:
-#    - echo "source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_lbann_modulepath.sh"
-#    - source LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh
     - echo "LBANN_BUILD_LABEL=${LBANN_BUILD_LABEL}"
     - echo "LBANN_BUILD_PARENT_DIR=${LBANN_BUILD_PARENT_DIR}"
     - echo "LBANN_BUILD_DIR=${LBANN_BUILD_DIR}"
@@ -125,8 +120,7 @@
   script:
     - echo "== REMOVING NEW BUILD RESOURCES =="
     - find ${CI_PROJECT_DIR}/builds -maxdepth 1 -mtime +2 -name "lbann_*" -type d -print -exec rm -r {} \;
-    - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +2 -name "LBANN_*_setup_module_path.sh" -type f -print -exec rm {} \;
-    - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +2 -name "LBANN_*_setup_module_path.sh" -type f -print -exec rm {} \;
+    - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +2 -name "LBANN_*_setup_build_tools.sh" -type f -print -exec rm {} \;
     - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +2 -name "LBANN_*.cmake" -type f -print -exec rm {} \;
     - echo "== REMOVING OLD BUILD RESOURCES =="
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
@@ -140,7 +134,6 @@
       - spack-ci-env-name.sh
       - LBANN_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*.cmake
       - LBANN_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*_setup_build_tools.sh
-#      - LBANN_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*_setup_module_path.sh
       - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/install/*
       - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/*.sh
       - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/*.cmake
