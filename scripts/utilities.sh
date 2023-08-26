@@ -64,7 +64,7 @@ function update_LBANN_DEPENDENT_MODULES_field() {
     local p="$1"
 
     if [[ (! "${LBANN_DEPENDENT_MODULES:-}" =~ .*"${p}".*) ]]; then
-        echo "INFO: Adding package ${p} to ${LBANN_DEPENDENT_MODULES}"
+        echo "INFO: Adding package ${p}"
         if [[ -z "${LBANN_DEPENDENT_MODULES:-}" ]]; then
             LBANN_DEPENDENT_MODULES="${p}"
         else
