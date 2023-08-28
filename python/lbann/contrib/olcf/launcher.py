@@ -46,15 +46,21 @@ def make_batch_script(
         if key not in environment:
             environment[key] = os.getenv(key, default)
 
+    def prepend_environment_path(key, prefix):
+        if key not in environment:
+            environment[key] = prefix + ":" + os.getenv(key)
+        else:
+            environment[key] = prefix + ":" + environment[key]
+
     # Setup GPU bindings
     # Note: Each Hydrogen process is assigned to the GPU index that
     # matches its node communicator rank. This is not compatible with
     # mpibind, which assigns a GPU with index 0 to each process. We
     # can't use an exclusive GPU compute mode since processes may
     # touch the wrong GPU while figuring out ownership.
-    if scheduler == 'slurm' and has_gpu(system):
-        launcher_args.extend(['--mpibind=off',
-                              '--nvidia_compute_mode=default'])
+    # if scheduler == 'slurm' and has_gpu(system):
+    #     launcher_args.extend(['--mpibind=off',
+    #                           '--nvidia_compute_mode=default'])
 
     # Optimizations for Summit-like systems
     if system in ('summit'):
