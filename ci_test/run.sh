@@ -30,7 +30,30 @@ while :; do
     shift
 done
 
+# Use the spack provided by the CI
+source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
+
+# "spack" is just a shell function; it may not be exported to this
+# scope. Just to be sure, reload the shell integration.
+if [ -n "${SPACK_ROOT}" ]; then
+    source ${SPACK_ROOT}/share/spack/setup-env.sh
+else
+    echo "Spack required.  Please set SPACK_ROOT environment variable"
+    exit 1
+fi
+
+SPACK_VERSION=$(spack --version | sed 's/-.*//g' | sed 's/[(].*[)]//g')
+MIN_SPACK_VERSION=0.18.0
+
 source ${LBANN_DIR}/scripts/utilities.sh
+
+compare_versions ${SPACK_VERSION} ${MIN_SPACK_VERSION}
+VALID_SPACK=$?
+
+if [[ ${VALID_SPACK} -eq 2 ]]; then
+    echo "Newer version of Spack required.  Detected version ${SPACK_VERSION} requires at least ${MIN_SPACK_VERSION}"
+    exit 1
+fi
 
 echo "run.sh WEEKLY="
 echo $WEEKLY
@@ -44,6 +67,15 @@ cd compiler_tests
 $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml || exit 1
 
 # Find the correct module to load
+SPACK_ARCH=$(spack arch)
+SPACK_ARCH_TARGET=$(spack arch -t)
+#echo "source ${LBANN_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh" | tee -a ${LOG}
+#source ${LBANN_DIR}/LBANN_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}_setup_module_path.sh
+export LBANN_BUILD_LABEL="lbann_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}"
+export LBANN_BUILD_PARENT_DIR="${CI_PROJECT_DIR}/builds/${LBANN_BUILD_LABEL}"
+#export LBANN_BUILD_DIR="${LBANN_BUILD_PARENT_DIR}/build"
+export LBANN_INSTALL_DIR="${LBANN_BUILD_PARENT_DIR}/install"
+export LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
 ml use ${LBANN_MODFILES_DIR}
 ml load lbann
 
