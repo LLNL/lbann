@@ -97,25 +97,6 @@
     # - export LBANN_INSTALL_DIR="${LBANN_BUILD_PARENT_DIR}/install"
     # - export LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
 
-# .setup_module_path:
-#   script:
-#     # - export BUILD_TASKS=$(($(nproc) + 2))
-#     # - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
-#     # - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
-#     # - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
-#     # - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-#     # # Use a bit of redirection to properly interpret the WITH_CLEAN_BUILD flag
-#     # - export SPACK_DEPS_FLAG_TRUE=${WITH_CLEAN_BUILD:+-d}
-#     # - export SPACK_DEPS_FLAG=${SPACK_DEPS_FLAG_TRUE:--r}
-#     # - export CLEAN_BUILD_FLAG=${WITH_CLEAN_BUILD:+--clean-build}
-#     # - export SPACK_ARCH=$(spack arch)
-#     # - export SPACK_ARCH_TARGET=$(spack arch -t)
-#     - export LBANN_BUILD_LABEL="lbann_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}"
-#     - export LBANN_BUILD_PARENT_DIR="${CI_PROJECT_DIR}/builds/${LBANN_BUILD_LABEL}"
-#     - export LBANN_BUILD_DIR="${LBANN_BUILD_PARENT_DIR}/build"
-#     - export LBANN_INSTALL_DIR="${LBANN_BUILD_PARENT_DIR}/install"
-#     - export LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
-
 .setup_lbann:
   script:
     - export LBANN_BUILD_LABEL="lbann_${SYSTEM_NAME}_${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}"
