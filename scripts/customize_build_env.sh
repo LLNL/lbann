@@ -134,7 +134,7 @@ set_center_specific_modules()
                 MODULE_CMD="module load gcc/9.3.0 cuda/11.1.1 spectrum-mpi/10.3.1.2-20200121"
                 ;;
             "zen3") # Frontier, Crusher
-                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.15.2.0 perftools-base/22.12.0 amd/5.5.1 craype/2.7.21 cray-mpich/8.1.26 openblas/0.3.17-omp PrgEnv-amd/8.4.0 cmake/3.23.2 cray-python/3.9.13.1 hdf5/1.14.0"
+                MODULE_CMD="module load ums/default ums002/default; module unload rocm; module load craype-x86-trento craype-network-ofi libfabric/1.15.2.0 perftools-base/22.12.0 amd/5.5.1 craype/2.7.21 cray-mpich/8.1.26 openblas/0.3.17-omp PrgEnv-amd/8.4.0 cmake/3.23.2 cray-python/3.9.13.1 hdf5/1.14.0"
 #                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.15.2.0 perftools-base/22.12.0 amd/5.5.1 craype/2.7.21 cray-mpich/8.1.26 cray-libsci/23.05.1.4 PrgEnv-amd/8.4.0 cmake/3.23.2 cray-python/3.9.13.1 hdf5/1.14.0"
                 ;;
             *)
