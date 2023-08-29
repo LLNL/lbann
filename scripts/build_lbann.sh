@@ -585,8 +585,6 @@ if [[ -n "${REUSE_ENV:-}" || -z "${INSTALL_DEPS:-}" ]]; then
         if [[ ! -z "${MATCHED_CONFIG_FILE_PATH}" ]]; then
             if [[ -e "${MATCHED_CONFIG_FILE_PATH}" && -r "${MATCHED_CONFIG_FILE_PATH}" ]]; then
                 echo "I have found and will use ${MATCHED_CONFIG_FILE_PATH}"
-                # if [[ ! -e ${LBANN_INSTALL_FILE} ]]; then
-                #     echo "I cannot find ${LBANN_INSTALL_FILE} -- recreate the CacheCMakeBuild"
                 if [[ ! -e ${LBANN_SETUP_FILE} ]]; then
                     echo "I cannot find ${LBANN_SETUP_FILE} -- recreate the CacheCMakeBuild"
                 else
@@ -1010,19 +1008,6 @@ LBANN_DEPENDENT_MODULES=
         done
     fi
 
-    # FOUND_PYTHON_HASHES=$(spack find -cl | grep -v "\-\-\-\-\-\-" | grep python | awk '{print $1}')
-    # FIRST_PYTHON_HASH=
-    # if [[ -n "${DEP_PYTHON_PKG_LIST:-}" ]]; then
-    #     for p in ${DEP_PYTHON_PKG_LIST}
-    #     do
-    #         if [[ -z "${FIRST_PYTHON_HASH:-}" ]]; then
-    #             FIRST_PYTHON_HASH="${p}"
-    #         else
-    #             echo "WARNING: Found multiple python packages installed in the spack environment"
-    #         fi
-    #     done
-    # fi
-
     # Check for python
     DEP_PYTHON_PKG_LIST=$(spack find --format "{name}/{version}-{hash:7}" | grep "python" )
     if [[ -n "${DEP_PYTHON_PKG_LIST:-}" ]]; then
@@ -1079,14 +1064,9 @@ echo ${CMD} | tee -a ${LOG}
 
 ##########################################################################################
 # Create and setup the module files for all of the dependencies
-# spack module lmod -n lbann_lmod_modules  refresh
 CMD="spack module lmod -n lbann_lmod_modules refresh --delete-tree --upstream-modules -y"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-
-# CMD="module use $SPACK_ROOT/share/spack/lmod/${SPACK_ARCH}"
-# echo ${CMD} | tee -a ${LOG}
-# [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
 CMD="module use ${LBANN_MODFILES_DIR}/Core"
 echo ${CMD} | tee -a ${LOG}
