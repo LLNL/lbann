@@ -25,6 +25,7 @@ def construct_cosmoflow_model(parallel_strategy,
         mlperf=mlperf,
         transform_input=transform_input)(universes)
     mse = lbann.MeanSquaredError([preds, secrets])
+    mae = lbann.MeanAbsoluteError([preds, secrets])
     obj = lbann.ObjectiveFunction([mse])
     layers = list(lbann.traverse_layer_graph([universes, secrets]))
 
@@ -47,7 +48,8 @@ def construct_cosmoflow_model(parallel_strategy,
             layer.parallel_strategy = parallel_strategy
 
     # Set up model
-    metrics = [lbann.Metric(mse, name='MSE', unit='')]
+    metrics = [lbann.Metric(mse, name='MSE', unit=''),
+               lbann.Metric(mae, name='MAE', unit='')]
     callbacks = [
         lbann.CallbackPrint(),
         lbann.CallbackTimer(),
