@@ -29,6 +29,9 @@
 #include "lbann/utils/profiling.hpp"
 #include "lbann/base.hpp"
 #include "lbann/utils/exception.hpp"
+// For get_current_comm, which is here for some reason.
+#include "lbann/utils/serialize.hpp"
+#include "lbann/utils/options.hpp"
 
 #if defined(LBANN_SCOREP)
 #include <scorep/SCOREP_User.h>
@@ -102,7 +105,7 @@ std::string as_lowercase(std::string str)
 void do_adiak_init()
 {
   struct adiak_configuration const cc;
-  adiak::init(NULL);
+  adiak::init(utils::get_current_comm().get_world_comm().GetMPIComm());
   adiak::user();
   adiak::launchdate();
   adiak::libraries();
@@ -195,16 +198,22 @@ void do_adiak_finalize() {
 }
 
 cali::ConfigManager cali_mgr;
+bool caliper_initialized = false;
 }// namespace
 void prof_start()
 {
+  if (caliper_initialized) {
+    LBANN_ERROR("Cannot reinitialize Caliper");
+  }
   do_adiak_init();
 
-  // FIXME: Should this be configurable?
-  cali_mgr.add("spot(output=lbann.cali)");
+  auto& arg_parser = global_argument_parser();
+  cali_mgr.add(
+    arg_parser.get<std::string>(LBANN_OPTION_CALIPER_CONFIG).c_str());
   cali_mgr.start();
 
   profiling_started = true;
+  caliper_initialized = true;
 }
 void prof_stop()
 {

@@ -261,6 +261,12 @@ void construct_std_options()
                         "[STD] Divide each trainer into equally-sized "
                         "sub-grids with blocked ordering",
                         0);
+#ifdef LBANN_HAS_CALIPER
+  arg_parser.add_option(LBANN_OPTION_CALIPER_CONFIG,
+                        {"--caliper_config"},
+                        "[STD] Caliper configuration string",
+                        "spot(output=lbann.cali)")
+#endif
 }
 
 void construct_datastore_options()
