@@ -937,7 +937,11 @@ fi
 if [[ -n "${PIP_EXTRAS:-}" ]]; then
     for p in ${PIP_EXTRAS}
     do
-        CMD="python3 -m pip install -r ${p}"
+        if [[ -e "${p}" ]]; then
+            CMD="python3 -m pip install -r ${p}"
+        else
+            CMD="python3 -m pip install ${p}"
+        fi
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     done
