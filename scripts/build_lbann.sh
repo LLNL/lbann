@@ -388,7 +388,7 @@ LBANN_BUILD_DIR="${LBANN_BUILD_PARENT_DIR}/build"
 LBANN_INSTALL_DIR="${LBANN_BUILD_PARENT_DIR}/install"
 LBANN_MODFILES_DIR="${LBANN_INSTALL_DIR}/etc/modulefiles"
 LBANN_SETUP_FILE_LABEL="LBANN_${CLUSTER}_${LBANN_LABEL}_setup_build_tools.sh"
-LBANN_SETUP_FILE="${LBANN_HOME}/${LBANN_SETUP_FILE_LABEL}"
+LBANN_SETUP_FILE="${LBANN_BUILD_PARENT_DIR}/${LBANN_SETUP_FILE_LABEL}"
 
 if [[ ! -d "${LBANN_BUILD_PARENT_DIR}" ]]; then
     CMD="mkdir -p ${LBANN_BUILD_PARENT_DIR}"
@@ -581,7 +581,7 @@ if [[ -n "${REUSE_ENV:-}" || -z "${INSTALL_DEPS:-}" ]]; then
             exit 1
         fi
     else
-        find_cmake_config_file ${LBANN_LABEL} ${CENTER_COMPILER} ${LBANN_HOME}
+        find_cmake_config_file ${LBANN_LABEL} ${CENTER_COMPILER} ${LBANN_BUILD_PARENT_DIR}
         if [[ ! -z "${MATCHED_CONFIG_FILE_PATH}" ]]; then
             if [[ -e "${MATCHED_CONFIG_FILE_PATH}" && -r "${MATCHED_CONFIG_FILE_PATH}" ]]; then
                 echo "I have found and will use ${MATCHED_CONFIG_FILE_PATH}"
@@ -595,13 +595,6 @@ if [[ -n "${REUSE_ENV:-}" || -z "${INSTALL_DEPS:-}" ]]; then
                         REUSE_ENV=""
                     else
                         CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
-                        if [[ ! -e "${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}" ]]; then
-                            echo "Overwritting exising CMake config file in ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
-                        fi
-                        # Save the config file in the build directory
-                        CMD="cp ${MATCHED_CONFIG_FILE_PATH} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
-                        echo ${CMD}
-                        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
                     fi
                 fi
             fi
@@ -624,6 +617,15 @@ if [[ -n "${REUSE_ENV:-}" ]]; then
     else
         echo "Spack environment ${LBANN_ENV} does not exists... creating it (as if -d flag was thrown)"
         INSTALL_DEPS="TRUE"
+    fi
+fi
+
+if [[ -n "${INSTALL_DEPS:-}" ]]; then
+    if [[ -d "${LBANN_BUILD_PARENT_DIR}" ]]; then
+        echo "There is a request for a clean build but there is an existing directory: ${LBANN_BUILD_PARENT_DIR}"
+        CMD="rm -r ${LBANN_BUILD_PARENT_DIR}"
+        echo ${CMD}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
     fi
 fi
 
@@ -1058,14 +1060,6 @@ fi
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
 fi
 
-# Save the setup file in the build directory
-if [[ ! -e ${LBANN_BUILD_PARENT_DIR}/${LBANN_SETUP_FILE_LABEL} ]]; then
-    echo "Overwritting exising setup file in ${LBANN_BUILD_PARENT_DIR}/${LBANN_SETUP_FILE_LABEL}"
-fi
-CMD="cp ${LBANN_SETUP_FILE} ${LBANN_BUILD_PARENT_DIR}/${LBANN_SETUP_FILE_LABEL}"
-echo ${CMD} | tee -a ${LOG}
-[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
-
 ##########################################################################################
 # Create and setup the module files for all of the dependencies
 CMD="spack module lmod -n lbann_lmod_modules refresh --delete-tree --upstream-modules -y"
@@ -1094,7 +1088,7 @@ if [[ ! -z "${MATCHED_CONFIG_FILE_PATH}" ]]; then
             echo "Overwritting exising CMake config file in ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
         fi
         # Save the config file in the build directory
-        CMD="cp ${MATCHED_CONFIG_FILE_PATH} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
+        CMD="mv ${MATCHED_CONFIG_FILE_PATH} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || warn_on_failure "${CMD}"; }
     else
@@ -1149,7 +1143,7 @@ else
     exit 1
 fi
 
-CMAKE_CMD="${LBANN_CMAKE} -C ${LBANN_HOME}/${CONFIG_FILE_NAME} -B ${LBANN_BUILD_DIR} -DCMAKE_INSTALL_PREFIX=${LBANN_INSTALL_DIR} -DLBANN_WRITE_DEPENDENT_MODULEPATH=${LBANN_WRITE_DEPENDENT_MODULEPATH} -DLBANN_WRITE_DEPENDENT_MODULES=${LBANN_DEPENDENT_MODULES} ${LBANN_HOME}"
+CMAKE_CMD="${LBANN_CMAKE} -C ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME} -B ${LBANN_BUILD_DIR} -DCMAKE_INSTALL_PREFIX=${LBANN_INSTALL_DIR} -DLBANN_WRITE_DEPENDENT_MODULEPATH=${LBANN_WRITE_DEPENDENT_MODULEPATH} -DLBANN_WRITE_DEPENDENT_MODULES=${LBANN_DEPENDENT_MODULES} ${LBANN_HOME}"
 echo ${CMAKE_CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMAKE_CMD} || exit_on_failure "${CMAKE_CMD}"; }
 
