@@ -95,13 +95,6 @@ void construct_std_options()
     LBANN_OPTION_SERIALIZE_IO,
     {"--serialize_io"},
     "[STD] force data readers to use a single threaded for I/O");
-  arg_parser.add_flag(LBANN_OPTION_ST_ON,
-                      {"--st_on"},
-                      "[STD] Enable stack profiler tracing");
-  arg_parser.add_flag(
-    LBANN_OPTION_ST_FULL_TRACE,
-    {"--st_full_trace"},
-    "[STD] Enable full stack trace, stack tracing must be enabled");
   arg_parser.add_flag(LBANN_OPTION_STACK_TRACE_TO_FILE,
                       {"--stack_trace_to_file"},
                       "[STD] When enabled, stack trace is output to file");

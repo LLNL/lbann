@@ -109,9 +109,6 @@ int main(int argc, char* argv[])
       stack_trace::register_signal_handler(file_base);
     }
 
-    // to activate, must specify --st_on on cmd line
-    stack_profiler::get()->activate(comm->get_rank_in_world());
-
     std::ostringstream err;
 
     auto pbs = protobuf_utils::load_prototext(master);
@@ -291,9 +288,6 @@ int main(int argc, char* argv[])
     if (master)
       std::cout << " Evaluate pretrained autoencoder" << std::endl;
     trainer.evaluate(ae_cycgan_model.get(), execution_mode::testing);
-
-    // has no affect unless option: --st_on was given
-    stack_profiler::get()->print();
   }
   catch (std::exception& e) {
     El::ReportException(e);
