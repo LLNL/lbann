@@ -64,6 +64,7 @@ def construct_cosmoflow_model(parallel_strategy,
         lbann.CallbackLinearGrowthLearningRate(target=learning_rate, num_epochs=5),
         lbann.CallbackSetLearningRate(step=32, val=0.25 * learning_rate),
         lbann.CallbackSetLearningRate(step=64, val=0.125 * learning_rate),
+        lbann.CallbackProgressBar()
     ]
     return lbann.Model(
         epochs=num_epochs,
