@@ -1063,7 +1063,7 @@ void print_parameters(const lbann_comm& comm,
                    << static_cast<unsigned int>(data_seq_random_seeds[i])
                    << " ";
     }
-    else {
+    else if (rank_in_trainer == max_rng_seeds) {
       root_rng << "... ";
       rng << "... ";
       data_seq_rng << "... ";
