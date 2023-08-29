@@ -1202,7 +1202,7 @@ if [[ -n ${MODULE_CMD} ]]; then
 fi
 echo "  source ${LBANN_SETUP_FILE}" | tee -a ${LOG}
 echo "  ${CMAKE_CMD}" | tee -a ${LOG}
-echo "  cd ${LBANN_BUILD_PARENT_DIR}" | tee -a ${LOG}
+echo "  cd ${LBANN_BUILD_DIR}" | tee -a ${LOG}
 echo "  ${LBANN_NINJA} install" | tee -a ${LOG}
 echo "To manipulate the dependencies you can activate the spack environment named ${LBANN_ENV} via:" | tee -a ${LOG}
 echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
