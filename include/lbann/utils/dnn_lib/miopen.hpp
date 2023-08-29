@@ -248,11 +248,14 @@ inline bwd_filter_conv_alg from_miopen(miopenConvBwdWeightsAlgorithm_t a)
 /** @brief Convert an LBANN pooling_mode to the MIOpen equivalent value. */
 inline miopenPoolingMode_t to_miopen(pooling_mode m)
 {
+  const int rank = lbann::get_rank_in_world();
   switch (m) {
   case pooling_mode::MAX:
     return miopenPoolingMax;
 #ifdef LBANN_DETERMINISTIC
-    LBANN_WARNING("Deterministic max pooling mode not supported in MIOpen");
+    if (rank == 0) {
+      LBANN_WARNING("Deterministic max pooling mode not supported in MIOpen");
+    }
     return miopenPoolingMax;
 #else
     return miopenPoolingMax;
@@ -262,7 +265,9 @@ inline miopenPoolingMode_t to_miopen(pooling_mode m)
   case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING:
     return miopenPoolingAverage;
   case pooling_mode::MAX_DETERMINISTIC:
-    LBANN_WARNING("Deterministic max pooling mode not supported in MIOpen");
+    if (rank == 0) {
+      LBANN_WARNING("Deterministic max pooling mode not supported in MIOpen");
+    }
     return miopenPoolingMax;
   default:
     LBANN_ERROR("Invalid pooling mode requested");

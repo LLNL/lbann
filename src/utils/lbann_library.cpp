@@ -161,9 +161,11 @@ trainer& construct_trainer(lbann_comm* comm,
 
   // Check to see if the model wants to reduce the I/O parallelism
   bool const serialized_io = pb_trainer->serialize_io();
-  if (serialized_io) {
-    std::cout << "Trainer " << pb_trainer->name()
-              << " serialized the I/O threads" << std::endl;
+  if (comm->am_trainer_master()) {
+    if (serialized_io) {
+      std::cout << "Trainer " << pb_trainer->name()
+                << " serialized the I/O threads" << std::endl;
+    }
   }
 
   // Initalize a per-trainer I/O thread pool
