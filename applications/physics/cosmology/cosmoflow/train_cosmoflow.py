@@ -112,6 +112,9 @@ if __name__ == "__main__":
         '--num-secrets', action='store', default=4, type=int,
         help='number of secrets (default: 4)')
     parser.add_argument(
+        '--mlperf', action='store_true',
+        help='Use MLPerf HPC compliant model')
+    parser.add_argument(
         '--use-batchnorm', action='store_true',
         help='Use batch normalization layers')
     parser.add_argument(
@@ -127,8 +130,14 @@ if __name__ == "__main__":
     parser.add_argument(
         '--synthetic', action='store_true',
         help='Use synthetic data')
+    parser.add_argument(
+        '--transform-input', action='store_true',
+        help='Apply log1p transformation to model inputs')
 
     # Parallelism arguments
+    parser.add_argument(
+        '--use-distconv', action='store_true',
+        help='Enable distconv spatial parallelism.')
     parser.add_argument(
         '--depth-groups', action='store', type=int, default=4,
         help='the k-way partitioning of the depth dimension (default: 4)')
@@ -148,11 +157,8 @@ if __name__ == "__main__":
         '--sample-groups', action='store', type=int, default=1,
         help='the k-way partitioning of the sample dimension (default: 1)')
     parser.add_argument(
-        '--depth-splits-pooling-id', action='store', type=int, default=None,
-        help='the number of pooling layers from which depth_split is set (default: None)')
-    parser.add_argument(
-        '--gather-dropout-id', action='store', type=int, default=1,
-        help='the number of dropout layers from which the network is gathered (default: 1)')
+        '--min-distconv-width', action='store', type=int, default=None,
+        help='the minimum spatial size for which distconv is enabled (default: depth groups)')
 
     parser.add_argument(
         '--dynamically-reclaim-error-signals', action='store_true',
@@ -164,36 +170,42 @@ if __name__ == "__main__":
 
     lbann.contrib.args.add_optimizer_arguments(
         parser,
-        default_optimizer="adam",
+        default_optimizer="sgd",
         default_learning_rate=0.001,
     )
     args = parser.parse_args()
 
-    if args.mini_batch_size * args.depth_groups < args.nodes * args.procs_per_node:
-        print('WARNING the number of samples per mini-batch and depth group (partitions per sample)'
-              ' is too small for the number of processes per trainer. Increasing the mini-batch size')
-        args.mini_batch_size = int((args.nodes * args.procs_per_node) / args.depth_groups)
-        print(f'Increasing mini_batch size to {args.mini_batch_size}')
-
     # Set parallel_strategy
-    parallel_strategy = get_parallel_strategy_args(
-        height_groups=args.height_groups,
-        width_groups=args.width_groups,
-        sample_groups=args.sample_groups,
-        channel_groups=args.channel_groups,
-        filter_groups=args.filter_groups,
-        depth_groups=args.depth_groups)
+    parallel_strategy = None
+    if args.use_distconv:
+        if args.mini_batch_size * args.depth_groups < args.nodes * args.procs_per_node:
+            print('WARNING the number of samples per mini-batch and depth group (partitions per sample)'
+                ' is too small for the number of processes per trainer. Increasing the mini-batch size')
+            args.mini_batch_size = int((args.nodes * args.procs_per_node) / args.depth_groups)
+            print(f'Increasing mini_batch size to {args.mini_batch_size}')
+
+        parallel_strategy = get_parallel_strategy_args(
+            height_groups=args.height_groups,
+            width_groups=args.width_groups,
+            sample_groups=args.sample_groups,
+            channel_groups=args.channel_groups,
+            filter_groups=args.filter_groups,
+            depth_groups=args.depth_groups)
+    
     model = cosmoflow_model.construct_cosmoflow_model(parallel_strategy=parallel_strategy,
                                                       local_batchnorm=args.local_batchnorm,
                                                       input_width=args.input_width,
                                                       num_secrets=args.num_secrets,
                                                       use_batchnorm=args.use_batchnorm,
                                                       num_epochs=args.num_epochs,
-                                                      depth_splits_pooling_id = args.depth_splits_pooling_id,
-                                                      gather_dropout_id = args.gather_dropout_id)
+                                                      learning_rate=args.optimizer_learning_rate,
+                                                      min_distconv_width=args.min_distconv_width,
+                                                      mlperf=args.mlperf,
+                                                      transform_input=args.transform_input)
 
     # Setup optimizer
     optimizer = lbann.contrib.args.create_optimizer(args)
+    optimizer.learn_rate *= 1e-2
 
     # Setup data reader
     if args.synthetic:
@@ -216,7 +228,7 @@ if __name__ == "__main__":
 
     # Runtime parameters/arguments
     environment = lbann.contrib.args.get_distconv_environment(
-        num_io_partitions=args.depth_groups)
+        num_io_partitions=args.depth_groups if args.use_distconv else 1)
     if args.dynamically_reclaim_error_signals:
         environment['LBANN_KEEP_ERROR_SIGNALS'] = 0
     else:
