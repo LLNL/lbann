@@ -74,6 +74,14 @@ set_center_specific_gpu_arch()
             *)
                 ;;
         esac
+    elif [[ ${center} = "olcf" ]]; then
+        case ${spack_arch_target} in
+            "zen3") # Crusher, Frontier
+                GPU_ARCH_VARIANTS="amdgpu_target=gfx90a"
+                ;;
+            *)
+                ;;
+        esac
     elif [[ ${center} = "nersc" ]]; then
         case ${spack_arch_target} in
             "zen3") # Perlmutter
@@ -124,6 +132,10 @@ set_center_specific_modules()
         case ${spack_arch_target} in
             "power9le")
                 MODULE_CMD="module load gcc/9.3.0 cuda/11.1.1 spectrum-mpi/10.3.1.2-20200121"
+                ;;
+            "zen3") # Frontier, Crusher
+                MODULE_CMD="module load ums/default ums002/default; module unload rocm; module load craype-x86-trento craype-network-ofi libfabric/1.15.2.0 perftools-base/22.12.0 amd/5.5.1 craype/2.7.21 cray-mpich/8.1.26 openblas/0.3.17-omp PrgEnv-amd/8.4.0 cmake/3.23.2 cray-python/3.9.13.1 hdf5/1.14.0"
+#                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.15.2.0 perftools-base/22.12.0 amd/5.5.1 craype/2.7.21 cray-mpich/8.1.26 cray-libsci/23.05.1.4 PrgEnv-amd/8.4.0 cmake/3.23.2 cray-python/3.9.13.1 hdf5/1.14.0"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -217,6 +229,16 @@ set_center_specific_spack_dependencies()
         case ${spack_arch_target} in
             "power9le")
                 CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12"
+                ;;
+            "zen3") # Frontier, Crusher
+                CENTER_COMPILER="%rocmcc@5.5.1"
+                CENTER_DEPENDENCIES="^cray-mpich@8.1.26 ^hip@5.5.1 ^python@3.9.13 ^protobuf@3.21.12"
+#                CENTER_DEPENDENCIES="^cray-mpich@8.1.26 ^hip@5.5.1 ^python@3.9.12 ^aluminum@1.4.0: +ofi_libfabric_plugin"
+                CENTER_BLAS_LIBRARY="blas=openblas"
+#                CENTER_BLAS_LIBRARY="blas=libsci"
+                # Override the conduit variants for the cray compilers
+                CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis+blt_find_mpi~test"
+                CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
                 ;;
             *)
                 echo "No center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
@@ -416,6 +438,68 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
+EOF
+                ;;
+            "zen3")
+cat <<EOF  >> ${yaml}
+  compilers:
+  - compiler:
+      spec: rocmcc@5.5.1
+      paths:
+        cc: cc
+        cxx: CC
+        f77: ftn
+        fc: ftn
+      flags: {}
+      operating_system: rhel8
+      target: any
+      modules:
+      - PrgEnv-amd
+      - amd/5.5.1
+      environment: {}
+      extra_rpaths: []
+  packages:
+    all:
+      providers:
+        mpi: [cray-mpich]
+    hipcub:
+      buildable: False
+      version:
+      - '5.5.1'
+      externals:
+      - spec: hipcub@5.5.1 arch=${spack_arch}
+        prefix: /opt/rocm-5.5.1/hipcub
+    llvm-amdgpu:
+      buildable: False
+      version:
+      - '5.5.1'
+      externals:
+      - spec: llvm-amdgpu@5.5.1 arch=${spack_arch}
+        prefix: /opt/rocm-5.5.1/llvm
+    cray-libsci:
+      buildable: False
+      version:
+      - '23.05.1.4'
+      externals:
+      - spec: cray-libsci@23.05.1.4 arch=${spack_arch}
+        modules:
+        - amd/5.5.1 PrgEnv-amd/8.4.0 cray-libsci/23.05.1.4
+    cray-mpich:
+      buildable: False
+      version:
+      - '8.1.26'
+      externals:
+      - spec: cray-mpich@8.1.26 arch=${spack_arch}
+        modules:
+        - amd/5.6.0 PrgEnv-amd/8.4.0 cray-mpich/8.1.26
+    # libfabric:
+    #   buildable: false
+    #   version:
+    #   - 1.15.0
+    #   externals:
+    #   - spec: libfabric@1.15.0 arch=${spack_arch}
+    #     modules:
+    #     - libfabric/1.15.0
 EOF
                 ;;
             *)

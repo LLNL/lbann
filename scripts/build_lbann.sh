@@ -773,7 +773,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     # Limit the scope of the external search to minimize overhead time
     # CRAY_MANIFEST="/opt/cray/pe/cpe-descriptive-manifest"
     # if [[ -e ${CRAY_MANIFEST} ]]; then
-    #    CMD="spack external read-cray-manifest --directory ${CRAY_MANIFEST} --fail-on-error"
+    #    CMD="spack external read-cray-manifest --directory ${CRAY_MANIFEST}"
     #    echo ${CMD} | tee -a ${LOG}
     #    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     # fi
@@ -783,7 +783,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-    CMD="spack external find --scope env:${LBANN_ENV} bzip2 cuda cudnn hwloc libfabric nccl ncurses openblas perl python rccl rdma-core sqlite spectrum-mpi mvapich2 openmpi netlib-lapack"
+    CMD="spack external find --scope env:${LBANN_ENV} bzip2 cuda cudnn hdf5 hwloc libfabric nccl ncurses openblas perl python rccl rdma-core sqlite spectrum-mpi mvapich2 openmpi netlib-lapack"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 

@@ -16,6 +16,8 @@ class SystemParams:
 # Supported LC systems
 _system_params = {
     'summit':   SystemParams(44, 6, 'lsf'),
+    'frontier': SystemParams(64, 8, 'slurm'),
+    'crusher': SystemParams(64, 8, 'slurm'),
 }
 
 # Detect system

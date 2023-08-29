@@ -46,15 +46,21 @@ def make_batch_script(
         if key not in environment:
             environment[key] = os.getenv(key, default)
 
+    def prepend_environment_path(key, prefix):
+        if key not in environment:
+            environment[key] = prefix + ":" + os.getenv(key)
+        else:
+            environment[key] = prefix + ":" + environment[key]
+
     # Setup GPU bindings
     # Note: Each Hydrogen process is assigned to the GPU index that
     # matches its node communicator rank. This is not compatible with
     # mpibind, which assigns a GPU with index 0 to each process. We
     # can't use an exclusive GPU compute mode since processes may
     # touch the wrong GPU while figuring out ownership.
-    if scheduler == 'slurm' and has_gpu(system):
-        launcher_args.extend(['--mpibind=off',
-                              '--nvidia_compute_mode=default'])
+    # if scheduler == 'slurm' and has_gpu(system):
+    #     launcher_args.extend(['--mpibind=off',
+    #                           '--nvidia_compute_mode=default'])
 
     # Optimizations for Summit-like systems
     if system in ('summit'):
@@ -91,6 +97,20 @@ def make_batch_script(
 
         # Configure NVSHMEM to load Spectrum MPI
         set_environment('NVSHMEM_MPI_LIB_NAME', 'libmpi_ibm.so')
+
+    # Optimizations for Frontier and Crusher
+    if system in ('frontier', 'crusher'):
+        #set_environment('NCCL_SOCKET_IFNAME', 'hsi')
+        set_environment('MIOPEN_DEBUG_DISABLE_FIND_DB', '1')
+        set_environment('MIOPEN_DISABLE_CACHE', '1')
+        set_environment('MIOPEN_USER_DB_PATH', '/tmp')
+        set_environment('MIOPEN_CUSTOM_CACHE_DIR', '/tmp')
+        prepend_environment_path('LD_LIBRARY_PATH', os.getenv('CRAY_LD_LIBRARY_PATH'))
+        if os.getenv('ROCM_PATH') is not None:
+            prepend_environment_path('LD_LIBRARY_PATH', os.path.join(os.getenv('ROCM_PATH'), 'llvm', 'lib'))
+        different_ofi_plugin = os.getenv('LBANN_USE_THIS_OFI_PLUGIN')
+        if different_ofi_plugin is not None:
+            prepend_environment_path('LD_LIBRARY_PATH', different_ofi_plugin)
 
     return lbann.launcher.make_batch_script(
         procs_per_node=procs_per_node,
