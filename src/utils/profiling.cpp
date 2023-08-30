@@ -215,8 +215,11 @@ void prof_start()
   do_adiak_init();
 
   auto& arg_parser = global_argument_parser();
-  cali_mgr.add(
-    arg_parser.get<std::string>(LBANN_OPTION_CALIPER_CONFIG).c_str());
+  auto config = arg_parser.get<std::string>(LBANN_OPTION_CALIPER_CONFIG).c_str();
+  cali_mgr.add(config);
+  if (cali_mgr.error()) {
+    LBANN_ERROR("Caliper config parse error: ", cali_mgr.error_msg());
+  }
   cali_mgr.start();
 
   profiling_started = true;
