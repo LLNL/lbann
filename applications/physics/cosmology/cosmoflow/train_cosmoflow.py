@@ -192,7 +192,7 @@ if __name__ == "__main__":
             channel_groups=args.channel_groups,
             filter_groups=args.filter_groups,
             depth_groups=args.depth_groups)
-    
+
     model = cosmoflow_model.construct_cosmoflow_model(parallel_strategy=parallel_strategy,
                                                       local_batchnorm=args.local_batchnorm,
                                                       input_width=args.input_width,
@@ -243,6 +243,7 @@ if __name__ == "__main__":
         lbann_args = []
     else:
         lbann_args = ['--use_data_store']
+    lbann_args += lbann.contrib.args.get_profile_args(args)
 
     # Run experiment
     kwargs = lbann.contrib.args.get_scheduler_kwargs(args)

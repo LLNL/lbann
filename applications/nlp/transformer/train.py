@@ -267,7 +267,7 @@ def make_batch_script(trainer_params, model_params, script_params, args):
     script.add_parallel_command([
         lbann.lbann_exe(),
         f'--prototext={protobuf_file}',
-    ])
+    ] + lbann.contrib.args.get_profile_args(args))
     script.add_command('status=$?')
     script.add_command('echo "Finished training at $(date)"')
     script.add_command('exit ${status}')
