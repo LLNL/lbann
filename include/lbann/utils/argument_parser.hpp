@@ -28,6 +28,7 @@
 #define LBANN_UTILS_ARGUMENT_PARSER_HPP_INCLUDED
 
 #include "lbann/utils/environment_variable.hpp"
+#include "lbann/utils/exception.hpp"
 
 #include <clara.hpp>
 
@@ -652,6 +653,9 @@ template <typename T>
 inline T const&
 argument_parser<ErrorHandler>::get(std::string const& option_name) const
 {
+  if (!option_is_defined(option_name)) {
+    LBANN_ERROR("Invalid option", option_name);
+  }
   return std::any_cast<T const&>(params_.at(option_name));
 }
 
