@@ -42,6 +42,7 @@ public:
   profiler(bool sync = false, bool skip_init = false);
   profiler(const profiler&) = default;
   profiler& operator=(const profiler&) = default;
+  ~profiler();
   profiler* copy() const override { return new profiler(*this); }
   void on_epoch_begin(model* m) override;
   void on_epoch_end(model* m) override;

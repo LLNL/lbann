@@ -227,9 +227,11 @@ void prof_start()
 }
 void prof_stop()
 {
-  cali_mgr.stop();
-  cali_mgr.flush();
-  do_adiak_finalize();
+  if (caliper_initialized) {
+    cali_mgr.stop();
+    cali_mgr.flush();
+    do_adiak_finalize();
+  }
   profiling_started = false;
 }
 void prof_region_begin(const char* s, int, bool)
