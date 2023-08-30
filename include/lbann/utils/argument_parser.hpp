@@ -654,7 +654,7 @@ inline T const&
 argument_parser<ErrorHandler>::get(std::string const& option_name) const
 {
   if (!option_is_defined(option_name)) {
-    LBANN_ERROR("Invalid option", option_name);
+    LBANN_ERROR("Invalid option: ", option_name);
   }
   return std::any_cast<T const&>(params_.at(option_name));
 }
