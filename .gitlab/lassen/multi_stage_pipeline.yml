@@ -30,31 +30,46 @@
 # output is in JUnit format and parsed by the pipeline for web
 # viewing.
 
+include:
+  - .gitlab/common/common.yml
+
 stages:
+  # - allocate
   - build
   - test
   - cleanup
 
+# Get LC resources.
+# allocate lc resources:
+#   stage: allocate
+#   extends:
+#     - .lassen common
+#     - .lbann-base-vars
+#   variables:
+#     GIT_STRATEGY: none
+#   script:
+#     - echo "== ACQUIRING SLURM RESOURCES =="
+#     - echo "${WITH_WEEKLY:+Running with --weekly}"
+#     - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "120" || echo "90")
+#     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
+#     - salloc --exclusive -N ${LBANN_NNODES} -p pbatch -t ${TEST_TIME} --no-shell -J ${JOB_NAME}
+#   timeout: 6h
 
 # Build LBANN and establish the Spack environment for this pipeline.
 build and install:
-  extends: .lassen common
+  extends:
+    - .lassen common
+    - .lbann-base-vars
+    - .lbann-artifacts
   stage: build
-  artifacts:
-    paths:
-      - spack-*.txt
-      - spack-build-*/CMakeCache.txt
-      - spack-build-*/build.ninja
-      - spack-build-*/spack-*.txt
-      - spack-ci-env-name.sh
-      - ${RESULTS_DIR}/*
   script:
     - echo "== BUILDING LBANN =="
-    - export BUILD_TASKS=$(($(nproc) + 2))
-    - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
-    - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
-    - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
-    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
+    # - export BUILD_TASKS=$(($(nproc) + 2))
+    - !reference [.setup_spack, script]
+    # - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
+    # - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
+    # - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
+    # - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - lalloc 1 -W 30 -q pdebug ./scripts/build_lbann.sh -r
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS}
       -e ./scripts/common_spack_packages/ci_spack_packages.sh --
@@ -62,11 +77,12 @@ build and install:
     - export TEST_TASKS_PER_NODE=2
     - export LBANN_NNODES=1
     - export TEST_MPIBIND_FLAG="--mpibind=off"
-    - export SPACK_ARCH=$(spack arch)
-    - export SPACK_ARCH_TARGET=$(spack arch -t)
-    - echo "export SPACK_DEP_ENV_NAME=${SPACK_ENV_NAME}" > spack-ci-env-name.sh
-    - echo "export SPACK_ARCH=${SPACK_ARCH}" >> spack-ci-env-name.sh
-    - echo "export SPACK_ARCH_TARGET=${SPACK_ARCH_TARGET}" >> spack-ci-env-name.sh
+    # - export SPACK_ARCH=$(spack arch)
+    # - export SPACK_ARCH_TARGET=$(spack arch -t)
+    # - echo "export SPACK_DEP_ENV_NAME=${SPACK_ENV_NAME}" > spack-ci-env-name.sh
+    # - echo "export SPACK_ARCH=${SPACK_ARCH}" >> spack-ci-env-name.sh
+    # - echo "export SPACK_ARCH_TARGET=${SPACK_ARCH_TARGET}" >> spack-ci-env-name.sh
+    - !reference [.setup_lbann, script]
     - lalloc ${LBANN_NNODES} -W 30 -q pdebug .gitlab/common/run-catch-tests-lsf.sh
   timeout: 1h
 
@@ -74,7 +90,9 @@ build and install:
 unit tests:
   extends:
     - .lassen common
+    - .lbann-base-vars
     - .uses spack environment
+    - .uses spack environment nvshmem:
   stage: test
   dependencies:
     - build and install
@@ -97,7 +115,9 @@ unit tests:
 integration tests:
   extends:
     - .lassen common
+    - .lbann-base-vars
     - .uses spack environment
+    - .uses spack environment nvshmem:
   stage: test
   dependencies:
     - build and install
@@ -121,6 +141,7 @@ integration tests:
 check catch2 tests:
   extends:
     - .lassen common
+    - .lbann-base-vars
   stage: test
   dependencies:
     - build and install
@@ -134,25 +155,23 @@ check catch2 tests:
 # Switching over to reusing Spack environments for each feature branch so don't remove them immediately
 # Cleanup any build directories and spack environments older than 5 days since last use
 remove spack environment:
-  extends: .lassen common
+  extends:
+    - .lassen common
+    - .lbann-base-vars
+    - .cleanup old spack environment
   stage: cleanup
   variables:
     GIT_STRATEGY: none
   when: always
-  script:
-    - echo "== REMOVING OLD BUILD RESOURCES =="
-    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +5 -name "spack-build-*" -type d -exec rm -r {} \;
-    - find ${HOME}/${SPACK_REPO}/var/spack/environments/ -maxdepth 1 -mtime +5 -type d -exec basename {} \; | xargs -r spack env rm --yes-to-all
 
 
 # Load the spack shell integration and load the environment.
-.uses spack environment:
+.uses spack environment nvshmem:
   before_script:
-    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - source spack-ci-env-name.sh
-    - spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
-    - spack load lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
+    # - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
+    # - source spack-ci-env-name.sh
+    # - spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
+    # - spack load lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
     - export NVSHMEM_IBRC_SUPPORT=1
     - export NVSHMEM_PMIX_SUPPORT="0"
     - export NVSHMEM_LIBFABRIC_SUPPORT=0
@@ -163,6 +182,7 @@ remove spack environment:
   variables:
     # Just the obvious identifier. Which specific node doesn't matter.
     SYSTEM_NAME: lassen
+    SPACK_USER_CACHE_PATH: /g/g14/lbannusr/spack_repos/.spack_${SYSTEM_NAME}
     SPACK_REPO: spack_repos/spack_${SYSTEM_NAME}.git
 
     # This is based on the assumption that each runner will only ever
