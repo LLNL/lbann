@@ -4,6 +4,7 @@ import cosmoflow_model
 
 import argparse
 
+import os
 import numpy as np
 
 import lbann.contrib.args
@@ -241,6 +242,12 @@ if __name__ == "__main__":
         environment['LBANN_KEEP_ERROR_SIGNALS'] = 0
     else:
         environment['LBANN_KEEP_ERROR_SIGNALS'] = 1
+
+    # Setup DaCe kernels
+    environment['DISTCONV_JIT_VERBOSE'] = 1
+    application_path=os.path.dirname(__file__)
+    environment['DISTCONV_JIT_CACHEPATH'] = f'{application_path}/DaCe_kernels'
+
     if args.synthetic or args.no_datastore:
         lbann_args = []
     else:
