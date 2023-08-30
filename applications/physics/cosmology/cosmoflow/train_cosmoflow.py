@@ -89,6 +89,7 @@ if __name__ == "__main__":
             'Running the experiment is only supported on LC systems.')
     parser = argparse.ArgumentParser(description=desc)
     lbann.contrib.args.add_scheduler_arguments(parser)
+    lbann.contrib.args.add_profiling_arguments(parser)
 
     # General arguments
     parser.add_argument(
@@ -202,6 +203,11 @@ if __name__ == "__main__":
                                                       min_distconv_width=args.min_distconv_width,
                                                       mlperf=args.mlperf,
                                                       transform_input=args.transform_input)
+
+    # Add profiling callback if needed.
+    profiler = lbann.contrib.args.create_profile_callback(args)
+    if profiler is not None:
+        model.callbacks.append(profiler)
 
     # Setup optimizer
     optimizer = lbann.contrib.args.create_optimizer(args)
