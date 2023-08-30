@@ -29,6 +29,9 @@
 #include "lbann/utils/profiling.hpp"
 #include "lbann/base.hpp"
 #include "lbann/utils/exception.hpp"
+// For get_current_comm, which is here for some reason.
+#include "lbann/utils/serialize.hpp"
+#include "lbann/utils/options.hpp"
 
 #if defined(LBANN_SCOREP)
 #include <scorep/SCOREP_User.h>
@@ -74,6 +77,11 @@ namespace lbann {
 // been configured with these tools and access them via Caliper.
 #if defined(LBANN_HAS_CALIPER)
 namespace {
+
+cali::ConfigManager cali_mgr;
+bool caliper_initialized = false;
+MPI_Comm adiak_comm;  // Dedicated Adiak communicator.
+
 std::vector<std::string> split(std::string const str,
                                std::string const regex_str)
 {
@@ -102,7 +110,9 @@ std::string as_lowercase(std::string str)
 void do_adiak_init()
 {
   struct adiak_configuration const cc;
-  adiak::init(NULL);
+  MPI_Comm world_comm = utils::get_current_comm().get_world_comm().GetMPIComm();
+  MPI_Comm_dup(world_comm, &adiak_comm);
+  adiak::init(&adiak_comm);
   adiak::user();
   adiak::launchdate();
   adiak::libraries();
@@ -192,25 +202,36 @@ void do_adiak_init()
 }
 void do_adiak_finalize() {
   adiak::fini();
+  MPI_Comm_free(&adiak_comm);
 }
 
-cali::ConfigManager cali_mgr;
-}// namespace
+}  // namespace
+
 void prof_start()
 {
+  if (caliper_initialized) {
+    LBANN_ERROR("Cannot reinitialize Caliper");
+  }
   do_adiak_init();
 
-  // FIXME: Should this be configurable?
-  cali_mgr.add("spot(output=lbann.cali)");
+  auto& arg_parser = global_argument_parser();
+  auto config = arg_parser.get<std::string>(LBANN_OPTION_CALIPER_CONFIG).c_str();
+  cali_mgr.add(config);
+  if (cali_mgr.error()) {
+    LBANN_ERROR("Caliper config parse error: ", cali_mgr.error_msg());
+  }
   cali_mgr.start();
 
   profiling_started = true;
+  caliper_initialized = true;
 }
 void prof_stop()
 {
-  cali_mgr.stop();
-  cali_mgr.flush();
-  do_adiak_finalize();
+  if (caliper_initialized) {
+    cali_mgr.stop();
+    cali_mgr.flush();
+    do_adiak_finalize();
+  }
   profiling_started = false;
 }
 void prof_region_begin(const char* s, int, bool)

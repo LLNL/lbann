@@ -59,6 +59,11 @@ profiler::profiler(bool sync, bool skip_init)
   }
 }
 
+profiler::~profiler()
+{
+  prof_stop();
+}
+
 template <class Archive>
 void profiler::serialize(Archive& ar)
 {

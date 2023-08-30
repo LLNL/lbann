@@ -31,6 +31,7 @@ def list2str(l):
 
 parser = argparse.ArgumentParser()
 lbann.contrib.args.add_scheduler_arguments(parser)
+lbann.contrib.args.add_profiling_arguments(parser)
 parser.add_argument('--job-name',
                     action='store',
                     default='lbann_transformer',
@@ -196,10 +197,6 @@ parser.add_argument('--synthetic',
 parser.add_argument('--progress',
                     action='store_true',
                     help='Print progress bar')
-
-parser.add_argument('--profiling',
-                    action='store_true',
-                    help='Instrument the run for profiling')
 
 parser.add_argument('--dataset-fraction',
                     action='store',

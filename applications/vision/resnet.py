@@ -12,6 +12,7 @@ desc = ('Construct and run ResNet on ImageNet-1K data. '
         'Running the experiment is only supported on LC systems.')
 parser = argparse.ArgumentParser(description=desc)
 lbann.contrib.args.add_scheduler_arguments(parser)
+lbann.contrib.args.add_profiling_arguments(parser)
 parser.add_argument(
     '--job-name', action='store', default='lbann_resnet', type=str,
     help='scheduler job name (default: lbann_resnet)')
@@ -138,6 +139,9 @@ if args.warmup:
     callbacks.append(
         lbann.CallbackLinearGrowthLearningRate(
             target=0.1 * args.mini_batch_size / 256, num_epochs=5))
+profiler = lbann.contrib.args.create_profile_callback(args)
+if profiler is not None:
+    callbacks.append(profiler)
 model = lbann.Model(args.num_epochs,
                     layers=layers,
                     objective_function=obj,
@@ -158,9 +162,10 @@ trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size, random_seed=args.r
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 if args.synthetic:
-    lbann_args = ""
+    lbann_args = []
 else:
-    lbann_args = " --use_data_store --preload_data_store --node_sizes_vary"
+    lbann_args = ['--use_data_store', '--preload_data_store', '--node_sizes_vary']
+lbann_args += lbann.contrib.args.get_profile_args(args)
 lbann.contrib.launcher.run(trainer, model, data_reader, opt,
                            job_name=args.job_name,
                            lbann_args=lbann_args,

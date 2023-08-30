@@ -60,7 +60,6 @@ def construct_cosmoflow_model(parallel_strategy,
             layers=' '.join([preds.name, secrets.name]),
             execution_modes='test'
         ),
-        lbann.CallbackProfiler(skip_init=True),
         lbann.CallbackLinearGrowthLearningRate(target=learning_rate, num_epochs=5),
         lbann.CallbackSetLearningRate(step=32, val=0.25 * learning_rate),
         lbann.CallbackSetLearningRate(step=64, val=0.125 * learning_rate),

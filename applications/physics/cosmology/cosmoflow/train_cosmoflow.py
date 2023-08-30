@@ -89,6 +89,7 @@ if __name__ == "__main__":
             'Running the experiment is only supported on LC systems.')
     parser = argparse.ArgumentParser(description=desc)
     lbann.contrib.args.add_scheduler_arguments(parser)
+    lbann.contrib.args.add_profiling_arguments(parser)
 
     # General arguments
     parser.add_argument(
@@ -191,7 +192,7 @@ if __name__ == "__main__":
             channel_groups=args.channel_groups,
             filter_groups=args.filter_groups,
             depth_groups=args.depth_groups)
-    
+
     model = cosmoflow_model.construct_cosmoflow_model(parallel_strategy=parallel_strategy,
                                                       local_batchnorm=args.local_batchnorm,
                                                       input_width=args.input_width,
@@ -202,6 +203,11 @@ if __name__ == "__main__":
                                                       min_distconv_width=args.min_distconv_width,
                                                       mlperf=args.mlperf,
                                                       transform_input=args.transform_input)
+
+    # Add profiling callback if needed.
+    profiler = lbann.contrib.args.create_profile_callback(args)
+    if profiler is not None:
+        model.callbacks.append(profiler)
 
     # Setup optimizer
     optimizer = lbann.contrib.args.create_optimizer(args)
@@ -237,6 +243,7 @@ if __name__ == "__main__":
         lbann_args = []
     else:
         lbann_args = ['--use_data_store']
+    lbann_args += lbann.contrib.args.get_profile_args(args)
 
     # Run experiment
     kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
