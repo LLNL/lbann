@@ -34,26 +34,9 @@ include:
   - .gitlab/common/common.yml
 
 stages:
-  # - allocate
   - build
   - test
   - cleanup
-
-# Get LC resources.
-# allocate lc resources:
-#   stage: allocate
-#   extends:
-#     - .lassen common
-#     - .lbann-base-vars
-#   variables:
-#     GIT_STRATEGY: none
-#   script:
-#     - echo "== ACQUIRING SLURM RESOURCES =="
-#     - echo "${WITH_WEEKLY:+Running with --weekly}"
-#     - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "120" || echo "90")
-#     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
-#     - salloc --exclusive -N ${LBANN_NNODES} -p pbatch -t ${TEST_TIME} --no-shell -J ${JOB_NAME}
-#   timeout: 6h
 
 # Build LBANN and establish the Spack environment for this pipeline.
 build and install:
@@ -64,12 +47,7 @@ build and install:
   stage: build
   script:
     - echo "== BUILDING LBANN =="
-    # - export BUILD_TASKS=$(($(nproc) + 2))
     - !reference [.setup_spack, script]
-    # - echo "SPACK_REPO=${HOME}/${SPACK_REPO}"
-    # - export GITLAB_SUFFIX=`basename ${CI_BUILDS_DIR}`
-    # - export SPACK_ENV_NAME=${SPACK_ENV_BASE_NAME}-${GITLAB_SUFFIX}
-    # - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - lalloc 1 -W 30 -q pdebug ./scripts/build_lbann.sh -r
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS}
       -e ./scripts/common_spack_packages/ci_spack_packages.sh --
@@ -77,13 +55,8 @@ build and install:
     - export TEST_TASKS_PER_NODE=2
     - export LBANN_NNODES=1
     - export TEST_MPIBIND_FLAG="--mpibind=off"
-    # - export SPACK_ARCH=$(spack arch)
-    # - export SPACK_ARCH_TARGET=$(spack arch -t)
-    # - echo "export SPACK_DEP_ENV_NAME=${SPACK_ENV_NAME}" > spack-ci-env-name.sh
-    # - echo "export SPACK_ARCH=${SPACK_ARCH}" >> spack-ci-env-name.sh
-    # - echo "export SPACK_ARCH_TARGET=${SPACK_ARCH_TARGET}" >> spack-ci-env-name.sh
     - !reference [.setup_lbann, script]
-    - lalloc ${LBANN_NNODES} -W 30 -q pdebug .gitlab/common/run-catch-tests-lsf.sh
+    - lalloc ${LBANN_NNODES} -W 45 -q pdebug .gitlab/common/run-catch-tests-lsf.sh
   timeout: 1h
 
 # Run the Python-based unit tests.
@@ -92,7 +65,7 @@ unit tests:
     - .lassen common
     - .lbann-base-vars
     - .uses spack environment
-    - .uses spack environment nvshmem
+    - .uses nvshmem environment
   stage: test
   dependencies:
     - build and install
@@ -117,7 +90,7 @@ integration tests:
     - .lassen common
     - .lbann-base-vars
     - .uses spack environment
-    - .uses spack environment nvshmem
+    - .uses nvshmem environment
   stage: test
   dependencies:
     - build and install
@@ -166,12 +139,8 @@ remove spack environment:
 
 
 # Load the spack shell integration and load the environment.
-.uses spack environment nvshmem:
+.uses nvshmem environment:
   before_script:
-    # - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    # - source spack-ci-env-name.sh
-    # - spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
-    # - spack load lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
     - export NVSHMEM_IBRC_SUPPORT=1
     - export NVSHMEM_PMIX_SUPPORT="0"
     - export NVSHMEM_LIBFABRIC_SUPPORT=0
