@@ -1,7 +1,9 @@
 #!/bin/sh
 
 # Frontier environment setup
+source $LMOD_PKG/init/sh
 module load amd/5.5.1
+export LIBRARY_PATH="$(which hipcc | xargs dirname)/../lib:$LIBRARY_PATH"
 export CC=`which amdclang`
 export CXX=`which amdclang++`
 export DACE_compiler_extra_cmake_args="-DHIP_CLANG_PATH=${ROCM_PATH}/llvm/bin"
