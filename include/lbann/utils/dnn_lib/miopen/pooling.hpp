@@ -44,6 +44,8 @@ inline size_t get_pooling_ws_size(PoolingDescriptor const& poolingDesc,
                                   TensorDescriptor const& yDesc)
 {
   BASIC_PROF_REGION("miopen:get_pooling_ws_size");
+  if (!poolingDesc) LBANN_ERROR("Pooling desc is null");
+  if (!yDesc) LBANN_ERROR("Pooling tensor desc is null");
   CHECK_MIOPEN(miopenSetPoolingIndexType(poolingDesc, miopenIndexUint32));
   size_t size;
   CHECK_MIOPEN(miopenPoolingGetWorkSpaceSizeV2(poolingDesc, yDesc, &size));
