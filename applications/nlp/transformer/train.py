@@ -226,7 +226,7 @@ def make_batch_script(trainer_params, model_params, script_params, args):
             lbann.CallbackProgressBar()
         )
 
-    profiler = create_profile_callback(args)
+    profiler = lbann.contrib.args.create_profile_callback(args)
     if profiler is not None:
         model.callbacks.append(profiler)
 
