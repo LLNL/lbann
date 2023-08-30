@@ -113,17 +113,17 @@ void pooling_layer<TensorDataType, Layout, Device>::fp_compute_dnn()
 #ifndef LBANN_HAS_DNN_LIB
   LBANN_ERROR("DNN library not detected");
 #else
-  // Initialize GPU workspace
-  El::Matrix<TensorDataType, El::Device::GPU> workspace;
-  size_t workspace_size =
-    dnn_lib::get_pooling_ws_size(m_pooling_dnn_desc,
-                                 m_tensors_dnn_desc.get_activations());
-  workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
-
   using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
   const auto& local_input = this->get_local_prev_activations();
   auto& local_output = this->get_local_activations();
   if (local_input.Height() > 0 && local_input.Width() > 0) {
+    // Initialize GPU workspace
+    El::Matrix<TensorDataType, El::Device::GPU> workspace;
+    size_t workspace_size =
+      dnn_lib::get_pooling_ws_size(m_pooling_dnn_desc,
+                                  m_tensors_dnn_desc.get_activations());
+    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+
     const auto zero = El::TypeTraits<ScalingType>::Zero();
     const auto one = El::TypeTraits<ScalingType>::One();
     dnn_lib::pooling_forward(m_pooling_dnn_desc,
@@ -145,19 +145,18 @@ void pooling_layer<TensorDataType, Layout, Device>::bp_compute_dnn()
 #ifndef LBANN_HAS_DNN_LIB
   LBANN_ERROR("DNN library not detected");
 #else
-  // Initialize GPU workspace
-  El::Matrix<TensorDataType, El::Device::GPU> workspace;
-  size_t workspace_size =
-    dnn_lib::get_pooling_ws_size(m_pooling_dnn_desc,
-                                 m_tensors_dnn_desc.get_activations());
-  workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
-
   using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
   const auto& local_input = this->get_local_prev_activations();
   const auto& local_output = this->get_local_activations();
   const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
   auto& local_gradient_wrt_input = this->get_local_error_signals();
   if (local_input.Height() > 0 && local_input.Width() > 0) {
+    // Initialize GPU workspace
+    El::Matrix<TensorDataType, El::Device::GPU> workspace;
+    size_t workspace_size =
+      dnn_lib::get_pooling_ws_size(m_pooling_dnn_desc,
+                                  m_tensors_dnn_desc.get_activations());
+    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
 
     // Useful constants
     const auto one = El::TypeTraits<ScalingType>::One();
