@@ -77,6 +77,11 @@ namespace lbann {
 // been configured with these tools and access them via Caliper.
 #if defined(LBANN_HAS_CALIPER)
 namespace {
+
+cali::ConfigManager cali_mgr;
+bool caliper_initialized = false;
+MPI_Comm adiak_comm;  // Dedicated Adiak communicator.
+
 std::vector<std::string> split(std::string const str,
                                std::string const regex_str)
 {
@@ -105,9 +110,7 @@ std::string as_lowercase(std::string str)
 void do_adiak_init()
 {
   struct adiak_configuration const cc;
-  // Provide Adiak with a separate communicator to be safe.
   MPI_Comm world_comm = utils::get_current_comm().get_world_comm().GetMPIComm();
-  MPI_Comm adiak_comm;
   MPI_Comm_dup(world_comm, &adiak_comm);
   adiak::init(&adiak_comm);
   adiak::user();
@@ -199,11 +202,11 @@ void do_adiak_init()
 }
 void do_adiak_finalize() {
   adiak::fini();
+  MPI_Comm_free(&adiak_comm);
 }
 
-cali::ConfigManager cali_mgr;
-bool caliper_initialized = false;
-}// namespace
+}  // namespace
+
 void prof_start()
 {
   if (caliper_initialized) {
