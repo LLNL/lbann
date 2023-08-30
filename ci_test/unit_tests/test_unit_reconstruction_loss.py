@@ -7,6 +7,11 @@ import tools
 
 def skeleton_jag_reconstruction_loss(cluster, dir_name,
                                      weekly, data_reader_fraction):
+    if cluster == 'corona':
+      message = f'{os.path.basename(__file__)} is only broken on corona systems'
+      print('Skip - ' + message)
+      pytest.skip(message)
+
     output_file_name = '%s/ci_test/unit_tests/output/jag_reconstruction_loss_output.txt' % (dir_name)
     error_file_name  = '%s/ci_test/unit_tests/error/jag_reconstruction_loss_error.txt' % (dir_name)
     command = tools.get_command(

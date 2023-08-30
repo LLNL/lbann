@@ -294,6 +294,7 @@ set_center_specific_externals()
     local spack_arch_target="$2"
     local spack_arch="$3"
     local yaml="$4"
+    local module_dir="$5"
 
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
@@ -366,22 +367,22 @@ EOF
                 ;;
             "zen3")
 cat <<EOF  >> ${yaml}
-  # compilers:
-  # - compiler:
-  #     spec: rocmcc@5.6.0
-  #     paths:
-  #       cc: cc
-  #       cxx: CC
-  #       f77: ftn
-  #       fc: ftn
-  #     flags: {}
-  #     operating_system: rhel8
-  #     target: any
-  #     modules:
-  #     - PrgEnv-amd
-  #     - amd/5.6.0
-  #     environment: {}
-  #     extra_rpaths: []
+  compilers:
+  - compiler:
+      spec: rocmcc@5.6.0
+      paths:
+        cc: cc
+        cxx: CC
+        f77: ftn
+        fc: ftn
+      flags: {}
+      operating_system: rhel8
+      target: any
+      modules:
+      - PrgEnv-amd
+      - amd/5.6.0
+      environment: {}
+      extra_rpaths: []
   packages:
     all:
       providers:
@@ -586,10 +587,29 @@ EOF
 cat <<EOF >> ${yaml}
   modules:
     default:
+      enable::
+        - lmod
       lmod:
+        all:
+          autoload: direct
         core_compilers:
         - 'cce@13.0.0'
+    lbann_lmod_modules:
+      roots:
+        lmod: ${module_dir}
+      arch_folder: false
+      lmod:
+        all:
+          autoload: direct
 EOF
+    if [[ ${CENTER_COMPILER} ]]; then
+        CORE_COMPILER=$(echo "${CENTER_COMPILER}" | tr -d '%')
+cat <<EOF >> ${yaml}
+        core_compilers:
+        - '${CORE_COMPILER}'
+EOF
+    fi
+
 }
 
 cleanup_clang_compilers()

@@ -628,6 +628,17 @@ void print_lbann_configuration(lbann_comm* comm,
   std::cout << "  MV2_USE_CUDA : " << (env != nullptr ? env : "") << std::endl;
   std::cout << std::endl;
 
+#ifdef LBANN_HAS_DIHYDROGEN
+  std::cout << "DiHydrogen Features:" << std::endl;
+  std::cout << "  DaCe : ";
+#ifdef H2_HAS_DACE
+  std::cout << "enabled" << std::endl;
+#else
+  std::cout << "disabled" << std::endl;
+#endif // H2_HAS_DACE
+  std::cout << std::endl;
+#endif // LBANN_HAS_DIHYDROGEN
+
 #ifdef LBANN_HAS_ALUMINUM
   std::cout << "Aluminum Features:" << std::endl;
   std::cout << "  NCCL : ";

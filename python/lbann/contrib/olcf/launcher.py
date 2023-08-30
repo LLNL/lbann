@@ -105,7 +105,11 @@ def make_batch_script(
         set_environment('MIOPEN_DISABLE_CACHE', '1')
         set_environment('MIOPEN_USER_DB_PATH', '/tmp')
         set_environment('MIOPEN_CUSTOM_CACHE_DIR', '/tmp')
-        prepend_environment_path('LD_LIBRARY_PATH', os.getenv('CRAY_LD_LIBRARY_PATH'))
+        # set_environment('MIOPEN_ENABLE_LOGGING','1')
+        # set_environment('MIOPEN_ENABLE_LOGGING_CMD', '1')
+        # set_environment('MIOPEN_LOG_LEVEL', '6')
+        if os.getenv('CRAY_LD_LIBRARY_PATH') is not None:
+            prepend_environment_path('LD_LIBRARY_PATH', os.getenv('CRAY_LD_LIBRARY_PATH'))
         if os.getenv('ROCM_PATH') is not None:
             prepend_environment_path('LD_LIBRARY_PATH', os.path.join(os.getenv('ROCM_PATH'), 'llvm', 'lib'))
         different_ofi_plugin = os.getenv('LBANN_USE_THIS_OFI_PLUGIN')
