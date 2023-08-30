@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann_config.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/argument_parser.hpp"
 
@@ -265,7 +266,7 @@ void construct_std_options()
   arg_parser.add_option(LBANN_OPTION_CALIPER_CONFIG,
                         {"--caliper_config"},
                         "[STD] Caliper configuration string",
-                        "spot(output=lbann.cali)")
+                        "spot(output=lbann.cali)");
 #endif
 }
 

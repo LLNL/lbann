@@ -105,7 +105,11 @@ std::string as_lowercase(std::string str)
 void do_adiak_init()
 {
   struct adiak_configuration const cc;
-  adiak::init(utils::get_current_comm().get_world_comm().GetMPIComm());
+  // Provide Adiak with a separate communicator to be safe.
+  MPI_Comm world_comm = utils::get_current_comm().get_world_comm().GetMPIComm();
+  MPI_Comm adiak_comm;
+  MPI_Comm_dup(world_comm, &adiak_comm);
+  adiak::init(&adiak_comm);
   adiak::user();
   adiak::launchdate();
   adiak::libraries();
