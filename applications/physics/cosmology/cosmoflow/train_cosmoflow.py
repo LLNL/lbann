@@ -246,7 +246,7 @@ if __name__ == "__main__":
     # Setup DaCe kernels
     environment['DISTCONV_JIT_VERBOSE'] = 1
     application_path=os.path.dirname(__file__)
-    environment['DISTCONV_JIT_CACHEPATH'] = f'{application_path}/DaCe_kernels'
+    environment['DISTCONV_JIT_CACHEPATH'] = f'{application_path}/DaCe_kernels/.dacecache'
 
     if args.synthetic or args.no_datastore:
         lbann_args = []
