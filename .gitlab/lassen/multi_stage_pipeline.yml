@@ -92,7 +92,7 @@ unit tests:
     - .lassen common
     - .lbann-base-vars
     - .uses spack environment
-    - .uses spack environment nvshmem:
+    - .uses spack environment nvshmem
   stage: test
   dependencies:
     - build and install
@@ -117,7 +117,7 @@ integration tests:
     - .lassen common
     - .lbann-base-vars
     - .uses spack environment
-    - .uses spack environment nvshmem:
+    - .uses spack environment nvshmem
   stage: test
   dependencies:
     - build and install
