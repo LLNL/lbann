@@ -619,9 +619,11 @@ void print_lbann_configuration(lbann_comm* comm,
 #else
   std::cout << "NOT detected" << std::endl;
 #endif // HYDROGEN_HAVE_CUB
-  const auto* env = std::getenv("MV2_USE_CUDA");
-  std::cout << "  MV2_USE_CUDA : " << (env != nullptr ? env : "") << std::endl;
-  std::cout << std::endl;
+  {
+    const auto* env = std::getenv("MV2_USE_CUDA");
+    std::cout << "  MV2_USE_CUDA : " << (env != nullptr ? env : "") << std::endl;
+    std::cout << std::endl;
+  }
 
 #ifdef LBANN_HAS_ROCM
   std::cout << "  MIOpen DB Cache : " << std::endl;
@@ -638,6 +640,11 @@ void print_lbann_configuration(lbann_comm* comm,
   std::cout << "  DaCe : ";
 #ifdef H2_HAS_DACE
   std::cout << "enabled" << std::endl;
+  {
+    const auto* env = std::getenv("DISTCONV_JIT_CACHEPATH");
+    std::cout << "  DISTCONV_JIT_CACHEPATH : " << (env != nullptr ? env : "N/A") << std::endl;
+    std::cout << std::endl;
+  }
 #else
   std::cout << "disabled" << std::endl;
 #endif // H2_HAS_DACE
