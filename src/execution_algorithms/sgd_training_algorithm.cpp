@@ -44,6 +44,16 @@
 #include <memory>
 #include <string>
 
+#ifdef LBANN_HAS_CALIPER
+#define LBANN_CALI_LOOP_BEGIN(label, desc) CALI_CXX_MARK_LOOP_BEGIN(label, desc)
+#define LBANN_CALI_LOOP_END(label) CALI_CXX_MARK_LOOP_END(label)
+#define LBANN_CALI_LOOP_ITER(label, id) CALI_CXX_MARK_LOOP_ITERATION(label, id)
+#else
+#define LBANN_CALI_LOOP_BEGIN(...)
+#define LBANN_CALI_LOOP_END(...)
+#define LBANN_CALI_LOOP_ITER(...)
+#endif
+
 namespace lbann {
 
 SGDTrainingAlgorithm::SGDTrainingAlgorithm(
@@ -114,56 +124,61 @@ void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
   do_train_begin_cbs(model, ScopeTimer{train_timer, "train_begin callbacks"});
 
   // Start iterating
-  bool is_start_of_epoch = true;
   c.start_timer();
-  while (!term(c)) {
+  LBANN_CALI_LOOP_BEGIN(train_epoch, "training epoch");
+  for (size_t epoch = 0; !term(c); ++epoch) {
 
-    if (is_start_of_epoch) {
-      // Initialize epoch
-      model.reset_mode(c, execution_mode::training);
-      model.reset_epoch_statistics(execution_mode::training);
-      dc.reset_mode(c);
-      do_epoch_begin_cbs(model,
-                         ScopeTimer{train_timer, "epoch_begin callbacks"});
-      is_start_of_epoch = false;
-    }
+    LBANN_CALI_LOOP_ITER(train_epoch, epoch);
+
+    // Initialize epoch
+    model.reset_mode(c, execution_mode::training);
+    model.reset_epoch_statistics(execution_mode::training);
+    dc.reset_mode(c);
+    do_epoch_begin_cbs(model,
+                       ScopeTimer{train_timer, "epoch_begin callbacks"});
 
     // Train a mini batch. Returns "true" if the data_coordinator
-    // detects the end of an epoch.
-    if (train_mini_batch(c,
-                         model,
-                         dc,
-                         ScopeTimer{train_timer, "train minibatch"})) {
-      // Finalize epoch
-      c.inc_epoch();
-      model.reconcile_weight_values();
-      do_epoch_end_cbs(model, ScopeTimer{train_timer, "epoch_end callbacks"});
+    // detects the end of an epoch. The termination criteria must be
+    // checked every iteration as there may be a batch limit rather
+    // than an epoch limit.
+    LBANN_CALI_LOOP_BEGIN(train_batch, "training minibatch");
+    bool end_of_epoch=false;
+    while (!term(c) && !end_of_epoch) {
+      LBANN_CALI_LOOP_ITER(train_batch, c.get_step());
+      end_of_epoch = train_mini_batch(c,
+                                      model,
+                                      dc,
+                                      ScopeTimer{train_timer, "train minibatch"});
+    }
+    LBANN_CALI_LOOP_END(train_batch);
 
-      // Evaluate on validation set
-      //
-      // FIXME (trb 05/04/2021): Upon further refactor, this should
-      // move out of the main training cycle and become part of an
-      // "evaluation policy" or something of that nature, ideally with
-      // its own context that we needn't know about.
-      if (dc.is_execution_mode_valid(execution_mode::validation)) {
-        evaluate(evaluation_context,
-                 model,
-                 dc,
-                 execution_mode::validation,
-                 EpochTerminationCriteria(num_validation_epochs));
-        ++num_validation_epochs;
+    // Finalize epoch
+    c.inc_epoch();
+    model.reconcile_weight_values();
+    do_epoch_end_cbs(model, ScopeTimer{train_timer, "epoch_end callbacks"});
 
-        // FIXME (trb 06/07/21): The early stopping callback is part
-        // of the evaluation callbacks but it's meant to affect
-        // training. This fixes a bug in which the training context
-        // was meant to stop but was never properly told.
-        c.set_early_stop(evaluation_context.get_early_stop());
-      }
+    // Evaluate on validation set
+    //
+    // FIXME (trb 05/04/2021): Upon further refactor, this should
+    // move out of the main training cycle and become part of an
+    // "evaluation policy" or something of that nature, ideally with
+    // its own context that we needn't know about.
+    if (dc.is_execution_mode_valid(execution_mode::validation)) {
+      evaluate(evaluation_context,
+               model,
+               dc,
+               execution_mode::validation,
+               EpochTerminationCriteria(num_validation_epochs));
+      ++num_validation_epochs;
 
-      // Trigger new epoch stuff next iteration (if there is one).
-      is_start_of_epoch = true;
+      // FIXME (trb 06/07/21): The early stopping callback is part
+      // of the evaluation callbacks but it's meant to affect
+      // training. This fixes a bug in which the training context
+      // was meant to stop but was never properly told.
+      c.set_early_stop(evaluation_context.get_early_stop());
     }
   }
+  LBANN_CALI_LOOP_END(train_epoch);
   c.stop_timer();
 
   // Reset the model back to the training execution context prior to
@@ -183,6 +198,7 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
                                             ScopeTimer timer)
 {
   LBANN_CALIPER_MARK_FUNCTION;
+
   model.reset_mode(c, execution_mode::training);
   dc.reset_mode(c);
   do_batch_begin_cbs(model,
@@ -283,7 +299,9 @@ void SGDTrainingAlgorithm::evaluate(SGDExecutionContext& c,
   do_evaluate_begin_cbs(model,
                         mode,
                         ScopeTimer{eval_timer, "eval_begin callbacks"});
+  LBANN_CALI_LOOP_BEGIN(eval_batch, "evaluation batch");
   while (!term(c)) {
+    LBANN_CALI_LOOP_ITER(eval_batch, c.get_step());
     if (evaluate_mini_batch(c,
                             model,
                             dc,
@@ -291,6 +309,7 @@ void SGDTrainingAlgorithm::evaluate(SGDExecutionContext& c,
                             ScopeTimer{eval_timer, "eval minibatch"}))
       c.inc_epoch();
   }
+  LBANN_CALI_LOOP_END(eval_batch);
   do_evaluate_end_cbs(model,
                       mode,
                       ScopeTimer{eval_timer, "eval_end callbacks"});
