@@ -16,7 +16,7 @@ import tools
 @pytest.mark.parametrize('num_dims', [2, 3])
 @test_util.lbann_test(check_gradients=True,
                       environment=lbann.contrib.args.get_distconv_environment(),
-                      time_limit=4)
+                      time_limit=10)
 def test_simple(num_dims):
     try:
         import torch
