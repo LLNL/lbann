@@ -97,7 +97,8 @@ unit tests:
     - export OMP_NUM_THREADS=10
     - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - cd ci_test/unit_tests
-    - flux proxy ${FLUX_JOB_ID} lbann_pfe.sh -m pytest -s -vv --durations=0 --junitxml=results.xml
+    - echo "Running unit tests with file pattern: ${TEST_FLAG}"
+    - flux proxy ${FLUX_JOB_ID} lbann_pfe.sh -m pytest -s -vv --durations=0 --junitxml=results.xml ${TEST_FLAG}
   artifacts:
     when: always
     paths:
@@ -121,8 +122,9 @@ integration tests:
     - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - cd ci_test/integration_tests
     - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
-    - echo "python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml"
-    - flux proxy ${FLUX_JOB_ID} lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml
+    - echo "Running integration tests with file pattern: ${TEST_FLAG}"
+    - echo "python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml ${TEST_FLAG}"
+    - flux proxy ${FLUX_JOB_ID} lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml ${TEST_FLAG}
   artifacts:
     when: always
     paths:
