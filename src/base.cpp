@@ -243,6 +243,10 @@ auto lbann::initialize(int& argc, char**& argv) -> world_comm_ptr
   hwloc_topology_destroy(topo);
 #endif
 
+#ifdef LBANN_HAS_CALIPER
+  initialize_caliper();
+#endif
+
 #ifdef LBANN_HAS_SHMEM
   // Initialize SHMEM
   if (arg_parser.get<bool>(LBANN_OPTION_INIT_SHMEM)) {
@@ -288,6 +292,10 @@ void lbann::finalize(lbann_comm* comm)
 #ifdef LBANN_HAS_SHMEM
   shmem_finalize();
 #endif // LBANN_HAS_SHMEM
+#ifdef LBANN_HAS_CALIPER
+  finalize_caliper();
+#endif
+
   if (comm != nullptr) {
     delete comm;
   }

@@ -137,7 +137,6 @@ void do_adiak_init()
   if (tsize >= 4) {
     // pickup path version <compiler-version-hash|date>/mpispec/bin/exec
     std::string const path_version = tokens[tsize - 4];
-    std::cout << "Compiler path version: " << path_version << "\n";
     auto const s = split(path_version, "-");
     if (s.size() >= 2) {
       std::string const path_version_short = s[0] + "-" + s[1];
@@ -214,8 +213,8 @@ void initialize_caliper()
   }
   do_adiak_init();
 
-  auto& arg_parser = global_argument_parser();
-  auto config =
+  auto const& arg_parser = global_argument_parser();
+  auto const config =
     arg_parser.get<std::string>(LBANN_OPTION_CALIPER_CONFIG).c_str();
   cali_mgr.add(config);
   if (cali_mgr.error()) {
