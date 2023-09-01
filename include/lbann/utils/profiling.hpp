@@ -28,7 +28,9 @@
 #ifndef LBANN_UTILS_PROFILING_HPP
 #define LBANN_UTILS_PROFILING_HPP
 
-#ifdef LBANN_HAS_CALIPER
+#include <lbann_config.hpp>
+
+#if defined(LBANN_HAS_CALIPER)
 #include <caliper/cali.h>
 #include <caliper/cali_macros.h>
 
@@ -59,6 +61,12 @@
 #endif
 
 namespace lbann {
+
+#if defined(LBANN_HAS_CALIPER)
+void initialize_caliper();
+void finalize_caliper();
+bool is_caliper_initialized() noexcept;
+#endif
 
 // Colors to use for profiling.
 constexpr int num_prof_colors = 20;
@@ -91,11 +99,6 @@ private:
 
 // Using a macro so it's easy to remove if needed.
 #define BASIC_PROF_REGION(NAME) ProfRegion _(NAME)
-
-#ifdef LBANN_HAS_CALIPER
-void initialize_caliper();
-void finalize_caliper();
-#endif
 
 } // namespace lbann
 #endif // LBANN_UTILS_PROFILING_HPP

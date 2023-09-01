@@ -27,6 +27,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/profiling.hpp"
+
 #include "lbann/base.hpp"
 #include "lbann/utils/exception.hpp"
 // For get_current_comm, which is here for some reason.
@@ -49,12 +50,13 @@
 #include <roctracer/roctx.h>
 #endif
 
-#ifdef LBANN_HAS_CALIPER
+#if defined(LBANN_HAS_CALIPER)
 #include <adiak.hpp>
 #include <caliper/cali-manager.h>
 #include <caliper/cali.h>
 
 #include "adiak_config.hpp"
+
 #include <algorithm>
 #include <regex>
 #include <string>
@@ -68,8 +70,6 @@
 namespace {
 bool profiling_started = false;
 }
-
-namespace lbann {
 
 // If Caliper is available, it is used unilaterally. If it were
 // composed with other annotation APIs (nvtx, roctx, etc), one could
@@ -108,8 +108,9 @@ std::string as_lowercase(std::string str)
 // the working directory as a general artifact of the run.
 void do_adiak_init()
 {
-  struct adiak_configuration const cc;
-  MPI_Comm world_comm = utils::get_current_comm().get_world_comm().GetMPIComm();
+  struct lbann::adiak_configuration const cc;
+  MPI_Comm world_comm =
+    lbann::utils::get_current_comm().get_world_comm().GetMPIComm();
   MPI_Comm_dup(world_comm, &adiak_comm);
   adiak::init(&adiak_comm);
   adiak::user();
@@ -218,7 +219,7 @@ static bool check_env_set_and_nonempty(char const* env_var)
 //     "--caliper_config".
 //   - if "--caliper", setup with "--caliper_config".
 //   - Otherwise, do nothing.
-void initialize_caliper()
+void lbann::initialize_caliper()
 {
   auto const& arg_parser = global_argument_parser();
   bool const cali_config_from_env = check_env_set_and_nonempty("CALI_CONFIG");
@@ -245,7 +246,7 @@ void initialize_caliper()
   caliper_initialized = true;
 }
 
-void finalize_caliper()
+void lbann::finalize_caliper()
 {
   if (caliper_initialized) {
     cali_mgr.stop();
@@ -254,22 +255,12 @@ void finalize_caliper()
   }
 }
 
-void prof_start() { profiling_started = true; }
-void prof_stop() { profiling_started = false; }
+bool lbann::is_caliper_initialized() noexcept { return caliper_initialized; }
+#endif // LBANN_HAS_CALIPER
 
-void prof_region_begin(const char* s, int, bool)
-{
-  if (!profiling_started)
-    return;
-  cali_begin_region(s);
-}
-void prof_region_end(const char* s, bool)
-{
-  if (!profiling_started)
-    return;
-  cali_end_region(s);
-}
-#elif defined(LBANN_SCOREP)
+namespace lbann {
+
+#if defined(LBANN_SCOREP)
 void prof_start()
 {
   profiling_started = true;
