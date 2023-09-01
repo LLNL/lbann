@@ -44,11 +44,18 @@
 #define LBANN_CALIPER_MARK_END(x) \
   CALI_MARK_END(x)
 
+#define LBANN_CALIPER_LOOP_BEGIN(label, desc) CALI_CXX_MARK_LOOP_BEGIN(label, desc)
+#define LBANN_CALIPER_LOOP_END(label) CALI_CXX_MARK_LOOP_END(label)
+#define LBANN_CALIPER_LOOP_ITER(label, id) CALI_CXX_MARK_LOOP_ITERATION(label, id)
+
 #else
 #define LBANN_CALIPER_MARK_SCOPE(x) ((void)0)
 #define LBANN_CALIPER_MARK_FUNCTION ((void)0)
 #define LBANN_CALIPER_MARK_BEGIN(x) ((void)0)
 #define LBANN_CALIPER_MARK_END(x) ((void)0)
+#define LBANN_CALIPER_LOOP_BEGIN(...) ((void)0)
+#define LBANN_CALIPER_LOOP_END(...) ((void)0)
+#define LBANN_CALIPER_LOOP_ITER(...) ((void)0)
 #endif
 
 namespace lbann {
@@ -84,6 +91,11 @@ private:
 
 // Using a macro so it's easy to remove if needed.
 #define BASIC_PROF_REGION(NAME) ProfRegion _(NAME)
+
+#ifdef LBANN_HAS_CALIPER
+void initialize_caliper();
+void finalize_caliper();
+#endif
 
 } // namespace lbann
 #endif // LBANN_UTILS_PROFILING_HPP

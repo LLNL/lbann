@@ -80,11 +80,6 @@ void profiler::write_specific_proto(lbann_data::Callback& proto) const
   msg->set_skip_init(m_skip_init);
 }
 
-// Note: we don't add "counting" annotations with caliper. Caliper
-// prefers to have its own loop annotation, tracking the iteration
-// count separately. This is not supported in our profiling API. So we
-// annotate directly in the SGD algorithm.
-
 void profiler::on_epoch_begin(model* m)
 {
   const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
@@ -92,92 +87,72 @@ void profiler::on_epoch_begin(model* m)
   if (m_skip_init && c.get_epoch() == 1) {
     prof_start();
   }
-#ifndef LBANN_HAS_CALIPER
   prof_region_begin(("epoch " + std::to_string(c.get_epoch())).c_str(),
                     prof_colors[0],
                     m_sync);
-#endif
 }
 
 void profiler::on_epoch_end(model* m)
 {
-#ifndef LBANN_HAS_CALIPER
   const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   prof_region_end(("epoch " + std::to_string(c.get_epoch())).c_str(), m_sync);
-#endif
 }
 
 void profiler::on_validation_begin(model* m)
 {
-#ifndef LBANN_HAS_CALIPER
   const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   prof_region_begin(("val " + std::to_string(c.get_epoch())).c_str(),
                     prof_colors[0],
                     m_sync);
-#endif
 }
 
 void profiler::on_validation_end(model* m)
 {
-#ifndef LBANN_HAS_CALIPER
   const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   prof_region_end(("val " + std::to_string(c.get_epoch())).c_str(), m_sync);
-#endif
 }
 
 void profiler::on_test_begin(model* m)
 {
-#ifndef LBANN_HAS_CALIPER
   const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   prof_region_begin(("test " + std::to_string(c.get_epoch())).c_str(),
                     prof_colors[0],
                     m_sync);
-#endif
 }
 
 void profiler::on_test_end(model* m)
 {
-#ifndef LBANN_HAS_CALIPER
   const auto& c = static_cast<SGDExecutionContext&>(m->get_execution_context());
   prof_region_end(("test " + std::to_string(c.get_epoch())).c_str(), m_sync);
-#endif
 }
 
 void profiler::on_batch_begin(model* m)
 {
-#ifndef LBANN_HAS_CALIPER
   const auto& c = m->get_execution_context();
   prof_region_begin(("batch " + std::to_string(c.get_step())).c_str(),
                     prof_colors[1],
                     m_sync);
-#endif
 }
 
 void profiler::on_batch_end(model* m)
 {
-#ifndef LBANN_HAS_CALIPER
   const auto& c = m->get_execution_context();
   prof_region_end(("batch " + std::to_string(c.get_step())).c_str(), m_sync);
-#endif
 }
 
 void profiler::on_batch_evaluate_begin(model* m)
 {
-#ifndef LBANN_HAS_CALIPER
   const auto& c = m->get_execution_context();
   prof_region_begin(("batch eval " + std::to_string(c.get_step())).c_str(),
                     prof_colors[1],
                     m_sync);
-#endif
 }
 
 void profiler::on_batch_evaluate_end(model* m)
 {
-#ifndef LBANN_HAS_CALIPER
   const auto& c = m->get_execution_context();
   prof_region_end(("batch eval " + std::to_string(c.get_step())).c_str(),
                   m_sync);
-#endif
 }
 
 void profiler::on_forward_prop_begin(model* m)

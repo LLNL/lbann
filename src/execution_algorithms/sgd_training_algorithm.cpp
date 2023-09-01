@@ -44,16 +44,6 @@
 #include <memory>
 #include <string>
 
-#ifdef LBANN_HAS_CALIPER
-#define LBANN_CALI_LOOP_BEGIN(label, desc) CALI_CXX_MARK_LOOP_BEGIN(label, desc)
-#define LBANN_CALI_LOOP_END(label) CALI_CXX_MARK_LOOP_END(label)
-#define LBANN_CALI_LOOP_ITER(label, id) CALI_CXX_MARK_LOOP_ITERATION(label, id)
-#else
-#define LBANN_CALI_LOOP_BEGIN(...)
-#define LBANN_CALI_LOOP_END(...)
-#define LBANN_CALI_LOOP_ITER(...)
-#endif
-
 namespace lbann {
 
 SGDTrainingAlgorithm::SGDTrainingAlgorithm(
@@ -125,32 +115,32 @@ void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
 
   // Start iterating
   c.start_timer();
-  LBANN_CALI_LOOP_BEGIN(train_epoch, "training epoch");
+  LBANN_CALIPER_LOOP_BEGIN(train_epoch, "train_epoch");
   for (size_t epoch = 0; !term(c); ++epoch) {
 
-    LBANN_CALI_LOOP_ITER(train_epoch, epoch);
+    LBANN_CALIPER_LOOP_ITER(train_epoch, epoch);
 
     // Initialize epoch
     model.reset_mode(c, execution_mode::training);
     model.reset_epoch_statistics(execution_mode::training);
     dc.reset_mode(c);
-    do_epoch_begin_cbs(model,
-                       ScopeTimer{train_timer, "epoch_begin callbacks"});
+    do_epoch_begin_cbs(model, ScopeTimer{train_timer, "epoch_begin callbacks"});
 
     // Train a mini batch. Returns "true" if the data_coordinator
     // detects the end of an epoch. The termination criteria must be
     // checked every iteration as there may be a batch limit rather
     // than an epoch limit.
-    LBANN_CALI_LOOP_BEGIN(train_batch, "training minibatch");
-    bool end_of_epoch=false;
+    LBANN_CALIPER_LOOP_BEGIN(train_batch, "train_minibatch");
+    bool end_of_epoch = false;
     while (!term(c) && !end_of_epoch) {
-      LBANN_CALI_LOOP_ITER(train_batch, c.get_step());
-      end_of_epoch = train_mini_batch(c,
-                                      model,
-                                      dc,
-                                      ScopeTimer{train_timer, "train minibatch"});
+      LBANN_CALIPER_LOOP_ITER(train_batch, c.get_step());
+      end_of_epoch =
+        train_mini_batch(c,
+                         model,
+                         dc,
+                         ScopeTimer{train_timer, "train minibatch"});
     }
-    LBANN_CALI_LOOP_END(train_batch);
+    LBANN_CALIPER_LOOP_END(train_batch);
 
     // Finalize epoch
     c.inc_epoch();
@@ -178,7 +168,7 @@ void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
       c.set_early_stop(evaluation_context.get_early_stop());
     }
   }
-  LBANN_CALI_LOOP_END(train_epoch);
+  LBANN_CALIPER_LOOP_END(train_epoch);
   c.stop_timer();
 
   // Reset the model back to the training execution context prior to
@@ -208,7 +198,7 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
   bool finished = false;
 
 #ifdef LBANN_HAS_GPU
-      m_data_prefetch_sync_event.synchronize();
+  m_data_prefetch_sync_event.synchronize();
 #endif // LBANN_HAS_GPU
 
   dc.fetch_data(execution_mode::training);
@@ -227,7 +217,8 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
       }
 
 #ifdef LBANN_HAS_GPU
-      m_data_prefetch_sync_event.record(El::SyncInfo<El::Device::GPU>{}.Stream());
+      m_data_prefetch_sync_event.record(
+        El::SyncInfo<El::Device::GPU>{}.Stream());
 #endif // LBANN_HAS_GPU
 
       // Result is not needed until the end of the mini-batch.
@@ -269,6 +260,22 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
   return finished;
 }
 
+static char const* loop_label(execution_mode mode)
+{
+  switch (mode) {
+  case execution_mode::validation:
+    return "validation_batch";
+  case execution_mode::testing:
+    return "testing_batch";
+  case execution_mode::prediction:
+    return "prediction_batch";
+  case execution_mode::tournament:
+    return "tournament_batch";
+  default:
+    return "unknown_evaluation_batch";
+  }
+}
+
 void SGDTrainingAlgorithm::evaluate(SGDExecutionContext& c,
                                     model& model,
                                     data_coordinator& dc,
@@ -299,9 +306,9 @@ void SGDTrainingAlgorithm::evaluate(SGDExecutionContext& c,
   do_evaluate_begin_cbs(model,
                         mode,
                         ScopeTimer{eval_timer, "eval_begin callbacks"});
-  LBANN_CALI_LOOP_BEGIN(eval_batch, "evaluation batch");
+  LBANN_CALIPER_LOOP_BEGIN(eval_batch, loop_label(mode));
   while (!term(c)) {
-    LBANN_CALI_LOOP_ITER(eval_batch, c.get_step());
+    LBANN_CALIPER_LOOP_ITER(eval_batch, c.get_step());
     if (evaluate_mini_batch(c,
                             model,
                             dc,
@@ -309,7 +316,7 @@ void SGDTrainingAlgorithm::evaluate(SGDExecutionContext& c,
                             ScopeTimer{eval_timer, "eval minibatch"}))
       c.inc_epoch();
   }
-  LBANN_CALI_LOOP_END(eval_batch);
+  LBANN_CALIPER_LOOP_END(eval_batch);
   do_evaluate_end_cbs(model,
                       mode,
                       ScopeTimer{eval_timer, "eval_end callbacks"});

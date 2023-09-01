@@ -30,8 +30,8 @@
 #include "lbann/base.hpp"
 #include "lbann/utils/exception.hpp"
 // For get_current_comm, which is here for some reason.
-#include "lbann/utils/serialize.hpp"
 #include "lbann/utils/options.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #if defined(LBANN_SCOREP)
 #include <scorep/SCOREP_User.h>
@@ -51,8 +51,8 @@
 
 #ifdef LBANN_HAS_CALIPER
 #include <adiak.hpp>
-#include <caliper/cali.h>
 #include <caliper/cali-manager.h>
+#include <caliper/cali.h>
 
 #include "adiak_config.hpp"
 #include <algorithm>
@@ -80,7 +80,7 @@ namespace {
 
 cali::ConfigManager cali_mgr;
 bool caliper_initialized = false;
-MPI_Comm adiak_comm;  // Dedicated Adiak communicator.
+MPI_Comm adiak_comm; // Dedicated Adiak communicator.
 
 std::vector<std::string> split(std::string const str,
                                std::string const regex_str)
@@ -94,10 +94,9 @@ std::vector<std::string> split(std::string const str,
 
 std::string as_lowercase(std::string str)
 {
-  std::transform(cbegin(str),
-                 cend(str),
-                 begin(str),
-                 [](unsigned char c) { return ::tolower(c); });
+  std::transform(cbegin(str), cend(str), begin(str), [](unsigned char c) {
+    return ::tolower(c);
+  });
   return str;
 }
 
@@ -200,14 +199,15 @@ void do_adiak_init()
   adiak::value("omp_max_threads", omp_get_max_threads());
 #endif
 }
-void do_adiak_finalize() {
+void do_adiak_finalize()
+{
   adiak::fini();
   MPI_Comm_free(&adiak_comm);
 }
 
-}  // namespace
+} // namespace
 
-void prof_start()
+void initialize_caliper()
 {
   if (caliper_initialized) {
     LBANN_ERROR("Cannot reinitialize Caliper");
@@ -215,33 +215,38 @@ void prof_start()
   do_adiak_init();
 
   auto& arg_parser = global_argument_parser();
-  auto config = arg_parser.get<std::string>(LBANN_OPTION_CALIPER_CONFIG).c_str();
+  auto config =
+    arg_parser.get<std::string>(LBANN_OPTION_CALIPER_CONFIG).c_str();
   cali_mgr.add(config);
   if (cali_mgr.error()) {
     LBANN_ERROR("Caliper config parse error: ", cali_mgr.error_msg());
   }
   cali_mgr.start();
-
-  profiling_started = true;
   caliper_initialized = true;
 }
-void prof_stop()
+
+void finalize_caliper()
 {
   if (caliper_initialized) {
     cali_mgr.stop();
     cali_mgr.flush();
     do_adiak_finalize();
   }
-  profiling_started = false;
 }
+
+void prof_start() { profiling_started = true; }
+void prof_stop() { profiling_started = false; }
+
 void prof_region_begin(const char* s, int, bool)
 {
-  if (!profiling_started) return;
+  if (!profiling_started)
+    return;
   cali_begin_region(s);
 }
 void prof_region_end(const char* s, bool)
 {
-  if (!profiling_started) return;
+  if (!profiling_started)
+    return;
   cali_end_region(s);
 }
 #elif defined(LBANN_SCOREP)
