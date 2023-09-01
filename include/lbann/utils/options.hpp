@@ -96,6 +96,7 @@ namespace lbann {
 #define LBANN_OPTION_NUM_SUBGRIDS_BLOCK_ORDER                                  \
   "Divide each trainer into equally-sized sub-grids with blocked ordering"
 #ifdef LBANN_HAS_CALIPER
+#define LBANN_OPTION_USE_CALIPER "use caliper"
 #define LBANN_OPTION_CALIPER_CONFIG "caliper_config"
 #endif
 

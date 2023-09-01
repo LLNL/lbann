@@ -263,6 +263,9 @@ void construct_std_options()
                         "sub-grids with blocked ordering",
                         0);
 #ifdef LBANN_HAS_CALIPER
+  arg_parser.add_flag(LBANN_OPTION_USE_CALIPER,
+                      {"--caliper"},
+                      "[STD] Enable caliper.");
   arg_parser.add_option(LBANN_OPTION_CALIPER_CONFIG,
                         {"--caliper_config"},
                         "[STD] Caliper configuration string",

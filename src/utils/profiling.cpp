@@ -206,19 +206,40 @@ void do_adiak_finalize()
 
 } // namespace
 
+static bool check_env_set_and_nonempty(char const* env_var)
+{
+  auto const val = std::getenv(env_var);
+  return val && std::strlen(val) > 0UL;
+}
+
+// The rules for caliper:
+//
+//   - If CALI_CONFIG is set and nonempty, initialize caliper but ignore
+//     "--caliper_config".
+//   - if "--caliper", setup with "--caliper_config".
+//   - Otherwise, do nothing.
 void initialize_caliper()
 {
+  auto const& arg_parser = global_argument_parser();
+  bool const cali_config_from_env = check_env_set_and_nonempty("CALI_CONFIG");
+  bool const use_caliper =
+    cali_config_from_env || arg_parser.get<bool>(LBANN_OPTION_USE_CALIPER);
+
+  if (!use_caliper)
+    return;
+
   if (caliper_initialized) {
     LBANN_ERROR("Cannot reinitialize Caliper");
   }
   do_adiak_init();
 
-  auto const& arg_parser = global_argument_parser();
-  auto const config =
-    arg_parser.get<std::string>(LBANN_OPTION_CALIPER_CONFIG).c_str();
-  cali_mgr.add(config);
-  if (cali_mgr.error()) {
-    LBANN_ERROR("Caliper config parse error: ", cali_mgr.error_msg());
+  if (!cali_config_from_env) {
+    auto const config =
+      arg_parser.get<std::string>(LBANN_OPTION_CALIPER_CONFIG).c_str();
+    cali_mgr.add(config);
+    if (cali_mgr.error()) {
+      LBANN_ERROR("Caliper config parse error: ", cali_mgr.error_msg());
+    }
   }
   cali_mgr.start();
   caliper_initialized = true;
