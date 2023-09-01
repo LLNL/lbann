@@ -80,6 +80,7 @@ def get_distconv_environment(parallel_io=False, num_io_partitions=1, init_nvshme
         num_io_partitions (int):
             The number of processes to read a single sample.
     """
+    # TODO: Use the default halo exchange and shuffle method. See https://github.com/LLNL/lbann/issues/1659
     environment = {
         'DISTCONV_WS_CAPACITY_FACTOR': 0.8,
         'LBANN_DISTCONV_HALO_EXCHANGE': 'AL',
