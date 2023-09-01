@@ -112,6 +112,9 @@ integration tests:
   stage: test
   dependencies:
     - build and install
+  rules:
+    - if: $TEST_FLAGS =~ /^distconv/
+      when: never
   script:
     - echo "== RUNNING PYTHON-BASED INTEGRATION TESTS =="
     - echo "Testing $(which lbann)"
