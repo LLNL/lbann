@@ -20,7 +20,7 @@ def f_invtransform(y,scale=4.0): ### Transform to original space
                           lbann.SafeDivide(
                           lbann.Add(lbann.Constant(value=1.0, hint_layer=y),lbann.Identity(y)),
                           lbann.Subtract(lbann.Constant(value=1.0, hint_layer=y),lbann.Identity(y))),
-                          scaling_factors=str(scale))
+                          scaling_factors=scale)
 
     return inv_transform
 
