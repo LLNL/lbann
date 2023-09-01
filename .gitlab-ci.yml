@@ -119,6 +119,7 @@ tioga distconv testing:
     SPACK_SPECS: "+rocm +distconv"
     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
+    TEST_FLAG: "test_*_distconv.py"
   trigger:
     strategy: depend
     include: .gitlab/tioga/pipeline.yml
