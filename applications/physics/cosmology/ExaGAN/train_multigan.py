@@ -204,6 +204,7 @@ def construct_model(args):
     callbacks.append(lbann.CallbackPrint())
     callbacks.append(lbann.CallbackTimer())
     callbacks.append(lbann.CallbackGPUMemoryUsage())
+    callbacks.append(lbann.CallbackProgressBar())
     if args.dump_outputs:
       callbacks.append(lbann.CallbackDumpOutputs(batch_interval=600,
                        execution_modes='validation',
