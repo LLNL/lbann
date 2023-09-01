@@ -8,7 +8,6 @@ import lbann
 import lbann.core.optimizer
 
 
-
 def add_scheduler_arguments(parser):
     """Add command-line arguments for common scheduler settings.
 
@@ -170,8 +169,13 @@ def add_profiling_arguments(parser: argparse.ArgumentParser) -> None:
     """Add command-line arguments for common profiler settings within
     LBANN.
 
-    Adds the following options: `--profile`, `--profile-init`, and
-    `--caliper-config`.
+    Adds the following options: `--profile`, `--profile-init`,
+    `--caliper` and `--caliper-config`.
+
+    `--caliper-config` implies `--caliper`. `--caliper` without a
+    `--caliper-config` will use the default configuration in LBANN.
+    These options will only have an effect if LBANN has been built
+    with Caliper support.
 
     The caller is responsible for using them.
 
@@ -187,6 +191,8 @@ def add_profiling_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         '--profile-init', action='store_true', default=False,
         help='enable profiling initialization')
+    parser.add_argument('--caliper', action='store_true', default=False,
+                        help='enable Caliper')
     parser.add_argument(
         '--caliper-config', action='store', default=None, type=str,
         help='Configuration string for Caliper')
@@ -235,11 +241,15 @@ def get_profile_args(args: argparse.Namespace) -> list[str]:
 
     """
     try:
+        caliper = args.caliper
         caliper_config = args.caliper_config
     except AttributeError:
         raise ValueError('passed arguments have not been processed by '
                          '`add_profiling_arguments`')
 
-    if caliper_config:
-        return ['--caliper_config', f'"{caliper_config}"']
+    if lbann.has_feature("CALIPER"):
+        if caliper_config:
+            return ['--caliper', '--caliper_config', f'"{caliper_config}"']
+        if caliper:
+            return ['--caliper']
     return []
