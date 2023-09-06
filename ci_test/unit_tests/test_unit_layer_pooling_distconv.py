@@ -315,8 +315,8 @@ def construct_data_reader(lbann):
 
 environment=lbann.contrib.args.get_distconv_environment()
 system = system()
-if system in ('tioga', 'rzvernal'):
-    if os.getlogin() == 'lbannusr':
+if system in ('tioga', 'rzvernal', 'corona'):
+    if os.environ.get('USER') == 'lbannusr':
         if os.path.isdir('/p/vast1/lbannusr/MIOpen_db_cache'):
             environment['MIOPEN_USER_DB_PATH'] = '/p/vast1/lbannusr/MIOpen_db_cache'
             environment['MIOPEN_CUSTOM_CACHE_DIR'] ='/p/vast1/lbannusr/MIOpen_db_cache'
