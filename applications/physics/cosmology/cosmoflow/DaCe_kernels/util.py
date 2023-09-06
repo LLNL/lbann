@@ -129,15 +129,45 @@ def conv_inputs():
 
     return x, w, y
 
+
+def conv_bwddata_inputs():
+    # Buffers can stay flat
+    x = np.fromfile('in_dx.bin', dtype=np.float32)
+    w = np.fromfile('inw.bin', dtype=np.float32)
+    y = np.fromfile('in_dy.bin', dtype=np.float32)
+
+    return x, w, y
+
+
+def conv_bwdfilt_inputs():
+    # Buffers can stay flat
+    x = np.fromfile('in_x.bin', dtype=np.float32)
+    w = np.fromfile('in_dw.bin', dtype=np.float32)
+    y = np.fromfile('in_dy.bin', dtype=np.float32)
+
+    return x, w, y
+
+
 def _verify(output, reference):
-    # print('Output   :', output)
-    # print('Reference:', reference)
+    print('Output   :', output)
+    print('Reference:', reference)
 
     print('Difference:')
     diff = reference - output
     print('  L2  :', np.linalg.norm(diff) / diff.size)
     print('  Linf:', np.max(diff))
 
+
 def verify_fwd(y):
     ref_y = np.fromfile('out.bin', dtype=np.float32)
     _verify(y, ref_y)
+
+
+def verify_bwddata(dx):
+    ref_dx = np.fromfile('out_dx.bin', dtype=np.float32)
+    _verify(dx, ref_dx)
+
+
+def verify_bwdfilt(dw):
+    ref_dw = np.fromfile('out_dw.bin', dtype=np.float32)
+    _verify(dw, ref_dw)
