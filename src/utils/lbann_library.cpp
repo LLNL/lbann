@@ -628,6 +628,14 @@ void print_lbann_configuration(lbann_comm* comm,
   std::cout << "  MV2_USE_CUDA : " << (env != nullptr ? env : "") << std::endl;
   std::cout << std::endl;
 
+#ifdef LBANN_HAS_ROCM
+  std::cout << "  MIOpen DB Cache : " << std::endl;
+  const auto* env_db = std::getenv("MIOPEN_USER_DB_PATH");
+  std::cout << "    MIOPEN_USER_DB_PATH : " << (env_db != nullptr ? env_db : "") << std::endl;
+  const auto* env_cache = std::getenv("MIOPEN_CUSTOM_CACHE_DIR");
+  std::cout << "    MIOPEN_CUSTOM_CACHE_DIR : " << (env_cache != nullptr ? env_cache : "") << std::endl;
+#endif // LBANN_HAS_ROCM
+
 #ifdef LBANN_HAS_DIHYDROGEN
   std::cout << "DiHydrogen Features:" << std::endl;
   std::cout << "  DaCe : ";

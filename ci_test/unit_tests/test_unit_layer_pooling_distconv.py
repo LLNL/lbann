@@ -7,6 +7,7 @@ import sys
 import numpy as np
 import pytest
 import lbann.contrib.args
+from lbann.contrib.lc.systems import *
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -109,7 +110,7 @@ def setup_experiment(lbann, weekly):
         message = f'{os.path.basename(__file__)} requires DISTCONV'
         print('Skip - ' + message)
         pytest.skip(message)
-    
+
     mini_batch_size = num_samples() // 2
     trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model(lbann)
@@ -312,10 +313,23 @@ def construct_data_reader(lbann):
 # Setup PyTest
 # ==============================================
 
+environment=lbann.contrib.args.get_distconv_environment()
+system = system()
+if system in ('tioga', 'rzvernal'):
+    if os.getlogin() == 'lbannusr':
+        if os.path.isdir('/p/vast1/lbannusr/MIOpen_db_cache'):
+            environment['MIOPEN_USER_DB_PATH'] = '/p/vast1/lbannusr/MIOpen_db_cache'
+            environment['MIOPEN_CUSTOM_CACHE_DIR'] ='/p/vast1/lbannusr/MIOpen_db_cache'
+        else:
+            print('CI run is unable to find MIOpen DB cache directory')
+    elif os.path.isdir('/p/vast1/lbann/MIOpen_db_cache'):
+        environment['MIOPEN_USER_DB_PATH'] = '/p/vast1/lbann/MIOpen_db_cache'
+        environment['MIOPEN_CUSTOM_CACHE_DIR'] ='/p/vast1/lbann/MIOpen_db_cache'
+
 # Create test functions that can interact with PyTest
 # Note: Create test name by removing ".py" from file name
 _test_name = os.path.splitext(os.path.basename(current_file))[0]
 for _test_func in tools.create_tests(setup_experiment, _test_name,
-                                     environment=lbann.contrib.args.get_distconv_environment(),
-                                     time_limit=10):
+                                     environment=environment,
+                                     time_limit=15):
     globals()[_test_func.__name__] = _test_func
