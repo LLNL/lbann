@@ -704,6 +704,8 @@ void Layer::remove_as_gradient_source()
 
 void Layer::back_prop()
 {
+  LBANN_CALIPER_MARK_SCOPE(("bp " + this->get_name()).c_str());
+
   allocate_new_gradients_();
   back_prop_impl_();
   propagate_error_signals_to_parents_();

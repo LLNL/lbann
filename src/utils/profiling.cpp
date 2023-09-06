@@ -27,11 +27,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/profiling.hpp"
+
 #include "lbann/base.hpp"
 #include "lbann/utils/exception.hpp"
 // For get_current_comm, which is here for some reason.
-#include "lbann/utils/serialize.hpp"
 #include "lbann/utils/options.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #if defined(LBANN_SCOREP)
 #include <scorep/SCOREP_User.h>
@@ -49,12 +50,13 @@
 #include <roctracer/roctx.h>
 #endif
 
-#ifdef LBANN_HAS_CALIPER
+#if defined(LBANN_HAS_CALIPER)
 #include <adiak.hpp>
-#include <caliper/cali.h>
 #include <caliper/cali-manager.h>
+#include <caliper/cali.h>
 
 #include "adiak_config.hpp"
+
 #include <algorithm>
 #include <regex>
 #include <string>
@@ -69,8 +71,6 @@ namespace {
 bool profiling_started = false;
 }
 
-namespace lbann {
-
 // If Caliper is available, it is used unilaterally. If it were
 // composed with other annotation APIs (nvtx, roctx, etc), one could
 // end up with double marked regions. Instead, ensure that Caliper has
@@ -80,7 +80,7 @@ namespace {
 
 cali::ConfigManager cali_mgr;
 bool caliper_initialized = false;
-MPI_Comm adiak_comm;  // Dedicated Adiak communicator.
+MPI_Comm adiak_comm; // Dedicated Adiak communicator.
 
 std::vector<std::string> split(std::string const str,
                                std::string const regex_str)
@@ -94,10 +94,9 @@ std::vector<std::string> split(std::string const str,
 
 std::string as_lowercase(std::string str)
 {
-  std::transform(cbegin(str),
-                 cend(str),
-                 begin(str),
-                 [](unsigned char c) { return ::tolower(c); });
+  std::transform(cbegin(str), cend(str), begin(str), [](unsigned char c) {
+    return ::tolower(c);
+  });
   return str;
 }
 
@@ -109,8 +108,9 @@ std::string as_lowercase(std::string str)
 // the working directory as a general artifact of the run.
 void do_adiak_init()
 {
-  struct adiak_configuration const cc;
-  MPI_Comm world_comm = utils::get_current_comm().get_world_comm().GetMPIComm();
+  struct lbann::adiak_configuration const cc;
+  MPI_Comm world_comm =
+    lbann::utils::get_current_comm().get_world_comm().GetMPIComm();
   MPI_Comm_dup(world_comm, &adiak_comm);
   adiak::init(&adiak_comm);
   adiak::user();
@@ -138,7 +138,6 @@ void do_adiak_init()
   if (tsize >= 4) {
     // pickup path version <compiler-version-hash|date>/mpispec/bin/exec
     std::string const path_version = tokens[tsize - 4];
-    std::cout << "Compiler path version: " << path_version << "\n";
     auto const s = split(path_version, "-");
     if (s.size() >= 2) {
       std::string const path_version_short = s[0] + "-" + s[1];
@@ -200,51 +199,68 @@ void do_adiak_init()
   adiak::value("omp_max_threads", omp_get_max_threads());
 #endif
 }
-void do_adiak_finalize() {
+void do_adiak_finalize()
+{
   adiak::fini();
   MPI_Comm_free(&adiak_comm);
 }
 
-}  // namespace
+} // namespace
 
-void prof_start()
+static bool check_env_set_and_nonempty(char const* env_var)
 {
+  auto const val = std::getenv(env_var);
+  return val && std::strlen(val) > 0UL;
+}
+
+// The rules for caliper:
+//
+//   - If CALI_CONFIG is set and nonempty, initialize caliper but ignore
+//     "--caliper_config".
+//   - if "--caliper", setup with "--caliper_config".
+//   - Otherwise, do nothing.
+void lbann::initialize_caliper()
+{
+  auto const& arg_parser = global_argument_parser();
+  bool const cali_config_from_env = check_env_set_and_nonempty("CALI_CONFIG");
+  bool const use_caliper =
+    cali_config_from_env || arg_parser.get<bool>(LBANN_OPTION_USE_CALIPER);
+
+  if (!use_caliper)
+    return;
+
   if (caliper_initialized) {
     LBANN_ERROR("Cannot reinitialize Caliper");
   }
   do_adiak_init();
 
-  auto& arg_parser = global_argument_parser();
-  auto config = arg_parser.get<std::string>(LBANN_OPTION_CALIPER_CONFIG).c_str();
-  cali_mgr.add(config);
-  if (cali_mgr.error()) {
-    LBANN_ERROR("Caliper config parse error: ", cali_mgr.error_msg());
+  if (!cali_config_from_env) {
+    auto const config =
+      arg_parser.get<std::string>(LBANN_OPTION_CALIPER_CONFIG).c_str();
+    cali_mgr.add(config);
+    if (cali_mgr.error()) {
+      LBANN_ERROR("Caliper config parse error: ", cali_mgr.error_msg());
+    }
   }
   cali_mgr.start();
-
-  profiling_started = true;
   caliper_initialized = true;
 }
-void prof_stop()
+
+void lbann::finalize_caliper()
 {
   if (caliper_initialized) {
     cali_mgr.stop();
     cali_mgr.flush();
     do_adiak_finalize();
   }
-  profiling_started = false;
 }
-void prof_region_begin(const char* s, int, bool)
-{
-  if (!profiling_started) return;
-  cali_begin_region(s);
-}
-void prof_region_end(const char* s, bool)
-{
-  if (!profiling_started) return;
-  cali_end_region(s);
-}
-#elif defined(LBANN_SCOREP)
+
+bool lbann::is_caliper_initialized() noexcept { return caliper_initialized; }
+#endif // LBANN_HAS_CALIPER
+
+namespace lbann {
+
+#if defined(LBANN_SCOREP)
 void prof_start()
 {
   profiling_started = true;

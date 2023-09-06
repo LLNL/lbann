@@ -27,6 +27,7 @@
 #ifndef LBANN_OPTIMIZERS_DATA_TYPE_OPTIMIZER_IMPL_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_DATA_TYPE_OPTIMIZER_IMPL_HPP_INCLUDED
 
+#include "lbann/utils/profiling.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/weights/data_type_weights.hpp"
@@ -172,6 +173,9 @@ void data_type_optimizer<TensorDataType>::set_learning_rate(
 template <typename TensorDataType>
 void data_type_optimizer<TensorDataType>::step()
 {
+  LBANN_CALIPER_MARK_SCOPE(
+    (this->get_type() + " " + m_weights->get_name()).c_str());
+
   if (m_weights == nullptr) {
     LBANN_ERROR("attempted to perform optimization step without weights");
   }

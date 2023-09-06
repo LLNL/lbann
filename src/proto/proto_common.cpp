@@ -33,6 +33,9 @@
 #include "lbann/proto/init_image_data_readers.hpp"
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/file_utils.hpp"
+#if defined(LBANN_HAS_CALIPER)
+#include "lbann/utils/profiling.hpp"
+#endif
 
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 #include "lbann/utils/options.hpp"
@@ -1024,6 +1027,11 @@ void print_parameters(const lbann_comm& comm,
 #else
   bool const enable_determinism = false;
 #endif // LBANN_DETERMINISTIC
+#if defined(LBANN_HAS_CALIPER)
+  bool const enable_caliper = is_caliper_initialized();
+#else
+  bool const enable_caliper = false;
+#endif
 
   std::cout << "\nRunning with these parameters:\n"
             << " General:\n"
@@ -1037,6 +1045,8 @@ void print_parameters(const lbann_comm& comm,
             << "  num_parallel_readers:       " << t.num_parallel_readers()
             << '\n'
             << "  serialize_io:               " << t.serialize_io() << '\n'
+            << "  caliper:                    "
+            << (enable_caliper ? "enabled" : "disabled") << '\n'
             << "  cuda:                       "
             << (disable_cuda ? "disabled" : "enabled") << '\n'
             << "  cudnn:                      "

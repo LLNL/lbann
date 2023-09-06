@@ -87,6 +87,7 @@ data_type_layer<InputTensorDataType, OutputTensorDataType>::operator=(
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
 {
+  LBANN_CALIPER_MARK_SCOPE(("fp " + this->get_name()).c_str());
   const auto fp_start = get_time();
 
   // Setup weights proxies

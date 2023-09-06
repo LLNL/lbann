@@ -67,6 +67,13 @@
               << std::endl;                                                    \
   } while (0)
 
+#define LBANN_WARNING_WORLD_ROOT(...)                                          \
+  do {                                                                         \
+    if (lbann::get_rank_in_world() == 0) {                                     \
+      LBANN_WARNING(__VA_ARGS__);                                              \
+    }                                                                          \
+  } while (0)
+
 // Macro to print a message to standard cout stream.
 #define LBANN_MSG(...)                                                         \
   do {                                                                         \

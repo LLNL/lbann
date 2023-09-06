@@ -1576,6 +1576,7 @@ void model::clear_gradients()
 
 void model::forward_prop(execution_mode mode)
 {
+  LBANN_CALIPER_MARK_FUNCTION;
   do_model_forward_prop_begin_cbs(mode);
 
   for (El::Int i = 0; i < get_num_layers(); ++i) {
@@ -1603,7 +1604,7 @@ void model::forward_prop(execution_mode mode)
 
 void model::backward_prop(bool compute_weight_grads_only)
 {
-
+  LBANN_CALIPER_MARK_FUNCTION;
   do_model_backward_prop_begin_cbs();
 
   for (El::Int i = get_num_layers() - 1; i >= 0; --i) {
@@ -1655,6 +1656,7 @@ void model::backward_prop(bool compute_weight_grads_only)
 
 void model::update_weights()
 {
+  LBANN_CALIPER_MARK_FUNCTION;
   do_model_optimize_begin_cbs();
 
   // Apply optimization step to weights
