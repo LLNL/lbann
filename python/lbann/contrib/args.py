@@ -191,12 +191,11 @@ def add_profiling_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         '--profile-init', action='store_true', default=False,
         help='enable profiling initialization')
-    if lbann.has_feature('CALIPER'):
-        parser.add_argument('--caliper', action='store_true', default=False,
-                            help='enable Caliper')
-        parser.add_argument(
-            '--caliper-config', action='store', default=None, type=str,
-            help='Configuration string for Caliper')
+    parser.add_argument('--caliper', action='store_true', default=False,
+                        help='enable Caliper')
+    parser.add_argument(
+        '--caliper-config', action='store', default=None, type=str,
+        help='Configuration string for Caliper')
 
 
 def create_profile_callback(args: argparse.Namespace) -> Any:
@@ -253,4 +252,6 @@ def get_profile_args(args: argparse.Namespace) -> list[str]:
             return ['--caliper', '--caliper_config', f'"{caliper_config}"']
         if caliper:
             return ['--caliper']
+    elif caliper_config or caliper:
+        raise RuntimeError('Requested Caliper but LBANN does not have Caliper support.')
     return []
