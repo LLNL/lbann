@@ -269,7 +269,7 @@ void construct_std_options()
   arg_parser.add_option(LBANN_OPTION_CALIPER_CONFIG,
                         {"--caliper_config"},
                         "[STD] Caliper configuration string",
-                        "spot(output=lbann.cali)");
+                        "spot");
 #endif
 }
 
