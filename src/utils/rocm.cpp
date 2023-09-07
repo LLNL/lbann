@@ -66,17 +66,27 @@ namespace rocm {
 
 event_wrapper::event_wrapper() : m_event(nullptr), m_stream(0)
 {
+#if HIP_VERSION < 50600000
+  CHECK_ROCM(hipEventCreateWithFlags(&m_event,
+                                     hipEventDisableTiming));
+#else
   CHECK_ROCM(hipEventCreateWithFlags(&m_event,
                                      hipEventDisableTiming |
                                        hipEventDisableSystemFence));
+#endif
 }
 
 event_wrapper::event_wrapper(const event_wrapper& other)
   : m_event(nullptr), m_stream(other.m_stream)
 {
+#if HIP_VERSION < 50600000
+  CHECK_ROCM(hipEventCreateWithFlags(&m_event,
+                                     hipEventDisableTiming));
+#else
   CHECK_ROCM(hipEventCreateWithFlags(&m_event,
                                      hipEventDisableTiming |
                                        hipEventDisableSystemFence));
+#endif
   if (!other.query()) {
     record(m_stream);
   }
