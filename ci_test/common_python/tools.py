@@ -10,6 +10,8 @@ import pytest
 import shutil
 import subprocess
 from filecmp import cmp
+import lbann.contrib.args
+from lbann.contrib.lc.systems import *
 
 def check_list(substrings, strings):
     errors = []
@@ -743,6 +745,30 @@ def create_tests(setup_func,
     if not re.match('^test_.', test_name_base):
         # Make sure test name is prefixed with 'test_'
         test_name_base = 'test_' + test_name_base
+
+    # Check to see if we are testing on a ROCm system and then set a cache for CI testing
+    system = lbann.contrib.lc.systems.system()
+    if system in ('tioga', 'rzvernal', 'corona'):
+        if 'environment' in kwargs:
+            environment = kwargs.get('environment')
+        else:
+            environment = {}
+
+        if os.environ.get('USER') == 'lbannusr':
+            basepath = '/p/vast1/lbannusr/'
+        else:
+            basepath = '/p/vast1/lbann/'
+
+        if os.path.isdir(basepath) and os.access(basepath, os.R_OK | os.W_OK):
+            db_path = basepath
+        else:
+            db_path = 'tmp'
+
+        environment['MIOPEN_USER_DB_PATH'] = f'{db_path}/MIOpen_user_db'
+        # Empirically the cache dir cannot be on a parallel file system
+        environment['MIOPEN_CUSTOM_CACHE_DIR'] ='/tmp/MIOpen_custom_cache'
+
+        kwargs['environment'] = environment
 
     def test_func(cluster, dirname, weekly):
         """Function that can interact with PyTest.

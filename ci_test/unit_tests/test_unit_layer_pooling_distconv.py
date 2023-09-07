@@ -312,24 +312,10 @@ def construct_data_reader(lbann):
 # ==============================================
 # Setup PyTest
 # ==============================================
-
-environment=lbann.contrib.args.get_distconv_environment()
-system = system()
-if system in ('tioga', 'rzvernal', 'corona'):
-    if os.environ.get('USER') == 'lbannusr':
-        if os.path.isdir('/p/vast1/lbannusr/MIOpen_db_cache'):
-            environment['MIOPEN_USER_DB_PATH'] = '/p/vast1/lbannusr/MIOpen_db_cache'
-            environment['MIOPEN_CUSTOM_CACHE_DIR'] ='/p/vast1/lbannusr/MIOpen_db_cache'
-        else:
-            print('CI run is unable to find MIOpen DB cache directory')
-    elif os.path.isdir('/p/vast1/lbann/MIOpen_db_cache'):
-        environment['MIOPEN_USER_DB_PATH'] = '/p/vast1/lbann/MIOpen_db_cache'
-        environment['MIOPEN_CUSTOM_CACHE_DIR'] ='/p/vast1/lbann/MIOpen_db_cache'
-
 # Create test functions that can interact with PyTest
 # Note: Create test name by removing ".py" from file name
 _test_name = os.path.splitext(os.path.basename(current_file))[0]
 for _test_func in tools.create_tests(setup_experiment, _test_name,
-                                     environment=environment,
+                                     environment=lbann.contrib.args.get_distconv_environment(),
                                      time_limit=15):
     globals()[_test_func.__name__] = _test_func
