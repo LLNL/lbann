@@ -66,13 +66,17 @@ namespace rocm {
 
 event_wrapper::event_wrapper() : m_event(nullptr), m_stream(0)
 {
-  CHECK_ROCM(hipEventCreateWithFlags(&m_event, hipEventDisableTiming));
+  CHECK_ROCM(hipEventCreateWithFlags(&m_event,
+                                     hipEventDisableTiming |
+                                       hipEventDisableSystemFence));
 }
 
 event_wrapper::event_wrapper(const event_wrapper& other)
   : m_event(nullptr), m_stream(other.m_stream)
 {
-  CHECK_ROCM(hipEventCreateWithFlags(&m_event, hipEventDisableTiming));
+  CHECK_ROCM(hipEventCreateWithFlags(&m_event,
+                                     hipEventDisableTiming |
+                                       hipEventDisableSystemFence));
   if (!other.query()) {
     record(m_stream);
   }
