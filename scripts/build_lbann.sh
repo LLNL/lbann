@@ -471,7 +471,7 @@ if [[ ! "${LBANN_VARIANTS}" =~ .*"^dihydrogen".* ]]; then
     # If the user didn't supply a specific version of DiHydrogen on the command line add one
     # Due to concretizer errors force the openmp variant for DiHydrogen
 #    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER}}"
-#    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER} ${CENTER_BLAS_LIBRARY}"
+    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER} ${CENTER_BLAS_LIBRARY}"
 fi
 
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^conduit".* ]]; then
