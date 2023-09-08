@@ -543,9 +543,9 @@ if [[ ! "${LBANN_VARIANTS}" =~ .*"~python".* ]]; then
         fi
         # Include PyTest as a top level dependency because of a spack bug that fails
         # to add it for building things like NumPy
-        if [[ ! "${PKG_LIST}" =~ .*"py-pytest".* ]]; then
-            PKG_LIST="${PKG_LIST} py-pytest"
-        fi
+        # if [[ ! "${PKG_LIST}" =~ .*"py-pytest".* ]]; then
+        #     PKG_LIST="${PKG_LIST} py-pytest"
+        # fi
     fi
 fi
 
@@ -889,7 +889,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         # Try to concretize the environment and catch the return code
         # Set the -f flag to force spack to re-evaluate all packages
         # During concretation to ensure that proper reuse actually occurs
-        CMD="spack concretize --reuse -f ${BUILD_JOBS}"
+        CMD="spack concretize --test root --reuse -f ${BUILD_JOBS}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     fi
@@ -927,7 +927,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
 
     ##########################################################################################
     # Actually install LBANN's dependencies from local source
-    CMD="spack install --reuse --only dependencies ${BUILD_JOBS}"
+    CMD="spack install --test root --reuse --only dependencies ${BUILD_JOBS}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -943,7 +943,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
     if [[ -n "${SPACK_EXTRA_ROOT_PACKAGES:-}" ]]; then
         for p in ${SPACK_EXTRA_ROOT_PACKAGES}
         do
-            CMD="spack install --reuse ${BUILD_JOBS} ${p}"
+            CMD="spack install --test root --reuse ${BUILD_JOBS} ${p}"
             echo ${CMD} | tee -a ${LOG}
             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
         done
@@ -965,7 +965,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
 
     ##########################################################################################
     # Configure but don't install LBANN using spack
-    CMD="spack install --reuse -u initconfig ${BUILD_JOBS} lbann"
+    CMD="spack install --test root --reuse -u initconfig ${BUILD_JOBS} lbann"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 

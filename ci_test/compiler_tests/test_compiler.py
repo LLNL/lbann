@@ -13,7 +13,7 @@ def test_compiler_build_script(cluster, dirname):
     # Get environment variables
     ENV_NAME = os.getenv('SPACK_ENV_NAME')
 
-    common_cmd = '%s/scripts/build_lbann.sh -r -l %s -j $(($(nproc)+2)) -e %s/scripts/common_spack_packages/ci_spack_packages.sh -- +deterministic +vision +numpy +unit_tests' % (dirname, ENV_NAME, dirname)
+    common_cmd = '%s/scripts/build_lbann.sh -r -l %s -j $(($(nproc)+2)) -p py-scipy@1.8.1 --pip pytest --pip tqdm -- +deterministic +vision +numpy +unit_tests' % (dirname, ENV_NAME, dirname)
     if cluster in ['lassen', 'pascal', 'ray']:
         command = '%s +cuda +half +fft > %s 2> %s' % (common_cmd, output_file_name, error_file_name)
     elif cluster in ['corona']:
