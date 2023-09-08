@@ -14,8 +14,6 @@ for i in y:
     else: # Keeep the rest in a single list
         roots.append(i)
 
-#print(lbann[1].format('{name}/{version}-{hash:7}'))
-
 # Get the module names and hashes of the roots
 module_list = []
 for i in roots:
@@ -30,10 +28,5 @@ for i in deps:
     if module not in module_list:
         module_list.append(module)
 
-# module_list = root_modules
-# module_list.extend(dependent_modules)
-#print(module_list)
+# Export the list of module names to the calling function
 print(";".join(module_list))
-# print('\n')
-# print("; ".join(sorted(set(module_list))))
-# print('\n')
