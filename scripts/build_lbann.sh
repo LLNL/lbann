@@ -707,6 +707,12 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         CMD="spack config add concretizer:unify:true"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+        # Try to get spack to reuse as much as possible
+        CMD="spack config add concretizer:reuse:true"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
         # CMD="spack config add concretizer:duplicates:strategy:none"
         # echo ${CMD} | tee -a ${LOG}
         # [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
@@ -880,7 +886,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
 
     if [[ -n "${INSTALL_DEPS:-}" ]]; then
         # Try to concretize the environment and catch the return code
-        CMD="spack concretize --reuse ${BUILD_JOBS}"
+        CMD="spack concretize --reuse -f ${BUILD_JOBS}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     fi
