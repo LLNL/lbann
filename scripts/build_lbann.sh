@@ -707,9 +707,9 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         CMD="spack config add concretizer:unify:true"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-        CMD="spack config add concretizer:duplicates:strategy:none"
-        echo ${CMD} | tee -a ${LOG}
-        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        # CMD="spack config add concretizer:duplicates:strategy:none"
+        # echo ${CMD} | tee -a ${LOG}
+        # [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     fi
 
     ##########################################################################################
