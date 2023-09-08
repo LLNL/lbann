@@ -364,9 +364,9 @@ if __name__ == '__main__':
     sdfg.name = 'conv'
     csdfg = sdfg.compile()
     shutil.copyfile(os.path.abspath(os.path.join(sdfg.build_folder, 'build', f'lib{sdfg.name}.so')),
-                    f'lib{hash}.so')
+                    f'.dacecache/lib{hash}.so')
 
-    print(f'Compilation complete. Output file: lib{hash}.so')
+    print(f'Compilation complete. Output file: .dacecache/lib{hash}.so')
 
     if storage == dace.StorageType.CPU_Heap and os.path.exists('out_dx.bin'):
         print('Files found, verifying result')
