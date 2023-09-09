@@ -12,8 +12,17 @@ def test_compiler_build_script(cluster, dirname):
 
     # Get environment variables
     ENV_NAME = os.getenv('SPACK_ENV_NAME')
+    CLEAN_BUILD_FLAG = os.getenv('CLEAN_BUILD_FLAG')
+    clean_flag = ''
+    if CLEAN_BUILD_FLAG is not None:
+        clean_flag = '--clean-build'
 
-    common_cmd = '%s/scripts/build_lbann.sh -r -l %s -j $(($(nproc)+2)) -e %s/scripts/common_spack_packages/ci_spack_packages.sh -- +deterministic +vision +numpy +unit_tests' % (dirname, ENV_NAME, dirname)
+    SPACK_DEPS_FLAG = os.getenv('SPACK_DEPS_FLAG')
+    if SPACK_DEPS_FLAG is None:
+        print('Unknown state: MISSING SPACK_DEPS_FLAG')
+        SPACK_DEPS_FLAG='-r'
+
+    common_cmd = '%s/scripts/build_lbann.sh %s -l %s -j $(($(nproc)+2)) %s -p py-scipy@1.8.1 --pip pytest --pip tqdm -- +deterministic +vision +numpy +unit_tests' % (dirname, SPACK_DEPS_FLAG, ENV_NAME, clean_flag)
     if cluster in ['lassen', 'pascal', 'ray']:
         command = '%s +cuda +half +fft > %s 2> %s' % (common_cmd, output_file_name, error_file_name)
     elif cluster in ['corona']:

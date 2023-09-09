@@ -322,7 +322,7 @@ PIP to install Python-only requirements.
    .. code-block:: console
 
         <path to lbann repo>/scripts/build_lbann.sh <options>
-                    -e scripts/common_spack_packages/ci_spack_packages.sh
+                    -p py-scipy@1.8.1 --pip pytest --pip tqdm
                     -- <variants>
 
 or

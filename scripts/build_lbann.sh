@@ -470,6 +470,7 @@ fi
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^dihydrogen".* ]]; then
     # If the user didn't supply a specific version of DiHydrogen on the command line add one
     # Due to concretizer errors force the openmp variant for DiHydrogen
+#    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER}}"
     DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER} ${CENTER_BLAS_LIBRARY}"
 fi
 
@@ -539,11 +540,6 @@ if [[ ! "${LBANN_VARIANTS}" =~ .*"~python".* ]]; then
         # C++ std library
         if [[ ! "${PKG_LIST}" =~ .*"py-numpy".* ]]; then
             PKG_LIST="${PKG_LIST} py-numpy@1.16.0:"
-        fi
-        # Include PyTest as a top level dependency because of a spack bug that fails
-        # to add it for building things like NumPy
-        if [[ ! "${PKG_LIST}" =~ .*"py-pytest".* ]]; then
-            PKG_LIST="${PKG_LIST} py-pytest"
         fi
     fi
 fi
@@ -706,6 +702,16 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         CMD="spack config add concretizer:unify:true"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+        # Try to get spack to reuse as much as possible
+        # (redundant with the --reuse flag but makes it persistent in the environment)
+        CMD="spack config add concretizer:reuse:true"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+        # CMD="spack config add concretizer:duplicates:strategy:none"
+        # echo ${CMD} | tee -a ${LOG}
+        # [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     fi
 
     ##########################################################################################
@@ -782,7 +788,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-        CMD="spack external find --scope env:${LBANN_ENV} bzip2 cuda cudnn hdf5 hwloc libfabric nccl ncurses openblas perl python rccl rdma-core sqlite spectrum-mpi mvapich2 openmpi netlib-lapack"
+        CMD="spack external find --scope env:${LBANN_ENV} bzip2 cuda cudnn git hdf5 hwloc libfabric nccl ncurses openblas perl python rccl rdma-core sqlite spectrum-mpi mvapich2 openmpi netlib-lapack"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -876,7 +882,9 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
 
     if [[ -n "${INSTALL_DEPS:-}" ]]; then
         # Try to concretize the environment and catch the return code
-        CMD="spack concretize --reuse ${BUILD_JOBS}"
+        # Set the -f flag to force spack to re-evaluate all packages
+        # During concretation to ensure that proper reuse actually occurs
+        CMD="spack concretize --test root --reuse -f ${BUILD_JOBS}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     fi
@@ -914,7 +922,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
 
     ##########################################################################################
     # Actually install LBANN's dependencies from local source
-    CMD="spack install --reuse --only dependencies ${BUILD_JOBS}"
+    CMD="spack install --test root --reuse --only dependencies ${BUILD_JOBS}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -930,7 +938,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
     if [[ -n "${SPACK_EXTRA_ROOT_PACKAGES:-}" ]]; then
         for p in ${SPACK_EXTRA_ROOT_PACKAGES}
         do
-            CMD="spack install --reuse ${BUILD_JOBS} ${p}"
+            CMD="spack install --test root --reuse ${BUILD_JOBS} ${p}"
             echo ${CMD} | tee -a ${LOG}
             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
         done
@@ -952,7 +960,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
 
     ##########################################################################################
     # Configure but don't install LBANN using spack
-    CMD="spack install --reuse -u initconfig ${BUILD_JOBS} lbann"
+    CMD="spack install --test root --reuse -u initconfig ${BUILD_JOBS} lbann"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -994,61 +1002,7 @@ EOF
 
         # Build a list of modules that LBANN should load
         LBANN_WRITE_DEPENDENT_MODULEPATH="${LBANN_MODFILES_DIR}/Core"
-        LBANN_DEPENDENT_MODULES=
-
-        ENV_ROOT_PKG_LIST=$(spack find -x --format "{name}/{version}-{hash:7}")
-        if [[ -n "${ENV_ROOT_PKG_LIST:-}" ]]; then
-            for p in ${ENV_ROOT_PKG_LIST}
-            do
-                update_LBANN_DEPENDENT_MODULES_field ${p}
-            done
-        fi
-
-        # Find any installed python packages so that they get their modules loaded
-        # to ensure that PYTHONPATH is properly setup
-        DEP_PYTHON_PKG_LIST=$(spack find --format "{name}/{version}-{hash:7}" | grep "py-" )
-        if [[ -n "${DEP_PYTHON_PKG_LIST:-}" ]]; then
-            for p in ${DEP_PYTHON_PKG_LIST}
-            do
-                update_LBANN_DEPENDENT_MODULES_field ${p}
-            done
-        fi
-
-        # Check for python
-        DEP_PYTHON_PKG_LIST=$(spack find --format "{name}/{version}-{hash:7}" | grep "python" )
-        if [[ -n "${DEP_PYTHON_PKG_LIST:-}" ]]; then
-            for p in ${DEP_PYTHON_PKG_LIST}
-            do
-                update_LBANN_DEPENDENT_MODULES_field ${p}
-            done
-        fi
-
-        # Get the spack hash for aws-ofi plugin (Ensure that the concretize command has been run so that any impact of external packages is factored in)
-        if [[ -n "${POSSIBLE_AWS_OFI_PLUGIN}" ]]; then
-            AWS_OFI_PLUGIN_PKG=$(spack find --format "{name}/{version}-{hash:7}" ${POSSIBLE_AWS_OFI_PLUGIN})
-            if [[ $? == 0 ]]; then
-                update_LBANN_DEPENDENT_MODULES_field ${AWS_OFI_PLUGIN_PKG}
-            fi
-        fi
-
-        if [[ -n "${POSSIBLE_DNN_LIB}" ]]; then
-            POSSIBLE_DNN_LIB_PKG=$(spack find --format "{name}/{version}-{hash:7}" ${POSSIBLE_DNN_LIB})
-            if [[ $? == 0 ]]; then
-                update_LBANN_DEPENDENT_MODULES_field ${POSSIBLE_DNN_LIB_PKG}
-            fi
-        fi
-
-        if [[ -n "${POSSIBLE_NVSHMEM_LIB}" ]]; then
-            POSSIBLE_NVSHMEM_LIB_PKG=$(spack find --format "{name}/{version}-{hash:7}" ${POSSIBLE_NVSHMEM_LIB})
-            if [[ $? == 0 ]]; then
-                update_LBANN_DEPENDENT_MODULES_field ${POSSIBLE_NVSHMEM_LIB_PKG}
-            fi
-        fi
-
-        ALUMINUM_PKG=$(spack find --format "{name}/{version}-{hash:7}" aluminum)
-        HYDROGEN_PKG=$(spack find --format "{name}/{version}-{hash:7}" hydrogen)
-        DIHYDROGEN_PKG=$(spack find --format "{name}/{version}-{hash:7}" dihydrogen)
-        LBANN_DEPENDENT_MODULES="${ALUMINUM_PKG};${HYDROGEN_PKG};${DIHYDROGEN_PKG};${LBANN_DEPENDENT_MODULES}"
+        LBANN_DEPENDENT_MODULES=$(spack-python $SCRIPTS_DIR/find_externals_and_lbann_top_level_dependencies.py)
 
         if [[ "${CENTER_COMPILER}" =~ .*"%clang".* ]]; then
             # If the compiler is clang use the LLD fast linker
