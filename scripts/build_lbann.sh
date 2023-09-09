@@ -541,14 +541,6 @@ if [[ ! "${LBANN_VARIANTS}" =~ .*"~python".* ]]; then
         if [[ ! "${PKG_LIST}" =~ .*"py-numpy".* ]]; then
             PKG_LIST="${PKG_LIST} py-numpy@1.16.0:"
         fi
-        # if [[ ! "${PKG_LIST}" =~ .*"py-scipy".* ]]; then
-        #     PKG_LIST="${PKG_LIST} py-scipy@1.8.1"
-        # fi
-        # Include PyTest as a top level dependency because of a spack bug that fails
-        # to add it for building things like NumPy
-        # if [[ ! "${PKG_LIST}" =~ .*"py-pytest".* ]]; then
-        #     PKG_LIST="${PKG_LIST} py-pytest"
-        # fi
     fi
 fi
 
