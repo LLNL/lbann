@@ -48,7 +48,7 @@ build and install:
   script:
     - echo "== BUILDING LBANN =="
     - !reference [.setup_spack, script]
-    - lalloc 1 -W 30 -q pdebug ./scripts/build_lbann.sh -r
+    - lalloc 1 -W 60 -q pdebug ./scripts/build_lbann.sh -r
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS}
       -e ./scripts/common_spack_packages/ci_spack_packages.sh --
       +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
