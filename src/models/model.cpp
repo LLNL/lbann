@@ -58,6 +58,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <set>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -1605,17 +1606,27 @@ void model::forward_prop(execution_mode mode)
 void model::backward_prop(bool compute_weight_grads_only)
 {
   LBANN_CALIPER_MARK_FUNCTION;
+
+  // Layers disabled due to not propagating error signals through
+  std::unordered_set<const Layer*> disabled_layers;
+  auto const& arg_parser = global_argument_parser();
+  bool const envvar_disable_layers =
+    !arg_parser.get<bool>(LBANN_OPTION_NO_BACKPROP_DISABLE);
+
   do_model_backward_prop_begin_cbs();
 
   for (El::Int i = get_num_layers() - 1; i >= 0; --i) {
 
     // Perform backward prop step on current layer
     auto& l = get_layer(i);
+    bool enable_layer = (!envvar_disable_layers ||
+                         disabled_layers.find(&l) == disabled_layers.end());
 
     if (this->is_subgraph_parallelism_enabled()) {
       if (l.get_run_layer_in_subgraph()) {
         do_layer_backward_prop_begin_cbs(&l);
-        l.back_prop();
+        if (enable_layer)
+          l.back_prop();
         do_layer_backward_prop_end_cbs(&l);
       }
       else {
@@ -1625,8 +1636,16 @@ void model::backward_prop(bool compute_weight_grads_only)
     }
     else {
       do_layer_backward_prop_begin_cbs(&l);
-      l.back_prop();
+      if (enable_layer)
+        l.back_prop();
       do_layer_backward_prop_end_cbs(&l);
+    }
+
+    // Add parents to disabled layers if this layer is disabled
+    if (!enable_layer) {
+      for (auto& parent : l.get_parent_layers()) {
+        disabled_layers.insert(parent);
+      }
     }
 
     // Terminate early if all gradients have been computed
