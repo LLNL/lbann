@@ -1642,9 +1642,16 @@ void model::backward_prop(bool compute_weight_grads_only)
     }
 
     // Add parents to disabled layers if this layer is disabled
-    if (!enable_layer) {
-      for (auto& parent : l.get_parent_layers()) {
-        disabled_layers.insert(parent);
+    if (envvar_disable_layers) {
+      // Start propagating disabled layers up
+      if (l.get_backprop_requirements() == PROPAGATE_NOTHING)
+        enable_layer = false;
+
+      // Either start or continue propagating disabled layers
+      if (!enable_layer) {
+        for (auto& parent : l.get_parent_layers()) {
+          disabled_layers.insert(parent);
+        }
       }
     }
 
