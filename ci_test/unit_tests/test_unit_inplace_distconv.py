@@ -16,8 +16,14 @@ import tools
 @pytest.mark.parametrize('num_dims', [2, 3])
 @test_util.lbann_test(check_gradients=False,
                       environment=lbann.contrib.args.get_distconv_environment(),
+                      skip_clusters=["corona"],
                       time_limit=3)
 def test_simple(num_dims):
+    # if not lbann.has_feature('DISTCONV'):
+    #     message = f'{os.path.basename(__file__)} requires DISTCONV'
+    #     print('Skip - ' + message)
+    #     pytest.skip(message)
+
     np.random.seed(20230607)
     # Two samples of 4x16x16 or 4x16x16x16 tensors
     shape = [2, 4] + [16] * num_dims
