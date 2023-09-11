@@ -43,7 +43,7 @@ def lbann_test(check_gradients=False, train=False, **decorator_kwargs):
     The unit test in the wrapped function must return a ``test_util.ModelTester``
     object, which contains all the necessary information to test the model (e.g.,
     model, input/reference tensors).
-    
+
     The decorator wraps the test with the appropriate setup phase, data reading,
     callbacks, and metrics so that the test functions properly.
     """
@@ -79,7 +79,7 @@ def lbann_test(check_gradients=False, train=False, **decorator_kwargs):
                                           upper_bound=tester.tolerance,
                                           error_on_failure=True,
                                           execution_modes='train' if train else 'test'))
-            
+
             obj_func = None
             if check_gradients:
                 if tester.check_gradients_tensor is None:
@@ -138,7 +138,7 @@ def lbann_test(check_gradients=False, train=False, **decorator_kwargs):
                 return trainer, model, data_reader, optimizer, None  # Don't request any specific number of nodes
 
             test = tools.create_tests(setup_func, file, **decorator_kwargs)[0]
-            cluster = kwargs.get('cluster', 'unset')
+            cluster = kwargs.get('cluster', None)
             weekly = kwargs.get('weekly', False)
             test(cluster, weekly, False)
 
@@ -159,9 +159,9 @@ class ModelTester:
     reference: Optional[lbann.Layer] = None  #: Reference LBANN node (optional)
     reference_tensor: Optional[
         Any] = None  #: Optional reference tensor to compare with
-    
+
     # Tensor that will be used as the model objective function when checking
-    # gradients. Required if check_gradients is True in tester. 
+    # gradients. Required if check_gradients is True in tester.
     check_gradients_tensor: Optional[lbann.Layer] = None
 
     loss: Optional[lbann.Layer] = None  # Optional loss test
@@ -234,7 +234,7 @@ class ModelTester:
         self.reference = refnode
         self.reference_tensor = ref
         return self.reference
-    
+
     def set_check_gradients_tensor(self, tensor: lbann.Layer):
         """
         Sets the tensor to be used as the objective function when running the
