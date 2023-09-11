@@ -827,7 +827,6 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
       temp_grad = output_mat_builder->MakeEmpty(grid, 0);
     }
 
-
     count = 1;
     for (auto& subgrid_tensor : m_subgrid_tensors_split) {
       subgrid_tensor = input_mat_builder->MakeEmpty(*grids[count], 0);
@@ -1240,6 +1239,11 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
 {
   for (int i = 0; i < get_num_parents(); ++i) {
     auto& parent = const_cast<Layer&>(get_parent_layer(i));
+
+    // If this parent layer does not require any error signals,
+    // skip it.
+    if (parent.get_backprop_requirements() == PROPAGATE_NOTHING)
+      continue;
 
     // If my error signals persist, my parent can always view them,
     // assuming the distdata is right. Otherwise, my views and my data
