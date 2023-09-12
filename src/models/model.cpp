@@ -1622,6 +1622,25 @@ void model::backward_prop(bool compute_weight_grads_only)
     bool enable_layer = (!envvar_disable_layers ||
                          disabled_layers.find(&l) == disabled_layers.end());
 
+    // Check if all children skip gradient backpropagation
+    if (enable_layer && envvar_disable_layers) {
+      bool all_children_skip_gradient = l.get_num_children() > 0;
+      for (auto& child : l.get_child_layers()) {
+        if (disabled_layers.find(child) != disabled_layers.end())
+          continue;
+        all_children_skip_gradient &=
+          (child->get_backprop_requirements() == PROPAGATE_NOTHING);
+        if (!all_children_skip_gradient)
+          break;
+      }
+
+      // Start disabling layers from this point onwards
+      if (all_children_skip_gradient) {
+        enable_layer = false;
+        disabled_layers.insert(&l);
+      }
+    }
+
     if (this->is_subgraph_parallelism_enabled()) {
       if (l.get_run_layer_in_subgraph()) {
         do_layer_backward_prop_begin_cbs(&l);
@@ -1639,20 +1658,6 @@ void model::backward_prop(bool compute_weight_grads_only)
       if (enable_layer)
         l.back_prop();
       do_layer_backward_prop_end_cbs(&l);
-    }
-
-    // Add parents to disabled layers if this layer is disabled
-    if (envvar_disable_layers) {
-      // Start propagating disabled layers up
-      if (l.get_backprop_requirements() == PROPAGATE_NOTHING)
-        enable_layer = false;
-
-      // Either start or continue propagating disabled layers
-      if (!enable_layer) {
-        for (auto& parent : l.get_parent_layers()) {
-          disabled_layers.insert(parent);
-        }
-      }
     }
 
     // Terminate early if all gradients have been computed
