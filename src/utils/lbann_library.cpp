@@ -638,7 +638,7 @@ void print_lbann_configuration(lbann_comm* comm,
 #ifdef LBANN_HAS_DIHYDROGEN
   std::cout << "DiHydrogen Features:" << std::endl;
   std::cout << "  DaCe : ";
-#ifdef H2_HAS_DACE
+#if H2_HAS_DACE
   std::cout << "enabled" << std::endl;
   {
     const auto* env = std::getenv("DISTCONV_JIT_CACHEPATH");
