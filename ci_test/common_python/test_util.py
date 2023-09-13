@@ -139,6 +139,8 @@ def lbann_test(check_gradients=False, train=False, **decorator_kwargs):
 
             test = tools.create_tests(setup_func, file, **decorator_kwargs)[0]
             cluster = kwargs.get('cluster', None)
+            if cluster is None:
+                cluster = tools.system(lbann)
             weekly = kwargs.get('weekly', False)
             test(cluster, weekly, False)
 
