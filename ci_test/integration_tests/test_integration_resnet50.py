@@ -166,7 +166,7 @@ def augment_test_func(test_func):
     def func(cluster, dirname, weekly):
 
         # Skip test on CPU systems
-        if cluster in ('catalyst', 'corona'):
+        if cluster in ('catalyst'):
             pytest.skip('only run {} on GPU systems'.format(test_name))
 
         if weekly:
