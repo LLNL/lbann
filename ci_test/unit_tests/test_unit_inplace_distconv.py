@@ -19,10 +19,10 @@ import tools
                       skip_clusters=["corona"],
                       time_limit=3)
 def test_simple(num_dims):
-    # if not lbann.has_feature('DISTCONV'):
-    #     message = f'{os.path.basename(__file__)} requires DISTCONV'
-    #     print('Skip - ' + message)
-    #     pytest.skip(message)
+    if not lbann.has_feature('DISTCONV'):
+        message = f'{os.path.basename(__file__)} requires DISTCONV'
+        print('Skip - ' + message)
+        pytest.skip(message)
 
     np.random.seed(20230607)
     # Two samples of 4x16x16 or 4x16x16x16 tensors
