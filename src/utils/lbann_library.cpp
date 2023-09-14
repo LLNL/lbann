@@ -53,7 +53,7 @@ namespace lbann {
 
 // Creates a datareader metadata to get around the need for an actual
 // datareader in inference only mode
-auto mock_dr_metadata(std::vector<int> input_dims, std::vector<int> output_dims)
+  auto mock_dr_metadata(std::vector<El::Int> input_dims, std::vector<El::Int> output_dims)
 {
   DataReaderMetaData drmd;
   auto& md_dims = drmd.data_dims;
@@ -66,8 +66,8 @@ auto mock_dr_metadata(std::vector<int> input_dims, std::vector<int> output_dims)
 std::unique_ptr<model> load_inference_model(lbann_comm* lc,
                                             std::string cp_dir,
                                             int mbs,
-                                            std::vector<int> input_dims,
-                                            std::vector<int> output_dims)
+                                            std::vector<El::Int> input_dims,
+                                            std::vector<El::Int> output_dims)
 {
   persist p;
   p.open_restart(cp_dir.c_str());

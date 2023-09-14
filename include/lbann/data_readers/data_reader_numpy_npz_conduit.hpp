@@ -75,7 +75,7 @@ public:
   {
     return m_num_response_features;
   }
-  const std::vector<int> get_data_dims() const override { return m_data_dims; }
+  const std::vector<El::Int> get_data_dims() const override { return m_data_dims; }
 
 protected:
   void do_preload_data_store() override;
@@ -93,7 +93,7 @@ protected:
   /// Number of features in each response.
   int m_num_response_features = 0;
 
-  std::vector<int> m_data_dims;
+  std::vector<El::Int> m_data_dims;
   int m_data_word_size = 0;
   size_t m_response_word_size = 0;
 

@@ -1188,14 +1188,14 @@ const std::vector<int> data_reader_jag_conduit::get_dims(
   return {};
 }
 
-const std::vector<int> data_reader_jag_conduit::get_data_dims() const
+const std::vector<El::Int> data_reader_jag_conduit::get_data_dims() const
 {
 #if 1
   return {get_linearized_data_size()};
 #else
-  std::vector<int> all_dim;
+  std::vector<El::Int> all_dim;
   for (const auto t : m_independent) {
-    const std::vector<int> ld = get_dims(t);
+    const std::vector<El::Int> ld = get_dims(t);
     all_dim.insert(all_dim.end(), ld.begin(), ld.end());
   }
   if (all_dim.empty()) {

@@ -95,9 +95,9 @@ TEST_CASE("Synthetic data reader public API tests",
     GENERATE(std::string("labels"), std::string("responses")));
   auto s = GENERATE(range(1, 11));
   El::Int num_samples = s;
-  std::vector<int> dims = {s, s};
+  std::vector<El::Int> dims = {s, s};
   El::Int num_labels = s * 2;
-  std::vector<int> response_dims = {s + 1, s + 1};
+  std::vector<El::Int> response_dims = {s + 1, s + 1};
 
   std::map<lbann::data_field_type, std::unique_ptr<lbann::CPUMat>>
     owning_local_input_buffers;
@@ -209,13 +209,13 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
   auto s = GENERATE(range(1, 2));
   El::Int num_samples = s;
   std::set<lbann::data_field_type> data_fields = {"foo", "bar"};
-  std::map<lbann::data_field_type, std::vector<int>> fields;
+  std::map<lbann::data_field_type, std::vector<El::Int>> fields;
   int f = 0;
   std::map<lbann::data_field_type, std::unique_ptr<lbann::CPUMat>>
     owning_local_input_buffers;
   std::map<lbann::data_field_type, lbann::CPUMat*> local_input_buffers;
   for (auto const& data_field : data_fields) {
-    std::vector<int> dims = {s + f, s + f};
+    std::vector<El::Int> dims = {s + f, s + f};
     fields[data_field] = dims;
     ++f;
     auto local_mat = std::make_unique<lbann::CPUMat>();
@@ -263,7 +263,7 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
 
   SECTION("fetch arbitrary bad data field with extra fields")
   {
-    std::map<lbann::data_field_type, std::vector<int>> test_fields;
+    std::map<lbann::data_field_type, std::vector<El::Int>> test_fields;
     lbann::data_field_type bad_field = "bar";
     for (auto const& data_field : data_fields) {
       if (data_field != bad_field) {
@@ -296,7 +296,7 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
 
   SECTION("fetch arbitrary bad data fields - no extra buffers")
   {
-    std::map<lbann::data_field_type, std::vector<int>> test_fields;
+    std::map<lbann::data_field_type, std::vector<El::Int>> test_fields;
     std::map<lbann::data_field_type, lbann::CPUMat*> test_local_input_buffers;
     lbann::data_field_type bad_field = "bar";
     for (auto const& data_field : data_fields) {

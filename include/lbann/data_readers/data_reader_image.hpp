@@ -75,7 +75,7 @@ public:
     return m_image_linearized_size;
   }
   int get_linearized_label_size() const override { return m_num_labels; }
-  const std::vector<int> get_data_dims() const override
+  const std::vector<El::Int> get_data_dims() const override
   {
     return {m_image_num_channels, m_image_height, m_image_width};
   }

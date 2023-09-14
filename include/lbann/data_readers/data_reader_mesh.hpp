@@ -72,9 +72,9 @@ public:
   {
     return m_data_height * m_data_width;
   }
-  const std::vector<int> get_data_dims() const override
+  const std::vector<El::Int> get_data_dims() const override
   {
-    return {static_cast<int>(m_channels.size()), m_data_height, m_data_width};
+    return {static_cast<El::Int>(m_channels.size()), m_data_height, m_data_width};
   }
 
 protected:

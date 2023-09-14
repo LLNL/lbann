@@ -73,7 +73,7 @@ public:
   {
     return m_label_reader->get_linearized_label_size();
   }
-  const std::vector<int> get_data_dims() const override
+  const std::vector<El::Int> get_data_dims() const override
   {
     // Todo: Can we merge the dimensions of each reader sensibly?
     return {get_linearized_data_size()};

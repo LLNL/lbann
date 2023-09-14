@@ -74,7 +74,7 @@ void data_reader_merge_samples::sanity_check_for_consistency(
   int num_labels,
   int data_size,
   int label_size,
-  const std::vector<int>& data_dims)
+  const std::vector<El::Int>& data_dims)
 {
   for (auto&& reader : m_data_readers) {
     if (num_labels != reader->get_num_labels()) {
@@ -118,7 +118,7 @@ void data_reader_merge_samples::load()
   int num_labels = m_data_readers[0]->get_num_labels();
   int data_size = m_data_readers[0]->get_linearized_data_size();
   int label_size = m_data_readers[0]->get_linearized_label_size();
-  const std::vector<int> data_dims = m_data_readers[0]->get_data_dims();
+  const std::vector<El::Int> data_dims = m_data_readers[0]->get_data_dims();
   sanity_check_for_consistency(num_labels, data_size, label_size, data_dims);
 
   size_t global_num_samples = compute_num_samples_psum();

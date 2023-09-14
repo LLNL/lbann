@@ -91,7 +91,7 @@ TEST_CASE("Synthetic data reader classification tests",
 
   auto s = GENERATE(range(1, 11));
   El::Int num_samples = s;
-  std::vector<int> dims = {s, s};
+  std::vector<El::Int> dims = {s, s};
   ;
   El::Int num_labels = s * 2;
 
@@ -152,9 +152,9 @@ TEST_CASE("Synthetic data reader regression tests",
 
   auto s = GENERATE(range(1, 11));
   El::Int num_samples = s;
-  std::vector<int> dims = {s, s};
+  std::vector<El::Int> dims = {s, s};
   ;
-  std::vector<int> response_dims = {s + 1, s + 1};
+  std::vector<El::Int> response_dims = {s + 1, s + 1};
 
   SECTION("fetch data and response")
   {
@@ -217,10 +217,10 @@ TEST_CASE("Synthetic data reader data field",
   auto s = GENERATE(range(1, 4));
   El::Int num_samples = s;
   std::vector<lbann::data_field_type> data_fields = {"foo", "bar"};
-  std::map<lbann::data_field_type, std::vector<int>> fields;
+  std::map<lbann::data_field_type, std::vector<El::Int>> fields;
   int f = 0;
   for (auto const& data_field : data_fields) {
-    std::vector<int> dims = {s + f, s + f};
+    std::vector<El::Int> dims = {s + f, s + f};
     fields[data_field] = dims;
     ++f;
   }

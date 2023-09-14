@@ -59,7 +59,7 @@ public:
   {
     return m_num_features * (m_num_neighbors + 1);
   }
-  const std::vector<int> get_data_dims() const override
+  const std::vector<El::Int> get_data_dims() const override
   {
     return m_shape;
     // return {m_num_neighbors + 1, (int) m_features.shape[2],
@@ -138,7 +138,7 @@ protected:
   DataType bond_len_scale_factor = 10.0;
 
   /// support for data_store_pilot2_molecular
-  std::vector<int> m_shape;
+  std::vector<El::Int> m_shape;
 
   /// support for data_store_pilot2_molecular
   int m_word_size;
