@@ -67,7 +67,8 @@ lassen distconv testing:
     JOB_NAME: ${CI_PROJECT_NAME}_${CI_PIPELINE_ID}_distconv
     SPACK_SPECS: "+cuda +distconv +nvshmem +fft"
     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
-    WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
+    WITH_CLEAN_BUILD: "TRUE"
+#    WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
     TEST_FLAG: "test_*_distconv.py"
   trigger:
     strategy: depend
