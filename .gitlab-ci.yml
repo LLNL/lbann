@@ -65,6 +65,7 @@ lassen distconv testing:
   stage: run-all-clusters
   variables:
     JOB_NAME: ${CI_PROJECT_NAME}_${CI_PIPELINE_ID}_distconv
+    SPACK_ENV_BASE_NAME_MODIFIER: "-multi-stage"
     SPACK_SPECS: "+cuda +distconv +nvshmem +fft"
     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
     WITH_CLEAN_BUILD: "TRUE"
