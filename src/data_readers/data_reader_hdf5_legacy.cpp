@@ -225,7 +225,7 @@ void hdf5_reader<TensorDataType>::load()
     hsize_t dims[4];
     CHECK_HDF5(H5Sget_simple_extent_dims(h_space, dims, NULL));
     CHECK_HDF5(H5Dclose(h_data));
-    m_data_dims = std::vector<int>(dims, dims + 4);
+    m_data_dims = std::vector<El::Int>(dims, dims + 4);
   }
   else {
     LBANN_ERROR("The number of HDF5 samples should not be zero");
