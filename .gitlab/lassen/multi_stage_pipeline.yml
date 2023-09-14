@@ -59,7 +59,7 @@ build and install:
     - export SPACK_ARCH_TARGET=$(spack arch -t)
     - !reference [.setup_lbann, script]
     - lalloc ${LBANN_NNODES} -W 45 -q pdebug .gitlab/common/run-catch-tests-lsf.sh
-  timeout: 1h
+  timeout: 2h
 
 # Run the Python-based unit tests.
 unit tests:
