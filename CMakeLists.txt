@@ -394,7 +394,7 @@ if (LBANN_HAS_CUDA)
   if (LBANN_WITH_NVSHMEM)
     find_package(NVSHMEM REQUIRED)
     # Build LBANN as a static library to get around a bug in NVSHMEM
-    set(BUILD_SHARED_LIBS OFF)
+#    set(BUILD_SHARED_LIBS OFF)
     list(APPEND LBANN_CUDA_LIBS NVSHMEM::NVSHMEM)
   endif ()
   set(LBANN_HAS_NVSHMEM "${NVSHMEM_FOUND}")
