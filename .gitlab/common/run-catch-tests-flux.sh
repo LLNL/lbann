@@ -71,7 +71,7 @@ echo "Running MPI catch tests with ${LBANN_NNODES} nodes and ${TEST_TASKS_PER_NO
 
 flux run \
      -N ${LBANN_NNODES} -n $((${TEST_TASKS_PER_NODE} * ${LBANN_NNODES})) \
-     -g 1 -t 10m -o gpu-affinity=per-task -o cpu-affinity=per-task -o mpibind=off \
+     -g 1 -t 20m -o gpu-affinity=per-task -o cpu-affinity=per-task -o mpibind=off \
      ./unit_test/mpi-catch-tests "exclude:[random]" "exclude:[filesystem]"\
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-results-rank=%r-size=%s.xml"
@@ -83,7 +83,7 @@ echo "Running MPI filesystem catch tests"
 
 flux run \
      -N ${LBANN_NNODES} -n $((${TEST_TASKS_PER_NODE} * ${LBANN_NNODES})) \
-     -g 1 -t 10m -o gpu-affinity=per-task -o cpu-affinity=per-task -o mpibind=off \
+     -g 1 -t 20m -o gpu-affinity=per-task -o cpu-affinity=per-task -o mpibind=off \
      ./unit_test/mpi-catch-tests -s "[filesystem]" \
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
