@@ -146,7 +146,7 @@ class SlurmBatchScript(BatchScript):
         args.append(f'--ntasks-per-node={procs_per_node}')
         use_this_rccl=os.getenv('LBANN_USE_THIS_RCCL')
         if use_this_rccl is not None:
-            args.append(f'--env=LD_PRELOAD=' + use_this_rccl)
+            args.append(f'--export=ALL,LD_PRELOAD=' + use_this_rccl)
         if time_limit is not None:
             args.append(f'--time={_time_string(time_limit)}')
         if job_name:
