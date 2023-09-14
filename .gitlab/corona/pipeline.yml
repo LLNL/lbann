@@ -80,7 +80,8 @@ build and install:
     - export SPACK_ARCH=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch)
     - export SPACK_ARCH_TARGET=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t)
     - !reference [.setup_lbann, script]
-    - flux proxy ${JOB_ID} .gitlab/common/run-catch-tests-flux.sh
+    - .gitlab/common/run-catch-tests-flux.sh
+#    - flux proxy ${JOB_ID} .gitlab/common/run-catch-tests-flux.sh
 
 # Run the Python-based unit tests.
 unit tests:
