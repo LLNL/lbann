@@ -155,7 +155,7 @@ protected:
   std::vector<float> m_all_responses;
   std::vector<std::string> m_file_paths;
   MPI_Comm m_comm;
-  std::vector<int> m_data_dims;
+  std::vector<El::Int> m_data_dims;
   std::vector<hsize_t> m_hyperslab_dims;
   hid_t m_fapl;
   hid_t m_dxpl;
