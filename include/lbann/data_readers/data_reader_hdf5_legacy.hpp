@@ -124,7 +124,7 @@ public:
     }
     return m_all_responses.size();
   }
-  const std::vector<int> get_data_dims() const override { return m_data_dims; }
+  const std::vector<El::Int> get_data_dims() const override { return m_data_dims; }
 
 #ifdef LBANN_HAS_DISTCONV
   bool is_tensor_shuffle_required() const override { return false; }
