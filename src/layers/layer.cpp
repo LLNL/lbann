@@ -704,7 +704,12 @@ void Layer::remove_as_gradient_source()
 
 void Layer::back_prop()
 {
-  LBANN_CALIPER_MARK_SCOPE(("bp " + this->get_name()).c_str());
+    // This bit is preprocessed out since the LBANN_CALIPER macro
+    // won't help us out here.
+#ifdef LBANN_HAS_CALIPER
+  auto const scope_name = this->get_type() + "_layer:back_prop";
+  LBANN_CALIPER_MARK_SCOPE(scope_name.c_str());
+#endif
 
   allocate_new_gradients_();
   back_prop_impl_();
