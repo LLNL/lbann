@@ -67,12 +67,12 @@ unit tests:
     - .lassen common
     - .lbann-base-vars
     - .uses spack environment
-    - .uses nvshmem environment
   stage: test
   dependencies:
     - build and install
   script:
     - echo "== RUNNING PYTHON-BASED UNIT TESTS =="
+    - !reference [.setup_nvshmem, script]
     - echo "Testing $(which lbann)"
     - export OMP_NUM_THREADS=10
     - export LBANN_NNODES=1
@@ -93,7 +93,6 @@ integration tests:
     - .lassen common
     - .lbann-base-vars
     - .uses spack environment
-    - .uses nvshmem environment
   stage: test
   dependencies:
     - build and install
@@ -102,6 +101,7 @@ integration tests:
       when: never
   script:
     - echo "== RUNNING PYTHON-BASED INTEGRATION TESTS =="
+    - !reference [.setup_nvshmem, script]
     - echo "Testing $(which lbann)"
     - export OMP_NUM_THREADS=10
     - export LBANN_NNODES=2
@@ -146,8 +146,8 @@ remove spack environment:
 
 
 # Load the spack shell integration and load the environment.
-.uses nvshmem environment:
-  before_script:
+.setup_nvshmem:
+  script:
     - export NVSHMEM_IBRC_SUPPORT=1
     - export NVSHMEM_PMIX_SUPPORT="0"
     - export NVSHMEM_LIBFABRIC_SUPPORT=0
