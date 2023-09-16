@@ -52,26 +52,22 @@ export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
 
 cd ${LBANN_BUILD_DIR}
 
-
-flux proxy ${JOB_ID} flux run --label-io -n4 -N2 -g 1 -o cpu-affinity=per-task -o gpu-affinity=per-task sh -c 'taskset -cp $$; printenv | grep VISIBLE' | sort
-
-flux proxy ${JOB_ID} flux run --label-io -n4 -N2 -g 1 -o cpu-affinity=off -o gpu-affinity=per-task sh -c 'taskset -cp $$; printenv | grep VISIBLE' | sort
-
 echo "Running sequential catch tests"
 
-flux proxy ${JOB_ID} flux run -N 1 -n 1 -g 1 -t 5m \
+flux run -N 1 -n 1 -g 1 -t 5m \
      ./unit_test/seq-catch-tests \
      -r JUnit \
      -o ${OUTPUT_DIR}/seq-catch-results.xml
 if [[ $? -ne 0 ]]; then
     FAILED_JOBS+=" seq"
 fi
+13
 
 echo "Running MPI catch tests with ${LBANN_NNODES} nodes and ${TEST_TASKS_PER_NODE} tasks per node"
 
-flux proxy ${JOB_ID} flux run \
+flux run \
      -N ${LBANN_NNODES} -n $((${TEST_TASKS_PER_NODE} * ${LBANN_NNODES})) \
-     -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task -o mpibind=off \
+     -g 1 -t 5m -o gpu-affinity=per-task -o mpibind=off \
      ./unit_test/mpi-catch-tests "exclude:[random]" "exclude:[filesystem]"\
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-results-rank=%r-size=%s.xml"
@@ -81,9 +77,9 @@ fi
 
 echo "Running MPI filesystem catch tests"
 
-flux proxy ${JOB_ID} flux run \
+flux run \
      -N ${LBANN_NNODES} -n $((${TEST_TASKS_PER_NODE} * ${LBANN_NNODES})) \
-     -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task -o mpibind=off \
+     -g 1 -t 5m -o gpu-affinity=per-task -o mpibind=off \
      ./unit_test/mpi-catch-tests -s "[filesystem]" \
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
