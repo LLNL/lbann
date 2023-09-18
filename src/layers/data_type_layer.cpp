@@ -87,7 +87,13 @@ data_type_layer<InputTensorDataType, OutputTensorDataType>::operator=(
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
 {
-  LBANN_CALIPER_MARK_SCOPE(("fp " + this->get_name()).c_str());
+  // This bit is preprocessed out since the LBANN_CALIPER macro
+  // won't help us out here.
+#ifdef LBANN_HAS_CALIPER
+  auto const scope_name = this->get_type() + "_layer::forward_prop";
+  LBANN_CALIPER_MARK_SCOPE(scope_name.c_str());
+#endif
+
   const auto fp_start = get_time();
 
   // Setup weights proxies
@@ -131,12 +137,7 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
 
   // Apply layer's compute function
   {
-    // This bit is preprocessed out since the LBANN_CALIPER macro
-    // won't help us out here.
-#ifdef LBANN_HAS_CALIPER
-    auto const scope_name = this->get_type() + "_layer::fp_compute";
-    LBANN_CALIPER_MARK_SCOPE(scope_name.c_str());
-#endif
+    LBANN_CALIPER_MARK_SCOPE(("fp_compute:" + this->get_name()).c_str());
     const auto fp_compute_start = get_time();
     fp_compute();
     m_fp_compute_time += get_time() - fp_compute_start;
@@ -191,12 +192,7 @@ void data_type_layer<InputTensorDataType,
 
   // Backprop the compute function.
   {
-    // This bit is preprocessed out since the LBANN_CALIPER macro
-    // won't help us out here.
-#ifdef LBANN_HAS_CALIPER
-    auto const scope_name = this->get_type() + "_layer::bp_compute";
-    LBANN_CALIPER_MARK_SCOPE(scope_name.c_str());
-#endif
+    LBANN_CALIPER_MARK_SCOPE(("bp_compute" + this->get_name()).c_str());
     const auto bp_compute_start = get_time();
     bp_compute();
     m_bp_compute_time += get_time() - bp_compute_start;

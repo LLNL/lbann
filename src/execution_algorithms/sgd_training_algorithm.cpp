@@ -40,6 +40,11 @@
 
 #include "lbann/proto/training_algorithm.pb.h"
 
+// FIXME (trb): This is a quick hack for a short-term deliverable.
+#ifdef LBANN_HAS_CALIPER
+#include <adiak.hpp>
+#endif
+
 #include <iostream>
 #include <memory>
 #include <string>
@@ -114,6 +119,7 @@ void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
   do_train_begin_cbs(model, ScopeTimer{train_timer, "train_begin callbacks"});
 
   // Start iterating
+  size_t total_batches = 0;
   c.start_timer();
   LBANN_CALIPER_LOOP_BEGIN(train_epoch, "train_epoch");
   for (size_t epoch = 0; !term(c); ++epoch) {
@@ -130,7 +136,7 @@ void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
     // detects the end of an epoch. The termination criteria must be
     // checked every iteration as there may be a batch limit rather
     // than an epoch limit.
-    LBANN_CALIPER_LOOP_BEGIN(train_batch, "train_minibatch");
+    LBANN_CALIPER_LOOP_BEGIN(train_batch, (epoch == 0UL ? "train_minibatch_epoch_0" : "train_minibatch"));
     bool end_of_epoch = false;
     while (!term(c) && !end_of_epoch) {
       LBANN_CALIPER_LOOP_ITER(train_batch, c.get_step());
@@ -139,6 +145,7 @@ void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
                          model,
                          dc,
                          ScopeTimer{train_timer, "train minibatch"});
+      ++total_batches;
     }
     LBANN_CALIPER_LOOP_END(train_batch);
 
@@ -170,6 +177,12 @@ void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
   }
   LBANN_CALIPER_LOOP_END(train_epoch);
   c.stop_timer();
+#ifdef LBANN_HAS_CALIPER
+  if (is_caliper_initialized()) {
+    adiak::value("total training epochs", c.get_epoch());
+    adiak::value("total training batches", total_batches);
+  }
+#endif
 
   // Reset the model back to the training execution context prior to
   // end of training callbacks
@@ -187,8 +200,6 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
                                             data_coordinator& dc,
                                             ScopeTimer timer)
 {
-  LBANN_CALIPER_MARK_FUNCTION;
-
   model.reset_mode(c, execution_mode::training);
   dc.reset_mode(c);
   do_batch_begin_cbs(model,
