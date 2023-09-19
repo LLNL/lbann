@@ -27,7 +27,7 @@
 const std::string hdf5_c3fd_data_sample=R"FOO(RUN_ID:
   000000001:
     NodeFeatures: [0.1, 0.2, 1.1, 1.2, 2.1, 2.2, 3.1, 3.2]
-    EdgeFeatures: [0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0]
+    EdgeFeatures: [0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1]
     COOList: [0, 0, 1, 2, 3, 2, 2, 0]
 )FOO";
 
