@@ -44,6 +44,7 @@ corona distconv testing:
   stage: run-all-clusters
   variables:
     JOB_NAME_SUFFIX: _distconv
+    SPACK_ENV_BASE_NAME_MODIFIER: "-distconv"
     SPACK_SPECS: "+rocm +distconv"
     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
@@ -65,7 +66,7 @@ lassen testing:
 #   stage: run-all-clusters
 #   variables:
 #     JOB_NAME_SUFFIX: _distconv
-#     SPACK_ENV_BASE_NAME_MODIFIER: "-multi-stage"
+#     SPACK_ENV_BASE_NAME_MODIFIER: "-multi-stage-distconv"
 #     SPACK_SPECS: "+cuda +distconv +nvshmem +fft"
 #     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
 #     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
@@ -119,6 +120,7 @@ tioga distconv testing:
   stage: run-all-clusters
   variables:
     JOB_NAME_SUFFIX: _distconv
+    SPACK_ENV_BASE_NAME_MODIFIER: "-distconv"
     SPACK_SPECS: "+rocm +distconv"
     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
