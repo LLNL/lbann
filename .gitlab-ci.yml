@@ -43,7 +43,7 @@ corona testing:
 corona distconv testing:
   stage: run-all-clusters
   variables:
-    JOB_NAME: ${CI_PROJECT_NAME}_${CI_PIPELINE_ID}_distconv
+    JOB_NAME_SUFFIX: _distconv
     SPACK_SPECS: "+rocm +distconv"
     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
@@ -64,7 +64,7 @@ lassen testing:
 # lassen distconv testing:
 #   stage: run-all-clusters
 #   variables:
-#     JOB_NAME: ${CI_PROJECT_NAME}_${CI_PIPELINE_ID}_distconv
+#     JOB_NAME_SUFFIX: _distconv
 #     SPACK_ENV_BASE_NAME_MODIFIER: "-multi-stage"
 #     SPACK_SPECS: "+cuda +distconv +nvshmem +fft"
 #     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
@@ -96,7 +96,7 @@ pascal compiler testing:
 pascal distconv testing:
   stage: run-all-clusters
   variables:
-    JOB_NAME: ${CI_PROJECT_NAME}_${CI_PIPELINE_ID}_distconv
+    JOB_NAME_SUFFIX: _distconv
     SPACK_SPECS: "%gcc@10.3.1 +cuda +distconv +fft"
     BUILD_SCRIPT_OPTIONS: "--no-default-mirrors"
     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
@@ -118,7 +118,7 @@ tioga testing:
 tioga distconv testing:
   stage: run-all-clusters
   variables:
-    JOB_NAME: ${CI_PROJECT_NAME}_${CI_PIPELINE_ID}_distconv
+    JOB_NAME_SUFFIX: _distconv
     SPACK_SPECS: "+rocm +distconv"
     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"

@@ -33,7 +33,7 @@
 
     # This variable is the name used to identify the job in the Slurm
     # queue. We need this to be able to access the correct jobid.
-    JOB_NAME: ${CI_PROJECT_NAME}_${CI_PIPELINE_ID}
+    JOB_NAME: ${CI_PROJECT_NAME}_${CI_PIPELINE_ID}${JOB_NAME_SUFFIX}
 
     # This is needed to ensure that we run as lbannusr.
     LLNL_SERVICE_USER: lbannusr
