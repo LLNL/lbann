@@ -470,7 +470,7 @@ fi
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^dihydrogen".* ]]; then
     # If the user didn't supply a specific version of DiHydrogen on the command line add one
     # Due to concretizer errors force the openmp variant for DiHydrogen
-#    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER}}"
+#    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER}"
     DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER} ${CENTER_BLAS_LIBRARY}"
 fi
 
@@ -539,7 +539,10 @@ if [[ ! "${LBANN_VARIANTS}" =~ .*"~python".* ]]; then
         # Specifically, for use within the data reader, NumPy has to have the same
         # C++ std library
         if [[ ! "${PKG_LIST}" =~ .*"py-numpy".* ]]; then
-            PKG_LIST="${PKG_LIST} py-numpy@1.16.0:"
+            PKG_LIST="${PKG_LIST} py-numpy@1.16.0:1.24.3"
+        fi
+        if [[ ! "${PKG_LIST}" =~ .*"py-pip".* ]]; then
+            PKG_LIST="${PKG_LIST} py-pip@22.2.2:"
         fi
     fi
 fi
@@ -922,7 +925,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
 
     ##########################################################################################
     # Actually install LBANN's dependencies from local source
-    CMD="spack install --test root --reuse --only dependencies ${BUILD_JOBS}"
+    CMD="spack install --reuse --only dependencies ${BUILD_JOBS}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -938,7 +941,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
     if [[ -n "${SPACK_EXTRA_ROOT_PACKAGES:-}" ]]; then
         for p in ${SPACK_EXTRA_ROOT_PACKAGES}
         do
-            CMD="spack install --test root --reuse ${BUILD_JOBS} ${p}"
+            CMD="spack install --reuse ${BUILD_JOBS} ${p}"
             echo ${CMD} | tee -a ${LOG}
             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
         done
@@ -949,9 +952,9 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         for p in ${PIP_EXTRAS}
         do
             if [[ -e "${p}" ]]; then
-                CMD="python3 -m pip install -r ${p}"
+                CMD="python3 -m pip install --prefix ${LBANN_INSTALL_DIR} -r ${p}"
             else
-                CMD="python3 -m pip install ${p}"
+                CMD="python3 -m pip install --prefix ${LBANN_INSTALL_DIR} ${p}"
             fi
             echo ${CMD} | tee -a ${LOG}
             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
