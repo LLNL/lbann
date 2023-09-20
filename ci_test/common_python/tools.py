@@ -735,7 +735,7 @@ def create_tests(setup_func,
 
     """
     # Load LBANN Python frontend
-    import lbann.contrib.args
+    import lbann.contrib.lc.systems
     from lbann.contrib.lc.systems import *
 
     # Make sure test name is valid
