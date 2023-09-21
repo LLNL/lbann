@@ -261,7 +261,10 @@ public:
   std::ofstream* m_profile = nullptr;
 
   /// for use during development and debugging
-  int get_data_size() { return m_data.size(); }
+  int get_data_size() {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_data.size();
+  }
 
   /// made public for debugging during development
   void copy_members(const data_store_conduit& rhs);
@@ -362,7 +365,9 @@ private:
   map_ii_t m_spilled_nodes;
 
   /// used in set_conduit_node(...)
-  std::mutex m_mutex;
+  // Guards m_sample_sizes, m_data
+  mutable std::mutex m_mutex;
+  // Guards m_compact_sample_size
   std::mutex m_mutex_2;
 
   /// for use in local cache mode
