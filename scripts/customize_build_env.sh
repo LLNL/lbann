@@ -608,6 +608,12 @@ cat <<EOF >> ${yaml}
         core_compilers:
         - '${CORE_COMPILER}'
 EOF
+        if [[ ${DEPENDENTS_CENTER_COMPILER} ]]; then
+            DEPENDENTS_CORE_COMPILER=$(echo "${DEPENDENTS_CENTER_COMPILER}" | tr -d '%')
+cat <<EOF >> ${yaml}
+        - '${DEPENDENTS_CORE_COMPILER}'
+EOF
+        fi
     fi
 
 }
