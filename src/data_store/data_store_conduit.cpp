@@ -614,7 +614,9 @@ void data_store_conduit::start_exchange_data_by_sample(size_t current_pos,
           LBANN_ERROR("data_id: ", index, " does not have a contiguous layout");
         }
         if (n.data_ptr() == nullptr) {
-          LBANN_ERROR("data_id: ", index, " does not have a valid data pointer");
+          LBANN_ERROR("data_id: ",
+                      index,
+                      " does not have a valid data pointer");
         }
         if (n.contiguous_data_ptr() == nullptr) {
           LBANN_ERROR("data_id: ",
@@ -699,10 +701,11 @@ void data_store_conduit::start_exchange_data_by_sample(size_t current_pos,
                   m_recv_buffer.size());
     }
     if (m_recv_requests.size() != m_recv_buffer.size()) {
-      LBANN_ERROR("m_recv_requests.size != m_recv_buffer.size; m_recv_requests: ",
-                  m_recv_requests.size(),
-                  " m_recv_buffer.size: ",
-                  m_recv_buffer.size());
+      LBANN_ERROR(
+        "m_recv_requests.size != m_recv_buffer.size; m_recv_requests: ",
+        m_recv_requests.size(),
+        " m_recv_buffer.size: ",
+        m_recv_buffer.size());
     }
   } // End scope std::lock_guard<std::mutex> lock(m_mutex);
 
