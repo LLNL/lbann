@@ -1385,7 +1385,7 @@ void data_store_conduit::exchange_local_caches()
   PROFILE("  is_local_cache(): ", is_local_cache());
   PROFILE("  is_fully_loaded: ", is_fully_loaded());
 
-  std::lock_guard<std::mutex> lock(m_mutex);
+  //  std::lock_guard<std::mutex> lock(m_mutex);
   // indices[j] will contain the indices
   // that P_j will read from disk, and subsequently bcast to all others
   std::vector<std::vector<int>> indices;
