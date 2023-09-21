@@ -46,12 +46,13 @@ static inline void
 print_progress(int iteration, int total, double avg_time, std::string prefix)
 {
   // Preamble
-  std::cout << "Step " << iteration << "/" << total << "    " << prefix << "[";
+  std::cout << "Step " << (iteration + 1) << "/" << total << "    " << prefix
+            << "[";
 
   // Clamp value
   iteration = (iteration < 0) ? 0 : iteration;
-  iteration = (iteration > total) ? total : iteration;
-  float percentage = static_cast<float>(iteration) / total;
+  iteration = (iteration > (total - 1)) ? (total - 1) : iteration;
+  float percentage = static_cast<float>(iteration + 1) / total;
   int bars = static_cast<int>(percentage * LBANN_PBAR_WIDTH);
 
   // Bar
@@ -75,7 +76,7 @@ print_progress(int iteration, int total, double avg_time, std::string prefix)
               << " sec          "; // Extra whitespace to clear previous prompts
   }
 
-  if (iteration == total)
+  if (iteration >= (total - 1))
     std::cout << std::endl;
   else
     std::cout << "\r" << std::flush;
