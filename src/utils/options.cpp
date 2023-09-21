@@ -24,9 +24,9 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann_config.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/argument_parser.hpp"
+#include "lbann_config.hpp"
 
 namespace lbann {
 
@@ -135,6 +135,10 @@ void construct_std_options()
                       {"--no_inplace"},
                       utils::ENV("LBANN_NO_INPLACE"),
                       "[STD] Disable in-place layer memory optimization");
+  arg_parser.add_flag(LBANN_OPTION_NO_BACKPROP_DISABLE,
+                      {"--no_backprop_disable"},
+                      utils::ENV("LBANN_NO_BACKPROP_DISABLE"),
+                      "[STD] Always compute all layers in backpropagation");
 
   // Input options
   arg_parser.add_option(
@@ -400,10 +404,11 @@ void construct_datareader_options()
                         {"--data_filename_validate"},
                         "[DATAREADER] Sets the filename for validation data",
                         "");
-  arg_parser.add_option(LBANN_OPTION_DATA_READER_FRACTION,
-                        {"--data_reader_fraction"},
-                        "[DATAREADER] Sets the fraction of total samples to use",
-                        (float)-1);
+  arg_parser.add_option(
+    LBANN_OPTION_DATA_READER_FRACTION,
+    {"--data_reader_fraction"},
+    "[DATAREADER] Sets the fraction of total samples to use",
+    (float)-1);
   arg_parser.add_option(
     LBANN_OPTION_LABEL_FILENAME_TEST,
     {"--label_filename_test"},

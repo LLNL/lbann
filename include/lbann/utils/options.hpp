@@ -66,6 +66,7 @@ namespace lbann {
 #define LBANN_OPTION_INIT_SHMEM "Initialize SHMEM when initializing LBANN"
 #define LBANN_OPTION_INIT_NVSHMEM "Initialize NVSHMEM when initializing LBANN"
 #define LBANN_OPTION_NO_INPLACE "no_inplace"
+#define LBANN_OPTION_NO_BACKPROP_DISABLE "no_backprop_disable"
 
 // Input options
 #define LBANN_OPTION_CKPT_DIR "ckpt_dir"

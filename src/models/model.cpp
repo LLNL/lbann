@@ -58,6 +58,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <set>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -1605,17 +1606,46 @@ void model::forward_prop(execution_mode mode)
 void model::backward_prop(bool compute_weight_grads_only)
 {
   LBANN_CALIPER_MARK_FUNCTION;
+
+  // Layers disabled due to not propagating error signals through
+  std::unordered_set<const Layer*> disabled_layers;
+  auto const& arg_parser = global_argument_parser();
+  bool const envvar_disable_layers =
+    !arg_parser.get<bool>(LBANN_OPTION_NO_BACKPROP_DISABLE);
+
   do_model_backward_prop_begin_cbs();
 
   for (El::Int i = get_num_layers() - 1; i >= 0; --i) {
 
     // Perform backward prop step on current layer
     auto& l = get_layer(i);
+    bool enable_layer = (!envvar_disable_layers ||
+                         disabled_layers.find(&l) == disabled_layers.end());
+
+    // Check if all children skip gradient backpropagation
+    if (enable_layer && envvar_disable_layers) {
+      bool all_children_skip_gradient = l.get_num_children() > 0;
+      for (auto& child : l.get_child_layers()) {
+        if (disabled_layers.find(child) != disabled_layers.end())
+          continue;
+        all_children_skip_gradient &=
+          (child->get_backprop_requirements() == PROPAGATE_NOTHING);
+        if (!all_children_skip_gradient)
+          break;
+      }
+
+      // Start disabling layers from this point onwards
+      if (all_children_skip_gradient) {
+        enable_layer = false;
+        disabled_layers.insert(&l);
+      }
+    }
 
     if (this->is_subgraph_parallelism_enabled()) {
       if (l.get_run_layer_in_subgraph()) {
         do_layer_backward_prop_begin_cbs(&l);
-        l.back_prop();
+        if (enable_layer)
+          l.back_prop();
         do_layer_backward_prop_end_cbs(&l);
       }
       else {
@@ -1625,7 +1655,8 @@ void model::backward_prop(bool compute_weight_grads_only)
     }
     else {
       do_layer_backward_prop_begin_cbs(&l);
-      l.back_prop();
+      if (enable_layer)
+        l.back_prop();
       do_layer_backward_prop_end_cbs(&l);
     }
 
