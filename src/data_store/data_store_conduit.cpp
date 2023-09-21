@@ -131,16 +131,16 @@ data_store_conduit::~data_store_conduit()
   if (m_profile) {
     m_profile->close();
   }
-  if (m_is_local_cache && m_mem_seg && m_comm->get_rank_in_node() == 0) {
-    int sanity = shm_unlink(m_seg_name.c_str());
+  if (m_is_local_cache && m_mem_seg) {
+    int sanity = munmap(reinterpret_cast<void*>(m_mem_seg), m_mem_seg_length);
     if (sanity != 0) {
-      std::cout << "\nWARNING: shm_unlink failed in "
-	"data_store_conduit::~data_store_conduit() for name " << m_seg_name.c_str() << "\n";
+      LBANN_WARNING("munmap failed in for m_seg_name ", m_seg_name);
     }
-    sanity = munmap(reinterpret_cast<void*>(m_mem_seg), m_mem_seg_length);
-    if (sanity != 0) {
-      std::cout << "\nWARNING: munmap failed in "
-                   "data_store_conduit::~data_store_conduit()\n";
+    if (m_comm->get_rank_in_node() == 0) {
+      sanity = shm_unlink(m_seg_name.c_str());
+      if (sanity != 0) {
+        LBANN_WARNING("shm_unlink failed for m_seg_name ", m_seg_name);
+      }
     }
   }
 }
