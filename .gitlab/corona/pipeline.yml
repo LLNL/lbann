@@ -55,7 +55,7 @@ allocate lc resources:
     - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "150m" || echo "120m")
     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
     - export FLUX_F58_FORCE_ASCII=t
-    - jobid=$(flux --parent alloc -N ${LBANN_NNODES} -g 1 -t ${TEST_TIME} --job-name=${JOB_NAME} --bg)
+    - jobid=$(flux --parent alloc -N ${LBANN_NNODES} --exclusive -t ${TEST_TIME} --job-name=${JOB_NAME} --bg)
     - export JOB_ID=$jobid
   timeout: 6h
 
