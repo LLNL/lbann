@@ -54,7 +54,7 @@ cd ${LBANN_BUILD_DIR}
 
 echo "Running sequential catch tests"
 
-flux run -N 1 -n 1 -g 1 -t 5m \
+flux run -N 1 -n 1 --exclusive -o pmi=pmix -o nosetpgrp -t 5m \
      ./unit_test/seq-catch-tests \
      -r JUnit \
      -o ${OUTPUT_DIR}/seq-catch-results.xml
@@ -66,7 +66,7 @@ echo "Running MPI catch tests with ${LBANN_NNODES} nodes and ${TEST_TASKS_PER_NO
 
 flux run \
      -N ${LBANN_NNODES} -n $((${TEST_TASKS_PER_NODE} * ${LBANN_NNODES})) \
-     -g 1 -t 5m --exclusive -o pmi=pmix -o nosetpgrp \
+     -t 5m --exclusive -o pmi=pmix -o nosetpgrp \
      ./unit_test/mpi-catch-tests "exclude:[random]" "exclude:[filesystem]"\
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-results-rank=%r-size=%s.xml"
@@ -78,7 +78,7 @@ echo "Running MPI filesystem catch tests"
 
 flux run \
      -N ${LBANN_NNODES} -n $((${TEST_TASKS_PER_NODE} * ${LBANN_NNODES})) \
-     -g 1 -t 5m --exclusive -o pmi=pmix -o nosetpgrp \
+     -t 5m --exclusive -o pmi=pmix -o nosetpgrp \
      ./unit_test/mpi-catch-tests -s "[filesystem]" \
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
