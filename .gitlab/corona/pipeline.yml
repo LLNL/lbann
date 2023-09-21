@@ -79,6 +79,7 @@ build and install:
     - export TEST_MPIBIND_FLAG="--mpibind=off"
     - export SPACK_ARCH=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch)
     - export SPACK_ARCH_TARGET=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t)
+    - export EXTRA_FLUX_ARGS="-o pmi=pmix"
     - !reference [.setup_lbann, script]
     - flux proxy ${JOB_ID} .gitlab/common/run-catch-tests-flux.sh
 
