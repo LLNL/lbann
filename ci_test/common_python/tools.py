@@ -760,14 +760,15 @@ def create_tests(setup_func,
         else:
             basepath = '/p/vast1/lbann'
 
+        tmpdir = os.environ.get('TMPDIR')
         if os.path.isdir(basepath) and os.access(basepath, os.R_OK | os.W_OK):
             db_path = basepath
         else:
-            db_path = '/tmp'
+            db_path = tmpdir
 
         environment['MIOPEN_USER_DB_PATH'] = f'{db_path}/MIOpen_user_db'
         # Empirically the cache dir cannot be on a parallel file system
-        environment['MIOPEN_CUSTOM_CACHE_DIR'] ='/tmp/MIOpen_custom_cache'
+        environment['MIOPEN_CUSTOM_CACHE_DIR'] =f'{tmpdir}/MIOpen_custom_cache'
 
         kwargs['environment'] = environment
 

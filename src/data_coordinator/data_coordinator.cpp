@@ -29,8 +29,8 @@
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include <lbann/data_coordinator/data_coordinator.hpp>
 #include <lbann/trainers/trainer.hpp>
-#include <lbann/utils/distconv.hpp>
 #include <lbann/utils/dim_helpers.hpp>
+#include <lbann/utils/distconv.hpp>
 #include <lbann/utils/serialize.hpp>
 
 namespace lbann {
@@ -234,7 +234,8 @@ TargetModeDimMap data_coordinator::get_data_dims()
           std::vector<El::Int>(1, dr->get_num_labels());
       }
       else {
-        map[data_reader_target_mode::CLASSIFICATION] = std::vector<El::Int>(1, 0);
+        map[data_reader_target_mode::CLASSIFICATION] =
+          std::vector<El::Int>(1, 0);
       }
       if (dr->has_responses()) {
         map[data_reader_target_mode::REGRESSION] =
@@ -353,10 +354,21 @@ long data_coordinator::get_linearized_size(
   auto& dim_map = m_active_data_fields_dim_map.at(data_field);
   if (linearized_size != get_linear_size(dim_map)) {
     if (linearized_size == -1) {
-      LBANN_WARNING("Unable to find data readers; using data field map for linearized size for data field: ", data_field, " = ", get_linear_size(dim_map));
+      LBANN_WARNING("Unable to find data readers; using data field map for "
+                    "linearized size for data field: ",
+                    data_field,
+                    " = ",
+                    get_linear_size(dim_map));
       linearized_size = get_linear_size(dim_map);
-    }else {
-      LBANN_ERROR("The data readers and data field map disagree on the linearized size of the field: ", data_field, ": ", linearized_size, " != ", get_linear_size(dim_map));
+    }
+    else {
+      LBANN_ERROR("The data readers and data field map disagree on the "
+                  "linearized size of the field: ",
+                  data_field,
+                  ": ",
+                  linearized_size,
+                  " != ",
+                  get_linear_size(dim_map));
     }
   }
   return linearized_size;
@@ -529,7 +541,8 @@ bool data_coordinator::at_new_epoch() const
 }
 
 void data_coordinator::register_active_data_field(
-  data_field_type const data_field, std::vector<El::Int> const data_field_dim_map)
+  data_field_type const& data_field,
+  std::vector<El::Int> const& data_field_dim_map)
 {
   m_active_data_fields.insert(data_field);
   m_active_data_fields_dim_map[data_field] = data_field_dim_map;

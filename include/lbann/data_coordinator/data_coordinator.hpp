@@ -281,8 +281,9 @@ public:
 
   bool at_new_epoch() const;
 
-  virtual void register_active_data_field(data_field_type const data_field,
-                                          std::vector<El::Int> const data_field_dim_map);
+  virtual void
+  register_active_data_field(data_field_type const& data_field,
+                             std::vector<El::Int> const& data_field_dim_map);
 
   //************************************************************************
   //
