@@ -96,9 +96,10 @@ integration tests:
   dependencies:
     - build and install
   rules:
-    - if: $TEST_FLAGS =~ /distconv/
-      when: never
-    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
+    - !reference [.lbann-test-rules, rules]
+    # - if: $TEST_FLAGS =~ /distconv/
+    #   when: never
+    # - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
   script:
     - echo "== RUNNING PYTHON-BASED INTEGRATION TESTS =="
     - !reference [.setup_nvshmem, script]

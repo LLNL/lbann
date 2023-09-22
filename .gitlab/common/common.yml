@@ -141,3 +141,9 @@
     exclude:
       - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/build/**/*.o
       - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/build/unit_test/*
+
+.lbann-test-rules:
+  rules:
+    - if: $TEST_FLAGS =~ /distconv/
+      when: never
+    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
