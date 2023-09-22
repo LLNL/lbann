@@ -24,13 +24,6 @@
 ################################################################################
 
 #!/bin/bash
-# Just in case
-# source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-# source spack-ci-env-name.sh
-
-# # Load up the spack environment
-# spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
-# spack load lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
 
 echo "Task: Intergation Tests"
 cd ci_test/integration_tests

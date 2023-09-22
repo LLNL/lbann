@@ -77,7 +77,6 @@ unit tests:
     - export OMP_NUM_THREADS=10
     - export LBANN_NNODES=1
     - export TEST_TASKS_PER_NODE=4
-    - !reference [.setup_lbann, script]
     - lalloc ${LBANN_NNODES} -W 30 -G guests -q pdebug .gitlab/lassen/run_unit_tests.sh
   artifacts:
     when: always
@@ -107,7 +106,6 @@ integration tests:
     - export LBANN_NNODES=2
     - export TEST_TASKS_PER_NODE=4
     - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
-    - !reference [.setup_lbann, script]
     - lalloc ${LBANN_NNODES} -W 45 -G guests -q pdebug .gitlab/lassen/run_integration_tests.sh
   artifacts:
     when: always

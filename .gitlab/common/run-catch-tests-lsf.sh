@@ -25,16 +25,6 @@
 ################################################################################
 
 #!/bin/bash
-# Just in case
-# source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-# source spack-ci-env-name.sh
-
-# # Load up the spack environment
-# #SPACK_ARCH=$(spack arch)
-# #SPACK_ARCH_TARGET=$(spack arch -t)
-# spack env activate lbann-${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET}
-# spack load lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
-
 cd ${LBANN_BUILD_DIR}
 
 # Configure the output directory
@@ -47,9 +37,6 @@ mkdir -p ${OUTPUT_DIR}
 
 FAILED_JOBS=""
 
-# LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_DEP_ENV_NAME}-${SPACK_ARCH_TARGET})
-# SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
-# cd ${SPACK_BUILD_DIR}
 lrun -N 1 -n 1 -W 5 \
      ./unit_test/seq-catch-tests \
      -r JUnit \
