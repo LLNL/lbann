@@ -41,6 +41,7 @@ weekly_options_and_targets = {
         'lassen': 0.10,
         'ray':    0.15,
         'tioga':  0.25,
+        'corona':  0.61,
     }
 }
 
@@ -59,6 +60,7 @@ nightly_options_and_targets = {
         'lassen': 0.15,
         'ray':    0.23,
         'tioga':  0.43,
+        'corona':  0.61,
     }
 }
 
