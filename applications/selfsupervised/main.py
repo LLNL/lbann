@@ -19,10 +19,7 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 
 # Command-line options
 parser = argparse.ArgumentParser()
-lbann.contrib.args.add_scheduler_arguments(parser)
-parser.add_argument(
-    '--job-name', action='store', default='lbann_siamese', type=str,
-    help='job name', metavar='NAME')
+lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_siamese')
 parser.add_argument(
     '--pretrain', action='store', default='siamese', type=str,
     help='pretraining model (default: siamese)')

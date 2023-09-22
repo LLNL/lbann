@@ -7,10 +7,7 @@ from image_dataset import make_data_reader
 
 desc = ('Train GAN on image data using LBANN.')
 parser = argparse.ArgumentParser(description=desc)
-lbann.contrib.args.add_scheduler_arguments(parser)
-parser.add_argument(
-    '--job-name', action='store', default='lbann_image_gan', type=str,
-    help='scheduler job name (default: lbann_image_gan)')
+lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_image_gan')
 parser.add_argument(
     '--mini-batch-size', action='store', default=32, type=int,
     help='mini-batch size (default: 32)', metavar='NUM')

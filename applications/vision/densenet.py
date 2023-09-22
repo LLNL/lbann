@@ -336,10 +336,7 @@ def get_args():
     desc = ('Construct and run DenseNet on ImageNet data. '
             'Running the experiment is only supported on LC systems.')
     parser = argparse.ArgumentParser(description=desc)
-    lbann.contrib.args.add_scheduler_arguments(parser)
-    parser.add_argument(
-        '--job-name', action='store', default='lbann_densenet', type=str,
-        help='scheduler job name (default: lbann_densenet)')
+    lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_densenet')
     parser.add_argument(
         '--mini-batch-size', action='store', default=256, type=int,
         help='mini-batch size (default: 256)', metavar='NUM')

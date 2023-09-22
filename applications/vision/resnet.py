@@ -11,11 +11,8 @@ import data.imagenet
 desc = ('Construct and run ResNet on ImageNet-1K data. '
         'Running the experiment is only supported on LC systems.')
 parser = argparse.ArgumentParser(description=desc)
-lbann.contrib.args.add_scheduler_arguments(parser)
+lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_resnet')
 lbann.contrib.args.add_profiling_arguments(parser)
-parser.add_argument(
-    '--job-name', action='store', default='lbann_resnet', type=str,
-    help='scheduler job name (default: lbann_resnet)')
 parser.add_argument(
     '--resnet', action='store', default=50, type=int,
     choices=(18, 34, 50, 101, 152),

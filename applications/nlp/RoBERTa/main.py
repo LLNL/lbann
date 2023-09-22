@@ -28,14 +28,6 @@ parser.add_argument(
     help="size of minibatches for training",
 )
 parser.add_argument(
-    "--job-name",
-    action="store",
-    default="lbann_RoBERTa",
-    type=str,
-    help="scheduler job name",
-    metavar="NAME",
-)
-parser.add_argument(
     "--work-dir",
     action="store",
     default=None,
@@ -47,7 +39,7 @@ parser.add_argument("--batch-job", action="store_true", help="submit as batch jo
 parser.add_argument(
     "--checkpoint", action="store_true", help="checkpoint trainer after every epoch"
 )
-lbann.contrib.args.add_scheduler_arguments(parser)
+lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_RoBERTa')
 lbann_params = parser.parse_args()
 
 # ----------------------------------------------

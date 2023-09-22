@@ -137,12 +137,9 @@ if __name__ == "__main__":
     # Command-line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--job-name', action='store', default='lbann_siamese', type=str,
-        help='scheduler job name  (default: lbann_siamese)', metavar='NAME')
-    parser.add_argument(
         '--num-patches', action='store', default=3, type=int,
         help='number of patches and Siamese heads (default: 3)', metavar='NUM')
-    lbann.contrib.args.add_scheduler_arguments(parser)
+    lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_siamese')
     parser.add_argument(
         '--mini-batch-size', action='store', default=512, type=int,
         help='mini-batch size (default: 512)', metavar='NUM')

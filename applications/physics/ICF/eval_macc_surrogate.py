@@ -26,10 +26,7 @@ lbann_exe = join(dirname(lbann_exe), 'lbann_inf')
 
 # Command-line arguments
 parser = argparse.ArgumentParser()
-lbann.contrib.args.add_scheduler_arguments(parser)
-parser.add_argument(
-    '--job-name', action='store', default='eval', type=str,
-    help='job name', metavar='NAME')
+lbann.contrib.args.add_scheduler_arguments(parser, 'eval')
 parser.add_argument(
     '--mini-batch-size', action='store', default=4096, type=int,
     help='mini-batch size (default: 128)', metavar='NUM')

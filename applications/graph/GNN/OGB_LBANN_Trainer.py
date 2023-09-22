@@ -17,7 +17,7 @@ desc = ("Training Edge-conditioned Graph Convolutional Model Using LBANN ")
 
 parser = argparse.ArgumentParser(description=desc)
 
-lbann.contrib.args.add_scheduler_arguments(parser)
+lbann.contrib.args.add_scheduler_arguments(parser, 'NN_Conv')
 lbann.contrib.args.add_optimizer_arguments(parser)
 
 parser.add_argument(
@@ -59,10 +59,6 @@ parser.add_argument(
 parser.add_argument(
     '--edge-embeddings', action='store', default=16, type=int,
     help='dimensionality of edge feature embedding (deafult: 16)', metavar='NUM')
-
-parser.add_argument(
-    '--job-name', action='store', default="NN_Conv", type=str,
-    help="Job name for scheduler", metavar='NAME')
 
 parser.add_argument(
     '--enable-distconv', action='store_true',
