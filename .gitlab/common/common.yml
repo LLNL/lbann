@@ -144,7 +144,6 @@
 
 .lbann-test-rules:
   rules:
-#    - if: $TEST_FLAGS =~ /.*distconv.py$/
     - if: $JOB_NAME_SUFFIX == "_distconv"
       when: never
     - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME

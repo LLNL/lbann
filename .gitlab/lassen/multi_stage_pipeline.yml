@@ -146,7 +146,8 @@ remove spack environment:
 .setup_nvshmem:
   script:
     - export NVSHMEM_IBRC_SUPPORT=1
-    - export NVSHMEM_PMIX_SUPPORT="0"
+    - export NVSHMEM_PMIX_SUPPORT="1"
+#    - export NVSHMEM_PMIX_SUPPORT="0"
     - export NVSHMEM_LIBFABRIC_SUPPORT=0
 
 # Variables for Lassen. Because this test uses "test_compiler.py", we
@@ -157,10 +158,6 @@ remove spack environment:
     SYSTEM_NAME: lassen
     SPACK_USER_CACHE_PATH: /g/g14/lbannusr/spack_repos/.spack_${SYSTEM_NAME}
     SPACK_REPO: spack_repos/spack_${SYSTEM_NAME}.git
-
-    # # This is based on the assumption that each runner will only ever
-    # # be able to run one pipeline on a given cluster at one time.
-    # SPACK_ENV_BASE_NAME: gitlab-multi-stage-${CI_COMMIT_BRANCH}-${GITLAB_USER_LOGIN}-${SYSTEM_NAME}-${CI_RUNNER_SHORT_TOKEN}
 
     # These are system-specific specs that should be forwarded to the
     # build script
