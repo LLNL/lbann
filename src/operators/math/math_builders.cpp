@@ -62,6 +62,8 @@ LBANN_ABS_OP_COMPLEX_ETI(El::Device::GPU);
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(exp, T, D);                           \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(expm1, T, D);                         \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(floor, T, D);                         \
+  LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(gelu, T, D);                          \
+  LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(gelunew, T, D);                       \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(greater, T, D);                       \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(greater_constant, T, D);              \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(greater_equal, T, D);                 \

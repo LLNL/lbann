@@ -464,6 +464,56 @@ struct ErfInvOpImpl
   }
 };
 
+// GELU operator
+template <typename DataT>
+struct GeluOpImpl
+{
+  DataT operator()(DataT const& x) const noexcept
+  {
+    const double rsqrt_two = 0.7071067811865475;
+    return (x / 2) *
+           (1 + El::To<DataT>(std::erf(El::To<double>(x) * rsqrt_two)));
+  }
+  DataT operator()(DataT const& x, DataT const& dy) const noexcept
+  {
+    const double rsqrt_two = 0.7071067811865475;
+    const auto sqrt_two_pi = El::To<DataT>(2.5066282746310002);
+    const auto h = El::To<DataT>(0.5);
+
+    auto term1 = h * El::To<DataT>(std::erf(El::To<double>(x) * rsqrt_two));
+    auto term2 = El::Exp(-x * x / 2) * x * sqrt_two_pi;
+    return dy * (h + term1 + term2);
+  }
+};
+
+// GELU operator (hyperbolic tangent approximation)
+template <typename DataT>
+struct GeluNewOpImpl
+{
+  DataT operator()(DataT const& x) const noexcept
+  {
+    // Coefficients as they appear in the BERT and GPT codebases
+    const auto sqrt_two_over_pi = El::To<DataT>(0.7978845608028654);
+    const auto coeff = El::To<DataT>(0.044715);
+
+    auto hx = x / 2;
+    return hx * (1 + El::Tanh(sqrt_two_over_pi * (x + coeff * x * x * x)));
+  }
+  DataT operator()(DataT const& x, DataT const& dy) const noexcept
+  {
+    const auto c1 = El::To<DataT>(0.797885);
+    const auto c2 = El::To<DataT>(0.107032);
+    const auto c3 = El::To<DataT>(0.0356774);
+    auto x3 = x * x * x;
+    auto c1x = c1 * x;
+    auto c3x3 = c3 * x3;
+    auto sech = El::To<DataT>(1) / El::Cosh(c1x + c3x3);
+    auto dx = (1 + (c1x + c2 * x3) * sech * sech + El::Tanh(c1x + c3x3));
+
+    return dx * dy / 2;
+  }
+};
+
 } // namespace
 
 // Template instantiation
@@ -514,6 +564,8 @@ DEFINE_COMPUTE_OPS(ErfInv)
 DEFINE_COMPUTE_OPS(Exp)
 DEFINE_COMPUTE_OPS(Expm1)
 DEFINE_COMPUTE_OPS(Floor)
+DEFINE_COMPUTE_OPS(Gelu)
+DEFINE_COMPUTE_OPS(GeluNew)
 DEFINE_COMPUTE_OPS(Log)
 DEFINE_COMPUTE_OPS(Log1p)
 DEFINE_COMPUTE_OPS(LogicalNot)
@@ -545,6 +597,8 @@ DEFINE_COMPUTE_OPS(Tanh)
   template class ExpOperator<T, El::Device::CPU>;                              \
   template class Expm1Operator<T, El::Device::CPU>;                            \
   template class FloorOperator<T, El::Device::CPU>;                            \
+  template class GeluOperator<T, El::Device::CPU>;                             \
+  template class GeluNewOperator<T, El::Device::CPU>;                          \
   template class Log1pOperator<T, El::Device::CPU>;                            \
   template class LogOperator<T, El::Device::CPU>;                              \
   template class LogicalNotOperator<T, El::Device::CPU>;                       \

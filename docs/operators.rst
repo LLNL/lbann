@@ -54,6 +54,8 @@ Operators are specified for unique input and output data types.
    :ref:`ExpOperator <Exp>`, "Apply the Exp operator entrywise"
    :ref:`Expm1Operator <Expm1>`, "Apply the Expm1 operator entrywise"
    :ref:`FloorOperator <Floor>`, "Apply the Floor operator entrywise"
+   :ref:`GeluOperator <Gelu>`, "Gaussian Error Linear Unit operator"
+   :ref:`GeluNewOperator <GeluNew>`, "Gaussian Error Linear Unit operator (tanh approximation)"
    :ref:`GreaterOperator <Greater>`, "Apply the Greater operator entrywise"
    :ref:`GreaterConstantOperator <GreaterConstant>`, "Test each value for 'greater-than' with a constant (x>c)"
    :ref:`GreaterEqualOperator <GreaterEqual>`, "Apply the GreaterEqual operator entrywise"
@@ -562,6 +564,53 @@ Apply the floor function to the input tensor entrywise.
 :ref:`Back to Top<operators>`
 
 ________________________________________________
+
+
+
+.. _Gelu:
+
+------------------------------------------------
+Gelu
+------------------------------------------------
+
+Gaussian Error Linear Unit (GELU) operator.
+
+.. math::
+
+   \text{GELU}(x) = x\Phi (x),
+
+where :math:`\Phi` is the Gaussian cumulative distribution function. See:
+
+Dan Hendrycks and Kevin Gimpel. "Gaussian Error Linear Units (GELUs)."
+arXiv preprint arXiv:1606.08415 (2016).
+
+:ref:`Back to Top<operators>`
+
+________________________________________
+
+
+
+.. _GeluNew:
+
+------------------------------------------------
+GeluNew (GELU tanh approximation)
+------------------------------------------------
+
+Hyperbolic tangent-based approximation of the Gaussian Error Linear Unit (GELU)
+operator, found in the BERT and GPT transformer codebases.
+
+.. math::
+
+   \text{GELU'}(x) = \frac{x}{2} \cdot (1 + \text{tanh}(\sqrt{2 / \pi} \cdot (x + 0.044715 x^3))).
+
+For explanation on GELU, see:
+
+Dan Hendrycks and Kevin Gimpel. "Gaussian Error Linear Units (GELUs)."
+arXiv preprint arXiv:1606.08415 (2016).
+
+:ref:`Back to Top<operators>`
+
+________________________________________
 
 
 

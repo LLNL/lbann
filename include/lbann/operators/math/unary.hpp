@@ -88,6 +88,14 @@ LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(ErfInv,
                                              "inverse error function",
                                              true);
 
+// Probabilistic operations
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Gelu,
+                                             "gaussian error linear unit",
+                                             true);
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(GeluNew,
+                                             "gaussian error linear unit new",
+                                             true);
+
 } // namespace lbann
 
 #endif // LBANN_INCLUDE_LBANN_OPERATORS_MATH_UNARY_HPP_INCLUDED
