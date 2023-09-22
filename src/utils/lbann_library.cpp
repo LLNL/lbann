@@ -53,7 +53,7 @@ namespace lbann {
 
 // Creates a datareader metadata to get around the need for an actual
 // datareader in inference only mode
-  auto mock_dr_metadata(std::vector<El::Int> input_dims, std::vector<El::Int> output_dims)
+auto mock_dr_metadata(std::vector<El::Int> input_dims, std::vector<El::Int> output_dims)
 {
   DataReaderMetaData drmd;
   auto& md_dims = drmd.data_dims;
