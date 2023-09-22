@@ -72,7 +72,7 @@ unit tests:
     - build and install
   script:
     - echo "== RUNNING PYTHON-BASED UNIT TESTS =="
-    - !reference [.setup_nvshmem, script]
+#    - !reference [.setup_nvshmem, script]
     - echo "Testing $(which lbann)"
     - export OMP_NUM_THREADS=10
     - export LBANN_NNODES=1
@@ -99,7 +99,7 @@ integration tests:
     - !reference [.lbann-test-rules, rules]
   script:
     - echo "== RUNNING PYTHON-BASED INTEGRATION TESTS =="
-    - !reference [.setup_nvshmem, script]
+#    - !reference [.setup_nvshmem, script]
     - echo "Testing $(which lbann)"
     - export OMP_NUM_THREADS=10
     - export LBANN_NNODES=2
