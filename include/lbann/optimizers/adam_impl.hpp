@@ -40,6 +40,7 @@ void adam<TensorDataType>::serialize(Archive& ar)
      CEREAL_NVP(m_beta1),
      CEREAL_NVP(m_beta2),
      CEREAL_NVP(m_eps),
+     CEREAL_NVP(m_weight_decay),
      CEREAL_NVP(m_current_beta1),
      CEREAL_NVP(m_current_beta2),
      CEREAL_NVP(m_moment1),

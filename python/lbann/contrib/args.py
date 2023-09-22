@@ -144,7 +144,7 @@ def add_optimizer_arguments(parser,
         action='store',
         default=default_optimizer,
         type=str,
-        choices=('momentum', 'sgd', 'adam', 'adagrad', 'rmsprop'),
+        choices=('momentum', 'sgd', 'adam', 'adamw', 'adagrad', 'rmsprop'),
         help='optimizer (default: {})'.format(default_optimizer))
     parser.add_argument('--optimizer-learning-rate',
                         action='store',
@@ -189,6 +189,12 @@ def create_optimizer(args):
                                          beta1=0.9,
                                          beta2=0.99,
                                          eps=1e-8)
+    elif opt == 'adamw':
+        return lbann.core.optimizer.Adam(learn_rate=lr,
+                                         beta1=0.9,
+                                         beta2=0.99,
+                                         eps=1e-8,
+                                         weight_decay=1e-2)
     elif opt == 'adagrad':
         return lbann.core.optimizer.AdaGrad(learn_rate=lr, eps=1e-8)
     elif opt == 'rmsprop':

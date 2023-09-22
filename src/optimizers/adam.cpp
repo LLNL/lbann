@@ -38,8 +38,13 @@ template <typename TensorDataType>
 adam<TensorDataType>::adam(TensorDataType learning_rate,
                            TensorDataType beta1,
                            TensorDataType beta2,
-                           TensorDataType eps)
-  : BaseType(learning_rate), m_beta1(beta1), m_beta2(beta2), m_eps(eps)
+                           TensorDataType eps,
+                           TensorDataType weight_decay)
+  : BaseType(learning_rate),
+    m_beta1(beta1),
+    m_beta2(beta2),
+    m_eps(eps),
+    m_weight_decay(weight_decay)
 {}
 
 template <typename TensorDataType>
@@ -48,6 +53,7 @@ adam<TensorDataType>::adam(const adam& other)
     m_beta1(other.m_beta1),
     m_beta2(other.m_beta2),
     m_eps(other.m_eps),
+    m_weight_decay(other.m_weight_decay),
     m_current_beta1(other.m_current_beta1),
     m_current_beta2(other.m_current_beta2),
     m_moment1(other.m_moment1 ? other.m_moment1->Copy() : nullptr),
@@ -62,6 +68,7 @@ adam<TensorDataType>::operator=(const adam<TensorDataType>& other)
   m_beta1 = other.m_beta1;
   m_beta2 = other.m_beta2;
   m_eps = other.m_eps;
+  m_weight_decay = other.m_weight_decay;
   m_current_beta1 = other.m_current_beta1;
   m_current_beta2 = other.m_current_beta2;
   m_moment1.reset(other.m_moment1 ? other.m_moment1->Copy() : nullptr);
@@ -76,6 +83,9 @@ description adam<TensorDataType>::get_description() const
   desc.add("beta1", m_beta1);
   desc.add("beta2", m_beta2);
   desc.add("eps", m_eps);
+  if (m_weight_decay != 0) {
+    desc.add("AdamW weight decay", m_weight_decay);
+  }
   return desc;
 }
 
@@ -142,6 +152,7 @@ void adam<TensorDataType>::write_proto(lbann_data::Optimizer& proto) const
   opt->set_beta1(m_beta1);
   opt->set_beta2(m_beta2);
   opt->set_eps(m_eps);
+  opt->set_weight_decay(m_weight_decay);
 }
 
 template <typename TensorDataType>
@@ -206,7 +217,7 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
       auto& m2 = moment2_buffer[i];
       m1 = m_beta1 * m1 + (one - m_beta1) * g;
       m2 = m_beta2 * m2 + (one - m_beta2) * g * g;
-      x -= correction * m1 / (El::Sqrt(m2) + m_eps);
+      x -= correction * (m1 / (El::Sqrt(m2) + m_eps) + m_weight_decay * x);
     }
   }
   else {
@@ -229,7 +240,7 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
         auto& m2 = moment2_buffer[row + col * moment2_ldim];
         m1 = m_beta1 * m1 + (one - m_beta1) * g;
         m2 = m_beta2 * m2 + (one - m_beta2) * g * g;
-        x -= correction * m1 / (El::Sqrt(m2) + m_eps);
+        x -= correction * (m1 / (El::Sqrt(m2) + m_eps) + m_weight_decay * x);
       }
     }
   }
@@ -244,7 +255,8 @@ build_adam_optimizer_from_pbuf(google::protobuf::Message const& msg)
     TensorDataType(params.learn_rate()),
     TensorDataType(params.beta1()),
     TensorDataType(params.beta2()),
-    TensorDataType(params.eps()));
+    TensorDataType(params.eps()),
+    TensorDataType(params.weight_decay()));
 }
 
 #define PROTO(T)                                                               \
