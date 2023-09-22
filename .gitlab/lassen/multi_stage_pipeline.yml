@@ -24,69 +24,47 @@
 ## permissions and limitations under the license.
 ################################################################################
 
-# This is the testing pipeline for the Corona cluster at LLNL. This
+# This is the testing pipeline for the Lassen cluster at LLNL. This
 # cluster builds the LBANN applications and libraries using a single
 # compiler toolchain and then runs a collection of tests. Testing
 # output is in JUnit format and parsed by the pipeline for web
 # viewing.
 
-# See the Catalyst pipeline for more thorough documentation.
-
 include:
   - .gitlab/common/common.yml
 
 stages:
-  - allocate
   - build
   - test
-  - deallocate
-
-# Get LC resources.
-allocate lc resources:
-  stage: allocate
-  extends:
-    - .corona common
-    - .lbann-base-vars
-  variables:
-    GIT_STRATEGY: none
-  script:
-    - echo "== ACQUIRING FLUX RESOURCES =="
-    - echo "${WITH_WEEKLY:+Running with --weekly}"
-    - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "150m" || echo "120m")
-    - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
-    - export FLUX_F58_FORCE_ASCII=t
-    - jobid=$(flux --parent alloc -N ${LBANN_NNODES} --exclusive -t ${TEST_TIME} --job-name=${JOB_NAME} --bg)
-    - export JOB_ID=$jobid
-  timeout: 6h
+  - cleanup
 
 # Build LBANN and establish the Spack environment for this pipeline.
 build and install:
   extends:
-    - .corona common
+    - .lassen common
     - .lbann-base-vars
     - .lbann-artifacts
   stage: build
   script:
     - echo "== BUILDING LBANN =="
-    - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
-    - "export LBANN_NNODES=$(flux jobs -no {id}:{name}:{nnodes} | grep ${JOB_NAME} | awk -F: '{print $3}')"
     - !reference [.setup_spack, script]
-    - flux proxy ${JOB_ID} flux mini run -N 1 -t 30m ./scripts/build_lbann.sh ${SPACK_DEPS_FLAG}
+    - lalloc 1 -W 60 -q pdebug ./scripts/build_lbann.sh ${SPACK_DEPS_FLAG}
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS} ${CLEAN_BUILD_FLAG}
-      -p py-pip --ci-pip --
+      -p py-scipy@1.8.1 --pip pytest --pip tqdm --
       +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
-    - export TEST_TASKS_PER_NODE=4
+    - export TEST_TASKS_PER_NODE=2
+    - export LBANN_NNODES=1
     - export TEST_MPIBIND_FLAG="--mpibind=off"
-    - export SPACK_ARCH=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch)
-    - export SPACK_ARCH_TARGET=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t)
-    - export EXTRA_FLUX_ARGS="-o pmi=pmix"
+    - export SPACK_ARCH=$(spack arch)
+    - export SPACK_ARCH_TARGET=$(spack arch -t)
     - !reference [.setup_lbann, script]
-    - flux proxy ${JOB_ID} .gitlab/common/run-catch-tests-flux.sh
+    - lalloc ${LBANN_NNODES} -W 45 -q pdebug .gitlab/common/run-catch-tests-lsf.sh
+  timeout: 2h
 
 # Run the Python-based unit tests.
 unit tests:
   extends:
-    - .corona common
+    - .lassen common
     - .lbann-base-vars
     - .uses spack environment
   stage: test
@@ -94,23 +72,25 @@ unit tests:
     - build and install
   script:
     - echo "== RUNNING PYTHON-BASED UNIT TESTS =="
+#    - !reference [.setup_nvshmem, script]
     - echo "Testing $(which lbann)"
     - export OMP_NUM_THREADS=10
-    - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
-    - cd ci_test/unit_tests
-    # - echo "Running unit tests with file pattern: ${TEST_FLAG}"
-    - flux proxy ${FLUX_JOB_ID} python3 -m pytest -s -vv --durations=0 --junitxml=results.xml ${TEST_FLAG}
+    - export LBANN_NNODES=1
+    - export TEST_TASKS_PER_NODE=4
+    - echo "Skipping unit tests due to PMI issue on lassen."
+#    - lalloc ${LBANN_NNODES} -W 30 -G guests -q pdebug .gitlab/lassen/run_unit_tests.sh
   artifacts:
     when: always
     paths:
       - ci_test/unit_tests/results.xml
     reports:
       junit: ci_test/unit_tests/results.xml
+  timeout: 1h
 
 # Run the Python-based integration tests.
 integration tests:
   extends:
-    - .corona common
+    - .lassen common
     - .lbann-base-vars
     - .uses spack environment
   stage: test
@@ -120,33 +100,30 @@ integration tests:
     - !reference [.lbann-test-rules, rules]
   script:
     - echo "== RUNNING PYTHON-BASED INTEGRATION TESTS =="
+#    - !reference [.setup_nvshmem, script]
     - echo "Testing $(which lbann)"
     - export OMP_NUM_THREADS=10
-    - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
-    - cd ci_test/integration_tests
+    - export LBANN_NNODES=2
+    - export TEST_TASKS_PER_NODE=4
     - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
-    # - echo "Running integration tests with file pattern: ${TEST_FLAG}"
-    # - echo "python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml ${TEST_FLAG}"
-    - flux proxy ${FLUX_JOB_ID} python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml ${TEST_FLAG}
+    - lalloc ${LBANN_NNODES} -W 45 -G guests -q pdebug .gitlab/lassen/run_integration_tests.sh
   artifacts:
     when: always
     paths:
       - ci_test/integration_tests/results.xml
     reports:
       junit: ci_test/integration_tests/results.xml
+  timeout: 1h
 
 # This is a dummy job that checks the Catch2 testing.
 check catch2 tests:
-  variables:
-    GIT_STRATEGY: none
   extends:
-    - .corona common
+    - .lassen common
     - .lbann-base-vars
   stage: test
   dependencies:
     - build and install
   script:
-    - find ${RESULTS_DIR} -name "catch-tests-failed.txt" | xargs cat
     - ([[ $(find ${RESULTS_DIR} -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
   artifacts:
     reports:
@@ -157,40 +134,35 @@ check catch2 tests:
 # Cleanup any build directories and spack environments older than 5 days since last use
 remove spack environment:
   extends:
-    - .corona common
+    - .lassen common
     - .lbann-base-vars
     - .cleanup old spack environment
-  stage: deallocate
+  stage: cleanup
   variables:
     GIT_STRATEGY: none
   when: always
 
-# Free the allocation we obtained in "allocate lc resources".
-release allocation:
-  stage: deallocate
-  extends:
-    - .corona common
-    - .lbann-base-vars
-  variables:
-    GIT_STRATEGY: none
-  when: always
+
+# Load the spack shell integration and load the environment.
+.setup_nvshmem:
   script:
-    - echo "== RELEASING RESOURCES =="
-    - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
-    - ([[ -n "${JOB_ID}" ]] && flux job cancel ${JOB_ID})
+    - export NVSHMEM_IBRC_SUPPORT=1
+    - export NVSHMEM_PMIX_SUPPORT="1"
+#    - export NVSHMEM_PMIX_SUPPORT="0"
+    - export NVSHMEM_LIBFABRIC_SUPPORT=0
 
-# Variables for Corona.
-.corona common:
+# Variables for Lassen. Because this test uses "test_compiler.py", we
+# don't need to specify the Spack spec or the job name.
+.lassen common:
   variables:
     # Just the obvious identifier. Which specific node doesn't matter.
-    SYSTEM_NAME: corona
+    SYSTEM_NAME: lassen
     SPACK_USER_CACHE_PATH: /g/g14/lbannusr/spack_repos/.spack_${SYSTEM_NAME}
     SPACK_REPO: spack_repos/spack_${SYSTEM_NAME}.git
 
     # These are system-specific specs that should be forwarded to the
     # build script
-    SPACK_SPECS: "+rocm"
-
+    SPACK_SPECS: "+cuda +half +fft"
   tags:
-    - corona
+    - lassen
     - shell

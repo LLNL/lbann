@@ -281,7 +281,9 @@ public:
 
   bool at_new_epoch() const;
 
-  virtual void register_active_data_field(data_field_type const data_field);
+  virtual void
+  register_active_data_field(data_field_type const& data_field,
+                             std::vector<El::Int> const& data_field_dim_map);
 
   //************************************************************************
   //
@@ -305,6 +307,8 @@ protected:
 
   data_reader_map_t m_data_readers;
   //  std::map<execution_mode, dataset_stats> m_dataset_stats;
+
+  data_field_dim_map_type m_active_data_fields_dim_map;
 
   std::set<data_field_type> m_active_data_fields;
 

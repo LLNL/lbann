@@ -31,6 +31,7 @@
 
 #include "lbann/utils/enum_iterator.hpp"
 #include "lbann_config.hpp"
+#include "lbann/data_readers/utils/input_data_type.hpp"
 
 #include <string>
 #include <unordered_map>
@@ -52,11 +53,15 @@ enum class data_reader_target_mode
 std::string to_string(data_reader_target_mode m);
 /// Map from target modes to dimension maps
 using TargetModeDimMap =
-  std::unordered_map<data_reader_target_mode, std::vector<int>>;
+  std::unordered_map<data_reader_target_mode, std::vector<El::Int>>;
 using data_reader_target_mode_iterator =
   enum_iterator<data_reader_target_mode,
                 data_reader_target_mode::CLASSIFICATION,
                 data_reader_target_mode::NA>;
+
+/// Map from data_field_type to dimension maps
+using data_field_dim_map_type =
+  std::unordered_map<data_field_type, std::vector<El::Int>>;
 
 enum class slice_points_mode
 {

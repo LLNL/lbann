@@ -160,7 +160,7 @@ public:
   /**
    * Get the dimensions of the underlying data.
    */
-  std::vector<int> get_data_dims(DataReaderMetaData& dr_metadata,
+  std::vector<El::Int> get_data_dims(DataReaderMetaData& dr_metadata,
                                  int child_index = 0) const;
 
   /** @name Serialization */

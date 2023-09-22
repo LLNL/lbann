@@ -55,7 +55,7 @@ allocate lc resources:
     - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "150m" || echo "120m")
     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
     - export FLUX_F58_FORCE_ASCII=t
-    - jobid=$(flux --parent alloc -N ${LBANN_NNODES} -g 1 -t ${TEST_TIME} --job-name=${JOB_NAME} --bg)
+    - jobid=$(flux --parent alloc -N ${LBANN_NNODES} --exclusive -t ${TEST_TIME} --job-name=${JOB_NAME} --bg)
     - export JOB_ID=$jobid
   timeout: 6h
 
@@ -72,14 +72,14 @@ build and install:
     - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - "export LBANN_NNODES=$(flux jobs -no {id}:{name}:{nnodes} | grep ${JOB_NAME} | awk -F: '{print $3}')"
     - !reference [.setup_spack, script]
-    - flux proxy ${JOB_ID} flux mini run -N 1 -t 30m ./scripts/build_lbann.sh ${SPACK_DEPS_FLAG}
+    - flux proxy ${JOB_ID} flux run -N 1 -t 30m ./scripts/build_lbann.sh ${SPACK_DEPS_FLAG}
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS} ${CLEAN_BUILD_FLAG}
       -p py-pip --ci-pip --
       +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
     - export TEST_TASKS_PER_NODE=4
     - export TEST_MPIBIND_FLAG="--mpibind=off"
-    - export SPACK_ARCH=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch)
-    - export SPACK_ARCH_TARGET=$(flux proxy ${JOB_ID} flux mini run -N 1 spack arch -t)
+    - export SPACK_ARCH=$(flux proxy ${JOB_ID} flux run -N 1 spack arch)
+    - export SPACK_ARCH_TARGET=$(flux proxy ${JOB_ID} flux run -N 1 spack arch -t)
     - export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
     - export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
     - !reference [.setup_lbann, script]
@@ -102,7 +102,7 @@ unit tests:
     - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - cd ci_test/unit_tests
     - export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
-    - flux proxy ${FLUX_JOB_ID} lbann_pfe.sh -m pytest -s -vv --durations=0 --junitxml=results.xml
+    - flux proxy ${FLUX_JOB_ID} lbann_pfe.sh -m pytest -s -vv --durations=0 --junitxml=results.xml ${TEST_FLAG}
   artifacts:
     when: always
     paths:
@@ -119,6 +119,8 @@ integration tests:
   stage: test
   dependencies:
     - build and install
+  rules:
+    - !reference [.lbann-test-rules, rules]
   script:
     - echo "== RUNNING PYTHON-BASED INTEGRATION TESTS =="
     - echo "Testing $(which lbann)"
@@ -128,7 +130,7 @@ integration tests:
     - cd ci_test/integration_tests
     - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
     - export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
-    - flux proxy ${FLUX_JOB_ID} lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml
+    - flux proxy ${FLUX_JOB_ID} lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml ${TEST_FLAG}
   artifacts:
     when: always
     paths:

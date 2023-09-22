@@ -41,6 +41,7 @@ weekly_options_and_targets = {
         'lassen': 0.10,
         'ray':    0.15,
         'tioga':  0.25,
+        'corona':  0.61,
     }
 }
 
@@ -59,6 +60,7 @@ nightly_options_and_targets = {
         'lassen': 0.15,
         'ray':    0.23,
         'tioga':  0.43,
+        'corona':  0.61,
     }
 }
 
@@ -77,6 +79,11 @@ def setup_experiment(lbann, weekly):
         message = f'{os.path.basename(__file__)} requires VISION support with OPENCV'
         print('Skip - ' + message)
         pytest.skip(message)
+
+    # Skip test on CPU systems
+    if not lbann.has_feature('GPU'):
+        pytest.skip('only run {} on GPU systems'.format(test_name))
+
     if weekly:
         options = weekly_options_and_targets
     else:
@@ -164,10 +171,6 @@ def augment_test_func(test_func):
 
     # Define test function
     def func(cluster, dirname, weekly):
-
-        # Skip test on CPU systems
-        if cluster in ('catalyst', 'corona'):
-            pytest.skip('only run {} on GPU systems'.format(test_name))
 
         if weekly:
             targets = weekly_options_and_targets

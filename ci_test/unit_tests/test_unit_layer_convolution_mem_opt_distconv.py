@@ -5,6 +5,7 @@ import pytest
 import os
 import sys
 import lbann.contrib.launcher
+import lbann.contrib.args
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -13,7 +14,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
 import tools
 
 @pytest.mark.parametrize('num_dims', [2, 3])
-@test_util.lbann_test(check_gradients=True, environment=tools.get_distconv_environment())
+@test_util.lbann_test(check_gradients=True,
+                      environment=lbann.contrib.args.get_distconv_environment(),
+                      time_limit=10)
 def test_simple(num_dims):
     try:
         import torch

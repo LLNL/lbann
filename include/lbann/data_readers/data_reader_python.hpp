@@ -49,7 +49,7 @@ public:
 
   std::string get_type() const override { return "python_reader"; }
 
-  const std::vector<int> get_data_dims() const override;
+  const std::vector<El::Int> get_data_dims() const override;
   int get_num_labels() const override;
   int get_linearized_data_size() const override;
   int get_linearized_label_size() const override;

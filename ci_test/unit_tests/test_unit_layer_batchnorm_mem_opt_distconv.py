@@ -5,6 +5,7 @@ import pytest
 import os
 import sys
 import lbann.contrib.launcher
+import lbann.contrib.args
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -13,7 +14,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
 import tools
 
 @pytest.mark.parametrize('num_dims', [2, 3])
-@test_util.lbann_test(check_gradients=True, train=True, environment=tools.get_distconv_environment())
+@test_util.lbann_test(check_gradients=True,
+                      train=True,
+                      environment=lbann.contrib.args.get_distconv_environment(),
+                      time_limit=5)
 def test_simple(num_dims):
     np.random.seed(20230621)
     # Two samples of 4x16x16 or 4x16x16x16 tensors

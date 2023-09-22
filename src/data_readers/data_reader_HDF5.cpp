@@ -877,9 +877,9 @@ void hdf5_data_reader::repack_image(conduit::Node& node,
   }
 }
 
-const std::vector<int> hdf5_data_reader::get_data_dims(std::string name) const
+const std::vector<El::Int> hdf5_data_reader::get_data_dims(std::string name) const
 {
-  std::unordered_map<std::string, std::vector<int>>::const_iterator iter =
+  std::unordered_map<std::string, std::vector<El::Int>>::const_iterator iter =
     m_data_dims_lookup_table.find(name);
   if (iter == m_data_dims_lookup_table.end()) {
     LBANN_ERROR(

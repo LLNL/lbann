@@ -94,7 +94,8 @@ unit tests:
     - export OMP_NUM_THREADS=10
     - export SLURM_JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - cd ci_test/unit_tests
-    - lbann_pfe.sh -m pytest -s -vv --durations=0 --junitxml=results.xml
+    # - echo "Running unit tests with file pattern: ${TEST_FLAG}"
+    - lbann_pfe.sh -m pytest -s -vv --durations=0 --junitxml=results.xml ${TEST_FLAG}
   artifacts:
     when: always
     paths:
@@ -111,6 +112,8 @@ integration tests:
   stage: test
   dependencies:
     - build and install
+  rules:
+    - !reference [.lbann-test-rules, rules]
   script:
     - echo "== RUNNING PYTHON-BASED INTEGRATION TESTS =="
     - echo "Testing $(which lbann)"
@@ -118,8 +121,9 @@ integration tests:
     - export SLURM_JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - cd ci_test/integration_tests
     - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
-    - echo "lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml"
-    - lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml
+    # - echo "Running integration tests with file pattern: ${TEST_FLAG}"
+    # - echo "lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml ${TEST_FLAG}"
+    - lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml ${TEST_FLAG}
   artifacts:
     when: always
     paths:

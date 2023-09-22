@@ -213,7 +213,7 @@ public:
   std::vector<size_t> get_linearized_response_sizes() const;
 
   /// Return the dimension of data
-  const std::vector<int> get_data_dims() const override;
+  const std::vector<El::Int> get_data_dims() const override;
 
   int get_num_data() const override;
   int get_num_labels() const override;

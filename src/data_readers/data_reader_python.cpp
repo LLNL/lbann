@@ -92,9 +92,9 @@ python_reader::~python_reader()
   }
 }
 
-const std::vector<int> python_reader::get_data_dims() const
+const std::vector<El::Int> python_reader::get_data_dims() const
 {
-  std::vector<int> dims;
+  std::vector<El::Int> dims;
   for (const auto& d : m_sample_dims) {
     dims.push_back(d);
   }

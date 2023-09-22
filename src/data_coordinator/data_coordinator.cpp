@@ -29,6 +29,7 @@
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include <lbann/data_coordinator/data_coordinator.hpp>
 #include <lbann/trainers/trainer.hpp>
+#include <lbann/utils/dim_helpers.hpp>
 #include <lbann/utils/distconv.hpp>
 #include <lbann/utils/serialize.hpp>
 
@@ -230,21 +231,22 @@ TargetModeDimMap data_coordinator::get_data_dims()
       map[data_reader_target_mode::INPUT] = dr->get_data_dims();
       if (dr->has_labels()) {
         map[data_reader_target_mode::CLASSIFICATION] =
-          std::vector<int>(1, dr->get_num_labels());
+          std::vector<El::Int>(1, dr->get_num_labels());
       }
       else {
-        map[data_reader_target_mode::CLASSIFICATION] = std::vector<int>(1, 0);
+        map[data_reader_target_mode::CLASSIFICATION] =
+          std::vector<El::Int>(1, 0);
       }
       if (dr->has_responses()) {
         map[data_reader_target_mode::REGRESSION] =
-          std::vector<int>(1, dr->get_num_responses());
+          std::vector<El::Int>(1, dr->get_num_responses());
       }
       else {
-        map[data_reader_target_mode::REGRESSION] = std::vector<int>(1, 0);
+        map[data_reader_target_mode::REGRESSION] = std::vector<El::Int>(1, 0);
       }
       map[data_reader_target_mode::RECONSTRUCTION] = dr->get_data_dims();
       map[data_reader_target_mode::LABEL_RECONSTRUCTION] = dr->get_data_dims();
-      map[data_reader_target_mode::NA] = std::vector<int>(1, 0);
+      map[data_reader_target_mode::NA] = std::vector<El::Int>(1, 0);
       return map;
     }
   }
@@ -349,6 +351,26 @@ long data_coordinator::get_linearized_size(
       linearized_size = tmp_size;
     }
   }
+  auto& dim_map = m_active_data_fields_dim_map.at(data_field);
+  if (linearized_size != get_linear_size(dim_map)) {
+    if (linearized_size == -1) {
+      LBANN_WARNING("Unable to find data readers; using data field map for "
+                    "linearized size for data field: ",
+                    data_field,
+                    " = ",
+                    get_linear_size(dim_map));
+      linearized_size = get_linear_size(dim_map);
+    }
+    else {
+      LBANN_ERROR("The data readers and data field map disagree on the "
+                  "linearized size of the field: ",
+                  data_field,
+                  ": ",
+                  linearized_size,
+                  " != ",
+                  get_linear_size(dim_map));
+    }
+  }
   return linearized_size;
 }
 
@@ -357,26 +379,7 @@ long data_coordinator::get_linearized_size(
  */
 long data_coordinator::get_linearized_data_size() const
 {
-  long linearized_data_size = -1;
-  generic_data_reader* dr;
-  for (auto mode : execution_mode_iterator()) {
-    dr = get_data_reader(mode);
-    if (dr != nullptr) {
-      long tmp_data_size = dr->get_linearized_data_size();
-      if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
-        LBANN_ERROR(
-          "data_coordinator: ",
-          to_string(mode),
-          " data set size (",
-          std::to_string(tmp_data_size),
-          ") does not match the currently established data set size (",
-          std::to_string(linearized_data_size),
-          ")");
-      }
-      linearized_data_size = tmp_data_size;
-    }
-  }
-  return linearized_data_size;
+  return get_linearized_size(INPUT_DATA_TYPE_SAMPLES);
 }
 
 /**
@@ -384,27 +387,7 @@ long data_coordinator::get_linearized_data_size() const
  */
 long data_coordinator::get_linearized_label_size() const
 {
-  long linearized_label_size = -1;
-  generic_data_reader* dr;
-  for (auto mode : execution_mode_iterator()) {
-    dr = get_data_reader(mode);
-    if (dr != nullptr) {
-      long tmp_label_size = dr->get_linearized_label_size();
-      if (linearized_label_size != -1 &&
-          linearized_label_size != tmp_label_size) {
-        LBANN_ERROR(
-          "data_coordinator: ",
-          to_string(mode),
-          " label set size (",
-          std::to_string(tmp_label_size),
-          ") does not match the currently established data set size (",
-          std::to_string(linearized_label_size),
-          ")");
-      }
-      linearized_label_size = tmp_label_size;
-    }
-  }
-  return linearized_label_size;
+  return get_linearized_size(INPUT_DATA_TYPE_LABELS);
 }
 
 /**
@@ -412,27 +395,7 @@ long data_coordinator::get_linearized_label_size() const
  */
 long data_coordinator::get_linearized_response_size() const
 {
-  long linearized_response_size = -1;
-  generic_data_reader* dr;
-  for (auto mode : execution_mode_iterator()) {
-    dr = get_data_reader(mode);
-    if (dr != nullptr) {
-      long tmp_response_size = dr->get_linearized_response_size();
-      if (linearized_response_size != -1 &&
-          linearized_response_size != tmp_response_size) {
-        LBANN_ERROR(
-          "data_coordinator: ",
-          to_string(mode),
-          " response set size (",
-          std::to_string(tmp_response_size),
-          ") does not match the currently established data set size (",
-          std::to_string(linearized_response_size),
-          ")");
-      }
-      linearized_response_size = tmp_response_size;
-    }
-  }
-  return linearized_response_size;
+  return get_linearized_size(INPUT_DATA_TYPE_RESPONSES);
 }
 
 // At the start of the epoch, set the execution mode and make sure
@@ -578,9 +541,11 @@ bool data_coordinator::at_new_epoch() const
 }
 
 void data_coordinator::register_active_data_field(
-  data_field_type const data_field)
+  data_field_type const& data_field,
+  std::vector<El::Int> const& data_field_dim_map)
 {
   m_active_data_fields.insert(data_field);
+  m_active_data_fields_dim_map[data_field] = data_field_dim_map;
 }
 
 size_t data_coordinator::get_num_iterations_per_epoch(execution_mode mode) const

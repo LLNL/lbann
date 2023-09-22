@@ -734,6 +734,7 @@ def create_tests(setup_func,
             other output data.
 
     """
+    import lbann.contrib.lc.systems
 
     # Make sure test name is valid
     test_file = os.path.realpath(test_file)
@@ -743,6 +744,31 @@ def create_tests(setup_func,
     if not re.match('^test_.', test_name_base):
         # Make sure test name is prefixed with 'test_'
         test_name_base = 'test_' + test_name_base
+
+    # Check to see if we are testing on a ROCm system and then set a cache for CI testing
+    system = lbann.contrib.lc.systems.system()
+    if system in ('tioga', 'rzvernal', 'corona'):
+        if 'environment' in kwargs:
+            environment = kwargs.get('environment')
+        else:
+            environment = {}
+
+        if os.environ.get('USER') == 'lbannusr':
+            basepath = '/p/vast1/lbannusr'
+        else:
+            basepath = '/p/vast1/lbann'
+
+        tmpdir = os.environ.get('TMPDIR')
+        if os.path.isdir(basepath) and os.access(basepath, os.R_OK | os.W_OK):
+            db_path = basepath
+        else:
+            db_path = tmpdir
+
+        environment['MIOPEN_USER_DB_PATH'] = f'{db_path}/MIOpen_user_db'
+        # Empirically the cache dir cannot be on a parallel file system
+        environment['MIOPEN_CUSTOM_CACHE_DIR'] =f'{tmpdir}/MIOpen_custom_cache'
+
+        kwargs['environment'] = environment
 
     def test_func(cluster, dirname, weekly):
         """Function that can interact with PyTest.
@@ -1020,16 +1046,3 @@ def gpus_per_node(lbann):
         return getattr(lbann.contrib, compute_center).systems.gpus_per_node()
     else:
         return 0
-
-
-# Get the environment variables for Distconv.
-def get_distconv_environment(init_nvshmem=False):
-    # TODO: Use the default halo exchange and shuffle method. See https://github.com/LLNL/lbann/issues/1659
-    environment = {"LBANN_DISTCONV_HALO_EXCHANGE": "AL",
-            "LBANN_DISTCONV_TENSOR_SHUFFLER": "AL",
-            "LBANN_KEEP_ERROR_SIGNALS": "1",
-        }
-    if init_nvshmem:
-        environment["LBANN_INIT_NVSHMEM"] = 1
-
-    return environment

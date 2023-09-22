@@ -82,12 +82,16 @@ void input_layer<TensorDataType, T_layout, Dev>::setup_dims(
 {
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
   for (int i = 0; i < this->get_num_children(); ++i) {
-    this->set_output_dims(get_data_dims(dr_metadata, i), i);
+    this->set_output_dims(vector_cast<int>(get_data_dims(dr_metadata, i)), i);
   }
   if (m_data_field == "") {
     LBANN_ERROR("Failed to setup input layer with empty data field");
   }
-  get_trainer().get_data_coordinator().register_active_data_field(m_data_field);
+  get_trainer().get_data_coordinator().register_active_data_field(m_data_field,
+                                                                  // BVE FIXME HACK FOR NOW
+                                                                  // Redundantly store
+                                                                  // the dimensions
+                                                                  get_data_dims(dr_metadata, 0));
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
@@ -181,7 +185,7 @@ void input_layer<TensorDataType, T_layout, Dev>::set_samples(
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-std::vector<int> input_layer<TensorDataType, T_layout, Dev>::get_data_dims(
+std::vector<El::Int> input_layer<TensorDataType, T_layout, Dev>::get_data_dims(
   DataReaderMetaData& dr_metadata,
   int child_index) const
 {
@@ -203,7 +207,7 @@ std::vector<int> input_layer<TensorDataType, T_layout, Dev>::get_data_dims(
   else {
     LBANN_ERROR("Unknown data_field_type value provided: " + m_data_field);
   }
-  return std::vector<int>(1, 0);
+  return std::vector<El::Int>(1, 0);
 }
 
 #ifdef LBANN_HAS_ONNX

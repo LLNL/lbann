@@ -43,9 +43,11 @@ namespace lbann {
 
 template <typename TensorDataType>
 void buffered_data_coordinator<TensorDataType>::register_active_data_field(
-  data_field_type const data_field)
+  data_field_type const& data_field,
+  std::vector<El::Int> const& data_field_dim_map)
+
 {
-  data_coordinator::register_active_data_field(data_field);
+  data_coordinator::register_active_data_field(data_field, data_field_dim_map);
   for (const auto& buf_map : m_data_buffers) {
     const data_buffer_map_t& buffer_map = buf_map;
     for (auto& [mode, buffer] : buffer_map) {
@@ -119,6 +121,10 @@ void buffered_data_coordinator<TensorDataType>::setup_data_fields(
         if (phase_io_buffer->IsEmpty() || phase_io_buffer->Width() == 0 ||
             phase_io_buffer->Height() == 0) {
           El::Int linearized_size = get_linearized_size(data_field);
+          if (linearized_size == -1) {
+            LBANN_ERROR("Invalid value for the linearized size of data field ",
+                        data_field);
+          }
           data_buffer->m_input_buffers[data_field]->Resize(linearized_size,
                                                            max_mini_batch_size);
 
@@ -482,7 +488,7 @@ bool buffered_data_coordinator<TensorDataType>::load_from_checkpoint_shared(
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
                                                    "_dc.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                                    "_dc.bin"
+                                                   "_dc.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
     );
     buf = create_cereal_archive_binary_string<buffered_data_coordinator>(*this);
@@ -529,7 +535,7 @@ bool buffered_data_coordinator<
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
                                                  "_dc.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                                  "_dc.bin"
+                                                 "_dc.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   );
   return true;

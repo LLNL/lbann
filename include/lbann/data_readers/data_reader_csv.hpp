@@ -129,7 +129,7 @@ public:
     }
   }
   int get_linearized_label_size() const override { return m_num_labels; }
-  const std::vector<int> get_data_dims() const override
+  const std::vector<El::Int> get_data_dims() const override
   {
     return {get_linearized_data_size()};
   }

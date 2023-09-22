@@ -46,15 +46,15 @@ public:
   // TODO: add what data distribution to use
   data_reader_synthetic(int num_samples, int num_features, bool shuffle = true);
   data_reader_synthetic(int num_samples,
-                        std::vector<int> dims,
+                        std::vector<El::Int> dims,
                         int num_labels,
                         bool shuffle = true);
   data_reader_synthetic(int num_samples,
-                        std::vector<int> dims,
-                        std::vector<int> response_dims,
+                        std::vector<El::Int> dims,
+                        std::vector<El::Int> response_dims,
                         bool shuffle = true);
   data_reader_synthetic(int num_samples,
-                        std::map<data_field_type, std::vector<int>> data_fields,
+                        std::map<data_field_type, std::vector<El::Int>> data_fields,
                         bool shuffle = true);
   data_reader_synthetic(const data_reader_synthetic&) = default;
   data_reader_synthetic& operator=(const data_reader_synthetic&) = default;
@@ -86,7 +86,7 @@ public:
     return get_linear_size(m_response_dimensions);
   }
 
-  const std::vector<int> get_data_dims() const override { return m_dimensions; }
+  const std::vector<El::Int> get_data_dims() const override { return m_dimensions; }
 
   int get_num_labels() const override { return m_num_labels; }
   int get_num_responses() const override
@@ -112,11 +112,11 @@ private:
   /** Number of labels in the dataset. */
   int m_num_labels;
   /** Shape of the data. */
-  std::vector<int> m_dimensions;
+  std::vector<El::Int> m_dimensions;
   /** Shape of the responses. */
-  std::vector<int> m_response_dimensions;
+  std::vector<El::Int> m_response_dimensions;
 
-  std::map<data_field_type, std::vector<int>> m_synthetic_data_fields;
+  std::map<data_field_type, std::vector<El::Int>> m_synthetic_data_fields;
 };
 
 } // namespace lbann

@@ -56,7 +56,7 @@ data_reader_synthetic::data_reader_synthetic(int num_samples,
 {}
 
 data_reader_synthetic::data_reader_synthetic(int num_samples,
-                                             std::vector<int> dims,
+                                             std::vector<El::Int> dims,
                                              int num_labels,
                                              bool shuffle)
   : generic_data_reader(shuffle),
@@ -74,8 +74,8 @@ data_reader_synthetic::data_reader_synthetic(int num_samples,
 }
 
 data_reader_synthetic::data_reader_synthetic(int num_samples,
-                                             std::vector<int> dims,
-                                             std::vector<int> response_dims,
+                                             std::vector<El::Int> dims,
+                                             std::vector<El::Int> response_dims,
                                              bool shuffle)
   : generic_data_reader(shuffle),
     m_num_samples(num_samples),
@@ -94,7 +94,7 @@ data_reader_synthetic::data_reader_synthetic(int num_samples,
 
 data_reader_synthetic::data_reader_synthetic(
   int num_samples,
-  std::map<data_field_type, std::vector<int>> data_fields,
+  std::map<data_field_type, std::vector<El::Int>> data_fields,
   bool shuffle)
   : generic_data_reader(shuffle),
     m_num_samples(num_samples),

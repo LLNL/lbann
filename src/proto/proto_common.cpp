@@ -425,15 +425,15 @@ void init_data_readers(
       if (readme.num_labels() != 0) {
         reader =
           new data_reader_synthetic(readme.num_samples(),
-                                    parse_list<int>(readme.synth_dimensions()),
+                                    parse_list<El::Int>(readme.synth_dimensions()),
                                     readme.num_labels(),
                                     shuffle);
       }
       else {
         reader = new data_reader_synthetic(
           readme.num_samples(),
-          parse_list<int>(readme.synth_dimensions()),
-          parse_list<int>(readme.synth_response_dimensions()),
+          parse_list<El::Int>(readme.synth_dimensions()),
+          parse_list<El::Int>(readme.synth_response_dimensions()),
           shuffle);
       }
     }

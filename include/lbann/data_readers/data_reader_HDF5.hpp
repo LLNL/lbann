@@ -136,7 +136,7 @@ public:
     return m_data_schema_filename;
   }
 
-  const std::vector<int> get_data_dims() const override
+  const std::vector<El::Int> get_data_dims() const override
   {
     return get_data_dims(INPUT_DATA_TYPE_SAMPLES);
   }
@@ -192,7 +192,7 @@ private:
   /** filled in by construct_linearized_size_lookup_tables;
    *  used by get_data_dims()
    */
-  std::unordered_map<std::string, std::vector<int>> m_data_dims_lookup_table;
+  std::unordered_map<std::string, std::vector<El::Int>> m_data_dims_lookup_table;
 
   /** filled in by construct_linearized_size_lookup_tables;
    *  used by get_linearized_size()
@@ -268,7 +268,7 @@ private:
   // methods follow
   //=========================================================================
 
-  const std::vector<int> get_data_dims(std::string name = "") const;
+  const std::vector<El::Int> get_data_dims(std::string name = "") const;
 
   /** Returns the size of the requested field (datum, label, response, etc) */
   int get_linearized_size(data_field_type const& data_field) const override;

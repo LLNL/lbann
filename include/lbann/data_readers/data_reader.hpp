@@ -384,9 +384,9 @@ public:
   virtual int get_linearized_size(data_field_type const& data_field) const;
 
   /// Get the dimensions of the data.
-  virtual const std::vector<int> get_data_dims() const
+  virtual const std::vector<El::Int> get_data_dims() const
   {
-    return std::vector<int>(0);
+    return std::vector<El::Int>(0);
   }
 
   virtual std::vector<El::Int>
