@@ -79,6 +79,11 @@ def setup_experiment(lbann, weekly):
         message = f'{os.path.basename(__file__)} requires VISION support with OPENCV'
         print('Skip - ' + message)
         pytest.skip(message)
+
+    # Skip test on CPU systems
+    if not lbann.has_feature('GPU'):
+        pytest.skip('only run {} on GPU systems'.format(test_name))
+
     if weekly:
         options = weekly_options_and_targets
     else:
@@ -166,10 +171,6 @@ def augment_test_func(test_func):
 
     # Define test function
     def func(cluster, dirname, weekly):
-
-        # Skip test on CPU systems
-        if not lbann.has_feature('GPU'):
-            pytest.skip('only run {} on GPU systems'.format(test_name))
 
         if weekly:
             targets = weekly_options_and_targets
