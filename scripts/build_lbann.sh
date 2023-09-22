@@ -774,7 +774,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
 
         # Put the compilers into the SITE scope so that we can execute
         # spack load commands later without activating the environment
-        CMD="spack compiler find --scope site ${CENTER_COMPILER_PATHS}"
+        CMD="spack compiler find --scope env:${LBANN_ENV} ${CENTER_COMPILER_PATHS}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
