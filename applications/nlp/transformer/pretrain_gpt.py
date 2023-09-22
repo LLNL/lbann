@@ -56,7 +56,7 @@ def main():
 
     parser.add_argument('--optimizer',
                         type=str,
-                        default='adam',
+                        default='adamw',
                         choices=['adam', 'adamw'],
                         help='Stochastic optimizer used in training')
 

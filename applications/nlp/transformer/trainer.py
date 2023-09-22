@@ -65,7 +65,7 @@ def make_batch_script(model: lbann.Model, dataset_name: str, work_dir: str,
                       args: argparse.Namespace):
     # Setup training algorithm
     algo = lbann.BatchedIterativeOptimizer("sgd", epoch_count=args.num_epochs)
-    if args.kfac:
+    if hasattr(args, 'kfac') and args.kfac:
         algo = create_kfac_optimizer(algo, args)
 
     # Create LBANN trainer and data reader
@@ -75,7 +75,8 @@ def make_batch_script(model: lbann.Model, dataset_name: str, work_dir: str,
 
     # Optimizer with learning rate schedule
     if args.optimizer.lower() == 'adamw':
-        raise NotImplementedError('AdamW not yet implemented')
+        opt = lbann.Adam(learn_rate=0.0001, beta1=0.9, beta2=0.98, eps=1e-9,
+                         weight_decay=1e-2)
     elif args.optimizer.lower() == 'adam':
         # Note: Rough approximation of
         #   embed_dim^-0.5 * min(step^-0.5, step*warmup^-1.5)
