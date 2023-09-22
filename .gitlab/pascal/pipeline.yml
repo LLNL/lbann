@@ -94,7 +94,7 @@ unit tests:
     - export OMP_NUM_THREADS=10
     - export SLURM_JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - cd ci_test/unit_tests
-#    - echo "Running unit tests with file pattern: ${TEST_FLAG}"
+    - echo "Running unit tests with file pattern: ${TEST_FLAG}"
     - lbann_pfe.sh -m pytest -s -vv --durations=0 --junitxml=results.xml ${TEST_FLAG}
   artifacts:
     when: always
@@ -122,8 +122,8 @@ integration tests:
     - export SLURM_JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - cd ci_test/integration_tests
     - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
-#    - echo "Running integration tests with file pattern: ${TEST_FLAG}"
-#    - echo "lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml ${TEST_FLAG}"
+    - echo "Running integration tests with file pattern: ${TEST_FLAG}"
+    - echo "lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml ${TEST_FLAG}"
     - lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml ${TEST_FLAG}
   artifacts:
     when: always
