@@ -1197,6 +1197,7 @@ void data_store_conduit::get_image_sizes(map_is_t& file_sizes,
   // this block fires if we're exchanging cache data at the end
   // of the first epoch, and the data store was not preloaded
   if (is_explicitly_loading()) {
+    std::lock_guard<std::mutex> lock(m_mutex);
     for (const auto& t : m_data) {
       int data_id = t.first;
       my_image_sizes.push_back(data_id);
@@ -1268,6 +1269,7 @@ void data_store_conduit::compute_image_offsets(
   map_is_t& sizes,
   std::vector<std::vector<int>>& indices)
 {
+  std::lock_guard<std::mutex> lock(m_mutex);
   size_t offset = 0;
   for (size_t p = 0; p < indices.size(); p++) {
     for (auto idx : indices[p]) {
@@ -1385,7 +1387,6 @@ void data_store_conduit::exchange_local_caches()
   PROFILE("  is_local_cache(): ", is_local_cache());
   PROFILE("  is_fully_loaded: ", is_fully_loaded());
 
-  //  std::lock_guard<std::mutex> lock(m_mutex);
   // indices[j] will contain the indices
   // that P_j will read from disk, and subsequently bcast to all others
   std::vector<std::vector<int>> indices;
@@ -1395,6 +1396,7 @@ void data_store_conduit::exchange_local_caches()
   PROFILE("  get_image_sizes time: ", (get_time() - tm1));
 
   tm1 = get_time();
+  // BVE 9-21-2023 It seems like this should only be done once
   allocate_shared_segment(m_sample_sizes, indices);
   PROFILE("  allocate_shared_segment time: ", (get_time() - tm1));
 
@@ -1460,6 +1462,7 @@ void data_store_conduit::read_files(std::vector<char>& work,
 void data_store_conduit::build_conduit_nodes(map_is_t& sizes)
 {
   image_data_reader* image_reader = dynamic_cast<image_data_reader*>(m_reader);
+  std::lock_guard<std::mutex> lock(m_mutex);
   for (auto t : sizes) {
     int data_id = t.first;
     const auto sample = image_reader->get_sample(static_cast<size_t>(data_id));
