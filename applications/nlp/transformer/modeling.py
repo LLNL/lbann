@@ -250,7 +250,7 @@ def _add_autoregressive_loss(preds, input_tokens, sequence_length, vocab_size,
     # Compute cross-entropy loss between preds[:-1] (up until the last token)
     # and input[1:] (predicting one token forward)
     shifted_preds = lbann.Identity(
-        lbann.Slice(preds, slice_points=[0, sequence_length - 1]))
+        lbann.Slice(preds, axis=1, slice_points=[0, sequence_length - 1]))
     shifted_labels = lbann.Identity(
         lbann.Slice(input_tokens, slice_points=[1, sequence_length]))
     flat_labels = lbann.Reshape(shifted_labels, dims=[1, sequence_length - 1])

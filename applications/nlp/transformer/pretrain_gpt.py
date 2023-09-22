@@ -50,7 +50,7 @@ def main():
     parser = argparse.ArgumentParser()
     lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_gpt')
     lbann.contrib.args.add_profiling_arguments(parser)
-    lbann.contrib.args.add_training_arguments(parser)
+    lbann.contrib.args.add_training_arguments(parser, default_minibatch_size=32)
 
     dataset_utils.add_dataset_arguments(parser, default='thepile')
 
