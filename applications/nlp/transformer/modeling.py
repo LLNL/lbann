@@ -260,8 +260,8 @@ def _add_autoregressive_loss(preds, input_tokens, sequence_length, vocab_size,
 
     # Filter out output predictions that are in padding from cross-entropy by
     # using values that will never contribute to the cross-entropy loss
-    labels = lbann.Select(labels,
-                          lbann.Identity(labels),
+    flat_labels = lbann.Select(flat_labels,
+                          lbann.Identity(flat_labels),
                           value=pad_index,
                           if_false=(vocab_size + 1))
 
