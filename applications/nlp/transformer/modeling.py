@@ -242,7 +242,8 @@ def _add_encoder_decoder_loss(preds, both_sequences, sequence_length,
                           if_false=(vocab_size + 1))
 
     # Compute cross-entropy
-    return lbann.CrossEntropy(preds, labels, use_labels=True)
+    ce = lbann.CrossEntropy(preds, labels, use_labels=True)
+    return lbann.Scale(ce, constant=1/(sequence_length - 1))
 
 
 def _add_autoregressive_loss(preds, input_tokens, sequence_length, vocab_size,
@@ -253,10 +254,13 @@ def _add_autoregressive_loss(preds, input_tokens, sequence_length, vocab_size,
         lbann.Slice(preds, axis=1, slice_points=[0, sequence_length - 1]))
     shifted_labels = lbann.Identity(
         lbann.Slice(input_tokens, slice_points=[1, sequence_length]))
-    flat_labels = lbann.Reshape(shifted_labels, dims=[1, sequence_length - 1])
 
     # Flatten labels
-    return lbann.CrossEntropy(shifted_preds, flat_labels, use_labels=True)
+    flat_labels = lbann.Reshape(shifted_labels, dims=[1, sequence_length - 1])
+
+    # Compute mean cross-entropy over the sequence
+    ce = lbann.CrossEntropy(shifted_preds, flat_labels, use_labels=True)
+    return lbann.Scale(ce, constant=1/(sequence_length - 1))
 
 
 # Command-line arguments
