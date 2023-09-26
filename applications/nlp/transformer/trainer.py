@@ -15,13 +15,33 @@ import utils.paths
 
 
 def construct_training_task(model: lbann.Model,
-                            args: argparse.Namespace) -> BatchScript:
+                            args: argparse.Namespace,
+                            learning_rate: float = 0.0001,
+                            beta1: float = 0.9,
+                            beta2: float = 0.98,
+                            eps: float = 1e-9,
+                            clip_gradient: float = 0.0,
+                            lr_decay: str = 'fixed',
+                            lr_decay_steps: float = 0.0,
+                            end_learning_rate: float = 1e-5,
+                            warmup_steps: int = 0,
+                            adamw_decay: float = 0.1) -> BatchScript:
     """
     Construct an LBANN trainer batch script for training transformers.
 
     :param model: An LBANN model.
-    :param dataset: A module pointing to the dataset to train on.
     :param args: Command-line arguments.
+    :param learning_rate: Learning rate.
+    :param beta1: Adam beta1 factor.
+    :param beta2: Adam beta2 factor.
+    :param eps: Adam epsilon factor.
+    :param clip_gradient: Clip gradient norm to value (0 disables).
+    :param lr_decay: Learning rate decay type (values: fixed, cosine, none).
+    :param lr_decay_steps: Steps for the total learning decay process (in cosine
+                           decay).
+    :param end_learning_rate: Learning rate after decay.
+    :param warmup_steps: Learning rate warmup steps.
+    :param adamw_decay: Weight decay if using the AdamW optimizer.
     :return: A batch script object that will run distributed training.
     """
 
@@ -32,7 +52,11 @@ def construct_training_task(model: lbann.Model,
     os.makedirs(work_dir, exist_ok=True)
 
     # Create batch script
-    train_script = make_batch_script(model, args.dataset, work_dir, args)
+    train_script = make_batch_script(model, args.dataset, work_dir, args,
+                                     learning_rate, beta1, beta2, eps,
+                                     clip_gradient, lr_decay, lr_decay_steps,
+                                     end_learning_rate, warmup_steps,
+                                     adamw_decay)
 
     return train_script
 
@@ -61,8 +85,20 @@ def make_data_reader(dataset_name, fraction):
 # ----------------------------------------------
 # Batch script
 # ----------------------------------------------
-def make_batch_script(model: lbann.Model, dataset_name: str, work_dir: str,
-                      args: argparse.Namespace):
+def make_batch_script(model: lbann.Model,
+                      dataset_name: str,
+                      work_dir: str,
+                      args: argparse.Namespace,
+                      learning_rate: float = 0.0001,
+                      beta1: float = 0.9,
+                      beta2: float = 0.98,
+                      eps: float = 1e-9,
+                      clip_gradient: float = 0.0,
+                      lr_decay: str = 'fixed',
+                      lr_decay_steps: float = 0.0,
+                      end_learning_rate: float = 1e-5,
+                      warmup_steps: int = 0,
+                      adamw_decay: float = 0.1):
     # Setup training algorithm
     algo = lbann.BatchedIterativeOptimizer("sgd", epoch_count=args.num_epochs)
     if hasattr(args, 'kfac') and args.kfac:
@@ -75,13 +111,21 @@ def make_batch_script(model: lbann.Model, dataset_name: str, work_dir: str,
 
     # Optimizer with learning rate schedule
     if args.optimizer.lower() == 'adamw':
-        opt = lbann.Adam(learn_rate=0.0001, beta1=0.9, beta2=0.98, eps=1e-9,
-                         weight_decay=1e-2)
+        opt = lbann.Adam(learn_rate=learning_rate,
+                         beta1=beta1,
+                         beta2=beta2,
+                         eps=eps,
+                         weight_decay=adamw_decay)
     elif args.optimizer.lower() == 'adam':
         # Note: Rough approximation of
         #   embed_dim^-0.5 * min(step^-0.5, step*warmup^-1.5)
         # with embed_dim=512 and warmup=4000.
-        opt = lbann.Adam(learn_rate=0.0001, beta1=0.9, beta2=0.98, eps=1e-9)
+        opt = lbann.Adam(learn_rate=learning_rate,
+                         beta1=beta1,
+                         beta2=beta2,
+                         eps=eps)
+
+    if lr_decay == 'fixed':
         model.callbacks.append(
             lbann.CallbackDropFixedLearningRate(
                 drop_epoch=[1],

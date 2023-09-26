@@ -31,17 +31,18 @@ class GPTConfig:
     model_dim: int
     num_heads: int
     head_dim: int
+    lr: float
 
 
 SIZES = {
-    'small': GPTConfig(12, 768, 12, 64),
-    'medium': GPTConfig(24, 1024, 16, 64),
-    'large': GPTConfig(24, 1536, 16, 96),
-    'xl': GPTConfig(24, 2048, 24, 128),
-    '2.7b': GPTConfig(32, 2560, 32, 80),
-    '6.7b': GPTConfig(32, 4096, 32, 128),
-    '13b': GPTConfig(40, 5140, 40, 128),
-    'gpt3': GPTConfig(96, 12288, 96, 128),
+    'small': GPTConfig(12, 768, 12, 64, 6e-4),
+    'medium': GPTConfig(24, 1024, 16, 64, 3e-4),
+    'large': GPTConfig(24, 1536, 16, 96, 2.5e-4),
+    'xl': GPTConfig(24, 2048, 24, 128, 2e-4),
+    '2.7b': GPTConfig(32, 2560, 32, 80, 1.6e-4),
+    '6.7b': GPTConfig(32, 4096, 32, 128, 1.2e-4),
+    '13b': GPTConfig(40, 5140, 40, 128, 1e-4),
+    'gpt3': GPTConfig(96, 12288, 96, 128, 6e-5),
 }
 
 
@@ -50,7 +51,8 @@ def main():
     parser = argparse.ArgumentParser()
     lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_gpt')
     lbann.contrib.args.add_profiling_arguments(parser)
-    lbann.contrib.args.add_training_arguments(parser, default_minibatch_size=32)
+    lbann.contrib.args.add_training_arguments(parser,
+                                              default_minibatch_size=32)
 
     dataset_utils.add_dataset_arguments(parser, default='thepile')
 
@@ -82,6 +84,7 @@ def main():
         default=0.1,
         help="Dropout ratio after multi-head attention (default: 0.1)")
 
+    parser.set_defaults(progress=True)
     args = parser.parse_args()
 
     # Load dataset
@@ -101,7 +104,22 @@ def main():
     )
 
     # Construct trainer
-    train_script: BatchScript = trainer.construct_training_task(model, args)
+    tokens_per_step = dataset.sequence_length * args.mini_batch_size
+    train_script: BatchScript = trainer.construct_training_task(
+        model,
+        args,
+        learning_rate=chosen_config.lr,
+        # Training parameters from paper
+        beta1=0.9,
+        beta2=0.95,
+        eps=1e-8,
+        clip_gradient=1.0,
+        lr_decay='cosine',
+        lr_decay_steps=(260*1e9) // tokens_per_step,
+        end_learning_rate=chosen_config.lr / 10,
+        warmup_steps=(375*1e6) // tokens_per_step,
+        adamw_decay=0.1,
+    )
 
     # Run trainer
     train_script.run(overwrite=True)

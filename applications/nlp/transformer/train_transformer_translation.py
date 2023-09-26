@@ -50,6 +50,7 @@ def main():
         default=0.0,
         help="Dropout ratio after input encoding (default: 0.0 = disabled)")
 
+    parser.set_defaults(progress=True)
     args = parser.parse_args()
 
     # Load dataset
@@ -63,7 +64,9 @@ def main():
     train_script: BatchScript = trainer.construct_training_task(model, args)
 
     # Run trainer
-    train_script.run(overwrite=True)
+    retval = train_script.run(overwrite=True)
+    if retval != 0:
+        return
 
     if args.checkpoint:
         print(
