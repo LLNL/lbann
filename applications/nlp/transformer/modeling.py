@@ -239,7 +239,7 @@ def _add_encoder_decoder_loss(preds, both_sequences, sequence_length,
     labels = lbann.Select(labels,
                           lbann.Identity(labels),
                           value=pad_index,
-                          if_false=(vocab_size + 1))
+                          if_true=(vocab_size + 1))
 
     # Compute cross-entropy
     ce = lbann.CrossEntropy(preds, labels, use_labels=True)
@@ -261,9 +261,9 @@ def _add_autoregressive_loss(preds, input_tokens, sequence_length, vocab_size,
     # Filter out output predictions that are in padding from cross-entropy by
     # using values that will never contribute to the cross-entropy loss
     flat_labels = lbann.Select(flat_labels,
-                          lbann.Identity(flat_labels),
-                          value=pad_index,
-                          if_false=(vocab_size + 1))
+                               lbann.Identity(flat_labels),
+                               value=pad_index,
+                               if_true=(vocab_size + 1))
 
     # Compute mean cross-entropy over the sequence
     ce = lbann.CrossEntropy(shifted_preds, flat_labels, use_labels=True)
