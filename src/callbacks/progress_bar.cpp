@@ -136,6 +136,7 @@ void progress_bar::write_specific_proto(lbann_data::Callback& proto) const
 {
   auto* msg = proto.mutable_progress_bar();
   msg->set_interval(this->m_batch_interval);
+  msg->set_newline_interval(this->m_newline_interval);
 }
 
 void progress_bar::on_epoch_begin(model* m)
@@ -181,6 +182,11 @@ void progress_bar::on_forward_prop_begin(model* m)
                    prefix);
 
     m_current_iteration += 1;
+
+    if (m_newline_interval > 0 &&
+        m_current_iteration % m_newline_interval == 0) {
+      std::cout << std::endl << std::flush;
+    }
   }
 }
 
@@ -190,7 +196,8 @@ std::unique_ptr<callback_base> build_progress_bar_callback_from_pbuf(
 {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackProgressBar&>(proto_msg);
-  return std::make_unique<progress_bar>(params.interval());
+  return std::make_unique<progress_bar>(params.interval(),
+                                        params.newline_interval());
 }
 
 } // namespace callback

@@ -110,7 +110,7 @@ def make_batch_script(model: lbann.Model, dataset_name: str, work_dir: str,
 
     # Print a progress bar
     if args.progress:
-        model.callbacks.append(lbann.CallbackProgressBar())
+        model.callbacks.append(lbann.CallbackProgressBar(newline_interval=100))
 
     profiler = lbann.contrib.args.create_profile_callback(args)
     if profiler is not None:

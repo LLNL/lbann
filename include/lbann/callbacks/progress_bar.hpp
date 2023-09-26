@@ -50,7 +50,9 @@ public:
   /**
    * @param batch_interval The frequency at which to print the progress bar.
    */
-  progress_bar(int batch_interval = 1) : callback_base(batch_interval) {}
+  progress_bar(int batch_interval = 1, int newline_interval = 0)
+    : callback_base(batch_interval), m_newline_interval(newline_interval)
+  {}
   progress_bar(const progress_bar&) = default;
   progress_bar& operator=(const progress_bar&) = default;
   progress_bar* copy() const override { return new progress_bar(*this); }
@@ -74,6 +76,9 @@ private:
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
   friend class cereal::access;
+
+  // Settings
+  int m_newline_interval;
 
   // Cached values for epochs
   bool m_print;
