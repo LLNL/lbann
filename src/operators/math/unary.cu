@@ -496,8 +496,9 @@ struct GeluOpImpl
     DataT const sqrt_two_over_pi(0.7978845608028654);
     DataT const coeff(0.044715);
 
-    auto hx = x / 2;
-    return hx * (1 + gpu_lib::tanh(sqrt_two_over_pi * (x + coeff * x * x * x)));
+    DataT hx = x * DataT(0.5);
+    return hx * (DataT(1) +
+                 gpu_lib::tanh(sqrt_two_over_pi * (x + coeff * x * x * x)));
   }
   inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
   {
@@ -508,9 +509,10 @@ struct GeluOpImpl
     DataT c1x = c1 * x;
     DataT c3x3 = c3 * x3;
     DataT sech = DataT(1) / gpu_lib::cosh(c1x + c3x3);
-    DataT dx = (1 + (c1x + c2 * x3) * sech * sech + gpu_lib::tanh(c1x + c3x3));
+    DataT dx =
+      (DataT(1) + (c1x + c2 * x3) * sech * sech + gpu_lib::tanh(c1x + c3x3));
 
-    return dx * dy / 2;
+    return dx * dy * DataT(0.5);
   }
 };
 
