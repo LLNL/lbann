@@ -82,10 +82,10 @@ def get_train_sample(index):
         offset = int(np.floor(offset))
         sample = sample[offset:offset + sequence_length]
 
-    # Pad sequences if they are too short
+    # Left-pad sequences if they are too short
     if len(sample) < sequence_length:
         sample_pad = np.full(sequence_length, pad_index, dtype=int)
-        sample_pad[0:len(sample)] = sample
+        sample_pad[-len(sample):] = sample
         return sample_pad
 
     return sample
