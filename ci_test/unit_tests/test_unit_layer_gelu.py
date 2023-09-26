@@ -84,10 +84,10 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    y = lbann.GeluNew(x)
+    y = lbann.Gelu(x)
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='gelunew'))
+    metrics.append(lbann.Metric(z, name='gelu'))
 
     # NumPy implementation
     vals = []

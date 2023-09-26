@@ -155,7 +155,7 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
                                            num_encoder_layers=0,
                                            num_decoder_layers=num_decoders,
                                            pre_layernorm=True,
-                                           activation=lbann.GeluNew,
+                                           activation=lbann.Gelu,
                                            name='transformer')
 
     # Run through transformer with the same sequence

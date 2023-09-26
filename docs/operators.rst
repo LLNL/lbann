@@ -55,7 +55,6 @@ Operators are specified for unique input and output data types.
    :ref:`Expm1Operator <Expm1>`, "Apply the Expm1 operator entrywise"
    :ref:`FloorOperator <Floor>`, "Apply the Floor operator entrywise"
    :ref:`GeluOperator <Gelu>`, "Gaussian Error Linear Unit operator"
-   :ref:`GeluNewOperator <GeluNew>`, "Gaussian Error Linear Unit operator (tanh approximation)"
    :ref:`GreaterOperator <Greater>`, "Apply the Greater operator entrywise"
    :ref:`GreaterConstantOperator <GreaterConstant>`, "Test each value for 'greater-than' with a constant (x>c)"
    :ref:`GreaterEqualOperator <GreaterEqual>`, "Apply the GreaterEqual operator entrywise"
@@ -570,34 +569,19 @@ ________________________________________________
 .. _Gelu:
 
 ------------------------------------------------
-Gelu
+Gelu (GELU tanh approximation)
 ------------------------------------------------
 
-Gaussian Error Linear Unit (GELU) operator.
+The Gaussian Error Linear Unit (GELU) operator is defined by:
 
 .. math::
 
    \text{GELU}(x) = x\Phi (x),
 
-where :math:`\Phi` is the Gaussian cumulative distribution function. See:
-
-Dan Hendrycks and Kevin Gimpel. "Gaussian Error Linear Units (GELUs)."
-arXiv preprint arXiv:1606.08415 (2016).
-
-:ref:`Back to Top<operators>`
-
-________________________________________
-
-
-
-.. _GeluNew:
-
-------------------------------------------------
-GeluNew (GELU tanh approximation)
-------------------------------------------------
-
-Hyperbolic tangent-based approximation of the Gaussian Error Linear Unit (GELU)
-operator, found in the BERT and GPT transformer codebases.
+where :math:`\Phi` is the Gaussian cumulative distribution function. The
+hyperbolic tangent-based approximation of the Gaussian Error Linear Unit (GELU)
+operator, found in the BERT and GPT transformer codebases, is implemented in
+LBANN and given by:
 
 .. math::
 

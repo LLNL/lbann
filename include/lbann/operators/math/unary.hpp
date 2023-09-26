@@ -92,9 +92,6 @@ LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(ErfInv,
 LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(Gelu,
                                              "gaussian error linear unit",
                                              true);
-LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(GeluNew,
-                                             "gaussian error linear unit new",
-                                             true);
 
 } // namespace lbann
 

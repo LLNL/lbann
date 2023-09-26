@@ -48,7 +48,6 @@ set_full_path(THIS_DIR_SOURCES
   expm1.cpp
   floor.cpp
   gelu.cpp
-  gelunew.cpp
   greater.cpp
   greater_equal.cpp
   less.cpp

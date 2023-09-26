@@ -28,6 +28,7 @@ def construct_training_task(model: lbann.Model,
     # Setup working directory
     timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
     work_dir = f'{timestamp}_{args.job_name}'
+    work_dir = os.path.abspath(work_dir)
     os.makedirs(work_dir, exist_ok=True)
 
     # Create batch script

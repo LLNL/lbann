@@ -486,30 +486,9 @@ struct ErfInvOpImpl
   }
 };
 
-// GELU operator
-template <typename DataT>
-struct GeluOpImpl
-{
-  inline __device__ DataT operator()(DataT const& x) const
-  {
-    DataT const rsqrt_two(0.7071067811865475);
-    return (x / 2) * (1 + gpu_lib::erf(x * rsqrt_two));
-  }
-  inline __device__ DataT operator()(DataT const& x, DataT const& dy) const
-  {
-    DataT const rsqrt_two(0.7071067811865475);
-    DataT const sqrt_two_pi(2.5066282746310002);
-    DataT const h(0.5);
-
-    auto term1 = h * gpu_lib::erf(x * rsqrt_two);
-    auto term2 = gpu_lib::exp(-x * x / 2) * x * sqrt_two_pi;
-    return dy * (h + term1 + term2);
-  }
-};
-
 // GELU operator (hyperbolic tangent approximation)
 template <typename DataT>
-struct GeluNewOpImpl
+struct GeluOpImpl
 {
   inline __device__ DataT operator()(DataT const& x) const
   {
@@ -583,7 +562,6 @@ DEFINE_COMPUTE_OPS(Exp)
 DEFINE_COMPUTE_OPS(Expm1)
 DEFINE_COMPUTE_OPS(Floor)
 DEFINE_COMPUTE_OPS(Gelu)
-DEFINE_COMPUTE_OPS(GeluNew)
 DEFINE_COMPUTE_OPS(Log)
 DEFINE_COMPUTE_OPS(Log1p)
 DEFINE_COMPUTE_OPS(LogicalNot)
@@ -616,7 +594,6 @@ DEFINE_COMPUTE_OPS(Tanh)
   template class Expm1Operator<T, El::Device::GPU>;                            \
   template class FloorOperator<T, El::Device::GPU>;                            \
   template class GeluOperator<T, El::Device::GPU>;                             \
-  template class GeluNewOperator<T, El::Device::GPU>;                          \
   template class Log1pOperator<T, El::Device::GPU>;                            \
   template class LogOperator<T, El::Device::GPU>;                              \
   template class LogicalNotOperator<T, El::Device::GPU>;                       \

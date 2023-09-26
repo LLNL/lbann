@@ -306,15 +306,6 @@ class Gelu(Operator):
         params = OpProto.GeluOperator()
         return params
 
-class GeluNew(Operator):
-    """Apply the GELU operator (BERT/GPT hyperbolic tangent approximation)."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def do_export_proto(self):
-        params = OpProto.GeluNewOperator()
-        return params
-
 class Greater(Operator):
     """Apply the Greater operator entrywise."""
     def __init__(self, *args, **kwargs):
