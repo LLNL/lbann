@@ -258,6 +258,13 @@ def _add_autoregressive_loss(preds, input_tokens, sequence_length, vocab_size,
     # Flatten labels
     flat_labels = lbann.Reshape(shifted_labels, dims=[1, sequence_length - 1])
 
+    # Filter out output predictions that are in padding from cross-entropy by
+    # using values that will never contribute to the cross-entropy loss
+    labels = lbann.Select(labels,
+                          lbann.Identity(labels),
+                          value=pad_index,
+                          if_false=(vocab_size + 1))
+
     # Compute mean cross-entropy over the sequence
     ce = lbann.CrossEntropy(shifted_preds, flat_labels, use_labels=True)
     return lbann.Scale(ce, constant=1/(sequence_length - 1))
