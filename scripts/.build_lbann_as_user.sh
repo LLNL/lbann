@@ -2,9 +2,10 @@ LBANN_REPO_PATH="https://github.com/LLNL/lbann/raw/develop"
 curl -fsSL -O ${LBANN_REPO_PATH}/scripts/build_lbann.sh
 curl -fsSL -O ${LBANN_REPO_PATH}/scripts/customize_build_env.sh
 curl -fsSL -O ${LBANN_REPO_PATH}/scripts/utilities.sh
+curl -fsSL -O ${LBANN_REPO_PATH}/scripts/find_externals_and_lbann_top_level_dependencies.py
 curl -fsSL -O ${LBANN_REPO_PATH}/ci_test/requirements.txt
 
-chmod +x build_lbann.sh customize_build_env.sh utilities.sh
+chmod +x build_lbann.sh customize_build_env.sh utilities.sh find_externals_and_lbann_top_level_dependencies.py
 
 # Identify the center that we are running at
 CENTER=
