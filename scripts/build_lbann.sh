@@ -712,9 +712,10 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-        # CMD="spack config add concretizer:duplicates:strategy:none"
-        # echo ${CMD} | tee -a ${LOG}
-        # [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        # Allow minimal duplicates otherwise NumPy and SciPy cannot co-concretize
+        CMD="spack config add concretizer:duplicates:strategy:minimal"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     fi
 
     ##########################################################################################
@@ -787,11 +788,17 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         # fi
 
         # Use standard tags for common packages
-        CMD="spack external find --scope env:${LBANN_ENV} --tag core-packages --tag build-tools --tag rocm"
+        CMD="spack external find --not-buildable --scope env:${LBANN_ENV} --tag core-packages --tag build-tools --tag rocm"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-        CMD="spack external find --scope env:${LBANN_ENV} bzip2 cuda cudnn git hdf5 hwloc libfabric nccl ncurses openblas perl python rccl rdma-core sqlite spectrum-mpi mvapich2 openmpi netlib-lapack"
+        # Find key externals that you don't want to ever rebuild
+        CMD="spack external find --not-buildable --scope env:${LBANN_ENV} bzip2 cuda cudnn git hdf5 hwloc libfabric nccl ncurses openblas openssl perl rdma-core sqlite spectrum-mpi mvapich2 openmpi netlib-lapack"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+        # Look for external pacakges that it may be okay to build new ones if required
+        CMD="spack external find --scope env:${LBANN_ENV} python rccl"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -872,7 +879,6 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
                 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
             done
         fi
-
     fi # [[ -n "${INSTALL_DEPS:-}" ]]
 
     if [[ "${SPEC_ONLY}" == "TRUE" ]]; then
@@ -888,6 +894,11 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         # Set the -f flag to force spack to re-evaluate all packages
         # During concretation to ensure that proper reuse actually occurs
         CMD="spack concretize --test root --reuse -f ${BUILD_JOBS}"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+        # Display the dependency types
+        CMD="spack solve -t --reuse"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     fi
