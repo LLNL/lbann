@@ -431,6 +431,72 @@ build_optimizerwise_adaptive_learning_rate_callback_from_pbuf(
   const google::protobuf::Message&,
   std::shared_ptr<lbann_summary> const&);
 
+/**
+ * Decrease the learning rate with a cosine policy and a potential stepwise
+ * warmup, originally presented in:
+ * Ilya Loshchilov, Frank Hutter, "SGDR: Stochastic Gradient Descent with Warm
+ * Restarts." ICLR 2017.
+ *
+ * The formula is as follows:
+ *
+ * lr_min + 0.5 * (lr_max - lr_min) * (1 + cos(pi * t_cur / t_total))
+ *
+ * where t_cur is the current iteration and t_total is the total number of
+ * iterations. If warmup steps are given, the schedule starts with
+ * ``initial_learning_rate`` and gradually raises the learning rate to
+ * ``lr_max``, after which cosine decay will occur for the specified number of
+ * steps until ``lr_min`` is reached.
+ */
+class cosine_decay_learning_rate : public learning_rate
+{
+public:
+  cosine_decay_learning_rate(double lr_max,
+                             double lr_min,
+                             size_t decay_steps,
+                             double initial_learning_rate = 0.0,
+                             size_t warmup_steps = 0);
+  cosine_decay_learning_rate(double lr_max,
+                             double lr_min,
+                             size_t decay_steps,
+                             double initial_learning_rate,
+                             size_t warmup_steps,
+                             std::vector<std::string> weight_names);
+  cosine_decay_learning_rate(const cosine_decay_learning_rate&) = default;
+  cosine_decay_learning_rate&
+  operator=(const cosine_decay_learning_rate&) = default;
+  cosine_decay_learning_rate* copy() const override
+  {
+    return new cosine_decay_learning_rate(*this);
+  }
+  void setup(model* m) override;
+  std::string name() const override { return "cosine decay learning rate"; }
+
+protected:
+  float global_schedule(model* m) override;
+  float optimizer_schedule(model* m, optimizer& opt) override;
+
+private:
+  /** Add callback specific data to prototext */
+  void write_specific_proto(lbann_data::Callback& proto) const final;
+
+  /// The starting learning rate before decay
+  float m_lr_max;
+  /// The learning rate after cosine decay
+  float m_lr_min;
+  /// The number of steps for decay
+  size_t m_decay_steps;
+  /// The initial learning rate for warmup. Relevant only if m_warmup_steps > 0
+  float m_initial_lr;
+  /// Number of warmup steps
+  size_t m_warmup_steps;
+};
+
+// Builder function
+std::unique_ptr<callback_base>
+build_cosine_decay_learning_rate_callback_from_pbuf(
+  const google::protobuf::Message&,
+  std::shared_ptr<lbann_summary> const&);
+
 } // namespace callback
 } // namespace lbann
 

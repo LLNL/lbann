@@ -22,7 +22,7 @@ def construct_training_task(model: lbann.Model,
                             eps: float = 1e-9,
                             clip_gradient: float = 0.0,
                             lr_decay: str = 'fixed',
-                            lr_decay_steps: float = 0.0,
+                            lr_decay_steps: int = 0,
                             end_learning_rate: float = 1e-5,
                             warmup_steps: int = 0,
                             adamw_decay: float = 0.1) -> BatchScript:
@@ -95,7 +95,7 @@ def make_batch_script(model: lbann.Model,
                       eps: float = 1e-9,
                       clip_gradient: float = 0.0,
                       lr_decay: str = 'fixed',
-                      lr_decay_steps: float = 0.0,
+                      lr_decay_steps: int = 0,
                       end_learning_rate: float = 1e-5,
                       warmup_steps: int = 0,
                       adamw_decay: float = 0.1):
@@ -126,6 +126,10 @@ def make_batch_script(model: lbann.Model,
                          eps=eps)
 
     if lr_decay == 'fixed':
+        if warmup_steps > 0:
+            raise NotImplementedError(
+                'Warmup not implemented with fixed learning rate')
+
         model.callbacks.append(
             lbann.CallbackDropFixedLearningRate(
                 drop_epoch=[1],
@@ -136,6 +140,18 @@ def make_batch_script(model: lbann.Model,
                 drop_epoch=[2, 4, 8, 12],
                 amt=0.75,
             ))
+    elif lr_decay == 'cosine':
+        model.callbacks.append(
+            lbann.CallbackCosineDecayLearningRate(
+                lr_max=learning_rate,
+                lr_min=end_learning_rate,
+                decay_steps=lr_decay_steps,
+                initial_warmup_learning_rate=end_learning_rate,
+                warmup_steps=warmup_steps,
+            ))
+
+    # if clip_gradient > 0:
+    #     raise NotImplementedError('Gradient clipping not yet implemented')
 
     # Checkpoint after every epoch
     if args.checkpoint:

@@ -110,9 +110,12 @@ def main():
         print('Using torch.compile')
         model = torch.compile(model)
 
+    train_loop(model, dataset, args.num_epochs, num_samples, b)
+
+def train_loop(model, dataset, num_epochs, num_samples, b):
     # Loop through epochs
     opt = torch.optim.AdamW(model.parameters())
-    for epoch in range(args.num_epochs):
+    for epoch in range(num_epochs):
         print('Epoch', epoch)
         indices = np.random.permutation(num_samples)
         model.train()
@@ -131,7 +134,10 @@ def main():
             # Use causal LM
             preds = model(samples, labels=samples)
             if preds.loss is not None:
-                progress.set_description(f'Loss: {preds.loss.item():.4f}')
+                max_mem = torch.cuda.max_memory_allocated() / 1024 / 1024
+
+                progress.set_description(f'Loss: {preds.loss.item():.4f}. '
+                                         f'Mem usage: {max_mem:.2f} MB')
                 preds.loss.backward()
                 opt.step()
 

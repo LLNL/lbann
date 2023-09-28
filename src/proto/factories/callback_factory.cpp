@@ -127,6 +127,8 @@ void register_default_builders(factory_type& factory)
                            build_confusion_matrix_callback_from_pbuf);
   factory.register_builder("CallbackComputeModelSize",
                            build_compute_model_size_callback_from_pbuf);
+  factory.register_builder("CallbackCosineDecayLearningRate",
+                           build_cosine_decay_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackDebug", build_debug_callback_from_pbuf);
   factory.register_builder("CallbackDebugIO",
                            build_debug_io_callback_from_pbuf);

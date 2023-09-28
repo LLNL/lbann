@@ -84,7 +84,7 @@ def main():
         default=0.1,
         help="Dropout ratio after multi-head attention (default: 0.1)")
 
-    parser.set_defaults(progress=True)
+    parser.set_defaults(progress=True, num_epochs=1)
     args = parser.parse_args()
 
     # Load dataset
@@ -115,9 +115,9 @@ def main():
         eps=1e-8,
         clip_gradient=1.0,
         lr_decay='cosine',
-        lr_decay_steps=(260*1e9) // tokens_per_step,
+        lr_decay_steps=int((260*1e9) // tokens_per_step),
         end_learning_rate=chosen_config.lr / 10,
-        warmup_steps=(375*1e6) // tokens_per_step,
+        warmup_steps=int((375*1e6) // tokens_per_step),
         adamw_decay=0.1,
     )
 
