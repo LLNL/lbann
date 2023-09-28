@@ -8,7 +8,7 @@ import numpy as np
 # Options
 # ----------------------------------------------
 
-sequence_length = 64
+sequence_length = 512
 _vocab_size = 32000
 
 # ----------------------------------------------

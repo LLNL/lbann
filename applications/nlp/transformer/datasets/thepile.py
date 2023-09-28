@@ -66,9 +66,8 @@ def detokenize(indices):
 def get_train_sample(index):
     """Token indices for a data sample from the training set.
 
-    The English and German text samples are tokenized,
-    padded/subsampled to sequence_length tokens, and concatenated.
-
+    The text samples are tokenized and padded/subsampled to sequence_length
+    tokens.
     """
 
     # Tokenize text data
