@@ -713,9 +713,9 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
         # Allow minimal duplicates otherwise NumPy and SciPy cannot co-concretize
-        CMD="spack config add concretizer:duplicates:strategy:minimal"
-        echo ${CMD} | tee -a ${LOG}
-        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        # CMD="spack config add concretizer:duplicates:strategy:minimal"
+        # echo ${CMD} | tee -a ${LOG}
+        # [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     fi
 
     ##########################################################################################
