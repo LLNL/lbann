@@ -115,7 +115,7 @@ def make_batch_script(model: lbann.Model,
                          beta1=beta1,
                          beta2=beta2,
                          eps=eps,
-                         weight_decay=adamw_decay)
+                         adamw_weight_decay=adamw_decay)
     elif args.optimizer.lower() == 'adam':
         opt = lbann.Adam(learn_rate=learning_rate,
                          beta1=beta1,

@@ -44,7 +44,7 @@ struct AdamBuilder
       /*beta1=*/TensorDataType(1.f),
       /*beta2=*/TensorDataType(4.f),
       /*eps=*/TensorDataType(2.f),
-      /*weight_decay=*/TensorDataType(5.f));
+      /*adamw_weight_decay=*/TensorDataType(5.f));
 
     // These probably shouldn't be set here, but let's pretend
     // something's happened to perturb the state.
@@ -60,7 +60,7 @@ struct AdamBuilder
       /*beta1=*/TensorDataType(0.0f),
       /*beta2=*/TensorDataType(0.0f),
       /*eps=*/TensorDataType(0.0f),
-      /*weight_decay=*/TensorDataType(0.0f));
+      /*adamw_weight_decay=*/TensorDataType(0.0f));
   }
 }; // struct AdamBuilder
 
@@ -91,7 +91,8 @@ TEMPLATE_LIST_TEST_CASE("Adam Optimizer serialization",
   CHECK_FALSE(opt.get_current_beta1() == opt_restore.get_current_beta1());
   CHECK_FALSE(opt.get_current_beta2() == opt_restore.get_current_beta2());
   CHECK_FALSE(opt.get_eps() == opt_restore.get_eps());
-  CHECK_FALSE(opt.get_weight_decay() == opt_restore.get_weight_decay());
+  CHECK_FALSE(opt.get_adamw_weight_decay() ==
+              opt_restore.get_adamw_weight_decay());
 
   {
     OutputArchiveType oarchive(ss);
@@ -109,5 +110,5 @@ TEMPLATE_LIST_TEST_CASE("Adam Optimizer serialization",
   CHECK(opt.get_current_beta1() == opt_restore.get_current_beta1());
   CHECK(opt.get_current_beta2() == opt_restore.get_current_beta2());
   CHECK(opt.get_eps() == opt_restore.get_eps());
-  CHECK(opt.get_weight_decay() == opt_restore.get_weight_decay());
+  CHECK(opt.get_adamw_weight_decay() == opt_restore.get_adamw_weight_decay());
 }

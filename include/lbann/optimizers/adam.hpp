@@ -73,7 +73,7 @@ public:
        TensorDataType beta1 = 0.9,
        TensorDataType beta2 = 0.99,
        TensorDataType eps = 1e-8,
-       TensorDataType weight_decay = 0.0);
+       TensorDataType adamw_weight_decay = 0.0);
   adam(const adam& other);
   adam& operator=(const adam& other);
   ~adam() = default;
@@ -110,11 +110,14 @@ public:
   /** Small factor to avoid division by zero. */
   void set_eps(TensorDataType eps) { m_eps = eps; }
   /** Regularizer coefficient for AdamW weight decay. */
-  TensorDataType get_weight_decay() const noexcept { return m_weight_decay; }
-  /** Regularizer coefficient for AdamW weight decay. */
-  void set_weight_decay(TensorDataType weight_decay)
+  TensorDataType get_adamw_weight_decay() const noexcept
   {
-    m_weight_decay = weight_decay;
+    return m_adamw_weight_decay;
+  }
+  /** Regularizer coefficient for AdamW weight decay. */
+  void set_adamw_weight_decay(TensorDataType adamw_weight_decay)
+  {
+    m_adamw_weight_decay = adamw_weight_decay;
   }
 
   /** First moment estimates. */
@@ -189,7 +192,7 @@ private:
   /** Small factor to avoid division by zero. */
   TensorDataType m_eps;
   /** Regularizer coefficient for AdamW weight decay. */
-  TensorDataType m_weight_decay;
+  TensorDataType m_adamw_weight_decay;
   /** beta1 ^ iteration. */
   TensorDataType m_current_beta1 = TensorDataType(1.);
   /** beta2 ^ iteration. */
