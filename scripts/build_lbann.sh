@@ -898,9 +898,9 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
         # Display the dependency types
-        CMD="spack solve -t --reuse"
-        echo ${CMD} | tee -a ${LOG}
-        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        # CMD="spack solve -t --reuse"
+        # echo ${CMD} | tee -a ${LOG}
+        # [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     fi
 
     # Get the spack hash for LBANN (Ensure that the concretize command has been run so that any impact of external packages is factored in)
