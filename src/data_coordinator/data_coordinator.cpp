@@ -351,24 +351,27 @@ long data_coordinator::get_linearized_size(
       linearized_size = tmp_size;
     }
   }
-  auto& dim_map = m_active_data_fields_dim_map.at(data_field);
-  if (linearized_size != get_linear_size(dim_map)) {
-    if (linearized_size == -1) {
-      LBANN_WARNING("Unable to find data readers; using data field map for "
-                    "linearized size for data field: ",
+  auto it = m_active_data_fields_dim_map.find(data_field);
+  if (it != m_active_data_fields_dim_map.end()) {
+    auto& dim_map = it->second;
+    if (linearized_size != get_linear_size(dim_map)) {
+      if (linearized_size == -1) {
+        LBANN_WARNING("Unable to find data readers; using data field map for "
+                      "linearized size for data field: ",
+                      data_field,
+                      " = ",
+                      get_linear_size(dim_map));
+        linearized_size = get_linear_size(dim_map);
+      }
+      else {
+        LBANN_ERROR("The data readers and data field map disagree on the "
+                    "linearized size of the field: ",
                     data_field,
-                    " = ",
+                    ": ",
+                    linearized_size,
+                    " != ",
                     get_linear_size(dim_map));
-      linearized_size = get_linear_size(dim_map);
-    }
-    else {
-      LBANN_ERROR("The data readers and data field map disagree on the "
-                  "linearized size of the field: ",
-                  data_field,
-                  ": ",
-                  linearized_size,
-                  " != ",
-                  get_linear_size(dim_map));
+      }
     }
   }
   return linearized_size;
