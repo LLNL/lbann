@@ -117,9 +117,6 @@ def make_batch_script(model: lbann.Model,
                          eps=eps,
                          weight_decay=adamw_decay)
     elif args.optimizer.lower() == 'adam':
-        # Note: Rough approximation of
-        #   embed_dim^-0.5 * min(step^-0.5, step*warmup^-1.5)
-        # with embed_dim=512 and warmup=4000.
         opt = lbann.Adam(learn_rate=learning_rate,
                          beta1=beta1,
                          beta2=beta2,

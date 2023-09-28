@@ -29,12 +29,9 @@ dataset_train, dataset_val = load_dataset(os.path.join(data_dir, 'pile.py'),
                                           cache_dir=os.path.join(
                                               data_dir, 'cache'))
 
-# Use the WMT 2016 tokenizer (?)
-tokenizer = Tokenizer.from_file(
-    os.path.join(utils.paths.wmt_dir(), 'tokenizer-wmt16.json'))
-pad_index = tokenizer.token_to_id('<pad>')
-bos_index = tokenizer.token_to_id('<s>')
-eos_index = tokenizer.token_to_id('</s>')
+# Use the GPT-NeoX-20B tokenizer
+tokenizer = Tokenizer.from_file(os.path.join(data_dir, '20B_tokenizer.json'))
+pad_index = tokenizer.token_to_id('<|padding|>')
 
 # ----------------------------------------------
 # Tokenization
@@ -44,9 +41,9 @@ eos_index = tokenizer.token_to_id('</s>')
 def tokenize(text):
     """Convert string to list of token indices.
 
-    Use byte-pair encoding trained on WMT-16. We add BOS and EOS tokens.
+    Use byte-pair encoding trained on The Pile.
     """
-    return tokenizer.encode('<s>' + text + '</s>').ids
+    return tokenizer.encode(text).ids
 
 
 def detokenize(indices):
@@ -54,8 +51,7 @@ def detokenize(indices):
 
     Stops at the first EOS token. All other special tokens are ignored.
     """
-    return tokenizer.decode(indices,
-                            skip_special_tokens=True).replace(' ##', '')
+    return tokenizer.decode(indices)
 
 
 # ----------------------------------------------
