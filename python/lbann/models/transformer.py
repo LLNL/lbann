@@ -101,6 +101,7 @@ class TransformerEncoderLayer(lbann.modules.Module):
         self.dropout_prob = dropout
         self.pre_layernorm = pre_layernorm
         self.activation = activation
+        self.extra_ffn_args = {}
 
         # Module name
         self.name = name
@@ -174,25 +175,29 @@ class TransformerEncoderLayer(lbann.modules.Module):
             weights=self.fc1_weights,
             output_channel_dims=[self.feedforward_dim],
             name=f'{name}_fc1',
+            **self.extra_ffn_args,
         )
-        y = self.activation(y, name=f'{name}_ffn_act')
+        y = self.activation(y, name=f'{name}_ffn_act', **self.extra_ffn_args)
         if self.dropout_prob > 0:
             y = lbann.Dropout(
                 y,
                 keep_prob=1 - self.dropout_prob,
                 name=f'{name}_drop2',
+                **self.extra_ffn_args,
             )
         y = lbann.ChannelwiseFullyConnected(
             y,
             weights=self.fc2_weights,
             output_channel_dims=[self.embed_dim],
             name=f'{name}_fc2',
+            **self.extra_ffn_args,
         )
         if self.dropout_prob > 0:
             y = lbann.Dropout(
                 y,
                 keep_prob=1 - self.dropout_prob,
                 name=f'{name}_drop3',
+                **self.extra_ffn_args,
             )
         z = lbann.Sum(x, y, name=f'{name}_sum2')
         if not self.pre_layernorm:
@@ -244,6 +249,7 @@ class TransformerDecoderLayer(lbann.modules.Module):
         self.dropout_prob = dropout
         self.pre_layernorm = pre_layernorm
         self.activation = activation
+        self.extra_ffn_args = {}
 
         # Module name
         self.name = name
@@ -258,7 +264,9 @@ class TransformerDecoderLayer(lbann.modules.Module):
             dropout=attn_dropout,
             name=f'{self.name}_attention1')
         self.attention2 = lbann.modules.transformer.MultiheadAttention(
-            embed_dim, num_heads, dropout=attn_dropout,
+            embed_dim,
+            num_heads,
+            dropout=attn_dropout,
             name=f'{self.name}_attention2')
         self.norm1 = LayerNorm(self.embed_dim, name=f'{self.name}_norm1')
         self.norm2 = LayerNorm(self.embed_dim, name=f'{self.name}_norm2')
@@ -351,25 +359,29 @@ class TransformerDecoderLayer(lbann.modules.Module):
             weights=self.fc1_weights,
             output_channel_dims=[self.feedforward_dim],
             name=f'{name}_fc1',
+            **self.extra_ffn_args,
         )
-        y = self.activation(y, name=f'{name}_ffn_act')
+        y = self.activation(y, name=f'{name}_ffn_act', **self.extra_ffn_args)
         if self.dropout_prob > 0:
             y = lbann.Dropout(
                 y,
                 keep_prob=1 - self.dropout_prob,
                 name=f'{name}_drop3',
+                **self.extra_ffn_args,
             )
         y = lbann.ChannelwiseFullyConnected(
             y,
             weights=self.fc2_weights,
             output_channel_dims=[self.embed_dim],
             name=f'{name}_fc2',
+            **self.extra_ffn_args,
         )
         if self.dropout_prob > 0:
             y = lbann.Dropout(
                 y,
                 keep_prob=1 - self.dropout_prob,
                 name=f'{name}_drop4',
+                **self.extra_ffn_args,
             )
         z = lbann.Sum(x, y, name=f'{name}_sum3')
 
@@ -427,6 +439,8 @@ class Transformer(lbann.modules.Module):
         self.instance = 0
         self.hidden_size = hidden_size
         self.num_heads = num_heads
+        self.dropout = dropout
+        self.attn_dropout = attn_dropout
 
         # Module name
         self.name = name
@@ -439,6 +453,7 @@ class Transformer(lbann.modules.Module):
         # Default feedforward size is 4*hidden_size
         if feedforward_size is None or feedforward_size == 0:
             feedforward_size = 4 * hidden_size
+        self.feedforward_size = feedforward_size
 
         # Encoder and decoder stacks
         self.encoder = [

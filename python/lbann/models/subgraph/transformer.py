@@ -1479,7 +1479,7 @@ class Transformer(lbann.modules.Module):
         # Return cached mask
         return self._subsequent_mask_cache[size]
 
-    def forward(self, source, source_length, target, target_length):
+    def forward(self, source, target, target_length):
         """Apply Transformer.
 
         The input and output tensors are interpreted as sequences of
@@ -1501,21 +1501,13 @@ class Transformer(lbann.modules.Module):
         self.instance += 1
 
         # Encoder stack
-        # Note: Add positional encoding to input
-        x = lbann.Sum(
-            [source, self._positional_encoding(source_length)],
-            name=f"{self.name}_instance{self.instance}_positional_source",
-        )
+        x = source
         for encoder_layer in self.encoder:
             x = encoder_layer(x)
         memory = x
 
         # Decoder stack
-        # Note: Add positional encoding to input
-        x = lbann.Sum(
-            [target, self._positional_encoding(target_length)],
-            name=f"{self.name}_instance{self.instance}_positional_target",
-        )
+        x = target
 
         subgraph_masks = {}
 
@@ -1535,7 +1527,6 @@ class Transformer(lbann.modules.Module):
                     memory,
                     tgt_mask=subgraph_masks,
                 )
-
         else:
             for decoder_layer in self.decoder:
                 x = decoder_layer(

@@ -6,6 +6,7 @@ from typing import Tuple
 from lbann.models.transformer import LayerNorm
 from lbann.modules.transformer import PositionalEncoding, LearnedInputEncoding
 import numpy as np
+import parallelism
 
 
 class InputEncoding(Enum):
@@ -79,22 +80,29 @@ def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
         num_encoder_layers=num_encoders,
         num_decoder_layers=num_decoders)
 
+    # Apply parallelism techniques
+    transformer, extra_model_kwargs = parallelism.apply_subgraph_parallelism(
+        transformer, args)
+    parallelism.apply_ffn_model_parallelism(transformer, args)
+
     # Run through transformer
     result = transformer(encoder_input, decoder_input, sequence_length - 1)
 
     # Reconstruct decoder input
-    preds = lbann.ChannelwiseFullyConnected(result,
-                                            weights=embedding_weights,
-                                            output_channel_dims=[vocab_size],
-                                            bias=False,
-                                            transpose=True,
-                                            name="prediction_layer")
-    preds = lbann.ChannelwiseSoftmax(preds)
+    lm_head = lbann.ChannelwiseFullyConnected(result,
+                                              weights=embedding_weights,
+                                              output_channel_dims=[vocab_size],
+                                              bias=False,
+                                              transpose=True,
+                                              name="prediction_layer")
+    preds = lbann.ChannelwiseSoftmax(lm_head)
     preds = lbann.TensorPermute(preds, axes=[1, 0])
 
     # Compute loss
     loss = _add_encoder_decoder_loss(preds, input_tokens, sequence_length,
                                      vocab_size, dataset.pad_index)
+
+    parallelism.apply_lm_head_model_parallelism(lm_head, args)
 
     # Construct model
     metrics = []
@@ -105,13 +113,15 @@ def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
         objective_function=loss,
         metrics=metrics,
         callbacks=callbacks,
+        **extra_model_kwargs,
     )
 
 
 def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
                                          num_decoders: int, num_heads: int,
                                          dropout: float, input_dropout: float,
-                                         attn_dropout: float, num_epochs: int):
+                                         attn_dropout: float, num_epochs: int,
+                                         args: argparse.Namespace):
     """
     Creates a GPT-style decoder-only transformer for causal language modeling
     tasks (e.g., predict next token).
@@ -158,6 +168,8 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
                                            activation=lbann.Gelu,
                                            name='transformer')
 
+    parallelism.apply_ffn_model_parallelism(transformer, args)
+
     # Run through transformer with the same sequence
     result = transformer(decoder_input, decoder_input, sequence_length)
 
@@ -166,18 +178,20 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
     result = norm_final(result)
 
     # Apply language modeling head on results
-    preds = lbann.ChannelwiseFullyConnected(result,
-                                            weights=embedding_weights,
-                                            output_channel_dims=[vocab_size],
-                                            bias=False,
-                                            transpose=True,
-                                            name="prediction_layer")
-    preds = lbann.ChannelwiseSoftmax(preds)
+    lm_head = lbann.ChannelwiseFullyConnected(result,
+                                              weights=embedding_weights,
+                                              output_channel_dims=[vocab_size],
+                                              bias=False,
+                                              transpose=True,
+                                              name="prediction_layer")
+    preds = lbann.ChannelwiseSoftmax(lm_head)
     preds = lbann.TensorPermute(preds, axes=[1, 0])
 
     # Compute loss
     loss = _add_autoregressive_loss(preds, input_tokens, sequence_length,
                                     vocab_size, dataset.pad_index)
+
+    parallelism.apply_lm_head_model_parallelism(lm_head, args)
 
     # Construct model
     metrics = []
@@ -243,7 +257,7 @@ def _add_encoder_decoder_loss(preds, both_sequences, sequence_length,
 
     # Compute cross-entropy
     ce = lbann.CrossEntropy(preds, labels, use_labels=True)
-    return lbann.Scale(ce, constant=1/(sequence_length - 1))
+    return lbann.Scale(ce, constant=1 / (sequence_length - 1))
 
 
 def _add_autoregressive_loss(preds, input_tokens, sequence_length, vocab_size,
@@ -267,7 +281,7 @@ def _add_autoregressive_loss(preds, input_tokens, sequence_length, vocab_size,
 
     # Compute mean cross-entropy over the sequence
     ce = lbann.CrossEntropy(shifted_preds, flat_labels, use_labels=True)
-    return lbann.Scale(ce, constant=1/(sequence_length - 1))
+    return lbann.Scale(ce, constant=1 / (sequence_length - 1))
 
 
 # Command-line arguments

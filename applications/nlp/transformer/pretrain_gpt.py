@@ -19,6 +19,7 @@ sys.path.append(root_dir)
 
 import dataset_utils
 import modeling
+import parallelism
 import trainer
 
 
@@ -53,6 +54,7 @@ def main():
     lbann.contrib.args.add_profiling_arguments(parser)
     lbann.contrib.args.add_training_arguments(parser,
                                               default_minibatch_size=32)
+    parallelism.add_transformer_parallelism_arguments(parser, subgraph=False)
 
     dataset_utils.add_dataset_arguments(parser, default='thepile')
 
@@ -101,6 +103,7 @@ def main():
         input_dropout=args.input_dropout,
         attn_dropout=args.attn_dropout,
         num_epochs=args.num_epochs,
+        args=args,
     )
 
     # Construct trainer
@@ -115,9 +118,9 @@ def main():
         eps=1e-8,
         clip_gradient=0.0,
         lr_decay='cosine',
-        lr_decay_steps=int((260*1e9) // tokens_per_step),
+        lr_decay_steps=int((260 * 1e9) // tokens_per_step),
         end_learning_rate=chosen_config.lr / 10,
-        warmup_steps=int((375*1e6) // tokens_per_step),
+        warmup_steps=int((375 * 1e6) // tokens_per_step),
         adamw_decay=0.1,
     )
 

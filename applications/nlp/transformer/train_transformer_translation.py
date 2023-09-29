@@ -18,6 +18,7 @@ sys.path.append(root_dir)
 
 import dataset_utils
 import modeling
+import parallelism
 import trainer
 
 
@@ -30,6 +31,7 @@ def main():
     trainer.add_kfac_arguments(parser)
 
     modeling.add_transformer_architecture_arguments(parser)
+    parallelism.add_transformer_parallelism_arguments(parser)
     dataset_utils.add_dataset_arguments(parser, default='wmt16')
 
     parser.add_argument('--optimizer',
