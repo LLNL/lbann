@@ -848,25 +848,16 @@ void model::check_subgraph_parallelism()
 void model::setup_subgrid_layers_run_condition()
 {
   const auto& layers = this->get_layers();
-  const El::Int num_layers = layers.size();
-  for (El::Int node = 0; node < num_layers; ++node) {
+  for (auto const& l : layers) {
     // Special case when split/slice and concatenate/sum need sub-graph
     // parallelism execution
-    if (layers[node]->get_type() == "split" ||
-        layers[node]->get_type() == "slice") {
-
-      const std::vector<const Layer*>& childs =
-        layers[node]->get_child_layers();
-
-      if (childs[0]->get_grid_tag() != layers[node]->get_grid_tag())
-        layers[node]->set_subgraph_parallelism_execution();
+    if ((l->get_type() == "split" || l->get_type() == "slice") &&
+        (l->get_child_layer(0).get_grid_tag() != l->get_grid_tag())) {
+      l->set_subgraph_parallelism_execution();
     }
-    if (layers[node]->get_type() == "concatenate" ||
-        layers[node]->get_type() == "sum") {
-      const std::vector<const Layer*>& parents =
-        layers[node]->get_parent_layers();
-      if (parents[0]->get_grid_tag() != layers[node]->get_grid_tag())
-        layers[node]->set_subgraph_parallelism_execution();
+    if ((l->get_type() == "concatenate" || l->get_type() == "sum") &&
+        (l->get_parent_layer(0).get_grid_tag() != l->get_grid_tag())) {
+      l->set_subgraph_parallelism_execution();
     }
   }
 }
@@ -911,7 +902,7 @@ void model::get_subgrids_order(std::vector<int>& ranks_order, int num_branches)
   }
 }
 
-void model::setup_subcommunicators(const std::vector<El::Grid*>& grids)
+void model::setup_subcommunicators(const std::vector<El::Grid*>& fngrids)
 {
   // Because of this optimization we cannot have dynamic number of sub-graph in
   // a model For example: In a model, module1 cannnot different number of
@@ -938,7 +929,7 @@ void model::setup_subcommunicators(const std::vector<El::Grid*>& grids)
 
         int indexSubgrid = -1;
         for (int child = 0; child < layers[node]->get_num_children(); ++child) {
-          if (grids[childs[child]->get_grid_tag()]->InGrid())
+          if (fngrids[childs[child]->get_grid_tag()]->InGrid())
 
           {
             indexSubgrid = child;
@@ -948,8 +939,8 @@ void model::setup_subcommunicators(const std::vector<El::Grid*>& grids)
         const int child_tag = childs[indexSubgrid]->get_grid_tag();
         const int layer_tag = layers[node]->get_grid_tag();
 
-        const int posInSubGrid = grids[child_tag]->VCRank();
-        const int posInGrid = grids[layer_tag]->ViewingRank();
+        const int posInSubGrid = fngrids[child_tag]->VCRank();
+        const int posInGrid = fngrids[layer_tag]->ViewingRank();
         El::mpi::Split(layers[node]->get_comm()->get_trainer_comm(),
                        posInSubGrid,
                        posInGrid,
@@ -997,7 +988,7 @@ void model::setup_layer_execution_order()
   ensure_input_layers_first();
 }
 
-void model::setup_layer_grid_tags(const std::vector<El::Grid*>& grids)
+void model::setup_layer_grid_tags(const std::vector<El::Grid*>& fngrids)
 {
   for (auto& layer : this->get_layers()) {
     // Choose process grid to distribute matrices over
@@ -1019,7 +1010,7 @@ void model::setup_layer_grid_tags(const std::vector<El::Grid*>& grids)
         tag = 0;
       }
     }
-    if (tag < 0 || tag >= static_cast<int>(grids.size())) {
+    if (tag < 0 || tag >= static_cast<int>(fngrids.size())) {
       LBANN_ERROR("attempted to initialize ",
                   layer->get_type(),
                   " layer \"",
@@ -1029,7 +1020,7 @@ void model::setup_layer_grid_tags(const std::vector<El::Grid*>& grids)
                   "(grid tag ",
                   tag,
                   ", ",
-                  grids.size(),
+                  fngrids.size(),
                   " grids available)");
     }
     layer->set_grid_tag(tag);
@@ -2122,7 +2113,7 @@ void model::save_model()
 #ifdef LBANN_HAS_DISTCONV
 void model::setup_distconv()
 {
-  std::stringstream dc_enabled, dc_disabled;
+  std::ostringstream dc_enabled, dc_disabled;
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& layer = get_layer(i);
     if (layer.distconv_enabled()) {
@@ -2132,6 +2123,12 @@ void model::setup_distconv()
       dc_disabled << " " << layer.get_name();
     }
   }
+
+  // Short-circuit if this model isn't using distconv! Like most of
+  // the models in LBANN's app directory!
+  if (dc_enabled.tellp() == typename std::ostringstream::pos_type{0})
+    return;
+
   if (m_comm->am_world_master()) {
     std::cout << "\nDistconv-enabled layers:\n\t" << dc_enabled.str() << "\n\n"
               << "Distconv-disabled layers:\n\t" << dc_disabled.str() << "\n\n";

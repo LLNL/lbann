@@ -1324,59 +1324,6 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
   }
 }
 
-template <typename InputTensorDataType, typename OutputTensorDataType>
-void data_type_layer<InputTensorDataType, OutputTensorDataType>::
-  setup_inter_subgrid_comm_based_on_childs(const El::Grid& grid)
-{
-  // Now we are creating sub-communicators in model.cpp as this method will lead
-  // to several instances of sub-communicators on same rank sets. BUG: NCCL
-  // allocates some memory for each communicator, which lead to Out-of-memory
-  // (OOM) when we have large number of communicators
-  const auto& childs = get_child_layers();
-
-  int indexSubgrid = -1;
-  for (int child = 0; child < this->get_num_children(); ++child) {
-    if (childs[child]->get_mygrid()->InGrid())
-
-    {
-      indexSubgrid = child;
-    }
-  }
-  const int posInSubGrid = childs[indexSubgrid]->get_mygrid()->VCRank();
-  const int posInGrid = grid.ViewingRank();
-  auto& interSubgridComm = this->get_subgrid_comm();
-  El::mpi::Split(this->get_comm()->get_trainer_comm(),
-                 posInSubGrid,
-                 posInGrid,
-                 interSubgridComm);
-}
-
-template <typename InputTensorDataType, typename OutputTensorDataType>
-void data_type_layer<InputTensorDataType, OutputTensorDataType>::
-  setup_inter_subgrid_comm_based_on_parents(const El::Grid& grid)
-{
-  // Now we are creating sub-communicators in model.cpp as this method will lead
-  // to several instances of sub-communicators on same rank sets. BUG: NCCL
-  // allocates some memory for each communicator, which lead to Out-of-memory
-  // (OOM) when we have large number of communicators
-
-  const auto& parents = get_parent_layers();
-
-  int indexSubgrid = -1;
-  for (int parent = 0; parent < this->get_num_parents(); ++parent) {
-    if (parents[parent]->get_mygrid()->InGrid()) {
-      indexSubgrid = parent;
-    }
-  }
-  const int posInSubGrid = parents[indexSubgrid]->get_mygrid()->VCRank();
-  const int posInGrid = grid.ViewingRank();
-  auto& interSubgridComm = this->get_subgrid_comm();
-  El::mpi::Split(this->get_comm()->get_trainer_comm(),
-                 posInSubGrid,
-                 posInGrid,
-                 interSubgridComm);
-}
-
 #ifdef LBANN_HAS_DISTCONV
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::

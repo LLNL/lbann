@@ -286,9 +286,6 @@ protected:
   weights& master_weights(size_t idx) { return get_weights(idx); }
   weights const& master_weights(size_t idx) const { return get_weights(idx); }
 
-  void setup_inter_subgrid_comm_based_on_childs(const El::Grid& grid);
-  void setup_inter_subgrid_comm_based_on_parents(const El::Grid& grid);
-
 private:
   /** @brief Attempt to take ownership of the previous error signal.
    *
