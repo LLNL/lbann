@@ -1,4 +1,5 @@
 """The Pile dataset."""
+import os
 import os.path
 import sys
 
@@ -15,14 +16,15 @@ import utils.paths
 # Options
 # ----------------------------------------------
 
-sequence_length = 512
+sequence_length = int(os.getenv('THE_PILE_SEQUENCE_LENGTH', default='512'))
 
 # ----------------------------------------------
 # Setup
 # ----------------------------------------------
 
 # Load the dataset with HuggingFace datasets
-data_dir = '/p/vast1/data/datasets/the-pile-huggingface'
+data_dir = os.getenv('THE_PILE_DATA_DIR',
+                     '/p/vast1/data/datasets/the-pile-huggingface')
 dataset_train, dataset_val = load_dataset(os.path.join(data_dir, 'pile.py'),
                                           'all',
                                           split=('train', 'validation'),
