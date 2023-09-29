@@ -230,69 +230,8 @@ build_categorical_accuracy_strategy_from_pbuf(
 std::vector<std::pair<size_t, El::Int>>
 autoencoder_strategy::get_image_indices(model const& m) const
 {
-
-  // Grab the data coordinator
-  auto const& dc = get_const_trainer().get_data_coordinator();
-
-  // Grab the data reader
-  auto const& data_reader =
-    *(dc.get_data_reader(m.get_execution_context().get_execution_mode()));
-
-  // Get the indices for this minibatch
-  bool const i_am_root = m.get_comm()->am_trainer_master();
-  auto const& exe_mode = m.get_execution_context().get_execution_mode();
-  auto const& total_steps = dc.get_num_iterations_per_epoch(exe_mode);
-  auto const& current_step =
-    ((m.get_execution_context().get_step() - 1) % total_steps) + 1;
-  bool const last_mb = (current_step == total_steps);
-  size_t const mb_size =
-    (last_mb ? data_reader.get_global_last_mini_batch_size()
-             : data_reader.get_global_mini_batch_size());
-
-  // FIXME (trb 08/20/19): Based on my testing, the data reader will
-  // reshuffle its indices before the end-of-batch callbacks are
-  // called in the final epoch. This is the simplest hack around that,
-  // though not very efficient.
-  if (current_step == decltype(current_step){1}) {
-    auto const& tmp_inds = data_reader.get_shuffled_indices();
-    m_shuffled_indices[&m].assign(tmp_inds.cbegin(), tmp_inds.cend());
-  }
-  auto const& shuffled_indices = m_shuffled_indices[&m];
-
-  size_t const minibatch_start_index =
-    (current_step - 1) * data_reader.get_global_mini_batch_size();
-  size_t const minibatch_end_index =
-    std::min(minibatch_start_index + mb_size, shuffled_indices.size());
-
-  auto* sample_indices = dc.get_sample_indices_per_mb(exe_mode);
-  if (sample_indices == nullptr)
-    LBANN_ERROR("Sample indices is NULL.");
-
   std::vector<std::pair<size_t, El::Int>> img_indices;
-  if (i_am_root) {
-    using index_type =
-      typename std::decay<decltype(shuffled_indices)>::type::value_type;
-    if (shuffled_indices[minibatch_start_index] !=
-        index_type(sample_indices->Get(0, 0))) {
-      LBANN_ERROR("KABOOM. Interval = [",
-                  minibatch_start_index,
-                  ", ",
-                  minibatch_end_index,
-                  "]");
-    }
-
-    for (size_t ii = 0; ii < mb_size; ++ii) {
-      auto const& sample_index = shuffled_indices[minibatch_start_index + ii];
-
-      if (m_tracked_images.find(sample_index) != m_tracked_images.end()) {
-        img_indices.push_back(std::make_pair(ii, sample_index));
-      }
-      else if (m_tracked_images.size() < m_num_images) {
-        m_tracked_images.insert(sample_index);
-        img_indices.push_back(std::make_pair(ii, sample_index));
-      }
-    }
-  }
+  LBANN_ERROR("This feature is no longer supported");
   return img_indices;
 }
 

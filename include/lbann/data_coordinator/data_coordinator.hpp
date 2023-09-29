@@ -146,6 +146,14 @@ public:
   virtual bool epoch_complete(execution_mode mode) = 0;
 
   //************************************************************************
+  // Helper functions for LTFB
+  //************************************************************************
+
+  void make_data_store_preloaded(execution_mode mode);
+
+  void mark_data_store_explicitly_loading(execution_mode mode);
+
+  //************************************************************************
   // Helper functions to access the statistics about the data set
   //************************************************************************
 

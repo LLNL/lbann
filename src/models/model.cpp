@@ -1497,32 +1497,6 @@ void model::replace_layer(OwningLayerPtr&& new_layer,
 // =============================================
 // Execution
 // =============================================
-// only used in callbacks/ltfb.cpp; from that file:
-// "Note that this is a temporary fix
-// for the current use of the tournament"
-void model::make_data_store_preloaded(execution_mode mode)
-{
-  data_coordinator& dc = get_trainer().get_data_coordinator();
-  auto* data_store = dc.get_data_reader(mode)->get_data_store_ptr();
-  if (data_store != nullptr && !data_store->is_fully_loaded()) {
-    dc.get_data_reader(mode)->get_data_store_ptr()->set_loading_is_complete();
-    dc.get_data_reader(mode)->get_data_store_ptr()->set_is_explicitly_loading(
-      false);
-  }
-}
-
-// only used in callbacks/ltfb.cpp; from that file:
-// "Note that this is a temporary fix
-// for the current use of the tournament"
-void model::mark_data_store_explicitly_loading(execution_mode mode)
-{
-  data_coordinator& dc = get_trainer().get_data_coordinator();
-  auto* data_store = dc.get_data_reader(mode)->get_data_store_ptr();
-  if (data_store != nullptr && !data_store->is_fully_loaded()) {
-    dc.get_data_reader(mode)->get_data_store_ptr()->set_is_explicitly_loading(
-      true);
-  }
-}
 
 // At the start of the epoch, set the execution mode and make sure
 // that each layer points to this model

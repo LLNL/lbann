@@ -91,7 +91,7 @@ EvalType RegularizedEvolution::evaluate_model(model& m,
 
   // Mark the data store as loading - Note that this is a temporary fix
   // for the current use of the tournament
-  m.mark_data_store_explicitly_loading(execution_mode::tournament);
+  dc.mark_data_store_explicitly_loading(execution_mode::tournament);
 
   // Evaluate model on test (or validation?) set
   get_trainer().evaluate(&m, execution_mode::tournament);
@@ -119,7 +119,7 @@ EvalType RegularizedEvolution::evaluate_model(model& m,
                 "\"");
   }
 
-  m.make_data_store_preloaded(execution_mode::tournament);
+  dc.make_data_store_preloaded(execution_mode::tournament);
 
   // Clean up and return metric score
   m.reset_mode(ctxt, original_mode);

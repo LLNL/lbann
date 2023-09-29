@@ -41,7 +41,7 @@
 #include <ostream>
 #include <string.h>
 
-#include "../src/data_readers/unit_test/test_data/hdf5_hrrl_test_data_and_schemas.yaml"
+#include "../src/data_readers/unit_test/test_data/hdf5_hrrl_test_data_and_schemas.yaml" // THIS IS NOT A YAML FILE
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 
 class DataReaderHDF5WhiteboxTester
@@ -207,8 +207,6 @@ TEST_CASE("Data Coordinator hdf5 conduit fetch tests",
     indices_fetched.Resize(1, 1);
     auto valid = hdf5_dr->fetch(samples, indices_fetched, 1);
     //    auto valid = hdf5_dr->fetch(samples, indices_fetched, 2);
-
-
 
     //    lbann::CPUMat X;
     // Check the primary data fields
