@@ -1,11 +1,12 @@
-"""Evaluate Transformer example.
+"""
+Evaluate an already-trained Transformer translation example.
+For more information, see the driver script: ``train_transformer_translation.py``
 
 The LBANN Transformer model is assumed to have saved its weights to
 weight files with the "dump weights" callback. These weights are
 loaded into a PyTorch model and English-German translation is
-performed with greedy decoding on the WMT 2014 validation dataset.
+performed with greedy decoding on the WMT 2016 validation dataset.
 BLEU scores are computed for the predicted translations.
-
 """
 
 import argparse
@@ -18,37 +19,15 @@ import torch.nn
 import evaluate
 
 # Local imports
-current_file = os.path.realpath(__file__)
-root_dir = os.path.dirname(os.path.dirname(current_file))
-sys.path.append(root_dir)
-import dataset
-import utils
+current_dir = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(current_dir)
+sys.path.append(os.path.join(current_dir, '..'))
+import dataset_utils
+import modeling
 import utils.paths
 
-# ----------------------------------------------
-# Options
-# ----------------------------------------------
-
-# Evaluation options
-mini_batch_size = 64    # Doesn't need to match training
-
-# Hard-coded model parameters
-# Note: Must match parameters from training.
-embed_dim = 512
-num_heads = 8
-num_encoder_layers = 6
-num_decoder_layers = 6
-filter_dim = 2048
-dropout = 0.1
-
-# Dataset properties
-vocab_size = dataset.vocab_size()
-max_sequence_length = dataset.sequence_length
-bos_index = dataset.bos_index
-eos_index = dataset.eos_index
-pad_index = dataset.pad_index
-num_samples = dataset.num_val_samples()
-metric = evaluate.load(os.path.join(utils.paths.wmt_dir(), 'sacrebleu_metric.py'))
+metric = evaluate.load(
+    os.path.join(utils.paths.wmt_dir(), 'sacrebleu_metric.py'))
 
 if torch.cuda.is_available():
     device = torch.device('cuda')
@@ -59,7 +38,8 @@ else:
 # Evaluation data
 # ----------------------------------------------
 
-def get_batch(indices):
+
+def get_batch(dataset, indices):
     """Get a batch of samples from the evaluation dataset.
 
     The sequences are padded to the length of the longest sequence in
@@ -79,12 +59,12 @@ def get_batch(indices):
     # Convert tokens to PyTorch tensors
     tokens_en = np.full(
         (max(len(seq) for seq in tokens_list_en), len(indices)),
-        pad_index,
+        dataset.pad_index,
         dtype=int,
     )
     tokens_de = np.full(
         (max(len(seq) for seq in tokens_list_de), len(indices)),
-        pad_index,
+        dataset.pad_index,
         dtype=int,
     )
     for i, seq in enumerate(tokens_list_en):
@@ -95,9 +75,11 @@ def get_batch(indices):
     tokens_de = torch.from_numpy(tokens_de)
     return tokens_en, tokens_de
 
+
 # ----------------------------------------------
 # Load model from file
 # ----------------------------------------------
+
 
 def load_weight(weight_file):
     """Create a PyTorch tensor object with weights from LBANN.
@@ -109,6 +91,7 @@ def load_weight(weight_file):
     data = np.loadtxt(weight_file, dtype=np.float32)
     return torch.tensor(data)
 
+
 def load_parameter(weight_file):
     """Create a PyTorch Parameter object with weights from LBANN.
 
@@ -117,11 +100,10 @@ def load_parameter(weight_file):
 
     """
     data = np.loadtxt(weight_file, dtype=np.float32)
-    return torch.nn.Parameter(
-        data=torch.from_numpy(data),
-        requires_grad=False)
+    return torch.nn.Parameter(data=torch.from_numpy(data), requires_grad=False)
 
-def load_embedding_layer(weights_prefix):
+
+def load_embedding_layer(weights_prefix, dataset, args):
     """Create a PyTorch embedding layer with weights from LBANN.
 
     Weight files are assumed to have been created by the "dump
@@ -130,15 +112,16 @@ def load_embedding_layer(weights_prefix):
 
     """
     weight_file = f'{weights_prefix}/embeddings.txt'
-    weight = load_parameter(weight_file).transpose(1,0)
+    weight = load_parameter(weight_file).transpose(1, 0)
     return torch.nn.Embedding(
-        num_embeddings=vocab_size,
-        embedding_dim=embed_dim,
-        padding_idx=pad_index,
+        num_embeddings=dataset.vocab_size(),
+        embedding_dim=args.embed_dim,
+        padding_idx=dataset.pad_index,
         _weight=weight,
     )
 
-def load_transformer(weights_prefix):
+
+def load_transformer(weights_prefix, args):
     """Create a PyTorch transformer with weights from LBANN.
 
     Weight files are assumed to have been created by the "dump
@@ -149,12 +132,13 @@ def load_transformer(weights_prefix):
 
     # PyTorch transformer model
     transformer = torch.nn.Transformer(
-        d_model=embed_dim,
-        nhead=num_heads,
-        num_encoder_layers=num_encoder_layers,
-        num_decoder_layers=num_decoder_layers,
-        dim_feedforward=filter_dim,
-        dropout=dropout,
+        d_model=args.embed_dim,
+        nhead=args.num_attention_heads,
+        num_encoder_layers=args.num_layers,
+        num_decoder_layers=args.num_layers,
+        dim_feedforward=(args.feedforward_dim if args.feedforward_dim else
+                         (args.embed_dim * 4)),
+        dropout=0,
     )
 
     # Set transformer to evaluation mode
@@ -166,9 +150,10 @@ def load_transformer(weights_prefix):
         # Load weights for self-attention
         attention = layer.self_attn
         prefix = f'{weights_prefix}/transformer_encoder{i}_attention'
-        attention.in_proj_weight  = load_parameter(f'{prefix}_qkv_matrix.txt')
+        attention.in_proj_weight = load_parameter(f'{prefix}_qkv_matrix.txt')
         attention.in_proj_bias = load_parameter(f'{prefix}_qkv_bias.txt')
-        attention.out_proj_weight = load_parameter(f'{prefix}_output_matrix.txt')
+        attention.out_proj_weight = load_parameter(
+            f'{prefix}_output_matrix.txt')
         attention.out_proj_bias = load_parameter(f'{prefix}_output_bias.txt')
 
         # Load weights for feedforward network
@@ -190,7 +175,8 @@ def load_transformer(weights_prefix):
         prefix = f'{weights_prefix}/transformer_decoder{i}_attention1'
         attention.in_proj_weight = load_parameter(f'{prefix}_qkv_matrix.txt')
         attention.in_proj_bias = load_parameter(f'{prefix}_qkv_bias.txt')
-        attention.out_proj_weight = load_parameter(f'{prefix}_output_matrix.txt')
+        attention.out_proj_weight = load_parameter(
+            f'{prefix}_output_matrix.txt')
         attention.out_proj_bias = load_parameter(f'{prefix}_output_bias.txt')
 
         # Load weights for attention with memory
@@ -202,14 +188,15 @@ def load_transformer(weights_prefix):
         k_proj_bias = load_parameter(f'{prefix}_key_bias.txt')
         v_proj_weight = load_parameter(f'{prefix}_value_matrix.txt')
         v_proj_bias = load_parameter(f'{prefix}_value_bias.txt')
-        attention.out_proj_weight = load_parameter(f'{prefix}_output_matrix.txt')
+        attention.out_proj_weight = load_parameter(
+            f'{prefix}_output_matrix.txt')
         attention.out_proj_bias = load_parameter(f'{prefix}_output_bias.txt')
-        attention.in_proj_weight = torch.nn.Parameter(
-            torch.cat((q_proj_weight, k_proj_weight, v_proj_weight)),
-            requires_grad=False)
-        attention.in_proj_bias = torch.nn.Parameter(
-            torch.cat((q_proj_bias, k_proj_bias, v_proj_bias)),
-            requires_grad=False)
+        attention.in_proj_weight = torch.nn.Parameter(torch.cat(
+            (q_proj_weight, k_proj_weight, v_proj_weight)),
+                                                      requires_grad=False)
+        attention.in_proj_bias = torch.nn.Parameter(torch.cat(
+            (q_proj_bias, k_proj_bias, v_proj_bias)),
+                                                    requires_grad=False)
 
         # Load weights for feedforward network
         prefix = f'{weights_prefix}/transformer_decoder{i}'
@@ -226,24 +213,28 @@ def load_transformer(weights_prefix):
 
     return transformer
 
+
 # ----------------------------------------------
 # Evaluate transformer model
 # ----------------------------------------------
+
 
 def add_positional_encoding(x):
     """Add positional encoding for transformer model."""
     sequence_length = x.shape[0]
     embed_dim = x.shape[2]
     encoding = np.zeros(x.shape, dtype=np.float32)
-    for i in range((embed_dim+1) // 2):
-        pos = np.arange(sequence_length).reshape(-1,1)
-        encoding[:,:,2*i] = np.sin(pos / 10000**(2*i/embed_dim))
+    for i in range((embed_dim + 1) // 2):
+        pos = np.arange(sequence_length).reshape(-1, 1)
+        encoding[:, :, 2 * i] = np.sin(pos / 10000**(2 * i / embed_dim))
     for i in range(embed_dim // 2):
-        pos = np.arange(sequence_length).reshape(-1,1)
-        encoding[:,:,2*i+1] = np.cos(pos / 10000**(2*i/embed_dim))
+        pos = np.arange(sequence_length).reshape(-1, 1)
+        encoding[:, :, 2 * i + 1] = np.cos(pos / 10000**(2 * i / embed_dim))
     return x + torch.from_numpy(encoding).to(device)
 
-def greedy_decode(tokens_en, embedding_layer, transformer, classifier):
+
+def greedy_decode(tokens_en, embedding_layer, transformer, classifier,
+                  dataset):
     """Generate sequence with transformer.
 
     Predict tokens one at a time by choosing the one that maximizes
@@ -254,26 +245,30 @@ def greedy_decode(tokens_en, embedding_layer, transformer, classifier):
     # Encode English sequence
     embeddings_en = embedding_layer(tokens_en)
     memory = transformer.encoder(
-        add_positional_encoding(embeddings_en * np.sqrt(embed_dim))
-    )
+        add_positional_encoding(embeddings_en * np.sqrt(transformer.d_model)))
 
     # Decode German sequence
     # TODO: Only perform compute for last sequence entry
     # TODO: Detect EOS tokens and stop early
-    tokens_de = torch.full((1,tokens_en.shape[1]), bos_index, dtype=int, device=device)
-    for i in range(1, max_sequence_length):
+    tokens_de = torch.full((1, tokens_en.shape[1]),
+                           dataset.bos_index,
+                           dtype=int,
+                           device=device)
+    for i in range(1, dataset.sequence_length):
         embeddings_de = embedding_layer(tokens_de)
         preds = transformer.decoder(
-            add_positional_encoding(embeddings_de * np.sqrt(embed_dim)),
+            add_positional_encoding(embeddings_de *
+                                    np.sqrt(transformer.d_model)),
             memory,
             tgt_mask=transformer.generate_square_subsequent_mask(i).to(device),
         )
-        preds = classifier(preds[-1,:,:])
+        preds = classifier(preds[-1, :, :])
         preds = preds.argmax(dim=1)
-        tokens_de = torch.cat([tokens_de, preds.reshape(1,-1)], dim=0)
+        tokens_de = torch.cat([tokens_de, preds.reshape(1, -1)], dim=0)
     return tokens_de
 
-def evaluate_transformer(weights_prefix):
+
+def evaluate_transformer(weights_prefix, args):
     """Evaluate transformer model with weights from LBANN.
 
     Weight files are assumed to have been created by the "dump
@@ -281,63 +276,67 @@ def evaluate_transformer(weights_prefix):
     <weights_prefix>-<weight_name>-Weights.txt.
 
     """
+    dataset = dataset_utils.load_dataset(args.dataset)
 
     # Load model weights from file
-    embedding_layer = load_embedding_layer(weights_prefix).to(device)
-    transformer = load_transformer(weights_prefix).to(device)
-    classifier = torch.nn.Linear(embed_dim, vocab_size, bias=False).to(device)
+    embedding_layer = load_embedding_layer(weights_prefix, dataset,
+                                           args).to(device)
+    transformer = load_transformer(weights_prefix, args).to(device)
+    classifier = torch.nn.Linear(args.embed_dim,
+                                 dataset.vocab_size(),
+                                 bias=False).to(device)
     classifier.weight = embedding_layer.weight
 
     # Evaluate model
     bleu_scores = []
-    for batch, index_start in enumerate(range(0, num_samples, mini_batch_size)):
-        index_end = min(index_start+mini_batch_size, num_samples)
+    for index_start in range(0, dataset.num_val_samples(),
+                             args.mini_batch_size):
+        index_end = min(index_start + args.mini_batch_size,
+                        dataset.num_val_samples())
         indices = list(range(index_start, index_end))
         batch_size = len(indices)
 
         # Translate English sequence to German
         # TODO: Decoding with beam search
-        tokens_en, true_tokens_de = get_batch(indices)
+        tokens_en, true_tokens_de = get_batch(dataset, indices)
         tokens_en = tokens_en.to(device)
         pred_tokens_de = greedy_decode(
             tokens_en,
             embedding_layer,
             transformer,
             classifier,
+            dataset,
         ).cpu()
 
         # Compute BLEU score
         for i in range(batch_size):
-            hypothesis = dataset.detokenize(pred_tokens_de[:,i].numpy())
-            reference = dataset.detokenize(true_tokens_de[:,i].numpy())
+            hypothesis = dataset.detokenize(pred_tokens_de[:, i].numpy())
+            reference = dataset.detokenize(true_tokens_de[:, i].numpy())
             bleu_scores.append(
-                metric.compute(
-                    predictions=[hypothesis],
-                    references=[[reference]]
-                )['score']
-            )
+                metric.compute(predictions=[hypothesis],
+                               references=[[reference]])['score'])
 
     # Print results
-    print(
-        f'BLEU score: '
-        f'mean={np.mean(bleu_scores)}, '
-        f'stdev={np.std(bleu_scores)}, '
-        f'min={np.min(bleu_scores)}, '
-        f'max={np.max(bleu_scores)}'
-    )
+    print(f'BLEU score: '
+          f'mean={np.mean(bleu_scores)}, '
+          f'stdev={np.std(bleu_scores)}, '
+          f'min={np.min(bleu_scores)}, '
+          f'max={np.max(bleu_scores)}')
 
-# ----------------------------------------------
-# Command-line options if run as script
-# ----------------------------------------------
 
 if __name__ == "__main__":
-
     # Command-line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        'weights_prefix', type=str,
-        help='prefix for saved weights from LBANN')
+    parser.add_argument('weight_path',
+                        type=str,
+                        help='prefix for saved weights from LBANN')
+    parser.add_argument('--mini-batch-size',
+                        type=int,
+                        default=64,
+                        help='mini-batch size to use for evaluation')
+    dataset_utils.add_dataset_arguments(parser, default='wmt16')
+    modeling.add_transformer_architecture_arguments(parser)
     args = parser.parse_args()
 
     # Evaluate model
-    evaluate_transformer(args.weights_prefix)
+    evaluate_transformer(args.weight_path, args)

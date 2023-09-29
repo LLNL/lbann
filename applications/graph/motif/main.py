@@ -13,7 +13,7 @@ import data
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser()
-lbann.contrib.args.add_scheduler_arguments(parser)
+lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_motif')
 parser.add_argument(
     '--mini-batch-size', action='store', default=256, type=int,
     help='mini-batch size (default: 256)', metavar='NUM')
@@ -59,7 +59,7 @@ lbann.contrib.launcher.run(
     model_,
     data_reader,
     optimizer,
-    job_name='lbann_motif',
+    job_name=args.job_name,
     work_dir=args.work_dir,
     batch_job=args.batch_job,
     **kwargs,

@@ -78,6 +78,7 @@ message AsinhOperator {}
 message AtanhOperator {}
 message ErfOperator {}
 message ErfInvOperator {}
+message GeluOperator {}
 
 /// @}
 /// @name Binary math layers.

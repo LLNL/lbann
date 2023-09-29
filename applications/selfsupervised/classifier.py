@@ -95,10 +95,7 @@ if __name__ == "__main__":
 
     # Command-line arguments
     parser = argparse.ArgumentParser()
-    lbann.contrib.args.add_scheduler_arguments(parser)
-    parser.add_argument(
-        '--job-name', action='store', default='lbann_siamese_finetune', type=str,
-        help=('scheduler job name'))
+    lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_siamese_finetune')
     parser.add_argument(
         '--mini-batch-size', action='store', default=128, type=int,
         help='mini-batch size (default: 128)', metavar='NUM')

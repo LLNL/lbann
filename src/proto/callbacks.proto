@@ -87,6 +87,7 @@ message Callback {
     CallbackExportOnnx export_onnx = 53;
     CallbackAlternateUpdates alternate_updates = 54;
     CallbackProgressBar progress_bar = 56;
+    CallbackCosineDecayLearningRate cosine_decay_learning_rate = 57;
   }
 
   message CallbackLTFB {
@@ -234,6 +235,15 @@ message Callback {
     uint64 num_epochs = 3;
     uint64 max_iter = 4;
     double end_lr = 5;
+  }
+
+  message CallbackCosineDecayLearningRate {
+    string weights = 1;
+    double lr_max = 2;
+    double lr_min = 3;
+    uint64 decay_steps = 4;
+    double initial_warmup_learning_rate = 5;
+    uint64 warmup_steps = 6;
   }
 
   message CallbackStepMinibatch {
@@ -447,6 +457,8 @@ message Callback {
   }
 
   message CallbackProgressBar {
-    int64 interval = 1;
+    int64 interval = 1;          // Print every n iterations
+    int64 newline_interval = 2;  // Number of iterations between a newline print
+                                 // (0 disables)
   }
 }

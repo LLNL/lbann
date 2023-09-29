@@ -464,6 +464,36 @@ struct ErfInvOpImpl
   }
 };
 
+// GELU operator (hyperbolic tangent approximation)
+template <typename DataT>
+struct GeluOpImpl
+{
+  DataT operator()(DataT const& x) const noexcept
+  {
+    // Coefficients as they appear in the BERT and GPT codebases
+    const auto sqrt_two_over_pi = El::To<DataT>(0.7978845608028654);
+    const auto coeff = El::To<DataT>(0.044715);
+
+    DataT hx = x * El::To<DataT>(0.5);
+    return hx * (El::To<DataT>(1) +
+                 El::Tanh(sqrt_two_over_pi * (x + coeff * x * x * x)));
+  }
+  DataT operator()(DataT const& x, DataT const& dy) const noexcept
+  {
+    const auto c1 = El::To<DataT>(0.797885);
+    const auto c2 = El::To<DataT>(0.107032);
+    const auto c3 = El::To<DataT>(0.0356774);
+    auto x3 = x * x * x;
+    auto c1x = c1 * x;
+    auto c3x3 = c3 * x3;
+    auto sech = El::To<DataT>(1) / El::Cosh(c1x + c3x3);
+    auto dx =
+      (El::To<DataT>(1) + (c1x + c2 * x3) * sech * sech + El::Tanh(c1x + c3x3));
+
+    return dx * dy * El::To<DataT>(0.5);
+  }
+};
+
 } // namespace
 
 // Template instantiation
@@ -514,6 +544,7 @@ DEFINE_COMPUTE_OPS(ErfInv)
 DEFINE_COMPUTE_OPS(Exp)
 DEFINE_COMPUTE_OPS(Expm1)
 DEFINE_COMPUTE_OPS(Floor)
+DEFINE_COMPUTE_OPS(Gelu)
 DEFINE_COMPUTE_OPS(Log)
 DEFINE_COMPUTE_OPS(Log1p)
 DEFINE_COMPUTE_OPS(LogicalNot)
@@ -545,6 +576,7 @@ DEFINE_COMPUTE_OPS(Tanh)
   template class ExpOperator<T, El::Device::CPU>;                              \
   template class Expm1Operator<T, El::Device::CPU>;                            \
   template class FloorOperator<T, El::Device::CPU>;                            \
+  template class GeluOperator<T, El::Device::CPU>;                             \
   template class Log1pOperator<T, El::Device::CPU>;                            \
   template class LogOperator<T, El::Device::CPU>;                              \
   template class LogicalNotOperator<T, El::Device::CPU>;                       \

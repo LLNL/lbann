@@ -40,6 +40,7 @@ adam_noncontiguous_kernel(size_t height,
                           TensorDataType eps,
                           TensorDataType beta1,
                           TensorDataType beta2,
+                          TensorDataType weight_decay,
                           TensorDataType* __restrict__ values,
                           size_t values_ldim,
                           const TensorDataType* __restrict__ gradient,
@@ -62,7 +63,7 @@ adam_noncontiguous_kernel(size_t height,
     auto& x = values[row + col * values_ldim];
     m1 = beta1 * m1 + (TensorDataType(1) - beta1) * g;
     m2 = beta2 * m2 + (TensorDataType(1) - beta2) * g * g;
-    x -= correction * m1 / (gpu_lib::sqrt(m2) + eps);
+    x -= correction * (m1 / (gpu_lib::sqrt(m2) + eps)) + weight_decay * x;
   }
 }
 
@@ -73,6 +74,7 @@ adam_contiguous_kernel(size_t size,
                        TensorDataType eps,
                        TensorDataType beta1,
                        TensorDataType beta2,
+                       TensorDataType weight_decay,
                        TensorDataType* __restrict__ values,
                        const TensorDataType* __restrict__ gradient,
                        TensorDataType* __restrict__ moment1,
@@ -89,7 +91,7 @@ adam_contiguous_kernel(size_t size,
     auto& x = values[gid];
     m1 = beta1 * m1 + (TensorDataType(1) - beta1) * g;
     m2 = beta2 * m2 + (TensorDataType(1) - beta2) * g * g;
-    x -= correction * m1 / (gpu_lib::sqrt(m2) + eps);
+    x -= correction * (m1 / (gpu_lib::sqrt(m2) + eps)) + weight_decay * x;
   }
 }
 
@@ -101,6 +103,9 @@ void adam<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
                                             const TensorDataType& correction)
 {
   LBANN_CALIPER_MARK_SCOPE("adam::step_compute");
+
+  const TensorDataType lr = El::To<TensorDataType>(this->get_learning_rate());
+
   // Get matrix dimensions
   const size_t local_height = values.LocalHeight();
   const size_t local_width = values.LocalWidth();
@@ -126,6 +131,7 @@ void adam<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
                                 m_eps,
                                 m_beta1,
                                 m_beta2,
+                                m_adamw_weight_decay * lr,
                                 values.Buffer(),
                                 gradient.LockedBuffer(),
                                 m_moment1->Buffer(),
@@ -143,6 +149,7 @@ void adam<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
                                 m_eps,
                                 m_beta1,
                                 m_beta2,
+                                m_adamw_weight_decay * lr,
                                 values.Buffer(),
                                 values.LDim(),
                                 gradient.LockedBuffer(),

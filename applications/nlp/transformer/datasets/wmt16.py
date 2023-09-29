@@ -7,8 +7,8 @@ from datasets import load_dataset
 from tokenizers import Tokenizer
 
 # Local imports
-current_file = os.path.realpath(__file__)
-root_dir = os.path.dirname(os.path.dirname(current_file))
+current_dir = os.path.dirname(os.path.realpath(__file__))
+root_dir = os.path.join(current_dir, '..', '..')
 sys.path.append(root_dir)
 import utils.paths
 
@@ -26,14 +26,12 @@ sequence_length = 64
 
 # Load WMT 2016 dataset and tokenizer.
 data_dir = utils.paths.wmt_dir()
-dataset_train, dataset_val = load_dataset(
-    os.path.join(data_dir, 'wmt16.py'), 'de-en', 
-    split=('train', 'validation'),
-    cache_dir=os.path.join(data_dir, 'cache')
-)
-tokenizer = Tokenizer.from_file(
-    os.path.join(data_dir, 'tokenizer-wmt16.json')
-)
+dataset_train, dataset_val = load_dataset(os.path.join(data_dir, 'wmt16.py'),
+                                          'de-en',
+                                          split=('train', 'validation'),
+                                          cache_dir=os.path.join(
+                                              data_dir, 'cache'))
+tokenizer = Tokenizer.from_file(os.path.join(data_dir, 'tokenizer-wmt16.json'))
 pad_index = tokenizer.token_to_id('<pad>')
 bos_index = tokenizer.token_to_id('<s>')
 eos_index = tokenizer.token_to_id('</s>')
@@ -42,14 +40,16 @@ eos_index = tokenizer.token_to_id('</s>')
 # Tokenization
 # ----------------------------------------------
 
+
 def tokenize(text):
     """Convert string to list of token indices.
 
-    WMT 2014 has already been tokenized with byte-pair encoding. We
+    WMT 2016 has already been tokenized with byte-pair encoding. We
     add BOS and EOS tokens.
 
     """
     return tokenizer.encode('<s>' + text + '</s>').ids
+
 
 def detokenize(indices):
     """Convert token indices to string.
@@ -58,12 +58,14 @@ def detokenize(indices):
     ignored.
 
     """
-    return tokenizer.decode(indices, skip_special_tokens=True).replace(' ##', '')
+    return tokenizer.decode(indices,
+                            skip_special_tokens=True).replace(' ##', '')
 
 
 # ----------------------------------------------
 # Sample access functions
 # ----------------------------------------------
+
 
 def get_train_sample(index):
     """Token indices for a data sample from the training set.
@@ -84,17 +86,18 @@ def get_train_sample(index):
         if len(sample_en) > sequence_length:
             offset = (len(sample_en) - sequence_length + 1) * pos
             offset = int(np.floor(offset))
-            sample_en = sample_en[offset:offset+sequence_length]
+            sample_en = sample_en[offset:offset + sequence_length]
         if len(sample_de) > sequence_length:
             offset = (len(sample_de) - sequence_length + 1) * pos
             offset = int(np.floor(offset))
-            sample_de = sample_de[offset:offset+sequence_length]
+            sample_de = sample_de[offset:offset + sequence_length]
 
     # Concatenate sequences and return
-    sample = np.full(2*sequence_length, pad_index, dtype=int)
+    sample = np.full(2 * sequence_length, pad_index, dtype=int)
     sample[0:len(sample_en)] = sample_en
-    sample[sequence_length:sequence_length+len(sample_de)] = sample_de
+    sample[sequence_length:sequence_length + len(sample_de)] = sample_de
     return sample
+
 
 def get_val_sample(index):
     """Token indices for a data sample from the validation set."""
@@ -103,11 +106,18 @@ def get_val_sample(index):
     sample_de = tokenize(text['de'])
     return sample_en, sample_de
 
+
 def num_train_samples():
     return len(dataset_train)
+
+
 def num_val_samples():
     return len(dataset_val)
+
+
 def sample_dims():
-    return (2*sequence_length+1,)
+    return (2 * sequence_length + 1, )
+
+
 def vocab_size():
     return tokenizer.get_vocab_size()

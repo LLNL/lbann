@@ -88,13 +88,10 @@ if __name__ == "__main__":
     desc = ('Construct and run the CosmoFlow network on CosmoFlow dataset.'
             'Running the experiment is only supported on LC systems.')
     parser = argparse.ArgumentParser(description=desc)
-    lbann.contrib.args.add_scheduler_arguments(parser)
+    lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_cosmoflow')
     lbann.contrib.args.add_profiling_arguments(parser)
 
     # General arguments
-    parser.add_argument(
-        '--job-name', action='store', default='lbann_cosmoflow', type=str,
-        help='scheduler job name (default: lbann_cosmoflow)')
     parser.add_argument(
         '--mini-batch-size', action='store', default=1, type=int,
         help='mini-batch size (default: 1)', metavar='NUM')

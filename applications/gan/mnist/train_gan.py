@@ -7,10 +7,7 @@ from mnist_dataset import make_data_reader
 
 desc = ('Train GAN on MNIST data using LBANN.')
 parser = argparse.ArgumentParser(description=desc)
-lbann.contrib.args.add_scheduler_arguments(parser)
-parser.add_argument(
-    '--job-name', action='store', default='lbann_mnist_gan', type=str,
-    help='scheduler job name (default: lbann_mnist_gan)')
+lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_mnist_gan')
 parser.add_argument(
     '--mini-batch-size', action='store', default=128, type=int,
     help='mini-batch size (default: 128)', metavar='NUM')

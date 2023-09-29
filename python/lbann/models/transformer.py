@@ -10,28 +10,23 @@ Systems, pp. 5998-6008. 2017.
 """
 import math
 import numpy as np
+from typing import Optional
 
 import lbann
 import lbann.modules
 from lbann.util import make_iterable
+
 
 class LayerNorm(lbann.modules.Module):
     """See https://pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html"""
 
     global_count = 0  # Static counter, used for default names
 
-    def __init__(
-            self,
-            normalized_shape,
-            name=None,
-            builtin=True
-    ):
+    def __init__(self, normalized_shape, name=None, builtin=True):
         super().__init__()
         LayerNorm.global_count += 1
         self.normalized_shape = make_iterable(normalized_shape)
-        self.name = (name
-                     if name
-                     else f'layernorm{LayerNorm.global_count}')
+        self.name = (name if name else f'layernorm{LayerNorm.global_count}')
         self.builtin = builtin
 
         if not self.builtin:
@@ -63,7 +58,7 @@ class LayerNorm(lbann.modules.Module):
             dims=[1] + list(make_iterable(self.normalized_shape)),
         )
         b = lbann.Tessellate(b, hint_layer=x)
-        x = lbann.Add(lbann.Multiply(s,x), b)
+        x = lbann.Add(lbann.Multiply(s, x), b)
         return x
 
 
@@ -79,7 +74,8 @@ class TransformerEncoderLayer(lbann.modules.Module):
         num_heads (int): Number of attention heads.
         feedforward_dim (int): Internal dimensionality of
             fully-connected feedforward network.
-        dropout (float): Dropout probability.
+        dropout (float): Dropout probability after multi-head attention.
+        attn_dropout (float): Dropout probability during multi-head attention.
         name (str): Default name is in the form
             'transformerencoderlayer<index>'.
 
@@ -89,10 +85,13 @@ class TransformerEncoderLayer(lbann.modules.Module):
 
     def __init__(
         self,
-        embed_dim=512,
-        num_heads=8,
-        feedforward_dim=2048,
-        dropout=0.1,
+        embed_dim,
+        num_heads,
+        feedforward_dim,
+        dropout,
+        attn_dropout,
+        pre_layernorm=False,
+        activation=lbann.Relu,
         name=None,
     ):
         TransformerEncoderLayer.global_count += 1
@@ -100,6 +99,9 @@ class TransformerEncoderLayer(lbann.modules.Module):
         self.embed_dim = embed_dim
         self.feedforward_dim = feedforward_dim
         self.dropout_prob = dropout
+        self.pre_layernorm = pre_layernorm
+        self.activation = activation
+        self.extra_ffn_args = {}
 
         # Module name
         self.name = name
@@ -110,9 +112,9 @@ class TransformerEncoderLayer(lbann.modules.Module):
         self.attention = lbann.modules.transformer.MultiheadAttention(
             self.embed_dim,
             num_heads,
+            dropout=attn_dropout,
             self_attention=True,
-            name=f'{self.name}_attention'
-        )
+            name=f'{self.name}_attention')
         self.norm1 = LayerNorm(self.embed_dim, name=f'{self.name}_norm1')
         self.norm2 = LayerNorm(self.embed_dim, name=f'{self.name}_norm2')
 
@@ -144,47 +146,64 @@ class TransformerEncoderLayer(lbann.modules.Module):
         self.instance += 1
         name = f'{self.name}_instance{self.instance}'
 
+        if self.pre_layernorm:
+            y = self.norm1(x)
+        else:
+            y = x
+
         # Self-attention with residual connection
-        y = self.attention(x, x, x, mask=mask)
+        y = self.attention(y, y, y, mask=mask)
         if self.dropout_prob > 0:
             y = lbann.Dropout(
                 y,
-                keep_prob=1-self.dropout_prob,
+                keep_prob=1 - self.dropout_prob,
                 name=f'{name}_drop1',
             )
         z = lbann.Sum(x, y, name=f'{name}_sum1')
-        z = self.norm1(z)
+        if not self.pre_layernorm:
+            z = self.norm1(z)
         x = z
 
         # Feedforward network with residual connection
+        if self.pre_layernorm:
+            y = self.norm2(z)
+        else:
+            y = x
+
         y = lbann.ChannelwiseFullyConnected(
-            x,
+            y,
             weights=self.fc1_weights,
             output_channel_dims=[self.feedforward_dim],
             name=f'{name}_fc1',
+            **self.extra_ffn_args,
         )
-        y = lbann.Relu(y, name=f'{name}_relu1')
+        y = self.activation(y, name=f'{name}_ffn_act', **self.extra_ffn_args)
         if self.dropout_prob > 0:
             y = lbann.Dropout(
                 y,
-                keep_prob=1-self.dropout_prob,
+                keep_prob=1 - self.dropout_prob,
                 name=f'{name}_drop2',
+                **self.extra_ffn_args,
             )
         y = lbann.ChannelwiseFullyConnected(
             y,
             weights=self.fc2_weights,
             output_channel_dims=[self.embed_dim],
             name=f'{name}_fc2',
+            **self.extra_ffn_args,
         )
         if self.dropout_prob > 0:
             y = lbann.Dropout(
                 y,
-                keep_prob=1-self.dropout_prob,
+                keep_prob=1 - self.dropout_prob,
                 name=f'{name}_drop3',
+                **self.extra_ffn_args,
             )
         z = lbann.Sum(x, y, name=f'{name}_sum2')
-        z = self.norm2(z)
+        if not self.pre_layernorm:
+            z = self.norm2(z)
         return z
+
 
 class TransformerDecoderLayer(lbann.modules.Module):
     """Building block for decoder in Transformer model.
@@ -199,7 +218,12 @@ class TransformerDecoderLayer(lbann.modules.Module):
         num_heads (int): Number of attention heads.
         feedforward_dim (int): Internal dimensionality of
             fully-connected feedforward network.
-        dropout (float): Dropout probability.
+        dropout (float): Dropout probability after multi-head attention.
+        attn_dropout (float): Dropout probability during multi-head attention.
+        pre_layernorm (bool): If True, performs layer normalization before
+            applying attention operators.
+        activation (Type[lbann.Layer]): Activation function to apply in
+            feedforward network. Examples include ReLU or GELU.
         name (str): Default name is in the form
             'transformerdecoderlayer<index>'.
 
@@ -209,10 +233,13 @@ class TransformerDecoderLayer(lbann.modules.Module):
 
     def __init__(
         self,
-        embed_dim=512,
-        num_heads=8,
-        feedforward_dim=2048,
-        dropout=0.1,
+        embed_dim,
+        num_heads,
+        feedforward_dim,
+        dropout,
+        attn_dropout,
+        pre_layernorm=False,
+        activation=lbann.Relu,
         name=None,
     ):
         TransformerDecoderLayer.global_count += 1
@@ -220,6 +247,9 @@ class TransformerDecoderLayer(lbann.modules.Module):
         self.embed_dim = embed_dim
         self.feedforward_dim = feedforward_dim
         self.dropout_prob = dropout
+        self.pre_layernorm = pre_layernorm
+        self.activation = activation
+        self.extra_ffn_args = {}
 
         # Module name
         self.name = name
@@ -231,13 +261,13 @@ class TransformerDecoderLayer(lbann.modules.Module):
             embed_dim,
             num_heads,
             self_attention=True,
-            name=f'{self.name}_attention1'
-        )
+            dropout=attn_dropout,
+            name=f'{self.name}_attention1')
         self.attention2 = lbann.modules.transformer.MultiheadAttention(
             embed_dim,
             num_heads,
-            name=f'{self.name}_attention2'
-        )
+            dropout=attn_dropout,
+            name=f'{self.name}_attention2')
         self.norm1 = LayerNorm(self.embed_dim, name=f'{self.name}_norm1')
         self.norm2 = LayerNorm(self.embed_dim, name=f'{self.name}_norm2')
         self.norm3 = LayerNorm(self.embed_dim, name=f'{self.name}_norm3')
@@ -262,7 +292,7 @@ class TransformerDecoderLayer(lbann.modules.Module):
         Args:
             x (lbann.Layer): Sequence of input vectors.
             memory (lbann.Layer): Sequence of vectors produced by
-                Transformer encoder stack.
+                Transformer encoder stack, or None to disable cross-attention.
             src_mask (lbann.Layer, optional): Attention mask for
                 second attention module (attends to both `x` and
                 `memory`).
@@ -276,59 +306,90 @@ class TransformerDecoderLayer(lbann.modules.Module):
         self.instance += 1
         name = f'{self.name}_instance{self.instance}'
 
+        if self.pre_layernorm:
+            y = self.norm1(x)
+        else:
+            y = x
+
         # Self-attention with residual connection
-        y = self.attention1(x, x, x, mask=tgt_mask)
+        y = self.attention1(y, y, y, mask=tgt_mask)
         if self.dropout_prob > 0:
             y = lbann.Dropout(
                 y,
-                keep_prob=1-self.dropout_prob,
+                keep_prob=1 - self.dropout_prob,
                 name=f'{name}_drop1',
             )
         z = lbann.Sum(x, y, name=f'{name}_sum1')
-        z = self.norm1(z)
+
+        if not self.pre_layernorm:
+            z = self.norm1(z)
+
         x = z
 
-        # Attention on encoder output with residual connection
-        y = self.attention2(x, memory, memory, mask=src_mask)
-        if self.dropout_prob > 0:
-            y = lbann.Dropout(
-                y,
-                keep_prob=1-self.dropout_prob,
-                name=f'{name}_drop2',
-            )
-        z = lbann.Sum(x, y, name=f'{name}_sum2')
-        z = self.norm2(z)
-        x = z
+        # Cross-attention
+        if memory is not None:
+            # Attention on encoder output with residual connection
+            if self.pre_layernorm:
+                y = self.norm2(x)
+            else:
+                y = x
+
+            y = self.attention2(y, memory, memory, mask=src_mask)
+            if self.dropout_prob > 0:
+                y = lbann.Dropout(
+                    y,
+                    keep_prob=1 - self.dropout_prob,
+                    name=f'{name}_drop2',
+                )
+            z = lbann.Sum(x, y, name=f'{name}_sum2')
+
+            if not self.pre_layernorm:
+                z = self.norm2(z)
+
+            x = z
 
         # Feedforward network with residual connection
+        if self.pre_layernorm:
+            y = self.norm3(x)
+        else:
+            y = x
+
         y = lbann.ChannelwiseFullyConnected(
-            x,
+            y,
             weights=self.fc1_weights,
             output_channel_dims=[self.feedforward_dim],
             name=f'{name}_fc1',
+            **self.extra_ffn_args,
         )
-        y = lbann.Relu(y, name=f'{name}_relu1')
+        y = self.activation(y, name=f'{name}_ffn_act', **self.extra_ffn_args)
         if self.dropout_prob > 0:
             y = lbann.Dropout(
                 y,
-                keep_prob=1-self.dropout_prob,
+                keep_prob=1 - self.dropout_prob,
                 name=f'{name}_drop3',
+                **self.extra_ffn_args,
             )
         y = lbann.ChannelwiseFullyConnected(
             y,
             weights=self.fc2_weights,
             output_channel_dims=[self.embed_dim],
             name=f'{name}_fc2',
+            **self.extra_ffn_args,
         )
         if self.dropout_prob > 0:
             y = lbann.Dropout(
                 y,
-                keep_prob=1-self.dropout_prob,
+                keep_prob=1 - self.dropout_prob,
                 name=f'{name}_drop4',
+                **self.extra_ffn_args,
             )
         z = lbann.Sum(x, y, name=f'{name}_sum3')
-        z = self.norm3(z)
+
+        if not self.pre_layernorm:
+            z = self.norm3(z)
+
         return z
+
 
 class Transformer(lbann.modules.Module):
     """Transformer model.
@@ -341,14 +402,19 @@ class Transformer(lbann.modules.Module):
     Processing Systems, pp. 5998-6008. 2017.
 
     Args:
-        hidden_dim (int): Internal dimensionality of multi-head
+        hidden_size (int): Internal dimensionality of multi-head
             attention.
         num_heads (int): Number of attention heads.
         num_encoder_layers (int): Number of stacked layers in encoder.
         num_decoder_layers (int): Number of stacked layers in decoder.
-        filter_dim (int): Internal dimensionality of fully-connected
+        feedforward_size (int): Internal dimensionality of fully-connected
             feedforward networks.
-        dropout (float): Dropout probability.
+        dropout (float): Dropout probability after multi-head attention.
+        attn_dropout (float): Dropout probability during multi-head attention.
+        pre_layernorm (bool): If True, performs layer normalization before
+            applying attention operators.
+        activation (Type[lbann.Layer]): Activation function to apply in
+            feedforward network. Examples include ReLU or GELU.
         name (str): Default name is in the form
             'transformer<index>'.
 
@@ -362,14 +428,19 @@ class Transformer(lbann.modules.Module):
         num_heads=8,
         num_encoder_layers=6,
         num_decoder_layers=6,
-        filter_size=2048,
+        feedforward_size=None,
         dropout=0.1,
+        attn_dropout=0.0,
+        pre_layernorm=False,
+        activation=lbann.Relu,
         name=None,
     ):
         Transformer.global_count += 1
         self.instance = 0
         self.hidden_size = hidden_size
         self.num_heads = num_heads
+        self.dropout = dropout
+        self.attn_dropout = attn_dropout
 
         # Module name
         self.name = name
@@ -378,67 +449,40 @@ class Transformer(lbann.modules.Module):
 
         # Caches for helper functions
         self._subsequent_mask_cache = {}
-        self._positional_encoding_cache = {}
+
+        # Default feedforward size is 4*hidden_size
+        if feedforward_size is None or feedforward_size == 0:
+            feedforward_size = 4 * hidden_size
+        self.feedforward_size = feedforward_size
 
         # Encoder and decoder stacks
         self.encoder = [
             TransformerEncoderLayer(
                 embed_dim=hidden_size,
                 num_heads=num_heads,
-                feedforward_dim=filter_size,
+                feedforward_dim=feedforward_size,
                 dropout=dropout,
+                attn_dropout=attn_dropout,
+                pre_layernorm=pre_layernorm,
+                activation=activation,
                 name=f'{self.name}_encoder{i}',
-            )
-            for i in range(num_encoder_layers)
+            ) for i in range(num_encoder_layers)
         ]
         self.decoder = [
             TransformerDecoderLayer(
                 embed_dim=hidden_size,
                 num_heads=num_heads,
-                feedforward_dim=filter_size,
+                feedforward_dim=feedforward_size,
                 dropout=dropout,
+                attn_dropout=attn_dropout,
+                pre_layernorm=pre_layernorm,
+                activation=activation,
                 name=f'{self.name}_decoder{i}',
-            )
-            for i in range(num_decoder_layers)
+            ) for i in range(num_decoder_layers)
         ]
         self.separate_heads = self.decoder[0].attention1.separate_heads
         assert all(dec.attention1.separate_heads == self.separate_heads
                    for dec in self.decoder)
-
-    def _positional_encoding(self, sequence_length):
-        """Positional encodings corresponding to a sequence length.
-
-        PE(pos,2*i)   = sin( pos / 10000**(2*i/hidden_size) )
-
-        PE(pos,2*i+1) = cos( pos / 10000**(2*i/hidden_size) )
-
-        Encodings are memoized.
-
-        """
-
-        # Construct positional encoding if not in cache
-        if sequence_length not in self._positional_encoding_cache:
-            vals = []
-            for pos in range(sequence_length):
-                for i in range((self.hidden_size+1) // 2):
-                    x = pos / 10000**(2*i/self.hidden_size)
-                    vals.append(math.sin(x))
-                    vals.append(math.cos(x))
-                if self.hidden_size % 2 != 0:
-                    vals.pop()
-            weights = lbann.Weights(
-                initializer=lbann.ValueInitializer(values=vals),
-                optimizer=None,
-                name=f'{self.name}_positional{sequence_length}_weights',
-            )
-            self._positional_encoding_cache[sequence_length] = lbann.WeightsLayer(
-                dims=[sequence_length, self.hidden_size],
-                weights=weights,
-                name=f'{self.name}_positional{sequence_length}',
-            )
-
-        # Return cached positional encoding
-        return self._positional_encoding_cache[sequence_length]
 
     def _subsequent_mask(self, size):
         """Attention mask to prevent attending to subsequent positions.
@@ -450,7 +494,7 @@ class Transformer(lbann.modules.Module):
 
         # Construct mask if not in cache
         if size not in self._subsequent_mask_cache:
-            vals = np.triu(np.full((size,size), -1e9), k=1)
+            vals = np.triu(np.full((size, size), -1e9), k=1)
 
             if not self.separate_heads:
                 # Precompute mask for all heads because Add is entry-wise
@@ -471,7 +515,11 @@ class Transformer(lbann.modules.Module):
         # Return cached mask
         return self._subsequent_mask_cache[size]
 
-    def forward(self, source, source_length, target, target_length):
+    def forward(self,
+                source: lbann.Layer,
+                target: lbann.Layer,
+                target_length: int,
+                cross_attention: Optional[lbann.Layer] = None):
         """Apply Transformer.
 
         The input and output tensors are interpreted as sequences of
@@ -479,37 +527,33 @@ class Transformer(lbann.modules.Module):
         dimension.
 
         Args:
-            source (lbann.Layer): Sequence of input vectors to encoder
-                stack.
-            source_length (int): Length of input sequence to encoder.
-            target (lbann.Layer): Sequence of input vectors to decoder
-                stack.
-            target_length (int): Length of input sequence to decoder.
+            source: Sequence of input vectors to encoder stack.
+            target: Sequence of input vectors to decoder stack.
+            target_length: Length of input sequence to decoder.
+            cross_attention: Optional cross-attention tensor to give to a
+                decoder-only architecture.
 
         Returns:
             lbann.Layer: Sequence of output vectors.
-
         """
         self.instance += 1
 
-        # Encoder stack
-        # Note: Add positional encoding to input
-        x = lbann.Add(
-            source,
-            self._positional_encoding(source_length),
-            name=f'{self.name}_instance{self.instance}_positional_source',
-        )
-        for encoder_layer in self.encoder:
-            x = encoder_layer(x)
-        memory = x
+        # Encoder stack (assumes encoded input, including positional encoding)
+        if self.encoder:
+            x = source
+            for encoder_layer in self.encoder:
+                x = encoder_layer(x)
+            memory = x
+        else:
+            # Decoder-only architecture with an optional input cross-attention
+            # tensor
+            memory = cross_attention
+
+        if not self.decoder:  # Encoder-only architecture
+            return x
 
         # Decoder stack
-        # Note: Add positional encoding to input
-        x = lbann.Add(
-            target,
-            self._positional_encoding(target_length),
-            name=f'{self.name}_instance{self.instance}_positional_target',
-        )
+        x = target
         for decoder_layer in self.decoder:
             x = decoder_layer(
                 x,

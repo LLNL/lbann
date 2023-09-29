@@ -15,10 +15,7 @@ import lbann.contrib.launcher
 # Command-line arguments
 desc = ('Construct and run ProbiesNet on HRRL PROBIES data. ')
 parser = argparse.ArgumentParser(description=desc)
-lbann.contrib.args.add_scheduler_arguments(parser)
-parser.add_argument(
-    '--job-name', action='store', default='probiesNet', type=str,
-    help='scheduler job name (default: probiesNet)')
+lbann.contrib.args.add_scheduler_arguments(parser, 'probiesNet')
 parser.add_argument(
     '--mini-batch-size', action='store', default=32, type=int,
     help='mini-batch size (default: 32)', metavar='NUM')

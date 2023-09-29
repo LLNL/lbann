@@ -24,52 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-syntax = "proto3";
+#include "lbann/operators/math/unary.hpp"
+#include "lbann/utils/serialize.hpp"
 
-package lbann_data;
-
-message Optimizer {
-  oneof optimizer_type {
-    NoOptimizer no_optimizer = 1;
-    AdaGrad adagrad = 2;
-    Adam adam = 3;
-    HypergradientAdam hypergradient_adam = 4;
-    RMSprop rmsprop = 5;
-    SGD sgd = 6;
-  }
-
-  message NoOptimizer {}
-
-  message AdaGrad {
-    double learn_rate = 1;
-    double eps = 2;  // Suggested: 1e-8
-  }
-
-  message Adam {
-    double learn_rate = 1;
-    double beta1 = 6;               // Suggested: 0.9
-    double beta2 = 7;               // Suggested: 0.99
-    double eps = 8;                 // Suggested: 1e-8
-    double adamw_weight_decay = 9;  // Suggested: 0
-  }
-
-  message HypergradientAdam {
-    double init_learning_rate = 1;
-    double hyper_learning_rate = 2;  // Suggested: 1e-7
-    double beta1 = 6;                // Suggested: 0.9
-    double beta2 = 7;                // Suggested: 0.99
-    double eps = 8;                  // Suggested: 1e-8
-  }
-
-  message RMSprop {
-    double learn_rate = 1;
-    double decay_rate = 2;
-    double eps = 3;  // Suggested: 1e-8
-  }
-
-  message SGD {
-    double learn_rate = 1;
-    double momentum = 2;  // Set to zero for vanilla SGD
-    bool nesterov = 4;
-  }
-}
+#define LBANN_OPERATOR_NAME GeluOperator
+#include <lbann/macros/register_operator_with_cereal.hpp>

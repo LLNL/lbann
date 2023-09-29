@@ -47,6 +47,7 @@ set_full_path(THIS_DIR_SOURCES
   exp.cpp
   expm1.cpp
   floor.cpp
+  gelu.cpp
   greater.cpp
   greater_equal.cpp
   less.cpp

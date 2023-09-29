@@ -1,5 +1,6 @@
 """
-Synthetic dataset for benchmarking the transformer sample
+Synthetic dataset for benchmarking transformers with source and
+target sequences (occurring, e.g., in translation tasks).
 """
 import numpy as np
 
@@ -7,8 +8,6 @@ import numpy as np
 # Options
 # ----------------------------------------------
 
-# Note: Sequence lengths for WMT 2014 have mean 29.05, standard
-# deviation 16.20, and max 484.
 sequence_length = 64
 _vocab_size = 32000
 
@@ -26,7 +25,7 @@ pad_index = 0
 def get_train_sample(index):
     return np.random.randint(0,
                              _vocab_size,
-                             size=(2 * sequence_length, ),
+                             size=(2 * sequence_length + 1, ),
                              dtype=np.int32)
 
 
@@ -51,7 +50,7 @@ def num_val_samples():
 
 
 def sample_dims():
-    return (2 * sequence_length, )
+    return (2 * sequence_length + 1, )
 
 
 def vocab_size():

@@ -1,7 +1,19 @@
+"""
+Train a Transformer model for translation.
+The default dataset (WMT-16) requires HuggingFace Datasets and Tokenizers.
+"""
 import argparse
 import torch
+import math
+import numpy as np
+import os
 import random
+import sys
 import tqdm
+
+# Import local utilities
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+import dataset_utils
 
 
 def main():
@@ -9,28 +21,30 @@ def main():
 
     parser.add_argument('--mini-batch-size',
                         action='store',
-                        default=256,
+                        default=32,
                         type=int,
-                        help='mini-batch size (default: 256)',
+                        help='Mini-batch size (default: 32)',
                         metavar='NUM')
+
     parser.add_argument('--num-epochs',
                         action='store',
                         default=20,
                         type=int,
-                        help='number of epochs (default: 20)',
+                        help='Number of epochs (default: 20)',
                         metavar='NUM')
-    parser.add_argument(
-        '--num-attention-heads',
-        action='store',
-        default=8,
-        type=int,
-        help='number of parallel attention layers (default: 8)',
-        metavar='NUM')
+
+    parser.add_argument('--num-attention-heads',
+                        action='store',
+                        default=8,
+                        type=int,
+                        help='Number of parallel attention heads (default: 8)',
+                        metavar='NUM')
+
     parser.add_argument('--embed-dim',
                         action='store',
                         default=512,
                         type=int,
-                        help='embedding space dimensions (default: 512)',
+                        help='Embedding space dimensions (default: 512)',
                         metavar='NUM')
 
     parser.add_argument(
@@ -41,16 +55,15 @@ def main():
         help='Number of encoder and decoder layers (default: 6)',
         metavar='NUM')
 
-    parser.add_argument('--synthetic',
-                        action='store_true',
-                        help='Use synthetic data')
+    parser.add_argument(
+        '--train-sequence-length',
+        action='store',
+        default=0,
+        type=int,
+        help='Sequence length for training. 0 to keep as-is (default: 0)',
+        metavar='NUM')
 
-    parser.add_argument('--dataset-fraction',
-                        action='store',
-                        default=1.0,
-                        type=float,
-                        help='Fraction of dataset to use',
-                        metavar='NUM')
+    dataset_utils.add_dataset_arguments(parser, default='wmt16')
 
     # PyTorch specific arguments
     parser.add_argument('--compile',
@@ -60,15 +73,46 @@ def main():
 
     args = parser.parse_args()
 
-    # Setup dataset
-    if args.synthetic:
-        import dataset_synthetic as dataset
-    else:
-        import dataset
+    # Load the dataset
+    dataset = dataset_utils.load_dataset(args.dataset)
+
+    if args.train_sequence_length > 0:
+        print('Setting sequence length to', args.train_sequence_length)
+        dataset.sequence_length = args.train_sequence_length
 
     indices = list(range(dataset.num_train_samples()))
     num_samples = int(len(indices) * args.dataset_fraction)
     b = args.mini_batch_size
+
+    class PositionalEncoding(torch.nn.Module):
+        """
+        Positional encoding, adapted from
+        https://pytorch.org/tutorials/beginner/transformer_tutorial.html
+        for batch_first operation.
+        """
+
+        def __init__(self,
+                     d_model: int,
+                     dropout: float = 0.0,
+                     max_len: int = 50000):
+            super().__init__()
+            self.dropout = torch.nn.Dropout(p=dropout)
+
+            position = torch.arange(max_len).unsqueeze(1)
+            div_term = torch.exp(
+                torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
+            pe = torch.zeros(max_len, d_model)
+            pe[:, 0::2] = torch.sin(position * div_term)
+            pe[:, 1::2] = torch.cos(position * div_term)
+            self.register_buffer('pe', pe)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """
+            Arguments:
+                x: Tensor, shape ``[batch_size, seq_len, embedding_dim]``
+            """
+            x = x + self.pe[:x.size(1)]
+            return self.dropout(x)
 
     # Setup model
     class TransformerModel(torch.nn.Module):
@@ -83,6 +127,8 @@ def main():
                 num_decoder_layers=args.num_layers,
                 batch_first=True,
             )
+            self.pe = PositionalEncoding(args.embed_dim, 0.0,
+                                         dataset.sequence_length)
             self.embeddings = torch.nn.Embedding(dataset.vocab_size(),
                                                  args.embed_dim,
                                                  dataset.pad_index)
@@ -91,8 +137,8 @@ def main():
         def forward(self, samples):
             src = samples[:, :dataset.sequence_length]
             tgt = samples[:, dataset.sequence_length:-1]
-            esrc = self.embeddings(src)
-            etgt = self.embeddings(tgt)
+            esrc = self.pe(self.embeddings(src))
+            etgt = self.pe(self.embeddings(tgt))
 
             output = self.model(esrc, etgt)
             result = self.linear(output)
@@ -103,18 +149,13 @@ def main():
         def __init__(self) -> None:
             super().__init__()
             self.smax = torch.nn.Softmax(-1)
-            self.ce = torch.nn.CrossEntropyLoss()
-            self.pad = dataset.pad_index
+            self.ce = torch.nn.CrossEntropyLoss(ignore_index=dataset.pad_index)
             self.vocab_size = dataset.vocab_size()
 
         def forward(self, output, labels):
             s = self.smax(output)
             s = s.view(-1, self.vocab_size)
             labels = labels.view(-1)
-
-            # Ignore padding by setting values to a size that will not contribute
-            s = s[labels != self.pad]
-            labels = labels[labels != self.pad]
 
             return self.ce(s, labels)
 
@@ -131,11 +172,13 @@ def main():
         print('Epoch', epoch)
         random.shuffle(indices)
         model.train()
-        for idx in tqdm.trange(num_samples // b):
+        progress = tqdm.tqdm(range(num_samples // b), total=num_samples // b)
+        for idx in progress:
             # Stack minibatch
-            samples = torch.tensor(
-                [dataset.get_train_sample(indices[idx + i]) for i in range(b)],
-                dtype=torch.int32).cuda()
+            samples = torch.tensor(np.array([
+                dataset.get_train_sample(indices[idx + i]) for i in range(b)
+            ]),
+                                   dtype=torch.int32).cuda()
 
             labels = samples[:, dataset.sequence_length + 1:].long()
 
@@ -145,6 +188,7 @@ def main():
             loss = criterion(preds, labels)
             loss.backward()
             opt.step()
+            progress.set_description(f'Loss: {loss.item():.4f}')
 
 
 if __name__ == '__main__':
