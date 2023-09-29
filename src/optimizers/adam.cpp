@@ -193,6 +193,8 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
   LBANN_CALIPER_MARK_SCOPE("adam::step_compute");
   static const auto one = TensorDataType(1.);
 
+  const TensorDataType lr = El::To<TensorDataType>(this->get_learning_rate());
+
   // Get local matrix data
   const size_t local_height = values.LocalHeight();
   const size_t local_width = values.LocalWidth();
@@ -217,8 +219,8 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
       auto& m2 = moment2_buffer[i];
       m1 = m_beta1 * m1 + (one - m_beta1) * g;
       m2 = m_beta2 * m2 + (one - m_beta2) * g * g;
-      x -=
-        correction * (m1 / (El::Sqrt(m2) + m_eps) + m_adamw_weight_decay * x);
+      x -= correction * (m1 / (El::Sqrt(m2) + m_eps)) +
+           lr * m_adamw_weight_decay * x;
     }
   }
   else {
@@ -241,8 +243,8 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
         auto& m2 = moment2_buffer[row + col * moment2_ldim];
         m1 = m_beta1 * m1 + (one - m_beta1) * g;
         m2 = m_beta2 * m2 + (one - m_beta2) * g * g;
-        x -=
-          correction * (m1 / (El::Sqrt(m2) + m_eps) + m_adamw_weight_decay * x);
+        x -= correction * (m1 / (El::Sqrt(m2) + m_eps)) +
+             lr * m_adamw_weight_decay * x;
       }
     }
   }
