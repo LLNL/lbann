@@ -241,14 +241,6 @@ construct_layer_legacy(lbann_comm* comm,
   // arguments.
   if (proto_layer.has_reshape()) {
     const auto& params = proto_layer.reshape();
-    if (proto_layer.num_neurons_from_data_reader()) {
-      if (training_dr_linearized_data_size == -1) {
-        LBANN_ERROR("Training data reader does not exist!");
-      }
-      return std::make_unique<reshape_layer<TensorDataType, Layout, Device>>(
-        comm,
-        std::vector<int>{training_dr_linearized_data_size});
-    }
     return std::make_unique<reshape_layer<TensorDataType, Layout, Device>>(
       comm,
       protobuf::to_vector<int>(params.dims()));

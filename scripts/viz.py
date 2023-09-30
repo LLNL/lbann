@@ -55,8 +55,7 @@ graph.attr('node', shape='rect')
 layer_types = (set(layers_pb2.Layer.DESCRIPTOR.fields_by_name.keys())
                - set(['name', 'parents', 'children', 'datatype',
                       'data_layout', 'device_allocation', 'weights',
-                      'num_neurons_from_data_reader', 'freeze',
-                      'hint_layer', 'weights_data',
+                      'hint_layer',
                       'top', 'bottom', 'type', 'motif_layer']))
 for l in model.layer:
 

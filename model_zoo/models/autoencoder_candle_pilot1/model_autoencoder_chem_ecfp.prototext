@@ -284,7 +284,6 @@ model {
     parents: "relu9"
     name: "decode1"
     data_layout: "model_parallel"
-    num_neurons_from_data_reader: true
     fully_connected {
       has_bias: true
     }

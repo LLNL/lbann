@@ -117,13 +117,8 @@ message Layer {
   // ===========================================
   // Deprecated options
   // ===========================================
-
-  /// Deprecated
-  bool num_neurons_from_data_reader = 400;
   /// Deprecated
   bool freeze = 401;
-  /// Deprecated and unused
-  repeated WeightsData weights_data = 402;
 
   // ===========================================
   // Concrete layer types

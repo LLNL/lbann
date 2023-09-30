@@ -4,6 +4,7 @@ from lbann import layers_pb2
 from lbann.util import make_iterable
 import lbann.core.util
 
+
 class Layer(abc.ABC):
     """Neural network tensor operation.
 
@@ -71,9 +72,8 @@ class Layer(abc.ABC):
         if self.hint_layer:
             proto.hint_layer = self.hint_layer.name
         if self.parallel_strategy:
-            lbann.core.util.set_protobuf_message(
-                proto.parallel_strategy,
-                **self.parallel_strategy)
+            lbann.core.util.set_protobuf_message(proto.parallel_strategy,
+                                                 **self.parallel_strategy)
             proto.parallel_strategy.SetInParent()
         return proto
 
@@ -101,23 +101,27 @@ class Layer(abc.ABC):
         """
         self.add_parent(parent)
 
+
 # Generate Layer sub-classes from lbann.proto
 # Note: The list of skip fields must be updated if any new fields are
 # added to the Layer message in lbann.proto
 if layers_pb2:
     classes = lbann.core.util.generate_classes_from_protobuf_message(
         layers_pb2.Layer,
-        skip_fields = set([
-            'name', 'parents', 'children', 'data_layout', 'device_allocation', 'datatype',
-            'weights', 'num_neurons_from_data_reader', 'freeze', 'hint_layer',
-            'parallel_strategy', 'weights_data', 'top', 'bottom', 'type', 'motif_layer']),
-        base_class = Layer,
-        base_kwargs = set([
-            'parents', 'children', 'weights',
-            'name', 'device', 'data_layout', 'datatype', 'hint_layer', 'parallel_strategy']),
-        base_has_export_proto = True)
+        skip_fields=set([
+            'name', 'parents', 'children', 'data_layout', 'device_allocation',
+            'datatype', 'weights', 'hint_layer', 'parallel_strategy', 'top',
+            'bottom', 'type', 'motif_layer'
+        ]),
+        base_class=Layer,
+        base_kwargs=set([
+            'parents', 'children', 'weights', 'name', 'device', 'data_layout',
+            'datatype', 'hint_layer', 'parallel_strategy'
+        ]),
+        base_has_export_proto=True)
     for c in classes:
         globals()[c.__name__] = c
+
 
 def traverse_layer_graph(layers):
     """Topologically ordered traversal of layer graph.
@@ -152,8 +156,7 @@ def traverse_layer_graph(layers):
     stack = roots
     while stack:
         l = stack.pop()
-        if (l not in visited
-            and all([(p in visited) for p in l.parents])):
+        if (l not in visited and all([(p in visited) for p in l.parents])):
             visited.add(l)
             stack.extend(l.children)
             yield l
