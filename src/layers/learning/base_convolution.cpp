@@ -230,10 +230,9 @@ base_convolution_layer<TensorDataType, Device>::get_description() const
 }
 
 template <typename TensorDataType, El::Device Device>
-void base_convolution_layer<TensorDataType, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void base_convolution_layer<TensorDataType, Device>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
   std::ostringstream err;
 
   // Check number of channels and channel groups
@@ -1210,8 +1209,7 @@ base_convolution_layer<TensorDataType, Device>::get_backward_filter_algo_dnn(
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, El::Device Device>
-void base_convolution_layer<TensorDataType, Device>::setup_distconv_adapter(
-  const DataReaderMetaData& dr_metadata)
+void base_convolution_layer<TensorDataType, Device>::setup_distconv_adapter()
 {
   this->get_distconv_adapter_ptr() =
     std::make_unique<base_convolution_adapter<TensorDataType, Device>>(*this);
@@ -1321,18 +1319,17 @@ void base_convolution_adapter<TensorDataType, Device>::setup_layer(
 }
 
 template <typename TensorDataType, El::Device Device>
-std::unique_ptr<typename base_convolution_adapter<TensorDataType,
-                                                   Device>::TensorDevType>
-base_convolution_adapter<TensorDataType, Device>::
-  setup_error_signals_i(int index) const
+std::unique_ptr<
+  typename base_convolution_adapter<TensorDataType, Device>::TensorDevType>
+base_convolution_adapter<TensorDataType, Device>::setup_error_signals_i(
+  int index) const
 {
   assert_eq(index, 0);
   auto& parent_layer = this->layer().get_parent_layer();
-  if (parent_layer.get_backprop_requirements() & ACTIVATIONS
-      || parent_layer.get_type() == "identity"
-      || this->get_prev_activations_dist() != this->get_error_signals_dist()
-      || std::getenv("DISTCONV_DISABLE_MEM_OPT")
-      ) {
+  if (parent_layer.get_backprop_requirements() & ACTIVATIONS ||
+      parent_layer.get_type() == "identity" ||
+      this->get_prev_activations_dist() != this->get_error_signals_dist() ||
+      std::getenv("DISTCONV_DISABLE_MEM_OPT")) {
     return data_type_distconv_adapter<TensorDataType>::setup_error_signals_i(0);
   }
   const auto& prev_activations = this->get_prev_activations(0);

@@ -71,10 +71,9 @@ void mini_batch_index_layer<T, L, D>::write_specific_proto(
 }
 
 template <typename T, data_layout L, El::Device D>
-void mini_batch_index_layer<T, L, D>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void mini_batch_index_layer<T, L, D>::setup_dims()
 {
-  data_type_layer<T>::setup_dims(dr_metadata);
+  data_type_layer<T>::setup_dims();
   this->set_output_dims({1});
 }
 

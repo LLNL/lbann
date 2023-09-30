@@ -91,10 +91,9 @@ convolution_layer<TensorDataType, Layout, Device>::convolution_layer()
 {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void convolution_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void convolution_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  base_convolution_layer<TensorDataType, Device>::setup_dims(dr_metadata);
+  base_convolution_layer<TensorDataType, Device>::setup_dims();
 
   // Get tensor dimensions
   const auto& input_dims = this->get_input_dims();
@@ -253,8 +252,7 @@ void convolution_layer<T, L, D>::write_specific_proto(
 
 #if defined LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void convolution_layer<TensorDataType, Layout, Device>::setup_distconv_adapter(
-  const DataReaderMetaData& dr_metadata)
+void convolution_layer<TensorDataType, Layout, Device>::setup_distconv_adapter()
 {
   this->get_distconv_adapter_ptr() = std::make_unique<
     convolution_distconv_adapter<TensorDataType, Layout, Device>>(*this);

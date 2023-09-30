@@ -48,16 +48,6 @@ namespace {
 // model_prototext string is defined here as a "const std::string".
 #include "lenet.prototext.inc"
 
-auto mock_datareader_metadata()
-{
-  lbann::DataReaderMetaData md;
-  auto& md_dims = md.data_dims;
-  // This is all that should be needed for this test.
-  md_dims[lbann::data_reader_target_mode::CLASSIFICATION] = {10};
-  md_dims[lbann::data_reader_target_mode::INPUT] = {1, 28, 28};
-  return md;
-}
-
 template <typename T>
 auto make_model(lbann::lbann_comm& comm,
                 const std::string& model_contents = model_prototext)
@@ -66,14 +56,15 @@ auto make_model(lbann::lbann_comm& comm,
   if (!pb::TextFormat::ParseFromString(model_contents, &my_proto))
     throw "Parsing protobuf failed.";
   // Construct a trainer so that the model can register the input layer
-  lbann::construct_trainer(&comm, my_proto.mutable_trainer(), my_proto);
-  auto metadata = mock_datareader_metadata();
+  auto& trainer =
+    lbann::construct_trainer(&comm, my_proto.mutable_trainer(), my_proto);
+  unit_test::utilities::mock_data_reader(trainer, {1, 28, 28}, 10);
   auto my_model = lbann::proto::construct_model(&comm,
                                                 -1,
                                                 my_proto.optimizer(),
                                                 my_proto.trainer(),
                                                 my_proto.model());
-  my_model->setup(1UL, metadata, {&comm.get_trainer_grid()});
+  my_model->setup(1UL, {&comm.get_trainer_grid()});
   return my_model;
 }
 
@@ -106,8 +97,7 @@ TEST_CASE("Serializing models", "[mpi][model][serialize]")
       REQUIRE(IsValidPtr(model_tgt_ptr));
     }
     if (IsValidPtr(model_tgt_ptr)) {
-      auto metadata = mock_datareader_metadata();
-      REQUIRE_NOTHROW(model_tgt_ptr->setup(1UL, metadata, {&g}));
+      REQUIRE_NOTHROW(model_tgt_ptr->setup(1UL, {&g}));
       // if (comm.get_rank_in_world() == 1)
       //   std::cout << model_tgt_ptr->get_description()
       //             << std::endl;
@@ -127,8 +117,7 @@ TEST_CASE("Serializing models", "[mpi][model][serialize]")
     }
 
     if (IsValidPtr(model_tgt_ptr)) {
-      auto metadata = mock_datareader_metadata();
-      REQUIRE_NOTHROW(model_tgt_ptr->setup(1UL, metadata, {&g}));
+      REQUIRE_NOTHROW(model_tgt_ptr->setup(1UL, {&g}));
       // if (comm.get_rank_in_world() == 1)
       //   std::cout << model_tgt_ptr->get_description()
       //             << std::endl;
@@ -237,9 +226,9 @@ private:
   friend class cereal::access;
   backprop_test_layer() : backprop_test_layer(nullptr) {}
 
-  void setup_dims(lbann::DataReaderMetaData& dr_metadata) final
+  void setup_dims() final
   {
-    lbann::data_type_layer<float>::setup_dims(dr_metadata);
+    lbann::data_type_layer<float>::setup_dims();
     this->set_output_dims(this->get_input_dims());
   }
   void fp_setup_outputs(El::Int mini_batch_size) override
@@ -278,8 +267,7 @@ TEST_CASE("Gradient backpropagation stop", "[mpi][model][backprop]")
   model->insert_layer(after_stopgrad, "layer2");
 
   // Reset the model after adding the new layers
-  auto metadata = lbann::DataReaderMetaData();
-  model->setup(1UL, metadata, {&g}, true);
+  model->setup(1UL, {&g}, true);
 
   REQUIRE(!before_stopgrad->fprop_computed());
   REQUIRE(!before_stopgrad->bprop_computed());

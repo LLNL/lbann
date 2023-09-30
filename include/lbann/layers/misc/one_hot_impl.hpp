@@ -33,10 +33,9 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void one_hot_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void one_hot_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
 
   // Make sure input tensor is scalar
   if (this->get_input_size() != 1) {

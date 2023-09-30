@@ -66,7 +66,7 @@ protected:
   friend class cereal::access;
   identity_zero_layer() : identity_zero_layer(nullptr) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void fp_compute() override;
 

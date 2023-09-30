@@ -114,7 +114,7 @@ protected:
   friend class cereal::access;
   embedding_layer();
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
   void setup_data(size_t max_mini_batch_size) override;
 
   void fp_compute() override;
@@ -230,10 +230,9 @@ embedding_layer<TensorDataType, Layout, Device>::get_description() const
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void embedding_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void embedding_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
   auto dims = this->get_input_dims();
   dims.push_back(static_cast<int>(m_embedding_dim));
   this->set_output_dims(dims);

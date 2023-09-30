@@ -74,10 +74,9 @@ deconvolution_layer<TensorDataType, Layout, Device>::deconvolution_layer()
 {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void deconvolution_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void deconvolution_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  base_convolution_layer<TensorDataType, Device>::setup_dims(dr_metadata);
+  base_convolution_layer<TensorDataType, Device>::setup_dims();
 
   // Check for unsupported features
   /// @todo Implement dilated and grouped deconvolution
@@ -265,7 +264,7 @@ bool deconvolution_layer<TensorDataType, Layout, Device>::
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void deconvolution_layer<TensorDataType, Layout, Device>::
-  setup_distconv_adapter(const DataReaderMetaData& dr_metadata)
+  setup_distconv_adapter()
 {
   this->get_distconv_adapter_ptr() = std::make_unique<
     deconvolution_distconv_adapter<TensorDataType, Layout, Device>>(*this);

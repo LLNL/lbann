@@ -70,9 +70,9 @@ protected:
   friend class cereal::access;
   reshape_layer() : reshape_layer(nullptr, {1}) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
 
     const auto& input_dims = this->get_input_dims();
     auto output_dims = this->get_output_dims();

@@ -72,9 +72,9 @@ private:
     }
   }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) final
+  void setup_dims() final
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
 
     // print dims

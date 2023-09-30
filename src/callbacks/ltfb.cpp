@@ -813,9 +813,7 @@ void ltfb::on_batch_begin(model* m)
     local_model.swap_metrics(partner_model);
     local_model.swap_objective_function(partner_model);
     auto& trainer_ = get_trainer();
-    auto&& metadata = trainer_.get_data_coordinator().get_dr_metadata();
     local_model.setup(trainer_.get_max_mini_batch_size(),
-                      metadata,
                       trainer_.get_grids(),
                       true);
   }

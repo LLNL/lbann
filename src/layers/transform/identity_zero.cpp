@@ -37,9 +37,9 @@
 namespace lbann {
 
 template <typename T, data_layout L, El::Device D>
-void identity_zero_layer<T, L, D>::setup_dims(DataReaderMetaData& dr_metadata)
+void identity_zero_layer<T, L, D>::setup_dims()
 {
-  data_type_layer<T>::setup_dims(dr_metadata);
+  data_type_layer<T>::setup_dims();
   this->set_output_dims(this->get_input_dims());
 
   // Check that input dimensions match

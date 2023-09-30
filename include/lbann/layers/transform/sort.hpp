@@ -81,7 +81,7 @@ protected:
   friend class cereal::access;
   sort_layer() : sort_layer(nullptr) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void setup_data(size_t max_mini_batch_size) override;
 

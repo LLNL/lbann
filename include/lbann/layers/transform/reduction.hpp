@@ -93,7 +93,7 @@ protected:
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void fp_compute() override;
 

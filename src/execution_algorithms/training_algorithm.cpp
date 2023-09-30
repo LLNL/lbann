@@ -46,7 +46,6 @@ std::string const& TrainingAlgorithm::get_name() const noexcept
 void TrainingAlgorithm::setup_models(
   std::vector<observer_ptr<model>> const& models,
   size_t max_mini_batch_size,
-  DataReaderMetaData& dr_metadata,
   const std::vector<El::Grid*>& grids)
 {
   for (observer_ptr<model> const& m : models) {
@@ -60,7 +59,7 @@ void TrainingAlgorithm::setup_models(
       }
     }
     // Setup models
-    m->setup(max_mini_batch_size, dr_metadata, grids);
+    m->setup(max_mini_batch_size, grids);
   }
 }
 

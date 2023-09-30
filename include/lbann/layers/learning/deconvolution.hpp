@@ -106,7 +106,7 @@ public:
     return ERROR_SIGNALS | WEIGHTS | PREV_ACTIVATIONS;
   }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   /** @name Serialization */
   ///@{
@@ -131,7 +131,7 @@ protected:
   friend class deconvolution_distconv_adapter<TensorDataType, Layout, Device>;
 
 protected:
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
+  void setup_distconv_adapter() override;
   bool is_distconv_supported() const override;
 #endif // LBANN_HAS_DISTCONV
 

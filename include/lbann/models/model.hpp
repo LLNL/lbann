@@ -61,7 +61,6 @@ class access;
 namespace lbann {
 
 // Forward declarations
-struct DataReaderMetaData;
 class lbann_comm;
 class description;
 class Layer;
@@ -220,7 +219,6 @@ public:
   /** @details Must be called after model specification and before
    *  execution. */
   void setup(size_t max_mini_batch_size,
-             DataReaderMetaData& dr_metadata,
              const std::vector<El::Grid*>& grids,
              bool force = false);
 
@@ -342,7 +340,6 @@ private:
    *  Called in setup function.
    */
   void setup_layers(size_t max_mini_batch_size,
-                    DataReaderMetaData& dr_metadata,
                     const std::vector<El::Grid*>& grids);
 
   /** @brief Set up weights.

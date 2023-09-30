@@ -95,7 +95,7 @@ public:
     return ERROR_SIGNALS | PREV_ACTIVATIONS;
   }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void setup_data(size_t max_mini_batch_size) override;
 

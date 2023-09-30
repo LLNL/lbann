@@ -51,17 +51,6 @@
 
 namespace lbann {
 
-// Creates a datareader metadata to get around the need for an actual
-// datareader in inference only mode
-auto mock_dr_metadata(std::vector<El::Int> input_dims, std::vector<El::Int> output_dims)
-{
-  DataReaderMetaData drmd;
-  auto& md_dims = drmd.data_dims;
-  md_dims[data_reader_target_mode::INPUT] = input_dims;
-  md_dims[data_reader_target_mode::CLASSIFICATION] = output_dims;
-  return drmd;
-}
-
 // Loads a model from checkpoint and sets up model for inference
 std::unique_ptr<model> load_inference_model(lbann_comm* lc,
                                             std::string cp_dir,
@@ -75,10 +64,7 @@ std::unique_ptr<model> load_inference_model(lbann_comm* lc,
   m->load_from_checkpoint_shared(p);
   p.close_restart();
 
-  // Must use a mock datareader with input and output dims for setup
-  // TODO: avoid need for datareader altogether
-  auto dr_metadata = mock_dr_metadata(input_dims, output_dims);
-  m->setup(mbs, dr_metadata, get_trainer().get_grids());
+  m->setup(mbs, get_trainer().get_grids());
 
   return m;
 }
@@ -561,34 +547,30 @@ void print_lbann_configuration(lbann_comm* comm,
   std::cout << std::endl;
 
   // Report build settings
-  std::cout << "Running: LLNL LBANN version: "
-            << LBANN_MAKE_STR(LBANN_VERSION)
-  #ifdef LBANN_GIT_VERSION
+  std::cout << "Running: LLNL LBANN version: " << LBANN_MAKE_STR(LBANN_VERSION)
+#ifdef LBANN_GIT_VERSION
             << " (" << LBANN_MAKE_STR(LBANN_GIT_VERSION) << ")"
-  #endif
+#endif
             << std::endl;
 #ifdef HYDROGEN_VERSION
-  std::cout << "         LLNL Hydrogen version: "
-            << HYDROGEN_VERSION
-  #ifdef HYDROGEN_GIT_VERSION
+  std::cout << "         LLNL Hydrogen version: " << HYDROGEN_VERSION
+#ifdef HYDROGEN_GIT_VERSION
             << " (" << HYDROGEN_GIT_VERSION << ")"
-  #endif
+#endif
             << std::endl;
 #endif
 #ifdef DIHYDROGEN_VERSION
-  std::cout << "         LLNL DiHydrogen version: "
-            << DIHYDROGEN_VERSION
-  #ifdef DIHYDROGEN_GIT_VERSION
+  std::cout << "         LLNL DiHydrogen version: " << DIHYDROGEN_VERSION
+#ifdef DIHYDROGEN_GIT_VERSION
             << " (" << DIHYDROGEN_GIT_VERSION << ")"
-  #endif
+#endif
             << std::endl;
 #endif
 #ifdef AL_VERSION
-  std::cout << "         LLNL Aluminum version: "
-            << AL_VERSION
-  #ifdef AL_GIT_VERSION
+  std::cout << "         LLNL Aluminum version: " << AL_VERSION
+#ifdef AL_GIT_VERSION
             << " (" << AL_GIT_VERSION << ")"
-  #endif
+#endif
             << std::endl;
 #endif
   std::cout << std::endl;
@@ -631,9 +613,11 @@ void print_lbann_configuration(lbann_comm* comm,
 #ifdef LBANN_HAS_ROCM
   std::cout << "  MIOpen DB Cache : " << std::endl;
   const auto* env_db = std::getenv("MIOPEN_USER_DB_PATH");
-  std::cout << "    MIOPEN_USER_DB_PATH : " << (env_db != nullptr ? env_db : "") << std::endl;
+  std::cout << "    MIOPEN_USER_DB_PATH : " << (env_db != nullptr ? env_db : "")
+            << std::endl;
   const auto* env_cache = std::getenv("MIOPEN_CUSTOM_CACHE_DIR");
-  std::cout << "    MIOPEN_CUSTOM_CACHE_DIR : " << (env_cache != nullptr ? env_cache : "") << std::endl;
+  std::cout << "    MIOPEN_CUSTOM_CACHE_DIR : "
+            << (env_cache != nullptr ? env_cache : "") << std::endl;
 #endif // LBANN_HAS_ROCM
 
 #ifdef LBANN_HAS_DIHYDROGEN

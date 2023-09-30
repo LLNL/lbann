@@ -104,7 +104,7 @@ protected:
   friend class cereal::access;
   gru_layer() : gru_layer(0, 0) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
   void setup_data(size_t max_mini_batch_size) override;
 
   void fp_compute() override;

@@ -66,7 +66,7 @@ protected:
   friend class cereal::access;
   mini_batch_size_layer() : mini_batch_size_layer(nullptr) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
   void fp_setup_outputs(El::Int mini_batch_size) override;
   void fp_compute() override;
 

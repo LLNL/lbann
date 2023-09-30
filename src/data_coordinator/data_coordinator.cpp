@@ -221,7 +221,7 @@ data_coordinator::get_data_reader(const execution_mode mode) const
   return data_reader;
 }
 
-TargetModeDimMap data_coordinator::get_data_dims()
+TargetModeDimMap data_coordinator::get_data_dims() const
 {
   TargetModeDimMap map;
   generic_data_reader* dr;
@@ -257,7 +257,7 @@ TargetModeDimMap data_coordinator::get_data_dims()
 /**
  * Get the dimensions of the underlying data.
  */
-SPModeSlicePoints data_coordinator::get_slice_points()
+SPModeSlicePoints data_coordinator::get_slice_points() const
 {
   SPModeSlicePoints map;
   generic_data_reader* dr;
@@ -278,22 +278,35 @@ SPModeSlicePoints data_coordinator::get_slice_points()
   return {};
 }
 
-DataReaderMetaData data_coordinator::get_dr_metadata()
+DataReaderMetaData data_coordinator::get_dr_metadata() const
 {
+  if (m_mock_data_reader_metadata)
+    return *m_mock_data_reader_metadata;
+
   DataReaderMetaData drm;
   drm.data_dims = get_data_dims();
   drm.slice_points = get_slice_points();
 #ifdef LBANN_HAS_DISTCONV
-  const auto training_dr = m_data_readers[execution_mode::training];
+  const auto training_dr = m_data_readers.at(execution_mode::training);
   drm.shuffle_required = training_dr->is_tensor_shuffle_required();
 #endif // LBANN_HAS_DISTCONV
   return drm;
 }
 
+void data_coordinator::set_mock_dr_metadata(const DataReaderMetaData& drm)
+{
+  m_mock_data_reader_metadata = std::make_unique<DataReaderMetaData>(drm);
+}
+
+void data_coordinator::clear_mock_dr_metadata()
+{
+  m_mock_data_reader_metadata.reset();
+}
+
 /**
  * Check to see if the data readers have labels
  */
-bool data_coordinator::has_labels()
+bool data_coordinator::has_labels() const
 {
   bool flag = false;
   generic_data_reader* dr;
@@ -312,7 +325,7 @@ bool data_coordinator::has_labels()
 /**
  * Check to see if the data readers have responses
  */
-bool data_coordinator::has_responses()
+bool data_coordinator::has_responses() const
 {
   bool flag = false;
   generic_data_reader* dr;

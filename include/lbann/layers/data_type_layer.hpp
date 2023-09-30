@@ -426,7 +426,7 @@ public:
   get_distconv_adapter() const override;
 
 protected:
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
+  void setup_distconv_adapter() override;
 #endif // LBANN_HAS_DISTCONV
 
 #ifdef LBANN_HAS_GPU

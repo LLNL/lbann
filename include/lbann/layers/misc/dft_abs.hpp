@@ -102,7 +102,7 @@ protected:
   dft_abs_layer() : dft_abs_layer(nullptr) {}
 
   dft_abs_layer(dft_abs_layer const&);
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
   void fp_compute() override;
   void bp_compute() override;
 

@@ -67,8 +67,8 @@ public:
   void setup_fp_tensors() override;
   void setup_bp_tensors() override;
   void setup_layer(size_t workspace_capacity) override;
-  std::unique_ptr<TensorDevType> 
-    setup_error_signals_i(int index) const override;
+  std::unique_ptr<TensorDevType>
+  setup_error_signals_i(int index) const override;
 
   void fp_compute_convolution();
   void fp_apply_bias();
@@ -191,7 +191,7 @@ public:
 #endif // LBANN_HAS_DNN_LIB
 
   description get_description() const override;
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   /** @brief Setup layer data.
    *  The kernel weights are setup in the convolution and
@@ -282,7 +282,7 @@ private:
 
 protected:
   using BaseConvAdapterType = base_convolution_adapter<TensorDataType, Device>;
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
+  void setup_distconv_adapter() override;
   BaseConvAdapterType& get_distconv_adapter() override;
   const BaseConvAdapterType& get_distconv_adapter() const override;
 #endif // LBANN_HAS_DISTCONV

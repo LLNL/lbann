@@ -75,10 +75,9 @@ void batchwise_reduce_sum_layer<T, L, D>::write_specific_proto(
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void batchwise_reduce_sum_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void batchwise_reduce_sum_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
   this->set_output_dims(this->get_input_dims());
 }
 

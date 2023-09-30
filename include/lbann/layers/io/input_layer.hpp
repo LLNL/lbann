@@ -140,7 +140,7 @@ public:
   bool can_run_inplace() const override { return false; }
   int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void setup_data(size_t max_mini_batch_size) override;
 
@@ -159,8 +159,8 @@ public:
   /**
    * Get the dimensions of the underlying data.
    */
-  std::vector<El::Int> get_data_dims(DataReaderMetaData& dr_metadata,
-                                 int child_index = 0) const;
+  std::vector<El::Int> get_data_dims(const DataReaderMetaData& dr_metadata,
+                                     int child_index = 0) const;
 
   /** @name Serialization */
   ///@{
@@ -197,13 +197,7 @@ protected:
   {
     return Dev == El::Device::CPU && T_layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override
-  {
-    this->get_distconv_adapter_ptr() =
-      std::make_unique<distconv_adapter_type>(*this,
-                                              m_data_field,
-                                              dr_metadata.shuffle_required);
-  }
+  void setup_distconv_adapter() override;
   distconv_adapter_type& get_distconv_adapter() override;
   const distconv_adapter_type& get_distconv_adapter() const override;
   bool keep_original_outputs(int index) const override;

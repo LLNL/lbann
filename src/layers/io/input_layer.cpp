@@ -77,21 +77,23 @@ void input_layer<T, L, D>::write_specific_proto(lbann_data::Layer& proto) const
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void input_layer<TensorDataType, T_layout, Dev>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void input_layer<TensorDataType, T_layout, Dev>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_coordinator& dc = get_trainer().get_data_coordinator();
+  const DataReaderMetaData& dr_metadata = dc.get_dr_metadata();
+  data_type_layer<TensorDataType>::setup_dims();
   for (int i = 0; i < this->get_num_children(); ++i) {
     this->set_output_dims(vector_cast<int>(get_data_dims(dr_metadata, i)), i);
   }
   if (m_data_field == "") {
     LBANN_ERROR("Failed to setup input layer with empty data field");
   }
-  get_trainer().get_data_coordinator().register_active_data_field(m_data_field,
-                                                                  // BVE FIXME HACK FOR NOW
-                                                                  // Redundantly store
-                                                                  // the dimensions
-                                                                  get_data_dims(dr_metadata, 0));
+  get_trainer().get_data_coordinator().register_active_data_field(
+    m_data_field,
+    // BVE FIXME HACK FOR NOW
+    // Redundantly store
+    // the dimensions
+    get_data_dims(dr_metadata, 0));
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
@@ -186,23 +188,24 @@ void input_layer<TensorDataType, T_layout, Dev>::set_samples(
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 std::vector<El::Int> input_layer<TensorDataType, T_layout, Dev>::get_data_dims(
-  DataReaderMetaData& dr_metadata,
+  const DataReaderMetaData& dr_metadata,
   int child_index) const
 {
   if (child_index != 0) {
     LBANN_ERROR("get_data_dims: Invalid child index");
   }
   if (m_data_field == INPUT_DATA_TYPE_SAMPLES) {
-    return dr_metadata.data_dims[data_reader_target_mode::INPUT];
+    return dr_metadata.data_dims.at(data_reader_target_mode::INPUT);
   }
   else if (m_data_field == INPUT_DATA_TYPE_LABELS) {
-    return dr_metadata.data_dims[data_reader_target_mode::CLASSIFICATION];
+    return dr_metadata.data_dims.at(data_reader_target_mode::CLASSIFICATION);
   }
   else if (m_data_field == INPUT_DATA_TYPE_RESPONSES) {
-    return dr_metadata.data_dims[data_reader_target_mode::REGRESSION];
+    return dr_metadata.data_dims.at(data_reader_target_mode::REGRESSION);
   }
   else if (m_data_field == INPUT_DATA_TYPE_LABEL_RECONSTRUCTION) {
-    return dr_metadata.data_dims[data_reader_target_mode::LABEL_RECONSTRUCTION];
+    return dr_metadata.data_dims.at(
+      data_reader_target_mode::LABEL_RECONSTRUCTION);
   }
   else {
     LBANN_ERROR("Unknown data_field_type value provided: " + m_data_field);
@@ -549,6 +552,16 @@ void input_distconv_adapter<TensorDataType, T_layout, Dev>::fp_compute()
       prof_region_end("copy-to-device", false);
     }
   }
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void input_layer<TensorDataType, T_layout, Dev>::setup_distconv_adapter()
+{
+  data_coordinator& dc = get_trainer().get_data_coordinator();
+  this->get_distconv_adapter_ptr() = std::make_unique<distconv_adapter_type>(
+    *this,
+    m_data_field,
+    dc.get_dr_metadata().shuffle_required);
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

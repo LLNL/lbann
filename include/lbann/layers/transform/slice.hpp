@@ -95,7 +95,7 @@ protected:
   friend class cereal::access;
   slice_layer() : slice_layer(nullptr) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void fp_setup_outputs(El::Int mini_batch_size) override;
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
@@ -205,97 +205,6 @@ description slice_layer<TensorDataType, Layout, Device>::get_description() const
   }
   desc.add("Slice points", ss.str());
   return desc;
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void slice_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
-{
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-
-  // Setup the slice points if they are to be established by the data reader
-  if (m_set_slice_points_from_data_reader) {
-    std::vector<size_t> slice_points;
-    std::string slice_point_method_name = "'get_slice_points_from_reader'";
-    for (auto& slice_point : dr_metadata.slice_points[m_var_category]) {
-      slice_points.push_back(slice_point);
-    }
-
-    if (slice_points.size() < 2u) {
-      LBANN_ERROR(slice_point_method_name, " is not supported by the reader.");
-      return;
-    }
-    m_slice_points = std::move(slice_points);
-  }
-
-  // Check that slice parameters are valid
-  const auto& input_dims = this->get_input_dims();
-  const size_t num_outputs = this->get_num_children();
-  if (m_slice_dim >= input_dims.size()) {
-    std::ostringstream err;
-    err << this->get_type() << " layer \"" << this->get_name() << "\" "
-        << "is slicing along dimension " << m_slice_dim << ", "
-        << "but it has a " << input_dims.size() << "-D input tensor "
-        << "(parent layer \"" << this->get_parent_layers()[0]->get_name()
-        << "\" "
-        << "outputs with dimensions ";
-    for (size_t d = 0; d < input_dims.size(); ++d) {
-      err << (d > 0 ? " x " : "") << input_dims[d];
-    }
-    err << ")";
-    LBANN_ERROR(err.str());
-  }
-  if (m_slice_points.size() <= num_outputs) {
-    LBANN_ERROR(this->get_type(),
-                " layer \"",
-                this->get_name(),
-                "\" ",
-                "has ",
-                num_outputs,
-                " children, "
-                "but only ",
-                m_slice_points.size(),
-                " slice points");
-  }
-  if (!std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
-    LBANN_ERROR(this->get_type(),
-                " layer \"",
-                this->get_name(),
-                "\" ",
-                "has unsorted slice points");
-  }
-  if (m_slice_points.back() > static_cast<size_t>(input_dims[m_slice_dim])) {
-    LBANN_ERROR(this->get_type(),
-                " layer \"",
-                this->get_name(),
-                "\" ",
-                "has a slice point of ",
-                m_slice_points.back(),
-                ", ",
-                "which is outside the expected range "
-                "[0 ",
-                input_dims[m_slice_dim],
-                "]");
-  }
-
-  // Model-parallel implementation only supports flat data
-  if (Layout == data_layout::MODEL_PARALLEL && input_dims.size() != 1) {
-    LBANN_ERROR(this->get_type(),
-                " layer \"",
-                this->get_name(),
-                "\" ",
-                "attempted to slice along dimension ",
-                m_slice_dim,
-                ", ",
-                "but model-parallel slice layer only supports flat data");
-  }
-
-  // Set output tensor dimensions
-  auto output_dims = input_dims;
-  for (size_t i = 0; i < num_outputs; ++i) {
-    output_dims[m_slice_dim] = m_slice_points[i + 1] - m_slice_points[i];
-    this->set_output_dims(output_dims, i);
-  }
 }
 
 template <typename TensorDataType, El::Device Device>

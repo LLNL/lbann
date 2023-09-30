@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_SLICE_LAYER_INSTANTIATE
-#include "lbann/layers/transform/slice.hpp"
+#include "lbann/layers/transform/slice_impl.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
 #ifdef LBANN_HAS_DISTCONV

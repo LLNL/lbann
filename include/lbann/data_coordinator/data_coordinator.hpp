@@ -196,24 +196,30 @@ public:
   /**
    * Get the dimensions of the underlying data.
    */
-  TargetModeDimMap get_data_dims();
+  TargetModeDimMap get_data_dims() const;
 
   /**
    * Get the dimensions of the underlying data.
    */
-  SPModeSlicePoints get_slice_points();
+  SPModeSlicePoints get_slice_points() const;
 
-  DataReaderMetaData get_dr_metadata();
+  DataReaderMetaData get_dr_metadata() const;
+
+  /** Sets a mock data reader metadata, for when a data reader does not exist.
+   *  Used in unit tests.
+   */
+  void set_mock_dr_metadata(const DataReaderMetaData& drm);
+  void clear_mock_dr_metadata();
 
   /**
    * Check to see if the data readers have labels
    */
-  bool has_labels();
+  bool has_labels() const;
 
   /**
    * Check to see if the data readers have responses
    */
-  bool has_responses();
+  bool has_responses() const;
 
   /**
    * Get the linearized size of the underlying data.
@@ -329,6 +335,9 @@ public: // @todo BVE FIXME
   observer_ptr<ExecutionContext> m_execution_context;
 
   observer_ptr<thread_pool> m_io_thread_pool;
+
+private:
+  std::unique_ptr<DataReaderMetaData> m_mock_data_reader_metadata;
 };
 
 } // namespace lbann

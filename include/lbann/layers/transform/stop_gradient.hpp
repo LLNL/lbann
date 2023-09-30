@@ -71,9 +71,9 @@ protected:
   friend class cereal::access;
   stop_gradient_layer() : stop_gradient_layer(nullptr) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
   }
   void fp_setup_outputs(El::Int mini_batch_size) override

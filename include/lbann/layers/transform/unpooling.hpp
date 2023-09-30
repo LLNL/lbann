@@ -97,9 +97,9 @@ public:
     }
   }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
 
     // Check that input tensor is valid
     const auto* hint_layer = this->get_hint_layer();

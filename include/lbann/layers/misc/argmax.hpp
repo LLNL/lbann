@@ -69,7 +69,7 @@ protected:
   friend class cereal::access;
   argmax_layer() : argmax_layer(nullptr) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void fp_compute() override;
 };

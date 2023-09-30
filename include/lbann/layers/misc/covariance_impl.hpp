@@ -44,10 +44,9 @@ void covariance_layer<TensorDataType, Layout, Device>::setup_data(
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void covariance_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void covariance_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
   this->set_output_dims({1});
   if (this->get_input_dims(0) != this->get_input_dims(1)) {
     const auto& parents = this->get_parent_layers();

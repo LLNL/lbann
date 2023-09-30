@@ -68,7 +68,7 @@ protected:
   friend class cereal::access;
   mini_batch_index_layer() : mini_batch_index_layer(nullptr) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
   void fp_compute() override;
 };
 

@@ -93,9 +93,9 @@ private:
   friend class cereal::access;
   my_identity_layer() : my_identity_layer(nullptr) {}
 
-  void setup_dims(lbann::DataReaderMetaData& dr_metadata) final
+  void setup_dims() final
   {
-    lbann::data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    lbann::data_type_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
   }
 

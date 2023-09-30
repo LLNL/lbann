@@ -125,9 +125,9 @@ public:
       El::Device::CPU));
   }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
     std::stringstream err;
 
     // Make sure input tensors have valid dimensions

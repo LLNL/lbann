@@ -131,8 +131,7 @@ bool matmul_layer<TensorDataType, Layout, Device>::is_distconv_supported() const
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void matmul_layer<TensorDataType, Layout, Device>::setup_distconv_adapter(
-  const DataReaderMetaData& dr_metadata)
+void matmul_layer<TensorDataType, Layout, Device>::setup_distconv_adapter()
 {
   this->get_distconv_adapter_ptr() =
     std::make_unique<matmul_distconv_adapter<TensorDataType, Layout, Device>>(
@@ -607,10 +606,9 @@ void bp_compute_impl(
 #endif // LBANN_HAS_GPU
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void matmul_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void matmul_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
 
   // Input dimensions
   const auto& input0_dims = this->get_input_dims(0);

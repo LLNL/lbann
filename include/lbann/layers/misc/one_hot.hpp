@@ -72,7 +72,7 @@ protected:
   friend class cereal::access;
   one_hot_layer() : one_hot_layer(0) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void fp_compute() override;
 };
