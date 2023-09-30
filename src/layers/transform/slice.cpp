@@ -24,9 +24,6 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-// TODO REMOVE
-#include "lbann/data_coordinator/data_coordinator.hpp"
-
 #define LBANN_SLICE_LAYER_INSTANTIATE
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/layers/transform/slice_impl.hpp"
