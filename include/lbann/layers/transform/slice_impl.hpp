@@ -38,10 +38,13 @@ void slice_layer<TensorDataType, Layout, Device>::setup_dims()
   data_type_layer<TensorDataType>::setup_dims();
 
   // Setup the slice points if they are to be established by the data reader
-  // TODO: Move this responsibility to another component (data coordinator)
+  // TODO: Move this responsibility to another component (input layer)
   if (m_set_slice_points_from_data_reader) {
     std::vector<size_t> slice_points;
     std::string slice_point_method_name = "'get_slice_points_from_reader'";
+
+    LBANN_WARNING("slice_points_from_reader is deprecated and will be removed "
+                  "in a future version.");
 
     const data_coordinator& dc = get_const_trainer().get_data_coordinator();
     const DataReaderMetaData& dr_metadata = dc.get_dr_metadata();
