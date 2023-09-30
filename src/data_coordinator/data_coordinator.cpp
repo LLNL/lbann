@@ -24,10 +24,11 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/comm_impl.hpp"
-#include "lbann/data_readers/data_reader.hpp"
-#include "lbann/execution_algorithms/execution_context.hpp"
+#include <lbann/comm_impl.hpp>
 #include <lbann/data_coordinator/data_coordinator.hpp>
+#include <lbann/data_readers/data_reader.hpp>
+#include <lbann/data_store/data_store_conduit.hpp>
+#include <lbann/execution_algorithms/execution_context.hpp>
 #include <lbann/trainers/trainer.hpp>
 #include <lbann/utils/dim_helpers.hpp>
 #include <lbann/utils/distconv.hpp>
