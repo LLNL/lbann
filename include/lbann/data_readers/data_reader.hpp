@@ -30,7 +30,7 @@
 #define LBANN_DATA_READER_HPP
 
 #include "lbann/base.hpp"
-#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
+#include "lbann/data_readers/metadata.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/transforms/transform_pipeline.hpp"

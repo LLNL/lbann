@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
+#include "lbann/data_readers/metadata.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {

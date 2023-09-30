@@ -28,7 +28,6 @@ set_full_path(THIS_DIR_HEADERS
   buffered_data_coordinator.hpp
   buffered_data_coordinator_impl.hpp
   data_coordinator.hpp
-  data_coordinator_metadata.hpp
   data_packer.hpp
   )
 

@@ -27,7 +27,7 @@
 #ifndef LBANN_DATA_COORDINATOR_HPP
 #define LBANN_DATA_COORDINATOR_HPP
 
-#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
+#include "lbann/data_readers/metadata.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/utils/dataset.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"

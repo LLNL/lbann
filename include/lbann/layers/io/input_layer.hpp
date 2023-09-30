@@ -27,11 +27,10 @@
 #ifndef LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
 #define LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
 
+#include "lbann/data_readers/metadata.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/distconv.hpp"
-
-#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 
 namespace lbann {
 

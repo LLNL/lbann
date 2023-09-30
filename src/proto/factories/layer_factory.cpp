@@ -41,7 +41,7 @@
 // This is the one remaining "if" branch of the legacy factory function.
 #include "lbann/layers/transform/reshape.hpp"
 
-#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
+#include "lbann/data_readers/metadata.hpp"
 
 #include "lbann/proto/layers.pb.h"
 
