@@ -91,12 +91,12 @@ public:
   void initialize_buffer_for_data_field(data_field_type const data_field,
                                         lbann_comm* comm);
 
-  void set_fetch_data_in_background(bool flag)
+  void set_background_fetching_in_progress(bool flag)
   {
     m_fetch_data_in_background = flag;
   }
 
-  bool is_data_fetched_in_background() const
+  bool is_background_fetching_in_progress() const
   {
     return m_fetch_data_in_background;
   }
@@ -113,7 +113,7 @@ public:
     return &m_indices_fetched_per_mb;
   }
 
-  int num_samples_ready() { return m_num_samples_fetched; }
+  int num_samples_ready() const { return m_num_samples_fetched; }
 
   void set_data_fetch_future(std::future<void> future)
   {

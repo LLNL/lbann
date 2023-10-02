@@ -148,6 +148,9 @@ void KFAC::train(ExeContextType& kfac_context,
   model.reset_mode(sgd_context, execution_mode::training);
   dc.reset_mode(sgd_context);
 
+  // Load the first minibatch synchronously
+  dc.fetch_active_batch_synchronous(execution_mode::training);
+
   // Get lbann comm
   auto& comm = *model.get_comm();
 
@@ -274,11 +277,12 @@ bool KFAC::train_mini_batch(ExeContextType& kfac_context,
   const bool compute_inverse =
     sgd_context.get_step() % this->m_compute_interval == 0;
 
+  dc.fetch_data(execution_mode::training);
+
   El::Int current_mini_batch_size =
     dc.get_current_mini_batch_size(execution_mode::training);
   model.set_current_mini_batch_size(current_mini_batch_size);
-  dc.fetch_data(execution_mode::training);
-
+  
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
   LBANN_OMP_PARALLEL
   {
@@ -339,7 +343,7 @@ bool KFAC::train_mini_batch(ExeContextType& kfac_context,
           comm.get_grid_type() == GridType::NO_GRID) {
         // check if the data coordinator has finished the epoch and kickoff
         // background I/O
-        finished = dc.epoch_complete(execution_mode::training);
+        finished = dc.ready_for_next_fetch(execution_mode::training);
 
         // Result is not needed until the end of the mini-batch.
         model.get_objective_function()->start_evaluation(
@@ -369,7 +373,7 @@ bool KFAC::train_mini_batch(ExeContextType& kfac_context,
             .count();
       }
       else {
-        finished = dc.epoch_complete(execution_mode::training);
+        finished = dc.ready_for_next_fetch(execution_mode::training);
       }
 
       // Overlapping async communication in two models approach for weight

@@ -135,15 +135,24 @@ public:
     return *m_io_thread_pool;
   }
 
+  /** @brief Fetches data into the active buffer and ensures it is usable for
+   * forward propagation. This method may not perform any background tasks.
+   */
+  virtual void fetch_active_batch_synchronous(execution_mode mode) = 0;
+
+  /** @brief Ensures the active buffer contains usable data for forward
+   *  propagation. May initiate fetching of more data in the background.
+   */
   virtual void fetch_data(execution_mode mode) = 0;
+
+  /** @brief Signals to the coordinator that the active buffer can now be
+   * overridden. Returns true if the epoch is complete after this active buffer.
+   */
+  virtual bool ready_for_next_fetch(execution_mode mode) = 0;
 
   /** @brief Complete any background I/O data fetch for the execution
       mode requested */
   virtual void collect_background_data_fetch(execution_mode mode) = 0;
-
-  /// @todo BVE FIXME this should probably be a property of the
-  /// execution mode
-  virtual bool epoch_complete(execution_mode mode) = 0;
 
   //************************************************************************
   // Helper functions for LTFB

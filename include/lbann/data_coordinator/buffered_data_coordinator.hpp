@@ -30,6 +30,8 @@
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/data_coordinator/io_data_buffer.hpp"
 
+#include <utility>
+
 namespace lbann {
 
 template <typename TensorDataType>
@@ -58,18 +60,20 @@ public:
 
     // Initialize two buffers
     m_data_buffers.resize(2);
+    m_minibatch_sizes_per_buffer.resize(2);
     for (size_t i = 0; i < m_data_buffers.size(); i++) {
       for (auto m : execution_mode_iterator()) {
         if (m != execution_mode::invalid) {
           m_data_buffers[i][m] =
             std::make_unique<data_buffer<IODataType>>(comm);
+          m_minibatch_sizes_per_buffer[i][m] = std::make_pair(0, 0);
         }
       }
     }
 
     for (auto m : execution_mode_iterator()) {
       if (m != execution_mode::invalid) {
-        this->m_active_buffer[m].store(-1);
+        this->m_active_buffer[m].store(0);
       }
     }
   }
@@ -120,6 +124,7 @@ public:
                      El::Int cur_mini_batch_size);
 
   void fetch_data(execution_mode mode) override;
+  void fetch_active_batch_synchronous(execution_mode mode) override;
 
   const data_buffer_map_t& get_active_buffer_map(execution_mode mode) const;
   data_buffer_map_t& get_active_buffer_map(execution_mode mode);
@@ -131,11 +136,16 @@ public:
   get_sample_indices_per_mb(execution_mode mode) const override;
   El::Matrix<El::Int>* get_sample_indices_per_mb(execution_mode mode) override;
 
+  /*
+    int get_current_mini_batch_size(execution_mode mode) const override;
+    int get_current_global_mini_batch_size(execution_mode mode) const override;
+  */
+
   /** @brief Complete any background I/O data fetch for the execution
       mode requested */
   void collect_background_data_fetch(execution_mode mode) override;
 
-  bool epoch_complete(execution_mode mode) override;
+  bool ready_for_next_fetch(execution_mode mode) override;
 
   const data_buffer<IODataType>&
   get_data_buffer(const data_buffer_map_t& buffer_map,
@@ -149,9 +159,13 @@ public:
 
 protected:
   int fetch_to_local_matrix(data_buffer_map_t& buffer_map,
-                            const execution_mode mode);
+                            const execution_mode mode,
+                            int buffer_id);
 
   void fetch_data_in_background(int future_active_buffer, execution_mode mode);
+
+  const data_buffer<IODataType>& get_next_buffer(execution_mode mode) const;
+  data_buffer<IODataType>& get_next_buffer(execution_mode mode);
 
   int get_active_buffer_idx(execution_mode m) const
   {
@@ -164,6 +178,18 @@ protected:
   }
 
   void increment_active_buffer_idx(execution_mode m) { m_active_buffer[m]++; }
+
+  int get_next_buffer_idx(execution_mode m) const
+  {
+    return m_active_buffer.at(m).load() + 1;
+  }
+
+  int get_next_buffer_idx(execution_mode m)
+  {
+    return m_active_buffer[m].load() + 1;
+  }
+
+  bool update_data_reader(execution_mode mode);
 
   bool update_data_set(generic_data_reader* data_reader, execution_mode mode);
 
@@ -199,6 +225,11 @@ protected:
    *  or label or responase.
    */
   std::vector<data_buffer_map_t> m_data_buffers;
+
+  /** Stores minibatch size pair (local, global) for each active buffer (only
+   *  valid if buffer is fully loaded). */
+  std::vector<std::map<execution_mode, std::pair<int, int>>>
+    m_minibatch_sizes_per_buffer;
 };
 
 } // namespace lbann

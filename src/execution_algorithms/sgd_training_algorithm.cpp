@@ -111,6 +111,9 @@ void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
   model.reset_mode(c, execution_mode::training);
   dc.reset_mode(c);
 
+  // Fetch the first batch
+  dc.fetch_active_batch_synchronous(execution_mode::training);
+
   // Run callbacks.
   do_train_begin_cbs(model, ScopeTimer{train_timer, "train_begin callbacks"});
 
@@ -214,10 +217,11 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
   m_data_prefetch_sync_event.synchronize();
 #endif // LBANN_HAS_GPU
 
+  dc.fetch_data(execution_mode::training);
+
   El::Int current_mini_batch_size =
     dc.get_current_mini_batch_size(execution_mode::training);
   model.set_current_mini_batch_size(current_mini_batch_size);
-  dc.fetch_data(execution_mode::training);
 
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
   LBANN_OMP_PARALLEL
@@ -249,9 +253,8 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
       }
       model.get_objective_function()->compute_weight_regularization();
 
-      // check if the data coordinator has finished the epoch and kickoff
-      // background I/O
-      finished = dc.epoch_complete(execution_mode::training);
+      // Swap buffers in data coordinator
+      finished = dc.ready_for_next_fetch(execution_mode::training);
 
       // Finish evaluation.
       model.get_objective_function()->finish_evaluation(
@@ -316,6 +319,8 @@ void SGDTrainingAlgorithm::evaluate(SGDExecutionContext& c,
     LBANN_ERROR("invalid execution mode for evaluation");
   }
 
+  dc.fetch_active_batch_synchronous(mode);
+
   // Evaluate on all mini-batches
   do_evaluate_begin_cbs(model,
                         mode,
@@ -349,9 +354,7 @@ bool SGDTrainingAlgorithm::evaluate_mini_batch(SGDExecutionContext& c,
   model.set_current_mini_batch_size(current_mini_batch_size);
   dc.fetch_data(mode);
   model.forward_prop(mode);
-  // check if the data coordinator has finished the epoch and kickoff
-  // background I/O
-  const bool finished = dc.epoch_complete(mode);
+  bool const finished = dc.ready_for_next_fetch(mode);
 
   model.get_objective_function()->start_evaluation(mode,
                                                    current_mini_batch_size);
