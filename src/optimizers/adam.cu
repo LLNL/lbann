@@ -104,7 +104,8 @@ void adam<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
 {
   LBANN_CALIPER_MARK_SCOPE("adam::step_compute");
 
-  const TensorDataType lr = El::To<TensorDataType>(this->get_learning_rate());
+  const TensorDataType adjusted_weight_decay = El::To<TensorDataType>(
+    this->get_learning_rate() * El::To<float>(m_adamw_weight_decay));
 
   // Get matrix dimensions
   const size_t local_height = values.LocalHeight();
@@ -131,7 +132,7 @@ void adam<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
                                 m_eps,
                                 m_beta1,
                                 m_beta2,
-                                m_adamw_weight_decay * lr,
+                                adjusted_weight_decay,
                                 values.Buffer(),
                                 gradient.LockedBuffer(),
                                 m_moment1->Buffer(),
@@ -149,7 +150,7 @@ void adam<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
                                 m_eps,
                                 m_beta1,
                                 m_beta2,
-                                m_adamw_weight_decay * lr,
+                                adjusted_weight_decay,
                                 values.Buffer(),
                                 values.LDim(),
                                 gradient.LockedBuffer(),
