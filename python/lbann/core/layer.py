@@ -110,8 +110,8 @@ if layers_pb2:
         layers_pb2.Layer,
         skip_fields=set([
             'name', 'parents', 'children', 'data_layout', 'device_allocation',
-            'datatype', 'weights', 'hint_layer', 'parallel_strategy', 'top',
-            'bottom', 'type', 'motif_layer'
+            'datatype', 'weights', 'freeze', 'hint_layer', 'parallel_strategy',
+            'top', 'bottom', 'type', 'motif_layer'
         ]),
         base_class=Layer,
         base_kwargs=set([
