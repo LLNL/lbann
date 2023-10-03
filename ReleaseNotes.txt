@@ -39,6 +39,7 @@ Build system:
 Bug fixes:
 
 Retired features:
+ - Support for autoencoder strategy in the summarize images callback was removed
 
 ============================== Release Notes: v0.103 ==============================
 C++ API:
