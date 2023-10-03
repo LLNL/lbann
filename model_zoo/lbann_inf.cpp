@@ -81,13 +81,9 @@ int main(int argc, char* argv[])
     auto& trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]));
 
     thread_pool& io_thread_pool = trainer.get_io_thread_pool();
-    int training_dr_linearized_data_size = -1;
     auto* dr =
       trainer.get_data_coordinator().get_data_reader(execution_mode::testing);
-    if (dr != nullptr) {
-      training_dr_linearized_data_size = dr->get_linearized_data_size();
-    }
-    else {
+    if (dr == nullptr) {
       LBANN_ERROR("No testing data reader defined");
     }
 
@@ -100,8 +96,7 @@ int main(int argc, char* argv[])
                                    *pb_model,
                                    comm.get(),
                                    io_thread_pool,
-                                   trainer.get_callbacks_with_ownership(),
-                                   training_dr_linearized_data_size));
+                                   trainer.get_callbacks_with_ownership()));
     }
 
     /// Interleave the inference between the models so that they can use a

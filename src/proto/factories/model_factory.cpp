@@ -237,17 +237,13 @@ void assign_weights_to_objective_function(
 } // namespace
 
 std::unique_ptr<model> construct_model(lbann_comm* comm,
-                                       int training_dr_linearized_data_size,
                                        const lbann_data::Optimizer& proto_opt,
                                        const lbann_data::Trainer& proto_trainer,
                                        const lbann_data::Model& proto_model)
 {
 
   // Construct layer graph
-  auto layer_list = construct_layer_graph(comm,
-                                          training_dr_linearized_data_size,
-                                          proto_trainer,
-                                          proto_model);
+  auto layer_list = construct_layer_graph(comm, proto_trainer, proto_model);
 
   // Construct objective function
   const auto& proto_obj = proto_model.objective_function();

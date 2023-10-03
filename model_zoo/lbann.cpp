@@ -184,12 +184,6 @@ int main(int argc, char* argv[])
 
     thread_pool& io_thread_pool = trainer.get_io_thread_pool();
 
-    int training_dr_linearized_data_size = -1;
-    auto* dr =
-      trainer.get_data_coordinator().get_data_reader(execution_mode::training);
-    if (dr != nullptr) {
-      training_dr_linearized_data_size = dr->get_linearized_data_size();
-    }
     lbann_data::Model* pb_model = pb.mutable_model();
 
     auto model =
@@ -199,8 +193,7 @@ int main(int argc, char* argv[])
                                  pb,
                                  comm.get(),
                                  io_thread_pool,
-                                 trainer.get_callbacks_with_ownership(),
-                                 training_dr_linearized_data_size);
+                                 trainer.get_callbacks_with_ownership());
 
     if (!arg_parser.get<bool>(LBANN_OPTION_EXIT_AFTER_SETUP)) {
 

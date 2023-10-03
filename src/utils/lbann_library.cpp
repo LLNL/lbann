@@ -387,8 +387,7 @@ std::unique_ptr<model> build_model_from_prototext(
   lbann_data::LbannPB& pb,
   lbann_comm* comm,
   thread_pool& io_thread_pool,
-  std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
-  int training_dr_linearized_data_size)
+  std::vector<std::shared_ptr<callback_base>>& shared_callbacks)
 {
 
   bool master = comm->am_world_master();
@@ -410,11 +409,7 @@ std::unique_ptr<model> build_model_from_prototext(
 
   // Initalize model
   std::unique_ptr<model> ret_model =
-    proto::construct_model(comm,
-                           training_dr_linearized_data_size,
-                           pb.optimizer(),
-                           pb.trainer(),
-                           pb.model());
+    proto::construct_model(comm, pb.optimizer(), pb.trainer(), pb.model());
 
   // Add the trainer's callbacks to the model
   for (auto&& c : shared_callbacks) {
