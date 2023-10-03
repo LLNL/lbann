@@ -30,8 +30,6 @@
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/data_coordinator/io_data_buffer.hpp"
 
-#include <utility>
-
 namespace lbann {
 
 template <typename TensorDataType>
@@ -60,13 +58,11 @@ public:
 
     // Initialize two buffers
     m_data_buffers.resize(2);
-    m_minibatch_sizes_per_buffer.resize(2);
     for (size_t i = 0; i < m_data_buffers.size(); i++) {
       for (auto m : execution_mode_iterator()) {
         if (m != execution_mode::invalid) {
           m_data_buffers[i][m] =
             std::make_unique<data_buffer<IODataType>>(comm);
-          m_minibatch_sizes_per_buffer[i][m] = std::make_pair(0, 0);
         }
       }
     }
@@ -135,11 +131,6 @@ public:
   const El::Matrix<El::Int>*
   get_sample_indices_per_mb(execution_mode mode) const override;
   El::Matrix<El::Int>* get_sample_indices_per_mb(execution_mode mode) override;
-
-  /*
-    int get_current_mini_batch_size(execution_mode mode) const override;
-    int get_current_global_mini_batch_size(execution_mode mode) const override;
-  */
 
   /** @brief Complete any background I/O data fetch for the execution
       mode requested */
@@ -225,11 +216,6 @@ protected:
    *  or label or responase.
    */
   std::vector<data_buffer_map_t> m_data_buffers;
-
-  /** Stores minibatch size pair (local, global) for each active buffer (only
-   *  valid if buffer is fully loaded). */
-  std::vector<std::map<execution_mode, std::pair<int, int>>>
-    m_minibatch_sizes_per_buffer;
 };
 
 } // namespace lbann

@@ -272,21 +272,10 @@ void buffered_data_coordinator<TensorDataType>::fetch_active_batch_synchronous(
     active_buffer.set_background_fetching_in_progress(true);
   }
 
-  // Wait for the background thread to complete fetching the data
+  // Wait for the background thread to complete fetching the same data
   if (active_buffer.is_background_fetching_in_progress()) {
     active_buffer.get_data_fetch_future().get();
     active_buffer.set_background_fetching_in_progress(false);
-  }
-
-  //  int num_samples_in_batch = 0;
-  if (active_buffer.num_samples_ready() > 0) {
-    /*num_samples_in_batch = */ active_buffer.num_samples_ready();
-    // }else {
-    //     if(!get_data_reader(mode)->position_is_overrun()) {
-    //       std::stringstream err;
-    //       err << "I/O buffer does not contain valid samples ("/*<<
-    //       num_samples_in_batch << ")"*/; LBANN_ERROR(err.str());
-    //     }
   }
 }
 
@@ -331,44 +320,14 @@ bool buffered_data_coordinator<TensorDataType>::ready_for_next_fetch(
   return this->update_data_reader(mode);
 }
 
-/*
-template <typename TensorDataType>
-int
-buffered_data_coordinator<TensorDataType>::get_current_mini_batch_size(execution_mode
-mode) const
-{
-  int idx = this->get_active_buffer_idx(mode);
-  return m_minibatch_sizes_per_buffer.at(idx).at(mode).first;
-}
-
-template <typename TensorDataType>
-int
-buffered_data_coordinator<TensorDataType>::get_current_global_mini_batch_size(
-  execution_mode mode) const
-{
-  int idx = this->get_active_buffer_idx(mode);
-  return m_minibatch_sizes_per_buffer.at(idx).at(mode).second;
-}
-*/
-
 template <typename TensorDataType>
 bool buffered_data_coordinator<TensorDataType>::update_data_reader(
   execution_mode mode)
 {
-  // int idx = this->get_active_buffer_idx(mode);
-
   // Use the predetermined size of the mini-batch to set the current
   // batch size for the neural network
   int num_samples_in_batch =
     data_coordinator::get_current_mini_batch_size(mode);
-  /*
-  int num_global_samples_in_batch =
-  data_coordinator::get_current_global_mini_batch_size(mode); std::cout <<
-  "Samples: " << num_samples_in_batch << "  global: " <<
-  num_global_samples_in_batch << std::endl;
-  m_minibatch_sizes_per_buffer[idx][mode] = std::make_pair(num_samples_in_batch,
-  num_global_samples_in_batch);
-  */
 
   // BVE When we finish the epoch we can increment the number of
   // samples that have been processed
