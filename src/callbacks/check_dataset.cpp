@@ -65,28 +65,25 @@ void check_dataset::add_to_set(model* m,
     return;
   }
 
-  const auto& c =
-    static_cast<const SGDExecutionContext&>(m->get_execution_context());
-  // Print minibatch sample indices of the data coordinator
-  data_coordinator& dc = get_trainer().get_data_coordinator();
-  El::Matrix<El::Int>* indices =
-    dc.get_sample_indices_per_mb(c.get_execution_mode());
+  // FIXME (trb 10/03/2023): This is not the "right" fix (which is
+  // probably to reconsider this callback entirely, but this is the
+  // drop-in replacement for the line that was here
+  // (l->get_sample_indices_per_mb(), which just returns 'nullptr'
+  // (which is never checked, of course, so the loop below would
+  // segfault almost instantly))).
+  auto const mode = m->get_execution_context().get_execution_mode();
+  El::Matrix<El::Int> const* const indices
+    = get_trainer().get_data_coordinator().get_sample_indices_per_mb(mode);
 
-  std::set<long>::iterator it;
-
-  for (El::Int i = 0; i < indices->Height(); i++) {
-    for (El::Int j = 0; j < indices->Width(); j++) {
-      El::Int idx = indices->Get(i, j);
-      it = set.find(idx);
-      if (it != set.end()) {
-        throw lbann_exception(std::string{} + __FILE__ + " " +
-                              std::to_string(__LINE__) + " :: @" +
-                              std::to_string(step) +
-                              " :: found a duplicate index in being loaded: " +
-                              std::to_string(idx));
-      }
-      else {
-        set.insert(idx);
+  for (El::Int j = 0; j < indices->Width(); j++) {
+    for (El::Int i = 0; i < indices->Height(); i++) {
+      El::Int const idx = indices->Get(i, j);
+      auto const [_, new_value] = set.insert(idx);
+      if (!new_value) {
+        LBANN_ERROR("Step ",
+                    step,
+                    " :: found a duplicate index in being loaded: ",
+                    idx);
       }
     }
   }
