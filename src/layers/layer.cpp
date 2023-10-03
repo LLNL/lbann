@@ -466,7 +466,7 @@ std::string get_child_names(Layer const& l)
   }
   return ss.str();
 }
-}// namespace
+} // namespace
 
 void Layer::setup_pointers()
 {

@@ -72,8 +72,8 @@ void check_dataset::add_to_set(model* m,
   // (which is never checked, of course, so the loop below would
   // segfault almost instantly))).
   auto const mode = m->get_execution_context().get_execution_mode();
-  El::Matrix<El::Int> const* const indices
-    = get_trainer().get_data_coordinator().get_sample_indices_per_mb(mode);
+  El::Matrix<El::Int> const* const indices =
+    get_trainer().get_data_coordinator().get_sample_indices_per_mb(mode);
 
   for (El::Int j = 0; j < indices->Width(); j++) {
     for (El::Int i = 0; i < indices->Height(); i++) {

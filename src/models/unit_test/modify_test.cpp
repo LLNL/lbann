@@ -93,8 +93,8 @@ bool is_child(model const& m,
                  cend(layers),
                  [&parent_layer_name, &child_layer_name](auto const& l) {
                    return l->get_name() == parent_layer_name &&
-                     l->get_num_children() > 0 &&
-                     l->get_child_layer(0).get_name() == child_layer_name;
+                          l->get_num_children() > 0 &&
+                          l->get_child_layer(0).get_name() == child_layer_name;
                  });
   return (iter != cend(layers));
 }

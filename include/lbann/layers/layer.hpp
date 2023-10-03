@@ -412,10 +412,7 @@ public:
 
   /** @brief Whether the layer is using a GPU implementation. */
 #ifdef LBANN_HAS_GPU
-  bool using_gpus() const
-  {
-    return get_device_allocation() == El::Device::GPU;
-  }
+  bool using_gpus() const { return get_device_allocation() == El::Device::GPU; }
 #else
   bool using_gpus() const noexcept { return false; }
 #endif // LBANN_HAS_GPU
@@ -502,7 +499,8 @@ public:
   El::Int get_num_spliting_groups() const { return m_num_spliting_groups; }
 
   // (trb 10/03/2023): USED BUT THIS IS BAD BECAUSE m_mygrid IS NEVER SET!
-  std::shared_ptr<El::Grid> get_mygrid() const {
+  std::shared_ptr<El::Grid> get_mygrid() const
+  {
     LBANN_ERROR("This funciton should not be used.");
     return nullptr;
   }
@@ -530,7 +528,10 @@ public:
   void set_run_layer_in_subgraph() { run_layer_in_subgraph = true; }
 
   // (trb 10/03/2023): used
-  bool get_run_layer_in_subgraph() const noexcept { return run_layer_in_subgraph; }
+  bool get_run_layer_in_subgraph() const noexcept
+  {
+    return run_layer_in_subgraph;
+  }
   ///@}
 
 private:
@@ -557,7 +558,6 @@ private:
 #endif // LBANN_HAS_ONNX
 
 public:
-
   /** @name Parent/child accessors */
   ///@{
 
