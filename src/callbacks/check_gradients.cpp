@@ -380,6 +380,7 @@ void check_gradients::do_check_gradients(model& m) const
   }
 
   // Clean up
+  // TODO: Why
   auto&& reader = dc.get_data_reader(mode);
   reader->set_initial_position();
   m.get_objective_function()->reset_statistics(mode);

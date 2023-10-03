@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATA_COORDINATOR_METADATA_HPP
-#define LBANN_DATA_COORDINATOR_METADATA_HPP
+#ifndef LBANN_DATA_READER_METADATA_HPP
+#define LBANN_DATA_READER_METADATA_HPP
 
 #include <El.hpp>
 
@@ -79,9 +79,6 @@ using slice_points_mode_iterator = enum_iterator<slice_points_mode,
                                                  slice_points_mode::NA>;
 
 /// Data structure containing metadata from the data readers
-// using DataReaderMetaData = std::pair<TargetModeDimMap,
-// TargetModeSlicePoints>;
-
 struct DataReaderMetaData
 {
   TargetModeDimMap data_dims;
@@ -96,4 +93,4 @@ struct DataReaderMetaData
 
 } // namespace lbann
 
-#endif // LBANN_DATA_COORDINATOR_METADATA_HPP
+#endif // LBANN_DATA_READER_METADATA_HPP

@@ -403,10 +403,6 @@ public:
   /** Grab the training context of the model */
   ExecutionContext& get_execution_context();
 
-  void make_data_store_preloaded(execution_mode mode);
-
-  void mark_data_store_explicitly_loading(execution_mode mode);
-
   /** @brief Reset model pointer and execution mode. */
   void reset_mode(ExecutionContext& context, execution_mode mode);
   /** @brief Reset model statistics for an epoch. */

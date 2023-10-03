@@ -27,7 +27,7 @@
 #ifndef LBANN_DATA_COORDINATOR_HPP
 #define LBANN_DATA_COORDINATOR_HPP
 
-#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
+#include "lbann/data_readers/metadata.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/utils/dataset.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
@@ -144,6 +144,14 @@ public:
   /// @todo BVE FIXME this should probably be a property of the
   /// execution mode
   virtual bool epoch_complete(execution_mode mode) = 0;
+
+  //************************************************************************
+  // Helper functions for LTFB
+  //************************************************************************
+
+  void make_data_store_preloaded(execution_mode mode);
+
+  void mark_data_store_explicitly_loading(execution_mode mode);
 
   //************************************************************************
   // Helper functions to access the statistics about the data set

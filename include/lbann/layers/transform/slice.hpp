@@ -27,7 +27,6 @@
 #ifndef LBANN_LAYERS_TRANSFORM_SLICE_HPP_INCLUDED
 #define LBANN_LAYERS_TRANSFORM_SLICE_HPP_INCLUDED
 
-#include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
@@ -164,7 +163,7 @@ slice_layer<TensorDataType, Layout, Device>::slice_layer(lbann_comm* comm)
         0UL,
         hydrogen::SyncInfo<El::Device::CPU>{},
         1U /*=pinned*/)}
-#endif                                    /* LBANN_HAS_GPU */
+#endif /* LBANN_HAS_GPU */
 {
   this->m_expected_num_child_layers = -1; // No limit on children
 }

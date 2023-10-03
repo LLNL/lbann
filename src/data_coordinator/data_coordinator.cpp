@@ -747,6 +747,31 @@ bool data_coordinator::load_from_checkpoint_distributed(persist& p)
   return true;
 }
 
+// only used in LTFB; from that file:
+// "Note that this is a temporary fix
+// for the current use of the tournament"
+void data_coordinator::make_data_store_preloaded(execution_mode mode)
+{
+  auto* dr = this->get_data_reader(mode);
+  auto* data_store = dr->get_data_store_ptr();
+  if (data_store != nullptr && !data_store->is_fully_loaded()) {
+    dr->get_data_store_ptr()->set_loading_is_complete();
+    dr->get_data_store_ptr()->set_is_explicitly_loading(false);
+  }
+}
+
+// only used in LTFB; from that file:
+// "Note that this is a temporary fix
+// for the current use of the tournament"
+void data_coordinator::mark_data_store_explicitly_loading(execution_mode mode)
+{
+  auto* dr = this->get_data_reader(mode);
+  auto* data_store = dr->get_data_store_ptr();
+  if (data_store != nullptr && !data_store->is_fully_loaded()) {
+    dr->get_data_store_ptr()->set_is_explicitly_loading(true);
+  }
+}
+
 } // namespace lbann
 
 #define LBANN_CLASS_NAME data_coordinator
