@@ -80,7 +80,6 @@ std::unique_ptr<lbann::model> setup_model(const std::string& model_contents)
   REQUIRE_NOTHROW(lbann::read_prototext_string(model_contents, pb, true));
 
   // Construct a trainer so that the model can register the input layer
-  auto metadata = lbann::DataReaderMetaData();
   lbann::construct_trainer(&world_comm, pb.mutable_trainer(), pb);
   auto my_model = lbann::proto::construct_model(&world_comm,
                                                 -1,
@@ -88,7 +87,7 @@ std::unique_ptr<lbann::model> setup_model(const std::string& model_contents)
                                                 pb.trainer(),
                                                 pb.model());
   // Setup the model with a minibatch size of 1
-  my_model->setup(1UL, metadata, {&g});
+  my_model->setup(1UL, {&g});
 
   return my_model;
 }

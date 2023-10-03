@@ -93,7 +93,7 @@ protected:
     : top_k_categorical_accuracy_layer(nullptr, 1)
   {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void fp_compute() override;
 

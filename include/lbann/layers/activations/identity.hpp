@@ -84,9 +84,9 @@ protected:
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
   }
   void fp_setup_outputs(El::Int mini_batch_size) override
@@ -124,7 +124,7 @@ protected:
   {
     return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override
+  void setup_distconv_adapter() override
   {
     this->get_distconv_adapter_ptr() = std::make_unique<
       identity_distconv_adapter<TensorDataType, Layout, Device>>(*this);

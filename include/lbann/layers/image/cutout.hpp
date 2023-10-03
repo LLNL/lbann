@@ -80,7 +80,7 @@ protected:
   friend class cereal::access;
   cutout_layer() : cutout_layer(nullptr) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void write_specific_proto(lbann_data::Layer& proto) const final;
 };

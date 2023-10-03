@@ -138,7 +138,7 @@ protected:
   friend class cereal::access;
   convolution_layer();
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
   std::vector<int> get_kernel_dims() const override;
   void fp_compute() override;
   void bp_compute() override;
@@ -147,7 +147,7 @@ protected:
   friend class convolution_distconv_adapter<TensorDataType, Layout, Device>;
 
 protected:
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
+  void setup_distconv_adapter() override;
   bool is_distconv_supported() const override;
 #endif // LBANN_HAS_DISTCONV
 };

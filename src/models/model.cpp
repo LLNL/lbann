@@ -703,7 +703,6 @@ void model::remap_pointers(
 // =============================================
 
 void model::setup(size_t max_mini_batch_size,
-                  DataReaderMetaData& dr_metadata,
                   const std::vector<El::Grid*>& grids_,
                   bool force)
 {
@@ -734,7 +733,7 @@ void model::setup(size_t max_mini_batch_size,
     setup_subcommunicators(grids_);
   }
 
-  setup_layers(max_mini_batch_size, dr_metadata, grids_);
+  setup_layers(max_mini_batch_size, grids_);
 
   // Setup weights
   setup_weights();
@@ -1053,14 +1052,13 @@ void model::ensure_input_layers_first()
 }
 
 void model::setup_layers(size_t max_mini_batch_size,
-                         DataReaderMetaData& dr_metadata,
                          const std::vector<El::Grid*>& grids_)
 {
 
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
     l.set_model(this);
-    l.setup(max_mini_batch_size, dr_metadata, grids_);
+    l.setup(max_mini_batch_size, grids_);
     l.check_setup();
   }
 }

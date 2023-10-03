@@ -63,10 +63,9 @@ El::Device rowwise_weights_norms_layer<T, L, D>::get_device_allocation() const
 }
 
 template <typename T, data_layout L, El::Device D>
-void rowwise_weights_norms_layer<T, L, D>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void rowwise_weights_norms_layer<T, L, D>::setup_dims()
 {
-  data_type_layer<T>::setup_dims(dr_metadata);
+  data_type_layer<T>::setup_dims();
 
   // Make sure weights have already been setup by another layer
   if (this->has_weights() != 1) {

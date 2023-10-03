@@ -30,6 +30,7 @@ Internal features:
 
 I/O & data readers:
  - Renamed percent_of_data_to_use more accurately to fraction_of_data_to_use.
+ - DataReaderMetaData was removed from the model and layer API
 
 Build system:
  - Updated build script to use CachedCMakeProject mode, which should

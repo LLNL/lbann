@@ -100,7 +100,7 @@ protected:
   concatenate_layer() : concatenate_layer(nullptr, 0) {}
 
   void setup_pointers() override;
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void fp_setup_outputs(El::Int mini_batch_size) override;
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
@@ -148,7 +148,7 @@ protected:
     return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL &&
            m_concat_dim == 0;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override
+  void setup_distconv_adapter() override
   {
     this->get_distconv_adapter_ptr() = std::make_unique<
       concatenate_distconv_adapter<TensorDataType, Layout, Device>>(*this);
@@ -232,10 +232,9 @@ void concatenate_layer<TensorDataType, Layout, Device>::setup_pointers()
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void concatenate_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void concatenate_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
 
   // Dimensions of first input tensor
   auto output_dims = this->get_input_dims(0);

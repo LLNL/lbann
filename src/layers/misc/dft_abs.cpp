@@ -271,9 +271,9 @@ dft_abs_layer<T, D>::~dft_abs_layer()
 
 // Protected
 template <typename T, El::Device D>
-void dft_abs_layer<T, D>::setup_dims(DataReaderMetaData& dr_metadata)
+void dft_abs_layer<T, D>::setup_dims()
 {
-  data_type_layer<T>::setup_dims(dr_metadata);
+  data_type_layer<T>::setup_dims();
   this->set_output_dims(this->get_input_dims());
   pimpl_ = std::make_unique<dft_abs_impl<T, D>>(this->get_input_dims());
 }

@@ -78,7 +78,7 @@ protected:
   friend class cereal::access;
   bilinear_resize_layer() : bilinear_resize_layer(nullptr, 1, 1) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
 private:
   /** Output image height.

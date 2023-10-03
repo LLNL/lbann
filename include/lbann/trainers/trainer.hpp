@@ -41,7 +41,6 @@
 namespace lbann {
 
 // Forward-declarations
-struct DataReaderMetaData;
 class data_coordinator;
 class description;
 class lbann_comm;

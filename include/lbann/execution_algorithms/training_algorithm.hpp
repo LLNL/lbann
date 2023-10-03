@@ -37,7 +37,6 @@
 namespace lbann {
 
 // Forward-declarations
-struct DataReaderMetaData;
 class data_coordinator;
 class ExecutionContext;
 class model;
@@ -136,14 +135,10 @@ public:
    *  @param[in] models The collection of models to be setup.
    *  @param[in] max_mini_batch_size The largest minibatch size
    *             accepted by any model.
-   *  @param[in] dr_metadata The data reader metadata that might be
-   *             used when initializing certain model components.
    *  @param[in] grids Process grids for distributed tensors.
-   *  @todo Remove the dr_metadata argument.
    */
   void setup_models(std::vector<observer_ptr<model>> const& models,
                     size_t max_mini_batch_size,
-                    DataReaderMetaData& dr_metadata,
                     const std::vector<El::Grid*>& grids);
 
   /** @brief Get a default-initialized execution context that fits

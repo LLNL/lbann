@@ -88,7 +88,7 @@ protected:
   friend class cereal::access;
   channelwise_softmax_layer() : channelwise_softmax_layer(nullptr, 0, false) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void fp_compute() override;
   void bp_compute() override;

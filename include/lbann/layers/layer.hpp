@@ -79,7 +79,6 @@ class Layer;
 namespace lbann {
 
 // Forward declarations
-struct DataReaderMetaData;
 class lbann_comm;
 class description;
 class Layer;
@@ -465,7 +464,6 @@ public:
    *  initialized.
    */
   virtual void setup(size_t max_mini_batch_size,
-                     DataReaderMetaData& dr_metadata,
                      const std::vector<El::Grid*>& grids);
 
   /** @brief Check that the setup is reasonable. */
@@ -746,7 +744,7 @@ protected:
    *  the base method sets all uninitialized output tensor dimensions
    *  equal to the first input tensor dimensions.
    */
-  virtual void setup_dims(DataReaderMetaData& dr_metadata);
+  virtual void setup_dims();
   /** @brief Setup buffers for layer inputs and outputs
    *
    *  Called by the 'setup' function. Each column of these distributed
@@ -1050,9 +1048,8 @@ protected:
   /** @brief Indicate whether distconv is supported. */
   virtual bool is_distconv_supported() const { return false; }
   /** @brief Pre-initialize distconv attributes needed for setup_data(). */
-  void prepare_distconv(const DataReaderMetaData& dr_metadata);
-  virtual void
-  setup_distconv_adapter(const DataReaderMetaData& dr_metadata) = 0;
+  void prepare_distconv();
+  virtual void setup_distconv_adapter() = 0;
   std::unique_ptr<distconv_adapter>& get_distconv_adapter_ptr()
   {
     return m_dc;

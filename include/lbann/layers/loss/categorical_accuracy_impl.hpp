@@ -33,10 +33,9 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void categorical_accuracy_layer<TensorDataType, T_layout, Dev>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void categorical_accuracy_layer<TensorDataType, T_layout, Dev>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
   this->set_output_dims({1});
 
   // Check that input dimensions match

@@ -132,12 +132,12 @@ protected:
 
   friend class cereal::access;
   gather_layer() : gather_layer(-1) {}
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
   void fp_compute() override;
   void bp_compute() override;
 #if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
   friend class gather_distconv_adapter<TensorDataType, Layout, Device>;
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
+  void setup_distconv_adapter() override;
   bool is_distconv_supported() const override;
   gather_distconv_adapter<TensorDataType, Layout, Device>&
   get_distconv_adapter() override;
@@ -195,10 +195,9 @@ gather_layer<TensorDataType, Layout, Device>::get_device_allocation() const
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void gather_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void gather_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
 
   // Tensor dimensions
   const auto& input0_dims = this->get_input_dims(0);
@@ -348,8 +347,7 @@ bool gather_layer<TensorDataType, Layout, Device>::is_distconv_supported() const
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void gather_layer<TensorDataType, Layout, Device>::setup_distconv_adapter(
-  const DataReaderMetaData& dr_metadata)
+void gather_layer<TensorDataType, Layout, Device>::setup_distconv_adapter()
 {
   this->get_distconv_adapter_ptr() =
     std::make_unique<gather_distconv_adapter<TensorDataType, Layout, Device>>(

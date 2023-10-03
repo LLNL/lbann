@@ -74,8 +74,8 @@ public:
   dc::Shape get_per_channel_stat_shape() const;
   dc::Dist get_per_channel_stat_dist(const dc::Dist& input_dist) const;
   void setup_layer(size_t workspace_capacity) override;
-  std::unique_ptr<TensorDevType> 
-    setup_error_signals_i(int index) const override;
+  std::unique_ptr<TensorDevType>
+  setup_error_signals_i(int index) const override;
   void fp_compute();
   void bp_compute();
 
@@ -288,9 +288,9 @@ protected:
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
   }
 
@@ -459,7 +459,7 @@ protected:
   {
     return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override
+  void setup_distconv_adapter() override
   {
     this->get_distconv_adapter_ptr() = std::make_unique<
       batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>>(

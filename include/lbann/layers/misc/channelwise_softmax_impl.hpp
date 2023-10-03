@@ -33,10 +33,9 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void channelwise_softmax_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void channelwise_softmax_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
   int64_t dims = static_cast<int64_t>(this->get_input_dims().size());
   if (this->m_dim < -dims || this->m_dim >= dims) {
     LBANN_ERROR("Dimension ",

@@ -143,7 +143,7 @@ protected:
   friend class cereal::access;
   channelwise_fully_connected_layer();
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
   void setup_data(size_t max_mini_batch_size) override;
 
   void fp_compute() override;
@@ -157,7 +157,7 @@ protected:
                                                             Device>;
 
 protected:
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
+  void setup_distconv_adapter() override;
   bool is_distconv_supported() const override;
   channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>&
   get_distconv_adapter() override;

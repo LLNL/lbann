@@ -150,10 +150,9 @@ gru_layer<TensorDataType, Layout, Device>::get_reserve_space() const
 // =========================================================
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void gru_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void gru_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
 
   // Check parameters
   if (m_hidden_size <= 0) {

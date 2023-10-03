@@ -83,7 +83,7 @@ protected:
   friend class cereal::access;
   rotation_layer() : rotation_layer(nullptr) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 };
 
 #ifndef LBANN_ROTATION_LAYER_INSTANTIATE

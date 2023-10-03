@@ -239,10 +239,9 @@ abstract_evaluation_layer<TensorDataType>::abstract_evaluation_layer(
 }
 
 template <typename TensorDataType>
-void abstract_evaluation_layer<TensorDataType>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void abstract_evaluation_layer<TensorDataType>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
   if (this->get_input_size() != 1) {
     std::stringstream err;
     const auto& dims = this->get_input_dims();

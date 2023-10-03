@@ -335,9 +335,7 @@ void RandomPairwiseExchange::select_next(model& m,
     m_mutate_algo->mutate(m, step);
 
     auto& trainer = get_trainer();
-    auto&& metadata = dc.get_dr_metadata();
     m.setup(trainer.get_max_mini_batch_size(),
-            metadata,
             trainer.get_grids(),
             /*force*/ true);
   }

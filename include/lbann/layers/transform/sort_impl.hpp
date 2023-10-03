@@ -81,10 +81,9 @@ sort_layer<TensorDataType, T_layout, Dev>::operator=(const sort_layer& other)
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void sort_layer<TensorDataType, T_layout, Dev>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void sort_layer<TensorDataType, T_layout, Dev>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
   this->set_output_dims(this->get_input_dims());
 }
 

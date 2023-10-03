@@ -98,7 +98,7 @@ protected:
     : composite_image_transformation_layer(nullptr)
   {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 };
 
 #ifndef LBANN_COMPOSITE_IMAGE_TRANSFORMATION_LAYER_INSTANTIATE

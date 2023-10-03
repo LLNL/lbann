@@ -1326,8 +1326,8 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename InputTensorDataType, typename OutputTensorDataType>
-void data_type_layer<InputTensorDataType, OutputTensorDataType>::
-  setup_distconv_adapter(const DataReaderMetaData& dr_metadata)
+void data_type_layer<InputTensorDataType,
+                     OutputTensorDataType>::setup_distconv_adapter()
 {
   this->get_distconv_adapter_ptr() = std::make_unique<
     data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>>(

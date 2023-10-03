@@ -36,9 +36,9 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void composite_image_transformation_layer<TensorDataType, Layout, Device>::
-  setup_dims(DataReaderMetaData& dr_metadata)
+  setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
 
   // Get input dimensions
   auto dims = this->get_input_dims(0);

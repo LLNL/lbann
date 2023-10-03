@@ -297,9 +297,9 @@ protected:
   friend class cereal::access;
   pooling_layer() : pooling_layer(nullptr, 1, 1, 1, 1, pooling_mode::MAX) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
     const auto& input_dims = this->get_input_dims();
     auto output_dims = input_dims;
     for (size_t i = 0; i < output_dims.size() - 1; ++i) {
@@ -351,7 +351,7 @@ private:
 
 protected:
   bool is_distconv_supported() const override;
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override
+  void setup_distconv_adapter() override
   {
     this->get_distconv_adapter_ptr() =
       std::make_unique<pooling_distconv_adapter<TensorDataType, T_layout, Dev>>(

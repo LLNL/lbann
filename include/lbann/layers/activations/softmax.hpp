@@ -141,9 +141,9 @@ public:
   std::string get_onnx_op_type() const override { return "Softmax"; }
 #endif // LBANN_HAS_ONNX
 
-  void setup_dims(DataReaderMetaData& dr_metadata) final
+  void setup_dims() final
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
   }
 
@@ -249,7 +249,7 @@ protected:
   {
     return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) final
+  void setup_distconv_adapter() final
   {
     this->get_distconv_adapter_ptr() = std::make_unique<
       softmax_distconv_adapter<TensorDataType, Layout, Device>>(*this);

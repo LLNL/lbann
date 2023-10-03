@@ -82,7 +82,7 @@ protected:
   friend class cereal::access;
   PermuteLayer();
 
-  void setup_dims(DataReaderMetaData& dr_metadata) final;
+  void setup_dims() final;
   void fp_compute() final;
   void bp_compute() final;
 

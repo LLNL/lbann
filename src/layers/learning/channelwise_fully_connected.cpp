@@ -317,7 +317,7 @@ bool channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
-  setup_distconv_adapter(const DataReaderMetaData& dr_metadata)
+  setup_distconv_adapter()
 {
   this->get_distconv_adapter_ptr() = std::make_unique<
     channelwise_fully_connected_distconv_adapter<TensorDataType,
@@ -482,9 +482,9 @@ channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
-  setup_dims(DataReaderMetaData& dr_metadata)
+  setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
 
   // Make sure input and output dimensions are valid
   const auto& input_dims = this->get_input_dims();

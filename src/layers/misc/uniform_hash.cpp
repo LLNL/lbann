@@ -64,10 +64,9 @@ uniform_hash_layer<TensorDataType, Layout, Device>::get_device_allocation()
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void uniform_hash_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void uniform_hash_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
   this->set_output_dims(this->get_input_dims());
 }
 

@@ -77,7 +77,7 @@ public:
   void fill_onnx_node(onnx::GraphProto& graph) const override;
 #endif // LBANN_HAS_ONNX
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void fp_compute() override;
 

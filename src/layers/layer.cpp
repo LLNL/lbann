@@ -432,15 +432,14 @@ bool Layer::is_frozen() const
 }
 
 void Layer::setup(size_t max_mini_batch_size,
-                  DataReaderMetaData& dr_metadata,
                   const std::vector<El::Grid*>& grids)
 {
   setup_pointers();
-  setup_dims(dr_metadata);
+  setup_dims();
   setup_matrices(grids);
 
 #ifdef LBANN_HAS_DISTCONV
-  prepare_distconv(dr_metadata);
+  prepare_distconv();
 #endif // LBANN_HAS_DISTCONV
   setup_data(max_mini_batch_size);
   if (using_gpus()) {
@@ -585,7 +584,7 @@ void Layer::setup_pointers()
   }
 }
 
-void Layer::setup_dims(DataReaderMetaData& dr_metadata)
+void Layer::setup_dims()
 {
   m_output_dims_list.resize(get_num_children());
   const auto* hint_layer = get_hint_layer();
@@ -704,8 +703,8 @@ void Layer::remove_as_gradient_source()
 
 void Layer::back_prop()
 {
-    // This bit is preprocessed out since the LBANN_CALIPER macro
-    // won't help us out here.
+  // This bit is preprocessed out since the LBANN_CALIPER macro
+  // won't help us out here.
 #ifdef LBANN_HAS_CALIPER
   auto const scope_name = this->get_type() + "_layer:back_prop";
   LBANN_CALIPER_MARK_SCOPE(scope_name.c_str());
@@ -1049,10 +1048,10 @@ void Layer::set_layer_pointers(std::vector<ViewingLayerPtr> layers)
 }
 
 #ifdef LBANN_HAS_DISTCONV
-void Layer::prepare_distconv(const DataReaderMetaData& dr_metadata)
+void Layer::prepare_distconv()
 {
   if (distconv_enabled()) {
-    setup_distconv_adapter(dr_metadata);
+    setup_distconv_adapter();
   }
 }
 

@@ -96,7 +96,7 @@ protected:
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
   void setup_data(size_t max_mini_batch_size) override;
 
   void fp_compute() override;
@@ -234,10 +234,9 @@ layer_norm_layer<TensorDataType, Layout, Device>::get_description() const
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void layer_norm_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void layer_norm_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
   this->set_output_dims(this->get_input_dims());
 }
 
