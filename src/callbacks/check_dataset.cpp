@@ -28,6 +28,7 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/layers/io/input_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/trainers/trainer.hpp"
@@ -64,7 +65,12 @@ void check_dataset::add_to_set(model* m,
     return;
   }
 
-  El::Matrix<El::Int>* indices = l->get_sample_indices_per_mb();
+  const auto& c =
+    static_cast<const SGDExecutionContext&>(m->get_execution_context());
+  // Print minibatch sample indices of the data coordinator
+  data_coordinator& dc = get_trainer().get_data_coordinator();
+  El::Matrix<El::Int>* indices =
+    dc.get_sample_indices_per_mb(c.get_execution_mode());
 
   std::set<long>::iterator it;
 

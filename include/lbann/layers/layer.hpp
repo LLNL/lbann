@@ -518,8 +518,6 @@ public:
   /** @brief Set the model that manages this layer. */
   inline void set_model(model* m) { m_model = m; }
 
-  virtual El::Matrix<El::Int>* get_sample_indices_per_mb() { return nullptr; };
-
   /** @brief Write layer to proto file */
   void write_proto(lbann_data::Layer& proto);
 
