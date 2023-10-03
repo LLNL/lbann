@@ -37,6 +37,7 @@ class Layer(abc.ABC):
                  data_layout=None,
                  datatype=None,
                  hint_layer=None,
+                 grid_tag=None,
                  parallel_strategy={}):
         Layer.global_count += 1
         self.parents = []
@@ -47,6 +48,7 @@ class Layer(abc.ABC):
         self.data_layout = data_layout
         self.datatype = datatype
         self.hint_layer = hint_layer
+        self.grid_tag = { 'value': grid_tag } if grid_tag else {}
         self.parallel_strategy = parallel_strategy if parallel_strategy else {}
 
         # Initialize parents, children, and weights
@@ -71,6 +73,11 @@ class Layer(abc.ABC):
             proto.datatype = self.datatype
         if self.hint_layer:
             proto.hint_layer = self.hint_layer.name
+        if self.grid_tag:
+            lbann.core.util.set_protobuf_message(
+                proto.grid_tag ,
+                **self.grid_tag)
+            proto.grid_tag.SetInParent()
         if self.parallel_strategy:
             lbann.core.util.set_protobuf_message(proto.parallel_strategy,
                                                  **self.parallel_strategy)
@@ -108,17 +115,16 @@ class Layer(abc.ABC):
 if layers_pb2:
     classes = lbann.core.util.generate_classes_from_protobuf_message(
         layers_pb2.Layer,
-        skip_fields=set([
+        skip_fields = set([
             'name', 'parents', 'children', 'data_layout', 'device_allocation',
-            'datatype', 'weights', 'freeze', 'hint_layer', 'parallel_strategy',
-            'top', 'bottom', 'type', 'motif_layer'
-        ]),
-        base_class=Layer,
-        base_kwargs=set([
-            'parents', 'children', 'weights', 'name', 'device', 'data_layout',
-            'datatype', 'hint_layer', 'parallel_strategy'
-        ]),
-        base_has_export_proto=True)
+            'datatype', 'weights', 'freeze', 'hint_layer', 'grid_tag',
+            'parallel_strategy', 'top', 'bottom', 'type', 'motif_layer']),
+        base_class = Layer,
+        base_kwargs = set([
+            'parents', 'children', 'weights',
+            'name', 'device', 'data_layout', 'datatype', 'hint_layer', 'grid_tag',
+            'parallel_strategy']),
+        base_has_export_proto = True)
     for c in classes:
         globals()[c.__name__] = c
 

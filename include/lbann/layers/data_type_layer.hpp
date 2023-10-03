@@ -248,6 +248,12 @@ protected:
    */
   void setup_matrices(const std::vector<El::Grid*>& grids) override;
 
+  /** @brief Setup distributed matrices with "subgraph parallelism" logic */
+  virtual void do_setup_matrices_subgraph(std::vector<El::Grid*> const& grids);
+
+  /** @brief Setup all distributed matrices with given grid */
+  virtual void do_setup_matrices_simple(El::Grid const& grid);
+
   /** Setup layer data.
    *  Called by the 'setup' function. Memory is allocated for
    *  distributed matrices.

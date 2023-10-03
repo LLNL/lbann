@@ -116,6 +116,9 @@ message Layer {
   /** @brief Configuration for advanced parallelization strategies */
   ParallelStrategy parallel_strategy = 12;
 
+  /** @brief Tag for layer-parallelism grid */
+  google.protobuf.Int64Value grid_tag = 13;
+
   // ===========================================
   // Deprecated options
   // ===========================================

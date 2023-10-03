@@ -251,9 +251,27 @@ lbann_comm* Layer::get_comm() const
   return m_model->get_comm();
 }
 
+// Layer parallelism
+int Layer::grid_tag() const noexcept { return m_lp_grid_tag; }
+
+// Layer parallelism
+void Layer::grid_tag(int tag)
+{
+  LBANN_ASSERT(tag >= 0);         // This tag is valid
+  LBANN_ASSERT(m_grid_tag == -1); // The subgraph tag is not set
+  m_lp_grid_tag = tag;
+}
+
+// Subgraph parallelism
 int Layer::get_grid_tag() const noexcept { return m_grid_tag; }
 
-void Layer::set_grid_tag(int tag) { m_grid_tag = tag; }
+// Subgraph parallelism
+void Layer::set_grid_tag(int tag)
+{
+  LBANN_ASSERT(tag == -1 ||
+               m_lp_grid_tag == -1); // the layer parallel tag is not set
+  m_grid_tag = tag;
+}
 
 bool Layer::update()
 {

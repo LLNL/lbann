@@ -1004,27 +1004,27 @@ void model::setup_layer_execution_order()
 
 void model::setup_layer_grid_tags(const std::vector<El::Grid*>& fngrids)
 {
+  // This is "subgraph" code. The logic is (now) as follows:
+  //
+  // If a layer tag is -1, then we check its parents. If they are all
+  // the same, set to parent value. If any is different, set to 0.
+  // (Note that if we're doing "layer parallelism", they should all be
+  // -1 and this definition will recover that.)
   for (auto& layer : this->get_layers()) {
-    // Choose process grid to distribute matrices over
     int tag = layer->get_grid_tag();
     if (tag < 0) {
-      // Use tag from parent layers if they are all the same. Otherwise
-      // use tag 0.
       for (int i = 0; i < layer->get_num_parents(); ++i) {
-        auto parent_tag = layer->get_parent_layer(i).get_grid_tag();
+        auto const parent_tag = layer->get_parent_layer(i).get_grid_tag();
         if (i == 0) {
           tag = parent_tag;
         }
-        if (tag != parent_tag) {
-          tag = -1;
+        else if (tag != parent_tag) {
+          tag = 0;
           break;
         }
       }
-      if (tag < 0) {
-        tag = 0;
-      }
     }
-    if (tag < 0 || tag >= static_cast<int>(fngrids.size())) {
+    if (tag >= static_cast<int>(fngrids.size())) {
       LBANN_ERROR("attempted to initialize ",
                   layer->get_type(),
                   " layer \"",
@@ -1431,7 +1431,7 @@ void model::remove_layer(std::string const& removable_layer_name)
   auto& parent =
     const_cast<Layer&>(l.get_parent_layer(0)); // assuming only one parent
   auto& child =
-    const_cast<Layer&>(l.get_child_layer(0)); // assuming only one child
+    const_cast<Layer&>(l.get_child_layer(0));  // assuming only one child
 
   // Setup relationship between parent layer and child layer
   child.replace_parent_layer(l.get_parent_layer_pointer(0),
@@ -1483,7 +1483,7 @@ void model::replace_layer(OwningLayerPtr&& new_layer,
   auto& parent =
     const_cast<Layer&>(l.get_parent_layer(0)); // assuming only one parent
   auto& child =
-    const_cast<Layer&>(l.get_child_layer(0)); // assuming only one child
+    const_cast<Layer&>(l.get_child_layer(0));  // assuming only one child
 
   // Setup relationship between the new layer and child of old layer (which
   // becomes child of new layer)

@@ -823,12 +823,18 @@ void fully_connected_layer<T, L, D>::write_specific_proto(
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void fully_connected_layer<TensorDataType, T_layout, Dev>::fp_compute()
 {
+  if (!this->weights_values(0).Participating())
+    return;
+
   fp_compute_impl<TensorDataType>(*this);
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void fully_connected_layer<TensorDataType, T_layout, Dev>::bp_compute()
 {
+  if (!this->weights_values(0).Participating())
+    return;
+
   bp_compute_impl<TensorDataType>(*this);
 }
 
