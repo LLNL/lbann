@@ -4,6 +4,7 @@ C++ API:
 Support for new training algorithms:
 
 Support for new network structures:
+  - Added GPT-3 transformers and training recipes
 
 Support for new layers:
   - Select operator (set tensor value based on predicate)
@@ -30,7 +31,9 @@ Internal features:
 
 I/O & data readers:
  - Renamed percent_of_data_to_use more accurately to fraction_of_data_to_use.
- - DataReaderMetaData was removed from the model and layer API
+ - DataReaderMetaData, training_dr_linearized_data_size, and num_parallel_readers
+   were removed from the model and layer API, and instead reside in the data
+   ingestion pipeline.
 
 Build system:
  - Updated build script to use CachedCMakeProject mode, which should
@@ -41,6 +44,8 @@ Bug fixes:
 
 Retired features:
  - Support for autoencoder strategy in the summarize images callback was removed
+ - Removed deprecated Layer protobuf fields: weight_data, 
+   num_neurons_from_data_reader
 
 ============================== Release Notes: v0.103 ==============================
 C++ API:
