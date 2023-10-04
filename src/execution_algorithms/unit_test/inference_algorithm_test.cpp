@@ -72,7 +72,6 @@ auto make_model(lbann::lbann_comm& comm, int class_n)
     lbann::construct_trainer(&comm, my_proto.mutable_trainer(), my_proto);
   unit_test::utilities::mock_data_reader(trainer, {1, 1, class_n}, class_n);
   auto my_model = lbann::proto::construct_model(&comm,
-                                                -1,
                                                 my_proto.optimizer(),
                                                 my_proto.trainer(),
                                                 my_proto.model());

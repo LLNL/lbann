@@ -125,22 +125,14 @@ int main(int argc, char* argv[])
 
     thread_pool& io_thread_pool = trainer.get_io_thread_pool();
 
-    int training_dr_linearized_data_size = -1;
-    auto* dr =
-      trainer.get_data_coordinator().get_data_reader(execution_mode::training);
-    if (dr != nullptr) {
-      training_dr_linearized_data_size = dr->get_linearized_data_size();
-    }
-
-    auto model_1 =
-      build_model_from_prototext(argc,
-                                 argv,
-                                 pb_trainer,
-                                 *(pbs[0]),
-                                 comm.get(),
-                                 io_thread_pool,
-                                 trainer.get_callbacks_with_ownership(),
-                                 training_dr_linearized_data_size); // D1 solver
+    auto model_1 = build_model_from_prototext(
+      argc,
+      argv,
+      pb_trainer,
+      *(pbs[0]),
+      comm.get(),
+      io_thread_pool,
+      trainer.get_callbacks_with_ownership()); // D1 solver
     // hack, overide model name to make reporting easy, what can break?"
     std::unique_ptr<model> model_2, // G1 solver
       model_3,                      // G2 solver
@@ -157,8 +149,7 @@ int main(int argc, char* argv[])
                                    *(pbs[1]),
                                    comm.get(),
                                    io_thread_pool,
-                                   trainer.get_callbacks_with_ownership(),
-                                   training_dr_linearized_data_size);
+                                   trainer.get_callbacks_with_ownership());
     }
 
     if (pbs.size() > 2) {
@@ -169,8 +160,7 @@ int main(int argc, char* argv[])
                                    *(pbs[2]),
                                    comm.get(),
                                    io_thread_pool,
-                                   trainer.get_callbacks_with_ownership(),
-                                   training_dr_linearized_data_size);
+                                   trainer.get_callbacks_with_ownership());
     }
 
     if (pbs.size() > 3) {
@@ -181,8 +171,7 @@ int main(int argc, char* argv[])
                                    *(pbs[3]),
                                    comm.get(),
                                    io_thread_pool,
-                                   trainer.get_callbacks_with_ownership(),
-                                   training_dr_linearized_data_size);
+                                   trainer.get_callbacks_with_ownership());
     }
 
     if (pbs.size() > 4) {
@@ -193,8 +182,7 @@ int main(int argc, char* argv[])
                                    *(pbs[4]),
                                    comm.get(),
                                    io_thread_pool,
-                                   trainer.get_callbacks_with_ownership(),
-                                   training_dr_linearized_data_size);
+                                   trainer.get_callbacks_with_ownership());
     }
 
     const lbann_data::Model pb_model = pbs[0]->model();

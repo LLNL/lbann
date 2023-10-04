@@ -229,26 +229,12 @@ factory_type const& get_layer_factory() noexcept
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<Layer>
-construct_layer_legacy(lbann_comm* comm,
-                       int training_dr_linearized_data_size,
-                       int num_parallel_readers,
-                       const lbann_data::Layer& proto_layer)
+construct_layer_legacy(lbann_comm* comm, const lbann_data::Layer& proto_layer)
 {
 
   // Transform layers
-  // Currently this cannot be suitably removed from this function
-  // because it relies on LBANN_OPTION_NUM_PARALLEL_READERS and "data_readers"
-  // arguments.
   if (proto_layer.has_reshape()) {
     const auto& params = proto_layer.reshape();
-    if (proto_layer.num_neurons_from_data_reader()) {
-      if (training_dr_linearized_data_size == -1) {
-        LBANN_ERROR("Training data reader does not exist!");
-      }
-      return std::make_unique<reshape_layer<TensorDataType, Layout, Device>>(
-        comm,
-        std::vector<int>{training_dr_linearized_data_size});
-    }
     return std::make_unique<reshape_layer<TensorDataType, Layout, Device>>(
       comm,
       protobuf::to_vector<int>(params.dims()));
@@ -261,8 +247,6 @@ construct_layer_legacy(lbann_comm* comm,
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<Layer> construct_layer(lbann_comm* comm,
-                                       int training_dr_linearized_data_size,
-                                       int num_parallel_readers,
                                        const lbann_data::Layer& proto_layer)
 {
 
@@ -273,14 +257,8 @@ std::unique_ptr<Layer> construct_layer(lbann_comm* comm,
     factory.create_object(msg.GetDescriptor()->name(), comm, proto_layer);
   if (!l) {
     if constexpr (std::is_same_v<TensorDataType, DataType>)
-      l = construct_layer_legacy<DataType, Layout, Device>(
-        comm,
-        training_dr_linearized_data_size,
-        num_parallel_readers,
-        proto_layer);
+      l = construct_layer_legacy<DataType, Layout, Device>(comm, proto_layer);
     else {
-      (void)training_dr_linearized_data_size;
-      (void)num_parallel_readers;
       LBANN_ERROR("Currently, layers of type \"",
                   msg.GetDescriptor()->name(),
                   "\" are not constructible with any type other than the "
@@ -302,14 +280,10 @@ std::unique_ptr<Layer> construct_layer(lbann_comm* comm,
   template std::unique_ptr<Layer>                                              \
   construct_layer<T, data_layout::DATA_PARALLEL, Device>(                      \
     lbann_comm * comm,                                                         \
-    int training_dr_linearized_data_size,                                      \
-    int num_parallel_readers,                                                  \
     const lbann_data::Layer& proto_layer);                                     \
   template std::unique_ptr<Layer>                                              \
   construct_layer<T, data_layout::MODEL_PARALLEL, Device>(                     \
     lbann_comm * comm,                                                         \
-    int training_dr_linearized_data_size,                                      \
-    int num_parallel_readers,                                                  \
     const lbann_data::Layer& proto_layer)
 
 #include "lbann/macros/instantiate_device.hpp"

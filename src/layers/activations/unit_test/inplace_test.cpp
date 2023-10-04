@@ -82,7 +82,6 @@ std::unique_ptr<lbann::model> setup_model(const std::string& model_contents)
   // Construct a trainer so that the model can register the input layer
   lbann::construct_trainer(&world_comm, pb.mutable_trainer(), pb);
   auto my_model = lbann::proto::construct_model(&world_comm,
-                                                -1,
                                                 pb.optimizer(),
                                                 pb.trainer(),
                                                 pb.model());

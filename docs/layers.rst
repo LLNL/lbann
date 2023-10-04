@@ -175,19 +175,7 @@ Common Layer Arguments
 
 Deprecated:
 
-  :num_neurons_from_data_reader: (``bool``)
-
   :freeze: (``bool``)
-
-Deprecated and unused:
-
-  :WeightsData weights_data: (``repeated``)
-
-  :top: (``string``)
-
-  :bottom: (``string``)
-
-  :type: (``string``)
 
 
 .. _layers-list:
