@@ -71,7 +71,7 @@ build and install:
     - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - "export LBANN_NNODES=$(flux jobs -no {id}:{name}:{nnodes} | grep ${JOB_NAME} | awk -F: '{print $3}')"
     - !reference [.setup_spack, script]
-    - flux proxy ${JOB_ID} flux mini run -N 1 -t 30m ./scripts/build_lbann.sh ${SPACK_DEPS_FLAG}
+    - flux proxy ${JOB_ID} flux mini run -N 1 -t 30m ./scripts/build_lbann.sh --ci ${SPACK_DEPS_FLAG}
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS} ${CLEAN_BUILD_FLAG}
       -p py-pip --ci-pip --
       +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
