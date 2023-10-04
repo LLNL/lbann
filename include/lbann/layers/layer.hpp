@@ -501,7 +501,7 @@ public:
   // (trb 10/03/2023): USED BUT THIS IS BAD BECAUSE m_mygrid IS NEVER SET!
   std::shared_ptr<El::Grid> get_mygrid() const
   {
-    LBANN_ERROR("This funciton should not be used.");
+    LBANN_ERROR("This function should not be used.");
     return nullptr;
   }
 
