@@ -753,16 +753,16 @@ def create_tests(setup_func,
         else:
             environment = {}
 
-        if os.environ.get('USER') == 'lbannusr':
-            basepath = '/p/vast1/lbannusr'
-        else:
-            basepath = '/p/vast1/lbann'
+        # if os.environ.get('USER') == 'lbannusr':
+        #     basepath = '/p/vast1/lbannusr'
+        # else:
+        #     basepath = '/p/vast1/lbann'
 
         tmpdir = os.environ.get('TMPDIR')
-        if os.path.isdir(basepath) and os.access(basepath, os.R_OK | os.W_OK):
-            db_path = basepath
-        else:
-            db_path = tmpdir
+        # if os.path.isdir(basepath) and os.access(basepath, os.R_OK | os.W_OK):
+        #     db_path = basepath
+        # else:
+        db_path = tmpdir
 
         environment['MIOPEN_USER_DB_PATH'] = f'{db_path}/MIOpen_user_db'
         # Empirically the cache dir cannot be on a parallel file system
