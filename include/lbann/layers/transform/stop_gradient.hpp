@@ -78,7 +78,7 @@ protected:
   }
   void fp_setup_outputs(El::Int mini_batch_size) override
   {
-    El::LockedView(this->get_activations(), this->get_prev_activations());
+    El::View(this->get_activations(), this->get_prev_activations());
   }
   void fp_compute() override {}
 };
