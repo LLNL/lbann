@@ -43,7 +43,7 @@
 #include <utility>
 #include <vector>
 
-namespace {
+namespace lbann {
 
 /** @brief cuTENSOR-based implementation of tensor permute.
  *
@@ -320,5 +320,5 @@ inline void cuTENSOR_PermuteImpl::swap(cuTENSOR_PermuteImpl& other)
   std::swap(m_output_modes, other.m_output_modes);
 }
 
-} // namespace
+} // namespace lbann
 #endif // LBANN_SRC_LAYERS_TRANSFORM_CUTENSOR_PERMUTEIMPL_HPP_INCLUDED

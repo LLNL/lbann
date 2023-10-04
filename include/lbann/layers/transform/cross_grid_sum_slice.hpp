@@ -203,8 +203,7 @@ protected:
 
     El::Transpose(temp_output, transposed_output);
     transposed_output.Resize(mloc * subgrid_comm_size, nloc);
-
-    for (int i = 0; i < children.size(); i++) {
+    for (int i = 0; i < El::To<int>(children.size()); i++) {
       auto& gradient_wrt_input_cast_layer =
         dynamic_cast<MatrixType&>(this->get_error_signals(i));
       gradient_wrt_input_cast_layer.Resize(this->get_input_size(),

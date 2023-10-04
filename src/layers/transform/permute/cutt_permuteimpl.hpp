@@ -71,7 +71,7 @@ static inline char const* cutt_err_string(cuttResult err) noexcept
   }
 }
 
-namespace {
+namespace lbann {
 
 /** @brief cuTT-based implementation of tensor permute.
  *
@@ -405,6 +405,6 @@ inline void cuTT_PermuteImpl::swap(cuTT_PermuteImpl& other)
   std::swap(m_output_dims, other.m_output_dims);
 }
 
-} // namespace
+} // namespace lbann
 #undef LBANN_CHECK_CUTT
 #endif // LBANN_SRC_LAYERS_TRANSFORM_CUTT_PERMUTEIMPL_HPP_INCLUDED

@@ -46,6 +46,8 @@ static std::string stringify_vec(std::vector<T> const& vec)
   return oss.str();
 }
 
+using namespace lbann;
+
 TEST_CASE("Computing modes and column-major dims and strides.",
           "[permute][layer][cutensor]")
 {

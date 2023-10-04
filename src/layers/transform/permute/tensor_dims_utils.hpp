@@ -33,7 +33,7 @@
 #include <vector>
 
 // This stuff shouldn't be publicly accessible.
-namespace {
+namespace lbann {
 
 template <typename T, typename Tag>
 class NamedVector
@@ -95,35 +95,33 @@ using ColMajorPerm = NamedVector<int, struct ColMajorPermTag>;
 
 // For dimensions, this is a simple reversal.
 template <typename IndexT>
-static void convert(RowMajorDims<IndexT> const& src, ColMajorDims<IndexT>& tgt)
+void convert(RowMajorDims<IndexT> const& src, ColMajorDims<IndexT>& tgt)
 {
   tgt.get().assign(crbegin(src.get()), crend(src.get()));
 }
 
 template <typename IndexT>
-static void convert(ColMajorDims<IndexT> const& src, RowMajorDims<IndexT>& tgt)
+void convert(ColMajorDims<IndexT> const& src, RowMajorDims<IndexT>& tgt)
 {
   tgt.get().assign(crbegin(src.get()), crend(src.get()));
 }
 
 // For dimensions, this is a simple reversal.
 template <typename IndexT>
-static void convert(RowMajorStrides<IndexT> const& src,
-                    ColMajorStrides<IndexT>& tgt)
+void convert(RowMajorStrides<IndexT> const& src, ColMajorStrides<IndexT>& tgt)
 {
   tgt.get().assign(crbegin(src.get()), crend(src.get()));
 }
 
 template <typename IndexT>
-static void convert(ColMajorStrides<IndexT> const& src,
-                    RowMajorStrides<IndexT>& tgt)
+void convert(ColMajorStrides<IndexT> const& src, RowMajorStrides<IndexT>& tgt)
 {
   tgt.get().assign(crbegin(src.get()), crend(src.get()));
 }
 
 // For permutation arrays, it's a reversal with a complement with
 // respect to the total number of dimensions.
-static void switch_perm_majorness(std::vector<int> const& in,
+inline void switch_perm_majorness(std::vector<int> const& in,
                                   std::vector<int>& out)
 {
   int const ndims = static_cast<int>(in.size());
@@ -133,12 +131,12 @@ static void switch_perm_majorness(std::vector<int> const& in,
   });
 }
 
-static void convert(RowMajorPerm const& src, ColMajorPerm& tgt)
+inline void convert(RowMajorPerm const& src, ColMajorPerm& tgt)
 {
   switch_perm_majorness(src.get(), tgt.get());
 }
 
-static void convert(ColMajorPerm const& src, RowMajorPerm& tgt)
+inline void convert(ColMajorPerm const& src, RowMajorPerm& tgt)
 {
   switch_perm_majorness(src.get(), tgt.get());
 }
@@ -148,72 +146,70 @@ static void convert(ColMajorPerm const& src, RowMajorPerm& tgt)
  *  The types must implicitly convert.
  */
 template <typename OutT, typename InT>
-static auto vec_convert(std::vector<InT> const& in)
+auto vec_convert(std::vector<InT> const& in)
 {
   return std::vector<OutT>{cbegin(in), cend(in)};
 }
-
-} // namespace
 
 /** @name Factory functions with type deduction */
 ///@{
 
 template <typename IndexT>
-static auto RowMajor(std::vector<IndexT>&& ds)
+auto RowMajor(std::vector<IndexT>&& ds)
 {
   return RowMajorDims<IndexT>{std::move(ds)};
 }
 
 template <typename IndexT>
-static auto RowMajor(std::vector<IndexT> const& ds)
+auto RowMajor(std::vector<IndexT> const& ds)
 {
   return RowMajorDims<IndexT>{ds};
 }
 
 template <typename IndexT>
-static auto RowMajor(ColMajorDims<IndexT> const& dims)
+auto RowMajor(ColMajorDims<IndexT> const& dims)
 {
   return RowMajorDims<IndexT>(dims);
 }
 
 template <typename IndexT>
-static auto RowMajor(RowMajorDims<IndexT> const& dims)
+auto RowMajor(RowMajorDims<IndexT> const& dims)
 {
   return RowMajorDims<IndexT>(dims);
 }
 
 template <typename IndexT>
-static auto RowMajor(RowMajorDims<IndexT>&& dims)
+auto RowMajor(RowMajorDims<IndexT>&& dims)
 {
   return RowMajorDims<IndexT>(std::move(dims));
 }
 
 template <typename IndexT>
-static auto ColMajor(std::vector<IndexT>&& ds)
+auto ColMajor(std::vector<IndexT>&& ds)
 {
   return ColMajorDims<IndexT>{std::move(ds)};
 }
 
 template <typename IndexT>
-static auto ColMajor(std::vector<IndexT> const& ds)
+auto ColMajor(std::vector<IndexT> const& ds)
 {
   return ColMajorDims<IndexT>{ds};
 }
 
 template <typename IndexT>
-static auto ColMajor(RowMajorDims<IndexT> const& dims)
+auto ColMajor(RowMajorDims<IndexT> const& dims)
 {
   return ColMajorDims<IndexT>(dims);
 }
 
 template <typename IndexT>
-static auto ColMajor(ColMajorDims<IndexT> const& dims)
+auto ColMajor(ColMajorDims<IndexT> const& dims)
 {
   return ColMajorDims<IndexT>(dims);
 }
 
 template <typename IndexT>
-static auto ColMajor(ColMajorDims<IndexT>&& dims)
+auto ColMajor(ColMajorDims<IndexT>&& dims)
 {
   return ColMajorDims<IndexT>(std::move(dims));
 }
@@ -229,7 +225,7 @@ static auto ColMajor(ColMajorDims<IndexT>&& dims)
  *  type-converting the accumulating stride.
  */
 template <typename StrideT, typename DimT>
-static auto get_strides_as(ColMajorDims<DimT> const& dims)
+auto get_strides_as(ColMajorDims<DimT> const& dims)
 {
   std::vector<DimT> const& dim_vec = dims.get();
   size_t const ndims = dim_vec.size();
@@ -249,7 +245,7 @@ static auto get_strides_as(ColMajorDims<DimT> const& dims)
  *  represented in the same type as the input dimensions.
  */
 template <typename DimT>
-static auto get_strides(ColMajorDims<DimT> const& dims)
+auto get_strides(ColMajorDims<DimT> const& dims)
 {
   return get_strides_as<DimT>(dims);
 }
@@ -265,7 +261,7 @@ static auto get_strides(ColMajorDims<DimT> const& dims)
  *  A valid permutation uses every index in [0, ndims) exactly once.
  */
 template <typename T>
-static bool check_perm_impl(std::vector<T> perm)
+bool check_perm_impl(std::vector<T> perm)
 {
   size_t const ndims = perm.size();
   std::sort(begin(perm), end(perm));
@@ -277,7 +273,7 @@ static bool check_perm_impl(std::vector<T> perm)
 
 /** @brief Returns the inverse of the given permutation. */
 template <typename T>
-static auto invert_perm_impl(std::vector<T> const& perm)
+auto invert_perm_impl(std::vector<T> const& perm)
 {
   size_t const size = perm.size();
   std::vector<T> out(size);
@@ -295,8 +291,7 @@ static auto invert_perm_impl(std::vector<T> const& perm)
 // the "modes", which might include the non-permutable sample
 // dimension.
 template <typename IndexT, typename PermT>
-static auto permute_impl(std::vector<IndexT> const& in,
-                         std::vector<PermT> const& perm)
+auto permute_impl(std::vector<IndexT> const& in, std::vector<PermT> const& perm)
 {
   if (perm.size() == 0UL)
     return in;
@@ -318,22 +313,22 @@ static auto permute_impl(std::vector<IndexT> const& in,
 /** @name Public interface for permutation arrays */
 ///@{
 
-static bool is_valid(RowMajorPerm const& perm)
+inline bool is_valid(RowMajorPerm const& perm)
 {
   return perm.size() == 0UL || check_perm_impl(perm.get());
 }
 
-static bool is_valid(ColMajorPerm const& perm)
+inline bool is_valid(ColMajorPerm const& perm)
 {
   return perm.size() == 0UL || check_perm_impl(perm.get());
 }
 
-static RowMajorPerm invert(RowMajorPerm const& in)
+inline RowMajorPerm invert(RowMajorPerm const& in)
 {
   return RowMajorPerm{invert_perm_impl(in.get())};
 }
 
-static ColMajorPerm invert(ColMajorPerm const& in)
+inline ColMajorPerm invert(ColMajorPerm const& in)
 {
   return ColMajorPerm{invert_perm_impl(in.get())};
 }
@@ -343,19 +338,18 @@ static ColMajorPerm invert(ColMajorPerm const& in)
 ///@{
 
 template <typename IndexT>
-static auto permute_dims(RowMajorDims<IndexT> const& in,
-                         RowMajorPerm const& perm)
+auto permute_dims(RowMajorDims<IndexT> const& in, RowMajorPerm const& perm)
 {
   return RowMajor(permute_impl(in.get(), perm.get()));
 }
 
 template <typename IndexT>
-static auto permute_dims(ColMajorDims<IndexT> const& in,
-                         ColMajorPerm const& perm)
+auto permute_dims(ColMajorDims<IndexT> const& in, ColMajorPerm const& perm)
 {
   return ColMajor(permute_impl(in.get(), perm.get()));
 }
 
 ///@}
 
+} // namespace lbann
 #endif // SRC_LAYERS_TRANSFORM_TENSOR_DIMS_UTILS_HPP_INCLUDED

@@ -116,16 +116,10 @@ private:
     auto childs = this->get_child_layers();
 
     int tag = -1;
-
-    for (int i = 0; i < parents.size(); i++) {
+    for (int i = 0; i < El::To<int>(parents.size()); i++) {
       if (this->get_activations(i).Grid().InGrid())
         tag = i;
     }
-
-    int const rank = El::mpi::Rank(this->get_subgrid_comm());
-
-    int tag_parent = parents[rank]->get_grid_tag();
-    int tag_child = childs[rank]->get_grid_tag();
 
     auto& output = this->get_activations(tag);
     auto& input = this->get_prev_activations(tag);
@@ -171,30 +165,22 @@ private:
 
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) final
   {
-    int rank = El::mpi::Rank(this->get_subgrid_comm());
     auto parents = this->get_parent_layers();
     auto children = this->get_child_layers();
 
-    int tag = -1;
     int tag_parent = -1;
-    int tag_child = -1;
-    int count = 0;
-    for (int i = 0; i < parents.size(); i++) {
+    for (int i = 0; i < El::To<int>(parents.size()); i++) {
       if (this->get_error_signals(i).Grid().InGrid())
         tag_parent = parents[i]->get_grid_tag();
     }
-    tag = tag_parent - 1;
-    for (int i = 0; i < children.size(); i++) {
-      if (this->get_prev_error_signals(i).Grid().InGrid())
-        tag_child = children[i]->get_grid_tag();
-    }
+    int const tag = tag_parent - 1;
 
     const auto& gradient_wrt_output = this->get_prev_error_signals(tag);
     auto& gradient_wrt_input = this->get_error_signals(tag);
 
     int gradient_wrt_output_Height = gradient_wrt_output.Height();
     int gradient_wrt_output_Width = gradient_wrt_output.Width();
-    for (int i = 0; i < children.size(); i++) {
+    for (int i = 0; i < El::To<int>(children.size()); i++) {
       auto& gradient_wrt_input_cast = dynamic_cast<
         El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>&>(
         this->get_error_signals(i));

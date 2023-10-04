@@ -43,6 +43,8 @@ static std::string stringify_vec(std::vector<T> const& vec)
   return oss.str();
 }
 
+using namespace lbann;
+
 TEST_CASE("Copy between RowMajorDims and ColMajorDims", "[permute][dim utils]")
 {
   auto const rm_dims = RowMajor(std::vector<int>{4, 5, 6, 7});

@@ -205,7 +205,7 @@ TEST_CASE("Data Coordinator hdf5 conduit fetch tests",
     std::vector<conduit::Node> samples(1);
     El::Matrix<El::Int> indices_fetched;
     indices_fetched.Resize(1, 1);
-    auto valid = hdf5_dr->fetch(samples, indices_fetched, 1);
+    hdf5_dr->fetch(samples, indices_fetched, 1);
     //    auto valid = hdf5_dr->fetch(samples, indices_fetched, 2);
 
     //    lbann::CPUMat X;

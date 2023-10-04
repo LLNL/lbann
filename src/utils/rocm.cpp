@@ -67,8 +67,7 @@ namespace rocm {
 event_wrapper::event_wrapper() : m_event(nullptr), m_stream(0)
 {
 #if HIP_VERSION < 50600000
-  CHECK_ROCM(hipEventCreateWithFlags(&m_event,
-                                     hipEventDisableTiming));
+  CHECK_ROCM(hipEventCreateWithFlags(&m_event, hipEventDisableTiming));
 #else
   CHECK_ROCM(hipEventCreateWithFlags(&m_event,
                                      hipEventDisableTiming |
@@ -80,8 +79,7 @@ event_wrapper::event_wrapper(const event_wrapper& other)
   : m_event(nullptr), m_stream(other.m_stream)
 {
 #if HIP_VERSION < 50600000
-  CHECK_ROCM(hipEventCreateWithFlags(&m_event,
-                                     hipEventDisableTiming));
+  CHECK_ROCM(hipEventCreateWithFlags(&m_event, hipEventDisableTiming));
 #else
   CHECK_ROCM(hipEventCreateWithFlags(&m_event,
                                      hipEventDisableTiming |
@@ -101,7 +99,7 @@ event_wrapper& event_wrapper::operator=(const event_wrapper& other)
   return *this;
 }
 
-event_wrapper::~event_wrapper() { hipEventDestroy(m_event); }
+event_wrapper::~event_wrapper() { static_cast<void>(hipEventDestroy(m_event)); }
 
 void event_wrapper::record(hipStream_t stream)
 {
