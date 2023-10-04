@@ -340,29 +340,32 @@ struct BackendTag
 };
 
 #if defined(LBANN_HAS_GPU) && defined(LBANN_HAS_ALUMINUM)
-auto GetRequest(Al::request& r, BackendTag<Al::dummy_backend>) ->
-  typename Al::dummy_backend::req_type
+[[maybe_unused]] auto GetRequest(Al::request& r, BackendTag<Al::dummy_backend>)
+  -> typename Al::dummy_backend::req_type
 {
   return Al::dummy_backend::null_req;
 }
 
-auto GetRequest(Al::request& r, BackendTag<::Al::MPIBackend>) ->
-  typename ::Al::MPIBackend::req_type&
+[[maybe_unused]] auto GetRequest(Al::request& r, BackendTag<::Al::MPIBackend>)
+  -> typename ::Al::MPIBackend::req_type&
 {
   return r.mpi_req;
 }
-void UpdateRequest(typename ::Al::MPIBackend::req_type&,
-                   El::SyncInfo<El::Device::CPU> const&) noexcept
+[[maybe_unused]] void
+UpdateRequest(typename ::Al::MPIBackend::req_type&,
+              El::SyncInfo<El::Device::CPU> const&) noexcept
 {}
 
 #ifdef AL_HAS_NCCL
-auto GetRequest(Al::request& r, BackendTag<::Al::NCCLBackend>) noexcept ->
+[[maybe_unused]] auto GetRequest(Al::request& r,
+                                 BackendTag<::Al::NCCLBackend>) noexcept ->
   typename ::Al::NCCLBackend::req_type&
 {
   return r.nccl_req;
 }
-void UpdateRequest(typename ::Al::NCCLBackend::req_type& req,
-                   El::SyncInfo<El::Device::GPU> const& si) noexcept
+[[maybe_unused]] void
+UpdateRequest(typename ::Al::NCCLBackend::req_type& req,
+              El::SyncInfo<El::Device::GPU> const& si) noexcept
 {
   if (req)
     req->orig_stream = si.Stream();
@@ -370,13 +373,15 @@ void UpdateRequest(typename ::Al::NCCLBackend::req_type& req,
 #endif // AL_HAS_NCCL
 
 #ifdef AL_HAS_HOST_TRANSFER
-auto GetRequest(Al::request& r, BackendTag<::Al::HostTransferBackend>) noexcept
+[[maybe_unused]] auto GetRequest(Al::request& r,
+                                 BackendTag<::Al::HostTransferBackend>) noexcept
   -> typename ::Al::HostTransferBackend::req_type&
 {
   return r.hosttransfer_req;
 }
-void UpdateRequest(typename ::Al::HostTransferBackend::req_type& req,
-                   El::SyncInfo<El::Device::GPU> const& si) noexcept
+[[maybe_unused]] void
+UpdateRequest(typename ::Al::HostTransferBackend::req_type& req,
+              El::SyncInfo<El::Device::GPU> const& si) noexcept
 {
   if (req)
     req->orig_stream = si.Stream();

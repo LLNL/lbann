@@ -74,6 +74,7 @@ Build LBANN: has preconfigured module lists for LLNL LC, OLCF, and NERSC systems
 Usage: ${SCRIPT} [options] -- [list of spack variants]
 Options:
   ${C}--help${N}                     Display this help message and exit.
+  ${C}--ci${N}                       Pass when doing CI
   ${C}--ci-pip${N}                   PIP install CI required Python packages
   ${C}--clean-build${N}              Delete the local link to the build directory
   ${C}--clean-deps${N}               Forcibly uninstall Hydrogen, Aluminum, and DiHydrogen dependencies
@@ -115,6 +116,11 @@ while :; do
             # Help message
             help_message
             exit 1
+            ;;
+        --ci)
+            # We want all compilation errors
+            LBANN_WARNINGS_AS_ERRORS="TRUE"
+            EXTRA_NINJA_FLAGS="-k 0"
             ;;
         --ci-pip)
             PIP_EXTRAS="${PIP_EXTRAS} ${LBANN_HOME}/ci_test/requirements.txt"
@@ -1109,7 +1115,7 @@ else
     exit 1
 fi
 
-CMAKE_CMD="${LBANN_CMAKE} -C ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME} -B ${LBANN_BUILD_DIR} -DCMAKE_INSTALL_PREFIX=${LBANN_INSTALL_DIR} -DLBANN_WRITE_DEPENDENT_MODULEPATH=${LBANN_WRITE_DEPENDENT_MODULEPATH} -DLBANN_WRITE_DEPENDENT_MODULES=${LBANN_DEPENDENT_MODULES} ${LBANN_HOME}"
+CMAKE_CMD="${LBANN_CMAKE} -C ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME} -B ${LBANN_BUILD_DIR} -DCMAKE_INSTALL_PREFIX=${LBANN_INSTALL_DIR} -DLBANN_WRITE_DEPENDENT_MODULEPATH=${LBANN_WRITE_DEPENDENT_MODULEPATH} -DLBANN_WRITE_DEPENDENT_MODULES=${LBANN_DEPENDENT_MODULES} -DLBANN_WARNINGS_AS_ERRORS=${LBANN_WARNINGS_AS_ERRORS} ${LBANN_HOME}"
 echo ${CMAKE_CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMAKE_CMD} || exit_on_failure "${CMAKE_CMD}"; }
 
@@ -1117,7 +1123,7 @@ CMD="cd ${LBANN_BUILD_DIR}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-CMD="${LBANN_NINJA} install"
+CMD="${LBANN_NINJA} ${EXTRA_NINJA_FLAGS} install"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 

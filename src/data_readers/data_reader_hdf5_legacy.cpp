@@ -375,9 +375,11 @@ bool hdf5_reader<TensorDataType>::fetch_datum(Mat& X, int data_id, int mb_idx)
     LBANN_ERROR("Invalid configuration.");
     return false;
   }
-  assert_eq((unsigned long)X.Height(),
-            m_num_features / dc::get_number_of_io_partitions() /
-              (sizeof(DataType) / sizeof(TensorDataType)));
+  else {
+    assert_eq((unsigned long)X.Height(),
+              m_num_features / dc::get_number_of_io_partitions() /
+                (sizeof(DataType) / sizeof(TensorDataType)));
+  }
 
   auto X_v = create_datum_view(X, mb_idx);
   if (m_use_data_store) {

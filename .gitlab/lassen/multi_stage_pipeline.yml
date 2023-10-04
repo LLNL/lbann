@@ -48,7 +48,7 @@ build and install:
   script:
     - echo "== BUILDING LBANN =="
     - !reference [.setup_spack, script]
-    - lalloc 1 -W 60 -q pdebug ./scripts/build_lbann.sh ${SPACK_DEPS_FLAG}
+    - lalloc 1 -W 60 -q pdebug ./scripts/build_lbann.sh --ci ${SPACK_DEPS_FLAG}
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS} ${CLEAN_BUILD_FLAG}
       -p py-scipy@1.8.1 --pip pytest --pip tqdm --
       +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}

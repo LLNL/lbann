@@ -27,6 +27,9 @@
 #ifndef LBANN_LAYER_CROP_HPP_INCLUDED
 #define LBANN_LAYER_CROP_HPP_INCLUDED
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/layers.pb.h"
@@ -387,4 +390,5 @@ void crop_layer<T, L, D>::write_specific_proto(lbann_data::Layer& proto) const
 
 } // namespace lbann
 
+#pragma GCC diagnostic pop
 #endif // LBANN_LAYER_CROP_HPP_INCLUDED

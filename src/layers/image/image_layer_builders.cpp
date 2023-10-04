@@ -69,9 +69,12 @@ lbann::build_composite_image_transformation_layer_from_pbuf(
         composite_image_transformation_layer<double,
                                              data_layout::DATA_PARALLEL,
                                              El::Device::CPU>>(comm);
-    else
+    else {
+      (void)comm;
       LBANN_ERROR("composite_image_transformation_layer is only supported for "
                   "\"float\" and \"double\".");
+      return nullptr;
+    }
   }
   else {
     (void)comm;

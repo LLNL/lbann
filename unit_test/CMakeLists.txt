@@ -34,3 +34,13 @@ if (LBANN_USE_CATCH2_V3)
 endif ()
 # TODO: Some "magical" way to automatically run tests if a parallel
 # environment is detected at CTest time
+
+if (LBANN_FLAG_Werror_OK)
+  target_compile_options(seq-catch-tests
+    PRIVATE $<$<COMPILE_LANGUAGE:CXX>:$<BUILD_INTERFACE:-Werror>>)
+endif ()
+
+if (LBANN_FLAG_Werror_OK)
+  target_compile_options(mpi-catch-tests
+    PRIVATE $<$<COMPILE_LANGUAGE:CXX>:$<BUILD_INTERFACE:-Werror>>)
+endif ()

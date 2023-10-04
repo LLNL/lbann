@@ -43,7 +43,7 @@
     }                                                                          \
   } while (false)
 
-namespace {
+namespace lbann {
 
 template <typename CppType>
 struct CUDATypeT;
@@ -101,6 +101,6 @@ static cutensorHandle_t* get_handle_ptr()
   return &handle;
 }
 
-} // namespace
+} // namespace lbann
 
 #endif // LBANN_SRC_LAYERS_TRANSFORM_CUTENSOR_SUPPORT_HPP_INCLUDED

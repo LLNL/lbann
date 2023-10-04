@@ -1026,8 +1026,6 @@ void TranslateBetweenGridsVCAsyncDirect(
   El::SyncInfo<KFACDevice> syncInfoA = El::SyncInfoFromMatrix(A.LockedMatrix());
   El::SyncInfo<KFACDevice> syncInfoB = El::SyncInfoFromMatrix(B.LockedMatrix());
 
-  El::SyncInfo<KFACDevice> syncGeneral = El::SyncInfo<KFACDevice>();
-
   height = featureSize;
   width = currentBatchSize;
 

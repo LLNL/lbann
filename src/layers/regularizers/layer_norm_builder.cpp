@@ -47,9 +47,13 @@ lbann::build_layer_norm_layer_from_pbuf(lbann_comm* /*comm*/,
     return std::make_unique<layer_norm_layer<double, L, D>>(epsilon,
                                                             scale,
                                                             bias);
-  else
+  else {
+    (void)scale;
+    (void)bias;
+    (void)epsilon;
     LBANN_ERROR(
       "layer_norm_layer is only supported for \"float\" and \"double\".");
+  }
 }
 
 namespace lbann {

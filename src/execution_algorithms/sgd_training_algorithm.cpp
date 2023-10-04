@@ -119,10 +119,10 @@ void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
   do_train_begin_cbs(model, ScopeTimer{train_timer, "train_begin callbacks"});
 
   // Start iterating
-  size_t total_batches = 0;
+  [[maybe_unused]] size_t total_batches = 0;
   c.start_timer();
   LBANN_CALIPER_LOOP_BEGIN(train_epoch, "train_epoch");
-  for (size_t epoch = 0; !term(c); ++epoch) {
+  for ([[maybe_unused]] size_t epoch = 0; !term(c); ++epoch) {
 
     LBANN_CALIPER_LOOP_ITER(train_epoch, epoch);
 
@@ -271,7 +271,7 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
   return finished;
 }
 
-static char const* loop_label(execution_mode mode)
+[[maybe_unused]] static char const* loop_label(execution_mode mode)
 {
   switch (mode) {
   case execution_mode::validation:

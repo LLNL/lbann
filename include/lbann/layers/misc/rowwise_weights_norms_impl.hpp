@@ -26,6 +26,9 @@
 #ifndef LBANN_LAYERS_MISC_ROWWISE_WEIGHTS_NORMS_IMPL_HPP_INCLUDED
 #define LBANN_LAYERS_MISC_ROWWISE_WEIGHTS_NORMS_IMPL_HPP_INCLUDED
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 #include "lbann/layers/misc/rowwise_weights_norms.hpp"
 
 namespace lbann {
@@ -185,4 +188,6 @@ void rowwise_weights_norms_layer<T, L, D>::bp_compute()
                  weights_matrix_grad.Matrix());
 }
 } // namespace lbann
+
+#pragma GCC diagnostic pop
 #endif // LBANN_LAYERS_MISC_ROWWISE_WEIGHTS_NORMS_IMPL_HPP_INCLUDED
