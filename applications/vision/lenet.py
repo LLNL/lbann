@@ -20,8 +20,8 @@ args = parser.parse_args()
 # ----------------------------------
 
 # Input data
-images = lbann.Input(data_field='samples')
-labels = lbann.Input(data_field='labels')
+images = lbann.Input(data_field='samples', grid_tag=0)
+labels = lbann.Input(data_field='labels', grid_tag=0)
 
 # LeNet
 x = lbann.Convolution(images,
@@ -31,13 +31,13 @@ x = lbann.Convolution(images,
                       kernel_size = 5,
                       stride = 1,
                       dilation = 1,
-                      has_bias = True)
-x = lbann.Relu(x)
+                      has_bias = True, grid_tag=1)
+x = lbann.Relu(x, grid_tag=1)
 x = lbann.Pooling(x,
                   num_dims = 2,
                   pool_dims_i = 2,
                   pool_strides_i = 2,
-                  pool_mode = "max")
+                  pool_mode = "max", grid_tag=1)
 x = lbann.Convolution(x,
                       num_dims = 2,
                       out_channels = 16,
@@ -45,23 +45,24 @@ x = lbann.Convolution(x,
                       kernel_size = 5,
                       stride = 1,
                       dilation = 1,
-                      has_bias = True)
-x = lbann.Relu(x)
+                      has_bias = True, grid_tag=1)
+x = lbann.Relu(x, grid_tag=1)
 x = lbann.Pooling(x,
                   num_dims = 2,
                   pool_dims_i = 2,
                   pool_strides_i = 2,
-                  pool_mode = "max")
-x = lbann.FullyConnected(x, num_neurons = 120, has_bias = True)
-x = lbann.Relu(x)
-x = lbann.FullyConnected(x, num_neurons = 84, has_bias = True)
-x = lbann.Relu(x)
-x = lbann.FullyConnected(x, num_neurons = 10, has_bias = True)
-probs = lbann.Softmax(x)
+                  pool_mode = "max", grid_tag=1)
+
+x = lbann.FullyConnected(x, num_neurons = 120, has_bias = True, grid_tag=2)
+x = lbann.Relu(x, grid_tag=2)
+x = lbann.FullyConnected(x, num_neurons = 84, has_bias = True, grid_tag=2)
+x = lbann.Relu(x, grid_tag=2)
+x = lbann.FullyConnected(x, num_neurons = 10, has_bias = True, grid_tag=2)
+probs = lbann.Softmax(x, grid_tag=2)
 
 # Loss function and accuracy
-loss = lbann.CrossEntropy(probs, labels)
-acc = lbann.CategoricalAccuracy(probs, labels)
+loss = lbann.CrossEntropy(probs, labels, grid_tag=2)
+acc = lbann.CategoricalAccuracy(probs, labels, grid_tag=2)
 
 # ----------------------------------
 # Setup experiment
@@ -95,4 +96,5 @@ trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 lbann.contrib.launcher.run(trainer, model, data_reader, opt,
                            job_name=args.job_name,
+                           lbann_args=['--num-subgrids', '2'],
                            **kwargs)
