@@ -68,7 +68,6 @@ protected:
 
   void setup_dims() override;
   void setup_data(size_t max_mini_batch_size) override;
-  void fp_setup_outputs() override;
   void fp_compute() override;
 
 private:

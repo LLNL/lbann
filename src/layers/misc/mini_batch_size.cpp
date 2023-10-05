@@ -85,14 +85,6 @@ void mini_batch_size_layer<T, L, D>::setup_data(size_t max_mini_batch_size)
 }
 
 template <typename T, data_layout L, El::Device D>
-void mini_batch_size_layer<T, L, D>::fp_setup_outputs()
-{
-  data_type_layer<T>::fp_setup_outputs();
-  m_mini_batch_size = 0;
-  LBANN_ERROR("BVE FIXME");
-}
-
-template <typename T, data_layout L, El::Device D>
 void mini_batch_size_layer<T, L, D>::fp_compute()
 {
   El::Fill(this->get_activations(), El::To<T>(m_mini_batch_size));
