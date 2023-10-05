@@ -116,7 +116,7 @@ def main():
         beta1=0.9,
         beta2=0.95,
         eps=1e-8,
-        clip_gradient=0.0,
+        clip_gradient=1.0,
         lr_decay='cosine',
         lr_decay_steps=int((260 * 1e9) // tokens_per_step),
         end_learning_rate=chosen_config.lr / 10,
