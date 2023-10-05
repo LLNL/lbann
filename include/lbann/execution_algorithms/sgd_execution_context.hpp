@@ -96,16 +96,6 @@ public:
   {
     return m_current_mini_batch_size;
   }
-  /** Get the trainer's effective mini-batch size. */
-  inline size_t get_effective_mini_batch_size() const
-  {
-    return m_effective_mini_batch_size;
-  }
-  /** Set the trainer's effective mini-batch size. */
-  inline void set_effective_mini_batch_size(size_t mini_batch_size)
-  {
-    m_effective_mini_batch_size = mini_batch_size;
-  }
 
   /** Checkpoint training_algorithm to given file descriptor  */
   void save_to_checkpoint_shared(persist& p) override;
@@ -147,15 +137,12 @@ private:
   /** Number of times the training data set has been traversed. */
   size_t m_epoch = 0;
 
-  /** Size of the current mini-batch in the model. */
-  size_t m_current_mini_batch_size;
-
-  /** The "effective" size of a minibatch.
+  /** Size of the current mini-batch in the model.
    *
-   *  This is the size of the minibatch across all models and used for
-   *  e.g.  correctly averaging gradients from multiple models.
+   *  Number of samples being processed in the current step (iteration),
+   *  used for correctly averaging gradients.
    */
-  size_t m_effective_mini_batch_size;
+  size_t m_current_mini_batch_size;
 
   execution_mode m_execution_mode;
 

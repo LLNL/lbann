@@ -175,12 +175,6 @@ public:
 
   virtual int get_current_mini_batch_size(execution_mode mode) const;
 
-  virtual int get_world_master_mini_batch_adjustment(execution_mode mode) const;
-
-  virtual int
-  get_current_world_master_mini_batch_adjustment(execution_mode mode,
-                                                 int model_rank) const;
-
   //************************************************************************
   // Helper functions to access the data readers
   //************************************************************************

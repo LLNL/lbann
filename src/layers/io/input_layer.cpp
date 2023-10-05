@@ -130,7 +130,6 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs()
     auto& c = dynamic_cast<SGDExecutionContext&>(
       this->m_model->get_execution_context());
     auto mode = c.get_execution_mode();
-    auto effective_mini_batch_size = mini_batch_size;
     if (!(mode == execution_mode::inference)) {
       data_coordinator& dc = get_trainer().get_data_coordinator();
       // Determine model mini-batch size and effective mini-batch size
@@ -138,12 +137,9 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs()
       // mini-batch is equal to the global mini-batch size.
       /// @todo This functionality should probably be moved elsewhere
       mini_batch_size = dc.get_current_mini_batch_size(mode);
-
-      effective_mini_batch_size = mini_batch_size;
     }
     // Set mini-batch size in model
     c.set_current_mini_batch_size(mini_batch_size);
-    c.set_effective_mini_batch_size(effective_mini_batch_size);
   }
 
   // Activation matrices are initalized in setup_data and further

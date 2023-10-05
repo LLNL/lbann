@@ -53,9 +53,8 @@ Retired features:
    models and trainers.  The mini-batch is now strictly contained to a
    single trainer.  This deprecates an unused (and old) multi-model
    execution mode that predated LTFB.
- - [TODO] Remove the notion of effective mini-batch size versus
-   current mini-batch size
- - [TODO] Remove world master mini-batch adjustment
+ - Removed the notion of effective mini-batch size versus current mini-batch size
+ - Remove world master mini-batch adjustment
  - [TODO] Remove model stride
 
 ============================== Release Notes: v0.103 ==============================

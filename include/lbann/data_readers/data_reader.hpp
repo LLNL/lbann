@@ -97,7 +97,6 @@ public:
       m_loaded_mini_batch_idx(0),
       m_current_mini_batch_idx(0),
       m_num_iterations_per_epoch(0),
-      m_world_master_mini_batch_adjustment(0),
       m_num_parallel_readers(0),
       m_max_files_to_load(0),
       m_file_dir(""),
@@ -424,8 +423,6 @@ public:
   int get_loaded_mini_batch_size() const;
   /// Get the current mini-batch size.
   int get_current_mini_batch_size() const;
-  /// Get the current mini-batch size.
-  int get_current_world_master_mini_batch_adjustment(int model_rank) const;
   /// Return the full mini_batch_size.
   int get_mini_batch_max() const { return m_mini_batch_size; }
   /// Set the mini batch stride
@@ -458,16 +455,6 @@ public:
   void set_last_mini_batch_size(const int s) { m_last_mini_batch_size = s; }
   /// Return the last mini batch size
   int get_last_mini_batch_size() const { return m_last_mini_batch_size; }
-  /// Set the world master mini batch adjustment (global)
-  void set_world_master_mini_batch_adjustment(const int s)
-  {
-    m_world_master_mini_batch_adjustment = s;
-  }
-  /// Return the world master mini batch adjustment (global)
-  int get_world_master_mini_batch_adjustment() const
-  {
-    return m_world_master_mini_batch_adjustment;
-  }
   /// Set the last mini batch stride
   void set_stride_to_last_mini_batch(const int s)
   {
@@ -791,8 +778,6 @@ public:
   int m_current_mini_batch_idx;
   int
     m_num_iterations_per_epoch; /// How many iterations all readers will execute
-
-  int m_world_master_mini_batch_adjustment;
 
   int m_num_parallel_readers; /// How many parallel readers are being used
 

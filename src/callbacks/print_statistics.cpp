@@ -95,28 +95,24 @@ void print_statistics::on_epoch_begin(model* m)
               << "/"
               << dc.get_num_iterations_per_epoch(execution_mode::tournament)
               << "]" << std::endl;
-    std::cout
-      << std::setfill(' ') << std::setw(23) << "  local MB ="
-      << " [" << std::setw(4)
-      << dc.get_mini_batch_size(execution_mode::training) << "/" << std::setw(4)
-      << dc.get_mini_batch_size(execution_mode::validation) << "/"
-      << std::setw(4) << dc.get_mini_batch_size(execution_mode::testing) << "/"
-      << std::setw(4) << dc.get_mini_batch_size(execution_mode::tournament)
-      << "]"
-      << "  local last MB ="
-      << " [" << std::setw(4)
-      << dc.get_last_mini_batch_size(execution_mode::training) << "+"
-      << dc.get_world_master_mini_batch_adjustment(execution_mode::training)
-      << "/" << std::setw(4)
-      << dc.get_last_mini_batch_size(execution_mode::validation) << "+"
-      << dc.get_world_master_mini_batch_adjustment(execution_mode::validation)
-      << "/" << std::setw(4)
-      << dc.get_last_mini_batch_size(execution_mode::testing) << "+"
-      << dc.get_world_master_mini_batch_adjustment(execution_mode::testing)
-      << "/" << std::setw(4)
-      << dc.get_last_mini_batch_size(execution_mode::tournament) << "+"
-      << dc.get_world_master_mini_batch_adjustment(execution_mode::tournament)
-      << "]" << std::endl;
+    std::cout << std::setfill(' ') << std::setw(23) << "  local MB ="
+              << " [" << std::setw(4)
+              << dc.get_mini_batch_size(execution_mode::training) << "/"
+              << std::setw(4)
+              << dc.get_mini_batch_size(execution_mode::validation) << "/"
+              << std::setw(4) << dc.get_mini_batch_size(execution_mode::testing)
+              << "/" << std::setw(4)
+              << dc.get_mini_batch_size(execution_mode::tournament) << "]"
+              << "  local last MB ="
+              << " [" << std::setw(4)
+              << dc.get_last_mini_batch_size(execution_mode::training) << "/"
+              << std::setw(4)
+              << dc.get_last_mini_batch_size(execution_mode::validation) << "/"
+              << std::setw(4)
+              << dc.get_last_mini_batch_size(execution_mode::testing) << "/"
+              << std::setw(4)
+              << dc.get_last_mini_batch_size(execution_mode::tournament) << "]"
+              << std::endl;
     std::cout << "-------------------------------------------------------------"
                  "-------------------------------"
               << std::endl;

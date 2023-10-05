@@ -107,8 +107,6 @@ void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
   auto& num_validation_epochs = m_validation_epochs;
   evaluation_context.set_current_mini_batch_size(
     dc.get_mini_batch_size(execution_mode::validation));
-  evaluation_context.set_effective_mini_batch_size(
-    dc.get_mini_batch_size(execution_mode::validation));
 
   // Initialize some state so it knows we're training now.
   c.set_execution_mode(execution_mode::training);
@@ -136,7 +134,9 @@ void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
     // detects the end of an epoch. The termination criteria must be
     // checked every iteration as there may be a batch limit rather
     // than an epoch limit.
-    LBANN_CALIPER_LOOP_BEGIN(train_batch, (epoch == 0UL ? "train_minibatch_epoch_0" : "train_minibatch"));
+    LBANN_CALIPER_LOOP_BEGIN(
+      train_batch,
+      (epoch == 0UL ? "train_minibatch_epoch_0" : "train_minibatch"));
     bool end_of_epoch = false;
     while (!term(c) && !end_of_epoch) {
       LBANN_CALIPER_LOOP_ITER(train_batch, c.get_step());

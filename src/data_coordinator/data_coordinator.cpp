@@ -596,26 +596,6 @@ int data_coordinator::get_current_mini_batch_size(execution_mode mode) const
                                   : 0;
 }
 
-int data_coordinator::get_world_master_mini_batch_adjustment(
-  execution_mode mode) const
-{
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr)
-           ? data_reader->get_world_master_mini_batch_adjustment()
-           : 0;
-}
-
-int data_coordinator::get_current_world_master_mini_batch_adjustment(
-  execution_mode mode,
-  int model_rank) const
-{
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr)
-           ? data_reader->get_current_world_master_mini_batch_adjustment(
-               model_rank)
-           : 0;
-}
-
 // save state of IO to a checkpoint
 bool data_coordinator::save_to_checkpoint_shared(persist& p) const
 {

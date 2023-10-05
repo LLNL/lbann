@@ -87,7 +87,6 @@ void generic_data_reader::setup(int num_io_threads,
   m_stride_to_last_mini_batch = 0;
   m_current_mini_batch_idx = 0;
   m_num_iterations_per_epoch = 0;
-  m_world_master_mini_batch_adjustment = 0;
 
   set_initial_position();
 
@@ -500,26 +499,10 @@ int generic_data_reader::get_loaded_mini_batch_size() const
 int generic_data_reader::get_current_mini_batch_size() const
 {
   if (m_current_mini_batch_idx == (m_num_iterations_per_epoch - 1)) {
-    return m_last_mini_batch_size + m_world_master_mini_batch_adjustment;
+    return m_last_mini_batch_size;
   }
   else {
     return m_mini_batch_size;
-  }
-}
-
-/// Returns the current adjustment to the mini-batch size based on if
-/// the world master (model 0) has any extra samples
-/// Note that any rank in model 0 does not need to add in this offset
-/// since the model will already be aware of the extra samples
-int generic_data_reader::get_current_world_master_mini_batch_adjustment(
-  int model_rank) const
-{
-  if (model_rank != 0 &&
-      m_current_mini_batch_idx == (m_num_iterations_per_epoch - 1)) {
-    return m_world_master_mini_batch_adjustment;
-  }
-  else {
-    return 0;
   }
 }
 
