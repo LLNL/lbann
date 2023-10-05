@@ -355,20 +355,26 @@ void Layer::set_output_dims(std::vector<int> dims, size_t output_index)
 El::Int Layer::infer_mini_batch_size_from_parents() const
 {
   El::Int inferred_mini_batch_size = 0;
+  std::string inferred_parent_layer_name;
   for (int i = 0; i < get_num_parents(); ++i) {
     // Set the mini-batch size based on the parent tensors
     const auto& parent = get_parent_layer(i);
     const auto& parent_output = parent.get_activations(*this);
     if (inferred_mini_batch_size == 0) {
       inferred_mini_batch_size = parent_output.Width();
+      inferred_parent_layer_name = parent.get_name();
     }
     else if (inferred_mini_batch_size != parent_output.Width()) {
       // Check mini-batch matrix dimensions
       LBANN_ERROR("Layer ",
                   get_name(),
                   " has multiple parents with different mini-batch sizes: ",
+                  inferred_parent_layer_name,
+                  "=",
                   inferred_mini_batch_size,
                   " vs ",
+                  parent.get_name(),
+                  "=",
                   parent_output.Width());
     }
   }
