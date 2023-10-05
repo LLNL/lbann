@@ -108,7 +108,7 @@ void input_layer<TensorDataType, T_layout, Dev>::setup_data(
   //  data_type_layer<TensorDataType>::infer_mini_batch_size(); El::Int
   //  inferred_max_mini_batch_size =
   //  data_type_layer<TensorDataType>::get_mini_batch_size_from_execution_context();
-  LBANN_MSG("I believe that the mini-batch size is ", max_mini_batch_size);
+  // LBANN_MSG("I believe that the mini-batch size is ", max_mini_batch_size);
   // Resize output to maximum mini-batch size
   for (int i = 0; i < this->get_num_children(); ++i) {
     auto& output = this->get_activations(i);

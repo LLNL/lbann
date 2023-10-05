@@ -939,10 +939,10 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_data(
     // get_model()->get_max_mini_batch_size();
     //    El::Int inferred_max_mini_batch_size =
     //    get_trainer().get_max_mini_batch_size();
-    LBANN_MSG("DTL for layer ",
-              this->get_name(),
-              " I believe that the mini-batch size is ",
-              max_mini_batch_size);
+    // LBANN_MSG("DTL for layer ",
+    //           this->get_name(),
+    //           " I believe that the mini-batch size is ",
+    //           max_mini_batch_size);
     // Resize output to maximum mini-batch size
     for (int i = 0; i < this->get_num_children(); ++i) {
       auto& output = this->get_activations(i);
