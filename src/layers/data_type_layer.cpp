@@ -167,9 +167,6 @@ modify_reference_counter(PointerRangeReferenceCounter& refcnt,
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
 {
-  if (!this->is_participating())
-    return;
-
   // This bit is preprocessed out since the LBANN_CALIPER macro
   // won't help us out here.
 #ifdef LBANN_HAS_CALIPER
@@ -223,6 +220,7 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
 #endif // LBANN_HAS_DISTCONV
 
   // Apply layer's compute function
+  if (this->is_participating())
   {
     LBANN_CALIPER_MARK_SCOPE(("fp_compute:" + this->get_name()).c_str());
     const auto fp_compute_start = get_time();
