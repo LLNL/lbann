@@ -867,7 +867,8 @@ void data_type_distconv_adapter<InputTensorDataType,
       layer());
   // Reconfigure the sample dimension as the mini batch size may vary
   // at the end of epoch
-  El::Int mini_batch_size = l.current_output_mini_batch_size();
+  El::Int mini_batch_size =
+    l.infer_mini_batch_size_from_parents_or_default_to_current();
   set_activations_outermost_dimension(mini_batch_size);
   for (int i = 0; i < l.get_num_parents(); ++i) {
     if (parent_copy_required(i) || parent_shuffle_required(i)) {
@@ -911,7 +912,8 @@ void data_type_distconv_adapter<InputTensorDataType,
       layer());
   // Reconfigure the sample dimension as the mini batch size may vary
   // at the end of epoch
-  El::Int mini_batch_size = l.current_output_mini_batch_size();
+  El::Int mini_batch_size =
+    l.infer_mini_batch_size_from_parents_or_default_to_current();
   set_error_signals_outermost_dimension(mini_batch_size);
   for (int i = 0; i < l.get_num_children(); ++i) {
     if (child_copy_required(i) || child_shuffle_required(i)) {
