@@ -460,6 +460,10 @@ public:
   void do_weight_optimize_end_cbs(weights* w);
   /** @brief Return the maximum mini-batch size. */
   size_t get_max_mini_batch_size() const noexcept;
+  /** @brief Return the current mini-batch size. */
+  El::Int get_current_mini_batch_size() const noexcept;
+  /** @brief Set the current mini-batch size. */
+  void set_current_mini_batch_size(El::Int) noexcept;
 
 private:
   friend cereal::access;
@@ -596,6 +600,12 @@ private:
    *  @details This should be set before setup_distconv() is called.
    */
   size_t m_max_mini_batch_size;
+
+  /** @brief The current mini-batch size.
+   *  @details This should be set on each step by the data coordinator
+   *  / input layers on fp_setup_output.
+   */
+  El::Int m_current_mini_batch_size;
 
 #ifdef LBANN_HAS_DISTCONV
 private:
@@ -736,6 +746,17 @@ inline void model::set_num_resources_branch_layers(int num) noexcept
 inline size_t model::get_max_mini_batch_size() const noexcept
 {
   return m_max_mini_batch_size;
+}
+
+inline El::Int model::get_current_mini_batch_size() const noexcept
+{
+  return m_current_mini_batch_size;
+}
+
+inline void model::set_current_mini_batch_size(El::Int mini_batch_size) noexcept
+{
+  m_current_mini_batch_size = mini_batch_size;
+  return;
 }
 
 } // namespace lbann
