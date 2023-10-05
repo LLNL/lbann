@@ -70,7 +70,7 @@ public:
   bool child_shuffle_required(size_t output_index) const override;
 
   // Nothing to do here as everything is done in fp_compute_distconv.
-  void fp_setup(El::Int mini_batch_size) override {}
+  void fp_setup() override {}
   void fp_compute();
 
 private:
@@ -147,7 +147,7 @@ public:
   /** Setup output tensors.
    *  Sets up the effective (global) mini-batch size.
    */
-  void fp_setup_outputs(El::Int mini_batch_size) override;
+  void fp_setup_outputs() override;
 
   void fp_compute() override;
 

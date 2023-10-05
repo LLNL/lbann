@@ -112,9 +112,9 @@ public:
   /** Get original previous error signal tensor. */
   OutputTensorDevType& get_original_prev_error_signals(int child_index = 0);
 
-  void fp_setup(El::Int mini_batch_size) override;
+  void fp_setup() override;
   void fp_postprocess() override;
-  void bp_setup(El::Int mini_batch_size) override;
+  void bp_setup() override;
   void bp_postprocess() override;
 
   void dump_activations() const override;

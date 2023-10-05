@@ -97,8 +97,8 @@ protected:
 
   void setup_dims() override;
 
-  void fp_setup_outputs(El::Int mini_batch_size) override;
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
+  void fp_setup_outputs() override;
+  void bp_setup_gradient_wrt_inputs() override;
   void fp_compute() override;
   void bp_compute() override;
   void fp_compute_subgrid();
@@ -243,8 +243,7 @@ void fp_setup_outputs_impl(
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void slice_layer<TensorDataType, Layout, Device>::fp_setup_outputs(
-  El::Int mini_batch_size)
+void slice_layer<TensorDataType, Layout, Device>::fp_setup_outputs()
 {
   fp_setup_outputs_impl(*this);
 }
@@ -352,8 +351,7 @@ void slice_layer<TensorDataType, Layout, Device>::bp_compute_subgrid()
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void slice_layer<TensorDataType, Layout, Device>::bp_setup_gradient_wrt_inputs(
-  El::Int mini_batch_size)
+void slice_layer<TensorDataType, Layout, Device>::bp_setup_gradient_wrt_inputs()
 {
   const auto& output0_grad = this->get_prev_error_signals(0);
   auto& input_grad = this->get_error_signals();

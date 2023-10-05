@@ -89,27 +89,26 @@ protected:
     data_type_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
   }
-  void fp_setup_outputs(El::Int mini_batch_size) override
+  void fp_setup_outputs() override
   {
 #ifdef LBANN_HAS_DISTCONV
     // Copy activations when distconv is enabled
 
     if (this->distconv_enabled()) {
-      data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
+      data_type_layer<TensorDataType>::fp_setup_outputs();
 
       return;
     }
 #endif // LBANN_HAS_DISTCONV
     El::LockedView(this->get_activations(), this->get_prev_activations());
   }
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override
+  void bp_setup_gradient_wrt_inputs() override
   {
 #ifdef LBANN_HAS_DISTCONV
     // Copy gradients wrt inputs when distconv is enabled
 
     if (this->distconv_enabled()) {
-      data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(
-        mini_batch_size);
+      data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs();
 
       return;
     }

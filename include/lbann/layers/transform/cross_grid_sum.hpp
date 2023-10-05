@@ -147,12 +147,14 @@ private:
                        syncInfoOutput);
   }
 
-  void fp_setup_outputs(El::Int mini_batch_size) final
+  void fp_setup_outputs() final
   {
 
     if (this->get_num_children() < 1) {
       return;
     }
+    auto mini_batch_size =
+      this->infer_mini_batch_size_from_parents_or_default_to_current();
 
     // Initialize output tensors
     for (int i = 0; i < this->get_num_children(); ++i) {
@@ -163,7 +165,7 @@ private:
     }
   }
 
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) final
+  void bp_setup_gradient_wrt_inputs() final
   {
     auto parents = this->get_parent_layers();
     auto children = this->get_child_layers();

@@ -145,13 +145,16 @@ protected:
       sync_info_output);
   }
 
-  void fp_setup_outputs(El::Int mini_batch_size) override
+  void fp_setup_outputs() override
   {
 
     if (this->get_num_children() < 1) {
       return;
     }
     // Determine distributed matrix alignment
+
+    auto mini_batch_size =
+      this->infer_mini_batch_size_from_parents_or_default_to_current();
 
     // Initialize output tensors
     for (int i = 0; i < this->get_num_children(); ++i) {
@@ -161,7 +164,7 @@ protected:
     }
   }
 
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override
+  void bp_setup_gradient_wrt_inputs() override
   {
     auto children = this->get_child_layers();
     auto const subgrid_comm_rank = El::mpi::Rank(this->get_subgrid_comm());
@@ -203,6 +206,10 @@ protected:
 
     El::Transpose(temp_output, transposed_output);
     transposed_output.Resize(mloc * subgrid_comm_size, nloc);
+
+    auto mini_batch_size =
+      this->infer_mini_batch_size_from_parents_or_default_to_current();
+
     for (int i = 0; i < El::To<int>(children.size()); i++) {
       auto& gradient_wrt_input_cast_layer =
         dynamic_cast<MatrixType&>(this->get_error_signals(i));

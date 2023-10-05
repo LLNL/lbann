@@ -214,12 +214,14 @@ protected:
     }
   }
 
-  void fp_setup_outputs(El::Int mini_batch_size) override
+  void fp_setup_outputs() override
   {
 
     if (this->get_num_children() < 1) {
       return;
     }
+    auto mini_batch_size =
+      this->infer_mini_batch_size_from_parents_or_default_to_current();
     // Determine distributed matrix alignment
     const bool align_outputs = this->get_num_parents() > 0;
     const auto& alignment_dist =
@@ -242,7 +244,7 @@ protected:
     }
   }
 
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override
+  void bp_setup_gradient_wrt_inputs() override
   {
     int tag = 0;
     const auto& parents = this->get_parent_layers();

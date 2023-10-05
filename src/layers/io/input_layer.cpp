@@ -118,9 +118,12 @@ void input_layer<TensorDataType, T_layout, Dev>::setup_data(
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(
-  El::Int mini_batch_size)
+void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs()
 {
+  El::Int mini_batch_size = 0;
+  // if (get_model() != NULL) {
+  mini_batch_size = get_trainer().get_max_mini_batch_size();
+  // }
   /// During model setup there is no valid execution context, but
   /// during execution there is a context
   if (this->m_model->has_valid_execution_context()) {

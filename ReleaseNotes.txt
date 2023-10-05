@@ -28,6 +28,9 @@ Experiments & Applications:
 Internal features:
  - Fixed a bug where in-place layers sometimes attached a locked view
    of a matrix to a mutable view.
+ - Removed the mini_batch_size parameter from the following functions
+   in the layer class hierarchy: fp_setup_inputs, fp_setup_outputs, bp_setup_gradient_wrt_inputs
+   and the distconv_adapter class: fp_setup, bp_setup
 
 I/O & data readers:
  - Renamed percent_of_data_to_use more accurately to fraction_of_data_to_use.
@@ -44,7 +47,7 @@ Bug fixes:
 
 Retired features:
  - Support for autoencoder strategy in the summarize images callback was removed
- - Removed deprecated Layer protobuf fields: weight_data, 
+ - Removed deprecated Layer protobuf fields: weight_data,
    num_neurons_from_data_reader
 
 ============================== Release Notes: v0.103 ==============================

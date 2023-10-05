@@ -110,6 +110,19 @@ data_type_layer<InputTensorDataType,
 }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
+El::Int data_type_layer<InputTensorDataType, OutputTensorDataType>::
+  infer_mini_batch_size_from_parents_or_default_to_current() const
+{
+  auto mini_batch_size = infer_mini_batch_size_from_parents();
+  if (mini_batch_size == 0 && get_num_parents() == 0) {
+    // If there are no parents or the inferred size is 0, check
+    // existing outputs
+    mini_batch_size = current_output_mini_batch_size();
+  }
+  return mini_batch_size;
+}
+
+template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
 {
   // This bit is preprocessed out since the LBANN_CALIPER macro
@@ -136,19 +149,8 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
   }
 
   // Setup tensors
-  size_t mini_batch_size = 0;
-  // El::Int mini_batch_size = get_mini_batch_size_from_execution_context();
-  // LBANN_MSG("Forward prop says that the mini batch size is ",
-  // mini_batch_size); if (m_model->has_valid_execution_context()) {
-  //   const auto& c =
-  //     static_cast<SGDExecutionContext&>(m_model->get_execution_context());
-  //   mini_batch_size = c.get_current_mini_batch_size();
-  // }
-  // else {
-  //   mini_batch_size = m_model->get_max_mini_batch_size();
-  // }
-  fp_setup_inputs(mini_batch_size);
-  fp_setup_outputs(mini_batch_size);
+  fp_setup_inputs();
+  fp_setup_outputs();
 
 #if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
@@ -159,7 +161,7 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
 
 #ifdef LBANN_HAS_DISTCONV
   if (distconv_enabled())
-    get_distconv_adapter().fp_setup(mini_batch_size);
+    get_distconv_adapter().fp_setup();
 #endif // LBANN_HAS_DISTCONV
 
   // Apply layer's compute function
@@ -194,16 +196,7 @@ void data_type_layer<InputTensorDataType,
   const auto bp_start = get_time();
 
   // Setup tensors
-  size_t mini_batch_size = 0;
-  // if (m_model->has_valid_execution_context()) {
-  //   const auto& c =
-  //     static_cast<SGDExecutionContext&>(m_model->get_execution_context());
-  //   mini_batch_size = c.get_current_mini_batch_size();
-  // }
-  // else {
-  //   mini_batch_size = m_model->get_max_mini_batch_size();
-  // }
-  bp_setup_gradient_wrt_inputs(mini_batch_size);
+  bp_setup_gradient_wrt_inputs();
 
 #if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
@@ -214,7 +207,7 @@ void data_type_layer<InputTensorDataType,
 
 #ifdef LBANN_HAS_DISTCONV
   if (distconv_enabled())
-    get_distconv_adapter().bp_setup(mini_batch_size);
+    get_distconv_adapter().bp_setup();
 #endif // LBANN_HAS_DISTCONV
 
   // Backprop the compute function.
@@ -931,8 +924,8 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_data(
   Layer::setup_data(max_mini_batch_size);
 
   // Initialize input and output tensors
-  fp_setup_inputs(max_mini_batch_size);
-  fp_setup_outputs(max_mini_batch_size);
+  fp_setup_inputs();
+  fp_setup_outputs();
 
   if (this->get_num_parents() == 0) {
     // El::Int inferred_max_mini_batch_size =
@@ -1043,8 +1036,8 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::check_setup()
 }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
-void data_type_layer<InputTensorDataType, OutputTensorDataType>::
-  fp_setup_inputs(El::Int mini_batch_size)
+void data_type_layer<InputTensorDataType,
+                     OutputTensorDataType>::fp_setup_inputs()
 {
   if (get_num_parents() < 1) {
     return;
@@ -1065,26 +1058,12 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
     auto& input = get_prev_activations(i);
     input.Empty(false);
     view_or_copy_tensor(parent_output, input, !m_runs_inplace);
-
-    // Check input matrix dimensions
-    // const auto& height = get_input_size(i);
-    // const auto& width = mini_batch_size;
-    // if ((input.Height() != height || input.Width() != width)) {
-    //   std::stringstream err;
-    //   err << "layer \"" << get_name() << "\" "
-    //       << "expected an input tensor stored in a " << height << " x " <<
-    //       width
-    //       << " matrix "
-    //       << "from layer \"" << parent.get_name() << "\", but got a "
-    //       << input.Height() << " x " << input.Width() << " matrix";
-    //   LBANN_ERROR(err.str());
-    // }
   }
 }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
-void data_type_layer<InputTensorDataType, OutputTensorDataType>::
-  fp_setup_outputs(El::Int mini_batch_size)
+void data_type_layer<InputTensorDataType,
+                     OutputTensorDataType>::fp_setup_outputs()
 {
   if (get_num_children() < 1) {
     return;
@@ -1096,15 +1075,8 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
     (align_outputs ? get_prev_activations().DistData()
                    : get_activations().DistData());
 
-  // BVE
-  auto inferred_mini_batch_size = infer_mini_batch_size_from_parents();
-  if (inferred_mini_batch_size == 0 && get_num_parents() == 0) {
-    // If there are no parents or the inferred size is 0, check
-    // existing outputs
-    inferred_mini_batch_size = current_output_mini_batch_size();
-    //    inferred_mini_batch_size = mini_batch_size;
-  }
-  // BVE
+  auto mini_batch_size =
+    infer_mini_batch_size_from_parents_or_default_to_current();
 
   // Initialize output tensors
   for (int i = 0; i < get_num_children(); ++i) {
@@ -1127,25 +1099,7 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
     if (align_outputs) {
       output.AlignWith(alignment_dist);
     }
-
-    // Check input matrix dimensions
-    const auto& height = get_output_size(i);
-    const auto& width = mini_batch_size;
-    output.Resize(get_output_size(i), inferred_mini_batch_size);
-
-    // if (mini_batch_size != inferred_mini_batch_size) {
-    //   //    if ((output.Height() != height || output.Width() != width)) {
-    //   std::stringstream err;
-    //   err << "layer \"" << get_name() << "\" "
-    //       << "mini batch diff " << mini_batch_size << " versus " <<
-    //       inferred_mini_batch_size
-    //       << "expected an input tensor stored in a " << height << " x " <<
-    //       width
-    //       << " matrix "
-    //       << "from layer \"" << this->get_name() << "\", but got a "
-    //       << output.Height() << " x " << output.Width() << " matrix";
-    //   LBANN_WARNING(err.str());
-    // }
+    output.Resize(get_output_size(i), mini_batch_size);
   }
 }
 
@@ -1390,23 +1344,16 @@ void data_type_layer<InputTensorDataType,
 }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
-void data_type_layer<InputTensorDataType, OutputTensorDataType>::
-  bp_setup_gradient_wrt_inputs(El::Int mini_batch_size)
+void data_type_layer<InputTensorDataType,
+                     OutputTensorDataType>::bp_setup_gradient_wrt_inputs()
 {
   for (int i = 0; i < get_num_parents(); ++i) {
     if (m_runs_inplace && i < get_num_children() && !distconv_enabled()) {
       continue;
     }
 
-    // BVE
-    auto inferred_mini_batch_size = infer_mini_batch_size_from_parents();
-    if (inferred_mini_batch_size == 0 && get_num_parents() == 0) {
-      // If there are no parents or the inferred size is 0, check
-      // existing outputs
-      inferred_mini_batch_size = current_output_mini_batch_size();
-      //    inferred_mini_batch_size = mini_batch_size;
-    }
-    // BVE
+    auto mini_batch_size =
+      infer_mini_batch_size_from_parents_or_default_to_current();
 
 #ifdef LBANN_HAS_DISTCONV
     if (!keep_original_gradient_wrt_inputs(i))
@@ -1421,7 +1368,7 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
     }
     gradient_wrt_input.Empty(false);
     gradient_wrt_input.AlignWith(get_prev_activations(i));
-    gradient_wrt_input.Resize(get_input_size(i), inferred_mini_batch_size);
+    gradient_wrt_input.Resize(get_input_size(i), mini_batch_size);
 
     // if (mini_batch_size != inferred_mini_batch_size) {
     //   std::stringstream err;

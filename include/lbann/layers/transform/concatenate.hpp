@@ -102,8 +102,8 @@ protected:
   void setup_pointers() override;
   void setup_dims() override;
 
-  void fp_setup_outputs(El::Int mini_batch_size) override;
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
+  void fp_setup_outputs() override;
+  void bp_setup_gradient_wrt_inputs() override;
   void fp_compute() override;
   void bp_compute() override;
 
@@ -305,8 +305,7 @@ void concatenate_layer<TensorDataType, Layout, Device>::setup_dims()
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void concatenate_layer<TensorDataType, Layout, Device>::fp_setup_outputs(
-  El::Int mini_batch_size)
+void concatenate_layer<TensorDataType, Layout, Device>::fp_setup_outputs()
 {
 #ifdef LBANN_HAS_DISTCONV
   if (!this->keep_original_outputs(0))
@@ -475,7 +474,7 @@ void bp_setup_gradient_wrt_inputs_impl(
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType, Layout, Device>::
-  bp_setup_gradient_wrt_inputs(El::Int mini_batch_size)
+  bp_setup_gradient_wrt_inputs()
 {
   bp_setup_gradient_wrt_inputs_impl(*this);
 }

@@ -606,8 +606,8 @@ data_type_distconv_adapter<InputTensorDataType,
   const auto shape = get_activations_shape(index);
   const auto local_shape = get_activations_local_shape(index);
 
-  if (layer().runs_inplace() && (prev_dist == dist) 
-      && index < layer().get_num_parents()){
+  if (layer().runs_inplace() && (prev_dist == dist) &&
+      index < layer().get_num_parents()) {
     const auto& prev_activations = this->get_prev_activations(index);
     return std::make_unique<OutputTensorDevType>(prev_activations);
   }
@@ -755,8 +755,8 @@ data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
   const auto shape = get_error_signals_shape(index);
   const auto local_shape = get_error_signals_local_shape(index);
 
-  if (layer().runs_inplace() && (prev_dist == dist) 
-      && index < layer().get_num_children()){
+  if (layer().runs_inplace() && (prev_dist == dist) &&
+      index < layer().get_num_children()) {
     const auto& prev_error_signals = this->get_prev_error_signals(index);
     return std::make_unique<InputTensorDevType>(prev_error_signals);
   }
@@ -859,14 +859,15 @@ void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
 }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
-void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
-  fp_setup(El::Int mini_batch_size)
+void data_type_distconv_adapter<InputTensorDataType,
+                                OutputTensorDataType>::fp_setup()
 {
   const auto& l =
     dynamic_cast<data_type_layer<InputTensorDataType, OutputTensorDataType>&>(
       layer());
   // Reconfigure the sample dimension as the mini batch size may vary
   // at the end of epoch
+  El::Int mini_batch_size = l.current_output_mini_batch_size();
   set_activations_outermost_dimension(mini_batch_size);
   for (int i = 0; i < l.get_num_parents(); ++i) {
     if (parent_copy_required(i) || parent_shuffle_required(i)) {
@@ -902,14 +903,15 @@ void data_type_distconv_adapter<InputTensorDataType,
 }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
-void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
-  bp_setup(El::Int mini_batch_size)
+void data_type_distconv_adapter<InputTensorDataType,
+                                OutputTensorDataType>::bp_setup()
 {
   const auto& l =
     dynamic_cast<data_type_layer<InputTensorDataType, OutputTensorDataType>&>(
       layer());
   // Reconfigure the sample dimension as the mini batch size may vary
   // at the end of epoch
+  El::Int mini_batch_size = l.current_output_mini_batch_size();
   set_error_signals_outermost_dimension(mini_batch_size);
   for (int i = 0; i < l.get_num_children(); ++i) {
     if (child_copy_required(i) || child_shuffle_required(i)) {
