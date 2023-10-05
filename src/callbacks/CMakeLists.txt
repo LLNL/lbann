@@ -46,6 +46,7 @@ set_full_path(THIS_DIR_SOURCES
   dump_weights.cpp
   early_stopping.cpp
   gpu_memory_usage.cpp
+  gradient_clipping.cpp
   hang.cpp
   learning_rate.cpp
   load_model.cpp

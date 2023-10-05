@@ -46,6 +46,7 @@ set_full_path(THIS_DIR_HEADERS
   dump_weights.hpp
   early_stopping.hpp
   gpu_memory_usage.hpp
+  gradient_clipping.hpp
   hang.hpp
   learning_rate.hpp
   ltfb.hpp

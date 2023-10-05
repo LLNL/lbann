@@ -49,6 +49,7 @@
 #endif // LBANN_HAS_ONNX
 #include "lbann/callbacks/alternate_updates.hpp"
 #include "lbann/callbacks/gpu_memory_usage.hpp"
+#include "lbann/callbacks/gradient_clipping.hpp"
 #include "lbann/callbacks/hang.hpp"
 #include "lbann/callbacks/learning_rate.hpp"
 #include "lbann/callbacks/load_model.hpp"
@@ -156,6 +157,8 @@ void register_default_builders(factory_type& factory)
 #endif // LBANN_HAS_ONNX
   factory.register_builder("CallbackGPUMemoryUsage",
                            build_gpu_memory_usage_callback_from_pbuf);
+  factory.register_builder("CallbackClipGradientNorm",
+                           build_clip_gradient_norm_callback_from_pbuf);
   factory.register_builder("CallbackHang", build_hang_callback_from_pbuf);
   factory.register_builder(
     "CallbackLinearGrowthLearningRate",

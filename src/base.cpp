@@ -651,6 +651,7 @@ CEREAL_FORCE_DYNAMIC_INIT(callback_dump_outputs);
 CEREAL_FORCE_DYNAMIC_INIT(callback_dump_weights);
 CEREAL_FORCE_DYNAMIC_INIT(callback_early_stopping);
 CEREAL_FORCE_DYNAMIC_INIT(callback_gpu_memory_usage);
+CEREAL_FORCE_DYNAMIC_INIT(callback_clip_gradient_norm);
 CEREAL_FORCE_DYNAMIC_INIT(callback_hang);
 CEREAL_FORCE_DYNAMIC_INIT(callback_load_model);
 CEREAL_FORCE_DYNAMIC_INIT(callback_mixup);
