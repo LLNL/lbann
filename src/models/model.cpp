@@ -223,8 +223,9 @@ void model::serialize(Archive& ar)
     // CEREAL_NVP(m_callbacks),
     CEREAL_NVP(m_background_io_allowed),
     // CEREAL_NVP(m_model_is_setup),
-    CEREAL_NVP(m_max_mini_batch_size),
-    CEREAL_NVP(m_current_mini_batch_size));
+    CEREAL_NVP(m_max_mini_batch_size)
+    // CEREAL_NVP(m_current_mini_batch_size),
+  );
 
   ar.serializeDeferments();
   if constexpr (utils::IsInputArchive<Archive>)
