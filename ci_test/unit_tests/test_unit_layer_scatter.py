@@ -128,7 +128,6 @@ def construct_model(lbann):
         upper_bound=val+tol,
         error_on_failure=True,
         execution_modes='test'))
-    callbacks.append(lbann.CallbackPrintModelDescription())
 
     ######################################################################
     #
@@ -182,7 +181,6 @@ def construct_model(lbann):
         upper_bound=val+tol,
         error_on_failure=True,
         execution_modes='test'))
-    callbacks.append(lbann.CallbackPrintModelDescription())
     ######################################################################
     #
     #          2D Values , 1D Input, Axis = 1
@@ -238,7 +236,6 @@ def construct_model(lbann):
     # Gradient checking
 
     callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
-    callbacks.append(lbann.CallbackPrintModelDescription())
 
     # Construct model
     num_epochs = 0
