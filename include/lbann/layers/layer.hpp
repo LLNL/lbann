@@ -634,6 +634,9 @@ public:
   /** @brief Set output tensor dimensions. */
   void set_output_dims(std::vector<int> dims, size_t output_index = 0);
 
+  El::Int infer_mini_batch_size_from_parents() const;
+  virtual El::Int current_output_mini_batch_size() const = 0;
+
   ///@}
 
   /** Get reference to LBANN communicator. */

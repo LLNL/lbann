@@ -132,6 +132,12 @@ public:
   const InputAbsDistMatrixType&
   get_error_signals(const Layer& parent) const override;
 
+  /* Legacy method for getting the mini-batch size from the execution
+     context */
+  // El::Int get_mini_batch_size_from_execution_context();
+
+  El::Int current_output_mini_batch_size() const override;
+
   /** Get temp Grad Tensor. */
   OutputAbsDistMatrixType& get_temp_grad();
   /** Get transfered input for each branch tag **/
