@@ -159,6 +159,14 @@ void local_bp_gpu(
 } // namespace
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void l2_norm2_layer<TensorDataType, T_layout, Dev>::fp_compute_external(
+  const El::AbstractMatrix<TensorDataType>& input,
+  El::AbstractMatrix<TensorDataType>& output)
+{
+  local_fp_gpu(input, output);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void l2_norm2_layer<TensorDataType, T_layout, Dev>::local_fp_compute()
 {
   local_fp_gpu(this->get_local_prev_activations(), this->m_workspace->Matrix());
