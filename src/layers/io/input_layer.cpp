@@ -102,18 +102,17 @@ void input_layer<TensorDataType, T_layout, Dev>::setup_data(
 {
   data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
-  El::Int inferred_max_mini_batch_size =
-    get_trainer().get_max_mini_batch_size();
+  // El::Int inferred_max_mini_batch_size =
+  //   get_trainer().get_max_mini_batch_size();
   //  El::Int inferred_max_mini_batch_size =
   //  data_type_layer<TensorDataType>::infer_mini_batch_size(); El::Int
   //  inferred_max_mini_batch_size =
   //  data_type_layer<TensorDataType>::get_mini_batch_size_from_execution_context();
-  LBANN_MSG("I believe that the mini-batch size is ",
-            inferred_max_mini_batch_size);
+  LBANN_MSG("I believe that the mini-batch size is ", max_mini_batch_size);
   // Resize output to maximum mini-batch size
   for (int i = 0; i < this->get_num_children(); ++i) {
     auto& output = this->get_activations(i);
-    output.Resize(output.Height(), inferred_max_mini_batch_size);
+    output.Resize(output.Height(), max_mini_batch_size);
   }
 }
 
@@ -122,8 +121,10 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs()
 {
   El::Int mini_batch_size = 0;
   // if (get_model() != NULL) {
-  mini_batch_size = get_trainer().get_max_mini_batch_size();
-  // }
+  mini_batch_size = this->get_model()->get_current_mini_batch_size();
+// mini_batch_size = get_trainer().get_max_mini_batch_size();
+//  }
+#if 0
   /// During model setup there is no valid execution context, but
   /// during execution there is a context
   if (this->m_model->has_valid_execution_context()) {
@@ -137,15 +138,16 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs()
       // mini-batch is equal to the global mini-batch size.
       /// @todo This functionality should probably be moved elsewhere
       mini_batch_size = dc.get_current_mini_batch_size(mode);
-      // LBANN_MSG("DC Fetch for layer ",
-      //           this->get_name(),
-      //           " I believe that the mini-batch size is ",
-      //           mini_batch_size);
+      LBANN_MSG("DC Fetch for layer ",
+                this->get_name(),
+                " I believe that the mini-batch size is ",
+                mini_batch_size);
     }
     // Set mini-batch size in model
     c.set_current_mini_batch_size(mini_batch_size);
     this->get_model()->set_current_mini_batch_size(mini_batch_size);
   }
+#endif
 
   // LBANN_MSG("Input layer ",
   //           this->get_name(),

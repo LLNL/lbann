@@ -755,6 +755,16 @@ inline El::Int model::get_current_mini_batch_size() const noexcept
 
 inline void model::set_current_mini_batch_size(El::Int mini_batch_size) noexcept
 {
+  if (mini_batch_size > static_cast<El::Int>(m_max_mini_batch_size)) {
+    LBANN_WARNING(
+      "LOGICAL ERROR: the current mini-batch size ",
+      mini_batch_size,
+      " is being set to larger than the established maximim mini-batch size ",
+      m_max_mini_batch_size,
+      ".  Note that this should work properly as all matrices will be resized, "
+      "but this is a logical error as the maximum mini-batch size should be "
+      "established at setup time to avoid dynamic allocation.");
+  }
   m_current_mini_batch_size = mini_batch_size;
   return;
 }

@@ -100,6 +100,8 @@ public:
     // hard-coded into the model & layers
     auto c = SGDExecutionContext(execution_mode::inference, mbs);
     model->reset_mode(c, execution_mode::inference);
+    // Explicitly set the size of the mini-batch that the model is executing
+    model->set_current_mini_batch_size(mbs);
 
     // Infer on mini batches
     for (size_t i = 0; i < samples_size; i += mbs) {

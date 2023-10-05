@@ -212,6 +212,18 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
   m_data_prefetch_sync_event.synchronize();
 #endif // LBANN_HAS_GPU
 
+  El::Int current_mini_batch_size =
+    dc.get_current_mini_batch_size(execution_mode::training);
+  // BVE Fix it so that the updated current mini-batch is set before
+  // any layer is evaluated to avoid the race condition of a non-input
+  // root node using the wrong current mini-batch size
+  model.set_current_mini_batch_size(current_mini_batch_size);
+  // Set mini-batch size in the execution context.  This used to be
+  // done in the input layer, but should be done there any more.
+  c.set_current_mini_batch_size(current_mini_batch_size);
+  // LBANN_MSG("Model DC Fetch I believe that the mini-batch size is ",
+  //           current_mini_batch_size);
+
   dc.fetch_data(execution_mode::training);
 
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
@@ -342,6 +354,14 @@ bool SGDTrainingAlgorithm::evaluate_mini_batch(SGDExecutionContext& c,
   model.reset_mode(c, mode);
   dc.reset_mode(c);
   do_batch_begin_cbs(model, mode, ScopeTimer{timer, "batch_begin callbacks"});
+  El::Int current_mini_batch_size = dc.get_current_mini_batch_size(mode);
+  // BVE Fix it so that the updated current mini-batch is set before
+  // any layer is evaluated to avoid the race condition of a non-input
+  // root node using the wrong current mini-batch size
+  model.set_current_mini_batch_size(current_mini_batch_size);
+  // Set mini-batch size in the execution context.  This used to be
+  // done in the input layer, but should be done there any more.
+  c.set_current_mini_batch_size(current_mini_batch_size);
   dc.fetch_data(mode);
   model.forward_prop(mode);
   // check if the data coordinator has finished the epoch and kickoff
