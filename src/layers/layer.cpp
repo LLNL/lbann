@@ -772,6 +772,9 @@ void Layer::remove_as_gradient_source()
 
 void Layer::back_prop()
 {
+  if (!this->is_participating())
+    return;
+
   // This bit is preprocessed out since the LBANN_CALIPER macro
   // won't help us out here.
 #ifdef LBANN_HAS_CALIPER

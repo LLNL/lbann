@@ -121,6 +121,9 @@ public:
     return TypeName<OutputTensorDataType>();
   };
 
+  /** @brief Determine if we're participating in the compute on this process */
+  bool is_participating() const final;
+
   /** Forward propagation step.
    *  Apply a mathematical operation to input tensors to obtain output
    *  tensors.

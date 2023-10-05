@@ -84,6 +84,19 @@ data_type_layer<InputTensorDataType, OutputTensorDataType>::operator=(
   return *this;
 }
 
+template <typename InT, typename OutT>
+bool data_type_layer<InT, OutT>::is_participating() const
+{
+  if (this->get_num_children() > 0)
+    return this->get_activations().Participating();
+  if (this->get_num_parents() > 0)
+    return this->get_prev_activations().Participating();
+
+  LBANN_ERROR("Layer \"", this->get_name(), "\" has no children "
+              "and no parents; cannot determine grid.");
+  return false;
+}
+
 template <typename InputTensorDataType, typename OutputTensorDataType>
 El::Int
 data_type_layer<InputTensorDataType,
@@ -154,6 +167,9 @@ modify_reference_counter(PointerRangeReferenceCounter& refcnt,
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
 {
+  if (!this->is_participating())
+    return;
+
   // This bit is preprocessed out since the LBANN_CALIPER macro
   // won't help us out here.
 #ifdef LBANN_HAS_CALIPER

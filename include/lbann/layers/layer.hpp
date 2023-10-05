@@ -375,6 +375,13 @@ public:
    */
   virtual El::Device get_device_allocation() const = 0;
 
+  /** @brief Get whether this layer participates on this process.
+   *
+   *  @note This is technically possible to implement here, but easier
+   *        in data_type_layer.
+   */
+  virtual bool is_participating() const = 0;
+
   /** @brief Get expected number of parent layers.
    *  A negative value indicates no limit.
    */
