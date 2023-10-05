@@ -734,6 +734,10 @@ void model::setup(size_t max_mini_batch_size,
     setup_subcommunicators(grids_);
   }
 
+  // Because it is used as a default for layers with no inputs
+  // initailize the current mini-batch size before setting up the
+  // layers
+  m_current_mini_batch_size = max_mini_batch_size;
   setup_layers(max_mini_batch_size, grids_);
 
   // Setup weights
