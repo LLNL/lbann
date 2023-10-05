@@ -97,8 +97,6 @@ public:
       m_loaded_mini_batch_idx(0),
       m_current_mini_batch_idx(0),
       m_num_iterations_per_epoch(0),
-      m_global_mini_batch_size(0),
-      m_global_last_mini_batch_size(0),
       m_world_master_mini_batch_adjustment(0),
       m_num_parallel_readers(0),
       m_max_files_to_load(0),
@@ -426,16 +424,10 @@ public:
   int get_loaded_mini_batch_size() const;
   /// Get the current mini-batch size.
   int get_current_mini_batch_size() const;
-  /// Get the current global mini-batch size.
-  int get_current_global_mini_batch_size() const;
   /// Get the current mini-batch size.
   int get_current_world_master_mini_batch_adjustment(int model_rank) const;
   /// Return the full mini_batch_size.
   int get_mini_batch_max() const { return m_mini_batch_size; }
-  /// Set the mini batch size across all models (global)
-  void set_global_mini_batch_size(const int s) { m_global_mini_batch_size = s; }
-  /// Return the mini_batch_size across all models (global)
-  int get_global_mini_batch_size() const { return m_global_mini_batch_size; }
   /// Set the mini batch stride
   void set_stride_to_next_mini_batch(const int s)
   {
@@ -466,16 +458,6 @@ public:
   void set_last_mini_batch_size(const int s) { m_last_mini_batch_size = s; }
   /// Return the last mini batch size
   int get_last_mini_batch_size() const { return m_last_mini_batch_size; }
-  /// Set the last mini batch size across all models (global)
-  void set_global_last_mini_batch_size(const int s)
-  {
-    m_global_last_mini_batch_size = s;
-  }
-  /// Return the last mini batch size across all models (global)
-  int get_global_last_mini_batch_size() const
-  {
-    return m_global_last_mini_batch_size;
-  }
   /// Set the world master mini batch adjustment (global)
   void set_world_master_mini_batch_adjustment(const int s)
   {
@@ -789,7 +771,7 @@ public:
   /// batch of a dataset
   int m_model_offset;
   /// Sample stride is used when a mini-batch is finely interleaved across a
-  /// DATA_PARALELL distribution.
+  /// DATA_PARALLEL distribution.
   int m_sample_stride;
   /// Stride used by parallel data readers within the model
   int m_iteration_stride;
@@ -810,8 +792,6 @@ public:
   int
     m_num_iterations_per_epoch; /// How many iterations all readers will execute
 
-  int m_global_mini_batch_size;
-  int m_global_last_mini_batch_size;
   int m_world_master_mini_batch_adjustment;
 
   int m_num_parallel_readers; /// How many parallel readers are being used

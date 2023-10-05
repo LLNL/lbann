@@ -207,8 +207,6 @@ void data_coordinator::calculate_num_iterations_per_epoch(
   data_reader->set_last_mini_batch_size(last_mini_batch_size);
   data_reader->set_stride_to_last_mini_batch(
     data_reader->get_stride_to_next_mini_batch());
-  data_reader->set_global_mini_batch_size(max_mini_batch_size);
-  data_reader->set_global_last_mini_batch_size(last_mini_batch_size);
   return;
 }
 
@@ -596,30 +594,6 @@ int data_coordinator::get_current_mini_batch_size(execution_mode mode) const
   const generic_data_reader* data_reader = get_data_reader(mode);
   return (data_reader != nullptr) ? data_reader->get_current_mini_batch_size()
                                   : 0;
-}
-
-int data_coordinator::get_global_mini_batch_size(execution_mode mode) const
-{
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_global_mini_batch_size()
-                                  : 0;
-}
-
-int data_coordinator::get_current_global_mini_batch_size(
-  execution_mode mode) const
-{
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr)
-           ? data_reader->get_current_global_mini_batch_size()
-           : 0;
-}
-
-int data_coordinator::get_global_last_mini_batch_size(execution_mode mode) const
-{
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr)
-           ? data_reader->get_global_last_mini_batch_size()
-           : 0;
 }
 
 int data_coordinator::get_world_master_mini_batch_adjustment(

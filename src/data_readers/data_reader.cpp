@@ -87,8 +87,6 @@ void generic_data_reader::setup(int num_io_threads,
   m_stride_to_last_mini_batch = 0;
   m_current_mini_batch_idx = 0;
   m_num_iterations_per_epoch = 0;
-  m_global_mini_batch_size = 0;
-  m_global_last_mini_batch_size = 0;
   m_world_master_mini_batch_adjustment = 0;
 
   set_initial_position();
@@ -509,16 +507,6 @@ int generic_data_reader::get_current_mini_batch_size() const
   }
 }
 
-int generic_data_reader::get_current_global_mini_batch_size() const
-{
-  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch - 1)) {
-    return m_global_last_mini_batch_size;
-  }
-  else {
-    return m_global_mini_batch_size;
-  }
-}
-
 /// Returns the current adjustment to the mini-batch size based on if
 /// the world master (model 0) has any extra samples
 /// Note that any rank in model 0 does not need to add in this offset
@@ -715,7 +703,7 @@ bool generic_data_reader::save_to_checkpoint_shared(persist& p,
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
                                               "_dr.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                               "_dr.bin"
+                                              "_dr.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
     );
   }
@@ -733,7 +721,7 @@ bool lbann::generic_data_reader::load_from_checkpoint_shared(
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
                                                        "_dr.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                                        "_dr.bin"
+                                                       "_dr.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   );
   // Adjust current position to deal with fact that it was just loaded to all
@@ -751,7 +739,7 @@ bool generic_data_reader::save_to_checkpoint_distributed(persist& p,
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
                                             "_dr.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                             "_dr.bin"
+                                            "_dr.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 
   );
@@ -768,7 +756,7 @@ bool lbann::generic_data_reader::load_from_checkpoint_distributed(
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
                                            "_dr.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                            "_dr.bin"
+                                           "_dr.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   );
   return true;
@@ -876,13 +864,14 @@ size_t generic_data_reader::get_absolute_sample_count() const
 }
 
 void generic_data_reader::set_execution_mode_split_fraction(execution_mode m,
-                                                           double s)
+                                                            double s)
 {
   if (s < 0 or s > 1.0) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: set_validation_fraction() - must be: s >= 0, s <= 1.0; you passed: " +
-      std::to_string(s));
+    throw lbann_exception(std::string{} + __FILE__ + " " +
+                          std::to_string(__LINE__) +
+                          " :: set_validation_fraction() - must be: s >= 0, s "
+                          "<= 1.0; you passed: " +
+                          std::to_string(s));
   }
   m_execution_mode_split_fraction[m] = s;
 }

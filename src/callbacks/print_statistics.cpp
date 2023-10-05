@@ -95,30 +95,6 @@ void print_statistics::on_epoch_begin(model* m)
               << "/"
               << dc.get_num_iterations_per_epoch(execution_mode::tournament)
               << "]" << std::endl;
-    std::cout << std::setfill(' ') << std::setw(23) << " global MB ="
-              << " [" << std::setw(4)
-              << dc.get_global_mini_batch_size(execution_mode::training) << "/"
-              << std::setw(4)
-              << dc.get_global_mini_batch_size(execution_mode::validation)
-              << "/" << std::setw(4)
-              << dc.get_global_mini_batch_size(execution_mode::testing) << "/"
-              << std::setw(4)
-              << dc.get_global_mini_batch_size(execution_mode::tournament)
-              << "]"
-              << " global last MB ="
-              << " [" << std::setw(4)
-              << dc.get_global_last_mini_batch_size(execution_mode::training)
-              << std::setw(2) << " "
-              << "/" << std::setw(4)
-              << dc.get_global_last_mini_batch_size(execution_mode::validation)
-              << std::setw(2) << " "
-              << "/" << std::setw(4)
-              << dc.get_global_last_mini_batch_size(execution_mode::testing)
-              << std::setw(2) << " "
-              << "/" << std::setw(4)
-              << dc.get_global_last_mini_batch_size(execution_mode::tournament)
-              << std::setw(2) << " "
-              << "]" << std::endl;
     std::cout
       << std::setfill(' ') << std::setw(23) << "  local MB ="
       << " [" << std::setw(4)

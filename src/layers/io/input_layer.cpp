@@ -140,13 +140,6 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs()
       mini_batch_size = dc.get_current_mini_batch_size(mode);
 
       effective_mini_batch_size = mini_batch_size;
-      for (auto&& cb : this->m_model->get_callbacks()) {
-        if (dynamic_cast<callback::imcomm*>(cb) != nullptr) {
-          effective_mini_batch_size =
-            dc.get_current_global_mini_batch_size(mode);
-          break;
-        }
-      }
     }
     // Set mini-batch size in model
     c.set_current_mini_batch_size(mini_batch_size);
