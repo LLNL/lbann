@@ -119,12 +119,12 @@ El::Int data_type_layer<InputTensorDataType, OutputTensorDataType>::
     // existing outputs
     //    mini_batch_size = current_output_mini_batch_size();
     mini_batch_size = this->get_model()->get_current_mini_batch_size();
-    LBANN_MSG("INFERO: For layer ",
-              this->get_name(),
-              " there are no parents so the mini-batch size is ",
-              mini_batch_size,
-              " and the current output mini batch size is ",
-              current_output_mini_batch_size());
+    // LBANN_MSG("INFERO: For layer ",
+    //           this->get_name(),
+    //           " there are no parents so the mini-batch size is ",
+    //           mini_batch_size,
+    //           " and the current output mini batch size is ",
+    //           current_output_mini_batch_size());
   }
   return mini_batch_size;
 }

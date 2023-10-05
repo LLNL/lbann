@@ -137,20 +137,20 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs()
       // mini-batch is equal to the global mini-batch size.
       /// @todo This functionality should probably be moved elsewhere
       mini_batch_size = dc.get_current_mini_batch_size(mode);
-      LBANN_MSG("DC Fetch for layer ",
-                this->get_name(),
-                " I believe that the mini-batch size is ",
-                mini_batch_size);
+      // LBANN_MSG("DC Fetch for layer ",
+      //           this->get_name(),
+      //           " I believe that the mini-batch size is ",
+      //           mini_batch_size);
     }
     // Set mini-batch size in model
     c.set_current_mini_batch_size(mini_batch_size);
     this->get_model()->set_current_mini_batch_size(mini_batch_size);
   }
 
-  LBANN_MSG("Input layer ",
-            this->get_name(),
-            " I believe that the mini-batch size is ",
-            mini_batch_size);
+  // LBANN_MSG("Input layer ",
+  //           this->get_name(),
+  //           " I believe that the mini-batch size is ",
+  //           mini_batch_size);
   // Activation matrices are initalized in setup_data and further
   // managed in the distribute_from_local_matrix function of the
   // data_coordinator.
