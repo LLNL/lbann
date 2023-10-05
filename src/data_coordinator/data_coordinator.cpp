@@ -193,7 +193,6 @@ void data_coordinator::calculate_num_iterations_per_epoch(
   data_reader->set_iteration_stride(1);
   /// Set data reader base offset and model offset
   data_reader->set_base_offset(base_offset);
-  data_reader->set_model_offset(0);
   data_reader->set_initial_position();
 
   /// By default each data reader will plan to process the entire data set

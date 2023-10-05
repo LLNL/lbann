@@ -131,7 +131,6 @@ void debug_io::print_phase_start(model* m, execution_mode mode)
               << data_reader->get_last_mini_batch_size() << "s [+"
               << data_reader->get_stride_to_last_mini_batch() << "s]):"
               << " base offset " << data_reader->get_base_offset()
-              << " model offset " << data_reader->get_model_offset()
               << " par. readers = " << data_reader->get_num_parallel_readers()
               << "r" << std::endl;
   }

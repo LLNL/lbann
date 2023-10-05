@@ -292,8 +292,7 @@ void lbann::generic_data_reader::start_data_store_mini_batch_exchange()
   // to seeing if the local rank's position is valid.  Note that
   // every rank will hold data that may be used in the last mini-batch
   if (data_store_active()) {
-    m_data_store->start_exchange_mini_batch_data(m_current_pos - m_base_offset -
-                                                   m_model_offset,
+    m_data_store->start_exchange_mini_batch_data(m_current_pos - m_base_offset,
                                                  loaded_batch_size);
   }
   return;

@@ -88,7 +88,6 @@ public:
       m_current_pos(0),
       m_stride_to_next_mini_batch(0),
       m_base_offset(0),
-      m_model_offset(0),
       m_sample_stride(1),
       m_iteration_stride(1),
       m_last_mini_batch_size(0),
@@ -447,10 +446,6 @@ public:
   virtual void set_base_offset(const int s) { m_base_offset = s; }
   /// Return the base offset.
   int get_base_offset() const { return m_base_offset; }
-  /// Set the model offset
-  void set_model_offset(const int s) { m_model_offset = s; }
-  /// Return the model offset.
-  int get_model_offset() const { return m_model_offset; }
   /// Set the last mini batch size
   void set_last_mini_batch_size(const int s) { m_last_mini_batch_size = s; }
   /// Return the last mini batch size
@@ -483,7 +478,7 @@ public:
   /// Set the current position based on the base and model offsets
   void set_initial_position()
   {
-    m_current_pos = m_base_offset + m_model_offset;
+    m_current_pos = m_base_offset;
     m_loaded_mini_batch_idx = m_reset_mini_batch_index;
     m_current_mini_batch_idx = 0;
   }
@@ -752,11 +747,6 @@ public:
   /// If there are multiple instances of the reader,
   /// then it may not reset to zero
   int m_base_offset;
-  /// If there are multiple models with multiple instances of the reader,
-  /// each model's set of readers may not reset to zero
-  /// Provide a set of size, strides, and thresholds to handle the last mini
-  /// batch of a dataset
-  int m_model_offset;
   /// Sample stride is used when a mini-batch is finely interleaved across a
   /// DATA_PARALLEL distribution.
   int m_sample_stride;
