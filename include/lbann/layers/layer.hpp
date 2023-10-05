@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_LAYER_HPP_INCLUDED
 
 #include "lbann/base.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/utils/typename.hpp"
 #include <string>
 #include <vector>
@@ -295,6 +296,8 @@ class Layer
   friend class kfac_block_gru;
 
 public:
+  /** @name Lifecycle */
+  ///@{
   Layer();
   virtual ~Layer() = default;
 
@@ -305,170 +308,49 @@ public:
    */
   virtual Layer* copy() const = 0;
 
-  /** @brief Get the layer type's name.
-   *  A layer type name should be brief, human-readable description of
-   *  the layer's mathematical operation.
-   */
-  virtual std::string get_type() const = 0;
-  /** @brief Get the layer instance's name.
-   *  Each layer in a model should have a unique, preferably
-   *  human-readable, name.
-   */
-  inline std::string get_name() const { return m_name; }
+  ///@}
+  /** @name Metadata modifiers */
+  ///@{
+
   /** @brief Set the layer instance's name.
    *  Each layer in a model should have a unique, preferably
    *  human-readable, name.
    */
-  inline void set_name(const std::string name) { m_name = name; }
+  void set_name(const std::string name) { m_name = name; }
+  /** @brief Set the model that manages this layer. */
+  void set_model(model* m) { m_model = m; }
 
-  /** Get a string representing the layer datatype
+  ///@}
+  /** @name Metadata queries */
+  ///@{
+
+  /** @brief Get the layer instance's name.
+   *
+   *  Each layer in a model should have a unique, preferably
+   *  human-readable, name.
    */
+  std::string get_name() const { return m_name; }
 
-  void set_communication_flag(int type)
-  {
-    subgraph_communication_method = static_cast<SubGraphCommunication>(type);
-  }
+  /** @brief Get a reference to the model that manages this layer.
+   *
+   *  May be null if this layer is "free" (e.g., during model assembly
+   *  or for testing). This will not be null in training applications.
+   */
+  model* get_model() const noexcept { return m_model; }
 
-  SubGraphCommunication get_communication_flag()
-  {
-    return subgraph_communication_method;
-  }
-
-  void reset_subgrid_ranks(std::set<int> sub_grid_rank)
-  {
-    m_subgrid_ranks.reset(
-      new std::set<int>(sub_grid_rank.begin(), sub_grid_rank.end()));
-  }
-
-  std::set<int> get_subgrid_ranks() const { return *m_subgrid_ranks; }
-
-  void reset_parent_tags(std::vector<int> tags)
-  {
-    m_parent_tags.reset(new std::vector<int>(tags.begin(), tags.end()));
-  }
-
-  std::vector<int> get_parent_tags() const { return *m_parent_tags; }
-
-  void set_num_spliting_groups(El::Int spliting_groups)
-  {
-    m_num_spliting_groups = spliting_groups;
-  }
-
-  El::Int get_num_spliting_groups() const { return m_num_spliting_groups; }
-
-  void set_subgrid_index(std::string index) { m_subgrid_index = index; }
-
-  std::string get_subgrid_index() const { return m_subgrid_index; }
-
-  void reset_mygrid(std::shared_ptr<El::Grid> grid) { m_mygrid = grid; }
-
-  std::shared_ptr<El::Grid> get_mygrid() const { return m_mygrid; }
-
-  void reset_inter_subgrid_vc_comm(std::shared_ptr<El::mpi::Comm> mpi_comm)
-  {
-    m_interSubGridVCComm = mpi_comm;
-  }
-
-  std::shared_ptr<El::mpi::Comm> get_inter_subgrid_vc_comm() const
-  {
-    return m_interSubGridVCComm;
-  }
-
-  void enable_subgraph_parallelism() { apply_subgraph_parallelism = true; }
-  // model wide sub graph parallelism enabled
-  bool is_subgraph_parallelism_enabled() { return apply_subgraph_parallelism; }
-
-  void set_subgraph_parallelism_execution()
-  {
-    m_subgraph_parallelism_execution = true;
-  }
-  // layer-level sub-graph parallelism execution
-  bool subgraph_parallelism_execution()
-  {
-    return m_subgraph_parallelism_execution;
-  }
-
-  void set_run_layer_in_subgraph() { run_layer_in_subgraph = true; }
-
-  bool get_run_layer_in_subgraph() { return run_layer_in_subgraph; }
+  /** @brief Get the layer type's name.
+   *
+   *  A layer type name should be brief, unique, and human-readable
+   *  description of the layer's mathematical operation that is
+   *  recognizable to ML practitioners (e.g., "Convolution", "ReLU")
+   */
+  virtual std::string get_type() const = 0;
 
   /** @brief Get a string representing the layer datatype */
-  virtual std::string get_datatype_name() const
-  {
-    return TypeName<DataType>();
-  };
-
-  /**
-   * @brief Returns the necessary tensors for computing backpropagation
-   */
-  virtual int get_backprop_requirements() const
-  {
-    return ERROR_SIGNALS | PREV_ACTIVATIONS | ACTIVATIONS | WEIGHTS;
-  }
-
-  /**
-   * @brief If True, the computation can run in-place (feeding each
-   * input activations tensor as the corresponding output activations)
-   */
-  virtual bool can_run_inplace() const { return false; }
-
-  // enable subgraph parallelism for this layer
-  // to set variable for ssplit layer
-  void set_enable_subgraph_variable()
-  {
-    m_parallel_strategy.enable_subgraph = true;
-  }
+  virtual std::string get_datatype_name() const = 0;
 
   /** @brief Human-readable description. */
-
   virtual description get_description() const;
-
-  /** @brief Get the parallel strategy for the layer. */
-  inline ParallelStrategy& get_parallel_strategy()
-  {
-    return m_parallel_strategy;
-  }
-  /** @brief Get the parallel strategy for the layer. */
-  const ParallelStrategy& get_parallel_strategy() const
-  {
-    return m_parallel_strategy;
-  }
-
-  /** @brief Forward propagation step.
-   *  Apply a mathematical operation to input tensors to obtain output
-   *  tensors.
-   */
-  virtual void forward_prop(){};
-  /** @brief Backward propagation step.
-   *  Given the objective function gradients w.r.t. the output
-   *  tensors, compute the gradients w.r.t. the input tensors and
-   *  w.r.t. the weights. This is essentially an application of the
-   *  chain rule.
-   */
-  void back_prop();
-
-  /** @brief Update step.
-   *  Update the layer's internal members. Note that the optimization
-   *  step for the weights happens elsewhere.
-   */
-  virtual bool update();
-
-  virtual void summarize_stats(lbann_summary& summarizer, int step);
-  virtual void summarize_matrices(lbann_summary& summarizer, int step) = 0;
-
-  /** @brief Setup layer members
-   *
-   *  This calls the 'setup_pointers', 'setup_dims', 'setup_matrices',
-   *  'setup_data', and 'setup_gpu' (if needed) functions. It is
-   *  assumed that pointers to parent/child layers have already been
-   *  initialized.
-   */
-  virtual void setup(size_t max_mini_batch_size,
-                     const std::vector<El::Grid*>& grids);
-
-  /** @brief Check that the setup is reasonable. */
-
-  virtual void check_setup();
 
   /** @brief Get data layout of the data tensors.
    *  We assume that the data layouts of the previous activations,
@@ -485,41 +367,172 @@ public:
    */
   virtual El::Device get_device_allocation() const = 0;
 
-  /** @brief Reset layer stat counters. */
-  virtual void reset_counters();
-
-  /** @brief Whether the layer is using a GPU implementation. */
-  inline bool using_gpus() const
-  {
-#ifdef LBANN_HAS_GPU
-    return get_device_allocation() == El::Device::GPU;
-#else
-    return false;
-#endif // LBANN_HAS_GPU
-  }
-
   /** @brief Get expected number of parent layers.
    *  A negative value indicates no limit.
    */
-  inline int get_expected_num_parent_layers() const
+  int get_expected_num_parent_layers() const noexcept
   {
     return m_expected_num_parent_layers;
   }
+
   /** @brief Get expected number of child layers.
    *  A negative value indicates no limit.
    */
-  inline int get_expected_num_child_layers() const
+  int get_expected_num_child_layers() const noexcept
   {
     return m_expected_num_child_layers;
   }
 
-  /** @brief Return the model that manages this layer. */
-  inline model* get_model() const { return m_model; }
-  /** @brief Set the model that manages this layer. */
-  inline void set_model(model* m) { m_model = m; }
+  /**
+   * @brief Returns the necessary tensors for computing backpropagation
+   */
+  virtual int get_backprop_requirements() const
+  {
+    return ERROR_SIGNALS | PREV_ACTIVATIONS | ACTIVATIONS | WEIGHTS;
+  }
+
+  /** @brief Get the parallel strategy for the layer. */
+  ParallelStrategy& get_parallel_strategy() noexcept
+  {
+    return m_parallel_strategy;
+  }
+  /** @brief Get the parallel strategy for the layer. */
+  ParallelStrategy const& get_parallel_strategy() const noexcept
+  {
+    return m_parallel_strategy;
+  }
+
+  ///@}
+  /** @name Metadata predicates */
+  /**
+   * @brief If True, the computation can run in-place (feeding each
+   * input activations tensor as the corresponding output activations)
+   */
+  virtual bool can_run_inplace() const { return false; }
+
+  /** @brief Whether the layer is using a GPU implementation. */
+#ifdef LBANN_HAS_GPU
+  bool using_gpus() const { return get_device_allocation() == El::Device::GPU; }
+#else
+  bool using_gpus() const noexcept { return false; }
+#endif // LBANN_HAS_GPU
+
+  ///@}
+  /** @name Training support */
+  ///@{
+
+  /** @brief Forward propagation step.
+   *  Apply a mathematical operation to input tensors to obtain output
+   *  tensors.
+   */
+  virtual void forward_prop() = 0;
+  /** @brief Backward propagation step.
+   *  Given the objective function gradients w.r.t. the output
+   *  tensors, compute the gradients w.r.t. the input tensors and
+   *  w.r.t. the weights. This is essentially an application of the
+   *  chain rule.
+   */
+  void back_prop();
+
+  /** @brief Update step.
+   *  Update the layer's internal members. Note that the optimization
+   *  step for the weights happens elsewhere.
+   */
+  bool update();
+
+  /** @brief Setup layer members
+   *
+   *  This calls the 'setup_pointers', 'setup_dims', 'setup_matrices',
+   *  'setup_data', and 'setup_gpu' (if needed) functions. It is
+   *  assumed that pointers to parent/child layers have already been
+   *  initialized.
+   */
+  virtual void setup(size_t max_mini_batch_size,
+                     const std::vector<El::Grid*>& grids);
+
+  /** @brief Check that the setup is reasonable. */
+  virtual void check_setup();
+
+  ///@}
 
   /** @brief Write layer to proto file */
-  void write_proto(lbann_data::Layer& proto);
+  void write_proto(lbann_data::Layer& proto) const;
+
+  /** @name Summarizer support */
+  ///@{
+
+  // FIXME (trb 10/03/2023): The lbann_summary class should be
+  // reevaluated. This strikes me as a feature that should be moved to
+  // a callback and/or replaced by proper performance
+  // profilers/counters (e.g., Caliper). More directly: I'm not sure
+  // anyone has used the summarizer in at least 2 years and it might
+  // be time to trim that out.
+  void summarize_stats(lbann_summary& summarizer, int step);
+  virtual void summarize_matrices(lbann_summary& summarizer, int step) = 0;
+
+  /** @brief Reset layer stat counters. */
+  void reset_counters();
+
+  ///@}
+  /** @name Subgraph stuff */
+  ///@{
+
+  // (trb 10/03/2023): unused, but accessor is used; kept for symmetry
+  void set_communication_flag(SubGraphCommunication type)
+  {
+    subgraph_communication_method = type;
+  }
+
+  // (trb 10/03/2023): used, keeping setter, which is unused.
+  SubGraphCommunication get_communication_flag()
+  {
+    return subgraph_communication_method;
+  }
+
+  // (trb 10/03/2023): used
+  void set_num_spliting_groups(El::Int spliting_groups)
+  {
+    m_num_spliting_groups = spliting_groups;
+  }
+
+  // (trb 10/03/2023): used
+  El::Int get_num_spliting_groups() const { return m_num_spliting_groups; }
+
+  // (trb 10/03/2023): USED BUT THIS IS BAD BECAUSE m_mygrid IS NEVER SET!
+  std::shared_ptr<El::Grid> get_mygrid() const
+  {
+    LBANN_ERROR("This function should not be used.");
+    return nullptr;
+  }
+
+  // (trb 10/03/2023): used, model.cpp
+  void reset_inter_subgrid_vc_comm(std::shared_ptr<El::mpi::Comm> mpi_comm)
+  {
+    m_interSubGridVCComm = std::move(mpi_comm);
+  }
+
+  // (trb 10/03/2023): used
+  void set_subgraph_parallelism_execution()
+  {
+    m_subgraph_parallelism_execution = true;
+  }
+
+  // layer-level sub-graph parallelism execution
+  // (trb 10/03/2023): used
+  bool subgraph_parallelism_execution() const noexcept
+  {
+    return m_subgraph_parallelism_execution;
+  }
+
+  // (trb 10/03/2023): used
+  void set_run_layer_in_subgraph() { run_layer_in_subgraph = true; }
+
+  // (trb 10/03/2023): used
+  bool get_run_layer_in_subgraph() const noexcept
+  {
+    return run_layer_in_subgraph;
+  }
+  ///@}
 
 private:
   /** @brief Add layer specific data to prototext */
@@ -545,6 +558,9 @@ private:
 #endif // LBANN_HAS_ONNX
 
 public:
+  /** @name Parent/child accessors */
+  ///@{
+
   const Layer& get_parent_layer(size_t index = 0) const;
   const Layer& get_child_layer(size_t index = 0) const;
 
@@ -555,13 +571,11 @@ public:
   size_t find_child_layer_index(const Layer& l) const;
 
   /** @brief Get number of parent layers. */
-  int get_num_parents() const { return m_parent_layers.size(); }
+  int get_num_parents() const noexcept { return m_parent_layers.size(); }
   /** @brief Get number of child layers. */
-  int get_num_children() const { return m_child_layers.size(); }
+  int get_num_children() const noexcept { return m_child_layers.size(); }
 
-  std::string get_parent_names() const;
-  std::string get_child_names() const;
-
+  ///@}
   /** @name Layer pointer manipulation functions */
   ///@{
 
@@ -877,8 +891,6 @@ protected:
   // Layer-level: Does this layer need subgraph execution (like split and sum
   // layers) Process-level: Does this layer exist in the given process (For e.g.
   // some layers will only run on a subset of processes defined by grid tag)
-  // Model-level sub-graph parallelism
-  bool apply_subgraph_parallelism = false;
   // Layer-level sub-graph execution
   bool m_subgraph_parallelism_execution = false;
   // Process-level sub-graph execution
@@ -886,10 +898,8 @@ protected:
 
   /** Ranks in grid for the sub-graph */
   std::unique_ptr<std::set<int>> m_subgrid_ranks;
-  std::unique_ptr<std::vector<int>> m_parent_tags;
-  std::string m_subgrid_index = "";
+
   El::Int m_num_spliting_groups = 1;
-  std::shared_ptr<El::Grid> m_mygrid;
   std::shared_ptr<El::mpi::Comm> m_interSubGridVCComm;
 
 private:

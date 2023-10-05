@@ -447,6 +447,27 @@ void Layer::setup(size_t max_mini_batch_size,
   }
 }
 
+namespace {
+
+std::string get_parent_names(Layer const& l)
+{
+  std::ostringstream ss;
+  for (int i = 0; i < l.get_num_parents(); ++i) {
+    ss << (i > 0 ? ", " : "") << l.get_parent_layer(i).get_name();
+  }
+  return ss.str();
+}
+
+std::string get_child_names(Layer const& l)
+{
+  std::ostringstream ss;
+  for (int i = 0; i < l.get_num_children(); ++i) {
+    ss << (i > 0 ? ", " : "") << l.get_child_layer(i).get_name();
+  }
+  return ss.str();
+}
+} // namespace
+
 void Layer::setup_pointers()
 {
 
@@ -507,7 +528,7 @@ void Layer::setup_pointers()
                 "but found ",
                 get_num_parents(),
                 " (",
-                get_parent_names(),
+                get_parent_names(*this),
                 ")");
   }
   if (m_expected_num_child_layers >= 0 &&
@@ -522,7 +543,7 @@ void Layer::setup_pointers()
                 "but found ",
                 get_num_children(),
                 " (",
-                get_child_names(),
+                get_child_names(*this),
                 ")");
   }
 
@@ -716,7 +737,7 @@ void Layer::back_prop()
   clear_prev_error_signals_();
 }
 
-void Layer::write_proto(lbann_data::Layer& proto)
+void Layer::write_proto(lbann_data::Layer& proto) const
 {
   proto.Clear();
   proto.set_name(get_name());
@@ -877,24 +898,6 @@ size_t Layer::find_child_layer_index(const Layer& l) const
               this->get_name(),
               "\"");
   return get_num_children();
-}
-
-std::string Layer::get_parent_names() const
-{
-  std::ostringstream ss;
-  for (int i = 0; i < get_num_parents(); ++i) {
-    ss << (i > 0 ? ", " : "") << get_parent_layer(i).get_name();
-  }
-  return ss.str();
-}
-
-std::string Layer::get_child_names() const
-{
-  std::ostringstream ss;
-  for (int i = 0; i < get_num_children(); ++i) {
-    ss << (i > 0 ? ", " : "") << get_child_layer(i).get_name();
-  }
-  return ss.str();
 }
 
 void Layer::add_parent_layer(ViewingLayerPtr l)
