@@ -76,6 +76,12 @@ class TransformerEncoderLayer(lbann.modules.Module):
             fully-connected feedforward network.
         dropout (float): Dropout probability after multi-head attention.
         attn_dropout (float): Dropout probability during multi-head attention.
+        pre_layernorm (bool): If True, performs layer normalization before
+            applying attention operators.
+        activation (Type[lbann.Layer]): Activation function to apply in
+            feedforward network. Examples include ReLU or GELU.
+        parallel_attention_heads (int): If positive, applies subgraph
+            parallelism on attention heads.
         name (str): Default name is in the form
             'transformerencoderlayer<index>'.
 
@@ -92,6 +98,7 @@ class TransformerEncoderLayer(lbann.modules.Module):
         attn_dropout,
         pre_layernorm=False,
         activation=lbann.Relu,
+        parallel_attention_heads=0,
         name=None,
     ):
         TransformerEncoderLayer.global_count += 1
@@ -114,6 +121,7 @@ class TransformerEncoderLayer(lbann.modules.Module):
             num_heads,
             dropout=attn_dropout,
             self_attention=True,
+            subgraph_branches=parallel_attention_heads,
             name=f'{self.name}_attention')
         self.norm1 = LayerNorm(self.embed_dim, name=f'{self.name}_norm1')
         self.norm2 = LayerNorm(self.embed_dim, name=f'{self.name}_norm2')
@@ -224,6 +232,8 @@ class TransformerDecoderLayer(lbann.modules.Module):
             applying attention operators.
         activation (Type[lbann.Layer]): Activation function to apply in
             feedforward network. Examples include ReLU or GELU.
+        parallel_attention_heads (int): If positive, applies subgraph
+            parallelism on attention heads.
         name (str): Default name is in the form
             'transformerdecoderlayer<index>'.
 
@@ -240,6 +250,7 @@ class TransformerDecoderLayer(lbann.modules.Module):
         attn_dropout,
         pre_layernorm=False,
         activation=lbann.Relu,
+        parallel_attention_heads=0,
         name=None,
     ):
         TransformerDecoderLayer.global_count += 1
@@ -262,11 +273,13 @@ class TransformerDecoderLayer(lbann.modules.Module):
             num_heads,
             self_attention=True,
             dropout=attn_dropout,
+            subgraph_branches=parallel_attention_heads,
             name=f'{self.name}_attention1')
         self.attention2 = lbann.modules.transformer.MultiheadAttention(
             embed_dim,
             num_heads,
             dropout=attn_dropout,
+            subgraph_branches=parallel_attention_heads,
             name=f'{self.name}_attention2')
         self.norm1 = LayerNorm(self.embed_dim, name=f'{self.name}_norm1')
         self.norm2 = LayerNorm(self.embed_dim, name=f'{self.name}_norm2')
@@ -415,6 +428,8 @@ class Transformer(lbann.modules.Module):
             applying attention operators.
         activation (Type[lbann.Layer]): Activation function to apply in
             feedforward network. Examples include ReLU or GELU.
+        parallel_attention_heads (int): If positive, applies subgraph
+            parallelism on attention heads. 
         name (str): Default name is in the form
             'transformer<index>'.
 
@@ -433,6 +448,7 @@ class Transformer(lbann.modules.Module):
         attn_dropout=0.0,
         pre_layernorm=False,
         activation=lbann.Relu,
+        parallel_attention_heads=0,
         name=None,
     ):
         Transformer.global_count += 1
@@ -441,6 +457,9 @@ class Transformer(lbann.modules.Module):
         self.num_heads = num_heads
         self.dropout = dropout
         self.attn_dropout = attn_dropout
+        self.pre_layernorm = pre_layernorm
+        self.activation = activation
+        self.parallel_attention_heads = parallel_attention_heads
 
         # Module name
         self.name = name
@@ -465,6 +484,7 @@ class Transformer(lbann.modules.Module):
                 attn_dropout=attn_dropout,
                 pre_layernorm=pre_layernorm,
                 activation=activation,
+                parallel_attention_heads=parallel_attention_heads,
                 name=f'{self.name}_encoder{i}',
             ) for i in range(num_encoder_layers)
         ]
@@ -477,6 +497,7 @@ class Transformer(lbann.modules.Module):
                 attn_dropout=attn_dropout,
                 pre_layernorm=pre_layernorm,
                 activation=activation,
+                parallel_attention_heads=parallel_attention_heads,
                 name=f'{self.name}_decoder{i}',
             ) for i in range(num_decoder_layers)
         ]
@@ -519,6 +540,7 @@ class Transformer(lbann.modules.Module):
                 source: lbann.Layer,
                 target: lbann.Layer,
                 target_length: int,
+                target_mask: Optional[lbann.Layer] = None,
                 cross_attention: Optional[lbann.Layer] = None):
         """Apply Transformer.
 
@@ -530,6 +552,8 @@ class Transformer(lbann.modules.Module):
             source: Sequence of input vectors to encoder stack.
             target: Sequence of input vectors to decoder stack.
             target_length: Length of input sequence to decoder.
+            target_mask: Optional mask tensor for different decoder masking
+                         schemes.
             cross_attention: Optional cross-attention tensor to give to a
                 decoder-only architecture.
 
@@ -554,11 +578,21 @@ class Transformer(lbann.modules.Module):
 
         # Decoder stack
         x = target
+
+        # Create mask if not given
+        if target_mask is None:
+            target_mask = self._subsequent_mask(target_length)
+
+        # For attention-head parallelism, replicate mask for each subgraph
+        if self.parallel_attention_heads > 0:
+            target_mask = [
+                lbann.Identity(target_mask,
+                               name=f'tgtmask_branch{i}',
+                               parallel_strategy=dict(grid_tag=i))
+                for i in range(1, self.parallel_attention_heads + 1)
+            ]
+
         for decoder_layer in self.decoder:
-            x = decoder_layer(
-                x,
-                memory,
-                tgt_mask=self._subsequent_mask(target_length),
-            )
+            x = decoder_layer(x, memory, tgt_mask=target_mask)
 
         return x

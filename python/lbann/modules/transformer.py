@@ -1,6 +1,7 @@
 """Neural network modules for transformer models."""
 import math
 import numpy as np
+from typing import Dict
 import lbann
 from .base import Module
 
@@ -24,6 +25,8 @@ class MultiheadAttention(Module):
         batch_heads (bool): If True, batches all head computations into tensor
             contraction operations.
         dropout (float): Dropout probability applied before attention output.
+        subgraph_branches (int): How many subgraph-parallel branches to divide
+            multi-head attention to.
         name (str): Default name is in the form
             'multiheadattention<index>'.
 
@@ -37,6 +40,7 @@ class MultiheadAttention(Module):
                  self_attention=False,
                  batch_heads=True,
                  dropout=0.0,
+                 subgraph_branches=0,
                  name=None):
         super().__init__()
         MultiheadAttention.global_count += 1
@@ -52,7 +56,14 @@ class MultiheadAttention(Module):
         self.self_attention = self_attention
 
         # Mode that runs each head separately and concatenates the results
-        self.separate_heads = not batch_heads
+        self.subgraph_branches = subgraph_branches
+        if subgraph_branches > 0:
+            self.separate_heads = True
+            if self.num_heads % subgraph_branches != 0:
+                raise ValueError('Number of heads should be divisible by '
+                                 'parallel attention head branches')
+        else:
+            self.separate_heads = not batch_heads
 
         # Module name
         self.name = name
@@ -105,9 +116,10 @@ class MultiheadAttention(Module):
             queries (lbann.Layer): Sequence of query vectors.
             keys (lbann.Layer): Sequence of key vectors.
             values (lbann.Layer): Sequence of value vectors.
-            mask (lbann.Layer, optional): Additive attention mask. If
-                the (i,j) entry is very negative (e.g. -1e9), then the
-                ith query does not attend to the jth key/value pair.
+            mask (lbann.Layer or List[lbann.Layer], optional): Additive
+                attention mask or masks, if attention-head parallelism is
+                enabled. If the (i,j) entry is very negative (e.g. -1e9), then
+                the ith query does not attend to the jth key/value pair.
 
         Returns:
             lbann.Layer: Sequence of output vectors. The sequence
@@ -238,6 +250,19 @@ class MultiheadAttention(Module):
         attentions = lbann.Reshape(attentions, dims=(-1, self.embed_dim))
         return attentions
 
+    def _get_subgraph(self, tag_id: int = 0) -> Dict[str, int]:
+        """
+        Returns a parallel strategy based on the attention head subgraph
+        parallelism configuration and the requested grid tag.
+
+        :param tag_id: The preferred grid tag to use.
+        :return: A dictionary mapping to the subgraph if subgraph parallelism
+                 is requested, or None otherwise.
+        """
+        if self.subgraph_branches == 0:
+            return None
+        return dict(grid_tag=tag_id)
+
     def dot_product_attn_separate_heads(self, name, queries_fc, keys_fc,
                                         values_fc, mask):
         # Slice embedding vectors for each head
@@ -247,29 +272,45 @@ class MultiheadAttention(Module):
             axis=1,
             slice_points=slice_points,
             name=f'{name}_queries_slice',
+            parallel_strategy=self._get_subgraph(),
         )
         keys_slice = lbann.Slice(
             keys_fc,
             axis=1,
             slice_points=slice_points,
             name=f'{name}_keys_slice',
+            parallel_strategy=self._get_subgraph(),
         )
         values_slice = lbann.Slice(
             values_fc,
             axis=1,
             slice_points=slice_points,
             name=f'{name}_values_slice',
+            parallel_strategy=self._get_subgraph(),
         )
+
+        if self.subgraph_branches > 0 and mask is not None:
+            assert (isinstance(mask, list)
+                    and len(mask) == self.subgraph_branches)
 
         # Compute scaled dot-product attention for each head
         attentions = []
+        tag = 0
         for head in range(self.num_heads):
             head_name = f'{name}_head{head}'
 
+            # Increment tag when head subgraph branch is fully populated
+            if (self.subgraph_branches > 0 and head %
+                (self.num_heads // self.subgraph_branches) == 0):
+                tag += 1
+
             # Attention inputs
-            q = lbann.Identity(queries_slice)
-            k = lbann.Identity(keys_slice)
-            v = lbann.Identity(values_slice)
+            q = lbann.Identity(queries_slice,
+                               parallel_strategy=self._get_subgraph(tag))
+            k = lbann.Identity(keys_slice,
+                               parallel_strategy=self._get_subgraph(tag))
+            v = lbann.Identity(values_slice,
+                               parallel_strategy=self._get_subgraph(tag))
 
             # Multiply queries and keys
             # Note: num_queries x num_keys
@@ -283,7 +324,11 @@ class MultiheadAttention(Module):
                             constant=1 / math.sqrt(self.head_dim),
                             name=f'{head_name}_scale')
             if mask:
-                y = lbann.Add(y, mask, name=f'{head_name}_mask')
+                if self.subgraph_branches > 0:
+                    y = lbann.Add(y, mask[tag - 1], name=f'{head_name}_mask')
+                else:
+                    y = lbann.Add(y, mask, name=f'{head_name}_mask')
+
             y = lbann.ChannelwiseSoftmax(y, name=f'{head_name}_softmax')
 
             if self.dropout > 0:
@@ -298,9 +343,11 @@ class MultiheadAttention(Module):
             attentions.append(lbann.MatMul(y, v, name=head_name))
 
         # Concatenate heads and apply fully-connected layer
-        attentions = lbann.Concatenation(attentions,
-                                         axis=1,
-                                         name=f'{name}_heads_concat')
+        attentions = lbann.Concatenation(
+            attentions,
+            axis=1,
+            name=f'{name}_heads_concat',
+            parallel_strategy=self._get_subgraph())
         return attentions
 
 

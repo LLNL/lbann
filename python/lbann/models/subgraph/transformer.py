@@ -1,4 +1,6 @@
-"""Basic Transformer model with multi-head self-attention.
+"""Basic Transformer model with multi-head self-attention and all-subgraph
+parallelism (i.e., with separate feed-forward networks after multi-head
+attention).
 
 See:
 
@@ -8,139 +10,12 @@ is all you need." In Advances in Neural Information Processing
 Systems, pp. 5998-6008. 2017.
 
 """
-import math
 import numpy as np
+from typing import Optional
 
 import lbann
 import lbann.modules
-
-
-class TransformerEncoderLayer(lbann.modules.Module):
-    """Building block for encoder in Transformer model.
-
-    Comprised of multi-head attention and a fully-connected
-    feedforward network, each with a residual connection.
-
-    Args:
-            embed_dim (int): Internal dimensionality of multi-head
-                    attention.
-            num_heads (int): Number of attention heads.
-            feedforward_dim (int): Internal dimensionality of
-                    fully-connected feedforward network.
-            dropout (float): Dropout probability.
-            name (str): Default name is in the form
-                    'transformerencoderlayer<index>'.
-
-    """
-
-    global_count = 0  # Static counter, used for default names
-
-    def __init__(
-        self,
-        branches,
-        embed_dim=512,
-        num_heads=8,
-        feedforward_dim=2048,
-        dropout=0.1,
-        d_kv=None,
-        name=None,
-    ):
-        TransformerEncoderLayer.global_count += 1
-        self.instance = 0
-        self.embed_dim = embed_dim
-        self.feedforward_dim = feedforward_dim
-        self.dropout_prob = dropout
-
-        # Module name
-        self.name = name
-        if not self.name:
-            self.name = f"transformerencoderlayer{TransformerEncoderLayer.global_count}"
-
-        # Layer modules
-        self.attention = lbann.modules.subgraph.transformer.MultiheadAttention(
-            self.embed_dim,
-            num_heads,
-            branches=branches,
-            d_kv=d_kv,
-            name=f"{self.name}_attention",
-        )
-
-        # Weights for fully-connected layers
-        self.fc1_weights = [
-            lbann.Weights(
-                initializer=lbann.HeNormalInitializer(), name=f"{self.name}_fc1_matrix"
-            ),
-            lbann.Weights(
-                initializer=lbann.ConstantInitializer(value=0),
-                name=f"{self.name}_fc1_bias",
-            ),
-        ]
-        self.fc2_weights = [
-            lbann.Weights(
-                initializer=lbann.GlorotNormalInitializer(),
-                name=f"{self.name}_fc2_matrix",
-            ),
-            lbann.Weights(
-                initializer=lbann.ConstantInitializer(value=0),
-                name=f"{self.name}_fc2_bias",
-            ),
-        ]
-
-    def forward(self, x, mask=None):
-        """Apply Transformer encoder layer.
-
-        Args:
-                x (lbann.Layer): Sequence of input vectors.
-                mask (lbann.Layer, optional): Attention mask.
-
-        Returns:
-                lbann.Layer: Sequence of output vectors.
-
-        """
-        self.instance += 1
-        name = f"{self.name}_instance{self.instance}"
-
-        # Self-attention with residual connection
-        y = self.attention(x, x, x, mask=mask)
-        if self.dropout_prob > 0:
-            y = lbann.Dropout(
-                y,
-                keep_prob=1 - self.dropout_prob,
-                name=f"{name}_drop1",
-            )
-        z = lbann.Sum(x, y, name=f"{name}_sum1")
-        z = lbann.InstanceNorm(z, name=f"{name}_norm1")
-        x = z
-
-        # Feedforward network with residual connection
-        y = lbann.ChannelwiseFullyConnected(
-            x,
-            weights=self.fc1_weights,
-            output_channel_dims=[self.feedforward_dim],
-            name=f"{name}_fc1",
-        )
-        y = lbann.Relu(y, name=f"{name}_relu1")
-        if self.dropout_prob > 0:
-            y = lbann.Dropout(
-                y,
-                keep_prob=1 - self.dropout_prob,
-                name=f"{name}_drop2",
-            )
-        y = lbann.ChannelwiseFullyConnected(
-            y,
-            weights=self.fc2_weights,
-            output_channel_dims=[self.embed_dim],
-            name=f"{name}_fc2",
-        )
-        if self.dropout_prob > 0:
-            y = lbann.Dropout(
-                y,
-                keep_prob=1 - self.dropout_prob,
-                name=f"{name}_drop3",
-            )
-        z = lbann.Sum(x, y, name=f"{name}_sum2")
-        z = lbann.InstanceNorm(z, name=f"{name}_norm2")
-        return z
+from lbann.modules import attention_allsubgraph as attn
 
 
 class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
@@ -170,11 +45,14 @@ class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
         num_heads=8,
         feedforward_dim=2048,
         dropout=0.1,
+        attn_dropout=0.0,
+        pre_layernorm=False,
+        activation=lbann.Relu,
         d_kv=None,
         name=None,
         Apply_Concat=True,
     ):
-        TransformerEncoderLayer.global_count += 1
+        TransformerEncoderLayerAllSubgraph.global_count += 1
         self.instance = 0
         self.embed_dim = embed_dim
         self.feedforward_dim = feedforward_dim
@@ -182,55 +60,56 @@ class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
         self.branches = branches
         self.branch_dim = int(embed_dim // branches)
         self.Apply_Concat = Apply_Concat
+        self.pre_layernorm = pre_layernorm
+        self.activation = activation
 
         # Module name
         self.name = name
         if not self.name:
-            self.name = f"transformerencoderlayer{TransformerEncoderLayer.global_count}"
+            self.name = f"transformerencoderlayerasg{TransformerEncoderLayerAllSubgraph.global_count}"
 
         # Layer modules
-        self.attention = (
-            lbann.modules.subgraph.transformer.MultiheadAttentionAllSubGraph(
-                self.embed_dim,
-                num_heads,
-                branches=branches,
-                d_kv=d_kv,
-                name=f"{self.name}_attention",
-            )
-        )
+        self.attention = (attn.MultiheadAttentionAllSubGraph(
+            self.embed_dim,
+            num_heads,
+            branches=branches,
+            dropout=attn_dropout,
+            d_kv=d_kv,
+            name=f"{self.name}_attention",
+        ))
+        self.norm1 = lbann.modules.transformer.LayerNorm(
+            self.embed_dim, name=f'{self.name}_norm1')
+        self.norm2 = lbann.modules.transformer.LayerNorm(
+            self.embed_dim, name=f'{self.name}_norm2')
 
         # Weights for fully-connected layers
         self.fc1_weights = []
 
         for branch in range(branches):
-            self.fc1_weights.append(
-                [
-                    lbann.Weights(
-                        initializer=lbann.HeNormalInitializer(),
-                        name=f"{self.name}_branch{branch}_fc1_matrix",
-                    ),
-                    lbann.Weights(
-                        initializer=lbann.ConstantInitializer(value=0),
-                        name=f"{self.name}_branch{branch}_fc1_bias",
-                    ),
-                ]
-            )
+            self.fc1_weights.append([
+                lbann.Weights(
+                    initializer=lbann.HeNormalInitializer(),
+                    name=f"{self.name}_branch{branch}_fc1_matrix",
+                ),
+                lbann.Weights(
+                    initializer=lbann.ConstantInitializer(value=0),
+                    name=f"{self.name}_branch{branch}_fc1_bias",
+                ),
+            ])
 
         self.fc2_weights = []
 
         for branch in range(branches):
-            self.fc2_weights.append(
-                [
-                    lbann.Weights(
-                        initializer=lbann.GlorotNormalInitializer(),
-                        name=f"{self.name}_branch{branch}_fc2_matrix",
-                    ),
-                    lbann.Weights(
-                        initializer=lbann.ConstantInitializer(value=0),
-                        name=f"{self.name}_branch{branch}_fc2_bias",
-                    ),
-                ]
-            )
+            self.fc2_weights.append([
+                lbann.Weights(
+                    initializer=lbann.GlorotNormalInitializer(),
+                    name=f"{self.name}_branch{branch}_fc2_matrix",
+                ),
+                lbann.Weights(
+                    initializer=lbann.ConstantInitializer(value=0),
+                    name=f"{self.name}_branch{branch}_fc2_bias",
+                ),
+            ])
 
     def forward(self, x, mask=None):
         """Apply Transformer encoder layer.
@@ -246,8 +125,13 @@ class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
         self.instance += 1
         name = f"{self.name}_instance{self.instance}"
 
+        if self.pre_layernorm:
+            y = self.norm1(x)
+        else:
+            y = x
+
         # Self-attention with residual connection
-        attentions = self.attention(x, x, x, mask=mask)
+        attentions = self.attention(y, y, y, mask=mask)
 
         slice_points = [self.branch_dim * i for i in range(self.branches + 1)]
 
@@ -272,14 +156,22 @@ class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
                     name=f"{name}_branch{head}_drop1",
                 )
 
-            x_sliced = lbann.Identity(x_slice, parallel_strategy={"grid_tag": head + 1})
+            x_sliced = lbann.Identity(x_slice,
+                                      parallel_strategy={"grid_tag": head + 1})
             z = lbann.Sum(x_sliced, y, name=f"{name}_branch{head}_sum1")
-            z = lbann.InstanceNorm(z, name=f"{name}_branch{head}_norm1")
+            if not self.pre_layernorm:
+                z = self.norm1(z)
             x = z
 
             # Feedforward network with residual connection
+            if self.pre_layernorm:
+                y = self.norm2(z)
+            else:
+                y = x
+
+            # Feedforward network with residual connection
             y = lbann.ChannelwiseFullyConnected(
-                x,
+                y,
                 weights=self.fc1_weights[head],
                 output_channel_dims=[self.feedforward_dim],
                 name=f"{name}_branch{head}_fc1",
@@ -296,9 +188,9 @@ class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
         branches1 = []
 
         for head in range(self.branches):
-            y = lbann.Relu(
+            y = self.activation(
                 grid_sum_slice,
-                name=f"{name}_branch{head}_relu1",
+                name=f"{name}_branch{head}_act1",
                 parallel_strategy={"grid_tag": head + 1},
             )
             if self.dropout_prob > 0:
@@ -318,7 +210,8 @@ class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
         grid_sum_slice = lbann.Cross_Grid_Sum_Slice(branches1)
 
         for head in range(self.branches):
-            y = lbann.Identity(grid_sum_slice, parallel_strategy={"grid_tag": head + 1})
+            y = lbann.Identity(grid_sum_slice,
+                               parallel_strategy={"grid_tag": head + 1})
 
             if self.dropout_prob > 0:
                 y = lbann.Dropout(
@@ -328,7 +221,8 @@ class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
                 )
 
             z = lbann.Sum(branches2[head], y, name=f"{name}_branch{head}_sum2")
-            z = lbann.InstanceNorm(z, name=f"{name}_branch{head}_norm2")
+            if not self.pre_layernorm:
+                z = self.norm2(z)
 
             branch_outputs.append(z)
 
@@ -376,15 +270,20 @@ class TransformerEncoderLayerAllSubgraphInputSubGrids(lbann.modules.Module):
         num_heads=8,
         feedforward_dim=2048,
         dropout=0.1,
+        attn_dropout=0.0,
+        pre_layernorm=False,
+        activation=lbann.Relu,
         d_kv=None,
         name=None,
         Apply_Concat=False,
     ):
-        TransformerEncoderLayer.global_count += 1
+        TransformerEncoderLayerAllSubgraphInputSubGrids.global_count += 1
         self.instance = 0
         self.embed_dim = embed_dim
         self.feedforward_dim = feedforward_dim
         self.dropout_prob = dropout
+        self.pre_layernorm = pre_layernorm
+        self.activation = activation
         self.branches = branches
         self.branch_dim = int(embed_dim // branches)
         self.Apply_Concat = Apply_Concat
@@ -392,49 +291,50 @@ class TransformerEncoderLayerAllSubgraphInputSubGrids(lbann.modules.Module):
         # Module name
         self.name = name
         if not self.name:
-            self.name = f"transformerencoderlayer{TransformerEncoderLayer.global_count}"
+            self.name = f"transformerencoderlayerasgisg{TransformerEncoderLayerAllSubgraphInputSubGrids.global_count}"
 
         # Layer modules
-        self.attention = lbann.modules.subgraph.transformer.MultiheadAttentionAllSubGraphInputSubGrids(
+        self.attention = attn.MultiheadAttentionAllSubGraphInputSubGrids(
             self.embed_dim,
             num_heads,
+            dropout=attn_dropout,
             branches=branches,
             d_kv=d_kv,
             name=f"{self.name}_attention",
         )
+        self.norm1 = lbann.modules.transformer.LayerNorm(
+            self.embed_dim, name=f'{self.name}_norm1')
+        self.norm2 = lbann.modules.transformer.LayerNorm(
+            self.embed_dim, name=f'{self.name}_norm2')
 
         # Weights for fully-connected layers
         self.fc1_weights = []
 
         for branch in range(branches):
-            self.fc1_weights.append(
-                [
-                    lbann.Weights(
-                        initializer=lbann.HeNormalInitializer(),
-                        name=f"{self.name}_branch{branch}_fc1_matrix",
-                    ),
-                    lbann.Weights(
-                        initializer=lbann.ConstantInitializer(value=0),
-                        name=f"{self.name}_branch{branch}_fc1_bias",
-                    ),
-                ]
-            )
+            self.fc1_weights.append([
+                lbann.Weights(
+                    initializer=lbann.HeNormalInitializer(),
+                    name=f"{self.name}_branch{branch}_fc1_matrix",
+                ),
+                lbann.Weights(
+                    initializer=lbann.ConstantInitializer(value=0),
+                    name=f"{self.name}_branch{branch}_fc1_bias",
+                ),
+            ])
 
         self.fc2_weights = []
 
         for branch in range(branches):
-            self.fc2_weights.append(
-                [
-                    lbann.Weights(
-                        initializer=lbann.GlorotNormalInitializer(),
-                        name=f"{self.name}_branch{branch}_fc2_matrix",
-                    ),
-                    lbann.Weights(
-                        initializer=lbann.ConstantInitializer(value=0),
-                        name=f"{self.name}_branch{branch}_fc2_bias",
-                    ),
-                ]
-            )
+            self.fc2_weights.append([
+                lbann.Weights(
+                    initializer=lbann.GlorotNormalInitializer(),
+                    name=f"{self.name}_branch{branch}_fc2_matrix",
+                ),
+                lbann.Weights(
+                    initializer=lbann.ConstantInitializer(value=0),
+                    name=f"{self.name}_branch{branch}_fc2_bias",
+                ),
+            ])
 
     def forward(self, x, mask=None):
         """Apply Transformer encoder layer.
@@ -450,10 +350,13 @@ class TransformerEncoderLayerAllSubgraphInputSubGrids(lbann.modules.Module):
         self.instance += 1
         name = f"{self.name}_instance{self.instance}"
 
-        # Self-attention with residual connection
-        attentions = self.attention(x, x, x, mask=mask)
+        if self.pre_layernorm:
+            y = self.norm1(x)
+        else:
+            y = x
 
-        slice_points = [self.branch_dim * i for i in range(self.branches + 1)]
+        # Self-attention with residual connection
+        attentions = self.attention(y, y, y, mask=mask)
 
         x_list = x
         head = 0
@@ -469,12 +372,17 @@ class TransformerEncoderLayerAllSubgraphInputSubGrids(lbann.modules.Module):
 
             x_sliced = lbann.Identity(x_list[iter_count])
             z = lbann.Sum(x_sliced, y, name=f"{name}_branch{head}_sum1")
-            z = lbann.InstanceNorm(z, name=f"{name}_branch{head}_norm1")
+            if not self.pre_layernorm:
+                z = self.norm1(z)
             x = z
 
             # Feedforward network with residual connection
+            if self.pre_layernorm:
+                y = self.norm2(z)
+            else:
+                y = x
             y = lbann.ChannelwiseFullyConnected(
-                x,
+                y,
                 weights=self.fc1_weights[head],
                 output_channel_dims=[self.feedforward_dim],
                 name=f"{name}_branch{head}_fc1",
@@ -491,9 +399,9 @@ class TransformerEncoderLayerAllSubgraphInputSubGrids(lbann.modules.Module):
         branches1 = []
 
         for head in range(self.branches):
-            y = lbann.Relu(
+            y = self.activation(
                 grid_sum_slice,
-                name=f"{name}_branch{head}_relu1",
+                name=f"{name}_branch{head}_act1",
                 parallel_strategy={"grid_tag": head + 1},
             )
             if self.dropout_prob > 0:
@@ -513,7 +421,8 @@ class TransformerEncoderLayerAllSubgraphInputSubGrids(lbann.modules.Module):
         grid_sum_slice = lbann.Cross_Grid_Sum_Slice(branches1)
 
         for head in range(self.branches):
-            y = lbann.Identity(grid_sum_slice, parallel_strategy={"grid_tag": head + 1})
+            y = lbann.Identity(grid_sum_slice,
+                               parallel_strategy={"grid_tag": head + 1})
 
             if self.dropout_prob > 0:
                 y = lbann.Dropout(
@@ -523,7 +432,8 @@ class TransformerEncoderLayerAllSubgraphInputSubGrids(lbann.modules.Module):
                 )
 
             z = lbann.Sum(branches2[head], y, name=f"{name}_branch{head}_sum2")
-            z = lbann.InstanceNorm(z, name=f"{name}_branch{head}_norm2")
+            if not self.pre_layernorm:
+                z = self.norm2(z)
 
             branch_outputs.append(z)
 
@@ -542,160 +452,6 @@ class TransformerEncoderLayerAllSubgraphInputSubGrids(lbann.modules.Module):
         else:
             attentions = branch_outputs
         return attentions
-
-
-class TransformerDecoderLayer(lbann.modules.Module):
-    """Building block for decoder in Transformer model.
-
-    Comprised of two multi-head attention modules and a
-    fully-connected feedforward network, each with a residual
-    connection.
-
-    Args:
-            embed_dim (int): Internal dimensionality of multi-head
-                    attention.
-            num_heads (int): Number of attention heads.
-            feedforward_dim (int): Internal dimensionality of
-                    fully-connected feedforward network.
-            dropout (float): Dropout probability.
-            name (str): Default name is in the form
-                    'transformerdecoderlayer<index>'.
-
-    """
-
-    global_count = 0  # Static counter, used for default names
-
-    def __init__(
-        self,
-        branches,
-        embed_dim=512,
-        num_heads=8,
-        feedforward_dim=2048,
-        dropout=0.1,
-        d_kv=None,
-        name=None,
-    ):
-        TransformerDecoderLayer.global_count += 1
-        self.instance = 0
-        self.embed_dim = embed_dim
-        self.feedforward_dim = feedforward_dim
-        self.dropout_prob = dropout
-
-        # Module name
-        self.name = name
-        if not self.name:
-            self.name = f"transformerdecoderlayer{TransformerDecoderLayer.global_count}"
-
-        # Layer modules
-        self.attention1 = lbann.modules.subgraph.transformer.MultiheadAttention(
-            embed_dim,
-            num_heads,
-            branches=branches,
-            d_kv=d_kv,
-            name=f"{self.name}_attention1",
-        )
-        self.attention2 = lbann.modules.subgraph.transformer.MultiheadAttention(
-            embed_dim,
-            num_heads,
-            branches=branches,
-            d_kv=d_kv,
-            name=f"{self.name}_attention2",
-        )
-
-        # Weights for fully-connected layers
-        self.fc1_weights = [
-            lbann.Weights(
-                initializer=lbann.HeNormalInitializer(), name=f"{self.name}_fc1_matrix"
-            ),
-            lbann.Weights(
-                initializer=lbann.ConstantInitializer(value=0),
-                name=f"{self.name}_fc1_bias",
-            ),
-        ]
-        self.fc2_weights = [
-            lbann.Weights(
-                initializer=lbann.GlorotNormalInitializer(),
-                name=f"{self.name}_fc2_matrix",
-            ),
-            lbann.Weights(
-                initializer=lbann.ConstantInitializer(value=0),
-                name=f"{self.name}_fc2_bias",
-            ),
-        ]
-
-    def forward(self, x, memory, src_mask=None, tgt_mask=None):
-        """Apply Transformer decoder layer.
-
-        Args:
-                x (lbann.Layer): Sequence of input vectors.
-                memory (lbann.Layer): Sequence of vectors produced by
-                        Transformer encoder stack.
-                src_mask (lbann.Layer, optional): Attention mask for
-                        second attention module (attends to both `x` and
-                        `memory`).
-                tgt_mask (lbann.Layer, optional): Attention mask for first
-                        attention module (attends only to `x`).
-
-        Returns:
-                lbann.Layer: Sequence of output vectors.
-
-        """
-        self.instance += 1
-        name = f"{self.name}_instance{self.instance}"
-
-        # Self-attention with residual connection
-        y = self.attention1(x, x, x, mask=tgt_mask)
-        if self.dropout_prob > 0:
-            y = lbann.Dropout(
-                y,
-                keep_prob=1 - self.dropout_prob,
-                name=f"{name}_drop1",
-            )
-        z = lbann.Sum(x, y, name=f"{name}_sum1")
-        z = lbann.InstanceNorm(z, name=f"{name}_norm1")
-        x = z
-
-        # Attention on encoder output with residual connection
-        y = self.attention2(x, memory, memory, mask=src_mask)
-        if self.dropout_prob > 0:
-            y = lbann.Dropout(
-                y,
-                keep_prob=1 - self.dropout_prob,
-                name=f"{name}_drop2",
-            )
-        z = lbann.Sum(x, y, name=f"{name}_sum2")
-        z = lbann.InstanceNorm(z, name=f"{name}_norm2")
-        x = z
-
-        # Feedforward network with residual connection
-        y = lbann.ChannelwiseFullyConnected(
-            x,
-            weights=self.fc1_weights,
-            output_channel_dims=[self.feedforward_dim],
-            name=f"{name}_fc1",
-        )
-        y = lbann.Relu(y, name=f"{name}_relu1")
-        if self.dropout_prob > 0:
-            y = lbann.Dropout(
-                y,
-                keep_prob=1 - self.dropout_prob,
-                name=f"{name}_drop3",
-            )
-        y = lbann.ChannelwiseFullyConnected(
-            y,
-            weights=self.fc2_weights,
-            output_channel_dims=[self.embed_dim],
-            name=f"{name}_fc2",
-        )
-        if self.dropout_prob > 0:
-            y = lbann.Dropout(
-                y,
-                keep_prob=1 - self.dropout_prob,
-                name=f"{name}_drop4",
-            )
-        z = lbann.Sum(x, y, name=f"{name}_sum3")
-        z = lbann.InstanceNorm(z, name=f"{name}_norm3")
-        return z
 
 
 class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
@@ -726,15 +482,20 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
         num_heads=8,
         feedforward_dim=2048,
         dropout=0.1,
+        attn_dropout=0.0,
+        pre_layernorm=False,
+        activation=lbann.Relu,
         d_kv=None,
         name=None,
         Apply_Concat=True,
     ):
-        TransformerDecoderLayer.global_count += 1
+        TransformerDecoderLayerAllSubGraph.global_count += 1
         self.instance = 0
         self.embed_dim = embed_dim
         self.feedforward_dim = feedforward_dim
         self.dropout_prob = dropout
+        self.pre_layernorm = pre_layernorm
+        self.activation = activation
         self.Apply_Concat = Apply_Concat
         self.branches = branches
         self.branch_dim = int(embed_dim // branches)
@@ -742,54 +503,56 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
         # Module name
         self.name = name
         if not self.name:
-            self.name = f"transformerdecoderlayer{TransformerDecoderLayer.global_count}"
+            self.name = f"transformerdecoderlayerasg{TransformerDecoderLayerAllSubGraph.global_count}"
 
         # Layer modules
-        self.attention1 = (
-            lbann.modules.subgraph.transformer.MultiheadAttentionAllSubGraph(
-                embed_dim,
-                num_heads,
-                branches=branches,
-                d_kv=d_kv,
-                name=f"{self.name}_attention1",
-            )
-        )
-        self.attention2 = lbann.modules.subgraph.transformer.MultiheadAttentionAllSubGraphInputSubGrids(
+        self.attention1 = attn.MultiheadAttentionAllSubGraph(
             embed_dim,
             num_heads,
+            dropout=attn_dropout,
+            branches=branches,
+            d_kv=d_kv,
+            name=f"{self.name}_attention1",
+        )
+        self.attention2 = attn.MultiheadAttentionAllSubGraphInputSubGrids(
+            embed_dim,
+            num_heads,
+            dropout=attn_dropout,
             branches=branches,
             d_kv=d_kv,
             name=f"{self.name}_attention2",
         )
+        self.norm1 = lbann.modules.transformer.LayerNorm(
+            self.embed_dim, name=f'{self.name}_norm1')
+        self.norm2 = lbann.modules.transformer.LayerNorm(
+            self.embed_dim, name=f'{self.name}_norm2')
+        self.norm3 = lbann.modules.transformer.LayerNorm(
+            self.embed_dim, name=f'{self.name}_norm3')
 
         # Weights for fully-connected layers
         self.fc1_weights = []
         self.fc2_weights = []
         for branch in range(branches):
-            self.fc1_weights.append(
-                [
-                    lbann.Weights(
-                        initializer=lbann.HeNormalInitializer(),
-                        name=f"{self.name}_branch{branch}_fc1_matrix",
-                    ),
-                    lbann.Weights(
-                        initializer=lbann.ConstantInitializer(value=0),
-                        name=f"{self.name}_branch{branch}_fc1_bias",
-                    ),
-                ]
-            )
-            self.fc2_weights.append(
-                [
-                    lbann.Weights(
-                        initializer=lbann.GlorotNormalInitializer(),
-                        name=f"{self.name}_branch{branch}_fc2_matrix",
-                    ),
-                    lbann.Weights(
-                        initializer=lbann.ConstantInitializer(value=0),
-                        name=f"{self.name}_branch{branch}_fc2_bias",
-                    ),
-                ]
-            )
+            self.fc1_weights.append([
+                lbann.Weights(
+                    initializer=lbann.HeNormalInitializer(),
+                    name=f"{self.name}_branch{branch}_fc1_matrix",
+                ),
+                lbann.Weights(
+                    initializer=lbann.ConstantInitializer(value=0),
+                    name=f"{self.name}_branch{branch}_fc1_bias",
+                ),
+            ])
+            self.fc2_weights.append([
+                lbann.Weights(
+                    initializer=lbann.GlorotNormalInitializer(),
+                    name=f"{self.name}_branch{branch}_fc2_matrix",
+                ),
+                lbann.Weights(
+                    initializer=lbann.ConstantInitializer(value=0),
+                    name=f"{self.name}_branch{branch}_fc2_bias",
+                ),
+            ])
 
     def forward(self, x, memory, src_mask=None, tgt_mask=None):
         """Apply Transformer decoder layer.
@@ -811,8 +574,13 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
         self.instance += 1
         name = f"{self.name}_instance{self.instance}"
 
+        if self.pre_layernorm:
+            y = self.norm1(x)
+        else:
+            y = x
+
         # Slice x
-        x_slice = lbann.Identity(x)
+        x_slice = lbann.Identity(y)
 
         slice_points = [self.branch_dim * i for i in range(self.branches + 1)]
 
@@ -835,12 +603,14 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
         )
 
         # Self-attention with residual connection
-        y = self.attention1(x, x, x, mask=tgt_mask)
+        y = self.attention1(y, y, y, mask=tgt_mask)
 
         attentions1_output = []
         memory_list = []
 
-        assert len(y) == self.branches, "Number of layers should be equal to branches "
+        assert len(
+            y
+        ) == self.branches, "Number of layers should be equal to branches "
 
         for count, attention in enumerate(y):
             if self.dropout_prob > 0:
@@ -851,54 +621,74 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
                 )
 
             x_sliced = lbann.Identity(
-                x_slice, parallel_strategy={"grid_tag": count + 1}
-            )
+                x_slice, parallel_strategy={"grid_tag": count + 1})
             x_sliced = lbann.Identity(x_sliced)
             memory_sliced = lbann.Identity(
-                memory_slice, parallel_strategy={"grid_tag": count + 1}
-            )
+                memory_slice, parallel_strategy={"grid_tag": count + 1})
             memory_sliced = lbann.Identity(memory_sliced)
-            z = lbann.Sum(x_sliced, attention, name=f"{name}_branch{count}_sum1")
-            z = lbann.InstanceNorm(z, name=f"{name}_branch{count}_norm1")
+            z = lbann.Sum(x_sliced,
+                          attention,
+                          name=f"{name}_branch{count}_sum1")
+            if not self.pre_layernorm:
+                z = self.norm1(z)
             x = z
             attentions1_output.append(x)
             memory_list.append(memory_sliced)
 
-        # Attention on encoder output with residual connection
-        y = self.attention2(attentions1_output, memory_list, memory_list, mask=src_mask)
+        # Cross-attention on encoder output with residual connection
+        if memory is not None:
+            if self.pre_layernorm:
+                attentions1_output = [
+                    self.norm2(x) for x in attentions1_output
+                ]
 
-        branch_outputs1 = []
-        branch_outputs2 = []
-        for count, attention in enumerate(y):
-            if self.dropout_prob > 0:
-                attention = lbann.Dropout(
-                    attention,
-                    keep_prob=1 - self.dropout_prob,
-                    name=f"{name}_branch{count}_drop2",
+            y = self.attention2(attentions1_output,
+                                memory_list,
+                                memory_list,
+                                mask=src_mask)
+
+            branch_outputs1 = []
+            branch_outputs2 = []
+            for count, attention in enumerate(y):
+                if self.dropout_prob > 0:
+                    attention = lbann.Dropout(
+                        attention,
+                        keep_prob=1 - self.dropout_prob,
+                        name=f"{name}_branch{count}_drop2",
+                    )
+                z = lbann.Sum(attentions1_output[count],
+                              attention,
+                              name=f"{name}_branch{count}_sum2")
+                if not self.pre_layernorm:
+                    z = self.norm2(z)
+                x = z
+
+                branch_outputs1.append(x)
+                # Feedforward network with residual connection
+                if self.pre_layernorm:
+                    y = self.norm3(x)
+                else:
+                    y = x
+
+                y = lbann.ChannelwiseFullyConnected(
+                    y,
+                    weights=self.fc1_weights[count],
+                    output_channel_dims=[self.feedforward_dim],
+                    name=f"{name}_branch{count}_fc1",
                 )
-            z = lbann.Sum(
-                attentions1_output[count], attention, name=f"{name}_branch{count}_sum2"
-            )
-            z = lbann.InstanceNorm(z, name=f"{name}_branch{count}_norm2")
-            x = z
+                branch_outputs2.append(y)
 
-            branch_outputs1.append(x)
-            # Feedforward network with residual connection
-            y = lbann.ChannelwiseFullyConnected(
-                x,
-                weights=self.fc1_weights[count],
-                output_channel_dims=[self.feedforward_dim],
-                name=f"{name}_branch{count}_fc1",
-            )
-            branch_outputs2.append(y)
+            grid_sum_slice = lbann.Cross_Grid_Sum_Slice(branch_outputs2)
+        else:
+            grid_sum_slice = attentions1_output
 
-        grid_sum_slice = lbann.Cross_Grid_Sum_Slice(branch_outputs2)
         branch_outputs2 = []
 
         for head in range(self.branches):
-            y = lbann.Identity(grid_sum_slice, parallel_strategy={"grid_tag": head + 1})
+            y = lbann.Identity(grid_sum_slice,
+                               parallel_strategy={"grid_tag": head + 1})
 
-            y = lbann.Relu(y, name=f"{name}_branch{head}_relu1")
+            y = self.activation(y, name=f"{name}_branch{head}_act1")
             if self.dropout_prob > 0:
                 y = lbann.Dropout(
                     y,
@@ -917,7 +707,8 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
         branch_outputs2 = []
 
         for head in range(self.branches):
-            y = lbann.Identity(grid_sum_slice, parallel_strategy={"grid_tag": head + 1})
+            y = lbann.Identity(grid_sum_slice,
+                               parallel_strategy={"grid_tag": head + 1})
 
             if self.dropout_prob > 0:
                 y = lbann.Dropout(
@@ -925,8 +716,12 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
                     keep_prob=1 - self.dropout_prob,
                     name=f"{name}_branch{head}_drop4",
                 )
-            z = lbann.Sum(branch_outputs1[head], y, name=f"{name}_branch{head}_sum3")
-            z = lbann.InstanceNorm(z, name=f"{name}_branch{head}_norm3")
+            z = lbann.Sum(branch_outputs1[head],
+                          y,
+                          name=f"{name}_branch{head}_sum3")
+
+            if not self.pre_layernorm:
+                z = self.norm3(z)
             branch_outputs2.append(z)
 
         if self.Apply_Concat:
@@ -942,7 +737,7 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
             attentions = lbann.Identity(attentions)
 
         else:
-            attentions = branch_outputs
+            attentions = branch_outputs2
         return attentions
 
 
@@ -974,69 +769,78 @@ class TransformerDecoderLayerAllSubGraphInputSubGrids(lbann.modules.Module):
         num_heads=8,
         feedforward_dim=2048,
         dropout=0.1,
+        attn_dropout=0.0,
+        pre_layernorm=False,
+        activation=lbann.Relu,
         d_kv=None,
         name=None,
         Apply_Concat=False,
         Slice_X=False,
     ):
-        TransformerDecoderLayer.global_count += 1
+        TransformerDecoderLayerAllSubGraphInputSubGrids.global_count += 1
         self.instance = 0
         self.embed_dim = embed_dim
         self.feedforward_dim = feedforward_dim
         self.dropout_prob = dropout
         self.Apply_Concat = Apply_Concat
+        self.pre_layernorm = pre_layernorm
+        self.activation = activation
         self.branches = branches
         self.branch_dim = int(embed_dim // branches)
         self.Slice_X = Slice_X
         # Module name
         self.name = name
         if not self.name:
-            self.name = f"transformerdecoderlayer{TransformerDecoderLayer.global_count}"
+            self.name = f"transformerdecoderlayerasgisg{TransformerDecoderLayerAllSubGraphInputSubGrids.global_count}"
 
         # Layer modules
-        self.attention1 = lbann.modules.subgraph.transformer.MultiheadAttentionAllSubGraphInputSubGrids(
+        self.attention1 = attn.MultiheadAttentionAllSubGraphInputSubGrids(
             embed_dim,
             num_heads,
+            dropout=attn_dropout,
             branches=branches,
             d_kv=d_kv,
             name=f"{self.name}_attention1",
         )
-        self.attention2 = lbann.modules.subgraph.transformer.MultiheadAttentionAllSubGraphInputSubGrids(
+        self.attention2 = attn.MultiheadAttentionAllSubGraphInputSubGrids(
             embed_dim,
             num_heads,
+            dropout=attn_dropout,
             branches=branches,
             d_kv=d_kv,
             name=f"{self.name}_attention2",
         )
+        self.norm1 = lbann.modules.transformer.LayerNorm(
+            self.embed_dim, name=f'{self.name}_norm1')
+        self.norm2 = lbann.modules.transformer.LayerNorm(
+            self.embed_dim, name=f'{self.name}_norm2')
+        self.norm3 = lbann.modules.transformer.LayerNorm(
+            self.embed_dim, name=f'{self.name}_norm3')
 
         # Weights for fully-connected layers
         self.fc1_weights = []
         self.fc2_weights = []
         for branch in range(branches):
-            self.fc1_weights.append(
-                [
-                    lbann.Weights(
-                        initializer=lbann.HeNormalInitializer(),
-                        name=f"{self.name}_branch{branch}_fc1_matrix",
-                    ),
-                    lbann.Weights(
-                        initializer=lbann.ConstantInitializer(value=0),
-                        name=f"{self.name}_branch{branch}_fc1_bias",
-                    ),
-                ]
-            )
-            self.fc2_weights.append(
-                [
-                    lbann.Weights(
-                        initializer=lbann.GlorotNormalInitializer(),
-                        name=f"{self.name}_branch{branch}_fc2_matrix",
-                    ),
-                    lbann.Weights(
-                        initializer=lbann.ConstantInitializer(value=0),
-                        name=f"{self.name}_branch{branch}_fc2_bias",
-                    ),
-                ]
-            )
+            self.fc1_weights.append([
+                lbann.Weights(
+                    initializer=lbann.HeNormalInitializer(),
+                    name=f"{self.name}_branch{branch}_fc1_matrix",
+                ),
+                lbann.Weights(
+                    initializer=lbann.ConstantInitializer(value=0),
+                    name=f"{self.name}_branch{branch}_fc1_bias",
+                ),
+            ])
+            self.fc2_weights.append([
+                lbann.Weights(
+                    initializer=lbann.GlorotNormalInitializer(),
+                    name=f"{self.name}_branch{branch}_fc2_matrix",
+                ),
+                lbann.Weights(
+                    initializer=lbann.ConstantInitializer(value=0),
+                    name=f"{self.name}_branch{branch}_fc2_bias",
+                ),
+            ])
 
     def forward(self, x, memory, src_mask=None, tgt_mask=None):
         """Apply Transformer decoder layer.
@@ -1058,12 +862,18 @@ class TransformerDecoderLayerAllSubGraphInputSubGrids(lbann.modules.Module):
         self.instance += 1
         name = f"{self.name}_instance{self.instance}"
 
+        if self.pre_layernorm:
+            y = self.norm1(x)
+        else:
+            y = x
+
         # Slice
-
         if self.Slice_X:
-            x_slice = lbann.Identity(x)
+            x_slice = lbann.Identity(y)
 
-            slice_points = [self.branch_dim * i for i in range(self.branches + 1)]
+            slice_points = [
+                self.branch_dim * i for i in range(self.branches + 1)
+            ]
 
             x_slice = lbann.Slice(
                 x_slice,
@@ -1073,24 +883,25 @@ class TransformerDecoderLayerAllSubGraphInputSubGrids(lbann.modules.Module):
                 parallel_strategy={"grid_tag": 0},
             )
 
-            x = []
+            y = []
 
             for branch in range(self.branches):
                 x_sliced = lbann.Identity(
-                    x_slice, parallel_strategy={"grid_tag": branch + 1}
-                )
+                    x_slice, parallel_strategy={"grid_tag": branch + 1})
                 x_sliced = lbann.Identity(x_sliced)
-                x.append(x_sliced)
+                y.append(x_sliced)
 
         # Self-attention with residual connection
-        y = self.attention1(x, x, x, mask=tgt_mask)
+        y = self.attention1(y, y, y, mask=tgt_mask)
 
         attentions1_output = []
         memory_list = []
-        x_list = x
+        x_list = y
         memory_list = memory
 
-        assert len(y) == self.branches, "Number of layers should be equal to branches "
+        assert len(
+            y
+        ) == self.branches, "Number of layers should be equal to branches "
 
         for count, attention in enumerate(y):
             if self.dropout_prob > 0:
@@ -1102,46 +913,67 @@ class TransformerDecoderLayerAllSubGraphInputSubGrids(lbann.modules.Module):
 
             x_sliced = lbann.Identity(x_list[count])
 
-            z = lbann.Sum(x_sliced, attention, name=f"{name}_branch{count}_sum1")
-            z = lbann.InstanceNorm(z, name=f"{name}_branch{count}_norm1")
+            z = lbann.Sum(x_sliced,
+                          attention,
+                          name=f"{name}_branch{count}_sum1")
+            if not self.pre_layernorm:
+                z = self.norm1(z)
             x = z
             attentions1_output.append(x)
 
-        # Attention on encoder output with residual connection
-        y = self.attention2(attentions1_output, memory_list, memory_list, mask=src_mask)
+        # Cross-attention on encoder output with residual connection
+        if memory is not None:
+            if self.pre_layernorm:
+                attentions1_output = [
+                    self.norm2(x) for x in attentions1_output
+                ]
+            y = self.attention2(attentions1_output,
+                                memory_list,
+                                memory_list,
+                                mask=src_mask)
 
-        branch_outputs1 = []
-        branch_outputs2 = []
-        for count, attention in enumerate(y):
-            if self.dropout_prob > 0:
-                attention = lbann.Dropout(
-                    attention,
-                    keep_prob=1 - self.dropout_prob,
-                    name=f"{name}_branch{count}_drop2",
+            branch_outputs1 = []
+            branch_outputs2 = []
+            for count, attention in enumerate(y):
+                if self.dropout_prob > 0:
+                    attention = lbann.Dropout(
+                        attention,
+                        keep_prob=1 - self.dropout_prob,
+                        name=f"{name}_branch{count}_drop2",
+                    )
+                z = lbann.Sum(attentions1_output[count],
+                              attention,
+                              name=f"{name}_branch{count}_sum2")
+                if not self.pre_layernorm:
+                    z = self.norm2(z)
+                x = z
+
+                branch_outputs1.append(x)
+                # Feedforward network with residual connection
+                if self.pre_layernorm:
+                    y = self.norm3(x)
+                else:
+                    y = x
+
+                y = lbann.ChannelwiseFullyConnected(
+                    y,
+                    weights=self.fc1_weights[count],
+                    output_channel_dims=[self.feedforward_dim],
+                    name=f"{name}_branch{count}_fc1",
                 )
-            z = lbann.Sum(
-                attentions1_output[count], attention, name=f"{name}_branch{count}_sum2"
-            )
-            z = lbann.InstanceNorm(z, name=f"{name}_branch{count}_norm2")
-            x = z
+                branch_outputs2.append(y)
 
-            branch_outputs1.append(x)
-            # Feedforward network with residual connection
-            y = lbann.ChannelwiseFullyConnected(
-                x,
-                weights=self.fc1_weights[count],
-                output_channel_dims=[self.feedforward_dim],
-                name=f"{name}_branch{count}_fc1",
-            )
-            branch_outputs2.append(y)
+            grid_sum_slice = lbann.Cross_Grid_Sum_Slice(branch_outputs2)
+        else:
+            grid_sum_slice = attentions1_output
 
-        grid_sum_slice = lbann.Cross_Grid_Sum_Slice(branch_outputs2)
         branch_outputs2 = []
 
         for head in range(self.branches):
-            y = lbann.Identity(grid_sum_slice, parallel_strategy={"grid_tag": head + 1})
+            y = lbann.Identity(grid_sum_slice,
+                               parallel_strategy={"grid_tag": head + 1})
 
-            y = lbann.Relu(y, name=f"{name}_branch{head}_relu1")
+            y = self.activation(y, name=f"{name}_branch{head}_act1")
             if self.dropout_prob > 0:
                 y = lbann.Dropout(
                     y,
@@ -1160,7 +992,8 @@ class TransformerDecoderLayerAllSubGraphInputSubGrids(lbann.modules.Module):
         branch_outputs2 = []
 
         for head in range(self.branches):
-            y = lbann.Identity(grid_sum_slice, parallel_strategy={"grid_tag": head + 1})
+            y = lbann.Identity(grid_sum_slice,
+                               parallel_strategy={"grid_tag": head + 1})
 
             if self.dropout_prob > 0:
                 y = lbann.Dropout(
@@ -1168,8 +1001,11 @@ class TransformerDecoderLayerAllSubGraphInputSubGrids(lbann.modules.Module):
                     keep_prob=1 - self.dropout_prob,
                     name=f"{name}_branch{head}_drop4",
                 )
-            z = lbann.Sum(branch_outputs1[head], y, name=f"{name}_branch{head}_sum3")
-            z = lbann.InstanceNorm(z, name=f"{name}_branch{head}_norm3")
+            z = lbann.Sum(branch_outputs1[head],
+                          y,
+                          name=f"{name}_branch{head}_sum3")
+            if not self.pre_layernorm:
+                z = self.norm3(z)
             branch_outputs2.append(z)
 
         if self.Apply_Concat:
@@ -1189,8 +1025,11 @@ class TransformerDecoderLayerAllSubGraphInputSubGrids(lbann.modules.Module):
         return attentions
 
 
-class Transformer(lbann.modules.Module):
-    """Transformer model.
+class TransformerAllSubgraph(lbann.modules.Module):
+    """
+    Transformer model with subgraph parallelism on attention heads and
+    MLP. This model is not equivalent to a transformer due to the
+    decomposition of the MLP layers.
 
     See:
 
@@ -1222,16 +1061,22 @@ class Transformer(lbann.modules.Module):
         num_heads=8,
         num_encoder_layers=6,
         num_decoder_layers=6,
-        filter_size=2048,
+        feedforward_size=None,
         dropout=0.1,
+        attn_dropout=0.0,
+        pre_layernorm=False,
+        activation=lbann.Relu,
         d_kv=None,
         name=None,
         ENABLE_ALLSUBGRAPH=False,
         ENABLE_Concat=False,
     ):
-        Transformer.global_count += 1
+        TransformerAllSubgraph.global_count += 1
         self.instance = 0
         self.hidden_size = hidden_size
+        self.attn_dropout = attn_dropout
+        self.pre_layernorm = pre_layernorm
+        self.activation = activation
 
         # Apply concat after apply every encoder
         # The input needs to be sliced again among sub-grids
@@ -1239,11 +1084,15 @@ class Transformer(lbann.modules.Module):
         # Module name
         self.name = name
         if not self.name:
-            self.name = f"transformer{Transformer.global_count}"
+            self.name = f"transformer{TransformerAllSubgraph.global_count}"
+
+        # Default feedforward size is 4*hidden_size
+        if feedforward_size is None or feedforward_size == 0:
+            feedforward_size = 4 * hidden_size
+        self.feedforward_size = feedforward_size
 
         # Caches for helper functions
         self._subsequent_mask_cache = {}
-        self._positional_encoding_cache = {}
 
         # Encoder and decoder stacks
         if ENABLE_ALLSUBGRAPH and ENABLE_Concat == False:
@@ -1256,79 +1105,80 @@ class Transformer(lbann.modules.Module):
                             branches,
                             embed_dim=hidden_size,
                             num_heads=num_heads,
-                            feedforward_dim=filter_size,
+                            feedforward_dim=feedforward_size,
                             dropout=dropout,
+                            attn_dropout=attn_dropout,
+                            pre_layernorm=pre_layernorm,
+                            activation=activation,
                             d_kv=d_kv,
                             name=f"{self.name}_encoder{i}",
                             Apply_Concat=False,
-                        )
-                    )
+                        ))
                 elif i == 0:
                     self.encoder.append(
                         TransformerEncoderLayerAllSubgraph(
                             branches,
                             embed_dim=hidden_size,
                             num_heads=num_heads,
-                            feedforward_dim=filter_size,
+                            feedforward_dim=feedforward_size,
                             dropout=dropout,
+                            attn_dropout=attn_dropout,
+                            pre_layernorm=pre_layernorm,
+                            activation=activation,
                             d_kv=d_kv,
                             name=f"{self.name}_encoder{i}",
                             Apply_Concat=False,
-                        )
-                    )
+                        ))
                 elif i == num_encoder_layers - 1:
                     self.encoder.append(
                         TransformerEncoderLayerAllSubgraphInputSubGrids(
                             branches,
                             embed_dim=hidden_size,
                             num_heads=num_heads,
-                            feedforward_dim=filter_size,
+                            feedforward_dim=feedforward_size,
                             dropout=dropout,
+                            attn_dropout=attn_dropout,
+                            pre_layernorm=pre_layernorm,
+                            activation=activation,
                             d_kv=d_kv,
                             name=f"{self.name}_encoder{i}",
                             Apply_Concat=False,
-                        )
-                    )
+                        ))
                 else:
                     self.encoder.append(
                         TransformerEncoderLayerAllSubgraphInputSubGrids(
                             branches,
                             embed_dim=hidden_size,
                             num_heads=num_heads,
-                            feedforward_dim=filter_size,
+                            feedforward_dim=feedforward_size,
                             dropout=dropout,
+                            attn_dropout=attn_dropout,
+                            pre_layernorm=pre_layernorm,
+                            activation=activation,
                             d_kv=d_kv,
                             name=f"{self.name}_encoder{i}",
-                        )
-                    )
+                        ))
         elif ENABLE_ALLSUBGRAPH and ENABLE_Concat == True:
             self.encoder = [
                 TransformerEncoderLayerAllSubgraph(
                     branches,
                     embed_dim=hidden_size,
                     num_heads=num_heads,
-                    feedforward_dim=filter_size,
+                    feedforward_dim=feedforward_size,
                     dropout=dropout,
+                    attn_dropout=attn_dropout,
+                    pre_layernorm=pre_layernorm,
+                    activation=activation,
                     d_kv=d_kv,
                     name=f"{self.name}_encoder{i}",
                     Apply_Concat=True,
-                )
-                for i in range(num_encoder_layers)
+                ) for i in range(num_encoder_layers)
             ]
 
         else:
-            self.encoder = [
-                TransformerEncoderLayer(
-                    branches,
-                    embed_dim=hidden_size,
-                    num_heads=num_heads,
-                    feedforward_dim=filter_size,
-                    dropout=dropout,
-                    d_kv=d_kv,
-                    name=f"{self.name}_encoder{i}",
-                )
-                for i in range(num_encoder_layers)
-            ]
+            raise ValueError(
+                'Use standard Transformer with parallel_attention_heads=branches'
+            )
 
         self.decoder = []
 
@@ -1338,12 +1188,14 @@ class Transformer(lbann.modules.Module):
                     branches,
                     embed_dim=hidden_size,
                     num_heads=num_heads,
-                    feedforward_dim=filter_size,
+                    feedforward_dim=feedforward_size,
                     dropout=dropout,
+                    attn_dropout=attn_dropout,
+                    pre_layernorm=pre_layernorm,
+                    activation=activation,
                     d_kv=d_kv,
                     name=f"{self.name}_decoder{i}",
-                )
-                for i in range(num_decoder_layers)
+                ) for i in range(num_decoder_layers)
             ]
         elif ENABLE_ALLSUBGRAPH and ENABLE_Concat == False:
             for i in range(num_decoder_layers):
@@ -1353,106 +1205,71 @@ class Transformer(lbann.modules.Module):
                             branches,
                             embed_dim=hidden_size,
                             num_heads=num_heads,
-                            feedforward_dim=filter_size,
+                            feedforward_dim=feedforward_size,
                             dropout=dropout,
+                            attn_dropout=attn_dropout,
+                            pre_layernorm=pre_layernorm,
+                            activation=activation,
                             d_kv=d_kv,
                             name=f"{self.name}_decoder{i}",
                             Apply_Concat=True,
                             Slice_X=True,
-                        )
-                    )
+                        ))
                 elif i == num_decoder_layers - 1:
                     self.decoder.append(
                         TransformerDecoderLayerAllSubGraphInputSubGrids(
                             branches,
                             embed_dim=hidden_size,
                             num_heads=num_heads,
-                            feedforward_dim=filter_size,
+                            feedforward_dim=feedforward_size,
                             dropout=dropout,
+                            attn_dropout=attn_dropout,
+                            pre_layernorm=pre_layernorm,
+                            activation=activation,
                             d_kv=d_kv,
                             name=f"{self.name}_decoder{i}",
                             Apply_Concat=True,
                             Slice_X=False,
-                        )
-                    )
+                        ))
                 elif i == 0:
                     self.decoder.append(
                         TransformerDecoderLayerAllSubGraphInputSubGrids(
                             branches,
                             embed_dim=hidden_size,
                             num_heads=num_heads,
-                            feedforward_dim=filter_size,
+                            feedforward_dim=feedforward_size,
                             dropout=dropout,
+                            attn_dropout=attn_dropout,
+                            pre_layernorm=pre_layernorm,
+                            activation=activation,
                             d_kv=d_kv,
                             name=f"{self.name}_decoder{i}",
                             Apply_Concat=False,
                             Slice_X=True,
-                        )
-                    )
+                        ))
                 else:
                     self.decoder.append(
                         TransformerDecoderLayerAllSubGraphInputSubGrids(
                             branches,
                             embed_dim=hidden_size,
                             num_heads=num_heads,
-                            feedforward_dim=filter_size,
+                            feedforward_dim=feedforward_size,
                             dropout=dropout,
+                            attn_dropout=attn_dropout,
+                            pre_layernorm=pre_layernorm,
+                            activation=activation,
                             d_kv=d_kv,
                             name=f"{self.name}_decoder{i}",
                             Apply_Concat=False,
                             Slice_X=False,
-                        )
-                    )
+                        ))
 
         else:
-            self.decoder = [
-                TransformerDecoderLayer(
-                    branches,
-                    embed_dim=hidden_size,
-                    num_heads=num_heads,
-                    feedforward_dim=filter_size,
-                    dropout=dropout,
-                    d_kv=d_kv,
-                    name=f"{self.name}_decoder{i}",
-                )
-                for i in range(num_decoder_layers)
-            ]
+            raise ValueError(
+                'Use standard Transformer with parallel_attention_heads=branches'
+            )
+
         self.branches = branches
-
-    def _positional_encoding(self, sequence_length):
-        """Positional encodings corresponding to a sequence length.
-
-        PE(pos,2*i)   = sin( pos / 10000**(2*i/hidden_size) )
-
-        PE(pos,2*i+1) = cos( pos / 10000**(2*i/hidden_size) )
-
-        Encodings are memoized.
-
-        """
-
-        # Construct positional encoding if not in cache
-        if sequence_length not in self._positional_encoding_cache:
-            vals = []
-            for pos in range(sequence_length):
-                for i in range((self.hidden_size + 1) // 2):
-                    x = pos / 10000 ** (2 * i / self.hidden_size)
-                    vals.append(math.sin(x))
-                    vals.append(math.cos(x))
-                if self.hidden_size % 2 != 0:
-                    vals.pop()
-            weights = lbann.Weights(
-                initializer=lbann.ValueInitializer(values=vals),
-                optimizer=None,
-                name=f"{self.name}_positional{sequence_length}_weights",
-            )
-            self._positional_encoding_cache[sequence_length] = lbann.WeightsLayer(
-                dims=[sequence_length, self.hidden_size],
-                weights=weights,
-                name=f"{self.name}_positional{sequence_length}",
-            )
-
-        # Return cached positional encoding
-        return self._positional_encoding_cache[sequence_length]
 
     def _subsequent_mask(self, size):
         """Attention mask to prevent attending to subsequent positions.
@@ -1479,7 +1296,11 @@ class Transformer(lbann.modules.Module):
         # Return cached mask
         return self._subsequent_mask_cache[size]
 
-    def forward(self, source, target, target_length):
+    def forward(self,
+                source: lbann.Layer,
+                target: lbann.Layer,
+                target_length: int,
+                cross_attention: Optional[lbann.Layer] = None):
         """Apply Transformer.
 
         The input and output tensors are interpreted as sequences of
@@ -1487,24 +1308,30 @@ class Transformer(lbann.modules.Module):
         dimension.
 
         Args:
-                source (lbann.Layer): Sequence of input vectors to encoder
-                        stack.
-                source_length (int): Length of input sequence to encoder.
-                target (lbann.Layer): Sequence of input vectors to decoder
-                        stack.
-                target_length (int): Length of input sequence to decoder.
-
+                source: Sequence of input vectors to encoder stack.
+                target: Sequence of input vectors to decoder stack.
+                target_length: Length of input sequence to decoder.
+                cross_attention: Optional cross-attention tensor to give to a
+                    decoder-only architecture.
         Returns:
                 lbann.Layer: Sequence of output vectors.
 
         """
         self.instance += 1
 
-        # Encoder stack
-        x = source
-        for encoder_layer in self.encoder:
-            x = encoder_layer(x)
-        memory = x
+        # Encoder stack (assumes encoded input, including positional encoding)
+        if self.encoder:
+            x = source
+            for encoder_layer in self.encoder:
+                x = encoder_layer(x)
+            memory = x
+        else:
+            # Decoder-only architecture with an optional input cross-attention
+            # tensor
+            memory = cross_attention
+
+        if not self.decoder:  # Encoder-only architecture
+            return x
 
         # Decoder stack
         x = target

@@ -6,6 +6,7 @@ strategies found in this file.
 import argparse
 import itertools
 import lbann
+import lbann.models.subgraph.transformer
 from typing import Any, Dict, Optional, List, Tuple, Union
 
 #############################################################################
@@ -70,7 +71,7 @@ def apply_lm_head_model_parallelism(lm_head: lbann.Layer,
 def apply_subgraph_parallelism(
     module: lbann.models.Transformer, args: argparse.Namespace
 ) -> Tuple[Union[lbann.models.Transformer,
-                 lbann.models.subgraph.TransformerSubGraph], Dict[str, Any]]:
+                 lbann.models.subgraph.transformer.TransformerAllSubgraph], Dict[str, Any]]:
     """
     Applies a subgraph parallelism strategy on the attention heads in each
     transformer block, if requested.
@@ -78,8 +79,8 @@ def apply_subgraph_parallelism(
     :param module: Transformer module to use.
     :param args: Command-line arguments.
     :return: A 2-tuple of (module, extra_model_args), where module is either a
-             ``Transformer`` module (if no subgraph parallelism was
-             requested), or ``TransformerSubGraph`` with subgraph parallelism.
+             ``Transformer`` module, or ``TransformerAllSubgraph`` with
+             all-subgraph (i.e., MLP per branch) parallelism.
              The second tuple entry is a set of extra arguments to pass to
              the ``lbann.Model`` upon creation.
     """
@@ -87,20 +88,40 @@ def apply_subgraph_parallelism(
         return module, {}
 
     # Create new module from existing one
-    sgmodule = lbann.models.subgraph.TransformerSubGraph(
-        # Transfomer parameters
-        hidden_size=module.hidden_size,
-        num_heads=module.num_heads,
-        num_encoder_layers=len(module.encoder),
-        num_decoder_layers=len(module.decoder),
-        filter_size=module.feedforward_size,
-        dropout=module.dropout,
-        name=module.name,
-        # Subgraph parameters
-        branches=args.attn_head_parallel,
-        ENABLE_ALLSUBGRAPH=args.subgraph_parallelism_all,
-        ENABLE_Concat=args.subgraph_parallelism_concat,
-    )
+    if args.subgraph_parallelism_all:
+        sgmodule = lbann.models.subgraph.TransformerAllSubgraph(
+            # Transfomer parameters
+            hidden_size=module.hidden_size,
+            num_heads=module.num_heads,
+            num_encoder_layers=len(module.encoder),
+            num_decoder_layers=len(module.decoder),
+            filter_size=module.feedforward_size,
+            dropout=module.dropout,
+            attn_dropout=module.attn_dropout,
+            pre_layernorm=module.pre_layernorm,
+            activation=module.activation,
+            name=module.name,
+            # Subgraph parameters
+            branches=args.attn_head_parallel,
+            ENABLE_ALLSUBGRAPH=True,
+            ENABLE_Concat=args.subgraph_parallelism_concat,
+        )
+    else:
+        sgmodule = lbann.models.Transformer(
+            # Transfomer parameters
+            hidden_size=module.hidden_size,
+            num_heads=module.num_heads,
+            num_encoder_layers=len(module.encoder),
+            num_decoder_layers=len(module.decoder),
+            feedforward_size=module.feedforward_size,
+            dropout=module.dropout,
+            attn_dropout=module.attn_dropout,
+            pre_layernorm=module.pre_layernorm,
+            activation=module.activation,
+            name=module.name,
+            # Subgraph parameters
+            parallel_attention_heads=args.attn_head_parallel,
+        )
 
     # Add model arguments
     extra_model_kwargs = dict(
@@ -164,7 +185,8 @@ def add_transformer_parallelism_arguments(parser: argparse.Namespace,
     parser.add_argument(
         '--subgraph-parallelism-all',
         action='store_true',
-        help='Enable subgraph parallelism for common layers in transformer')
+        help='Enable subgraph parallelism for all layers in transformer, '
+        'including decomposing the MLP into distinct subgraphs')
 
     parser.add_argument(
         '--subgraph-parallelism-concat',
