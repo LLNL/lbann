@@ -337,7 +337,7 @@ bool hdf5_reader<TensorDataType>::fetch_data_field(data_field_type data_field,
   TensorDataType* buf = nullptr;
   assert_eq((unsigned long)Y.Height(), m_num_features);
   conduit::Node node;
-  if (data_store_active() || m_data_store->has_conduit_node(data_id)) {
+  if (m_use_data_store && (data_store_active() || m_data_store->has_conduit_node(data_id))) {
     prof_region_begin("get_conduit_node", prof_colors[0], false);
     const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
     node.set_external(ds_node);
@@ -381,10 +381,10 @@ bool hdf5_reader<TensorDataType>::fetch_datum(Mat& X, int data_id, int mb_idx)
 
   auto X_v = create_datum_view(X, mb_idx);
   if (m_use_data_store) {
-    fetch_datum_conduit(X_v, data_id);
+        fetch_datum_conduit(X_v, data_id);
   }
   else {
-    read_hdf5_sample(data_id, (TensorDataType*)X_v.Buffer(), nullptr);
+        read_hdf5_sample(data_id, (TensorDataType*)X_v.Buffer(), nullptr);
   }
   prof_region_end("fetch_datum", false);
   return true;
@@ -396,7 +396,7 @@ void hdf5_reader<TensorDataType>::fetch_datum_conduit(Mat& X, int data_id)
   const std::string conduit_key = LBANN_DATA_ID_STR(data_id);
   // Create a node to hold all of the data
   conduit::Node node;
-  if (data_store_active() || m_data_store->has_conduit_node(data_id)) {
+  if (m_use_data_store && (data_store_active() || m_data_store->has_conduit_node(data_id))) {
     prof_region_begin("get_conduit_node", prof_colors[0], false);
     const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
     node.set_external(ds_node);
@@ -445,7 +445,7 @@ bool hdf5_reader<TensorDataType>::fetch_response(Mat& Y,
   else {
     assert_eq((unsigned long)Y.Height(), m_all_responses.size());
     conduit::Node node;
-    if (data_store_active() || m_data_store->has_conduit_node(data_id)) {
+    if (m_use_data_store && (data_store_active() || m_data_store->has_conduit_node(data_id))) {
       const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
       node.set_external(ds_node);
     }
