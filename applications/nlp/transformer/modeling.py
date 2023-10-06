@@ -168,6 +168,9 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
                                            activation=lbann.Gelu,
                                            name='transformer')
 
+    # Apply parallelism techniques
+    transformer, extra_model_kwargs = parallelism.apply_subgraph_parallelism(
+        transformer, args)
     parallelism.apply_ffn_model_parallelism(transformer, args)
 
     # Run through transformer with the same sequence
@@ -202,6 +205,7 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
         objective_function=loss,
         metrics=metrics,
         callbacks=callbacks,
+        **extra_model_kwargs,
     )
 
 

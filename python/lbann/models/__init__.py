@@ -14,10 +14,3 @@ from lbann.models.transformer import (
     TransformerEncoderLayer,
     TransformerDecoderLayer,
 )
-from lbann.models.subgraph.transformer import Transformer as TransformerSubGraph
-from lbann.models.subgraph.transformer import (
-    TransformerEncoderLayer as TransformerEncoderLayerSubGraph,
-)
-from lbann.models.subgraph.transformer import (
-    TransformerDecoderLayer as TransformerDecoderLayerSubGraph,
-)

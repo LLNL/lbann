@@ -186,9 +186,10 @@ def make_batch_script(model: lbann.Model,
     }
 
     # Create Protobuf file
-    protobuf_file = os.path.join(work_dir, 'experiment.prototext')
+    protobuf_file = os.path.join(work_dir, 'experiment.protobin')
 
     lbann.proto.save_prototext(protobuf_file,
+                               binary=True,
                                trainer=trainer,
                                model=model,
                                data_reader=reader,
