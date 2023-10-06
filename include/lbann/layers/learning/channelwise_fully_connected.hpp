@@ -93,11 +93,6 @@ public:
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class channelwise_fully_connected_layer : public data_type_layer<TensorDataType>
 {
-
-  static_assert(Layout == data_layout::DATA_PARALLEL,
-                "channelwise_fully_connected layer "
-                "only supports data parallel layout");
-
 public:
   /** @brief Constructor.
    *  @param output_channel_dims    Output tensor dimensions,
@@ -136,6 +131,9 @@ public:
 
   ///@}
 
+  bool transpose() const { return m_transpose; }
+  bool has_bias() const { return m_has_bias; }
+
 protected:
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
@@ -172,6 +170,13 @@ private:
   bool m_has_bias;
   /** Whether to transpose linearity. */
   bool m_transpose;
+
+  template <typename U, El::Device D>
+  friend void
+  fp_compute_impl(channelwise_fully_connected_layer<U, Layout, D>& l);
+  template <typename U, El::Device D>
+  friend void
+  bp_compute_impl(channelwise_fully_connected_layer<U, Layout, D>& l);
 };
 
 // Builder function
@@ -183,7 +188,11 @@ LBANN_DEFINE_LAYER_BUILDER(channelwise_fully_connected);
   extern template class channelwise_fully_connected_layer<                     \
     T,                                                                         \
     data_layout::DATA_PARALLEL,                                                \
-    Device>
+    Device>;                                                                   \
+  extern template class channelwise_fully_connected_layer<                     \
+    T,                                                                         \
+    data_layout::MODEL_PARALLEL,                                               \
+    Device>;
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
 #endif // LBANN_CHANNELWISE_FULLY_CONNECTED_LAYER_INSTANTIATE

@@ -106,7 +106,11 @@ def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
 
     # Construct model
     metrics = []
-    callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer()]
+    callbacks = [
+        lbann.CallbackPrint(),
+        lbann.CallbackTimer(),
+        lbann.CallbackGPUMemoryUsage()
+    ]
     return lbann.Model(
         args.num_epochs,
         layers=lbann.traverse_layer_graph(input_tokens),
@@ -198,7 +202,11 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
 
     # Construct model
     metrics = []
-    callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer()]
+    callbacks = [
+        lbann.CallbackPrint(),
+        lbann.CallbackTimer(),
+        lbann.CallbackGPUMemoryUsage()
+    ]
     return lbann.Model(
         num_epochs,
         layers=lbann.traverse_layer_graph(input_tokens),
