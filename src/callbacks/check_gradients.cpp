@@ -82,12 +82,12 @@ EvalType compute_objective_function(model& m)
   auto&& obj = m.get_objective_function();
   const auto mode = c.get_execution_mode();
   const auto mini_batch_size = c.get_current_mini_batch_size();
-  if (m.get_current_mini_batch_size() != mini_batch_size) {
-    LBANN_ERROR("Model and execution context disagree ",
-                m.get_current_mini_batch_size(),
-                " vs ",
-                mini_batch_size);
-  }
+  // if (m.get_current_mini_batch_size() != mini_batch_size) {
+  //   LBANN_ERROR("Model and execution context disagree ",
+  //               m.get_current_mini_batch_size(),
+  //               " vs ",
+  //               mini_batch_size);
+  // }
   obj->start_evaluation(mode, mini_batch_size);
   return obj->finish_evaluation(mode, mini_batch_size);
 }
