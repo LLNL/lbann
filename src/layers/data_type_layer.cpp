@@ -114,17 +114,14 @@ El::Int data_type_layer<InputTensorDataType, OutputTensorDataType>::
   infer_mini_batch_size_from_parents_or_default_to_current() const
 {
   auto mini_batch_size = infer_mini_batch_size_from_parents();
-  if (mini_batch_size == 0 && get_num_parents() == 0) {
+  if (mini_batch_size == 0 || get_num_parents() == 0) {
+    // Note that with DistConv adaptors it is possible to have a
+    // parent layer with a 0-sized mini-batch.  Once DiHydrogen is the
+    // default, this should be a fatal error.
     // If there are no parents or the inferred size is 0, check
     // existing outputs
     //    mini_batch_size = current_output_mini_batch_size();
     mini_batch_size = this->get_model()->get_current_mini_batch_size();
-    // LBANN_MSG("INFERO: For layer ",
-    //           this->get_name(),
-    //           " there are no parents so the mini-batch size is ",
-    //           mini_batch_size,
-    //           " and the current output mini batch size is ",
-    //           current_output_mini_batch_size());
   }
   return mini_batch_size;
 }
@@ -945,6 +942,10 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_data(
     //           max_mini_batch_size);
     // Resize output to maximum mini-batch size
     for (int i = 0; i < this->get_num_children(); ++i) {
+#ifdef LBANN_HAS_DISTCONV
+      if (!keep_original_outputs(i))
+        continue;
+#endif // LBANN_HAS_DISTCONV
       auto& output = this->get_activations(i);
       output.Resize(output.Height(), max_mini_batch_size);
     }
