@@ -420,6 +420,7 @@ void data_type_weights<TensorDataType>::reconcile_values()
 {
   auto& values = get_values();
   if (values.RedundantSize() > 1) {
+    LBANN_ERROR("TEST SUCCEEDED: reconcile values was called.");
     El::Scale(TensorDataType(1. / values.RedundantSize()), values);
     this->get_comm().allreduce(values, values.RedundantComm());
   }
@@ -430,6 +431,7 @@ void data_type_weights<TensorDataType>::reconcile_values(Al::request& req)
 {
   auto& values = get_values();
   if (values.RedundantSize() > 1) {
+    LBANN_ERROR("TEST SUCCEEDED: async reconcile values was called.");
     El::Scale(TensorDataType(1. / values.RedundantSize()), values);
     this->get_comm().nb_allreduce(values, values.RedundantComm(), req);
   }
