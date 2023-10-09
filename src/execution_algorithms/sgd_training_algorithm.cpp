@@ -355,9 +355,10 @@ bool SGDTrainingAlgorithm::evaluate_mini_batch(SGDExecutionContext& c,
   dc.reset_mode(c);
   do_batch_begin_cbs(model, mode, ScopeTimer{timer, "batch_begin callbacks"});
   El::Int current_mini_batch_size = dc.get_current_mini_batch_size(mode);
-  // BVE Fix it so that the updated current mini-batch is set before
-  // any layer is evaluated to avoid the race condition of a non-input
-  // root node using the wrong current mini-batch size
+  // LBANN_MSG("Working on evaluating a mini-batch size ",
+  // current_mini_batch_size); BVE Fix it so that the updated current mini-batch
+  // is set before any layer is evaluated to avoid the race condition of a
+  // non-input root node using the wrong current mini-batch size
   model.set_current_mini_batch_size(current_mini_batch_size);
   // Set mini-batch size in the execution context.  This used to be
   // done in the input layer, but should be done there any more.

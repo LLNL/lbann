@@ -272,6 +272,10 @@ bool KFAC::train_mini_batch(ExeContextType& kfac_context,
   const bool compute_inverse =
     sgd_context.get_step() % this->m_compute_interval == 0;
 
+  El::Int current_mini_batch_size =
+    dc.get_current_mini_batch_size(execution_mode::training);
+  model.set_current_mini_batch_size(current_mini_batch_size);
+  sgd_context.set_current_mini_batch_size(current_mini_batch_size);
   dc.fetch_data(execution_mode::training);
 
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
