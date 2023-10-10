@@ -764,7 +764,7 @@ inline void model::set_current_mini_batch_size(El::Int mini_batch_size) noexcept
     LBANN_WARNING(
       "LOGICAL ERROR: the current mini-batch size ",
       mini_batch_size,
-      " is being set to larger than the established maximim mini-batch size ",
+      " is being set to larger than the established maximum mini-batch size ",
       m_max_mini_batch_size,
       ".  Note that this should work properly as all matrices will be resized, "
       "but this is a logical error as the maximum mini-batch size should be "
