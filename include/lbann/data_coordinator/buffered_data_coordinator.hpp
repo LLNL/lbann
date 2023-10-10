@@ -127,9 +127,10 @@ public:
   /** @brief After registering the active data field, allocate storage for each
    *  data field in the context maps within the double buffer.
    */
-  void register_active_data_field(
-    data_field_type const& data_field,
-    std::vector<El::Int> const& data_field_dim_map) override;
+  void
+  register_active_data_field(data_field_type const& data_field,
+                             std::vector<El::Int> const& data_field_dim_map,
+                             int max_mini_batch_size = 0) override;
 
   void fp_setup_data(data_buffer<IODataType>& buffer,
                      El::Int cur_mini_batch_size);

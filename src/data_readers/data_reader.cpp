@@ -938,7 +938,10 @@ void generic_data_reader::setup_data_store(int mini_batch_size)
 
 bool generic_data_reader::data_store_active() const
 {
-  if (m_data_store != nullptr && m_data_store->is_fully_loaded()) {
+  if (m_data_store == nullptr) {
+    return false;
+  }
+  if (m_data_store->is_fully_loaded()) {
     return true;
   }
 
@@ -946,8 +949,7 @@ bool generic_data_reader::data_store_active() const
     get_trainer().get_data_coordinator().get_execution_context());
   /// Use the data store for all modes except testing
   /// i.e. training, validation, tournament
-  return (m_data_store != nullptr &&
-          (((c.get_execution_mode() == execution_mode::training) &&
+  return ((((c.get_execution_mode() == execution_mode::training) &&
             c.get_epoch() > 0) ||
            ((c.get_execution_mode() == execution_mode::validation) &&
             c.get_epoch() > 0)));

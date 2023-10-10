@@ -556,7 +556,8 @@ bool data_coordinator::at_new_epoch() const
 
 void data_coordinator::register_active_data_field(
   data_field_type const& data_field,
-  std::vector<El::Int> const& data_field_dim_map)
+  std::vector<El::Int> const& data_field_dim_map,
+  int max_mini_batch_size)
 {
   m_active_data_fields.insert(data_field);
   m_active_data_fields_dim_map[data_field] = data_field_dim_map;

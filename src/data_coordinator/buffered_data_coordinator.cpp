@@ -44,7 +44,8 @@ namespace lbann {
 template <typename TensorDataType>
 void buffered_data_coordinator<TensorDataType>::register_active_data_field(
   data_field_type const& data_field,
-  std::vector<El::Int> const& data_field_dim_map)
+  std::vector<El::Int> const& data_field_dim_map,
+  int max_mini_batch_size)
 
 {
   data_coordinator::register_active_data_field(data_field, data_field_dim_map);
@@ -54,7 +55,10 @@ void buffered_data_coordinator<TensorDataType>::register_active_data_field(
       buffer->initialize_buffer_for_data_field(data_field, m_comm);
     }
   }
-  setup_data_fields(get_trainer().get_max_mini_batch_size());
+  if (max_mini_batch_size == 0) {
+    max_mini_batch_size = get_trainer().get_max_mini_batch_size();
+  }
+  setup_data_fields(max_mini_batch_size);
 }
 
 template <typename TensorDataType>
