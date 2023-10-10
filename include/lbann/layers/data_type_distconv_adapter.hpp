@@ -112,9 +112,9 @@ public:
   /** Get original previous error signal tensor. */
   OutputTensorDevType& get_original_prev_error_signals(int child_index = 0);
 
-  void fp_setup(El::Int mini_batch_size) override;
+  void fp_setup() override;
   void fp_postprocess() override;
-  void bp_setup(El::Int mini_batch_size) override;
+  void bp_setup() override;
   void bp_postprocess() override;
 
   void dump_activations() const override;
@@ -205,7 +205,7 @@ private:
   void set_activations_outermost_dimension(size_t dim);
   void set_error_signals_outermost_dimension(size_t dim);
 
-  size_t get_max_mini_batch_size() const;
+  El::Int get_max_mini_batch_size() const;
 };
 
 } // namespace lbann

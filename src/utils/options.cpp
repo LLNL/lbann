@@ -79,11 +79,6 @@ void construct_std_options()
     {"--multitrainer_verbose"},
     utils::ENV("LBANN_MULTITRAINER_VERBOSE"),
     "[STD] Increases number of per-trainer messages that are reported");
-  arg_parser.add_flag(
-    LBANN_OPTION_NO_IM_COMM,
-    {"--no_im_comm"},
-    "[STD] removed ImComm callback, if present; this is intended for "
-    "running alexnet with a single model, but may be useful elsewhere");
   arg_parser.add_flag(LBANN_OPTION_PRELOAD_DATA_STORE,
                       {"--preload_data_store"},
                       "[STD] Preloads the data store in-memory structure "

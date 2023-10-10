@@ -40,7 +40,6 @@ message Callback {
     CallbackDumpGradients dump_gradients = 6;
     CallbackDumpMBIndices dump_mb_indices = 7;
     CallbackDispIOStats disp_io_stats = 8;
-    CallbackImComm imcomm = 9;
     CallbackSaveImages save_images = 10;
     CallbackDebug debug = 11;
     CallbackAdaptiveLearningRate adaptive_learning_rate = 12;

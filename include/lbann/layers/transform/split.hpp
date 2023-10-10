@@ -113,10 +113,12 @@ protected:
     }
   }
 
-  void fp_setup_outputs(El::Int mini_batch_size) override
+  void fp_setup_outputs() override
   {
 
     const auto& input = this->get_prev_activations();
+    auto mini_batch_size =
+      this->infer_mini_batch_size_from_parents_or_default_to_current();
 
     if (this->subgraph_parallelism_execution()) {
 

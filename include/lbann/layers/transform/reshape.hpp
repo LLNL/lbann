@@ -111,11 +111,11 @@ protected:
     }
   }
 
-  void fp_setup_outputs(El::Int mini_batch_size) override
+  void fp_setup_outputs() override
   {
     El::LockedView(this->get_activations(), this->get_prev_activations());
   }
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override
+  void bp_setup_gradient_wrt_inputs() override
   {
     El::LockedView(this->get_error_signals(), this->get_prev_error_signals());
   }

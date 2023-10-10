@@ -78,10 +78,10 @@ void mini_batch_size_layer<T, L, D>::setup_dims()
 }
 
 template <typename T, data_layout L, El::Device D>
-void mini_batch_size_layer<T, L, D>::fp_setup_outputs(El::Int mini_batch_size)
+void mini_batch_size_layer<T, L, D>::setup_data(size_t max_mini_batch_size)
 {
-  data_type_layer<T>::fp_setup_outputs(mini_batch_size);
-  m_mini_batch_size = mini_batch_size;
+  data_type_layer<T>::setup_data(max_mini_batch_size);
+  m_mini_batch_size = max_mini_batch_size;
 }
 
 template <typename T, data_layout L, El::Device D>

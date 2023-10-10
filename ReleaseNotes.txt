@@ -28,6 +28,9 @@ Experiments & Applications:
 Internal features:
  - Fixed a bug where in-place layers sometimes attached a locked view
    of a matrix to a mutable view.
+ - Removed the mini_batch_size parameter from the following functions
+   in the layer class hierarchy: fp_setup_inputs, fp_setup_outputs, bp_setup_gradient_wrt_inputs
+   and the distconv_adapter class: fp_setup, bp_setup
 
 I/O & data readers:
  - Renamed percent_of_data_to_use more accurately to fraction_of_data_to_use.
@@ -44,8 +47,19 @@ Bug fixes:
 
 Retired features:
  - Support for autoencoder strategy in the summarize images callback was removed
- - Removed deprecated Layer protobuf fields: weight_data, 
+ - Removed deprecated Layer protobuf fields: weight_data,
    num_neurons_from_data_reader
+ - Removed support for calculating a global mini-batch across multiple
+   models using the imcomm callback or multiple trainers.  The
+   mini-batch is now strictly contained to a single model in a single
+   trainer.  This deprecates an unused (and old) multi-model
+   execution mode using imcomm callback that predated LTFB.
+ - Removed the notion of effective mini-batch size versus current mini-batch size.
+ - Remove world master mini-batch adjustment.
+ - Remove model offset field.  No longer necessary since data sets do not span models.
+ - Remove the cached value of the current mini-batch size from the SGD
+   execution context.  It is now only cached in the model.
+ - Removed the imcomm "inter-model" callback
 
 ============================== Release Notes: v0.103 ==============================
 C++ API:

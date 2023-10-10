@@ -76,7 +76,7 @@ protected:
     data_type_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
   }
-  void fp_setup_outputs(El::Int mini_batch_size) override
+  void fp_setup_outputs() override
   {
     El::View(this->get_activations(), this->get_prev_activations());
   }

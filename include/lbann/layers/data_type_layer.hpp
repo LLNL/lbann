@@ -132,6 +132,10 @@ public:
   const InputAbsDistMatrixType&
   get_error_signals(const Layer& parent) const override;
 
+  El::Int current_output_mini_batch_size() const override;
+  El::Int
+  infer_mini_batch_size_from_parents_or_default_to_current() const override;
+
   /** Get temp Grad Tensor. */
   OutputAbsDistMatrixType& get_temp_grad();
   /** Get transfered input for each branch tag **/
@@ -247,12 +251,12 @@ protected:
    *  setup as a view or copy of the corresponding parent layer's
    *  output tensor.
    */
-  void fp_setup_inputs(El::Int mini_batch_size) override;
+  void fp_setup_inputs() override;
   /** Setup output tensors.
    *  Called by the 'forward_prop' function. Each output tensor is
    *  resized to match the mini-batch size.
    */
-  void fp_setup_outputs(El::Int mini_batch_size) override;
+  void fp_setup_outputs() override;
 
   // ===========================================================
   // Back prop step helper functions
@@ -262,7 +266,7 @@ protected:
    *  Called by the 'back_prop' function. Each gradient w.r.t. input
    *  tensor is resized to match the mini-batch size.
    */
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
+  void bp_setup_gradient_wrt_inputs() override;
   /** Compute objective funciton gradients.
    *  Called by the 'back_prop' function. Given the input, output, and
    *  gradient w.r.t. output tensors, the gradient w.r.t. input

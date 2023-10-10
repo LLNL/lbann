@@ -106,7 +106,6 @@ Available Callbacks
    Early stopping <callbacks/early_stopping>
    Gpu memory usage <callbacks/gpu_memory_usage>
    Hang <callbacks/hang>
-   Imcomm <callbacks/imcomm>
    Learning rate <callbacks/learning_rate>
    Load model <callbacks/load_model>
    Ltfb <callbacks/ltfb>

@@ -29,7 +29,6 @@
 #define LBANN_INPUT_LAYER_INSTANTIATE
 #include "lbann/layers/io/input_layer.hpp"
 
-#include "lbann/callbacks/imcomm.hpp"
 #include "lbann/data_coordinator/buffered_data_coordinator.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
@@ -110,37 +109,10 @@ void input_layer<TensorDataType, T_layout, Dev>::setup_data(
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(
-  El::Int mini_batch_size)
+void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs()
 {
-  /// During model setup there is no valid execution context, but
-  /// during execution there is a context
-  if (this->m_model->has_valid_execution_context()) {
-    auto& c = dynamic_cast<SGDExecutionContext&>(
-      this->m_model->get_execution_context());
-    auto mode = c.get_execution_mode();
-    auto effective_mini_batch_size = mini_batch_size;
-    if (!(mode == execution_mode::inference)) {
-      data_coordinator& dc = get_trainer().get_data_coordinator();
-      // Determine model mini-batch size and effective mini-batch size
-      // Note: If inter-model communication is activated, the effective
-      // mini-batch is equal to the global mini-batch size.
-      /// @todo This functionality should probably be moved elsewhere
-      mini_batch_size = dc.get_current_mini_batch_size(mode);
-
-      effective_mini_batch_size = mini_batch_size;
-      for (auto&& cb : this->m_model->get_callbacks()) {
-        if (dynamic_cast<callback::imcomm*>(cb) != nullptr) {
-          effective_mini_batch_size =
-            dc.get_current_global_mini_batch_size(mode);
-          break;
-        }
-      }
-    }
-    // Set mini-batch size in model
-    c.set_current_mini_batch_size(mini_batch_size);
-    c.set_effective_mini_batch_size(effective_mini_batch_size);
-  }
+  El::Int mini_batch_size = 0;
+  mini_batch_size = this->get_model()->get_current_mini_batch_size();
 
   // Activation matrices are initalized in setup_data and further
   // managed in the distribute_from_local_matrix function of the
@@ -504,12 +476,7 @@ void input_distconv_adapter<TensorDataType, T_layout, Dev>::fp_compute()
   auto& l =
     dynamic_cast<input_layer<TensorDataType, T_layout, Dev>&>(this->layer());
   auto stream = default_hydrogen_stream();
-  // Note that the mini-batch size of the data reader is not
-  // actually the one for the current mini-batch as the mini-batch
-  // index is already updated by fp_compute.
-  const int mb_size =
-    static_cast<SGDExecutionContext&>(l.get_model()->get_execution_context())
-      .get_current_mini_batch_size();
+  const El::Int mb_size = l.get_model()->get_current_mini_batch_size();
 
   if (m_is_input_processed) {
 

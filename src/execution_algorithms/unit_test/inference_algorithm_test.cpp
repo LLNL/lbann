@@ -75,7 +75,7 @@ auto make_model(lbann::lbann_comm& comm, int class_n)
                                                 my_proto.optimizer(),
                                                 my_proto.trainer(),
                                                 my_proto.model());
-  my_model->setup(1UL, {&comm.get_trainer_grid()});
+  my_model->setup(class_n, {&comm.get_trainer_grid()});
   return my_model;
 }
 

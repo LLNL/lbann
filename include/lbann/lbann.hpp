@@ -177,7 +177,6 @@
 #include "lbann/callbacks/early_stopping.hpp"
 #include "lbann/callbacks/gpu_memory_usage.hpp"
 #include "lbann/callbacks/hang.hpp"
-#include "lbann/callbacks/imcomm.hpp"
 #include "lbann/callbacks/learning_rate.hpp"
 #include "lbann/callbacks/load_model.hpp"
 #include "lbann/callbacks/ltfb.hpp"

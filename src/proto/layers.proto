@@ -1583,7 +1583,6 @@ message WeightsData {
   int64 height = 2;
   int64 width = 3;
   repeated float data = 4 [packed = true];
-  Imcomm imcomm = 55;
 }
 /// Deprecated
 enum Imcomm {

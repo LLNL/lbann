@@ -52,7 +52,6 @@ namespace lbann {
 #define LBANN_OPTION_MULTITRAINER_VERBOSE "multitrainer_verbose"
 #define LBANN_OPTION_ALLOW_MULTITRAINER_GLOBAL_STATISTICS                      \
   "Allow multitrainer global statistics"
-#define LBANN_OPTION_NO_IM_COMM "no_im_comm"
 #define LBANN_OPTION_PRELOAD_DATA_STORE "preload_data_store"
 #define LBANN_OPTION_PRINT_AFFINITY "print_affinity"
 #define LBANN_OPTION_SERIALIZE_IO "serialize_io"

@@ -223,7 +223,9 @@ void model::serialize(Archive& ar)
     // CEREAL_NVP(m_callbacks),
     CEREAL_NVP(m_background_io_allowed),
     // CEREAL_NVP(m_model_is_setup),
-    CEREAL_NVP(m_max_mini_batch_size));
+    CEREAL_NVP(m_max_mini_batch_size)
+    // CEREAL_NVP(m_current_mini_batch_size),
+  );
 
   ar.serializeDeferments();
   if constexpr (utils::IsInputArchive<Archive>)
@@ -733,6 +735,10 @@ void model::setup(size_t max_mini_batch_size,
     setup_subcommunicators(grids_);
   }
 
+  // Because it is used as a default for layers with no inputs
+  // initialize the current mini-batch size before setting up the
+  // layers
+  m_current_mini_batch_size = max_mini_batch_size;
   setup_layers(max_mini_batch_size, grids_);
 
   // Setup weights

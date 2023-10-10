@@ -47,7 +47,6 @@ set_full_path(THIS_DIR_SOURCES
   early_stopping.cpp
   gpu_memory_usage.cpp
   hang.cpp
-  imcomm.cpp
   learning_rate.cpp
   load_model.cpp
   ltfb.cpp

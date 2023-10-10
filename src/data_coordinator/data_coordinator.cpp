@@ -193,7 +193,6 @@ void data_coordinator::calculate_num_iterations_per_epoch(
   data_reader->set_iteration_stride(1);
   /// Set data reader base offset and model offset
   data_reader->set_base_offset(base_offset);
-  data_reader->set_model_offset(0);
   data_reader->set_initial_position();
 
   /// By default each data reader will plan to process the entire data set
@@ -207,8 +206,6 @@ void data_coordinator::calculate_num_iterations_per_epoch(
   data_reader->set_last_mini_batch_size(last_mini_batch_size);
   data_reader->set_stride_to_last_mini_batch(
     data_reader->get_stride_to_next_mini_batch());
-  data_reader->set_global_mini_batch_size(max_mini_batch_size);
-  data_reader->set_global_last_mini_batch_size(last_mini_batch_size);
   return;
 }
 
@@ -596,50 +593,6 @@ int data_coordinator::get_current_mini_batch_size(execution_mode mode) const
   const generic_data_reader* data_reader = get_data_reader(mode);
   return (data_reader != nullptr) ? data_reader->get_current_mini_batch_size()
                                   : 0;
-}
-
-int data_coordinator::get_global_mini_batch_size(execution_mode mode) const
-{
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_global_mini_batch_size()
-                                  : 0;
-}
-
-int data_coordinator::get_current_global_mini_batch_size(
-  execution_mode mode) const
-{
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr)
-           ? data_reader->get_current_global_mini_batch_size()
-           : 0;
-}
-
-int data_coordinator::get_global_last_mini_batch_size(execution_mode mode) const
-{
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr)
-           ? data_reader->get_global_last_mini_batch_size()
-           : 0;
-}
-
-int data_coordinator::get_world_master_mini_batch_adjustment(
-  execution_mode mode) const
-{
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr)
-           ? data_reader->get_world_master_mini_batch_adjustment()
-           : 0;
-}
-
-int data_coordinator::get_current_world_master_mini_batch_adjustment(
-  execution_mode mode,
-  int model_rank) const
-{
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr)
-           ? data_reader->get_current_world_master_mini_batch_adjustment(
-               model_rank)
-           : 0;
 }
 
 // save state of IO to a checkpoint

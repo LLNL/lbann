@@ -105,8 +105,7 @@ void debug_io::print_fp_start(model* m, input_layer<DataType>* input)
     << dc.get_data_reader(mode)->get_current_mini_batch_index() << " of "
     << dc.get_num_iterations_per_epoch(mode) << " loading idx "
     << dc.get_data_reader(mode)->get_loaded_mini_batch_index()
-    << " bs=" << dc.get_current_mini_batch_size(mode) << "/"
-    << dc.get_current_global_mini_batch_size(mode) << " @"
+    << " bs=" << dc.get_current_mini_batch_size(mode) << " @"
     << dc.get_data_reader(mode)->get_position()
     //              << " %" << input->get_data_reader()->get_batch_stride()
     << " ^" << dc.get_data_reader(mode)->get_sample_stride() << std::endl;
@@ -127,16 +126,11 @@ void debug_io::print_phase_start(model* m, execution_mode mode)
               << m->get_comm()->get_rank_in_trainer() << "] @" << 0 << "."
               << step << " Starting Phase: " << to_string(mode) << " "
               << (data_reader->get_num_iterations_per_epoch() - 1) << "i @ "
-              << data_reader->get_global_mini_batch_size()
-              << "s (=" << m->get_comm()->get_num_trainers() << "m *"
               << data_reader->get_mini_batch_size() << "s [+"
               << data_reader->get_stride_to_next_mini_batch() << "s]) + 1i @ "
-              << data_reader->get_global_last_mini_batch_size()
-              << "s (=" << m->get_comm()->get_num_trainers() << "m *"
               << data_reader->get_last_mini_batch_size() << "s [+"
               << data_reader->get_stride_to_last_mini_batch() << "s]):"
               << " base offset " << data_reader->get_base_offset()
-              << " model offset " << data_reader->get_model_offset()
               << " par. readers = " << data_reader->get_num_parallel_readers()
               << "r" << std::endl;
   }

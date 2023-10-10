@@ -109,10 +109,9 @@ void sort_layer<TensorDataType, T_layout, Dev>::setup_data(
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void sort_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(
-  El::Int mini_batch_size)
+void sort_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs()
 {
-  data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
+  data_type_layer<TensorDataType>::fp_setup_outputs();
   const auto& output = this->get_activations();
   m_indices->Resize(output.LocalHeight(), output.LocalWidth());
 }
