@@ -418,9 +418,9 @@ void data_type_weights<TensorDataType>::set_value(TensorDataType value,
 template <typename TensorDataType>
 void data_type_weights<TensorDataType>::reconcile_values()
 {
+  LBANN_ERROR("This should not be called. Method is a candidate for removal");
   auto& values = get_values();
   if (values.RedundantSize() > 1) {
-    LBANN_ERROR("TEST SUCCEEDED: reconcile values was called.");
     El::Scale(TensorDataType(1. / values.RedundantSize()), values);
     this->get_comm().allreduce(values, values.RedundantComm());
   }
@@ -429,9 +429,9 @@ void data_type_weights<TensorDataType>::reconcile_values()
 template <typename TensorDataType>
 void data_type_weights<TensorDataType>::reconcile_values(Al::request& req)
 {
+  LBANN_ERROR("This should not be called. Method is a candidate for removal");
   auto& values = get_values();
   if (values.RedundantSize() > 1) {
-    LBANN_ERROR("TEST SUCCEEDED: async reconcile values was called.");
     El::Scale(TensorDataType(1. / values.RedundantSize()), values);
     this->get_comm().nb_allreduce(values, values.RedundantComm(), req);
   }

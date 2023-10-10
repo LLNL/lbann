@@ -197,7 +197,11 @@ void KFAC::train(ExeContextType& kfac_context,
       if (comm.get_KFAC_subgrid_create_two_models() or
           comm.get_grid_type() == GridType::NO_GRID or
           comm.get_grid_type() == GridType::PRIMARY_GRID) {
-        model.reconcile_weight_values();
+        // FIXME (tbennun 10/09/23): This is weight averaging and should not be
+        // done unless requested. Commented out for now to test for any
+        // regressions.
+        // model.reconcile_weight_values();
+
         do_epoch_end_cbs(model);
 
         // Evaluate on validation set

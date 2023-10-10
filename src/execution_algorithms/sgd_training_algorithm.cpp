@@ -149,7 +149,11 @@ void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
 
     // Finalize epoch
     c.inc_epoch();
-    model.reconcile_weight_values();
+
+    // FIXME (tbennun 10/09/23): This is weight averaging and should not be done
+    // unless requested. Commented out for now to test for any regressions.
+    // model.reconcile_weight_values();
+
     do_epoch_end_cbs(model, ScopeTimer{train_timer, "epoch_end callbacks"});
 
     // Evaluate on validation set
