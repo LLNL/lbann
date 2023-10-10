@@ -58,11 +58,13 @@ public:
 
     // Initialize two buffers
     m_data_buffers.resize(2);
+    m_current_mini_batch_size.resize(2);
     for (size_t i = 0; i < m_data_buffers.size(); i++) {
       for (auto m : execution_mode_iterator()) {
         if (m != execution_mode::invalid) {
           m_data_buffers[i][m] =
             std::make_unique<data_buffer<IODataType>>(comm);
+          m_current_mini_batch_size[i][m] = 0;
         }
       }
     }
@@ -81,11 +83,17 @@ public:
     : data_coordinator(other)
   {
     m_data_buffers.resize(other.m_data_buffers.size());
+    m_current_mini_batch_size.resize(other.m_current_mini_batch_size.size());
     for (size_t i = 0; i < other.m_data_buffers.size(); i++) {
       data_buffer_map_t& buffer_map = m_data_buffers[i];
       const data_buffer_map_t& other_buffer_map = other.m_data_buffers[i];
       for (auto& b : other_buffer_map) {
         buffer_map[b.first].reset(b.second ? b.second->copy() : nullptr);
+      }
+      auto& mb_map = m_current_mini_batch_size[i];
+      const auto& other_mb_map = other.m_current_mini_batch_size[i];
+      for (const auto& mb : other_mb_map) {
+        mb_map[mb.first] = mb.second;
       }
     }
   }
@@ -95,11 +103,18 @@ public:
     data_coordinator::operator=(other);
     m_data_buffers.clear();
     m_data_buffers.resize(other.m_data_buffers.size());
+    m_current_mini_batch_size.clear();
+    m_current_mini_batch_size.resize(other.m_current_mini_batch_size.size());
     for (size_t i = 0; i < other.m_data_buffers.size(); i++) {
       data_buffer_map_t& buffer_map = m_data_buffers[i];
       const data_buffer_map_t& other_buffer_map = other.m_data_buffers[i];
       for (auto& b : other_buffer_map) {
         buffer_map[b.first].reset(b.second ? b.second->copy() : nullptr);
+      }
+      auto& mb_map = m_current_mini_batch_size[i];
+      const auto& other_mb_map = other.m_current_mini_batch_size[i];
+      for (const auto& mb : other_mb_map) {
+        mb_map[mb.first] = mb.second;
       }
     }
     return *this;
@@ -184,6 +199,8 @@ protected:
 
   bool update_data_set(generic_data_reader* data_reader, execution_mode mode);
 
+  int get_current_mini_batch_size(execution_mode mode) const override;
+
   //************************************************************************
   //
   //************************************************************************
@@ -216,6 +233,11 @@ protected:
    *  or label or responase.
    */
   std::vector<data_buffer_map_t> m_data_buffers;
+
+  /**
+   * Stores each buffer mini-batch size as it was returned from the data reader.
+   */
+  std::vector<std::map<execution_mode, int>> m_current_mini_batch_size;
 };
 
 } // namespace lbann

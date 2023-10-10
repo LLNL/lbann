@@ -149,16 +149,6 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_compute()
     }
 #endif // LBANN_HAS_DISTCONV
   }
-
-  if (this->m_model->has_valid_execution_context()) {
-    auto& c = dynamic_cast<SGDExecutionContext&>(
-      this->m_model->get_execution_context());
-    auto mode = c.get_execution_mode();
-
-    // Set mini-batch size in model
-    c.set_current_mini_batch_size(this->get_activations(0).Width());
-    c.set_effective_mini_batch_size(this->get_activations(0).Width());
-  }
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

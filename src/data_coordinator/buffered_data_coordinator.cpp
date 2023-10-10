@@ -178,6 +178,10 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
               dr->m_sample_stride},
       local_input_buffers[INPUT_DATA_TYPE_SAMPLES]->Width());
 
+    // Store the size of the current mini-batch so that others can obtain it
+    // without worrying about where the data reader is currently at.
+    m_current_mini_batch_size[buffer_id][mode] = mb_size;
+
     /** @brief Each rank will fetch a mini-batch worth of data into its buffer
      */
     if (dr->has_conduit_output()) {
@@ -223,10 +227,21 @@ void buffered_data_coordinator<TensorDataType>::fetch_data_in_background(
   int active_buffer_idx = future_active_buffer % m_data_buffers.size();
   data_buffer_map_t& buffer_map = m_data_buffers[active_buffer_idx];
   std::lock_guard<std::mutex> guard(dr_mutex);
+  // TODO: This is happenning too early - current minibatch size is set inside
+  // fetch_to_local_matrix. Currently fp_setup_data would be called with 0
   int mini_batch_size = get_current_mini_batch_size(mode);
   fp_setup_data(*buffer_map[mode], mini_batch_size);
   fetch_to_local_matrix(buffer_map, mode, active_buffer_idx);
   return;
+}
+
+template <typename TensorDataType>
+int buffered_data_coordinator<TensorDataType>::get_current_mini_batch_size(
+  execution_mode mode) const
+{
+  // Get the mini-batch size from the active buffer
+  int buffer_id = this->get_active_buffer_idx(mode) % m_data_buffers.size();
+  return m_current_mini_batch_size.at(buffer_id).at(mode);
 }
 
 /// Check for each buffer if there is an outstanding fetch request
@@ -324,10 +339,9 @@ template <typename TensorDataType>
 bool buffered_data_coordinator<TensorDataType>::update_data_reader(
   execution_mode mode)
 {
-  // Use the predetermined size of the mini-batch to set the current
-  // batch size for the neural network
-  int num_samples_in_batch =
-    data_coordinator::get_current_mini_batch_size(mode);
+  // Use the size of the mini-batch to update the data reader how much
+  // to advance
+  int num_samples_in_batch = get_current_mini_batch_size(mode);
 
   // BVE When we finish the epoch we can increment the number of
   // samples that have been processed
