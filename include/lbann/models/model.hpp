@@ -602,8 +602,13 @@ private:
   size_t m_max_mini_batch_size;
 
   /** @brief The current mini-batch size.
-   *  @details This should be set on each step by the data coordinator
-   *  / input layers on fp_setup_output.
+   *  @details This should be set on each step by the execution
+   *  algorithm using the value that the data coordinator gets from
+   *  the data readers.
+   *
+   *  Number of samples being processed in the current step (iteration),
+   *  used for correctly averaging gradients.
+
    */
   El::Int m_current_mini_batch_size;
 

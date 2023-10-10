@@ -143,8 +143,7 @@ trainer::check_and_build_execution_context(TrainingAlgorithm& alg,
     if (dynamic_cast<observer_ptr<SGDTrainingAlgorithm>>(&alg) != nullptr) {
       /// @todo BVE FIXME Figure out how to get a good mini-batch size
       /// in here
-      context =
-        std::make_unique<SGDExecutionContext>(mode, get_max_mini_batch_size());
+      context = std::make_unique<SGDExecutionContext>(mode);
     }
     else {
       LBANN_ERROR("Unknown execution algorithm type.");
@@ -167,8 +166,7 @@ trainer::check_and_build_execution_context(ExecutionContext& c,
     //    observer_ptr<training_algorithm> alg = const_cast
     if (dynamic_cast<observer_ptr</*const */ SGDExecutionContext>>(&c) !=
         nullptr) {
-      context =
-        std::make_unique<SGDExecutionContext>(mode, get_max_mini_batch_size());
+      context = std::make_unique<SGDExecutionContext>(mode);
     }
     else {
       LBANN_ERROR("Unknown execution context type");

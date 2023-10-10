@@ -95,10 +95,11 @@ public:
     size_t samples_size = samples.Height();
     El::Matrix<int, El::Device::CPU> labels(samples_size, 1);
 
+    // BVE FIXME
     // Create an SGD_execution_context so that layer.forward_prop can get the
     // mini_batch_size - This should be fixed in the future, when SGD is not so
     // hard-coded into the model & layers
-    auto c = SGDExecutionContext(execution_mode::inference, mbs);
+    auto c = SGDExecutionContext(execution_mode::inference);
     model->reset_mode(c, execution_mode::inference);
     // Explicitly set the size of the mini-batch that the model is executing
     model->set_current_mini_batch_size(mbs);

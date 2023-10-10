@@ -42,7 +42,7 @@ class SGDExecutionContext final : public ExecutionContext
 {
 public:
   /** Constructor. */
-  SGDExecutionContext(execution_mode mode, size_t mini_batch_size);
+  SGDExecutionContext(execution_mode mode);
   /** Destructor. */
   virtual ~SGDExecutionContext() = default;
 
@@ -59,7 +59,7 @@ public:
 
   std::unique_ptr<ExecutionContext> get_new() const override
   {
-    return std::make_unique<SGDExecutionContext>(execution_mode::invalid, 0UL);
+    return std::make_unique<SGDExecutionContext>(execution_mode::invalid);
   }
 
   /** Archive for checkpoint and restart */
@@ -85,17 +85,6 @@ public:
    *  that the data set has been traversed.
    */
   void inc_epoch() noexcept { ++m_epoch; }
-
-  /** Set the trainer's current mini-batch size. */
-  inline void set_current_mini_batch_size(size_t mini_batch_size)
-  {
-    m_current_mini_batch_size = mini_batch_size;
-  }
-  /** Get the trainer's current mini-batch size. */
-  inline size_t get_current_mini_batch_size() const
-  {
-    return m_current_mini_batch_size;
-  }
 
   /** Checkpoint training_algorithm to given file descriptor  */
   void save_to_checkpoint_shared(persist& p) override;
@@ -136,13 +125,6 @@ private:
 
   /** Number of times the training data set has been traversed. */
   size_t m_epoch = 0;
-
-  /** Size of the current mini-batch in the model.
-   *
-   *  Number of samples being processed in the current step (iteration),
-   *  used for correctly averaging gradients.
-   */
-  size_t m_current_mini_batch_size;
 
   execution_mode m_execution_mode;
 

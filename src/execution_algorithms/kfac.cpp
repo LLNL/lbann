@@ -109,8 +109,7 @@ std::string KFAC::get_type() const { return "KFAC"; }
 
 kfac::KFACExecutionContext* KFAC::do_get_new_execution_context() const
 {
-  return new kfac::KFACExecutionContext(0UL,
-                                        m_damping_act_params[0],
+  return new kfac::KFACExecutionContext(m_damping_act_params[0],
                                         m_damping_err_params[0],
                                         m_damping_bn_act_params[0],
                                         m_damping_bn_err_params[0]);
@@ -209,8 +208,7 @@ void KFAC::train(ExeContextType& kfac_context,
         // its own context that we needn't know about.
         if (dc.is_execution_mode_valid(execution_mode::validation)) {
           const execution_mode eval_mode = execution_mode::validation;
-          SGDExecutionContext eval_context(eval_mode,
-                                           dc.get_mini_batch_size(eval_mode));
+          SGDExecutionContext eval_context(eval_mode);
           // FIXME (trb 05/05/2021): This hacks around a bad assumption
           // in the data store.
           // Note (tym 6/7/21): Copied from sgd_training_algorithm.cpp.
@@ -275,7 +273,6 @@ bool KFAC::train_mini_batch(ExeContextType& kfac_context,
   El::Int current_mini_batch_size =
     dc.get_current_mini_batch_size(execution_mode::training);
   model.set_current_mini_batch_size(current_mini_batch_size);
-  sgd_context.set_current_mini_batch_size(current_mini_batch_size);
   dc.fetch_data(execution_mode::training);
 
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
@@ -343,7 +340,7 @@ bool KFAC::train_mini_batch(ExeContextType& kfac_context,
         // Result is not needed until the end of the mini-batch.
         model.get_objective_function()->start_evaluation(
           execution_mode::training,
-          sgd_context.get_current_mini_batch_size());
+          current_mini_batch_size);
 
         // Backward prop step
 #ifdef LBANN_HAS_GPU
@@ -446,9 +443,9 @@ bool KFAC::train_mini_batch(ExeContextType& kfac_context,
         // Finish evaluation.
         model.get_objective_function()->finish_evaluation(
           execution_mode::training,
-          sgd_context.get_current_mini_batch_size());
+          current_mini_batch_size);
         model.evaluate_metrics(execution_mode::training,
-                               sgd_context.get_current_mini_batch_size());
+                               current_mini_batch_size);
 
         // Update step
         model.update_weights();
@@ -1214,7 +1211,6 @@ void KFAC::on_forward_prop_end(ExeContextType& context, model& model)
 
   auto& comm = *model.get_comm();
   const auto layers = model.get_layers();
-  auto& sgd_context = context.get_sgd_execution_context();
 
   // List up layers to be updated
   if (context.m_blocks.size() == 0) {
@@ -1412,7 +1408,7 @@ void KFAC::on_forward_prop_end(ExeContextType& context, model& model)
   hydrogen::gpu::SynchronizeDevice();
 #endif // LBANN_HAS_GPU
   auto t_start = std::chrono::high_resolution_clock::now();
-  int current_batch_size = sgd_context.get_current_mini_batch_size();
+  int current_batch_size = model.get_current_mini_batch_size();
   current_batch_size = broadcast_variable_grids(current_batch_size, &comm);
   for (auto& block : context.m_blocks) {
     // Start forward end exchange (like activations and weights)

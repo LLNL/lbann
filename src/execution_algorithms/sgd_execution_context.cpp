@@ -33,9 +33,8 @@
 
 namespace lbann {
 
-SGDExecutionContext::SGDExecutionContext(execution_mode mode,
-                                         size_t mini_batch_size)
-  : m_current_mini_batch_size(mini_batch_size), m_execution_mode(mode)
+SGDExecutionContext::SGDExecutionContext(execution_mode mode)
+  : m_execution_mode(mode)
 {}
 
 template <class Archive>
@@ -43,7 +42,6 @@ void SGDExecutionContext::serialize(Archive& ar)
 {
   ar(cereal::base_class<ExecutionContext>(this),
      CEREAL_NVP(m_epoch),
-     CEREAL_NVP(m_current_mini_batch_size),
      CEREAL_NVP(m_execution_mode));
 }
 

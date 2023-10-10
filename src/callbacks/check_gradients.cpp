@@ -81,7 +81,7 @@ EvalType compute_objective_function(model& m)
   // Get objective function value
   auto&& obj = m.get_objective_function();
   const auto mode = c.get_execution_mode();
-  const auto mini_batch_size = c.get_current_mini_batch_size();
+  const auto mini_batch_size = m.get_current_mini_batch_size();
   // if (m.get_current_mini_batch_size() != mini_batch_size) {
   //   LBANN_ERROR("Model and execution context disagree ",
   //               m.get_current_mini_batch_size(),
@@ -291,7 +291,6 @@ void check_gradients::do_check_gradients(model& m) const
   data_coordinator& dc = get_trainer().get_data_coordinator();
   El::Int current_mini_batch_size = dc.get_current_mini_batch_size(mode);
   m.set_current_mini_batch_size(current_mini_batch_size);
-  c.set_current_mini_batch_size(current_mini_batch_size);
   dc.fetch_data(mode);
 
   // checking subgrpah parallelism

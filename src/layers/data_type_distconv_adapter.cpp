@@ -964,9 +964,8 @@ get_shuffler(const Layer& layer,
              const dc::TensorDev<TensorDataType>& dst,
              const size_t max_mini_batch_size)
 {
-  const auto& c = static_cast<SGDExecutionContext&>(
-    layer.get_model()->get_execution_context());
-  const auto& mini_batch_size = c.get_current_mini_batch_size();
+  const auto& mini_batch_size =
+    layer.get_model()->get_current_mini_batch_size();
   int shuffler_idx = -1;
   if (max_mini_batch_size == mini_batch_size) {
     shuffler_idx = 0;

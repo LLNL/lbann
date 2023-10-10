@@ -50,12 +50,15 @@ Retired features:
  - Removed deprecated Layer protobuf fields: weight_data,
    num_neurons_from_data_reader
  - Removed support for calculating a global mini-batch across multiple
-   models and trainers.  The mini-batch is now strictly contained to a
-   single trainer.  This deprecates an unused (and old) multi-model
-   execution mode that predated LTFB.
+   models using the imcomm callback or multiple trainers.  The
+   mini-batch is now strictly contained to a single model in a single
+   trainer.  This deprecates an unused (and old) multi-model
+   execution mode using imcomm callback that predated LTFB.
  - Removed the notion of effective mini-batch size versus current mini-batch size.
  - Remove world master mini-batch adjustment.
  - Remove model offset field.  No longer necessary since data sets do not span models.
+ - Remove the cached value of the current mini-batch size from the SGD
+   execution context.  It is now only cached in the model.
 
 ============================== Release Notes: v0.103 ==============================
 C++ API:

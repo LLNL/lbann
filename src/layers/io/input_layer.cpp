@@ -108,7 +108,8 @@ void input_layer<TensorDataType, T_layout, Dev>::setup_data(
   //  data_type_layer<TensorDataType>::infer_mini_batch_size(); El::Int
   //  inferred_max_mini_batch_size =
   //  data_type_layer<TensorDataType>::get_mini_batch_size_from_execution_context();
-  // LBANN_MSG("I believe that the mini-batch size is ", max_mini_batch_size);
+  // LBANN_MSG("I believe that the mini-batch size is ",
+  //           max_mini_batch_size);
   // Resize output to maximum mini-batch size
   for (int i = 0; i < this->get_num_children(); ++i) {
     auto& output = this->get_activations(i);
@@ -122,8 +123,8 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs()
   El::Int mini_batch_size = 0;
   // if (get_model() != NULL) {
   mini_batch_size = this->get_model()->get_current_mini_batch_size();
-// mini_batch_size = get_trainer().get_max_mini_batch_size();
-//  }
+  // mini_batch_size = get_trainer().get_max_mini_batch_size();
+  //  }
 #if 0
   /// During model setup there is no valid execution context, but
   /// during execution there is a context
@@ -148,7 +149,6 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs()
     this->get_model()->set_current_mini_batch_size(mini_batch_size);
   }
 #endif
-
   // LBANN_MSG("Input layer ",
   //           this->get_name(),
   //           " I believe that the mini-batch size is ",
@@ -518,9 +518,10 @@ void input_distconv_adapter<TensorDataType, T_layout, Dev>::fp_compute()
   // Note that the mini-batch size of the data reader is not
   // actually the one for the current mini-batch as the mini-batch
   // index is already updated by fp_compute.
-  const int mb_size =
-    static_cast<SGDExecutionContext&>(l.get_model()->get_execution_context())
-      .get_current_mini_batch_size();
+  const El::Int mb_size = l.get_model()->get_current_mini_batch_size();
+  // const int mb_size =
+  //   static_cast<SGDExecutionContext&>(l.get_model()->get_execution_context())
+  //     .get_current_mini_batch_size();
 
   if (m_is_input_processed) {
 
