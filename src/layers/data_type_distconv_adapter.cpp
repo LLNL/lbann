@@ -962,12 +962,12 @@ get_shuffler(const Layer& layer,
              std::array<dc::TensorShuffler<TensorDataType>*, 4>& shufflers,
              const dc::TensorDev<TensorDataType>& src,
              const dc::TensorDev<TensorDataType>& dst,
-             const size_t max_mini_batch_size)
+             const El::Int max_mini_batch_size)
 {
   const auto& mini_batch_size =
     layer.get_model()->get_current_mini_batch_size();
   int shuffler_idx = -1;
-  if (static_cast<El::Int>(max_mini_batch_size) == mini_batch_size) {
+  if (max_mini_batch_size == mini_batch_size) {
     shuffler_idx = 0;
   }
   else {
@@ -1193,7 +1193,7 @@ void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
 }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
-size_t data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
+El::Int data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
   get_max_mini_batch_size() const
 {
   return layer().get_model()->get_max_mini_batch_size();

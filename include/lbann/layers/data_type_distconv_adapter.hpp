@@ -205,7 +205,7 @@ private:
   void set_activations_outermost_dimension(size_t dim);
   void set_error_signals_outermost_dimension(size_t dim);
 
-  size_t get_max_mini_batch_size() const;
+  El::Int get_max_mini_batch_size() const;
 };
 
 } // namespace lbann

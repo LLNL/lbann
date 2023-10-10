@@ -459,7 +459,7 @@ public:
   /** @brief Execute callbacks at the end of weight optimization. */
   void do_weight_optimize_end_cbs(weights* w);
   /** @brief Return the maximum mini-batch size. */
-  size_t get_max_mini_batch_size() const noexcept;
+  El::Int get_max_mini_batch_size() const noexcept;
   /** @brief Return the current mini-batch size. */
   El::Int get_current_mini_batch_size() const noexcept;
   /** @brief Set the current mini-batch size. */
@@ -599,7 +599,7 @@ private:
   /** @brief The maximum mini-batch size.
    *  @details This should be set before setup_distconv() is called.
    */
-  size_t m_max_mini_batch_size;
+  El::Int m_max_mini_batch_size;
 
   /** @brief The current mini-batch size.
    *  @details This should be set on each step by the execution
@@ -748,7 +748,7 @@ inline void model::set_num_resources_branch_layers(int num) noexcept
   num_resources_branch_layers = num;
 }
 
-inline size_t model::get_max_mini_batch_size() const noexcept
+inline El::Int model::get_max_mini_batch_size() const noexcept
 {
   return m_max_mini_batch_size;
 }
@@ -760,7 +760,7 @@ inline El::Int model::get_current_mini_batch_size() const noexcept
 
 inline void model::set_current_mini_batch_size(El::Int mini_batch_size) noexcept
 {
-  if (mini_batch_size > static_cast<El::Int>(m_max_mini_batch_size)) {
+  if (mini_batch_size > m_max_mini_batch_size) {
     LBANN_WARNING(
       "LOGICAL ERROR: the current mini-batch size ",
       mini_batch_size,
