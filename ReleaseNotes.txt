@@ -59,6 +59,7 @@ Retired features:
  - Remove model offset field.  No longer necessary since data sets do not span models.
  - Remove the cached value of the current mini-batch size from the SGD
    execution context.  It is now only cached in the model.
+ - Removed the imcomm "inter-model" callback
 
 ============================== Release Notes: v0.103 ==============================
 C++ API:

@@ -47,7 +47,6 @@ set_full_path(THIS_DIR_HEADERS
   early_stopping.hpp
   gpu_memory_usage.hpp
   hang.hpp
-  imcomm.hpp
   learning_rate.hpp
   ltfb.hpp
   mixup.hpp

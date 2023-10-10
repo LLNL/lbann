@@ -44,12 +44,6 @@ def callbacks(f, tab, checkpoint_dir=None):
   f.write(
 """%scallback { print {interval: 1} }
 %scallback { timer {} }
-%scallback {
-%s%simcomm {
-%s%s%sintertrainer_comm_method: "normal"
-%s%s%sall_optimizers: true
-%s%s}
-%s}
 """ % ((tab,)*14))
 
 ### Activation Layers ##########################################################

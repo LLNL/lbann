@@ -52,12 +52,6 @@ model {
       amt: 0.1
     }
   }
-  callback {
-    imcomm {
-      intertrainer_comm_method: "normal"
-      all_optimizers: true
-    }
-  }
 
   callback {
     dump_weights {

@@ -423,11 +423,11 @@ void init_data_readers(
     }
     else if (name == "synthetic") {
       if (readme.num_labels() != 0) {
-        reader =
-          new data_reader_synthetic(readme.num_samples(),
-                                    parse_list<El::Int>(readme.synth_dimensions()),
-                                    readme.num_labels(),
-                                    shuffle);
+        reader = new data_reader_synthetic(
+          readme.num_samples(),
+          parse_list<El::Int>(readme.synth_dimensions()),
+          readme.num_labels(),
+          shuffle);
       }
       else {
         reader = new data_reader_synthetic(
@@ -521,9 +521,9 @@ void init_data_readers(
     }
     if (readme.role() == "train") {
       reader->set_execution_mode_split_fraction(execution_mode::validation,
-                                               readme.validation_fraction());
+                                                readme.validation_fraction());
       reader->set_execution_mode_split_fraction(execution_mode::tournament,
-                                               readme.tournament_fraction());
+                                                readme.tournament_fraction());
     }
 
     reader->load();
@@ -963,15 +963,6 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   }
   if (arg_parser.get<float>(LBANN_OPTION_DATA_READER_FRACTION) != -1.0) {
     set_data_readers_fraction(p);
-  }
-  if (arg_parser.get<bool>(LBANN_OPTION_NO_IM_COMM)) {
-    int sz = model->callback_size();
-    for (int j = 0; j < sz; j++) {
-      lbann_data::Callback* c = model->mutable_callback(j);
-      if (c->has_imcomm()) {
-        c->clear_imcomm();
-      }
-    }
   }
   if (arg_parser.get<int>(LBANN_OPTION_MINI_BATCH_SIZE) != -1) {
     trainer->set_mini_batch_size(
