@@ -212,13 +212,7 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
 
   El::Int current_mini_batch_size =
     dc.get_current_mini_batch_size(execution_mode::training);
-  // BVE Fix it so that the updated current mini-batch is set before
-  // any layer is evaluated to avoid the race condition of a non-input
-  // root node using the wrong current mini-batch size
   model.set_current_mini_batch_size(current_mini_batch_size);
-  // LBANN_MSG("Model DC Fetch I believe that the mini-batch size is ",
-  //           current_mini_batch_size);
-
   dc.fetch_data(execution_mode::training);
 
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
@@ -348,10 +342,6 @@ bool SGDTrainingAlgorithm::evaluate_mini_batch(SGDExecutionContext& c,
   dc.reset_mode(c);
   do_batch_begin_cbs(model, mode, ScopeTimer{timer, "batch_begin callbacks"});
   El::Int current_mini_batch_size = dc.get_current_mini_batch_size(mode);
-  // LBANN_MSG("Working on evaluating a mini-batch size ",
-  // current_mini_batch_size); BVE Fix it so that the updated current mini-batch
-  // is set before any layer is evaluated to avoid the race condition of a
-  // non-input root node using the wrong current mini-batch size
   model.set_current_mini_batch_size(current_mini_batch_size);
   dc.fetch_data(mode);
   model.forward_prop(mode);

@@ -121,38 +121,8 @@ template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs()
 {
   El::Int mini_batch_size = 0;
-  // if (get_model() != NULL) {
   mini_batch_size = this->get_model()->get_current_mini_batch_size();
-  // mini_batch_size = get_trainer().get_max_mini_batch_size();
-  //  }
-#if 0
-  /// During model setup there is no valid execution context, but
-  /// during execution there is a context
-  if (this->m_model->has_valid_execution_context()) {
-    auto& c = dynamic_cast<SGDExecutionContext&>(
-      this->m_model->get_execution_context());
-    auto mode = c.get_execution_mode();
-    if (!(mode == execution_mode::inference)) {
-      data_coordinator& dc = get_trainer().get_data_coordinator();
-      // Determine model mini-batch size and effective mini-batch size
-      // Note: If inter-model communication is activated, the effective
-      // mini-batch is equal to the global mini-batch size.
-      /// @todo This functionality should probably be moved elsewhere
-      mini_batch_size = dc.get_current_mini_batch_size(mode);
-      LBANN_MSG("DC Fetch for layer ",
-                this->get_name(),
-                " I believe that the mini-batch size is ",
-                mini_batch_size);
-    }
-    // Set mini-batch size in model
-    c.set_current_mini_batch_size(mini_batch_size);
-    this->get_model()->set_current_mini_batch_size(mini_batch_size);
-  }
-#endif
-  // LBANN_MSG("Input layer ",
-  //           this->get_name(),
-  //           " I believe that the mini-batch size is ",
-  //           mini_batch_size);
+
   // Activation matrices are initalized in setup_data and further
   // managed in the distribute_from_local_matrix function of the
   // data_coordinator.
@@ -515,13 +485,7 @@ void input_distconv_adapter<TensorDataType, T_layout, Dev>::fp_compute()
   auto& l =
     dynamic_cast<input_layer<TensorDataType, T_layout, Dev>&>(this->layer());
   auto stream = default_hydrogen_stream();
-  // Note that the mini-batch size of the data reader is not
-  // actually the one for the current mini-batch as the mini-batch
-  // index is already updated by fp_compute.
   const El::Int mb_size = l.get_model()->get_current_mini_batch_size();
-  // const int mb_size =
-  //   static_cast<SGDExecutionContext&>(l.get_model()->get_execution_context())
-  //     .get_current_mini_batch_size();
 
   if (m_is_input_processed) {
 

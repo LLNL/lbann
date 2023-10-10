@@ -394,27 +394,6 @@ auto data_type_layer<InputTensorDataType,
   return *m_gradient_wrt_inputs[parent_index];
 }
 
-// template <typename InputTensorDataType, typename OutputTensorDataType>
-// auto data_type_layer<InputTensorDataType,
-// OutputTensorDataType>::get_mini_batch_size_from_execution_context()
-//   -> El::Int
-// {
-//   El::Int mini_batch_size;
-//   if (m_model->has_valid_execution_context()) {
-//     const auto& c =
-//       static_cast<SGDExecutionContext&>(m_model->get_execution_context());
-//     mini_batch_size = c.get_current_mini_batch_size();
-//     LBANN_MSG("Valid execution context, using mini-batch size is ",
-//     mini_batch_size);
-//   }
-//   else {
-//     mini_batch_size = m_model->get_max_mini_batch_size();
-//     LBANN_MSG("No valid execution context, using model default mini-batch
-//     size is ", mini_batch_size);
-//   }
-//   return mini_batch_size;
-// }
-
 template <typename InputTensorDataType, typename OutputTensorDataType>
 auto data_type_layer<InputTensorDataType, OutputTensorDataType>::get_temp_grad()
   -> OutputAbsDistMatrixType&
@@ -932,14 +911,6 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_data(
   fp_setup_outputs();
 
   if (this->get_num_parents() == 0) {
-    // El::Int inferred_max_mini_batch_size =
-    // get_model()->get_max_mini_batch_size();
-    //    El::Int inferred_max_mini_batch_size =
-    //    get_trainer().get_max_mini_batch_size();
-    // LBANN_MSG("DTL for layer ",
-    //           this->get_name(),
-    //           " I believe that the mini-batch size is ",
-    //           max_mini_batch_size);
     // Resize output to maximum mini-batch size
     for (int i = 0; i < this->get_num_children(); ++i) {
 #ifdef LBANN_HAS_DISTCONV
@@ -1379,19 +1350,6 @@ void data_type_layer<InputTensorDataType,
     gradient_wrt_input.Empty(false);
     gradient_wrt_input.AlignWith(get_prev_activations(i));
     gradient_wrt_input.Resize(get_input_size(i), mini_batch_size);
-
-    // if (mini_batch_size != inferred_mini_batch_size) {
-    //   std::stringstream err;
-    //   err << "layer \"" << get_name() << "\" "
-    //       << "mini batch diff " << mini_batch_size << " versus " <<
-    //       inferred_mini_batch_size;
-    //       // << "expected an input tensor stored in a " << height << " x " <<
-    //       width
-    //       // << " matrix "
-    //       // << "from layer \"" << this->get_name() << "\", but got a "
-    //       // << output.Height() << " x " << output.Width() << " matrix";
-    //   LBANN_WARNING(err.str());
-    // }
   }
 }
 
