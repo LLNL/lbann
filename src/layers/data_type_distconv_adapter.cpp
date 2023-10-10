@@ -967,7 +967,7 @@ get_shuffler(const Layer& layer,
   const auto& mini_batch_size =
     layer.get_model()->get_current_mini_batch_size();
   int shuffler_idx = -1;
-  if (max_mini_batch_size == mini_batch_size) {
+  if (static_cast<El::Int>(max_mini_batch_size) == mini_batch_size) {
     shuffler_idx = 0;
   }
   else {
