@@ -435,7 +435,7 @@ void kfac_block_bn<Device>::start_communication_forward_end(lbann_comm* comm)
       for (auto& weight : this->m_weight_values) {
         auto& weights = this->m_layer->get_weights(iter);
         const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
-        auto& weight_values = dtw->get_values();
+        const auto& weight_values = dtw->get_values();
         const auto weight_ptr = dynamic_cast<
           const El::
             DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(
@@ -443,7 +443,7 @@ void kfac_block_bn<Device>::start_communication_forward_end(lbann_comm* comm)
         auto weight_input_ptr = dynamic_cast<
           El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(
           &(*weight));
-        El::Copy(dtw->get_values(), *weight);
+        El::Copy(weight_values, *weight);
         kfac::TranslateBetweenGridsSTARAsync(*weight_ptr,
                                              *weight_input_ptr,
                                              this->m_requests_forward_end);
@@ -492,7 +492,7 @@ void kfac_block_bn<Device>::start_communication_forward_end(lbann_comm* comm)
       const auto& weights = this->m_layer->get_weights(i);
       const auto& dtw =
         dynamic_cast<const data_type_weights<DataType>*>(&weights);
-      auto& weight_values = dtw->get_values();
+      auto& weight_values = dtw->get_values_sharded();
       const auto weight_ptr = dynamic_cast<
         const El::
           DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(

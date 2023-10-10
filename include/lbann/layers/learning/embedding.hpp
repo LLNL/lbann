@@ -287,7 +287,7 @@ void embedding_layer<TensorDataType, Layout, Device>::setup_data(
     // type that matches this layer. In future, we should abstract
     // this or dynamically dispatch it.
     auto& embedding_values =
-      dynamic_cast<AbsDistMatrixType&>(embeddings.get_values());
+      dynamic_cast<AbsDistMatrixType&>(embeddings.get_values_sharded());
     std::unique_ptr<AbsDistMatrixType> pad_embedding(
       embedding_values.Construct(embedding_values.Grid(),
                                  embedding_values.Root()));
@@ -298,7 +298,7 @@ void embedding_layer<TensorDataType, Layout, Device>::setup_data(
   // Initialize gradient w.r.t. embeddings
   {
     auto& embedding_values =
-      dynamic_cast<AbsDistMatrixType&>(embeddings.get_values());
+      dynamic_cast<AbsDistMatrixType&>(embeddings.get_values_sharded());
     this->m_embeddings_grad.reset(
       embedding_values.Construct(embedding_values.Grid(),
                                  embedding_values.Root()));

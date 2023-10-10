@@ -421,7 +421,7 @@ void Layer::replace_weights(Layer const& other_layer)
   using IdxT = typename std::decay<decltype(my_num_weights)>::type;
   for (IdxT ii = 0; ii < my_num_weights; ++ii) {
     auto const& other_layer_weights = other_layer.get_weights(ii);
-    this->get_weights(ii).set_values(other_layer_weights.get_values());
+    this->get_weights(ii).set_values(other_layer_weights.get_values_sharded());
   }
 }
 

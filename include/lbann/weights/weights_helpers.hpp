@@ -63,7 +63,7 @@ struct SafeWeightsAccessor
                   "\" does not have weights of dynamic type \"",
                   TypeName<TensorDataType>(),
                   "\".");
-    return dtw->get_values();
+    return dtw->get_values_sharded();
   }
 }; // class SafeWeightsAccessor
 

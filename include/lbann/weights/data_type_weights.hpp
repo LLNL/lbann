@@ -128,9 +128,14 @@ public:
   // -----------------------------------------------
 
   /** Get the weight matrix. */
-  AbsDistMatrixType& get_values() override;
-  /** Get the weight matrix. */
   const AbsDistMatrixType& get_values() const override;
+
+  /** @brief Access the local shard of weight values. If sharded is false,
+   *         equivalent to 'get_values'.
+   */
+  AbsDistMatrixType& get_values_sharded() override;
+  AbsDistMatrixType const& get_values_sharded() const override;
+
   using weights::set_values;
   /** Set the weight matrix. */
   void set_values(const AbsDistMatrixType& values);
@@ -195,7 +200,7 @@ private:
   void do_steal_values_(weights& other) override;
 
 private:
-  /** Weight matrix. */
+  /** Weight matrix (potentially sharded). */
   std::unique_ptr<AbsDistMatrixType> m_values;
 
   /** Weights initializer.

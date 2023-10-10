@@ -278,6 +278,9 @@ public:
 
   void inc_step_time(EvalType time) { m_step_time += time; }
 
+  /** Are parent weights sharded across ranks? */
+  virtual bool is_sharded() const = 0;
+
   virtual std::tuple<El::Int, El::Int, El::DistData>
   get_matrix_info() const = 0;
 

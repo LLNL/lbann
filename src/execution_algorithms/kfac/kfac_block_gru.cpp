@@ -1435,7 +1435,7 @@ void kfac_block_gru<Device>::start_communication_forward_end(lbann_comm* comm)
       for (auto& weight : this->m_weight_values) {
         auto& weights = this->m_layer->get_weights(iter);
         const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
-        auto& weight_values = dtw->get_values();
+        const auto& weight_values = dtw->get_values();
         const auto weight_ptr = dynamic_cast<
           const El::
             DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(
@@ -1495,7 +1495,7 @@ void kfac_block_gru<Device>::start_communication_forward_end(lbann_comm* comm)
       const auto& weights = this->m_layer->get_weights(i);
       const auto& dtw =
         dynamic_cast<const data_type_weights<DataType>*>(&weights);
-      auto& weight_values = dtw->get_values();
+      auto& weight_values = dtw->get_values_sharded();
       const auto weight_ptr = dynamic_cast<
         const El::
           DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(
@@ -1777,7 +1777,7 @@ void kfac_block_gru<Device>::initialize_activations_and_errors(
     for (int i = 0; i < num_weights; ++i) {
       auto& weights = this->m_layer->get_weights(i);
       const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
-      El::LockedView(*this->m_weight_values[i], dtw->get_values());
+      El::LockedView(*this->m_weight_values[i], dtw->get_values_sharded());
     }
   }
 }

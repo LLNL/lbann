@@ -36,6 +36,7 @@ message Weights {
   Optimizer optimizer = 2;
   Initializer initializer = 3;
   DataType datatype = 4;
+  bool sharded = 5;
 }
 
 message Initializer {

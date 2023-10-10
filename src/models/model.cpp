@@ -587,7 +587,7 @@ void model::copy_trained_weights_from(std::vector<weights*>& new_weights)
         dynamic_cast<data_type_weights<DataType>&>(*m_weights[j].get())
           .set_values(
             dynamic_cast<data_type_weights<DataType> const&>(*new_weights[i])
-              .get_values());
+              .get_values_sharded());
       }
     }
   }

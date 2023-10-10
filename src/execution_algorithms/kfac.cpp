@@ -611,7 +611,7 @@ void KFAC::sync_weights_model(model& model, lbann_comm* comm)
       int width = weights.get_matrix_width();
 
       El::AbstractDistMatrix<DataType>& weight_values =
-        weights_dt->get_values();
+        weights_dt->get_values_sharded();
       El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*
         weight_values_ = dynamic_cast<
           El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(
@@ -678,7 +678,7 @@ void KFAC::sync_weights_model(model& model, lbann_comm* comm)
         El::Matrix<DataType, Device> weight_buffer(height, width);
 
         El::AbstractDistMatrix<DataType>& weight_values =
-          weights_dt->get_values();
+          weights_dt->get_values_sharded();
         El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*
           weight_values_ = dynamic_cast<
             El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(
@@ -757,7 +757,7 @@ void KFAC::start_old_async_weights_model(model& model,
       int width = weights.get_matrix_width();
 
       El::AbstractDistMatrix<DataType>& weight_values =
-        weights_dt->get_values();
+        weights_dt->get_values_sharded();
       El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*
         weight_values_ = dynamic_cast<
           El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(
@@ -849,7 +849,7 @@ void KFAC::end_old_async_weights_model(model& model,
         El::Matrix<DataType, Device> weight_buffer(height, width);
 
         El::AbstractDistMatrix<DataType>& weight_values =
-          weights_dt->get_values();
+          weights_dt->get_values_sharded();
         El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*
           weight_values_ = dynamic_cast<
             El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(
@@ -893,7 +893,7 @@ void KFAC::start_sync_weights_async(model& model, lbann_comm* comm)
       int height = weight->get_matrix_height();
       int width = weight->get_matrix_width();
       auto dtw = dynamic_cast<data_type_weights<DataType>*>(&(*weight));
-      auto& weight_values = dtw->get_values().Matrix();
+      auto& weight_values = dtw->get_values_sharded().Matrix();
       El::Matrix<DataType, Device>* weight_values_ =
         dynamic_cast<El::Matrix<DataType, Device>*>(&weight_values);
       El::SyncInfo<Device> sync_info = El::SyncInfoFromMatrix(*weight_values_);
@@ -923,7 +923,7 @@ void KFAC::start_sync_weights_async(model& model, lbann_comm* comm)
       int height = weight->get_matrix_height();
       int width = weight->get_matrix_width();
       auto dtw = dynamic_cast<data_type_weights<DataType>*>(&(*weight));
-      auto& weight_values = dtw->get_values().Matrix();
+      auto& weight_values = dtw->get_values_sharded().Matrix();
       El::Matrix<DataType, Device>* weight_values_ =
         dynamic_cast<El::Matrix<DataType, Device>*>(&weight_values);
       El::SyncInfo<Device> sync_info = El::SyncInfoFromMatrix(*weight_values_);

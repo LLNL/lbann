@@ -97,9 +97,11 @@ public:
   /** @name Gradient update management */
   ///@{
 
-  /** @brief Objective function gradient w.r.t. the weights.
+  /** @brief Get the full objective function gradient w.r.t. the weights,
+   *  synchronized across all ranks in the trainer.
    *
-   *  An allreduce may be launched and/or synchronized if needed.
+   *  A collective operation (allreduce or allgather) may be launched and/or
+   *  synchronized if needed.
    */
   AbsDistMatrixType& get_gradient();
 
@@ -111,6 +113,9 @@ public:
   double get_learning_rate() const final;
   /** @brief Set the scaling factor for optimization step sizes. */
   void set_learning_rate(double learning_rate) override;
+
+  /** Are parent weights sharded across ranks? */
+  bool is_sharded() const override { return m_sharded; }
 
   /** @name Checkpointing functionality */
   ///@{
@@ -144,14 +149,6 @@ private:
   /** @brief Objective function gradient w.r.t. weights. */
   std::unique_ptr<AbsDistMatrixType> m_gradient;
 
-  /** @brief Workspace matrix.
-   *
-   *  Helps ensure gradient contributions are in the right
-   *  distribution. Most of the time, this should just be a matrix
-   *  view.
-   */
-  std::unique_ptr<AbsDistMatrixType> m_gradient_v;
-
   /** @brief Communication request object for gradient allreduce.
    *
    *  Used to synchronize non-blocking allreduce.
@@ -168,6 +165,9 @@ private:
    *  @todo Consider moving this to the derived classes.
    */
   double m_learning_rate;
+
+  /** Annotates whether the parent weights are sharded across ranks. */
+  bool m_sharded;
 };
 
 #ifndef LBANN_DATA_TYPE_OPTIMIZER_INSTANTIATE

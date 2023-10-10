@@ -98,7 +98,7 @@ void set_weights_value::on_batch_begin(model* m)
                     "\", "
                     "which has an invalid data type");
       }
-      El::Fill(dtw->get_values(), float(m_value));
+      El::Fill(dtw->get_values_sharded(), float(m_value));
       return;
     }
     LBANN_ERROR("\"",

@@ -238,13 +238,14 @@ void data_type_weights<TensorDataType>::do_setup_()
     return;
   }
 
-  // Construct matrix for weights values
+  // Construct matrix for weight values
+  // If sharded, use STAR_VC distribution (column distributed)
   auto matrix_dist = this->get_matrix_distribution();
   m_values.reset(AbsDistMatrixType::Instantiate(
     *matrix_dist.grid,
     matrix_dist.root,
-    matrix_dist.colDist,
-    matrix_dist.rowDist,
+    this->is_sharded() ? El::VC : matrix_dist.colDist,
+    this->is_sharded() ? El::STAR : matrix_dist.rowDist,
     (matrix_dist.blockHeight == 1 && matrix_dist.blockWidth == 1 ? El::ELEMENT
                                                                  : El::BLOCK),
     matrix_dist.device));
@@ -281,21 +282,42 @@ void data_type_weights<TensorDataType>::do_setup_()
 // -----------------------------------------------
 
 template <typename TensorDataType>
-auto data_type_weights<TensorDataType>::get_values() -> AbsDistMatrixType&
-{
-  return const_cast<AbsDistMatrixType&>(
-    static_cast<const data_type_weights&>(*this).get_values());
-}
-template <typename TensorDataType>
 auto data_type_weights<TensorDataType>::get_values() const
   -> const AbsDistMatrixType&
 {
+  // Create a new matrix with the correct value distribution (usually STAR_STAR)
+  // and copy the values from there.
+  auto matrix_dist = this->get_matrix_distribution();
+  auto result = AbsDistMatrixType::Instantiate(
+    *matrix_dist.grid,
+    matrix_dist.root,
+    matrix_dist.colDist,
+    matrix_dist.rowDist,
+    (matrix_dist.blockHeight == 1 && matrix_dist.blockWidth == 1 ? El::ELEMENT
+                                                                 : El::BLOCK),
+    matrix_dist.device);
+
+  El::Copy(*m_values, *result);
+  return *result;
+}
+
+template <typename TensorDataType>
+auto data_type_weights<TensorDataType>::get_values_sharded()
+  -> AbsDistMatrixType&
+{
+  return const_cast<AbsDistMatrixType&>(
+    static_cast<const data_type_weights&>(*this).get_values_sharded());
+}
+template <typename TensorDataType>
+auto data_type_weights<TensorDataType>::get_values_sharded() const
+  -> const AbsDistMatrixType&
+{
   if (m_values == nullptr) {
-    LBANN_ERROR("attempted to access values of "
+    LBANN_ERROR("attempted to access value shard of "
                 "weights \"" +
                 this->get_name() +
                 "\" "
-                "before they are setup");
+                "before they are set up");
   }
   return *m_values;
 }
@@ -304,8 +326,8 @@ template <typename TensorDataType>
 void data_type_weights<TensorDataType>::set_values(
   const AbsDistMatrixType& values)
 {
-  if ((values.Height() != get_values().Height()) ||
-      (values.Width() != get_values().Width())) {
+  if ((values.Height() != m_values->Height()) ||
+      (values.Width() != m_values->Width())) {
     LBANN_ERROR("Expected matrix size ",
                 this->get_matrix_height(),
                 "x",
@@ -315,7 +337,7 @@ void data_type_weights<TensorDataType>::set_values(
                 "x",
                 values.Width());
   }
-  El::Copy(values, get_values());
+  El::Copy(values, *m_values);
 }
 
 template <typename TensorDataType>
@@ -409,7 +431,7 @@ void data_type_weights<TensorDataType>::set_value(TensorDataType value,
 #endif // LBANN_DEBUG
 
   // Set value if it is local
-  auto& values = get_values();
+  auto& values = *m_values;
   if (values.IsLocal(row, col)) {
     values.SetLocal(values.LocalRow(row), values.LocalCol(col), value);
   }
@@ -419,7 +441,7 @@ template <typename TensorDataType>
 void data_type_weights<TensorDataType>::reconcile_values()
 {
   LBANN_ERROR("This should not be called. Method is a candidate for removal");
-  auto& values = get_values();
+  auto& values = *m_values;
   if (values.RedundantSize() > 1) {
     El::Scale(TensorDataType(1. / values.RedundantSize()), values);
     this->get_comm().allreduce(values, values.RedundantComm());
@@ -430,7 +452,7 @@ template <typename TensorDataType>
 void data_type_weights<TensorDataType>::reconcile_values(Al::request& req)
 {
   LBANN_ERROR("This should not be called. Method is a candidate for removal");
-  auto& values = get_values();
+  auto& values = *m_values;
   if (values.RedundantSize() > 1) {
     El::Scale(TensorDataType(1. / values.RedundantSize()), values);
     this->get_comm().nb_allreduce(values, values.RedundantComm(), req);

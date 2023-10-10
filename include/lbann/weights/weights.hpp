@@ -197,9 +197,14 @@ public:
    */
   void set_values(El::BaseDistMatrix const& values);
 
-  /** @brief Access the matrix of weights values. */
-  virtual El::BaseDistMatrix& get_values() = 0;
-  virtual El::BaseDistMatrix const& get_values() const = 0;
+  /** @brief Access the full matrix of weight values. */
+  virtual const El::BaseDistMatrix& get_values() const = 0;
+
+  /** @brief Access the local shard of weight values. If sharded is false,
+   *         equivalent to 'get_values'.
+   */
+  virtual El::BaseDistMatrix& get_values_sharded() = 0;
+  virtual El::BaseDistMatrix const& get_values_sharded() const = 0;
   ///@}
 
   // -----------------------------------------------
@@ -234,6 +239,14 @@ public:
   // Setup
   // -----------------------------------------------
   void setup();
+
+  // -----------------------------------------------
+  // Weight sharding functions
+  // -----------------------------------------------
+  /** Are weights sharded across ranks? */
+  bool is_sharded() const { return m_sharded; }
+  /** Set weight sharding configuration. */
+  void set_sharded(bool value) { m_sharded = value; }
 
   // -----------------------------------------------
   // Freezing
@@ -339,6 +352,9 @@ private:
 
   /** Whether weight optimization is disabled. */
   bool m_frozen;
+
+  /** Whether weights are sharded across ranks. */
+  bool m_sharded;
 };
 
 } // namespace lbann

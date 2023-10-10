@@ -48,7 +48,6 @@ data_type_optimizer<TensorDataType>::data_type_optimizer(
   : BaseType(other),
     m_weights(other.m_weights),
     m_gradient(other.m_gradient ? other.m_gradient->Copy() : nullptr),
-    m_gradient_v(other.m_gradient_v ? other.m_gradient_v->Copy() : nullptr),
     m_learning_rate(other.m_learning_rate)
 {}
 
@@ -60,7 +59,6 @@ data_type_optimizer<TensorDataType>::operator=(
   optimizer::operator=(other);
   m_weights = other.m_weights;
   m_gradient.reset(other.m_gradient ? other.m_gradient->Copy() : nullptr);
-  m_gradient_v.reset(other.m_gradient_v ? other.m_gradient_v->Copy() : nullptr);
   m_learning_rate = other.m_learning_rate;
   return *this;
 }
@@ -131,6 +129,7 @@ template <typename TensorDataType>
 void data_type_optimizer<TensorDataType>::setup_base(WeightsType* w)
 {
   this->set_comm(w->get_comm());
+  this->m_sharded = w->is_sharded();
   this->clear_gradient();
 
   // Set weights being optimized
@@ -148,13 +147,6 @@ void data_type_optimizer<TensorDataType>::setup_base(WeightsType* w)
   m_gradient.reset(AbsDistMatrixType::Instantiate(values.DistData()));
   m_gradient->AlignWith(values);
   m_gradient->Resize(height, width);
-  m_gradient_v.reset(AbsDistMatrixType::Instantiate(values.DistData()));
-  m_gradient_v->AlignWith(values);
-#ifdef HYDROGEN_HAVE_CUB
-  if (m_gradient_v->GetLocalDevice() == El::Device::GPU) {
-    m_gradient_v->Matrix().SetMemoryMode(1); // CUB GPU memory pool
-  }
-#endif // HYDROGEN_HAVE_CUB
 }
 
 template <typename TensorDataType>
@@ -186,7 +178,7 @@ void data_type_optimizer<TensorDataType>::step()
     LBANN_ERROR("attempted to perform optimization step without weights");
   }
   const auto start_time = get_time();
-  this->step_compute(m_weights->get_values(), this->get_gradient());
+  this->step_compute(m_weights->get_values_sharded(), this->get_gradient());
   this->inc_step_time(get_time() - start_time);
 }
 

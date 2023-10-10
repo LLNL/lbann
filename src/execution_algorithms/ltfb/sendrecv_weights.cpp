@@ -105,8 +105,8 @@ SendRecvWeights::get_partner_model(model const& m,
     using WeightsType = data_type_weights<TensorDataType>;
     auto& recv_weights = dynamic_cast<WeightsType&>(*w_ptr);
     auto send_weights = recv_weights;
-    El::SendRecv(send_weights.get_values().LockedMatrix(),
-                 recv_weights.get_values().Matrix(),
+    El::SendRecv(send_weights.get_values_sharded().LockedMatrix(),
+                 recv_weights.get_values_sharded().Matrix(),
                  comm.get_world_comm(),
                  partner_rank_in_world,
                  partner_rank_in_world);
