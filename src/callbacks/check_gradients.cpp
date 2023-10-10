@@ -288,7 +288,7 @@ void check_gradients::do_check_gradients(model& m) const
   dc.fetch_data(mode);
   El::Int current_mini_batch_size = dc.get_current_mini_batch_size(mode);
   m.set_current_mini_batch_size(current_mini_batch_size);
-  
+
   // checking subgrpah parallelism
   if (m.is_subgraph_parallelism_enabled()) {
     for (auto&& l : m.get_layers()) {
