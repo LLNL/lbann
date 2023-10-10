@@ -91,8 +91,8 @@ TEST_CASE("Buffered data coordinator test", "[io][data_coordinator]")
 
   // Set up the data coordinator
   REQUIRE_NOTHROW(bdc.setup(*io_thread_pool, minibatch_size, readers));
-  REQUIRE_NOTHROW(
-    bdc.register_active_data_field("samples", {1}, minibatch_size));
+  REQUIRE_NOTHROW(bdc.register_active_data_field("samples", {1}));
+  REQUIRE_NOTHROW(bdc.setup_data_fields(minibatch_size));
 
   // Sample matrix
   auto samples = El::DistMatrix<lbann::DataType,

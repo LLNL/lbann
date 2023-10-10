@@ -294,8 +294,7 @@ public:
 
   virtual void
   register_active_data_field(data_field_type const& data_field,
-                             std::vector<El::Int> const& data_field_dim_map,
-                             int max_mini_batch_size = 0);
+                             std::vector<El::Int> const& data_field_dim_map);
 
   //************************************************************************
   //

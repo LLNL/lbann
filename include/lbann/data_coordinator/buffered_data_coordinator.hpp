@@ -127,10 +127,14 @@ public:
   /** @brief After registering the active data field, allocate storage for each
    *  data field in the context maps within the double buffer.
    */
-  void
-  register_active_data_field(data_field_type const& data_field,
-                             std::vector<El::Int> const& data_field_dim_map,
-                             int max_mini_batch_size = 0) override;
+  void register_active_data_field(
+    data_field_type const& data_field,
+    std::vector<El::Int> const& data_field_dim_map) override;
+
+  /** @brief After a data field has been registered with the data
+   *  coordinator setup its buffers. Note this can be called after
+   *  each call to register_active_data_field. */
+  void setup_data_fields(int max_mini_batch_size) override;
 
   void fp_setup_data(data_buffer<IODataType>& buffer,
                      El::Int cur_mini_batch_size);
@@ -217,11 +221,6 @@ protected:
   bool load_from_checkpoint_distributed(persist& p) override;
 
 protected:
-  /** @brief After a data field has been registered with the data
-   *  coordinator setup its buffers. Note this can be called after
-   *  each call to register_active_data_field. */
-  void setup_data_fields(int max_mini_batch_size) override;
-
   /**
    * Map from execution context to the index of the active data buffer
    */

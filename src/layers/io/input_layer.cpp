@@ -87,12 +87,14 @@ void input_layer<TensorDataType, T_layout, Dev>::setup_dims()
   if (m_data_field == "") {
     LBANN_ERROR("Failed to setup input layer with empty data field");
   }
-  get_trainer().get_data_coordinator().register_active_data_field(
-    m_data_field,
-    // BVE FIXME HACK FOR NOW
-    // Redundantly store
-    // the dimensions
-    get_data_dims(dr_metadata, 0));
+  // Register the active data field
+  dc.register_active_data_field(m_data_field,
+                                // BVE FIXME HACK FOR NOW
+                                // Redundantly store
+                                // the dimensions
+                                get_data_dims(dr_metadata, 0));
+  // Setup buffers for all active data fields
+  dc.setup_data_fields(get_trainer().get_max_mini_batch_size());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
