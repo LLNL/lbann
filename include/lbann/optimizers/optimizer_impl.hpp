@@ -205,9 +205,10 @@ void optimizer::GradientHelperImpl<TensorDataType>::start_sync(lbann_comm& comm)
                         sync_req_);
     }
     else {
-      // TODO
-      // comm.nb_reducescatter(*local_gradient_, *global_gradient_,
-      // global_gradient_->RedundantComm(), sync_req_);
+      comm.nb_reduce_scatter(*local_gradient_contrib_,
+                             *global_gradient_,
+                             local_gradient_contrib_->RedundantComm(),
+                             sync_req_);
     }
     this->set_status(optimizer_gradient_status::sync_started);
     break;
