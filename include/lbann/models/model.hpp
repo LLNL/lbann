@@ -427,6 +427,20 @@ public:
   }
 
   // ===========================================
+  // Automatic mixed precision
+  // ===========================================
+
+  /** @brief Return true if automatic mixed precision (AMP) is enabled. */
+  bool is_amp_enabled() const noexcept;
+  /** @brief Return the current AMP scale factor. */
+  EvalType get_amp_scale_factor() const noexcept;
+  /** @brief Enable automatic mixed precision. */
+  void enable_amp(EvalType init_scale_factor = 65536.0,
+                  EvalType growth_factor = 2.0,
+                  EvalType backoff_factor = 0.5,
+                  size_t growth_interval = 2000);
+
+  // ===========================================
   // Callbacks
   // ===========================================
 
@@ -550,6 +564,19 @@ private:
    *  @details Flag to indicate if the setup function has been called
    */
   bool m_model_is_setup = false;
+
+  /** @brief Whether automatic mixed precision (AMP) is enabled. */
+  bool m_amp_enabled = false;
+  /** @brief Scale factor for AMP loss scaling. */
+  EvalType m_amp_scale_factor = 65536.0;
+  /** @brief Growth factor for AMP loss scaling. */
+  EvalType m_amp_growth_factor = 2.0;
+  /** @brief Backoff factor for AMP loss scaling. */
+  EvalType m_amp_backoff_factor = 0.5;
+  /** @brief Number of iterations between growth attempts. */
+  size_t m_amp_growth_interval = 2000;
+  /** @brief Current number of steps since the last skip or scale increase. */
+  size_t m_amp_cur_steps = 0;
 
 private:
   // ===========================================
@@ -760,6 +787,16 @@ inline void model::set_current_mini_batch_size(El::Int mini_batch_size) noexcept
   }
   m_current_mini_batch_size = mini_batch_size;
   return;
+}
+
+inline bool model::is_amp_enabled() const noexcept
+{
+  return m_amp_enabled;
+}
+
+inline EvalType model::get_amp_scale_factor() const noexcept
+{
+  return m_amp_scale_factor;
 }
 
 } // namespace lbann

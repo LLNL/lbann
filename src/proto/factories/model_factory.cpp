@@ -300,6 +300,27 @@ std::unique_ptr<model> construct_model(lbann_comm* comm,
   m->set_subgraph_num_parent_resources(
     proto_model.subgraph_parent_grid_resources());
 
+  const auto& proto_amp = proto_model.amp();
+  if (proto_amp.enabled()) {
+    EvalType init_scale = proto_amp.init_scale();
+    if (init_scale == 0.0) {
+      init_scale = 65536.0;
+    }
+    EvalType growth_factor = proto_amp.growth_factor();
+    if (growth_factor == 0.0) {
+      growth_factor = 2.0;
+    }
+    EvalType backoff_factor = proto_amp.backoff_factor();
+    if (backoff_factor == 0.0) {
+      backoff_factor = 0.5;
+    }
+    size_t growth_interval = proto_amp.growth_interval();
+    if (growth_interval == 0) {
+      growth_interval = 2000;
+    }
+    m->enable_amp(init_scale, growth_factor, backoff_factor, growth_interval);
+  }
+
   return m;
 }
 

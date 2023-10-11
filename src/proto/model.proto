@@ -47,6 +47,13 @@ message Model {
   message Summarizer {
     string dir = 1;
   }
+  message AutomaticMixedPrecision {
+    bool enabled = 1;
+    double init_scale = 2;  // Initial loss scale; default: 65536.0
+    double growth_factor = 3;  // Growth factor for scale; default: 2.0
+    double backoff_factor = 4;  // Backoff factor for scale; default: 0.5
+    int64 growth_interval = 5;  // Number of iterations between growth attempts; default: 2000
+  }
   string name = 3;
   ObjectiveFunction objective_function = 2;
   repeated Metric metric = 5;
@@ -72,4 +79,6 @@ message Model {
   repeated Callback callback = 20;
 
   Summarizer summarizer = 32;
+
+  AutomaticMixedPrecision amp = 60;
 }

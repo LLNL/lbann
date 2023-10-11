@@ -111,6 +111,11 @@ void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
   model.reset_mode(c, execution_mode::training);
   dc.reset_mode(c);
 
+  // AMP: Set initial loss scale.
+  if (model.is_amp_enabled()) {
+    model.get_objective_function()->set_amp_scale(model.get_amp_scale_factor());
+  }
+
   // Run callbacks.
   do_train_begin_cbs(model, ScopeTimer{train_timer, "train_begin callbacks"});
 

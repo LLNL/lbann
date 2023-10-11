@@ -86,6 +86,7 @@ void layer_term::setup(model& m)
   auto& eval =
     dynamic_cast<abstract_evaluation_layer<DataType>&>(get_evaluation_layer());
   eval.set_scale(m_scale_factor);
+  eval.set_amp_scale(m_amp_scale_factor);
   // get_evaluation_layer().set_scale(m_scale_factor);
 }
 
@@ -99,6 +100,7 @@ EvalType layer_term::finish_evaluation()
   auto& eval =
     dynamic_cast<abstract_evaluation_layer<DataType>&>(get_evaluation_layer());
   eval.set_scale(m_scale_factor);
+  eval.set_amp_scale(m_amp_scale_factor);
   return eval.get_value();
 }
 
@@ -107,6 +109,7 @@ void layer_term::differentiate()
   auto& eval =
     dynamic_cast<abstract_evaluation_layer<DataType>&>(get_evaluation_layer());
   eval.set_scale(m_scale_factor);
+  eval.set_amp_scale(m_amp_scale_factor);
   // get_evaluation_layer().set_scale(m_scale_factor);
 }
 

@@ -27,6 +27,7 @@
 #ifndef LBANN_OPTIMIZERS_DATA_TYPE_OPTIMIZER_IMPL_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_DATA_TYPE_OPTIMIZER_IMPL_HPP_INCLUDED
 
+#include "lbann/utils/amp.hpp"
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/timer.hpp"
@@ -219,6 +220,15 @@ data_type_optimizer<TensorDataType>::get_matrix_info() const
           w.get_matrix_width(),
           w.get_matrix_distribution(),
           m_gradient->DistData()};
+}
+
+template <typename TensorDataType>
+bool data_type_optimizer<TensorDataType>::is_gradient_finite_and_unscale(
+  EvalType scale) {
+  if (m_weights == nullptr) {
+    LBANN_ERROR("Attempt to unscale gradients without weights");
+  }
+  return amp::is_finite_and_unscale(this->get_gradient(), scale);
 }
 
 template <typename TensorDataType>

@@ -281,6 +281,13 @@ public:
    */
   void finish_gradient_sync();
 
+  /** @brief Check whether gradients are finite and unscale them for
+   *  automatic mixed precision.
+   *
+   * This will complete gradient allreduces.
+   */
+  virtual bool is_gradient_finite_and_unscale(EvalType scale) = 0;
+
 private:
   /** @brief LBANN communicator. */
   lbann_comm* m_comm;

@@ -232,6 +232,13 @@ void objective_function::set_weights_pointers(std::vector<ViewingWeightsPtr> w)
   }
 }
 
+void objective_function::set_amp_scale(EvalType scale)
+{
+  for (auto&& term : m_terms) {
+    term->set_amp_scale(scale);
+  }
+}
+
 void objective_function::write_proto(lbann_data::ObjectiveFunction& proto) const
 {
   for (auto const& term : m_terms)

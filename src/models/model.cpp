@@ -43,6 +43,7 @@
 #include "lbann/objective_functions/layer_term.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/trainers/trainer.hpp"
+#include "lbann/utils/amp.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/graph.hpp"
@@ -222,9 +223,15 @@ void model::serialize(Archive& ar)
     CEREAL_NVP(m_metrics),
     // CEREAL_NVP(m_callbacks),
     // CEREAL_NVP(m_model_is_setup),
-    CEREAL_NVP(m_max_mini_batch_size)
+    CEREAL_NVP(m_max_mini_batch_size),
     // CEREAL_NVP(m_current_mini_batch_size),
-  );
+    CEREAL_NVP(m_max_mini_batch_size),
+    CEREAL_NVP(m_amp_enabled),
+    CEREAL_NVP(m_amp_scale_factor),
+    CEREAL_NVP(m_amp_growth_factor),
+    CEREAL_NVP(m_amp_backoff_factor),
+    CEREAL_NVP(m_amp_growth_interval),
+    CEREAL_NVP(m_amp_cur_steps));
 
   ar.serializeDeferments();
   if constexpr (utils::IsInputArchive<Archive>)
@@ -1668,22 +1675,65 @@ void model::update_weights()
   LBANN_CALIPER_MARK_FUNCTION;
   do_model_optimize_begin_cbs();
 
-  // Apply optimization step to weights
-  // Note: Heuristically, forward prop consumes weights in the same
-  // order as m_weights and backprop computes weights gradients in
-  // reverse order. Also, we often launch a non-blocking allreduce
-  // after a weights gradient has been computed. Thus, iterating in
-  // reverse order will use gradients that have already finished their
-  // allreduce, giving more time for more recent allreduces to finish.
-  for (auto rit = m_weights.rbegin(); rit != m_weights.rend(); ++rit) {
-    auto& w = **rit;
-    auto&& opt = w.get_optimizer();
-
-    if (opt != nullptr) {
-      do_weight_optimize_begin_cbs(&w);
-      opt->step();
-      do_weight_optimize_end_cbs(&w);
+  // AMP: Check gradients for NaNs and infinities.
+  // If any are found, this iteration will be skipped.
+  // If not, the gradients will be unscaled.
+  bool skip_step = false;
+  if (is_amp_enabled()) {
+    for (auto rit = m_weights.rbegin(); rit != m_weights.rend(); ++rit) {
+      auto& w = **rit;
+      auto&& opt = w.get_optimizer();
+      if (opt != nullptr) {
+        skip_step = !opt->is_gradient_finite_and_unscale(m_amp_scale_factor);
+        if (skip_step) {
+          break;
+        }
+      }
     }
+  }
+
+  if (!skip_step) {
+    // Apply optimization step to weights
+    // Note: Heuristically, forward prop consumes weights in the same
+    // order as m_weights and backprop computes weights gradients in
+    // reverse order. Also, we often launch a non-blocking allreduce
+    // after a weights gradient has been computed. Thus, iterating in
+    // reverse order will use gradients that have already finished their
+    // allreduce, giving more time for more recent allreduces to finish.
+    for (auto rit = m_weights.rbegin(); rit != m_weights.rend(); ++rit) {
+      auto& w = **rit;
+      auto&& opt = w.get_optimizer();
+
+      if (opt != nullptr) {
+        do_weight_optimize_begin_cbs(&w);
+        opt->step();
+        do_weight_optimize_end_cbs(&w);
+      }
+    }
+  }
+
+  // AMP: Update loss scale.
+  if (is_amp_enabled()) {
+    if (skip_step) {
+      m_amp_cur_steps = 0;
+      // Keep scale factor to the smallest positive normalized value for
+      // floats. Even when EvalType is double, we may cast to float.
+      m_amp_scale_factor = std::max(
+        static_cast<EvalType>(std::numeric_limits<float>::min()),
+        m_amp_scale_factor * m_amp_backoff_factor);
+    } else {
+      if (m_amp_cur_steps + 1 == m_amp_growth_interval) {
+        m_amp_cur_steps = 0;
+        // Prevent scale factor from overflowing to inf when cast to
+        // float.
+        m_amp_scale_factor = std::min(
+          static_cast<EvalType>(std::numeric_limits<float>::max()),
+          m_amp_scale_factor * m_amp_growth_factor);
+      } else {
+        ++m_amp_cur_steps;
+      }
+    }
+    get_objective_function()->set_amp_scale(m_amp_scale_factor);
   }
 
   do_model_optimize_end_cbs();
@@ -1719,6 +1769,17 @@ void model::reconcile_weight_values()
   for (auto& req : reqs) {
     m_comm->wait(req);
   }
+}
+
+void model::enable_amp(EvalType init_scale_factor,
+                       EvalType growth_factor,
+                       EvalType backoff_factor,
+                       size_t growth_interval) {
+  m_amp_enabled = true;
+  m_amp_scale_factor = init_scale_factor;
+  m_amp_growth_factor = growth_factor;
+  m_amp_backoff_factor = backoff_factor;
+  m_amp_growth_interval = growth_interval;
 }
 
 // =============================================

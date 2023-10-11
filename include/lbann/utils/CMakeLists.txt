@@ -25,6 +25,7 @@
 ################################################################################
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
+  amp.hpp
   any.hpp
   argument_parser.hpp
   beta.hpp

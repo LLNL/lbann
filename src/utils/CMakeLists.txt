@@ -25,6 +25,7 @@
 ################################################################################
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
+  amp.cpp
   argument_parser.cpp
   commify.cpp
   cudnn.cpp
@@ -65,6 +66,7 @@ if (LBANN_HAS_CUDA)
 
   # Add the CUDA source files for this directory
   set_full_path(THIS_DIR_CU_SOURCES
+    amp.cu
     cuda.cu
     nvshmem.cu
     im2col.cu
@@ -74,6 +76,7 @@ endif ()
 if (LBANN_HAS_ROCM)
   # Add the ROCM source files for this directory
   set_full_path(THIS_DIR_CU_SOURCES
+    amp.cu
     im2col.cu
     rocm.cpp
     )
