@@ -108,6 +108,9 @@ description weights::get_description() const
   }
   desc.add("Dimensions", ss.str());
 
+  // Datatype.
+  desc.add("Data type", get_datatype_name());
+
   // Freeze state
   if (is_frozen()) {
     desc.add("Frozen");

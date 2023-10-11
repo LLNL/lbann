@@ -125,6 +125,9 @@ public:
   /** Human-readable description. */
   description get_description() const;
 
+  /** Get a string representing the weights's datatype. */
+  virtual std::string get_datatype_name() const = 0;
+
   virtual bool has_optimizer() const = 0;
 
   // -----------------------------------------------
