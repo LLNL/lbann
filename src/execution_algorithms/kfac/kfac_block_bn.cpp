@@ -57,8 +57,6 @@ void kfac_block_bn<Device>::compute_local_kronecker_factors(
   assert(this->m_layer->num_weights() == 4); // scale, bias, r_mean, r_var
   auto& scales = this->m_layer->get_weights(0);
   auto& biases = this->m_layer->get_weights(1);
-  optimizer* s_optimizer = scales.get_optimizer();
-  optimizer* b_optimizer = biases.get_optimizer();
   const auto& s_dtw = dynamic_cast<data_type_weights<DataType>*>(&scales);
   const auto& b_dtw = dynamic_cast<data_type_weights<DataType>*>(&biases);
   const auto& scale_values = s_dtw->get_values();
