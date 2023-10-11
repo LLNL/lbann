@@ -63,8 +63,8 @@ void local_fp_cpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
       if (xhat > zero) {
         const auto& x = local_prediction(row, col);
 #ifdef LBANN_DEBUG
-        if (x <= zero) {
-          LBANN_ERROR("non-positive prediction");
+        if (x < zero) {
+          LBANN_ERROR("negative prediction");
         }
 #endif // LBANN_DEBUG
         sum += -xhat * std::log(x);
