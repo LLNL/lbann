@@ -172,6 +172,11 @@ construct_layer_graph(lbann_comm* comm,
 
 #undef TEMPLATE_INSTANTIATION
 
+    // Check that layer has been constructed
+    if (l == nullptr) {
+      LBANN_ERROR("Could not construct layer ", name);
+    }
+
     // Set up parallel strategy.
     ParallelStrategy& ps = l->get_parallel_strategy();
     ps.sample_groups = proto_layer.parallel_strategy().sample_groups();
@@ -187,10 +192,6 @@ construct_layer_graph(lbann_comm* comm,
     ps.replications = proto_layer.parallel_strategy().replications();
     ps.depth_groups = proto_layer.parallel_strategy().depth_groups();
     ps.depth_splits = proto_layer.parallel_strategy().depth_splits();
-
-    // Check that layer has been constructed
-    if (l == nullptr)
-      LBANN_ERROR("Could not construct layer ", name);
 
     // Initialize layer name and check it is unique
     if (!name.empty()) {
