@@ -30,6 +30,7 @@
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/weights.hpp"
+#include "lbann/utils/typename.hpp"
 
 namespace cereal {
 class access;
@@ -84,6 +85,10 @@ public:
   data_type_weights(const data_type_weights& other);
   data_type_weights& operator=(const data_type_weights& other);
   virtual ~data_type_weights() = default;
+
+  std::string get_datatype_name() const override {
+    return TypeName<TensorDataType>();
+  }
 
   bool has_optimizer() const override { return m_optimizer != nullptr; }
 
