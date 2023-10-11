@@ -84,6 +84,7 @@ def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
     transformer, extra_model_kwargs = parallelism.apply_subgraph_parallelism(
         transformer, args)
     parallelism.apply_ffn_model_parallelism(transformer, args)
+    parallelism.apply_fsdp(transformer, args)
 
     # Run through transformer
     result = transformer(encoder_input, decoder_input, sequence_length - 1)
@@ -176,6 +177,7 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
     transformer, extra_model_kwargs = parallelism.apply_subgraph_parallelism(
         transformer, args)
     parallelism.apply_ffn_model_parallelism(transformer, args)
+    parallelism.apply_fsdp(transformer, args)
 
     # Run through transformer with the same sequence
     result = transformer(decoder_input, decoder_input, sequence_length)
