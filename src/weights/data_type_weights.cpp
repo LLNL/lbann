@@ -285,9 +285,14 @@ template <typename TensorDataType>
 auto data_type_weights<TensorDataType>::get_values() const
   -> const AbsDistMatrixType&
 {
+  auto matrix_dist = this->get_matrix_distribution();
+  // If the weights are not sharded, return a view
+  if (m_values->DistData() == matrix_dist) {
+    return m_values;
+  }
+
   // Create a new matrix with the correct value distribution (usually STAR_STAR)
   // and copy the values from there.
-  auto matrix_dist = this->get_matrix_distribution();
   auto result = AbsDistMatrixType::Instantiate(
     *matrix_dist.grid,
     matrix_dist.root,

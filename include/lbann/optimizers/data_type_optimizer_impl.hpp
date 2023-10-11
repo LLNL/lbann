@@ -96,9 +96,14 @@ auto data_type_optimizer<TensorDataType>::get_gradient()
 {
   auto& sharded_gradient = this->get_gradient_sharded();
 
+  auto matrix_dist = std::get<2>(this->get_matrix_info());
+  // If the gradient is not sharded, return a view
+  if (sharded_gradient.DistData() == matrix_dist) {
+    return sharded_gradient;
+  }
+
   // Create a new matrix with the correct value distribution (usually STAR_STAR)
   // and copy the values from there.
-  auto matrix_dist = std::get<2>(this->get_matrix_info());
   auto result = AbsDistMatrixType::Instantiate(
     *matrix_dist.grid,
     matrix_dist.root,
