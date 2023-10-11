@@ -155,26 +155,14 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
   data_buffer<IODataType>& buf = get_data_buffer(buffer_map, mode);
 
   //************************************************************************
-  // Get the expected current mini-batch from the data reader
-  int loaded_batch_size = dr->get_loaded_mini_batch_size();
-
-  // Compute the size of the current mini-batch
-  const El::Int end_pos =
-    std::min(static_cast<size_t>(dr->m_current_pos + loaded_batch_size),
-             dr->m_shuffled_indices.size());
-  const El::Int current_mini_batch_size =
-    El::Int{((end_pos - dr->m_current_pos) + dr->m_sample_stride - 1) /
-            dr->m_sample_stride};
-
+  // Get the current mini-batch from the data reader
+  auto current_mini_batch_size = dr->get_loaded_mini_batch_size();
   // Set the size for the I/O buffers
   fp_setup_data(buf, current_mini_batch_size);
-
   // Store the size of the current mini-batch so that others can obtain it
   // without worrying about where the data reader is currently at.
   m_current_mini_batch_size[buffer_id][mode] = current_mini_batch_size;
 
-  // LBANN_MSG("I think that the current mini-batch size is ",
-  // current_mini_batch_size);
   buf.m_num_samples_fetched = 0;
   /// BVE FIXME change the guard
   // Check to see if this rank has local space for the current mini-batch
@@ -188,39 +176,28 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
         static_cast<CPUMat*>(&(b.second->Matrix()));
     }
 
-    // // Compute the size of the current mini-batch
-
-    // int loaded_batch_size = dr->get_loaded_mini_batch_size();
-    // const int end_pos =
-    //   std::min(static_cast<size_t>(dr->m_current_pos + loaded_batch_size),
-    //            dr->m_shuffled_indices.size());
-    // const int mb_size = std::min(
-    //   El::Int{((end_pos - dr->m_current_pos) + dr->m_sample_stride - 1) /
-    //           dr->m_sample_stride},
-    //   local_input_buffers[INPUT_DATA_TYPE_SAMPLES]->Width());
-    const int mb_size =
-      std::min(current_mini_batch_size,
-               local_input_buffers[INPUT_DATA_TYPE_SAMPLES]->Width());
-    // LBANN_MSG("I think that the current local input buffers size ",
-    // local_input_buffers[INPUT_DATA_TYPE_SAMPLES]->Width(), " and the local
-    // mini-batch size is ", mb_size);
-
-    // // Store the size of the current mini-batch so that others can obtain it
-    // // without worrying about where the data reader is currently at.
-    // m_current_mini_batch_size[buffer_id][mode] = mb_size;
+    // Compute the size of the current local mini-batch
+    const int end_pos =
+      std::min(static_cast<size_t>(dr->m_current_pos + current_mini_batch_size),
+               dr->m_shuffled_indices.size());
+    const int local_mini_batch_size = std::min(
+      El::Int{((end_pos - dr->m_current_pos) + dr->m_sample_stride - 1) /
+              dr->m_sample_stride},
+      local_input_buffers[INPUT_DATA_TYPE_SAMPLES]->Width());
 
     /** @brief Each rank will fetch a mini-batch worth of data into its buffer
      */
     if (dr->has_conduit_output()) {
-      std::vector<conduit::Node> samples(mb_size);
+      std::vector<conduit::Node> samples(local_mini_batch_size);
       buf.m_num_samples_fetched =
-        dr->fetch(samples, buf.m_indices_fetched_per_mb, mb_size);
+        dr->fetch(samples, buf.m_indices_fetched_per_mb, local_mini_batch_size);
       data_packer::extract_data_fields_from_samples(samples,
                                                     local_input_buffers);
     }
     else {
-      buf.m_num_samples_fetched =
-        dr->fetch(local_input_buffers, buf.m_indices_fetched_per_mb, mb_size);
+      buf.m_num_samples_fetched = dr->fetch(local_input_buffers,
+                                            buf.m_indices_fetched_per_mb,
+                                            local_mini_batch_size);
     }
 
     bool data_valid = (buf.m_num_samples_fetched > 0);
@@ -254,10 +231,6 @@ void buffered_data_coordinator<TensorDataType>::fetch_data_in_background(
   int active_buffer_idx = future_active_buffer % m_data_buffers.size();
   data_buffer_map_t& buffer_map = m_data_buffers[active_buffer_idx];
   std::lock_guard<std::mutex> guard(dr_mutex);
-  // TODO: This is happenning too early - current minibatch size is set inside
-  // fetch_to_local_matrix. Currently fp_setup_data would be called with 0
-  // int mini_batch_size = get_current_mini_batch_size(mode);
-  // fp_setup_data(*buffer_map[mode], mini_batch_size);
   fetch_to_local_matrix(buffer_map, mode, active_buffer_idx);
   return;
 }
@@ -358,8 +331,11 @@ template <typename TensorDataType>
 bool buffered_data_coordinator<TensorDataType>::ready_for_next_fetch(
   execution_mode mode)
 {
+  // Make sure to update the data reader before incrementing the
+  // buffer index
+  auto is_epoch_complete = this->update_data_reader(mode);
   this->increment_active_buffer_idx(mode);
-  return this->update_data_reader(mode);
+  return is_epoch_complete;
 }
 
 template <typename TensorDataType>
@@ -369,7 +345,6 @@ bool buffered_data_coordinator<TensorDataType>::update_data_reader(
   // Use the size of the mini-batch to update the data reader how much
   // to advance
   int num_samples_in_batch = get_current_mini_batch_size(mode);
-
   // BVE When we finish the epoch we can increment the number of
   // samples that have been processed
   update_num_samples_processed(mode, num_samples_in_batch);
