@@ -179,7 +179,8 @@ def make_batch_script(model: lbann.Model,
     script_params['environment'] = {
         'LBANN_USE_CUBLAS_TENSOR_OPS': 0,
         'LBANN_USE_CUDNN_TENSOR_OPS': 0,
-        "LBANN_KEEP_ERROR_SIGNALS": 1
+        # "LBANN_KEEP_ERROR_SIGNALS": 1
+        "LBANN_NO_INPLACE": 1,
     }
 
     # Create Protobuf file
