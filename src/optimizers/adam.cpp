@@ -134,7 +134,7 @@ template <typename TensorDataType>
 void adam<TensorDataType>::setup(WeightsType* w)
 {
   OptimizerType::setup(w);
-  const auto& gradient = this->get_gradient();
+  const auto& gradient = this->get_gradient_sharded();
   m_moment1.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
   m_moment2.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
 #ifdef LBANN_HAS_GPU

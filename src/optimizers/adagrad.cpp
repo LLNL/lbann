@@ -73,7 +73,7 @@ template <typename TensorDataType>
 void adagrad<TensorDataType>::setup(WeightsType* w)
 {
   OptimizerType::setup(w);
-  const auto& gradient = this->get_gradient();
+  const auto& gradient = this->get_gradient_sharded();
   m_cache.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
   El::Zeros(*m_cache, gradient.Height(), gradient.Width());
 }

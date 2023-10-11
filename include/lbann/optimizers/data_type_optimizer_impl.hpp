@@ -91,7 +91,30 @@ auto data_type_optimizer<TensorDataType>::get_weights() const
 }
 
 template <typename TensorDataType>
-auto data_type_optimizer<TensorDataType>::get_gradient() -> AbsDistMatrixType&
+auto data_type_optimizer<TensorDataType>::get_gradient()
+  -> const AbsDistMatrixType&
+{
+  auto& sharded_gradient = this->get_gradient_sharded();
+
+  // Create a new matrix with the correct value distribution (usually STAR_STAR)
+  // and copy the values from there.
+  auto matrix_dist = std::get<2>(this->get_matrix_info());
+  auto result = AbsDistMatrixType::Instantiate(
+    *matrix_dist.grid,
+    matrix_dist.root,
+    matrix_dist.colDist,
+    matrix_dist.rowDist,
+    (matrix_dist.blockHeight == 1 && matrix_dist.blockWidth == 1 ? El::ELEMENT
+                                                                 : El::BLOCK),
+    matrix_dist.device);
+
+  El::Copy(sharded_gradient, *result);
+  return *result;
+}
+
+template <typename TensorDataType>
+auto data_type_optimizer<TensorDataType>::get_gradient_sharded()
+  -> AbsDistMatrixType&
 {
 
   // Make sure gradient matrix has been setup
@@ -143,7 +166,7 @@ void data_type_optimizer<TensorDataType>::setup_base(WeightsType* w)
   // Initialize matrices
   const auto& height = m_weights->get_matrix_height();
   const auto& width = m_weights->get_matrix_width();
-  const AbsDistMatrixType& values = m_weights->get_values();
+  const AbsDistMatrixType& values = m_weights->get_values_sharded();
   m_gradient.reset(AbsDistMatrixType::Instantiate(values.DistData()));
   m_gradient->AlignWith(values);
   m_gradient->Resize(height, width);
@@ -178,7 +201,8 @@ void data_type_optimizer<TensorDataType>::step()
     LBANN_ERROR("attempted to perform optimization step without weights");
   }
   const auto start_time = get_time();
-  this->step_compute(m_weights->get_values_sharded(), this->get_gradient());
+  this->step_compute(m_weights->get_values_sharded(),
+                     this->get_gradient_sharded());
   this->inc_step_time(get_time() - start_time);
 }
 

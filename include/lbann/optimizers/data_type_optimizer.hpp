@@ -103,7 +103,14 @@ public:
    *  A collective operation (allreduce or allgather) may be launched and/or
    *  synchronized if needed.
    */
-  AbsDistMatrixType& get_gradient();
+  const AbsDistMatrixType& get_gradient();
+
+  /** @brief Get the raw objective function gradient w.r.t. the weights,
+   *  synchronized across all ranks in the trainer. This may be a local sharded
+   *  version and not contain the gradients of all weights, but it will
+   *  contain all contributions made to the gradients.
+   */
+  AbsDistMatrixType& get_gradient_sharded();
 
   /** @brief Optimization step. */
   void step() override;
@@ -146,14 +153,9 @@ private:
   /** @brief Weights being optimized. */
   data_type_weights<TensorDataType>* m_weights = nullptr;
 
-  /** @brief Objective function gradient w.r.t. weights. */
-  std::unique_ptr<AbsDistMatrixType> m_gradient;
-
-  /** @brief Communication request object for gradient allreduce.
-   *
-   *  Used to synchronize non-blocking allreduce.
+  /** @brief Objective function gradient w.r.t. weights (potentially sharded).
    */
-  Al::request m_gradient_allreduce_req;
+  std::unique_ptr<AbsDistMatrixType> m_gradient;
 
   /** @brief Scaling factor for optimization step sizes.
    *

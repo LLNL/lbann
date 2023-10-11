@@ -61,8 +61,6 @@ void kfac_block_bn<Device>::compute_local_kronecker_factors(
   optimizer* b_optimizer = biases.get_optimizer();
   auto* s_dto = dynamic_cast<data_type_optimizer<DataType>*>(s_optimizer);
   auto* b_dto = dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer);
-  El::Matrix<DataType, Device> s_gradients = s_dto->get_gradient().Matrix();
-  El::Matrix<DataType, Device> b_gradients = b_dto->get_gradient().Matrix();
   const auto& s_dtw = dynamic_cast<data_type_weights<DataType>*>(&scales);
   const auto& b_dtw = dynamic_cast<data_type_weights<DataType>*>(&biases);
   const auto& scale_values = s_dtw->get_values();
@@ -243,8 +241,10 @@ void kfac_block_bn<Device>::compute_preconditioned_gradients(
   optimizer* b_optimizer = biases.get_optimizer();
   auto* s_dto = dynamic_cast<data_type_optimizer<DataType>*>(s_optimizer);
   auto* b_dto = dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer);
-  El::Matrix<DataType, Device> s_gradients = s_dto->get_gradient().Matrix();
-  El::Matrix<DataType, Device> b_gradients = b_dto->get_gradient().Matrix();
+  const El::Matrix<DataType, Device> s_gradients =
+    s_dto->get_gradient().LockedMatrix();
+  const El::Matrix<DataType, Device> b_gradients =
+    b_dto->get_gradient().LockedMatrix();
 
   auto& stacked_grads =
     this->get_workspace_matrix("bn_stacked_grads", m_num_channels * 2, 1);

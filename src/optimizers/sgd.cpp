@@ -99,7 +99,7 @@ template <typename TensorDataType>
 void sgd<TensorDataType>::setup(WeightsType* w)
 {
   OptimizerType::setup(w);
-  const auto& gradient = this->get_gradient();
+  const auto& gradient = this->get_gradient_sharded();
   m_velocity.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
 #ifdef LBANN_HAS_GPU
   if (m_velocity->GetLocalDevice() == El::Device::GPU) {
