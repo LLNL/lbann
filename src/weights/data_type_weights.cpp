@@ -288,7 +288,7 @@ auto data_type_weights<TensorDataType>::get_values() const
   auto matrix_dist = this->get_matrix_distribution();
   // If the weights are not sharded, return a view
   if (m_values->DistData() == matrix_dist) {
-    return m_values;
+    return *m_values;
   }
 
   // Create a new matrix with the correct value distribution (usually STAR_STAR)
