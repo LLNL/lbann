@@ -57,13 +57,14 @@ enum class optimizer_gradient_status
    *  @details Buffer must be zeroed out before accessing.
    */
   cleared,
-  /** @brief Allreduce is needed before accessing values. */
-  allreduce_needed,
-  /** @brief Allreduce on values is in progress.
-   *  @details Non-blocking allreduce must be synchronized before
+  /** @brief Synchronization (allreduce, reducescatter) is needed before
+   * accessing values. */
+  sync_needed,
+  /** @brief Value synchronization is in progress.
+   *  @details Non-blocking collective must be synchronized before
    *  accessing.
    */
-  allreduce_started,
+  sync_started,
 };
 
 /** @brief Human-readable string for status of gradient in optimizer. */
@@ -110,18 +111,19 @@ public:
    *  @param contrib            Contribution to gradient.
    *  @param scale              Scaling factor for gradient
    *                            contribution.
-   *  @param allreduce_needed   Whether the gradient contribution
-   *                            requires an allreduce over its redundant
+   *  @param sync_needed        Whether the gradient contribution
+   *                            requires a synchronization (e.g., allreduce)
+   *                            over its redundant
    *                            communicator. If false, duplicated data
    *                            (over the redundant communicator) is
-   *                            assumed to be identical. If true, an
-   *                            allreduce is performed lazily when the
+   *                            assumed to be identical. If true, a
+   *                            synchronization is performed lazily when the
    *                            gradient is accessed.
    */
   template <typename TensorDataType>
   void add_to_gradient(El::AbstractDistMatrix<TensorDataType> const& contrib,
                        TensorDataType scale = 1.f,
-                       bool allreduce_needed = false);
+                       bool sync_needed = false);
 
   /** @brief Zero out the objective function gradient w.r.t. the weights. */
   void clear_gradient();
@@ -142,8 +144,8 @@ public:
    *
    *  When an object adds its contribution to the objective function
    *  gradient during back prop, it should unregister itself. If there
-   *  are no more gradient sources remaining, a non-blocking allreduce
-   *  will be launched on the gradient, if needed.
+   *  are no more gradient sources remaining, a non-blocking synchronization
+   *  collective will be launched on the gradient, if needed.
    */
   void remove_gradient_source(const void* source);
 
@@ -170,14 +172,14 @@ public:
    *                   the returned buffer by.
    *  @param in_scale A scale factor provided to the caller to scale
    *                  their gradient contributions by.
-   *  @param allreduce_needed Whether this gradient contribution will need to
-   *                          be allreduced.
+   *  @param sync_needed Whether this gradient contribution will need to
+   *                     be synchronized across ranks.
    */
   template <typename TensorDataType>
   El::AbstractDistMatrix<TensorDataType>&
   get_gradient_buffer(TensorDataType& buf_scale,
                       TensorDataType& in_scale,
-                      bool allreduce_needed = false);
+                      bool sync_needed = false);
 
   ///@}
   /** @brief Communicator access */
@@ -219,10 +221,12 @@ public:
     virtual ~GradientHelper() = default;
     optimizer_gradient_status get_status() const noexcept { return status_; }
     void set_status(optimizer_gradient_status s) noexcept { status_ = s; }
-    virtual El::BaseDistMatrix& gradient() noexcept = 0;
-    virtual El::BaseDistMatrix const& gradient() const noexcept = 0;
-    virtual void start_allreduce(lbann_comm&) = 0;
-    virtual void complete_allreduce(lbann_comm&) = 0;
+    virtual El::BaseDistMatrix& local_gradient() noexcept = 0;
+    virtual El::BaseDistMatrix const& local_gradient() const noexcept = 0;
+    virtual El::BaseDistMatrix& global_gradient() noexcept = 0;
+    virtual El::BaseDistMatrix const& global_gradient() const noexcept = 0;
+    virtual void start_sync(lbann_comm&) = 0;
+    virtual void complete_sync(lbann_comm&) = 0;
     virtual void clear() = 0;
 
   private:
@@ -236,23 +240,55 @@ public:
     using AbsDistMatType = El::AbstractDistMatrix<TensorDataType>;
 
   public:
-    GradientHelperImpl(El::Int height, El::Int width, El::DistData dist_data)
-      : gradient_{AbsDistMatType::Instantiate(dist_data)}
+    GradientHelperImpl(El::Int height,
+                       El::Int width,
+                       El::DistData dist_data,
+                       El::DistData grad_dist_data,
+                       bool sharded_weights)
+      : local_gradient_contrib_{AbsDistMatType::Instantiate(dist_data)},
+        global_gradient_{AbsDistMatType::Instantiate(grad_dist_data)},
+        sharded_weights_(sharded_weights)
     {
-      El::Zeros(*gradient_, height, width);
+      El::Zeros(*local_gradient_contrib_, height, width);
+      if (grad_dist_data == dist_data) {
+        El::View(*global_gradient_, *local_gradient_contrib_);
+      }
+      else {
+        El::Zeros(*global_gradient_, height, width);
+      }
     }
-    AbsDistMatType& gradient() noexcept override { return *gradient_; }
-    AbsDistMatType const& gradient() const noexcept override
+    AbsDistMatType& local_gradient() noexcept override
     {
-      return *gradient_;
+      return *local_gradient_contrib_;
     }
-    void start_allreduce(lbann_comm& comm) override;
-    void complete_allreduce(lbann_comm& comm) override;
+    AbsDistMatType const& local_gradient() const noexcept override
+    {
+      return *local_gradient_contrib_;
+    }
+    AbsDistMatType& global_gradient() noexcept override
+    {
+      return *global_gradient_;
+    }
+    AbsDistMatType const& global_gradient() const noexcept override
+    {
+      return *global_gradient_;
+    }
+    void start_sync(lbann_comm& comm) override;
+    void complete_sync(lbann_comm& comm) override;
     void clear() override;
 
   private:
-    std::unique_ptr<AbsDistMatType> gradient_;
-    Al::request allreduce_req_;
+    /** Matches the distribution of gathered (unsharded) weights in backprop. */
+    std::unique_ptr<AbsDistMatType> local_gradient_contrib_;
+
+    /** Matches the distribution of data_type_optimizer<T>::m_gradient (i.e.,
+     *  post synchronization). Will view said matrix if only one data type
+     *  exists.
+     */
+    std::unique_ptr<AbsDistMatType> global_gradient_;
+
+    Al::request sync_req_;
+    bool sharded_weights_;
   }; // class GradientHelperImpl
 
   /** @brief Copy construct/copy assign */
@@ -281,26 +317,26 @@ public:
   /** Are parent weights sharded across ranks? */
   virtual bool is_sharded() const = 0;
 
-  virtual std::tuple<El::Int, El::Int, El::DistData>
+  virtual std::tuple<El::Int, El::Int, El::DistData, El::DistData>
   get_matrix_info() const = 0;
 
   template <typename TensorDataType>
   void accumulate_all_gradient_contributions(
     El::AbstractDistMatrix<TensorDataType>& gradient);
 
-  /** @brief Launch non-blocking allreduce on the gradient, if needed.
+  /** @brief Launch non-blocking synchronization on the gradient, if needed.
    *
-   *  Does nothing if an allreduce is not needed or has already been
-   *  started.
+   *  Does nothing if an allreduce/reducescatter is not needed or has already
+   *  been started.
    */
-  void start_gradient_allreduce();
+  void start_gradient_sync();
 
-  /** @brief Synchronize non-blocking allreduce on the gradient, if needed.
+  /** @brief Synchronize non-blocking collectives on the gradient, if needed.
    *
-   *  Does nothing if an allreduce isn't needed. Throws an exception
-   *  if an allreduce is needed but hasn't been started.
+   *  Does nothing if a synchronization isn't needed. Throws an exception
+   *  if a synchronization is needed but hasn't been started.
    */
-  void finish_gradient_allreduce();
+  void finish_gradient_sync();
 
 private:
   /** @brief LBANN communicator. */
@@ -313,8 +349,8 @@ private:
    *  gradient. Objects should register themselves as they use the
    *  weights during forward prop and unregister themselves as they
    *  add their gradient contributions. Once this set is empty, it is
-   *  safe to launch a non-blocking allreduce on the gradient, if
-   *  needed.
+   *  safe to launch a non-blocking synchronization collective on the gradient,
+   *  if needed.
    */
   std::unordered_set<const void*> m_gradient_sources;
 
@@ -330,7 +366,8 @@ private:
    */
   using gradient_manager_type = GradientHelper;
   using gradient_manager_ptr = std::unique_ptr<gradient_manager_type>;
-  std::unordered_map<std::type_index, gradient_manager_ptr> gradients_;
+  std::unordered_map<std::type_index, gradient_manager_ptr>
+    m_local_gradient_contributions;
 };
 
 } // namespace lbann

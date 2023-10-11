@@ -145,9 +145,11 @@ protected:
                             const AbsDistMatrixType& gradient) = 0;
 
   /** @brief Get the info needed to construct a new gradient matrix.
-   *  @return Tuple of height, width, and DistData.
+   *  @return Tuple of height, width, DistData (local contributions), and
+   *  DistData (global gradient, possibly sharded).
    */
-  std::tuple<El::Int, El::Int, El::DistData> get_matrix_info() const final;
+  std::tuple<El::Int, El::Int, El::DistData, El::DistData>
+  get_matrix_info() const final;
 
 private:
   /** @brief Weights being optimized. */

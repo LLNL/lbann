@@ -128,8 +128,8 @@ auto data_type_optimizer<TensorDataType>::get_gradient_sharded()
   }
 
   // Make sure gradient values are ready
-  this->start_gradient_allreduce();
-  this->finish_gradient_allreduce();
+  this->start_gradient_sync();
+  this->finish_gradient_sync();
 
   // Gather all gradients to the master precision
   this->accumulate_all_gradient_contributions(*m_gradient);
@@ -212,13 +212,14 @@ void data_type_optimizer<TensorDataType>::step()
 }
 
 template <typename TensorDataType>
-std::tuple<El::Int, El::Int, El::DistData>
+std::tuple<El::Int, El::Int, El::DistData, El::DistData>
 data_type_optimizer<TensorDataType>::get_matrix_info() const
 {
   auto const& w = this->get_weights();
   return {w.get_matrix_height(),
           w.get_matrix_width(),
-          w.get_matrix_distribution()};
+          w.get_matrix_distribution(),
+          m_gradient->DistData()};
 }
 
 template <typename TensorDataType>
