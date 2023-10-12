@@ -1,4 +1,7 @@
 """Neural network model."""
+
+from typing import NamedTuple, Optional
+
 from lbann import model_pb2
 from lbann.util import make_iterable
 import lbann.core.layer
@@ -19,6 +22,15 @@ def convert_to_protbuf_enums(subgraph_communication):
         return model_pb2.SubGraphCommunication.Value('COLL_OPT')
 
 
+class AmpOptions(NamedTuple):
+    """Options for automatic mixed precision."""
+    enabled: bool = False
+    init_scale: Optional[float] = None
+    growth_factor: Optional[float] = None
+    backoff_factor: Optional[float] = None
+    growth_interval: Optional[int] = None
+
+
 class Model:
     """Neural network model."""
 
@@ -29,7 +41,8 @@ class Model:
                  summary_dir=None,
                  subgraph_communication=SubgraphCommunication.PT2PT,
                  subgraph_topology=False,
-                 subgraph_num_common_resources=0):
+                 subgraph_num_common_resources=0,
+                 amp: AmpOptions = None):
 
         # Scalar fields
         self.epochs = epochs
@@ -60,6 +73,9 @@ class Model:
         self.subgraph_topology = subgraph_topology
         self.subgraph_num_common_resources = subgraph_num_common_resources
 
+        # AMP.
+        self.amp = amp
+
     def export_proto(self):
         """Construct and return a protobuf message."""
         # Initialize protobuf message
@@ -78,6 +94,18 @@ class Model:
         model.objective_function.CopyFrom(self.objective_function.export_proto())
         model.metric.extend([m.export_proto() for m in self.metrics])
         model.callback.extend([c.export_proto() for c in self.callbacks])
+
+        # Add AMP options:
+        if self.amp is not None:
+            model.amp.enabled = self.amp.enabled
+            if self.amp.init_scale is not None:
+                model.amp.init_scale = self.amp.init_scale
+            if self.amp.growth_factor is not None:
+                model.amp.growth_factor = self.amp.growth_factor
+            if self.amp.backoff_factor is not None:
+                model.amp.backoff_factor = self.amp.backoff_factor
+            if self.amp.growth_interval is not None:
+                model.amp.growth_interval = self.amp.growth_interval
 
         return model
 

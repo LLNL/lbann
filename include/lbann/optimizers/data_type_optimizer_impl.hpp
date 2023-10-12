@@ -224,7 +224,8 @@ data_type_optimizer<TensorDataType>::get_matrix_info() const
 
 template <typename TensorDataType>
 bool data_type_optimizer<TensorDataType>::is_gradient_finite_and_unscale(
-  EvalType scale) {
+  EvalType scale)
+{
   if (m_weights == nullptr) {
     LBANN_ERROR("Attempt to unscale gradients without weights");
   }

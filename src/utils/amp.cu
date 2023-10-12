@@ -38,13 +38,15 @@ namespace {
 // we handle it by converting to float.
 
 template <typename T>
-__host__ __device__ __forceinline__ bool amp_is_finite(T val) {
+__host__ __device__ __forceinline__ bool amp_is_finite(T val)
+{
   return std::isfinite(val);
 }
 
 #ifdef LBANN_HAS_GPU_FP16
 template <>
-__host__ __device__ __forceinline__ bool amp_is_finite<fp16>(fp16 val) {
+__host__ __device__ __forceinline__ bool amp_is_finite<fp16>(fp16 val)
+{
   return std::isfinite(static_cast<float>(val));
 }
 #endif
@@ -88,9 +90,9 @@ __global__ void is_finite_and_unscale_noncontiguous_kernel(
 }  // anonymous namespace
 
 template <typename TensorDataType>
-bool is_finite_and_unscale_gpu(
-  El::AbstractDistMatrix<TensorDataType>& grads,
-  EvalType scale) {
+bool is_finite_and_unscale_gpu(El::AbstractDistMatrix<TensorDataType>& grads,
+                               EvalType scale)
+{
   LBANN_CALIPER_MARK_SCOPE("amp::is_finite_and_unscale");
 
   const size_t height = grads.LocalHeight();
@@ -104,7 +106,7 @@ bool is_finite_and_unscale_gpu(
   // TODO: This could be optimized.
   El::Matrix<float, El::Device::GPU> is_finite_d;
 #ifdef HYDROGEN_HAVE_CUB
-  is_finite_d.SetMemoryMode(1);  // Use CUB memory pool.
+  is_finite_d.SetMemoryMode(1); // Use CUB memory pool.
 #endif
   is_finite_d.Resize(1, 1);
   El::Fill(is_finite_d, El::TypeTraits<float>::One());
@@ -146,18 +148,20 @@ bool is_finite_and_unscale_gpu(
 
 #ifdef LBANN_HAS_HALF
 template <>
-bool is_finite_and_unscale_gpu<cpu_fp16>(El::AbstractDistMatrix<cpu_fp16>&, EvalType) {
+bool is_finite_and_unscale_gpu<cpu_fp16>(El::AbstractDistMatrix<cpu_fp16>&,
+                                         EvalType)
+{
   LBANN_ERROR("Do not call the GPU kernels with cpu_fp16!");
 }
 #endif
 
-#define PROTO(T)                                        \
-  template bool is_finite_and_unscale_gpu<T>(           \
-    El::AbstractDistMatrix<T>& grads,                   \
-    EvalType scale);
+#define PROTO(T)                                                               \
+  template bool is_finite_and_unscale_gpu<T>(El::AbstractDistMatrix<T> &       \
+                                               grads,                          \
+                                             EvalType scale);
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 }  // namespace amp
-}  // namespace lbann
+} // namespace lbann

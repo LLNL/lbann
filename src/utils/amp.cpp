@@ -33,9 +33,9 @@ namespace lbann {
 namespace amp {
 
 template <typename TensorDataType>
-bool is_finite_and_unscale(
-  El::AbstractDistMatrix<TensorDataType>& grads,
-  EvalType scale) {
+bool is_finite_and_unscale(El::AbstractDistMatrix<TensorDataType>& grads,
+                           EvalType scale)
+{
   switch (grads.GetLocalDevice()) {
   case El::Device::CPU:
     return is_finite_and_unscale_cpu(grads, scale);
@@ -50,9 +50,9 @@ bool is_finite_and_unscale(
 }
 
 template <typename TensorDataType>
-bool is_finite_and_unscale_cpu(
-  El::AbstractDistMatrix<TensorDataType>& grads,
-  EvalType scale) {
+bool is_finite_and_unscale_cpu(El::AbstractDistMatrix<TensorDataType>& grads,
+                               EvalType scale)
+{
   const auto inv_scale = El::To<TensorDataType>(EvalType{1} / scale);
   auto* __restrict__ buf = grads.Buffer();
 
@@ -88,10 +88,8 @@ bool is_finite_and_unscale_cpu(
   return is_finite;
 }
 
-#define PROTO(T)                                \
-  template bool is_finite_and_unscale<T>(       \
-    El::AbstractDistMatrix<T>&,                 \
-    EvalType);                                  \
+#define PROTO(T)                                                               \
+  template bool is_finite_and_unscale<T>(El::AbstractDistMatrix<T>&, EvalType);
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

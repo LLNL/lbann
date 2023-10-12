@@ -41,20 +41,17 @@ namespace amp {
  * fusing these checks into optimizers.
  */
 template <typename TensorDataType>
-bool is_finite_and_unscale(
-  El::AbstractDistMatrix<TensorDataType>& grads,
-  EvalType scale);
+bool is_finite_and_unscale(El::AbstractDistMatrix<TensorDataType>& grads,
+                           EvalType scale);
 
 template <typename TensorDataType>
-bool is_finite_and_unscale_cpu(
-  El::AbstractDistMatrix<TensorDataType>& grads,
-  EvalType scale);
+bool is_finite_and_unscale_cpu(El::AbstractDistMatrix<TensorDataType>& grads,
+                               EvalType scale);
 
 #ifdef LBANN_HAS_GPU
 template <typename TensorDataType>
-bool is_finite_and_unscale_gpu(
-  El::AbstractDistMatrix<TensorDataType>& grads,
-  EvalType scale);
+bool is_finite_and_unscale_gpu(El::AbstractDistMatrix<TensorDataType>& grads,
+                               EvalType scale);
 #endif
 
 }  // namespace amp
