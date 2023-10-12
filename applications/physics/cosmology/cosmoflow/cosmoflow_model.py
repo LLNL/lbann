@@ -52,7 +52,7 @@ def construct_cosmoflow_model(parallel_strategy,
                lbann.Metric(mae, name='MAE', unit='')]
     callbacks = [
         lbann.CallbackPrint(),
-        lbann.CallbackTimer(),
+        lbann.CallbackTimer(skip_steps=3),
         lbann.CallbackGPUMemoryUsage(),
         lbann.CallbackPrintModelDescription(),
         lbann.CallbackDumpOutputs(
