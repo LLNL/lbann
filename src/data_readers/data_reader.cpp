@@ -487,7 +487,25 @@ int generic_data_reader::get_linearized_size(
 
 int generic_data_reader::get_loaded_mini_batch_size() const
 {
-  if (m_loaded_mini_batch_idx >= (m_num_iterations_per_epoch - 1)) {
+  if (m_loaded_mini_batch_idx > (m_num_iterations_per_epoch - 1)) {
+    return 0;
+  }
+  else if (m_loaded_mini_batch_idx == (m_num_iterations_per_epoch - 1)) {
+    return m_last_mini_batch_size;
+  }
+  else {
+    return m_mini_batch_size;
+  }
+}
+
+int generic_data_reader::get_next_loaded_mini_batch_size() const
+{
+  if (m_loaded_mini_batch_idx + m_iteration_stride >
+      (m_num_iterations_per_epoch - 1)) {
+    return 0;
+  }
+  else if (m_loaded_mini_batch_idx + m_iteration_stride ==
+           (m_num_iterations_per_epoch - 1)) {
     return m_last_mini_batch_size;
   }
   else {

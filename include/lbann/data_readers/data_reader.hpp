@@ -418,8 +418,12 @@ public:
   void set_mini_batch_size(const int s);
   /// Get the mini batch size
   int get_mini_batch_size() const { return m_mini_batch_size; }
-  /// Get the loaded mini-batch size
+  /// Get the size of the mini-batch that will be loaded by a future
+  /// parallel I/O reader
   int get_loaded_mini_batch_size() const;
+  /// Get the size of the next mini-batch that will be loaded by a future
+  /// parallel I/O reader (one fetch in the future)
+  int get_next_loaded_mini_batch_size() const;
   /// Get the current mini-batch size.
   int get_current_mini_batch_size() const;
   /// Return the full mini_batch_size.
