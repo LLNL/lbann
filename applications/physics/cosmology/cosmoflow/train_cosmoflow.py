@@ -129,6 +129,9 @@ if __name__ == "__main__":
         '--synthetic', action='store_true',
         help='Use synthetic data')
     parser.add_argument(
+        '--no-datastore', action='store_true',
+        help='Disable the data store')
+    parser.add_argument(
         '--transform-input', action='store_true',
         help='Apply log1p transformation to model inputs')
 
@@ -236,7 +239,7 @@ if __name__ == "__main__":
         environment['LBANN_KEEP_ERROR_SIGNALS'] = 0
     else:
         environment['LBANN_KEEP_ERROR_SIGNALS'] = 1
-    if args.synthetic:
+    if args.synthetic or args.no_datastore:
         lbann_args = []
     else:
         lbann_args = ['--use_data_store']
