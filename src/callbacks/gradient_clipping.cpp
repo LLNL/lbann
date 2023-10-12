@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/gradient_clipping.hpp"
+#include "lbann/comm_impl.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/layers/loss/l2_norm2.hpp"
 #include "lbann/models/model.hpp"
@@ -85,32 +86,42 @@ void clip_gradient_norm::write_specific_proto(lbann_data::Callback& proto) const
 
 void clip_gradient_norm::on_backward_prop_end(model* m)
 {
-  // auto global_norm = ...;
+  DataType global_norm = 0;
   for (weights* w : this->m_weights) {
     optimizer* opt = w->get_optimizer();
     if (opt != nullptr) {
+      DataType norm;
       auto* dt_opt = dynamic_cast<data_type_optimizer<DataType>*>(opt);
+      // if (!ONe) {
       auto& grad = dt_opt->get_gradient();
-      // auto norm = ...;
-      // l2_norm2_layer<DataType, T_layout, Dev>::fp_compute_external(grad,
-      // this->m_global_norm ? global_norm : norm);
-      if (!m_global_norm) {
-        // m_comm->Allreduce(norm);
-        // DataType scale = std::min(1, this->m_value / host_norm);
-        // El::Scale(grad, scale);
+      norm = El::Nrm2(grad);
+      // }
+      // else {
+      //   auto& grad_shard = dt_opt->get_gradient_shard();
+      //   norm = El::Nrm2(grad_shard);
+      //   norm =
+      //     std::sqrt(m->get_comm()->trainer_allreduce<DataType>(norm * norm));
+      // }
+      if (!m_global_norm && norm > this->m_value) {
+        El::Scale(this->m_value / norm, grad);
+      }
+      else if (m_global_norm) {
+        global_norm += norm * norm;
       }
     }
   }
 
   if (m_global_norm) {
-    // m_comm->Allreduce(norm);
-    // DataType scale = std::min(1, this->m_value / host_norm);
-    for (weights* w : this->m_weights) {
-      optimizer* opt = w->get_optimizer();
-      if (opt != nullptr) {
-        auto* dt_opt = dynamic_cast<data_type_optimizer<DataType>*>(opt);
-        auto& grad = dt_opt->get_gradient();
-        // El::Scale(grad, scale);
+    global_norm = std::sqrt(global_norm);
+    if (global_norm > this->m_value) {
+      DataType scale = this->m_value / global_norm;
+      for (weights* w : this->m_weights) {
+        optimizer* opt = w->get_optimizer();
+        if (opt != nullptr) {
+          auto* dt_opt = dynamic_cast<data_type_optimizer<DataType>*>(opt);
+          auto& grad = dt_opt->get_gradient();
+          El::Scale(scale, grad);
+        }
       }
     }
   }
