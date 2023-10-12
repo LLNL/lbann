@@ -54,24 +54,24 @@ void timer::batch_timing_begin(const model& m)
 {
   const auto& c = m.get_execution_context();
   auto const mode = c.get_execution_mode();
-  if (mode == execution_mode::training && c.get_step() >= m_skip_steps) {
-    m_batch_start_times[mode] = get_time();
-  }
+  if (mode == execution_mode::training && c.get_step() < m_skip_steps)
+    return;
+  m_batch_start_times[mode] = get_time();
 }
 
 void timer::batch_timing_end(const model& m)
 {
   const auto& c = m.get_execution_context();
   const auto& mode = c.get_execution_mode();
-  if (mode == execution_mode::training && c.get_step() - 1 >= m_skip_steps) {
-    const auto& batch_time = get_time() - m_batch_start_times[mode];
-    m_batch_times[mode].push_back(batch_time);
-    if (m_summarizer != nullptr) {
-      m_summarizer->reduce_scalar("minibatch_time", batch_time, c.get_step() - 1);
-      m_summarizer->reduce_scalar_all("minibatch_time",
-                                      batch_time,
-                                      c.get_step() - 1);
-    }
+  if (mode == execution_mode::training && c.get_step() - 1 < m_skip_steps)
+    return;
+  const auto& batch_time = get_time() - m_batch_start_times[mode];
+  m_batch_times[mode].push_back(batch_time);
+  if (m_summarizer != nullptr) {
+    m_summarizer->reduce_scalar("minibatch_time", batch_time, c.get_step() - 1);
+    m_summarizer->reduce_scalar_all("minibatch_time",
+                                    batch_time,
+                                    c.get_step() - 1);
   }
 }
 
