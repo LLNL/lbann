@@ -301,6 +301,11 @@ auto data_type_weights<TensorDataType>::get_values() const
     (matrix_dist.blockHeight == 1 && matrix_dist.blockWidth == 1 ? El::ELEMENT
                                                                  : El::BLOCK),
     matrix_dist.device);
+#ifdef HYDROGEN_HAVE_CUB
+  if (matrix_dist.device == El::Device::GPU) {
+    result->Matrix().SetMemoryMode(1); // CUB memory pool
+  }
+#endif // HYDROGEN_HAVE_CUB
 
   El::Copy(*m_values, *result);
   return *result;
