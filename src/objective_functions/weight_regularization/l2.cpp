@@ -28,7 +28,7 @@
 #include "lbann/comm.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
-#include "lbann/optimizers/optimizer_impl.hpp"
+#include "lbann/optimizers/optimizer.hpp"
 #include "lbann/proto/objective_functions.pb.h"
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/serialize.hpp"

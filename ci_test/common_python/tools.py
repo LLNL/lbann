@@ -1031,6 +1031,9 @@ def print_diff_files(dcmp):
 
 def system(lbann):
     """Name of compute system."""
+    import lbann.contrib
+    import lbann.contrib.launcher
+
     compute_center = lbann.contrib.launcher.compute_center()
     if compute_center != "unknown":
         return getattr(lbann.contrib, compute_center).systems.system()
@@ -1041,6 +1044,9 @@ def system(lbann):
 # Get the number of GPUs per compute node.
 # Return 0 if the system is unknown.
 def gpus_per_node(lbann):
+    import lbann.contrib
+    import lbann.contrib.launcher
+
     compute_center = lbann.contrib.launcher.compute_center()
     if compute_center != "unknown":
         return getattr(lbann.contrib, compute_center).systems.gpus_per_node()

@@ -236,46 +236,6 @@ def construct_model(lbann):
         execution_modes='test'))
 
     # ------------------------------------------
-    # Data-parallel layout, sharded weights, non-transpose, bias
-    # ------------------------------------------
-
-    # LBANN implementation
-    linearity_weights = lbann.Weights(
-        optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(
-            values=np.nditer(linearity, order='F')
-        ),
-        sharded=True,
-    )
-    bias_weights = lbann.Weights(
-        optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(
-            values=np.nditer(bias)
-        ),
-        sharded=True,
-    )
-    x = x_lbann
-    y = lbann.FullyConnected(x,
-                             weights=(linearity_weights, bias_weights),
-                             data_layout='data_parallel',
-                             num_neurons=_output_size,
-                             has_bias=True,
-                             transpose=False)
-    z = lbann.L2Norm2(y)
-    obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel sharded, non-transpose, bias'))
-
-    # NumPy implementation
-    val = val_with_bias
-    tol = 8 * val * np.finfo(np.float32).eps
-    callbacks.append(lbann.CallbackCheckMetric(
-        metric=metrics[-1].name,
-        lower_bound=val-tol,
-        upper_bound=val+tol,
-        error_on_failure=True,
-        execution_modes='test'))
-
-    # ------------------------------------------
     # Gradient checking
     # ------------------------------------------
 

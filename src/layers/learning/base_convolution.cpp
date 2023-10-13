@@ -28,7 +28,7 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/optimizers/optimizer_impl.hpp"
+#include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/exception.hpp"

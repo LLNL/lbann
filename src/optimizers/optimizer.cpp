@@ -134,5 +134,23 @@ void optimizer::remove_gradient_source(const void* source)
 
 } // namespace lbann
 
+// Instantiate methods
+#undef PROTO
+#define PROTO(T)                                                               \
+  template El::AbstractDistMatrix<T>& lbann::optimizer::get_gradient_buffer(   \
+    T& buf_scale,                                                              \
+    T& in_scale,                                                               \
+    bool sync_needed);                                                         \
+  template void lbann::optimizer::add_to_gradient(                             \
+    El::AbstractDistMatrix<T> const& contrib,                                  \
+    T scale,                                                                   \
+    bool sync_needed);                                                         \
+  template void lbann::optimizer::accumulate_all_gradient_contributions(       \
+    El::AbstractDistMatrix<T>& gradient);
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+
 #define LBANN_CLASS_NAME optimizer
 #include <lbann/macros/register_class_with_cereal.hpp>
