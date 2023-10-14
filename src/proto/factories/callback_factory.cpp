@@ -53,6 +53,7 @@
 #include "lbann/callbacks/learning_rate.hpp"
 #include "lbann/callbacks/load_model.hpp"
 #include "lbann/callbacks/ltfb.hpp"
+#include "lbann/callbacks/memory_profiler.hpp"
 #include "lbann/callbacks/mixup.hpp"
 #include "lbann/callbacks/monitor_io.hpp"
 #include "lbann/callbacks/perturb_adam.hpp"
@@ -160,6 +161,8 @@ void register_default_builders(factory_type& factory)
     "CallbackLinearGrowthLearningRate",
     build_linear_growth_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackLTFB", build_ltfb_callback_from_pbuf);
+  factory.register_builder("CallbackMemoryProfiler",
+                           build_memory_profiler_callback_from_pbuf);
   factory.register_builder("CallbackMinibatchSchedule",
                            build_minibatch_schedule_callback_from_pbuf);
   factory.register_builder("CallbackMixup", build_mixup_callback_from_pbuf);

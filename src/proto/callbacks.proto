@@ -87,6 +87,7 @@ message Callback {
     CallbackAlternateUpdates alternate_updates = 54;
     CallbackProgressBar progress_bar = 56;
     CallbackCosineDecayLearningRate cosine_decay_learning_rate = 57;
+    CallbackMemoryProfiler memory_profiler = 58;
   }
 
   message CallbackLTFB {
@@ -460,4 +461,6 @@ message Callback {
     int64 newline_interval = 2;  // Number of iterations between a newline print
                                  // (0 disables)
   }
+
+  message CallbackMemoryProfiler {}
 }

@@ -109,6 +109,7 @@ Available Callbacks
    Learning rate <callbacks/learning_rate>
    Load model <callbacks/load_model>
    Ltfb <callbacks/ltfb>
+   Memory Profiler <callbacks/memory_profiler>
    Mixup <callbacks/mixup>
    Monitor io <callbacks/monitor_io>
    Perturb adam <callbacks/perturb_adam>
