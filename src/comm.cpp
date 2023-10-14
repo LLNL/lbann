@@ -647,7 +647,7 @@ void nb_reduce_scatter_aluminum(const El::Matrix<T, El::Device::GPU>& src,
                                 El::mpi::Op const& op,
                                 BackendTag<BackendT> const& tag)
 {
-  const auto local_size = src.Height() * src.Width();
+  const auto local_size = dst.Height() * dst.Width();
   const auto& syncinfo = El::SyncInfoFromMatrix(dst);
   auto& request = GetRequest(req, tag);
   ::Al::NonblockingReduce_scatter<BackendT>(
@@ -728,22 +728,21 @@ void nb_reduce_scatter_impl(const El::Matrix<T, El::Device::CPU>& src,
                             Al::request& req,
                             El::mpi::Op const& op)
 {
+  const auto local_size = dst.Height() * dst.Width();
   if (dst.Height() == dst.LDim() || dst.Width() == 1) {
-    auto const count = src.Height() * src.Width();
-    int counts[1] = {static_cast<int>(count)};
-    MPI_Ireduce_scatter(src.LockedBuffer(),
-                        dst.Buffer(),
-                        counts,
-                        El::mpi::TypeMap<T>(),
-                        op.op,
-                        c.GetMPIComm(),
-                        &(req.raw_mpi_req));
+    MPI_Ireduce_scatter_block(src.LockedBuffer(),
+                              dst.Buffer(),
+                              local_size,
+                              El::mpi::TypeMap<T>(),
+                              op.op,
+                              c.GetMPIComm(),
+                              &(req.raw_mpi_req));
   }
   else {
     const auto& syncinfo = El::SyncInfoFromMatrix(dst);
     return El::mpi::ReduceScatter(src.LockedBuffer(),
                                   dst.Buffer(),
-                                  dst.Width(),
+                                  local_size,
                                   op,
                                   c,
                                   syncinfo);
@@ -758,11 +757,12 @@ void lbann_comm::nb_reduce_scatter(
   Al::request& req,
   El::mpi::Op op) const
 {
-  if (El::mpi::Size(c) == 1 || dst.Height() < 1 || dst.Width() < 1) {
+  if (dst.Height() < 1 || dst.Width() < 1) {
     return;
   }
 
-  const int local_size = src.Height() * src.Width();
+  const auto local_size = dst.Height() * dst.Width();
+
   m_bytes_sent += sizeof(DataType) * local_size;
   m_bytes_received += sizeof(DataType) * local_size * (El::mpi::Size(c) - 1);
 

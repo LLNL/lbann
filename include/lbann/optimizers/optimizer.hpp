@@ -221,6 +221,7 @@ public:
     virtual ~GradientHelper() = default;
     optimizer_gradient_status get_status() const noexcept { return status_; }
     void set_status(optimizer_gradient_status s) noexcept { status_ = s; }
+    virtual void ensure_gradient_memory(El::Int height, El::Int width) = 0;
     virtual El::BaseDistMatrix& local_gradient() noexcept = 0;
     virtual El::BaseDistMatrix const& local_gradient() const noexcept = 0;
     virtual El::BaseDistMatrix& global_gradient() noexcept = 0;
@@ -232,64 +233,6 @@ public:
   private:
     optimizer_gradient_status status_ = optimizer_gradient_status::cleared;
   }; // class GradientHelper
-
-  template <typename TensorDataType>
-  class GradientHelperImpl : public GradientHelper
-  {
-  public:
-    using AbsDistMatType = El::AbstractDistMatrix<TensorDataType>;
-
-  public:
-    GradientHelperImpl(El::Int height,
-                       El::Int width,
-                       El::DistData dist_data,
-                       El::DistData grad_dist_data,
-                       bool sharded_weights)
-      : local_gradient_contrib_{AbsDistMatType::Instantiate(dist_data)},
-        global_gradient_{AbsDistMatType::Instantiate(grad_dist_data)},
-        sharded_weights_(sharded_weights)
-    {
-      El::Zeros(*local_gradient_contrib_, height, width);
-      if (grad_dist_data == dist_data) {
-        El::View(*global_gradient_, *local_gradient_contrib_);
-      }
-      else {
-        El::Zeros(*global_gradient_, height, width);
-      }
-    }
-    AbsDistMatType& local_gradient() noexcept override
-    {
-      return *local_gradient_contrib_;
-    }
-    AbsDistMatType const& local_gradient() const noexcept override
-    {
-      return *local_gradient_contrib_;
-    }
-    AbsDistMatType& global_gradient() noexcept override
-    {
-      return *global_gradient_;
-    }
-    AbsDistMatType const& global_gradient() const noexcept override
-    {
-      return *global_gradient_;
-    }
-    void start_sync(lbann_comm& comm) override;
-    void complete_sync(lbann_comm& comm) override;
-    void clear() override;
-
-  private:
-    /** Matches the distribution of gathered (unsharded) weights in backprop. */
-    std::unique_ptr<AbsDistMatType> local_gradient_contrib_;
-
-    /** Matches the distribution of data_type_optimizer<T>::m_gradient (i.e.,
-     *  post synchronization). Will view said matrix if only one data type
-     *  exists.
-     */
-    std::unique_ptr<AbsDistMatType> global_gradient_;
-
-    Al::request sync_req_;
-    bool sharded_weights_;
-  }; // class GradientHelperImpl
 
   /** @brief Copy construct/copy assign */
   optimizer(const optimizer& other);
