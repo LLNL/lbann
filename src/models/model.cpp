@@ -715,8 +715,7 @@ void model::setup(size_t max_mini_batch_size,
   }
 
   for (const auto& cb : m_callbacks) {
-    if (dynamic_cast<callback::checkpoint const*>(cb.get()))
-      cb->setup(this);
+    cb->on_setup_begin(this);
   }
 
   check_subgraph_parallelism();
@@ -754,8 +753,7 @@ void model::setup(size_t max_mini_batch_size,
 
   // Set up callbacks
   for (const auto& cb : m_callbacks) {
-    if (!dynamic_cast<callback::checkpoint const*>(cb.get()))
-      cb->setup(this);
+    cb->setup(this);
   }
 
   m_max_mini_batch_size = max_mini_batch_size;

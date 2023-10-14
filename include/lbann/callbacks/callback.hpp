@@ -110,6 +110,8 @@ public:
   /** @name Callback hooks */
   ///@{
 
+  /** @brief Called at the beginning of model setup. */
+  virtual void on_setup_begin(model* m) {}
   /** @brief Called at the end of setup. */
   virtual void on_setup_end(model* m) {}
   /** @brief Called at the beginning of training. */
