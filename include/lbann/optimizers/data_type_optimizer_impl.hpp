@@ -164,6 +164,12 @@ double data_type_optimizer<TensorDataType>::get_learning_rate() const
 }
 
 template <typename TensorDataType>
+size_t data_type_optimizer<TensorDataType>::get_state_size() const
+{
+  return m_gradient->AllocatedMemory() * sizeof(TensorDataType);
+}
+
+template <typename TensorDataType>
 void data_type_optimizer<TensorDataType>::set_learning_rate(
   double learning_rate)
 {

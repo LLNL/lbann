@@ -69,6 +69,16 @@ description sgd<TensorDataType>::get_description() const
 }
 
 template <typename TensorDataType>
+size_t sgd<TensorDataType>::get_state_size() const
+{
+  size_t allocated = 0;
+  if (m_velocity != nullptr) {
+    allocated += m_velocity->AllocatedMemory() * sizeof(TensorDataType);
+  }
+  return data_type_optimizer<TensorDataType>::get_state_size() + allocated;
+}
+
+template <typename TensorDataType>
 auto sgd<TensorDataType>::get_velocity() const -> const AbsDistMatrixType&
 {
   if (m_velocity == nullptr) {
