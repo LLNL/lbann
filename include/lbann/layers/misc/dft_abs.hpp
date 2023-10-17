@@ -123,11 +123,9 @@ void dft_abs_layer<T, D>::write_specific_proto(lbann_data::Layer& proto) const
 #ifdef LBANN_HAS_FFTW_FLOAT
 extern template class dft_abs_layer<float, El::Device::CPU>;
 #endif // LBANN_HAS_FFTW_FLOAT
-#ifdef LBANN_HAS_FFTW_DOUBLE
-#ifdef LBANN_HAS_DOUBLE
+#if defined(LBANN_HAS_DOUBLE) && defined(LBANN_HAS_FFTW_DOUBLE)
 extern template class dft_abs_layer<double, El::Device::CPU>;
-#endif // LBANN_HAS_DOUBLE
-#endif // LBANN_HAS_FFTW_DOUBLE
+#endif // defined(LBANN_HAS_DOUBLE) && defined (LBANN_HAS_FFTW_DOUBLE)
 
 #ifdef LBANN_HAS_GPU
 // cuFFT always supports both types.

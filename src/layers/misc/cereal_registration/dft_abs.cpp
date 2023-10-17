@@ -54,11 +54,9 @@ void dft_abs_layer<TensorDataType, Device>::serialize(ArchiveT& ar)
 #ifdef LBANN_HAS_FFTW_FLOAT
 PROTO_DEVICE(float, El::Device::CPU)
 #endif // LBANN_HAS_FFTW_FLOAT
-#ifdef LBANN_HAS_FFTW_DOUBLE
-#ifdef LBANN_HAS_DOUBLE
+#if defined(LBANN_HAS_DOUBLE) && defined(LBANN_HAS_FFTW_DOUBLE)
 PROTO_DEVICE(double, El::Device::CPU)
-#endif // LBANN_HAS_DOUBLE
-#endif // LBANN_HAS_FFTW_DOUBLE
+#endif // defined(LBANN_HAS_DOUBLE) && defined (LBANN_HAS_FFTW_DOUBLE)
 #ifdef LBANN_HAS_GPU
 PROTO_DEVICE(float, El::Device::GPU)
 #ifdef LBANN_HAS_DOUBLE

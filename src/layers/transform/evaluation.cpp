@@ -338,10 +338,12 @@ LBANN_LAYER_DEFAULT_BUILDER(evaluation)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
+#define LBANN_INSTANTIATE_DOUBLE
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 #undef LBANN_INSTANTIATE_CPU_HALF
 #undef LBANN_INSTANTIATE_GPU_HALF
+#undef LBANN_INSTANTIATE_DOUBLE
 
 #define PROTO_DEVICE(T, Device)                                                \
   template class evaluation_layer<T, data_layout::DATA_PARALLEL, Device>;      \

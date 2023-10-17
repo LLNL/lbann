@@ -953,6 +953,7 @@ int get_rank_in_world()
                                          Al::request& req,                     \
                                          El::mpi::Op op) const
 
+#define LBANN_INSTANTIATE_DOUBLE
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"

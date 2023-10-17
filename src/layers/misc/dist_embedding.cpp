@@ -419,17 +419,21 @@ build_dist_embedding_layer_from_pbuf(lbann_comm* comm,
 template class dist_embedding_layer<float,
                                     data_layout::DATA_PARALLEL,
                                     El::Device::CPU>;
+#ifdef LBANN_HAS_DOUBLE
 template class dist_embedding_layer<double,
                                     data_layout::DATA_PARALLEL,
                                     El::Device::CPU>;
+#endif // LBANN_HAS_DOUBLE
 #endif // LBANN_HAS_SHMEM
 #if defined(LBANN_HAS_GPU) && defined(LBANN_HAS_NVSHMEM)
 extern template class dist_embedding_layer<float,
                                            data_layout::DATA_PARALLEL,
                                            El::Device::GPU>;
+#ifdef LBANN_HAS_DOUBLE
 extern template class dist_embedding_layer<double,
                                            data_layout::DATA_PARALLEL,
                                            El::Device::GPU>;
+#endif // LBANN_HAS_DOUBLE
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_HAS_NVSHMEM)
 
 #define PROTO_DEVICE(T, Device)                                                \
