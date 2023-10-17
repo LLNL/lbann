@@ -155,8 +155,8 @@ public:
 
   int get_local_memory_consumption() override
   {
-    return -1;
     LBANN_ERROR("this function is not implemented for GRU layer.");
+    return -1;
   }
 
   void compute_local_kronecker_factors(lbann_comm* comm,
