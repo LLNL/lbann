@@ -122,7 +122,7 @@ lbann::proto::construct_weights(lbann_comm* comm,
   if (!comm)
     LBANN_ERROR("Cannot have a null communicator.");
 
-  auto proto_datatype = proto_weights.datatype();
+  auto proto_datatype = resolve_default_datatype(proto_weights.datatype());
 
   // Instantiate weights
   //  auto w = std::make_unique<data_type_weights<DataType>>(comm);
@@ -154,6 +154,11 @@ lbann::proto::construct_weights(lbann_comm* comm,
 
 #undef PROTO
 #undef TEMPLATE_INSTANTIATION
+
+  if (w == nullptr) {
+    LBANN_ERROR("Could not construct weights ", proto_weights.name());
+  }
+  // Initializer and optimizer are permitted to be null.
 
   // Set weights name if provided
   const auto& name = proto_weights.name();

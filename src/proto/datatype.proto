@@ -29,11 +29,12 @@ syntax = "proto3";
 package lbann_data;
 
 enum DataType {
-  FLOAT = 0;
-  DOUBLE = 1;
-  FP16 = 2;
-  COMPLEX_FLOAT = 3;
-  COMPLEX_DOUBLE = 4;
+  DEFAULT_DATATYPE = 0;
+  FLOAT = 1;
+  DOUBLE = 2;
+  FP16 = 3;
+  COMPLEX_FLOAT = 4;
+  COMPLEX_DOUBLE = 5;
 }
 
 enum DeviceAllocation {

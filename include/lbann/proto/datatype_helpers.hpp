@@ -80,6 +80,17 @@ struct TypeToProtoDataType<fp16>
 template <typename T>
 auto ProtoDataType = TypeToProtoDataType<T>::value;
 
+/**
+ * Resolve a datatype, which may be DEFAULT_DATATYPE, to its actual
+ * proto type. The DEFAULT_DATATYPE is mapped to LBANN's DataType.
+ */
+inline lbann_data::DataType resolve_default_datatype(lbann_data::DataType datatype) {
+  if (datatype == lbann_data::DEFAULT_DATATYPE) {
+    datatype = ProtoDataType<DataType>;
+  }
+  return datatype;
+}
+
 template <El::Device D>
 struct DeviceToProtoDevice;
 
