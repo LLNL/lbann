@@ -169,7 +169,7 @@ void memory_profiler::report_mem_usage(model* m)
   // Traverse the graph layer by layer
   for (auto& layer : m->get_layers()) {
     std::stringstream reps;
-    size_t layer_total = 0;
+    size_t layer_total = 0, layer_total_acts = 0;
 
     reps << "  " << layer->get_name() << " (" << layer->get_type()
          << "):" << std::endl;
@@ -184,7 +184,7 @@ void memory_profiler::report_mem_usage(model* m)
         reps << "    Activations (" << i << "): ";
 
       size_t allocated = report_dist_matrix(act, reps);
-      layer_total += allocated;
+      layer_total_acts += allocated;
       max_act_mem = std::max(max_act_mem, allocated);
     }
 
@@ -250,11 +250,19 @@ void memory_profiler::report_mem_usage(model* m)
     }
 
     if (layer_total > 0) {
+      total += layer_total;
+
+      // Only account for activations when sorting
+      layer_total += layer_total_acts;
+
+      reps << "    Total: " << layer_total / 1048576.0 << " MiB" << std::endl;
       reps << std::endl;
       usage.emplace_back(MemUsage(reps.str(), layer_total));
     }
-    total += layer_total;
   }
+
+  // Total memory uses the maximal activation size approximation
+  total += max_act_mem;
 
   // Add extraneous weights
   for (auto& weight : m->get_weights()) {
@@ -282,6 +290,8 @@ void memory_profiler::report_mem_usage(model* m)
         }
       }
       if (weight_total > 0) {
+        reps << "    Total: " << weight_total / 1048576.0 << " MiB"
+             << std::endl;
         reps << std::endl;
         usage.emplace_back(MemUsage(reps.str(), weight_total));
       }
