@@ -92,6 +92,7 @@ void data_coordinator::setup(
 
   m_data_readers = data_readers;
 
+  LBANN_MSG("DID I get here with a mini batch size of ", max_mini_batch_size);
   // Initialize the data sets
   for (auto m : execution_mode_iterator()) {
     if (this->m_data_readers.count(m)) {
