@@ -59,9 +59,11 @@ using ClampOperatorAllDevices = h2::meta::TL<
 #endif // LBANN_HAS_GPU
   ClampOperator<T, El::Device::CPU>>;
 
-using AllClampOpTypes =
-  h2::meta::tlist::Append<ClampOperatorAllDevices<float>,
-                          ClampOperatorAllDevices<double>>;
+using AllClampOpTypes = h2::meta::tlist::Append<
+#ifdef LBANN_HAS_DOUBLE
+  ClampOperatorAllDevices<double>,
+#endif // LBANN_HAS_DOUBLE
+  ClampOperatorAllDevices<float>>;
 
 namespace lbann {
 template <typename T, El::Device D>

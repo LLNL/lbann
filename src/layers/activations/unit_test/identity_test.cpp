@@ -53,8 +53,11 @@ using LayerTypesAllDevices = h2::meta::tlist::Append<
 #endif // LBANN_HAS_GPU
   LayerTypesAllLayouts<T, El::Device::CPU>>;
 
-using AllLayerTypes = h2::meta::tlist::Append<LayerTypesAllDevices<float>,
-                                              LayerTypesAllDevices<double>>;
+using AllLayerTypes = h2::meta::tlist::Append<
+#ifdef LBANN_HAS_DOUBLE
+  LayerTypesAllDevices<double>,
+#endif // LBANN_HAS_DOUBLE
+  LayerTypesAllDevices<float>>;
 
 using unit_test::utilities::IsValidPtr;
 TEMPLATE_LIST_TEST_CASE("Serializing Identity layer",

@@ -64,11 +64,13 @@ lbann::build_composite_image_transformation_layer_from_pbuf(
         composite_image_transformation_layer<float,
                                              data_layout::DATA_PARALLEL,
                                              El::Device::CPU>>(comm);
+#ifdef LBANN_HAS_DOUBLE
     else if constexpr (std::is_same_v<T, double>)
       return std::make_unique<
         composite_image_transformation_layer<double,
                                              data_layout::DATA_PARALLEL,
                                              El::Device::CPU>>(comm);
+#endif // LBANN_HAS_DOUBLE
     else {
       (void)comm;
       LBANN_ERROR("composite_image_transformation_layer is only supported for "
@@ -94,10 +96,12 @@ lbann::build_rotation_layer_from_pbuf(lbann_comm* comm,
       return std::make_unique<
         rotation_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>>(
         comm);
+#ifdef LBANN_HAS_DOUBLE
     else if constexpr (std::is_same_v<T, double>)
       return std::make_unique<
         rotation_layer<double, data_layout::DATA_PARALLEL, El::Device::CPU>>(
         comm);
+#endif // LBANN_HAS_DOUBLE
     else {
       (void)comm;
       LBANN_ERROR(
@@ -119,10 +123,12 @@ lbann::build_cutout_layer_from_pbuf(lbann_comm* comm, lbann_data::Layer const&)
     if constexpr (std::is_same_v<T, float>)
       return std::make_unique<
         cutout_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
+#ifdef LBANN_HAS_DOUBLE
     else if constexpr (std::is_same_v<T, double>)
       return std::make_unique<
         cutout_layer<double, data_layout::DATA_PARALLEL, El::Device::CPU>>(
         comm);
+#endif // LBANN_HAS_DOUBLE
     else {
       (void)comm;
       LBANN_ERROR(

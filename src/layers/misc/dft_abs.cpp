@@ -139,18 +139,20 @@ static void MyRealPart(El::Matrix<El::Complex<T>, El::Device::CPU> const& in,
 // Have to instantiate this in device-compiled code.
 void Abs(El::Matrix<El::Complex<float>, El::Device::GPU> const& in,
          El::Matrix<float, El::Device::GPU>& out);
-void Abs(El::Matrix<El::Complex<double>, El::Device::GPU> const& in,
-         El::Matrix<double, El::Device::GPU>& out);
 void ApplyAbsGradientUpdate(
   El::Matrix<float, El::Device::GPU> const& grad_wrt_output,
   El::Matrix<El::Complex<float>, El::Device::GPU>& input_output);
+void MyRealPart(El::Matrix<El::Complex<float>, El::Device::GPU> const& in,
+                El::Matrix<float, El::Device::GPU>& out);
+#ifdef LBANN_HAS_DOUBLE
+void Abs(El::Matrix<El::Complex<double>, El::Device::GPU> const& in,
+         El::Matrix<double, El::Device::GPU>& out);
 void ApplyAbsGradientUpdate(
   El::Matrix<double, El::Device::GPU> const& grad_wrt_output,
   El::Matrix<El::Complex<double>, El::Device::GPU>& input_output);
-void MyRealPart(El::Matrix<El::Complex<float>, El::Device::GPU> const& in,
-                El::Matrix<float, El::Device::GPU>& out);
 void MyRealPart(El::Matrix<El::Complex<double>, El::Device::GPU> const& in,
                 El::Matrix<double, El::Device::GPU>& out);
+#endif // LBANN_HAS_DOUBLE
 #endif // LBANN_HAS_GPU
 
 } // namespace internal
@@ -311,12 +313,16 @@ dft_abs_layer<T, D>::dft_abs_layer(dft_abs_layer const& other)
 template class dft_abs_layer<float, El::Device::CPU>;
 #endif // LBANN_HAS_FFTW_FLOAT
 #ifdef LBANN_HAS_FFTW_DOUBLE
+#ifdef LBANN_HAS_DOUBLE
 template class dft_abs_layer<double, El::Device::CPU>;
+#endif // LBANN_HAS_DOUBLE
 #endif // LBANN_HAS_FFTW_DOUBLE
 
 #ifdef LBANN_HAS_GPU
 template class dft_abs_layer<float, El::Device::GPU>;
+#ifdef LBANN_HAS_DOUBLE
 template class dft_abs_layer<double, El::Device::GPU>;
+#endif // LBANN_HAS_DOUBLE
 #endif // LBANN_HAS_GPU
 
 } // namespace lbann

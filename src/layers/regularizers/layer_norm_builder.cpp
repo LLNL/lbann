@@ -43,10 +43,12 @@ lbann::build_layer_norm_layer_from_pbuf(lbann_comm* /*comm*/,
     return std::make_unique<layer_norm_layer<float, L, D>>(epsilon,
                                                            scale,
                                                            bias);
+#ifdef LBANN_HAS_DOUBLE
   else if constexpr (std::is_same_v<T, double>)
     return std::make_unique<layer_norm_layer<double, L, D>>(epsilon,
                                                             scale,
                                                             bias);
+#endif // LBANN_HAS_DOUBLE
   else {
     (void)scale;
     (void)bias;

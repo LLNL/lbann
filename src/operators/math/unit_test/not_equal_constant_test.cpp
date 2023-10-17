@@ -60,9 +60,11 @@ using NotEqualConstantOperatorAllDevices = h2::meta::TL<
 #endif // LBANN_HAS_GPU
   NotEqualConstantOperator<T, El::Device::CPU>>;
 
-using AllNotEqualConstantOpTypes =
-  h2::meta::tlist::Append<NotEqualConstantOperatorAllDevices<float>,
-                          NotEqualConstantOperatorAllDevices<double>>;
+using AllNotEqualConstantOpTypes = h2::meta::tlist::Append<
+#ifdef LBANN_HAS_DOUBLE
+  NotEqualConstantOperatorAllDevices<double>,
+#endif // LBANN_HAS_DOUBLE
+  NotEqualConstantOperatorAllDevices<float>>;
 
 namespace lbann {
 template <typename T, El::Device D>

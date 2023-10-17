@@ -35,6 +35,7 @@ void Abs(El::Matrix<El::Complex<float>, El::Device::GPU> const& in,
     return thrust::abs(x);
   });
 }
+#ifdef LBANN_HAS_DOUBLE
 void Abs(El::Matrix<El::Complex<double>, El::Device::GPU> const& in,
          El::Matrix<double, El::Device::GPU>& out)
 {
@@ -42,6 +43,7 @@ void Abs(El::Matrix<El::Complex<double>, El::Device::GPU> const& in,
     return thrust::abs(x);
   });
 }
+#endif // LBANN_HAS_DOUBLE
 void MyRealPart(El::Matrix<El::Complex<float>, El::Device::GPU> const& in,
                 El::Matrix<float, El::Device::GPU>& out)
 {
@@ -49,6 +51,7 @@ void MyRealPart(El::Matrix<El::Complex<float>, El::Device::GPU> const& in,
     return x.real();
   });
 }
+#ifdef LBANN_HAS_DOUBLE
 void MyRealPart(El::Matrix<El::Complex<double>, El::Device::GPU> const& in,
                 El::Matrix<double, El::Device::GPU>& out)
 {
@@ -56,6 +59,7 @@ void MyRealPart(El::Matrix<El::Complex<double>, El::Device::GPU> const& in,
     return x.real();
   });
 }
+#endif // LBANN_HAS_DOUBLE
 void ApplyAbsGradientUpdate(
   El::Matrix<float, El::Device::GPU> const& grad_wrt_output,
   El::Matrix<El::Complex<float>, El::Device::GPU>& input_output)
@@ -69,6 +73,7 @@ void ApplyAbsGradientUpdate(
                           : thrust::conj(x * (dy / thrust::abs(x))));
               });
 }
+#ifdef LBANN_HAS_DOUBLE
 void ApplyAbsGradientUpdate(
   El::Matrix<double, El::Device::GPU> const& grad_wrt_output,
   El::Matrix<El::Complex<double>, El::Device::GPU>& input_output)
@@ -82,5 +87,6 @@ void ApplyAbsGradientUpdate(
                           : thrust::conj(x * (dy / thrust::abs(x))));
               });
 }
+#endif // LBANN_HAS_DOUBLE
 } // namespace internal
 } // namespace lbann

@@ -54,8 +54,11 @@ using LayerTypesAllDevices =
 #endif // LBANN_HAS_GPU
                >;
 
-using AllLayerTypes = h2::meta::tlist::Append<LayerTypesAllDevices<float>,
-                                              LayerTypesAllDevices<double>>;
+using AllLayerTypes = h2::meta::tlist::Append<
+#ifdef LBANN_HAS_DOUBLE
+  LayerTypesAllDevices<double>,
+#endif // LBANN_HAS_DOUBLE
+  LayerTypesAllDevices<float>>;
 
 using unit_test::utilities::IsValidPtr;
 TEMPLATE_LIST_TEST_CASE("Serializing batchnorm layer",

@@ -43,10 +43,12 @@ lbann::build_entrywise_batch_normalization_layer_from_pbuf(
     return std::make_unique<entrywise_batch_normalization_layer<float, L, D>>(
       params.decay(),
       params.epsilon());
+#ifdef LBANN_HAS_DOUBLE
   else if constexpr (std::is_same_v<T, double>)
     return std::make_unique<entrywise_batch_normalization_layer<double, L, D>>(
       params.decay(),
       params.epsilon());
+#endif // LBANN_HAS_DOUBLE
   else
     LBANN_ERROR("entrywise_batch_normalization_layer is only supported for "
                 "\"float\" and \"double\".");

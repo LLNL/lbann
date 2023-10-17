@@ -60,9 +60,11 @@ using EqualConstantOperatorAllDevices = h2::meta::TL<
 #endif // LBANN_HAS_GPU
   EqualConstantOperator<T, El::Device::CPU>>;
 
-using AllEqualConstantOpTypes =
-  h2::meta::tlist::Append<EqualConstantOperatorAllDevices<float>,
-                          EqualConstantOperatorAllDevices<double>>;
+using AllEqualConstantOpTypes = h2::meta::tlist::Append<
+#ifdef LBANN_HAS_DOUBLE
+  EqualConstantOperatorAllDevices<double>,
+#endif // LBANN_HAS_DOUBLE
+  EqualConstantOperatorAllDevices<float>>;
 
 namespace lbann {
 template <typename T, El::Device D>

@@ -64,10 +64,14 @@ using AbsOperatorAllDevices = h2::meta::TL<
 using AllAbsOpTypes = h2::meta::tlist::Append<
 #if !defined LBANN_HAS_ROCM
   AbsOperatorAllDevices<El::Complex<float>>,
+#ifdef LBANN_HAS_DOUBLE
   AbsOperatorAllDevices<El::Complex<double>>,
+#endif // LBANN_HAS_DOUBLE
 #endif // LBANN_HAS_ROCM
-  AbsOperatorAllDevices<float>,
-  AbsOperatorAllDevices<double>>;
+#ifdef LBANN_HAS_DOUBLE
+  AbsOperatorAllDevices<double>,
+#endif // LBANN_HAS_DOUBLE
+  AbsOperatorAllDevices<float>>;
 
 namespace lbann {
 template <typename T, El::Device D>

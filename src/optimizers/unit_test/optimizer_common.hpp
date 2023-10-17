@@ -52,8 +52,11 @@ std::string desc_string(ObjectType const& opt)
 // archive, the cadr is the input archive. Accessor metafunctions are
 // defined below.
 
-using FpTypes = TL<float,
+using FpTypes = TL<float
+#ifdef LBANN_HAS_DOUBLE
+                   ,
                    double
+#endif // LBANN_HAS_DOUBLE
 #ifdef LBANN_HAS_HALF
                    ,
                    lbann::cpu_fp16

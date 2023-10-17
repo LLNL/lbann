@@ -68,22 +68,26 @@ struct DFTTypeSupported<float, El::Device::CPU> : std::true_type
 {
 };
 #endif // LBANN_HAS_FFTW_FLOAT
+#ifdef LBANN_HAS_DOUBLE
 #ifdef LBANN_HAS_FFTW_DOUBLE
 template <>
 struct DFTTypeSupported<double, El::Device::CPU> : std::true_type
 {
 };
 #endif // LBANN_HAS_FFTW_DOUBLE
+#endif // LBANN_HAS_DOUBLE
 
 #ifdef LBANN_HAS_GPU
 template <>
 struct DFTTypeSupported<float, El::Device::GPU> : std::true_type
 {
 };
+#ifdef LBANN_HAS_DOUBLE
 template <>
 struct DFTTypeSupported<double, El::Device::GPU> : std::true_type
 {
 };
+#endif // LBANN_HAS_DOUBLE
 #endif // LBANN_HAS_GPU
 
 template <typename T,
@@ -141,6 +145,7 @@ struct UniformHashBuilder<float, L, El::Device::GPU>
 #endif // LBANN_HAS_GPU
 
 #ifdef LBANN_HAS_GPU
+#ifdef LBANN_HAS_DOUBLE
 template <data_layout L>
 struct UniformHashBuilder<double, L, El::Device::GPU>
 {
@@ -151,6 +156,7 @@ struct UniformHashBuilder<double, L, El::Device::GPU>
     return std::make_unique<LayerType>(std::forward<Args>(args)...);
   }
 };
+#endif // LBANN_HAS_DOUBLE
 #endif // LBANN_HAS_GPU
 
 } // namespace
@@ -218,12 +224,14 @@ std::unique_ptr<lbann::Layer> lbann::build_channelwise_softmax_layer_from_pbuf(
         comm,
         layer.dim(),
         layer.single_dim_mode());
+#ifdef LBANN_HAS_DOUBLE
     else if constexpr (std::is_same_v<T, double>)
       return std::make_unique<
         channelwise_softmax_layer<double, data_layout::DATA_PARALLEL, D>>(
         comm,
         layer.dim(),
         layer.single_dim_mode());
+#endif // LBANN_HAS_DOUBLE
   }
   (void)comm;
   LBANN_ERROR("Attempted to construct channelwise_softmax_layer ",

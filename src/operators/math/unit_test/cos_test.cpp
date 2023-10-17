@@ -68,8 +68,11 @@ using CosOperatorAllDevices = h2::meta::TL<
 #endif // LBANN_HAS_GPU
   CosOperator<T, El::Device::CPU>>;
 
-using AllCosOpTypes = h2::meta::tlist::Append<CosOperatorAllDevices<float>,
-                                              CosOperatorAllDevices<double>>;
+using AllCosOpTypes = h2::meta::tlist::Append<
+#ifdef LBANN_HAS_DOUBLE
+  CosOperatorAllDevices<double>,
+#endif // LBANN_HAS_DOUBLE
+  CosOperatorAllDevices<float>>;
 
 namespace lbann {
 template <typename T, El::Device D>

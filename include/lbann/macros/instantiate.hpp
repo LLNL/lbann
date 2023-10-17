@@ -25,7 +25,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 PROTO(float);
+#ifdef LBANN_HAS_DOUBLE
 PROTO(double);
+#endif // LBANN_HAS_DOUBLE
 
 #ifdef LBANN_HAS_HALF
 #ifdef LBANN_INSTANTIATE_CPU_HALF

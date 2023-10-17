@@ -59,9 +59,11 @@ using SubtractOperatorAllDevices = h2::meta::TL<
 #endif // LBANN_HAS_GPU
   SubtractOperator<T, El::Device::CPU>>;
 
-using AllSubtractOpTypes =
-  h2::meta::tlist::Append<SubtractOperatorAllDevices<float>,
-                          SubtractOperatorAllDevices<double>>;
+using AllSubtractOpTypes = h2::meta::tlist::Append<
+#ifdef LBANN_HAS_DOUBLE
+  SubtractOperatorAllDevices<double>,
+#endif // LBANN_HAS_DOUBLE
+  SubtractOperatorAllDevices<float>>;
 
 namespace lbann {
 template <typename T, El::Device D>

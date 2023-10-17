@@ -186,7 +186,11 @@ using Mat =
 
 // Datatype for model evaluation
 // Examples: timing, metrics, objective functions
+#ifdef LBANN_HAS_DOUBLE
 using EvalType = double;
+#else
+using EvalType = float;
+#endif // LBANN_HAS_DOUBLE
 
 /// Distributed matrix format
 enum class matrix_format

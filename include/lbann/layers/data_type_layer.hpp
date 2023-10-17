@@ -61,8 +61,10 @@ using supported_layer_data_type = h2::meta::TL<
 #ifdef LBANN_HAS_HALF
   cpu_fp16,
 #endif
-  float,
-  double>;
+#ifdef LBANN_HAS_DOUBLE
+  double,
+#endif // LBANN_HAS_DOUBLE
+  float>;
 
 template <typename InputTensorDataType,
           typename OutputTensorDataType = InputTensorDataType>
