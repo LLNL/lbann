@@ -788,6 +788,7 @@ public:
   int m_first_n;
   std::string m_role;
 
+  virtual void print_config();
   /** @brief Print the return values from various get_X methods to file
    *
    * For use in unit testing. Only the master prints.

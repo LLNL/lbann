@@ -324,6 +324,18 @@ bool lbann::generic_data_reader::fetch_data_block(
     int index = m_shuffled_indices[n];
     indices_fetched.Set(s, 0, index);
 
+    LBANN_MSG("fetch data block is getting s = ",
+              s,
+              " with offset = ",
+              block_offset,
+              " stride = ",
+              block_stride,
+              " current_position ",
+              m_current_pos,
+              " n = ",
+              n,
+              " and index = ",
+              index);
     for (auto& [data_field, buf] : input_buffers) {
       bool valid = false;
       if (data_field == INPUT_DATA_TYPE_SAMPLES) {
@@ -454,7 +466,7 @@ bool generic_data_reader::update(bool is_active_reader)
     }
 
     shuffle_indices();
-    if (priming_data_store()) {
+    if (m_data_store != nullptr && priming_data_store()) {
       m_data_store->set_shuffled_indices(&m_shuffled_indices);
     }
 
@@ -975,11 +987,11 @@ bool generic_data_reader::data_store_active() const
 
 bool generic_data_reader::priming_data_store() const
 {
-  const auto& c = static_cast<const SGDExecutionContext&>(
-    get_trainer().get_data_coordinator().get_execution_context());
   if (m_data_store != nullptr && m_data_store->is_fully_loaded()) {
     return false;
   }
+  const auto& c = static_cast<const SGDExecutionContext&>(
+    get_trainer().get_data_coordinator().get_execution_context());
 
   /// Use the data store for all modes except testing
   /// i.e. training, validation, tournament
@@ -1039,6 +1051,53 @@ void generic_data_reader::preload_data_store()
     do_preload_data_store();
     m_data_store->set_loading_is_complete();
   }
+}
+
+void generic_data_reader::print_config()
+{
+  if (!get_comm()->am_world_master()) {
+    return;
+  }
+  LBANN_MSG("\n",
+            " role                       = ",
+            m_role,
+            "\n",
+            " mini_batch_size            = ",
+            m_mini_batch_size,
+            "\n",
+            " stride_to_next_mini_batch  = ",
+            m_stride_to_next_mini_batch,
+            "\n",
+            " base_offset                = ",
+            m_base_offset,
+            "\n",
+            " sample_stride              = ",
+            m_sample_stride,
+            "\n",
+            " iteration_stride           = ",
+            m_iteration_stride,
+            "\n",
+            " last_mini_batch_size       = ",
+            m_last_mini_batch_size,
+            "\n",
+            " stride_to_last_mini_batch  = ",
+            m_stride_to_last_mini_batch,
+            "\n",
+            " reset_mini_batch_index     = ",
+            m_reset_mini_batch_index,
+            "\n",
+            " loaded_mini_batch_idx      = ",
+            m_loaded_mini_batch_idx,
+            "\n",
+            " current_mini_batch_idx     = ",
+            m_current_mini_batch_idx,
+            "\n",
+            " num_iterations_per_epoch   = ",
+            m_num_iterations_per_epoch,
+            "\n",
+            " num_parallel_readers       = ",
+            m_num_parallel_readers,
+            "\n");
 }
 
 void generic_data_reader::print_get_methods(const std::string filename)
