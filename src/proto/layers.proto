@@ -40,8 +40,10 @@ enum ConvTensorOpsMode {
   DEFAULT_TENSOR_OPS = 0;
   // Explicitly disable tensor ops.
   NO_TENSOR_OPS = 1;
-  // Use tensor ops -- allows conversion FP32->FP16
+  // Use tensor ops if available, but do not convert datatypes.
   USE_TENSOR_OPS = 2;
+  // Use tensor ops is available, down-converting datatypes if needed.
+  USE_TENSOR_OPS_ALLOW_CONVERSION = 3;
 }
 
 /** @brief Neural network tensor operation

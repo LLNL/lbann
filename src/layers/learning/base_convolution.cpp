@@ -219,9 +219,7 @@ base_convolution_layer<TensorDataType, Device>::get_description() const
 #ifdef LBANN_HAS_DNN_LIB
   if (Device == El::Device::GPU) {
     desc.add("DNN Math Mode",
-             (m_convolution_math_type == dnn_lib::DNN_DEFAULT_MATH
-                ? "NO tensor cores."
-                : "USE tensor cores."));
+             dnn_lib::get_math_type_description(m_convolution_math_type));
   }
 #endif // LBANN_HAS_DNN_LIB
 

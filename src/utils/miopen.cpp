@@ -1593,6 +1593,10 @@ ProtoTensorOpEnumType convert_to_proto_math_type(dnnMathType_t mt)
   return lbann_data::DEFAULT_TENSOR_OPS;
 }
 
+std::string get_math_type_description(dnnMathType_t mt) {
+  return "MIOpen math";  // MIOpen does not have different math types.
+}
+
 #define PROTO(T)                                                               \
   template class layer_tensor_manager<T>;                                      \
   template class data_parallel_layer_tensor_manager<T>;                        \

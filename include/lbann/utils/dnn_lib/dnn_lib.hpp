@@ -748,6 +748,8 @@ using ProtoTensorOpEnumType = decltype(lbann_data::DEFAULT_TENSOR_OPS);
 dnnMathType_t convert_to_dnn_math_type(ProtoTensorOpEnumType mt);
 /** @brief Converts from DNN library math type to lbann_data. */
 ProtoTensorOpEnumType convert_to_proto_math_type(dnnMathType_t mt);
+/** @brief Get a textual description of a math type. */
+std::string get_math_type_description(dnnMathType_t mt);
 
 } // namespace dnn_lib
 } // namespace lbann

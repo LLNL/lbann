@@ -1708,12 +1708,12 @@ get_bwd_filter_algorithm(bool autotune,
 }
 
 namespace {
-cudnnMathType_t default_tensor_ops_mode = CUDNN_DEFAULT_MATH;
+cudnnMathType_t default_tensor_ops_mode = CUDNN_TENSOR_OP_MATH;
 }
 
 void default_to_tensor_ops() noexcept
 {
-  default_tensor_ops_mode = CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
+  default_tensor_ops_mode = CUDNN_TENSOR_OP_MATH;
 }
 
 cudnnMathType_t get_default_convolution_math_type() noexcept
@@ -1728,24 +1728,46 @@ cudnnMathType_t convert_to_dnn_math_type(ProtoTensorOpEnumType mt)
   case lbann_data::DEFAULT_TENSOR_OPS:
     return dnn_lib::get_default_convolution_math_type();
   case lbann_data::NO_TENSOR_OPS:
-    return CUDNN_DEFAULT_MATH;
+    return CUDNN_FMA_MATH;
   case lbann_data::USE_TENSOR_OPS:
+    return CUDNN_TENSOR_OP_MATH;
+  case lbann_data::USE_TENSOR_OPS_ALLOW_CONVERSION:
     return CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
   default:
     LBANN_ERROR("Bad math type value.");
   }
-  return CUDNN_DEFAULT_MATH;
+  return CUDNN_FMA_MATH;
 }
 
 ProtoTensorOpEnumType convert_to_proto_math_type(cudnnMathType_t mt)
 {
   switch (mt) {
   case CUDNN_DEFAULT_MATH:
+  case CUDNN_FMA_MATH:
+    // Note: These two are technically different in that DEFAULT_MATH
+    // allows TF32 conversion, but we basically never want to use that.
     return lbann_data::NO_TENSOR_OPS;
-  case CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION:
+  case CUDNN_TENSOR_OP_MATH:
     return lbann_data::USE_TENSOR_OPS;
+  case CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION:
+    return lbann_data::USE_TENSOR_OPS_ALLOW_CONVERSION;
   default:
     return lbann_data::DEFAULT_TENSOR_OPS;
+  }
+}
+
+std::string get_math_type_description(dnnMathType_t mt) {
+  switch (mt) {
+  case CUDNN_DEFAULT_MATH:
+    return "No Tensor Cores + TF32 conversion";
+  case CUDNN_FMA_MATH:
+    return "No tensor cores";
+  case CUDNN_TENSOR_OP_MATH:
+    return "Tensor cores supported";
+  case CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION:
+    return "Tensor cores + datatype downconversion";
+  default:
+    return "Unknown math type";
   }
 }
 
