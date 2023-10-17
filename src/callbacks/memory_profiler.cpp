@@ -39,8 +39,11 @@
 #include "h2/patterns/multimethods/SwitchDispatcher.hpp"
 
 #include <algorithm>
-#include <h2/gpu/memory_utils.hpp>
 #include <string>
+
+#ifdef LBANN_HAS_GPU
+#include <h2/gpu/memory_utils.hpp>
+#endif
 
 namespace lbann {
 namespace callback {

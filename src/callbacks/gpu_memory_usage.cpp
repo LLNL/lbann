@@ -30,9 +30,12 @@
 #include "lbann/models/model.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 #include "lbann/utils/serialize.hpp"
-#include <h2/gpu/memory_utils.hpp>
 #include <iomanip>
 #include <sstream>
+
+#ifdef LBANN_HAS_GPU
+#include <h2/gpu/memory_utils.hpp>
+#endif
 
 #include "lbann/proto/callbacks.pb.h"
 
