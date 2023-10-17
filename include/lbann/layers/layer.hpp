@@ -92,6 +92,7 @@ class distconv_adapter;
 #endif // LBANN_HAS_DISTCONV
 namespace callback {
 class sync_layers;
+class memory_profiler;
 } // namespace callback
 class KFAC;
 template <hydrogen::Device Device>
@@ -285,6 +286,7 @@ enum SubGraphCommunication
 class Layer
 {
   friend class callback::sync_layers;
+  friend class callback::memory_profiler;
   friend class KFAC;
   template <hydrogen::Device Device>
   friend class kfac_block_fc_conv;

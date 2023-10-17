@@ -47,9 +47,23 @@ public:
   memory_profiler& operator=(const memory_profiler&) = default;
   ~memory_profiler();
   memory_profiler* copy() const override { return new memory_profiler(*this); }
+
+  // Used for coarse-grained accounting
   void on_setup_begin(model* m) override;
   void on_setup_end(model* m) override;
+  void on_setup_begin(model* m, Layer* l) override;
+  void on_setup_end(model* m, Layer* l) override;
+  void on_batch_end(model* m) override;
+
+  // Used for detailed first-step accounting
   void on_forward_prop_begin(model* m) override;
+  void on_forward_prop_end(model* m) override;
+  void on_backward_prop_begin(model* m) override;
+  void on_backward_prop_end(model* m) override;
+  void on_optimize_begin(model* m) override;
+  void on_optimize_end(model* m) override;
+
+  // Used for layer-wise accounting in the first few steps
   void on_forward_prop_begin(model* m, Layer* l) override;
   void on_forward_prop_end(model* m, Layer* l) override;
   void on_backward_prop_begin(model* m, Layer* l) override;
@@ -67,20 +81,38 @@ public:
   ///@}
 
 private:
+  /** Prints the memory usage layer breakdown of a model. */
+  void report_mem_usage(model* m);
+
+  /** Performs first step detailed memory usage accounting. */
+  void first_step_accounting(model* m, const std::string& msg);
+
+  /** Performs peak memory usage collection in third step. */
+  void collect_peak_usage();
+
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
   /** Initial memory usage in bytes */
   size_t m_initial_memory_usage;
 
-  /** Unaccounted memory in bytes during model/layer setup */
-  size_t m_unaccounted_setup;
+  /** Unaccounted memory in bytes during layer setup */
+  std::map<Layer*, size_t> m_unaccounted_setup_layer;
 
   /** Unaccounted memory in bytes during forward propagation */
-  std::map<Layer*, size_t> m_unaccounted_fp;
+  std::map<Layer*, size_t> m_unaccounted_fp_layer;
 
   /** Unaccounted memory in bytes during backpropagation */
-  std::map<Layer*, size_t> m_unaccounted_bp;
+  std::map<Layer*, size_t> m_unaccounted_bp_layer;
+
+  /** Current step, used for tracking memory usage. */
+  int m_current_step;
+
+  /** Tracking of raw memory usage across the first three steps to identify
+   * leaks.
+   */
+  size_t m_setup_end_usage, m_step0_usage, m_step1_usage, m_step2_usage,
+    m_peak_mem_usage;
 };
 
 // Builder function
