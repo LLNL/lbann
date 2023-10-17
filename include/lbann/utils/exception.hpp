@@ -95,8 +95,11 @@
   } while (0)
 
 #define LBANN_ASSERT(cond)                                                     \
-  if (!(cond))                                                                 \
-  LBANN_ERROR("The assertion " #cond " failed.")
+  do {                                                                         \
+    if (!(cond)) {                                                             \
+      LBANN_ERROR("The assertion " #cond " failed.");                          \
+    }                                                                          \
+  } while (0)
 
 #ifdef LBANN_DEBUG
 #define LBANN_ASSERT_DEBUG(cond) LBANN_ASSERT(cond)
