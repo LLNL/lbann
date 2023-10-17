@@ -103,8 +103,9 @@ memory_profiler::memory_profiler(bool detailed_first_step)
   : callback_base(), m_detailed_first_step(detailed_first_step)
 {
 #ifndef LBANN_HAS_GPU
-  LBANN_WARNING("Memory profiler callback only provides unaccounted memory "
-                "information with GPU support.");
+  LBANN_WARNING(
+    "Without GPU support, the memory profiler callback does not ",
+    "provide raw memory usage information, only expected allocation size.");
 #endif
 }
 
