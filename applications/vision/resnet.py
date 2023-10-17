@@ -136,9 +136,7 @@ if args.warmup:
     callbacks.append(
         lbann.CallbackLinearGrowthLearningRate(
             target=0.1 * args.mini_batch_size / 256, num_epochs=5))
-profiler = lbann.contrib.args.create_profile_callback(args)
-if profiler is not None:
-    callbacks.append(profiler)
+callbacks.extend(lbann.contrib.args.create_profile_callbacks(args))
 model = lbann.Model(args.num_epochs,
                     layers=layers,
                     objective_function=obj,

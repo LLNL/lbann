@@ -172,9 +172,7 @@ def make_batch_script(model: lbann.Model,
     if args.progress:
         model.callbacks.append(lbann.CallbackProgressBar(newline_interval=100))
 
-    profiler = lbann.contrib.args.create_profile_callback(args)
-    if profiler is not None:
-        model.callbacks.append(profiler)
+    model.callbacks.extend(lbann.contrib.args.create_profile_callbacks(args))
 
     script_params = lbann.contrib.args.get_scheduler_kwargs(args)
     script_params['work_dir'] = work_dir
