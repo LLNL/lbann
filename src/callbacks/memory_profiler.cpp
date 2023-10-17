@@ -39,6 +39,7 @@
 #include "h2/patterns/multimethods/SwitchDispatcher.hpp"
 
 #include <algorithm>
+#include <h2/gpu/memory_utils.hpp>
 #include <string>
 
 namespace lbann {
@@ -169,17 +170,12 @@ size_t get_activation_and_error_signal_size(Layer const& x, std::ostream& os)
 /**
  * @brief Returns the currently used memory, or 0 if LBANN was not compiled with
  * GPU support.
+ * TODO(later): Gather across all ranks?
  */
 size_t get_used_gpu_memory()
 {
 #ifdef LBANN_HAS_GPU
-  size_t available;
-  size_t total;
-#ifdef LBANN_HAS_CUDA
-  FORCE_CHECK_CUDA(cudaMemGetInfo(&available, &total));
-#elif defined(LBANN_HAS_ROCM)
-  FORCE_CHECK_ROCM(hipMemGetInfo(&available, &total));
-#endif
+  auto const [available, total] = h2::gpu::mem_info();
   // TODO(later): Might be nicer to return a struct with gathered information
   // (min, max, median across ranks)
   return total - available;
@@ -195,14 +191,7 @@ size_t get_used_gpu_memory()
 static inline size_t get_total_gpu_memory()
 {
 #ifdef LBANN_HAS_GPU
-  size_t available;
-  size_t total;
-#ifdef LBANN_HAS_CUDA
-  FORCE_CHECK_CUDA(cudaMemGetInfo(&available, &total));
-#elif defined(LBANN_HAS_ROCM)
-  FORCE_CHECK_ROCM(hipMemGetInfo(&available, &total));
-#endif
-  return total;
+  return h2::gpu::mem_info().total;
 #else
   return 0;
 #endif
