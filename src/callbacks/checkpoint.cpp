@@ -84,7 +84,7 @@ size_t get_step_with_training_override(model& m, trainer& t)
 namespace callback {
 
 // Load from checkpoint occurs during setup callbacks
-void checkpoint::setup(model* m) { reload_model(m); }
+void checkpoint::on_setup_begin(model* m) { reload_model(m); }
 
 void checkpoint::setup(trainer* t)
 {

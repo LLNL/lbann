@@ -77,6 +77,8 @@ public:
   std::string get_type() const override { return "AdaGrad"; }
   /** Human-readable description. */
   description get_description() const override;
+  /** @brief Returns the optimizer state size in bytes. */
+  size_t get_state_size() const override;
 
   using OptimizerType::setup;
   void setup(WeightsType* w = nullptr) override;

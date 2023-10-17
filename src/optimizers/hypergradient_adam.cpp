@@ -97,6 +97,15 @@ description hypergradient_adam<TensorDataType>::get_description() const
 }
 
 template <typename TensorDataType>
+size_t hypergradient_adam<TensorDataType>::get_state_size() const
+{
+  size_t allocated = m_moment1->AllocatedMemory() * sizeof(TensorDataType);
+  allocated += m_moment2->AllocatedMemory() * sizeof(TensorDataType);
+  allocated += m_old_gradient->AllocatedMemory() * sizeof(TensorDataType);
+  return data_type_optimizer<TensorDataType>::get_state_size() + allocated;
+}
+
+template <typename TensorDataType>
 void hypergradient_adam<TensorDataType>::setup(WeightsType* w)
 {
   OptimizerType::setup(w);

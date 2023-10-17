@@ -715,8 +715,7 @@ void model::setup(size_t max_mini_batch_size,
   }
 
   for (const auto& cb : m_callbacks) {
-    if (dynamic_cast<callback::checkpoint const*>(cb.get()))
-      cb->setup(this);
+    cb->on_setup_begin(this);
   }
 
   check_subgraph_parallelism();
@@ -754,8 +753,7 @@ void model::setup(size_t max_mini_batch_size,
 
   // Set up callbacks
   for (const auto& cb : m_callbacks) {
-    if (!dynamic_cast<callback::checkpoint const*>(cb.get()))
-      cb->setup(this);
+    cb->setup(this);
   }
 
   m_max_mini_batch_size = max_mini_batch_size;
@@ -1063,9 +1061,18 @@ void model::setup_layers(size_t max_mini_batch_size,
 
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
+
+    for (const auto& cb : m_callbacks) {
+      cb->on_setup_begin(this, &l);
+    }
+
     l.set_model(this);
     l.setup(max_mini_batch_size, grids_);
     l.check_setup();
+
+    for (const auto& cb : m_callbacks) {
+      cb->on_setup_end(this, &l);
+    }
   }
 }
 

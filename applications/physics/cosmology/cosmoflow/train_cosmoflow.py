@@ -201,10 +201,8 @@ if __name__ == "__main__":
                                                       mlperf=args.mlperf,
                                                       transform_input=args.transform_input)
 
-    # Add profiling callback if needed.
-    profiler = lbann.contrib.args.create_profile_callback(args)
-    if profiler is not None:
-        model.callbacks.append(profiler)
+    # Add profiling callbacks if needed.
+    model.callbacks.extend(lbann.contrib.args.create_profile_callbacks(args))
 
     # Setup optimizer
     optimizer = lbann.contrib.args.create_optimizer(args)

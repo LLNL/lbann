@@ -91,7 +91,7 @@ public:
   checkpoint(const checkpoint&) = default;
   checkpoint& operator=(const checkpoint&) = default;
   checkpoint* copy() const override { return new checkpoint(*this); }
-  void setup(model* m) override;
+  void on_setup_begin(model* m) override;
   void setup(trainer* t) override;
   void on_train_begin(model* m) override;
   void on_train_end(model* m) override;

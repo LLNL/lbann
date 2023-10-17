@@ -90,6 +90,14 @@ description adam<TensorDataType>::get_description() const
 }
 
 template <typename TensorDataType>
+size_t adam<TensorDataType>::get_state_size() const
+{
+  size_t allocated = m_moment1->AllocatedMemory() * sizeof(TensorDataType);
+  allocated += m_moment2->AllocatedMemory() * sizeof(TensorDataType);
+  return data_type_optimizer<TensorDataType>::get_state_size() + allocated;
+}
+
+template <typename TensorDataType>
 auto adam<TensorDataType>::get_moment1() const -> const AbsDistMatrixType&
 {
   if (m_moment1 == nullptr) {

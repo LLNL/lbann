@@ -72,6 +72,9 @@ public:
   /** @brief Human-readable description. */
   virtual description get_description() const override;
 
+  /** @brief Returns the optimizer state size in bytes. */
+  virtual size_t get_state_size() const;
+
   /** @brief Must be called before training.
    *
    *  @param w Weights being optimized. If null, no change is made to

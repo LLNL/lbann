@@ -67,6 +67,13 @@ description rmsprop<TensorDataType>::get_description() const
 }
 
 template <typename TensorDataType>
+size_t rmsprop<TensorDataType>::get_state_size() const
+{
+  size_t allocated = m_cache->AllocatedMemory() * sizeof(TensorDataType);
+  return data_type_optimizer<TensorDataType>::get_state_size() + allocated;
+}
+
+template <typename TensorDataType>
 void rmsprop<TensorDataType>::setup(WeightsType* w)
 {
   OptimizerType::setup(w);
