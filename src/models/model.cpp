@@ -258,6 +258,12 @@ description model::get_description() const
   // Construct description object
   description desc(get_name());
 
+  // AMP details.
+  if (is_amp_enabled()) {
+    description amp_desc("Automatic mixed precision: Enabled");
+    desc.add(amp_desc);
+  }
+
   // Layer topology
   description layer_topology_desc("Layer topology:");
   for (El::Int k = 0; k < get_num_layers(); ++k) {

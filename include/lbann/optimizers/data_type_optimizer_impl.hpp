@@ -31,6 +31,7 @@
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/utils/typename.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 
 #include "lbann/optimizers/data_type_optimizer.hpp"
@@ -68,6 +69,7 @@ template <typename TensorDataType>
 description data_type_optimizer<TensorDataType>::get_description() const
 {
   description desc = optimizer::get_description();
+  desc.add("Data type", TypeName<TensorDataType>());
   desc.add("Learning rate", m_learning_rate);
   return desc;
 }
