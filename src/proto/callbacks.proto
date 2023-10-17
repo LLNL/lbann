@@ -462,5 +462,7 @@ message Callback {
                                  // (0 disables)
   }
 
-  message CallbackMemoryProfiler {}
+  message CallbackMemoryProfiler {
+    bool detailed_first_step = 1;  // Layer-wise first-step accounting
+  }
 }

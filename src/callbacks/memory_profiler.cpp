@@ -99,7 +99,8 @@ static inline size_t report_dist_matrix(const El::AbstractDistMatrix<T>& m,
   return allocated;
 }
 
-memory_profiler::memory_profiler() : callback_base()
+memory_profiler::memory_profiler(bool detailed_first_step)
+  : callback_base(), m_detailed_first_step(detailed_first_step)
 {
 #ifndef LBANN_HAS_GPU
   LBANN_WARNING("Memory profiler callback only provides unaccounted memory "
@@ -118,7 +119,8 @@ void memory_profiler::serialize(Archive& ar)
 
 void memory_profiler::write_specific_proto(lbann_data::Callback& proto) const
 {
-  // auto* msg = proto.mutable_memory_profiler();
+  auto* msg = proto.mutable_memory_profiler();
+  msg->set_detailed_first_step(m_detailed_first_step);
 }
 
 void memory_profiler::on_setup_begin(model* m)
@@ -347,6 +349,26 @@ void memory_profiler::first_step_accounting(model* m, const std::string& msg)
         std::cout << "MEM: Allocated memory " << msg << ": "
                   << (current_usage - m_step0_usage) / 1048576.0 << " MiB."
                   << std::endl;
+        if (m_detailed_first_step) {
+          std::cout << "Breakdown:" << std::endl;
+          size_t remainder = current_usage;
+          for (auto const& k : m_unaccounted_fp_layer) {
+            if (k.second > 0) {
+              std::cout << "  Layer " << k.first->get_name() << ": " << k.second
+                        << " bytes (forward)" << std::endl;
+              remainder -= k.second;
+            }
+          }
+          for (auto const& k : m_unaccounted_bp_layer) {
+            if (k.second > 0) {
+              std::cout << "  Layer " << k.first->get_name() << ": " << k.second
+                        << " bytes (backprop)" << std::endl;
+              remainder -= k.second;
+            }
+          }
+          std::cout << "  Unaccounted remainder: " << remainder << " bytes"
+                    << std::endl;
+        }
       }
       m_step0_usage = current_usage;
     }
@@ -538,10 +560,10 @@ std::unique_ptr<callback_base> build_memory_profiler_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
   const std::shared_ptr<lbann_summary>&)
 {
-  /*const auto& params =
-    dynamic_cast<const
-    lbann_data::Callback::CallbackMemoryProfiler&>(proto_msg);*/
-  return std::make_unique<memory_profiler>();
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackMemoryProfiler&>(
+      proto_msg);
+  return std::make_unique<memory_profiler>(params.detailed_first_step());
 }
 
 } // namespace callback

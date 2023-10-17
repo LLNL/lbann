@@ -42,7 +42,7 @@ namespace callback {
 class memory_profiler : public callback_base
 {
 public:
-  memory_profiler();
+  memory_profiler(bool detailed_first_step = false);
   memory_profiler(const memory_profiler&) = default;
   memory_profiler& operator=(const memory_profiler&) = default;
   ~memory_profiler();
@@ -92,6 +92,11 @@ private:
 
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
+
+  /** Whether to print layer-wise accounting if more allocations were
+   * detected in the first step.
+   */
+  bool m_detailed_first_step;
 
   /** Initial memory usage in bytes */
   size_t m_initial_memory_usage;
