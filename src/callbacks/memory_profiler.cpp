@@ -351,7 +351,7 @@ void memory_profiler::first_step_accounting(model* m, const std::string& msg)
                   << std::endl;
         if (m_detailed_first_step) {
           std::cout << "Breakdown:" << std::endl;
-          size_t remainder = current_usage;
+          size_t remainder = current_usage - m_setup_end_usage;
           for (auto const& k : m_unaccounted_fp_layer) {
             if (k.second > 0) {
               std::cout << "  Layer " << k.first->get_name() << ": " << k.second
@@ -366,8 +366,10 @@ void memory_profiler::first_step_accounting(model* m, const std::string& msg)
               remainder -= k.second;
             }
           }
-          std::cout << "  Unaccounted remainder: " << remainder << " bytes"
-                    << std::endl;
+          if (remainder > 0) {
+            std::cout << "  Unaccounted remainder: " << remainder << " bytes"
+                      << std::endl;
+          }
         }
       }
       m_step0_usage = current_usage;
@@ -458,7 +460,9 @@ void memory_profiler::on_batch_end(model* m)
           remainder -= k.second;
         }
       }
-      LBANN_WARNING("  Unaccounted remainder: ", remainder, " bytes");
+      if (remainder > 0) {
+        LBANN_WARNING("  Unaccounted remainder: ", remainder, " bytes");
+      }
     }
 
     if (should_print && m_peak_mem_usage > 0) {
