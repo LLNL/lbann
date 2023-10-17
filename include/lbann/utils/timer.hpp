@@ -33,17 +33,8 @@
 
 namespace lbann {
 
-// Datatype for model evaluation
-// Examples: timing, metrics, objective functions
-#ifdef LBANN_HAS_DOUBLE
-using EvalType = double;
-#else
-using EvalType = float;
-#endif // LBANN_HAS_DOUBLE
-
 /** @brief Return time in fractional seconds since an epoch. */
-// inline double get_time()
-inline EvalType get_time()
+inline double get_time()
 {
   using namespace std::chrono;
   return duration_cast<duration<double>>(steady_clock::now().time_since_epoch())
@@ -95,8 +86,7 @@ public:
    *
    *  @post running() returns @c false, as if reset() were called.
    */
-  //  double stop() noexcept
-  EvalType stop() noexcept
+  double stop() noexcept
   {
     auto elapsed_time = this->check();
     this->reset();
@@ -104,8 +94,7 @@ public:
   }
 
   /** @brief Get the current elapsed time (seconds) without stopping. */
-  EvalType check() const noexcept
-  //  double check() const noexcept
+  double check() const noexcept
   {
     using seconds_type = std::chrono::duration<double>;
     return running() ? seconds_type(ClockType::now() - m_start).count() : 0.;
