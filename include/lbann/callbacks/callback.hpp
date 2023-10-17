@@ -112,8 +112,12 @@ public:
 
   /** @brief Called at the beginning of model setup. */
   virtual void on_setup_begin(model* m) {}
-  /** @brief Called at the end of setup. */
+  /** @brief Called at the end of model setup. */
   virtual void on_setup_end(model* m) {}
+  /** @brief Called at the beginning of layer setup. */
+  virtual void on_setup_begin(model* m, Layer* l) {}
+  /** @brief Called at the end of layer setup. */
+  virtual void on_setup_end(model* m, Layer* l) {}
   /** @brief Called at the beginning of training. */
   virtual void on_train_begin(model* m) {}
   /** @brief Called at the end of training. */

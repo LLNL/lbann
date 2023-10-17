@@ -1061,9 +1061,18 @@ void model::setup_layers(size_t max_mini_batch_size,
 
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
+
+    for (const auto& cb : m_callbacks) {
+      cb->on_setup_begin(this, &l);
+    }
+
     l.set_model(this);
     l.setup(max_mini_batch_size, grids_);
     l.check_setup();
+
+    for (const auto& cb : m_callbacks) {
+      cb->on_setup_end(this, &l);
+    }
   }
 }
 
