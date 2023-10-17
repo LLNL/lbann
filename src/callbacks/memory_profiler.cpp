@@ -216,7 +216,7 @@ void memory_profiler::report_mem_usage(model* m)
 
         // Report weight tensor
         auto* dtw = dynamic_cast<data_type_weights<DataType>*>(w);
-        size_t allocated = report_dist_matrix(dtw->get_values(), reps);
+        size_t allocated = report_dist_matrix(dtw->get_values_sharded(), reps);
 
         weight_mem += allocated;
         layer_total += allocated;
@@ -276,7 +276,7 @@ void memory_profiler::report_mem_usage(model* m)
 
       // Report weight tensor
       auto* dtw = dynamic_cast<data_type_weights<DataType>*>(weight);
-      size_t allocated = report_dist_matrix(dtw->get_values(), reps);
+      size_t allocated = report_dist_matrix(dtw->get_values_sharded(), reps);
       weight_mem += allocated;
       weight_total += allocated;
       already_reported[weight] = weight->get_name();
