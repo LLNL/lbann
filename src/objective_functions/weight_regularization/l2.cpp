@@ -98,7 +98,7 @@ void l2_weight_regularization::setup(model& m)
   // Construct accumulation variables for each device
   for (const auto& ptr : get_weights_pointers()) {
     const auto& w = dynamic_cast<const WeightsType&>(*ptr.lock());
-    const auto& device = w.get_values().GetLocalDevice();
+    const auto& device = w.get_values_sharded().GetLocalDevice();
     if (m_contributions.count(device) == 0) {
 #ifdef LBANN_HAS_GPU
       m_contributions[device].SetMemoryMode(1); // Pinned memory
