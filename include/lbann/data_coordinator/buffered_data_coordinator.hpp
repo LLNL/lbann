@@ -172,11 +172,17 @@ public:
                                     AbsDistMatrixType& input_buffer);
 
 protected:
-  int fetch_to_local_matrix(data_buffer_map_t& buffer_map,
-                            const execution_mode mode,
+  int fetch_to_local_matrix(const execution_mode mode,
+                            data_buffer<IODataType>& buf,
+                            El::Int loaded_mini_batch_size,
+                            El::Int relative_base_position,
                             int buffer_id);
 
-  void fetch_data_in_background(int future_active_buffer, execution_mode mode);
+  void fetch_data_in_background(int future_active_buffer,
+                                data_buffer<IODataType>& buf,
+                                El::Int loaded_mini_batch_size,
+                                El::Int relative_base_position,
+                                execution_mode mode);
 
   const data_buffer<IODataType>& get_next_buffer(execution_mode mode) const;
   data_buffer<IODataType>& get_next_buffer(execution_mode mode);

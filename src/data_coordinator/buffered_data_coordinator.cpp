@@ -140,8 +140,10 @@ void buffered_data_coordinator<TensorDataType>::setup_data_fields(
 
 template <typename TensorDataType>
 int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
-  data_buffer_map_t& buffer_map,
   const execution_mode mode,
+  data_buffer<IODataType>& buf,
+  El::Int loaded_mini_batch_size,
+  El::Int relative_base_position,
   int buffer_id)
 {
   generic_data_reader* dr = get_data_reader(mode);
@@ -152,43 +154,6 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
   prof_region_begin(prof_title.c_str(), prof_colors[2], false);
   /// Coordinate all available readers so that they perform I/O in the same step
   /// Check to make sure that the local matrix has space for data
-  data_buffer<IODataType>& buf = get_data_buffer(buffer_map, mode);
-
-  //************************************************************************
-  // Get the current mini-batch from the data reader
-  // BVE FIXME I think that this can be wrong on the future fetches.
-  El::Int loaded_mini_batch_size;
-  bool fetching_future_buffer = false;
-  if (buffer_id !=
-      (this->get_active_buffer_idx(mode) % m_data_buffers.size())) {
-    LBANN_MSG(to_string(mode),
-              " I am looking into the future ",
-              buffer_id,
-              " is buffer id and the active one is ",
-              (this->get_active_buffer_idx(mode) % m_data_buffers.size()));
-    loaded_mini_batch_size = dr->get_next_loaded_mini_batch_size();
-    fetching_future_buffer = true;
-  }
-  else {
-    loaded_mini_batch_size = dr->get_loaded_mini_batch_size();
-  }
-  // if (dr->get_current_mini_batch_size() != dr->get_loaded_mini_batch_size())
-  // {
-  //   LBANN_MSG(to_string(mode), " The current is different from the loaded
-  //   mini_batch_size ", dr->get_current_mini_batch_size(), " != ",
-  //   dr->get_loaded_mini_batch_size());
-  // }
-  // if (dr->get_next_loaded_mini_batch_size() !=
-  // dr->get_loaded_mini_batch_size()) {
-  //   LBANN_MSG(to_string(mode), " The next loaded is different from the loaded
-  //   mini_batch_size ", dr->get_next_loaded_mini_batch_size(), " != ",
-  //   dr->get_loaded_mini_batch_size());
-  // }
-  // Set the size for the I/O buffers
-  fp_setup_data(buf, loaded_mini_batch_size);
-  // Store the size of the current mini-batch so that others can obtain it
-  // without worrying about where the data reader is currently at.
-  m_current_mini_batch_size[buffer_id][mode] = loaded_mini_batch_size;
 
   LBANN_MSG(to_string(mode),
             " mode: fetch to local matrix has a current mini-batch size = ",
@@ -208,24 +173,11 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
     }
 
     // Compute the size of the current local mini-batch
-    // BVE FIXME I think tha m_current_pos is stale if this is being
-    // called for the next mini-batch
-    El::Int relative_base_position = dr->m_current_pos;
-    if (fetching_future_buffer) {
-      relative_base_position = dr->get_next_position();
-      LBANN_MSG(
-        "Fetching local samples for a future buffer with new base position",
-        relative_base_position,
-        " versus current position ",
-        dr->m_current_pos);
-    }
     const int end_pos = std::min(
       static_cast<size_t>(relative_base_position + loaded_mini_batch_size),
       dr->m_shuffled_indices.size());
-    // std::min(static_cast<size_t>(dr->m_current_pos + loaded_mini_batch_size),
-    //          dr->m_shuffled_indices.size());
     const int local_mini_batch_size = std::min(
-      El::Int{((end_pos - dr->m_current_pos) + dr->m_sample_stride - 1) /
+      El::Int{((end_pos - relative_base_position) + dr->m_sample_stride - 1) /
               dr->m_sample_stride},
       local_input_buffers[INPUT_DATA_TYPE_SAMPLES]->Width());
 
@@ -271,12 +223,18 @@ void buffered_data_coordinator<TensorDataType>::fp_setup_data(
 template <typename TensorDataType>
 void buffered_data_coordinator<TensorDataType>::fetch_data_in_background(
   int future_active_buffer,
+  data_buffer<IODataType>& buf,
+  El::Int loaded_mini_batch_size,
+  El::Int relative_base_position,
   execution_mode mode)
 {
   int active_buffer_idx = future_active_buffer % m_data_buffers.size();
-  data_buffer_map_t& buffer_map = m_data_buffers[active_buffer_idx];
   std::lock_guard<std::mutex> guard(dr_mutex);
-  fetch_to_local_matrix(buffer_map, mode, active_buffer_idx);
+  fetch_to_local_matrix(mode,
+                        buf,
+                        loaded_mini_batch_size,
+                        relative_base_position,
+                        active_buffer_idx);
   return;
 }
 
@@ -311,12 +269,15 @@ void buffered_data_coordinator<TensorDataType>::fetch_active_batch_synchronous(
   execution_mode mode)
 {
   int idx = this->get_active_buffer_idx(mode);
+  int buffer_id = idx % m_data_buffers.size();
   data_buffer<IODataType>& active_buffer = get_active_buffer(mode);
 
   LBANN_MSG("fetching active batch for buffer ",
             std::to_string(get_active_buffer_idx(mode)));
 
   generic_data_reader* dr = get_data_reader(mode);
+  //************************************************************************
+  // Get the current mini-batch from the data reader
   El::Int loaded_mini_batch_size = dr->get_loaded_mini_batch_size();
   LBANN_MSG(to_string(mode),
             " fetch active data ",
@@ -348,10 +309,26 @@ void buffered_data_coordinator<TensorDataType>::fetch_active_batch_synchronous(
     // Finish data store exchange before accessing samples
     get_data_reader(mode)->finish_data_store_mini_batch_exchange();
 
+    // ********************************************************************************
+    // BVE Get all of the state now about what is being fetched
+
+    // Set the size for the I/O buffers
+    fp_setup_data(active_buffer, loaded_mini_batch_size);
+    // Store the size of the current mini-batch so that others can obtain it
+    // without worrying about where the data reader is currently at.
+    m_current_mini_batch_size[buffer_id][mode] = loaded_mini_batch_size;
+    El::Int relative_base_position = dr->m_current_pos;
+
+    // ********************************************************************************
+    // BVE
+
     std::future<void> background_fetch_done = get_io_thread_pool().submit_job(
       std::bind(&buffered_data_coordinator::fetch_data_in_background,
                 this,
                 idx,
+                std::ref(active_buffer),
+                loaded_mini_batch_size,
+                relative_base_position,
                 mode));
     active_buffer.set_data_fetch_future(std::move(background_fetch_done));
     active_buffer.set_background_fetching_in_progress(true);
@@ -372,6 +349,8 @@ void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode)
 {
   data_buffer<IODataType>& current_buffer = get_active_buffer(mode);
   data_buffer<IODataType>& next_buffer = get_next_buffer(mode);
+  auto next_buffer_idx = this->get_next_buffer_idx(mode);
+  auto next_buffer_id = next_buffer_idx % m_data_buffers.size();
 
   LBANN_MSG("fetching next batch for buffer ",
             std::to_string(get_next_buffer_idx(mode)),
@@ -385,6 +364,8 @@ void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode)
   }
 
   generic_data_reader* dr = get_data_reader(mode);
+  //************************************************************************
+  // Get the next mini-batchs size from the data reader
   El::Int next_loaded_mini_batch_size = dr->get_next_loaded_mini_batch_size();
   LBANN_MSG(to_string(mode),
             " fetch data thinks that for iteration ",
@@ -419,10 +400,32 @@ void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode)
     // Finish data store exchange before accessing samples
     get_data_reader(mode)->finish_data_store_mini_batch_exchange();
 
+    // ********************************************************************************
+    // BVE Get all of the state now about what is being fetched
+
+    // Set the size for the I/O buffers
+    fp_setup_data(next_buffer, next_loaded_mini_batch_size);
+    // Store the size of the current mini-batch so that others can obtain it
+    // without worrying about where the data reader is currently at.
+    m_current_mini_batch_size[next_buffer_id][mode] =
+      next_loaded_mini_batch_size;
+    El::Int relative_base_position = dr->get_next_position();
+    LBANN_MSG(
+      "Fetching local samples for a future buffer with new base position",
+      relative_base_position,
+      " versus current position ",
+      dr->m_current_pos);
+
+    // ********************************************************************************
+    // BVE
+
     std::future<void> background_fetch_done = get_io_thread_pool().submit_job(
       std::bind(&buffered_data_coordinator::fetch_data_in_background,
                 this,
-                this->get_next_buffer_idx(mode),
+                next_buffer_idx,
+                std::ref(next_buffer),
+                next_loaded_mini_batch_size,
+                relative_base_position,
                 mode));
     next_buffer.set_data_fetch_future(std::move(background_fetch_done));
     next_buffer.set_background_fetching_in_progress(true);

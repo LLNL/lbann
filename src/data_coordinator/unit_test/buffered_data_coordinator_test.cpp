@@ -88,8 +88,6 @@ public:
               mb_idx);
     auto X_v = El::View(X, El::ALL, El::IR(mb_idx, mb_idx + 1));
     auto Y_v = El::View(m_samples, El::ALL, El::IR(data_id, data_id + 1));
-    //               El::IR(m_current_pos + mb_idx, m_current_pos + mb_idx +
-    //               1));
     const El::Int height = X_v.Height(); // Width is 1.
     lbann::DataType* __restrict__ dst = X_v.Buffer();
     lbann::DataType* __restrict__ src = Y_v.Buffer();
@@ -111,11 +109,8 @@ public:
   {
     LBANN_MSG("Load the matrix");
     m_samples.Resize(1, get_num_data());
-    // m_samples.Resize(get_num_data(), m_mini_batch_size);
     const El::Int height = m_samples.Height(); // Width is 1.
     const El::Int width = m_samples.Width();   // Width is 1.
-    lbann::DataType* __restrict__ buf = m_samples.Buffer();
-    // lbann::DataType* __restrict__ buf = m_samples.Buffer();
     for (El::Int i = 0; i < height; ++i) {
       for (El::Int j = 0; j < width; ++j) {
         m_samples.Set(i, j, El::To<float>(m_counter++));
@@ -127,28 +122,13 @@ public:
                   m_samples.Get(i, j));
       }
     }
-    //   buf[i] = m_counter++;
-    // LBANN_MSG("test data reader is filling a matrix with buf[", i, "]=",
-    // buf[i]);
-    // }
     m_shuffled_indices.resize(get_num_data());
     std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
     for (auto i : m_shuffled_indices) {
       LBANN_MSG("The original shuffled indices are ", i);
     }
-    // resize_shuffled_indices();
-    // select_subset_of_data();
-    // for (auto i : m_shuffled_indices) {
-    //   LBANN_MSG("The fixed shuffled indices are ", i);
-    // }
   }
 
-  //   auto X_v = El::View(X, El::ALL, El::IR(mb_idx, mb_idx + 1));
-  //   m_counter = fill_matrix(X_v, m_counter);
-  //   // El::Fill(X_v, El::To<lbann::DataType>(m_counter));
-  //   // ++m_counter;
-  //   return true;
-  // }
 private:
   int m_counter;
   int m_lastbatch;
