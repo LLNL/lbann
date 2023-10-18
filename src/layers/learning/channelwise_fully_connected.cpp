@@ -1093,14 +1093,13 @@ void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
 
 namespace {
 
-template <typename TensorDataType, data_layout L, El::Device Device>
+template <typename T, data_layout L, El::Device D>
 struct Builder
 {
   template <typename... Args>
   static std::unique_ptr<Layer> Build(Args&&... args)
   {
-    using LayerType =
-      channelwise_fully_connected_layer<TensorDataType, L, Device>;
+    using LayerType = channelwise_fully_connected_layer<T, L, D>;
     return std::make_unique<LayerType>(std::forward<Args>(args)...);
   }
 };
