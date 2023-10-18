@@ -97,6 +97,7 @@ void generic_data_reader::setup(int num_io_threads,
 
 int lbann::generic_data_reader::fetch(std::vector<conduit::Node>& samples,
                                       El::Matrix<El::Int>& indices_fetched,
+                                      El::Int current_position_in_data_set,
                                       size_t mb_size)
 {
   // Check to make sure that a valid map was passed
@@ -138,6 +139,7 @@ int lbann::generic_data_reader::fetch(std::vector<conduit::Node>& samples,
         std::bind(&generic_data_reader::fetch_data_block_conduit,
                   this,
                   std::ref(samples),
+                  current_position_in_data_set,
                   t,
                   m_io_thread_pool->get_num_threads(),
                   mb_size,
@@ -145,6 +147,7 @@ int lbann::generic_data_reader::fetch(std::vector<conduit::Node>& samples,
     }
   }
   fetch_data_block_conduit(samples,
+                           current_position_in_data_set,
                            m_io_thread_pool->get_local_thread_id(),
                            m_io_thread_pool->get_num_threads(),
                            mb_size,
@@ -330,7 +333,6 @@ bool lbann::generic_data_reader::fetch_data_block(
       " instead of ",
       m_current_pos);
     int n = current_position_in_data_set + (s * m_sample_stride);
-    //    int n = m_current_pos + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
     indices_fetched.Set(s, 0, index);
 
@@ -414,6 +416,7 @@ bool lbann::generic_data_reader::fetch_data_block(
 
 bool lbann::generic_data_reader::fetch_data_block_conduit(
   std::vector<conduit::Node>& samples,
+  El::Int current_position_in_data_set,
   El::Int block_offset,
   El::Int block_stride,
   El::Int mb_size,
@@ -429,7 +432,7 @@ bool lbann::generic_data_reader::fetch_data_block_conduit(
   }
   //  CPUMat& X
   for (int s = block_offset; s < mb_size; s += block_stride) {
-    int n = m_current_pos + (s * m_sample_stride);
+    int n = current_position_in_data_set + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
     indices_fetched.Set(s, 0, index);
 

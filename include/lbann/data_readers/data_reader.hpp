@@ -307,6 +307,7 @@ public:
 
   int fetch(std::vector<conduit::Node>& samples,
             El::Matrix<El::Int>& indices_fetched,
+            El::Int current_position_in_data_set,
             size_t mb_size);
 
   /** @brief Check to see if the data reader supports this specific data field
@@ -651,6 +652,7 @@ protected:
                    El::Matrix<El::Int>& indices_fetched);
 
   bool fetch_data_block_conduit(std::vector<conduit::Node>& samples,
+                                El::Int current_position_in_data_set,
                                 El::Int block_offset,
                                 El::Int block_stride,
                                 El::Int mb_size,

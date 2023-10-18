@@ -185,8 +185,10 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
      */
     if (dr->has_conduit_output()) {
       std::vector<conduit::Node> samples(local_mini_batch_size);
-      buf.m_num_samples_fetched =
-        dr->fetch(samples, buf.m_indices_fetched_per_mb, local_mini_batch_size);
+      buf.m_num_samples_fetched = dr->fetch(samples,
+                                            buf.m_indices_fetched_per_mb,
+                                            relative_base_position,
+                                            local_mini_batch_size);
       data_packer::extract_data_fields_from_samples(samples,
                                                     local_input_buffers);
     }

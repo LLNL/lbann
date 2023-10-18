@@ -260,7 +260,8 @@ TEST_CASE("Data reader hdf5 conduit fetch tests",
     std::vector<conduit::Node> samples(1);
     El::Matrix<El::Int> indices_fetched;
     indices_fetched.Resize(1, 1);
-    auto valid = hdf5_dr->fetch(samples, indices_fetched, 1);
+    auto valid =
+      hdf5_dr->fetch(samples, indices_fetched, hdf5_dr->get_position(), 1);
     REQUIRE(valid > 0);
 
     // Check the primary data fields
@@ -324,7 +325,8 @@ TEST_CASE("Data reader hdf5 conduit fetch tests",
     std::vector<conduit::Node> samples;
     El::Matrix<El::Int> indices_fetched;
     indices_fetched.Resize(1, 1);
-    CHECK_THROWS(hdf5_dr->fetch(samples, indices_fetched, 1));
+    CHECK_THROWS(
+      hdf5_dr->fetch(samples, indices_fetched, hdf5_dr->get_position(), 1));
   }
 
   SECTION("fetch conduit node - mini-batch too large")
@@ -332,6 +334,7 @@ TEST_CASE("Data reader hdf5 conduit fetch tests",
     std::vector<conduit::Node> samples(1);
     El::Matrix<El::Int> indices_fetched;
     indices_fetched.Resize(1, 1);
-    CHECK_THROWS(hdf5_dr->fetch(samples, indices_fetched, 2));
+    CHECK_THROWS(
+      hdf5_dr->fetch(samples, indices_fetched, hdf5_dr->get_position(), 2));
   }
 }
