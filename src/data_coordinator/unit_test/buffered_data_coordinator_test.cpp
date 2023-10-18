@@ -260,7 +260,7 @@ TEST_CASE("Buffered data coordinator test", "[io][data_coordinator][sync]")
   SECTION("Asynchronous I/O (Background)")
   {
     // Test first minibatch
-    int remaining_num_mini_batches = num_mini_batches, data = 0;
+    int data = 0;
     bool epoch_done = false;
 
     // For background data fetching, start with a synchronous request.

@@ -471,7 +471,6 @@ bool buffered_data_coordinator<TensorDataType>::ready_for_next_fetch(
   // buffer index
   auto is_epoch_complete = this->update_data_reader(mode);
   if (is_epoch_complete) {
-    data_buffer<IODataType>& active_buffer = get_active_buffer(mode);
     // Wait for the background thread to complete fetching the same data
     if (active_buffer.is_background_fetching_in_progress()) {
       LBANN_MSG("ready_for_next_fetch has to wait for the data.");
