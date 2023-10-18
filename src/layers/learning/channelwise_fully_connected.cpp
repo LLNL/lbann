@@ -594,8 +594,10 @@ void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
   {
     auto& linearity_weights = this->get_weights(0);
     auto dist = this->get_prev_activations().DistData();
-    dist.colDist = El::STAR;
-    dist.rowDist = El::STAR;
+    if (dist.colDist != El::MC || dist.rowDist != El::MR) {
+      dist.colDist = El::STAR;
+      dist.rowDist = El::STAR;
+    }
     if (auto* initializer = linearity_weights.get_initializer()) {
       set_fan_in(*initializer, input_channel_size);
       set_fan_out(*initializer, output_channel_size);
@@ -608,9 +610,16 @@ void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
 
   // Setup bias weights if needed
   if (m_has_bias) {
+
+    // In model-parallel mode, replicate rows of bias
+    auto out_dist = this->get_activations().DistData();
+    out_dist.rowDist = El::STAR;
+
+    // In data-parallel mode, replicate bias
     auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
     dist.rowDist = El::STAR;
+
     if (!this->has_weights(1)) {
       auto w = std::make_shared<WeightsType>(*this->get_comm());
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
@@ -621,7 +630,8 @@ void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
     }
     auto& bias_weights = this->get_weights(1);
     bias_weights.set_dims(output_channel_dims);
-    bias_weights.set_matrix_distribution(dist);
+    bias_weights.set_matrix_distribution(
+      (Layout == data_layout::DATA_PARALLEL) ? dist : out_dist);
   }
 
   // Initialize freeze state
@@ -637,15 +647,17 @@ void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
   }
 }
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
-  fp_compute()
+template <typename TensorDataType, El::Device Device>
+void fp_compute_impl(
+  channelwise_fully_connected_layer<TensorDataType,
+                                    data_layout::DATA_PARALLEL,
+                                    Device>& l)
 {
 
 #ifdef LBANN_HAS_DISTCONV
   // We are guaranteed to have
-  if (this->distconv_enabled()) {
-    this->get_distconv_adapter().fp_compute();
+  if (l.distconv_enabled()) {
+    l.get_distconv_adapter().fp_compute();
     return;
   }
 
@@ -656,17 +668,17 @@ void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
 
   // Data tensors
   using LocalMat = El::Matrix<TensorDataType, Device>;
-  const auto& linearity = this->weights_values(0);
+  const auto& linearity = l.weights_values(0);
   const auto& local_input =
-    dynamic_cast<const LocalMat&>(this->get_local_prev_activations());
-  auto& local_output = dynamic_cast<LocalMat&>(this->get_local_activations());
+    dynamic_cast<const LocalMat&>(l.get_local_prev_activations());
+  auto& local_output = dynamic_cast<LocalMat&>(l.get_local_activations());
   const auto& local_linearity =
     dynamic_cast<const LocalMat&>(linearity.LockedMatrix());
 
   // Tensor dimensions
   const auto& local_mini_batch_size = local_input.Width();
-  const auto& input_dims = this->get_input_dims();
-  const auto& output_dims = this->get_output_dims();
+  const auto& input_dims = l.get_input_dims();
+  const auto& output_dims = l.get_output_dims();
   const auto& num_channels = input_dims[0];
   const auto& input_channel_size = std::accumulate(input_dims.begin() + 1,
                                                    input_dims.end(),
@@ -698,14 +710,14 @@ void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
                                  output_channel_size);
   }
   else {
-    LBANN_ERROR(this->get_type(),
+    LBANN_ERROR(l.get_type(),
                 " layer \"",
-                this->get_name(),
+                l.get_name(),
                 "\" ",
                 "has a non-contiguous output tensor");
   }
   // Apply linearity
-  El::Gemm(m_transpose ? El::TRANSPOSE : El::NORMAL,
+  El::Gemm(l.transpose() ? El::TRANSPOSE : El::NORMAL,
            El::NORMAL,
            one,
            local_linearity,
@@ -714,8 +726,8 @@ void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
            reinterpret_cast<LocalMat&>(local_output_reshaped));
 
   // Apply bias
-  if (m_has_bias) {
-    const auto& bias = this->weights_values(1);
+  if (l.has_bias()) {
+    const auto& bias = l.weights_values(1);
     LocalMat ones(local_mini_batch_size * num_channels, 1);
     El::Fill(ones, one);
     El::Gemm(El::NORMAL,
@@ -728,14 +740,89 @@ void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
   }
 }
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
-  bp_compute()
+template <typename TensorDataType, El::Device Device>
+void fp_compute_impl(
+  channelwise_fully_connected_layer<TensorDataType,
+                                    data_layout::MODEL_PARALLEL,
+                                    Device>& l)
+{
+#ifdef LBANN_HAS_DISTCONV
+  if (l.distconv_enabled()) {
+    LBANN_ERROR("Distconv not supported for model-parallel channelwise fully "
+                "connected layer");
+  }
+#endif // LBANN_HAS_DISTCONV
+
+  const auto& zero = El::TypeTraits<TensorDataType>::Zero();
+  const auto& one = El::TypeTraits<TensorDataType>::One();
+
+  // Data tensors
+  using DMat =
+    El::DistMatrix<TensorDataType, El::MC, El::MR, El::ELEMENT, Device>;
+  const DMat& input = dynamic_cast<DMat&>(l.get_prev_activations());
+  DMat& output = dynamic_cast<DMat&>(l.get_activations());
+
+  // Tensor dimensions
+  const auto& input_dims = l.get_input_dims();
+  const auto& output_dims = l.get_output_dims();
+  const auto& num_channels = input_dims[0];
+  const auto& input_channel_size = std::accumulate(input_dims.begin() + 1,
+                                                   input_dims.end(),
+                                                   1,
+                                                   std::multiplies<size_t>());
+  const auto& output_channel_size = std::accumulate(output_dims.begin() + 1,
+                                                    output_dims.end(),
+                                                    1,
+                                                    std::multiplies<size_t>());
+  auto const& linearity = l.weights_values(0);
+
+  // Perform multiplication channel-by-channel
+  for (int k = 0; k < num_channels; ++k) {
+    auto this_channel_in =
+      input(El::IR(k * input_channel_size, (k + 1) * input_channel_size),
+            El::ALL);
+    auto this_channel_out =
+      output(El::IR(k * output_channel_size, (k + 1) * output_channel_size),
+             El::ALL);
+
+    El::Gemm(l.transpose() ? El::TRANSPOSE : El::NORMAL,
+             El::NORMAL,
+             one,
+             linearity,
+             this_channel_in,
+             zero,
+             this_channel_out);
+
+    // Apply bias
+    if (l.has_bias()) {
+      const auto& bias = l.weights_values(1);
+      El::Matrix<TensorDataType, Device> ones;
+#ifdef HYDROGEN_HAVE_CUB
+      ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
+#endif
+      ones.Resize(this_channel_out.LocalWidth(), 1);
+      El::Fill(ones, El::TypeTraits<TensorDataType>::One());
+      El::Gemm(El::NORMAL,
+               El::TRANSPOSE,
+               one,
+               bias.LockedMatrix(),
+               ones,
+               one,
+               this_channel_out.Matrix());
+    }
+  }
+}
+
+template <typename TensorDataType, El::Device Device>
+void bp_compute_impl(
+  channelwise_fully_connected_layer<TensorDataType,
+                                    data_layout::DATA_PARALLEL,
+                                    Device>& l)
 {
 #ifdef LBANN_HAS_DISTCONV
 
-  if (this->distconv_enabled()) {
-    this->get_distconv_adapter().bp_compute();
+  if (l.distconv_enabled()) {
+    l.get_distconv_adapter().bp_compute();
 
     return;
   }
@@ -746,20 +833,19 @@ void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
 
   // Data tensors
   using LocalMat = El::Matrix<TensorDataType, Device>;
-  const auto& linearity = this->weights_values(0);
+  const auto& linearity = l.weights_values(0);
   const auto& local_input =
-    dynamic_cast<const LocalMat&>(this->get_local_prev_activations());
+    dynamic_cast<const LocalMat&>(l.get_local_prev_activations());
   const auto& local_output_grad =
-    dynamic_cast<const LocalMat&>(this->get_local_prev_error_signals());
-  auto& local_input_grad =
-    dynamic_cast<LocalMat&>(this->get_local_error_signals());
+    dynamic_cast<const LocalMat&>(l.get_local_prev_error_signals());
+  auto& local_input_grad = dynamic_cast<LocalMat&>(l.get_local_error_signals());
   const auto& local_linearity =
     dynamic_cast<const LocalMat&>(linearity.LockedMatrix());
 
   // Tensor dimensions
   const auto& local_mini_batch_size = local_input.Width();
-  const auto& input_dims = this->get_input_dims();
-  const auto& output_dims = this->get_output_dims();
+  const auto& input_dims = l.get_input_dims();
+  const auto& output_dims = l.get_output_dims();
   const auto& num_channels = input_dims[0];
   const auto& input_channel_size = std::accumulate(input_dims.begin() + 1,
                                                    input_dims.end(),
@@ -804,15 +890,15 @@ void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
                                      input_channel_size);
   }
   else {
-    LBANN_ERROR(this->get_type(),
+    LBANN_ERROR(l.get_type(),
                 " layer \"",
-                this->get_name(),
+                l.get_name(),
                 "\" ",
                 "has a non-contiguous gradient w.r.t. input tensor");
   }
 
   // Compute gradient w.r.t. input
-  El::Gemm(m_transpose ? El::NORMAL : El::TRANSPOSE,
+  El::Gemm(l.transpose() ? El::NORMAL : El::TRANSPOSE,
            El::NORMAL,
            one,
            local_linearity,
@@ -821,12 +907,12 @@ void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
            reinterpret_cast<LocalMat&>(local_input_grad_reshaped));
 
   // Compute gradient w.r.t. linearity
-  auto* linearity_optimizer = this->get_weights(0).get_optimizer();
+  auto* linearity_optimizer = l.get_weights(0).get_optimizer();
   if (linearity_optimizer != nullptr) {
     TensorDataType dst_scale, gradient_scale;
     auto& linearity_gradient =
       linearity_optimizer->get_gradient_buffer(dst_scale, gradient_scale, true);
-    if (m_transpose) {
+    if (l.transpose()) {
       El::Gemm(El::NORMAL,
                El::TRANSPOSE,
                gradient_scale,
@@ -847,8 +933,8 @@ void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
   }
 
   // Compute gradient w.r.t. bias
-  if (m_has_bias) {
-    auto& bias_weights = this->get_weights(1);
+  if (l.has_bias()) {
+    auto& bias_weights = l.get_weights(1);
     auto* bias_optimizer = bias_weights.get_optimizer();
     if (bias_optimizer != nullptr) {
       TensorDataType dst_scale, gradient_scale;
@@ -866,6 +952,141 @@ void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
   }
 }
 
+template <typename TensorDataType, El::Device Device>
+void bp_compute_impl(
+  channelwise_fully_connected_layer<TensorDataType,
+                                    data_layout::MODEL_PARALLEL,
+                                    Device>& l)
+{
+#ifdef LBANN_HAS_DISTCONV
+
+  if (l.distconv_enabled()) {
+    LBANN_ERROR("Distconv not supported for model-parallel channelwise fully "
+                "connected layer");
+  }
+#endif // LBANN_HAS_DISTCONV
+
+  const auto& zero = El::TypeTraits<TensorDataType>::Zero();
+  const auto& one = El::TypeTraits<TensorDataType>::One();
+
+  // Data tensors
+  using DMat =
+    El::DistMatrix<TensorDataType, El::MC, El::MR, El::ELEMENT, Device>;
+  using LocalMat = El::Matrix<TensorDataType, Device>;
+  const DMat& input = dynamic_cast<DMat&>(l.get_prev_activations());
+  const DMat& output_grad = dynamic_cast<DMat&>(l.get_prev_error_signals());
+  DMat& input_grad = dynamic_cast<DMat&>(l.get_error_signals());
+
+  // Tensor dimensions
+  const auto& input_dims = l.get_input_dims();
+  const auto& output_dims = l.get_output_dims();
+  const auto& num_channels = input_dims[0];
+  const auto& input_channel_size = std::accumulate(input_dims.begin() + 1,
+                                                   input_dims.end(),
+                                                   1,
+                                                   std::multiplies<size_t>());
+  const auto& output_channel_size = std::accumulate(output_dims.begin() + 1,
+                                                    output_dims.end(),
+                                                    1,
+                                                    std::multiplies<size_t>());
+  auto const& linearity = l.weights_values(0);
+  auto* linearity_optimizer = l.get_weights(0).get_optimizer();
+  if (!linearity.Participating()) {
+    return;
+  }
+
+  // Compute channel-by-channel
+  for (int k = 0; k < num_channels; ++k) {
+    auto this_channel_out_grad = output_grad(
+      El::IR(k * output_channel_size, (k + 1) * output_channel_size),
+      El::ALL);
+    auto this_channel_in_grad =
+      input_grad(El::IR(k * input_channel_size, (k + 1) * input_channel_size),
+                 El::ALL);
+    auto this_channel_input =
+      input(El::IR(k * input_channel_size, (k + 1) * input_channel_size),
+            El::ALL);
+
+    // Compute gradient w.r.t. input
+    El::Gemm(l.transpose() ? El::NORMAL : El::TRANSPOSE,
+             El::NORMAL,
+             one,
+             linearity,
+             this_channel_out_grad,
+             zero,
+             this_channel_in_grad);
+
+    // Compute gradient w.r.t. linearity
+    // TODO(later): Do we have to get the gradient buffer every loop?
+    //              Incurs unnecessary communication! Attempting
+    //              to accumulate outside of loop yields incorrect results.
+    TensorDataType dst_scale, gradient_scale;
+    if (linearity_optimizer != nullptr) {
+      auto& linearity_gradient =
+        linearity_optimizer->get_gradient_buffer(dst_scale,
+                                                 gradient_scale,
+                                                 true);
+      if (l.transpose()) {
+        El::Gemm(El::NORMAL,
+                 El::TRANSPOSE,
+                 gradient_scale,
+                 this_channel_input,
+                 this_channel_out_grad,
+                 dst_scale,
+                 linearity_gradient);
+      }
+      else {
+        El::Gemm(El::NORMAL,
+                 El::TRANSPOSE,
+                 gradient_scale,
+                 this_channel_out_grad,
+                 this_channel_input,
+                 dst_scale,
+                 linearity_gradient);
+      }
+    }
+
+    // Compute gradient w.r.t. bias
+    // TODO(later): Same as linearity gradient above
+    if (l.has_bias()) {
+      LocalMat ones;
+      TensorDataType dst_scale_bias, gradient_scale_bias;
+      auto& bias_weights = l.get_weights(1);
+      auto* bias_optimizer = bias_weights.get_optimizer();
+      if (bias_optimizer != nullptr) {
+        auto& bias_gradient =
+          bias_optimizer->get_gradient_buffer(dst_scale_bias,
+                                              gradient_scale_bias,
+                                              true);
+#ifdef HYDROGEN_HAVE_CUB
+        ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
+#endif
+        ones.Resize(this_channel_out_grad.LocalWidth(), 1);
+        El::Fill(ones, one);
+        El::Gemv(El::NORMAL,
+                 gradient_scale_bias,
+                 this_channel_out_grad.LockedMatrix(),
+                 ones,
+                 dst_scale_bias,
+                 bias_gradient.Matrix());
+      }
+    }
+  }
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
+  fp_compute()
+{
+  fp_compute_impl(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void channelwise_fully_connected_layer<TensorDataType, Layout, Device>::
+  bp_compute()
+{
+  bp_compute_impl(*this);
+}
 // =========================================================
 // Builder function
 // =========================================================
@@ -876,33 +1097,9 @@ template <typename T, data_layout L, El::Device D>
 struct Builder
 {
   template <typename... Args>
-  static std::unique_ptr<Layer> Build(Args&&...)
-  {
-    LBANN_ERROR("Attempted to construct channelwise_fully_connected_layer ",
-                "with invalid parameters ",
-                "(TensorDataType=",
-                TypeName<T>(),
-                ", ",
-                "Layout=",
-                to_string(L),
-                ", ",
-                "Device=",
-                to_string(D),
-                ")");
-    return nullptr;
-  }
-};
-
-template <typename TensorDataType, El::Device Device>
-struct Builder<TensorDataType, data_layout::DATA_PARALLEL, Device>
-{
-  template <typename... Args>
   static std::unique_ptr<Layer> Build(Args&&... args)
   {
-    using LayerType =
-      channelwise_fully_connected_layer<TensorDataType,
-                                        data_layout::DATA_PARALLEL,
-                                        Device>;
+    using LayerType = channelwise_fully_connected_layer<T, L, D>;
     return std::make_unique<LayerType>(std::forward<Args>(args)...);
   }
 };
@@ -948,6 +1145,10 @@ std::unique_ptr<Layer> build_channelwise_fully_connected_layer_from_pbuf(
   template class channelwise_fully_connected_layer<T,                          \
                                                    data_layout::DATA_PARALLEL, \
                                                    Device>;                    \
+  template class channelwise_fully_connected_layer<                            \
+    T,                                                                         \
+    data_layout::MODEL_PARALLEL,                                               \
+    Device>;                                                                   \
   LBANN_LAYER_BUILDER_ETI(channelwise_fully_connected, T, Device)
 #include "lbann/macros/instantiate_device.hpp"
 
