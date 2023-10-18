@@ -677,7 +677,7 @@ void nb_reduce_scatter_aluminum(const El::Matrix<T, El::Device::GPU>& src,
   const auto& syncinfo = El::SyncInfoFromMatrix(dst);
   return El::mpi::ReduceScatter(src.LockedBuffer(),
                                 dst.Buffer(),
-                                dst.LocalWidth(),
+                                dst.Width(),
                                 op,
                                 c,
                                 syncinfo);
@@ -695,7 +695,7 @@ void nb_reduce_scatter_impl(const El::Matrix<T, El::Device::GPU>& src,
     const auto& syncinfo = El::SyncInfoFromMatrix(dst);
     return El::mpi::ReduceScatter(src.LockedBuffer(),
                                   dst.Buffer(),
-                                  dst.Width(),
+                                  dst.Height() * dst.Width(),
                                   op,
                                   c,
                                   syncinfo);
