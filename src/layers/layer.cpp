@@ -215,6 +215,7 @@ description Layer::get_description() const
 
   // Sub-grid
   desc.add("Process grid", get_grid_tag());
+  desc.add("LP grid", grid_tag());
 
   // Freeze state
   if (is_frozen()) {
@@ -779,10 +780,8 @@ void Layer::back_prop()
   LBANN_CALIPER_MARK_SCOPE(scope_name.c_str());
 #endif
 
-  if (this->is_participating()) {
-    allocate_new_gradients_();
-    back_prop_impl_();
-  }
+  allocate_new_gradients_();
+  back_prop_impl_();
   propagate_error_signals_to_parents_();
   clear_prev_error_signals_();
 

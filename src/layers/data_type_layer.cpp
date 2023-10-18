@@ -322,6 +322,7 @@ void data_type_layer<InputTensorDataType,
 #endif // LBANN_HAS_DISTCONV
 
   // Backprop the compute function.
+  if (this->is_participating())
   {
     LBANN_CALIPER_MARK_SCOPE(("bp_compute" + this->get_name()).c_str());
     const auto bp_compute_start = get_time();

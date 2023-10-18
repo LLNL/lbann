@@ -48,7 +48,7 @@ class Layer(abc.ABC):
         self.data_layout = data_layout
         self.datatype = datatype
         self.hint_layer = hint_layer
-        self.grid_tag = { 'value': grid_tag } if grid_tag else {}
+        self.grid_tag = { 'value': grid_tag } if grid_tag is not None else {}
         self.parallel_strategy = parallel_strategy if parallel_strategy else {}
 
         # Initialize parents, children, and weights
