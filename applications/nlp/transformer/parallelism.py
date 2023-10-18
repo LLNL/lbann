@@ -13,12 +13,14 @@ from typing import Any, Dict, Optional, List, Tuple, Union
 
 
 # Fully-sharded data parallelism
-def apply_fsdp(module: lbann.models.Transformer, args: argparse.Namespace):
+def apply_fsdp(module: lbann.models.Transformer,
+               other_weights: List[lbann.Weights], args: argparse.Namespace):
     """
     Applies a sharded-weight data-parallel strategy on every weight or
     MLP weights only.
 
     :param module: Transformer module to modify.
+    :param other_weights: List of other weights to shard (e.g., embeddings).
     :param args: Command-line arguments.
     """
     if not args.fsdp:
@@ -26,13 +28,16 @@ def apply_fsdp(module: lbann.models.Transformer, args: argparse.Namespace):
     if args.ffn_parallel:
         raise ValueError('FSDP is incompatible with model parallelism')
 
-    # Go over all encoders and decoders
-    for i, submodule in itertools.chain(enumerate(module.encoder),
+    # Loop over all encoders and decoders
+    for _, submodule in itertools.chain(enumerate(module.encoder),
                                         enumerate(module.decoder)):
         for w in submodule.fc1_weights:
             w.sharded = True
         for w in submodule.fc2_weights:
             w.sharded = True
+
+    for w in other_weights:
+        w.sharded = True
 
 
 # Model (FFN tensor) parallelism
