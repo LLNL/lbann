@@ -188,10 +188,10 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute()
   const auto& local_mini_batch_size = local_input.Width();
 
   // Launch GPU kernel
-  if (dst_scale == El::TypeTraits<TensorDataType>::Zero()) {
+  if (El::To<float>(dst_scale) == 0.0f) {
     El::Zero(local_embedding_grad);
   }
-  else if (dst_scale != El::TypeTraits<TensorDataType>::One()) {
+  else if (El::To<float>(dst_scale) != 1.0f) {
     El::Scale(dst_scale, local_embedding_grad);
   }
 
