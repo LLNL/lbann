@@ -1771,10 +1771,34 @@ std::string get_math_type_description(dnnMathType_t mt) {
   }
 }
 
+template <typename TensorDataType>
+dnnDataType_t get_convolution_data_type() {
+  LBANN_ERROR("Invalid data type for cuDNN");
+}
+
+#ifdef LBANN_HAS_GPU_FP16
+// Half should use float for the convolution descriptor.
+// This corresponds to the PSEUDO_HALF_CONFIG in cuDNN.
+template <>
+dnnDataType_t get_convolution_data_type<fp16>() {
+  return get_data_type<float>();
+}
+#endif
+// Use the same type otherwise.
+template <>
+dnnDataType_t get_convolution_data_type<float>() {
+  return get_data_type<float>();
+}
+template <>
+dnnDataType_t get_convolution_data_type<double>() {
+  return get_data_type<double>();
+}
+
 #ifdef LBANN_HAS_HALF
 // Explicitly force gcc 10.3.1 to add a global symbol definition
 // rather than optimizing it to a local symbol definition.
 template cudnnDataType_t get_data_type<half_float::half>();
+template cudnnDataType_t get_convolution_data_type<half_float::half>();
 #endif
 
 #define PROTO(T)                                                               \

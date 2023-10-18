@@ -1597,6 +1597,28 @@ std::string get_math_type_description(dnnMathType_t mt) {
   return "MIOpen math";  // MIOpen does not have different math types.
 }
 
+// MIOpen does not use a datatype in its convolution descriptor but we
+// mirror cuDNN here.
+template <typename TensorDataType>
+dnnDataType_t get_convolution_data_type() {
+  LBANN_ERROR("Invalid data type for MIOpen");
+}
+#ifdef LBANN_HAS_GPU_FP16
+template <>
+dnnDataType_t get_convolution_data_type<fp16>() {
+  return get_data_type<float>();
+}
+#endif
+template <>
+dnnDataType_t get_convolution_data_type<float>() {
+  return get_data_type<float>();
+}
+template <>
+dnnDataType_t get_convolution_data_type<double>() {
+  LBANN_WARNING("MIOpen does not support double");
+  return get_data_type<float>();
+}
+
 #define PROTO(T)                                                               \
   template class layer_tensor_manager<T>;                                      \
   template class data_parallel_layer_tensor_manager<T>;                        \

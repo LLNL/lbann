@@ -751,6 +751,14 @@ ProtoTensorOpEnumType convert_to_proto_math_type(dnnMathType_t mt);
 /** @brief Get a textual description of a math type. */
 std::string get_math_type_description(dnnMathType_t mt);
 
+/**
+ * @brief Get the data type convolution should be performed in.
+ *
+ * For some backends, this may differ from tensor data types.
+ */
+template <typename TensorDataType>
+dnnDataType_t get_convolution_data_type();
+
 } // namespace dnn_lib
 } // namespace lbann
 #endif // LBANN_HAS_DNN_LIB

@@ -442,7 +442,7 @@ void base_convolution_layer<TensorDataType, Device>::setup_gpu()
   m_convolution_dnn_desc.set(m_pads,
                              m_strides,
                              m_dilations,
-                             dnn_lib::get_data_type<TensorDataType>(),
+                             dnn_lib::get_convolution_data_type<TensorDataType>(),
                              dnn_lib::DNN_CROSS_CORRELATION);
   m_convolution_dnn_desc.set_math_mode(m_convolution_math_type);
   m_convolution_dnn_desc.set_group_count(m_groups);
