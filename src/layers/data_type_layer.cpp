@@ -193,6 +193,11 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
   // Add this layer as a gradient source for weight optimizers
   this->add_as_gradient_source();
 
+  // Release the now-unnecessary full weight views
+  for (size_t i = 0; i < this->num_weights(); ++i) {
+    this->get_weights(i).release_full_weights();
+  }
+
 #if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
   if (using_gpus()) {
@@ -208,6 +213,20 @@ void data_type_layer<InputTensorDataType,
                      OutputTensorDataType>::back_prop_impl_()
 {
   const auto bp_start = get_time();
+
+  // Setup weights proxies
+  if (this->has_weights()) {
+    if ((m_weights_proxy.size() == 0) || m_weights_proxy[0].empty()) {
+      auto const num_weights = this->num_weights();
+      m_weights_proxy.resize(num_weights);
+      const auto ptrs = this->get_weights_pointers();
+      for (size_t ii = 0; ii < num_weights; ++ii) {
+        m_weights_proxy[ii].setup(ptrs[ii]);
+      }
+    }
+    for (auto& wp : m_weights_proxy)
+      wp.synchronize_with_master();
+  }
 
   // Setup tensors
   bp_setup_gradient_wrt_inputs();

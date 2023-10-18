@@ -19,11 +19,13 @@ def test_one(shard_dim):
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(values=np.nditer(w, order='F')),
         sharded=True,
+        name="linearity_sharded",
     )
     bias_weights = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(values=np.nditer(b)),
         sharded=True,
+        name="bias_sharded",
     )
 
     tester = test_util.ModelTester()
@@ -42,4 +44,5 @@ def test_one(shard_dim):
     # Set test loss
     tester.set_loss(lbann.MeanSquaredError(y, reference))
     tester.set_check_gradients_tensor(lbann.Square(y))
+    tester.extra_callbacks.append(lbann.CallbackMemoryProfiler())
     return tester

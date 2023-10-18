@@ -764,6 +764,11 @@ void Layer::back_prop()
   back_prop_impl_();
   propagate_error_signals_to_parents_();
   clear_prev_error_signals_();
+
+  // Release the now-unnecessary full weight views
+  for (size_t i = 0; i < this->num_weights(); ++i) {
+    this->get_weights(i).release_full_weights();
+  }
 }
 
 void Layer::write_proto(lbann_data::Layer& proto) const

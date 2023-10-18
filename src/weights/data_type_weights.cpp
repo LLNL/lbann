@@ -250,6 +250,23 @@ void data_type_weights<TensorDataType>::do_setup_()
                                                                  : El::BLOCK),
     matrix_dist.device));
 
+  if (this->is_sharded()) {
+    m_values_view.reset(AbsDistMatrixType::Instantiate(
+      *matrix_dist.grid,
+      matrix_dist.root,
+      matrix_dist.colDist,
+      matrix_dist.rowDist,
+      (matrix_dist.blockHeight == 1 && matrix_dist.blockWidth == 1 ? El::ELEMENT
+                                                                   : El::BLOCK),
+      matrix_dist.device));
+
+#ifdef LBANN_HAS_GPU
+    if (matrix_dist.device == El::Device::GPU) {
+      m_values_view->Matrix().SetMemoryMode(1); // CUB memory pool
+    }
+#endif // LBANN_HAS_GPU
+  }
+
   // Allocate memory
 #ifdef LBANN_HAS_GPU
   if (matrix_dist.device == El::Device::GPU) {
@@ -286,29 +303,16 @@ auto data_type_weights<TensorDataType>::get_values() const
   -> const AbsDistMatrixType&
 {
   auto matrix_dist = this->get_matrix_distribution();
-  // If the weights are not sharded, return a view
-  if (m_values->DistData() == matrix_dist) {
+  // If the weights are not sharded, return m_values directly
+  if (m_values->DistData() == matrix_dist || !this->is_sharded()) {
     return *m_values;
   }
 
-  // Create a new matrix with the correct value distribution (usually STAR_STAR)
-  // and copy the values from there.
-  auto result = AbsDistMatrixType::Instantiate(
-    *matrix_dist.grid,
-    matrix_dist.root,
-    matrix_dist.colDist,
-    matrix_dist.rowDist,
-    (matrix_dist.blockHeight == 1 && matrix_dist.blockWidth == 1 ? El::ELEMENT
-                                                                 : El::BLOCK),
-    matrix_dist.device);
-#ifdef HYDROGEN_HAVE_CUB
-  if (matrix_dist.device == El::Device::GPU) {
-    result->Matrix().SetMemoryMode(1); // CUB memory pool
-  }
-#endif // HYDROGEN_HAVE_CUB
+  // Get weights as necessary
+  request_full_weights_async();
+  wait_for_full_weights();
 
-  El::Copy(*m_values, *result);
-  return *result;
+  return *m_values_view;
 }
 
 template <typename TensorDataType>
@@ -444,6 +448,28 @@ void data_type_weights<TensorDataType>::set_value(TensorDataType value,
   auto& values = *m_values;
   if (values.IsLocal(row, col)) {
     values.SetLocal(values.LocalRow(row), values.LocalCol(col), value);
+  }
+}
+
+template <typename TensorDataType>
+void data_type_weights<TensorDataType>::request_full_weights_async() const
+{
+  m_values_view->AlignWith(this->get_matrix_distribution());
+  m_values_view->Resize(this->get_matrix_height(), this->get_matrix_width());
+  El::Copy(*m_values, *m_values_view);
+}
+
+template <typename TensorDataType>
+void data_type_weights<TensorDataType>::wait_for_full_weights() const
+{
+  // TODO(later): Wait for asynchronous gather, if necessary
+}
+
+template <typename TensorDataType>
+void data_type_weights<TensorDataType>::release_full_weights() const
+{
+  if (this->is_sharded()) {
+    m_values_view->Empty();
   }
 }
 

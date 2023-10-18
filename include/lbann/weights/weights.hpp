@@ -205,6 +205,21 @@ public:
    */
   virtual El::BaseDistMatrix& get_values_sharded() = 0;
   virtual El::BaseDistMatrix const& get_values_sharded() const = 0;
+
+  // Memory management
+
+  /** @brief Start an asynchronous request for the full view of weights.
+   *
+   *  This is a noop if the weights are not sharded.
+   */
+  virtual void request_full_weights_async() const = 0;
+  /** @brief Wait for an asynchronous request for the full view of weights.
+   *
+   *  This is a noop if the weights are not sharded, or already requested.
+   */
+  virtual void wait_for_full_weights() const = 0;
+  /** @brief Releases the full view of the weights for memory reclamation. */
+  virtual void release_full_weights() const = 0;
   ///@}
 
   // -----------------------------------------------

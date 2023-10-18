@@ -116,6 +116,11 @@ description weights::get_description() const
     desc.add("Frozen");
   }
 
+  // Sharding state
+  if (is_sharded()) {
+    desc.add("Sharded");
+  }
+
   // Derived class contribution
   do_augment_description_(desc);
 
