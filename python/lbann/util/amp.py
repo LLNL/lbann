@@ -3,6 +3,7 @@
 from typing import Optional
 
 import functools
+import argparse
 
 import lbann
 
@@ -147,13 +148,23 @@ def set_layer_datatypes(model: lbann.Model) -> None:
 
 
 def enable_amp(model: lbann.Model,
+               args: argparse.ArgumentParser,
                init_scale: Optional[float] = None,
                growth_factor: Optional[float] = None,
                backoff_factor: Optional[float] = None,
                growth_interval: Optional[int] = None) -> None:
-    """Enable automatic mixed precision for a model."""
+    """Enable automatic mixed precision for a model if requested."""
     if model.amp is not None:
         raise RuntimeError('Model already has AMP options set, not resetting')
+
+    try:
+        enable_amp = args.amp
+    except AttributeError:
+        raise ValueError('passed arguments have not been processed by '
+                         '`add_amp_arguments`')
+
+    if not enable_amp:
+        return
 
     # Set up datatypes.
     add_weights(model)

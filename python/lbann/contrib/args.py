@@ -340,3 +340,12 @@ def add_training_arguments(args: argparse.Namespace,
     args.add_argument('--checkpoint',
                       action='store_true',
                       help='Save checkpoints and weights after every epoch')
+
+
+def add_amp_arguments(args: argparse.ArgumentParser) -> None:
+    """Add automatic mixed precision arguments."""
+    args.add_argument(
+        '--amp',
+        action='store_true',
+        default=False,
+        help='Enable automatic mixed precision')

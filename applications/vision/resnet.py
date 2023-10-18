@@ -5,6 +5,7 @@ import lbann.models.resnet
 import lbann.contrib.args
 import lbann.contrib.models.wide_resnet
 import lbann.contrib.launcher
+import lbann.util.amp
 import data.imagenet
 
 # Command-line arguments
@@ -13,6 +14,7 @@ desc = ('Construct and run ResNet on ImageNet-1K data. '
 parser = argparse.ArgumentParser(description=desc)
 lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_resnet')
 lbann.contrib.args.add_profiling_arguments(parser)
+lbann.contrib.args.add_amp_arguments(parser)
 parser.add_argument(
     '--resnet', action='store', default=50, type=int,
     choices=(18, 34, 50, 101, 152),
@@ -142,6 +144,9 @@ model = lbann.Model(args.num_epochs,
                     objective_function=obj,
                     metrics=metrics,
                     callbacks=callbacks)
+
+# Enable AMP if requested.
+lbann.util.amp.enable_amp(model, args)
 
 # Setup optimizer
 opt = lbann.contrib.args.create_optimizer(args)
