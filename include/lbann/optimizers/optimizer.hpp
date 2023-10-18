@@ -311,6 +311,7 @@ private:
   /** @brief Time spent in optimization step. */
   EvalType m_step_time = 0;
 
+protected:
   /** @brief Map from data types to gradient contributions.
    *  @todo Refactor this out. It's a hack.
    */

@@ -231,7 +231,47 @@ bool data_type_optimizer<TensorDataType>::is_gradient_finite_and_unscale(
   if (m_weights == nullptr) {
     LBANN_ERROR("Attempt to unscale gradients without weights");
   }
-  return amp::is_finite_and_unscale(this->get_gradient(), scale);
+  // We cannot use this->get_gradient() here because that may return a
+  // copy; we instead need to modify the gradient manager's gradient.
+  // We do not currently support the case of multiple gradient managers
+  // which occurs when we have gradient contributions in multiple
+  // types.
+  // This implementation is therefore an ugly hack.
+  // TODO: Clean this up, maybe by integrating scaling into the
+  // gradient managers.
+  this->start_gradient_allreduce();
+  this->finish_gradient_allreduce();
+  if (this->gradients_.size() == 1UL) {
+    auto& grad_mgr = *(this->gradients_.begin()->second);
+    if (grad_mgr.get_status() != optimizer_gradient_status::ready) {
+      LBANN_ERROR("Optimizer gradient not ready");
+    }
+    auto& grad = grad_mgr.gradient();
+    // Even more ugly hacking:
+    // Attempt to convert from a BaseDistMatrix to an AbstractDistMatrix.
+    if (auto* ptr = dynamic_cast<El::AbstractDistMatrix<float>*>(&grad)) {
+      return amp::is_finite_and_unscale(*ptr, scale);
+    }
+    if (auto* ptr = dynamic_cast<El::AbstractDistMatrix<double>*>(&grad)) {
+      return amp::is_finite_and_unscale(*ptr, scale);
+    }
+#ifdef LBANN_HAS_HALF
+    if (auto* ptr = dynamic_cast<El::AbstractDistMatrix<cpu_fp16>*>(&grad)) {
+      return amp::is_finite_and_unscale(*ptr, scale);
+    }
+#endif
+#ifdef LBANN_HAS_GPU_FP16
+    if (auto* ptr = dynamic_cast<El::AbstractDistMatrix<fp16>*>(&grad)) {
+      return amp::is_finite_and_unscale(*ptr, scale);
+    }
+#endif
+    LBANN_ERROR("Could not determine gradient type");
+  }
+  else {
+    LBANN_ERROR(
+      "Not currently supporting AMP with gradient accumulations in multiple "
+      "types. Sorry.");
+  }
 }
 
 template <typename TensorDataType>
