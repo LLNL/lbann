@@ -49,9 +49,15 @@ public:
 
   /**
    * @param batch_interval The frequency at which to print the progress bar.
+   * @param newline_interval The frequency at which to print a new line.
+   * @param print_mem_usage If true, prints current GPU memory usage.
    */
-  progress_bar(int batch_interval = 1, int newline_interval = 0)
-    : callback_base(batch_interval), m_newline_interval(newline_interval)
+  progress_bar(int batch_interval = 1,
+               int newline_interval = 0,
+               bool print_mem_usage = false)
+    : callback_base(batch_interval),
+      m_newline_interval(newline_interval),
+      m_print_mem_usage(print_mem_usage)
   {}
   progress_bar(const progress_bar&) = default;
   progress_bar& operator=(const progress_bar&) = default;
@@ -79,6 +85,7 @@ private:
 
   // Settings
   int m_newline_interval;
+  bool m_print_mem_usage;
 
   // Cached values for epochs
   bool m_print;

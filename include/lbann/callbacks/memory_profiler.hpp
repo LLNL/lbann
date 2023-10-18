@@ -37,6 +37,12 @@ namespace lbann {
 namespace callback {
 
 /**
+ * @brief Returns the currently used memory, or 0 if LBANN was not compiled with
+ * GPU support.
+ */
+size_t get_used_gpu_memory();
+
+/**
  * Memory usage profiling
  */
 class memory_profiler : public callback_base

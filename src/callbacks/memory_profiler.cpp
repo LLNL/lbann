@@ -46,7 +46,7 @@ namespace callback {
  * @brief Returns the currently used memory, or 0 if LBANN was not compiled with
  * GPU support.
  */
-static inline size_t get_used_gpu_memory()
+size_t get_used_gpu_memory()
 {
 #ifdef LBANN_HAS_GPU
   size_t available;
