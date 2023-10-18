@@ -87,10 +87,9 @@ public:
               " and mb index ",
               mb_idx);
     auto X_v = El::View(X, El::ALL, El::IR(mb_idx, mb_idx + 1));
-    auto Y_v =
-      El::View(m_samples,
-               El::ALL,
-               El::IR(m_current_pos + mb_idx, m_current_pos + mb_idx + 1));
+    auto Y_v = El::View(m_samples, El::ALL, El::IR(data_id, data_id + 1));
+    //               El::IR(m_current_pos + mb_idx, m_current_pos + mb_idx +
+    //               1));
     const El::Int height = X_v.Height(); // Width is 1.
     lbann::DataType* __restrict__ dst = X_v.Buffer();
     lbann::DataType* __restrict__ src = Y_v.Buffer();
@@ -163,7 +162,7 @@ private:
 };
 
 using unit_test::utilities::IsValidPtr;
-TEST_CASE("Buffered data coordinator test", "[io][data_coordinator]")
+TEST_CASE("Buffered data coordinator test", "[io][data_coordinator][sync]")
 {
   constexpr int minibatch_size = 2;
   constexpr int minibatches = 5;
@@ -204,44 +203,77 @@ TEST_CASE("Buffered data coordinator test", "[io][data_coordinator]")
                                 El::Device::CPU>(minibatch_size,
                                                  1,
                                                  world_comm.get_trainer_grid());
-
-  // Test first minibatch
-  int remaining_minibatches = minibatches, data = 0;
-  bool epoch_done = false;
-  REQUIRE_NOTHROW(bdc.fetch_active_batch_synchronous(mode));
-  REQUIRE_NOTHROW(bdc.distribute_from_local_matrix(mode, "samples", samples));
-  REQUIRE_NOTHROW(epoch_done = bdc.ready_for_next_fetch(mode));
-  CHECK(epoch_done != true);
-  --remaining_minibatches;
-
-  // Check shape and contents
-  CHECK(samples.Width() == minibatch_size);
-  for (int i = 0; i < minibatch_size; ++i) {
-    CHECK(samples.LockedMatrix()(0, i) == data);
-    ++data;
-  }
-
-  // Test subsequent minibatches for continuity
-  for (; remaining_minibatches >= 2; --remaining_minibatches) {
+  SECTION("Synchronous I/O")
+  {
+    // Test first minibatch
+    int remaining_minibatches = minibatches, data = 0;
+    bool epoch_done = false;
     REQUIRE_NOTHROW(bdc.fetch_active_batch_synchronous(mode));
-    //    REQUIRE_NOTHROW(bdc.fetch_data(mode));
     REQUIRE_NOTHROW(bdc.distribute_from_local_matrix(mode, "samples", samples));
     REQUIRE_NOTHROW(epoch_done = bdc.ready_for_next_fetch(mode));
     CHECK(epoch_done != true);
+    --remaining_minibatches;
 
+    // Check shape and contents
     CHECK(samples.Width() == minibatch_size);
     for (int i = 0; i < minibatch_size; ++i) {
       CHECK(samples.LockedMatrix()(0, i) == data);
       ++data;
     }
+
+    // Test subsequent minibatches for continuity
+    for (; remaining_minibatches >= 2; --remaining_minibatches) {
+      REQUIRE_NOTHROW(bdc.fetch_active_batch_synchronous(mode));
+      //    REQUIRE_NOTHROW(bdc.fetch_data(mode));
+      REQUIRE_NOTHROW(
+        bdc.distribute_from_local_matrix(mode, "samples", samples));
+      REQUIRE_NOTHROW(epoch_done = bdc.ready_for_next_fetch(mode));
+      CHECK(epoch_done != true);
+
+      CHECK(samples.Width() == minibatch_size);
+      for (int i = 0; i < minibatch_size; ++i) {
+        CHECK(samples.LockedMatrix()(0, i) == data);
+        ++data;
+      }
+    }
+
+    // Test last minibatch
+    REQUIRE_NOTHROW(bdc.fetch_active_batch_synchronous(mode));
+    //  REQUIRE_NOTHROW(bdc.fetch_data(mode));
+    REQUIRE_NOTHROW(bdc.distribute_from_local_matrix(mode, "samples", samples));
+    REQUIRE_NOTHROW(epoch_done = bdc.ready_for_next_fetch(mode));
+    CHECK(epoch_done == true);
+    CHECK(samples.Width() == 1);
+    CHECK(samples.LockedMatrix()(0, 0) == data);
   }
 
-  // Test last minibatch
-  REQUIRE_NOTHROW(bdc.fetch_active_batch_synchronous(mode));
-  //  REQUIRE_NOTHROW(bdc.fetch_data(mode));
-  REQUIRE_NOTHROW(bdc.distribute_from_local_matrix(mode, "samples", samples));
-  REQUIRE_NOTHROW(epoch_done = bdc.ready_for_next_fetch(mode));
-  CHECK(epoch_done == true);
-  CHECK(samples.Width() == 1);
-  CHECK(samples.LockedMatrix()(0, 0) == data);
+  SECTION("Asynchronous I/O (Background)")
+  {
+    // Test first minibatch
+    int remaining_minibatches = minibatches, data = 0;
+    bool epoch_done = false;
+
+    // For background data fetching, start with a synchronous request.
+    REQUIRE_NOTHROW(bdc.fetch_active_batch_synchronous(mode));
+
+    // Test subsequent minibatches for continuity
+    for (; remaining_minibatches >= 1; --remaining_minibatches) {
+      REQUIRE_NOTHROW(bdc.fetch_data(mode));
+      REQUIRE_NOTHROW(
+        bdc.distribute_from_local_matrix(mode, "samples", samples));
+      REQUIRE_NOTHROW(epoch_done = bdc.ready_for_next_fetch(mode));
+      auto current_mini_batch_size = minibatch_size;
+      if (epoch_done == true) {
+        // Last mini-batch should be only a single sample
+        current_mini_batch_size = 1;
+      }
+      CHECK(samples.Width() == current_mini_batch_size);
+      for (int i = 0; i < current_mini_batch_size; ++i) {
+        CHECK(samples.LockedMatrix()(0, i) == data);
+        ++data;
+      }
+    }
+
+    CHECK(data == readers[mode]->get_num_data());
+  }
 }

@@ -60,6 +60,7 @@ public:
 
 protected:
   bool fetch_data_block(std::map<data_field_type, CPUMat*>& input_buffers,
+                        El::Int current_position_in_data_set,
                         El::Int block_offset,
                         El::Int block_stride,
                         El::Int mb_size,

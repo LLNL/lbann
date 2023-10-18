@@ -158,6 +158,7 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
   // Get the current mini-batch from the data reader
   // BVE FIXME I think that this can be wrong on the future fetches.
   El::Int loaded_mini_batch_size;
+  bool fetching_future_buffer = false;
   if (buffer_id !=
       (this->get_active_buffer_idx(mode) % m_data_buffers.size())) {
     LBANN_MSG(to_string(mode),
@@ -166,6 +167,7 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
               " is buffer id and the active one is ",
               (this->get_active_buffer_idx(mode) % m_data_buffers.size()));
     loaded_mini_batch_size = dr->get_next_loaded_mini_batch_size();
+    fetching_future_buffer = true;
   }
   else {
     loaded_mini_batch_size = dr->get_loaded_mini_batch_size();
@@ -206,9 +208,22 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
     }
 
     // Compute the size of the current local mini-batch
-    const int end_pos =
-      std::min(static_cast<size_t>(dr->m_current_pos + loaded_mini_batch_size),
-               dr->m_shuffled_indices.size());
+    // BVE FIXME I think tha m_current_pos is stale if this is being
+    // called for the next mini-batch
+    El::Int relative_base_position = dr->m_current_pos;
+    if (fetching_future_buffer) {
+      relative_base_position = dr->get_next_position();
+      LBANN_MSG(
+        "Fetching local samples for a future buffer with new base position",
+        relative_base_position,
+        " versus current position ",
+        dr->m_current_pos);
+    }
+    const int end_pos = std::min(
+      static_cast<size_t>(relative_base_position + loaded_mini_batch_size),
+      dr->m_shuffled_indices.size());
+    // std::min(static_cast<size_t>(dr->m_current_pos + loaded_mini_batch_size),
+    //          dr->m_shuffled_indices.size());
     const int local_mini_batch_size = std::min(
       El::Int{((end_pos - dr->m_current_pos) + dr->m_sample_stride - 1) /
               dr->m_sample_stride},
@@ -226,6 +241,7 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
     else {
       buf.m_num_samples_fetched = dr->fetch(local_input_buffers,
                                             buf.m_indices_fetched_per_mb,
+                                            relative_base_position,
                                             local_mini_batch_size);
     }
 
@@ -297,6 +313,9 @@ void buffered_data_coordinator<TensorDataType>::fetch_active_batch_synchronous(
   int idx = this->get_active_buffer_idx(mode);
   data_buffer<IODataType>& active_buffer = get_active_buffer(mode);
 
+  LBANN_MSG("fetching active batch for buffer ",
+            std::to_string(get_active_buffer_idx(mode)));
+
   generic_data_reader* dr = get_data_reader(mode);
   El::Int loaded_mini_batch_size = dr->get_loaded_mini_batch_size();
   LBANN_MSG(to_string(mode),
@@ -353,6 +372,11 @@ void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode)
 {
   data_buffer<IODataType>& current_buffer = get_active_buffer(mode);
   data_buffer<IODataType>& next_buffer = get_next_buffer(mode);
+
+  LBANN_MSG("fetching next batch for buffer ",
+            std::to_string(get_next_buffer_idx(mode)),
+            " active buffer is ",
+            std::to_string(get_active_buffer_idx(mode)));
 
   // Wait for the background thread to complete fetching the data
   if (current_buffer.is_background_fetching_in_progress()) {
@@ -413,6 +437,8 @@ template <typename TensorDataType>
 bool buffered_data_coordinator<TensorDataType>::ready_for_next_fetch(
   execution_mode mode)
 {
+  LBANN_MSG("ready for next fetch is cleaning up buffer ",
+            std::to_string(get_active_buffer_idx(mode)));
   // Check to see if the data from the sample was actually consumed
   data_buffer<IODataType>& active_buffer = get_active_buffer(mode);
   // for (const auto& buf_map : m_data_buffers) {
@@ -451,6 +477,8 @@ bool buffered_data_coordinator<TensorDataType>::ready_for_next_fetch(
     // going to the next phase
   }
   this->increment_active_buffer_idx(mode);
+  LBANN_MSG("ready for next fetch just flipped the index and it is now ",
+            std::to_string(get_active_buffer_idx(mode)));
   return is_epoch_complete;
 }
 
@@ -594,6 +622,8 @@ void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(
   std::string prof_title = ("distribute_from_local_matrix " +
                             std::to_string(get_active_buffer_idx(mode)));
   prof_region_begin(prof_title.c_str(), prof_colors[3], false);
+  LBANN_MSG("distributed from local matrix is looking at buffer ",
+            std::to_string(get_active_buffer_idx(mode)));
   data_buffer<IODataType>& buf = get_active_buffer(mode);
   // Wait for the background thread to complete fetching the same data
   if (buf.is_background_fetching_in_progress()) {
