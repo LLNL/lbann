@@ -131,8 +131,8 @@ public:
 
   ///@}
 
-  bool transpose() const { return m_transpose; }
-  bool has_bias() const { return m_has_bias; }
+  bool transpose() const noexcept { return m_transpose; }
+  bool has_bias() const noexcept { return m_has_bias; }
 
 protected:
   /** Add layer specific data to prototext */
