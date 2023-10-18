@@ -53,6 +53,22 @@ NUM_WEIGHTS = {
     lbann.LayerNorm: lambda _: 2,
 }
 
+# These define initializer types for a layer.
+WEIGHTS_INITIALIZERS = {
+    lbann.Convolution: [lbann.HeNormalInitializer,
+                        lambda: lbann.ConstantInitializer(value=0.0)],
+    lbann.Deconvolution: [lbann.HeNormalInitializer,
+                          lambda: lbann.ConstantInitializer(value=0.0)],
+    lbann.FullyConnected: [lbann.HeNormalInitializer,
+                           lambda: lbann.ConstantInitializer(value=0.0)],
+    lbann.ChannelwiseFullyConnected: [lbann.HeNormalInitializer,
+                                      lambda: lbann.ConstantInitializer(value=0.0)],
+    lbann.BatchNormalization: lambda _: [lambda: lbann.ConstantInitializer(value=1.0),
+                                         lambda: lbann.ConstantInitializer(value=0.0)],
+    lbann.LayerNorm: lambda _: [lambda: lbann.ConstantInitializer(value=1.0),
+                                lambda: lbann.ConstantInitializer(value=0.0)],
+}
+
 
 def add_weights(model: lbann.Model) -> None:
     """Set up weights in the model.
@@ -72,9 +88,12 @@ def add_weights(model: lbann.Model) -> None:
                     weight.datatype = lbann.DataType.FLOAT
         elif type(layer) in NUM_WEIGHTS:
             num_weights = NUM_WEIGHTS[type(layer)](layer)
+            initializer_types = WEIGHTS_INITIALIZERS[type(layer)]
             # Generate the weights.
             weights = [lbann.Weights(
-                name=f'{layer.name}_w{i}', datatype=lbann.DataType.FLOAT)
+                name=f'{layer.name}_w{i}',
+                datatype=lbann.DataType.FLOAT,
+                initializer=initializer_types[i]())
                        for i in range(num_weights)]
             layer.add_weights(weights)
             model.weights.update(weights)
