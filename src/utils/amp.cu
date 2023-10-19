@@ -143,7 +143,10 @@ bool is_finite_and_unscale_gpu(El::AbstractDistMatrix<TensorDataType>& grads,
   // Copy to host to check whether things are finite.
   // TODO: This induces a CPU<->GPU device sync. Remove when we have fused
   // optimizers/AMP.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   return is_finite_d.Get(0, 0) == 1.0f;
+#pragma GCC diagnostic pop
 }
 
 #ifdef LBANN_HAS_HALF

@@ -272,6 +272,8 @@ bool data_type_optimizer<TensorDataType>::is_gradient_finite_and_unscale(
       "Not currently supporting AMP with gradient accumulations in multiple "
       "types. Sorry.");
   }
+  // If no gradients, everything is finite.
+  return true;
 }
 
 template <typename TensorDataType>
