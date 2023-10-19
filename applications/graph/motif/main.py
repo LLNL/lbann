@@ -39,7 +39,6 @@ learn_rate = 0.025
 
 trainer = lbann.Trainer(
     mini_batch_size=args.mini_batch_size,
-    num_parallel_readers=0,
 )
 model_ = model.make_model(
     data_dim,

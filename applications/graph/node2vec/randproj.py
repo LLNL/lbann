@@ -151,7 +151,6 @@ iterations_per_epoch = utils.ceildiv(epoch_size, args.mini_batch_size)
 num_epochs = utils.ceildiv(args.num_iterations, iterations_per_epoch)
 trainer = lbann.Trainer(
     mini_batch_size=args.mini_batch_size,
-    num_parallel_readers=0,
 )
 callbacks = [
     lbann.CallbackPrint(),

@@ -191,7 +191,6 @@ model = lbann.Model(
 # Setup trainer, optimizer, data_reader
 trainer = lbann.Trainer(
     mini_batch_size=lbann_params.mini_batch_size,
-    num_parallel_readers=1,
 )
 optimizer = lbann.Adam(
     learn_rate=0.01,
