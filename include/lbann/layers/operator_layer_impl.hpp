@@ -262,8 +262,10 @@ auto lbann::build_operator_layer_from_pbuf(lbann_comm* comm,
   ops.reserve(num_ops);
   for (int ii = 0; ii < num_ops; ++ii) {
 #ifdef LBANN_DEBUG
-    LBANN_ASSERT(msg.datatype() == params.ops(ii).input_datatype());
-    LBANN_ASSERT(msg.datatype() == params.ops(ii).output_datatype());
+    LBANN_ASSERT(proto::resolve_default_datatype(msg.datatype()) ==
+                 proto::resolve_default_datatype(params.ops(ii).input_datatype()));
+    LBANN_ASSERT(proto::resolve_default_datatype(msg.datatype()) ==
+                 proto::resolve_default_datatype(params.ops(ii).output_datatype()));
 #endif
     ops.emplace_back(
       proto::construct_operator<InputT, OutputT, D>(params.ops(ii)));
