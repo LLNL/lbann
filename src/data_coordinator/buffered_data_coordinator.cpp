@@ -111,9 +111,9 @@ void buffered_data_coordinator<TensorDataType>::setup_data_fields(
 
   // Check to see if there are any data fields with unallocated buffers
   for (auto& data_field : m_active_data_fields) {
-    for (const auto& buf_map : m_data_buffers) {
-      const data_buffer_map_t& buffer_map = buf_map;
-      for (const auto& [mode, data_buffer] : buffer_map) {
+    for (/*const*/ auto& buf_map : m_data_buffers) {
+      /*const*/ data_buffer_map_t& buffer_map = buf_map;
+      for (/*const*/ auto& [mode, data_buffer] : buffer_map) {
         auto& phase_io_buffer = data_buffer->m_input_buffers[data_field];
         // Check to see if a buffer has already been allocated.  If
         // not, resize and zero it
@@ -129,9 +129,8 @@ void buffered_data_coordinator<TensorDataType>::setup_data_fields(
 
           /// The amount of space needed will vary based on input layer type,
           /// but the batch size is the maximum space necessary
-          El::Zeros_seq(data_buffer->m_indices_fetched_per_mb,
-                        local_mini_batch_size,
-                        1);
+          auto& indices_fetched_per_mb = data_buffer->m_indices_fetched_per_mb;
+          El::Zeros_seq(indices_fetched_per_mb, local_mini_batch_size, 1);
         }
       }
     }
@@ -147,7 +146,6 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
   int buffer_id)
 {
   generic_data_reader* dr = get_data_reader(mode);
-  int num_parallel_readers = dr->get_num_parallel_readers();
 
   std::string prof_title =
     ("fetch_to_local_matrix " + std::to_string(buffer_id));
@@ -163,9 +161,8 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
   buf.m_num_samples_fetched = 0;
   /// BVE FIXME change the guard
   // Check to see if this rank has local space for the current mini-batch
-  if (this->m_comm->get_rank_in_trainer() < num_parallel_readers &&
-      (buf.m_input_buffers[INPUT_DATA_TYPE_SAMPLES]->LocalHeight() != 0 &&
-       buf.m_input_buffers[INPUT_DATA_TYPE_SAMPLES]->LocalWidth() != 0)) {
+  if (buf.m_input_buffers[INPUT_DATA_TYPE_SAMPLES]->LocalHeight() != 0 &&
+      buf.m_input_buffers[INPUT_DATA_TYPE_SAMPLES]->LocalWidth() != 0) {
     /// Create a map of the local matrices to pass into the data reader
     std::map<data_field_type, CPUMat*> local_input_buffers;
     for (auto& b : buf.m_input_buffers) {
@@ -664,7 +661,10 @@ void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(
   if (buf.m_input_buffers.find(data_field) == buf.m_input_buffers.end()) {
     LBANN_ERROR("Unknown data_field_type value requested: " + data_field);
   }
-  view_or_copy_tensor(*buf.m_input_buffers[data_field], input_buffer);
+  //  const auto& local_buffer = *buf.m_input_buffers[data_field];
+  //  view_or_copy_tensor(local_buffer, input_buffer);
+  // BVE FIXME should we allow this to be a view or a copy
+  view_or_copy_tensor(*buf.m_input_buffers[data_field], input_buffer, false);
 #ifdef LBANN_HAS_DISTCONV
   if (dc::is_cosmoflow_parallel_io_enabled() &&
       data_field == INPUT_DATA_TYPE_RESPONSES) {

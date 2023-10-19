@@ -136,14 +136,7 @@ trainer& construct_trainer(lbann_comm* comm,
                            lbann_data::LbannPB& pb)
 {
   int const procs_per_trainer = comm->get_procs_per_trainer();
-  if (pb_trainer->num_parallel_readers() > procs_per_trainer) {
-    pb_trainer->set_num_parallel_readers(procs_per_trainer);
-  }
   auto const& arg_parser = global_argument_parser();
-
-  // Adjust the number of parallel readers; this may be adjusted
-  // after calling split_trainers()
-  // set_num_parallel_readers(*comm, pb);
 
   // Check to see if the model wants to reduce the I/O parallelism
   bool const serialized_io = pb_trainer->serialize_io();

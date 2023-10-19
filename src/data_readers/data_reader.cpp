@@ -462,8 +462,7 @@ bool generic_data_reader::update(bool is_active_reader)
   }
   if (m_current_mini_batch_idx == m_num_iterations_per_epoch) {
     // for working with 1B jag samples, we may not process all the data
-    if ((m_comm->get_rank_in_trainer() < m_num_parallel_readers) &&
-        (m_current_pos < (int)m_shuffled_indices.size())) {
+    if (m_current_pos < (int)m_shuffled_indices.size()) {
       throw lbann_exception(
         std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
         " :: generic data reader update error: the epoch is complete," +
@@ -1107,9 +1106,6 @@ void generic_data_reader::print_config()
             "\n",
             " num_iterations_per_epoch   = ",
             m_num_iterations_per_epoch,
-            "\n",
-            " num_parallel_readers       = ",
-            m_num_parallel_readers,
             "\n");
 }
 

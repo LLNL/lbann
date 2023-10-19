@@ -158,22 +158,6 @@ void data_coordinator::calculate_num_iterations_per_epoch(
     max_mini_batch_size = data_reader->get_num_data();
   }
 
-  /// Check to make sure that there is enough data for all of the parallel
-  /// readers
-  int num_parallel_readers_per_model =
-    compute_max_num_parallel_readers(data_reader->get_num_data(),
-                                     max_mini_batch_size,
-                                     this->m_comm->get_procs_per_trainer());
-  data_reader->set_num_parallel_readers(num_parallel_readers_per_model);
-  if (num_parallel_readers_per_model == 0 ||
-      (num_parallel_readers_per_model !=
-         this->m_comm->get_procs_per_trainer() &&
-       num_parallel_readers_per_model != max_mini_batch_size)) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: generic_data_distribution: number of parallel readers is zero");
-  }
-
 #ifdef LBANN_HAS_DISTCONV
   if (dc::is_cosmoflow_parallel_io_enabled()) {
     // #trainers is assumed to be 1.
@@ -192,10 +176,10 @@ void data_coordinator::calculate_num_iterations_per_epoch(
   data_reader->set_mini_batch_size(max_mini_batch_size);
   data_reader->set_stride_to_next_mini_batch(batch_stride);
 #ifdef LBANN_HAS_DISTCONV
-  data_reader->set_sample_stride(num_parallel_readers_per_model /
+  data_reader->set_sample_stride(this->m_comm->get_procs_per_trainer() /
                                  dc::get_number_of_io_partitions());
 #else
-  data_reader->set_sample_stride(num_parallel_readers_per_model);
+  data_reader->set_sample_stride(this->m_comm->get_procs_per_trainer());
 #endif
   data_reader->set_iteration_stride(1);
   /// Set data reader base offset and model offset
@@ -496,58 +480,6 @@ void data_coordinator::calculate_num_iterations_per_epoch(int mini_batch_size)
       continue;
     calculate_num_iterations_per_epoch(mini_batch_size, dr.second);
   }
-}
-
-int data_coordinator::compute_max_num_parallel_readers(
-  long data_set_size,
-  int mini_batch_size,
-  int requested_num_parallel_readers) const
-{
-  return compute_max_num_parallel_readers(data_set_size,
-                                          mini_batch_size,
-                                          requested_num_parallel_readers,
-                                          this->m_comm);
-}
-
-int data_coordinator::compute_max_num_parallel_readers(
-  long data_set_size,
-  int mini_batch_size,
-  int requested_num_parallel_readers,
-  const lbann_comm* comm)
-{
-  int num_parallel_readers = requested_num_parallel_readers;
-
-  if (comm->get_procs_per_trainer() != num_parallel_readers) {
-    if (comm->am_trainer_master()) {
-      std::cout << "Warning the requested number of parallel readers "
-                << num_parallel_readers << " does not match the grid size "
-                << comm->get_procs_per_trainer()
-                << " OVERRIDING requested number of parallel readers."
-                << std::endl;
-    }
-    num_parallel_readers = comm->get_procs_per_trainer();
-  }
-
-#if 0
-  if(mini_batch_size < num_parallel_readers) {
-    if (comm->am_trainer_master()) {
-      std::cout << "Warning the requested number of parallel readers "
-                << num_parallel_readers
-                << " is larger than the requested mini-batch size "
-                << mini_batch_size
-                << " OVERRIDING requested number of parallel readers."
-                << std::endl;
-    }
-    num_parallel_readers = mini_batch_size;
-  }
-#endif
-  return num_parallel_readers;
-}
-
-int data_coordinator::get_num_parallel_readers(execution_mode mode) const
-{
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_num_parallel_readers() : 0;
 }
 
 bool data_coordinator::at_new_epoch(execution_mode mode) const

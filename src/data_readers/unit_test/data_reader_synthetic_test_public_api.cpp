@@ -143,7 +143,6 @@ TEST_CASE("Synthetic data reader public API tests",
     }
     dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
     dr->set_comm(&comm);
-    dr->set_num_parallel_readers(1);
     dr->load();
     dr->set_mini_batch_size(num_samples);
     dr->set_last_mini_batch_size(num_samples);
@@ -238,7 +237,6 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
                                                              false);
     dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
     dr->set_comm(&comm);
-    dr->set_num_parallel_readers(1);
     dr->load();
     dr->set_mini_batch_size(num_samples);
     dr->set_last_mini_batch_size(num_samples);
@@ -281,7 +279,6 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
                                                              false);
     dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
     dr->set_comm(&comm);
-    dr->set_num_parallel_readers(1);
     dr->load();
     dr->set_mini_batch_size(num_samples);
     dr->set_last_mini_batch_size(num_samples);
@@ -319,7 +316,6 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
                                                              false);
     dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
     dr->set_comm(&comm);
-    dr->set_num_parallel_readers(1);
     dr->load();
     dr->set_mini_batch_size(num_samples);
     dr->set_last_mini_batch_size(num_samples);
@@ -362,7 +358,6 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
                                                              false);
     dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
     dr->set_comm(&comm);
-    dr->set_num_parallel_readers(1);
     dr->load();
     dr->set_mini_batch_size(num_samples);
     dr->set_last_mini_batch_size(num_samples);

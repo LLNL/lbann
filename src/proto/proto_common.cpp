@@ -56,9 +56,6 @@
 
 namespace lbann {
 
-int get_requested_num_parallel_readers(const lbann_comm& comm,
-                                       const lbann_data::LbannPB& p);
-
 void init_data_readers(
   lbann_comm* comm,
   const lbann_data::LbannPB& p,
@@ -129,8 +126,6 @@ void init_data_readers(
       for (int i = 0; i < pb_model.layer_size(); ++i) {
         const auto& proto_layer = pb_model.layer(i);
         if (proto_layer.has_input()) {
-          const auto num_readers = get_requested_num_parallel_readers(*comm, p);
-          reader_jag_conduit->set_num_parallel_readers(num_readers);
           reader_jag_conduit->set_local_id(readme.role());
           break;
         }
@@ -767,48 +762,6 @@ bool write_prototext_file(const std::string& fn, lbann_data::LbannPB& pb)
   return true;
 }
 
-bool check_if_num_parallel_readers_set(const lbann_comm& comm,
-                                       const lbann_data::Trainer& trainer)
-{
-  const bool master = comm.am_world_master();
-  const int parallel_io = trainer.num_parallel_readers();
-
-  if (parallel_io == 0) {
-    if (master) {
-      std::cout << "\tMax Parallel I/O Fetch: " << comm.get_procs_per_trainer()
-                << " (Limited to # Processes)" << std::endl;
-    }
-    return false;
-  }
-  if (master) {
-    std::cout << "\tMax Parallel I/O Fetch: " << parallel_io << std::endl;
-  }
-  return true;
-}
-
-void set_num_parallel_readers(const lbann_comm& comm, lbann_data::LbannPB& p)
-{
-  lbann_data::Trainer* trainer = p.mutable_trainer();
-  const bool is_set = check_if_num_parallel_readers_set(comm, *trainer);
-
-  if (!is_set) {
-    const int parallel_io = comm.get_procs_per_trainer();
-    trainer->set_num_parallel_readers(parallel_io); // adjust the prototext
-  }
-}
-
-int get_requested_num_parallel_readers(const lbann_comm& comm,
-                                       const lbann_data::LbannPB& p)
-{
-  const lbann_data::Trainer& trainer = p.trainer();
-  const bool is_set = check_if_num_parallel_readers_set(comm, trainer);
-
-  if (!is_set) {
-    return comm.get_procs_per_trainer();
-  }
-  return trainer.num_parallel_readers();
-}
-
 void set_data_readers_filenames(const std::string& which,
                                 lbann_data::LbannPB& p)
 {
@@ -975,10 +928,6 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
     trainer->set_hydrogen_block_size(
       arg_parser.get<int>(LBANN_OPTION_HYDROGEN_BLOCK_SIZE));
   }
-  if (arg_parser.get<int>(LBANN_OPTION_NUM_PARALLEL_READERS) != -1) {
-    trainer->set_num_parallel_readers(
-      arg_parser.get<int>(LBANN_OPTION_NUM_PARALLEL_READERS));
-  }
   if (arg_parser.get<bool>(LBANN_OPTION_DISABLE_CUDA)) {
     model->set_disable_cuda(arg_parser.get<bool>(LBANN_OPTION_DISABLE_CUDA));
   }
@@ -1032,8 +981,6 @@ void print_parameters(const lbann_comm& comm,
             << "  hydrogen_block_size:        " << t.hydrogen_block_size()
             << '\n'
             << "  procs_per_trainer:          " << comm.get_procs_per_trainer()
-            << '\n'
-            << "  num_parallel_readers:       " << t.num_parallel_readers()
             << '\n'
             << "  serialize_io:               " << t.serialize_io() << '\n'
             << "  caliper:                    "

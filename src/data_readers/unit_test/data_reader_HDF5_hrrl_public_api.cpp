@@ -98,7 +98,6 @@ TEST_CASE("hdf5 data reader data field fetch tests",
   auto io_thread_pool = std::make_unique<lbann::thread_pool>();
   io_thread_pool->launch_pinned_threads(1, 1);
   hdf5_dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
-  hdf5_dr->set_num_parallel_readers(1);
 
   SECTION("fetch data field")
   {
@@ -251,7 +250,6 @@ TEST_CASE("Data reader hdf5 conduit fetch tests",
   auto io_thread_pool = lbann::make_unique<lbann::thread_pool>();
   io_thread_pool->launch_pinned_threads(1, 1);
   hdf5_dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
-  hdf5_dr->set_num_parallel_readers(1);
 
   hdf5_dr->m_shuffled_indices.emplace_back(0);
 

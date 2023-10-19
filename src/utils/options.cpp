@@ -189,10 +189,6 @@ void construct_std_options()
                         "[STD] Number of threads available to both I/O and "
                         "initial data transformations for each rank.",
                         64);
-  arg_parser.add_option(LBANN_OPTION_NUM_PARALLEL_READERS,
-                        {"--num_parallel_readers"},
-                        "[STD] The number of parallel data readers",
-                        1);
   arg_parser.add_option(LBANN_OPTION_OPTIMIZER,
                         {"--optimizer"},
                         "[STD] Optimizer input file",

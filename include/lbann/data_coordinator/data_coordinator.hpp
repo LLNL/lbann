@@ -37,10 +37,6 @@
 #endif // LBANN_HAS_DISTCONV
 
 /** Design docs:
- num_parallel_readers - used by the partitioned io buffer to control
- how many ranks will access data.  Can be set by either the user, or
- by the size of the mini-batch????
-
  * IO buffers should go away and be rolled into the data coordinator.
 
  * Buffered data coordinator knows about the native data size / for
@@ -275,18 +271,6 @@ public:
   void calculate_num_iterations_per_epoch(int max_mini_batch_size,
                                           generic_data_reader* data_reader);
   void calculate_num_iterations_per_epoch(int mini_batch_size);
-
-  int compute_max_num_parallel_readers(
-    long data_set_size,
-    int mini_batch_size,
-    int requested_num_parallel_readers) const;
-  static int
-  compute_max_num_parallel_readers(long data_set_size,
-                                   int mini_batch_size,
-                                   int requested_num_parallel_readers,
-                                   const lbann_comm* comm);
-
-  virtual int get_num_parallel_readers(execution_mode mode) const;
 
   bool at_new_epoch(execution_mode mode) const;
 

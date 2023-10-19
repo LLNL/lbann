@@ -96,7 +96,6 @@ public:
       m_loaded_mini_batch_idx(0),
       m_current_mini_batch_idx(0),
       m_num_iterations_per_epoch(0),
-      m_num_parallel_readers(0),
       m_max_files_to_load(0),
       m_file_dir(""),
       m_data_sample_list(""),
@@ -466,10 +465,6 @@ public:
   {
     return m_stride_to_last_mini_batch;
   }
-  /// Set the number of parallel readers per model
-  void set_num_parallel_readers(const int s) { m_num_parallel_readers = s; }
-  /// Return the number of parallel readers per model
-  int get_num_parallel_readers() const { return m_num_parallel_readers; }
   /// Set the starting mini-batch index for the epoch
   virtual void set_reset_mini_batch_index(const int s)
   {
@@ -776,8 +771,6 @@ public:
   int m_current_mini_batch_idx;
   int
     m_num_iterations_per_epoch; /// How many iterations all readers will execute
-
-  int m_num_parallel_readers; /// How many parallel readers are being used
 
   size_t m_max_files_to_load;
   std::string m_file_dir;

@@ -162,7 +162,6 @@ TEST_CASE("Buffered data coordinator test", "[io][data_coordinator][sync]")
   //  world_comm.set_procs_per_trainer
   readers[mode]->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
   readers[mode]->set_comm(&world_comm);
-  readers[mode]->set_num_parallel_readers(1);
   readers[mode]->load();
   //  readers[mode]->set_initial_position();
   //  readers[mode] = new test_data_reader(num_mini_batches, mini_batch_size);

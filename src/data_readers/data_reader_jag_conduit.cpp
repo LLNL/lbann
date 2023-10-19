@@ -109,18 +109,6 @@ void data_reader_jag_conduit::shuffle_indices(rng_gen& gen)
                                           *m_comm);
 }
 
-int data_reader_jag_conduit::compute_max_num_parallel_readers()
-{
-  set_sample_stride(get_num_parallel_readers());
-  set_iteration_stride(1);
-  return get_num_parallel_readers();
-}
-
-bool data_reader_jag_conduit::check_num_parallel_readers(long data_set_size)
-{
-  return true;
-}
-
 data_reader_jag_conduit::data_reader_jag_conduit(bool shuffle)
   : generic_data_reader(shuffle)
 {
@@ -1690,7 +1678,7 @@ bool data_reader_jag_conduit::fetch_label(CPUMat& Y, int data_id, int mb_idx)
           mb_idx,
           1); // fake sample is set to 1; adversarial model
   else {      // fake sample (second half of minibatch is set to 0;discriminator
-         // model
+              // model
     // mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) :
     // Y.Set(m_gan_label_value,mb_idx,1);
     mb_idx < (get_current_mini_batch_size() / 2)

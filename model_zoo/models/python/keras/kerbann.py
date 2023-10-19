@@ -13,7 +13,7 @@ complex_layers = ['LSTM']
 def keras_to_lbann(model, num_classes,
         model_type='directed_acyclic_graph_model', data_layout="data_parallel",
         block_size=256, epochs=20,
-        batch_size=64, num_parallel_readers=0,
+        batch_size=64,
         procs_per_trainer=0, callbacks=['timer','print'], target='target'):
     # set user passed parameters (currently set once for entire model
     pb.model.type = model_type
@@ -21,7 +21,6 @@ def keras_to_lbann(model, num_classes,
     pb.model.mini_batch_size = batch_size
     pb.model.block_size = block_size
     pb.model.num_epochs = epochs
-    pb.model.num_parallel_readers = num_parallel_readers
     pb.model.procs_per_trainer = procs_per_trainer
 
     if model.layers[0].name != 'input_1':
