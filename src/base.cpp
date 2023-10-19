@@ -45,6 +45,7 @@
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/stack_trace.hpp"
+#include "lbann/utils/logging.hpp"
 
 #ifdef LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/helpers.hpp"
@@ -88,7 +89,6 @@ lbann_comm& get_current_comm() noexcept { return *world_comm_; }
 
 auto lbann::initialize_lbann(El::mpi::Comm&& c) -> std::unique_ptr<lbann_comm>
 {
-
   // Parse command-line arguments and environment variables
   auto& arg_parser = global_argument_parser();
   (void)arg_parser;
@@ -202,6 +202,9 @@ void lbann::finalize_lbann(lbann_comm* comm)
 
 auto lbann::initialize(int& argc, char**& argv) -> world_comm_ptr
 {
+  //FIXME(KLG): Can this go here?
+  logging::setup_loggers();
+
   // Parse command-line arguments and environment variables
   auto& arg_parser = global_argument_parser();
   (void)arg_parser;
