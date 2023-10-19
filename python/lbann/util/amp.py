@@ -64,10 +64,10 @@ WEIGHTS_INITIALIZERS = {
                            lambda: lbann.ConstantInitializer(value=0.0)],
     lbann.ChannelwiseFullyConnected: [lbann.HeNormalInitializer,
                                       lambda: lbann.ConstantInitializer(value=0.0)],
-    lbann.BatchNormalization: lambda _: [lambda: lbann.ConstantInitializer(value=1.0),
-                                         lambda: lbann.ConstantInitializer(value=0.0)],
-    lbann.LayerNorm: lambda _: [lambda: lbann.ConstantInitializer(value=1.0),
-                                lambda: lbann.ConstantInitializer(value=0.0)],
+    lbann.BatchNormalization: [lambda: lbann.ConstantInitializer(value=1.0),
+                               lambda: lbann.ConstantInitializer(value=0.0)],
+    lbann.LayerNorm: [lambda: lbann.ConstantInitializer(value=1.0),
+                      lambda: lbann.ConstantInitializer(value=0.0)],
 }
 
 
