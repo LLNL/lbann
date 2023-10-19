@@ -8,13 +8,11 @@ class Trainer:
     def __init__(self,
                  mini_batch_size,
                  name=None,
-                 num_parallel_readers=None,
                  random_seed=None,
                  serialize_io=None,
                  training_algo=None,
                  callbacks=[]):
         self.name = name
-        self.num_parallel_readers = num_parallel_readers
         self.random_seed = random_seed
         self.serialize_io = serialize_io
         self.mini_batch_size = mini_batch_size
@@ -29,8 +27,6 @@ class Trainer:
         trainer = trainer_pb2.Trainer()
         if self.name is not None:
             trainer.name = self.name
-        if self.num_parallel_readers is not None:
-            trainer.num_parallel_readers = self.num_parallel_readers
         if self.random_seed is not None:
             trainer.random_seed = self.random_seed
         if self.mini_batch_size is not None:
