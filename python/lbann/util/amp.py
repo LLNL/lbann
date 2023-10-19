@@ -50,7 +50,7 @@ NUM_WEIGHTS = {
     lbann.FullyConnected: num_weights_by_bias,
     lbann.ChannelwiseFullyConnected: functools.partial(
         num_weights_by_bias, bias_field='bias'),
-    lbann.BatchNormalization: lambda _: 2,
+    lbann.BatchNormalization: lambda _: 4,
     lbann.LayerNorm: lambda _: 2,
 }
 
@@ -65,7 +65,9 @@ WEIGHTS_INITIALIZERS = {
     lbann.ChannelwiseFullyConnected: [lbann.HeNormalInitializer,
                                       lambda: lbann.ConstantInitializer(value=0.0)],
     lbann.BatchNormalization: [lambda: lbann.ConstantInitializer(value=1.0),
-                               lambda: lbann.ConstantInitializer(value=0.0)],
+                               lambda: lbann.ConstantInitializer(value=0.0),
+                               lambda: lbann.ConstantInitializer(value=0.0),
+                               lambda: lbann.ConstantInitializer(value=1.0)],
     lbann.LayerNorm: [lambda: lbann.ConstantInitializer(value=1.0),
                       lambda: lbann.ConstantInitializer(value=0.0)],
 }
