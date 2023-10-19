@@ -348,7 +348,9 @@ public:
     m_supported_input_types[INPUT_DATA_TYPE_RESPONSES] = b;
   }
 
-  void start_data_store_mini_batch_exchange();
+  void
+  start_data_store_mini_batch_exchange(El::Int current_position_in_data_set,
+                                       El::Int current_mini_batch_size);
   void finish_data_store_mini_batch_exchange();
 
   /**

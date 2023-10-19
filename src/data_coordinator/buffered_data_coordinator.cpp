@@ -324,9 +324,16 @@ void buffered_data_coordinator<TensorDataType>::fetch_active_batch_synchronous(
   // thread to fetch the data, queue up the background thread
   if (loaded_mini_batch_size > 0 && active_buffer.num_samples_ready() == 0 &&
       !active_buffer.is_background_fetching_in_progress()) {
+    // Store the size of the current mini-batch so that others can obtain it
+    // without worrying about where the data reader is currently at.
+    m_current_mini_batch_size[buffer_id][mode] = loaded_mini_batch_size;
+    El::Int relative_base_position = dr->m_current_pos;
+
     // Start data store exchange if necessary (this should be moved
     // earlier as a future optimization)
-    get_data_reader(mode)->start_data_store_mini_batch_exchange();
+    get_data_reader(mode)->start_data_store_mini_batch_exchange(
+      relative_base_position,
+      loaded_mini_batch_size);
     // Finish data store exchange before accessing samples
     get_data_reader(mode)->finish_data_store_mini_batch_exchange();
 
@@ -335,10 +342,6 @@ void buffered_data_coordinator<TensorDataType>::fetch_active_batch_synchronous(
 
     // Set the size for the I/O buffers
     fp_setup_data(active_buffer, loaded_mini_batch_size);
-    // Store the size of the current mini-batch so that others can obtain it
-    // without worrying about where the data reader is currently at.
-    m_current_mini_batch_size[buffer_id][mode] = loaded_mini_batch_size;
-    El::Int relative_base_position = dr->m_current_pos;
 
     // ********************************************************************************
     // BVE
@@ -416,10 +419,17 @@ void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode)
       !next_buffer.is_background_fetching_in_progress()) {
     // BVE FIXME I don't think that the future data fetch should do
     // this.
+    // Store the size of the current mini-batch so that others can obtain it
+    // without worrying about where the data reader is currently at.
+    m_current_mini_batch_size[next_buffer_id][mode] =
+      next_loaded_mini_batch_size;
+    El::Int relative_base_position = dr->get_next_position();
 
     // Start data store exchange if necessary (this should be moved
     // earlier as a future optimization)
-    get_data_reader(mode)->start_data_store_mini_batch_exchange();
+    get_data_reader(mode)->start_data_store_mini_batch_exchange(
+      relative_base_position,
+      next_loaded_mini_batch_size);
     // Finish data store exchange before accessing samples
     get_data_reader(mode)->finish_data_store_mini_batch_exchange();
 
@@ -428,11 +438,6 @@ void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode)
 
     // Set the size for the I/O buffers
     fp_setup_data(next_buffer, next_loaded_mini_batch_size);
-    // Store the size of the current mini-batch so that others can obtain it
-    // without worrying about where the data reader is currently at.
-    m_current_mini_batch_size[next_buffer_id][mode] =
-      next_loaded_mini_batch_size;
-    El::Int relative_base_position = dr->get_next_position();
     // LBANN_WARNING(
     //   "Fetching local samples for a future buffer with new base position ",
     //   relative_base_position,
