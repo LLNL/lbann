@@ -72,6 +72,15 @@ WEIGHTS_INITIALIZERS = {
                       lambda: lbann.ConstantInitializer(value=0.0)],
 }
 
+# These define whether to enable or disable optimizers for specific weights.
+# None means to use the default optimizer.
+WEIGHTS_OPTIMIZERS = {
+    lbann.BatchNormalization: [lambda: None,
+                               lambda: None,
+                               lbann.NoOptimizer,
+                               lbann.NoOptimizer]
+}
+
 
 def add_weights(model: lbann.Model) -> None:
     """Set up weights in the model.
@@ -84,19 +93,22 @@ def add_weights(model: lbann.Model) -> None:
     # TODO: There may be an edge case where a layer with a bias has
     # had only one of its weights added.
     for layer in model.layers:
+        layer_type = type(layer)
         if layer.weights:
             # Set weights to FP32 if they don't have a datatype set.
             for weight in layer.weights:
                 if weight.datatype is None:
                     weight.datatype = lbann.DataType.FLOAT
-        elif type(layer) in NUM_WEIGHTS:
-            num_weights = NUM_WEIGHTS[type(layer)](layer)
-            initializer_types = WEIGHTS_INITIALIZERS[type(layer)]
+        elif layer_type in NUM_WEIGHTS:
+            num_weights = NUM_WEIGHTS[layer_type](layer)
+            initializer_types = WEIGHTS_INITIALIZERS[layer_type]
+            has_optimizer = WEIGHTS_OPTIMIZERS.get(layer_type, [])
             # Generate the weights.
             weights = [lbann.Weights(
                 name=f'{layer.name}_w{i}',
                 datatype=lbann.DataType.FLOAT,
-                initializer=initializer_types[i]())
+                initializer=initializer_types[i](),
+                optimizer=(has_optimizer[i]() if len(has_optimizer) > i else None))
                        for i in range(num_weights)]
             layer.add_weights(weights)
             model.weights.update(weights)

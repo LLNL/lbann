@@ -36,27 +36,6 @@ namespace lbann {
 
 namespace {
 
-/**
- * Define accumulation type for batchnorm.
- *
- * This is the same as the input type, except for half, where it is float to
- * ensure numerical stability.
- *
- * This is also type all weights are expected to be in.
- */
-template <typename TensorDataType>
-struct BNAccT
-{
-  using type = TensorDataType;
-};
-#ifdef LBANN_HAS_GPU_FP16
-template <>
-struct BNAccT<fp16>
-{
-  using type = fp16; // float;
-};
-#endif
-
 /** Functor for adding arrays. */
 template <typename T, size_t N>
 struct array_sum
@@ -552,15 +531,13 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute()
 
   // Compute statistics
   if (is_training) {
-    using ValuesGetter = weights_details::SafeWeightsAccessor<TensorDataType>;
-
     // Local matrices
     auto& local_mean = this->m_mean_v->Matrix();
     auto& local_var = this->m_var_v->Matrix();
     auto& local_running_mean =
-      ValuesGetter::mutable_values(this->get_weights(2)).Matrix();
+      dynamic_cast<WeightsType&>(this->get_weights(2)).get_values().Matrix();
     auto& local_running_var =
-      ValuesGetter::mutable_values(this->get_weights(3)).Matrix();
+      dynamic_cast<WeightsType&>(this->get_weights(3)).get_values().Matrix();
 
     // Compute sums and sums of squares
     El::Zero(local_mean);
@@ -649,14 +626,16 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute()
   }
 
   // Apply batch normalization
-  const auto& local_scale = this->weights_values(0).LockedMatrix();
-  const auto& local_bias = this->weights_values(1).LockedMatrix();
+  const auto& local_scale =
+    dynamic_cast<WeightsType&>(this->get_weights(0)).get_values().LockedMatrix();
+  const auto& local_bias =
+    dynamic_cast<WeightsType&>(this->get_weights(1)).get_values().LockedMatrix();
   const auto& local_mean =
     (is_training ? this->m_mean_v->LockedMatrix()
-                 : this->weights_values(2).LockedMatrix());
+                 : dynamic_cast<WeightsType&>(this->get_weights(2)).get_values().LockedMatrix());
   const auto& local_var =
     (is_training ? this->m_var_v->LockedMatrix()
-                 : this->weights_values(3).LockedMatrix());
+                 : dynamic_cast<WeightsType&>(this->get_weights(3)).get_values().LockedMatrix());
   if (!local_input.IsEmpty()) {
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
                                        gpu::get_sync_info(local_scale),
@@ -708,13 +687,14 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute()
     execution_mode::training;
 
   // Matrices
-  const auto& local_scale = this->weights_values(0).LockedMatrix();
+  const auto& local_scale =
+    dynamic_cast<WeightsType&>(this->get_weights(0)).get_values().LockedMatrix();
   const auto& local_mean =
     (is_training ? this->m_mean_v->LockedMatrix()
-                 : this->weights_values(2).LockedMatrix());
+                 : dynamic_cast<WeightsType&>(this->get_weights(2)).get_values().LockedMatrix());
   const auto& local_var =
     (is_training ? this->m_var_v->LockedMatrix()
-                 : this->weights_values(3).LockedMatrix());
+                 : dynamic_cast<WeightsType&>(this->get_weights(3)).get_values().LockedMatrix());
   const auto& input = this->get_prev_activations();
   const auto& local_input = input.LockedMatrix();
   const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();

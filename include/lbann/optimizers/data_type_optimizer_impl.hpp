@@ -267,7 +267,7 @@ bool data_type_optimizer<TensorDataType>::is_gradient_finite_and_unscale(
 #endif
     LBANN_ERROR("Could not determine gradient type");
   }
-  else {
+  else if (this->gradients_.size() > 1UL) {
     LBANN_ERROR(
       "Not currently supporting AMP with gradient accumulations in multiple "
       "types. Sorry.");
