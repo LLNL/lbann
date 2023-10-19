@@ -309,12 +309,12 @@ class GRU(Module):
 class ChannelwiseGRU(Module):
     """Channelwise extension of Gated-recurrent unit for 2D input.
        Implementation mostly taken from:
+
        https://pytorch.org/docs/stable/generated/torch.nn.GRUCell.html#torch.nn.GRUCell"""
     global_count = 0
 
     def __init__(self, num_channels, size, bias=True, weights=[], name=None):
         """Initialize GRU cell.
-
         Args:
             num_channels (int): The number of rows in the matrix to perform GRU
             size (int): Size of output tensor.
@@ -328,7 +328,6 @@ class ChannelwiseGRU(Module):
                 [-1/sqrt(size), 1/sqrt(size)]).
             name (str): Default name is in the form 'gru<index>'.
             data_layout (str): Data layout.
-
         """
 
         super().__init__()
