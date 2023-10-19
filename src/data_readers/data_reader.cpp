@@ -327,27 +327,27 @@ bool lbann::generic_data_reader::fetch_data_block(
 
   //  CPUMat& X
   for (int s = block_offset; s < mb_size; s += block_stride) {
-    LBANN_MSG(
-      "I am fetching a data block and I think that the current position is ",
-      current_position_in_data_set,
-      " instead of ",
-      m_current_pos);
+    // LBANN_MSG(
+    //   "I am fetching a data block and I think that the current position is ",
+    //   current_position_in_data_set,
+    //   " instead of ",
+    //   m_current_pos);
     int n = current_position_in_data_set + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
     indices_fetched.Set(s, 0, index);
 
-    LBANN_MSG("fetch data block is getting s = ",
-              s,
-              " with offset = ",
-              block_offset,
-              " stride = ",
-              block_stride,
-              " current_position ",
-              m_current_pos,
-              " n = ",
-              n,
-              " and index = ",
-              index);
+    // LBANN_MSG("fetch data block is getting s = ",
+    //           s,
+    //           " with offset = ",
+    //           block_offset,
+    //           " stride = ",
+    //           block_stride,
+    //           " current_position ",
+    //           m_current_pos,
+    //           " n = ",
+    //           n,
+    //           " and index = ",
+    //           index);
     for (auto& [data_field, buf] : input_buffers) {
       bool valid = false;
       if (data_field == INPUT_DATA_TYPE_SAMPLES) {
