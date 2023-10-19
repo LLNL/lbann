@@ -51,6 +51,7 @@ set_full_path(THIS_DIR_SOURCES
   tessellate.cpp
   uniform.cpp
   unpooling.cpp
+  upsample.cpp
   weighted_sum.cpp
   weights.cpp
 )
