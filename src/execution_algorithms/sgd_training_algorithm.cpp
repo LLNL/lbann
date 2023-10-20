@@ -111,15 +111,6 @@ void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
   model.reset_mode(c, execution_mode::training);
   dc.reset_mode(c);
 
-  if (get_trainer().background_io_activity_allowed()) {
-    // if (model.background_io_activity_allowed()) {
-    // Fetch the first batch
-    dc.fetch_active_batch_synchronous(execution_mode::training);
-    El::Int current_mini_batch_size =
-      dc.get_current_mini_batch_size(execution_mode::training);
-    model.set_current_mini_batch_size(current_mini_batch_size);
-  }
-
   // Run callbacks.
   do_train_begin_cbs(model, ScopeTimer{train_timer, "train_begin callbacks"});
 
@@ -144,6 +135,15 @@ void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
     LBANN_CALIPER_LOOP_BEGIN(
       train_batch,
       (epoch == 0UL ? "train_minibatch_epoch_0" : "train_minibatch"));
+
+    if (get_trainer().background_io_activity_allowed()) {
+      // Fetch the first batch
+      dc.fetch_active_batch_synchronous(execution_mode::training);
+      El::Int current_mini_batch_size =
+        dc.get_current_mini_batch_size(execution_mode::training);
+      model.set_current_mini_batch_size(current_mini_batch_size);
+    }
+
     bool end_of_epoch = false;
     while (!term(c) && !end_of_epoch) {
       LBANN_CALIPER_LOOP_ITER(train_batch, c.get_step());
@@ -330,18 +330,17 @@ void SGDTrainingAlgorithm::evaluate(SGDExecutionContext& c,
     LBANN_ERROR("invalid execution mode for evaluation");
   }
 
+  // Evaluate on all mini-batches
+  do_evaluate_begin_cbs(model,
+                        mode,
+                        ScopeTimer{eval_timer, "eval_begin callbacks"});
+  LBANN_CALIPER_LOOP_BEGIN(eval_batch, loop_label(mode));
   if (get_trainer().background_io_activity_allowed()) {
     // Fetch the first step in an evaluation
     dc.fetch_active_batch_synchronous(mode);
     El::Int current_mini_batch_size = dc.get_current_mini_batch_size(mode);
     model.set_current_mini_batch_size(current_mini_batch_size);
   }
-
-  // Evaluate on all mini-batches
-  do_evaluate_begin_cbs(model,
-                        mode,
-                        ScopeTimer{eval_timer, "eval_begin callbacks"});
-  LBANN_CALIPER_LOOP_BEGIN(eval_batch, loop_label(mode));
   while (!term(c)) {
     LBANN_CALIPER_LOOP_ITER(eval_batch, c.get_step());
     if (evaluate_mini_batch(c,
