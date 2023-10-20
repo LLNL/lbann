@@ -44,6 +44,12 @@ void construct_std_options()
     {"--disable_cuda"},
     "[STD] has no effect unless LBANN was compiled with LBANN_HAS_CUDNN");
   arg_parser.add_flag(
+    LBANN_OPTION_DISABLE_DISTCONV,
+    {"--disable_distconv"},
+    utils::ENV("LBANN_DISABLE_DISTCONV"),
+    "[STD] Disables distconv support. Has no effect unless LBANN was compiled "
+    "with LBANN_HAS_DISTCONV");
+  arg_parser.add_flag(
     LBANN_OPTION_DISABLE_SIGNAL_HANDLER,
     {"--disable_signal_handler"},
     "[STD] Disables signal handling (signal handling on by default)");

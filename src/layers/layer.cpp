@@ -1100,6 +1100,14 @@ bool Layer::distconv_enabled() const
     return m_distconv_enabled;
   }
 
+  // Check if distconv is disabled in arguments
+  auto const& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(LBANN_OPTION_DISABLE_DISTCONV)) {
+    m_distconv_enabled = false;
+    m_distconv_enabled_set = true;
+    return false;
+  }
+
   // Check if distconv is enabled
   const auto& ps = get_parallel_strategy();
   ParallelStrategy default_zero_ps;

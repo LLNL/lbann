@@ -40,6 +40,7 @@ namespace lbann {
 #define LBANN_OPTION_DISABLE_BACKGROUND_IO_ACTIVITY                            \
   "disable_background_io_activity"
 #define LBANN_OPTION_DISABLE_CUDA "disable_cuda"
+#define LBANN_OPTION_DISABLE_DISTCONV "disable_distconv"
 #define LBANN_OPTION_DISABLE_SIGNAL_HANDLER "disable_signal_handler"
 #define LBANN_OPTION_EXIT_AFTER_SETUP "exit_after_setup"
 #define LBANN_OPTION_GENERATE_MULTI_PROTO "generate_multi_proto"

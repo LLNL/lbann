@@ -264,7 +264,9 @@ auto lbann::initialize(int& argc, char**& argv) -> world_comm_ptr
 #endif // LBANN_HAS_NVSHMEM
 
 #ifdef LBANN_HAS_DISTCONV
-  dc::initialize(MPI_COMM_WORLD);
+  if (!arg_parser.get<bool>(LBANN_OPTION_DISABLE_DISTCONV)) {
+    dc::initialize(MPI_COMM_WORLD);
+  }
 #endif // LBANN_HAS_DISTCONV
 
   return comm;

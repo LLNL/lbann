@@ -88,6 +88,8 @@ def main():
 
     parser.set_defaults(progress=True, num_epochs=1)
     args = parser.parse_args()
+    if args.job_name == 'lbann_gpt':
+        args.job_name = f'lbann_gpt_{args.model_type}'
 
     # Load dataset
     dataset = dataset_utils.load_dataset(args.dataset)
