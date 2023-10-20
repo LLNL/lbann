@@ -1692,6 +1692,8 @@ void model::update_weights()
       if (opt != nullptr) {
         skip_step = !opt->is_gradient_finite_and_unscale(m_amp_scale_factor);
         if (skip_step) {
+          std::cout << "Skipping step after seeing " << w.get_name()
+                    << std::endl;
           break;
         }
       }
@@ -1722,14 +1724,22 @@ void model::update_weights()
   if (is_amp_enabled()) {
     if (skip_step) {
       m_amp_cur_steps = 0;
+      ++m_amp_cur_skipped_steps;
       // Keep scale factor to the smallest positive normalized value for
       // floats. Even when EvalType is double, we may cast to float.
       m_amp_scale_factor = std::max(
         static_cast<EvalType>(std::numeric_limits<float>::min()),
         m_amp_scale_factor * m_amp_backoff_factor);
+      // Warn if we've been skipping too many steps.
+      // Check exact number to avoid printing repeatedly.
+      if (m_amp_cur_skipped_steps == 10) {
+        LBANN_WARNING(
+          "AMP skipped ten steps in a row, your model may have issues with AMP");
+      }
     } else {
       if (m_amp_cur_steps + 1 == m_amp_growth_interval) {
         m_amp_cur_steps = 0;
+        m_amp_cur_skipped_steps = 0;
         // Prevent scale factor from overflowing to inf when cast to
         // float.
         m_amp_scale_factor = std::min(

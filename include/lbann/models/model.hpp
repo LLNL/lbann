@@ -577,6 +577,8 @@ private:
   size_t m_amp_growth_interval = 2000;
   /** @brief Current number of steps since the last skip or scale increase. */
   size_t m_amp_cur_steps = 0;
+  /** @brief Current number of sequentially skipped steps. */
+  size_t m_amp_cur_skipped_steps = 0;
 
 private:
   // ===========================================
