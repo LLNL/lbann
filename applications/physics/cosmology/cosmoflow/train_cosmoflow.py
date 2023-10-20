@@ -9,6 +9,7 @@ import numpy as np
 import lbann.contrib.args
 import lbann.contrib.launcher
 from lbann.core.util import get_parallel_strategy_args
+import os
 
 def create_cosmoflow_data_reader(
         train_path, val_path, test_path, num_responses):
@@ -22,7 +23,7 @@ def create_cosmoflow_data_reader(
     reader_args = [
         {"role": "train", "data_filename": train_path},
         {"role": "validate", "data_filename": val_path},
-        {"role": "test", "data_filename": test_path},
+        # {"role": "test", "data_filename": test_path},
     ]
 
     for reader_arg in reader_args:
@@ -168,10 +169,13 @@ if __name__ == "__main__":
     parser.add_argument(
         '--batch-job', action='store_true',
         help='Run as a batch job (default: false)')
+    
+    parser.add_argument(
+        '--work-dir', action='store', type=str, default=None)
 
     lbann.contrib.args.add_optimizer_arguments(
         parser,
-        default_optimizer="sgd",
+        default_optimizer="momentum",
         default_learning_rate=0.001,
     )
     args = parser.parse_args()
@@ -211,7 +215,7 @@ if __name__ == "__main__":
 
     # Setup optimizer
     optimizer = lbann.contrib.args.create_optimizer(args)
-    optimizer.learn_rate *= 1e-2
+    # optimizer.learn_rate *= 1e-2
 
     # Setup data reader
     if args.synthetic:
@@ -253,4 +257,5 @@ if __name__ == "__main__":
         environment=environment,
         lbann_args=lbann_args,
         batch_job=args.batch_job,
+        work_dir=args.work_dir,
         **kwargs)
