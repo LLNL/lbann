@@ -111,11 +111,14 @@ void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
   model.reset_mode(c, execution_mode::training);
   dc.reset_mode(c);
 
-  // Fetch the first batch
-  dc.fetch_active_batch_synchronous(execution_mode::training);
-  El::Int current_mini_batch_size =
-    dc.get_current_mini_batch_size(execution_mode::training);
-  model.set_current_mini_batch_size(current_mini_batch_size);
+  if (get_trainer().background_io_activity_allowed()) {
+    // if (model.background_io_activity_allowed()) {
+    // Fetch the first batch
+    dc.fetch_active_batch_synchronous(execution_mode::training);
+    El::Int current_mini_batch_size =
+      dc.get_current_mini_batch_size(execution_mode::training);
+    model.set_current_mini_batch_size(current_mini_batch_size);
+  }
 
   // Run callbacks.
   do_train_begin_cbs(model, ScopeTimer{train_timer, "train_begin callbacks"});
@@ -220,7 +223,12 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
   m_data_prefetch_sync_event.synchronize();
 #endif // LBANN_HAS_GPU
 
-  dc.fetch_data(execution_mode::training);
+  if (get_trainer().background_io_activity_allowed()) {
+    dc.fetch_data(execution_mode::training);
+  }
+  else {
+    dc.fetch_active_batch_synchronous(execution_mode::training);
+  }
 
   El::Int current_mini_batch_size =
     dc.get_current_mini_batch_size(execution_mode::training);
@@ -322,8 +330,12 @@ void SGDTrainingAlgorithm::evaluate(SGDExecutionContext& c,
     LBANN_ERROR("invalid execution mode for evaluation");
   }
 
-  // Fetch the first step in an evaluation
-  dc.fetch_active_batch_synchronous(mode);
+  if (get_trainer().background_io_activity_allowed()) {
+    // Fetch the first step in an evaluation
+    dc.fetch_active_batch_synchronous(mode);
+    El::Int current_mini_batch_size = dc.get_current_mini_batch_size(mode);
+    model.set_current_mini_batch_size(current_mini_batch_size);
+  }
 
   // Evaluate on all mini-batches
   do_evaluate_begin_cbs(model,
@@ -354,7 +366,12 @@ bool SGDTrainingAlgorithm::evaluate_mini_batch(SGDExecutionContext& c,
   model.reset_mode(c, mode);
   dc.reset_mode(c);
   do_batch_begin_cbs(model, mode, ScopeTimer{timer, "batch_begin callbacks"});
-  dc.fetch_data(mode);
+  if (get_trainer().background_io_activity_allowed()) {
+    dc.fetch_data(mode);
+  }
+  else {
+    dc.fetch_active_batch_synchronous(mode);
+  }
   El::Int current_mini_batch_size = dc.get_current_mini_batch_size(mode);
   model.set_current_mini_batch_size(current_mini_batch_size);
   // LBANN_MSG("evaluate mb thinks that the current mini-batch is ",

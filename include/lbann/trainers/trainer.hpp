@@ -197,7 +197,7 @@ public:
     return m_max_mini_batch_size;
   }
 
-  /** @brief Are background I/O activities enabled by the input layers */
+  /** @brief Are background I/O activities enabled by the data coordinator */
   bool background_io_activity_allowed() const noexcept
   {
     return m_background_io_allowed;

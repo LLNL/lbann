@@ -43,7 +43,9 @@ I/O & data readers:
    were removed from the model and layer API, and instead reside in the data
    ingestion pipeline.
  - Fixed implementation of background I/O to achive better decoupling
-   of background data fetch.
+   of background data fetch. Can be enabled / disabled with runtime
+   flag.
+ - Set the default number of I/O threads to 4
  - BVE TBD: remove m_current_pos, disable background I/O flag, cleanup
  buffer array of structs versus struct of arrays.
 

@@ -205,14 +205,6 @@ public:
   template <typename TensorDataType>
   std::unique_ptr<optimizer> create_optimizer() const;
 
-  /** @brief Set a flag that can be used to enable / disable the
-   *         background I/O activities
-   */
-  void allow_background_io_activity(bool enable) noexcept;
-
-  /** @brief Are background I/O activities enabled by the input layers */
-  bool background_io_activity_allowed() const noexcept;
-
   // ===========================================
   // Setup
   // ===========================================
@@ -554,9 +546,6 @@ private:
   /** @brief Current callbacks to process. */
   std::vector<std::shared_ptr<callback_base>> m_callbacks;
 
-  /** @brief Flag that allows input layers to fetch data in the background */
-  bool m_background_io_allowed = true;
-
   /** @brief Is the model setup
    *  @details Flag to indicate if the setup function has been called
    */
@@ -685,16 +674,6 @@ inline std::unique_ptr<optimizer> model::create_optimizer() const
   if (m_default_optimizer_msg)
     return proto::construct_optimizer<TensorDataType>(*m_default_optimizer_msg);
   return nullptr;
-}
-
-inline void model::allow_background_io_activity(bool enable) noexcept
-{
-  m_background_io_allowed = enable;
-}
-
-inline bool model::background_io_activity_allowed() const noexcept
-{
-  return m_background_io_allowed;
 }
 
 inline void model::set_subgrid_communication_type(int type) noexcept

@@ -80,7 +80,8 @@ void trainer::serialize(Archive& ar)
      CEREAL_NVP(m_max_mini_batch_size),
      CEREAL_NVP(m_root_random_seed),
      CEREAL_NVP(m_random_seed),
-     CEREAL_NVP(m_data_seq_random_seed));
+     CEREAL_NVP(m_data_seq_random_seed),
+     CEREAL_NVP(m_background_io_allowed));
 }
 
 ////////////////////////////////////////////////////////////
