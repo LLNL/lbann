@@ -89,11 +89,8 @@ public:
       m_stride_to_next_mini_batch(0),
       m_base_offset(0),
       m_sample_stride(1),
-      m_iteration_stride(1),
       m_last_mini_batch_size(0),
       m_stride_to_last_mini_batch(0),
-      m_reset_mini_batch_index(0),
-      m_loaded_mini_batch_idx(0),
       m_current_mini_batch_idx(0),
       m_num_iterations_per_epoch(0),
       m_max_files_to_load(0),
@@ -410,23 +407,14 @@ public:
             (m_current_pos - end_pos) < m_comm->get_procs_per_trainer());
   }
   /// True if the data reader is at the start of an epoch.
-  bool at_new_epoch() const
-  {
-    /// Note that data readers can start at a non-zero index if there
-    /// are parallel data readers in a model
-    return ((m_loaded_mini_batch_idx == m_reset_mini_batch_index) &&
-            (m_current_mini_batch_idx == 0));
-  }
+  bool at_new_epoch() const { return (m_current_mini_batch_idx == 0); }
   /// Set the mini batch size
   void set_mini_batch_size(const int s);
   /// Get the mini batch size
   int get_mini_batch_size() const { return m_mini_batch_size; }
-  /// Get the size of the mini-batch that will be loaded by a future
-  /// parallel I/O reader
-  int get_loaded_mini_batch_size() const;
-  /// Get the size of the next mini-batch that will be loaded by a future
-  /// parallel I/O reader (one fetch in the future)
-  int get_next_loaded_mini_batch_size() const;
+  /// Get the size of the next mini-batch that will be loaded by an
+  /// asynchronous, background, I/O thread (one fetch in the future)
+  int get_next_mini_batch_size() const;
   /// Get the current mini-batch size.
   int get_current_mini_batch_size() const;
   /// Return the full mini_batch_size.
@@ -445,10 +433,6 @@ public:
   void set_sample_stride(const int s) { m_sample_stride = s; }
   /// Return the sample stride.
   int get_sample_stride() const { return m_sample_stride; }
-  /// Set the iteration stride
-  void set_iteration_stride(const int s) { m_iteration_stride = s; }
-  /// Return the iteration stride.
-  int get_iteration_stride() const { return m_iteration_stride; }
   /// Return the base offset.
   virtual void set_base_offset(const int s) { m_base_offset = s; }
   /// Return the base offset.
@@ -467,22 +451,12 @@ public:
   {
     return m_stride_to_last_mini_batch;
   }
-  /// Set the starting mini-batch index for the epoch
-  virtual void set_reset_mini_batch_index(const int s)
-  {
-    m_reset_mini_batch_index = s;
-  }
-  /// Return the starting mini-batch index for the epoch
-  int get_reset_mini_batch_index() const { return m_reset_mini_batch_index; }
-  /// Return the current mini-batch index for the epoch
-  int get_loaded_mini_batch_index() const { return m_loaded_mini_batch_idx; }
   /// Return the current mini-batch index for the epoch
   int get_current_mini_batch_index() const { return m_current_mini_batch_idx; }
   /// Set the current position based on the base and model offsets
   void set_initial_position()
   {
     m_current_pos = m_base_offset;
-    m_loaded_mini_batch_idx = m_reset_mini_batch_index;
     m_current_mini_batch_idx = 0;
   }
   /// Get the current position in the data reader.
@@ -755,8 +729,6 @@ public:
   /// Sample stride is used when a mini-batch is finely interleaved across a
   /// DATA_PARALLEL distribution.
   int m_sample_stride;
-  /// Stride used by parallel data readers within the model
-  int m_iteration_stride;
 
   std::vector<int> m_shuffled_indices;
   /// Record of the indicies that are not being used for training
@@ -764,10 +736,6 @@ public:
 
   int m_last_mini_batch_size;
   int m_stride_to_last_mini_batch;
-  /// The index at which this data reader starts its epoch
-  int m_reset_mini_batch_index;
-  /// The index of the current mini-batch that has been loaded
-  int m_loaded_mini_batch_idx;
   /// The index of the current mini-batch that is being processed
   /// (train/test/validate)
   int m_current_mini_batch_idx;

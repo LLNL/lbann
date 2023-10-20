@@ -181,7 +181,6 @@ void data_coordinator::calculate_num_iterations_per_epoch(
 #else
   data_reader->set_sample_stride(this->m_comm->get_procs_per_trainer());
 #endif
-  data_reader->set_iteration_stride(1);
   /// Set data reader base offset and model offset
   data_reader->set_base_offset(base_offset);
   data_reader->set_initial_position();

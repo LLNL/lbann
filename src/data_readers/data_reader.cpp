@@ -453,11 +453,11 @@ bool generic_data_reader::update(bool is_active_reader)
 
   if (is_active_reader) {
     m_current_pos = get_next_position();
-    m_loaded_mini_batch_idx += m_iteration_stride;
   }
-  if (m_loaded_mini_batch_idx >= m_num_iterations_per_epoch) {
-    reader_not_done = false;
-  }
+  // if (m_current_mini_batch_idx >= m_num_iterations_per_epoch) {
+  //   //  if (m_loaded_mini_batch_idx >= m_num_iterations_per_epoch) {
+  //   reader_not_done = false;
+  // }
   if ((size_t)m_current_pos >= m_shuffled_indices.size()) {
     reader_not_done = false;
   }
@@ -470,10 +470,8 @@ bool generic_data_reader::update(bool is_active_reader)
         " but not all of the data has been used -- current pos = " +
         std::to_string(m_current_pos) + " and there are " +
         std::to_string(m_shuffled_indices.size()) + " indices" +
-        " : iteration=" + std::to_string(m_current_mini_batch_idx) + "C [" +
-        std::to_string(m_loaded_mini_batch_idx) + "L] of " +
+        " : iteration=" + std::to_string(m_current_mini_batch_idx) + "C of" +
         std::to_string(m_num_iterations_per_epoch) + "+" +
-        std::to_string(m_iteration_stride) + " : " +
         " index stride=" + std::to_string(m_stride_to_next_mini_batch) + "/" +
         std::to_string(m_stride_to_last_mini_batch));
     }
@@ -510,27 +508,12 @@ int generic_data_reader::get_linearized_size(
   return 0;
 }
 
-int generic_data_reader::get_loaded_mini_batch_size() const
+int generic_data_reader::get_next_mini_batch_size() const
 {
-  if (m_loaded_mini_batch_idx > (m_num_iterations_per_epoch - 1)) {
+  if (m_current_mini_batch_idx + 1 > (m_num_iterations_per_epoch - 1)) {
     return 0;
   }
-  else if (m_loaded_mini_batch_idx == (m_num_iterations_per_epoch - 1)) {
-    return m_last_mini_batch_size;
-  }
-  else {
-    return m_mini_batch_size;
-  }
-}
-
-int generic_data_reader::get_next_loaded_mini_batch_size() const
-{
-  if (m_loaded_mini_batch_idx + m_iteration_stride >
-      (m_num_iterations_per_epoch - 1)) {
-    return 0;
-  }
-  else if (m_loaded_mini_batch_idx + m_iteration_stride ==
-           (m_num_iterations_per_epoch - 1)) {
+  else if (m_current_mini_batch_idx + 1 == (m_num_iterations_per_epoch - 1)) {
     return m_last_mini_batch_size;
   }
   else {
@@ -540,7 +523,10 @@ int generic_data_reader::get_next_loaded_mini_batch_size() const
 
 int generic_data_reader::get_current_mini_batch_size() const
 {
-  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch - 1)) {
+  if (m_current_mini_batch_idx > (m_num_iterations_per_epoch - 1)) {
+    return 0;
+  }
+  else if (m_current_mini_batch_idx == (m_num_iterations_per_epoch - 1)) {
     return m_last_mini_batch_size;
   }
   else {
@@ -553,8 +539,7 @@ int generic_data_reader::get_next_position() const
   /// If the next mini-batch for this rank is going to be the last
   /// mini-batch, take the proper (possibly reduced) step to
   /// setup for the last mini-batch
-  if ((m_current_mini_batch_idx + m_iteration_stride - 1) ==
-      (m_num_iterations_per_epoch - 1)) {
+  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch - 1)) {
     return m_current_pos + m_stride_to_last_mini_batch;
   }
   else {
@@ -1087,20 +1072,11 @@ void generic_data_reader::print_config()
             " sample_stride              = ",
             m_sample_stride,
             "\n",
-            " iteration_stride           = ",
-            m_iteration_stride,
-            "\n",
             " last_mini_batch_size       = ",
             m_last_mini_batch_size,
             "\n",
             " stride_to_last_mini_batch  = ",
             m_stride_to_last_mini_batch,
-            "\n",
-            " reset_mini_batch_index     = ",
-            m_reset_mini_batch_index,
-            "\n",
-            " loaded_mini_batch_idx      = ",
-            m_loaded_mini_batch_idx,
             "\n",
             " current_mini_batch_idx     = ",
             m_current_mini_batch_idx,

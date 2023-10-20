@@ -299,7 +299,7 @@ void buffered_data_coordinator<TensorDataType>::fetch_active_batch_synchronous(
   generic_data_reader* dr = get_data_reader(mode);
   //************************************************************************
   // Get the current mini-batch from the data reader
-  El::Int loaded_mini_batch_size = dr->get_loaded_mini_batch_size();
+  El::Int loaded_mini_batch_size = dr->get_current_mini_batch_size();
   // LBANN_WARNING(to_string(mode),
   //           " fetch active data ",
   //           " for index ",
@@ -392,7 +392,7 @@ void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode)
   generic_data_reader* dr = get_data_reader(mode);
   //************************************************************************
   // Get the next mini-batchs size from the data reader
-  El::Int next_loaded_mini_batch_size = dr->get_next_loaded_mini_batch_size();
+  El::Int next_mini_batch_size = dr->get_next_mini_batch_size();
   // LBANN_WARNING(to_string(mode),
   //           " fetch data thinks that for iteration ",
   //           " for index ",
@@ -410,26 +410,25 @@ void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode)
   //           dr->get_iteration_stride(),
   //           ")",
   //           ", the next mini-batch size will be ",
-  //           next_loaded_mini_batch_size);
+  //           next_mini_batch_size);
   // If the projected mini-batch will not run past the epoch boundary
   // If there is no valid data and there is not already a background
   // thread to fetch the data, queue up the background thread
   // NOTE: This may fetch one more sample after the last epoch has completed.
-  if (next_loaded_mini_batch_size > 0 && next_buffer.num_samples_ready() == 0 &&
+  if (next_mini_batch_size > 0 && next_buffer.num_samples_ready() == 0 &&
       !next_buffer.is_background_fetching_in_progress()) {
     // BVE FIXME I don't think that the future data fetch should do
     // this.
     // Store the size of the current mini-batch so that others can obtain it
     // without worrying about where the data reader is currently at.
-    m_current_mini_batch_size[next_buffer_id][mode] =
-      next_loaded_mini_batch_size;
+    m_current_mini_batch_size[next_buffer_id][mode] = next_mini_batch_size;
     El::Int relative_base_position = dr->get_next_position();
 
     // Start data store exchange if necessary (this should be moved
     // earlier as a future optimization)
     get_data_reader(mode)->start_data_store_mini_batch_exchange(
       relative_base_position,
-      next_loaded_mini_batch_size);
+      next_mini_batch_size);
     // Finish data store exchange before accessing samples
     get_data_reader(mode)->finish_data_store_mini_batch_exchange();
 
@@ -437,7 +436,7 @@ void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode)
     // BVE Get all of the state now about what is being fetched
 
     // Set the size for the I/O buffers
-    fp_setup_data(next_buffer, next_loaded_mini_batch_size);
+    fp_setup_data(next_buffer, next_mini_batch_size);
     // LBANN_WARNING(
     //   "Fetching local samples for a future buffer with new base position ",
     //   relative_base_position,
@@ -452,14 +451,14 @@ void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode)
                 this,
                 next_buffer_idx,
                 std::ref(next_buffer),
-                next_loaded_mini_batch_size,
+                next_mini_batch_size,
                 relative_base_position,
                 mode));
     next_buffer.set_data_fetch_future(std::move(background_fetch_done));
     next_buffer.set_background_fetching_in_progress(true);
   }
 
-  // if (next_loaded_mini_batch_size == 0) {
+  // if (next_mini_batch_size == 0) {
   //   LBANN_WARNING("I will skipped a fetch batch");
   // }
 }
