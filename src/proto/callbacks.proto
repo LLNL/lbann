@@ -140,7 +140,9 @@ message Callback {
     bool skip_init = 2;
   }
 
-  message CallbackTimer {}
+  message CallbackTimer {
+    int64 skip_steps = 1;   // Number of steps to skip before starting timing
+  }
 
   message CallbackSummary {
     int64 batch_interval = 2;  // default in lbann_callback_summary.hpp is 1

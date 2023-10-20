@@ -52,7 +52,10 @@ void timer::serialize(Archive& ar)
 
 void timer::batch_timing_begin(const model& m)
 {
-  auto const mode = m.get_execution_context().get_execution_mode();
+  const auto& c = m.get_execution_context();
+  auto const mode = c.get_execution_mode();
+  if (mode == execution_mode::training && c.get_step() < m_skip_steps)
+    return;
   m_batch_start_times[mode] = get_time();
 }
 
@@ -60,6 +63,8 @@ void timer::batch_timing_end(const model& m)
 {
   const auto& c = m.get_execution_context();
   const auto& mode = c.get_execution_mode();
+  if (mode == execution_mode::training && c.get_step() - 1 < m_skip_steps)
+    return;
   const auto& batch_time = get_time() - m_batch_start_times[mode];
   m_batch_times[mode].push_back(batch_time);
   if (m_summarizer != nullptr) {
@@ -266,10 +271,12 @@ void timer::write_specific_proto(lbann_data::Callback& proto) const
 }
 
 std::unique_ptr<callback_base>
-build_timer_callback_from_pbuf(const google::protobuf::Message&,
+build_timer_callback_from_pbuf(const google::protobuf::Message& proto_msg,
                                std::shared_ptr<lbann_summary> const& summarizer)
 {
-  return std::make_unique<timer>(summarizer);
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackTimer&>(proto_msg);
+  return std::make_unique<timer>(summarizer, params.skip_steps());
 }
 
 } // namespace callback

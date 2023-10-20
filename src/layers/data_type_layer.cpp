@@ -114,7 +114,16 @@ El::Int data_type_layer<InputTensorDataType, OutputTensorDataType>::
   infer_mini_batch_size_from_parents_or_default_to_current() const
 {
   auto mini_batch_size = infer_mini_batch_size_from_parents();
-  if (mini_batch_size == 0 || get_num_parents() == 0) {
+
+  bool has_distconv_parent = false;
+  for (auto const* parent : get_parent_layers()) {
+    if (parent->distconv_enabled()) {
+      has_distconv_parent = true;
+      break;
+    }
+  }
+  if (mini_batch_size == 0 || get_num_parents() == 0 || distconv_enabled() ||
+      has_distconv_parent) {
     // Note that with DistConv adaptors it is possible to have a
     // parent layer with a 0-sized mini-batch.  Once DiHydrogen is the
     // default, this should be a fatal error.
@@ -123,6 +132,7 @@ El::Int data_type_layer<InputTensorDataType, OutputTensorDataType>::
     //    mini_batch_size = current_output_mini_batch_size();
     mini_batch_size = this->get_model()->get_current_mini_batch_size();
   }
+
   return mini_batch_size;
 }
 

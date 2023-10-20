@@ -110,7 +110,7 @@ class CosmoFlow(lm.Module):
             fc = lm.FullyConnectedModule(
                 **param,
                 name=self.name+"_"+fc_name,
-                weights=[lbann.Weights(initializer=lbann.HeNormalInitializer()),
+                weights=[lbann.Weights(initializer=lbann.HeNormalInitializer() if i < len(fc_params)-1 else lbann.ConstantInitializer(value=0)),
                          lbann.Weights(initializer=lbann.ConstantInitializer(value=0))],
             )
             setattr(self, fc_name, fc)

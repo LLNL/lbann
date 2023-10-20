@@ -52,7 +52,7 @@ def construct_cosmoflow_model(parallel_strategy,
                lbann.Metric(mae, name='MAE', unit='')]
     callbacks = [
         lbann.CallbackPrint(),
-        lbann.CallbackTimer(),
+        lbann.CallbackTimer(skip_steps=3),
         lbann.CallbackGPUMemoryUsage(),
         lbann.CallbackPrintModelDescription(),
         lbann.CallbackDumpOutputs(
@@ -60,10 +60,17 @@ def construct_cosmoflow_model(parallel_strategy,
             layers=' '.join([preds.name, secrets.name]),
             execution_modes='test'
         ),
-        lbann.CallbackLinearGrowthLearningRate(target=learning_rate, num_epochs=5),
-        lbann.CallbackSetLearningRate(step=32, val=0.25 * learning_rate),
-        lbann.CallbackSetLearningRate(step=64, val=0.125 * learning_rate),
-        lbann.CallbackProgressBar()
+        # lbann.CallbackLinearGrowthLearningRate(target=learning_rate, num_epochs=5),
+        # lbann.CallbackSetLearningRate(step=32, val=0.25 * learning_rate),
+        # lbann.CallbackSetLearningRate(step=64, val=0.125 * learning_rate),
+        # lbann.CallbackCosineDecayLearningRate(
+        #     lr_max=1e-3,
+        #     lr_min=1e-5,
+        #     decay_steps=10000,
+        #     initial_warmup_learning_rate=0,
+        #     warmup_steps=100
+        # ),
+        lbann.CallbackProgressBar(newline_interval=1)
     ]
     return lbann.Model(
         epochs=num_epochs,
