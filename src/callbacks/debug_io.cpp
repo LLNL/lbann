@@ -99,8 +99,7 @@ void debug_io::print_fp_start(model* m, input_layer<DataType>* input)
     << " starting forward propagation for layer " << input->get_name()
     << " type: " << input->get_type() << " iteration: "
     << dc.get_data_reader(mode)->get_current_mini_batch_index() << " of "
-    << dc.get_num_iterations_per_epoch(mode) << " loading idx "
-    << dc.get_data_reader(mode)->get_loaded_mini_batch_index()
+    << dc.get_num_iterations_per_epoch(mode)
     << " bs=" << dc.get_current_mini_batch_size(mode) << " @"
     << dc.get_data_reader(mode)->get_position()
     //              << " %" << input->get_data_reader()->get_batch_stride()
