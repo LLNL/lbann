@@ -87,11 +87,8 @@ message Callback {
     CallbackAlternateUpdates alternate_updates = 54;
     CallbackProgressBar progress_bar = 56;
     CallbackCosineDecayLearningRate cosine_decay_learning_rate = 57;
-<<<<<<< HEAD
     CallbackMemoryProfiler memory_profiler = 58;
-=======
-    CallbackClipGradientNorm clip_gradient_norm = 58;
->>>>>>> ad78c286c (Implement gradient norm clipping callback)
+    CallbackClipGradientNorm clip_gradient_norm = 59;
   }
 
   message CallbackLTFB {
@@ -145,7 +142,7 @@ message Callback {
   }
 
   message CallbackTimer {
-    int64 skip_steps = 1;   // Number of steps to skip before starting timing
+    int64 skip_steps = 1;  // Number of steps to skip before starting timing
   }
 
   message CallbackSummary {
