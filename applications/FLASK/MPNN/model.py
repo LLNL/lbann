@@ -47,7 +47,7 @@ def graph_splitter(_input):
     bond2bond_mapping = lbann.Reshape(lbann.Identity(graph_input), dims=[max_bonds])
     graph_mask = lbann.Reshape(lbann.Identity(graph_input), dims=[max_atoms])
     num_atoms = lbann.Reshape(lbann.Identity(graph_input), dims=[1])
-    target = lbann.Reshape(lbann.Identity(graph_input), dims=[1])
+    target = lbann.Reshape(lbann.Identity(graph_input), dims=[1], name='TARGET')
     
     return f_atoms, f_bonds, atom2bond_source_mapping, atom2bond_target_mapping, \
       bond2atom_mapping, bond2bond_mapping, graph_mask, num_atoms, target
@@ -61,6 +61,7 @@ def make_model():
 
     encoder = MPNEncoder(atom_fdim=DATASET_CONFIG['ATOM_FEATURES'],
                          bond_fdim=DATASET_CONFIG['BOND_FEATURES'],
+                         max_atoms=DATASET_CONFIG['MAX_ATOMS'],
                          hidden_size=HYPERPARAMETERS_CONFIG['HIDDEN_SIZE'],
                          activation_func=lbann.Relu)
 
@@ -79,21 +80,26 @@ def make_model():
     x = lbann.Relu(x, name="READOUT_Activation_1")
 
     x = lbann.FullyConnected(x, num_neurons=1,
-                             name="READOUT_output")
+                             name="PREDICTION")
 
     loss = lbann.MeanSquaredError(x, target)
 
     layers = lbann.traverse_layer_graph(_input)
+
+    # Callbacks
     training_output = lbann.CallbackPrint(interval=1, print_global_stat_only=False)
     gpu_usage = lbann.CallbackGPUMemoryUsage()
     timer = lbann.CallbackTimer()
+    predictions = lbann.CallbackDumpOutputs(['TARGET', 'PREDICTION'],
+                                            role='test')
 
-    callbacks = [training_output, gpu_usage, timer]
+    callbacks = [training_output, gpu_usage, timer, predictions]
     model = lbann.Model(HYPERPARAMETERS_CONFIG['EPOCH'],
                         layers=layers,
                         objective_function=loss,
                         callbacks=callbacks)
     return model
+
 
 def make_data_reader(classname='dataset',
                      sample='get_sample_func',

@@ -1,7 +1,7 @@
 # Dataset feature defeaults
 # In general,  don't change these unless using cusom data - S.Z.
 
-DATASET_CONFIG = {
+DATASET_CONFIG: dict = {
     "MAX_ATOMS": 100,  # The number of maximum atoms in CSD dataset
     "MAX_BONDS": 224,  # The number of maximum bonds in CSD dataset
     "ATOM_FEATURES": 133,
