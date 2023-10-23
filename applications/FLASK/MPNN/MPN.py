@@ -7,7 +7,11 @@ class MPNEncoder(Module):
   """
   global_count = 0
 
-  def __init__(self, atom_fdim, bond_fdim, hidden_size, activation_func, bias=False, depth=3, name=None):
+  def __init__(self,
+               atom_fdim,
+               bond_fdim,
+               hidden_size,
+               activation_func, bias=False, depth=3, name=None):
     
       MPNEncoder.global_count += 1
       # For debugging
