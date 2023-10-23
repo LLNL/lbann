@@ -4,6 +4,7 @@ modeling target. The Pile dataset reader is provided as an example task.
 """
 import argparse
 from dataclasses import dataclass
+import math
 import os
 import os.path
 import sys
@@ -85,6 +86,10 @@ def main():
         type=float,
         default=0.0,
         help="Dropout ratio after multi-head attention (default: 0.0)")
+    parser.add_argument("--grad-clip",
+                        type=float,
+                        default=0.0,
+                        help="Clip global gradient norm (default: 0.0)")
 
     parser.set_defaults(progress=True, num_epochs=1)
     args = parser.parse_args()
@@ -109,7 +114,14 @@ def main():
     )
 
     # Construct trainer
-    tokens_per_step = dataset.sequence_length * args.mini_batch_size
+
+    # Training schedule
+    # GPT-3 paper used 300 billion tokens in total
+    lr_decay_ratio = 260 / 300  # 260 billion tokens used for cosine decay
+    warmup_ratio = 375 / 300000  # 375 million tokens for warmup
+    # tokens_per_step = dataset.sequence_length * args.mini_batch_size
+    total_steps = math.ceil(dataset.num_train_samples() / args.mini_batch_size)
+
     train_script: BatchScript = trainer.construct_training_task(
         model,
         args,
@@ -118,11 +130,11 @@ def main():
         beta1=0.9,
         beta2=0.95,
         eps=1e-8,
-        clip_gradient=1.0,
+        clip_gradient=args.grad_clip,
         lr_decay='cosine',
-        lr_decay_steps=int((260 * 1e9) // tokens_per_step),
+        lr_decay_steps=int(lr_decay_ratio * total_steps),
         end_learning_rate=chosen_config.lr / 10,
-        warmup_steps=int((375 * 1e6) // tokens_per_step),
+        warmup_steps=int(warmup_ratio * total_steps),
         adamw_decay=0.1,
     )
 

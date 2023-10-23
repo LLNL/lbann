@@ -147,6 +147,10 @@ def make_batch_script(model: lbann.Model,
                 warmup_steps=warmup_steps,
             ))
 
+        print(f'Training schedule: warmup to LR={learning_rate:.6f} in '
+              f'{warmup_steps} steps, cosine decay to '
+              f'LR={end_learning_rate:.6f} in {lr_decay_steps} steps')
+
     if clip_gradient > 0:
         model.callbacks.append(
             lbann.CallbackClipGradientNorm(global_norm=True,
@@ -183,6 +187,7 @@ def make_batch_script(model: lbann.Model,
         'LBANN_USE_CUDNN_TENSOR_OPS': 0,
         # "LBANN_KEEP_ERROR_SIGNALS": 1
         "LBANN_NO_INPLACE": 1,
+        "LBANN_DISABLE_DISTCONV": 1,
     }
 
     save_text = False
