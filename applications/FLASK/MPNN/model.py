@@ -1,6 +1,7 @@
 import lbann
 from config import DATASET_CONFIG, HYPERPARAMETERS_CONFIG
 from MPN import MPNEncoder
+import os.path as osp
 
 
 def graph_splitter(_input):
@@ -94,3 +95,23 @@ def make_model():
                         callbacks=callbacks)
     return model
 
+def make_data_reader(classname='dataset',
+                     sample='get_sample_func',
+                     num_samples='num_samples_func',
+                     sample_dims='sample_dims_func'):
+    data_dir = osp.dirname(osp.realpath(__file__))
+    reader = lbann.reader_pb2.DataReader()
+
+    for role in ['train', 'validation', 'test']:
+        _reader = reader.reader.add()
+        _reader.name = 'python'
+        _reader.role = role
+        _reader.shuffle = True
+        _reader.fraction_of_data_to_use = 1.0
+        _reader.python.module = classname
+        _reader.python.module_dir = data_dir
+        _reader.python.sample_function = f"{role}_{sample}"
+        _reader.python.num_samples_function = f"{role}_{num_samples}"
+        _reader.python.sample_dims_function = f"{role}_{sample_dims}"
+    
+    return reader

@@ -10,7 +10,7 @@ DATASET_CONFIG = {
 
 # Hyperamaters used to set up trainer and MPN
 # These can be changed freely 
-HYPERPARAMETERS_CONFIG = {
+HYPERPARAMETERS_CONFIG: dict = {
     "HIDDEN_SIZE":300,
     "LR": 0.001,
     "BATCH_SIZE" : 128,
