@@ -92,16 +92,9 @@ void clip_gradient_norm::on_backward_prop_end(model* m)
     if (opt != nullptr) {
       DataType norm;
       auto* dt_opt = dynamic_cast<data_type_optimizer<DataType>*>(opt);
-      // if (!ONe) {
       auto& grad = dt_opt->get_gradient();
       norm = El::Nrm2(grad);
-      // }
-      // else {
-      //   auto& grad_shard = dt_opt->get_gradient_shard();
-      //   norm = El::Nrm2(grad_shard);
-      //   norm =
-      //     std::sqrt(m->get_comm()->trainer_allreduce<DataType>(norm * norm));
-      // }
+
       if (!m_global_norm && norm > this->m_value) {
         El::Scale(this->m_value / norm, grad);
       }

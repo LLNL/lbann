@@ -47,7 +47,6 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
-  using AbsMatrixType = El::AbstractMatrix<TensorDataType>;
   ///@}
 
 public:
@@ -107,9 +106,6 @@ public:
   void fp_compute() override;
 
   void bp_compute() override;
-
-  static void fp_compute_external(const AbsMatrixType& input,
-                                  AbsMatrixType& output);
 
 protected:
   /** Add layer specific data to prototext */
