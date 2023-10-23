@@ -45,45 +45,72 @@ class MPNEncoder(Module):
   
   def message(self, bond_features,
               bond2atom_mapping,
-              atom2bond_mapping,
+              atom2bond_sources_mapping,
+              atom2bond_target_mapping,
               bond2revbond_mapping,
               MAX_ATOMS):
       """
       """
       messages = self.W_i(bond_features)
       for depth in range(self.depth - 1):
-          a_message = lbann.Scatter(messages, bond2atom_mapping)
-          bond_message = lbann.Gather(a_message, atom2bond_mapping)
-          rev_message = lbann.Gather(messages, bond2revbond_mapping)
-          messages = lbann.SubtractOperator(bond_message, rev_message)
+          nei_message = lbann.Gather(messages,
+                                     atom2bond_sources_mapping,
+                                     axis=0)
 
+          a_message = lbann.Scatter(nei_message,
+                                    atom2bond_target_mapping,
+                                    dims=[MAX_ATOMS, self.hidden_size],
+                                    axis=0)
+
+          bond_message = lbann.Gather(a_message,
+                                      bond2atom_mapping)
+          rev_message = lbann.Gather(messages,
+                                     bond2revbond_mapping)
+
+          messages = lbann.SubtractOperator(bond_message, rev_message)
           messages = self.W_h(messages)
+
       return messages
   
 
-  def aggregate(self, atom_messages, bond_messages, bond2atom_mapping):
+  def aggregate(self,
+                atom_messages,
+                bond_messages,
+                bond2atom_mapping,
+                NUM_ATOMS):
       """
       """
-      a_messages = lbann.Scatter(bond_messages, bond2atom_mapping)
-      atoms_hidden = lbann.Concatentate([atom_messages, atom_messages],
+      a_messages = lbann.Scatter(bond_messages,
+                                 bond2atom_mapping,
+                                 axis=0,
+                                 dims=[NUM_ATOMS, self.hidden_size])
+
+      atoms_hidden = lbann.Concatentate([atom_messages, a_messages],
                                         dim=0)
       return self.W_o(atoms_hidden)
 
 
-  def readout(self, atom_encoded_features, graph_mask, num_atoms, max_atoms):
+  def readout(self,
+              atom_encoded_features,
+              graph_mask,
+              num_atoms,
+              max_atoms):
       """
       """
       mol_encoding = lbann.Scatter(atom_encoded_features,
                                    graph_mask,
                                    name=self.name + "graph_scatter")
-      mol_encoding = lbann.DivideOperator(mol_encoding, lbann.Tessallate(num_atoms,
-                                                                         dims=[max_atoms, 1]))
+      mol_encoding = lbann.DivideOperator(mol_encoding,
+                                          lbann.Tessallate(num_atoms,
+                                                           dims=[max_atoms, 1]))
       return mol_encoding
+
 
   def forward(self,
               atom_input_features,
               bond_input_features,
-              atom2bond_mapping,
+              atom2bond_sources_mapping,
+              atom2bond_target_mapping,
               bond2atom_mapping,
               bond2revbond_mapping,
               graph_mask, num_atoms, max_atoms):
@@ -91,12 +118,15 @@ class MPNEncoder(Module):
       """
       bond_messages = self.message(bond_input_features,
                                    bond2atom_mapping,
-                                   atom2bond_mapping,
+                                   atom2bond_sources_mapping,
+                                   atom2bond_target_mapping,
                                    bond2revbond_mapping,
                                    max_atoms)
       
-      atom_encoded_features = self.aggregate(atom_input_features, bond_messages,
-                                             bond2atom_mapping)
+      atom_encoded_features = self.aggregate(atom_input_features,
+                                             bond_messages,
+                                             bond2atom_mapping,
+                                             num_atoms)
       
       readout = self.readout(atom_encoded_features, graph_mask, num_atoms, max_atoms)
       return readout
