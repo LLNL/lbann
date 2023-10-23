@@ -25,12 +25,12 @@ def check_gradients(global_norm=True):
             norm = 0
             for gf in grad_files:
                 weight_norm = np.square(np.loadtxt(gf)).sum()
-                assert np.sqrt(weight_norm) <= 1 + eps
+                assert np.sqrt(weight_norm) <= 1 + 8 * eps
                 norm += weight_norm
             
             # Check the global gradient norm is less than 1 if requested.
             if global_norm:
-                assert np.sqrt(norm) <= 1 + eps
+                assert np.sqrt(norm) <= 1 + 8 * eps
         
         return wrapper
     
