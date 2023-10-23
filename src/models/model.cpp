@@ -1299,30 +1299,23 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names)
 
       // Create split layer
       OwningLayerPtr split;
-      using args_tuple = std::tuple<data_layout, El::Device>;
-      args_tuple args(l.get_data_layout(), l.get_device_allocation());
-      if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::CPU)) {
-        split.reset(new split_layer<DataType,
-                                    data_layout::DATA_PARALLEL,
-                                    El::Device::CPU>(m_comm));
+      using args_tuple = std::tuple<std::type_index, data_layout, El::Device>;
+      args_tuple args(l.get_output_datatype(),
+                      l.get_data_layout(),
+                      l.get_device_allocation());
+
+#define PROTO_DEVICE_LAYOUT(T_datatype, T_layout, T_device)                              \
+      if (args == args_tuple(std::type_index(typeid(T_datatype)), T_layout, T_device)) { \
+        split.reset(new split_layer<T_datatype, T_layout, T_device>(m_comm));            \
       }
-      if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::CPU)) {
-        split.reset(new split_layer<DataType,
-                                    data_layout::MODEL_PARALLEL,
-                                    El::Device::CPU>(m_comm));
-      }
-#ifdef LBANN_HAS_GPU
-      if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::GPU)) {
-        split.reset(new split_layer<DataType,
-                                    data_layout::DATA_PARALLEL,
-                                    El::Device::GPU>(m_comm));
-      }
-      if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::GPU)) {
-        split.reset(new split_layer<DataType,
-                                    data_layout::MODEL_PARALLEL,
-                                    El::Device::GPU>(m_comm));
-      }
-#endif // LBANN_HAS_GPU
+
+#define PROTO_DEVICE(T_datatype, T_device)                                    \
+      PROTO_DEVICE_LAYOUT(T_datatype, data_layout::DATA_PARALLEL, T_device);  \
+      PROTO_DEVICE_LAYOUT(T_datatype, data_layout::MODEL_PARALLEL, T_device);
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE_LAYOUT
+
       if (split == nullptr) {
         LBANN_ERROR("Could not construct split layer corresponding to layer \"",
                     l.get_name(),
@@ -1692,8 +1685,6 @@ void model::update_weights()
       if (opt != nullptr) {
         skip_step = !opt->is_gradient_finite_and_unscale(m_amp_scale_factor);
         if (skip_step) {
-          std::cout << "Skipping step after seeing " << w.get_name()
-                    << std::endl;
           break;
         }
       }

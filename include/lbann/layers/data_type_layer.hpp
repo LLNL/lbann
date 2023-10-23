@@ -103,6 +103,14 @@ public:
   {}
   virtual ~data_type_layer() = default;
 
+  std::type_index get_input_datatype() const override {
+    return std::type_index(typeid(InputTensorDataType));
+  }
+
+  std::type_index get_output_datatype() const override {
+    return std::type_index(typeid(OutputTensorDataType));
+  }
+
   /** Get a string representing the layer datatype
    */
   std::string get_datatype_name() const override
