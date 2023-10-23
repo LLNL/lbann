@@ -148,7 +148,6 @@ def make_batch_script(model: lbann.Model,
             ))
 
     if clip_gradient > 0:
-        raise NotImplementedError('Gradient norm clipping not yet implemented')
         model.callbacks.append(
             lbann.CallbackClipGradientNorm(global_norm=True,
                                            value=clip_gradient))

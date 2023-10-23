@@ -80,13 +80,13 @@ def lbann_test(check_gradients=False, train=False, **decorator_kwargs):
                                           error_on_failure=True,
                                           execution_modes='train' if train else 'test'))
 
-            obj_func = None
+            check_grad_obj_func = None
             if check_gradients:
                 if tester.check_gradients_tensor is None:
                     raise ValueError(
                         'LBANN test did not set a tensor for checking gradients, '
                         'use ``ModelTester.set_check_gradients_tensor``.')
-                obj_func = tester.check_gradients_tensor
+                check_grad_obj_func = tester.check_gradients_tensor
                 callbacks.append(
                     lbann.CallbackCheckGradients(error_on_failure=True))
             callbacks.extend(tester.extra_callbacks)
@@ -95,7 +95,7 @@ def lbann_test(check_gradients=False, train=False, **decorator_kwargs):
             metrics.extend(tester.extra_metrics)
             model = lbann.Model(epochs=1 if train else 0,
                                 layers=full_graph,
-                                objective_function=obj_func,
+                                objective_function=check_grad_obj_func if check_gradients else tester.loss,
                                 metrics=metrics,
                                 callbacks=callbacks)
 

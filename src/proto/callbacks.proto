@@ -88,6 +88,7 @@ message Callback {
     CallbackProgressBar progress_bar = 56;
     CallbackCosineDecayLearningRate cosine_decay_learning_rate = 57;
     CallbackMemoryProfiler memory_profiler = 58;
+    CallbackClipGradientNorm clip_gradient_norm = 59;
   }
 
   message CallbackLTFB {
@@ -141,7 +142,7 @@ message Callback {
   }
 
   message CallbackTimer {
-    int64 skip_steps = 1;   // Number of steps to skip before starting timing
+    int64 skip_steps = 1;  // Number of steps to skip before starting timing
   }
 
   message CallbackSummary {
@@ -466,5 +467,12 @@ message Callback {
 
   message CallbackMemoryProfiler {
     bool detailed_first_step = 1;  // Layer-wise first-step accounting
+  }
+
+  message CallbackClipGradientNorm {
+    string weights = 1;    // Parameters whose gradient to clip.
+    bool global_norm = 2;  // Whether to clip according to the values
+                           // of all parameters, or each one separately.
+    float value = 3;       // Value to clip to.
   }
 }
