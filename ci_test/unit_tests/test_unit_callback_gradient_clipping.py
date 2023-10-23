@@ -5,12 +5,17 @@ from glob import glob
 import functools
 import os
 
-def check_gradients(global_norm=True):
+
+def check_gradients(global_norm=True, clip=1.0):
+
     def decorator(f):
+
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             # Clear any gradient outputs from previous runs.
-            grad_files = glob(os.path.join(test_util._get_work_dir(__file__), 'gradients*.txt'))
+            grad_files = glob(
+                os.path.join(test_util._get_work_dir(__file__),
+                             'gradients*.txt'))
             for gf in grad_files:
                 os.remove(gf)
 
@@ -18,25 +23,28 @@ def check_gradients(global_norm=True):
             f(*args, **kwargs)
 
             eps = np.finfo(np.float32).eps
-            grad_files = glob(os.path.join(test_util._get_work_dir(__file__), 'gradients*.txt'))
+            grad_files = glob(
+                os.path.join(test_util._get_work_dir(__file__),
+                             'gradients*.txt'))
 
-            # Compute the weight gradient norms, check they are less than 1,
-            # and update global gradient norm.
+            # Compute the weight gradient norms, check they are less than
+            # "clip", and update global gradient norm.
             norm = 0
             for gf in grad_files:
                 weight_norm = np.square(np.loadtxt(gf)).sum()
-                assert np.sqrt(weight_norm) <= 1 + 8 * eps
+                assert np.sqrt(weight_norm) <= clip + 8 * eps
                 norm += weight_norm
-            
-            # Check the global gradient norm is less than 1 if requested.
+
+            # Check the global gradient norm is less than "clip" if requested.
             if global_norm:
-                assert np.sqrt(norm) <= 1 + 8 * eps
-        
+                assert np.sqrt(norm) <= clip + 8 * eps
+
         return wrapper
-    
+
     return decorator
 
-def setup_tester(scale, global_norm):
+
+def setup_tester(scale, global_norm, clip):
     np.random.seed(20231018)
     x = np.random.normal(scale=scale, size=[8, 16]).astype(np.float32)
     ref = np.zeros_like(x)
@@ -45,35 +53,41 @@ def setup_tester(scale, global_norm):
     x = tester.inputs(x)
     ref = tester.make_reference(ref)
 
-    y = lbann.FullyConnected(x,
-                             num_neurons=16,
-                             has_bias=True)
-    
-    z = lbann.FullyConnected(y,
-                             num_neurons=16,
-                             has_bias=True)
-    
-    tester.set_loss(lbann.MeanSquaredError(z, ref), tolerance=10*scale**2)
+    y = lbann.FullyConnected(x, num_neurons=16, has_bias=True)
+
+    z = lbann.FullyConnected(y, num_neurons=16, has_bias=True)
+
+    tester.set_loss(lbann.MeanSquaredError(z, ref), tolerance=10 * scale**2)
     tester.extra_callbacks = [
-        lbann.CallbackClipGradientNorm(global_norm=global_norm, value=1),
+        lbann.CallbackClipGradientNorm(global_norm=global_norm, value=clip),
         lbann.CallbackDumpGradients(basename='gradients')
     ]
     return tester
+
 
 # Case where no clipping is needed.
 @check_gradients(global_norm=True)
 @test_util.lbann_test(train=True)
 def test_gradient_no_clipping():
-    return setup_tester(scale=0.1, global_norm=True)
+    return setup_tester(scale=0.1, global_norm=True, clip=1.0)
+
 
 # Case with global clipping.
 @check_gradients(global_norm=True)
 @test_util.lbann_test(train=True)
 def test_gradient_clipping():
-    return setup_tester(scale=1, global_norm=True)
+    return setup_tester(scale=1, global_norm=True, clip=1.0)
+
+
+# Case with global clipping and another clip value.
+@check_gradients(global_norm=True, clip=0.3)
+@test_util.lbann_test(train=True)
+def test_gradient_clipping_diffclip():
+    return setup_tester(scale=1, global_norm=True, clip=0.3)
+
 
 # Case with per-weight clipping only.
 @check_gradients(global_norm=False)
 @test_util.lbann_test(train=True)
 def test_gradient_clipping_local():
-    return setup_tester(scale=10, global_norm=False)
+    return setup_tester(scale=10, global_norm=False, clip=1.0)
