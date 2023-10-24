@@ -113,12 +113,6 @@ top1 = lbann.CategoricalAccuracy(probs, labels)
 top5 = lbann.TopKCategoricalAccuracy(probs, labels, k=5)
 layers = list(lbann.traverse_layer_graph([images, labels]))
 
-# Setup tensor core operations (just to demonstrate enum usage)
-tensor_ops_mode = lbann.ConvTensorOpsMode.NO_TENSOR_OPS
-for l in layers:
-    if type(l) == lbann.Convolution:
-        l.conv_tensor_op_mode=tensor_ops_mode
-
 # Setup objective function
 l2_reg_weights = set()
 for l in layers:
