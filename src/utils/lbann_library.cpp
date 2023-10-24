@@ -138,6 +138,11 @@ trainer& construct_trainer(lbann_comm* comm,
   int const procs_per_trainer = comm->get_procs_per_trainer();
   auto const& arg_parser = global_argument_parser();
 
+  // Set the number of OMP threads for the trainer (Note that the
+  // LBANN option will inherit from std::getenv("OMP_NUM_THREADS")
+  auto num_omp_threads = arg_parser.get<int>(LBANN_OPTION_OMP_NUM_THREADS);
+  omp_set_num_threads(num_omp_threads);
+
   // Check to see if the model wants to reduce the I/O parallelism
   bool const serialized_io = pb_trainer->serialize_io();
   if (comm->am_trainer_master()) {
@@ -242,7 +247,8 @@ trainer& construct_trainer(lbann_comm* comm,
 #endif
 
   // Initialize the general RNGs and the data sequence RNGs
-  init_random(random_seed, io_threads_per_process);
+  int max_io_rng_banks = arg_parser.get<int>(LBANN_OPTION_MAX_IO_RNG_BANKS);
+  init_random(random_seed, max_io_rng_banks);
   init_data_seq_random(data_seq_random_seed);
   init_ltfb_random(root_random_seed);
   global_trainer_->set_random_seeds(root_random_seed,
@@ -357,14 +363,22 @@ std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm* comm,
 
   auto& arg_parser = global_argument_parser();
   int req_io_threads = arg_parser.get<int>(LBANN_OPTION_NUM_IO_THREADS);
-  int num_io_threads = std::max(std::min(max_io_threads, req_io_threads), 1);
+  int max_io_rng_banks = arg_parser.get<int>(LBANN_OPTION_MAX_IO_RNG_BANKS);
+  // Limit the number of I/O threads to:
+  //   < number of available free cores per process
+  //   < number of RNG banks provisioned
+  // and at least one
+  int num_io_threads = std::max(
+    std::min(max_io_rng_banks, std::min(max_io_threads, req_io_threads)),
+    1);
 
   auto io_threads_offset = free_core_offset(comm);
 
   if (comm->am_world_master()) {
     std::cout << "\tNum. I/O Threads: " << num_io_threads
-              << " (Limited to # Unused Compute Cores or 1) at offset "
-              << io_threads_offset << std::endl;
+              << " (Limited to # Unused Compute Cores [" << max_io_threads
+              << "] # of RNG banks [" << max_io_rng_banks
+              << "] or 1) at offset " << io_threads_offset << std::endl;
   }
 
   auto io_thread_pool = std::make_unique<thread_pool>();

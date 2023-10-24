@@ -248,6 +248,10 @@ void buffered_data_coordinator<TensorDataType>::fetch_data_in_background(
 {
   int active_buffer_idx = future_active_buffer % m_data_buffers.size();
   std::lock_guard<std::mutex> guard(dr_mutex);
+  //  std::thread::id this_id = std::this_thread::get_id();
+  // LBANN_WARNING("[", this_id, "]", " is launching fetch data in background
+  // with batch size ", loaded_mini_batch_size, " and relative base position ",
+  // relative_base_position);
   fetch_to_local_matrix(mode,
                         buf,
                         loaded_mini_batch_size,

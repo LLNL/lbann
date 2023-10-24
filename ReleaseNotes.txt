@@ -25,6 +25,8 @@ Performance optimizations:
  - Allow distconv to be disabled at runtime with LBANN_DISABLE_DISTCONV=1.
  - Activations are now deallocated when no longer needed via a reference counter,
    disable with LBANN_DISABLE_ACT_GC=1.
+ - Added option for LBANN to set the number of OMP threads to modest
+   default (4) if the environment doesn't specify anything.
 
 Model portability & usability:
 
@@ -46,6 +48,10 @@ I/O & data readers:
    of background data fetch. Can be enabled / disabled with runtime
    flag.
  - Set the default number of I/O threads to 4
+ - Changed the I/O and transform pipeline to use a bank of RNGs that
+   is now indexed by the sample ID in the load sequence, rather than the
+   I/O thread ID.  This eliminates variablility when using different
+   numbers of I/O threads.
  - BVE TBD: remove m_current_pos, disable background I/O flag, cleanup
  buffer array of structs versus struct of arrays.
 

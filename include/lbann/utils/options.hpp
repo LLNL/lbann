@@ -68,6 +68,8 @@ namespace lbann {
 #define LBANN_OPTION_NO_INPLACE "no_inplace"
 #define LBANN_OPTION_NO_BACKPROP_DISABLE "no_backprop_disable"
 
+#define LBANN_OPTION_OMP_NUM_THREADS "Num. OMP threads"
+
 // Input options
 #define LBANN_OPTION_CKPT_DIR "ckpt_dir"
 #define LBANN_OPTION_HYDROGEN_BLOCK_SIZE "hydrogen_block_size"
@@ -78,6 +80,7 @@ namespace lbann {
 #define LBANN_OPTION_MODEL "model"
 #define LBANN_OPTION_NUM_EPOCHS "num_epochs"
 #define LBANN_OPTION_NUM_IO_THREADS "Num. IO threads"
+#define LBANN_OPTION_MAX_IO_RNG_BANKS "Max IO RNG banks"
 #define LBANN_OPTION_OPTIMIZER "optimizer"
 #define LBANN_OPTION_PROCS_PER_TRAINER "Processes per trainer"
 #define LBANN_OPTION_PROTOTEXT "prototext"

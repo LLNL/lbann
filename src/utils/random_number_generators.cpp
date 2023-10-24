@@ -115,7 +115,7 @@ int get_num_io_generators() { return ::io_generators.size(); }
 
 locked_io_rng_ref set_io_generators_local_index(size_t idx)
 {
-  ::local_io_generators_index = idx;
+  ::local_io_generators_index = idx % io_generators.size();
   if (!::io_generators_inited) {
     LBANN_ERROR("I/O RNG seed not set");
   }

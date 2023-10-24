@@ -225,6 +225,7 @@ void hdf5_reader<TensorDataType>::load()
     hsize_t dims[4];
     CHECK_HDF5(H5Sget_simple_extent_dims(h_space, dims, NULL));
     CHECK_HDF5(H5Dclose(h_data));
+    CHECK_HDF5(H5Fclose(h_file));
     m_data_dims = std::vector<El::Int>(dims, dims + 4);
   }
   else {

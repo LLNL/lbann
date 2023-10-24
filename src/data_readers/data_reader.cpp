@@ -324,27 +324,31 @@ bool lbann::generic_data_reader::fetch_data_block(
   El::Int mb_size,
   El::Matrix<El::Int>& indices_fetched)
 {
-  locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
+  // locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
 
+  //  std::thread::id this_id = std::this_thread::get_id();
   //  CPUMat& X
+  // LBANN_WARNING("[", this_id, "]",
+  //     "I am fetching a data block and I think that the current position is ",
+  //     current_position_in_data_set,
+  //     " instead of ",
+  //               m_current_pos,
+  //               " with block offset ", block_offset,
+  //               " and block stride ", block_stride);
   for (int s = block_offset; s < mb_size; s += block_stride) {
-    // LBANN_MSG(
-    //   "I am fetching a data block and I think that the current position is ",
-    //   current_position_in_data_set,
-    //   " instead of ",
-    //   m_current_pos);
+    locked_io_rng_ref io_rng = set_io_generators_local_index(s);
     int n = current_position_in_data_set + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
     indices_fetched.Set(s, 0, index);
 
-    // LBANN_MSG("fetch data block is getting s = ",
+    // LBANN_WARNING("[", this_id, "]", "fetch data block is getting s = ",
     //           s,
-    //           " with offset = ",
+    //           " with block offset = ",
     //           block_offset,
-    //           " stride = ",
+    //           " block stride = ",
     //           block_stride,
     //           " current_position ",
-    //           m_current_pos,
+    //           current_position_in_data_set,
     //           " n = ",
     //           n,
     //           " and index = ",
@@ -423,7 +427,7 @@ bool lbann::generic_data_reader::fetch_data_block_conduit(
   El::Int mb_size,
   El::Matrix<El::Int>& indices_fetched)
 {
-  locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
+  // locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
 
   if (static_cast<size_t>(mb_size) > samples.size()) {
     LBANN_ERROR("unable to fetch data to conduit nodes, vector length ",
@@ -432,10 +436,28 @@ bool lbann::generic_data_reader::fetch_data_block_conduit(
                 mb_size);
   }
   //  CPUMat& X
+  // LBANN_MSG(
+  //   "I am fetching a data block (condui) and I think that the current
+  //   position is ", current_position_in_data_set, " instead of ",
+  //   m_current_pos);
   for (int s = block_offset; s < mb_size; s += block_stride) {
+    locked_io_rng_ref io_rng = set_io_generators_local_index(s);
     int n = current_position_in_data_set + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
     indices_fetched.Set(s, 0, index);
+
+    // LBANN_MSG("fetch data block (conduit) is getting s = ",
+    //           s,
+    //           " with offset = ",
+    //           block_offset,
+    //           " stride = ",
+    //           block_stride,
+    //           " current_position ",
+    //           m_current_pos,
+    //           " n = ",
+    //           n,
+    //           " and index = ",
+    //           index);
 
     auto& sample = samples[s];
     bool valid = fetch_conduit_node(sample, index);
