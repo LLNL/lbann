@@ -101,11 +101,6 @@ void construct_std_options()
   arg_parser.add_flag(LBANN_OPTION_STACK_TRACE_TO_FILE,
                       {"--stack_trace_to_file"},
                       "[STD] When enabled, stack trace is output to file");
-  arg_parser.add_flag(LBANN_OPTION_USE_CUBLAS_TENSOR_OPS,
-                      {"--use-cublas-tensor-ops"},
-                      utils::ENV("LBANN_USE_CUBLAS_TENSOR_OPS"),
-                      "[STD] Set the default cuBLAS math mode to use "
-                      "Tensor Core operations when available.");
   arg_parser.add_flag(LBANN_OPTION_USE_CUDNN_TENSOR_OPS,
                       {"--use-cudnn-tensor-ops"},
                       utils::ENV("LBANN_USE_CUDNN_TENSOR_OPS"),
