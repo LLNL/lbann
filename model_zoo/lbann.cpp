@@ -131,18 +131,18 @@ int main(int argc, char* argv[])
     }
 
     // Set up cuDNN defaults.
-    auto use_cudnn_tensor_ops =
-      arg_parser.get<bool>(LBANN_OPTION_USE_CUDNN_TENSOR_OPS);
+    auto disable_cudnn_tensor_ops =
+      arg_parser.get<bool>(LBANN_OPTION_DISABLE_CUDNN_TENSOR_OPS);
     if (master) {
       std::cout << "Default tensor core settings:\n"
-                << "   cuDNN: " << (use_cudnn_tensor_ops ? "" : "NOT ")
+                << "   cuDNN: " << (disable_cudnn_tensor_ops ? "NOT " : "")
                 << "using tensor core math."
                 << "\n"
                 << std::endl;
     }
 #ifdef LBANN_HAS_DNN_LIB
-    if (use_cudnn_tensor_ops)
-      dnn_lib::default_to_tensor_ops();
+    if (disable_cudnn_tensor_ops)
+      dnn_lib::disable_tensor_ops();
 #endif // LBANN_HAS_DNN_LIB
 
     // this must be called after call to arg_parser.parse();

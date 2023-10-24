@@ -101,11 +101,11 @@ void construct_std_options()
   arg_parser.add_flag(LBANN_OPTION_STACK_TRACE_TO_FILE,
                       {"--stack_trace_to_file"},
                       "[STD] When enabled, stack trace is output to file");
-  arg_parser.add_flag(LBANN_OPTION_USE_CUDNN_TENSOR_OPS,
-                      {"--use-cudnn-tensor-ops"},
-                      utils::ENV("LBANN_USE_CUDNN_TENSOR_OPS"),
-                      "[STD] Set the default cuDNN math mode to use "
-                      "Tensor Core operations when available.");
+  arg_parser.add_flag(LBANN_OPTION_DISABLE_CUDNN_TENSOR_OPS,
+                      {"--disable-cudnn-tensor-ops"},
+                      utils::ENV("LBANN_DISABLE_CUDNN_TENSOR_OPS"),
+                      "[STD] Disable tensor core operations in cuDNN "
+                      "Disable Tensor Core operations.");
   arg_parser.add_flag(LBANN_OPTION_USE_DATA_STORE,
                       {"--use_data_store"},
                       "[STD] Enables the data store in-memory structure");

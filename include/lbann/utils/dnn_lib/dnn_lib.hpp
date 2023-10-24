@@ -732,10 +732,13 @@ get_bwd_filter_algorithm(bool autotune,
                          size_t ws_size,
                          void* ws);
 
-/** @brief Set the default to use tensor core operations, allowing
- *         FP32->FP16 conversions.
+/** @brief Set the default to use tensor core operations when possible
+ * without converting datatypes.
  */
 void default_to_tensor_ops() noexcept;
+
+/** @brief Disable all use of tensor cores. */
+void disable_tensor_ops() noexcept;
 
 /** @brief Get the default math type.
  *

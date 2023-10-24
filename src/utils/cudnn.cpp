@@ -1716,6 +1716,11 @@ void default_to_tensor_ops() noexcept
   default_tensor_ops_mode = CUDNN_TENSOR_OP_MATH;
 }
 
+void disable_tensor_ops() noexcept
+{
+  default_tensor_ops_mode = CUDNN_FMA_MATH;
+}
+
 cudnnMathType_t get_default_convolution_math_type() noexcept
 {
   return default_tensor_ops_mode;

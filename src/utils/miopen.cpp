@@ -1579,6 +1579,8 @@ int default_tensor_ops_mode = 0;
 
 void default_to_tensor_ops() noexcept { default_tensor_ops_mode = 0; }
 
+void disable_tensor_ops() noexcept { default_tensor_ops_mode = 0; }
+
 int get_default_convolution_math_type() noexcept { return 0; }
 
 using ProtoTensorOpEnumType = decltype(lbann_data::DEFAULT_TENSOR_OPS);
