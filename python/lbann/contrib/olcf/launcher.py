@@ -74,7 +74,6 @@ def make_batch_script(
         procs_per_socket = (procs_per_node + 1) // 2
         cores_per_proc = cores_per_socket // procs_per_socket
         set_environment('AL_PROGRESS_RANKS_PER_NUMA_NODE', procs_per_socket)
-        set_environment('OMP_NUM_THREADS', cores_per_proc)
         if scheduler == 'lsf':
             launcher_args.append('--bind packed:{}'.format(cores_per_proc))
 
