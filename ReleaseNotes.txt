@@ -80,7 +80,7 @@ Retired features:
  - Removed the num-parallel-readers parameter to the I/O subsystem.
    This eliminates an older version of I/O parallelism that relied on
    a non-data-parallel I/O buffer and had different ranks fetching
-   entire mini-batchs.  It is superseded by standard data-parallel I/O.
+   entire mini-batches.  It is superseded by standard data-parallel I/O.
 
 ============================== Release Notes: v0.103 ==============================
 C++ API:
