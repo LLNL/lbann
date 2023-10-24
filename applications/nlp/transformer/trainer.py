@@ -69,7 +69,7 @@ def make_data_reader(dataset_name, fraction):
     _reader = reader.reader.add()
     _reader.name = 'python'
     _reader.role = 'train'
-    _reader.shuffle = True
+    _reader.shuffle = False if 'pretokenized' in dataset_name else True
     _reader.fraction_of_data_to_use = fraction
     _reader.python.module = dataset_name
     _reader.python.module_dir = os.path.join(
@@ -185,7 +185,6 @@ def make_batch_script(model: lbann.Model,
     script_params['environment'] = {
         'LBANN_USE_CUBLAS_TENSOR_OPS': 0,
         'LBANN_USE_CUDNN_TENSOR_OPS': 0,
-        # "LBANN_KEEP_ERROR_SIGNALS": 1
         "LBANN_NO_INPLACE": 1,
         "LBANN_DISABLE_DISTCONV": 1,
     }
