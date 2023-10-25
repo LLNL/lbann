@@ -323,6 +323,8 @@ void concatenate_layer<TensorDataType, Layout, Device>::fp_setup_outputs()
     }
 
     output.Resize(this->get_output_size(), input0.Width());
+
+    this->setup_reference_counter(output);
   }
 }
 

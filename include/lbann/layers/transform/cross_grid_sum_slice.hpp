@@ -161,6 +161,7 @@ protected:
       auto& output = this->get_activations(i);
       output.Empty(false);
       output.Resize(this->get_output_size(i), mini_batch_size);
+      this->setup_reference_counter(output);
     }
   }
 

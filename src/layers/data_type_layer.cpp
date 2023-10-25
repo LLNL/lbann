@@ -136,6 +136,21 @@ El::Int data_type_layer<InputTensorDataType, OutputTensorDataType>::
   return mini_batch_size;
 }
 
+template <typename TensorDataType>
+static void
+modify_reference_counter(PointerRangeReferenceCounter& refcnt,
+                         const El::AbstractDistMatrix<TensorDataType>& mat,
+                         bool inc)
+{
+  auto const& iter = lookup_pointer(refcnt, mat.LockedBuffer());
+  if (iter != refcnt.end()) {
+    if (inc)
+      refcnt.at(iter->first).inc();
+    else
+      refcnt.at(iter->first).dec();
+  }
+}
+
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
 {
@@ -147,6 +162,9 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
 #endif
 
   const auto fp_start = get_time();
+
+  // Reset activation accounting
+  m_activations_created = false;
 
   // Setup weights proxies
   if (this->has_weights()) {
@@ -165,6 +183,16 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
   // Setup tensors
   fp_setup_inputs();
   fp_setup_outputs();
+
+  // Increase output activation reference count for children (or objective
+  // functions) to use
+  model* m = this->get_model();
+  if (m != nullptr) {
+    auto& refcnt = m->get_activation_reference_counter();
+    for (size_t i = 0; i < m_outputs.size(); ++i) {
+      modify_reference_counter(refcnt, this->get_activations(i), true);
+    }
+  }
 
 #if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
@@ -198,6 +226,28 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
     this->get_weights(i).release_full_weights();
   }
 
+  // Release activation memory as necessary
+  if (m != nullptr) {
+    auto& refcnt = m->get_activation_reference_counter();
+    auto bpreqs = this->get_backprop_requirements();
+
+    // If activations are owned and not necessary for backprop, release owned
+    // activation memory (the next layer will also release its previous
+    // activations later).
+    if (this->owns_activations() && !(bpreqs & ACTIVATIONS)) {
+      for (size_t i = 0; i < m_outputs.size(); ++i) {
+        modify_reference_counter(refcnt, this->get_activations(i), false);
+      }
+    }
+
+    // If previous activations are not necessary for backprop, release
+    if (!(bpreqs & PREV_ACTIVATIONS)) {
+      for (int i = 0; i < this->get_num_parents(); ++i) {
+        modify_reference_counter(refcnt, this->get_prev_activations(i), false);
+      }
+    }
+  }
+
 #if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
   if (using_gpus()) {
@@ -206,6 +256,20 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
   m_fp_time += get_time() - fp_start;
+}
+
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::
+  setup_reference_counter(El::AbstractDistMatrix<OutputTensorDataType>& mat)
+{
+  model* m = this->get_model();
+  if (!m)
+    return;
+
+  auto& refcnt = m->get_activation_reference_counter();
+  auto range = MatrixRefCounter::get_range(mat);
+  refcnt.emplace(range, MatrixRefCounter(mat, this));
+  this->m_activations_created = true;
 }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
@@ -264,6 +328,27 @@ void data_type_layer<InputTensorDataType,
     hydrogen::gpu::SynchronizeDevice();
   }
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
+
+  // Release activation memory as necessary
+  model* m = this->get_model();
+  if (m != nullptr) {
+    auto& refcnt = m->get_activation_reference_counter();
+    auto bpreqs = this->get_backprop_requirements();
+
+    // Free activations, if needed
+    if (bpreqs & ACTIVATIONS) {
+      for (size_t i = 0; i < m_outputs.size(); ++i) {
+        modify_reference_counter(refcnt, this->get_activations(i), false);
+      }
+    }
+
+    // Free previous activations, if needed
+    if (bpreqs & PREV_ACTIVATIONS) {
+      for (int i = 0; i < this->get_num_parents(); ++i) {
+        modify_reference_counter(refcnt, this->get_prev_activations(i), false);
+      }
+    }
+  }
 
   m_bp_time += get_time() - bp_start;
 }
@@ -909,20 +994,17 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
   }
 
 #ifdef LBANN_HAS_GPU
-  // Use directly-allocated GPU memory for forward prop matrices
-  // Note: GPU memory pool uses more memory and these buffers are
-  // rarely reallocated
-  /// @todo Consider using directly-allocated device memory when
-  /// training with persistent error signals
+  // Use GPU memory pool for forward prop matrices to support de/reallocation
+  // upon end of use
   if (this->get_device_allocation() == El::Device::GPU) {
     const auto& arg_parser = global_argument_parser();
     if (!arg_parser.get<bool>(
           LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP)) {
       for (auto& input : m_inputs) {
-        input->Matrix().SetMemoryMode(0); // Directly-allocated memory
+        input->Matrix().SetMemoryMode(1);
       }
       for (auto& output : m_outputs) {
-        output->Matrix().SetMemoryMode(0); // Directly-allocated memory
+        output->Matrix().SetMemoryMode(1);
       }
     }
   }
@@ -934,10 +1016,6 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_data(
   size_t max_mini_batch_size)
 {
   Layer::setup_data(max_mini_batch_size);
-
-  // Initialize input and output tensors
-  fp_setup_inputs();
-  fp_setup_outputs();
 
   if (this->get_num_parents() == 0) {
     // Resize output to maximum mini-batch size
@@ -1049,10 +1127,6 @@ template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType,
                      OutputTensorDataType>::fp_setup_inputs()
 {
-  if (get_num_parents() < 1) {
-    return;
-  }
-
   // Iterate through input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
 
@@ -1110,6 +1184,7 @@ void data_type_layer<InputTensorDataType,
       output.AlignWith(alignment_dist);
     }
     output.Resize(get_output_size(i), mini_batch_size);
+    this->setup_reference_counter(output);
   }
 }
 
@@ -1117,13 +1192,23 @@ void data_type_layer<InputTensorDataType,
 namespace {
 
 // This was just cluttering up things.
-void assert_tensor_size(const BaseDistMat& mat,
+void assert_tensor_size(Layer* l,
+                        const BaseDistMat& mat,
                         El::Int expected_height,
                         El::Int expected_width,
                         std::string const& this_layer_name,
                         std::string const& child_layer_name)
 {
-  if ((mat.Height() != expected_height) || (mat.Width() != expected_width)) {
+  // If the expected tensor does not have a width set, try to infer from model
+  if (expected_width == 0) {
+    model* m = l->get_model();
+    if (m != nullptr) {
+      expected_width = m->get_current_mini_batch_size();
+    }
+  }
+
+  if ((mat.Height() != expected_height) ||
+      (expected_width != 0 && mat.Width() != expected_width)) {
     LBANN_ERROR("layer \"",
                 this_layer_name,
                 "\" expected a tensor stored in a ",
@@ -1153,18 +1238,18 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
     return;
 #endif // LBANN_HAS_DISTCONV
 
-  auto const& output = this->get_activations(layer_idx);
+  auto& prev_error_sig = *m_gradient_wrt_outputs[layer_idx];
 
   // Check the signal size
-  assert_tensor_size(signal,
+  assert_tensor_size(this,
+                     signal,
                      get_output_size(layer_idx),
-                     output.Width(),
+                     prev_error_sig.Width(),
                      m_name,
                      child.get_name());
 
   // If the distributions are compatible, we can just view
   // things. Otherwise, deep-copy the data.
-  auto& prev_error_sig = *m_gradient_wrt_outputs[layer_idx];
   view_or_copy_tensor(signal, prev_error_sig, !m_runs_inplace);
 }
 
@@ -1179,24 +1264,25 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
     return;
 #endif // LBANN_HAS_DISTCONV
 
-  auto& output = this->get_activations(layer_idx);
+  auto& prev_error_sig_ptr = m_gradient_wrt_outputs[layer_idx];
 
   // Check the signal size
   auto& signal = *signal_in;
-  assert_tensor_size(signal,
+  assert_tensor_size(this,
+                     signal,
                      get_output_size(layer_idx),
-                     output.Width(),
+                     prev_error_sig_ptr ? prev_error_sig_ptr->Width() : 0,
                      m_name,
                      child.get_name());
 
   // If the distribution is OK, then we can just swap data
   // around. Otherwise, deep copy into correct distribution.
-  El::DistData expected_distdata = output.DistData();
+  El::DistData expected_distdata = this->get_activations(layer_idx).DistData();
   if (signal.DistData() == expected_distdata) {
     if (auto sig_ptr =
           dynamic_cast<OutputAbsDistMatrixType*>(signal_in.get())) {
       signal_in.release();
-      m_gradient_wrt_outputs[layer_idx].reset(sig_ptr);
+      prev_error_sig_ptr.reset(sig_ptr);
     }
     else {
       LBANN_ERROR("Logic error: DistData objects compare equal "
@@ -1205,14 +1291,14 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
   }
   else // Deep copy
   {
-    if (!m_gradient_wrt_outputs[layer_idx]) {
-      m_gradient_wrt_outputs[layer_idx] =
+    if (!prev_error_sig_ptr) {
+      prev_error_sig_ptr =
         MakeMatBuilder<OutputTensorDataType>(this->get_data_layout(),
                                              this->get_device_allocation())
           ->MakeEmpty(*expected_distdata.grid, 0);
     }
 
-    do_tensor_copy(signal, *m_gradient_wrt_outputs[layer_idx]);
+    do_tensor_copy(signal, *prev_error_sig_ptr);
   }
 }
 
@@ -1225,18 +1311,18 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
   if (!keep_original_gradient_wrt_outputs(layer_idx))
     return;
 #endif // LBANN_HAS_DISTCONV
-  auto const& output = this->get_activations(layer_idx);
+  auto& prev_error_sig = *m_gradient_wrt_outputs[layer_idx];
 
   // Check the signal size
-  assert_tensor_size(signal,
+  assert_tensor_size(this,
+                     signal,
                      get_output_size(layer_idx),
-                     output.Width(),
+                     prev_error_sig.Width(),
                      m_name,
                      child.get_name());
 
   // If the distributions are compatible, we can just view
   // things. Otherwise, deep-copy the data.
-  auto& prev_error_sig = *m_gradient_wrt_outputs[layer_idx];
   do_tensor_copy(signal, prev_error_sig);
 }
 

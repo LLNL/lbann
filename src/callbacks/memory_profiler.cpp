@@ -164,8 +164,8 @@ struct MemUsage
 
 void memory_profiler::report_mem_usage(model* m)
 {
-  size_t total = 0, weight_mem = 0, max_act_mem = 0, opt_state_mem = 0,
-         other_mem = 0;
+  size_t total = 0, weight_mem = 0, act_mem = 0, max_act_mem = 0,
+         opt_state_mem = 0, other_mem = 0;
   std::vector<MemUsage> usage;
   std::map<weights*, std::string> already_reported;
 
@@ -188,6 +188,8 @@ void memory_profiler::report_mem_usage(model* m)
 
       size_t allocated = report_dist_matrix(act, reps);
       layer_total_acts += allocated;
+      act_mem += allocated;
+      layer_total += allocated;
       max_act_mem = std::max(max_act_mem, allocated);
     }
 
@@ -242,6 +244,13 @@ void memory_profiler::report_mem_usage(model* m)
 
     // Get the rest of the allocated memory during setup
     size_t unaccounted = m_unaccounted_setup_layer[layer];
+    if (layer_total_acts > unaccounted) {
+      reps << "    Excess activation memory: " << layer_total_acts << std::endl;
+      layer_total_acts = 0;
+    }
+    else {
+      unaccounted -= layer_total_acts;
+    }
     // TODO: Subtract workspace from unaccounted so that the field is accurate
     // unaccounted -= workspace;
 
@@ -310,7 +319,6 @@ void memory_profiler::report_mem_usage(model* m)
 
   std::cout << "MEM: Total expected model memory: " << total / 1048576.0
             << " MiB (weights: " << weight_mem / 1048576.0
-            << " MiB, max activation tensor: " << max_act_mem / 1048576.0
             << " MiB, optimizer state: " << opt_state_mem / 1048576.0
             << " MiB, other: " << other_mem / 1048576.0 << " MiB)."
             << std::endl;
@@ -347,7 +355,7 @@ void memory_profiler::first_step_accounting(model* m, const std::string& msg)
       auto comm = m->get_comm();
       bool should_print = comm->am_trainer_master();
       if (should_print) {
-        std::cout << "MEM: Allocated memory " << msg << ": "
+        std::cout << "MEM: Allocated memory " << msg << ": " << std::fixed
                   << (current_usage - m_step0_usage) / 1048576.0 << " MiB."
                   << std::endl;
         if (m_detailed_first_step) {

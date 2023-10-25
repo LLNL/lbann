@@ -124,6 +124,7 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs()
     if (!output.Viewing()) {
       output.Empty(false);
       output.Resize(this->get_output_size(i), mini_batch_size);
+      this->setup_reference_counter(output);
     }
   }
 }
