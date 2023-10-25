@@ -1489,7 +1489,7 @@ get_fwd_algo_autotune(bool deterministic,
                                                        perf_results.data(),
                                                        ws,
                                                        ws_size));
-    if (trial > num_skip) {
+    if (trial >= num_skip) {
       for (const auto& p : perf_results) {
         perf_results_all.push_back(p);
       }
@@ -1536,7 +1536,7 @@ get_bwd_data_algo_autotune(bool deterministic,
                                                   perf_results.data(),
                                                   ws,
                                                   ws_size));
-    if (trial > num_skip) {
+    if (trial >= num_skip) {
       for (const auto& p : perf_results) {
         perf_results_all.push_back(p);
       }
@@ -1583,7 +1583,7 @@ get_bwd_filter_algo_autotune(bool deterministic,
                                                     perf_results.data(),
                                                     ws,
                                                     ws_size));
-    if (trial > num_skip) {
+    if (trial >= num_skip) {
       for (const auto& p : perf_results) {
         perf_results_all.push_back(p);
       }

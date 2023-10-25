@@ -149,4 +149,4 @@ void is_finite_and_unscale_gpu<cpu_fp16>(El::AbstractDistMatrix<cpu_fp16>&, Eval
 #include "lbann/macros/instantiate.hpp"
 
 }  // namespace amp
-} // namespace lbann
+}  // namespace lbann
