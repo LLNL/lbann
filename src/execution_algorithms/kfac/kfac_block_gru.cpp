@@ -1088,7 +1088,8 @@ void kfac_block_gru<Device>::get_gradient_matrix(
   auto& weights = this->m_layer->get_weights(ids.first);
   optimizer* opt = weights.get_optimizer();
   auto* dto = dynamic_cast<data_type_optimizer<DataType>*>(opt);
-  const auto& gradients = dto->get_gradient().LockedMatrix();
+  auto grad = dto->get_gradient();
+  const auto& gradients = grad->LockedMatrix();
   LBANN_ASSERT(static_cast<size_t>(gradients.Height()) == hidden_size * 3);
   const auto gradients_mat = El::LockedView(
     (El::Matrix<DataType, Device>&)gradients,

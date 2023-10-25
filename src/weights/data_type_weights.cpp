@@ -244,8 +244,8 @@ void data_type_weights<TensorDataType>::do_setup_()
   m_values.reset(AbsDistMatrixType::Instantiate(
     *matrix_dist.grid,
     matrix_dist.root,
-    this->is_sharded() ? El::VC : matrix_dist.colDist,
-    this->is_sharded() ? El::STAR : matrix_dist.rowDist,
+    this->is_sharded() ? El::STAR : matrix_dist.colDist,
+    this->is_sharded() ? El::VC : matrix_dist.rowDist,
     (matrix_dist.blockHeight == 1 && matrix_dist.blockWidth == 1 ? El::ELEMENT
                                                                  : El::BLOCK),
     matrix_dist.device));

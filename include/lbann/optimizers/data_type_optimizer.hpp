@@ -103,7 +103,7 @@ public:
    *  A collective operation (allreduce or allgather) may be launched and/or
    *  synchronized if needed.
    */
-  const AbsDistMatrixType& get_gradient();
+  std::unique_ptr<AbsDistMatrixType> get_gradient();
 
   /** @brief Get the raw objective function gradient w.r.t. the weights,
    *  synchronized across all ranks in the trainer. This may be a local sharded

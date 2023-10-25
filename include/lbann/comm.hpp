@@ -629,37 +629,7 @@ public:
                     const El::mpi::Comm& c,
                     Al::request& req,
                     El::mpi::Op op = El::mpi::SUM) const;
-  /** Non-blocking matrix reduce-scatter.
-   *  If LBANN has not been built with Aluminum, then this calls a
-   *  blocking matrix operation.
-   */
-  template <typename TensorDataType>
-  void nb_reduce_scatter(const El::AbstractMatrix<TensorDataType>& src,
-                         El::AbstractMatrix<TensorDataType>& dst,
-                         const El::mpi::Comm& c,
-                         Al::request& req,
-                         El::mpi::Op op = El::mpi::SUM) const;
-  /** Non-blocking matrix reduce-scatter.
-   *  If LBANN has not been built with Aluminum, then this calls a
-   *  blocking matrix operation.
-   */
-  template <typename TensorDataType>
-  void nb_reduce_scatter(const El::AbstractDistMatrix<TensorDataType>& src,
-                         El::AbstractDistMatrix<TensorDataType>& dst,
-                         const El::mpi::Comm& c,
-                         Al::request& req,
-                         El::mpi::Op op = El::mpi::SUM) const;
-  /** Non-blocking matrix reduce-scatter.
-   *  If LBANN has not been built with Aluminum, then this calls a
-   *  blocking matrix operation.
-   */
-  template <typename T>
-  void nb_reduce_scatter(const T* src,
-                         T* dst,
-                         int count,
-                         const El::mpi::Comm& c,
-                         Al::request& req,
-                         El::mpi::Op op = El::mpi::SUM) const;
+
   /** Wait for a all non-blocking requests to complete. */
   template <typename T>
   void wait_all(std::vector<El::mpi::Request<T>>& req) const;
