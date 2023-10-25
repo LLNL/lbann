@@ -90,9 +90,10 @@ __global__ void is_finite_and_unscale_noncontiguous_kernel(
 }  // anonymous namespace
 
 template <typename TensorDataType>
-bool is_finite_and_unscale_gpu(El::AbstractDistMatrix<TensorDataType>& grads,
-                               EvalType scale)
-{
+void is_finite_and_unscale_gpu(
+  El::AbstractDistMatrix<TensorDataType>& grads,
+  EvalType scale,
+  float* is_finite) {
   LBANN_CALIPER_MARK_SCOPE("amp::is_finite_and_unscale");
 
   const size_t height = grads.LocalHeight();
@@ -102,17 +103,7 @@ bool is_finite_and_unscale_gpu(El::AbstractDistMatrix<TensorDataType>& grads,
   const size_t grid_size = (size + block_size - 1) / block_size;
   const TensorDataType inv_scale = El::To<TensorDataType>(EvalType(1) / scale);
 
-  // Set up buffer for is_finite.
-  // TODO: This could be optimized.
-  El::Matrix<float, El::Device::GPU> is_finite_d;
-#ifdef HYDROGEN_HAVE_CUB
-  is_finite_d.SetMemoryMode(1); // Use CUB memory pool.
-#endif
-  is_finite_d.Resize(1, 1);
-  El::Fill(is_finite_d, El::TypeTraits<float>::One());
-
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(grads),
-                                     gpu::get_sync_info(is_finite_d));
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(grads));
 
   if (grads.Contiguous()) {
     hydrogen::gpu::LaunchKernel(
@@ -124,7 +115,7 @@ bool is_finite_and_unscale_gpu(El::AbstractDistMatrix<TensorDataType>& grads,
       size,
       grads.Buffer(),
       inv_scale,
-      is_finite_d.Buffer());
+      is_finite);
   } else {
     hydrogen::gpu::LaunchKernel(
       is_finite_and_unscale_noncontiguous_kernel<TensorDataType>,
@@ -137,31 +128,22 @@ bool is_finite_and_unscale_gpu(El::AbstractDistMatrix<TensorDataType>& grads,
       grads.LDim(),
       grads.Buffer(),
       inv_scale,
-      is_finite_d.Buffer());
+      is_finite);
   }
-
-  // Copy to host to check whether things are finite.
-  // TODO: This induces a CPU<->GPU device sync. Remove when we have fused
-  // optimizers/AMP.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-  return is_finite_d.Get(0, 0) == 1.0f;
-#pragma GCC diagnostic pop
 }
 
 #ifdef LBANN_HAS_HALF
 template <>
-bool is_finite_and_unscale_gpu<cpu_fp16>(El::AbstractDistMatrix<cpu_fp16>&,
-                                         EvalType)
-{
+void is_finite_and_unscale_gpu<cpu_fp16>(El::AbstractDistMatrix<cpu_fp16>&, EvalType, float*) {
   LBANN_ERROR("Do not call the GPU kernels with cpu_fp16!");
 }
 #endif
 
-#define PROTO(T)                                                               \
-  template bool is_finite_and_unscale_gpu<T>(El::AbstractDistMatrix<T> &       \
-                                               grads,                          \
-                                             EvalType scale);
+#define PROTO(T)                                        \
+  template void is_finite_and_unscale_gpu<T>(           \
+    El::AbstractDistMatrix<T>& grads,                   \
+    EvalType scale,                                     \
+    float* is_finite);
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"

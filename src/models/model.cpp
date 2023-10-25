@@ -1679,16 +1679,15 @@ void model::update_weights()
   // If not, the gradients will be unscaled.
   bool skip_step = false;
   if (is_amp_enabled()) {
+    std::vector<optimizer*> optimizers;
     for (auto rit = m_weights.rbegin(); rit != m_weights.rend(); ++rit) {
       auto& w = **rit;
       auto&& opt = w.get_optimizer();
       if (opt != nullptr) {
-        skip_step = !opt->is_gradient_finite_and_unscale(m_amp_scale_factor);
-        if (skip_step) {
-          break;
-        }
+        optimizers.push_back(opt);
       }
     }
+    skip_step = !amp::is_finite_and_unscale_all(optimizers, m_amp_scale_factor);
   }
 
   if (!skip_step) {

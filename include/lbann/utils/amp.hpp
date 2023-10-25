@@ -29,29 +29,53 @@
 
 #include "lbann/base.hpp"
 
+#include <vector>
+
 namespace lbann {
+
+// Forward-declare this.
+class optimizer;
+
 namespace amp {
 
 /** Check gradients for invalid values and unscale them.
- *  Returns true if all elements in grads are finite (not inf or NaN)
- *  and are successfully unscaled; otherwise returns false. If this
- *  returns false, grads should not be used.
+ *  Will set the value pointed to by is_finite_cpu or is_finite_gpu to
+ *  zero if a non-finite (inf or NaN) value is found; otherwise this
+ *  will not modify them.
+ *  If is_finite_cpu/gpu is set to zero, grads should not be used.
  *
  * @todo This involves a CPU<->GPU sync which could be avoided by
  * fusing these checks into optimizers.
+ *
+ * @todo is_finite_cpu/gpu is kind of a hack to share a single buffer
+ * across many invocations.
  */
 template <typename TensorDataType>
-bool is_finite_and_unscale(El::AbstractDistMatrix<TensorDataType>& grads,
-                           EvalType scale);
+void is_finite_and_unscale(
+  El::AbstractDistMatrix<TensorDataType>& grads,
+  EvalType scale,
+  float* is_finite_cpu,
+  float* is_finite_gpu);
+
+/** Apply is_finite_and_unscale to all gradients in optimizers. This
+ *  can be faster than applying it individually.
+ */
+bool is_finite_and_unscale_all(
+  std::vector<optimizer*> optimizers,
+  EvalType scale);
 
 template <typename TensorDataType>
-bool is_finite_and_unscale_cpu(El::AbstractDistMatrix<TensorDataType>& grads,
-                               EvalType scale);
+void is_finite_and_unscale_cpu(
+  El::AbstractDistMatrix<TensorDataType>& grads,
+  EvalType scale,
+  float* is_finite);
 
 #ifdef LBANN_HAS_GPU
 template <typename TensorDataType>
-bool is_finite_and_unscale_gpu(El::AbstractDistMatrix<TensorDataType>& grads,
-                               EvalType scale);
+void is_finite_and_unscale_gpu(
+  El::AbstractDistMatrix<TensorDataType>& grads,
+  EvalType scale,
+  float* is_finite);
 #endif
 
 }  // namespace amp

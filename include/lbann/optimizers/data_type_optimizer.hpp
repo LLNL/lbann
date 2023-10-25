@@ -151,9 +151,6 @@ protected:
   std::tuple<El::Int, El::Int, El::DistData, El::DistData>
   get_matrix_info() const final;
 
-  /** @brief Check gradients and unscale for AMP. */
-  bool is_gradient_finite_and_unscale(EvalType scale) override;
-
 private:
   /** @brief Weights being optimized. */
   data_type_weights<TensorDataType>* m_weights = nullptr;

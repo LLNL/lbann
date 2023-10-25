@@ -37,9 +37,11 @@
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/memory.hpp"
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <typeindex>
+#include <vector>
 #include <unordered_set>
 
 namespace lbann_data {
@@ -281,12 +283,13 @@ public:
    */
   void finish_gradient_sync();
 
-  /** @brief Check whether gradients are finite and unscale them for
-   *  automatic mixed precision.
+  /** @brief Return all raw gradient buffers.
    *
    * This will complete gradient allreduces.
+   *
+   * This is meant for internal use with AMP.
    */
-  virtual bool is_gradient_finite_and_unscale(EvalType scale) = 0;
+  std::vector<std::reference_wrapper<El::BaseDistMatrix>> get_raw_gradients();
 
 private:
   /** @brief LBANN communicator. */
@@ -311,7 +314,6 @@ private:
   /** @brief Time spent in optimization step. */
   EvalType m_step_time = 0;
 
-protected:
   /** @brief Map from data types to gradient contributions.
    *  @todo Refactor this out. It's a hack.
    */

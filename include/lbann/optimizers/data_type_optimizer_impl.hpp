@@ -225,55 +225,6 @@ data_type_optimizer<TensorDataType>::get_matrix_info() const
 }
 
 template <typename TensorDataType>
-bool data_type_optimizer<TensorDataType>::is_gradient_finite_and_unscale(
-  EvalType scale)
-{
-  if (m_weights == nullptr) {
-    LBANN_ERROR("Attempt to unscale gradients without weights");
-  }
-  // We cannot use this->get_gradient() here because that may return a
-  // copy; we instead need to modify the gradient manager's gradient.
-  // This implementation is therefore an ugly hack.
-  // TODO: Clean this up, maybe by integrating scaling into the
-  // gradient managers.
-  this->start_gradient_allreduce();
-  this->finish_gradient_allreduce();
-  bool all_finite = true; // If no gradients, everything is finite.
-  for (auto& grad_mgr_v : this->gradients_) {
-    auto& grad_mgr = *(grad_mgr_v.second);
-    if (grad_mgr.get_status() != optimizer_gradient_status::ready) {
-      LBANN_ERROR("Optimizer gradient not ready");
-    }
-    auto& grad = grad_mgr.gradient();
-    // Even more ugly hacking:
-    // Attempt to convert from a BaseDistMatrix to an AbstractDistMatrix.
-    if (auto* ptr_f = dynamic_cast<El::AbstractDistMatrix<float>*>(&grad)) {
-      all_finite &= amp::is_finite_and_unscale(*ptr_f, scale);
-    }
-    else if (auto* ptr_d =
-               dynamic_cast<El::AbstractDistMatrix<double>*>(&grad)) {
-      all_finite &= amp::is_finite_and_unscale(*ptr_d, scale);
-    }
-#ifdef LBANN_HAS_HALF
-    else if (auto* ptr_cpufp16 =
-               dynamic_cast<El::AbstractDistMatrix<cpu_fp16>*>(&grad)) {
-      all_finite &= amp::is_finite_and_unscale(*ptr_cpufp16, scale);
-    }
-#endif
-#ifdef LBANN_HAS_GPU_FP16
-    else if (auto* ptr_fp16 =
-               dynamic_cast<El::AbstractDistMatrix<fp16>*>(&grad)) {
-      all_finite &= amp::is_finite_and_unscale(*ptr_fp16, scale);
-    }
-#endif
-    else {
-      LBANN_ERROR("Could not determine gradient type");
-    }
-  }
-  return all_finite;
-}
-
-template <typename TensorDataType>
 template <class Archive>
 void data_type_optimizer<TensorDataType>::serialize(Archive& ar)
 {
