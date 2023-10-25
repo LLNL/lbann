@@ -182,10 +182,11 @@ set_center_specific_spack_dependencies()
                 fi
             done
         fi
-        CENTER_UPSTREAM_PATH="/p/vast1/lbann/spack_installed_packages/opt/spack"
+        # CENTER_UPSTREAM_PATH="/p/vast1/lbann/spack_installed_packages/opt/spack"
         # MIRRORS="/p/vast1/lbann/spack/mirror /p/vast1/atom/spack/mirror"
         case ${spack_arch_target} in
             "power9le") # Lassen
+                CENTER_UPSTREAM_PATH="/p/gpfs1/lbann/spack_installed_packages/opt/spack"
                 CENTER_COMPILER_PATHS="/usr/tce/packages/gcc/gcc-8.3.1 /usr/tce/packages/clang/clang-10.0.1-gcc-8.3.1/"
                 CENTER_COMPILER="%gcc@8.3.1"
                 DEPENDENTS_CENTER_COMPILER="%gcc@8.3.1"
@@ -194,6 +195,7 @@ set_center_specific_spack_dependencies()
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 # On LC the mvapich2 being used is built against HWLOC v1
+                CENTER_UPSTREAM_PATH="/p/lustre2/lbann/spack_installed_packages/opt/spack"
                 CENTER_COMPILER_PATHS="/usr/tce/packages/gcc/gcc-10.3.1-magic /usr/workspace/brain/tom/pascal/llvm/latest/"
                 CENTER_COMPILER="%gcc"
 #                CENTER_COMPILER="%clang"
@@ -204,16 +206,19 @@ set_center_specific_spack_dependencies()
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
                 # On LC the mvapich2 being used is built against HWLOC v1
+                CENTER_UPSTREAM_PATH="/p/lustre2/lbann/spack_installed_packages/opt/spack"
                 CENTER_COMPILER="%gcc"
                 CENTER_DEPENDENCIES="^mvapich2@2.3.6 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
+                CENTER_UPSTREAM_PATH="/p/lustre2/lbann/spack_installed_packages/opt/spack"
                 CENTER_COMPILER="%rocmcc@5.6.0"
                 CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.6.0 ^python@3.9.12 ^protobuf@3.21.12"
                 CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
                 ;;
             "zen3") # Tioga, RZVernal
+                CENTER_UPSTREAM_PATH="/p/lustre2/lbann/spack_installed_packages/opt/spack"
                 CENTER_COMPILER="%rocmcc@5.6.0"
                 CENTER_DEPENDENCIES="^cray-mpich@8.1.26 ^hip@5.6.0 ^python@3.9.12 ^protobuf@3.21.12"
                 CENTER_BLAS_LIBRARY="blas=libsci"
