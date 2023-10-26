@@ -302,7 +302,7 @@ protected:
 
     // Display warning if mini-batch size is small
     const auto& output = this->get_activations();
-    const auto& mini_batch_size = output.Width();
+    const auto& mini_batch_size = max_mini_batch_size;
     const auto& local_mini_batch_size = mini_batch_size / output.DistSize();
     if (m_statistics_group_size == 0 && mini_batch_size <= 4) {
       if (output.DistRank() == 0) {
@@ -324,7 +324,7 @@ protected:
         err << "LBANN warning: " << get_type() << " layer \""
             << this->get_name() << "\" "
             << "is aggregating statistics over " << m_statistics_group_size
-            << "processors and the aggregated mini-batch size ("
+            << " processors and the aggregated mini-batch size ("
             << (m_statistics_group_size * local_mini_batch_size) << ") "
             << "may be too small to get good statistics";
         std::cerr << err.str() << std::endl;
