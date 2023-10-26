@@ -103,15 +103,13 @@ void is_finite_and_unscale_gpu(
   const size_t grid_size = (size + block_size - 1) / block_size;
   const TensorDataType inv_scale = El::To<TensorDataType>(EvalType(1) / scale);
 
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(grads));
-
   if (grads.Contiguous()) {
     hydrogen::gpu::LaunchKernel(
       is_finite_and_unscale_contiguous_kernel<TensorDataType>,
       grid_size,
       block_size,
       0,
-      multisync,
+      gpu::get_sync_info(grads),
       size,
       grads.Buffer(),
       inv_scale,
@@ -122,7 +120,7 @@ void is_finite_and_unscale_gpu(
       grid_size,
       block_size,
       0,
-      multisync,
+      gpu::get_sync_info(grads),
       height,
       width,
       grads.LDim(),
