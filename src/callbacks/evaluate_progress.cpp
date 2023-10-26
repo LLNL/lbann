@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/ltfb.hpp"
+#include "lbann/callbacks/evaluate_progress.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
@@ -70,10 +70,10 @@ EvalType evaluate(model& m, const std::string& metric_name)
   dc.collect_background_data_fetch(original_mode);
 
   auto mode = execution_mode::invalid;
-  auto modes = [ execution_mode::tournament, execution_mode::validation ];
-  for (auto m : modes) {
-    if (dc.is_execution_mode_valid(m)) {
-      mode = m;
+  auto modes = {execution_mode::tournament, execution_mode::validation};
+  for (auto em : modes) {
+    if (dc.is_execution_mode_valid(em)) {
+      mode = em;
       break;
     }
   }
@@ -164,37 +164,37 @@ void evaluate_progress::on_batch_begin(model* m)
 
     // Evaluate local model
     if (comm.am_world_master()) {
-      std::cout << message_prefix + "evaluating local model...\n";
+      std::cout << message_prefix + "evaluating model...\n";
     }
     auto local_score = evaluate(local_model, m_metric_name);
 
     // Report evaluation results
     if (comm.am_trainer_master()) {
       std::ostringstream msg;
-      msg << message_prefix << "trainer " << local_trainer << " "
+      msg << message_prefix << "trainer "
           << "(" << to_string(mode) << ") "
           << "= " << local_score << "\n";
       std::cout << msg.str() << std::flush;
     }
   }
+}
 
-  void evaluate_progress::write_specific_proto(lbann_data::Callback & proto)
-    const
-  {
-    auto* msg = proto.mutable_evaluate_progress();
-    msg->set_batch_interval(m_batch_interval);
-    msg->set_metric(m_metric_name);
-  }
-  std::unique_ptr<callback_base> build_evaluate_progress_callback_from_pbuf(
-    const google::protobuf::Message& proto_msg,
-    const std::shared_ptr<lbann_summary>&)
-  {
-    const auto& params =
-      dynamic_cast<const lbann_data::Callback::CallbackEvaluateProgress&>(
-        proto_msg);
-    return std::make_unique<evaluate_progress>(params.batch_interval(),
-                                               params.metric());
-  }
+void evaluate_progress::write_specific_proto(lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_evaluate_progress();
+  msg->set_batch_interval(m_batch_interval);
+  msg->set_metric(m_metric_name);
+}
+std::unique_ptr<callback_base> build_evaluate_progress_callback_from_pbuf(
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>&)
+{
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackEvaluateProgress&>(
+      proto_msg);
+  return std::make_unique<evaluate_progress>(params.batch_interval(),
+                                             params.metric());
+}
 
 } // namespace callback
 } // namespace lbann

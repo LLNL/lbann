@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_LTFB_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_LTFB_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_EVALUATE_PROGRESS_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_EVALUATE_PROGRESS_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
 #include <memory>
@@ -34,9 +34,6 @@
 
 namespace lbann {
 namespace callback {
-
-// Forward declaration
-class LTFBCommunicationAlgorithm;
 
 /** @brief Tournament training.
  *
@@ -59,7 +56,7 @@ class LTFBCommunicationAlgorithm;
  *    - Can this be used to explore model architectures?
  *
  */
-class evaluation : public callback_base
+class evaluate_progress : public callback_base
 {
 public:
   /** @brief Construct the LTFB callback
@@ -70,11 +67,14 @@ public:
    *  @param exchange_hyperparameters Whether to exchange hyperparameters
    *                                  with model information.
    */
-  ltfb(El::Int batch_interval, std::string metric_name);
-  ltfb(const ltfb& other);
-  ltfb& operator=(const ltfb& other);
-  ltfb* copy() const override { return new ltfb(*this); }
-  std::string name() const override { return "LTFB"; }
+  evaluate_progress(El::Int batch_interval, std::string metric_name);
+  evaluate_progress(const evaluate_progress& other);
+  evaluate_progress& operator=(const evaluate_progress& other);
+  evaluate_progress* copy() const override
+  {
+    return new evaluate_progress(*this);
+  }
+  std::string name() const override { return "EVALUATE_PROGRESS"; }
 
   void on_train_begin(model* m) override;
   void on_batch_begin(model* m) override;
@@ -95,4 +95,4 @@ std::unique_ptr<callback_base> build_evaluate_progress_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-#endif // LBANN_CALLBACKS_CALLBACK_LTFB_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_EVALUATE_PROGRESS_HPP_INCLUDED
